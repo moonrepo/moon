@@ -1,14 +1,12 @@
 use moon_constants::{CONFIG_GLOBAL_PROJECT_FILENAME, CONFIG_WORKSPACE_FILENAME};
-use moon_utils::test::{
-    create_moon_command, create_sandbox, create_sandbox_with_git, run_git_command,
-};
+use moon_test_utils::create_sandbox;
 use predicates::prelude::*;
 use std::fs;
 
 #[test]
 fn creates_files_in_dest() {
-    let fixture = create_sandbox("init-sandbox");
-    let root = fixture.path();
+    let mut sandbox = create_sandbox("init-sandbox");
+    let root = sandbox.path().to_path_buf();
     let workspace_config = root.join(".moon").join(CONFIG_WORKSPACE_FILENAME);
     let project_config = root.join(".moon").join(CONFIG_GLOBAL_PROJECT_FILENAME);
     let gitignore = root.join(".gitignore");
@@ -17,11 +15,9 @@ fn creates_files_in_dest() {
     assert!(!project_config.exists());
     assert!(!gitignore.exists());
 
-    let assert = create_moon_command(root)
-        .arg("init")
-        .arg("--yes")
-        .arg(root)
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("init").arg("--yes").arg(root);
+    });
 
     assert.success().code(0).stdout(predicate::str::contains(
         "moon has successfully been initialized in",
@@ -34,15 +30,13 @@ fn creates_files_in_dest() {
 
 #[test]
 fn creates_workspace_config_from_template() {
-    let fixture = create_sandbox("init-sandbox");
-    let root = fixture.path();
+    let mut sandbox = create_sandbox("init-sandbox");
+    let root = sandbox.path().to_path_buf();
     let workspace_config = root.join(".moon").join("workspace.yml");
 
-    create_moon_command(root)
-        .arg("init")
-        .arg("--yes")
-        .arg(root)
-        .assert();
+    sandbox.run_moon(|cmd| {
+        cmd.arg("init").arg("--yes").arg(root);
+    });
 
     assert!(
         predicate::str::contains("https://moonrepo.dev/schemas/workspace.json")
@@ -52,17 +46,15 @@ fn creates_workspace_config_from_template() {
 
 #[test]
 fn creates_project_config_from_template() {
-    let fixture = create_sandbox("init-sandbox");
-    let root = fixture.path();
+    let mut sandbox = create_sandbox("init-sandbox");
+    let root = sandbox.path().to_path_buf();
     let project_config = root
         .join(".moon")
         .join(moon_constants::CONFIG_GLOBAL_PROJECT_FILENAME);
 
-    create_moon_command(root)
-        .arg("init")
-        .arg("--yes")
-        .arg(root)
-        .assert();
+    sandbox.run_moon(|cmd| {
+        cmd.arg("init").arg("--yes").arg(root);
+    });
 
     assert!(
         predicate::str::contains("https://moonrepo.dev/schemas/global-project.json")
@@ -72,15 +64,13 @@ fn creates_project_config_from_template() {
 
 #[test]
 fn creates_gitignore_file() {
-    let fixture = create_sandbox("init-sandbox");
-    let root = fixture.path();
+    let mut sandbox = create_sandbox("init-sandbox");
+    let root = sandbox.path().to_path_buf();
     let gitignore = root.join(".gitignore");
 
-    create_moon_command(root)
-        .arg("init")
-        .arg("--yes")
-        .arg(root)
-        .assert();
+    sandbox.run_moon(|cmd| {
+        cmd.arg("init").arg("--yes").arg(root);
+    });
 
     assert_eq!(
         fs::read_to_string(gitignore).unwrap(),
@@ -90,17 +80,15 @@ fn creates_gitignore_file() {
 
 #[test]
 fn appends_existing_gitignore_file() {
-    let fixture = create_sandbox("init-sandbox");
-    let root = fixture.path();
+    let mut sandbox = create_sandbox("init-sandbox");
+    let root = sandbox.path().to_path_buf();
     let gitignore = root.join(".gitignore");
 
     fs::write(&gitignore, "*.js\n*.log").unwrap();
 
-    create_moon_command(root)
-        .arg("init")
-        .arg("--yes")
-        .arg(root)
-        .assert();
+    sandbox.run_moon(|cmd| {
+        cmd.arg("init").arg("--yes").arg(root);
+    });
 
     assert_eq!(
         fs::read_to_string(gitignore).unwrap(),
@@ -110,22 +98,17 @@ fn appends_existing_gitignore_file() {
 
 #[test]
 fn does_overwrite_existing_config_if_force_passed() {
-    let fixture = create_sandbox("init-sandbox");
-    let root = fixture.path();
+    let mut sandbox = create_sandbox("init-sandbox");
+    let root = sandbox.path().to_path_buf();
 
-    create_moon_command(root)
-        .arg("init")
-        .arg("--yes")
-        .arg(root)
-        .assert();
+    sandbox.run_moon(|cmd| {
+        cmd.arg("init").arg("--yes").arg(&root);
+    });
 
     // Run again
-    let assert = create_moon_command(root)
-        .arg("init")
-        .arg("--yes")
-        .arg(root)
-        .arg("--force")
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("init").arg("--yes").arg(root).arg("--force");
+    });
 
     assert.success().code(0).stdout(predicate::str::contains(
         "moon has successfully been initialized in",
@@ -136,26 +119,25 @@ mod vcs {
     use super::*;
 
     #[test]
-
     fn detects_git() {
-        let fixture = create_sandbox_with_git("init-sandbox");
-        let root = fixture.path();
+        let mut sandbox = create_sandbox("init-sandbox");
+        sandbox.enable_git();
+
+        let root = sandbox.path().to_path_buf();
         let workspace_config = root.join(".moon").join("workspace.yml");
 
         // Checkout a new branch
-        run_git_command(root, |cmd| {
-            cmd.args(["checkout", "-b", "fixtures-test"]);
+        sandbox.run_git(|cmd| {
+            cmd.args(["checkout", "-b", "sandboxs-test"]);
         });
 
-        create_moon_command(root)
-            .arg("init")
-            .arg("--yes")
-            .arg(root)
-            .assert();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("init").arg("--yes").arg(root);
+        });
 
         let content = fs::read_to_string(workspace_config).unwrap();
 
         assert!(predicate::str::contains("manager: 'git'").eval(&content));
-        assert!(predicate::str::contains("defaultBranch: 'fixtures-test'").eval(&content));
+        assert!(predicate::str::contains("defaultBranch: 'sandboxs-test'").eval(&content));
     }
 }

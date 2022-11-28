@@ -28,11 +28,10 @@ mod load_files {
 
     #[tokio::test]
     async fn filters_out_schema_file() {
-        let dest = assert_fs::TempDir::new().unwrap();
         let mut template = create_template();
 
         template
-            .load_files(dest.path(), &create_context())
+            .load_files(&get_fixtures_dir("generator"), &create_context())
             .await
             .unwrap();
 
@@ -135,9 +134,8 @@ mod interpolate_path {
 }
 
 mod set_content {
-    use moon_config::TemplateFrontmatterConfig;
-
     use super::*;
+    use moon_config::TemplateFrontmatterConfig;
 
     #[test]
     fn works_without_frontmatter() {

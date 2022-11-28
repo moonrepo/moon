@@ -2217,6 +2217,7 @@ dependencies = [
  "moon_config",
  "moon_error",
  "moon_logger",
+ "moon_test_utils",
  "moon_utils",
  "rustc-hash",
  "serde",

@@ -1,15 +1,43 @@
 mod utils;
 
-use insta::assert_snapshot;
 use moon_cache::CacheEngine;
-use moon_utils::path::standardize_separators;
-use moon_utils::test::{
-    create_moon_command, create_sandbox, create_sandbox_with_git, get_assert_output,
+use moon_config::WorkspaceConfig;
+use moon_test_utils::{
+    assert_snapshot, create_sandbox, create_sandbox_with_config, get_assert_output,
+    get_cases_fixture_configs, Sandbox,
 };
+use moon_utils::path::standardize_separators;
 use predicates::prelude::*;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use utils::get_path_safe_output;
+
+fn cases_sandbox() -> Sandbox {
+    let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
+
+    create_sandbox_with_config(
+        "cases",
+        Some(&workspace_config),
+        Some(&toolchain_config),
+        Some(&projects_config),
+    )
+}
+
+fn cases_sandbox_with_config<C>(callback: C) -> Sandbox
+where
+    C: FnOnce(&mut WorkspaceConfig),
+{
+    let (mut workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
+
+    callback(&mut workspace_config);
+
+    create_sandbox_with_config(
+        "cases",
+        Some(&workspace_config),
+        Some(&toolchain_config),
+        Some(&projects_config),
+    )
+}
 
 async fn extract_hash_from_run(fixture: &Path, target_id: &str) -> String {
     let engine = CacheEngine::load(fixture).await.unwrap();
@@ -20,48 +48,44 @@ async fn extract_hash_from_run(fixture: &Path, target_id: &str) -> String {
 
 #[test]
 fn errors_for_unknown_project() {
-    let fixture = create_sandbox("cases");
+    let sandbox = cases_sandbox();
 
-    let assert = create_moon_command(fixture.path())
-        .arg("run")
-        .arg("unknown:test")
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("unknown:test");
+    });
 
     assert_snapshot!(get_assert_output(&assert));
 }
 
 #[test]
 fn errors_for_unknown_task_in_project() {
-    let fixture = create_sandbox("cases");
+    let sandbox = cases_sandbox();
 
-    let assert = create_moon_command(fixture.path())
-        .arg("run")
-        .arg("base:unknown")
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("base:unknown");
+    });
 
     assert_snapshot!(get_assert_output(&assert));
 }
 
 #[test]
 fn errors_for_unknown_all_target() {
-    let fixture = create_sandbox("cases");
+    let sandbox = cases_sandbox();
 
-    let assert = create_moon_command(fixture.path())
-        .arg("run")
-        .arg(":unknown")
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg(":unknown");
+    });
 
     assert_snapshot!(get_assert_output(&assert));
 }
 
 #[test]
 fn errors_for_cycle_in_task_deps() {
-    let fixture = create_sandbox("cases");
+    let sandbox = cases_sandbox();
 
-    let assert = create_moon_command(fixture.path())
-        .arg("run")
-        .arg("depsA:taskCycle")
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("depsA:taskCycle");
+    });
 
     assert_snapshot!(get_assert_output(&assert));
 }
@@ -69,32 +93,31 @@ fn errors_for_cycle_in_task_deps() {
 #[cfg(not(windows))]
 mod general {
     use super::*;
-    use utils::append_workspace_config;
 
     #[test]
     fn logs_command_for_project_root() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox_with_config(|cfg| {
+            cfg.runner.log_running_command = true;
+        });
+        sandbox.enable_git();
 
-        append_workspace_config(fixture.path(), "runner:\n  logRunningCommand: true");
-
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("base:runFromProject")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("base:runFromProject");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
 
     #[test]
     fn logs_command_for_workspace_root() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox_with_config(|cfg| {
+            cfg.runner.log_running_command = true;
+        });
+        sandbox.enable_git();
 
-        append_workspace_config(fixture.path(), "runner:\n  logRunningCommand: true");
-
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("base:runFromWorkspace")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("base:runFromWorkspace");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
@@ -102,16 +125,14 @@ mod general {
 
 mod configs {
     use super::*;
-    use std::path::PathBuf;
 
     #[test]
     fn bubbles_up_invalid_workspace_config() {
-        let fixture = create_sandbox("config-invalid-workspace");
+        let sandbox = create_sandbox("config-invalid-workspace");
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("project:task")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("project:task");
+        });
 
         assert_snapshot!(standardize_separators(get_path_safe_output(
             &assert,
@@ -121,12 +142,11 @@ mod configs {
 
     #[test]
     fn bubbles_up_invalid_global_project_config() {
-        let fixture = create_sandbox("config-invalid-global-project");
+        let sandbox = create_sandbox("config-invalid-global-project");
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("project:task")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("project:task");
+        });
 
         assert_snapshot!(standardize_separators(get_path_safe_output(
             &assert,
@@ -136,12 +156,11 @@ mod configs {
 
     #[test]
     fn bubbles_up_invalid_project_config() {
-        let fixture = create_sandbox("config-invalid-project");
+        let sandbox = create_sandbox("config-invalid-project");
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("test:task")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("test:task");
+        });
 
         assert_snapshot!(standardize_separators(get_path_safe_output(
             &assert,
@@ -152,34 +171,35 @@ mod configs {
 
 mod logs {
     use super::*;
-    use moon_utils::test::create_sandbox_with_git;
 
     #[test]
     fn creates_log_file() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        create_moon_command(fixture.path())
-            .arg("--logFile=output.log")
-            .arg("run")
-            .arg("node:standard")
-            .assert();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("--logFile=output.log")
+                .arg("run")
+                .arg("node:standard");
+        });
 
-        let output_path = fixture.path().join("output.log");
+        let output_path = sandbox.path().join("output.log");
 
         assert!(output_path.exists());
     }
 
     #[test]
     fn creates_nested_log_file() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        create_moon_command(fixture.path())
-            .arg("--logFile=nested/output.log")
-            .arg("run")
-            .arg("node:standard")
-            .assert();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("--logFile=nested/output.log")
+                .arg("run")
+                .arg("node:standard");
+        });
 
-        let output_path = fixture.path().join("nested/output.log");
+        let output_path = sandbox.path().join("nested/output.log");
 
         assert!(output_path.exists());
     }
@@ -190,91 +210,90 @@ mod dependencies {
 
     #[test]
     fn runs_the_graph_in_order() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("depsA:dependencyOrder")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("depsA:dependencyOrder");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
 
     #[test]
     fn runs_the_graph_in_order_not_from_head() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("depsB:dependencyOrder")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("depsB:dependencyOrder");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
 
     #[test]
     fn can_run_deps_in_serial() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("dependsOn:serialDeps")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("dependsOn:serialDeps");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
 
     #[tokio::test]
     async fn generates_unique_hashes_for_each_target() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("outputs:withDeps")
-            .assert();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputs:withDeps");
+        });
 
         assert_eq!(
-            extract_hash_from_run(fixture.path(), "outputs:asDep").await,
+            extract_hash_from_run(sandbox.path(), "outputs:asDep").await,
             "92c5b8c6dceccedc0547032c9eeb5be64d225545ac679c6b1bb7d41baf892d77"
         );
         assert_eq!(
-            extract_hash_from_run(fixture.path(), "outputs:withDeps").await,
+            extract_hash_from_run(sandbox.path(), "outputs:withDeps").await,
             "3d4fef133338cff776bd701538bf4861c92dce2e1f1282feb35d42a1b13c4b3b"
         );
     }
 
     #[tokio::test]
     async fn changes_primary_hash_if_deps_hash_changes() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("outputs:withDeps")
-            .assert();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputs:withDeps");
+        });
 
         assert_eq!(
-            extract_hash_from_run(fixture.path(), "outputs:asDep").await,
+            extract_hash_from_run(sandbox.path(), "outputs:asDep").await,
             "92c5b8c6dceccedc0547032c9eeb5be64d225545ac679c6b1bb7d41baf892d77"
         );
         assert_eq!(
-            extract_hash_from_run(fixture.path(), "outputs:withDeps").await,
+            extract_hash_from_run(sandbox.path(), "outputs:withDeps").await,
             "3d4fef133338cff776bd701538bf4861c92dce2e1f1282feb35d42a1b13c4b3b"
         );
 
         // Create an `inputs` file for `outputs:asDep`
-        fs::write(fixture.path().join("outputs/random.js"), "").unwrap();
+        fs::write(sandbox.path().join("outputs/random.js"), "").unwrap();
 
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("outputs:withDeps")
-            .assert();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputs:withDeps");
+        });
 
         assert_eq!(
-            extract_hash_from_run(fixture.path(), "outputs:asDep").await,
+            extract_hash_from_run(sandbox.path(), "outputs:asDep").await,
             "296411f059717096bc78f8bd1a5f33019de11bd57480c900d9d3a25ea5441ca1"
         );
         assert_eq!(
-            extract_hash_from_run(fixture.path(), "outputs:withDeps").await,
+            extract_hash_from_run(sandbox.path(), "outputs:withDeps").await,
             "b7af1e952f2146ce128b74809598233fdc17cc0dadd3e863edaf1cb8c69f019b"
         );
     }
@@ -285,36 +304,34 @@ mod target_scopes {
 
     #[test]
     fn errors_for_deps_scope() {
-        let fixture = create_sandbox("cases");
+        let sandbox = cases_sandbox();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("^:test")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("^:test");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
 
     #[test]
     fn errors_for_self_scope() {
-        let fixture = create_sandbox("cases");
+        let sandbox = cases_sandbox();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("~:test")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("~:test");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
 
     #[test]
     fn supports_all_scope() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg(":all")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg(":all");
+        });
         let output = get_assert_output(&assert);
 
         assert!(predicate::str::contains("targetScopeA:all").eval(&output));
@@ -325,12 +342,12 @@ mod target_scopes {
 
     #[test]
     fn supports_deps_scope_in_task() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("targetScopeA:deps")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("targetScopeA:deps");
+        });
         let output = get_assert_output(&assert);
 
         assert!(predicate::str::contains("targetScopeA:deps").eval(&output));
@@ -342,12 +359,12 @@ mod target_scopes {
 
     #[test]
     fn supports_self_scope_in_task() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("targetScopeB:self")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("targetScopeB:self");
+        });
         let output = get_assert_output(&assert);
 
         assert!(predicate::str::contains("targetScopeB:self").eval(&output));
@@ -363,12 +380,12 @@ mod outputs {
 
     #[tokio::test]
     async fn errors_if_output_missing() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("outputs:missingOutput")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputs:missingOutput");
+        });
 
         let output = get_assert_output(&assert);
 
@@ -377,14 +394,14 @@ mod outputs {
 
     #[tokio::test]
     async fn doesnt_cache_if_cache_disabled() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("outputs:noCache")
-            .assert();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputs:noCache");
+        });
 
-        let hash = extract_hash_from_run(fixture.path(), "outputs:noCache").await;
+        let hash = extract_hash_from_run(sandbox.path(), "outputs:noCache").await;
 
         assert_eq!(hash, "");
 
@@ -393,24 +410,24 @@ mod outputs {
 
     #[tokio::test]
     async fn caches_single_file() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("outputs:generateFile")
-            .assert();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputs:generateFile");
+        });
 
-        let hash = extract_hash_from_run(fixture.path(), "outputs:generateFile").await;
+        let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFile").await;
 
         // hash
-        assert!(fixture
+        assert!(sandbox
             .path()
             .join(".moon/cache/hashes")
             .join(format!("{}.json", hash))
             .exists());
 
         // outputs
-        assert!(fixture
+        assert!(sandbox
             .path()
             .join(".moon/cache/outputs")
             .join(format!("{}.tar.gz", hash))
@@ -419,24 +436,24 @@ mod outputs {
 
     #[tokio::test]
     async fn caches_multiple_files() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("outputs:generateFiles")
-            .assert();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputs:generateFiles");
+        });
 
-        let hash = extract_hash_from_run(fixture.path(), "outputs:generateFiles").await;
+        let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFiles").await;
 
         // hash
-        assert!(fixture
+        assert!(sandbox
             .path()
             .join(".moon/cache/hashes")
             .join(format!("{}.json", hash))
             .exists());
 
         // outputs
-        assert!(fixture
+        assert!(sandbox
             .path()
             .join(".moon/cache/outputs")
             .join(format!("{}.tar.gz", hash))
@@ -445,24 +462,24 @@ mod outputs {
 
     #[tokio::test]
     async fn caches_single_folder() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("outputs:generateFolder")
-            .assert();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputs:generateFolder");
+        });
 
-        let hash = extract_hash_from_run(fixture.path(), "outputs:generateFolder").await;
+        let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFolder").await;
 
         // hash
-        assert!(fixture
+        assert!(sandbox
             .path()
             .join(".moon/cache/hashes")
             .join(format!("{}.json", hash))
             .exists());
 
         // outputs
-        assert!(fixture
+        assert!(sandbox
             .path()
             .join(".moon/cache/outputs")
             .join(format!("{}.tar.gz", hash))
@@ -471,24 +488,24 @@ mod outputs {
 
     #[tokio::test]
     async fn caches_multiple_folders() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("outputs:generateFolders")
-            .assert();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputs:generateFolders");
+        });
 
-        let hash = extract_hash_from_run(fixture.path(), "outputs:generateFolders").await;
+        let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFolders").await;
 
         // hash
-        assert!(fixture
+        assert!(sandbox
             .path()
             .join(".moon/cache/hashes")
             .join(format!("{}.json", hash))
             .exists());
 
         // outputs
-        assert!(fixture
+        assert!(sandbox
             .path()
             .join(".moon/cache/outputs")
             .join(format!("{}.tar.gz", hash))
@@ -497,24 +514,24 @@ mod outputs {
 
     #[tokio::test]
     async fn caches_both_file_and_folder() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("outputs:generateFileAndFolder")
-            .assert();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputs:generateFileAndFolder");
+        });
 
-        let hash = extract_hash_from_run(fixture.path(), "outputs:generateFileAndFolder").await;
+        let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder").await;
 
         // hash
-        assert!(fixture
+        assert!(sandbox
             .path()
             .join(".moon/cache/hashes")
             .join(format!("{}.json", hash))
             .exists());
 
         // outputs
-        assert!(fixture
+        assert!(sandbox
             .path()
             .join(".moon/cache/outputs")
             .join(format!("{}.tar.gz", hash))
@@ -523,19 +540,19 @@ mod outputs {
 
     #[tokio::test]
     async fn caches_output_logs_in_tarball() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("outputs:generateFile")
-            .assert();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputs:generateFile");
+        });
 
-        let hash = extract_hash_from_run(fixture.path(), "outputs:generateFile").await;
-        let tarball = fixture
+        let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFile").await;
+        let tarball = sandbox
             .path()
             .join(".moon/cache/outputs")
             .join(format!("{}.tar.gz", hash));
-        let dir = fixture.path().join(".moon/cache/outputs").join(hash);
+        let dir = sandbox.path().join(".moon/cache/outputs").join(hash);
 
         moon_archive::untar(tarball, &dir, None).unwrap();
 
@@ -549,23 +566,22 @@ mod outputs {
 
         #[tokio::test]
         async fn reuses_cache_from_previous_run() {
-            let fixture = create_sandbox_with_git("cases");
+            let sandbox = cases_sandbox();
+            sandbox.enable_git();
 
-            let assert1 = create_moon_command(fixture.path())
-                .arg("run")
-                .arg("outputs:generateFileAndFolder")
-                .assert();
+            let assert1 = sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("outputs:generateFileAndFolder");
+            });
 
             let hash1 =
-                extract_hash_from_run(fixture.path(), "outputs:generateFileAndFolder").await;
+                extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder").await;
 
-            let assert2 = create_moon_command(fixture.path())
-                .arg("run")
-                .arg("outputs:generateFileAndFolder")
-                .assert();
+            let assert2 = sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("outputs:generateFileAndFolder");
+            });
 
             let hash2 =
-                extract_hash_from_run(fixture.path(), "outputs:generateFileAndFolder").await;
+                extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder").await;
 
             assert_eq!(hash1, hash2);
             assert_snapshot!(get_assert_output(&assert1));
@@ -574,95 +590,91 @@ mod outputs {
 
         #[tokio::test]
         async fn doesnt_keep_output_logs_in_project() {
-            let fixture = create_sandbox_with_git("cases");
+            let sandbox = cases_sandbox();
+            sandbox.enable_git();
 
-            create_moon_command(fixture.path())
-                .arg("run")
-                .arg("outputs:generateFileAndFolder")
-                .assert();
+            sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("outputs:generateFileAndFolder");
+            });
 
-            create_moon_command(fixture.path())
-                .arg("run")
-                .arg("outputs:generateFileAndFolder")
-                .assert();
+            sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("outputs:generateFileAndFolder");
+            });
 
-            assert!(!fixture.path().join("outputs/stdout.log").exists());
-            assert!(!fixture.path().join("outputs/stderr.log").exists());
+            assert!(!sandbox.path().join("outputs/stdout.log").exists());
+            assert!(!sandbox.path().join("outputs/stderr.log").exists());
         }
 
         #[tokio::test]
         async fn hydrates_missing_outputs_from_previous_run() {
-            let fixture = create_sandbox_with_git("cases");
+            let sandbox = cases_sandbox();
+            sandbox.enable_git();
 
-            create_moon_command(fixture.path())
-                .arg("run")
-                .arg("outputs:generateFileAndFolder")
-                .assert();
+            sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("outputs:generateFileAndFolder");
+            });
 
             // Remove outputs
-            fs::remove_dir_all(fixture.path().join("outputs/esm")).unwrap();
-            fs::remove_dir_all(fixture.path().join("outputs/lib")).unwrap();
+            fs::remove_dir_all(sandbox.path().join("outputs/esm")).unwrap();
+            fs::remove_dir_all(sandbox.path().join("outputs/lib")).unwrap();
 
-            assert!(!fixture.path().join("outputs/esm").exists());
-            assert!(!fixture.path().join("outputs/lib").exists());
+            assert!(!sandbox.path().join("outputs/esm").exists());
+            assert!(!sandbox.path().join("outputs/lib").exists());
 
-            create_moon_command(fixture.path())
-                .arg("run")
-                .arg("outputs:generateFileAndFolder")
-                .assert();
+            sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("outputs:generateFileAndFolder");
+            });
 
             // Outputs should come back
-            assert!(fixture.path().join("outputs/esm").exists());
-            assert!(fixture.path().join("outputs/lib").exists());
+            assert!(sandbox.path().join("outputs/esm").exists());
+            assert!(sandbox.path().join("outputs/lib").exists());
         }
 
         #[tokio::test]
         async fn hydrates_with_a_different_hash_cache() {
-            let fixture = create_sandbox_with_git("cases");
+            let sandbox = cases_sandbox();
+            sandbox.enable_git();
 
-            create_moon_command(fixture.path())
-                .arg("run")
-                .arg("outputs:generateFileAndFolder")
-                .assert();
+            sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("outputs:generateFileAndFolder");
+            });
 
             let hash1 =
-                extract_hash_from_run(fixture.path(), "outputs:generateFileAndFolder").await;
-            let contents1 = fs::read_to_string(fixture.path().join("outputs/lib/one.js")).unwrap();
+                extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder").await;
+            let contents1 = fs::read_to_string(sandbox.path().join("outputs/lib/one.js")).unwrap();
 
             // Create a file to trigger an inputs change
-            fs::write(fixture.path().join("outputs/trigger.js"), "").unwrap();
+            fs::write(sandbox.path().join("outputs/trigger.js"), "").unwrap();
 
-            create_moon_command(fixture.path())
-                .arg("run")
-                .arg("outputs:generateFileAndFolder")
-                .assert();
+            sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("outputs:generateFileAndFolder");
+            });
 
             let hash2 =
-                extract_hash_from_run(fixture.path(), "outputs:generateFileAndFolder").await;
-            let contents2 = fs::read_to_string(fixture.path().join("outputs/lib/one.js")).unwrap();
+                extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder").await;
+            let contents2 = fs::read_to_string(sandbox.path().join("outputs/lib/one.js")).unwrap();
 
             // Hashes and contents should be different!
             assert_ne!(hash1, hash2);
             assert_ne!(contents1, contents2);
 
             // Remove outputs
-            fs::remove_dir_all(fixture.path().join("outputs/esm")).unwrap();
-            fs::remove_dir_all(fixture.path().join("outputs/lib")).unwrap();
+            fs::remove_dir_all(sandbox.path().join("outputs/esm")).unwrap();
+            fs::remove_dir_all(sandbox.path().join("outputs/lib")).unwrap();
 
-            assert!(!fixture.path().join("outputs/esm").exists());
-            assert!(!fixture.path().join("outputs/lib").exists());
+            assert!(!sandbox.path().join("outputs/esm").exists());
+            assert!(!sandbox.path().join("outputs/lib").exists());
 
             // Remove the trigger file
-            fs::remove_file(fixture.path().join("outputs/trigger.js")).unwrap();
+            fs::remove_file(sandbox.path().join("outputs/trigger.js")).unwrap();
 
-            create_moon_command(fixture.path())
-                .arg("run")
-                .arg("outputs:generateFileAndFolder")
-                .assert();
+            sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("outputs:generateFileAndFolder");
+            });
 
             let hash3 =
-                extract_hash_from_run(fixture.path(), "outputs:generateFileAndFolder").await;
-            let contents3 = fs::read_to_string(fixture.path().join("outputs/lib/one.js")).unwrap();
+                extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder").await;
+            let contents3 = fs::read_to_string(sandbox.path().join("outputs/lib/one.js")).unwrap();
 
             // Hashes and contents should match the original!
             assert_eq!(hash1, hash3);
@@ -670,8 +682,8 @@ mod outputs {
             assert_ne!(contents2, contents3);
 
             // Outputs should come back
-            assert!(fixture.path().join("outputs/esm").exists());
-            assert!(fixture.path().join("outputs/lib").exists());
+            assert!(sandbox.path().join("outputs/esm").exists());
+            assert!(sandbox.path().join("outputs/lib").exists());
         }
     }
 }
@@ -681,24 +693,24 @@ mod noop {
 
     #[test]
     fn runs_noop() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("noop:noop")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("noop:noop");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
 
     #[test]
     fn runs_noop_deps() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("noop:noopWithDeps")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("noop:noopWithDeps");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
@@ -709,12 +721,12 @@ mod root_level {
 
     #[test]
     fn runs_a_task() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("root:oneOff")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("root:oneOff");
+        });
 
         let output = get_assert_output(&assert);
 
@@ -727,24 +739,24 @@ mod output_styles {
 
     #[test]
     fn buffer() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("outputStyles:bufferPrimary")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputStyles:bufferPrimary");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
 
     #[test]
     fn buffer_on_failure_when_success() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("outputStyles:bufferFailurePassPrimary")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputStyles:bufferFailurePassPrimary");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
@@ -752,48 +764,48 @@ mod output_styles {
     #[cfg(not(windows))] // Different path output in snapshot
     #[test]
     fn buffer_on_failure_when_failure() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("outputStyles:bufferFailureFailPrimary")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputStyles:bufferFailureFailPrimary");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
 
     #[test]
     fn hash() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("outputStyles:hashPrimary")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputStyles:hashPrimary");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
 
     #[test]
     fn none() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("outputStyles:nonePrimary")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputStyles:nonePrimary");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
 
     #[test]
     fn stream() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("outputStyles:streamPrimary")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputStyles:streamPrimary");
+        });
 
         assert_snapshot!(get_assert_output(&assert));
     }
@@ -804,27 +816,26 @@ mod reports {
 
     #[test]
     fn doesnt_create_a_report_by_default() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("base:base")
-            .assert();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("base:base");
+        });
 
-        assert!(!fixture.path().join(".moon/cache/runReport.json").exists());
+        assert!(!sandbox.path().join(".moon/cache/runReport.json").exists());
     }
 
     #[test]
     fn creates_report_when_option_passed() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        create_moon_command(fixture.path())
-            .arg("run")
-            .arg("base:base")
-            .arg("--report")
-            .assert();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("base:base").arg("--report");
+        });
 
-        assert!(fixture.path().join(".moon/cache/runReport.json").exists());
+        assert!(sandbox.path().join(".moon/cache/runReport.json").exists());
     }
 }
 
@@ -834,13 +845,12 @@ mod affected {
 
     #[test]
     fn doesnt_run_if_not_affected() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("files:noop")
-            .arg("--affected")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("files:noop").arg("--affected");
+        });
 
         let output = get_assert_output(&assert);
 
@@ -852,15 +862,14 @@ mod affected {
 
     #[test]
     fn runs_if_affected() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        fs::write(fixture.path().join("files/other.txt"), "").unwrap();
+        fs::write(sandbox.path().join("files/other.txt"), "").unwrap();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("files:noop")
-            .arg("--affected")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("files:noop").arg("--affected");
+        });
 
         let output = get_assert_output(&assert);
 
@@ -869,17 +878,18 @@ mod affected {
 
     #[test]
     fn doesnt_run_if_affected_but_wrong_status() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        fs::write(fixture.path().join("files/other.txt"), "").unwrap();
+        fs::write(sandbox.path().join("files/other.txt"), "").unwrap();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("files:noop")
-            .arg("--affected")
-            .arg("--status")
-            .arg("deleted")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("files:noop")
+                .arg("--affected")
+                .arg("--status")
+                .arg("deleted");
+        });
 
         let output = get_assert_output(&assert);
 
@@ -891,17 +901,18 @@ mod affected {
 
     #[test]
     fn handles_untracked() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        fs::write(fixture.path().join("files/other.txt"), "").unwrap();
+        fs::write(sandbox.path().join("files/other.txt"), "").unwrap();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("files:noop")
-            .arg("--affected")
-            .arg("--status")
-            .arg("untracked")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("files:noop")
+                .arg("--affected")
+                .arg("--status")
+                .arg("untracked");
+        });
 
         let output = get_assert_output(&assert);
 
@@ -910,21 +921,22 @@ mod affected {
 
     #[test]
     fn handles_added() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        fs::write(fixture.path().join("files/other.txt"), "").unwrap();
+        fs::write(sandbox.path().join("files/other.txt"), "").unwrap();
 
-        run_git_command(fixture.path(), |cmd| {
+        run_git_command(sandbox.path(), |cmd| {
             cmd.args(["add", "files/other.txt"]);
         });
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("files:noop")
-            .arg("--affected")
-            .arg("--status")
-            .arg("added")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("files:noop")
+                .arg("--affected")
+                .arg("--status")
+                .arg("added");
+        });
 
         let output = get_assert_output(&assert);
 
@@ -933,17 +945,18 @@ mod affected {
 
     #[test]
     fn handles_modified() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        fs::write(fixture.path().join("files/file.txt"), "modified").unwrap();
+        fs::write(sandbox.path().join("files/file.txt"), "modified").unwrap();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("files:noop")
-            .arg("--affected")
-            .arg("--status")
-            .arg("modified")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("files:noop")
+                .arg("--affected")
+                .arg("--status")
+                .arg("modified");
+        });
 
         let output = get_assert_output(&assert);
 
@@ -952,17 +965,18 @@ mod affected {
 
     #[test]
     fn handles_deleted() {
-        let fixture = create_sandbox_with_git("cases");
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
 
-        fs::remove_file(fixture.path().join("files/file.txt")).unwrap();
+        fs::remove_file(sandbox.path().join("files/file.txt")).unwrap();
 
-        let assert = create_moon_command(fixture.path())
-            .arg("run")
-            .arg("files:noop")
-            .arg("--affected")
-            .arg("--status")
-            .arg("deleted")
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("files:noop")
+                .arg("--affected")
+                .arg("--status")
+                .arg("deleted");
+        });
 
         let output = get_assert_output(&assert);
 
@@ -974,13 +988,12 @@ mod affected {
 
         #[test]
         fn doesnt_run_if_not_affected() {
-            let fixture = create_sandbox_with_git("cases");
+            let sandbox = cases_sandbox();
+            sandbox.enable_git();
 
-            let assert = create_moon_command(fixture.path())
-                .arg("run")
-                .arg("root:noop")
-                .arg("--affected")
-                .assert();
+            let assert = sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("root:noop").arg("--affected");
+            });
 
             let output = get_assert_output(&assert);
 
@@ -992,15 +1005,14 @@ mod affected {
 
         #[test]
         fn runs_if_affected() {
-            let fixture = create_sandbox_with_git("cases");
+            let sandbox = cases_sandbox();
+            sandbox.enable_git();
 
-            fs::write(fixture.path().join("tsconfig.json"), "{}").unwrap();
+            fs::write(sandbox.path().join("tsconfig.json"), "{}").unwrap();
 
-            let assert = create_moon_command(fixture.path())
-                .arg("run")
-                .arg("root:noop")
-                .arg("--affected")
-                .assert();
+            let assert = sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("root:noop").arg("--affected");
+            });
 
             let output = get_assert_output(&assert);
 
@@ -1009,17 +1021,18 @@ mod affected {
 
         #[test]
         fn doesnt_run_if_affected_but_wrong_status() {
-            let fixture = create_sandbox_with_git("cases");
+            let sandbox = cases_sandbox();
+            sandbox.enable_git();
 
-            fs::write(fixture.path().join("tsconfig.json"), "{}").unwrap();
+            fs::write(sandbox.path().join("tsconfig.json"), "{}").unwrap();
 
-            let assert = create_moon_command(fixture.path())
-                .arg("run")
-                .arg("root:noop")
-                .arg("--affected")
-                .arg("--status")
-                .arg("deleted")
-                .assert();
+            let assert = sandbox.run_moon(|cmd| {
+                cmd.arg("run")
+                    .arg("root:noop")
+                    .arg("--affected")
+                    .arg("--status")
+                    .arg("deleted");
+            });
 
             let output = get_assert_output(&assert);
 

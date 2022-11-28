@@ -1,4 +1,4 @@
-use moon_utils::test::{create_moon_command, create_sandbox};
+use moon_test_utils::{create_sandbox_with_config, get_cases_fixture_configs};
 use predicates::prelude::*;
 
 // This requires installing the toolchain which is quite heavy in tests!
@@ -15,12 +15,17 @@ use predicates::prelude::*;
 
 #[test]
 fn invalid_tool() {
-    let fixture = create_sandbox("cases");
+    let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
+    let mut sandbox = create_sandbox_with_config(
+        "cases",
+        Some(&workspace_config),
+        Some(&toolchain_config),
+        Some(&projects_config),
+    );
 
-    let assert = create_moon_command(fixture.path())
-        .arg("bin")
-        .arg("unknown")
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("bin").arg("unknown");
+    });
 
     assert
         .failure()
@@ -33,13 +38,19 @@ fn invalid_tool() {
 
 #[test]
 fn not_configured() {
-    let fixture = create_sandbox("cases");
+    let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
+    let mut sandbox = create_sandbox_with_config(
+        "cases",
+        Some(&workspace_config),
+        Some(&toolchain_config),
+        Some(&projects_config),
+    );
 
-    let assert = create_moon_command(fixture.path())
-        .arg("bin")
-        .arg("yarn")
-        .env("MOON_NODE_VERSION", "17.0.0")
-        .assert();
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("bin")
+            .arg("yarn")
+            .env("MOON_NODE_VERSION", "17.0.0");
+    });
 
     assert.failure().code(1).stdout("");
 }

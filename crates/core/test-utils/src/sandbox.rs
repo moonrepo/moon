@@ -11,7 +11,6 @@ use std::path::Path;
 use std::process::Command as StdCommand;
 
 pub struct Sandbox {
-    assert: Option<Assert>,
     command: Option<Command>,
     pub fixture: TempDir,
 }
@@ -30,11 +29,7 @@ impl Sandbox {
         self
     }
 
-    pub fn debug(&self) -> &Self {
-        let assert = self.assert
-            .as_ref()
-            .expect("Debugging the sandbox requires a `moon` command to be ran with `run_moon()`. If you only want to debug files, use `debug_files()` instead.");
-
+    pub fn debug(&self, assert: &Assert) -> &Self {
         // List all files in the sandbox
         println!("sandbox:");
         debug_sandbox_files(self.path());
@@ -102,7 +97,7 @@ impl Sandbox {
         self
     }
 
-    pub fn run_moon<C>(&mut self, handler: C) -> &Self
+    pub fn run_moon<C>(&mut self, handler: C) -> Assert
     where
         C: FnOnce(&mut Command),
     {
@@ -110,9 +105,11 @@ impl Sandbox {
 
         handler(&mut cmd);
 
-        self.assert = Some(cmd.assert());
+        let assert = cmd.assert();
+
         self.command = Some(cmd);
-        self
+
+        assert
     }
 }
 
@@ -128,7 +125,6 @@ pub fn create_sandbox<T: AsRef<str>>(fixture: T) -> Sandbox {
         .unwrap();
 
     Sandbox {
-        assert: None,
         command: None,
         fixture: temp_dir,
     }

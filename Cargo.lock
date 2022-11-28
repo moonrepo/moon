@@ -1896,6 +1896,7 @@ dependencies = [
  "moon_system_platform",
  "moon_task",
  "moon_terminal",
+ "moon_test_utils",
  "moon_toolchain",
  "moon_typescript_lang",
  "moon_utils",

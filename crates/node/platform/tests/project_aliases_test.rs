@@ -1,40 +1,31 @@
 use moon_cache::CacheEngine;
-use moon_config::{
-    GlobalProjectConfig, NodeConfig, NodeProjectAliasFormat, ToolchainConfig, WorkspaceConfig,
-    WorkspaceProjects,
-};
+use moon_config::{NodeConfig, NodeProjectAliasFormat};
 use moon_node_platform::NodePlatform;
 use moon_platform::Platformable;
 use moon_project_graph::ProjectGraph;
-use moon_test_utils::{assert_snapshot, create_sandbox_with_config, Sandbox};
+use moon_test_utils::{
+    assert_snapshot, create_sandbox_with_config, get_project_graph_aliases_fixture_configs, Sandbox,
+};
 use rustc_hash::FxHashMap;
 
 async fn get_aliases_graph(node_config: NodeConfig) -> (ProjectGraph, Sandbox) {
-    let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
-            ("noLang".to_owned(), "no-lang".to_owned()),
-            ("nodeNameOnly".to_owned(), "node-name-only".to_owned()),
-            ("nodeNameScope".to_owned(), "node-name-scope".to_owned()),
-        ])),
-        ..WorkspaceConfig::default()
-    };
-    let toolchain_config = ToolchainConfig {
-        node: Some(node_config),
-        ..ToolchainConfig::default()
-    };
+    let (workspace_config, mut toolchain_config, projects_config) =
+        get_project_graph_aliases_fixture_configs();
+
+    toolchain_config.node = Some(node_config);
 
     let sandbox = create_sandbox_with_config(
         "project-graph/aliases",
         Some(&workspace_config),
         Some(&toolchain_config),
-        None,
+        Some(&projects_config),
     );
 
     let mut graph = ProjectGraph::generate(
         sandbox.path(),
         &workspace_config,
         &toolchain_config,
-        GlobalProjectConfig::default(),
+        projects_config,
         &CacheEngine::load(sandbox.path()).await.unwrap(),
     )
     .await

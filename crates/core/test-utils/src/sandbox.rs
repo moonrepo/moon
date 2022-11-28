@@ -132,20 +132,30 @@ pub fn create_sandbox<T: AsRef<str>>(fixture: T) -> Sandbox {
 
 pub fn create_sandbox_with_config<T: AsRef<str>>(
     fixture: T,
-    workspace_config: Option<WorkspaceConfig>,
-    toolchain_config: Option<ToolchainConfig>,
-    projects_config: Option<GlobalProjectConfig>,
+    workspace_config: Option<&WorkspaceConfig>,
+    toolchain_config: Option<&ToolchainConfig>,
+    projects_config: Option<&GlobalProjectConfig>,
 ) -> Sandbox {
     let sandbox = create_sandbox(fixture);
 
     sandbox.create_file(
         ".moon/workspace.yml",
-        serde_yaml::to_string(&workspace_config.unwrap_or_default()).unwrap(),
+        serde_yaml::to_string(
+            &workspace_config
+                .map(|c| c.to_owned())
+                .unwrap_or_else(|| WorkspaceConfig::default()),
+        )
+        .unwrap(),
     );
 
     sandbox.create_file(
         ".moon/toolchain.yml",
-        serde_yaml::to_string(&toolchain_config.unwrap_or_default()).unwrap(),
+        serde_yaml::to_string(
+            &toolchain_config
+                .map(|c| c.to_owned())
+                .unwrap_or_else(|| ToolchainConfig::default()),
+        )
+        .unwrap(),
     );
 
     if let Some(config) = projects_config {

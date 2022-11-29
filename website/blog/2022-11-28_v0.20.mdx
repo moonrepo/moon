@@ -9,6 +9,10 @@ tags: [hydration, toolchain, generator]
 With this release, we've focused heavily on future proofing our toolchain, and how it integrates
 with moon. We've also landed a handful of quality of life improvements.
 
+By default, all [targets](../concepts/target) that produce outputs are cached. For targets that _do
+not_ produce outputs, like testing, linting, and typechecking, these are not cached. This results in
+slower CI times as they are continuously ran, even if nothing has changed.
+
 <!--truncate-->
 
 ## Breaking changes

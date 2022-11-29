@@ -172,6 +172,21 @@ runner:
   cacheLifetime: '24 hours'
 ```
 
+### `cacheableTargets`<VersionLabel version="0.20" />
+
+<HeadingApiLink to="/api/types/interface/RunnerConfig#cacheableTargets" />
+
+Defines a list of targets, with or without a project scope, that will be cached within the runner.
+Tasks that produce [outputs](./project#outputs) are automatically cached, and do not need to be
+defined here. Defaults to an empty list.
+
+```yaml title=".moon/workspace.yml" {2-4}
+runner:
+  cacheableTargets:
+    - ':test'
+    - 'app:typecheck'
+```
+
 ### `implicitDeps`<VersionLabel version="0.16" />
 
 <HeadingApiLink to="/api/types/interface/RunnerConfig#implicitDeps" />

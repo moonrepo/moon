@@ -12,6 +12,7 @@ export interface NotifierConfig {
 
 export interface RunnerConfig {
 	cacheLifetime: string;
+	cacheableTargets: string[];
 	implicitDeps: string[];
 	implicitInputs: string[];
 	inheritColorsForPipedTasks: boolean;

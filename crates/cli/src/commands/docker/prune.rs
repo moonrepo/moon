@@ -55,7 +55,7 @@ pub async fn prune_node(
     //     }
     // }
 
-    try_join_all(futures).await?;
+    // try_join_all(futures).await?;
 
     Ok(())
 }

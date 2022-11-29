@@ -1,6 +1,6 @@
 use moon_test_utils::{
-    assert_snapshot, create_sandbox_with_config, get_assert_output,
-    get_project_graph_aliases_fixture_configs, get_tasks_fixture_configs,
+    assert_snapshot, create_sandbox_with_config, get_project_graph_aliases_fixture_configs,
+    get_tasks_fixture_configs,
 };
 
 #[test]
@@ -18,7 +18,7 @@ fn all_by_default() {
         cmd.arg("dep-graph");
     });
 
-    let dot = get_assert_output(&assert);
+    let dot = assert.output();
 
     // Snapshot is not deterministic
     assert_eq!(dot.split('\n').count(), 283);
@@ -39,7 +39,7 @@ fn focused_by_target() {
         cmd.arg("dep-graph").arg("basic:lint");
     });
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(assert.output());
 }
 
 #[test]
@@ -57,7 +57,7 @@ fn includes_dependencies_when_focused() {
         cmd.arg("dep-graph").arg("chain:e");
     });
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(assert.output());
 }
 
 #[test]
@@ -75,7 +75,7 @@ fn includes_dependents_when_focused() {
         cmd.arg("dep-graph").arg("basic:build");
     });
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(assert.output());
 }
 
 mod aliases {
@@ -97,7 +97,7 @@ mod aliases {
             cmd.arg("dep-graph").arg("@scope/pkg-foo:test");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -116,6 +116,6 @@ mod aliases {
             cmd.arg("dep-graph").arg("node:aliasDeps");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 }

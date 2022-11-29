@@ -1,6 +1,6 @@
 use moon_test_utils::{
-    assert_snapshot, create_sandbox_with_config, get_assert_output,
-    get_project_graph_aliases_fixture_configs, get_projects_fixture_configs,
+    assert_snapshot, create_sandbox_with_config, get_project_graph_aliases_fixture_configs,
+    get_projects_fixture_configs,
 };
 
 #[test]
@@ -11,7 +11,7 @@ fn no_projects() {
         cmd.arg("project-graph");
     });
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(assert.output());
 }
 
 #[test]
@@ -29,7 +29,7 @@ fn many_projects() {
         cmd.arg("project-graph");
     });
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(assert.output());
 }
 
 #[test]
@@ -47,7 +47,7 @@ fn single_project_with_dependencies() {
         cmd.arg("project-graph").arg("foo");
     });
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(assert.output());
 }
 
 #[test]
@@ -65,7 +65,7 @@ fn single_project_no_dependencies() {
         cmd.arg("project-graph").arg("baz");
     });
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(assert.output());
 }
 
 mod aliases {
@@ -87,7 +87,7 @@ mod aliases {
             cmd.arg("project-graph");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -106,7 +106,7 @@ mod aliases {
             cmd.arg("project-graph").arg("@scope/pkg-foo");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -125,6 +125,6 @@ mod aliases {
             cmd.arg("project-graph").arg("noLang");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 }

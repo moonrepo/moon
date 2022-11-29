@@ -1,15 +1,10 @@
 use moon_test_utils::{
-    assert_cmd::assert::Assert, assert_snapshot, create_sandbox_with_config, get_assert_output,
-    predicates::prelude::*, Sandbox,
+    assert_snapshot, create_sandbox_with_config, predicates::prelude::*, Sandbox,
 };
 use std::fs;
 
 fn generate_sandbox() -> Sandbox {
     create_sandbox_with_config("generator", None, None, None)
-}
-
-fn get_path_safe_output(assert: &Assert) -> String {
-    get_assert_output(assert).replace('\\', "/")
 }
 
 #[test]
@@ -20,7 +15,7 @@ fn creates_a_new_template() {
         cmd.arg("generate").arg("new-name").arg("--template");
     });
 
-    let output = get_path_safe_output(&assert);
+    let output = assert.output();
 
     assert!(predicate::str::contains("Created a new template new-name at").eval(&output));
     assert!(sandbox.path().join("templates/new-name").exists());
@@ -36,7 +31,7 @@ fn generates_files_from_template() {
         cmd.arg("generate").arg("standard").arg("./test");
     });
 
-    assert_snapshot!(get_path_safe_output(&assert));
+    assert_snapshot!(assert.output());
 
     assert!(sandbox.path().join("test").exists());
     assert!(sandbox.path().join("test/file.ts").exists());
@@ -55,7 +50,7 @@ fn doesnt_generate_files_when_dryrun() {
             .arg("--dryRun");
     });
 
-    assert_snapshot!(get_path_safe_output(&assert));
+    assert_snapshot!(assert.output());
 
     assert!(!sandbox.path().join("test").exists());
     assert!(!sandbox.path().join("test/file.ts").exists());
@@ -78,7 +73,7 @@ fn overwrites_existing_files_when_forced() {
             .arg("--force");
     });
 
-    assert_snapshot!(get_path_safe_output(&assert));
+    assert_snapshot!(assert.output());
 
     assert!(sandbox.path().join("test").exists());
     assert!(sandbox.path().join("test/file.ts").exists());
@@ -105,7 +100,7 @@ fn overwrites_existing_files_when_interpolated_path() {
             .arg("--force");
     });
 
-    assert_snapshot!(get_path_safe_output(&assert));
+    assert_snapshot!(assert.output());
 
     // file-[stringNotEmpty]-[number].txt
     assert!(sandbox.path().join("./test/file-default-0.txt").exists());
@@ -171,7 +166,7 @@ fn interpolates_destination_path() {
     });
 
     // Verify output paths are correct
-    assert_snapshot!(get_path_safe_output(&assert));
+    assert_snapshot!(assert.output());
 
     // file-[stringNotEmpty]-[number].txt
     assert!(sandbox.path().join("./test/file-default-0.txt").exists());
@@ -190,7 +185,7 @@ fn errors_when_parsing_custom_var_types() {
             .arg("--number=abc");
     });
 
-    assert_snapshot!(get_path_safe_output(&assert));
+    assert_snapshot!(assert.output());
 }
 
 #[test]

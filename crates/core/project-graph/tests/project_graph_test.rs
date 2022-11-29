@@ -9,7 +9,6 @@ use moon_test_utils::{
 };
 use moon_utils::string_vec;
 use rustc_hash::FxHashMap;
-use std::fs;
 
 async fn get_aliases_graph() -> (ProjectGraph, Sandbox) {
     let (workspace_config, toolchain_config, projects_config) =

@@ -1,15 +1,11 @@
-mod utils;
-
 use moon_cache::CacheEngine;
 use moon_config::WorkspaceConfig;
 use moon_test_utils::{
-    assert_snapshot, create_sandbox_with_config, get_assert_output, get_cases_fixture_configs,
-    predicates::prelude::*, Sandbox,
+    assert_snapshot, create_sandbox_with_config, get_cases_fixture_configs, predicates::prelude::*,
+    Sandbox,
 };
-use moon_utils::path::standardize_separators;
 use std::fs;
-use std::path::{Path, PathBuf};
-use utils::get_path_safe_output;
+use std::path::Path;
 
 fn cases_sandbox() -> Sandbox {
     let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
@@ -53,7 +49,7 @@ fn errors_for_unknown_project() {
         cmd.arg("run").arg("unknown:test");
     });
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(assert.output());
 }
 
 #[test]
@@ -64,7 +60,7 @@ fn errors_for_unknown_task_in_project() {
         cmd.arg("run").arg("base:unknown");
     });
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(assert.output());
 }
 
 #[test]
@@ -75,7 +71,7 @@ fn errors_for_unknown_all_target() {
         cmd.arg("run").arg(":unknown");
     });
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(assert.output());
 }
 
 #[test]
@@ -86,7 +82,7 @@ fn errors_for_cycle_in_task_deps() {
         cmd.arg("run").arg("depsA:taskCycle");
     });
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(assert.output());
 }
 
 #[cfg(not(windows))]
@@ -104,7 +100,7 @@ mod general {
             cmd.arg("run").arg("base:runFromProject");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -118,7 +114,7 @@ mod general {
             cmd.arg("run").arg("base:runFromWorkspace");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 }
 
@@ -135,10 +131,7 @@ mod configs {
             cmd.arg("run").arg("base:noop");
         });
 
-        assert_snapshot!(standardize_separators(get_path_safe_output(
-            &assert,
-            &PathBuf::from("./fake/path")
-        )));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -151,10 +144,7 @@ mod configs {
             cmd.arg("run").arg("base:noop");
         });
 
-        assert_snapshot!(standardize_separators(get_path_safe_output(
-            &assert,
-            &PathBuf::from("./fake/path")
-        )));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -167,10 +157,7 @@ mod configs {
             cmd.arg("run").arg("base:noop");
         });
 
-        assert_snapshot!(standardize_separators(get_path_safe_output(
-            &assert,
-            &PathBuf::from("./fake/path")
-        )));
+        assert_snapshot!(assert.output());
     }
 }
 
@@ -222,7 +209,7 @@ mod dependencies {
             cmd.arg("run").arg("depsA:dependencyOrder");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -234,7 +221,7 @@ mod dependencies {
             cmd.arg("run").arg("depsB:dependencyOrder");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -246,7 +233,7 @@ mod dependencies {
             cmd.arg("run").arg("dependsOn:serialDeps");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 
     #[tokio::test]
@@ -315,7 +302,7 @@ mod target_scopes {
             cmd.arg("run").arg("^:test");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -326,7 +313,7 @@ mod target_scopes {
             cmd.arg("run").arg("~:test");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -337,7 +324,7 @@ mod target_scopes {
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run").arg(":all");
         });
-        let output = get_assert_output(&assert);
+        let output = assert.output();
 
         assert!(predicate::str::contains("targetScopeA:all").eval(&output));
         assert!(predicate::str::contains("targetScopeB:all").eval(&output));
@@ -353,7 +340,7 @@ mod target_scopes {
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("targetScopeA:deps");
         });
-        let output = get_assert_output(&assert);
+        let output = assert.output();
 
         assert!(predicate::str::contains("targetScopeA:deps").eval(&output));
         assert!(predicate::str::contains("depsA:standard").eval(&output));
@@ -370,7 +357,7 @@ mod target_scopes {
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("targetScopeB:self");
         });
-        let output = get_assert_output(&assert);
+        let output = assert.output();
 
         assert!(predicate::str::contains("targetScopeB:self").eval(&output));
         assert!(predicate::str::contains("scope=self").eval(&output));
@@ -392,7 +379,7 @@ mod outputs {
             cmd.arg("run").arg("outputs:missingOutput");
         });
 
-        let output = get_assert_output(&assert);
+        let output = assert.output();
 
         assert!(predicate::str::contains("Target outputs:missingOutput defines the output unknown, but this output does not exist after being ran.").eval(&output));
     }
@@ -589,8 +576,8 @@ mod outputs {
                 extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder").await;
 
             assert_eq!(hash1, hash2);
-            assert_snapshot!(get_assert_output(&assert1));
-            assert_snapshot!(get_assert_output(&assert2));
+            assert_snapshot!(assert1.output());
+            assert_snapshot!(assert2.output());
         }
 
         #[tokio::test]
@@ -705,7 +692,7 @@ mod noop {
             cmd.arg("run").arg("noop:noop");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -717,7 +704,7 @@ mod noop {
             cmd.arg("run").arg("noop:noopWithDeps");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 }
 
@@ -733,7 +720,7 @@ mod root_level {
             cmd.arg("run").arg("root:oneOff");
         });
 
-        let output = get_assert_output(&assert);
+        let output = assert.output();
 
         assert!(predicate::str::contains("root one off").eval(&output));
     }
@@ -751,7 +738,7 @@ mod output_styles {
             cmd.arg("run").arg("outputStyles:bufferPrimary");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -763,7 +750,7 @@ mod output_styles {
             cmd.arg("run").arg("outputStyles:bufferFailurePassPrimary");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 
     #[cfg(not(windows))] // Different path output in snapshot
@@ -776,7 +763,7 @@ mod output_styles {
             cmd.arg("run").arg("outputStyles:bufferFailureFailPrimary");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -788,7 +775,7 @@ mod output_styles {
             cmd.arg("run").arg("outputStyles:hashPrimary");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -800,7 +787,7 @@ mod output_styles {
             cmd.arg("run").arg("outputStyles:nonePrimary");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -812,7 +799,7 @@ mod output_styles {
             cmd.arg("run").arg("outputStyles:streamPrimary");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 }
 
@@ -856,7 +843,7 @@ mod affected {
             cmd.arg("run").arg("files:noop").arg("--affected");
         });
 
-        let output = get_assert_output(&assert);
+        let output = assert.output();
 
         assert!(
             predicate::str::contains("Target(s) files:noop not affected by touched files")
@@ -875,7 +862,7 @@ mod affected {
             cmd.arg("run").arg("files:noop").arg("--affected");
         });
 
-        let output = get_assert_output(&assert);
+        let output = assert.output();
 
         assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
     }
@@ -895,7 +882,7 @@ mod affected {
                 .arg("deleted");
         });
 
-        let output = get_assert_output(&assert);
+        let output = assert.output();
 
         assert!(predicate::str::contains(
             "Target(s) files:noop not affected by touched files (using status deleted)"
@@ -918,7 +905,7 @@ mod affected {
                 .arg("untracked");
         });
 
-        let output = get_assert_output(&assert);
+        let output = assert.output();
 
         assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
     }
@@ -942,7 +929,7 @@ mod affected {
                 .arg("added");
         });
 
-        let output = get_assert_output(&assert);
+        let output = assert.output();
 
         assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
     }
@@ -962,7 +949,7 @@ mod affected {
                 .arg("modified");
         });
 
-        let output = get_assert_output(&assert);
+        let output = assert.output();
 
         assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
     }
@@ -982,7 +969,7 @@ mod affected {
                 .arg("deleted");
         });
 
-        let output = get_assert_output(&assert);
+        let output = assert.output();
 
         assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
     }
@@ -999,7 +986,7 @@ mod affected {
                 cmd.arg("run").arg("root:noop").arg("--affected");
             });
 
-            let output = get_assert_output(&assert);
+            let output = assert.output();
 
             assert!(
                 predicate::str::contains("Target(s) root:noop not affected by touched files")
@@ -1018,7 +1005,7 @@ mod affected {
                 cmd.arg("run").arg("root:noop").arg("--affected");
             });
 
-            let output = get_assert_output(&assert);
+            let output = assert.output();
 
             assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
         }
@@ -1038,7 +1025,7 @@ mod affected {
                     .arg("deleted");
             });
 
-            let output = get_assert_output(&assert);
+            let output = assert.output();
 
             assert!(predicate::str::contains(
                 "Target(s) root:noop not affected by touched files (using status deleted)"

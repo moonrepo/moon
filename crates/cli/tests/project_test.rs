@@ -1,5 +1,5 @@
 use moon_test_utils::{
-    assert_snapshot, create_sandbox_with_config, get_assert_output, get_assert_stderr_output,
+    assert_snapshot, create_sandbox_with_config, get_assert_stderr_output,
     get_cases_fixture_configs, get_projects_fixture_configs,
 };
 
@@ -18,7 +18,7 @@ fn unknown_project() {
         cmd.arg("project").arg("unknown");
     });
 
-    assert_snapshot!(get_assert_stderr_output(&assert));
+    assert_snapshot!(get_assert_stderr_output(&assert.inner));
 
     assert.failure().code(1);
 }
@@ -38,7 +38,7 @@ fn empty_config() {
         cmd.arg("project").arg("emptyConfig");
     });
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(assert.output());
 }
 
 #[test]
@@ -56,7 +56,7 @@ fn no_config() {
         cmd.arg("project").arg("noConfig");
     });
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(assert.output());
 }
 
 #[test]
@@ -75,7 +75,7 @@ fn basic_config() {
         cmd.arg("project").arg("basic");
     });
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(assert.output());
 }
 
 #[test]
@@ -94,7 +94,7 @@ fn advanced_config() {
         cmd.arg("project").arg("advanced");
     });
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(assert.output());
 }
 
 #[test]
@@ -113,7 +113,7 @@ fn depends_on_paths() {
         cmd.arg("project").arg("foo");
     });
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(assert.output());
 }
 
 #[test]
@@ -131,7 +131,7 @@ fn with_tasks() {
         cmd.arg("project").arg("tasks");
     });
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(assert.output());
 }
 
 #[test]
@@ -149,5 +149,5 @@ fn root_level() {
         cmd.arg("project").arg("root");
     });
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(assert.output());
 }

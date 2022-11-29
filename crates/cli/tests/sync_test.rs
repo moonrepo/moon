@@ -1,5 +1,5 @@
 use moon_config::{WorkspaceConfig, WorkspaceProjects};
-use moon_test_utils::{assert_snapshot, create_sandbox_with_config, get_assert_output};
+use moon_test_utils::{assert_snapshot, create_sandbox_with_config};
 use rustc_hash::FxHashMap;
 
 #[test]
@@ -25,7 +25,7 @@ fn syncs_all_projects() {
         cmd.arg("sync");
     });
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(assert.output());
 
     assert.success();
 }

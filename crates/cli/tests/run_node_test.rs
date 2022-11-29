@@ -1,14 +1,10 @@
-mod utils;
-
 use moon_config::{NodeConfig, TypeScriptConfig};
 use moon_test_utils::{
-    assert_snapshot, create_sandbox_with_config, get_assert_output,
-    get_node_depman_fixture_configs, get_node_fixture_configs, get_typescript_fixture_configs,
-    predicates::prelude::*, Sandbox,
+    assert_snapshot, create_sandbox_with_config, get_node_depman_fixture_configs,
+    get_node_fixture_configs, get_typescript_fixture_configs, predicates::prelude::*, Sandbox,
 };
 use moon_utils::string_vec;
 use std::fs::read_to_string;
-use utils::get_path_safe_output;
 
 fn node_sandbox() -> Sandbox {
     let (workspace_config, toolchain_config, projects_config) = get_node_fixture_configs();
@@ -90,7 +86,7 @@ fn runs_package_managers() {
         cmd.arg("run").arg("node:npm");
     });
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(assert.output());
 }
 
 #[test]
@@ -101,7 +97,7 @@ fn runs_standard_script() {
         cmd.arg("run").arg("node:standard");
     });
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(assert.output());
 }
 
 #[test]
@@ -112,7 +108,7 @@ fn runs_cjs_files() {
         cmd.arg("run").arg("node:cjs");
     });
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(assert.output());
 }
 
 #[test]
@@ -123,7 +119,7 @@ fn runs_mjs_files() {
         cmd.arg("run").arg("node:mjs");
     });
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(assert.output());
 }
 
 #[test]
@@ -134,7 +130,7 @@ fn supports_top_level_await() {
         cmd.arg("run").arg("node:topLevelAwait");
     });
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(assert.output());
 }
 
 #[test]
@@ -145,7 +141,7 @@ fn handles_process_exit_zero() {
         cmd.arg("run").arg("node:processExitZero");
     });
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(assert.output());
 }
 
 #[test]
@@ -159,7 +155,7 @@ fn handles_process_exit_nonzero() {
     if cfg!(windows) {
         assert.code(1);
     } else {
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 }
 
@@ -171,7 +167,7 @@ fn handles_process_exit_code_zero() {
         cmd.arg("run").arg("node:exitCodeZero");
     });
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(assert.output());
 }
 
 #[test]
@@ -185,7 +181,7 @@ fn handles_process_exit_code_nonzero() {
     if cfg!(windows) {
         assert.code(1);
     } else {
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 }
 
@@ -197,7 +193,7 @@ fn handles_throw_error() {
         cmd.arg("run").arg("node:throwError");
     });
 
-    let output = get_assert_output(&assert);
+    let output = assert.output();
 
     // Output contains file paths that we cant snapshot
     assert!(predicate::str::contains("Error: Oops").eval(&output));
@@ -214,7 +210,7 @@ fn handles_unhandled_promise() {
     if cfg!(windows) {
         assert.code(1);
     } else {
-        assert_snapshot!(get_path_safe_output(&assert, sandbox.path()));
+        assert_snapshot!(assert.output());
     }
 }
 
@@ -236,7 +232,7 @@ fn passes_args_through() {
             .arg("123");
     });
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(assert.output());
 }
 
 #[test]
@@ -252,7 +248,7 @@ fn passes_args_to_the_node_bin() {
             .arg("--extraArg");
     });
 
-    assert_snapshot!(get_path_safe_output(&assert, sandbox.path()));
+    assert_snapshot!(assert.output());
 }
 
 #[test]
@@ -263,7 +259,7 @@ fn sets_env_vars() {
         cmd.arg("run").arg("node:envVars");
     });
 
-    assert_snapshot!(get_assert_output(&assert));
+    assert_snapshot!(assert.output());
 }
 
 #[test]
@@ -274,7 +270,7 @@ fn inherits_moon_env_vars() {
         cmd.arg("run").arg("node:envVarsMoon");
     });
 
-    assert_snapshot!(get_path_safe_output(&assert, sandbox.path()));
+    assert_snapshot!(assert.output());
 }
 
 #[test]
@@ -285,7 +281,7 @@ fn runs_from_project_root() {
         cmd.arg("run").arg("node:runFromProject");
     });
 
-    assert_snapshot!(get_path_safe_output(&assert, sandbox.path()));
+    assert_snapshot!(assert.output());
 }
 
 #[test]
@@ -296,7 +292,7 @@ fn runs_from_workspace_root() {
         cmd.arg("run").arg("node:runFromWorkspace");
     });
 
-    assert_snapshot!(get_path_safe_output(&assert, sandbox.path()));
+    assert_snapshot!(assert.output());
 }
 
 #[test]
@@ -307,7 +303,7 @@ fn retries_on_failure_till_count() {
         cmd.arg("run").arg("node:retryCount");
     });
 
-    let output = get_assert_output(&assert);
+    let output = assert.output();
 
     assert!(predicate::str::contains("Process ~/.moon/tools/node/18.0.0").eval(&output));
 }
@@ -320,7 +316,7 @@ fn can_run_many_targets() {
         cmd.arg("run").arg("node:cjs").arg("node:mjs");
     });
 
-    let output = get_assert_output(&assert);
+    let output = assert.output();
 
     assert!(predicate::str::contains("node:cjs | stdout").eval(&output));
     assert!(predicate::str::contains("node:mjs | stdout").eval(&output));
@@ -343,7 +339,7 @@ mod install_deps {
                 .env_remove("MOON_TEST_HIDE_INSTALL_OUTPUT");
         });
 
-        let output = get_assert_output(&assert);
+        let output = assert.output();
 
         assert!(sandbox.path().join("node_modules").exists());
 
@@ -361,7 +357,7 @@ mod install_deps {
                 .env_remove("MOON_TEST_HIDE_INSTALL_OUTPUT");
         });
 
-        let output1 = get_assert_output(&assert);
+        let output1 = assert.output();
 
         assert!(predicate::str::contains("added").eval(&output1));
         assert!(predicate::str::contains("packages").eval(&output1));
@@ -372,7 +368,7 @@ mod install_deps {
                 .env_remove("MOON_TEST_HIDE_INSTALL_OUTPUT");
         });
 
-        let output2 = get_assert_output(&assert);
+        let output2 = assert.output();
 
         assert!(!predicate::str::contains("added").eval(&output2));
         assert!(!predicate::str::contains("packages").eval(&output2));
@@ -415,7 +411,7 @@ mod install_deps {
 
         assert!(predicate::str::contains("npm install")
             .count(3)
-            .eval(&get_assert_output(&assert)));
+            .eval(&assert.output()));
 
         assert!(sandbox.path().join("foo/package-lock.json").exists());
         assert!(sandbox.path().join("bar/package-lock.json").exists());
@@ -599,7 +595,7 @@ mod npm {
             cmd.arg("run").arg("npm:version");
         });
 
-        assert!(predicate::str::contains("8.0.0").eval(&get_assert_output(&assert)));
+        assert!(predicate::str::contains("8.0.0").eval(&assert.output()));
     }
 
     #[test]
@@ -621,7 +617,7 @@ mod npm {
             cmd.arg("run").arg("npm:runScript");
         });
 
-        assert!(predicate::str::contains("test").eval(&get_assert_output(&assert)));
+        assert!(predicate::str::contains("test").eval(&assert.output()));
 
         assert.success();
     }
@@ -636,7 +632,7 @@ mod npm {
 
         assert!(
             predicate::str::contains("All matched files use Prettier code style!")
-                .eval(&get_assert_output(&assert))
+                .eval(&assert.output())
         );
 
         assert.success();
@@ -655,7 +651,7 @@ mod npm {
 
         assert!(predicate::str::contains("npm install")
             .count(2)
-            .eval(&get_assert_output(&assert)));
+            .eval(&assert.output()));
 
         assert!(sandbox.path().join("package-lock.json").exists());
         assert!(sandbox
@@ -673,7 +669,6 @@ mod npm {
 
 mod pnpm {
     use super::*;
-    use std::fs;
 
     #[test]
     fn installs_correct_version() {
@@ -683,7 +678,7 @@ mod pnpm {
             cmd.arg("run").arg("pnpm:version");
         });
 
-        assert!(predicate::str::contains("7.5.0").eval(&get_assert_output(&assert)));
+        assert!(predicate::str::contains("7.5.0").eval(&assert.output()));
     }
 
     #[test]
@@ -705,7 +700,7 @@ mod pnpm {
             cmd.arg("run").arg("pnpm:runScript");
         });
 
-        assert!(predicate::str::contains("lint").eval(&get_assert_output(&assert)));
+        assert!(predicate::str::contains("lint").eval(&assert.output()));
 
         assert.success();
     }
@@ -722,7 +717,7 @@ mod pnpm {
 
         assert!(
             predicate::str::contains("All matched files use Prettier code style!")
-                .eval(&get_assert_output(&assert))
+                .eval(&assert.output())
         );
 
         assert.success();
@@ -740,7 +735,7 @@ mod pnpm {
 
         assert!(
             predicate::str::contains("All matched files use Prettier code style!")
-                .eval(&get_assert_output(&assert))
+                .eval(&assert.output())
         );
 
         assert.success();
@@ -758,7 +753,7 @@ mod pnpm {
     //         .arg("pnpm:noop")
     //         .assert();
 
-    //     assert_snapshot!(get_assert_output(&assert));
+    //     assert_snapshot!(assert.output());
 
     //     assert!(sandbox.path().join("pnpm-lock.yaml").exists());
     //     assert!(sandbox
@@ -785,7 +780,7 @@ mod yarn1 {
             cmd.arg("run").arg("yarn1:version");
         });
 
-        assert!(predicate::str::contains("1.22.0").eval(&get_assert_output(&assert)));
+        assert!(predicate::str::contains("1.22.0").eval(&assert.output()));
     }
 
     #[test]
@@ -807,7 +802,7 @@ mod yarn1 {
             cmd.arg("run").arg("yarn1:runScript");
         });
 
-        assert!(predicate::str::contains("build").eval(&get_assert_output(&assert)));
+        assert!(predicate::str::contains("build").eval(&assert.output()));
 
         assert.success();
     }
@@ -822,7 +817,7 @@ mod yarn1 {
 
         assert!(
             predicate::str::contains("All matched files use Prettier code style!")
-                .eval(&get_assert_output(&assert))
+                .eval(&assert.output())
         );
 
         assert.success();
@@ -841,7 +836,7 @@ mod yarn1 {
 
         assert!(predicate::str::contains("yarn install")
             .count(2)
-            .eval(&get_assert_output(&assert)));
+            .eval(&assert.output()));
 
         assert!(sandbox.path().join("yarn.lock").exists());
         assert!(sandbox.path().join("not-in-workspace/yarn.lock").exists());
@@ -865,7 +860,7 @@ mod yarn {
             cmd.arg("run").arg("yarn:version");
         });
 
-        assert!(predicate::str::contains("3.3.0").eval(&get_assert_output(&assert)));
+        assert!(predicate::str::contains("3.3.0").eval(&assert.output()));
     }
 
     #[test]
@@ -887,7 +882,7 @@ mod yarn {
             cmd.arg("run").arg("yarn:runScript");
         });
 
-        assert!(predicate::str::contains("build").eval(&get_assert_output(&assert)));
+        assert!(predicate::str::contains("build").eval(&assert.output()));
 
         assert.success();
     }
@@ -902,7 +897,7 @@ mod yarn {
 
         assert!(
             predicate::str::contains("All matched files use Prettier code style!")
-                .eval(&get_assert_output(&assert))
+                .eval(&assert.output())
         );
 
         assert.success();
@@ -921,7 +916,7 @@ mod yarn {
 
         assert!(predicate::str::contains("yarn install")
             .count(2)
-            .eval(&get_assert_output(&assert)));
+            .eval(&assert.output()));
 
         assert!(sandbox.path().join("yarn.lock").exists());
         assert!(sandbox.path().join("not-in-workspace/yarn.lock").exists());
@@ -994,7 +989,7 @@ mod aliases {
             cmd.arg("run").arg("@scope/pkg-foo:standard");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 }
 
@@ -1263,7 +1258,7 @@ mod workspace_overrides {
                 .arg("versionOverride:version");
         });
 
-        let output = get_assert_output(&assert);
+        let output = assert.output();
 
         assert!(predicate::str::contains("v18.0.0").eval(&output));
         assert!(predicate::str::contains("v19.0.0").eval(&output));
@@ -1274,7 +1269,6 @@ mod workspace_overrides {
 
 mod affected_files {
     use super::*;
-    use std::fs;
 
     #[test]
     fn uses_dot_when_not_affected() {
@@ -1284,7 +1278,7 @@ mod affected_files {
             cmd.arg("run").arg("node:affectedFiles");
         });
 
-        let output = get_assert_output(&assert);
+        let output = assert.output();
 
         assert!(predicate::str::contains("Args: .\n").eval(&output));
     }
@@ -1300,7 +1294,7 @@ mod affected_files {
             cmd.arg("run").arg("node:affectedFiles").arg("--affected");
         });
 
-        let output = get_assert_output(&assert);
+        let output = assert.output();
 
         if cfg!(windows) {
             assert!(predicate::str::contains("Args: .\\input1.js .\\input2.js").eval(&output));
@@ -1322,7 +1316,7 @@ mod affected_files {
                 .arg("--affected");
         });
 
-        let output = get_assert_output(&assert);
+        let output = assert.output();
 
         assert!(
             predicate::str::contains("MOON_AFFECTED_FILES=./input1.js,./input2.js").eval(&output)

@@ -1,12 +1,9 @@
-mod utils;
-
 use moon_config::{RunnerConfig, WorkspaceConfig, WorkspaceProjects};
 use moon_test_utils::{
-    assert_snapshot, create_sandbox_with_config, get_assert_output, predicates::prelude::*, Sandbox,
+    assert_snapshot, create_sandbox_with_config, predicates::prelude::*, Sandbox,
 };
 use moon_utils::string_vec;
 use rustc_hash::FxHashMap;
-use utils::get_path_safe_output;
 
 fn system_sandbox() -> Sandbox {
     let workspace_config = WorkspaceConfig {
@@ -40,7 +37,7 @@ mod unix {
             cmd.arg("run").arg("unix:echo");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -51,7 +48,7 @@ mod unix {
             cmd.arg("run").arg("unix:ls");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -62,7 +59,7 @@ mod unix {
             cmd.arg("run").arg("unix:bash");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -73,7 +70,7 @@ mod unix {
             cmd.arg("run").arg("unix:exitZero");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -84,7 +81,7 @@ mod unix {
             cmd.arg("run").arg("unix:exitNonZero");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -105,7 +102,7 @@ mod unix {
                 .arg("123");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -116,7 +113,7 @@ mod unix {
             cmd.arg("run").arg("unix:envVars");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -127,7 +124,7 @@ mod unix {
             cmd.arg("run").arg("unix:envVarsMoon");
         });
 
-        assert_snapshot!(get_path_safe_output(&assert, sandbox.path()));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -138,7 +135,7 @@ mod unix {
             cmd.arg("run").arg("unix:runFromProject");
         });
 
-        assert_snapshot!(get_path_safe_output(&assert, sandbox.path()));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -149,7 +146,7 @@ mod unix {
             cmd.arg("run").arg("unix:runFromWorkspace");
         });
 
-        assert_snapshot!(get_path_safe_output(&assert, sandbox.path()));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -160,7 +157,7 @@ mod unix {
             cmd.arg("run").arg("unix:retryCount");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -174,7 +171,7 @@ mod unix {
                 .arg("unix:baz");
         });
 
-        let output = get_assert_output(&assert);
+        let output = assert.output();
 
         assert!(predicate::str::contains("unix:foo | foo").eval(&output));
         assert!(predicate::str::contains("unix:bar | bar").eval(&output));
@@ -194,13 +191,13 @@ mod unix {
                 cmd.arg("run").arg("unix:outputs");
             });
 
-            assert_snapshot!(get_assert_output(&assert));
+            assert_snapshot!(assert.output());
 
             let assert = sandbox.run_moon(|cmd| {
                 cmd.arg("run").arg("unix:outputs");
             });
 
-            assert_snapshot!(get_assert_output(&assert));
+            assert_snapshot!(assert.output());
         }
 
         #[test]
@@ -258,7 +255,6 @@ mod unix {
 
     mod affected_files {
         use super::*;
-        use std::fs;
 
         #[test]
         fn uses_dot_when_not_affected() {
@@ -267,7 +263,7 @@ mod unix {
             let assert = sandbox.run_moon(|cmd| {
                 cmd.arg("run").arg("unix:affectedFiles");
             });
-            let output = get_assert_output(&assert);
+            let output = assert.output();
 
             assert!(predicate::str::contains("Args: .\n").eval(&output));
         }
@@ -282,7 +278,7 @@ mod unix {
             let assert = sandbox.run_moon(|cmd| {
                 cmd.arg("run").arg("unix:affectedFiles").arg("--affected");
             });
-            let output = get_assert_output(&assert);
+            let output = assert.output();
 
             assert!(predicate::str::contains("Args: ./input1.txt ./input2.txt").eval(&output));
         }
@@ -299,7 +295,7 @@ mod unix {
                     .arg("unix:affectedFilesEnvVar")
                     .arg("--affected");
             });
-            let output = get_assert_output(&assert);
+            let output = assert.output();
 
             assert!(
                 predicate::str::contains("MOON_AFFECTED_FILES=./input1.txt,./input2.txt")
@@ -321,7 +317,7 @@ mod system_windows {
             cmd.arg("run").arg("windows:bat");
         });
 
-        assert_snapshot!(get_path_safe_output(&assert, sandbox.path()));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -332,7 +328,7 @@ mod system_windows {
             cmd.arg("run").arg("windows:exitZero");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -343,7 +339,7 @@ mod system_windows {
             cmd.arg("run").arg("windows:exitNonZero");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -364,7 +360,7 @@ mod system_windows {
                 .arg("123");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -375,7 +371,7 @@ mod system_windows {
             cmd.arg("run").arg("windows:envVars");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -386,7 +382,7 @@ mod system_windows {
             cmd.arg("run").arg("windows:envVarsMoon");
         });
 
-        assert_snapshot!(get_path_safe_output(&assert, sandbox.path()));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -397,7 +393,7 @@ mod system_windows {
             cmd.arg("run").arg("windows:runFromProject");
         });
 
-        assert_snapshot!(get_path_safe_output(&assert, sandbox.path()));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -408,7 +404,7 @@ mod system_windows {
             cmd.arg("run").arg("windows:runFromWorkspace");
         });
 
-        assert_snapshot!(get_path_safe_output(&assert, sandbox.path()));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -419,7 +415,7 @@ mod system_windows {
             cmd.arg("run").arg("windows:retryCount");
         });
 
-        assert_snapshot!(get_assert_output(&assert));
+        assert_snapshot!(assert.output());
     }
 
     #[test]
@@ -433,7 +429,7 @@ mod system_windows {
                 .arg("windows:baz");
         });
 
-        let output = get_assert_output(&assert);
+        let output = assert.output();
 
         assert!(predicate::str::contains("windows:foo | foo").eval(&output));
         assert!(predicate::str::contains("windows:bar | bar").eval(&output));
@@ -453,13 +449,13 @@ mod system_windows {
                 cmd.arg("run").arg("windows:outputs");
             });
 
-            assert_snapshot!(get_assert_output(&assert));
+            assert_snapshot!(assert.output());
 
             let assert = sandbox.run_moon(|cmd| {
                 cmd.arg("run").arg("windows:outputs");
             });
 
-            assert_snapshot!(get_assert_output(&assert));
+            assert_snapshot!(assert.output());
         }
 
         #[test]

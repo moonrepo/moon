@@ -504,7 +504,6 @@ mod is_affected {
 
 mod expand_env {
     use super::*;
-    use std::fs;
 
     #[test]
     #[should_panic(expected = "Error parsing line: 'FOO', error at line index: 3")]

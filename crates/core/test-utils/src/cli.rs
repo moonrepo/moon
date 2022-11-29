@@ -1,4 +1,6 @@
+use crate::sandbox::{debug_sandbox_files, Sandbox};
 use assert_cmd::assert::Assert;
+use std::env;
 use std::path::Path;
 
 pub fn create_moon_command<T: AsRef<Path>>(path: T) -> assert_cmd::Command {
@@ -51,4 +53,56 @@ pub fn get_assert_stderr_output(assert: &Assert) -> String {
 
 pub fn get_assert_stdout_output(assert: &Assert) -> String {
     output_to_string(&assert.get_output().stdout)
+}
+
+pub struct SandboxAssert<'s> {
+    pub inner: Assert,
+    pub sandbox: &'s Sandbox,
+}
+
+impl<'s> SandboxAssert<'s> {
+    pub fn debug(&self) -> &Self {
+        println!("sandbox:");
+        debug_sandbox_files(self.sandbox.path());
+        println!("\n");
+
+        let output = self.inner.get_output();
+
+        println!("stdout:\n{}\n", output_to_string(&output.stdout));
+        println!("stderr:\n{}\n", output_to_string(&output.stderr));
+        println!("status: {:#?}", output.status);
+
+        self
+    }
+
+    pub fn code(self, num: i32) -> Assert {
+        self.inner.code(num)
+    }
+
+    pub fn failure(self) -> Assert {
+        self.inner.failure()
+    }
+
+    pub fn success(self) -> Assert {
+        self.inner.success()
+    }
+
+    pub fn output(&self) -> String {
+        let mut output =
+            get_assert_stdout_output(&self.inner) + &get_assert_stderr_output(&self.inner);
+
+        // Replace fixture path
+        output = output.replace(self.sandbox.path().to_str().unwrap(), "<WORKSPACE>");
+
+        // Replace home dir
+        #[allow(deprecated)]
+        if let Some(home_dir) = env::home_dir() {
+            output = output.replace(home_dir.to_str().unwrap(), "~");
+        }
+
+        // Standardize
+        output = output.replace('\\', "/");
+        output = output.replace("/private<", "<");
+        output
+    }
 }

@@ -1,6 +1,5 @@
-use crate::cli::{create_moon_command, output_to_string};
+use crate::cli::{create_moon_command, output_to_string, SandboxAssert};
 use crate::get_fixtures_path;
-use assert_cmd::assert::Assert;
 use assert_cmd::Command;
 use assert_fs::prelude::*;
 pub use assert_fs::TempDir;
@@ -8,27 +7,6 @@ use moon_config::{GlobalProjectConfig, ToolchainConfig, WorkspaceConfig};
 use std::fs;
 use std::path::Path;
 use std::process::Command as StdCommand;
-
-pub struct SandboxAssert<'s> {
-    assert: Assert,
-    sandbox: &'s Sandbox,
-}
-
-impl<'s> SandboxAssert<'s> {
-    pub fn debug(&self) -> &Self {
-        println!("sandbox:");
-        debug_sandbox_files(self.sandbox.path());
-        println!("\n");
-
-        let output = self.assert.get_output();
-
-        println!("stdout:\n{}\n", output_to_string(&output.stdout));
-        println!("stderr:\n{}\n", output_to_string(&output.stderr));
-        println!("status: {:#?}", output.status);
-
-        self
-    }
-}
 
 pub struct Sandbox {
     pub fixture: TempDir,
@@ -127,8 +105,8 @@ impl Sandbox {
         handler(&mut cmd);
 
         SandboxAssert {
-            assert: cmd.assert(),
-            sandbox: &self,
+            inner: cmd.assert(),
+            sandbox: self,
         }
     }
 }
@@ -185,7 +163,7 @@ pub fn create_sandbox_with_config<T: AsRef<str>>(
     sandbox
 }
 
-fn debug_sandbox_files(dir: &Path) {
+pub fn debug_sandbox_files(dir: &Path) {
     for entry in std::fs::read_dir(dir).unwrap() {
         let path = entry.unwrap().path();
 

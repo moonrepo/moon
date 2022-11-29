@@ -11,6 +11,7 @@ export interface NotifierConfig {
 }
 
 export interface RunnerConfig {
+	archivableTargets: string[];
 	cacheLifetime: string;
 	implicitDeps: string[];
 	implicitInputs: string[];

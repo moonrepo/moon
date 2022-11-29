@@ -1,7 +1,7 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 795
-expression: get_assert_output(&assert)
+assertion_line: 778
+expression: assert.output()
 ---
 ▪▪▪▪ npm install
 ▪▪▪▪ outputStyles:hash
@@ -11,6 +11,6 @@ expression: get_assert_output(&assert)
 Tasks: 2 completed
  Time: 100ms
 
-d5e3e5016e39e84b6cda3106d306a8d77bd9ab74393b38bb4cbb91a59d1b726e
+a53399dea723b848b8a39bb8edc5336d23d6e1bba8820629f09f995312ec58e7
 
 

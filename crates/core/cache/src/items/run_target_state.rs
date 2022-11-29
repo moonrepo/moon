@@ -31,12 +31,14 @@ impl RunTargetState {
         input_root: &Path,
         outputs: &[String],
     ) -> Result<bool, MoonError> {
-        if is_writable() && !outputs.is_empty() && !archive_file.exists() {
+        if is_writable() && !archive_file.exists() {
             let mut tar = TarArchiver::new(input_root, archive_file);
 
             // Outputs are relative from project root (the input)
-            for output in outputs {
-                tar.add_source(input_root.join(output), Some(output));
+            if !outputs.is_empty() {
+                for output in outputs {
+                    tar.add_source(input_root.join(output), Some(output));
+                }
             }
 
             // Also include stdout/stderr logs at the root of the tarball

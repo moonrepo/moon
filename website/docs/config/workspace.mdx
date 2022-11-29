@@ -172,6 +172,24 @@ runner:
   cacheLifetime: '24 hours'
 ```
 
+### `archivableTargets`<VersionLabel version="0.20" />
+
+<HeadingApiLink to="/api/types/interface/RunnerConfig#archivableTargets" />
+
+Defines a list of [targets](../concepts/target), with or without a project scope, that will be
+cached and archived within the runner. Tasks that produce [outputs](./project#outputs) are
+automatically archived, and do not need to be defined here. Defaults to an empty list.
+
+```yaml title=".moon/workspace.yml" {2-4}
+runner:
+  archivableTargets:
+    - ':test'
+    - 'app:typecheck'
+```
+
+> This setting primarily exists for [remote caching](../guides/remote-cache) as it will create and
+> persist tar archives located in `.moon/cache/outputs`.
+
 ### `implicitDeps`<VersionLabel version="0.16" />
 
 <HeadingApiLink to="/api/types/interface/RunnerConfig#implicitDeps" />

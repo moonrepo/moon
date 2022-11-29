@@ -1,0 +1,11 @@
+---
+source: crates/cli/tests/run_test.rs
+assertion_line: 274
+expression: "[h1, h2, extract_hash_from_run(sandbox.path(), \"outputs:asDep\").await,\n        extract_hash_from_run(sandbox.path(), \"outputs:withDeps\").await]"
+---
+[
+    "de9a88a9d20e197aea67694f09ca7f1d2f53cdd3320dc2b21c545e315c64c55c",
+    "59410edee555aa7dfffc83e58cc92d27e4ff84f97200b309b372cec7597450cd",
+    "61dda2e1c9baef298c81156ccea7d2716d75c8058aec36744e04323b61c6805a",
+    "9c5772c791d4fb9e7345fb24ff7f194b32490a9fdf71e56638c176e80bd0e388",
+]

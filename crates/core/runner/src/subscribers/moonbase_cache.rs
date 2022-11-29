@@ -56,7 +56,7 @@ impl Subscriber for MoonbaseCacheSubscriber {
                         Err(error) => {
                             handle_error(error);
 
-                            // Fallthrough to check local cache
+                            // Fallthrough and check local cache
                         }
                     }
                 }
@@ -72,7 +72,6 @@ impl Subscriber for MoonbaseCacheSubscriber {
             } => {
                 if is_writable() && archive_path.exists() {
                     let auth_token = moonbase.auth_token.to_owned();
-                    let repo_id = moonbase.repository_id;
                     let hash = (*hash).to_owned();
                     let target = target.id.to_owned();
                     let archive_path = archive_path.to_owned();
@@ -81,7 +80,7 @@ impl Subscriber for MoonbaseCacheSubscriber {
                     // while waiting for very large archives to upload.
                     self.requests.push(tokio::spawn(async move {
                         if let Err(error) =
-                            upload_artifact(auth_token, repo_id, hash, target, archive_path).await
+                            upload_artifact(auth_token, hash, target, archive_path).await
                         {
                             handle_error(error);
                         }

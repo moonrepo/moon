@@ -891,18 +891,17 @@ pub async fn run_target(
                 runner.hydrate_outputs().await?;
             }
 
-            runner.print_checkpoint(
-                Checkpoint::RunPassed,
-                &[
-                    match cache_location {
-                        HydrateFrom::LocalCache => "cached",
-                        HydrateFrom::RemoteCache => "cached from remote",
-                        HydrateFrom::PreviousOutput => "cached from previous run",
-                    },
-                    runner.get_short_hash(),
-                ],
-            )?;
+            let mut comments = vec![match cache_location {
+                HydrateFrom::LocalCache => "cached",
+                HydrateFrom::RemoteCache => "cached from remote",
+                HydrateFrom::PreviousOutput => "cached from previous run",
+            }];
 
+            if !is_test_env() {
+                comments.push(runner.get_short_hash());
+            }
+
+            runner.print_checkpoint(Checkpoint::RunPassed, &comments)?;
             runner.print_cache_item().await?;
             runner.flush_output()?;
 

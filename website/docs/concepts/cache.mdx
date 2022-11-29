@@ -28,6 +28,16 @@ Our smart hashing currently takes the following sources into account:
   - `package.json` dependencies (including development and peer).
   - `tsconfig.json` compiler options (when applicable).
 
+## Archiving & hydration
+
+On top of our hashing layer, we have another concept known as archiving, where in we create a
+tarball archive of a task's outputs and store it in `.moon/cache/outputs`. These are akin to build
+artifacts.
+
+When we encounter a cache hit on a hash, we trigger a mechanism known as hydration, where we
+efficiently unpack an existing tarball archive into a task's outputs. This can be understood as a
+timeline, where every point in time will have its own hash + archive that moon can play back.
+
 ## File structure
 
 The following diagram outlines our cache folder structure and why each piece exists.

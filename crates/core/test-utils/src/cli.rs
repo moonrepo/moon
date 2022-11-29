@@ -99,8 +99,11 @@ impl<'s> SandboxAssert<'s> {
             output = output.replace(home_dir.to_str().unwrap(), "~");
         }
 
-        // Standardize
-        // output = output.replace('\\', "/");
+        // Standardize when applicable
+        if output.contains("ERROR") {
+            output = output.replace('\\', "/");
+        }
+
         output = output.replace("/private<", "<");
         output
     }

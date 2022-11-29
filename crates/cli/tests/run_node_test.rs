@@ -914,8 +914,6 @@ mod yarn {
                 .arg("yarn:noop");
         });
 
-        assert.debug();
-
         assert!(predicate::str::contains("yarn install")
             .count(2)
             .eval(&assert.output()));

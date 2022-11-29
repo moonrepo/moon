@@ -134,7 +134,6 @@ impl Moonbase {
 // and not have to worry about lifetime and borrow issues.
 pub async fn upload_artifact(
     auth_token: String,
-    repository_id: i32,
     hash: String,
     target_id: String,
     path: PathBuf,
@@ -152,15 +151,12 @@ pub async fn upload_artifact(
     };
     let file_stream = FramedRead::new(file, BytesCodec::new());
 
-    let form = Form::new()
-        .text("repository", repository_id.to_string())
-        .text("target", target_id.to_owned())
-        .part(
-            "file",
-            Part::stream(Body::wrap_stream(file_stream))
-                .file_name(file_name.clone())
-                .mime_str("application/gzip")?,
-        );
+    let form = Form::new().text("target", target_id.to_owned()).part(
+        "file",
+        Part::stream(Body::wrap_stream(file_stream))
+            .file_name(file_name.clone())
+            .mime_str("application/gzip")?,
+    );
 
     let request = reqwest::Client::new()
         .post(format!("{}/artifacts/{}", get_host(), hash))

@@ -1,7 +1,8 @@
 use moon_cache::CacheEngine;
 use moon_config::WorkspaceConfig;
 use moon_test_utils::{
-    assert_snapshot, create_sandbox_with_config, get_cases_fixture_configs, predicates::prelude::*,
+    assert_debug_snapshot, assert_snapshot, create_sandbox_with_config, get_cases_fixture_configs,
+    predicates::{self, prelude::*},
     Sandbox,
 };
 use std::fs;
@@ -245,14 +246,10 @@ mod dependencies {
             cmd.arg("run").arg("outputs:withDeps");
         });
 
-        assert_eq!(
+        assert_debug_snapshot!([
             extract_hash_from_run(sandbox.path(), "outputs:asDep").await,
-            "fff0ae3851832c56a94c7bcc8996abcc1bd89a29d6d7d2cb51441236b6e4c9ec"
-        );
-        assert_eq!(
-            extract_hash_from_run(sandbox.path(), "outputs:withDeps").await,
-            "94afe73174ac40676d51e7574947265af2bc8ffe64ced566151572dd64e19f8f"
-        );
+            extract_hash_from_run(sandbox.path(), "outputs:withDeps").await
+        ]);
     }
 
     #[tokio::test]
@@ -264,14 +261,8 @@ mod dependencies {
             cmd.arg("run").arg("outputs:withDeps");
         });
 
-        assert_eq!(
-            extract_hash_from_run(sandbox.path(), "outputs:asDep").await,
-            "fff0ae3851832c56a94c7bcc8996abcc1bd89a29d6d7d2cb51441236b6e4c9ec"
-        );
-        assert_eq!(
-            extract_hash_from_run(sandbox.path(), "outputs:withDeps").await,
-            "94afe73174ac40676d51e7574947265af2bc8ffe64ced566151572dd64e19f8f"
-        );
+        let h1 = extract_hash_from_run(sandbox.path(), "outputs:asDep").await;
+        let h2 = extract_hash_from_run(sandbox.path(), "outputs:withDeps").await;
 
         // Create an `inputs` file for `outputs:asDep`
         sandbox.create_file("outputs/random.js", "");
@@ -280,14 +271,12 @@ mod dependencies {
             cmd.arg("run").arg("outputs:withDeps");
         });
 
-        assert_eq!(
+        assert_debug_snapshot!([
+            h1,
+            h2,
             extract_hash_from_run(sandbox.path(), "outputs:asDep").await,
-            "09bfb40435c99cb3d2ab88697ca8fc72fac361e4e456659cab336acba46bea62"
-        );
-        assert_eq!(
-            extract_hash_from_run(sandbox.path(), "outputs:withDeps").await,
-            "a6dcc84a82022d4e8a1003752dca38045b3af9554a66a8f8d520891ceddfcb3c"
-        );
+            extract_hash_from_run(sandbox.path(), "outputs:withDeps").await
+        ]);
     }
 }
 
@@ -676,6 +665,171 @@ mod outputs {
             // Outputs should come back
             assert!(sandbox.path().join("outputs/esm").exists());
             assert!(sandbox.path().join("outputs/lib").exists());
+        }
+    }
+
+    mod archiving {
+        use super::*;
+
+        #[tokio::test]
+        async fn doesnt_archive_non_build_tasks() {
+            let sandbox = cases_sandbox();
+            sandbox.enable_git();
+
+            sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("outputs:noOutput");
+            });
+
+            let hash = extract_hash_from_run(sandbox.path(), "outputs:noOutput").await;
+
+            assert!(!sandbox
+                .path()
+                .join(format!(".moon/cache/outputs/{}.tar.gz", hash))
+                .exists());
+        }
+
+        #[tokio::test]
+        async fn archives_non_build_tasks_with_full_target() {
+            let sandbox = cases_sandbox_with_config(|cfg| {
+                cfg.runner
+                    .archivable_targets
+                    .push("outputs:noOutput".into());
+            });
+
+            sandbox.enable_git();
+
+            sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("outputs:noOutput");
+            });
+
+            let hash = extract_hash_from_run(sandbox.path(), "outputs:noOutput").await;
+
+            assert!(sandbox
+                .path()
+                .join(format!(".moon/cache/outputs/{}.tar.gz", hash))
+                .exists());
+        }
+
+        #[tokio::test]
+        async fn archives_non_build_tasks_with_all_target() {
+            let sandbox = cases_sandbox_with_config(|cfg| {
+                cfg.runner.archivable_targets.push(":noOutput".into());
+            });
+
+            sandbox.enable_git();
+
+            sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("outputs:noOutput");
+            });
+
+            let hash = extract_hash_from_run(sandbox.path(), "outputs:noOutput").await;
+
+            assert!(sandbox
+                .path()
+                .join(format!(".moon/cache/outputs/{}.tar.gz", hash))
+                .exists());
+        }
+
+        #[tokio::test]
+        async fn doesnt_archive_non_build_tasks_for_nonmatch_target() {
+            let sandbox = cases_sandbox_with_config(|cfg| {
+                cfg.runner.archivable_targets.push(":otherTarget".into());
+            });
+
+            sandbox.enable_git();
+
+            sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("outputs:noOutput");
+            });
+
+            let hash = extract_hash_from_run(sandbox.path(), "outputs:noOutput").await;
+
+            assert!(!sandbox
+                .path()
+                .join(format!(".moon/cache/outputs/{}.tar.gz", hash))
+                .exists());
+        }
+
+        #[tokio::test]
+        async fn archives_std_output() {
+            let sandbox = cases_sandbox_with_config(|cfg| {
+                cfg.runner.archivable_targets.push(":noOutput".into());
+            });
+
+            sandbox.enable_git();
+
+            sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("outputs:noOutput");
+            });
+
+            assert_eq!(
+                fs::read_to_string(
+                    sandbox
+                        .path()
+                        .join(".moon/cache/states/outputs/noOutput/stdout.log")
+                )
+                .unwrap(),
+                "No outputs!"
+            );
+        }
+
+        #[tokio::test]
+        async fn can_hydrate_archives() {
+            let sandbox = cases_sandbox_with_config(|cfg| {
+                cfg.runner.archivable_targets.push(":noOutput".into());
+            });
+
+            sandbox.enable_git();
+
+            let assert1 = sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("outputs:noOutput");
+            });
+
+            let hash1 = extract_hash_from_run(sandbox.path(), "outputs:noOutput").await;
+
+            let assert2 = sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("outputs:noOutput");
+            });
+
+            let hash2 = extract_hash_from_run(sandbox.path(), "outputs:noOutput").await;
+
+            assert_eq!(hash1, hash2);
+        }
+
+        #[tokio::test]
+        async fn errors_for_deps_target() {
+            let sandbox = cases_sandbox_with_config(|cfg| {
+                cfg.runner.archivable_targets.push("^:otherTarget".into());
+            });
+
+            sandbox.enable_git();
+
+            let assert = sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("outputs:noOutput");
+            });
+
+            assert!(predicates::str::contains(
+                "Project dependencies scope (^:) is not supported in run contexts."
+            )
+            .eval(&assert.output()));
+        }
+
+        #[tokio::test]
+        async fn errors_for_self_target() {
+            let sandbox = cases_sandbox_with_config(|cfg| {
+                cfg.runner.archivable_targets.push("~:otherTarget".into());
+            });
+
+            sandbox.enable_git();
+
+            let assert = sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("outputs:noOutput");
+            });
+
+            assert!(predicates::str::contains(
+                "Project self scope (~:) is not supported in run contexts."
+            )
+            .eval(&assert.output()));
         }
     }
 }

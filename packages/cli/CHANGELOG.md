@@ -11,6 +11,8 @@
 
 #### 🚀 Updates
 
+- Added `runner.archivableTargets` to `.moon/workspace.yml` to control which targets are cached as
+  archives.
 - Added `vcs.remoteCandidates` to `.moon/workspace.yml` to customize the remotes for git to query
   against.
 - Added support for `moduleSuffixes` and `moduleDetection` in TypeScript `tsconfig.json` compiler
@@ -43,6 +45,7 @@
 - When writing YAML files, indentation and formatting will be inferred from the closest
   `.editorconfig` as best as possible.
 - Fixed an issue where parsing `yarn.lock` would panic on certain Windows machines.
+- Fixed an issue where `moon docker prune` would remove required node modules.
 
 #### ⚙️ Internal
 

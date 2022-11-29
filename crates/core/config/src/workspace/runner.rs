@@ -34,10 +34,21 @@ fn validate_cache_lifetime(value: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 
+fn validate_archivable_targets(list: &[String]) -> Result<(), ValidationError> {
+    for (index, item) in list.iter().enumerate() {
+        validate_target(format!("archivableTargets[{}]", index), item)?;
+    }
+
+    Ok(())
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
 #[serde(rename_all = "camelCase")]
 pub struct RunnerConfig {
+    #[validate(custom = "validate_archivable_targets")]
+    pub archivable_targets: Vec<String>,
+
     #[validate(custom = "validate_cache_lifetime")]
     pub cache_lifetime: String,
 
@@ -55,6 +66,7 @@ impl Default for RunnerConfig {
     fn default() -> Self {
         RunnerConfig {
             cache_lifetime: "7 days".to_owned(),
+            archivable_targets: vec![],
             implicit_deps: vec![],
             implicit_inputs: string_vec![
                 // When a project changes

@@ -76,3 +76,8 @@ tasks:
       - '*.js'
     outputs:
       - 'unknown'
+  noOutput:
+    command: node
+    args: generate.js none
+    inputs:
+      - '*.js'

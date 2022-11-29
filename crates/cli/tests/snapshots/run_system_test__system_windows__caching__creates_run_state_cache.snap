@@ -13,7 +13,6 @@ expression: "fs::read_to_string(fixture.path().join(format!(\".moon/cache/hashes
     "deps": {},
     "envVars": {},
     "inputs": {
-      ".moon/workspace.yml": "c448710a2eaaec20fe6897f6d62d1e77f39edf4e",
       "windows/cwd.bat": "f97d5bfb654f63a59a4158e4969707c8e1c29ece",
       "windows/echo.bat": "cf9137992257ec89c223a5d866458a94a361e0fd",
       "windows/envVars.bat": "af068672f8e5f2ca1aa1b5fec93df8fb253bdd0c",

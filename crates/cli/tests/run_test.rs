@@ -3,8 +3,8 @@ mod utils;
 use moon_cache::CacheEngine;
 use moon_config::WorkspaceConfig;
 use moon_test_utils::{
-    assert_snapshot, create_sandbox, create_sandbox_with_config, get_assert_output,
-    get_cases_fixture_configs, predicates::prelude::*, Sandbox,
+    assert_snapshot, create_sandbox_with_config, get_assert_output, get_cases_fixture_configs,
+    predicates::prelude::*, Sandbox,
 };
 use moon_utils::path::standardize_separators;
 use std::fs;
@@ -127,9 +127,9 @@ mod configs {
 
     #[test]
     fn bubbles_up_invalid_workspace_config() {
-        let sandbox = create_sandbox("cases");
+        let sandbox = cases_sandbox();
 
-        fs::write(sandbox.path().join(".moon/workspace.yml"), "projects: true").unwrap();
+        sandbox.create_file(".moon/workspace.yml", "projects: true");
 
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("base:noop");
@@ -143,9 +143,9 @@ mod configs {
 
     #[test]
     fn bubbles_up_invalid_global_project_config() {
-        let sandbox = create_sandbox("cases");
+        let sandbox = cases_sandbox();
 
-        fs::write(sandbox.path().join(".moon/project.yml"), "tasks: 123").unwrap();
+        sandbox.create_file(".moon/project.yml", "tasks: 123");
 
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("base:noop");
@@ -159,13 +159,9 @@ mod configs {
 
     #[test]
     fn bubbles_up_invalid_project_config() {
-        let sandbox = create_sandbox("cases");
+        let sandbox = cases_sandbox();
 
-        fs::write(
-            sandbox.path().join("base/moon.yml"),
-            "project:\n  type: library",
-        )
-        .unwrap();
+        sandbox.create_file("base/moon.yml", "project:\n  type: library");
 
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("base:noop");
@@ -264,11 +260,11 @@ mod dependencies {
 
         assert_eq!(
             extract_hash_from_run(sandbox.path(), "outputs:asDep").await,
-            "92c5b8c6dceccedc0547032c9eeb5be64d225545ac679c6b1bb7d41baf892d77"
+            "fff0ae3851832c56a94c7bcc8996abcc1bd89a29d6d7d2cb51441236b6e4c9ec"
         );
         assert_eq!(
             extract_hash_from_run(sandbox.path(), "outputs:withDeps").await,
-            "3d4fef133338cff776bd701538bf4861c92dce2e1f1282feb35d42a1b13c4b3b"
+            "94afe73174ac40676d51e7574947265af2bc8ffe64ced566151572dd64e19f8f"
         );
     }
 
@@ -283,11 +279,11 @@ mod dependencies {
 
         assert_eq!(
             extract_hash_from_run(sandbox.path(), "outputs:asDep").await,
-            "92c5b8c6dceccedc0547032c9eeb5be64d225545ac679c6b1bb7d41baf892d77"
+            "fff0ae3851832c56a94c7bcc8996abcc1bd89a29d6d7d2cb51441236b6e4c9ec"
         );
         assert_eq!(
             extract_hash_from_run(sandbox.path(), "outputs:withDeps").await,
-            "3d4fef133338cff776bd701538bf4861c92dce2e1f1282feb35d42a1b13c4b3b"
+            "94afe73174ac40676d51e7574947265af2bc8ffe64ced566151572dd64e19f8f"
         );
 
         // Create an `inputs` file for `outputs:asDep`
@@ -299,11 +295,11 @@ mod dependencies {
 
         assert_eq!(
             extract_hash_from_run(sandbox.path(), "outputs:asDep").await,
-            "296411f059717096bc78f8bd1a5f33019de11bd57480c900d9d3a25ea5441ca1"
+            "09bfb40435c99cb3d2ab88697ca8fc72fac361e4e456659cab336acba46bea62"
         );
         assert_eq!(
             extract_hash_from_run(sandbox.path(), "outputs:withDeps").await,
-            "b7af1e952f2146ce128b74809598233fdc17cc0dadd3e863edaf1cb8c69f019b"
+            "a6dcc84a82022d4e8a1003752dca38045b3af9554a66a8f8d520891ceddfcb3c"
         );
     }
 }

@@ -80,11 +80,9 @@ async fn doesnt_send_webhooks_if_first_fails() {
 
     let sandbox = sandbox(server.uri());
 
-    let assert = sandbox.run_moon(|cmd| {
+    sandbox.run_moon(|cmd| {
         cmd.arg("run").arg("node:cjs");
     });
-
-    assert.failure();
 }
 
 #[tokio::test]

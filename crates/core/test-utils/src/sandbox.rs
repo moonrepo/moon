@@ -1,6 +1,4 @@
-use crate::cli::{
-    create_moon_command, get_assert_stderr_output, get_assert_stdout_output, output_to_string,
-};
+use crate::cli::{create_moon_command, output_to_string};
 use crate::get_fixtures_path;
 use assert_cmd::assert::Assert;
 use assert_cmd::Command;
@@ -37,9 +35,11 @@ impl Sandbox {
         println!("\n");
 
         // Debug outputs
-        println!("stdout:\n{}\n", get_assert_stdout_output(assert));
-        println!("stderr:\n{}\n", get_assert_stderr_output(assert));
-        println!("status: {:#?}", assert.get_output().status);
+        let output = assert.get_output();
+
+        println!("stdout:\n{}\n", output_to_string(&output.stdout));
+        println!("stderr:\n{}\n", output_to_string(&output.stderr));
+        println!("status: {:#?}", output.status);
 
         self
     }
@@ -50,11 +50,11 @@ impl Sandbox {
             ".moon/toolchain.yml",
             ".moon/project.yml",
         ] {
-            println!(
-                "{} = {}",
-                cfg,
-                fs::read_to_string(self.path().join(cfg)).unwrap()
-            );
+            let path = self.path().join(cfg);
+
+            if path.exists() {
+                println!("{} = {}", cfg, fs::read_to_string(path).unwrap());
+            }
         }
 
         self

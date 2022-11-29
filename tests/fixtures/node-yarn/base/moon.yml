@@ -3,7 +3,6 @@ language: javascript
 tasks:
   version:
     command: yarn
-    args: --version
   installDep:
     command: yarn
     args: add react@17.0.0

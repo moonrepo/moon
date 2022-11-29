@@ -127,7 +127,9 @@ pub fn get_project_graph_aliases_fixture_configs(
 
     let toolchain_config = ToolchainConfig {
         node: Some(NodeConfig {
+            add_engines_constraint: false,
             alias_package_names: Some(NodeProjectAliasFormat::NameAndScope),
+            dedupe_on_lockfile_change: false,
             ..NodeConfig::default()
         }),
         ..ToolchainConfig::default()
@@ -237,7 +239,8 @@ pub fn get_node_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, GlobalPr
             (
                 "version".to_owned(),
                 TaskConfig {
-                    command: Some(TaskCommandArgs::String("node --version".into())),
+                    command: Some(TaskCommandArgs::String("node".into())),
+                    args: Some(TaskCommandArgs::String("--version".into())),
                     ..TaskConfig::default()
                 },
             ),

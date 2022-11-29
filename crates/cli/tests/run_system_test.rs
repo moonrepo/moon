@@ -1,9 +1,10 @@
 mod utils;
 
-use moon_config::{WorkspaceConfig, WorkspaceProjects};
+use moon_config::{RunnerConfig, WorkspaceConfig, WorkspaceProjects};
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, get_assert_output, predicates::prelude::*, Sandbox,
 };
+use moon_utils::string_vec;
 use rustc_hash::FxHashMap;
 use utils::get_path_safe_output;
 
@@ -13,6 +14,11 @@ fn system_sandbox() -> Sandbox {
             ("unix".to_owned(), "unix".to_owned()),
             ("windows".to_owned(), "windows".to_owned()),
         ])),
+        runner: RunnerConfig {
+            // Avoid these in hashes or snapshots
+            implicit_inputs: string_vec![],
+            ..RunnerConfig::default()
+        },
         ..WorkspaceConfig::default()
     };
 

@@ -309,7 +309,7 @@ fn retries_on_failure_till_count() {
 
     let output = get_assert_output(&assert);
 
-    assert!(predicate::str::contains("Process ~/.moon/tools/node/16.1.0").eval(&output));
+    assert!(predicate::str::contains("Process ~/.moon/tools/node/18.0.0").eval(&output));
 }
 
 #[test]
@@ -388,7 +388,7 @@ mod install_deps {
 
         assert!(sandbox
             .path()
-            .join(".moon/cache/states/toolNode-16.1.0.json")
+            .join(".moon/cache/states/toolNode-18.0.0.json")
             .exists());
     }
 
@@ -482,7 +482,7 @@ mod version_manager {
 
         assert_eq!(
             read_to_string(sandbox.path().join(".nvmrc")).unwrap(),
-            "16.1.0"
+            "18.0.0"
         );
     }
 
@@ -500,7 +500,7 @@ mod version_manager {
 
         assert_eq!(
             read_to_string(sandbox.path().join(".node-version")).unwrap(),
-            "16.1.0"
+            "18.0.0"
         );
     }
 }
@@ -1266,7 +1266,7 @@ mod workspace_overrides {
         let output = get_assert_output(&assert);
 
         assert!(predicate::str::contains("v18.0.0").eval(&output));
-        assert!(predicate::str::contains("v16.1.0").eval(&output));
+        assert!(predicate::str::contains("v19.0.0").eval(&output));
 
         assert.success();
     }

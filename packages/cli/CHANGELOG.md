@@ -11,6 +11,7 @@
 
 #### 🚀 Updates
 
+- Added `runner.cacheableTargets` to `.moon/workspace.yml` to control which targets are cached.
 - Added `vcs.remoteCandidates` to `.moon/workspace.yml` to customize the remotes for git to query
   against.
 - Added support for `moduleSuffixes` and `moduleDetection` in TypeScript `tsconfig.json` compiler

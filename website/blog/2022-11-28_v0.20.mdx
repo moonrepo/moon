@@ -1,17 +1,13 @@
 ---
 slug: v0.20
-title: moon v0.20 - Future proofing and toolchain/hydration improvements
+title: moon v0.20 - Future proofing and toolchain, caching, and hydration improvements
 authors: [milesj]
-tags: [hydration, toolchain, generator]
+tags: [hydration, toolchain, generator, runner]
 # image: ./img/v0.20.png
 ---
 
-With this release, we've focused heavily on future proofing our toolchain, and how it integrates
-with moon. We've also landed a handful of quality of life improvements.
-
-By default, all [targets](../concepts/target) that produce outputs are cached. For targets that _do
-not_ produce outputs, like testing, linting, and typechecking, these are not cached. This results in
-slower CI times as they are continuously ran, even if nothing has changed.
+With this release, we've focused heavily on future proofing our toolchain and how it integrates with
+moon. We've also landed a handful of quality of life improvements.
 
 <!--truncate-->
 
@@ -22,9 +18,9 @@ To start, we have a few breaking changes this release to be aware of!
 ### Moved toolchain settings
 
 The [`.moon/workspace.yml`](../docs/config/workspace) config file was getting rather bloated and
-complicated, as it contained the projects list, settings for each toolchain language, and each
-supported service (runner, generator, etc). Furthermore, this file will keep getting larger with
-each new language and service we support.
+complicated, as it contained the projects list, settings for each toolchain language, and settings
+for each supported service (runner, generator, etc). Furthermore, this file will keep getting larger
+with each new language and service we support.
 
 To future proof moon, and to land as many breaking changes before an official v1, we've decided to
 move toolchain specific settings into a new file, [`.moon/toolchain.yml`](../docs/config/toolchain).
@@ -86,6 +82,28 @@ resulted in a 10x performance increase, taking about 30ms! Multiply this by many
 results should be very apparent.
 
 We hope you enjoy this improvement, as it's the first of many to come!
+
+## Cache any and all targets
+
+By default, all [targets](../docs/concepts/target) that produce outputs are cached. For targets that
+_do not_ produce outputs, like testing, linting, and typechecking, these are not cached. This will
+result in slower CI times as they are continuously ran, even if nothing has changed. However with
+our new [remote caching](../docs/guides/remote-cache) layer, we can skip these from running
+entirely!
+
+To achieve this, we've added a new setting to [`.moon/workspace.yml`](../docs/config/workspace)
+called [`runner.cacheableTargets`](../docs/config/workspace#cacheabletargets). This setting accepts
+a list of targets that should be cached, regardless of whether or not they produce outputs.
+
+For example, if we want to cache testing, linting, and typechecking, we can define the following:
+
+```yaml title=".moon/workspace.yml"
+runner:
+  cacheableTargets:
+    - ':lint'
+    - ':test'
+    - ':typecheck'
+```
 
 ## Path handling in generator templates
 

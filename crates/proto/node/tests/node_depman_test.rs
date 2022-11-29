@@ -71,9 +71,9 @@ async fn downloads_verifies_installs_yarn_berry() {
     let fixture = assert_fs::TempDir::new().unwrap();
     let proto = create_proto(fixture.path());
     let mut tool =
-        NodeDependencyManager::new(&proto, NodeDependencyManagerType::Yarn, Some("3.0.0"));
+        NodeDependencyManager::new(&proto, NodeDependencyManagerType::Yarn, Some("3.3.0"));
 
-    tool.setup("3.0.0").await.unwrap();
+    tool.setup("3.3.0").await.unwrap();
 
     assert!(!tool.get_download_path().unwrap().exists());
     assert!(!tool.get_checksum_path().unwrap().exists());

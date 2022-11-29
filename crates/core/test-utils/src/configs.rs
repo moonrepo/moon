@@ -287,7 +287,7 @@ pub fn get_node_depman_fixture_configs(
             "yarn" => {
                 node_config.package_manager = NodePackageManager::Yarn;
                 node_config.yarn = Some(YarnConfig {
-                    version: "3.0.0".into(),
+                    version: "3.3.0".into(),
                     plugins: Some(vec!["workspace-tools".into()]),
                 });
             }

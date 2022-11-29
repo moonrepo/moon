@@ -9,8 +9,28 @@ use std::fs;
 use std::path::Path;
 use std::process::Command as StdCommand;
 
+pub struct SandboxAssert<'s> {
+    assert: Assert,
+    sandbox: &'s Sandbox,
+}
+
+impl<'s> SandboxAssert<'s> {
+    pub fn debug(&self) -> &Self {
+        println!("sandbox:");
+        debug_sandbox_files(self.sandbox.path());
+        println!("\n");
+
+        let output = self.assert.get_output();
+
+        println!("stdout:\n{}\n", output_to_string(&output.stdout));
+        println!("stderr:\n{}\n", output_to_string(&output.stderr));
+        println!("status: {:#?}", output.status);
+
+        self
+    }
+}
+
 pub struct Sandbox {
-    // command: Option<Command>,
     pub fixture: TempDir,
 }
 
@@ -24,22 +44,6 @@ impl Sandbox {
             .child(name)
             .write_str(content.as_ref())
             .unwrap();
-
-        self
-    }
-
-    pub fn debug(&self, assert: &Assert) -> &Self {
-        // List all files in the sandbox
-        println!("sandbox:");
-        debug_sandbox_files(self.path());
-        println!("\n");
-
-        // Debug outputs
-        let output = assert.get_output();
-
-        println!("stdout:\n{}\n", output_to_string(&output.stdout));
-        println!("stderr:\n{}\n", output_to_string(&output.stderr));
-        println!("status: {:#?}", output.status);
 
         self
     }
@@ -114,7 +118,7 @@ impl Sandbox {
         self
     }
 
-    pub fn run_moon<C>(&self, handler: C) -> Assert
+    pub fn run_moon<C>(&self, handler: C) -> SandboxAssert
     where
         C: FnOnce(&mut Command),
     {
@@ -122,9 +126,10 @@ impl Sandbox {
 
         handler(&mut cmd);
 
-        // self.command = Some(cmd);
-
-        cmd.assert()
+        SandboxAssert {
+            assert: cmd.assert(),
+            sandbox: &self,
+        }
     }
 }
 

@@ -865,7 +865,7 @@ mod yarn {
             cmd.arg("run").arg("yarn:version");
         });
 
-        assert!(predicate::str::contains("3.0.0").eval(&get_assert_output(&assert)));
+        assert!(predicate::str::contains("3.3.0").eval(&get_assert_output(&assert)));
     }
 
     #[test]

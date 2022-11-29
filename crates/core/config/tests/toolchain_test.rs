@@ -56,7 +56,7 @@ mod extends {
                     package_manager: NodePackageManager::Yarn,
                     yarn: Some(YarnConfig {
                         plugins: None,
-                        version: "3.0.0".into()
+                        version: "3.3.0".into()
                     }),
                     ..NodeConfig::default()
                 }),

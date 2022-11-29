@@ -235,7 +235,7 @@ pub async fn init_node(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use insta::assert_snapshot;
+    use moon_test_utils::assert_snapshot;
 
     #[test]
     fn renders_default() {

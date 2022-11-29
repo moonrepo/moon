@@ -3,7 +3,6 @@ language: javascript
 tasks:
   version:
     command: npm
-    args: --version
   installDep:
     command: npm
     args: install react@17.0.0

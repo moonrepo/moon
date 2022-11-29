@@ -1,9 +1,0 @@
-extends: '../shared-toolchain.yml'
-
-node:
-  # Use a unique version as to not collide with other tests
-  version: '16.2.0'
-  packageManager: 'pnpm'
-  pnpm:
-    version: '7.5.0'
-  addEnginesConstraint: false

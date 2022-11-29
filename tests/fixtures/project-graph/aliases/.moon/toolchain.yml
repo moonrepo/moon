@@ -1,4 +1,0 @@
-extends: '../shared-toolchain.yml'
-
-node:
-  aliasPackageNames: 'name-and-scope'

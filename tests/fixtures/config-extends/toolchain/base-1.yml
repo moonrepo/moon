@@ -3,4 +3,4 @@ extends: './base-0.yml'
 node:
   packageManager: 'yarn'
   yarn:
-    version: '3.0.0'
+    version: '3.3.0'

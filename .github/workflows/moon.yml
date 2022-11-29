@@ -47,6 +47,8 @@ jobs:
           toolchain: 1.65.0
           profile: minimal
       - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: moon
       - uses: moonrepo/tool-version-action@v1
         with:
           node: ${{ matrix.node-version }}

@@ -773,8 +773,8 @@ fn write_preserved_json(path: &Path, tsconfig: &TsConfigJson) -> Result<(), Moon
 #[cfg(test)]
 mod test {
     use super::*;
+    use moon_test_utils::get_fixtures_path;
     use moon_utils::string_vec;
-    use moon_utils::test::get_fixtures_dir;
 
     #[test]
     fn serializes_special_fields() {
@@ -893,7 +893,7 @@ mod test {
 
     #[tokio::test]
     async fn parse_basic_file() {
-        let path = get_fixtures_dir("base/tsconfig-json");
+        let path = get_fixtures_path("base/tsconfig-json");
         let config = TsConfigJson::read_with_name(path, "tsconfig.default.json")
             .unwrap()
             .unwrap();
@@ -911,7 +911,7 @@ mod test {
 
     #[tokio::test]
     async fn parse_inheriting_file() {
-        let path = get_fixtures_dir("base/tsconfig-json/tsconfig.inherits.json");
+        let path = get_fixtures_path("base/tsconfig-json/tsconfig.inherits.json");
         let config = TsConfigJson::load_with_extends(&path).await.unwrap();
 
         assert_eq!(
@@ -936,7 +936,7 @@ mod test {
 
     #[tokio::test]
     async fn parse_inheritance_chain() {
-        let path = get_fixtures_dir("base/tsconfig-json/a/tsconfig.json");
+        let path = get_fixtures_path("base/tsconfig-json/a/tsconfig.json");
         let config = TsConfigJson::load_with_extends(&path).await.unwrap();
 
         assert_eq!(

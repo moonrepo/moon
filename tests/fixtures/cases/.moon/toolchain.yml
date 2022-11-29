@@ -1,7 +1,0 @@
-extends: '../shared-toolchain.yml'
-
-node:
-  version: '16.0.0'
-  addEnginesConstraint: false
-  dedupeOnLockfileChange: false
-  syncProjectWorkspaceDependencies: false

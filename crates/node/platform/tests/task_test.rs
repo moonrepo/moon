@@ -529,7 +529,7 @@ mod infer_tasks_from_scripts {
 
 mod create_tasks_from_scripts {
     use super::*;
-    use pretty_assertions::assert_eq;
+    use moon_test_utils::pretty_assertions::assert_eq;
 
     #[test]
     fn ignores_unsupported_syntax() {
@@ -633,7 +633,7 @@ mod create_tasks_from_scripts {
 
     mod pre_post {
         use super::*;
-        use pretty_assertions::assert_eq;
+        use moon_test_utils::pretty_assertions::assert_eq;
 
         #[test]
         fn creates_pre_and_post() {
@@ -828,7 +828,7 @@ mod create_tasks_from_scripts {
 
     mod pm_run {
         use super::*;
-        use pretty_assertions::assert_eq;
+        use moon_test_utils::pretty_assertions::assert_eq;
 
         #[test]
         fn skips_when_pointing_to_an_unknown() {
@@ -1064,7 +1064,7 @@ mod create_tasks_from_scripts {
 
     mod life_cycle {
         use super::*;
-        use pretty_assertions::assert_eq;
+        use moon_test_utils::pretty_assertions::assert_eq;
 
         #[test]
         fn rewrites_run_commands() {
@@ -1134,7 +1134,7 @@ mod create_tasks_from_scripts {
 
     mod complex_examples {
         use super::*;
-        use pretty_assertions::assert_eq;
+        use moon_test_utils::pretty_assertions::assert_eq;
 
         // https://github.com/babel/babel/blob/main/package.json
         #[test]

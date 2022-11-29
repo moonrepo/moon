@@ -1,6 +1,0 @@
-extends: '../shared-workspace.yml'
-
-projects:
-  yarn: base
-  other: other
-  notInWorkspace: not-in-workspace

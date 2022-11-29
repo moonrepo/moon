@@ -1,6 +1,6 @@
 use moon_archive::{unzip, zip};
+use moon_test_utils::create_sandbox;
 use moon_utils::string_vec;
-use moon_utils::test::create_sandbox;
 use std::fs;
 use std::path::Path;
 
@@ -10,11 +10,11 @@ fn file_contents_match(a: &Path, b: &Path) -> bool {
 
 #[test]
 fn zips_file() {
-    let fixture = create_sandbox("archives");
+    let sandbox = create_sandbox("archives");
 
     // Pack
-    let input = fixture.path();
-    let archive = fixture.path().join("out.zip");
+    let input = sandbox.path();
+    let archive = sandbox.path().join("out.zip");
 
     zip(input, &string_vec!["file.txt"], &archive, None).unwrap();
 
@@ -22,7 +22,7 @@ fn zips_file() {
     assert_ne!(archive.metadata().unwrap().len(), 0);
 
     // Unpack
-    let output = fixture.path().join("out");
+    let output = sandbox.path().join("out");
 
     unzip(&archive, &output, None).unwrap();
 
@@ -38,11 +38,11 @@ fn zips_file() {
 
 #[test]
 fn zips_file_with_prefix() {
-    let fixture = create_sandbox("archives");
+    let sandbox = create_sandbox("archives");
 
     // Pack
-    let input = fixture.path();
-    let archive = fixture.path().join("out.zip");
+    let input = sandbox.path();
+    let archive = sandbox.path().join("out.zip");
 
     zip(
         input,
@@ -56,7 +56,7 @@ fn zips_file_with_prefix() {
     assert_ne!(archive.metadata().unwrap().len(), 0);
 
     // Unpack
-    let output = fixture.path().join("out");
+    let output = sandbox.path().join("out");
 
     unzip(&archive, &output, None).unwrap();
 
@@ -72,11 +72,11 @@ fn zips_file_with_prefix() {
 
 #[test]
 fn zips_file_with_prefix_thats_removed() {
-    let fixture = create_sandbox("archives");
+    let sandbox = create_sandbox("archives");
 
     // Pack
-    let input = fixture.path();
-    let archive = fixture.path().join("out.zip");
+    let input = sandbox.path();
+    let archive = sandbox.path().join("out.zip");
 
     zip(
         input,
@@ -90,7 +90,7 @@ fn zips_file_with_prefix_thats_removed() {
     assert_ne!(archive.metadata().unwrap().len(), 0);
 
     // Unpack
-    let output = fixture.path().join("out");
+    let output = sandbox.path().join("out");
 
     unzip(&archive, &output, Some("some/prefix")).unwrap();
 
@@ -106,11 +106,11 @@ fn zips_file_with_prefix_thats_removed() {
 
 #[test]
 fn zips_nested_file_and_preserves_path() {
-    let fixture = create_sandbox("archives");
+    let sandbox = create_sandbox("archives");
 
     // Pack
-    let input = fixture.path();
-    let archive = fixture.path().join("out.zip");
+    let input = sandbox.path();
+    let archive = sandbox.path().join("out.zip");
 
     zip(
         input,
@@ -124,7 +124,7 @@ fn zips_nested_file_and_preserves_path() {
     assert_ne!(archive.metadata().unwrap().len(), 0);
 
     // Unpack
-    let output = fixture.path().join("out");
+    let output = sandbox.path().join("out");
 
     unzip(&archive, &output, None).unwrap();
 
@@ -140,11 +140,11 @@ fn zips_nested_file_and_preserves_path() {
 
 #[test]
 fn zips_file_and_dir_explicitly() {
-    let fixture = create_sandbox("archives");
+    let sandbox = create_sandbox("archives");
 
     // Pack
-    let input = fixture.path();
-    let archive = fixture.path().join("out.zip");
+    let input = sandbox.path();
+    let archive = sandbox.path().join("out.zip");
 
     zip(
         input,
@@ -158,7 +158,7 @@ fn zips_file_and_dir_explicitly() {
     assert_ne!(archive.metadata().unwrap().len(), 0);
 
     // Unpack
-    let output = fixture.path().join("out");
+    let output = sandbox.path().join("out");
 
     unzip(&archive, &output, None).unwrap();
 
@@ -180,11 +180,11 @@ fn zips_file_and_dir_explicitly() {
 
 #[test]
 fn zips_dir() {
-    let fixture = create_sandbox("archives");
+    let sandbox = create_sandbox("archives");
 
     // Pack
-    let input = fixture.path();
-    let archive = fixture.path().join("out.zip");
+    let input = sandbox.path();
+    let archive = sandbox.path().join("out.zip");
 
     zip(input, &string_vec!["folder"], &archive, None).unwrap();
 
@@ -192,7 +192,7 @@ fn zips_dir() {
     assert_ne!(archive.metadata().unwrap().len(), 0);
 
     // Unpack
-    let output = fixture.path().join("out");
+    let output = sandbox.path().join("out");
 
     unzip(&archive, &output, None).unwrap();
 
@@ -213,11 +213,11 @@ fn zips_dir() {
 
 #[test]
 fn zips_dir_with_prefix() {
-    let fixture = create_sandbox("archives");
+    let sandbox = create_sandbox("archives");
 
     // Pack
-    let input = fixture.path();
-    let archive = fixture.path().join("out.zip");
+    let input = sandbox.path();
+    let archive = sandbox.path().join("out.zip");
 
     zip(input, &string_vec!["folder"], &archive, Some("some/prefix")).unwrap();
 
@@ -225,7 +225,7 @@ fn zips_dir_with_prefix() {
     assert_ne!(archive.metadata().unwrap().len(), 0);
 
     // Unpack
-    let output = fixture.path().join("out");
+    let output = sandbox.path().join("out");
 
     unzip(&archive, &output, None).unwrap();
 
@@ -246,11 +246,11 @@ fn zips_dir_with_prefix() {
 
 #[test]
 fn zips_dir_with_prefix_thats_removed() {
-    let fixture = create_sandbox("archives");
+    let sandbox = create_sandbox("archives");
 
     // Pack
-    let input = fixture.path();
-    let archive = fixture.path().join("out.zip");
+    let input = sandbox.path();
+    let archive = sandbox.path().join("out.zip");
 
     zip(input, &string_vec!["folder"], &archive, Some("some/prefix")).unwrap();
 
@@ -258,7 +258,7 @@ fn zips_dir_with_prefix_thats_removed() {
     assert_ne!(archive.metadata().unwrap().len(), 0);
 
     // Unpack
-    let output = fixture.path().join("out");
+    let output = sandbox.path().join("out");
 
     unzip(&archive, &output, Some("some/prefix")).unwrap();
 

@@ -7,8 +7,6 @@ edition = "2021"
 moon_constants = { path = "../constants" }
 moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
-assert_cmd = "2.0.6"
-assert_fs = "1.0.9"
 async-recursion = "1.0.0"
 cached = { workspace = true }
 chrono = { version = "0.4.23", features = ["serde"] }
@@ -33,4 +31,4 @@ tokio = { workspace = true }
 wax = "0.5.0"
 
 [dev-dependencies]
-insta = { workspace = true }
+moon_test_utils = { path = "../test-utils" }

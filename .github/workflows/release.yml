@@ -80,6 +80,8 @@ jobs:
           target: ${{ matrix.target }}
           toolchain: stable
       - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: moon
       - name: Generate lockfile
         uses: actions-rs/cargo@v1
         if: ${{ !matrix.docker-target }}
@@ -159,6 +161,8 @@ jobs:
           check-latest: true
           node-version: 16
       - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: moon
       - name: Setup toolchain
         if: ${{ matrix.setup }}
         run: ${{ matrix.setup }}

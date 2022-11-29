@@ -1,5 +1,5 @@
-use assert_fs::prelude::*;
 use moon_cache::{CacheEngine, ProjectsState, RunTargetState, ToolState};
+use moon_test_utils::{assert_fs::prelude::*, create_temp_dir};
 use moon_utils::time;
 use serde::Serialize;
 use serial_test::serial;
@@ -30,7 +30,7 @@ mod create {
     #[tokio::test]
     #[serial]
     async fn creates_dirs() {
-        let dir = assert_fs::TempDir::new().unwrap();
+        let dir = create_temp_dir();
 
         CacheEngine::load(dir.path()).await.unwrap();
 
@@ -49,7 +49,7 @@ mod create_runfile {
     #[tokio::test]
     #[serial]
     async fn creates_runfile_on_call() {
-        let dir = assert_fs::TempDir::new().unwrap();
+        let dir = create_temp_dir();
         let cache = CacheEngine::load(dir.path()).await.unwrap();
         let runfile = cache
             .create_runfile("123", &"content".to_owned())
@@ -73,7 +73,7 @@ mod cache_run_target_state {
     #[tokio::test]
     #[serial]
     async fn creates_parent_dir_on_call() {
-        let dir = assert_fs::TempDir::new().unwrap();
+        let dir = create_temp_dir();
         let cache = CacheEngine::load(dir.path()).await.unwrap();
         let item = cache.cache_run_target_state("foo:bar").await.unwrap();
 
@@ -86,7 +86,7 @@ mod cache_run_target_state {
     #[tokio::test]
     #[serial]
     async fn loads_cache_if_it_exists() {
-        let dir = assert_fs::TempDir::new().unwrap();
+        let dir = create_temp_dir();
 
         dir.child(".moon/cache/states/foo/bar/lastRun.json")
                 .write_str(r#"{"exitCode":123,"hash":"","lastRunTime":0,"stderr":"","stdout":"","target":"foo:bar"}"#)
@@ -111,7 +111,7 @@ mod cache_run_target_state {
     #[tokio::test]
     #[serial]
     async fn loads_cache_if_it_exists_and_cache_is_readonly() {
-        let dir = assert_fs::TempDir::new().unwrap();
+        let dir = create_temp_dir();
 
         dir.child(".moon/cache/states/foo/bar/lastRun.json")
                 .write_str(r#"{"exitCode":123,"hash":"","lastRunTime":0,"stderr":"","stdout":"","target":"foo:bar"}"#)
@@ -138,7 +138,7 @@ mod cache_run_target_state {
     #[tokio::test]
     #[serial]
     async fn doesnt_load_if_it_exists_but_cache_is_off() {
-        let dir = assert_fs::TempDir::new().unwrap();
+        let dir = create_temp_dir();
 
         dir.child(".moon/cache/states/foo/bar/lastRun.json")
                 .write_str(r#"{"exitCode":123,"hash":"","lastRunTime":0,"stderr":"","stdout":"","target":"foo:bar"}"#)
@@ -164,7 +164,7 @@ mod cache_run_target_state {
     #[tokio::test]
     #[serial]
     async fn saves_to_cache() {
-        let dir = assert_fs::TempDir::new().unwrap();
+        let dir = create_temp_dir();
         let cache = CacheEngine::load(dir.path()).await.unwrap();
         let mut item = cache.cache_run_target_state("foo:bar").await.unwrap();
 
@@ -183,7 +183,7 @@ mod cache_run_target_state {
     #[tokio::test]
     #[serial]
     async fn doesnt_save_if_cache_off() {
-        let dir = assert_fs::TempDir::new().unwrap();
+        let dir = create_temp_dir();
         let cache = CacheEngine::load(dir.path()).await.unwrap();
         let mut item = cache.cache_run_target_state("foo:bar").await.unwrap();
 
@@ -199,7 +199,7 @@ mod cache_run_target_state {
     #[tokio::test]
     #[serial]
     async fn doesnt_save_if_cache_readonly() {
-        let dir = assert_fs::TempDir::new().unwrap();
+        let dir = create_temp_dir();
         let cache = CacheEngine::load(dir.path()).await.unwrap();
         let mut item = cache.cache_run_target_state("foo:bar").await.unwrap();
 
@@ -221,7 +221,7 @@ mod cache_tool_state {
     #[tokio::test]
     #[serial]
     async fn creates_parent_dir_on_call() {
-        let dir = assert_fs::TempDir::new().unwrap();
+        let dir = create_temp_dir();
         let cache = CacheEngine::load(dir.path()).await.unwrap();
         let item = cache
             .cache_tool_state(&Runtime::Node(Version("1.2.3".into(), false)))
@@ -237,7 +237,7 @@ mod cache_tool_state {
     #[tokio::test]
     #[serial]
     async fn loads_cache_if_it_exists() {
-        let dir = assert_fs::TempDir::new().unwrap();
+        let dir = create_temp_dir();
 
         dir.child(".moon/cache/states/toolNode-1.2.3.json")
             .write_str(r#"{"lastVersionCheckTime":123}"#)
@@ -264,7 +264,7 @@ mod cache_tool_state {
     #[tokio::test]
     #[serial]
     async fn loads_cache_if_it_exists_and_cache_is_readonly() {
-        let dir = assert_fs::TempDir::new().unwrap();
+        let dir = create_temp_dir();
 
         dir.child(".moon/cache/states/toolNode-4.5.6.json")
             .write_str(r#"{"lastVersionCheckTime":123}"#)
@@ -291,7 +291,7 @@ mod cache_tool_state {
     #[tokio::test]
     #[serial]
     async fn doesnt_load_if_it_exists_but_cache_is_off() {
-        let dir = assert_fs::TempDir::new().unwrap();
+        let dir = create_temp_dir();
 
         dir.child(".moon/cache/states/toolSystem-latest.json")
             .write_str(r#"{"lastVersionCheckTime":123}"#)
@@ -316,7 +316,7 @@ mod cache_tool_state {
     #[tokio::test]
     #[serial]
     async fn saves_to_cache() {
-        let dir = assert_fs::TempDir::new().unwrap();
+        let dir = create_temp_dir();
         let cache = CacheEngine::load(dir.path()).await.unwrap();
         let mut item = cache
             .cache_tool_state(&Runtime::Node(Version("7.8.9".into(), false)))
@@ -329,7 +329,7 @@ mod cache_tool_state {
 
         assert_eq!(
             fs::read_to_string(item.path).unwrap(),
-            r#"{"lastVersionCheckTime":123}"#
+            r#"{"lastVersions":{},"lastVersionCheckTime":123}"#
         );
 
         dir.close().unwrap();
@@ -346,7 +346,7 @@ mod cache_projects_state {
     #[tokio::test]
     #[serial]
     async fn creates_parent_dir_on_call() {
-        let dir = assert_fs::TempDir::new().unwrap();
+        let dir = create_temp_dir();
         let cache = CacheEngine::load(dir.path()).await.unwrap();
         let item = cache.cache_projects_state().await.unwrap();
 
@@ -359,7 +359,7 @@ mod cache_projects_state {
     #[tokio::test]
     #[serial]
     async fn loads_cache_if_it_exists() {
-        let dir = assert_fs::TempDir::new().unwrap();
+        let dir = create_temp_dir();
 
         dir.child(".moon/cache/states/projects.json")
             .write_str(r#"{"globs":["**/*"],"projects":{"foo":"bar"}}"#)
@@ -383,7 +383,7 @@ mod cache_projects_state {
     #[tokio::test]
     #[serial]
     async fn loads_cache_if_it_exists_and_cache_is_readonly() {
-        let dir = assert_fs::TempDir::new().unwrap();
+        let dir = create_temp_dir();
 
         dir.child(".moon/cache/states/projects.json")
             .write_str(r#"{"globs":["**/*"],"projects":{"foo":"bar"}}"#)
@@ -409,7 +409,7 @@ mod cache_projects_state {
     #[tokio::test]
     #[serial]
     async fn doesnt_load_if_it_exists_but_cache_is_off() {
-        let dir = assert_fs::TempDir::new().unwrap();
+        let dir = create_temp_dir();
 
         dir.child(".moon/cache/states/projects.json")
             .write_str(r#"{"globs":[],"projects":{"foo":"bar"}}"#)
@@ -434,7 +434,7 @@ mod cache_projects_state {
     #[tokio::test]
     #[serial]
     async fn doesnt_load_if_it_exists_but_cache_is_stale() {
-        let dir = assert_fs::TempDir::new().unwrap();
+        let dir = create_temp_dir();
 
         dir.child(".moon/cache/states/projects.json")
             .write_str(r#"{"globs":[],"projects":{"foo":"bar"}}"#)
@@ -465,7 +465,7 @@ mod cache_projects_state {
     #[tokio::test]
     #[serial]
     async fn saves_to_cache() {
-        let dir = assert_fs::TempDir::new().unwrap();
+        let dir = create_temp_dir();
         let cache = CacheEngine::load(dir.path()).await.unwrap();
         let mut item = cache.cache_projects_state().await.unwrap();
 
@@ -494,7 +494,7 @@ mod create_hash_manifest {
     #[tokio::test]
     #[serial]
     async fn creates_hash_file() {
-        let dir = assert_fs::TempDir::new().unwrap();
+        let dir = create_temp_dir();
         let cache = CacheEngine::load(dir.path()).await.unwrap();
         let hasher = TestHasher::default();
 
@@ -508,7 +508,7 @@ mod create_hash_manifest {
     #[tokio::test]
     #[serial]
     async fn doesnt_create_if_cache_off() {
-        let dir = assert_fs::TempDir::new().unwrap();
+        let dir = create_temp_dir();
         let cache = CacheEngine::load(dir.path()).await.unwrap();
         let hasher = TestHasher::default();
 
@@ -524,7 +524,7 @@ mod create_hash_manifest {
     #[tokio::test]
     #[serial]
     async fn doesnt_create_if_cache_readonly() {
-        let dir = assert_fs::TempDir::new().unwrap();
+        let dir = create_temp_dir();
         let cache = CacheEngine::load(dir.path()).await.unwrap();
         let hasher = TestHasher::default();
 

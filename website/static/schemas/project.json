@@ -47,6 +47,17 @@
         "$ref": "#/definitions/TaskConfig"
       }
     },
+    "toolchain": {
+      "default": {
+        "node": null,
+        "typescript": true
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/ProjectToolchainConfig"
+        }
+      ]
+    },
     "type": {
       "default": "unknown",
       "allOf": [
@@ -61,9 +72,7 @@
           "exclude": null,
           "include": null,
           "rename": null
-        },
-        "node": null,
-        "typescript": true
+        }
       },
       "allOf": [
         {
@@ -156,6 +165,38 @@
         }
       }
     },
+    "ProjectToolchainConfig": {
+      "type": "object",
+      "properties": {
+        "node": {
+          "default": null,
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ProjectToolchainNodeConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "typescript": {
+          "default": true,
+          "type": "boolean"
+        }
+      }
+    },
+    "ProjectToolchainNodeConfig": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
     "ProjectType": {
       "type": "string",
       "enum": [
@@ -179,21 +220,6 @@
               "$ref": "#/definitions/ProjectWorkspaceInheritedTasksConfig"
             }
           ]
-        },
-        "node": {
-          "default": null,
-          "anyOf": [
-            {
-              "$ref": "#/definitions/ProjectWorkspaceNodeConfig"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "typescript": {
-          "default": true,
-          "type": "boolean"
         }
       }
     },
@@ -229,18 +255,6 @@
           "additionalProperties": {
             "type": "string"
           }
-        }
-      }
-    },
-    "ProjectWorkspaceNodeConfig": {
-      "type": "object",
-      "properties": {
-        "version": {
-          "default": null,
-          "type": [
-            "string",
-            "null"
-          ]
         }
       }
     },

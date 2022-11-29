@@ -1,7 +1,7 @@
 use moon_config::{TaskCommandArgs, TaskConfig, TaskOptionEnvFile, TaskOptionsConfig};
 use moon_task::test::create_expanded_task;
 use moon_task::{Target, Task, TaskOptions};
-use moon_utils::test::{create_sandbox, get_fixtures_dir};
+use moon_test_utils::{create_sandbox, get_fixtures_path};
 use moon_utils::{glob, string_vec};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::env;
@@ -9,7 +9,7 @@ use std::env;
 #[test]
 #[should_panic(expected = "NoOutputGlob")]
 fn errors_for_output_glob() {
-    let workspace_root = get_fixtures_dir("projects");
+    let workspace_root = get_fixtures_path("projects");
     let project_root = workspace_root.join("basic");
 
     create_expanded_task(
@@ -24,9 +24,8 @@ fn errors_for_output_glob() {
 }
 
 mod from_config {
-    use moon_config::{TaskMergeStrategy, TaskOutputStyle};
-
     use super::*;
+    use moon_config::{TaskMergeStrategy, TaskOutputStyle};
 
     #[test]
     fn sets_defaults() {
@@ -345,7 +344,7 @@ mod is_affected {
 
     #[test]
     fn returns_true_if_var_truthy() {
-        let workspace_root = get_fixtures_dir("base");
+        let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
         let task = create_expanded_task(
             &workspace_root,
@@ -366,7 +365,7 @@ mod is_affected {
 
     #[test]
     fn returns_false_if_var_missing() {
-        let workspace_root = get_fixtures_dir("base");
+        let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
         let task = create_expanded_task(
             &workspace_root,
@@ -383,7 +382,7 @@ mod is_affected {
 
     #[test]
     fn returns_false_if_var_empty() {
-        let workspace_root = get_fixtures_dir("base");
+        let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
         let task = create_expanded_task(
             &workspace_root,
@@ -404,7 +403,7 @@ mod is_affected {
 
     #[test]
     fn returns_true_if_matches_file() {
-        let workspace_root = get_fixtures_dir("base");
+        let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
         let task = create_expanded_task(
             &workspace_root,
@@ -424,7 +423,7 @@ mod is_affected {
 
     #[test]
     fn returns_true_if_matches_glob() {
-        let workspace_root = get_fixtures_dir("base");
+        let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
         let task = create_expanded_task(
             &workspace_root,
@@ -444,7 +443,7 @@ mod is_affected {
 
     #[test]
     fn returns_true_when_referencing_root_files() {
-        let workspace_root = get_fixtures_dir("base");
+        let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
         let task = create_expanded_task(
             &workspace_root,
@@ -464,7 +463,7 @@ mod is_affected {
 
     #[test]
     fn returns_false_if_outside_project() {
-        let workspace_root = get_fixtures_dir("base");
+        let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
         let task = create_expanded_task(
             &workspace_root,
@@ -484,7 +483,7 @@ mod is_affected {
 
     #[test]
     fn returns_false_if_no_match() {
-        let workspace_root = get_fixtures_dir("base");
+        let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
         let task = create_expanded_task(
             &workspace_root,
@@ -505,18 +504,17 @@ mod is_affected {
 
 mod expand_env {
     use super::*;
-    use std::fs;
 
     #[test]
     #[should_panic(expected = "Error parsing line: 'FOO', error at line index: 3")]
     fn errors_on_invalid_file() {
-        let fixture = create_sandbox("cases");
-        let project_root = fixture.path().join("base");
+        let sandbox = create_sandbox("cases");
+        let project_root = sandbox.path().join("base");
 
-        fs::write(project_root.join(".env"), "FOO").unwrap();
+        sandbox.create_file(".env", "FOO");
 
         create_expanded_task(
-            fixture.path(),
+            sandbox.path(),
             &project_root,
             Some(TaskConfig {
                 options: TaskOptionsConfig {
@@ -538,11 +536,11 @@ mod expand_env {
         if moon_utils::is_ci() {
             panic!("InvalidEnvFile");
         } else {
-            let fixture = create_sandbox("cases");
-            let project_root = fixture.path().join("base");
+            let sandbox = create_sandbox("cases");
+            let project_root = sandbox.path().join("base");
 
             create_expanded_task(
-                fixture.path(),
+                sandbox.path(),
                 &project_root,
                 Some(TaskConfig {
                     options: TaskOptionsConfig {
@@ -558,13 +556,13 @@ mod expand_env {
 
     #[test]
     fn loads_using_bool() {
-        let fixture = create_sandbox("cases");
-        let project_root = fixture.path().join("base");
+        let sandbox = create_sandbox("cases");
+        let project_root = sandbox.path().join("base");
 
-        fs::write(project_root.join(".env"), "FOO=foo\nBAR=123").unwrap();
+        sandbox.create_file(".env", "FOO=foo\nBAR=123");
 
         let task = create_expanded_task(
-            fixture.path(),
+            sandbox.path(),
             &project_root,
             Some(TaskConfig {
                 options: TaskOptionsConfig {
@@ -587,13 +585,13 @@ mod expand_env {
 
     #[test]
     fn loads_using_custom_path() {
-        let fixture = create_sandbox("cases");
-        let project_root = fixture.path().join("base");
+        let sandbox = create_sandbox("cases");
+        let project_root = sandbox.path().join("base");
 
-        fs::write(project_root.join(".env.production"), "FOO=foo\nBAR=123").unwrap();
+        sandbox.create_file(".env.production", "FOO=foo\nBAR=123");
 
         let task = create_expanded_task(
-            fixture.path(),
+            sandbox.path(),
             &project_root,
             Some(TaskConfig {
                 options: TaskOptionsConfig {
@@ -616,13 +614,13 @@ mod expand_env {
 
     #[test]
     fn doesnt_override_other_env() {
-        let fixture = create_sandbox("cases");
-        let project_root = fixture.path().join("base");
+        let sandbox = create_sandbox("cases");
+        let project_root = sandbox.path().join("base");
 
-        fs::write(project_root.join(".env"), "FOO=foo\nBAR=123").unwrap();
+        sandbox.create_file(".env", "FOO=foo\nBAR=123");
 
         let task = create_expanded_task(
-            fixture.path(),
+            sandbox.path(),
             &project_root,
             Some(TaskConfig {
                 env: Some(FxHashMap::from_iter([(
@@ -653,7 +651,7 @@ mod expand_inputs {
 
     #[test]
     fn filters_into_correct_types() {
-        let workspace_root = get_fixtures_dir("base");
+        let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
         let task = create_expanded_task(
             &workspace_root,

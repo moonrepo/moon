@@ -2,11 +2,11 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use moon_cache::CacheEngine;
 use moon_config::{GlobalProjectConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects};
 use moon_project_graph::ProjectGraph;
-use moon_utils::test::get_fixtures_dir;
+use moon_test_utils::get_fixtures_path;
 use rustc_hash::FxHashMap;
 
 pub fn load_benchmark(c: &mut Criterion) {
-    let workspace_root = get_fixtures_dir("cases");
+    let workspace_root = get_fixtures_path("cases");
     let workspace_config = WorkspaceConfig {
         projects: WorkspaceProjects::Sources(FxHashMap::from_iter([(
             "base".to_owned(),
@@ -40,7 +40,7 @@ pub fn load_benchmark(c: &mut Criterion) {
 }
 
 pub fn load_all_benchmark(c: &mut Criterion) {
-    let workspace_root = get_fixtures_dir("cases");
+    let workspace_root = get_fixtures_path("cases");
     let workspace_config = WorkspaceConfig::default();
 
     c.bench_function("project_graph_load_all", |b| {

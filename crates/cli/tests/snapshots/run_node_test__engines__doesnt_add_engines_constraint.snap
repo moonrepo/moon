@@ -1,7 +1,7 @@
 ---
 source: crates/cli/tests/run_node_test.rs
-assertion_line: 387
-expression: "read_to_string(fixture.path().join(\"package.json\")).unwrap()"
+assertion_line: 452
+expression: "read_to_string(sandbox.path().join(\"package.json\")).unwrap()"
 ---
 {
   "name": "test-node",
@@ -12,6 +12,7 @@ expression: "read_to_string(fixture.path().join(\"package.json\")).unwrap()"
     "lifecycles",
     "swc",
     "version-override"
-  ]
+  ],
+  "packageManager": "npm@8.19.2"
 }
 

@@ -1,7 +1,0 @@
-{
-  "name": "test-config-invalid-project",
-  "private": true,
-  "workspaces": [
-    "*"
-  ]
-}

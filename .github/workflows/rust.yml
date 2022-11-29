@@ -29,6 +29,8 @@ jobs:
           profile: minimal
           components: rustfmt
       - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: format
       - uses: actions-rs/cargo@v1
         name: Check formatting
         with:
@@ -50,6 +52,8 @@ jobs:
           profile: minimal
           components: clippy
       - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: lint
       - uses: davidB/rust-cargo-make@v1
       - name: Run linter
         run: cargo make lint
@@ -70,6 +74,8 @@ jobs:
           components: llvm-tools-preview
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: test
       - name: Install cargo-make
         uses: davidB/rust-cargo-make@v1
       - name: Install nextest

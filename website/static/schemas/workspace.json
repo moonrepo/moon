@@ -5,7 +5,6 @@
   "type": "object",
   "properties": {
     "extends": {
-      "default": null,
       "type": [
         "string",
         "null"
@@ -58,6 +57,7 @@
         "implicitInputs": [
           "package.json",
           "/.moon/project.yml",
+          "/.moon/toolchain.yml",
           "/.moon/workspace.yml"
         ],
         "inheritColorsForPipedTasks": true,
@@ -150,6 +150,7 @@
           "default": [
             "package.json",
             "/.moon/project.yml",
+            "/.moon/toolchain.yml",
             "/.moon/workspace.yml"
           ],
           "type": "array",

@@ -1,3 +1,0 @@
-tasks:
-  version:
-    command: node --version

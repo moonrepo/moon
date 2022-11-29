@@ -92,19 +92,23 @@ impl<'s> SandboxAssert<'s> {
             get_assert_stdout_output(&self.inner) + &get_assert_stderr_output(&self.inner);
 
         // Replace fixture path
-        output = output.replace(self.sandbox.path().to_str().unwrap(), "<WORKSPACE>");
+        let root = self.sandbox.path().to_str().unwrap();
+
+        output = output.replace(root, "<WORKSPACE>");
+        output = output.replace(&root.replace('\\', "/"), "<WORKSPACE>");
 
         // Replace home dir
         if let Some(home_dir) = home_dir() {
-            output = output.replace(home_dir.to_str().unwrap(), "~");
+            let home = home_dir.to_str().unwrap();
+
+            output = output.replace(home, "~");
+            output = output.replace(&home.replace('\\', "/"), "~");
         }
 
-        // Standardize when applicable
-        if output.contains("ERROR") {
-            output = output.replace('\\', "/");
-        }
+        output.replace("/private<", "<")
+    }
 
-        output = output.replace("/private<", "<");
-        output
+    pub fn output_standardized(&self) -> String {
+        self.output().replace('\\', "/")
     }
 }

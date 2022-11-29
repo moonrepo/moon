@@ -31,7 +31,7 @@ fn generates_files_from_template() {
         cmd.arg("generate").arg("standard").arg("./test");
     });
 
-    assert_snapshot!(assert.output());
+    assert_snapshot!(assert.output_standardized());
 
     assert!(sandbox.path().join("test").exists());
     assert!(sandbox.path().join("test/file.ts").exists());
@@ -50,7 +50,7 @@ fn doesnt_generate_files_when_dryrun() {
             .arg("--dryRun");
     });
 
-    assert_snapshot!(assert.output());
+    assert_snapshot!(assert.output_standardized());
 
     assert!(!sandbox.path().join("test").exists());
     assert!(!sandbox.path().join("test/file.ts").exists());
@@ -73,7 +73,7 @@ fn overwrites_existing_files_when_forced() {
             .arg("--force");
     });
 
-    assert_snapshot!(assert.output());
+    assert_snapshot!(assert.output_standardized());
 
     assert!(sandbox.path().join("test").exists());
     assert!(sandbox.path().join("test/file.ts").exists());
@@ -100,7 +100,7 @@ fn overwrites_existing_files_when_interpolated_path() {
             .arg("--force");
     });
 
-    assert_snapshot!(assert.output());
+    assert_snapshot!(assert.output_standardized());
 
     // file-[stringNotEmpty]-[number].txt
     assert!(sandbox.path().join("./test/file-default-0.txt").exists());
@@ -166,7 +166,7 @@ fn interpolates_destination_path() {
     });
 
     // Verify output paths are correct
-    assert_snapshot!(assert.output());
+    assert_snapshot!(assert.output_standardized());
 
     // file-[stringNotEmpty]-[number].txt
     assert!(sandbox.path().join("./test/file-default-0.txt").exists());
@@ -185,7 +185,7 @@ fn errors_when_parsing_custom_var_types() {
             .arg("--number=abc");
     });
 
-    assert_snapshot!(assert.output());
+    assert_snapshot!(assert.output_standardized());
 }
 
 #[test]

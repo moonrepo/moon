@@ -131,7 +131,7 @@ mod configs {
             cmd.arg("run").arg("base:noop");
         });
 
-        assert_snapshot!(assert.output());
+        assert_snapshot!(assert.output_standardized());
     }
 
     #[test]
@@ -144,7 +144,7 @@ mod configs {
             cmd.arg("run").arg("base:noop");
         });
 
-        assert_snapshot!(assert.output());
+        assert_snapshot!(assert.output_standardized());
     }
 
     #[test]
@@ -157,7 +157,7 @@ mod configs {
             cmd.arg("run").arg("base:noop");
         });
 
-        assert_snapshot!(assert.output());
+        assert_snapshot!(assert.output_standardized());
     }
 }
 

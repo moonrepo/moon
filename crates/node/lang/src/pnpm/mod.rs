@@ -78,9 +78,8 @@ pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVer
 #[cfg(test)]
 mod tests {
     use super::*;
-    use moon_test_utils::{assert_fs::prelude::*, create_temp_dir};
+    use moon_test_utils::{assert_fs::prelude::*, create_temp_dir, pretty_assertions::assert_eq};
     use moon_utils::string_vec;
-    use pretty_assertions::assert_eq;
     use serde_yaml::{Mapping, Number};
 
     #[test]

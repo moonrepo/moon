@@ -4,10 +4,9 @@ use moon_config::{NodeConfig, TypeScriptConfig};
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, get_assert_output,
     get_node_depman_fixture_configs, get_node_fixture_configs, get_typescript_fixture_configs,
-    Sandbox,
+    predicates::prelude::*, Sandbox,
 };
 use moon_utils::string_vec;
-use predicates::prelude::*;
 use std::fs::read_to_string;
 use utils::get_path_safe_output;
 

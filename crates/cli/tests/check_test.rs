@@ -1,5 +1,7 @@
-use moon_test_utils::{create_sandbox_with_config, get_assert_output, get_cases_fixture_configs};
-use predicates::prelude::*;
+use moon_test_utils::{
+    create_sandbox_with_config, get_assert_output, get_cases_fixture_configs,
+    predicates::prelude::*,
+};
 
 #[test]
 fn runs_tasks_in_project() {

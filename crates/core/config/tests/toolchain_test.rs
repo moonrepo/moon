@@ -38,7 +38,7 @@ fn loads_defaults() {
 mod extends {
     use super::*;
     use moon_config::{NodePackageManager, TypeScriptConfig, YarnConfig};
-    use pretty_assertions::assert_eq;
+    use moon_test_utils::pretty_assertions::assert_eq;
     use std::fs;
 
     #[test]

@@ -220,8 +220,8 @@ mod tasks {
     use moon_task::test::{
         create_expanded_task as create_expanded_task_internal, create_file_groups_config,
     };
+    use moon_test_utils::pretty_assertions::assert_eq;
     use moon_utils::glob;
-    use pretty_assertions::assert_eq;
 
     fn mock_task_config(command: &str) -> TaskConfig {
         TaskConfig {
@@ -902,7 +902,7 @@ mod tasks {
 
     mod expands_deps {
         use super::*;
-        use pretty_assertions::assert_eq;
+        use moon_test_utils::pretty_assertions::assert_eq;
 
         #[test]
         fn resolves_self_scope() {
@@ -997,7 +997,7 @@ mod tasks {
         use super::*;
         use moon_config::DependencyConfig;
         use moon_project::ProjectDependency;
-        use pretty_assertions::assert_eq;
+        use moon_test_utils::pretty_assertions::assert_eq;
         use std::path::PathBuf;
 
         #[test]

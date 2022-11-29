@@ -1,5 +1,4 @@
-use moon_test_utils::create_sandbox;
-use predicates::prelude::*;
+use moon_test_utils::{create_sandbox, predicates::prelude::*};
 use std::fs;
 
 mod init_node {

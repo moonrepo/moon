@@ -1,6 +1,5 @@
 use moon_constants::{CONFIG_GLOBAL_PROJECT_FILENAME, CONFIG_WORKSPACE_FILENAME};
-use moon_test_utils::create_sandbox;
-use predicates::prelude::*;
+use moon_test_utils::{create_sandbox, predicates::prelude::*};
 use std::fs;
 
 #[test]

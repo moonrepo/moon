@@ -8,6 +8,8 @@ moon_config = { path = "../config" }
 assert_cmd = "2.0.6"
 assert_fs = "1.0.9"
 clean-path = "0.2.1"
-insta = { workspace = true }
+insta = "1.21.1"
+predicates = "2.1.3"
+pretty_assertions = "1.3.0"
 rustc-hash = { workspace = true }
 serde_yaml = { workspace = true }

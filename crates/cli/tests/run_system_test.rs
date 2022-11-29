@@ -1,8 +1,9 @@
 mod utils;
 
 use moon_config::{WorkspaceConfig, WorkspaceProjects};
-use moon_test_utils::{assert_snapshot, create_sandbox_with_config, get_assert_output, Sandbox};
-use predicates::prelude::*;
+use moon_test_utils::{
+    assert_snapshot, create_sandbox_with_config, get_assert_output, predicates::prelude::*, Sandbox,
+};
 use rustc_hash::FxHashMap;
 use utils::get_path_safe_output;
 

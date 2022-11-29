@@ -1,5 +1,6 @@
-use moon_test_utils::{create_sandbox_with_config, get_cases_fixture_configs};
-use predicates::prelude::*;
+use moon_test_utils::{
+    create_sandbox_with_config, get_cases_fixture_configs, predicates::prelude::*,
+};
 
 // This requires installing the toolchain which is quite heavy in tests!
 // #[test]

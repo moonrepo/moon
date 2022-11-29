@@ -4,10 +4,9 @@ use moon_cache::CacheEngine;
 use moon_config::WorkspaceConfig;
 use moon_test_utils::{
     assert_snapshot, create_sandbox, create_sandbox_with_config, get_assert_output,
-    get_cases_fixture_configs, Sandbox,
+    get_cases_fixture_configs, predicates::prelude::*, Sandbox,
 };
 use moon_utils::path::standardize_separators;
-use predicates::prelude::*;
 use std::fs;
 use std::path::{Path, PathBuf};
 use utils::get_path_safe_output;
@@ -562,7 +561,7 @@ mod outputs {
 
     mod hydration {
         use super::*;
-        use pretty_assertions::assert_eq;
+        use moon_test_utils::pretty_assertions::assert_eq;
 
         #[tokio::test]
         async fn reuses_cache_from_previous_run() {

@@ -2,8 +2,8 @@ use moon_cli::commands::docker::DockerManifest;
 use moon_test_utils::{
     create_sandbox_with_config, get_assert_output, get_cases_fixture_configs,
     get_node_depman_fixture_configs, get_node_fixture_configs, get_projects_fixture_configs,
+    predicates::prelude::*,
 };
-use predicates::prelude::*;
 use rustc_hash::FxHashSet;
 use std::{fs, path::Path};
 

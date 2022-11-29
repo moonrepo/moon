@@ -7,6 +7,8 @@ pub use assert_fs;
 pub use cli::*;
 pub use configs::*;
 pub use insta::*;
+pub use predicates;
+pub use pretty_assertions;
 pub use sandbox::*;
 
 use clean_path::Clean;

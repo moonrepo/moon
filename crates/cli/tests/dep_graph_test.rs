@@ -1,7 +1,6 @@
-use insta::assert_snapshot;
 use moon_test_utils::{
-    create_sandbox_with_config, get_assert_output, get_project_graph_aliases_fixture_configs,
-    get_tasks_fixture_configs,
+    assert_snapshot, create_sandbox_with_config, get_assert_output,
+    get_project_graph_aliases_fixture_configs, get_tasks_fixture_configs,
 };
 
 #[test]

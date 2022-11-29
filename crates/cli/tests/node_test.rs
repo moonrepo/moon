@@ -1,7 +1,7 @@
 use moon_test_utils::{
     create_sandbox_with_config, get_fixtures_path, get_node_depman_fixture_configs,
+    predicates::prelude::*,
 };
-use predicates::prelude::*;
 use serial_test::serial;
 
 mod run_script {

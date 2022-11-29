@@ -1,8 +1,10 @@
-use moon_test_utils::{assert_snapshot, create_sandbox, get_assert_output};
-use predicates::prelude::*;
+use moon_test_utils::{
+    assert_cmd::assert::Assert, assert_snapshot, create_sandbox, get_assert_output,
+    predicates::prelude::*,
+};
 use std::fs;
 
-fn get_path_safe_output(assert: &assert_cmd::assert::Assert) -> String {
+fn get_path_safe_output(assert: &Assert) -> String {
     get_assert_output(assert).replace('\\', "/")
 }
 

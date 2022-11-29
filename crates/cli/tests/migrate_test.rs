@@ -1,6 +1,4 @@
-use insta::assert_snapshot;
-use moon_test_utils::create_sandbox;
-use predicates::str::contains;
+use moon_test_utils::{assert_snapshot, create_sandbox, predicates::str::contains};
 use std::fs;
 
 mod from_package_json {

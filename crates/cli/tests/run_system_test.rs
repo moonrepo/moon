@@ -276,8 +276,8 @@ mod unix {
         fn uses_rel_paths_when_affected() {
             let sandbox = system_sandbox();
 
-            fs::write(sandbox.path().join("unix/input1.txt"), "").unwrap();
-            fs::write(sandbox.path().join("unix/input2.txt"), "").unwrap();
+            sandbox.create_file("unix/input1.txt", "");
+            sandbox.create_file("unix/input2.txt", "");
 
             let assert = sandbox.run_moon(|cmd| {
                 cmd.arg("run").arg("unix:affectedFiles").arg("--affected");
@@ -291,8 +291,8 @@ mod unix {
         fn sets_env_var() {
             let sandbox = system_sandbox();
 
-            fs::write(sandbox.path().join("unix/input1.txt"), "").unwrap();
-            fs::write(sandbox.path().join("unix/input2.txt"), "").unwrap();
+            sandbox.create_file("unix/input1.txt", "");
+            sandbox.create_file("unix/input2.txt", "");
 
             let assert = sandbox.run_moon(|cmd| {
                 cmd.arg("run")

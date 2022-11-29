@@ -15,7 +15,7 @@ fn change_branch(sandbox: &Sandbox) {
 }
 
 fn touch_file(sandbox: &Sandbox) {
-    fs::write(sandbox.path().join("advanced/file"), "contents").unwrap();
+    sandbox.create_file("advanced/file", "contents");
 
     // CI uses `git diff` while local uses `git status`
     if is_ci() {

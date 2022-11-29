@@ -263,8 +263,7 @@ mod frontmatter {
     fn force_writes_file() {
         let sandbox = generate_sandbox();
 
-        fs::create_dir_all(sandbox.path().join("test")).unwrap();
-        fs::write(sandbox.path().join("test/forced.txt"), "Original content").unwrap();
+        sandbox.create_file("test/forced.txt", "Original content");
 
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("generate")

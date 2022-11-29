@@ -10,7 +10,7 @@ mod init_node {
         let root = sandbox.path().to_path_buf();
         let config = root.join(".moon").join("toolchain.yml");
 
-        fs::write(&root.join(".nvmrc"), "1.2.3").unwrap();
+        sandbox.create_file(".nvmrc", "1.2.3");
 
         sandbox.run_moon(|cmd| {
             cmd.arg("init").arg("--yes").arg(root);
@@ -27,7 +27,7 @@ mod init_node {
         let root = sandbox.path().to_path_buf();
         let config = root.join(".moon").join("toolchain.yml");
 
-        fs::write(&root.join(".node-version"), "1.2.3").unwrap();
+        sandbox.create_file(".node-version", "1.2.3");
 
         sandbox.run_moon(|cmd| {
             cmd.arg("init").arg("--yes").arg(root);
@@ -44,17 +44,9 @@ mod init_node {
         let root = sandbox.path().to_path_buf();
         let config = root.join(".moon").join("workspace.yml");
 
-        fs::create_dir_all(root.join("packages").join("foo")).unwrap();
-        fs::write(&root.join("packages").join("foo").join("README"), "Hello").unwrap();
-
-        fs::create_dir_all(root.join("app")).unwrap();
-        fs::write(&root.join("app").join("README"), "World").unwrap();
-
-        fs::write(
-            &root.join("package.json"),
-            r#"{"workspaces": ["packages/*", "app"] }"#,
-        )
-        .unwrap();
+        sandbox.create_file("packages/foo/README", "Hello");
+        sandbox.create_file("app/README", "World");
+        sandbox.create_file("package.json", r#"{"workspaces": ["packages/*", "app"] }"#);
 
         sandbox.run_moon(|cmd| {
             cmd.arg("init").arg("--yes").arg(root);
@@ -71,17 +63,12 @@ mod init_node {
         let root = sandbox.path().to_path_buf();
         let config = root.join(".moon").join("workspace.yml");
 
-        fs::create_dir_all(root.join("packages").join("bar")).unwrap();
-        fs::write(&root.join("packages").join("bar").join("README"), "Hello").unwrap();
-
-        fs::create_dir_all(root.join("app")).unwrap();
-        fs::write(&root.join("app").join("README"), "World").unwrap();
-
-        fs::write(
-            &root.join("package.json"),
+        sandbox.create_file("packages/bar/README", "Hello");
+        sandbox.create_file("app/README", "World");
+        sandbox.create_file(
+            "package.json",
             r#"{"workspaces": { "packages": ["packages/*", "app"] }}"#,
-        )
-        .unwrap();
+        );
 
         sandbox.run_moon(|cmd| {
             cmd.arg("init").arg("--yes").arg(root);
@@ -101,7 +88,7 @@ mod init_node {
             let root = sandbox.path().to_path_buf();
             let config = root.join(".moon").join("toolchain.yml");
 
-            fs::write(&root.join("package-lock.json"), "").unwrap();
+            sandbox.create_file("package-lock.json", "");
 
             sandbox.run_moon(|cmd| {
                 cmd.arg("init").arg("--yes").arg(root);
@@ -118,11 +105,7 @@ mod init_node {
             let root = sandbox.path().to_path_buf();
             let config = root.join(".moon").join("toolchain.yml");
 
-            fs::write(
-                &root.join("package.json"),
-                r#"{"packageManager":"npm@4.5.6"}"#,
-            )
-            .unwrap();
+            sandbox.create_file("package.json", r#"{"packageManager":"npm@4.5.6"}"#);
 
             sandbox.run_moon(|cmd| {
                 cmd.arg("init").arg("--yes").arg(root);
@@ -140,7 +123,7 @@ mod init_node {
             let root = sandbox.path().to_path_buf();
             let config = root.join(".moon").join("toolchain.yml");
 
-            fs::write(&root.join("pnpm-lock.yaml"), "").unwrap();
+            sandbox.create_file("pnpm-lock.yaml", "");
 
             sandbox.run_moon(|cmd| {
                 cmd.arg("init").arg("--yes").arg(root);
@@ -157,11 +140,7 @@ mod init_node {
             let root = sandbox.path().to_path_buf();
             let config = root.join(".moon").join("toolchain.yml");
 
-            fs::write(
-                &root.join("package.json"),
-                r#"{"packageManager":"pnpm@4.5.6"}"#,
-            )
-            .unwrap();
+            sandbox.create_file("package.json", r#"{"packageManager":"pnpm@4.5.6"}"#);
 
             sandbox.run_moon(|cmd| {
                 cmd.arg("init").arg("--yes").arg(root);
@@ -179,7 +158,7 @@ mod init_node {
             let root = sandbox.path().to_path_buf();
             let config = root.join(".moon").join("toolchain.yml");
 
-            fs::write(&root.join("yarn.lock"), "").unwrap();
+            sandbox.create_file("yarn.lock", "");
 
             sandbox.run_moon(|cmd| {
                 cmd.arg("init").arg("--yes").arg(root);
@@ -196,11 +175,7 @@ mod init_node {
             let root = sandbox.path().to_path_buf();
             let config = root.join(".moon").join("toolchain.yml");
 
-            fs::write(
-                &root.join("package.json"),
-                r#"{"packageManager":"yarn@4.5.6"}"#,
-            )
-            .unwrap();
+            sandbox.create_file("package.json", r#"{"packageManager":"yarn@4.5.6"}"#);
 
             sandbox.run_moon(|cmd| {
                 cmd.arg("init").arg("--yes").arg(root);

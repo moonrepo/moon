@@ -714,7 +714,7 @@ mod pnpm {
     fn can_run_a_deps_bin_isolated() {
         let sandbox = depman_sandbox("pnpm");
 
-        fs::write(sandbox.path().join(".npmrc"), "node-linker=isolated").unwrap();
+        sandbox.create_file(".npmrc", "node-linker=isolated");
 
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("pnpm:runDep");
@@ -732,7 +732,7 @@ mod pnpm {
     fn can_run_a_deps_bin_hoisted() {
         let sandbox = depman_sandbox("pnpm");
 
-        fs::write(sandbox.path().join(".npmrc"), "node-linker=hoisted").unwrap();
+        sandbox.create_file(".npmrc", "node-linker=hoisted");
 
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("pnpm:runDep");
@@ -1293,8 +1293,8 @@ mod affected_files {
     fn uses_rel_paths_when_affected() {
         let sandbox = node_sandbox();
 
-        fs::write(sandbox.path().join("base/input1.js"), "").unwrap();
-        fs::write(sandbox.path().join("base/input2.js"), "").unwrap();
+        sandbox.create_file("base/input1.js", "");
+        sandbox.create_file("base/input2.js", "");
 
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("node:affectedFiles").arg("--affected");
@@ -1313,8 +1313,8 @@ mod affected_files {
     fn sets_env_var() {
         let sandbox = node_sandbox();
 
-        fs::write(sandbox.path().join("base/input1.js"), "").unwrap();
-        fs::write(sandbox.path().join("base/input2.js"), "").unwrap();
+        sandbox.create_file("base/input1.js", "");
+        sandbox.create_file("base/input2.js", "");
 
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run")

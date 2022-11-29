@@ -287,7 +287,7 @@ mod dependencies {
         );
 
         // Create an `inputs` file for `outputs:asDep`
-        fs::write(sandbox.path().join("outputs/random.js"), "").unwrap();
+        sandbox.create_file("outputs/random.js", "");
 
         sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("outputs:withDeps");
@@ -649,7 +649,7 @@ mod outputs {
             let contents1 = fs::read_to_string(sandbox.path().join("outputs/lib/one.js")).unwrap();
 
             // Create a file to trigger an inputs change
-            fs::write(sandbox.path().join("outputs/trigger.js"), "").unwrap();
+            sandbox.create_file("outputs/trigger.js", "");
 
             sandbox.run_moon(|cmd| {
                 cmd.arg("run").arg("outputs:generateFileAndFolder");
@@ -869,7 +869,7 @@ mod affected {
         let sandbox = cases_sandbox();
         sandbox.enable_git();
 
-        fs::write(sandbox.path().join("files/other.txt"), "").unwrap();
+        sandbox.create_file("files/other.txt", "");
 
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("files:noop").arg("--affected");
@@ -885,7 +885,7 @@ mod affected {
         let sandbox = cases_sandbox();
         sandbox.enable_git();
 
-        fs::write(sandbox.path().join("files/other.txt"), "").unwrap();
+        sandbox.create_file("files/other.txt", "");
 
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run")
@@ -908,7 +908,7 @@ mod affected {
         let sandbox = cases_sandbox();
         sandbox.enable_git();
 
-        fs::write(sandbox.path().join("files/other.txt"), "").unwrap();
+        sandbox.create_file("files/other.txt", "");
 
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run")
@@ -928,7 +928,7 @@ mod affected {
         let sandbox = cases_sandbox();
         sandbox.enable_git();
 
-        fs::write(sandbox.path().join("files/other.txt"), "").unwrap();
+        sandbox.create_file("files/other.txt", "");
 
         sandbox.run_git(|cmd| {
             cmd.args(["add", "files/other.txt"]);
@@ -952,7 +952,7 @@ mod affected {
         let sandbox = cases_sandbox();
         sandbox.enable_git();
 
-        fs::write(sandbox.path().join("files/file.txt"), "modified").unwrap();
+        sandbox.create_file("files/file.txt", "modified");
 
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run")
@@ -1012,7 +1012,7 @@ mod affected {
             let sandbox = cases_sandbox();
             sandbox.enable_git();
 
-            fs::write(sandbox.path().join("tsconfig.json"), "{}").unwrap();
+            sandbox.create_file("tsconfig.json", "{}");
 
             let assert = sandbox.run_moon(|cmd| {
                 cmd.arg("run").arg("root:noop").arg("--affected");
@@ -1028,7 +1028,7 @@ mod affected {
             let sandbox = cases_sandbox();
             sandbox.enable_git();
 
-            fs::write(sandbox.path().join("tsconfig.json"), "{}").unwrap();
+            sandbox.create_file("tsconfig.json", "{}");
 
             let assert = sandbox.run_moon(|cmd| {
                 cmd.arg("run")

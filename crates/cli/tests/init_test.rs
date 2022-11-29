@@ -81,16 +81,15 @@ fn creates_gitignore_file() {
 fn appends_existing_gitignore_file() {
     let sandbox = create_sandbox("init-sandbox");
     let root = sandbox.path().to_path_buf();
-    let gitignore = root.join(".gitignore");
 
-    fs::write(&gitignore, "*.js\n*.log").unwrap();
+    sandbox.create_file(".gitignore", "*.js\n*.log").unwrap();
 
     sandbox.run_moon(|cmd| {
         cmd.arg("init").arg("--yes").arg(root);
     });
 
     assert_eq!(
-        fs::read_to_string(gitignore).unwrap(),
+        fs::read_to_string(root.join(".gitignore")).unwrap(),
         "*.js\n*.log\n# moon\n.moon/cache\n.moon/docker\n"
     );
 }

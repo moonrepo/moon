@@ -512,7 +512,7 @@ mod expand_env {
         let sandbox = create_sandbox("cases");
         let project_root = sandbox.path().join("base");
 
-        fs::write(project_root.join(".env"), "FOO").unwrap();
+        sandbox.create_file(".env", "FOO");
 
         create_expanded_task(
             sandbox.path(),
@@ -560,7 +560,7 @@ mod expand_env {
         let sandbox = create_sandbox("cases");
         let project_root = sandbox.path().join("base");
 
-        fs::write(project_root.join(".env"), "FOO=foo\nBAR=123").unwrap();
+        sandbox.create_file(".env", "FOO=foo\nBAR=123");
 
         let task = create_expanded_task(
             sandbox.path(),
@@ -589,7 +589,7 @@ mod expand_env {
         let sandbox = create_sandbox("cases");
         let project_root = sandbox.path().join("base");
 
-        fs::write(project_root.join(".env.production"), "FOO=foo\nBAR=123").unwrap();
+        sandbox.create_file(".env.production", "FOO=foo\nBAR=123");
 
         let task = create_expanded_task(
             sandbox.path(),
@@ -618,7 +618,7 @@ mod expand_env {
         let sandbox = create_sandbox("cases");
         let project_root = sandbox.path().join("base");
 
-        fs::write(project_root.join(".env"), "FOO=foo\nBAR=123").unwrap();
+        sandbox.create_file(".env", "FOO=foo\nBAR=123");
 
         let task = create_expanded_task(
             sandbox.path(),

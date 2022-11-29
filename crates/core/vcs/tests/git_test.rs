@@ -56,7 +56,7 @@ mod file_hashing {
         let sandbox = create_sandbox("vcs");
         sandbox.enable_git();
 
-        fs::write(sandbox.path().join(".gitignore"), "existing.txt").unwrap();
+        sandbox.create_file(".gitignore", "existing.txt");
 
         let git = Git::load(&create_config("default"), sandbox.path()).unwrap();
 
@@ -177,7 +177,7 @@ mod touched_files {
 
         let git = Git::load(&create_config("default"), sandbox.path()).unwrap();
 
-        fs::write(sandbox.path().join("added.txt"), "").unwrap();
+        sandbox.create_file("added.txt", "");
 
         assert_eq!(
             git.get_touched_files().await.unwrap(),
@@ -196,7 +196,7 @@ mod touched_files {
 
         let git = Git::load(&create_config("default"), sandbox.path()).unwrap();
 
-        fs::write(sandbox.path().join("added.txt"), "").unwrap();
+        sandbox.create_file("added.txt", "");
 
         sandbox.run_git(|cmd| {
             cmd.args(["add", "added.txt"]);
@@ -240,7 +240,7 @@ mod touched_files {
 
         let git = Git::load(&create_config("default"), sandbox.path()).unwrap();
 
-        fs::write(sandbox.path().join("existing.txt"), "modified").unwrap();
+        sandbox.create_file("existing.txt", "modified");
 
         assert_eq!(
             git.get_touched_files().await.unwrap(),
@@ -314,7 +314,7 @@ mod touched_files_via_diff {
             cmd.args(["checkout", "-b", "current"]);
         });
 
-        fs::write(sandbox.path().join("added.txt"), "").unwrap();
+        sandbox.create_file("added.txt", "");
 
         assert_eq!(
             git.get_touched_files_between_revisions("master", "current")
@@ -336,7 +336,7 @@ mod touched_files_via_diff {
             cmd.args(["checkout", "-b", "current"]);
         });
 
-        fs::write(sandbox.path().join("added.txt"), "").unwrap();
+        sandbox.create_file("added.txt", "");
 
         sandbox.run_git(|cmd| {
             cmd.args(["add", "added.txt"]);
@@ -392,7 +392,7 @@ mod touched_files_via_diff {
             cmd.args(["checkout", "-b", "current"]);
         });
 
-        fs::write(sandbox.path().join("existing.txt"), "modified").unwrap();
+        sandbox.create_file("existing.txt", "modified");
 
         assert_eq!(
             git.get_touched_files_between_revisions("master", "current")

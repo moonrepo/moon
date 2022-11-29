@@ -23,7 +23,7 @@ mod from_package_json {
         sandbox.enable_git();
 
         // create a new file at sandbox path to simulate a dirty repository
-        fs::write(sandbox.path().join("new_file"), "new_file").unwrap();
+        sandbox.create_file("new_file", "new_file");
 
         let assert = sandbox.run_moon(|cmd| {
             cmd.args(["migrate", "from-package-json", "common"]);

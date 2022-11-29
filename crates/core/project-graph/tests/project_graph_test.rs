@@ -149,8 +149,7 @@ mod globs {
         sandbox.enable_git();
 
         // Create fake node modules
-        fs::create_dir_all(sandbox.path().join("node_modules/moon")).unwrap();
-        fs::write(sandbox.path().join("node_modules/moon/package.json"), "{}").unwrap();
+        sandbox.create_file("node_modules/moon/package.json", "{}");
 
         let graph = ProjectGraph::generate(
             sandbox.path(),

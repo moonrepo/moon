@@ -11,7 +11,7 @@ use moon_node_platform::actions as node_actions;
 use moon_project::Project;
 use moon_runner_context::RunnerContext;
 use moon_system_platform::actions as system_actions;
-use moon_task::{Target, Task, TaskError};
+use moon_task::{Target, TargetError, TargetProjectScope, Task, TaskError};
 use moon_terminal::label_checkpoint;
 use moon_terminal::Checkpoint;
 use moon_utils::{
@@ -73,17 +73,19 @@ impl<'a> TargetRunner<'a> {
     pub async fn archive_outputs(&self) -> Result<(), RunnerError> {
         let hash = &self.cache.hash;
 
-        if self.task.outputs.is_empty() || hash.is_empty() {
+        if hash.is_empty() || !self.is_archivable()? {
             return Ok(());
         }
 
         // Check that outputs actually exist
-        for (i, output) in self.task.output_paths.iter().enumerate() {
-            if !output.exists() {
-                return Err(RunnerError::Task(TaskError::MissingOutput(
-                    self.task.target.id.clone(),
-                    self.task.outputs.get(i).unwrap().to_owned(),
-                )));
+        if !self.task.outputs.is_empty() {
+            for (i, output) in self.task.output_paths.iter().enumerate() {
+                if !output.exists() {
+                    return Err(RunnerError::Task(TaskError::MissingOutput(
+                        self.task.target.id.clone(),
+                        self.task.outputs.get(i).unwrap().to_owned(),
+                    )));
+                }
             }
         }
 
@@ -344,6 +346,38 @@ impl<'a> TargetRunner<'a> {
         self.stderr.flush()?;
 
         Ok(())
+    }
+
+    /// Determine if the current task can be archived.
+    pub fn is_archivable(&self) -> Result<bool, TargetError> {
+        let task = self.task;
+
+        if task.is_build_type() {
+            return Ok(true);
+        }
+
+        for target in &self.workspace.config.runner.archivable_targets {
+            let target = Target::parse(target)?;
+
+            match &target.project {
+                TargetProjectScope::All => {
+                    if task.target.task_id == target.task_id {
+                        return Ok(true);
+                    }
+                }
+                TargetProjectScope::Id(project_id) => {
+                    if let Some(owner_id) = &task.target.project_id {
+                        if owner_id == project_id && task.target.task_id == target.task_id {
+                            return Ok(true);
+                        }
+                    }
+                }
+                TargetProjectScope::Deps => return Err(TargetError::NoProjectDepsInRunContext),
+                TargetProjectScope::OwnSelf => return Err(TargetError::NoProjectSelfInRunContext),
+            };
+        }
+
+        Ok(false)
     }
 
     /// Hash the target based on all current parameters and return early

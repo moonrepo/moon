@@ -2237,6 +2237,7 @@ dependencies = [
  "assert_cmd",
  "assert_fs",
  "clean-path",
+ "dirs",
  "insta",
  "moon_config",
  "predicates",

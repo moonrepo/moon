@@ -1,6 +1,6 @@
 use crate::sandbox::{debug_sandbox_files, Sandbox};
 use assert_cmd::assert::Assert;
-use std::env;
+use dirs::home_dir;
 use std::path::Path;
 
 pub fn create_moon_command<T: AsRef<Path>>(path: T) -> assert_cmd::Command {
@@ -95,13 +95,12 @@ impl<'s> SandboxAssert<'s> {
         output = output.replace(self.sandbox.path().to_str().unwrap(), "<WORKSPACE>");
 
         // Replace home dir
-        #[allow(deprecated)]
-        if let Some(home_dir) = env::home_dir() {
+        if let Some(home_dir) = home_dir() {
             output = output.replace(home_dir.to_str().unwrap(), "~");
         }
 
         // Standardize
-        output = output.replace('\\', "/");
+        // output = output.replace('\\', "/");
         output = output.replace("/private<", "<");
         output
     }

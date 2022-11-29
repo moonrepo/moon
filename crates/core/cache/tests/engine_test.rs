@@ -329,7 +329,7 @@ mod cache_tool_state {
 
         assert_eq!(
             fs::read_to_string(item.path).unwrap(),
-            r#"{"lastVersionCheckTime":123}"#
+            r#"{"lastVersions":{},"lastVersionCheckTime":123}"#
         );
 
         dir.close().unwrap();

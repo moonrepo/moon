@@ -774,6 +774,29 @@ mod outputs {
         }
 
         #[tokio::test]
+        async fn can_hydrate_archives() {
+            let sandbox = cases_sandbox_with_config(|cfg| {
+                cfg.runner.archivable_targets.push(":noOutput".into());
+            });
+
+            sandbox.enable_git();
+
+            let assert1 = sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("outputs:noOutput");
+            });
+
+            let hash1 = extract_hash_from_run(sandbox.path(), "outputs:noOutput").await;
+
+            let assert2 = sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("outputs:noOutput");
+            });
+
+            let hash2 = extract_hash_from_run(sandbox.path(), "outputs:noOutput").await;
+
+            assert_eq!(hash1, hash2);
+        }
+
+        #[tokio::test]
         async fn errors_for_deps_target() {
             let sandbox = cases_sandbox_with_config(|cfg| {
                 cfg.runner.archivable_targets.push("^:otherTarget".into());

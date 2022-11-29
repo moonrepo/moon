@@ -5,7 +5,6 @@
   "type": "object",
   "properties": {
     "extends": {
-      "default": null,
       "type": [
         "string",
         "null"

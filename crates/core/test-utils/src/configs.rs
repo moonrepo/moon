@@ -127,6 +127,7 @@ pub fn get_project_graph_aliases_fixture_configs(
 
     let toolchain_config = ToolchainConfig {
         node: Some(NodeConfig {
+            version: "18.0.0".into(),
             add_engines_constraint: false,
             alias_package_names: Some(NodeProjectAliasFormat::NameAndScope),
             dedupe_on_lockfile_change: false,

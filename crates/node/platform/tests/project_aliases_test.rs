@@ -90,6 +90,7 @@ async fn returns_project_using_alias() {
 async fn graph_uses_id_for_nodes() {
     let (graph, _sandbox) = get_aliases_graph(NodeConfig {
         alias_package_names: Some(NodeProjectAliasFormat::NameAndScope),
+        version: "18.0.0".into(),
         ..NodeConfig::default()
     })
     .await;

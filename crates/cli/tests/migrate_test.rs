@@ -1,12 +1,25 @@
-use moon_test_utils::{assert_snapshot, create_sandbox, predicates::str::contains};
+use moon_config::{WorkspaceConfig, WorkspaceProjects};
+use moon_test_utils::{
+    assert_snapshot, create_sandbox, create_sandbox_with_config, predicates::str::contains,
+};
+use moon_utils::string_vec;
 use std::fs;
+
+fn migrate_sandbox() -> Sandbox {
+    let workspace_config = WorkspaceConfig {
+        projects: WorkspaceProjects::Globs(string_vec!["package-json/*"]),
+        ..WorkspaceConfig::default()
+    };
+
+    create_sandbox_with_config("migrate", Some(&workspace_config), None, None)
+}
 
 mod from_package_json {
     use super::*;
 
     #[test]
     fn dirty_repository_raises_an_error() {
-        let sandbox = create_sandbox("migrate");
+        let sandbox = migrate_sandbox();
         sandbox.enable_git();
 
         // create a new file at sandbox path to simulate a dirty repository
@@ -25,7 +38,7 @@ mod from_package_json {
 
     #[test]
     fn converts_scripts() {
-        let sandbox = create_sandbox("migrate");
+        let sandbox = migrate_sandbox();
 
         let assert = sandbox.run_moon(|cmd| {
             cmd.args([
@@ -50,7 +63,7 @@ mod from_package_json {
 
     #[test]
     fn links_depends_on() {
-        let sandbox = create_sandbox("migrate");
+        let sandbox = migrate_sandbox();
 
         let assert = sandbox.run_moon(|cmd| {
             cmd.args([

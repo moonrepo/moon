@@ -1,9 +1,0 @@
-node:
-  version: '16.0.0'
-  dedupeOnLockfileChange: false
-
-typescript:
-  createMissingConfig: false
-  routeOutDirToCache: false
-  syncProjectReferences: false
-  syncProjectReferencesToPaths: false

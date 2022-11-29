@@ -127,10 +127,12 @@ mod configs {
 
     #[test]
     fn bubbles_up_invalid_workspace_config() {
-        let sandbox = create_sandbox("config-invalid-workspace");
+        let sandbox = create_sandbox("cases");
+
+        fs::write(sandbox.path().join(".moon/workspace.yml"), "projects: true").unwrap();
 
         let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("run").arg("project:task");
+            cmd.arg("run").arg("base:noop");
         });
 
         assert_snapshot!(standardize_separators(get_path_safe_output(
@@ -141,10 +143,12 @@ mod configs {
 
     #[test]
     fn bubbles_up_invalid_global_project_config() {
-        let sandbox = create_sandbox("config-invalid-global-project");
+        let sandbox = create_sandbox("cases");
+
+        fs::write(sandbox.path().join(".moon/project.yml"), "tasks: 123").unwrap();
 
         let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("run").arg("project:task");
+            cmd.arg("run").arg("base:noop");
         });
 
         assert_snapshot!(standardize_separators(get_path_safe_output(
@@ -155,10 +159,16 @@ mod configs {
 
     #[test]
     fn bubbles_up_invalid_project_config() {
-        let sandbox = create_sandbox("config-invalid-project");
+        let sandbox = create_sandbox("cases");
+
+        fs::write(
+            sandbox.path().join("base/moon.yml"),
+            "project:\n  type: library",
+        )
+        .unwrap();
 
         let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("run").arg("test:task");
+            cmd.arg("run").arg("base:noop");
         });
 
         assert_snapshot!(standardize_separators(get_path_safe_output(

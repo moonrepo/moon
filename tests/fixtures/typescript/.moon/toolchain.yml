@@ -1,7 +1,0 @@
-extends: '../shared-toolchain.yml'
-
-typescript:
-  createMissingConfig: true
-  routeOutDirToCache: false
-  syncProjectReferences: true
-  syncProjectReferencesToPaths: false

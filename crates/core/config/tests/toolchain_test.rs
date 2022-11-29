@@ -212,7 +212,7 @@ node:
             jail.create_file(
                     super::CONFIG_WORKSPACE_FILENAME,
 r#"
-extends: https://raw.githubusercontent.com/moonrepo/moon/develop-0.20/tests/fixtures/config-extends/.moon/toolchain.yml
+extends: https://raw.githubusercontent.com/moonrepo/moon/master/tests/fixtures/config-extends/.moon/toolchain.yml
 
 node:
     version: '18.0.0'

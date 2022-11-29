@@ -5,12 +5,14 @@
   "type": "object",
   "properties": {
     "dependsOn": {
+      "default": [],
       "type": "array",
       "items": {
         "$ref": "#/definitions/ProjectDependsOn"
       }
     },
     "fileGroups": {
+      "default": {},
       "type": "object",
       "additionalProperties": {
         "type": "array",
@@ -20,9 +22,15 @@
       }
     },
     "language": {
-      "$ref": "#/definitions/ProjectLanguage"
+      "default": "unknown",
+      "allOf": [
+        {
+          "$ref": "#/definitions/ProjectLanguage"
+        }
+      ]
     },
     "project": {
+      "default": null,
       "anyOf": [
         {
           "$ref": "#/definitions/ProjectMetadataConfig"
@@ -33,16 +41,44 @@
       ]
     },
     "tasks": {
+      "default": {},
       "type": "object",
       "additionalProperties": {
         "$ref": "#/definitions/TaskConfig"
       }
     },
+    "toolchain": {
+      "default": {
+        "node": null,
+        "typescript": true
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/ProjectToolchainConfig"
+        }
+      ]
+    },
     "type": {
-      "$ref": "#/definitions/ProjectType"
+      "default": "unknown",
+      "allOf": [
+        {
+          "$ref": "#/definitions/ProjectType"
+        }
+      ]
     },
     "workspace": {
-      "$ref": "#/definitions/ProjectWorkspaceConfig"
+      "default": {
+        "inheritedTasks": {
+          "exclude": null,
+          "include": null,
+          "rename": null
+        }
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/ProjectWorkspaceConfig"
+        }
+      ]
     }
   },
   "definitions": {
@@ -129,6 +165,38 @@
         }
       }
     },
+    "ProjectToolchainConfig": {
+      "type": "object",
+      "properties": {
+        "node": {
+          "default": null,
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ProjectToolchainNodeConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "typescript": {
+          "default": true,
+          "type": "boolean"
+        }
+      }
+    },
+    "ProjectToolchainNodeConfig": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
     "ProjectType": {
       "type": "string",
       "enum": [
@@ -142,21 +210,16 @@
       "type": "object",
       "properties": {
         "inheritedTasks": {
-          "$ref": "#/definitions/ProjectWorkspaceInheritedTasksConfig"
-        },
-        "node": {
-          "anyOf": [
+          "default": {
+            "exclude": null,
+            "include": null,
+            "rename": null
+          },
+          "allOf": [
             {
-              "$ref": "#/definitions/ProjectWorkspaceNodeConfig"
-            },
-            {
-              "type": "null"
+              "$ref": "#/definitions/ProjectWorkspaceInheritedTasksConfig"
             }
           ]
-        },
-        "typescript": {
-          "default": true,
-          "type": "boolean"
         }
       }
     },
@@ -164,6 +227,7 @@
       "type": "object",
       "properties": {
         "exclude": {
+          "default": null,
           "type": [
             "array",
             "null"
@@ -173,6 +237,7 @@
           }
         },
         "include": {
+          "default": null,
           "type": [
             "array",
             "null"
@@ -182,6 +247,7 @@
           }
         },
         "rename": {
+          "default": null,
           "type": [
             "object",
             "null"
@@ -189,17 +255,6 @@
           "additionalProperties": {
             "type": "string"
           }
-        }
-      }
-    },
-    "ProjectWorkspaceNodeConfig": {
-      "type": "object",
-      "properties": {
-        "version": {
-          "type": [
-            "string",
-            "null"
-          ]
         }
       }
     },
@@ -220,6 +275,7 @@
       "type": "object",
       "properties": {
         "args": {
+          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskCommandArgs"
@@ -230,6 +286,7 @@
           ]
         },
         "command": {
+          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskCommandArgs"
@@ -240,6 +297,7 @@
           ]
         },
         "deps": {
+          "default": null,
           "type": [
             "array",
             "null"
@@ -249,6 +307,7 @@
           }
         },
         "env": {
+          "default": null,
           "type": [
             "object",
             "null"
@@ -258,6 +317,7 @@
           }
         },
         "inputs": {
+          "default": null,
           "type": [
             "array",
             "null"
@@ -267,12 +327,33 @@
           }
         },
         "local": {
+          "default": false,
           "type": "boolean"
         },
         "options": {
-          "$ref": "#/definitions/TaskOptionsConfig"
+          "default": {
+            "affectedFiles": null,
+            "cache": null,
+            "envFile": null,
+            "mergeArgs": null,
+            "mergeDeps": null,
+            "mergeEnv": null,
+            "mergeInputs": null,
+            "mergeOutputs": null,
+            "outputStyle": null,
+            "retryCount": null,
+            "runDepsInParallel": null,
+            "runInCI": null,
+            "runFromWorkspaceRoot": null
+          },
+          "allOf": [
+            {
+              "$ref": "#/definitions/TaskOptionsConfig"
+            }
+          ]
         },
         "outputs": {
+          "default": null,
           "type": [
             "array",
             "null"
@@ -281,8 +362,13 @@
             "type": "string"
           }
         },
-        "type": {
-          "$ref": "#/definitions/PlatformType"
+        "platform": {
+          "default": "unknown",
+          "allOf": [
+            {
+              "$ref": "#/definitions/PlatformType"
+            }
+          ]
         }
       }
     },
@@ -307,13 +393,22 @@
     "TaskOptionsConfig": {
       "type": "object",
       "properties": {
+        "affectedFiles": {
+          "default": null,
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
         "cache": {
+          "default": null,
           "type": [
             "boolean",
             "null"
           ]
         },
         "envFile": {
+          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskOptionEnvFile"
@@ -324,6 +419,7 @@
           ]
         },
         "mergeArgs": {
+          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
@@ -334,6 +430,7 @@
           ]
         },
         "mergeDeps": {
+          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
@@ -344,6 +441,7 @@
           ]
         },
         "mergeEnv": {
+          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
@@ -354,6 +452,7 @@
           ]
         },
         "mergeInputs": {
+          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
@@ -364,6 +463,7 @@
           ]
         },
         "mergeOutputs": {
+          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
@@ -374,6 +474,7 @@
           ]
         },
         "outputStyle": {
+          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskOutputStyle"
@@ -384,6 +485,7 @@
           ]
         },
         "retryCount": {
+          "default": null,
           "type": [
             "integer",
             "null"
@@ -392,18 +494,21 @@
           "minimum": 0.0
         },
         "runDepsInParallel": {
+          "default": null,
           "type": [
             "boolean",
             "null"
           ]
         },
         "runFromWorkspaceRoot": {
+          "default": null,
           "type": [
             "boolean",
             "null"
           ]
         },
         "runInCI": {
+          "default": null,
           "type": [
             "boolean",
             "null"

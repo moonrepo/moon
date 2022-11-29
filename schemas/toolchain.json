@@ -1,0 +1,249 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ToolchainConfig",
+  "description": "Docs: https://moonrepo.dev/docs/config/toolchain",
+  "type": "object",
+  "properties": {
+    "extends": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "node": {
+      "default": null,
+      "anyOf": [
+        {
+          "$ref": "#/definitions/NodeConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "typescript": {
+      "default": null,
+      "anyOf": [
+        {
+          "$ref": "#/definitions/TypeScriptConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "definitions": {
+    "NodeConfig": {
+      "type": "object",
+      "properties": {
+        "addEnginesConstraint": {
+          "default": true,
+          "type": "boolean"
+        },
+        "aliasPackageNames": {
+          "default": null,
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NodeProjectAliasFormat"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "binExecArgs": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "dedupeOnLockfileChange": {
+          "default": true,
+          "type": "boolean"
+        },
+        "dependencyVersionFormat": {
+          "default": "workspace-caret",
+          "allOf": [
+            {
+              "$ref": "#/definitions/NodeVersionFormat"
+            }
+          ]
+        },
+        "inferTasksFromScripts": {
+          "default": false,
+          "type": "boolean"
+        },
+        "npm": {
+          "default": {
+            "version": "8.19.2"
+          },
+          "allOf": [
+            {
+              "$ref": "#/definitions/NpmConfig"
+            }
+          ]
+        },
+        "packageManager": {
+          "default": "npm",
+          "allOf": [
+            {
+              "$ref": "#/definitions/NodePackageManager"
+            }
+          ]
+        },
+        "pnpm": {
+          "default": null,
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PnpmConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "syncProjectWorkspaceDependencies": {
+          "default": true,
+          "type": "boolean"
+        },
+        "syncVersionManagerConfig": {
+          "default": null,
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NodeVersionManager"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "version": {
+          "default": "18.12.0",
+          "type": "string"
+        },
+        "yarn": {
+          "default": null,
+          "anyOf": [
+            {
+              "$ref": "#/definitions/YarnConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "NodePackageManager": {
+      "type": "string",
+      "enum": [
+        "npm",
+        "pnpm",
+        "yarn"
+      ]
+    },
+    "NodeProjectAliasFormat": {
+      "type": "string",
+      "enum": [
+        "name-and-scope",
+        "name-only"
+      ]
+    },
+    "NodeVersionFormat": {
+      "type": "string",
+      "enum": [
+        "file",
+        "link",
+        "star",
+        "version",
+        "version-caret",
+        "version-tilde",
+        "workspace",
+        "workspace-caret",
+        "workspace-tilde"
+      ]
+    },
+    "NodeVersionManager": {
+      "type": "string",
+      "enum": [
+        "nodenv",
+        "nvm"
+      ]
+    },
+    "NpmConfig": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "default": "8.19.2",
+          "type": "string"
+        }
+      }
+    },
+    "PnpmConfig": {
+      "type": "object",
+      "required": [
+        "version"
+      ],
+      "properties": {
+        "version": {
+          "type": "string"
+        }
+      }
+    },
+    "TypeScriptConfig": {
+      "type": "object",
+      "properties": {
+        "createMissingConfig": {
+          "default": true,
+          "type": "boolean"
+        },
+        "projectConfigFileName": {
+          "default": "tsconfig.json",
+          "type": "string"
+        },
+        "rootConfigFileName": {
+          "default": "tsconfig.json",
+          "type": "string"
+        },
+        "rootOptionsConfigFileName": {
+          "default": "tsconfig.options.json",
+          "type": "string"
+        },
+        "routeOutDirToCache": {
+          "default": false,
+          "type": "boolean"
+        },
+        "syncProjectReferences": {
+          "default": true,
+          "type": "boolean"
+        },
+        "syncProjectReferencesToPaths": {
+          "default": false,
+          "type": "boolean"
+        }
+      }
+    },
+    "YarnConfig": {
+      "type": "object",
+      "required": [
+        "version"
+      ],
+      "properties": {
+        "plugins": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

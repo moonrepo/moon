@@ -5,7 +5,6 @@
   "type": "object",
   "properties": {
     "extends": {
-      "default": null,
       "type": [
         "string",
         "null"
@@ -30,17 +29,6 @@
       "allOf": [
         {
           "$ref": "#/definitions/HasherConfig"
-        }
-      ]
-    },
-    "node": {
-      "default": null,
-      "anyOf": [
-        {
-          "$ref": "#/definitions/NodeConfig"
-        },
-        {
-          "type": "null"
         }
       ]
     },
@@ -69,6 +57,7 @@
         "implicitInputs": [
           "package.json",
           "/.moon/project.yml",
+          "/.moon/toolchain.yml",
           "/.moon/workspace.yml"
         ],
         "inheritColorsForPipedTasks": true,
@@ -80,21 +69,14 @@
         }
       ]
     },
-    "typescript": {
-      "default": null,
-      "anyOf": [
-        {
-          "$ref": "#/definitions/TypeScriptConfig"
-        },
-        {
-          "type": "null"
-        }
-      ]
-    },
     "vcs": {
       "default": {
+        "defaultBranch": "master",
         "manager": "git",
-        "defaultBranch": "master"
+        "remoteCandidates": [
+          "origin",
+          "upstream"
+        ]
       },
       "allOf": [
         {
@@ -138,137 +120,6 @@
         "performance"
       ]
     },
-    "NodeConfig": {
-      "type": "object",
-      "properties": {
-        "addEnginesConstraint": {
-          "default": true,
-          "type": "boolean"
-        },
-        "aliasPackageNames": {
-          "default": null,
-          "anyOf": [
-            {
-              "$ref": "#/definitions/NodeProjectAliasFormat"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "dedupeOnLockfileChange": {
-          "default": true,
-          "type": "boolean"
-        },
-        "dependencyVersionFormat": {
-          "default": "workspace-caret",
-          "allOf": [
-            {
-              "$ref": "#/definitions/NodeVersionFormat"
-            }
-          ]
-        },
-        "inferTasksFromScripts": {
-          "default": false,
-          "type": "boolean"
-        },
-        "npm": {
-          "default": {
-            "version": "inherit"
-          },
-          "allOf": [
-            {
-              "$ref": "#/definitions/NpmConfig"
-            }
-          ]
-        },
-        "packageManager": {
-          "default": "npm",
-          "allOf": [
-            {
-              "$ref": "#/definitions/NodePackageManager"
-            }
-          ]
-        },
-        "pnpm": {
-          "default": null,
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PnpmConfig"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "syncProjectWorkspaceDependencies": {
-          "default": true,
-          "type": "boolean"
-        },
-        "syncVersionManagerConfig": {
-          "default": null,
-          "anyOf": [
-            {
-              "$ref": "#/definitions/NodeVersionManager"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "version": {
-          "default": "16.17.0",
-          "type": "string"
-        },
-        "yarn": {
-          "default": null,
-          "anyOf": [
-            {
-              "$ref": "#/definitions/YarnConfig"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      }
-    },
-    "NodePackageManager": {
-      "type": "string",
-      "enum": [
-        "npm",
-        "pnpm",
-        "yarn"
-      ]
-    },
-    "NodeProjectAliasFormat": {
-      "type": "string",
-      "enum": [
-        "name-and-scope",
-        "name-only"
-      ]
-    },
-    "NodeVersionFormat": {
-      "type": "string",
-      "enum": [
-        "file",
-        "link",
-        "star",
-        "version",
-        "version-caret",
-        "version-tilde",
-        "workspace",
-        "workspace-caret",
-        "workspace-tilde"
-      ]
-    },
-    "NodeVersionManager": {
-      "type": "string",
-      "enum": [
-        "nodenv",
-        "nvm"
-      ]
-    },
     "NotifierConfig": {
       "type": "object",
       "properties": {
@@ -278,26 +129,6 @@
             "string",
             "null"
           ]
-        }
-      }
-    },
-    "NpmConfig": {
-      "type": "object",
-      "properties": {
-        "version": {
-          "default": "inherit",
-          "type": "string"
-        }
-      }
-    },
-    "PnpmConfig": {
-      "type": "object",
-      "required": [
-        "version"
-      ],
-      "properties": {
-        "version": {
-          "type": "string"
         }
       }
     },
@@ -319,6 +150,7 @@
           "default": [
             "package.json",
             "/.moon/project.yml",
+            "/.moon/toolchain.yml",
             "/.moon/workspace.yml"
           ],
           "type": "array",
@@ -331,39 +163,6 @@
           "type": "boolean"
         },
         "logRunningCommand": {
-          "default": false,
-          "type": "boolean"
-        }
-      }
-    },
-    "TypeScriptConfig": {
-      "type": "object",
-      "properties": {
-        "createMissingConfig": {
-          "default": true,
-          "type": "boolean"
-        },
-        "projectConfigFileName": {
-          "default": "tsconfig.json",
-          "type": "string"
-        },
-        "rootConfigFileName": {
-          "default": "tsconfig.json",
-          "type": "string"
-        },
-        "rootOptionsConfigFileName": {
-          "default": "tsconfig.options.json",
-          "type": "string"
-        },
-        "routeOutDirToCache": {
-          "default": false,
-          "type": "boolean"
-        },
-        "syncProjectReferences": {
-          "default": true,
-          "type": "boolean"
-        },
-        "syncProjectReferencesToPaths": {
           "default": false,
           "type": "boolean"
         }
@@ -383,6 +182,16 @@
               "$ref": "#/definitions/VcsManager"
             }
           ]
+        },
+        "remoteCandidates": {
+          "default": [
+            "origin",
+            "upstream"
+          ],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
@@ -396,6 +205,27 @@
     "WorkspaceProjects": {
       "anyOf": [
         {
+          "type": "object",
+          "required": [
+            "globs",
+            "sources"
+          ],
+          "properties": {
+            "globs": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "sources": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
           "type": "array",
           "items": {
             "type": "string"
@@ -408,26 +238,6 @@
           }
         }
       ]
-    },
-    "YarnConfig": {
-      "type": "object",
-      "required": [
-        "version"
-      ],
-      "properties": {
-        "plugins": {
-          "type": [
-            "array",
-            "null"
-          ],
-          "items": {
-            "type": "string"
-          }
-        },
-        "version": {
-          "type": "string"
-        }
-      }
     }
   }
 }

@@ -338,7 +338,11 @@ impl<'a> TargetRunner<'a> {
     }
 
     pub fn get_short_hash(&self) -> &str {
-        &self.cache.hash[0..8]
+        if self.cache.hash.is_empty() {
+            "" // Empty when cache is disabled
+        } else {
+            &self.cache.hash[0..8]
+        }
     }
 
     pub fn flush_output(&self) -> Result<(), MoonError> {
@@ -728,9 +732,7 @@ impl<'a> TargetRunner<'a> {
             comments.push(time::elapsed(duration));
         }
 
-        // Do not include the hash while testing, as the hash
-        // constantly changes and breaks our local snapshots
-        if !is_test_env() && attempt.finished_at.is_some() {
+        if self.should_print_short_hash() && attempt.finished_at.is_some() {
             comments.push(self.get_short_hash().to_owned());
         }
 
@@ -806,6 +808,12 @@ impl<'a> TargetRunner<'a> {
         self.flush_output()?;
 
         Ok(())
+    }
+
+    fn should_print_short_hash(&self) -> bool {
+        // Do not include the hash while testing, as the hash
+        // constantly changes and breaks our local snapshots
+        !is_test_env() && self.task.options.cache && !self.cache.hash.is_empty()
     }
 }
 
@@ -897,7 +905,7 @@ pub async fn run_target(
                 HydrateFrom::PreviousOutput => "cached from previous run",
             }];
 
-            if !is_test_env() {
+            if runner.should_print_short_hash() {
                 comments.push(runner.get_short_hash());
             }
 

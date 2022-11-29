@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed a "byte index is out of bounds" panic when a task has caching disabled.
+
 ## 0.20.0
 
 #### 💥 Breaking

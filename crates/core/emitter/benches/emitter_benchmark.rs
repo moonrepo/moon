@@ -1,7 +1,7 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use moon_emitter::{Emitter, Event, EventFlow, Subscriber};
 use moon_error::MoonError;
-use moon_utils::test::get_fixtures_dir;
+use moon_test_utils::get_fixtures_path;
 use moon_workspace::Workspace;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -20,7 +20,7 @@ impl Subscriber for TestSubscriber {
 }
 
 pub fn emit_benchmark(c: &mut Criterion) {
-    let workspace_root = get_fixtures_dir("cases");
+    let workspace_root = get_fixtures_path("cases");
     let runtime = tokio::runtime::Runtime::new().unwrap();
 
     c.bench_function("emitter_emit", |b| {

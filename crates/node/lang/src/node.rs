@@ -215,8 +215,7 @@ pub fn parse_package_name(package_name: &str) -> (Option<String>, String) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use assert_fs::prelude::*;
-    use assert_fs::TempDir;
+    use moon_test_utils::{assert_fs::prelude::*, create_temp_dir, TempDir};
 
     fn create_cmd(path: &str) -> String {
         format!(
@@ -233,7 +232,7 @@ mod tests {
     }
 
     fn create_node_modules_sandbox() -> TempDir {
-        let sandbox = TempDir::new().unwrap();
+        let sandbox = create_temp_dir();
 
         sandbox
             .child("node_modules/@scope/pkg-foo/package.json")

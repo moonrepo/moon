@@ -1,6 +1,6 @@
 use moon_constants::CONFIG_TEMPLATE_FILENAME;
 use moon_generator::{Template, TemplateContext, TemplateFile};
-use moon_utils::test::get_fixtures_dir;
+use moon_test_utils::get_fixtures_path;
 use std::path::PathBuf;
 
 fn create_template_file() -> TemplateFile {
@@ -10,7 +10,7 @@ fn create_template_file() -> TemplateFile {
 fn create_template() -> Template {
     Template::new(
         "standard".into(),
-        get_fixtures_dir("generator").join("templates/standard"),
+        get_fixtures_path("generator/templates/standard"),
     )
     .unwrap()
 }
@@ -28,11 +28,10 @@ mod load_files {
 
     #[tokio::test]
     async fn filters_out_schema_file() {
-        let dest = assert_fs::TempDir::new().unwrap();
         let mut template = create_template();
 
         template
-            .load_files(dest.path(), &create_context())
+            .load_files(&get_fixtures_path("generator"), &create_context())
             .await
             .unwrap();
 
@@ -135,9 +134,8 @@ mod interpolate_path {
 }
 
 mod set_content {
-    use moon_config::TemplateFrontmatterConfig;
-
     use super::*;
+    use moon_config::TemplateFrontmatterConfig;
 
     #[test]
     fn works_without_frontmatter() {

@@ -47,5 +47,5 @@ tokio = { workspace = true }
 
 [dev-dependencies]
 moon_cache = { path = "../cache" }
+moon_test_utils = { path = "../test-utils" }
 criterion = { workspace = true }
-insta = { workspace = true }

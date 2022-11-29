@@ -21,6 +21,7 @@ use validator::Validate;
 #[schemars(default)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolchainConfig {
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_extends")]
     pub extends: Option<String>,
 

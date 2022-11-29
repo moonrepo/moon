@@ -66,13 +66,12 @@ pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVer
 #[cfg(test)]
 mod tests {
     use super::*;
-    use assert_fs::prelude::*;
+    use moon_test_utils::{assert_fs::prelude::*, create_temp_dir, pretty_assertions::assert_eq};
     use moon_utils::string_vec;
-    use pretty_assertions::assert_eq;
 
     #[test]
     fn parses_lockfile() {
-        let temp = assert_fs::TempDir::new().unwrap();
+        let temp = create_temp_dir();
 
         temp.child("package-lock.json")
             .write_str(r#"

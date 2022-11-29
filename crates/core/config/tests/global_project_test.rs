@@ -1,7 +1,7 @@
 use moon_config::{ConfigError, GlobalProjectConfig, TaskCommandArgs};
 use moon_constants::CONFIG_GLOBAL_PROJECT_FILENAME;
+use moon_test_utils::get_fixtures_path;
 use moon_utils::string_vec;
-use moon_utils::test::get_fixtures_dir;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -50,12 +50,12 @@ fileGroups:
 mod extends {
     use super::*;
     use moon_config::{TaskConfig, TaskOptionsConfig};
-    use pretty_assertions::assert_eq;
+    use moon_test_utils::pretty_assertions::assert_eq;
     use std::fs;
 
     #[test]
     fn recursive_merges() {
-        let fixture = get_fixtures_dir("config-extends/project");
+        let fixture = get_fixtures_path("config-extends/project");
         let config = GlobalProjectConfig::load(fixture.join("global-2.yml")).unwrap();
 
         assert_eq!(
@@ -226,7 +226,7 @@ mod extends {
 
     #[test]
     fn loads_from_file() {
-        use pretty_assertions::assert_eq;
+        use moon_test_utils::pretty_assertions::assert_eq;
 
         figment::Jail::expect_with(|jail| {
             fs::create_dir_all(jail.directory().join("shared")).unwrap();
@@ -269,7 +269,7 @@ fileGroups:
 
     #[test]
     fn loads_from_url() {
-        use pretty_assertions::assert_eq;
+        use moon_test_utils::pretty_assertions::assert_eq;
 
         figment::Jail::expect_with(|jail| {
             jail.set_env(

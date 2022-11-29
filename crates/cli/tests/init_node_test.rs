@@ -1,5 +1,4 @@
-use moon_utils::test::{create_moon_command, create_sandbox};
-use predicates::prelude::*;
+use moon_test_utils::{create_sandbox, predicates::prelude::*};
 use std::fs;
 
 mod init_node {
@@ -7,17 +6,15 @@ mod init_node {
 
     #[test]
     fn infers_version_from_nvm() {
-        let fixture = create_sandbox("init-sandbox");
-        let root = fixture.path();
+        let sandbox = create_sandbox("init-sandbox");
+        let root = sandbox.path().to_path_buf();
         let config = root.join(".moon").join("toolchain.yml");
 
-        fs::write(&root.join(".nvmrc"), "1.2.3").unwrap();
+        sandbox.create_file(".nvmrc", "1.2.3");
 
-        create_moon_command(root)
-            .arg("init")
-            .arg("--yes")
-            .arg(root)
-            .assert();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("init").arg("--yes").arg(root);
+        });
 
         let content = fs::read_to_string(config).unwrap();
 
@@ -26,17 +23,15 @@ mod init_node {
 
     #[test]
     fn infers_version_from_nodenv() {
-        let fixture = create_sandbox("init-sandbox");
-        let root = fixture.path();
+        let sandbox = create_sandbox("init-sandbox");
+        let root = sandbox.path().to_path_buf();
         let config = root.join(".moon").join("toolchain.yml");
 
-        fs::write(&root.join(".node-version"), "1.2.3").unwrap();
+        sandbox.create_file(".node-version", "1.2.3");
 
-        create_moon_command(root)
-            .arg("init")
-            .arg("--yes")
-            .arg(root)
-            .assert();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("init").arg("--yes").arg(root);
+        });
 
         let content = fs::read_to_string(config).unwrap();
 
@@ -45,27 +40,17 @@ mod init_node {
 
     #[test]
     fn infers_globs_from_workspaces() {
-        let fixture = create_sandbox("init-sandbox");
-        let root = fixture.path();
+        let sandbox = create_sandbox("init-sandbox");
+        let root = sandbox.path().to_path_buf();
         let config = root.join(".moon").join("workspace.yml");
 
-        fs::create_dir_all(root.join("packages").join("foo")).unwrap();
-        fs::write(&root.join("packages").join("foo").join("README"), "Hello").unwrap();
+        sandbox.create_file("packages/foo/README", "Hello");
+        sandbox.create_file("app/README", "World");
+        sandbox.create_file("package.json", r#"{"workspaces": ["packages/*", "app"] }"#);
 
-        fs::create_dir_all(root.join("app")).unwrap();
-        fs::write(&root.join("app").join("README"), "World").unwrap();
-
-        fs::write(
-            &root.join("package.json"),
-            r#"{"workspaces": ["packages/*", "app"] }"#,
-        )
-        .unwrap();
-
-        create_moon_command(root)
-            .arg("init")
-            .arg("--yes")
-            .arg(root)
-            .assert();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("init").arg("--yes").arg(root);
+        });
 
         let content = fs::read_to_string(config).unwrap();
 
@@ -74,27 +59,20 @@ mod init_node {
 
     #[test]
     fn infers_globs_from_workspaces_expanded() {
-        let fixture = create_sandbox("init-sandbox");
-        let root = fixture.path();
+        let sandbox = create_sandbox("init-sandbox");
+        let root = sandbox.path().to_path_buf();
         let config = root.join(".moon").join("workspace.yml");
 
-        fs::create_dir_all(root.join("packages").join("bar")).unwrap();
-        fs::write(&root.join("packages").join("bar").join("README"), "Hello").unwrap();
-
-        fs::create_dir_all(root.join("app")).unwrap();
-        fs::write(&root.join("app").join("README"), "World").unwrap();
-
-        fs::write(
-            &root.join("package.json"),
+        sandbox.create_file("packages/bar/README", "Hello");
+        sandbox.create_file("app/README", "World");
+        sandbox.create_file(
+            "package.json",
             r#"{"workspaces": { "packages": ["packages/*", "app"] }}"#,
-        )
-        .unwrap();
+        );
 
-        create_moon_command(root)
-            .arg("init")
-            .arg("--yes")
-            .arg(root)
-            .assert();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("init").arg("--yes").arg(root);
+        });
 
         let content = fs::read_to_string(config).unwrap();
 
@@ -106,17 +84,15 @@ mod init_node {
 
         #[test]
         fn infers_npm() {
-            let fixture = create_sandbox("init-sandbox");
-            let root = fixture.path();
+            let sandbox = create_sandbox("init-sandbox");
+            let root = sandbox.path().to_path_buf();
             let config = root.join(".moon").join("toolchain.yml");
 
-            fs::write(&root.join("package-lock.json"), "").unwrap();
+            sandbox.create_file("package-lock.json", "");
 
-            create_moon_command(root)
-                .arg("init")
-                .arg("--yes")
-                .arg(root)
-                .assert();
+            sandbox.run_moon(|cmd| {
+                cmd.arg("init").arg("--yes").arg(root);
+            });
 
             let content = fs::read_to_string(config).unwrap();
 
@@ -125,21 +101,15 @@ mod init_node {
 
         #[test]
         fn infers_npm_from_package() {
-            let fixture = create_sandbox("init-sandbox");
-            let root = fixture.path();
+            let sandbox = create_sandbox("init-sandbox");
+            let root = sandbox.path().to_path_buf();
             let config = root.join(".moon").join("toolchain.yml");
 
-            fs::write(
-                &root.join("package.json"),
-                r#"{"packageManager":"npm@4.5.6"}"#,
-            )
-            .unwrap();
+            sandbox.create_file("package.json", r#"{"packageManager":"npm@4.5.6"}"#);
 
-            create_moon_command(root)
-                .arg("init")
-                .arg("--yes")
-                .arg(root)
-                .assert();
+            sandbox.run_moon(|cmd| {
+                cmd.arg("init").arg("--yes").arg(root);
+            });
 
             let content = fs::read_to_string(config).unwrap();
 
@@ -149,17 +119,15 @@ mod init_node {
 
         #[test]
         fn infers_pnpm() {
-            let fixture = create_sandbox("init-sandbox");
-            let root = fixture.path();
+            let sandbox = create_sandbox("init-sandbox");
+            let root = sandbox.path().to_path_buf();
             let config = root.join(".moon").join("toolchain.yml");
 
-            fs::write(&root.join("pnpm-lock.yaml"), "").unwrap();
+            sandbox.create_file("pnpm-lock.yaml", "");
 
-            create_moon_command(root)
-                .arg("init")
-                .arg("--yes")
-                .arg(root)
-                .assert();
+            sandbox.run_moon(|cmd| {
+                cmd.arg("init").arg("--yes").arg(root);
+            });
 
             let content = fs::read_to_string(config).unwrap();
 
@@ -168,21 +136,15 @@ mod init_node {
 
         #[test]
         fn infers_pnpm_from_package() {
-            let fixture = create_sandbox("init-sandbox");
-            let root = fixture.path();
+            let sandbox = create_sandbox("init-sandbox");
+            let root = sandbox.path().to_path_buf();
             let config = root.join(".moon").join("toolchain.yml");
 
-            fs::write(
-                &root.join("package.json"),
-                r#"{"packageManager":"pnpm@4.5.6"}"#,
-            )
-            .unwrap();
+            sandbox.create_file("package.json", r#"{"packageManager":"pnpm@4.5.6"}"#);
 
-            create_moon_command(root)
-                .arg("init")
-                .arg("--yes")
-                .arg(root)
-                .assert();
+            sandbox.run_moon(|cmd| {
+                cmd.arg("init").arg("--yes").arg(root);
+            });
 
             let content = fs::read_to_string(config).unwrap();
 
@@ -192,17 +154,15 @@ mod init_node {
 
         #[test]
         fn infers_yarn() {
-            let fixture = create_sandbox("init-sandbox");
-            let root = fixture.path();
+            let sandbox = create_sandbox("init-sandbox");
+            let root = sandbox.path().to_path_buf();
             let config = root.join(".moon").join("toolchain.yml");
 
-            fs::write(&root.join("yarn.lock"), "").unwrap();
+            sandbox.create_file("yarn.lock", "");
 
-            create_moon_command(root)
-                .arg("init")
-                .arg("--yes")
-                .arg(root)
-                .assert();
+            sandbox.run_moon(|cmd| {
+                cmd.arg("init").arg("--yes").arg(root);
+            });
 
             let content = fs::read_to_string(config).unwrap();
 
@@ -211,21 +171,15 @@ mod init_node {
 
         #[test]
         fn infers_yarn_from_package() {
-            let fixture = create_sandbox("init-sandbox");
-            let root = fixture.path();
+            let sandbox = create_sandbox("init-sandbox");
+            let root = sandbox.path().to_path_buf();
             let config = root.join(".moon").join("toolchain.yml");
 
-            fs::write(
-                &root.join("package.json"),
-                r#"{"packageManager":"yarn@4.5.6"}"#,
-            )
-            .unwrap();
+            sandbox.create_file("package.json", r#"{"packageManager":"yarn@4.5.6"}"#);
 
-            create_moon_command(root)
-                .arg("init")
-                .arg("--yes")
-                .arg(root)
-                .assert();
+            sandbox.run_moon(|cmd| {
+                cmd.arg("init").arg("--yes").arg(root);
+            });
 
             let content = fs::read_to_string(config).unwrap();
 

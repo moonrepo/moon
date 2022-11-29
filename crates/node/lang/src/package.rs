@@ -506,13 +506,13 @@ fn write_preserved_json(path: &Path, package: &PackageJson) -> Result<(), MoonEr
 #[cfg(test)]
 mod test {
     use super::*;
-    use assert_fs::prelude::*;
+    use moon_test_utils::{assert_fs::prelude::*, create_temp_dir};
 
     #[test]
     fn preserves_order_when_de_to_ser() {
         let json = r#"{"name": "hello", "description": "world", "private": true}"#;
 
-        let dir = assert_fs::TempDir::new().unwrap();
+        let dir = create_temp_dir();
         let file = dir.child("package.json");
         file.write_str(json).unwrap();
 

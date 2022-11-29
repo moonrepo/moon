@@ -1,18 +1,8 @@
-use moon_utils::test::{create_moon_command, create_sandbox_with_git, get_fixtures_dir};
-use predicates::prelude::*;
+use moon_test_utils::{
+    create_sandbox_with_config, get_fixtures_path, get_node_depman_fixture_configs,
+    predicates::prelude::*,
+};
 use serial_test::serial;
-use std::path::Path;
-
-fn setup_toolchain(path: &Path, target_id: &str) {
-    if target_id.is_empty() {
-        create_moon_command(path).args(["setup"]).assert().success();
-    } else {
-        create_moon_command(path)
-            .args(["run", target_id])
-            .assert()
-            .success();
-    }
-}
 
 mod run_script {
     use super::*;
@@ -20,13 +10,19 @@ mod run_script {
     #[test]
     #[serial]
     fn errors_if_no_project() {
-        let fixture = create_sandbox_with_git("node-npm");
+        let (workspace_config, toolchain_config, projects_config) =
+            get_node_depman_fixture_configs("npm");
 
-        setup_toolchain(fixture.path(), "");
+        let sandbox = create_sandbox_with_config(
+            "node-npm",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&projects_config),
+        );
 
-        let assert = create_moon_command(fixture.path())
-            .args(["node", "run-script", "unknown"])
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.args(["node", "run-script", "unknown"]);
+        });
 
         assert.failure().stderr(predicate::str::contains(
             "This command must be ran within the context of a project.",
@@ -36,13 +32,19 @@ mod run_script {
     #[test]
     #[serial]
     fn errors_for_unknown_script() {
-        let fixture = create_sandbox_with_git("node-npm");
+        let (workspace_config, toolchain_config, projects_config) =
+            get_node_depman_fixture_configs("npm");
 
-        setup_toolchain(fixture.path(), "");
+        let sandbox = create_sandbox_with_config(
+            "node-npm",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&projects_config),
+        );
 
-        let assert = create_moon_command(fixture.path())
-            .args(["node", "run-script", "unknown", "--project", "npm"])
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.args(["node", "run-script", "unknown", "--project", "npm"]);
+        });
 
         assert
             .failure()
@@ -52,13 +54,19 @@ mod run_script {
     #[test]
     #[serial]
     fn runs_with_project_option() {
-        let fixture = create_sandbox_with_git("node-npm");
+        let (workspace_config, toolchain_config, projects_config) =
+            get_node_depman_fixture_configs("npm");
 
-        setup_toolchain(fixture.path(), "npm:installDep");
+        let sandbox = create_sandbox_with_config(
+            "node-npm",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&projects_config),
+        );
 
-        let assert = create_moon_command(fixture.path())
-            .args(["node", "run-script", "test", "--project", "npm"])
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.args(["node", "run-script", "test", "--project", "npm"]);
+        });
 
         assert.success().stdout(predicate::str::contains("> test"));
     }
@@ -66,17 +74,20 @@ mod run_script {
     #[test]
     #[serial]
     fn runs_with_env_var() {
-        let fixture = create_sandbox_with_git("node-npm");
+        let (workspace_config, toolchain_config, projects_config) =
+            get_node_depman_fixture_configs("npm");
 
-        setup_toolchain(fixture.path(), "npm:installDep");
+        let sandbox = create_sandbox_with_config(
+            "node-npm",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&projects_config),
+        );
 
-        let assert = create_moon_command(fixture.path())
-            .args(["node", "run-script", "test"])
-            .env(
-                "MOON_PROJECT_ROOT",
-                get_fixtures_dir("node-npm").join("base"),
-            )
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.args(["node", "run-script", "test"])
+                .env("MOON_PROJECT_ROOT", get_fixtures_path("node-npm/base"));
+        });
 
         assert.success().stdout(predicate::str::contains("> test"));
     }
@@ -84,13 +95,19 @@ mod run_script {
     #[test]
     #[serial]
     fn works_with_pnpm() {
-        let fixture = create_sandbox_with_git("node-pnpm");
+        let (workspace_config, toolchain_config, projects_config) =
+            get_node_depman_fixture_configs("pnpm");
 
-        setup_toolchain(fixture.path(), "pnpm:installDep");
+        let sandbox = create_sandbox_with_config(
+            "node-pnpm",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&projects_config),
+        );
 
-        let assert = create_moon_command(fixture.path())
-            .args(["node", "run-script", "lint", "--project", "pnpm"])
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.args(["node", "run-script", "lint", "--project", "pnpm"]);
+        });
 
         assert.success().stdout(predicate::str::contains("lint"));
     }
@@ -98,13 +115,19 @@ mod run_script {
     #[test]
     #[serial]
     fn works_with_yarn() {
-        let fixture = create_sandbox_with_git("node-yarn");
+        let (workspace_config, toolchain_config, projects_config) =
+            get_node_depman_fixture_configs("yarn");
 
-        setup_toolchain(fixture.path(), "yarn:installDep");
+        let sandbox = create_sandbox_with_config(
+            "node-yarn",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&projects_config),
+        );
 
-        let assert = create_moon_command(fixture.path())
-            .args(["node", "run-script", "build", "--project", "yarn"])
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.args(["node", "run-script", "build", "--project", "yarn"]);
+        });
 
         assert.success().stdout(predicate::str::contains("build"));
     }
@@ -112,13 +135,19 @@ mod run_script {
     #[test]
     #[serial]
     fn works_with_yarn1() {
-        let fixture = create_sandbox_with_git("node-yarn1");
+        let (workspace_config, toolchain_config, projects_config) =
+            get_node_depman_fixture_configs("yarn1");
 
-        setup_toolchain(fixture.path(), "yarn:installDep");
+        let sandbox = create_sandbox_with_config(
+            "node-yarn1",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&projects_config),
+        );
 
-        let assert = create_moon_command(fixture.path())
-            .args(["node", "run-script", "build", "--project", "yarn"])
-            .assert();
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.args(["node", "run-script", "build", "--project", "yarn1"]);
+        });
 
         assert.success().stdout(predicate::str::contains("build"));
     }

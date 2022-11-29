@@ -1,4 +1,3 @@
-use insta::assert_snapshot;
 use moon_cache::CacheEngine;
 use moon_config::{
     GlobalProjectConfig, NodeConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
@@ -9,7 +8,8 @@ use moon_project_graph::ProjectGraph;
 use moon_runner::{BatchedTopoSort, DepGraph, NodeIndex};
 use moon_system_platform::SystemPlatform;
 use moon_task::Target;
-use moon_utils::test::{create_sandbox, TempDir};
+use moon_test_utils::{assert_snapshot, create_sandbox_with_config, Sandbox};
+use moon_utils::string_vec;
 use rustc_hash::{FxHashMap, FxHashSet};
 
 fn register_platforms(project_graph: &mut ProjectGraph) {
@@ -21,50 +21,66 @@ fn register_platforms(project_graph: &mut ProjectGraph) {
         .unwrap();
 }
 
-async fn create_project_graph() -> (ProjectGraph, TempDir) {
-    let fixture = create_sandbox("projects");
-    let workspace_root = fixture.path();
+async fn create_project_graph() -> (ProjectGraph, Sandbox) {
     let workspace_config = WorkspaceConfig {
         projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
             ("advanced".to_owned(), "advanced".to_owned()),
             ("basic".to_owned(), "basic".to_owned()),
             ("emptyConfig".to_owned(), "empty-config".to_owned()),
             ("noConfig".to_owned(), "no-config".to_owned()),
+            // Deps
             ("foo".to_owned(), "deps/foo".to_owned()),
             ("bar".to_owned(), "deps/bar".to_owned()),
             ("baz".to_owned(), "deps/baz".to_owned()),
+            // Tasks
             ("tasks".to_owned(), "tasks".to_owned()),
+            // Languages
+            ("js".to_owned(), "langs/js".to_owned()),
+            ("ts".to_owned(), "langs/ts".to_owned()),
+            ("bash".to_owned(), "langs/bash".to_owned()),
             ("platforms".to_owned(), "platforms".to_owned()),
         ])),
         ..WorkspaceConfig::default()
     };
     let toolchain_config = ToolchainConfig {
         node: Some(NodeConfig {
-            // Consistent snapshots
             version: "16.0.0".into(),
+            dedupe_on_lockfile_change: false,
             ..NodeConfig::default()
         }),
         ..ToolchainConfig::default()
     };
+    let projects_config = GlobalProjectConfig {
+        file_groups: FxHashMap::from_iter([
+            ("sources".to_owned(), string_vec!["src/**/*", "types/**/*"]),
+            ("tests".to_owned(), string_vec!["tests/**/*"]),
+        ]),
+        ..GlobalProjectConfig::default()
+    };
+
+    let sandbox = create_sandbox_with_config(
+        "projects",
+        Some(&workspace_config),
+        Some(&toolchain_config),
+        Some(&projects_config),
+    );
 
     let mut graph = ProjectGraph::generate(
-        workspace_root,
+        sandbox.path(),
         &workspace_config,
         &toolchain_config,
-        GlobalProjectConfig::default(),
-        &CacheEngine::load(workspace_root).await.unwrap(),
+        projects_config,
+        &CacheEngine::load(sandbox.path()).await.unwrap(),
     )
     .await
     .unwrap();
 
     register_platforms(&mut graph);
 
-    (graph, fixture)
+    (graph, sandbox)
 }
 
-async fn create_tasks_project_graph() -> (ProjectGraph, TempDir) {
-    let fixture = create_sandbox("tasks");
-    let workspace_root = fixture.path();
+async fn create_tasks_project_graph() -> (ProjectGraph, Sandbox) {
     let workspace_config = WorkspaceConfig {
         projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
             ("basic".to_owned(), "basic".to_owned()),
@@ -76,6 +92,10 @@ async fn create_tasks_project_graph() -> (ProjectGraph, TempDir) {
             ("inputA".to_owned(), "input-a".to_owned()),
             ("inputB".to_owned(), "input-b".to_owned()),
             ("inputC".to_owned(), "input-c".to_owned()),
+            (
+                "mergeAllStrategies".to_owned(),
+                "merge-all-strategies".to_owned(),
+            ),
             ("mergeAppend".to_owned(), "merge-append".to_owned()),
             ("mergePrepend".to_owned(), "merge-prepend".to_owned()),
             ("mergeReplace".to_owned(), "merge-replace".to_owned()),
@@ -85,30 +105,36 @@ async fn create_tasks_project_graph() -> (ProjectGraph, TempDir) {
     };
     let toolchain_config = ToolchainConfig {
         node: Some(NodeConfig {
-            // Consistent snapshots
             version: "16.0.0".into(),
             ..NodeConfig::default()
         }),
         ..ToolchainConfig::default()
     };
-    let global_config = GlobalProjectConfig {
+    let projects_config = GlobalProjectConfig {
         file_groups: FxHashMap::from_iter([("sources".to_owned(), vec!["src/**/*".to_owned()])]),
         ..GlobalProjectConfig::default()
     };
 
+    let sandbox = create_sandbox_with_config(
+        "tasks",
+        Some(&workspace_config),
+        Some(&toolchain_config),
+        Some(&projects_config),
+    );
+
     let mut graph = ProjectGraph::generate(
-        workspace_root,
+        sandbox.path(),
         &workspace_config,
         &toolchain_config,
-        global_config,
-        &CacheEngine::load(workspace_root).await.unwrap(),
+        projects_config,
+        &CacheEngine::load(sandbox.path()).await.unwrap(),
     )
     .await
     .unwrap();
 
     register_platforms(&mut graph);
 
-    (graph, fixture)
+    (graph, sandbox)
 }
 
 fn sort_batches(batches: BatchedTopoSort) -> BatchedTopoSort {
@@ -137,7 +163,7 @@ fn default_graph() {
     expected = "CycleDetected(\"RunTarget(cycle:a) → RunTarget(cycle:b) → RunTarget(cycle:c)\")"
 )]
 async fn detects_cycles() {
-    let (projects, _fixture) = create_tasks_project_graph().await;
+    let (projects, _sandbox) = create_tasks_project_graph().await;
 
     let mut graph = DepGraph::default();
     graph
@@ -161,7 +187,7 @@ mod run_target {
 
     #[tokio::test]
     async fn single_targets() {
-        let (projects, _fixture) = create_project_graph().await;
+        let (projects, _sandbox) = create_project_graph().await;
 
         let mut graph = DepGraph::default();
         graph
@@ -194,7 +220,7 @@ mod run_target {
 
     #[tokio::test]
     async fn deps_chain_target() {
-        let (projects, _fixture) = create_tasks_project_graph().await;
+        let (projects, _sandbox) = create_tasks_project_graph().await;
 
         let mut graph = DepGraph::default();
         graph
@@ -242,7 +268,7 @@ mod run_target {
 
     #[tokio::test]
     async fn avoids_dupe_targets() {
-        let (projects, _fixture) = create_project_graph().await;
+        let (projects, _sandbox) = create_project_graph().await;
 
         let mut graph = DepGraph::default();
         graph
@@ -278,7 +304,7 @@ mod run_target {
 
     #[tokio::test]
     async fn runs_all_projects_for_target_all_scope() {
-        let (projects, _fixture) = create_tasks_project_graph().await;
+        let (projects, _sandbox) = create_tasks_project_graph().await;
 
         let mut graph = DepGraph::default();
         graph
@@ -321,7 +347,7 @@ mod run_target {
     #[tokio::test]
     #[should_panic(expected = "Target(NoProjectDepsInRunContext)")]
     async fn errors_for_target_deps_scope() {
-        let (projects, _fixture) = create_project_graph().await;
+        let (projects, _sandbox) = create_project_graph().await;
 
         let mut graph = DepGraph::default();
         graph
@@ -332,7 +358,7 @@ mod run_target {
     #[tokio::test]
     #[should_panic(expected = "Target(NoProjectSelfInRunContext)")]
     async fn errors_for_target_self_scope() {
-        let (projects, _fixture) = create_project_graph().await;
+        let (projects, _sandbox) = create_project_graph().await;
 
         let mut graph = DepGraph::default();
         graph
@@ -343,7 +369,7 @@ mod run_target {
     #[tokio::test]
     #[should_panic(expected = "Project(UnconfiguredID(\"unknown\"))")]
     async fn errors_for_unknown_project() {
-        let (projects, _fixture) = create_project_graph().await;
+        let (projects, _sandbox) = create_project_graph().await;
 
         let mut graph = DepGraph::default();
         graph
@@ -356,7 +382,7 @@ mod run_target {
     #[tokio::test]
     #[should_panic(expected = "Project(UnconfiguredTask(\"build\", \"tasks\"))")]
     async fn errors_for_unknown_task() {
-        let (projects, _fixture) = create_project_graph().await;
+        let (projects, _sandbox) = create_project_graph().await;
 
         let mut graph = DepGraph::default();
         graph
@@ -372,11 +398,11 @@ mod run_target_if_touched {
 
     #[tokio::test]
     async fn skips_if_untouched_project() {
-        let (projects, fixture) = create_tasks_project_graph().await;
+        let (projects, sandbox) = create_tasks_project_graph().await;
 
         let mut touched_files = FxHashSet::default();
-        touched_files.insert(fixture.path().join("input-a/a.ts"));
-        touched_files.insert(fixture.path().join("input-c/c.ts"));
+        touched_files.insert(sandbox.path().join("input-a/a.ts"));
+        touched_files.insert(sandbox.path().join("input-c/c.ts"));
         let touched_files = Some(touched_files);
 
         let mut graph = DepGraph::default();
@@ -400,12 +426,12 @@ mod run_target_if_touched {
 
     #[tokio::test]
     async fn skips_if_untouched_task() {
-        let (projects, fixture) = create_tasks_project_graph().await;
+        let (projects, sandbox) = create_tasks_project_graph().await;
 
         let mut touched_files = FxHashSet::default();
-        touched_files.insert(fixture.path().join("input-a/a2.ts"));
-        touched_files.insert(fixture.path().join("input-b/b2.ts"));
-        touched_files.insert(fixture.path().join("input-c/any.ts"));
+        touched_files.insert(sandbox.path().join("input-a/a2.ts"));
+        touched_files.insert(sandbox.path().join("input-b/b2.ts"));
+        touched_files.insert(sandbox.path().join("input-c/any.ts"));
         let touched_files = Some(touched_files);
 
         let mut graph = DepGraph::default();
@@ -448,7 +474,7 @@ mod sync_project {
 
     #[tokio::test]
     async fn isolated_projects() {
-        let (projects, _fixture) = create_project_graph().await;
+        let (projects, _sandbox) = create_project_graph().await;
         let mut graph = DepGraph::default();
 
         sync_projects(
@@ -482,7 +508,7 @@ mod sync_project {
 
     #[tokio::test]
     async fn projects_with_deps() {
-        let (projects, _fixture) = create_project_graph().await;
+        let (projects, _sandbox) = create_project_graph().await;
         let mut graph = DepGraph::default();
 
         sync_projects(&mut graph, &projects, &["foo", "bar", "baz", "basic"]);
@@ -519,7 +545,7 @@ mod sync_project {
 
     #[tokio::test]
     async fn projects_with_tasks() {
-        let (projects, _fixture) = create_project_graph().await;
+        let (projects, _sandbox) = create_project_graph().await;
         let mut graph = DepGraph::default();
 
         sync_projects(&mut graph, &projects, &["noConfig", "tasks"]);
@@ -546,7 +572,7 @@ mod sync_project {
 
     #[tokio::test]
     async fn avoids_dupe_projects() {
-        let (projects, _fixture) = create_project_graph().await;
+        let (projects, _sandbox) = create_project_graph().await;
         let mut graph = DepGraph::default();
 
         sync_projects(&mut graph, &projects, &["advanced", "advanced", "advanced"]);
@@ -557,7 +583,7 @@ mod sync_project {
     #[tokio::test]
     #[should_panic(expected = "UnconfiguredID(\"unknown\")")]
     async fn errors_for_unknown_project() {
-        let (projects, _fixture) = create_project_graph().await;
+        let (projects, _sandbox) = create_project_graph().await;
         let mut graph = DepGraph::default();
 
         sync_projects(&mut graph, &projects, &["unknown"]);
@@ -571,7 +597,7 @@ mod installs_deps {
 
     #[tokio::test]
     async fn tool_is_based_on_task_platform() {
-        let (projects, _fixture) = create_project_graph().await;
+        let (projects, _sandbox) = create_project_graph().await;
         let mut graph = DepGraph::default();
 
         graph

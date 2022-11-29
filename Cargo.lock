@@ -1828,12 +1828,12 @@ dependencies = [
 name = "moon_archive"
 version = "0.1.0"
 dependencies = [
- "assert_fs",
  "criterion",
  "fake",
  "flate2",
  "moon_error",
  "moon_logger",
+ "moon_test_utils",
  "moon_utils",
  "rand 0.8.5",
  "rustc-hash",
@@ -1847,13 +1847,13 @@ dependencies = [
 name = "moon_cache"
 version = "0.1.0"
 dependencies = [
- "assert_fs",
  "filetime",
  "moon_archive",
  "moon_constants",
  "moon_error",
  "moon_logger",
  "moon_platform",
+ "moon_test_utils",
  "moon_utils",
  "rustc-hash",
  "serde",
@@ -1865,7 +1865,6 @@ dependencies = [
 name = "moon_cli"
 version = "0.19.1"
 dependencies = [
- "assert_cmd",
  "async-recursion",
  "clap 4.0.23",
  "clap_lex 0.3.0",
@@ -1874,7 +1873,6 @@ dependencies = [
  "dialoguer",
  "futures",
  "indicatif",
- "insta",
  "itertools",
  "mimalloc",
  "moon_archive",
@@ -1896,13 +1894,12 @@ dependencies = [
  "moon_system_platform",
  "moon_task",
  "moon_terminal",
+ "moon_test_utils",
  "moon_toolchain",
  "moon_typescript_lang",
  "moon_utils",
  "moon_vcs",
  "moon_workspace",
- "predicates",
- "pretty_assertions",
  "rustc-hash",
  "serde",
  "serde_json",
@@ -1918,13 +1915,12 @@ dependencies = [
 name = "moon_config"
 version = "0.1.0"
 dependencies = [
- "assert_fs",
  "figment",
  "moon_constants",
  "moon_error",
  "moon_node_lang",
+ "moon_test_utils",
  "moon_utils",
- "pretty_assertions",
  "reqwest",
  "rustc-hash",
  "schemars",
@@ -1953,6 +1949,7 @@ dependencies = [
  "moon_platform",
  "moon_project",
  "moon_task",
+ "moon_test_utils",
  "moon_utils",
  "moon_workspace",
  "serde",
@@ -1973,7 +1970,6 @@ dependencies = [
 name = "moon_generator"
 version = "0.1.0"
 dependencies = [
- "assert_fs",
  "convert_case",
  "futures",
  "lazy_static",
@@ -1981,6 +1977,7 @@ dependencies = [
  "moon_constants",
  "moon_error",
  "moon_logger",
+ "moon_test_utils",
  "moon_utils",
  "serde_json",
  "tera",
@@ -2023,22 +2020,20 @@ dependencies = [
 name = "moon_node_lang"
 version = "0.1.0"
 dependencies = [
- "assert_fs",
  "cached",
  "content_inspector",
  "lazy_static",
  "moon_error",
  "moon_lang",
  "moon_logger",
+ "moon_test_utils",
  "moon_utils",
- "pretty_assertions",
  "regex",
  "reqwest",
  "rustc-hash",
  "serde",
  "serde_json",
  "serde_yaml",
- "serial_test",
  "thiserror",
  "tokio",
  "yarn-lock-parser",
@@ -2048,7 +2043,6 @@ dependencies = [
 name = "moon_node_platform"
 version = "0.1.0"
 dependencies = [
- "insta",
  "lazy_static",
  "moon_action",
  "moon_cache",
@@ -2064,11 +2058,11 @@ dependencies = [
  "moon_runner_context",
  "moon_task",
  "moon_terminal",
+ "moon_test_utils",
  "moon_toolchain",
  "moon_typescript_lang",
  "moon_utils",
  "moon_workspace",
- "pretty_assertions",
  "rustc-hash",
  "serde",
  "tokio",
@@ -2118,8 +2112,8 @@ dependencies = [
  "moon_error",
  "moon_logger",
  "moon_task",
+ "moon_test_utils",
  "moon_utils",
- "pretty_assertions",
  "rustc-hash",
  "serde",
  "strum",
@@ -2131,7 +2125,6 @@ name = "moon_project_graph"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "insta",
  "moon_cache",
  "moon_config",
  "moon_error",
@@ -2140,6 +2133,7 @@ dependencies = [
  "moon_platform",
  "moon_project",
  "moon_task",
+ "moon_test_utils",
  "moon_utils",
  "petgraph",
  "rustc-hash",
@@ -2154,7 +2148,6 @@ dependencies = [
  "async-trait",
  "console",
  "criterion",
- "insta",
  "moon_action",
  "moon_cache",
  "moon_config",
@@ -2172,6 +2165,7 @@ dependencies = [
  "moon_system_platform",
  "moon_task",
  "moon_terminal",
+ "moon_test_utils",
  "moon_toolchain",
  "moon_utils",
  "moon_vcs",
@@ -2217,6 +2211,7 @@ dependencies = [
  "moon_config",
  "moon_error",
  "moon_logger",
+ "moon_test_utils",
  "moon_utils",
  "rustc-hash",
  "serde",
@@ -2233,6 +2228,22 @@ dependencies = [
  "lazy_static",
  "moon_logger",
  "regex",
+]
+
+[[package]]
+name = "moon_test_utils"
+version = "0.1.0"
+dependencies = [
+ "assert_cmd",
+ "assert_fs",
+ "clean-path",
+ "dirs",
+ "insta",
+ "moon_config",
+ "predicates",
+ "pretty_assertions",
+ "rustc-hash",
+ "serde_yaml",
 ]
 
 [[package]]
@@ -2262,6 +2273,7 @@ dependencies = [
  "moon_error",
  "moon_lang",
  "moon_logger",
+ "moon_test_utils",
  "moon_utils",
  "serde",
  "serde_json",
@@ -2272,8 +2284,6 @@ dependencies = [
 name = "moon_utils"
 version = "0.1.0"
 dependencies = [
- "assert_cmd",
- "assert_fs",
  "async-recursion",
  "cached",
  "chrono",
@@ -2284,13 +2294,13 @@ dependencies = [
  "ec4rs",
  "futures",
  "humantime",
- "insta",
  "json_comments",
  "lazy_static",
  "md5",
  "moon_constants",
  "moon_error",
  "moon_logger",
+ "moon_test_utils",
  "pathdiff",
  "regex",
  "semver",
@@ -2311,6 +2321,7 @@ dependencies = [
  "ignore",
  "moon_config",
  "moon_error",
+ "moon_test_utils",
  "moon_utils",
  "regex",
  "rustc-hash",

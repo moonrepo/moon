@@ -1,6 +1,5 @@
-use insta::assert_snapshot;
+use moon_test_utils::{assert_snapshot, create_sandbox};
 use moon_utils::json;
-use moon_utils::test::create_sandbox;
 use std::fs;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
@@ -74,8 +73,8 @@ mod editor_config {
 
     #[test]
     fn uses_defaults_when_no_config() {
-        let fixture = create_sandbox("editor-config");
-        let path = fixture.path().join("file.json");
+        let sandbox = create_sandbox("editor-config");
+        let path = sandbox.path().join("file.json");
 
         json::write_with_config(&path, json::read(&path).unwrap(), true).unwrap();
 
@@ -84,8 +83,8 @@ mod editor_config {
 
     #[test]
     fn writes_ugly() {
-        let fixture = create_sandbox("editor-config");
-        let path = fixture.path().join("file.json");
+        let sandbox = create_sandbox("editor-config");
+        let path = sandbox.path().join("file.json");
 
         json::write_with_config(&path, json::read(&path).unwrap(), false).unwrap();
 
@@ -94,10 +93,10 @@ mod editor_config {
 
     #[test]
     fn can_change_space_indent() {
-        let fixture = create_sandbox("editor-config");
-        let path = fixture.path().join("file.json");
+        let sandbox = create_sandbox("editor-config");
+        let path = sandbox.path().join("file.json");
 
-        append_editor_config(fixture.path(), "[*.json]\nindent_size = 8");
+        append_editor_config(sandbox.path(), "[*.json]\nindent_size = 8");
 
         json::write_with_config(&path, json::read(&path).unwrap(), true).unwrap();
 
@@ -106,10 +105,10 @@ mod editor_config {
 
     #[test]
     fn can_change_tab_indent() {
-        let fixture = create_sandbox("editor-config");
-        let path = fixture.path().join("file.json");
+        let sandbox = create_sandbox("editor-config");
+        let path = sandbox.path().join("file.json");
 
-        append_editor_config(fixture.path(), "[*.json]\nindent_style = tab");
+        append_editor_config(sandbox.path(), "[*.json]\nindent_style = tab");
 
         json::write_with_config(&path, json::read(&path).unwrap(), true).unwrap();
 
@@ -118,10 +117,10 @@ mod editor_config {
 
     #[test]
     fn can_enable_trailing_line() {
-        let fixture = create_sandbox("editor-config");
-        let path = fixture.path().join("file.json");
+        let sandbox = create_sandbox("editor-config");
+        let path = sandbox.path().join("file.json");
 
-        append_editor_config(fixture.path(), "[*.json]\ninsert_final_newline = true");
+        append_editor_config(sandbox.path(), "[*.json]\ninsert_final_newline = true");
 
         json::write_with_config(&path, json::read(&path).unwrap(), true).unwrap();
 
@@ -130,10 +129,10 @@ mod editor_config {
 
     #[test]
     fn can_disable_trailing_line() {
-        let fixture = create_sandbox("editor-config");
-        let path = fixture.path().join("file.json");
+        let sandbox = create_sandbox("editor-config");
+        let path = sandbox.path().join("file.json");
 
-        append_editor_config(fixture.path(), "[*.json]\ninsert_final_newline = false");
+        append_editor_config(sandbox.path(), "[*.json]\ninsert_final_newline = false");
 
         json::write_with_config(&path, json::read(&path).unwrap(), true).unwrap();
 

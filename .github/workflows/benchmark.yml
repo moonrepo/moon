@@ -37,7 +37,9 @@ jobs:
         with:
           toolchain: 1.65.0
           profile: minimal
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: benchmark
       - name: Run benchmarks
         uses: actions-rs/cargo@v1
         with:

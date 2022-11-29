@@ -1,8 +1,12 @@
 use moon_test_utils::{
-    assert_cmd::assert::Assert, assert_snapshot, create_sandbox, get_assert_output,
-    predicates::prelude::*,
+    assert_cmd::assert::Assert, assert_snapshot, create_sandbox_with_config, get_assert_output,
+    predicates::prelude::*, Sandbox,
 };
 use std::fs;
+
+fn generate_sandbox() -> Sandbox {
+    create_sandbox_with_config("generator", None, None, None)
+}
 
 fn get_path_safe_output(assert: &Assert) -> String {
     get_assert_output(assert).replace('\\', "/")
@@ -10,7 +14,7 @@ fn get_path_safe_output(assert: &Assert) -> String {
 
 #[test]
 fn creates_a_new_template() {
-    let sandbox = create_sandbox("generator");
+    let sandbox = generate_sandbox();
 
     let assert = sandbox.run_moon(|cmd| {
         cmd.arg("generate").arg("new-name").arg("--template");
@@ -26,7 +30,7 @@ fn creates_a_new_template() {
 
 #[test]
 fn generates_files_from_template() {
-    let sandbox = create_sandbox("generator");
+    let sandbox = generate_sandbox();
 
     let assert = sandbox.run_moon(|cmd| {
         cmd.arg("generate").arg("standard").arg("./test");
@@ -42,7 +46,7 @@ fn generates_files_from_template() {
 
 #[test]
 fn doesnt_generate_files_when_dryrun() {
-    let sandbox = create_sandbox("generator");
+    let sandbox = generate_sandbox();
 
     let assert = sandbox.run_moon(|cmd| {
         cmd.arg("generate")
@@ -61,7 +65,7 @@ fn doesnt_generate_files_when_dryrun() {
 
 #[test]
 fn overwrites_existing_files_when_forced() {
-    let sandbox = create_sandbox("generator");
+    let sandbox = generate_sandbox();
 
     sandbox.run_moon(|cmd| {
         cmd.arg("generate").arg("standard").arg("./test");
@@ -84,7 +88,7 @@ fn overwrites_existing_files_when_forced() {
 
 #[test]
 fn overwrites_existing_files_when_interpolated_path() {
-    let sandbox = create_sandbox("generator");
+    let sandbox = generate_sandbox();
 
     sandbox.run_moon(|cmd| {
         cmd.arg("generate")
@@ -109,7 +113,7 @@ fn overwrites_existing_files_when_interpolated_path() {
 
 #[test]
 fn renders_and_interpolates_templates() {
-    let sandbox = create_sandbox("generator");
+    let sandbox = generate_sandbox();
 
     let assert = sandbox.run_moon(|cmd| {
         cmd.arg("generate")
@@ -126,7 +130,7 @@ fn renders_and_interpolates_templates() {
 
 #[test]
 fn renders_with_custom_vars_via_args() {
-    let sandbox = create_sandbox("generator");
+    let sandbox = generate_sandbox();
 
     let assert = sandbox.run_moon(|cmd| {
         cmd.arg("generate")
@@ -157,7 +161,7 @@ fn renders_with_custom_vars_via_args() {
 
 #[test]
 fn interpolates_destination_path() {
-    let sandbox = create_sandbox("generator");
+    let sandbox = generate_sandbox();
 
     let assert = sandbox.run_moon(|cmd| {
         cmd.arg("generate")
@@ -175,7 +179,7 @@ fn interpolates_destination_path() {
 
 #[test]
 fn errors_when_parsing_custom_var_types() {
-    let sandbox = create_sandbox("generator");
+    let sandbox = generate_sandbox();
 
     let assert = sandbox.run_moon(|cmd| {
         cmd.arg("generate")
@@ -191,7 +195,7 @@ fn errors_when_parsing_custom_var_types() {
 
 #[test]
 fn supports_custom_filters() {
-    let sandbox = create_sandbox("generator");
+    let sandbox = generate_sandbox();
 
     let assert = sandbox.run_moon(|cmd| {
         cmd.arg("generate")
@@ -207,7 +211,7 @@ fn supports_custom_filters() {
 
 #[test]
 fn supports_tera_twig_exts() {
-    let sandbox = create_sandbox("generator");
+    let sandbox = generate_sandbox();
 
     let assert = sandbox.run_moon(|cmd| {
         cmd.arg("generate")
@@ -239,7 +243,7 @@ mod frontmatter {
 
     #[test]
     fn changes_dest_path() {
-        let sandbox = create_sandbox("generator");
+        let sandbox = generate_sandbox();
 
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("generate")
@@ -257,7 +261,7 @@ mod frontmatter {
 
     #[test]
     fn force_writes_file() {
-        let sandbox = create_sandbox("generator");
+        let sandbox = generate_sandbox();
 
         fs::create_dir_all(sandbox.path().join("test")).unwrap();
         fs::write(sandbox.path().join("test/forced.txt"), "Original content").unwrap();
@@ -276,7 +280,7 @@ mod frontmatter {
 
     #[test]
     fn skips_over_file() {
-        let sandbox = create_sandbox("generator");
+        let sandbox = generate_sandbox();
 
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("generate")
@@ -292,7 +296,7 @@ mod frontmatter {
 
     #[test]
     fn supports_component_vars() {
-        let sandbox = create_sandbox("generator");
+        let sandbox = generate_sandbox();
 
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("generate")

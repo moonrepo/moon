@@ -7,6 +7,7 @@ use assert_cmd::Command;
 use assert_fs::prelude::*;
 pub use assert_fs::TempDir;
 use moon_config::{GlobalProjectConfig, ToolchainConfig, WorkspaceConfig};
+use std::fs;
 use std::path::Path;
 use std::process::Command as StdCommand;
 
@@ -39,6 +40,22 @@ impl Sandbox {
         println!("stdout:\n{}\n", get_assert_stdout_output(assert));
         println!("stderr:\n{}\n", get_assert_stderr_output(assert));
         println!("status: {:#?}", assert.get_output().status);
+
+        self
+    }
+
+    pub fn debug_configs(&self) -> &Self {
+        for cfg in [
+            ".moon/workspace.yml",
+            ".moon/toolchain.yml",
+            ".moon/project.yml",
+        ] {
+            println!(
+                "{} = {}",
+                cfg,
+                fs::read_to_string(self.path().join(cfg)).unwrap()
+            );
+        }
 
         self
     }

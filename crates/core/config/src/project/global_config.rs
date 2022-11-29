@@ -48,6 +48,7 @@ fn validate_tasks(map: &BTreeMap<String, TaskConfig>) -> Result<(), ValidationEr
 // We use serde(default) because extended configs may not have defined these fields
 #[serde(default, rename_all = "camelCase")]
 pub struct GlobalProjectConfig {
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_extends")]
     pub extends: Option<String>,
 

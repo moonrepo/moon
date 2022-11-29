@@ -146,7 +146,7 @@ mod run_script {
         );
 
         let assert = sandbox.run_moon(|cmd| {
-            cmd.args(["node", "run-script", "build", "--project", "yarn"]);
+            cmd.args(["node", "run-script", "build", "--project", "yarn1"]);
         });
 
         assert.success().stdout(predicate::str::contains("build"));

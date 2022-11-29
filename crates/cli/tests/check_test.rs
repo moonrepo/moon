@@ -40,6 +40,7 @@ fn runs_tasks_in_project_using_cwd() {
         cmd.current_dir(cwd).arg("check");
     });
 
+    sandbox.debug(&assert);
     let output = get_assert_output(&assert);
 
     assert!(predicate::str::contains("base:base").eval(&output));

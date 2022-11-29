@@ -1,6 +1,6 @@
 use moon_config::{WorkspaceConfig, WorkspaceProjects};
 use moon_test_utils::{
-    assert_snapshot, create_sandbox, create_sandbox_with_config, predicates::str::contains,
+    assert_snapshot, create_sandbox_with_config, predicates::str::contains, Sandbox,
 };
 use moon_utils::string_vec;
 use std::fs;

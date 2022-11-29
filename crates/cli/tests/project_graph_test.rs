@@ -1,11 +1,11 @@
 use moon_test_utils::{
-    assert_snapshot, create_sandbox, create_sandbox_with_config, get_assert_output,
+    assert_snapshot, create_sandbox_with_config, get_assert_output,
     get_project_graph_aliases_fixture_configs, get_projects_fixture_configs,
 };
 
 #[test]
 fn no_projects() {
-    let sandbox = create_sandbox("base");
+    let sandbox = create_sandbox_with_config("base", None, None, None);
 
     let assert = sandbox.run_moon(|cmd| {
         cmd.arg("project-graph");

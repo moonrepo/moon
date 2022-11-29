@@ -27,4 +27,7 @@ switch (type) {
 	case 'custom':
 		createFile(process.argv[3], 'fixed content');
 		break;
+	case 'none':
+		console.log('No outputs!');
+		break;
 }

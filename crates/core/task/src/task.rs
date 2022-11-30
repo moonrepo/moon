@@ -466,6 +466,9 @@ impl Task {
             let error_handler =
                 |e: dotenvy::Error| TaskError::InvalidEnvFile(env_path.clone(), e.to_string());
 
+            // Add as an input
+            self.inputs.push(env_file.to_owned());
+
             // The `.env` file may not have been committed, so avoid crashing in CI
             if is_ci() && !env_path.exists() {
                 debug!(

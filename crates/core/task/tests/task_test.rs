@@ -511,7 +511,7 @@ mod expand_env {
         let sandbox = create_sandbox("cases");
         let project_root = sandbox.path().join("base");
 
-        sandbox.create_file(".env", "FOO");
+        sandbox.create_file("base/.env", "FOO");
 
         create_expanded_task(
             sandbox.path(),
@@ -559,7 +559,7 @@ mod expand_env {
         let sandbox = create_sandbox("cases");
         let project_root = sandbox.path().join("base");
 
-        sandbox.create_file(".env", "FOO=foo\nBAR=123");
+        sandbox.create_file("base/.env", "FOO=foo\nBAR=123");
 
         let task = create_expanded_task(
             sandbox.path(),
@@ -581,6 +581,9 @@ mod expand_env {
                 ("BAR".to_owned(), "123".to_owned())
             ])
         );
+
+        assert!(task.inputs.contains(&".env".to_owned()));
+        assert!(task.input_paths.contains(&project_root.join(".env")));
     }
 
     #[test]
@@ -588,7 +591,7 @@ mod expand_env {
         let sandbox = create_sandbox("cases");
         let project_root = sandbox.path().join("base");
 
-        sandbox.create_file(".env.production", "FOO=foo\nBAR=123");
+        sandbox.create_file("base/.env.production", "FOO=foo\nBAR=123");
 
         let task = create_expanded_task(
             sandbox.path(),
@@ -610,6 +613,11 @@ mod expand_env {
                 ("BAR".to_owned(), "123".to_owned())
             ])
         );
+
+        assert!(task.inputs.contains(&".env.production".to_owned()));
+        assert!(task
+            .input_paths
+            .contains(&project_root.join(".env.production")));
     }
 
     #[test]
@@ -617,7 +625,7 @@ mod expand_env {
         let sandbox = create_sandbox("cases");
         let project_root = sandbox.path().join("base");
 
-        sandbox.create_file(".env", "FOO=foo\nBAR=123");
+        sandbox.create_file("base/.env", "FOO=foo\nBAR=123");
 
         let task = create_expanded_task(
             sandbox.path(),
@@ -643,6 +651,8 @@ mod expand_env {
                 ("BAR".to_owned(), "123".to_owned())
             ])
         );
+
+        assert!(task.inputs.contains(&".env".to_owned()));
     }
 }
 

@@ -506,10 +506,9 @@ mod is_affected {
 
         sandbox.create_file("files-and-dirs/.env", "");
 
-        let workspace_root = sandbox.path();
-        let project_root = workspace_root.join("files-and-dirs");
+        let project_root = sandbox.path().join("files-and-dirs");
         let task = create_expanded_task(
-            &workspace_root,
+            sandbox.path(),
             &project_root,
             Some(TaskConfig {
                 options: TaskOptionsConfig {

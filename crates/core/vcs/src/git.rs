@@ -168,12 +168,16 @@ impl Vcs for Git {
         .await
     }
 
-    async fn get_file_hashes(&self, files: &[String]) -> VcsResult<BTreeMap<String, String>> {
+    async fn get_file_hashes(
+        &self,
+        files: &[String],
+        allow_ignored: bool,
+    ) -> VcsResult<BTreeMap<String, String>> {
         let mut objects = vec![];
         let mut map = BTreeMap::new();
 
         for file in files {
-            if !self.is_file_ignored(file) {
+            if allow_ignored || !self.is_file_ignored(file) {
                 objects.push(file.clone());
             }
         }

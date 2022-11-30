@@ -39,7 +39,11 @@ pub trait Vcs {
 
     /// Get a map of hashes for the provided files.
     /// Files are relative from the repository root.
-    async fn get_file_hashes(&self, files: &[String]) -> VcsResult<BTreeMap<String, String>>;
+    async fn get_file_hashes(
+        &self,
+        files: &[String],
+        allow_ignored: bool,
+    ) -> VcsResult<BTreeMap<String, String>>;
 
     /// Get a map of hashes for all files recursively starting from a directory.
     /// Files are relative from the repository root.

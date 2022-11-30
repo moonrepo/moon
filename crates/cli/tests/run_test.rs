@@ -781,13 +781,13 @@ mod outputs {
 
             sandbox.enable_git();
 
-            let assert1 = sandbox.run_moon(|cmd| {
+            sandbox.run_moon(|cmd| {
                 cmd.arg("run").arg("outputs:noOutput");
             });
 
             let hash1 = extract_hash_from_run(sandbox.path(), "outputs:noOutput").await;
 
-            let assert2 = sandbox.run_moon(|cmd| {
+            sandbox.run_moon(|cmd| {
                 cmd.arg("run").arg("outputs:noOutput");
             });
 

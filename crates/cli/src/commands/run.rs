@@ -4,6 +4,7 @@ use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOption
 use moon_logger::{color, map_list};
 use moon_runner::{DepGraph, Runner};
 use moon_runner_context::{ProfileType, RunnerContext};
+use moon_utils::is_ci;
 use moon_workspace::Workspace;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::string::ToString;
@@ -32,24 +33,36 @@ pub async fn run(
     // Generate a dependency graph for all the targets that need to be ran
     let mut dep_graph = DepGraph::default();
     let touched_files = if options.affected {
-        Some(
-            query_touched_files(
-                &workspace,
-                &mut QueryTouchedFilesOptions {
-                    local: !options.upstream,
-                    status: options.status,
-                    ..QueryTouchedFilesOptions::default()
-                },
-            )
-            .await?,
+        query_touched_files(
+            &workspace,
+            &mut QueryTouchedFilesOptions {
+                local: !options.upstream,
+                status: options.status,
+                ..QueryTouchedFilesOptions::default()
+            },
         )
+        .await?
     } else {
-        None
+        query_touched_files(
+            &workspace,
+            &mut QueryTouchedFilesOptions {
+                local: !is_ci(),
+                ..QueryTouchedFilesOptions::default()
+            },
+        )
+        .await?
     };
 
     // Run targets, optionally based on affected files
-    let primary_targets =
-        dep_graph.run_targets_by_id(target_ids, &workspace.projects, &touched_files)?;
+    let primary_targets = dep_graph.run_targets_by_id(
+        target_ids,
+        &workspace.projects,
+        if options.affected {
+            Some(&touched_files)
+        } else {
+            None
+        },
+    )?;
 
     if primary_targets.is_empty() {
         let targets_list = map_list(target_ids, |id| color::target(id));
@@ -88,7 +101,7 @@ pub async fn run(
         primary_targets: FxHashSet::from_iter(primary_targets),
         profile: options.profile,
         target_hashes: FxHashMap::default(),
-        touched_files: touched_files.unwrap_or_default(),
+        touched_files,
     };
 
     let mut runner = Runner::new(workspace);

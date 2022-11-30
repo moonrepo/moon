@@ -199,11 +199,7 @@ impl DepGraph {
             let dep_project = project_graph.load(&dependent_id)?;
 
             if dep_project.tasks.contains_key(&task_id) {
-                self.run_target(
-                    Target::new(&dep_project.id, &task_id)?,
-                    project_graph,
-                    &None,
-                )?;
+                self.run_target(Target::new(&dep_project.id, &task_id)?, project_graph, None)?;
             }
         }
 
@@ -214,7 +210,7 @@ impl DepGraph {
         &mut self,
         target: T,
         project_graph: &ProjectGraph,
-        touched_files: &Option<TouchedFilePaths>,
+        touched_files: Option<&TouchedFilePaths>,
     ) -> Result<(FxHashSet<Target>, FxHashSet<NodeIndex>), DepGraphError> {
         let target = target.as_ref();
         let mut inserted_targets = FxHashSet::default();
@@ -271,7 +267,7 @@ impl DepGraph {
         target: T,
         project: &Project,
         project_graph: &ProjectGraph,
-        touched_files: &Option<TouchedFilePaths>,
+        touched_files: Option<&TouchedFilePaths>,
     ) -> Result<Option<NodeIndex>, DepGraphError> {
         let target = target.as_ref();
         let node = ActionNode::RunTarget(target.id.to_owned());
@@ -333,7 +329,7 @@ impl DepGraph {
         &mut self,
         task: &Task,
         project_graph: &ProjectGraph,
-        touched_files: &Option<TouchedFilePaths>,
+        touched_files: Option<&TouchedFilePaths>,
     ) -> Result<Vec<NodeIndex>, DepGraphError> {
         let parallel = task.options.run_deps_in_parallel;
         let mut indexes = vec![];
@@ -367,7 +363,7 @@ impl DepGraph {
         &mut self,
         target_ids: &[String],
         project_graph: &ProjectGraph,
-        touched_files: &Option<TouchedFilePaths>,
+        touched_files: Option<&TouchedFilePaths>,
     ) -> Result<Vec<Target>, DepGraphError> {
         let mut qualified_targets = vec![];
 

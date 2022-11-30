@@ -1863,7 +1863,7 @@ dependencies = [
 
 [[package]]
 name = "moon_cli"
-version = "0.20.0"
+version = "0.20.1"
 dependencies = [
  "async-recursion",
  "clap 4.0.23",

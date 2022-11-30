@@ -182,9 +182,8 @@ mod from_config {
 }
 
 mod merge {
-    use moon_config::TaskMergeStrategy;
-
     use super::*;
+    use moon_config::TaskMergeStrategy;
 
     #[test]
     fn merges_command_string() {
@@ -499,6 +498,33 @@ mod is_affected {
         set.insert(project_root.join("another.rs"));
 
         assert!(!task.is_affected(&set).unwrap());
+    }
+
+    #[test]
+    fn returns_true_for_env_file() {
+        let sandbox = create_sandbox("base");
+
+        sandbox.create_file("files-and-dirs/.env", "");
+
+        let workspace_root = sandbox.path();
+        let project_root = workspace_root.join("files-and-dirs");
+        let task = create_expanded_task(
+            &workspace_root,
+            &project_root,
+            Some(TaskConfig {
+                options: TaskOptionsConfig {
+                    env_file: Some(TaskOptionEnvFile::Enabled(true)),
+                    ..TaskOptionsConfig::default()
+                },
+                ..TaskConfig::default()
+            }),
+        )
+        .unwrap();
+
+        let mut set = FxHashSet::default();
+        set.insert(project_root.join(".env"));
+
+        assert!(task.is_affected(&set).unwrap());
     }
 }
 

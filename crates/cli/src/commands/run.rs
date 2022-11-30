@@ -20,6 +20,14 @@ pub struct RunOptions {
     pub upstream: bool,
 }
 
+pub fn is_local(options: &RunOptions) -> bool {
+    if options.affected {
+        !options.upstream
+    } else {
+        !is_ci()
+    }
+}
+
 pub async fn run(
     target_ids: &[String],
     options: RunOptions,
@@ -32,25 +40,18 @@ pub async fn run(
 
     // Generate a dependency graph for all the targets that need to be ran
     let mut dep_graph = DepGraph::default();
-    let touched_files = if options.affected {
+    let touched_files = if options.affected || workspace.vcs.is_enabled() {
         query_touched_files(
             &workspace,
             &mut QueryTouchedFilesOptions {
-                local: !options.upstream,
+                local: is_local(&options),
                 status: options.status,
                 ..QueryTouchedFilesOptions::default()
             },
         )
         .await?
     } else {
-        query_touched_files(
-            &workspace,
-            &mut QueryTouchedFilesOptions {
-                local: !is_ci(),
-                ..QueryTouchedFilesOptions::default()
-            },
-        )
-        .await?
+        FxHashSet::default()
     };
 
     // Run targets, optionally based on affected files

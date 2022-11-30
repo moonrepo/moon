@@ -22,34 +22,30 @@ pub fn setup_dep_graph(project_graph: &ProjectGraph) -> DepGraph {
     let mut dep_graph = DepGraph::default();
 
     dep_graph
-        .run_target(Target::parse("base:base").unwrap(), project_graph, &None)
+        .run_target(Target::parse("base:base").unwrap(), project_graph, None)
         .unwrap();
 
     dep_graph
         .run_target(
             Target::parse("depsA:dependencyOrder").unwrap(),
             project_graph,
-            &None,
+            None,
         )
         .unwrap();
 
     dep_graph
-        .run_target(
-            Target::parse("node:standard").unwrap(),
-            project_graph,
-            &None,
-        )
+        .run_target(Target::parse("node:standard").unwrap(), project_graph, None)
         .unwrap();
 
     dep_graph
-        .run_target(Target::parse("system:bash").unwrap(), project_graph, &None)
+        .run_target(Target::parse("system:bash").unwrap(), project_graph, None)
         .unwrap();
 
     dep_graph
         .run_target(
             Target::parse("targetScopeB:self").unwrap(),
             project_graph,
-            &None,
+            None,
         )
         .unwrap();
 

@@ -179,7 +179,7 @@ impl<'a> TargetRunner<'a> {
             let files = convert_paths_to_strings(&task.input_paths, &workspace.root)?;
 
             if !files.is_empty() {
-                hasher.hash_inputs(vcs.get_file_hashes(&files).await?);
+                hasher.hash_inputs(vcs.get_file_hashes(&files, true).await?);
             }
         }
 
@@ -214,7 +214,7 @@ impl<'a> TargetRunner<'a> {
                 .collect::<Vec<String>>();
 
             if !files.is_empty() {
-                hasher.hash_inputs(vcs.get_file_hashes(&files).await?);
+                hasher.hash_inputs(vcs.get_file_hashes(&files, false).await?);
             }
         }
 

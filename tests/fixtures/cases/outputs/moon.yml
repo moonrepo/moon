@@ -81,3 +81,11 @@ tasks:
     args: generate.js none
     inputs:
       - '*.js'
+  envFile:
+    command: node
+    args: generate.js none
+    inputs:
+      - '*.js'
+      - '.env'
+    options:
+      envFile: true

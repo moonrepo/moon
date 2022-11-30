@@ -182,9 +182,8 @@ mod from_config {
 }
 
 mod merge {
-    use moon_config::TaskMergeStrategy;
-
     use super::*;
+    use moon_config::TaskMergeStrategy;
 
     #[test]
     fn merges_command_string() {
@@ -500,6 +499,32 @@ mod is_affected {
 
         assert!(!task.is_affected(&set).unwrap());
     }
+
+    #[test]
+    fn returns_true_for_env_file() {
+        let sandbox = create_sandbox("base");
+
+        sandbox.create_file("files-and-dirs/.env", "");
+
+        let project_root = sandbox.path().join("files-and-dirs");
+        let task = create_expanded_task(
+            sandbox.path(),
+            &project_root,
+            Some(TaskConfig {
+                options: TaskOptionsConfig {
+                    env_file: Some(TaskOptionEnvFile::Enabled(true)),
+                    ..TaskOptionsConfig::default()
+                },
+                ..TaskConfig::default()
+            }),
+        )
+        .unwrap();
+
+        let mut set = FxHashSet::default();
+        set.insert(project_root.join(".env"));
+
+        assert!(task.is_affected(&set).unwrap());
+    }
 }
 
 mod expand_env {
@@ -511,7 +536,7 @@ mod expand_env {
         let sandbox = create_sandbox("cases");
         let project_root = sandbox.path().join("base");
 
-        sandbox.create_file(".env", "FOO");
+        sandbox.create_file("base/.env", "FOO");
 
         create_expanded_task(
             sandbox.path(),
@@ -559,7 +584,7 @@ mod expand_env {
         let sandbox = create_sandbox("cases");
         let project_root = sandbox.path().join("base");
 
-        sandbox.create_file(".env", "FOO=foo\nBAR=123");
+        sandbox.create_file("base/.env", "FOO=foo\nBAR=123");
 
         let task = create_expanded_task(
             sandbox.path(),
@@ -581,6 +606,9 @@ mod expand_env {
                 ("BAR".to_owned(), "123".to_owned())
             ])
         );
+
+        assert!(task.inputs.contains(&".env".to_owned()));
+        assert!(task.input_paths.contains(&project_root.join(".env")));
     }
 
     #[test]
@@ -588,7 +616,7 @@ mod expand_env {
         let sandbox = create_sandbox("cases");
         let project_root = sandbox.path().join("base");
 
-        sandbox.create_file(".env.production", "FOO=foo\nBAR=123");
+        sandbox.create_file("base/.env.production", "FOO=foo\nBAR=123");
 
         let task = create_expanded_task(
             sandbox.path(),
@@ -610,6 +638,11 @@ mod expand_env {
                 ("BAR".to_owned(), "123".to_owned())
             ])
         );
+
+        assert!(task.inputs.contains(&".env.production".to_owned()));
+        assert!(task
+            .input_paths
+            .contains(&project_root.join(".env.production")));
     }
 
     #[test]
@@ -617,7 +650,7 @@ mod expand_env {
         let sandbox = create_sandbox("cases");
         let project_root = sandbox.path().join("base");
 
-        sandbox.create_file(".env", "FOO=foo\nBAR=123");
+        sandbox.create_file("base/.env", "FOO=foo\nBAR=123");
 
         let task = create_expanded_task(
             sandbox.path(),
@@ -643,6 +676,8 @@ mod expand_env {
                 ("BAR".to_owned(), "123".to_owned())
             ])
         );
+
+        assert!(task.inputs.contains(&".env".to_owned()));
     }
 }
 

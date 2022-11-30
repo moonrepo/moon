@@ -35,7 +35,7 @@ mod file_hashing {
         let git = Git::load(&create_config("default"), sandbox.path()).unwrap();
 
         assert_eq!(
-            git.get_file_hashes(&string_vec!["existing.txt", "rename-me.txt"])
+            git.get_file_hashes(&string_vec!["existing.txt", "rename-me.txt"], false)
                 .await
                 .unwrap(),
             BTreeMap::from([
@@ -61,13 +61,39 @@ mod file_hashing {
         let git = Git::load(&create_config("default"), sandbox.path()).unwrap();
 
         assert_eq!(
-            git.get_file_hashes(&string_vec!["existing.txt", "rename-me.txt"])
+            git.get_file_hashes(&string_vec!["existing.txt", "rename-me.txt"], false)
                 .await
                 .unwrap(),
             BTreeMap::from([(
                 "rename-me.txt".to_owned(),
                 "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
             )])
+        );
+    }
+
+    #[tokio::test]
+    async fn can_allow_ignored_files_when_hashing() {
+        let sandbox = create_sandbox("vcs");
+        sandbox.enable_git();
+
+        sandbox.create_file(".gitignore", "existing.txt");
+
+        let git = Git::load(&create_config("default"), sandbox.path()).unwrap();
+
+        assert_eq!(
+            git.get_file_hashes(&string_vec!["existing.txt", "rename-me.txt"], true)
+                .await
+                .unwrap(),
+            BTreeMap::from([
+                (
+                    "existing.txt".to_owned(),
+                    "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                ),
+                (
+                    "rename-me.txt".to_owned(),
+                    "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                )
+            ])
         );
     }
 
@@ -109,7 +135,7 @@ mod file_hashing {
         let git = Git::load(&create_config("master"), sandbox.path()).unwrap();
 
         assert_eq!(
-            git.get_file_hashes(&string_vec!["foo", "bar", "dir/baz", "dir/qux"])
+            git.get_file_hashes(&string_vec!["foo", "bar", "dir/baz", "dir/qux"], false)
                 .await
                 .unwrap(),
             BTreeMap::from([

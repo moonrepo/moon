@@ -356,6 +356,13 @@ always run and bypass the cache.
 
 :::
 
+:::danger
+
+When using globs, be aware that files that match the glob, but are ignored via `.gitignore` (or
+similar), will _not_ be considered an input. To work around this, use explicit file inputs.
+
+:::
+
 ### `local`<VersionLabel version="0.11" />
 
 <HeadingApiLink to="/api/types/interface/TaskConfig#local" />

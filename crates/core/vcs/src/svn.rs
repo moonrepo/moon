@@ -179,7 +179,11 @@ impl Vcs for Svn {
         Ok(self.get_revision_number("HEAD").await?)
     }
 
-    async fn get_file_hashes(&self, files: &[String]) -> VcsResult<BTreeMap<String, String>> {
+    async fn get_file_hashes(
+        &self,
+        files: &[String],
+        _allow_ignored: bool,
+    ) -> VcsResult<BTreeMap<String, String>> {
         let mut map = BTreeMap::new();
 
         // svn doesnt support file hashing, so instead of generating some

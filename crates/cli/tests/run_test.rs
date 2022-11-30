@@ -356,6 +356,63 @@ mod target_scopes {
     }
 }
 
+mod hashing {
+    use super::*;
+
+    #[tokio::test]
+    async fn generates_diff_hashes_from_inputs() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputs:noOutput");
+        });
+
+        let hash1 = extract_hash_from_run(sandbox.path(), "outputs:noOutput").await;
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputs:noOutput");
+        });
+
+        let hash2 = extract_hash_from_run(sandbox.path(), "outputs:noOutput").await;
+
+        assert_eq!(hash1, hash2);
+    }
+
+    #[tokio::test]
+    async fn tracks_input_changes_for_env_files() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        sandbox.create_file("outputs/.env", "FOO=123");
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputs:envFile");
+        });
+
+        let hash1 = extract_hash_from_run(sandbox.path(), "outputs:envFile").await;
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputs:envFile");
+        });
+
+        let hash2 = extract_hash_from_run(sandbox.path(), "outputs:envFile").await;
+
+        assert_eq!(hash1, hash2);
+
+        sandbox.create_file("outputs/.env", "FOO=456");
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputs:envFile");
+        });
+
+        let hash3 = extract_hash_from_run(sandbox.path(), "outputs:envFile").await;
+
+        assert_ne!(hash1, hash3);
+        assert_ne!(hash2, hash3);
+    }
+}
+
 mod outputs {
     use super::*;
 

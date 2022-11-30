@@ -38,8 +38,7 @@ pub async fn run(
         None => load_workspace().await?,
     };
 
-    // Generate a dependency graph for all the targets that need to be ran
-    let mut dep_graph = DepGraph::default();
+    // Always query for a touched files list as it'll be used by many actions
     let touched_files = if options.affected || workspace.vcs.is_enabled() {
         query_touched_files(
             &workspace,
@@ -53,6 +52,9 @@ pub async fn run(
     } else {
         FxHashSet::default()
     };
+
+    // Generate a dependency graph for all the targets that need to be ran
+    let mut dep_graph = DepGraph::default();
 
     // Run targets, optionally based on affected files
     let primary_targets = dep_graph.run_targets_by_id(
@@ -96,7 +98,7 @@ pub async fn run(
 
     // Process all tasks in the graph
     let context = RunnerContext {
-        affected: options.affected,
+        affected_only: options.affected,
         initial_targets: FxHashSet::from_iter(target_ids.to_owned()),
         passthrough_args: options.passthrough,
         primary_targets: FxHashSet::from_iter(primary_targets),

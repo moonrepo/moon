@@ -1,6 +1,5 @@
-use moon_cache::CacheEngine;
-use moon_config::{GlobalProjectConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects};
-use moon_node_platform::NodePlatform;
+use moon::{generate_project_graph, load_workspace_from};
+use moon_config::{WorkspaceConfig, WorkspaceProjects};
 use moon_project::{ProjectDependency, ProjectDependencySource};
 use moon_project_graph::ProjectGraph;
 use moon_test_utils::{
@@ -20,15 +19,8 @@ async fn get_aliases_graph() -> (ProjectGraph, Sandbox) {
         Some(&projects_config),
     );
 
-    let graph = ProjectGraph::generate(
-        sandbox.path(),
-        &workspace_config,
-        &toolchain_config,
-        GlobalProjectConfig::default(),
-        &CacheEngine::load(sandbox.path()).await.unwrap(),
-    )
-    .await
-    .unwrap();
+    let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+    let graph = generate_project_graph(&mut workspace).await.unwrap();
 
     (graph, sandbox)
 }
@@ -51,15 +43,8 @@ async fn get_dependencies_graph() -> (ProjectGraph, Sandbox) {
         None,
     );
 
-    let graph = ProjectGraph::generate(
-        sandbox.path(),
-        &workspace_config,
-        &ToolchainConfig::default(),
-        GlobalProjectConfig::default(),
-        &CacheEngine::load(sandbox.path()).await.unwrap(),
-    )
-    .await
-    .unwrap();
+    let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+    let graph = generate_project_graph(&mut workspace).await.unwrap();
 
     (graph, sandbox)
 }
@@ -82,15 +67,8 @@ async fn get_dependents_graph() -> (ProjectGraph, Sandbox) {
         None,
     );
 
-    let graph = ProjectGraph::generate(
-        sandbox.path(),
-        &workspace_config,
-        &ToolchainConfig::default(),
-        GlobalProjectConfig::default(),
-        &CacheEngine::load(sandbox.path()).await.unwrap(),
-    )
-    .await
-    .unwrap();
+    let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+    let graph = generate_project_graph(&mut workspace).await.unwrap();
 
     (graph, sandbox)
 }
@@ -110,18 +88,11 @@ async fn can_use_map_and_globs_setting() {
 
     let sandbox = create_sandbox_with_config("projects", Some(&workspace_config), None, None);
 
-    let graph = ProjectGraph::generate(
-        sandbox.path(),
-        &workspace_config,
-        &ToolchainConfig::default(),
-        GlobalProjectConfig::default(),
-        &CacheEngine::load(sandbox.path()).await.unwrap(),
-    )
-    .await
-    .unwrap();
+    let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+    let graph = generate_project_graph(&mut workspace).await.unwrap();
 
     assert_eq!(
-        graph.projects_map,
+        graph.sources,
         FxHashMap::from_iter([
             ("noConfig".to_owned(), "noConfig".to_owned()),
             ("bar".to_owned(), "deps/bar".to_owned()),
@@ -149,18 +120,11 @@ mod globs {
         // Create fake node modules
         sandbox.create_file("node_modules/moon/package.json", "{}");
 
-        let graph = ProjectGraph::generate(
-            sandbox.path(),
-            &workspace_config,
-            &ToolchainConfig::default(),
-            GlobalProjectConfig::default(),
-            &CacheEngine::load(sandbox.path()).await.unwrap(),
-        )
-        .await
-        .unwrap();
+        let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+        let graph = generate_project_graph(&mut workspace).await.unwrap();
 
         assert_eq!(
-            graph.projects_map,
+            graph.sources,
             FxHashMap::from_iter([
                 ("advanced".to_owned(), "advanced".to_owned()),
                 ("bar".to_owned(), "deps/bar".to_owned()),
@@ -191,18 +155,11 @@ mod globs {
         let sandbox =
             create_sandbox_with_config("project-graph/ids", Some(&workspace_config), None, None);
 
-        let graph = ProjectGraph::generate(
-            sandbox.path(),
-            &workspace_config,
-            &ToolchainConfig::default(),
-            GlobalProjectConfig::default(),
-            &CacheEngine::load(sandbox.path()).await.unwrap(),
-        )
-        .await
-        .unwrap();
+        let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+        let graph = generate_project_graph(&mut workspace).await.unwrap();
 
         assert_eq!(
-            graph.projects_map,
+            graph.sources,
             FxHashMap::from_iter([
                 ("camelCase".to_owned(), "camelCase".to_owned()),
                 ("Capital".to_owned(), "Capital".to_owned()),
@@ -222,10 +179,10 @@ mod get_dependencies_of {
     async fn returns_dep_list() {
         let (graph, _sandbox) = get_dependencies_graph().await;
 
-        let a = graph.load("a").unwrap();
-        let b = graph.load("b").unwrap();
-        let c = graph.load("c").unwrap();
-        let d = graph.load("d").unwrap();
+        let a = graph.get("a").unwrap();
+        let b = graph.get("b").unwrap();
+        let c = graph.get("c").unwrap();
+        let d = graph.get("d").unwrap();
 
         assert_eq!(graph.get_dependencies_of(&a).unwrap(), string_vec!["b"]);
         assert_eq!(graph.get_dependencies_of(&b).unwrap(), string_vec!["c"]);
@@ -244,10 +201,10 @@ mod get_dependents_of {
     async fn returns_dep_list() {
         let (graph, _sandbox) = get_dependents_graph().await;
 
-        let a = graph.load("a").unwrap();
-        let b = graph.load("b").unwrap();
-        let c = graph.load("c").unwrap();
-        let d = graph.load("d").unwrap();
+        let a = graph.get("a").unwrap();
+        let b = graph.get("b").unwrap();
+        let c = graph.get("c").unwrap();
+        let d = graph.get("d").unwrap();
 
         assert_eq!(graph.get_dependents_of(&a).unwrap(), string_vec![]);
         assert_eq!(graph.get_dependents_of(&b).unwrap(), string_vec!["a"]);
@@ -266,10 +223,10 @@ mod to_dot {
     async fn renders_tree() {
         let (graph, _sandbox) = get_dependencies_graph().await;
 
-        graph.load("a").unwrap();
-        graph.load("b").unwrap();
-        graph.load("c").unwrap();
-        graph.load("d").unwrap();
+        graph.get("a").unwrap();
+        graph.get("b").unwrap();
+        graph.get("c").unwrap();
+        graph.get("d").unwrap();
 
         assert_snapshot!(graph.to_dot());
     }
@@ -280,13 +237,9 @@ mod implicit_explicit_deps {
 
     #[tokio::test]
     async fn loads_implicit() {
-        let (mut graph, _sandbox) = get_aliases_graph().await;
+        let (graph, _sandbox) = get_aliases_graph().await;
 
-        graph
-            .register_platform(Box::new(NodePlatform::default()))
-            .unwrap();
-
-        let project = graph.load("implicit").unwrap();
+        let project = graph.get("implicit").unwrap();
 
         assert_eq!(
             project.dependencies,
@@ -315,13 +268,9 @@ mod implicit_explicit_deps {
 
     #[tokio::test]
     async fn loads_explicit() {
-        let (mut graph, _sandbox) = get_aliases_graph().await;
+        let (graph, _sandbox) = get_aliases_graph().await;
 
-        graph
-            .register_platform(Box::new(NodePlatform::default()))
-            .unwrap();
-
-        let project = graph.load("explicit").unwrap();
+        let project = graph.get("explicit").unwrap();
 
         assert_eq!(
             project.dependencies,
@@ -350,13 +299,9 @@ mod implicit_explicit_deps {
 
     #[tokio::test]
     async fn loads_explicit_and_implicit() {
-        let (mut graph, _sandbox) = get_aliases_graph().await;
+        let (graph, _sandbox) = get_aliases_graph().await;
 
-        graph
-            .register_platform(Box::new(NodePlatform::default()))
-            .unwrap();
-
-        let project = graph.load("explicitAndImplicit").unwrap();
+        let project = graph.get("explicitAndImplicit").unwrap();
 
         assert_eq!(
             project.dependencies,

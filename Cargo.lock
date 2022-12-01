@@ -2085,8 +2085,8 @@ name = "moon_node_platform"
 version = "0.1.0"
 dependencies = [
  "lazy_static",
+ "moon",
  "moon_action",
- "moon_cache",
  "moon_config",
  "moon_error",
  "moon_hasher",

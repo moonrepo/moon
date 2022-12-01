@@ -24,9 +24,8 @@ rustc-hash = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
-moon_node_platform = { path = "../../node/platform" }
+moon = { path = "../moon" }
 moon_test_utils = { path = "../test-utils" }
-moon_workspace = { path = "../workspace" }
 criterion = { workspace = true }
 tokio = { workspace = true }
 

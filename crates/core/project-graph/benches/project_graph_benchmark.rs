@@ -1,21 +1,8 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use moon_project_graph::{ProjectGraph, ProjectGraphBuilder};
+use criterion::{criterion_group, criterion_main, Criterion};
+use moon::{generate_project_graph, load_workspace_from};
 use moon_test_utils::{create_sandbox_with_config, get_cases_fixture_configs};
-use moon_workspace::Workspace;
 
-async fn generate_project_graph(workspace: &mut Workspace) -> ProjectGraph {
-    let mut builder = ProjectGraphBuilder {
-        cache: &workspace.cache,
-        config: &workspace.projects_config,
-        platforms: &mut workspace.platforms,
-        workspace_config: &workspace.config,
-        workspace_root: &workspace.root,
-    };
-
-    builder.build().await.unwrap()
-}
-
-pub fn load_benchmark(c: &mut Criterion) {
+pub fn get_benchmark(c: &mut Criterion) {
     let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
 
     let sandbox = create_sandbox_with_config(
@@ -28,15 +15,17 @@ pub fn load_benchmark(c: &mut Criterion) {
     c.bench_function("project_graph_load", |b| {
         b.to_async(tokio::runtime::Runtime::new().unwrap())
             .iter(|| async {
-                let mut workspace = Workspace::load_from(sandbox.path()).await.unwrap();
-                let graph = generate_project_graph(&mut workspace).await;
+                let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+                let graph = generate_project_graph(&mut workspace).await.unwrap();
 
-                black_box(graph.get("base").unwrap());
+                for _ in [0..1000] {
+                    graph.get("base").unwrap();
+                }
             })
     });
 }
 
-pub fn load_all_benchmark(c: &mut Criterion) {
+pub fn get_all_benchmark(c: &mut Criterion) {
     let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
 
     let sandbox = create_sandbox_with_config(
@@ -46,16 +35,18 @@ pub fn load_all_benchmark(c: &mut Criterion) {
         Some(&projects_config),
     );
 
-    c.bench_function("project_graph_load_all", |b| {
+    c.bench_function("project_graph_get_all", |b| {
         b.to_async(tokio::runtime::Runtime::new().unwrap())
             .iter(|| async {
-                let mut workspace = Workspace::load_from(sandbox.path()).await.unwrap();
-                let graph = generate_project_graph(&mut workspace).await;
+                let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+                let graph = generate_project_graph(&mut workspace).await.unwrap();
 
-                black_box(graph.get_all().unwrap());
+                for _ in [0..1000] {
+                    graph.get_all().unwrap();
+                }
             })
     });
 }
 
-criterion_group!(project_graph, load_benchmark, load_all_benchmark);
+criterion_group!(project_graph, get_benchmark, get_all_benchmark);
 criterion_main!(project_graph);

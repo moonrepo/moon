@@ -3,21 +3,42 @@ use moon_dep_graph::DepGraphBuilder;
 use moon_node_platform::NodePlatform;
 use moon_project_graph::{ProjectError, ProjectGraph, ProjectGraphBuilder};
 use moon_system_platform::SystemPlatform;
+use moon_utils::is_test_env;
 use moon_workspace::{Workspace, WorkspaceError};
 use rustc_hash::FxHashMap;
+use std::path::Path;
 use strum::IntoEnumIterator;
 
-/// Loads the workspace and registers all available platforms!
-pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
-    let mut workspace = Workspace::load().await?;
-
+pub fn register_platforms(workspace: &mut Workspace) {
     workspace.register_platform(Box::new(SystemPlatform::default()));
 
     if let Some(node_config) = &workspace.toolchain.config.node {
         workspace.register_platform(Box::new(NodePlatform::new(node_config, &workspace.root)));
     }
+}
 
-    workspace.signin_to_moonbase().await?;
+/// Loads the workspace from the current working directory.
+pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
+    let mut workspace = Workspace::load().await?;
+
+    register_platforms(&mut workspace);
+
+    if !is_test_env() {
+        workspace.signin_to_moonbase().await?;
+    }
+
+    Ok(workspace)
+}
+
+/// Loads the workspace from a provided directory.
+pub async fn load_workspace_from(path: &Path) -> Result<Workspace, WorkspaceError> {
+    let mut workspace = Workspace::load_from(path).await?;
+
+    register_platforms(&mut workspace);
+
+    if !is_test_env() {
+        workspace.signin_to_moonbase().await?;
+    }
 
     Ok(workspace)
 }

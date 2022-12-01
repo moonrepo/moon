@@ -162,10 +162,7 @@ async fn run_action(
             let project = local_project_graph.get(project_id)?;
 
             local_emitter
-                .emit(Event::ProjectSyncing {
-                    project,
-                    runtime,
-                })
+                .emit(Event::ProjectSyncing { project, runtime })
                 .await?;
 
             let sync_result = match runtime {

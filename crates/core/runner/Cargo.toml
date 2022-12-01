@@ -43,6 +43,6 @@ thiserror = { workspace = true }
 tokio = { workspace = true }
 
 [dev-dependencies]
-moon_cache = { path = "../cache" }
+moon = { path = "../moon" }
 moon_test_utils = { path = "../test-utils" }
 criterion = { workspace = true }

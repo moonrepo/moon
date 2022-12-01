@@ -2189,6 +2189,7 @@ dependencies = [
  "async-trait",
  "console",
  "criterion",
+ "moon",
  "moon_action",
  "moon_cache",
  "moon_config",

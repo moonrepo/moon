@@ -1,0 +1,29 @@
+[package]
+name = "moon_dep_graph"
+version = "0.1.0"
+edition = "2021"
+
+# [lib]
+# bench = false
+
+# [[bench]]
+# name = "dep_graph_benchmark"
+# harness = false
+
+[dependencies]
+moon_action = { path = "../action" }
+moon_config = { path = "../config" }
+moon_error = { path = "../error" }
+moon_logger = { path = "../logger" }
+moon_platform = { path = "../platform" }
+moon_project = { path = "../project" }
+moon_project_graph = { path = "../project-graph" }
+moon_task = { path = "../task" }
+moon_utils = { path = "../utils" }
+petgraph = { version = "0.6.2", features = ["serde"] }
+rustc-hash = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+moon_test_utils = { path = "../test-utils" }
+

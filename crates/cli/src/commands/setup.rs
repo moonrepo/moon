@@ -1,6 +1,7 @@
 use crate::helpers::{create_progress_bar, load_workspace};
+use moon_dep_graph::DepGraph;
 use moon_platform::{Runtime, Version};
-use moon_runner::{DepGraph, Runner};
+use moon_runner::Runner;
 use moon_utils::is_test_env;
 
 pub async fn setup() -> Result<(), Box<dyn std::error::Error>> {

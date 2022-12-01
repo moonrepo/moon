@@ -1,11 +1,11 @@
 use crate::actions;
-use crate::dep_graph::DepGraph;
-use crate::errors::{DepGraphError, RunnerError};
+use crate::errors::RunnerError;
 use crate::run_report::RunReport;
 use crate::subscribers::local_cache::LocalCacheSubscriber;
 use crate::subscribers::moonbase_cache::MoonbaseCacheSubscriber;
 use console::Term;
 use moon_action::{Action, ActionNode, ActionStatus};
+use moon_dep_graph::{DepGraph, DepGraphError};
 use moon_emitter::{Emitter, Event};
 use moon_error::MoonError;
 use moon_logger::{color, debug, error, trace};

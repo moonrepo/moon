@@ -1,8 +1,9 @@
 use crate::enums::TouchedStatus;
 use crate::helpers::load_workspace;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
+use moon_dep_graph::DepGraph;
 use moon_logger::{color, map_list};
-use moon_runner::{DepGraph, Runner};
+use moon_runner::Runner;
 use moon_runner_context::{ProfileType, RunnerContext};
 use moon_utils::is_ci;
 use moon_workspace::Workspace;

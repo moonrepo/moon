@@ -1879,6 +1879,7 @@ dependencies = [
  "moon_cache",
  "moon_config",
  "moon_constants",
+ "moon_dep_graph",
  "moon_error",
  "moon_generator",
  "moon_lang",
@@ -1937,6 +1938,25 @@ dependencies = [
 [[package]]
 name = "moon_constants"
 version = "0.1.0"
+
+[[package]]
+name = "moon_dep_graph"
+version = "0.1.0"
+dependencies = [
+ "moon_action",
+ "moon_config",
+ "moon_error",
+ "moon_logger",
+ "moon_platform",
+ "moon_project",
+ "moon_project_graph",
+ "moon_task",
+ "moon_test_utils",
+ "moon_utils",
+ "petgraph",
+ "rustc-hash",
+ "thiserror",
+]
 
 [[package]]
 name = "moon_emitter"
@@ -2152,6 +2172,7 @@ dependencies = [
  "moon_action",
  "moon_cache",
  "moon_config",
+ "moon_dep_graph",
  "moon_emitter",
  "moon_error",
  "moon_hasher",

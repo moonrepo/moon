@@ -15,6 +15,7 @@ crate-type = ["rlib"]
 [dependencies]
 moon_config = { path = "../core/config" }
 moon_constants = { path = "../core/constants" }
+moon_dep_graph = { path = "../core/dep-graph" }
 moon_error = { path = "../core/error" }
 moon_generator = { path = "../core/generator" }
 moon_lang = { path = "../core/lang" }

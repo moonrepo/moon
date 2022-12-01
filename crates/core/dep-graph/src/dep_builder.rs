@@ -78,13 +78,8 @@ impl<'graph> DepGraphBuilder<'graph> {
             };
 
             if is_match {
-                project_runtime = platform.get_runtime_from_config(
-                    Some(&project.config),
-                    &self.project_graph.toolchain_config,
-                );
-
-                workspace_runtime =
-                    platform.get_runtime_from_config(None, &self.project_graph.toolchain_config);
+                project_runtime = platform.get_runtime_from_config(Some(&project.config));
+                workspace_runtime = platform.get_runtime_from_config(None);
 
                 break;
             }
@@ -116,7 +111,6 @@ impl<'graph> DepGraphBuilder<'graph> {
                 &project.id,
                 &project.root,
                 &self.project_graph.workspace_root,
-                &self.project_graph.toolchain_config,
             )? {
                 installs_in_project = true;
             }

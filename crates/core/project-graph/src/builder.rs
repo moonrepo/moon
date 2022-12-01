@@ -1,8 +1,7 @@
 use crate::project_graph::{GraphType, IndicesType, ProjectGraph, LOG_TARGET, ROOT_NODE_ID};
 use moon_cache::CacheEngine;
 use moon_config::{
-    GlobalProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, ToolchainConfig, WorkspaceConfig,
-    WorkspaceProjects,
+    GlobalProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceConfig, WorkspaceProjects,
 };
 use moon_logger::{color, debug, map_list, trace};
 use moon_platform::PlatformManager;
@@ -18,7 +17,6 @@ pub struct ProjectGraphBuilder<'graph> {
     pub cache: &'graph CacheEngine,
     pub config: &'graph GlobalProjectConfig,
     pub platforms: &'graph mut PlatformManager,
-    pub toolchain_config: &'graph ToolchainConfig,
     pub workspace_config: &'graph WorkspaceConfig,
     pub workspace_root: &'graph Path,
 }
@@ -102,7 +100,6 @@ impl<'graph> ProjectGraphBuilder<'graph> {
                 &project.root,
                 &project.config,
                 &self.workspace_root,
-                &self.toolchain_config,
             )? {
                 // Inferred tasks should not override explicit tasks
                 #[allow(clippy::map_entry)]
@@ -193,12 +190,7 @@ impl<'graph> ProjectGraphBuilder<'graph> {
         let mut aliases = FxHashMap::default();
 
         for platform in self.platforms.list_mut() {
-            platform.load_project_graph_aliases(
-                &self.workspace_root,
-                &self.toolchain_config,
-                sources,
-                &mut aliases,
-            )?;
+            platform.load_project_graph_aliases(&self.workspace_root, sources, &mut aliases)?;
         }
 
         Ok(aliases)

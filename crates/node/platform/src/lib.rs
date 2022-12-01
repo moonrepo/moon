@@ -4,8 +4,9 @@ pub mod task;
 
 pub use hasher::NodeTargetHasher;
 use moon_config::{
-    DependencyConfig, DependencyScope, NodeProjectAliasFormat, PlatformType, ProjectConfig,
-    ProjectID, ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap, ToolchainConfig,
+    DependencyConfig, DependencyScope, NodeConfig, NodeProjectAliasFormat, PlatformType,
+    ProjectConfig, ProjectID, ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap,
+    ToolchainConfig,
 };
 use moon_error::MoonError;
 use moon_logger::{color, debug, warn};
@@ -43,10 +44,21 @@ pub fn infer_tasks_from_scripts(
     Ok(parser.tasks)
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct NodePlatform {
+    config: NodeConfig,
+
     /// Maps `package.json` names to project IDs.
     package_names: FxHashMap<String, ProjectID>,
+}
+
+impl NodePlatform {
+    pub fn new(config: &NodeConfig) -> Self {
+        NodePlatform {
+            config: config.to_owned(),
+            package_names: FxHashMap::default(),
+        }
+    }
 }
 
 impl Platform for NodePlatform {
@@ -54,11 +66,7 @@ impl Platform for NodePlatform {
         PlatformType::Node
     }
 
-    fn get_runtime_from_config(
-        &self,
-        project_config: Option<&ProjectConfig>,
-        toolchain_config: &ToolchainConfig,
-    ) -> Option<Runtime> {
+    fn get_runtime_from_config(&self, project_config: Option<&ProjectConfig>) -> Option<Runtime> {
         if let Some(config) = &project_config {
             if let Some(node_config) = &config.toolchain.node {
                 if let Some(version) = &node_config.version {
@@ -67,14 +75,10 @@ impl Platform for NodePlatform {
             }
         }
 
-        if let Some(node_config) = &toolchain_config.node {
-            return Some(Runtime::Node(Version(
-                node_config.version.to_owned(),
-                false,
-            )));
-        }
-
-        None
+        return Some(Runtime::Node(Version(
+            self.config.version.to_owned(),
+            false,
+        )));
     }
 
     fn is_project_in_package_manager_workspace(
@@ -82,7 +86,6 @@ impl Platform for NodePlatform {
         project_id: &str,
         project_root: &Path,
         workspace_root: &Path,
-        _toolchain_config: &ToolchainConfig,
     ) -> Result<bool, MoonError> {
         let mut in_workspace = false;
 
@@ -112,18 +115,15 @@ impl Platform for NodePlatform {
     fn load_project_graph_aliases(
         &mut self,
         workspace_root: &Path,
-        toolchain_config: &ToolchainConfig,
         projects_map: &ProjectsSourcesMap,
         aliases_map: &mut ProjectsAliasesMap,
     ) -> Result<(), MoonError> {
         let mut map_aliases = false;
         let mut alias_format = NodeProjectAliasFormat::NameAndScope;
 
-        if let Some(node_config) = &toolchain_config.node {
-            if let Some(custom_format) = &node_config.alias_package_names {
-                map_aliases = true;
-                alias_format = custom_format.clone();
-            }
+        if let Some(custom_format) = &self.config.alias_package_names {
+            map_aliases = true;
+            alias_format = custom_format.clone();
         }
 
         debug!(
@@ -234,14 +234,11 @@ impl Platform for NodePlatform {
         project_root: &Path,
         _project_config: &ProjectConfig,
         _workspace_root: &Path,
-        toolchain_config: &ToolchainConfig,
     ) -> Result<TasksConfigsMap, MoonError> {
         let mut tasks = BTreeMap::new();
 
-        if let Some(node_config) = &toolchain_config.node {
-            if !node_config.infer_tasks_from_scripts {
-                return Ok(tasks);
-            }
+        if !self.config.infer_tasks_from_scripts {
+            return Ok(tasks);
         }
 
         debug!(

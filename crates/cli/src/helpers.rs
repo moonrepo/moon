@@ -26,12 +26,12 @@ pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
         .projects
         .register_platform(Box::new(SystemPlatform::default()))?;
 
-    if workspace.toolchain.config.node.is_some() {
-        workspace.register_platform(Box::new(NodePlatform::default()));
+    if let Some(node_config) = &workspace.toolchain.config.node {
+        workspace.register_platform(Box::new(NodePlatform::new(node_config)));
 
         workspace
             .projects
-            .register_platform(Box::new(NodePlatform::default()))?;
+            .register_platform(Box::new(NodePlatform::new(node_config)))?;
     }
 
     workspace.signin_to_moonbase().await?;

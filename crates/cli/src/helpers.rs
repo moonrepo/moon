@@ -1,9 +1,11 @@
 use console::{set_colors_enabled, set_colors_enabled_stderr};
 use indicatif::{ProgressBar, ProgressStyle};
 use moon_config::PlatformType;
+use moon_dep_graph::DepGraphBuilder;
 use moon_logger::color::{no_color, supports_color};
 use moon_node_platform::NodePlatform;
-use moon_platform::Platformable;
+use moon_platform::{PlatformManager, Platformable};
+use moon_project_graph::NewProjectGraph;
 use moon_system_platform::SystemPlatform;
 use moon_terminal::create_theme;
 use moon_workspace::{Workspace, WorkspaceError};
@@ -60,6 +62,13 @@ pub async fn load_workspace_with_toolchain() -> Result<Workspace, WorkspaceError
     }
 
     Ok(workspace)
+}
+
+pub fn build_dep_graph(
+    platform: &PlatformManager,
+    project_graph: &NewProjectGraph,
+) -> DepGraphBuilder {
+    DepGraphBuilder::new(platform, project_graph)
 }
 
 pub fn create_progress_bar<S: AsRef<str>, F: AsRef<str>>(start: S) -> impl FnOnce(F, bool) {

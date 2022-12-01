@@ -1889,6 +1889,7 @@ dependencies = [
  "moon_pipeline_provider",
  "moon_platform",
  "moon_project",
+ "moon_project_graph",
  "moon_runner",
  "moon_runner_context",
  "moon_system_platform",
@@ -2669,6 +2670,7 @@ checksum = "e6d5014253a1331579ce62aa67443b4a658c5e7dd03d4bc6d302b94474888143"
 dependencies = [
  "fixedbitset",
  "indexmap",
+ "serde",
 ]
 
 [[package]]

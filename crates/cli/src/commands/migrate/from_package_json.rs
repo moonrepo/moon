@@ -142,27 +142,28 @@ pub async fn from_package_json(
     project_id: &str,
     skip_touched_files_check: &bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let workspace = load_workspace().await?;
+    let mut workspace = load_workspace().await?;
+
     if *skip_touched_files_check {
         info!("Skipping touched files check.");
     } else {
         check_dirty_repo(&workspace).await?;
     };
+
     // Create a mapping of `package.json` names to project IDs
+    let project_graph = workspace.generate_project_graph().await?;
     let mut package_map: FxHashMap<String, String> = FxHashMap::default();
 
-    for id in workspace.projects.ids() {
-        let project = workspace.projects.load(&id)?;
-
+    for project in project_graph.get_all()? {
         if let Some(package_json) = PackageJson::read(&project.root)? {
             if let Some(package_name) = package_json.name {
-                package_map.insert(package_name, id);
+                package_map.insert(package_name, project.id.to_owned());
             }
         }
     }
 
     // Create or update the local `moon.yml`
-    let mut project = workspace.projects.load(project_id)?;
+    let mut project = project_graph.get(project_id)?.to_owned();
 
     let mut link_deps = |deps: &DepsSet, scope: DependencyScope| {
         for package_name in deps.keys() {

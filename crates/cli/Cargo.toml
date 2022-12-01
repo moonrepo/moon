@@ -24,6 +24,7 @@ moon_node_platform = { path = "../node/platform" }
 moon_pipeline_provider = { path = "../core/pipeline-provider" }
 moon_platform = { path = "../core/platform" }
 moon_project = { path = "../core/project" }
+moon_project_graph = { path = "../core/project-graph" }
 moon_runner = { path = "../core/runner" }
 moon_runner_context = { path = "../core/runner-context" }
 moon_system_platform = { path = "../system/platform" }

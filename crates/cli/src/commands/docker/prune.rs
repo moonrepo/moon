@@ -3,12 +3,14 @@ use crate::helpers::load_workspace_with_toolchain;
 use futures::future::try_join_all;
 use moon_config::ProjectLanguage;
 use moon_node_lang::{PackageJson, NODE};
+use moon_project_graph::NewProjectGraph;
 use moon_terminal::safe_exit;
 use moon_utils::{fs, json};
 use moon_workspace::Workspace;
 
 pub async fn prune_node(
     workspace: &Workspace,
+    project_graph: &NewProjectGraph,
     manifest: &DockerManifest,
 ) -> Result<(), Box<dyn std::error::Error>> {
     dbg!("PRUNE NODE", manifest);
@@ -17,7 +19,7 @@ pub async fn prune_node(
     let mut package_names = vec![];
 
     for project_id in &manifest.focused_projects {
-        if let Some(project_source) = workspace.projects.projects_map.get(project_id) {
+        if let Some(project_source) = project_graph.sources.get(project_id) {
             if let Some(package_json) = PackageJson::read(workspace.root.join(project_source))? {
                 if let Some(package_name) = package_json.name {
                     package_names.push(package_name);
@@ -29,7 +31,7 @@ pub async fn prune_node(
     // Some package managers do not delete stale node modules
     let mut futures = vec![fs::remove_dir_all(workspace.root.join(NODE.vendor_dir))];
 
-    for project_source in workspace.projects.projects_map.values() {
+    for project_source in project_graph.sources.values() {
         futures.push(fs::remove_dir_all(
             workspace.root.join(project_source).join(NODE.vendor_dir),
         ));
@@ -48,7 +50,7 @@ pub async fn prune_node(
     // let mut futures = vec![];
 
     // for project_id in &manifest.unfocused_projects {
-    //     if let Some(project_source) = workspace.projects.projects_map.get(project_id) {
+    //     if let Some(project_source) = project_graph.sources.get(project_id) {
     //         futures.push(fs::remove_dir_all(
     //             workspace.root.join(project_source).join(NODE.vendor_dir),
     //         ));
@@ -61,7 +63,7 @@ pub async fn prune_node(
 }
 
 pub async fn prune() -> Result<(), Box<dyn std::error::Error>> {
-    let workspace = load_workspace_with_toolchain().await?;
+    let mut workspace = load_workspace_with_toolchain().await?;
     let manifest_path = workspace.root.join("dockerManifest.json");
 
     if !manifest_path.exists() {
@@ -69,11 +71,12 @@ pub async fn prune() -> Result<(), Box<dyn std::error::Error>> {
         safe_exit(1);
     }
 
+    let project_graph = workspace.generate_project_graph().await?;
     let manifest: DockerManifest = json::read(manifest_path)?;
     let mut is_using_node = false;
 
     for project_id in &manifest.focused_projects {
-        let project = workspace.projects.load(project_id)?;
+        let project = project_graph.get(project_id)?;
 
         // We use a match here to exhaustively check all languages
         match project.language {
@@ -86,7 +89,7 @@ pub async fn prune() -> Result<(), Box<dyn std::error::Error>> {
 
     // Only prune Node.js when one of the focused projects is Node.js based
     if is_using_node {
-        prune_node(&workspace, &manifest).await?;
+        prune_node(&workspace, &project_graph, &manifest).await?;
     }
 
     Ok(())

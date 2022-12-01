@@ -7,10 +7,10 @@ use std::io;
 use std::io::prelude::*;
 
 pub async fn projects(options: &QueryProjectsOptions) -> Result<(), Box<dyn std::error::Error>> {
-    let workspace = load_workspace().await?;
+    let mut workspace = load_workspace().await?;
 
     let result = QueryProjectsResult {
-        projects: query_projects(&workspace, options).await?,
+        projects: query_projects(&mut workspace, options).await?,
         options: options.clone(),
     };
 

@@ -73,12 +73,11 @@ async fn load_touched_files(workspace: &Workspace) -> Result<TouchedFilePaths, W
 }
 
 pub async fn query_projects(
-    workspace: &Workspace,
+    workspace: &mut Workspace,
     options: &QueryProjectsOptions,
 ) -> Result<Vec<Project>, WorkspaceError> {
     debug!(target: LOG_TARGET, "Querying for projects");
 
-    let mut projects = vec![];
     let alias_regex = convert_to_regex("alias", &options.alias)?;
     let id_regex = convert_to_regex("id", &options.id)?;
     let language_regex = convert_to_regex("language", &options.language)?;
@@ -91,14 +90,15 @@ pub async fn query_projects(
         None
     };
 
-    for project_id in workspace.projects.ids() {
+    let project_graph = workspace.generate_project_graph().await?;
+    let mut projects = vec![];
+
+    for project in project_graph.get_all()? {
         if let Some(regex) = &id_regex {
-            if !regex.is_match(&project_id) {
+            if !regex.is_match(&project.id) {
                 continue;
             }
         }
-
-        let project = workspace.projects.load(&project_id)?;
 
         if options.affected {
             if let Some(touched) = &touched_files {
@@ -142,7 +142,7 @@ pub async fn query_projects(
             }
         }
 
-        projects.push(project);
+        projects.push(project.to_owned());
     }
 
     Ok(projects)

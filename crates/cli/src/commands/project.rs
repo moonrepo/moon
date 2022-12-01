@@ -6,8 +6,9 @@ use moon_terminal::{ExtendedTerm, Label};
 use moon_utils::is_test_env;
 
 pub async fn project(id: &str, json: bool) -> Result<(), Box<dyn std::error::Error>> {
-    let workspace = load_workspace().await?;
-    let project = workspace.projects.load(id)?;
+    let mut workspace = load_workspace().await?;
+    let project_graph = workspace.generate_project_graph().await?;
+    let project = project_graph.get(id)?;
     let config = &project.config;
 
     if json {

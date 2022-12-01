@@ -26,7 +26,6 @@ pub trait Platform: Debug + Send + Sync {
         &self,
         project_id: &str,
         project_root: &Path,
-        workspace_root: &Path,
     ) -> Result<bool, MoonError> {
         Ok(true)
     }
@@ -35,7 +34,6 @@ pub trait Platform: Debug + Send + Sync {
     /// map of projects that are unique to the platform's ecosystem.
     fn load_project_graph_aliases(
         &mut self,
-        workspace_root: &Path,
         projects_map: &ProjectsSourcesMap,
         aliases_map: &mut ProjectsAliasesMap,
     ) -> Result<(), MoonError> {
@@ -61,7 +59,6 @@ pub trait Platform: Debug + Send + Sync {
         project_id: &str,
         project_root: &Path,
         project_config: &ProjectConfig,
-        workspace_root: &Path,
     ) -> Result<TasksConfigsMap, MoonError> {
         Ok(BTreeMap::new())
     }

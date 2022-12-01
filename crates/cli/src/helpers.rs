@@ -4,7 +4,6 @@ use moon_config::PlatformType;
 use moon_dep_graph::DepGraphBuilder;
 use moon_logger::color::{no_color, supports_color};
 use moon_node_platform::NodePlatform;
-use moon_platform::{PlatformManager, Platformable};
 use moon_project_graph::NewProjectGraph;
 use moon_system_platform::SystemPlatform;
 use moon_terminal::create_theme;
@@ -22,16 +21,8 @@ pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
 
     workspace.register_platform(Box::new(SystemPlatform::default()));
 
-    workspace
-        .projects
-        .register_platform(Box::new(SystemPlatform::default()))?;
-
     if let Some(node_config) = &workspace.toolchain.config.node {
-        workspace.register_platform(Box::new(NodePlatform::new(node_config)));
-
-        workspace
-            .projects
-            .register_platform(Box::new(NodePlatform::new(node_config)))?;
+        workspace.register_platform(Box::new(NodePlatform::new(node_config, &workspace.root)));
     }
 
     workspace.signin_to_moonbase().await?;
@@ -64,11 +55,11 @@ pub async fn load_workspace_with_toolchain() -> Result<Workspace, WorkspaceError
     Ok(workspace)
 }
 
-pub fn build_dep_graph(
-    platform: &PlatformManager,
-    project_graph: &NewProjectGraph,
-) -> DepGraphBuilder {
-    DepGraphBuilder::new(platform, project_graph)
+pub fn build_dep_graph<'g>(
+    workspace: &'g Workspace,
+    project_graph: &'g NewProjectGraph,
+) -> DepGraphBuilder<'g> {
+    DepGraphBuilder::new(&workspace.platforms, project_graph)
 }
 
 pub fn create_progress_bar<S: AsRef<str>, F: AsRef<str>>(start: S) -> impl FnOnce(F, bool) {

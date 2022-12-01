@@ -95,12 +95,9 @@ impl<'graph> ProjectGraphBuilder<'graph> {
             }
 
             // Inherit platform specific tasks
-            for (task_id, task_config) in platform.load_project_tasks(
-                id,
-                &project.root,
-                &project.config,
-                &self.workspace_root,
-            )? {
+            for (task_id, task_config) in
+                platform.load_project_tasks(id, &project.root, &project.config)?
+            {
                 // Inferred tasks should not override explicit tasks
                 #[allow(clippy::map_entry)]
                 if !project.tasks.contains_key(&task_id) {
@@ -190,7 +187,7 @@ impl<'graph> ProjectGraphBuilder<'graph> {
         let mut aliases = FxHashMap::default();
 
         for platform in self.platforms.list_mut() {
-            platform.load_project_graph_aliases(&self.workspace_root, sources, &mut aliases)?;
+            platform.load_project_graph_aliases(sources, &mut aliases)?;
         }
 
         Ok(aliases)

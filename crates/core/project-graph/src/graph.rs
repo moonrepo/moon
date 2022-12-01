@@ -120,11 +120,7 @@ impl Platformable for ProjectGraph {
     fn register_platform(&mut self, platform: BoxedPlatform) -> Result<(), MoonError> {
         let mut platform = platform;
 
-        platform.load_project_graph_aliases(
-            &self.workspace_root,
-            &self.projects_map,
-            &mut self.aliases_map,
-        )?;
+        platform.load_project_graph_aliases(&self.projects_map, &mut self.aliases_map)?;
 
         self.platforms.register(platform.get_type(), platform);
 
@@ -371,12 +367,9 @@ impl ProjectGraph {
             }
 
             // Inherit platform specific tasks
-            for (task_id, task_config) in platform.load_project_tasks(
-                id,
-                &project.root,
-                &project.config,
-                &self.workspace_root,
-            )? {
+            for (task_id, task_config) in
+                platform.load_project_tasks(id, &project.root, &project.config)?
+            {
                 // Inferred tasks should not override explicit tasks
                 #[allow(clippy::map_entry)]
                 if !project.tasks.contains_key(&task_id) {

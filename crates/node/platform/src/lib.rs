@@ -6,7 +6,6 @@ pub use hasher::NodeTargetHasher;
 use moon_config::{
     DependencyConfig, DependencyScope, NodeConfig, NodeProjectAliasFormat, PlatformType,
     ProjectConfig, ProjectID, ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap,
-    ToolchainConfig,
 };
 use moon_error::MoonError;
 use moon_logger::{color, debug, warn};
@@ -16,6 +15,7 @@ use moon_platform::{Platform, Runtime, Version};
 use moon_task::TaskError;
 use moon_utils::glob::GlobSet;
 use rustc_hash::FxHashMap;
+use std::path::PathBuf;
 use std::{collections::BTreeMap, path::Path};
 use task::ScriptParser;
 
@@ -50,13 +50,16 @@ pub struct NodePlatform {
 
     /// Maps `package.json` names to project IDs.
     package_names: FxHashMap<String, ProjectID>,
+
+    workspace_root: PathBuf,
 }
 
 impl NodePlatform {
-    pub fn new(config: &NodeConfig) -> Self {
+    pub fn new(config: &NodeConfig, workspace_root: &Path) -> Self {
         NodePlatform {
             config: config.to_owned(),
             package_names: FxHashMap::default(),
+            workspace_root: workspace_root.to_path_buf(),
         }
     }
 }
@@ -85,19 +88,18 @@ impl Platform for NodePlatform {
         &self,
         project_id: &str,
         project_root: &Path,
-        workspace_root: &Path,
     ) -> Result<bool, MoonError> {
         let mut in_workspace = false;
 
         // Root package is always considered within the workspace
-        if project_root == workspace_root {
+        if project_root == self.workspace_root {
             return Ok(true);
         }
 
-        if let Some(globs) = get_package_manager_workspaces(workspace_root.to_owned())? {
+        if let Some(globs) = get_package_manager_workspaces(self.workspace_root.to_owned())? {
             in_workspace = GlobSet::new(globs)
                 .map_err(|e| MoonError::Generic(e.to_string()))?
-                .matches(project_root.strip_prefix(workspace_root).unwrap())?;
+                .matches(project_root.strip_prefix(&self.workspace_root).unwrap())?;
         }
 
         if !in_workspace {
@@ -114,7 +116,6 @@ impl Platform for NodePlatform {
 
     fn load_project_graph_aliases(
         &mut self,
-        workspace_root: &Path,
         projects_map: &ProjectsSourcesMap,
         aliases_map: &mut ProjectsAliasesMap,
     ) -> Result<(), MoonError> {
@@ -133,7 +134,8 @@ impl Platform for NodePlatform {
         );
 
         for (project_id, project_source) in projects_map {
-            if let Some(package_json) = PackageJson::read(workspace_root.join(project_source))? {
+            if let Some(package_json) = PackageJson::read(self.workspace_root.join(project_source))?
+            {
                 if let Some(package_name) = package_json.name {
                     // Always track package names internally so that we can discover implicit dependencies
                     self.package_names
@@ -233,7 +235,6 @@ impl Platform for NodePlatform {
         project_id: &str,
         project_root: &Path,
         _project_config: &ProjectConfig,
-        _workspace_root: &Path,
     ) -> Result<TasksConfigsMap, MoonError> {
         let mut tasks = BTreeMap::new();
 

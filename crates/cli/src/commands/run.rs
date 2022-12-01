@@ -1,7 +1,6 @@
 use crate::enums::TouchedStatus;
-use crate::helpers::load_workspace;
+use crate::helpers::{build_dep_graph, load_workspace};
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
-use moon_dep_graph::DepGraph;
 use moon_logger::{color, map_list};
 use moon_runner::Runner;
 use moon_runner_context::{ProfileType, RunnerContext};
@@ -34,7 +33,7 @@ pub async fn run(
     options: RunOptions,
     base_workspace: Option<Workspace>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let workspace = match base_workspace {
+    let mut workspace = match base_workspace {
         Some(ws) => ws,
         None => load_workspace().await?,
     };
@@ -55,12 +54,12 @@ pub async fn run(
     };
 
     // Generate a dependency graph for all the targets that need to be ran
-    let mut dep_graph = DepGraph::default();
+    let project_graph = workspace.generate_project_graph().await?;
+    let mut dep_builder = build_dep_graph(&workspace, &project_graph);
 
     // Run targets, optionally based on affected files
-    let primary_targets = dep_graph.run_targets_by_id(
+    let primary_targets = dep_builder.run_targets_by_id(
         target_ids,
-        &workspace.projects,
         if options.affected {
             Some(&touched_files)
         } else {
@@ -90,10 +89,8 @@ pub async fn run(
 
     // Run dependents for all primary targets
     if options.dependents {
-        workspace.projects.load_all()?;
-
         for target in &primary_targets {
-            dep_graph.run_dependents_for_target(target, &workspace.projects)?;
+            dep_builder.run_dependents_for_target(target)?;
         }
     }
 
@@ -108,6 +105,7 @@ pub async fn run(
         touched_files,
     };
 
+    let dep_graph = dep_builder.build();
     let mut runner = Runner::new(workspace);
 
     if options.report {

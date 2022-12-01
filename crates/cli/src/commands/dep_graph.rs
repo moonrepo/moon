@@ -1,32 +1,28 @@
-use crate::helpers::load_workspace;
-use moon_dep_graph::DepGraph;
+use crate::helpers::{build_dep_graph, load_workspace};
 use moon_task::Target;
 
 pub async fn dep_graph(target_id: &Option<String>) -> Result<(), Box<dyn std::error::Error>> {
-    let workspace = load_workspace().await?;
-    let projects = workspace.projects;
-    let mut graph = DepGraph::default();
-
-    // Preload all projects
-    projects.load_all()?;
+    let mut workspace = load_workspace().await?;
+    let project_graph = workspace.generate_project_graph().await?;
+    let mut dep_builder = build_dep_graph(&workspace, &project_graph);
 
     // Focus a target and its dependencies/dependents
     if let Some(id) = target_id {
         let target = Target::parse(id)?;
 
-        graph.run_target(&target, &projects, None)?;
-        graph.run_dependents_for_target(&target, &projects)?;
+        dep_builder.run_target(&target, None)?;
+        dep_builder.run_dependents_for_target(&target)?;
 
     // Show all targets and actions
     } else {
-        for project_id in projects.ids() {
-            for task in projects.load(&project_id)?.tasks.values() {
-                graph.run_target(&task.target, &projects, None)?;
+        for project in project_graph.get_all()? {
+            for task in project.tasks.values() {
+                dep_builder.run_target(&task.target, None)?;
             }
         }
     }
 
-    println!("{}", graph.to_dot());
+    println!("{}", dep_builder.build().to_dot());
 
     Ok(())
 }

@@ -1,7 +1,8 @@
 use crate::enums::TouchedStatus;
-use crate::helpers::{build_dep_graph, load_workspace};
+use crate::helpers::{build_dep_graph, generate_project_graph, load_workspace};
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use moon_logger::{color, map_list};
+use moon_project_graph::ProjectGraph;
 use moon_runner::Runner;
 use moon_runner_context::{ProfileType, RunnerContext};
 use moon_utils::is_ci;
@@ -28,16 +29,12 @@ pub fn is_local(options: &RunOptions) -> bool {
     }
 }
 
-pub async fn run(
+pub async fn run_target(
     target_ids: &[String],
     options: RunOptions,
-    base_workspace: Option<Workspace>,
+    workspace: Workspace,
+    project_graph: ProjectGraph,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut workspace = match base_workspace {
-        Some(ws) => ws,
-        None => load_workspace().await?,
-    };
-
     // Always query for a touched files list as it'll be used by many actions
     let touched_files = if options.affected || workspace.vcs.is_enabled() {
         query_touched_files(
@@ -54,7 +51,6 @@ pub async fn run(
     };
 
     // Generate a dependency graph for all the targets that need to be ran
-    let project_graph = workspace.generate_project_graph().await?;
     let mut dep_builder = build_dep_graph(&workspace, &project_graph);
 
     // Run targets, optionally based on affected files
@@ -112,9 +108,24 @@ pub async fn run(
         runner.generate_report("runReport.json");
     }
 
-    let results = runner.bail_on_error().run(dep_graph, Some(context)).await?;
+    let results = runner
+        .bail_on_error()
+        .run(dep_graph, project_graph, Some(context))
+        .await?;
 
     runner.render_stats(&results, true)?;
+
+    Ok(())
+}
+
+pub async fn run(
+    target_ids: &[String],
+    options: RunOptions,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mut workspace = load_workspace().await?;
+    let project_graph = generate_project_graph(&mut workspace).await?;
+
+    run_target(target_ids, options, workspace, project_graph).await?;
 
     Ok(())
 }

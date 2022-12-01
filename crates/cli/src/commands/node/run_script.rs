@@ -1,4 +1,4 @@
-use crate::helpers::load_workspace_with_toolchain;
+use crate::helpers::{generate_project_graph, load_workspace_with_toolchain};
 use moon_error::MoonError;
 use std::env;
 
@@ -18,7 +18,7 @@ pub async fn run_script(
 
         // Otherwise try and find the project in the graph
     } else if let Some(project_id) = project {
-        let project_graph = workspace.generate_project_graph().await?;
+        let project_graph = generate_project_graph(&mut workspace).await?;
 
         command.cwd(project_graph.get(project_id)?.root.to_owned());
 

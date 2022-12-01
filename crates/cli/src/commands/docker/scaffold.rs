@@ -1,4 +1,4 @@
-use crate::helpers::load_workspace;
+use crate::helpers::{generate_project_graph, load_workspace};
 use async_recursion::async_recursion;
 use futures::future::try_join_all;
 use moon_config::{NodePackageManager, ProjectID, ProjectLanguage};
@@ -6,7 +6,7 @@ use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_node_lang::{NODE, NPM, PNPM, YARN};
 use moon_project::ProjectError;
-use moon_project_graph::NewProjectGraph;
+use moon_project_graph::ProjectGraph;
 use moon_utils::{fs, glob, json, path};
 use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
@@ -48,7 +48,7 @@ async fn copy_files<T: AsRef<str>>(
 
 async fn scaffold_workspace(
     workspace: &Workspace,
-    project_graph: &NewProjectGraph,
+    project_graph: &ProjectGraph,
     docker_root: &Path,
 ) -> Result<(), ProjectError> {
     let docker_workspace_root = docker_root.join("workspace");
@@ -137,7 +137,7 @@ async fn scaffold_workspace(
 #[async_recursion]
 async fn scaffold_sources_project(
     workspace: &Workspace,
-    project_graph: &NewProjectGraph,
+    project_graph: &ProjectGraph,
     docker_sources_root: &Path,
     project_id: &str,
     manifest: &mut DockerManifest,
@@ -164,7 +164,7 @@ async fn scaffold_sources_project(
 
 async fn scaffold_sources(
     workspace: &Workspace,
-    project_graph: &NewProjectGraph,
+    project_graph: &ProjectGraph,
     docker_root: &Path,
     project_ids: &[String],
     include: &[String],
@@ -226,7 +226,7 @@ pub async fn scaffold(
     fs::create_dir_all(&docker_root).await?;
 
     // Create the workspace skeleton
-    let project_graph = workspace.generate_project_graph().await?;
+    let project_graph = generate_project_graph(&mut workspace).await?;
 
     scaffold_workspace(&workspace, &project_graph, &docker_root).await?;
 

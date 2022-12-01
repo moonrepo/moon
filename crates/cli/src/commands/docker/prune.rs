@@ -1,16 +1,16 @@
 use crate::commands::docker::scaffold::DockerManifest;
-use crate::helpers::load_workspace_with_toolchain;
+use crate::helpers::{generate_project_graph, load_workspace_with_toolchain};
 use futures::future::try_join_all;
 use moon_config::ProjectLanguage;
 use moon_node_lang::{PackageJson, NODE};
-use moon_project_graph::NewProjectGraph;
+use moon_project_graph::ProjectGraph;
 use moon_terminal::safe_exit;
 use moon_utils::{fs, json};
 use moon_workspace::Workspace;
 
 pub async fn prune_node(
     workspace: &Workspace,
-    project_graph: &NewProjectGraph,
+    project_graph: &ProjectGraph,
     manifest: &DockerManifest,
 ) -> Result<(), Box<dyn std::error::Error>> {
     dbg!("PRUNE NODE", manifest);
@@ -71,7 +71,7 @@ pub async fn prune() -> Result<(), Box<dyn std::error::Error>> {
         safe_exit(1);
     }
 
-    let project_graph = workspace.generate_project_graph().await?;
+    let project_graph = generate_project_graph(&mut workspace).await?;
     let manifest: DockerManifest = json::read(manifest_path)?;
     let mut is_using_node = false;
 

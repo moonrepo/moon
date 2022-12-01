@@ -4,7 +4,7 @@ use moon_action::ActionNode;
 use moon_logger::{color, debug, map_list, trace};
 use moon_platform::{PlatformManager, Runtime};
 use moon_project::Project;
-use moon_project_graph::NewProjectGraph;
+use moon_project_graph::ProjectGraph;
 use moon_task::{Target, TargetError, TargetProjectScope, Task, TouchedFilePaths};
 use petgraph::graph::NodeIndex;
 use petgraph::Graph;
@@ -25,13 +25,13 @@ pub struct DepGraphBuilder<'graph> {
 
     platforms: &'graph PlatformManager,
 
-    project_graph: &'graph NewProjectGraph,
+    project_graph: &'graph ProjectGraph,
 
     runtimes: FxHashMap<String, RuntimePair>,
 }
 
 impl<'graph> DepGraphBuilder<'graph> {
-    pub fn new(platforms: &'graph PlatformManager, project_graph: &'graph NewProjectGraph) -> Self {
+    pub fn new(platforms: &'graph PlatformManager, project_graph: &'graph ProjectGraph) -> Self {
         debug!(target: LOG_TARGET, "Creating dependency graph",);
 
         DepGraphBuilder {

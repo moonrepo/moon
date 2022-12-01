@@ -1,5 +1,5 @@
 use super::check_dirty_repo;
-use crate::helpers::load_workspace;
+use crate::helpers::{generate_project_graph, load_workspace};
 use moon_config::{
     DependencyConfig, DependencyScope, PlatformType, ProjectConfig, ProjectDependsOn,
     TaskCommandArgs,
@@ -151,7 +151,7 @@ pub async fn from_package_json(
     };
 
     // Create a mapping of `package.json` names to project IDs
-    let project_graph = workspace.generate_project_graph().await?;
+    let project_graph = generate_project_graph(&mut workspace).await?;
     let mut package_map: FxHashMap<String, String> = FxHashMap::default();
 
     for project in project_graph.get_all()? {

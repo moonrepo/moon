@@ -7,7 +7,6 @@ use moon_config::{
 use moon_constants as constants;
 use moon_logger::{color, debug, trace};
 use moon_platform::{BoxedPlatform, PlatformManager};
-use moon_project_graph::{NewProjectGraph, ProjectGraph, ProjectGraphBuilder};
 use moon_toolchain::Toolchain;
 use moon_utils::fs;
 use moon_vcs::{Vcs, VcsLoader};
@@ -147,10 +146,6 @@ pub struct Workspace {
     /// Registered platforms derived from toolchain configuration.
     pub platforms: PlatformManager,
 
-    /// The project graph, where each project is lazy loaded in.
-    /// #[deprecated]
-    pub projects: ProjectGraph,
-
     /// Global project configuration loaded from ".moon/project.yml".
     pub projects_config: GlobalProjectConfig,
 
@@ -198,15 +193,12 @@ impl Workspace {
         // Setup components
         let cache = CacheEngine::load(&root_dir).await?;
         let toolchain = Toolchain::load(&toolchain_config).await?;
-        let projects =
-            ProjectGraph::generate(&root_dir, &config, projects_config.clone(), &cache).await?;
         let vcs = VcsLoader::load(&root_dir, &config)?;
 
         Ok(Workspace {
             cache,
             config,
             platforms: PlatformManager::default(),
-            projects,
             projects_config,
             root: root_dir,
             session: None,
@@ -214,18 +206,6 @@ impl Workspace {
             vcs,
             working_dir: working_dir.to_owned(),
         })
-    }
-
-    pub async fn generate_project_graph(&mut self) -> Result<NewProjectGraph, WorkspaceError> {
-        let mut builder = ProjectGraphBuilder {
-            cache: &self.cache,
-            config: &self.projects_config,
-            platforms: &mut self.platforms,
-            workspace_config: &self.config,
-            workspace_root: &self.root,
-        };
-
-        Ok(builder.build().await?)
     }
 
     pub fn register_platform(&mut self, platform: BoxedPlatform) {

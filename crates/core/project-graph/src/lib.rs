@@ -1,8 +1,6 @@
-mod builder;
-mod graph;
+mod project_builder;
 mod project_graph;
 
-pub use builder::ProjectGraphBuilder;
-pub use graph::ProjectGraph;
 pub use moon_project::ProjectError;
-pub use project_graph::ProjectGraph as NewProjectGraph;
+pub use project_builder::ProjectGraphBuilder;
+pub use project_graph::ProjectGraph;

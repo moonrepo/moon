@@ -1,4 +1,4 @@
-use crate::helpers::load_workspace;
+use crate::helpers::{generate_project_graph, load_workspace};
 use console::Term;
 use itertools::Itertools;
 use moon_logger::color;
@@ -7,7 +7,7 @@ use moon_utils::is_test_env;
 
 pub async fn project(id: &str, json: bool) -> Result<(), Box<dyn std::error::Error>> {
     let mut workspace = load_workspace().await?;
-    let project_graph = workspace.generate_project_graph().await?;
+    let project_graph = generate_project_graph(&mut workspace).await?;
     let project = project_graph.get(id)?;
     let config = &project.config;
 

@@ -4,7 +4,8 @@ use moon_config::PlatformType;
 use moon_dep_graph::DepGraphBuilder;
 use moon_logger::color::{no_color, supports_color};
 use moon_node_platform::NodePlatform;
-use moon_project_graph::NewProjectGraph;
+use moon_project::ProjectError;
+use moon_project_graph::{ProjectGraph, ProjectGraphBuilder};
 use moon_system_platform::SystemPlatform;
 use moon_terminal::create_theme;
 use moon_workspace::{Workspace, WorkspaceError};
@@ -57,9 +58,23 @@ pub async fn load_workspace_with_toolchain() -> Result<Workspace, WorkspaceError
 
 pub fn build_dep_graph<'g>(
     workspace: &'g Workspace,
-    project_graph: &'g NewProjectGraph,
+    project_graph: &'g ProjectGraph,
 ) -> DepGraphBuilder<'g> {
     DepGraphBuilder::new(&workspace.platforms, project_graph)
+}
+
+pub async fn generate_project_graph(
+    workspace: &mut Workspace,
+) -> Result<ProjectGraph, ProjectError> {
+    let mut builder = ProjectGraphBuilder {
+        cache: &workspace.cache,
+        config: &workspace.projects_config,
+        platforms: &mut workspace.platforms,
+        workspace_config: &workspace.config,
+        workspace_root: &workspace.root,
+    };
+
+    Ok(builder.build().await?)
 }
 
 pub fn create_progress_bar<S: AsRef<str>, F: AsRef<str>>(start: S) -> impl FnOnce(F, bool) {

@@ -1,5 +1,8 @@
-use crate::queries::touched_files::{
-    query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
+use crate::{
+    helpers::{generate_project_graph, AnyError},
+    queries::touched_files::{
+        query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
+    },
 };
 use moon_error::MoonError;
 use moon_logger::{debug, trace};
@@ -29,10 +32,7 @@ pub struct QueryProjectsResult {
     pub options: QueryProjectsOptions,
 }
 
-fn convert_to_regex(
-    field: &str,
-    value: &Option<String>,
-) -> Result<Option<regex::Regex>, WorkspaceError> {
+fn convert_to_regex(field: &str, value: &Option<String>) -> Result<Option<regex::Regex>, AnyError> {
     match value {
         Some(pattern) => {
             trace!(
@@ -75,7 +75,7 @@ async fn load_touched_files(workspace: &Workspace) -> Result<TouchedFilePaths, W
 pub async fn query_projects(
     workspace: &mut Workspace,
     options: &QueryProjectsOptions,
-) -> Result<Vec<Project>, WorkspaceError> {
+) -> Result<Vec<Project>, AnyError> {
     debug!(target: LOG_TARGET, "Querying for projects");
 
     let alias_regex = convert_to_regex("alias", &options.alias)?;
@@ -90,7 +90,7 @@ pub async fn query_projects(
         None
     };
 
-    let project_graph = workspace.generate_project_graph().await?;
+    let project_graph = generate_project_graph(workspace).await?;
     let mut projects = vec![];
 
     for project in project_graph.get_all()? {

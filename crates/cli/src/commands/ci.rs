@@ -1,12 +1,12 @@
 use crate::enums::TouchedStatus;
-use crate::helpers::{build_dep_graph, load_workspace};
+use crate::helpers::{build_dep_graph, generate_project_graph, load_workspace};
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use itertools::Itertools;
 use moon_dep_graph::{DepGraph, DepGraphError};
 use moon_logger::{color, debug};
 use moon_pipeline_provider::{get_pipeline_output, PipelineOutput};
 use moon_project::ProjectError;
-use moon_project_graph::NewProjectGraph;
+use moon_project_graph::ProjectGraph;
 use moon_runner::Runner;
 use moon_runner_context::RunnerContext;
 use moon_task::{Target, TouchedFilePaths};
@@ -69,7 +69,7 @@ async fn gather_touched_files(
 /// Gather runnable targets by checking if all projects/tasks are affected based on touched files.
 fn gather_runnable_targets(
     provider: &PipelineOutput,
-    project_graph: &NewProjectGraph,
+    project_graph: &ProjectGraph,
     touched_files: &TouchedFilePaths,
 ) -> Result<TargetList, ProjectError> {
     print_header(provider, "Gathering runnable targets");
@@ -147,7 +147,7 @@ fn distribute_targets_across_jobs(
 fn generate_dep_graph(
     provider: &PipelineOutput,
     workspace: &Workspace,
-    project_graph: &NewProjectGraph,
+    project_graph: &ProjectGraph,
     targets: &TargetList,
 ) -> Result<DepGraph, DepGraphError> {
     print_header(provider, "Generating dependency graph");
@@ -181,8 +181,8 @@ pub struct CiOptions {
 pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
     let mut workspace = load_workspace().await?;
     let ci_provider = get_pipeline_output();
+    let project_graph = generate_project_graph(&mut workspace).await?;
     let touched_files = gather_touched_files(&ci_provider, &workspace, &options).await?;
-    let project_graph = workspace.generate_project_graph().await?;
     let targets = gather_runnable_targets(&ci_provider, &project_graph, &touched_files)?;
 
     if targets.is_empty() {
@@ -201,6 +201,7 @@ pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
         .generate_report("ciReport.json")
         .run(
             dep_graph,
+            project_graph,
             Some(RunnerContext {
                 touched_files,
                 ..RunnerContext::default()

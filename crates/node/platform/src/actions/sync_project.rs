@@ -3,6 +3,7 @@ use moon_config::{DependencyScope, NodeVersionFormat, TypeScriptConfig};
 use moon_logger::{color, debug};
 use moon_node_lang::{PackageJson, NPM};
 use moon_project::Project;
+use moon_project_graph::ProjectGraph;
 use moon_runner_context::RunnerContext;
 use moon_typescript_lang::tsconfig::CompilerOptionsPaths;
 use moon_typescript_lang::TsConfigJson;
@@ -78,10 +79,12 @@ pub async fn sync_project(
     _action: &mut Action,
     _context: Arc<RwLock<RunnerContext>>,
     workspace: Arc<RwLock<Workspace>>,
+    project_graph: Arc<RwLock<ProjectGraph>>,
     project: &Project,
 ) -> Result<ActionStatus, WorkspaceError> {
     let mut mutated_files = false;
     let workspace = workspace.read().await;
+    let project_graph = project_graph.read().await;
     let node = workspace.toolchain.node.get()?;
     let is_project_typescript_enabled = project.config.toolchain.typescript;
 
@@ -93,7 +96,7 @@ pub async fn sync_project(
     let mut tsconfig_paths: CompilerOptionsPaths = BTreeMap::new();
 
     for (dep_id, dep_cfg) in &project.dependencies {
-        let dep_project = workspace.projects.load(dep_id)?;
+        let dep_project = project_graph.get(dep_id).unwrap(); // TODO
         let dep_relative_path =
             path::relative_from(&dep_project.root, &project.root).unwrap_or_default();
         let is_dep_typescript_enabled = dep_project.config.toolchain.typescript;

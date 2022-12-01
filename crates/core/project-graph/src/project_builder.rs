@@ -48,7 +48,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         // Add a node for each project
         for id in sources.keys() {
-            self.load(&mut graph, &mut indices, sources, aliases, &id)?;
+            self.load(&mut graph, &mut indices, sources, aliases, id)?;
         }
 
         Ok((graph, indices))
@@ -60,7 +60,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         id: &str,
         source: &str,
     ) -> Result<Project, ProjectError> {
-        let mut project = Project::new(id, source, &self.workspace_root, &self.config)?;
+        let mut project = Project::new(id, source, self.workspace_root, self.config)?;
 
         // Find the alias for a given ID. This is currently... not performant,
         // so revisit once it becomes an issue!
@@ -110,7 +110,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         // Expand all tasks for the project (this must happen last)
         project.expand_tasks(
-            &self.workspace_root,
+            self.workspace_root,
             &self.workspace_config.runner.implicit_deps,
             &self.workspace_config.runner.implicit_inputs,
         )?;
@@ -136,7 +136,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             trace!(
                 target: LOG_TARGET,
                 "Project {} already exists in the project graph",
-                color::id(&id),
+                color::id(id),
             );
 
             return Ok(*indices.get(id).unwrap());
@@ -145,7 +145,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         trace!(
             target: LOG_TARGET,
             "Project {} does not exist in the project graph, attempting to load",
-            color::id(&id),
+            color::id(id),
         );
 
         // Create project based on ID and source
@@ -153,7 +153,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             return Err(ProjectError::UnconfiguredID(id.to_owned()));
         };
 
-        let project = self.create_project(aliases, &id, source)?;
+        let project = self.create_project(aliases, id, source)?;
         let depends_on = project.get_dependency_ids();
 
         // Insert the project into the graph
@@ -231,7 +231,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                 map_list(&globs, |g| color::file(g))
             );
 
-            detect_projects_with_globs(&self.workspace_root, &globs, &mut sources)?;
+            detect_projects_with_globs(self.workspace_root, &globs, &mut sources)?;
 
             // Update the cache
             cache.globs = globs.clone();

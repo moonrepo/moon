@@ -181,7 +181,7 @@ impl<'graph> DepGraphBuilder<'graph> {
 
         let (project_id, task_id) = target.ids()?;
         let project = self.project_graph.get(&project_id)?;
-        let dependents = self.project_graph.get_dependents_of(&project)?;
+        let dependents = self.project_graph.get_dependents_of(project)?;
 
         for dependent_id in dependents {
             let dep_project = self.project_graph.get(&dependent_id)?;
@@ -211,7 +211,7 @@ impl<'graph> DepGraphBuilder<'graph> {
                         let all_target = Target::new(&project.id, &target.task_id)?;
 
                         if let Some(index) =
-                            self.run_target_by_project(&all_target, &project, touched_files)?
+                            self.run_target_by_project(&all_target, project, touched_files)?
                         {
                             inserted_targets.insert(all_target);
                             inserted_indexes.insert(index);
@@ -229,7 +229,7 @@ impl<'graph> DepGraphBuilder<'graph> {
                 let own_target = Target::new(&project.id, &target.task_id)?;
 
                 if let Some(index) =
-                    self.run_target_by_project(&own_target, &project, touched_files)?
+                    self.run_target_by_project(&own_target, project, touched_files)?
                 {
                     inserted_targets.insert(own_target);
                     inserted_indexes.insert(index);
@@ -392,7 +392,7 @@ impl<'graph> DepGraphBuilder<'graph> {
         // And we should also depend on other projects
         for dep_project_id in self.project_graph.get_dependencies_of(project)? {
             let dep_project = self.project_graph.get(&dep_project_id)?;
-            let dep_index = self.sync_project(&dep_project)?;
+            let dep_index = self.sync_project(dep_project)?;
 
             self.graph.add_edge(index, dep_index, ());
         }

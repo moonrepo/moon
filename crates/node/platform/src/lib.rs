@@ -78,10 +78,10 @@ impl Platform for NodePlatform {
             }
         }
 
-        return Some(Runtime::Node(Version(
+        Some(Runtime::Node(Version(
             self.config.version.to_owned(),
             false,
-        )));
+        )))
     }
 
     fn is_project_in_package_manager_workspace(

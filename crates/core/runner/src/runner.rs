@@ -261,7 +261,7 @@ impl Runner {
         context: Option<RunnerContext>,
     ) -> Result<ActionResults, RunnerError> {
         let start = Instant::now();
-        let node_count = graph.graph.node_count();
+        let node_count = graph.get_node_count();
         let batches = graph.sort_batched_topological()?;
         let batches_count = batches.len();
         let graph = Arc::new(RwLock::new(graph));

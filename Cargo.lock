@@ -1944,7 +1944,6 @@ name = "moon_dep_graph"
 version = "0.1.0"
 dependencies = [
  "moon_action",
- "moon_config",
  "moon_error",
  "moon_logger",
  "moon_platform",
@@ -1952,7 +1951,6 @@ dependencies = [
  "moon_project_graph",
  "moon_task",
  "moon_test_utils",
- "moon_utils",
  "petgraph",
  "rustc-hash",
  "thiserror",

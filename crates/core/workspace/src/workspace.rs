@@ -6,7 +6,8 @@ use moon_config::{
 };
 use moon_constants as constants;
 use moon_logger::{color, debug, trace};
-use moon_project_graph::ProjectGraph;
+use moon_platform::{BoxedPlatform, PlatformManager};
+use moon_project_graph::{NewProjectGraph, ProjectGraph};
 use moon_toolchain::Toolchain;
 use moon_utils::fs;
 use moon_vcs::{Vcs, VcsLoader};
@@ -143,8 +144,14 @@ pub struct Workspace {
     /// Workspace configuration loaded from ".moon/workspace.yml".
     pub config: WorkspaceConfig,
 
+    /// Registered platforms derived from toolchain configuration.
+    pub platforms: PlatformManager,
+
     /// The project graph, where each project is lazy loaded in.
     pub projects: ProjectGraph,
+
+    /// Global project configuration loaded from ".moon/project.yml".
+    pub projects_config: GlobalProjectConfig,
 
     /// The root of the workspace that contains the ".moon" config folder.
     pub root: PathBuf,
@@ -185,7 +192,7 @@ impl Workspace {
         // Load configs
         let config = load_workspace_config(&root_dir)?;
         let toolchain_config = load_toolchain_config(&root_dir)?;
-        let project_config = load_global_project_config(&root_dir)?;
+        let projects_config = load_global_project_config(&root_dir)?;
 
         // Setup components
         let cache = CacheEngine::load(&root_dir).await?;
@@ -194,7 +201,7 @@ impl Workspace {
             &root_dir,
             &config,
             &toolchain_config,
-            project_config,
+            projects_config.clone(),
             &cache,
         )
         .await?;
@@ -203,13 +210,30 @@ impl Workspace {
         Ok(Workspace {
             cache,
             config,
+            platforms: PlatformManager::default(),
             projects,
+            projects_config,
             root: root_dir,
             session: None,
             toolchain,
             vcs,
             working_dir: working_dir.to_owned(),
         })
+    }
+
+    pub async fn generate_project_graph(&mut self) -> Result<NewProjectGraph, WorkspaceError> {
+        Ok(NewProjectGraph::generate(
+            &mut self.platforms,
+            &self.root,
+            &self.config,
+            &self.toolchain.config,
+            &self.projects_config,
+        )
+        .await?)
+    }
+
+    pub fn register_platform(&mut self, platform: BoxedPlatform) {
+        self.platforms.register(platform.get_type(), platform);
     }
 
     pub async fn signin_to_moonbase(&mut self) -> Result<(), WorkspaceError> {

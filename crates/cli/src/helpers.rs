@@ -18,11 +18,15 @@ pub type AnyError = Box<dyn std::error::Error>;
 pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
     let mut workspace = Workspace::load().await?;
 
+    workspace.register_platform(Box::new(SystemPlatform::default()));
+
     workspace
         .projects
         .register_platform(Box::new(SystemPlatform::default()))?;
 
     if workspace.toolchain.config.node.is_some() {
+        workspace.register_platform(Box::new(NodePlatform::default()));
+
         workspace
             .projects
             .register_platform(Box::new(NodePlatform::default()))?;

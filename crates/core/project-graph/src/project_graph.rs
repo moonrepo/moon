@@ -5,7 +5,7 @@ use moon_config::{
 };
 use moon_error::MoonError;
 use moon_logger::{color, debug, map_list, trace};
-use moon_platform::{BoxedPlatform, PlatformManager, Platformable};
+use moon_platform::PlatformManager;
 use moon_project::{
     detect_projects_with_globs, Project, ProjectDependency, ProjectDependencySource, ProjectError,
 };
@@ -123,7 +123,7 @@ impl<'graph> ProjectGraph<'graph> {
         workspace_root: &Path,
         workspace_config: &WorkspaceConfig,
         toolchain_config: &ToolchainConfig,
-        global_config: GlobalProjectConfig,
+        global_config: &GlobalProjectConfig,
     ) -> Result<ProjectGraph<'a>, ProjectError> {
         let mut graph = DiGraph::new();
         let mut aliases = FxHashMap::default();
@@ -148,7 +148,7 @@ impl<'graph> ProjectGraph<'graph> {
 
         Ok(ProjectGraph {
             aliases: FxHashMap::default(),
-            global_config,
+            global_config: global_config.to_owned(),
             graph,
             indices: FxHashMap::default(),
             platforms,

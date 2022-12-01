@@ -110,7 +110,7 @@ pub async fn install_deps(
     let manifest_filename = pm.get_manifest_filename();
 
     // When running against affected files, avoid install as it interrupts the workflow
-    if context.affected {
+    if context.affected_only {
         debug!(
             target: LOG_TARGET,
             "Running against affected files, skipping install",

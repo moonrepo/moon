@@ -31,6 +31,7 @@ export interface Action {
 }
 
 export interface RunnerContext {
+	affectedOnly: boolean;
 	initialTargets: string[];
 	passthroughArgs: string[];
 	primaryTargets: string[];

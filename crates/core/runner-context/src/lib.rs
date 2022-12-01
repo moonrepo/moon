@@ -13,7 +13,7 @@ pub enum ProfileType {
 #[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RunnerContext {
-    pub affected: bool,
+    pub affected_only: bool,
 
     pub initial_targets: FxHashSet<String>,
 

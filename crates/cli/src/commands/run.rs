@@ -4,6 +4,7 @@ use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOption
 use moon_logger::{color, map_list};
 use moon_runner::{DepGraph, Runner};
 use moon_runner_context::{ProfileType, RunnerContext};
+use moon_utils::is_ci;
 use moon_workspace::Workspace;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::string::ToString;
@@ -19,6 +20,14 @@ pub struct RunOptions {
     pub upstream: bool,
 }
 
+pub fn is_local(options: &RunOptions) -> bool {
+    if options.affected {
+        !options.upstream
+    } else {
+        !is_ci()
+    }
+}
+
 pub async fn run(
     target_ids: &[String],
     options: RunOptions,
@@ -29,27 +38,34 @@ pub async fn run(
         None => load_workspace().await?,
     };
 
-    // Generate a dependency graph for all the targets that need to be ran
-    let mut dep_graph = DepGraph::default();
-    let touched_files = if options.affected {
-        Some(
-            query_touched_files(
-                &workspace,
-                &mut QueryTouchedFilesOptions {
-                    local: !options.upstream,
-                    status: options.status,
-                    ..QueryTouchedFilesOptions::default()
-                },
-            )
-            .await?,
+    // Always query for a touched files list as it'll be used by many actions
+    let touched_files = if options.affected || workspace.vcs.is_enabled() {
+        query_touched_files(
+            &workspace,
+            &mut QueryTouchedFilesOptions {
+                local: is_local(&options),
+                status: options.status,
+                ..QueryTouchedFilesOptions::default()
+            },
         )
+        .await?
     } else {
-        None
+        FxHashSet::default()
     };
 
+    // Generate a dependency graph for all the targets that need to be ran
+    let mut dep_graph = DepGraph::default();
+
     // Run targets, optionally based on affected files
-    let primary_targets =
-        dep_graph.run_targets_by_id(target_ids, &workspace.projects, &touched_files)?;
+    let primary_targets = dep_graph.run_targets_by_id(
+        target_ids,
+        &workspace.projects,
+        if options.affected {
+            Some(&touched_files)
+        } else {
+            None
+        },
+    )?;
 
     if primary_targets.is_empty() {
         let targets_list = map_list(target_ids, |id| color::target(id));
@@ -82,13 +98,13 @@ pub async fn run(
 
     // Process all tasks in the graph
     let context = RunnerContext {
-        affected: options.affected,
+        affected_only: options.affected,
         initial_targets: FxHashSet::from_iter(target_ids.to_owned()),
         passthrough_args: options.passthrough,
         primary_targets: FxHashSet::from_iter(primary_targets),
         profile: options.profile,
         target_hashes: FxHashMap::default(),
-        touched_files: touched_files.unwrap_or_default(),
+        touched_files,
     };
 
     let mut runner = Runner::new(workspace);

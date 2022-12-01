@@ -6,6 +6,7 @@
 
 - Fixed an issue where env files (`.env`) would not be considered as task inputs. We've also updated
   `env_file` to be an implicit input.
+- Fixed an issue where changes to a nested `package.json` were not triggering automatic installs.
 
 ## 0.20.1
 

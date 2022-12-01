@@ -263,7 +263,7 @@ impl<'a> TargetRunner<'a> {
 
         // Affected files (must be last args)
         if self.task.options.affected_files {
-            if context.affected {
+            if context.affected_only {
                 let mut affected_files = self
                     .task
                     .get_affected_files(&context.touched_files, &self.project.root)?;

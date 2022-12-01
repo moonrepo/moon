@@ -832,7 +832,7 @@ pub async fn run_target(
     let emitter = emitter.read().await;
     let project = project_graph.get(&project_id)?;
     let task = project.get_task(&task_id)?;
-    let mut runner = TargetRunner::new(&emitter, &workspace, &project, task).await?;
+    let mut runner = TargetRunner::new(&emitter, &workspace, project, task).await?;
 
     debug!(
         target: LOG_TARGET,
@@ -878,7 +878,7 @@ pub async fn run_target(
                     .is_cached(
                         &mut context,
                         common_hasher,
-                        node_actions::create_target_hasher(&workspace, &project).await?,
+                        node_actions::create_target_hasher(&workspace, project).await?,
                     )
                     .await?
             }
@@ -887,7 +887,7 @@ pub async fn run_target(
                     .is_cached(
                         &mut context,
                         common_hasher,
-                        system_actions::create_target_hasher(&workspace, &project)?,
+                        system_actions::create_target_hasher(&workspace, project)?,
                     )
                     .await?
             }

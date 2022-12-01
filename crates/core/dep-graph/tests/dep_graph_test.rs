@@ -421,7 +421,7 @@ mod sync_project {
         for id in ids {
             let project = projects.get(id).unwrap();
 
-            graph.sync_project(&project).unwrap();
+            graph.sync_project(project).unwrap();
         }
     }
 

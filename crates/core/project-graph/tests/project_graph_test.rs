@@ -184,11 +184,11 @@ mod get_dependencies_of {
         let c = graph.get("c").unwrap();
         let d = graph.get("d").unwrap();
 
-        assert_eq!(graph.get_dependencies_of(&a).unwrap(), string_vec!["b"]);
-        assert_eq!(graph.get_dependencies_of(&b).unwrap(), string_vec!["c"]);
-        assert_eq!(graph.get_dependencies_of(&c).unwrap(), string_vec![]);
+        assert_eq!(graph.get_dependencies_of(a).unwrap(), string_vec!["b"]);
+        assert_eq!(graph.get_dependencies_of(b).unwrap(), string_vec!["c"]);
+        assert_eq!(graph.get_dependencies_of(c).unwrap(), string_vec![]);
         assert_eq!(
-            graph.get_dependencies_of(&d).unwrap(),
+            graph.get_dependencies_of(d).unwrap(),
             string_vec!["c", "b", "a"]
         );
     }
@@ -206,11 +206,11 @@ mod get_dependents_of {
         let c = graph.get("c").unwrap();
         let d = graph.get("d").unwrap();
 
-        assert_eq!(graph.get_dependents_of(&a).unwrap(), string_vec![]);
-        assert_eq!(graph.get_dependents_of(&b).unwrap(), string_vec!["a"]);
-        assert_eq!(graph.get_dependents_of(&c).unwrap(), string_vec!["b"]);
+        assert_eq!(graph.get_dependents_of(a).unwrap(), string_vec![]);
+        assert_eq!(graph.get_dependents_of(b).unwrap(), string_vec!["a"]);
+        assert_eq!(graph.get_dependents_of(c).unwrap(), string_vec!["b"]);
         assert_eq!(
-            graph.get_dependents_of(&d).unwrap(),
+            graph.get_dependents_of(d).unwrap(),
             string_vec!["a", "b", "c"]
         );
     }

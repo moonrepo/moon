@@ -18,7 +18,7 @@ pub async fn run_script(name: &str, project: &Option<String>) -> Result<(), AnyE
     } else if let Some(project_id) = project {
         let project_graph = generate_project_graph(&mut workspace).await?;
 
-        command.cwd(project_graph.get(project_id)?.root.to_owned());
+        command.cwd(&project_graph.get(project_id)?.root);
 
         // This should rarely happen...
     } else {

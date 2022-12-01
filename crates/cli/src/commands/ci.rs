@@ -153,7 +153,7 @@ fn generate_dep_graph(
 ) -> Result<DepGraph, DepGraphError> {
     print_header(provider, "Generating dependency graph");
 
-    let mut dep_builder = build_dep_graph(&workspace, &project_graph);
+    let mut dep_builder = build_dep_graph(workspace, project_graph);
 
     for target in targets {
         // Run the target and its dependencies

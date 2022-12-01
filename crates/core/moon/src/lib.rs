@@ -86,5 +86,5 @@ pub async fn generate_project_graph(
         workspace_root: &workspace.root,
     };
 
-    Ok(builder.build().await?)
+    builder.build().await
 }

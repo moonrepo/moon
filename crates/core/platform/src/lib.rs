@@ -69,10 +69,6 @@ pub trait Platform: Debug + Send + Sync {
 
 pub type BoxedPlatform = Box<dyn Platform>;
 
-pub trait Platformable {
-    fn register_platform(&mut self, platform: BoxedPlatform) -> Result<(), MoonError>;
-}
-
 #[derive(Debug, Default)]
 pub struct PlatformManager {
     cache: FxHashMap<PlatformType, BoxedPlatform>,

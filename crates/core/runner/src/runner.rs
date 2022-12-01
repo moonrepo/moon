@@ -84,14 +84,14 @@ async fn run_action(
 
             local_emitter
                 .emit(Event::DependenciesInstalling {
-                    project: Some(&project),
+                    project: Some(project),
                     runtime,
                 })
                 .await?;
 
             let install_result = match runtime {
                 Runtime::Node(_) => {
-                    node_actions::install_deps(action, context, workspace, runtime, Some(&project))
+                    node_actions::install_deps(action, context, workspace, runtime, Some(project))
                         .await
                         .map_err(RunnerError::Workspace)
                 }
@@ -101,7 +101,7 @@ async fn run_action(
             local_emitter
                 .emit(Event::DependenciesInstalled {
                     error: extract_run_error(&install_result),
-                    project: Some(&project),
+                    project: Some(project),
                     runtime,
                 })
                 .await?;
@@ -163,14 +163,14 @@ async fn run_action(
 
             local_emitter
                 .emit(Event::ProjectSyncing {
-                    project: &project,
+                    project,
                     runtime,
                 })
                 .await?;
 
             let sync_result = match runtime {
                 Runtime::Node(_) => {
-                    node_actions::sync_project(action, context, workspace, project_graph, &project)
+                    node_actions::sync_project(action, context, workspace, project_graph, project)
                         .await
                         .map_err(RunnerError::Workspace)
                 }
@@ -180,7 +180,7 @@ async fn run_action(
             local_emitter
                 .emit(Event::ProjectSynced {
                     error: extract_run_error(&sync_result),
-                    project: &project,
+                    project,
                     runtime,
                 })
                 .await?;

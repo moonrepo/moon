@@ -13,15 +13,15 @@ use petgraph::graph::{DiGraph, NodeIndex};
 use rustc_hash::FxHashMap;
 use std::path::Path;
 
-pub struct ProjectGraphBuilder<'graph> {
-    pub cache: &'graph CacheEngine,
-    pub config: &'graph GlobalProjectConfig,
-    pub platforms: &'graph mut PlatformManager,
-    pub workspace_config: &'graph WorkspaceConfig,
-    pub workspace_root: &'graph Path,
+pub struct ProjectGraphBuilder<'ws> {
+    pub cache: &'ws CacheEngine,
+    pub config: &'ws GlobalProjectConfig,
+    pub platforms: &'ws mut PlatformManager,
+    pub workspace_config: &'ws WorkspaceConfig,
+    pub workspace_root: &'ws Path,
 }
 
-impl<'graph> ProjectGraphBuilder<'graph> {
+impl<'ws> ProjectGraphBuilder<'ws> {
     pub async fn build(&mut self) -> Result<ProjectGraph, ProjectError> {
         let sources = self.load_sources().await?;
         let aliases = self.load_aliases(&sources).await?;

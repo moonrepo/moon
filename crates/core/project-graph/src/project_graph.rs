@@ -76,10 +76,7 @@ impl ProjectGraph {
     /// Find and return a project based on the initial path location.
     /// This will attempt to find the closest matching project source.
     #[track_caller]
-    pub fn load_from_path<P: AsRef<Path>>(
-        &self,
-        current_file: P,
-    ) -> Result<&Project, ProjectError> {
+    pub fn get_from_path<P: AsRef<Path>>(&self, current_file: P) -> Result<&Project, ProjectError> {
         let current_file = current_file.as_ref();
         let workspace_root = get_workspace_root();
 

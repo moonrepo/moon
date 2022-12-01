@@ -97,6 +97,12 @@ impl PlatformManager {
         self.cache.values()
     }
 
+    pub fn list_mut(
+        &mut self,
+    ) -> std::collections::hash_map::ValuesMut<PlatformType, BoxedPlatform> {
+        self.cache.values_mut()
+    }
+
     pub fn register(&mut self, type_of: PlatformType, platform: BoxedPlatform) {
         self.cache.insert(type_of, platform);
     }

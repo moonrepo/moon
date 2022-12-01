@@ -1,4 +1,4 @@
-use crate::helpers::load_workspace;
+use crate::helpers::{load_workspace, AnyError};
 pub use crate::queries::projects::{query_projects, QueryProjectsOptions, QueryProjectsResult};
 pub use crate::queries::touched_files::{
     query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
@@ -6,7 +6,7 @@ pub use crate::queries::touched_files::{
 use std::io;
 use std::io::prelude::*;
 
-pub async fn projects(options: &QueryProjectsOptions) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn projects(options: &QueryProjectsOptions) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;
 
     let result = QueryProjectsResult {
@@ -22,9 +22,7 @@ pub async fn projects(options: &QueryProjectsOptions) -> Result<(), Box<dyn std:
     Ok(())
 }
 
-pub async fn touched_files(
-    options: &mut QueryTouchedFilesOptions,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn touched_files(options: &mut QueryTouchedFilesOptions) -> Result<(), AnyError> {
     let workspace = load_workspace().await?;
 
     let result = QueryTouchedFilesResult {

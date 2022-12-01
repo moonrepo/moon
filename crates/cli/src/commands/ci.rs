@@ -1,5 +1,5 @@
 use crate::enums::TouchedStatus;
-use crate::helpers::{build_dep_graph, generate_project_graph, load_workspace};
+use crate::helpers::{build_dep_graph, generate_project_graph, load_workspace, AnyError};
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use itertools::Itertools;
 use moon_dep_graph::{DepGraph, DepGraphError};
@@ -178,7 +178,7 @@ pub struct CiOptions {
     pub job_total: Option<usize>,
 }
 
-pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn ci(options: CiOptions) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;
     let ci_provider = get_pipeline_output();
     let project_graph = generate_project_graph(&mut workspace).await?;

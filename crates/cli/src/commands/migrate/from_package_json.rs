@@ -1,5 +1,5 @@
 use super::check_dirty_repo;
-use crate::helpers::{generate_project_graph, load_workspace};
+use crate::helpers::{generate_project_graph, load_workspace, AnyError};
 use moon_config::{
     DependencyConfig, DependencyScope, PlatformType, ProjectConfig, ProjectDependsOn,
     TaskCommandArgs,
@@ -14,7 +14,7 @@ use rustc_hash::FxHashMap;
 use serde_yaml::to_string;
 
 // Don't use serde since it writes *everything*, which is a ton of nulled fields!
-pub fn convert_to_yaml(config: &ProjectConfig) -> Result<YamlValue, Box<dyn std::error::Error>> {
+pub fn convert_to_yaml(config: &ProjectConfig) -> Result<YamlValue, AnyError> {
     let mut root = Mapping::new();
 
     root.insert(
@@ -141,7 +141,7 @@ pub fn convert_to_yaml(config: &ProjectConfig) -> Result<YamlValue, Box<dyn std:
 pub async fn from_package_json(
     project_id: &str,
     skip_touched_files_check: &bool,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;
 
     if *skip_touched_files_check {

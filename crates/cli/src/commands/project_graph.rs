@@ -1,6 +1,6 @@
-use crate::helpers::{generate_project_graph, load_workspace};
+use crate::helpers::{generate_project_graph, load_workspace, AnyError};
 
-pub async fn project_graph(project_id: &Option<String>) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn project_graph(project_id: &Option<String>) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;
     let project_graph = generate_project_graph(&mut workspace).await?;
 

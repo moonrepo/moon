@@ -1,10 +1,10 @@
-use crate::helpers::{create_progress_bar, load_workspace};
+use crate::helpers::{create_progress_bar, load_workspace, AnyError};
 
 pub struct CleanOptions {
     pub cache_lifetime: String,
 }
 
-pub async fn clean(options: CleanOptions) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn clean(options: CleanOptions) -> Result<(), AnyError> {
     let workspace = load_workspace().await?;
 
     let done = create_progress_bar(format!(

@@ -1,5 +1,5 @@
 use crate::commands::docker::scaffold::DockerManifest;
-use crate::helpers::{generate_project_graph, load_workspace_with_toolchain};
+use crate::helpers::{generate_project_graph, load_workspace_with_toolchain, AnyError};
 use futures::future::try_join_all;
 use moon_config::ProjectLanguage;
 use moon_node_lang::{PackageJson, NODE};
@@ -12,9 +12,7 @@ pub async fn prune_node(
     workspace: &Workspace,
     project_graph: &ProjectGraph,
     manifest: &DockerManifest,
-) -> Result<(), Box<dyn std::error::Error>> {
-    dbg!("PRUNE NODE", manifest);
-
+) -> Result<(), AnyError> {
     let toolchain = &workspace.toolchain;
     let mut package_names = vec![];
 
@@ -62,7 +60,7 @@ pub async fn prune_node(
     Ok(())
 }
 
-pub async fn prune() -> Result<(), Box<dyn std::error::Error>> {
+pub async fn prune() -> Result<(), AnyError> {
     let mut workspace = load_workspace_with_toolchain().await?;
     let manifest_path = workspace.root.join("dockerManifest.json");
 

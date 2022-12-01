@@ -1,4 +1,4 @@
-use crate::helpers::load_workspace;
+use crate::helpers::{load_workspace, AnyError};
 use clap::ValueEnum;
 use moon_terminal::safe_exit;
 use moon_toolchain::RuntimeTool;
@@ -32,7 +32,7 @@ fn not_configured() -> ! {
     safe_exit(BinExitCodes::NotConfigured as i32);
 }
 
-pub async fn bin(tool_type: &BinTool) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn bin(tool_type: &BinTool) -> Result<(), AnyError> {
     let workspace = load_workspace().await?;
     let toolchain = &workspace.toolchain;
 

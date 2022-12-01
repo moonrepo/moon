@@ -1,7 +1,7 @@
-use crate::helpers::{build_dep_graph, generate_project_graph, load_workspace};
+use crate::helpers::{build_dep_graph, generate_project_graph, load_workspace, AnyError};
 use moon_task::Target;
 
-pub async fn dep_graph(target_id: &Option<String>) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn dep_graph(target_id: &Option<String>) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;
     let project_graph = generate_project_graph(&mut workspace).await?;
     let mut dep_builder = build_dep_graph(&workspace, &project_graph);

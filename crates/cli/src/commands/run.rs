@@ -1,5 +1,5 @@
 use crate::enums::TouchedStatus;
-use crate::helpers::{build_dep_graph, generate_project_graph, load_workspace};
+use crate::helpers::{build_dep_graph, generate_project_graph, load_workspace, AnyError};
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use moon_logger::{color, map_list};
 use moon_project_graph::ProjectGraph;
@@ -34,7 +34,7 @@ pub async fn run_target(
     options: RunOptions,
     workspace: Workspace,
     project_graph: ProjectGraph,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), AnyError> {
     // Always query for a touched files list as it'll be used by many actions
     let touched_files = if options.affected || workspace.vcs.is_enabled() {
         query_touched_files(
@@ -118,10 +118,7 @@ pub async fn run_target(
     Ok(())
 }
 
-pub async fn run(
-    target_ids: &[String],
-    options: RunOptions,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn run(target_ids: &[String], options: RunOptions) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;
     let project_graph = generate_project_graph(&mut workspace).await?;
 

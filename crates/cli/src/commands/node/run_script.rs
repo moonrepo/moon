@@ -1,11 +1,8 @@
-use crate::helpers::{generate_project_graph, load_workspace_with_toolchain};
+use crate::helpers::{generate_project_graph, load_workspace_with_toolchain, AnyError};
 use moon_error::MoonError;
 use std::env;
 
-pub async fn run_script(
-    name: &str,
-    project: &Option<String>,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn run_script(name: &str, project: &Option<String>) -> Result<(), AnyError> {
     let mut workspace = load_workspace_with_toolchain().await?;
     let node = workspace.toolchain.node.get()?;
     let mut command = node.get_package_manager().create_command(node)?;

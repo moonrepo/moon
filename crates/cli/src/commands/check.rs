@@ -1,5 +1,5 @@
 use crate::commands::run::{run_target, RunOptions};
-use crate::helpers::{generate_project_graph, load_workspace};
+use crate::helpers::{generate_project_graph, load_workspace, AnyError};
 use moon_logger::trace;
 use moon_project::Project;
 use std::env;
@@ -11,10 +11,7 @@ pub struct CheckOptions {
 
 const LOG_TARGET: &str = "moon:check";
 
-pub async fn check(
-    project_ids: &Vec<String>,
-    options: CheckOptions,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn check(project_ids: &Vec<String>, options: CheckOptions) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;
     let project_graph = generate_project_graph(&mut workspace).await?;
     let mut projects: Vec<&Project> = vec![];

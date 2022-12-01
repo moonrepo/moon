@@ -1,9 +1,9 @@
 use crate::helpers::{
-    build_dep_graph, create_progress_bar, generate_project_graph, load_workspace,
+    build_dep_graph, create_progress_bar, generate_project_graph, load_workspace, AnyError,
 };
 use moon_runner::Runner;
 
-pub async fn sync() -> Result<(), Box<dyn std::error::Error>> {
+pub async fn sync() -> Result<(), AnyError> {
     let done = create_progress_bar("Syncing projects...");
 
     let mut workspace = load_workspace().await?;

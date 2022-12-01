@@ -1943,17 +1943,23 @@ version = "0.1.0"
 name = "moon_dep_graph"
 version = "0.1.0"
 dependencies = [
+ "criterion",
  "moon_action",
+ "moon_config",
  "moon_error",
  "moon_logger",
+ "moon_node_platform",
  "moon_platform",
  "moon_project",
  "moon_project_graph",
+ "moon_system_platform",
  "moon_task",
  "moon_test_utils",
+ "moon_workspace",
  "petgraph",
  "rustc-hash",
  "thiserror",
+ "tokio",
 ]
 
 [[package]]

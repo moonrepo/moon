@@ -1,64 +1,58 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use moon_cache::CacheEngine;
-use moon_config::{GlobalProjectConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects};
-use moon_project_graph::ProjectGraph;
-use moon_test_utils::get_fixtures_path;
-use rustc_hash::FxHashMap;
+use moon_project_graph::{ProjectGraph, ProjectGraphBuilder};
+use moon_test_utils::{create_sandbox_with_config, get_cases_fixture_configs};
+use moon_workspace::Workspace;
 
-pub fn load_benchmark(c: &mut Criterion) {
-    let workspace_root = get_fixtures_path("cases");
-    let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Sources(FxHashMap::from_iter([(
-            "base".to_owned(),
-            "base".to_owned(),
-        )])),
-        ..WorkspaceConfig::default()
+async fn generate_project_graph(workspace: &mut Workspace) -> ProjectGraph {
+    let mut builder = ProjectGraphBuilder {
+        cache: &workspace.cache,
+        config: &workspace.projects_config,
+        platforms: &mut workspace.platforms,
+        workspace_config: &workspace.config,
+        workspace_root: &workspace.root,
     };
 
-    let runtime = tokio::runtime::Runtime::new().unwrap();
+    builder.build().await.unwrap()
+}
 
-    runtime.block_on(async {
-        let cache = CacheEngine::load(&workspace_root).await.unwrap();
+pub fn load_benchmark(c: &mut Criterion) {
+    let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
 
-        let graph = ProjectGraph::generate(
-            &workspace_root,
-            &workspace_config,
-            &ToolchainConfig::default(),
-            GlobalProjectConfig::default(),
-            &cache,
-        )
-        .await
-        .unwrap();
+    let sandbox = create_sandbox_with_config(
+        "cases",
+        Some(&workspace_config),
+        Some(&toolchain_config),
+        Some(&projects_config),
+    );
 
-        c.bench_function("project_graph_load", |b| {
-            b.iter(|| {
-                // This clones a new project struct every time
-                black_box(graph.load("base").unwrap());
+    c.bench_function("project_graph_load", |b| {
+        b.to_async(tokio::runtime::Runtime::new().unwrap())
+            .iter(|| async {
+                let mut workspace = Workspace::load_from(sandbox.path()).await.unwrap();
+                let graph = generate_project_graph(&mut workspace).await;
+
+                black_box(graph.get("base").unwrap());
             })
-        });
     });
 }
 
 pub fn load_all_benchmark(c: &mut Criterion) {
-    let workspace_root = get_fixtures_path("cases");
-    let workspace_config = WorkspaceConfig::default();
+    let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
+
+    let sandbox = create_sandbox_with_config(
+        "cases",
+        Some(&workspace_config),
+        Some(&toolchain_config),
+        Some(&projects_config),
+    );
 
     c.bench_function("project_graph_load_all", |b| {
         b.to_async(tokio::runtime::Runtime::new().unwrap())
             .iter(|| async {
-                let cache = CacheEngine::load(&workspace_root).await.unwrap();
-                let graph = ProjectGraph::generate(
-                    &workspace_root,
-                    &workspace_config,
-                    &ToolchainConfig::default(),
-                    GlobalProjectConfig::default(),
-                    &cache,
-                )
-                .await
-                .unwrap();
+                let mut workspace = Workspace::load_from(sandbox.path()).await.unwrap();
+                let graph = generate_project_graph(&mut workspace).await;
 
-                // This does NOT clone but inserts all projects into the graph
-                graph.load_all().unwrap();
+                black_box(graph.get_all().unwrap());
             })
     });
 }

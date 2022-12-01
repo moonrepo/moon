@@ -1,8 +1,9 @@
-use crate::helpers::{load_workspace, AnyError};
+use crate::helpers::AnyError;
 pub use crate::queries::projects::{query_projects, QueryProjectsOptions, QueryProjectsResult};
 pub use crate::queries::touched_files::{
     query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
 };
+use moon::load_workspace;
 use std::io;
 use std::io::prelude::*;
 

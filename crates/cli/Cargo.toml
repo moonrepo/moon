@@ -13,6 +13,7 @@ path = "src/lib.rs"
 crate-type = ["rlib"]
 
 [dependencies]
+moon = { path = "../core/moon" }
 moon_config = { path = "../core/config" }
 moon_constants = { path = "../core/constants" }
 moon_dep_graph = { path = "../core/dep-graph" }

@@ -1,5 +1,6 @@
 use super::check_dirty_repo;
-use crate::helpers::{generate_project_graph, load_workspace, AnyError};
+use crate::helpers::AnyError;
+use moon::{generate_project_graph, load_workspace};
 use moon_config::{
     DependencyConfig, DependencyScope, PlatformType, ProjectConfig, ProjectDependsOn,
     TaskCommandArgs,

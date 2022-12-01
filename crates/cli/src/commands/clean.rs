@@ -1,4 +1,5 @@
-use crate::helpers::{create_progress_bar, load_workspace, AnyError};
+use crate::helpers::{create_progress_bar, AnyError};
+use moon::load_workspace;
 
 pub struct CleanOptions {
     pub cache_lifetime: String,

@@ -1,6 +1,7 @@
-use crate::helpers::{load_workspace, AnyError};
+use crate::helpers::AnyError;
 use console::Term;
 use dialoguer::{theme::Theme, Confirm, Input, MultiSelect, Select};
+use moon::load_workspace;
 use moon_config::{TemplateVariable, TemplateVariableEnumValue};
 use moon_error::MoonError;
 use moon_generator::{FileState, Generator, GeneratorError, Template, TemplateContext};

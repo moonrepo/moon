@@ -1,9 +1,10 @@
 use crate::{
-    helpers::{generate_project_graph, AnyError},
+    helpers::AnyError,
     queries::touched_files::{
         query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
     },
 };
+use moon::generate_project_graph;
 use moon_error::MoonError;
 use moon_logger::{debug, trace};
 use moon_project::Project;

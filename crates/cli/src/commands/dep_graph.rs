@@ -1,4 +1,5 @@
-use crate::helpers::{build_dep_graph, generate_project_graph, load_workspace, AnyError};
+use crate::helpers::AnyError;
+use moon::{build_dep_graph, generate_project_graph, load_workspace};
 use moon_task::Target;
 
 pub async fn dep_graph(target_id: &Option<String>) -> Result<(), AnyError> {

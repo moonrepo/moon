@@ -1,4 +1,5 @@
-use crate::helpers::{generate_project_graph, load_workspace, AnyError};
+use crate::helpers::AnyError;
+use moon::{generate_project_graph, load_workspace};
 
 pub async fn project_graph(project_id: &Option<String>) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;

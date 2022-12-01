@@ -1,6 +1,7 @@
-use crate::helpers::{generate_project_graph, load_workspace, AnyError};
+use crate::helpers::AnyError;
 use console::Term;
 use itertools::Itertools;
+use moon::{generate_project_graph, load_workspace};
 use moon_logger::color;
 use moon_terminal::{ExtendedTerm, Label};
 use moon_utils::is_test_env;

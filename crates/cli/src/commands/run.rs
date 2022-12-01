@@ -1,6 +1,7 @@
 use crate::enums::TouchedStatus;
-use crate::helpers::{build_dep_graph, generate_project_graph, load_workspace, AnyError};
+use crate::helpers::AnyError;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
+use moon::{build_dep_graph, generate_project_graph, load_workspace};
 use moon_logger::{color, map_list};
 use moon_project_graph::ProjectGraph;
 use moon_runner::Runner;

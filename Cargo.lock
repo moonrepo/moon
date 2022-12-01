@@ -1816,6 +1816,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon"
+version = "0.1.0"
+dependencies = [
+ "moon_config",
+ "moon_dep_graph",
+ "moon_node_platform",
+ "moon_project_graph",
+ "moon_system_platform",
+ "moon_workspace",
+ "rustc-hash",
+ "strum",
+]
+
+[[package]]
 name = "moon_action"
 version = "0.1.0"
 dependencies = [
@@ -1875,6 +1889,7 @@ dependencies = [
  "indicatif",
  "itertools",
  "mimalloc",
+ "moon",
  "moon_archive",
  "moon_cache",
  "moon_config",

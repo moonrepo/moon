@@ -1,6 +1,6 @@
-use crate::helpers::{generate_project_graph, load_workspace};
 use async_recursion::async_recursion;
 use futures::future::try_join_all;
+use moon::{generate_project_graph, load_workspace};
 use moon_config::{NodePackageManager, ProjectID, ProjectLanguage};
 use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;

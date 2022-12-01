@@ -1,6 +1,5 @@
-use crate::helpers::{
-    build_dep_graph, create_progress_bar, generate_project_graph, load_workspace, AnyError,
-};
+use crate::helpers::{create_progress_bar, AnyError};
+use moon::{build_dep_graph, generate_project_graph, load_workspace};
 use moon_platform::{Runtime, Version};
 use moon_runner::Runner;
 use moon_utils::is_test_env;

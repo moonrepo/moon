@@ -1,7 +1,8 @@
 use crate::enums::TouchedStatus;
-use crate::helpers::{build_dep_graph, generate_project_graph, load_workspace, AnyError};
+use crate::helpers::AnyError;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use itertools::Itertools;
+use moon::{build_dep_graph, generate_project_graph, load_workspace};
 use moon_dep_graph::{DepGraph, DepGraphError};
 use moon_logger::{color, debug};
 use moon_pipeline_provider::{get_pipeline_output, PipelineOutput};

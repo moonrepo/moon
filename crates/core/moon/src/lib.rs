@@ -1,0 +1,99 @@
+use moon_config::PlatformType;
+use moon_dep_graph::DepGraphBuilder;
+use moon_node_platform::NodePlatform;
+use moon_project_graph::{ProjectError, ProjectGraph, ProjectGraphBuilder};
+use moon_system_platform::SystemPlatform;
+use moon_utils::is_test_env;
+use moon_workspace::{Workspace, WorkspaceError};
+use rustc_hash::FxHashMap;
+use std::path::Path;
+use strum::IntoEnumIterator;
+
+pub fn register_platforms(workspace: &mut Workspace) {
+    workspace.register_platform(Box::new(SystemPlatform::default()));
+
+    if let Some(node_config) = &workspace.toolchain.config.node {
+        workspace.register_platform(Box::new(NodePlatform::new(node_config, &workspace.root)));
+    }
+}
+
+/// Loads the workspace from the current working directory.
+pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
+    let mut workspace = Workspace::load().await?;
+
+    register_platforms(&mut workspace);
+
+    if !is_test_env() {
+        workspace.signin_to_moonbase().await?;
+    }
+
+    Ok(workspace)
+}
+
+/// Loads the workspace from a provided directory.
+pub async fn load_workspace_from(path: &Path) -> Result<Workspace, WorkspaceError> {
+    let mut workspace = Workspace::load_from(path).await?;
+
+    register_platforms(&mut workspace);
+
+    if !is_test_env() {
+        workspace.signin_to_moonbase().await?;
+    }
+
+    Ok(workspace)
+}
+
+// Some commands require the toolchain to exist, but don't use
+// the action runner. This is a simple flow to wire up the tools.
+pub async fn load_workspace_with_toolchain() -> Result<Workspace, WorkspaceError> {
+    let mut workspace = load_workspace().await?;
+    let mut last_versions = FxHashMap::default();
+
+    // Use exhaustive checks so we don't miss a platform
+    for platform in PlatformType::iter() {
+        match platform {
+            PlatformType::Node => {
+                if let Some(node_config) = &workspace.toolchain.config.node {
+                    workspace
+                        .toolchain
+                        .node
+                        .setup(&node_config.version, &mut last_versions)
+                        .await?;
+                }
+            }
+            PlatformType::System | PlatformType::Unknown => {}
+        }
+    }
+
+    Ok(workspace)
+}
+
+pub fn build_dep_graph<'g>(
+    workspace: &'g Workspace,
+    project_graph: &'g ProjectGraph,
+) -> DepGraphBuilder<'g> {
+    DepGraphBuilder::new(&workspace.platforms, project_graph)
+}
+
+pub async fn build_project_graph(
+    workspace: &mut Workspace,
+) -> Result<ProjectGraphBuilder, ProjectError> {
+    ProjectGraphBuilder::new(
+        &workspace.cache,
+        &workspace.projects_config,
+        &mut workspace.platforms,
+        &workspace.config,
+        &workspace.root,
+    )
+    .await
+}
+
+pub async fn generate_project_graph(
+    workspace: &mut Workspace,
+) -> Result<ProjectGraph, ProjectError> {
+    let mut builder = build_project_graph(workspace).await?;
+
+    builder.load_all()?;
+
+    Ok(builder.build())
+}

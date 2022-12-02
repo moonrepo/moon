@@ -14,7 +14,7 @@ pub enum ProjectError {
     InvalidConfigFile(String, String),
 
     #[error("No project exists at path <file>{0}</file>.")]
-    MissingProject(String),
+    MissingProjectAtSource(String),
 
     #[error("No project could be located starting from path <path>{0}</path>.")]
     MissingProjectFromPath(PathBuf),

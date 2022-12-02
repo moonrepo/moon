@@ -1,16 +1,17 @@
-use crate::helpers::load_workspace;
+use crate::helpers::AnyError;
 pub use crate::queries::projects::{query_projects, QueryProjectsOptions, QueryProjectsResult};
 pub use crate::queries::touched_files::{
     query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
 };
+use moon::load_workspace;
 use std::io;
 use std::io::prelude::*;
 
-pub async fn projects(options: &QueryProjectsOptions) -> Result<(), Box<dyn std::error::Error>> {
-    let workspace = load_workspace().await?;
+pub async fn projects(options: &QueryProjectsOptions) -> Result<(), AnyError> {
+    let mut workspace = load_workspace().await?;
 
     let result = QueryProjectsResult {
-        projects: query_projects(&workspace, options).await?,
+        projects: query_projects(&mut workspace, options).await?,
         options: options.clone(),
     };
 
@@ -22,9 +23,7 @@ pub async fn projects(options: &QueryProjectsOptions) -> Result<(), Box<dyn std:
     Ok(())
 }
 
-pub async fn touched_files(
-    options: &mut QueryTouchedFilesOptions,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn touched_files(options: &mut QueryTouchedFilesOptions) -> Result<(), AnyError> {
     let workspace = load_workspace().await?;
 
     let result = QueryTouchedFilesResult {

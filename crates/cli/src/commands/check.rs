@@ -1,5 +1,6 @@
-use crate::commands::run::{run, RunOptions};
-use crate::helpers::load_workspace;
+use crate::commands::run::{run_target, RunOptions};
+use crate::helpers::AnyError;
+use moon::{generate_project_graph, load_workspace};
 use moon_logger::trace;
 use moon_project::Project;
 use std::env;
@@ -11,22 +12,20 @@ pub struct CheckOptions {
 
 const LOG_TARGET: &str = "moon:check";
 
-pub async fn check(
-    project_ids: &Vec<String>,
-    options: CheckOptions,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let workspace = load_workspace().await?;
-    let mut projects: Vec<Project> = vec![];
+pub async fn check(project_ids: &Vec<String>, options: CheckOptions) -> Result<(), AnyError> {
+    let mut workspace = load_workspace().await?;
+    let project_graph = generate_project_graph(&mut workspace).await?;
+    let mut projects: Vec<&Project> = vec![];
 
     // Load projects
     if options.all {
         trace!(target: LOG_TARGET, "Running check on all projects");
 
-        projects.extend(workspace.projects.all_projects()?);
+        projects.extend(project_graph.get_all()?);
     } else if project_ids.is_empty() {
         trace!(target: LOG_TARGET, "Loading from path");
 
-        projects.push(workspace.projects.load_from_path(env::current_dir()?)?);
+        projects.push(project_graph.get_from_path(env::current_dir()?)?);
     } else {
         trace!(
             target: LOG_TARGET,
@@ -35,7 +34,7 @@ pub async fn check(
         );
 
         for id in project_ids {
-            projects.push(workspace.projects.load(id)?);
+            projects.push(project_graph.get(id)?);
         }
     };
 
@@ -51,13 +50,14 @@ pub async fn check(
     }
 
     // Run targets using our run command
-    run(
+    run_target(
         &targets,
         RunOptions {
             report: options.report,
             ..RunOptions::default()
         },
-        Some(workspace),
+        workspace,
+        project_graph,
     )
     .await?;
 

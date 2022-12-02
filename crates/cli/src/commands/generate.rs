@@ -1,6 +1,7 @@
-use crate::helpers::load_workspace;
+use crate::helpers::AnyError;
 use console::Term;
 use dialoguer::{theme::Theme, Confirm, Input, MultiSelect, Select};
+use moon::load_workspace;
 use moon_config::{TemplateVariable, TemplateVariableEnumValue};
 use moon_error::MoonError;
 use moon_generator::{FileState, Generator, GeneratorError, Template, TemplateContext};
@@ -303,10 +304,7 @@ fn gather_variables(
     Ok(context)
 }
 
-pub async fn generate(
-    name: &str,
-    options: GenerateOptions,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn generate(name: &str, options: GenerateOptions) -> Result<(), AnyError> {
     let workspace = load_workspace().await?;
     let generator = Generator::load(&workspace.root, &workspace.config.generator)?;
     let theme = create_theme();

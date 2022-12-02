@@ -1,11 +1,14 @@
 use crate::enums::TouchedStatus;
-use crate::helpers::load_workspace;
+use crate::helpers::AnyError;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use itertools::Itertools;
+use moon::{build_dep_graph, generate_project_graph, load_workspace};
+use moon_dep_graph::{DepGraph, DepGraphError};
 use moon_logger::{color, debug};
 use moon_pipeline_provider::{get_pipeline_output, PipelineOutput};
 use moon_project::ProjectError;
-use moon_runner::{DepGraph, DepGraphError, Runner};
+use moon_project_graph::ProjectGraph;
+use moon_runner::Runner;
 use moon_runner_context::RunnerContext;
 use moon_task::{Target, TouchedFilePaths};
 use moon_terminal::safe_exit;
@@ -67,7 +70,7 @@ async fn gather_touched_files(
 /// Gather runnable targets by checking if all projects/tasks are affected based on touched files.
 fn gather_runnable_targets(
     provider: &PipelineOutput,
-    workspace: &Workspace,
+    project_graph: &ProjectGraph,
     touched_files: &TouchedFilePaths,
 ) -> Result<TargetList, ProjectError> {
     print_header(provider, "Gathering runnable targets");
@@ -75,11 +78,7 @@ fn gather_runnable_targets(
     let mut targets = vec![];
 
     // Required for dependents
-    workspace.projects.load_all()?;
-
-    for project_id in workspace.projects.ids() {
-        let project = workspace.projects.load(&project_id)?;
-
+    for project in project_graph.get_all()? {
         for task in project.tasks.values() {
             if task.should_run_in_ci() {
                 if task.is_affected(touched_files)? {
@@ -149,22 +148,25 @@ fn distribute_targets_across_jobs(
 fn generate_dep_graph(
     provider: &PipelineOutput,
     workspace: &Workspace,
+    project_graph: &ProjectGraph,
     targets: &TargetList,
 ) -> Result<DepGraph, DepGraphError> {
     print_header(provider, "Generating dependency graph");
 
-    let mut dep_graph = DepGraph::default();
+    let mut dep_builder = build_dep_graph(workspace, project_graph);
 
     for target in targets {
         // Run the target and its dependencies
-        dep_graph.run_target(target, &workspace.projects, None)?;
+        dep_builder.run_target(target, None)?;
 
         // And also run its dependents to ensure consumers still work correctly
-        dep_graph.run_dependents_for_target(target, &workspace.projects)?;
+        dep_builder.run_dependents_for_target(target)?;
     }
 
+    let dep_graph = dep_builder.build();
+
     println!("Target count: {}", targets.len());
-    println!("Action count: {}", dep_graph.graph.node_count());
+    println!("Action count: {}", dep_graph.get_node_count());
     print_footer(provider);
 
     Ok(dep_graph)
@@ -177,18 +179,19 @@ pub struct CiOptions {
     pub job_total: Option<usize>,
 }
 
-pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
-    let workspace = load_workspace().await?;
+pub async fn ci(options: CiOptions) -> Result<(), AnyError> {
+    let mut workspace = load_workspace().await?;
     let ci_provider = get_pipeline_output();
+    let project_graph = generate_project_graph(&mut workspace).await?;
     let touched_files = gather_touched_files(&ci_provider, &workspace, &options).await?;
-    let targets = gather_runnable_targets(&ci_provider, &workspace, &touched_files)?;
+    let targets = gather_runnable_targets(&ci_provider, &project_graph, &touched_files)?;
 
     if targets.is_empty() {
         return Ok(());
     }
 
     let targets = distribute_targets_across_jobs(&ci_provider, &options, targets);
-    let dep_graph = generate_dep_graph(&ci_provider, &workspace, &targets)?;
+    let dep_graph = generate_dep_graph(&ci_provider, &workspace, &project_graph, &targets)?;
 
     // Process all tasks in the graph
     print_header(&ci_provider, "Running all targets");
@@ -199,6 +202,7 @@ pub async fn ci(options: CiOptions) -> Result<(), Box<dyn std::error::Error>> {
         .generate_report("ciReport.json")
         .run(
             dep_graph,
+            project_graph,
             Some(RunnerContext {
                 touched_files,
                 ..RunnerContext::default()

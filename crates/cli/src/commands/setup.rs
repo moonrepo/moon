@@ -1,25 +1,31 @@
-use crate::helpers::{create_progress_bar, load_workspace};
+use crate::helpers::{create_progress_bar, AnyError};
+use moon::{build_dep_graph, generate_project_graph, load_workspace};
 use moon_platform::{Runtime, Version};
-use moon_runner::{DepGraph, Runner};
+use moon_runner::Runner;
 use moon_utils::is_test_env;
 
-pub async fn setup() -> Result<(), Box<dyn std::error::Error>> {
+pub async fn setup() -> Result<(), AnyError> {
     let done = create_progress_bar("Downloading and installing tools...");
 
-    let workspace = load_workspace().await?;
-    let mut dep_graph = DepGraph::default();
+    let mut workspace = load_workspace().await?;
+    let project_graph = generate_project_graph(&mut workspace).await?;
+    let mut dep_builder = build_dep_graph(&workspace, &project_graph);
 
     if let Some(node) = &workspace.toolchain.config.node {
         let runtime = Runtime::Node(Version(node.version.to_owned(), false));
 
         if is_test_env() {
-            dep_graph.setup_tool(&runtime);
+            dep_builder.setup_tool(&runtime);
         } else {
-            dep_graph.install_workspace_deps(&runtime);
+            dep_builder.install_workspace_deps(&runtime);
         }
     }
 
-    Runner::new(workspace).run(dep_graph, None).await?;
+    let dep_graph = dep_builder.build();
+
+    Runner::new(workspace)
+        .run(dep_graph, project_graph, None)
+        .await?;
 
     done("Setup complete", true);
 

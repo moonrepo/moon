@@ -1,0 +1,15 @@
+[package]
+name = "moon"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_config = { path = "../config" }
+moon_dep_graph = { path = "../dep-graph" }
+moon_node_platform = { path = "../../node/platform" }
+moon_project_graph = { path = "../project-graph" }
+moon_system_platform = { path = "../../system/platform" }
+moon_utils = { path = "../utils" }
+moon_workspace = { path = "../workspace" }
+rustc-hash = { workspace = true }
+strum = { version = "0.24.1", features = ["derive"] }

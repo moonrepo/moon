@@ -1843,7 +1843,6 @@ dependencies = [
  "rustc-hash",
  "tar",
  "thiserror",
- "tokio",
  "zip",
 ]
 
@@ -1862,7 +1861,6 @@ dependencies = [
  "rustc-hash",
  "serde",
  "serial_test",
- "tokio",
 ]
 
 [[package]]
@@ -1934,7 +1932,6 @@ dependencies = [
  "serde_yaml",
  "strum",
  "thiserror",
- "tokio",
  "validator",
 ]
 
@@ -2009,7 +2006,6 @@ dependencies = [
  "serde_json",
  "tera",
  "thiserror",
- "tokio",
 ]
 
 [[package]]
@@ -2062,7 +2058,6 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "thiserror",
- "tokio",
  "yarn-lock-parser",
 ]
 
@@ -2306,7 +2301,6 @@ dependencies = [
  "moon_utils",
  "serde",
  "serde_json",
- "tokio",
 ]
 
 [[package]]
@@ -2373,7 +2367,6 @@ dependencies = [
  "moonbase",
  "reqwest",
  "thiserror",
- "tokio",
 ]
 
 [[package]]

@@ -17,4 +17,3 @@ thiserror = { workspace = true }
 
 [dev-dependencies]
 moon_test_utils = { path = "../test-utils" }
-tokio = { workspace = true }

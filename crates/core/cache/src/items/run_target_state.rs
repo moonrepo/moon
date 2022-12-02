@@ -25,7 +25,7 @@ pub struct RunTargetState {
 cache_item!(RunTargetState);
 
 impl RunTargetState {
-    pub async fn archive_outputs(
+    pub fn archive_outputs(
         &self,
         archive_file: &Path,
         input_root: &Path,
@@ -60,7 +60,7 @@ impl RunTargetState {
         Ok(false)
     }
 
-    pub async fn hydrate_outputs(
+    pub fn hydrate_outputs(
         &self,
         archive_file: &Path,
         project_root: &Path,
@@ -70,7 +70,6 @@ impl RunTargetState {
             let mut differ = TreeDiffer::load(project_root, outputs)?;
 
             untar_with_diff(&mut differ, archive_file, project_root, None)
-                .await
                 .map_err(|e| MoonError::Generic(e.to_string()))?;
 
             let cache_logs = self.get_output_logs();

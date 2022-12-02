@@ -18,7 +18,6 @@ flate2 = "1.0.25"
 rustc-hash = { workspace = true }
 tar = "0.4.38"
 thiserror = { workspace = true }
-tokio = { workspace = true }
 zip = "0.6.3"
 
 [dev-dependencies]

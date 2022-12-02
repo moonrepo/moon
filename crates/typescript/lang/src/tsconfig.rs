@@ -66,7 +66,7 @@ pub struct TsConfigJson {
 }
 
 impl TsConfigJson {
-    pub async fn load_with_extends<T: AsRef<Path>>(path: T) -> Result<TsConfigJson, MoonError> {
+    pub fn load_with_extends<T: AsRef<Path>>(path: T) -> Result<TsConfigJson, MoonError> {
         let path = path.as_ref();
         let values = load_to_value(path, true)?;
 
@@ -891,8 +891,8 @@ mod test {
         assert_eq!(value.compiler_options.unwrap().remove_comments, Some(true));
     }
 
-    #[tokio::test]
-    async fn parse_basic_file() {
+    #[test]
+    fn parse_basic_file() {
         let path = get_fixtures_path("base/tsconfig-json");
         let config = TsConfigJson::read_with_name(path, "tsconfig.default.json")
             .unwrap()
@@ -909,10 +909,10 @@ mod test {
         assert_eq!(config.compiler_options.unwrap().strict, Some(true));
     }
 
-    #[tokio::test]
-    async fn parse_inheriting_file() {
+    #[test]
+    fn parse_inheriting_file() {
         let path = get_fixtures_path("base/tsconfig-json/tsconfig.inherits.json");
-        let config = TsConfigJson::load_with_extends(&path).await.unwrap();
+        let config = TsConfigJson::load_with_extends(&path).unwrap();
 
         assert_eq!(
             config
@@ -934,10 +934,10 @@ mod test {
         );
     }
 
-    #[tokio::test]
-    async fn parse_inheritance_chain() {
+    #[test]
+    fn parse_inheritance_chain() {
         let path = get_fixtures_path("base/tsconfig-json/a/tsconfig.json");
-        let config = TsConfigJson::load_with_extends(&path).await.unwrap();
+        let config = TsConfigJson::load_with_extends(&path).unwrap();
 
         assert_eq!(
             config

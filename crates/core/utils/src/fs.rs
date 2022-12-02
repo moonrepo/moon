@@ -31,10 +31,7 @@ pub fn copy_dir_all<T: AsRef<Path> + Send>(
         let path = entry.path();
 
         if path.is_file() {
-            copy_file(
-                &path,
-                to_root.join(path.strip_prefix(from_root).unwrap()),
-            )?;
+            copy_file(&path, to_root.join(path.strip_prefix(from_root).unwrap()))?;
         } else if path.is_dir() {
             dirs.push(path);
         }

@@ -170,7 +170,7 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
 
 // Uncomment when needed!
 // #[track_caller]
-// pub async fn unzip_with_diff<I: AsRef<Path>, O: AsRef<Path>>(
+// pub fn unzip_with_diff<I: AsRef<Path>, O: AsRef<Path>>(
 //     differ: &mut TreeDiffer,
 //     input_file: I,
 //     output_dir: O,
@@ -245,7 +245,7 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
 //         }
 //     }
 
-//     differ.remove_stale_tracked_files().await?;
+//     differ.remove_stale_tracked_files()?;
 
 //     Ok(())
 // }

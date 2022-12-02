@@ -241,7 +241,7 @@ impl<'a> TargetRunner<'a> {
 
         let mut command = match task.platform {
             PlatformType::Node => {
-                node_actions::create_target_command(context, workspace, project, task).await?
+                node_actions::create_target_command(context, workspace, project, task)?
             }
             _ => system_actions::create_target_command(task, working_dir),
         };

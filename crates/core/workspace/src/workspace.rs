@@ -221,7 +221,11 @@ impl Workspace {
             return Ok(());
         };
 
-        let repo_slug = self.vcs.get_repository_slug().await?;
+        let repo_slug = if self.vcs.is_enabled() {
+            self.vcs.get_repository_slug().await?
+        } else {
+            return Ok(());
+        };
 
         self.session = Moonbase::signin(secret_key, api_key, repo_slug).await;
 

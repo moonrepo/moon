@@ -143,8 +143,7 @@ package at the root of the repository.
 
 For developers, we suggest installing the
 [`@moonrepo/cli`](https://www.npmjs.com/package/@moonrepo/cli) package globally, so that you can
-easily run `moon` commands from _any_ directory, instead of relying on `package.json` scripts. When
-using this approach, the global must be installed with npm (not pnpm or yarn)!
+easily run `moon` commands from _any_ directory, instead of relying on `package.json` scripts.
 
 ```shell
 npm install -g @moonrepo/cli
@@ -155,10 +154,10 @@ executed that was defined as a dependency in the repo.
 
 ### Adding a package script
 
-For other scenarios or environments, like CI, `moon` can be ran with through a `package.json` script
--- but this comes with a cost -- which is the overhead of launching Node.js and your chosen package
-manager to execute the Rust binary, _instead of_ executing the Rust binary directly. If this is
-problematic, feel free to use the global approach above.
+For other scenarios or environments, like CI, `moon` can be ran with through a root `package.json`
+script -- but this comes with a cost -- which is the overhead of launching Node.js and your chosen
+package manager to execute the Rust binary, _instead of_ executing the Rust binary directly. If this
+is problematic, feel free to use the global approach above.
 
 ```json title="package.json"
 {

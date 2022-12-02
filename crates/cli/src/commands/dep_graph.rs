@@ -4,7 +4,7 @@ use moon_task::Target;
 
 pub async fn dep_graph(target_id: &Option<String>) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;
-    let project_graph = generate_project_graph(&mut workspace).await?;
+    let project_graph = generate_project_graph(&mut workspace)?;
     let mut dep_builder = build_dep_graph(&workspace, &project_graph);
 
     // Focus a target and its dependencies/dependents

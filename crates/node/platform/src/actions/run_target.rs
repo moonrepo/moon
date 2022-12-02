@@ -86,7 +86,7 @@ fn create_node_options(
 /// ~/.moon/tools/node/1.2.3/bin/node --inspect /path/to/node_modules/.bin/eslint
 ///     --cache --color --fix --ext .ts,.tsx,.js,.jsx
 #[track_caller]
-pub async fn create_target_command(
+pub fn create_target_command(
     context: &RunnerContext,
     workspace: &Workspace,
     project: &Project,

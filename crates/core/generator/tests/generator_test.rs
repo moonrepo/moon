@@ -6,26 +6,24 @@ use moon_utils::string_vec;
 mod create_template {
     use super::*;
 
-    #[tokio::test]
+    #[test]
     #[should_panic(expected = "ExistingTemplate(\"standard\"")]
-    async fn errors_if_already_exists() {
+    fn errors_if_already_exists() {
         let sandbox = create_sandbox("generator");
 
         Generator::load(sandbox.path(), &GeneratorConfig::default())
             .unwrap()
             .create_template("standard")
-            .await
             .unwrap();
     }
 
-    #[tokio::test]
-    async fn creates_the_template() {
+    #[test]
+    fn creates_the_template() {
         let sandbox = create_sandbox("generator");
 
         let template = Generator::load(sandbox.path(), &GeneratorConfig::default())
             .unwrap()
             .create_template("new-template")
-            .await
             .unwrap();
 
         assert!(sandbox.path().join("templates/new-template").exists());
@@ -38,8 +36,8 @@ mod create_template {
         assert_eq!(template.root, sandbox.path().join("templates/new-template"));
     }
 
-    #[tokio::test]
-    async fn creates_the_template_from_another_dir() {
+    #[test]
+    fn creates_the_template_from_another_dir() {
         let sandbox = create_sandbox("generator");
 
         let template = Generator::load(
@@ -50,7 +48,6 @@ mod create_template {
         )
         .unwrap()
         .create_template("new-template")
-        .await
         .unwrap();
 
         assert!(sandbox.path().join("scaffolding/new-template").exists());
@@ -66,14 +63,13 @@ mod create_template {
         );
     }
 
-    #[tokio::test]
-    async fn cleans_and_formats_the_name() {
+    #[test]
+    fn cleans_and_formats_the_name() {
         let sandbox = create_sandbox("generator");
 
         let template = Generator::load(sandbox.path(), &GeneratorConfig::default())
             .unwrap()
             .create_template("so&me temPlatE- with Ran!dom-Valu^es 123_")
-            .await
             .unwrap();
 
         assert!(sandbox

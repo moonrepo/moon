@@ -181,7 +181,7 @@ impl DependencyManager<NodeTool> for YarnTool {
             return Ok(FxHashMap::default());
         };
 
-        Ok(yarn::load_lockfile_dependencies(lockfile_path).await?)
+        Ok(yarn::load_lockfile_dependencies(lockfile_path)?)
     }
 
     async fn install_dependencies(

@@ -27,7 +27,7 @@ pub struct CacheEngine {
 }
 
 impl CacheEngine {
-    pub async fn load(workspace_root: &Path) -> Result<Self, MoonError> {
+    pub fn load(workspace_root: &Path) -> Result<Self, MoonError> {
         let dir = workspace_root.join(CONFIG_DIRNAME).join("cache");
         let hashes_dir = dir.join("hashes");
         let out_dir = dir.join("out");
@@ -43,13 +43,13 @@ impl CacheEngine {
         // TODO: Remove in v1. This was renamed from out -> outputs,
         // but we didn't want to lose existing cache.
         if out_dir.exists() {
-            let _ = std::fs::rename(out_dir, &outputs_dir);
+            let _ = fs::rename(out_dir, &outputs_dir);
         }
 
         // Do this once instead of each time we are writing cache items
-        fs::create_dir_all(&hashes_dir).await?;
-        fs::create_dir_all(&outputs_dir).await?;
-        fs::create_dir_all(&states_dir).await?;
+        fs::create_dir_all(&hashes_dir)?;
+        fs::create_dir_all(&outputs_dir)?;
+        fs::create_dir_all(&states_dir)?;
 
         Ok(CacheEngine {
             dir,
@@ -59,7 +59,7 @@ impl CacheEngine {
         })
     }
 
-    pub async fn cache_deps_state(
+    pub fn cache_deps_state(
         &self,
         runtime: &Runtime,
         project_id: Option<&str>,
@@ -74,16 +74,15 @@ impl CacheEngine {
             }),
             0,
         )
-        .await
     }
 
-    pub async fn cache_run_target_state<T: AsRef<str>>(
+    pub fn cache_run_target_state<T: AsRef<str>>(
         &self,
         target_id: T,
     ) -> Result<RunTargetState, MoonError> {
         let target_id = target_id.as_ref();
         let mut item =
-            RunTargetState::load(self.get_target_dir(target_id).join("lastRun.json"), 0).await?;
+            RunTargetState::load(self.get_target_dir(target_id).join("lastRun.json"), 0)?;
 
         if item.target.is_empty() {
             item.target = target_id.to_owned();
@@ -92,24 +91,22 @@ impl CacheEngine {
         Ok(item)
     }
 
-    pub async fn cache_projects_state(&self) -> Result<ProjectsState, MoonError> {
+    pub fn cache_projects_state(&self) -> Result<ProjectsState, MoonError> {
         ProjectsState::load(
             self.states_dir.join("projects.json"),
             90000, // Cache for 3 minutes
         )
-        .await
     }
 
-    pub async fn cache_tool_state(&self, runtime: &Runtime) -> Result<ToolState, MoonError> {
+    pub fn cache_tool_state(&self, runtime: &Runtime) -> Result<ToolState, MoonError> {
         ToolState::load(
             self.states_dir
                 .join(format!("tool{}-{}.json", runtime, runtime.version())),
             0,
         )
-        .await
     }
 
-    pub async fn clean_stale_cache(
+    pub fn clean_stale_cache(
         &self,
         lifetime: &str,
     ) -> Result<fs::RemoveDirContentsResult, MoonError> {
@@ -123,10 +120,10 @@ impl CacheEngine {
         );
 
         let (hashes_deleted, hashes_bytes) =
-            fs::remove_dir_stale_contents(&self.hashes_dir, duration).await?;
+            fs::remove_dir_stale_contents(&self.hashes_dir, duration)?;
 
         let (outputs_deleted, outputs_bytes) =
-            fs::remove_dir_stale_contents(&self.outputs_dir, duration).await?;
+            fs::remove_dir_stale_contents(&self.outputs_dir, duration)?;
 
         let deleted = hashes_deleted + outputs_deleted;
         let bytes = hashes_bytes + outputs_bytes;
@@ -141,7 +138,7 @@ impl CacheEngine {
         Ok((deleted, bytes))
     }
 
-    pub async fn create_hash_manifest<T>(&self, hash: &str, hasher: &T) -> Result<(), MoonError>
+    pub fn create_hash_manifest<T>(&self, hash: &str, hasher: &T) -> Result<(), MoonError>
     where
         T: ?Sized + Serialize,
     {
@@ -160,11 +157,7 @@ impl CacheEngine {
         Ok(())
     }
 
-    pub async fn create_json_report<T: Serialize>(
-        &self,
-        name: &str,
-        data: T,
-    ) -> Result<(), MoonError> {
+    pub fn create_json_report<T: Serialize>(&self, name: &str, data: T) -> Result<(), MoonError> {
         let path = self.dir.join(name);
 
         trace!(target: LOG_TARGET, "Writing report {}", color::path(&path));
@@ -174,12 +167,12 @@ impl CacheEngine {
         Ok(())
     }
 
-    pub async fn create_runfile<T: DeserializeOwned + Serialize>(
+    pub fn create_runfile<T: DeserializeOwned + Serialize>(
         &self,
         project_id: &str,
         data: &T,
     ) -> Result<Runfile, MoonError> {
-        Runfile::load(self.states_dir.join(project_id).join("runfile.json"), data).await
+        Runfile::load(self.states_dir.join(project_id).join("runfile.json"), data)
     }
 
     pub fn get_hash_archive_path(&self, hash: &str) -> PathBuf {

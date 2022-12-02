@@ -183,7 +183,7 @@ pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(
 }
 
 #[track_caller]
-pub async fn untar_with_diff<I: AsRef<Path>, O: AsRef<Path>>(
+pub fn untar_with_diff<I: AsRef<Path>, O: AsRef<Path>>(
     differ: &mut TreeDiffer,
     input_file: I,
     output_dir: O,

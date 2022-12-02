@@ -24,11 +24,10 @@ pub fn render_template(context: Context) -> Result<String, Error> {
 
 /// Detect the Node.js version from local configuration files,
 /// otherwise fallback to the configuration default.
-async fn detect_node_version(dest_dir: &Path) -> Result<(String, String), AnyError> {
+fn detect_node_version(dest_dir: &Path) -> Result<(String, String), AnyError> {
     if is_using_version_manager(dest_dir, &NVMRC) {
         return Ok((
-            fs::read(dest_dir.join(NVMRC.version_filename))
-                .await?
+            fs::read(dest_dir.join(NVMRC.version_filename))?
                 .trim()
                 .to_owned(),
             NVMRC.binary.to_owned(),
@@ -37,8 +36,7 @@ async fn detect_node_version(dest_dir: &Path) -> Result<(String, String), AnyErr
 
     if is_using_version_manager(dest_dir, &NODENV) {
         return Ok((
-            fs::read(dest_dir.join(NODENV.version_filename))
-                .await?
+            fs::read(dest_dir.join(NODENV.version_filename))?
                 .trim()
                 .to_owned(),
             NODENV.binary.to_owned(),
@@ -50,7 +48,7 @@ async fn detect_node_version(dest_dir: &Path) -> Result<(String, String), AnyErr
 
 /// Verify the package manager to use. If a `package.json` exists,
 /// and the `packageManager` field is defined, use that.
-async fn detect_package_manager(
+fn detect_package_manager(
     dest_dir: &Path,
     options: &InitOptions,
     theme: &ColorfulTheme,
@@ -118,7 +116,7 @@ async fn detect_package_manager(
 
 // Detect potential projects (for existing repos only) by
 // inspecting the `workspaces` field in a root `package.json`.
-async fn detect_projects(
+fn detect_projects(
     dest_dir: &Path,
     options: &InitOptions,
     parent_context: &mut Context,
@@ -191,11 +189,11 @@ pub async fn init_node(
         println!("\n{}\n", label_header("Node"));
     }
 
-    let node_version = detect_node_version(dest_dir).await?;
-    let package_manager = detect_package_manager(dest_dir, options, theme).await?;
+    let node_version = detect_node_version(dest_dir)?;
+    let package_manager = detect_package_manager(dest_dir, options, theme)?;
 
     if let Some(parent_context) = parent_context {
-        detect_projects(dest_dir, options, parent_context, theme).await?;
+        detect_projects(dest_dir, options, parent_context, theme)?;
     }
 
     let alias_names = if options.yes {

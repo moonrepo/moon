@@ -2,12 +2,12 @@
 macro_rules! cache_item {
     ($struct:ident) => {
         impl $struct {
-            pub async fn load(path: PathBuf, stale_ms: u128) -> Result<Self, MoonError> {
+            pub fn load(path: PathBuf, stale_ms: u128) -> Result<Self, MoonError> {
                 let mut item = Self::default();
                 let log_target = "moon:cache:item";
 
                 if let Some(parent) = path.parent() {
-                    fs::create_dir_all(parent).await?;
+                    fs::create_dir_all(parent)?;
                 }
 
                 if is_readable() {
@@ -15,7 +15,7 @@ macro_rules! cache_item {
                         // If stale, treat as a cache miss
                         if stale_ms > 0
                             && time::now_millis()
-                                - time::to_millis(fs::metadata(&path).await?.modified().unwrap())
+                                - time::to_millis(fs::metadata(&path)?.modified().unwrap())
                                 > stale_ms
                         {
                             trace!(
@@ -46,7 +46,7 @@ macro_rules! cache_item {
                 Ok(item)
             }
 
-            pub async fn save(&self) -> Result<(), MoonError> {
+            pub fn save(&self) -> Result<(), MoonError> {
                 let log_target = "moon:cache:item";
 
                 if is_writable() {

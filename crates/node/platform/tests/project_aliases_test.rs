@@ -20,7 +20,7 @@ async fn get_aliases_graph(node_config: NodeConfig) -> (ProjectGraph, Sandbox) {
     );
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
-    let graph = generate_project_graph(&mut workspace).await.unwrap();
+    let graph = generate_project_graph(&mut workspace).unwrap();
 
     (graph, sandbox)
 }

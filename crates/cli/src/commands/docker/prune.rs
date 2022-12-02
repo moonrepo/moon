@@ -1,6 +1,5 @@
 use crate::commands::docker::scaffold::DockerManifest;
 use crate::helpers::AnyError;
-use futures::future::try_join_all;
 use moon::{generate_project_graph, load_workspace_with_toolchain};
 use moon_config::ProjectLanguage;
 use moon_node_lang::{PackageJson, NODE};
@@ -28,15 +27,11 @@ pub async fn prune_node(
     }
 
     // Some package managers do not delete stale node modules
-    let mut futures = vec![fs::remove_dir_all(workspace.root.join(NODE.vendor_dir))];
+    fs::remove_dir_all(workspace.root.join(NODE.vendor_dir))?;
 
     for project_source in project_graph.sources.values() {
-        futures.push(fs::remove_dir_all(
-            workspace.root.join(project_source).join(NODE.vendor_dir),
-        ));
+        fs::remove_dir_all(workspace.root.join(project_source).join(NODE.vendor_dir))?;
     }
-
-    try_join_all(futures).await?;
 
     // Install production only dependencies for focused projects
     let node = toolchain.node.get()?;
@@ -46,17 +41,11 @@ pub async fn prune_node(
         .await?;
 
     // Remove extraneous node module folders for unfocused projects
-    // let mut futures = vec![];
-
     // for project_id in &manifest.unfocused_projects {
     //     if let Some(project_source) = project_graph.sources.get(project_id) {
-    //         futures.push(fs::remove_dir_all(
-    //             workspace.root.join(project_source).join(NODE.vendor_dir),
-    //         ));
+    //         fs::remove_dir_all(workspace.root.join(project_source).join(NODE.vendor_dir))?;
     //     }
     // }
-
-    // try_join_all(futures).await?;
 
     Ok(())
 }
@@ -70,7 +59,7 @@ pub async fn prune() -> Result<(), AnyError> {
         safe_exit(1);
     }
 
-    let project_graph = generate_project_graph(&mut workspace).await?;
+    let project_graph = generate_project_graph(&mut workspace)?;
     let manifest: DockerManifest = json::read(manifest_path)?;
     let mut is_using_node = false;
 

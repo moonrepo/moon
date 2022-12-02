@@ -1,5 +1,3 @@
-use async_recursion::async_recursion;
-use futures::future::try_join_all;
 use moon::{generate_project_graph, load_workspace};
 use moon_config::{NodePackageManager, ProjectID, ProjectLanguage};
 use moon_constants::CONFIG_DIRNAME;
@@ -21,45 +19,37 @@ pub struct DockerManifest {
     pub unfocused_projects: FxHashSet<ProjectID>,
 }
 
-async fn copy_files<T: AsRef<str>>(
-    list: &[T],
-    source: &Path,
-    dest: &Path,
-) -> Result<(), MoonError> {
-    let mut futures = vec![];
-
+fn copy_files<T: AsRef<str>>(list: &[T], source: &Path, dest: &Path) -> Result<(), MoonError> {
     for file in list {
         let file = file.as_ref();
         let source_file = source.join(file);
 
         if source_file.exists() {
             if source_file.is_dir() {
-                fs::copy_dir_all(&source_file, &source_file, &dest.join(file)).await?;
+                fs::copy_dir_all(&source_file, &source_file, &dest.join(file))?;
             } else {
-                futures.push(fs::copy_file(source_file, dest.join(file)));
+                fs::copy_file(source_file, dest.join(file))?;
             }
         }
     }
 
-    try_join_all(futures).await?;
-
     Ok(())
 }
 
-async fn scaffold_workspace(
+fn scaffold_workspace(
     workspace: &Workspace,
     project_graph: &ProjectGraph,
     docker_root: &Path,
 ) -> Result<(), ProjectError> {
     let docker_workspace_root = docker_root.join("workspace");
 
-    fs::create_dir_all(&docker_workspace_root).await?;
+    fs::create_dir_all(&docker_workspace_root)?;
 
     // Copy each project and mimic the folder structure
     for project_source in project_graph.sources.values() {
         let docker_project_root = docker_workspace_root.join(project_source);
 
-        fs::create_dir_all(&docker_project_root).await?;
+        fs::create_dir_all(&docker_project_root)?;
 
         // Copy manifest and config files
         let mut files: Vec<String> = vec![];
@@ -88,8 +78,7 @@ async fn scaffold_workspace(
             &files,
             &workspace.root.join(project_source),
             &docker_project_root,
-        )
-        .await?;
+        )?;
     }
 
     // Copy root lockfiles and configurations
@@ -120,7 +109,7 @@ async fn scaffold_workspace(
         }
     }
 
-    copy_files(&files, &workspace.root, &docker_workspace_root).await?;
+    copy_files(&files, &workspace.root, &docker_workspace_root)?;
 
     // Copy moon configuration
     let moon_configs = glob::walk(&workspace.root.join(CONFIG_DIRNAME), &["*.yml"])?;
@@ -129,13 +118,12 @@ async fn scaffold_workspace(
         .map(|f| path::to_string(f.strip_prefix(&workspace.root).unwrap()))
         .collect::<Result<Vec<String>, MoonError>>()?;
 
-    copy_files(&moon_configs, &workspace.root, &docker_workspace_root).await?;
+    copy_files(&moon_configs, &workspace.root, &docker_workspace_root)?;
 
     Ok(())
 }
 
-#[async_recursion]
-async fn scaffold_sources_project(
+fn scaffold_sources_project(
     workspace: &Workspace,
     project_graph: &ProjectGraph,
     docker_sources_root: &Path,
@@ -146,7 +134,7 @@ async fn scaffold_sources_project(
 
     manifest.focused_projects.insert(project_id.to_owned());
 
-    copy_files(&[&project.source], &workspace.root, docker_sources_root).await?;
+    copy_files(&[&project.source], &workspace.root, docker_sources_root)?;
 
     for dep_id in project.get_dependency_ids() {
         scaffold_sources_project(
@@ -155,14 +143,13 @@ async fn scaffold_sources_project(
             docker_sources_root,
             &dep_id,
             manifest,
-        )
-        .await?;
+        )?;
     }
 
     Ok(())
 }
 
-async fn scaffold_sources(
+fn scaffold_sources(
     workspace: &Workspace,
     project_graph: &ProjectGraph,
     docker_root: &Path,
@@ -183,8 +170,7 @@ async fn scaffold_sources(
             &docker_sources_root,
             project_id,
             &mut manifest,
-        )
-        .await?;
+        )?;
     }
 
     // Include non-focused projects in the manifest
@@ -202,7 +188,7 @@ async fn scaffold_sources(
             .map(|f| path::to_string(f.strip_prefix(&workspace.root).unwrap()))
             .collect::<Result<Vec<String>, MoonError>>()?;
 
-        copy_files(&files, &workspace.root, &docker_sources_root).await?;
+        copy_files(&files, &workspace.root, &docker_sources_root)?;
     }
 
     json::write(
@@ -222,13 +208,13 @@ pub async fn scaffold(
     let docker_root = workspace.root.join(CONFIG_DIRNAME).join("docker");
 
     // Delete the docker skeleton to remove any stale files
-    fs::remove_dir_all(&docker_root).await?;
-    fs::create_dir_all(&docker_root).await?;
+    fs::remove_dir_all(&docker_root)?;
+    fs::create_dir_all(&docker_root)?;
 
     // Create the workspace skeleton
-    let project_graph = generate_project_graph(&mut workspace).await?;
+    let project_graph = generate_project_graph(&mut workspace)?;
 
-    scaffold_workspace(&workspace, &project_graph, &docker_root).await?;
+    scaffold_workspace(&workspace, &project_graph, &docker_root)?;
 
     scaffold_sources(
         &workspace,
@@ -236,8 +222,7 @@ pub async fn scaffold(
         &docker_root,
         project_ids,
         include,
-    )
-    .await?;
+    )?;
 
     Ok(())
 }

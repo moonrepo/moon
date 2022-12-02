@@ -8,7 +8,7 @@ pub async fn setup() -> Result<(), AnyError> {
     let done = create_progress_bar("Downloading and installing tools...");
 
     let mut workspace = load_workspace().await?;
-    let project_graph = generate_project_graph(&mut workspace).await?;
+    let project_graph = generate_project_graph(&mut workspace)?;
     let mut dep_builder = build_dep_graph(&workspace, &project_graph);
 
     if let Some(node) = &workspace.toolchain.config.node {

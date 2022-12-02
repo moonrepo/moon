@@ -10,13 +10,13 @@ pub struct Runfile {
 }
 
 impl Runfile {
-    pub async fn load<T: DeserializeOwned + Serialize>(
+    pub fn load<T: DeserializeOwned + Serialize>(
         path: PathBuf,
         data: &T,
     ) -> Result<Runfile, MoonError> {
         trace!(target: "moon:cache:runfile", "Writing runfile {}", color::path(&path));
 
-        fs::create_dir_all(path.parent().unwrap()).await?;
+        fs::create_dir_all(path.parent().unwrap())?;
 
         // Always write a runfile, regardless of MOON_CACHE,
         // since consumers expect this to exist at runtime

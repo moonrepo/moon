@@ -8,8 +8,8 @@ use moon_utils::string_vec;
 mod missing_tsconfig {
     use super::*;
 
-    #[tokio::test]
-    async fn creates_tsconfig() {
+    #[test]
+    fn creates_tsconfig() {
         let (workspace_config, toolchain_config, projects_config) = get_node_fixture_configs();
         let sandbox = create_sandbox_with_config(
             "node",
@@ -30,9 +30,7 @@ mod missing_tsconfig {
 
         assert!(!tsconfig_path.exists());
 
-        create_missing_tsconfig(&project, &TypeScriptConfig::default(), sandbox.path())
-            .await
-            .unwrap();
+        create_missing_tsconfig(&project, &TypeScriptConfig::default(), sandbox.path()).unwrap();
 
         assert!(tsconfig_path.exists());
 
@@ -45,8 +43,8 @@ mod missing_tsconfig {
         assert_eq!(tsconfig.include, Some(string_vec!["**/*"]));
     }
 
-    #[tokio::test]
-    async fn creates_tsconfig_with_custom_settings() {
+    #[test]
+    fn creates_tsconfig_with_custom_settings() {
         let (workspace_config, toolchain_config, projects_config) = get_node_fixture_configs();
         let sandbox = create_sandbox_with_config(
             "node",
@@ -76,7 +74,6 @@ mod missing_tsconfig {
             },
             sandbox.path(),
         )
-        .await
         .unwrap();
 
         assert!(tsconfig_path.exists());
@@ -89,8 +86,8 @@ mod missing_tsconfig {
         assert_eq!(tsconfig.include, Some(string_vec!["**/*"]));
     }
 
-    #[tokio::test]
-    async fn doesnt_create_if_a_config_exists() {
+    #[test]
+    fn doesnt_create_if_a_config_exists() {
         let (workspace_config, toolchain_config, projects_config) = get_node_fixture_configs();
         let sandbox = create_sandbox_with_config(
             "node",
@@ -113,7 +110,6 @@ mod missing_tsconfig {
 
         let created =
             create_missing_tsconfig(&project, &TypeScriptConfig::default(), sandbox.path())
-                .await
                 .unwrap();
 
         assert!(!created);

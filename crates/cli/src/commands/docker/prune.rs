@@ -41,17 +41,11 @@ pub async fn prune_node(
         .await?;
 
     // Remove extraneous node module folders for unfocused projects
-    // let mut futures = vec![];
-
     // for project_id in &manifest.unfocused_projects {
     //     if let Some(project_source) = project_graph.sources.get(project_id) {
-    //         futures.push(fs::remove_dir_all(
-    //             workspace.root.join(project_source).join(NODE.vendor_dir),
-    //         ));
+    //         fs::remove_dir_all(workspace.root.join(project_source).join(NODE.vendor_dir))?;
     //     }
     // }
-
-    // try_join_all(futures).await?;
 
     Ok(())
 }

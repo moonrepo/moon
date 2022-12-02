@@ -226,12 +226,12 @@ impl<'graph> DepGraphBuilder<'graph> {
             // project:task
             TargetProjectScope::Id(project_id) => {
                 let project = self.project_graph.get(project_id)?;
-                let own_target = Target::new(&project.id, &target.task_id)?;
+                let task = project.get_task(&target.task_id)?;
 
                 if let Some(index) =
-                    self.run_target_by_project(&own_target, project, touched_files)?
+                    self.run_target_by_project(&task.target, project, touched_files)?
                 {
-                    inserted_targets.insert(own_target);
+                    inserted_targets.insert(task.target.to_owned());
                     inserted_indexes.insert(index);
                 }
             }
@@ -394,7 +394,9 @@ impl<'graph> DepGraphBuilder<'graph> {
             let dep_project = self.project_graph.get(&dep_project_id)?;
             let dep_index = self.sync_project(dep_project)?;
 
-            self.graph.add_edge(index, dep_index, ());
+            if index != dep_index {
+                self.graph.add_edge(index, dep_index, ());
+            }
         }
 
         Ok(index)

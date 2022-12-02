@@ -12,7 +12,6 @@ pub type GraphType = DiGraph<Project, ()>;
 pub type IndicesType = FxHashMap<ProjectID, NodeIndex>;
 
 pub const LOG_TARGET: &str = "moon:project-graph";
-pub const ROOT_NODE_ID: &str = "(workspace)";
 
 pub struct ProjectGraph {
     /// Mapping of an alias to a project ID.
@@ -63,7 +62,7 @@ impl ProjectGraph {
         let index = self
             .indices
             .get(id)
-            .ok_or_else(|| ProjectError::MissingProject(id.to_owned()))?;
+            .ok_or_else(|| ProjectError::UnconfiguredID(id.to_owned()))?;
 
         Ok(self.graph.node_weight(*index).unwrap())
     }
@@ -140,7 +139,6 @@ impl ProjectGraph {
             .graph
             .neighbors_directed(*self.indices.get(&project.id).unwrap(), Direction::Incoming)
             .map(|idx| self.graph.node_weight(idx).unwrap().id.clone())
-            .filter(|id| id != ROOT_NODE_ID)
             .collect();
 
         Ok(deps)
@@ -164,19 +162,14 @@ impl ProjectGraph {
             &|_, n| {
                 let id = n.1;
 
-                if id == ROOT_NODE_ID {
-                    format!(
-                        "label=\"{}\" style=filled, shape=oval, fillcolor=black, fontcolor=white",
-                        id
-                    )
-                // } else if id == &highlight_id {
-                //     String::from("style=filled, shape=circle, fillcolor=palegreen, fontcolor=black")
-                } else {
-                    format!(
-                        "label=\"{}\" style=filled, shape=oval, fillcolor=gray, fontcolor=black",
-                        id
-                    )
-                }
+                // if id == &highlight_id {
+                // //     String::from("style=filled, shape=circle, fillcolor=palegreen, fontcolor=black")
+                // } else {
+                format!(
+                    "label=\"{}\" style=filled, shape=oval, fillcolor=gray, fontcolor=black",
+                    id
+                )
+                // }
             },
         );
 

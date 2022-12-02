@@ -1,4 +1,4 @@
-use crate::project_graph::{GraphType, IndicesType, ProjectGraph, LOG_TARGET, ROOT_NODE_ID};
+use crate::project_graph::{GraphType, IndicesType, ProjectGraph, LOG_TARGET};
 use moon_cache::CacheEngine;
 use moon_config::{
     GlobalProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceConfig, WorkspaceProjects,
@@ -38,15 +38,6 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         let mut graph = DiGraph::new();
         let mut indices = FxHashMap::default();
 
-        // Add a virtual root node
-        graph.add_node(Project {
-            id: ROOT_NODE_ID.to_owned(),
-            root: self.workspace_root.to_path_buf(),
-            source: String::from("."),
-            ..Project::default()
-        });
-
-        // Add a node for each project
         for id in sources.keys() {
             self.load(&mut graph, &mut indices, sources, aliases, id)?;
         }
@@ -132,7 +123,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         };
 
         // Already loaded, abort early
-        if indices.contains_key(id) || id == ROOT_NODE_ID {
+        if indices.contains_key(id) {
             trace!(
                 target: LOG_TARGET,
                 "Project {} already exists in the project graph",
@@ -159,7 +150,6 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         // Insert the project into the graph
         let node_index = graph.add_node(project);
 
-        graph.add_edge(NodeIndex::new(0), node_index, ());
         indices.insert(id.to_owned(), node_index);
 
         if !depends_on.is_empty() {

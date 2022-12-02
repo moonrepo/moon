@@ -413,9 +413,8 @@ mod run_target_if_touched {
 }
 
 mod sync_project {
-    use moon_dep_graph::DepGraphBuilder;
-
     use super::*;
+    use moon_dep_graph::DepGraphBuilder;
 
     fn sync_projects(graph: &mut DepGraphBuilder, projects: &ProjectGraph, ids: &[&str]) {
         for id in ids {

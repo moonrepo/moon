@@ -12,7 +12,7 @@ pub fn get_benchmark(c: &mut Criterion) {
         Some(&projects_config),
     );
 
-    c.bench_function("project_graph_load", |b| {
+    c.bench_function("project_graph_get", |b| {
         b.to_async(tokio::runtime::Runtime::new().unwrap())
             .iter(|| async {
                 let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();

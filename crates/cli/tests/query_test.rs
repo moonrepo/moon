@@ -49,7 +49,9 @@ mod projects {
         });
 
         let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
-        let ids: Vec<String> = json.projects.iter().map(|p| p.id.clone()).collect();
+        let mut ids: Vec<String> = json.projects.iter().map(|p| p.id.clone()).collect();
+
+        ids.sort();
 
         assert_eq!(
             ids,

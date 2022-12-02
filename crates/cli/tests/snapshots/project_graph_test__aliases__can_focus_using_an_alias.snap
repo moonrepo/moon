@@ -1,12 +1,25 @@
 ---
 source: crates/cli/tests/project_graph_test.rs
-assertion_line: 73
-expression: get_assert_output(&assert)
+assertion_line: 109
+expression: assert.output()
 ---
 digraph {
-    0 [ label="(workspace)" style=filled, shape=oval, fillcolor=black, fontcolor=white]
-    1 [ label="nodeNameScope" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    0 [ label="explicitAndImplicit" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    1 [ label="node" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    2 [ label="nodeNameScope" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    3 [ label="nodeNameOnly" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    4 [ label="noLang" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    5 [ label="implicit" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    6 [ label="explicit" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    1 -> 2 [ arrowhead=box, arrowtail=box]
+    1 -> 3 [ arrowhead=box, arrowtail=box]
     0 -> 1 [ arrowhead=none]
+    0 -> 3 [ arrowhead=none]
+    0 -> 2 [ arrowhead=none]
+    5 -> 1 [ arrowhead=box, arrowtail=box]
+    5 -> 2 [ arrowhead=box, arrowtail=box]
+    6 -> 1 [ arrowhead=box, arrowtail=box]
+    6 -> 2 [ arrowhead=box, arrowtail=box]
 }
 
 

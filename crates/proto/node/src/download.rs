@@ -6,11 +6,10 @@ use proto_core::{
 };
 use std::env::consts;
 use std::path::{Path, PathBuf};
-use std::str::FromStr;
 
 #[cfg(target_os = "macos")]
 pub fn get_archive_file_path(version: &str) -> Result<String, ProtoError> {
-    let arch = NodeArch::from_str(consts::ARCH)?;
+    let arch = NodeArch::from_os_arch()?;
 
     if !matches!(arch, NodeArch::X64 | NodeArch::Arm64) {
         return Err(ProtoError::UnsupportedArchitecture(
@@ -24,11 +23,11 @@ pub fn get_archive_file_path(version: &str) -> Result<String, ProtoError> {
 
 #[cfg(target_os = "linux")]
 pub fn get_archive_file_path(version: &str) -> Result<String, ProtoError> {
-    let arch = NodeArch::from_str(consts::ARCH)?;
+    let arch = NodeArch::from_os_arch()?;
 
     if !matches!(
         arch,
-        NodeArch::X64 | NodeArch::Arm64 | NodeArch::Armv7l | NodeArch::Ppc64le | NodeArch::S390x
+        NodeArch::X64 | NodeArch::Arm | NodeArch::Arm64 | NodeArch::Ppc64 | NodeArch::S390x
     ) {
         return Err(ProtoError::UnsupportedArchitecture(
             "Node.js".into(),
@@ -41,7 +40,7 @@ pub fn get_archive_file_path(version: &str) -> Result<String, ProtoError> {
 
 #[cfg(target_os = "windows")]
 pub fn get_archive_file_path(version: &str) -> Result<String, ProtoError> {
-    let arch = NodeArch::from_str(consts::ARCH)?;
+    let arch = NodeArch::from_os_arch()?;
 
     if !matches!(arch, NodeArch::X64 | NodeArch::X86) {
         return Err(ProtoError::UnsupportedArchitecture(

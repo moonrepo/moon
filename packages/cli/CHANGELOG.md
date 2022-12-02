@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where Node.js arm64 was no longer working within the toolchain.
+
 ## 0.20.2
 
 #### 🐞 Fixes

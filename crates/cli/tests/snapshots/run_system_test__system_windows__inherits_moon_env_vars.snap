@@ -1,0 +1,14 @@
+---
+source: crates/cli/tests/run_system_test.rs
+expression: "get_path_safe_output(&assert, fixture.path())"
+---
+▪▪▪▪ windows:envVarsMoon
+MOON_TARGET=windows:envVarsMoon
+MOON_PROJECT_ID=windows
+▪▪▪▪ windows:envVarsMoon (100ms)
+
+Tasks: 1 completed
+ Time: 100ms
+
+
+

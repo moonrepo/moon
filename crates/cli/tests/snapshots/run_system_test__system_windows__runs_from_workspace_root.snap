@@ -1,0 +1,13 @@
+---
+source: crates/cli/tests/run_system_test.rs
+expression: "get_path_safe_output(&assert, fixture.path())"
+---
+▪▪▪▪ windows:runFromWorkspace
+<WORKSPACE>
+▪▪▪▪ windows:runFromWorkspace (100ms)
+
+Tasks: 1 completed
+ Time: 100ms
+
+
+

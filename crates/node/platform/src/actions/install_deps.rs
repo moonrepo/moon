@@ -69,7 +69,7 @@ fn add_engines_constraint(node: &NodeTool, package_json: &mut PackageJson) -> bo
     false
 }
 
-async fn sync_workspace(workspace: &Workspace, node: &NodeTool) -> Result<(), MoonError> {
+fn sync_workspace(workspace: &Workspace, node: &NodeTool) -> Result<(), MoonError> {
     // Sync values to root `package.json`
     PackageJson::sync(&workspace.root, |package_json| {
         add_package_manager(node, package_json);
@@ -83,7 +83,7 @@ async fn sync_workspace(workspace: &Workspace, node: &NodeTool) -> Result<(), Mo
         let rc_name = version_manager.get_config_filename();
         let rc_path = workspace.root.join(&rc_name);
 
-        fs::write(&rc_path, &node.config.version).await?;
+        fs::write(&rc_path, &node.config.version)?;
 
         debug!(
             target: LOG_TARGET,
@@ -139,7 +139,7 @@ pub async fn install_deps(
             .any(|f| f.ends_with(&lock_filename) || f.ends_with(&manifest_filename));
 
         // When installing deps in the workspace root, also sync applicable settings
-        sync_workspace(&workspace, node).await?;
+        sync_workspace(&workspace, node)?;
     }
 
     // Install dependencies in the current project or workspace
@@ -147,13 +147,11 @@ pub async fn install_deps(
     let mut last_modified = 0;
     let mut cache = workspace
         .cache
-        .cache_deps_state(runtime, project.map(|p| p.id.as_ref()))
-        .await?;
+        .cache_deps_state(runtime, project.map(|p| p.id.as_ref()))?;
 
     if lock_filepath.exists() {
         last_modified = time::to_millis(
-            fs::metadata(&lock_filepath)
-                .await?
+            fs::metadata(&lock_filepath)?
                 .modified()
                 .map_err(|e| map_io_to_fs_error(e, lock_filepath.clone()))?,
         );
@@ -229,7 +227,7 @@ pub async fn install_deps(
 
         // Update the cache with the timestamp
         cache.last_install_time = time::now_millis();
-        cache.save().await?;
+        cache.save()?;
 
         return Ok(ActionStatus::Passed);
     }

@@ -19,7 +19,7 @@ pub fn register_platforms(workspace: &mut Workspace) {
 
 /// Loads the workspace from the current working directory.
 pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
-    let mut workspace = Workspace::load().await?;
+    let mut workspace = Workspace::load()?;
 
     register_platforms(&mut workspace);
 
@@ -32,7 +32,7 @@ pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
 
 /// Loads the workspace from a provided directory.
 pub async fn load_workspace_from(path: &Path) -> Result<Workspace, WorkspaceError> {
-    let mut workspace = Workspace::load_from(path).await?;
+    let mut workspace = Workspace::load_from(path)?;
 
     register_platforms(&mut workspace);
 
@@ -75,9 +75,7 @@ pub fn build_dep_graph<'g>(
     DepGraphBuilder::new(&workspace.platforms, project_graph)
 }
 
-pub async fn build_project_graph(
-    workspace: &mut Workspace,
-) -> Result<ProjectGraphBuilder, ProjectError> {
+pub fn build_project_graph(workspace: &mut Workspace) -> Result<ProjectGraphBuilder, ProjectError> {
     ProjectGraphBuilder::new(
         &workspace.cache,
         &workspace.projects_config,
@@ -85,13 +83,10 @@ pub async fn build_project_graph(
         &workspace.config,
         &workspace.root,
     )
-    .await
 }
 
-pub async fn generate_project_graph(
-    workspace: &mut Workspace,
-) -> Result<ProjectGraph, ProjectError> {
-    let mut builder = build_project_graph(workspace).await?;
+pub fn generate_project_graph(workspace: &mut Workspace) -> Result<ProjectGraph, ProjectError> {
+    let mut builder = build_project_graph(workspace)?;
 
     builder.load_all()?;
 

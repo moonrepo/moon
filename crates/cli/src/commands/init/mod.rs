@@ -58,7 +58,7 @@ pub struct InitOptions {
 
 /// Verify the destination and return a path to the `.moon` folder
 /// if all questions have passed.
-async fn verify_dest_dir(
+fn verify_dest_dir(
     dest_dir: &Path,
     options: &InitOptions,
     theme: &ColorfulTheme,
@@ -79,7 +79,7 @@ async fn verify_dest_dir(
             return Ok(None);
         }
 
-        fs::create_dir_all(&moon_dir).await?;
+        fs::create_dir_all(&moon_dir)?;
 
         return Ok(Some(moon_dir));
     }
@@ -148,7 +148,7 @@ pub async fn init(
     }
 
     // Extract template variables
-    let Some(moon_dir) = verify_dest_dir(&dest_dir, &options, &theme).await? else {
+    let Some(moon_dir) = verify_dest_dir(&dest_dir, &options, &theme)? else {
         return Ok(())
     };
     let mut context = create_default_context();
@@ -189,20 +189,17 @@ pub async fn init(
             .map(|c| c.trim().to_owned())
             .collect::<Vec<String>>()
             .join("\n\n"),
-    )
-    .await?;
+    )?;
 
     fs::write(
         &moon_dir.join(CONFIG_WORKSPACE_FILENAME),
         render_workspace_template(&context)?,
-    )
-    .await?;
+    )?;
 
     fs::write(
         &moon_dir.join(CONFIG_GLOBAL_PROJECT_FILENAME),
         Tera::one_off(load_global_project_config_template(), &context, false)?,
-    )
-    .await?;
+    )?;
 
     // Append to ignore file
     let mut file = OpenOptions::new()

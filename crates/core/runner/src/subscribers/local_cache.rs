@@ -46,9 +46,7 @@ impl Subscriber for LocalCacheSubscriber {
                 let archive_path = workspace.cache.get_hash_archive_path(hash);
 
                 if is_writable()
-                    && cache
-                        .archive_outputs(&archive_path, &project.root, &task.outputs)
-                        .await?
+                    && cache.archive_outputs(&archive_path, &project.root, &task.outputs)?
                 {
                     return Ok(EventFlow::Return(path::to_string(archive_path)?));
                 }
@@ -65,9 +63,7 @@ impl Subscriber for LocalCacheSubscriber {
                 let archive_path = workspace.cache.get_hash_archive_path(hash);
 
                 if is_readable()
-                    && cache
-                        .hydrate_outputs(&archive_path, &project.root, &task.outputs)
-                        .await?
+                    && cache.hydrate_outputs(&archive_path, &project.root, &task.outputs)?
                 {
                     return Ok(EventFlow::Return(path::to_string(archive_path)?));
                 }
@@ -77,8 +73,7 @@ impl Subscriber for LocalCacheSubscriber {
             Event::RunnerFinished { .. } => {
                 workspace
                     .cache
-                    .clean_stale_cache(&workspace.config.runner.cache_lifetime)
-                    .await?;
+                    .clean_stale_cache(&workspace.config.runner.cache_lifetime)?;
             }
             _ => {}
         }

@@ -168,11 +168,11 @@ pub struct Workspace {
 impl Workspace {
     /// Create a new workspace instance starting from the current working directory.
     /// Will locate the workspace root and load available configuration files.
-    pub async fn load() -> Result<Workspace, WorkspaceError> {
-        Workspace::load_from(env::current_dir().unwrap()).await
+    pub fn load() -> Result<Workspace, WorkspaceError> {
+        Workspace::load_from(env::current_dir().unwrap())
     }
 
-    pub async fn load_from<P: AsRef<Path>>(working_dir: P) -> Result<Workspace, WorkspaceError> {
+    pub fn load_from<P: AsRef<Path>>(working_dir: P) -> Result<Workspace, WorkspaceError> {
         let working_dir = working_dir.as_ref();
         let Some(root_dir) = find_workspace_root(working_dir) else {
             return Err(WorkspaceError::MissingConfigDir);
@@ -191,8 +191,8 @@ impl Workspace {
         let projects_config = load_global_project_config(&root_dir)?;
 
         // Setup components
-        let cache = CacheEngine::load(&root_dir).await?;
-        let toolchain = Toolchain::load(&toolchain_config).await?;
+        let cache = CacheEngine::load(&root_dir)?;
+        let toolchain = Toolchain::load(&toolchain_config)?;
         let vcs = VcsLoader::load(&root_dir, &config)?;
 
         Ok(Workspace {

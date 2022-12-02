@@ -30,4 +30,3 @@ validator = { version = "0.16.0", features = ["derive"] }
 
 [dev-dependencies]
 moon_test_utils = { path = "../test-utils" }
-tokio = { workspace = true }

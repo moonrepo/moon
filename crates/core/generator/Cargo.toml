@@ -10,7 +10,6 @@ moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
 moon_utils = { path = "../utils" }
 convert_case = "0.6.0"
-futures = "0.3.25"
 lazy_static = "1.4.0"
 serde_json = { workspace = true }
 tera = { version = "1.17.1", features = ["preserve_order"] }
@@ -18,4 +17,3 @@ thiserror = { workspace = true }
 
 [dev-dependencies]
 moon_test_utils = { path = "../test-utils" }
-tokio = { workspace = true }

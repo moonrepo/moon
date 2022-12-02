@@ -214,8 +214,8 @@ mod unix {
                 .exists());
         }
 
-        #[tokio::test]
-        async fn creates_run_state_cache() {
+        #[test]
+        fn creates_run_state_cache() {
             let sandbox = system_sandbox();
 
             sandbox.run_moon(|cmd| {
@@ -228,7 +228,7 @@ mod unix {
 
             assert!(cache_path.exists());
 
-            let state = RunTargetState::load(cache_path, 0).await.unwrap();
+            let state = RunTargetState::load(cache_path, 0).unwrap();
 
             assert_snapshot!(fs::read_to_string(
                 sandbox
@@ -472,8 +472,8 @@ mod system_windows {
                 .exists());
         }
 
-        #[tokio::test]
-        async fn creates_run_state_cache() {
+        #[test]
+        fn creates_run_state_cache() {
             let sandbox = system_sandbox();
 
             sandbox.run_moon(|cmd| {
@@ -486,7 +486,7 @@ mod system_windows {
 
             assert!(cache_path.exists());
 
-            let state = RunTargetState::load(cache_path, 0).await.unwrap();
+            let state = RunTargetState::load(cache_path, 0).unwrap();
 
             assert_snapshot!(fs::read_to_string(
                 sandbox

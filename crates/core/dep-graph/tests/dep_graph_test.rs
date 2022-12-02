@@ -56,7 +56,7 @@ async fn create_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
     );
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
-    let project_graph = generate_project_graph(&mut workspace).await.unwrap();
+    let project_graph = generate_project_graph(&mut workspace).unwrap();
 
     (workspace, project_graph, sandbox)
 }
@@ -104,7 +104,7 @@ async fn create_tasks_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
     );
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
-    let project_graph = generate_project_graph(&mut workspace).await.unwrap();
+    let project_graph = generate_project_graph(&mut workspace).unwrap();
 
     (workspace, project_graph, sandbox)
 }

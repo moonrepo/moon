@@ -185,11 +185,7 @@ impl Template {
 
     /// Load all template files from the source directory and return a list
     /// of template file structs. These will later be used for rendering and generating.
-    pub async fn load_files(
-        &mut self,
-        dest: &Path,
-        context: &Context,
-    ) -> Result<(), GeneratorError> {
+    pub fn load_files(&mut self, dest: &Path, context: &Context) -> Result<(), GeneratorError> {
         let mut files = vec![];
 
         for entry in fs::read_dir_all(&self.root)? {
@@ -275,7 +271,7 @@ impl Template {
     }
 
     /// Write the template file to the defined destination path.
-    pub async fn write_file(&self, file: &TemplateFile) -> Result<(), GeneratorError> {
+    pub fn write_file(&self, file: &TemplateFile) -> Result<(), GeneratorError> {
         match file.state {
             FileState::Merge => {
                 trace!(
@@ -303,7 +299,7 @@ impl Template {
             }
         }
 
-        fs::create_dir_all(file.dest_path.parent().unwrap()).await?;
+        fs::create_dir_all(file.dest_path.parent().unwrap())?;
 
         if matches!(file.state, FileState::Merge) {
             match file.is_mergeable() {
@@ -322,7 +318,7 @@ impl Template {
                 _ => {}
             }
         } else {
-            fs::write(&file.dest_path, &file.content).await?;
+            fs::write(&file.dest_path, &file.content)?;
         }
 
         Ok(())

@@ -626,8 +626,7 @@ impl Runner {
 
             workspace
                 .cache
-                .create_json_report(name, RunReport::new(actions, &context, duration))
-                .await?;
+                .create_json_report(name, RunReport::new(actions, &context, duration))?;
         }
 
         Ok(())

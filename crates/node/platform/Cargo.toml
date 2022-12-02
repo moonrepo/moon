@@ -13,6 +13,7 @@ moon_logger = { path = "../../core/logger" }
 moon_node_lang = { path = "../../node/lang" }
 moon_platform = { path = "../../core/platform" }
 moon_project = { path = "../../core/project" }
+moon_project_graph = { path = "../../core/project-graph" }
 moon_runner_context = { path = "../../core/runner-context" }
 moon_task = { path = "../../core/task" }
 moon_terminal = { path = "../../core/terminal" }
@@ -26,6 +27,5 @@ serde = { workspace = true }
 tokio = { workspace = true }
 
 [dev-dependencies]
-moon_cache = { path = "../../core/cache" }
-moon_project_graph = { path = "../../core/project-graph" }
+moon = { path = "../../core/moon" }
 moon_test_utils = { path = "../../core/test-utils" }

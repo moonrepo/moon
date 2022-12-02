@@ -7,10 +7,6 @@ edition = "2021"
 bench = false
 
 [[bench]]
-name = "dep_graph_benchmark"
-harness = false
-
-[[bench]]
 name = "runner_benchmark"
 harness = false
 
@@ -19,6 +15,7 @@ moonbase = { path = "../moonbase" }
 moon_action = { path = "../action" }
 moon_cache = { path = "../cache" }
 moon_config = { path = "../config" }
+moon_dep_graph = { path = "../dep-graph" }
 moon_emitter = { path = "../emitter" }
 moon_error = { path = "../error" }
 moon_hasher = { path = "../hasher" }
@@ -46,6 +43,6 @@ thiserror = { workspace = true }
 tokio = { workspace = true }
 
 [dev-dependencies]
-moon_cache = { path = "../cache" }
+moon = { path = "../moon" }
 moon_test_utils = { path = "../test-utils" }
 criterion = { workspace = true }

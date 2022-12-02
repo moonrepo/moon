@@ -1,62 +1,11 @@
 use console::{set_colors_enabled, set_colors_enabled_stderr};
 use indicatif::{ProgressBar, ProgressStyle};
-use moon_config::PlatformType;
 use moon_logger::color::{no_color, supports_color};
-use moon_node_platform::NodePlatform;
-use moon_platform::Platformable;
-use moon_system_platform::SystemPlatform;
 use moon_terminal::create_theme;
-use moon_workspace::{Workspace, WorkspaceError};
-use rustc_hash::FxHashMap;
 use std::env;
 use std::time::Duration;
-use strum::IntoEnumIterator;
 
 pub type AnyError = Box<dyn std::error::Error>;
-
-/// Loads the workspace and registers all available platforms!
-pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
-    let mut workspace = Workspace::load().await?;
-
-    workspace
-        .projects
-        .register_platform(Box::new(SystemPlatform::default()))?;
-
-    if workspace.toolchain.config.node.is_some() {
-        workspace
-            .projects
-            .register_platform(Box::new(NodePlatform::default()))?;
-    }
-
-    workspace.signin_to_moonbase().await?;
-
-    Ok(workspace)
-}
-
-// Some commands require the toolchain to exist, but don't use
-// the action runner. This is a simple flow to wire up the tools.
-pub async fn load_workspace_with_toolchain() -> Result<Workspace, WorkspaceError> {
-    let mut workspace = load_workspace().await?;
-    let mut last_versions = FxHashMap::default();
-
-    // Use exhaustive checks so we don't miss a platform
-    for platform in PlatformType::iter() {
-        match platform {
-            PlatformType::Node => {
-                if let Some(node_config) = &workspace.toolchain.config.node {
-                    workspace
-                        .toolchain
-                        .node
-                        .setup(&node_config.version, &mut last_versions)
-                        .await?;
-                }
-            }
-            PlatformType::System | PlatformType::Unknown => {}
-        }
-    }
-
-    Ok(workspace)
-}
 
 pub fn create_progress_bar<S: AsRef<str>, F: AsRef<str>>(start: S) -> impl FnOnce(F, bool) {
     let pb = ProgressBar::new_spinner();

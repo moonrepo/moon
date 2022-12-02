@@ -1816,6 +1816,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon"
+version = "0.1.0"
+dependencies = [
+ "moon_config",
+ "moon_dep_graph",
+ "moon_node_platform",
+ "moon_project_graph",
+ "moon_system_platform",
+ "moon_utils",
+ "moon_workspace",
+ "rustc-hash",
+ "strum",
+]
+
+[[package]]
 name = "moon_action"
 version = "0.1.0"
 dependencies = [
@@ -1875,10 +1890,12 @@ dependencies = [
  "indicatif",
  "itertools",
  "mimalloc",
+ "moon",
  "moon_archive",
  "moon_cache",
  "moon_config",
  "moon_constants",
+ "moon_dep_graph",
  "moon_error",
  "moon_generator",
  "moon_lang",
@@ -1889,6 +1906,7 @@ dependencies = [
  "moon_pipeline_provider",
  "moon_platform",
  "moon_project",
+ "moon_project_graph",
  "moon_runner",
  "moon_runner_context",
  "moon_system_platform",
@@ -1936,6 +1954,29 @@ dependencies = [
 [[package]]
 name = "moon_constants"
 version = "0.1.0"
+
+[[package]]
+name = "moon_dep_graph"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "moon",
+ "moon_action",
+ "moon_config",
+ "moon_error",
+ "moon_logger",
+ "moon_platform",
+ "moon_project",
+ "moon_project_graph",
+ "moon_task",
+ "moon_test_utils",
+ "moon_utils",
+ "moon_workspace",
+ "petgraph",
+ "rustc-hash",
+ "thiserror",
+ "tokio",
+]
 
 [[package]]
 name = "moon_emitter"
@@ -2044,8 +2085,8 @@ name = "moon_node_platform"
 version = "0.1.0"
 dependencies = [
  "lazy_static",
+ "moon",
  "moon_action",
- "moon_cache",
  "moon_config",
  "moon_error",
  "moon_hasher",
@@ -2125,11 +2166,11 @@ name = "moon_project_graph"
 version = "0.1.0"
 dependencies = [
  "criterion",
+ "moon",
  "moon_cache",
  "moon_config",
  "moon_error",
  "moon_logger",
- "moon_node_platform",
  "moon_platform",
  "moon_project",
  "moon_task",
@@ -2148,9 +2189,11 @@ dependencies = [
  "async-trait",
  "console",
  "criterion",
+ "moon",
  "moon_action",
  "moon_cache",
  "moon_config",
+ "moon_dep_graph",
  "moon_emitter",
  "moon_error",
  "moon_hasher",
@@ -2339,7 +2382,7 @@ dependencies = [
  "moon_constants",
  "moon_error",
  "moon_logger",
- "moon_project_graph",
+ "moon_platform",
  "moon_toolchain",
  "moon_utils",
  "moon_vcs",
@@ -2668,6 +2711,7 @@ checksum = "e6d5014253a1331579ce62aa67443b4a658c5e7dd03d4bc6d302b94474888143"
 dependencies = [
  "fixedbitset",
  "indexmap",
+ "serde",
 ]
 
 [[package]]

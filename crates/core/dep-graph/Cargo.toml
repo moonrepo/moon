@@ -1,5 +1,5 @@
 [package]
-name = "moon_project_graph"
+name = "moon_dep_graph"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,25 +7,27 @@ edition = "2021"
 bench = false
 
 [[bench]]
-name = "project_graph_benchmark"
+name = "dep_graph_benchmark"
 harness = false
 
 [dependencies]
-moon_cache = { path = "../cache" }
-moon_config = { path = "../config" }
+moon_action = { path = "../action" }
 moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
 moon_platform = { path = "../platform" }
 moon_project = { path = "../project" }
+moon_project_graph = { path = "../project-graph" }
 moon_task = { path = "../task" }
-moon_utils = { path = "../utils" }
 petgraph = { version = "0.6.2", features = ["serde"] }
 rustc-hash = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
 moon = { path = "../moon" }
+moon_config = { path = "../config" }
 moon_test_utils = { path = "../test-utils" }
+moon_utils = { path = "../utils" }
+moon_workspace = { path = "../workspace" }
 criterion = { workspace = true }
 tokio = { workspace = true }
 

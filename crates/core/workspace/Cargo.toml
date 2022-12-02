@@ -16,4 +16,3 @@ moon_utils = { path = "../utils" }
 moon_vcs = { path = "../vcs" }
 reqwest = { workspace = true }
 thiserror = { workspace = true }
-tokio = { workspace = true }

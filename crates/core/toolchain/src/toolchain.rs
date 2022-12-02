@@ -22,15 +22,14 @@ pub struct Toolchain {
 }
 
 impl Toolchain {
-    pub async fn load(config: &ToolchainConfig) -> Result<Toolchain, ToolchainError> {
+    pub fn load(config: &ToolchainConfig) -> Result<Toolchain, ToolchainError> {
         Toolchain::load_from(
             path::get_home_dir().ok_or(ToolchainError::MissingHomeDir)?,
             config,
         )
-        .await
     }
 
-    pub async fn load_from<P: AsRef<Path>>(
+    pub fn load_from<P: AsRef<Path>>(
         base_dir: P,
         config: &ToolchainConfig,
     ) -> Result<Toolchain, ToolchainError> {
@@ -42,7 +41,7 @@ impl Toolchain {
             color::path(&dir)
         );
 
-        fs::create_dir_all(&dir).await?;
+        fs::create_dir_all(&dir)?;
 
         let mut toolchain = Toolchain {
             config: config.to_owned(),

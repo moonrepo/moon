@@ -27,7 +27,7 @@ pub async fn setup_toolchain(
     );
 
     let mut workspace = workspace.write().await;
-    let mut cache = workspace.cache.cache_tool_state(runtime).await?;
+    let mut cache = workspace.cache.cache_tool_state(runtime)?;
     let toolchain_paths = workspace.toolchain.get_paths();
 
     // Install and setup the specific tool + version in the toolchain!
@@ -56,7 +56,7 @@ pub async fn setup_toolchain(
     // Update the cache with the timestamp
 
     cache.last_version_check_time = time::now_millis();
-    cache.save().await?;
+    cache.save()?;
 
     Ok(if installed > 0 {
         ActionStatus::Passed

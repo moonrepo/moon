@@ -121,7 +121,7 @@ pub async fn run_target(
 
 pub async fn run(target_ids: &[String], options: RunOptions) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;
-    let project_graph = generate_project_graph(&mut workspace).await?;
+    let project_graph = generate_project_graph(&mut workspace)?;
 
     run_target(target_ids, options, workspace, project_graph).await?;
 

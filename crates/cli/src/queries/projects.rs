@@ -91,7 +91,7 @@ pub async fn query_projects(
         None
     };
 
-    let project_graph = generate_project_graph(workspace).await?;
+    let project_graph = generate_project_graph(workspace)?;
     let mut projects = vec![];
 
     for project in project_graph.get_all()? {

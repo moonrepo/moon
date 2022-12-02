@@ -14,4 +14,3 @@ serde_json = { workspace = true, features = ["preserve_order"] }
 
 [dev-dependencies]
 moon_test_utils = { path = "../../core/test-utils" }
-tokio = { workspace = true }

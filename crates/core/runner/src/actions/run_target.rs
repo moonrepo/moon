@@ -51,14 +51,14 @@ pub struct TargetRunner<'a> {
 }
 
 impl<'a> TargetRunner<'a> {
-    pub async fn new(
+    pub fn new(
         emitter: &'a Emitter,
         workspace: &'a Workspace,
         project: &'a Project,
         task: &'a Task,
     ) -> Result<TargetRunner<'a>, MoonError> {
         Ok(TargetRunner {
-            cache: workspace.cache.cache_run_target_state(&task.target).await?,
+            cache: workspace.cache.cache_run_target_state(&task.target)?,
             emitter,
             project,
             stderr: Term::buffered_stderr(),
@@ -149,7 +149,7 @@ impl<'a> TargetRunner<'a> {
         }
 
         // Update the run state with the new hash
-        self.cache.save().await?;
+        self.cache.save()?;
 
         Ok(())
     }
@@ -241,7 +241,7 @@ impl<'a> TargetRunner<'a> {
 
         let mut command = match task.platform {
             PlatformType::Node => {
-                node_actions::create_target_command(context, workspace, project, task).await?
+                node_actions::create_target_command(context, workspace, project, task)?
             }
             _ => system_actions::create_target_command(task, working_dir),
         };
@@ -327,8 +327,7 @@ impl<'a> TargetRunner<'a> {
         let runfile = self
             .workspace
             .cache
-            .create_runfile(&self.project.id, self.project)
-            .await?;
+            .create_runfile(&self.project.id, self.project)?;
 
         env_vars.insert(
             "MOON_PROJECT_RUNFILE".to_owned(),
@@ -424,8 +423,7 @@ impl<'a> TargetRunner<'a> {
         // Refresh the hash manifest
         self.workspace
             .cache
-            .create_hash_manifest(&hash, &(common_hasher, platform_hasher))
-            .await?;
+            .create_hash_manifest(&hash, &(common_hasher, platform_hasher))?;
 
         // Check if that hash exists in the cache
         if let EventFlow::Return(value) = self
@@ -585,20 +583,18 @@ impl<'a> TargetRunner<'a> {
         // Write the cache with the result and output
         self.cache.exit_code = output.status.code().unwrap_or(0);
         self.cache.last_run_time = time::now_millis();
-        self.cache.save().await?;
-        self.cache
-            .save_output_logs(
-                output_to_string(&output.stdout),
-                output_to_string(&output.stderr),
-            )
-            .await?;
+        self.cache.save()?;
+        self.cache.save_output_logs(
+            output_to_string(&output.stdout),
+            output_to_string(&output.stderr),
+        )?;
 
         Ok(attempts)
     }
 
-    pub async fn print_cache_item(&self) -> Result<(), MoonError> {
+    pub fn print_cache_item(&self) -> Result<(), MoonError> {
         let item = &self.cache;
-        let (stdout, stderr) = item.load_output_logs().await?;
+        let (stdout, stderr) = item.load_output_logs()?;
 
         self.print_output_with_style(&stdout, &stderr, item.exit_code != 0)?;
 
@@ -832,7 +828,7 @@ pub async fn run_target(
     let emitter = emitter.read().await;
     let project = project_graph.get(&project_id)?;
     let task = project.get_task(&task_id)?;
-    let mut runner = TargetRunner::new(&emitter, &workspace, project, task).await?;
+    let mut runner = TargetRunner::new(&emitter, &workspace, project, task)?;
 
     debug!(
         target: LOG_TARGET,
@@ -913,7 +909,7 @@ pub async fn run_target(
             }
 
             runner.print_checkpoint(Checkpoint::RunPassed, &comments)?;
-            runner.print_cache_item().await?;
+            runner.print_cache_item()?;
             runner.flush_output()?;
 
             return Ok(if matches!(cache_location, HydrateFrom::RemoteCache) {

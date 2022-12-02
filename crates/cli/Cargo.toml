@@ -37,13 +37,11 @@ moon_typescript_lang = { path = "../typescript/lang" }
 moon_utils = { path = "../core/utils" }
 moon_vcs = { path = "../core/vcs" }
 moon_workspace = { path = "../core/workspace" }
-async-recursion = "1.0.0"
 clap = { workspace = true, features = ["derive", "env", "wrap_help"] }
 clap_lex = "0.3.0"
 console = "0.15.2"
 console-subscriber = "0.1.8"
 dialoguer = "0.10.2"
-futures = "0.3.25"
 indicatif = "0.17.2"
 itertools = "0.10.5"
 mimalloc = { version = "0.1.32", default-features = false }

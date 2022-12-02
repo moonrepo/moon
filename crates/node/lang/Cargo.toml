@@ -22,4 +22,3 @@ yarn-lock-parser = "0.4.1"
 [dev-dependencies]
 moon_test_utils = { path = "../../core/test-utils" }
 reqwest = { workspace = true, features = ["blocking"] }
-tokio = { workspace = true }

@@ -26,13 +26,12 @@ fn create_context() -> TemplateContext {
 mod load_files {
     use super::*;
 
-    #[tokio::test]
-    async fn filters_out_schema_file() {
+    #[test]
+    fn filters_out_schema_file() {
         let mut template = create_template();
 
         template
             .load_files(&get_fixtures_path("generator"), &create_context())
-            .await
             .unwrap();
 
         let has_schema = template

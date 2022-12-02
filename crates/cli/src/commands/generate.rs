@@ -312,7 +312,7 @@ pub async fn generate(name: &str, options: GenerateOptions) -> Result<(), AnyErr
 
     // This is a special case for creating a new template with the generator itself!
     if options.template {
-        let template = generator.create_template(name).await?;
+        let template = generator.create_template(name)?;
 
         println!(
             "Created a new template {} at {}",
@@ -328,7 +328,7 @@ pub async fn generate(name: &str, options: GenerateOptions) -> Result<(), AnyErr
     }
 
     // Create the template instance
-    let mut template = generator.load_template(name).await?;
+    let mut template = generator.load_template(name)?;
     let term = Term::buffered_stdout();
 
     term.write_line("")?;
@@ -376,7 +376,7 @@ pub async fn generate(name: &str, options: GenerateOptions) -> Result<(), AnyErr
     context.insert("workspace_root", &workspace.root);
 
     // Load template files and determine when to overwrite
-    template.load_files(&dest, &context).await?;
+    template.load_files(&dest, &context)?;
 
     for file in &mut template.files {
         if file.is_skipped() {
@@ -431,7 +431,7 @@ pub async fn generate(name: &str, options: GenerateOptions) -> Result<(), AnyErr
 
     // Generate the files in the destination and print the results
     if !options.dry_run {
-        generator.generate(&template).await?;
+        generator.generate(&template)?;
     }
 
     term.write_line("")?;

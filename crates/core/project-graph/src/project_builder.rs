@@ -28,7 +28,7 @@ pub struct ProjectGraphBuilder<'ws> {
 }
 
 impl<'ws> ProjectGraphBuilder<'ws> {
-    pub async fn new(
+    pub fn new(
         cache: &'ws CacheEngine,
         config: &'ws GlobalProjectConfig,
         platforms: &'ws mut PlatformManager,
@@ -49,8 +49,8 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             workspace_root,
         };
 
-        graph.load_sources().await?;
-        graph.load_aliases().await?;
+        graph.load_sources()?;
+        graph.load_aliases()?;
 
         Ok(graph)
     }
@@ -197,7 +197,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         Ok(node_index)
     }
 
-    async fn load_aliases(&mut self) -> Result<(), ProjectError> {
+    fn load_aliases(&mut self) -> Result<(), ProjectError> {
         for platform in self.platforms.list_mut() {
             platform.load_project_graph_aliases(&self.sources, &mut self.aliases)?;
         }
@@ -205,7 +205,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         Ok(())
     }
 
-    async fn load_sources(&mut self) -> Result<(), ProjectError> {
+    fn load_sources(&mut self) -> Result<(), ProjectError> {
         let mut globs = vec![];
         let mut sources = FxHashMap::default();
 
@@ -227,7 +227,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         // Only check the cache when using globs
         if !globs.is_empty() {
-            let mut cache = self.cache.cache_projects_state().await?;
+            let mut cache = self.cache.cache_projects_state()?;
 
             // Return the values from the cache
             if !cache.projects.is_empty() {
@@ -250,7 +250,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             // Update the cache
             cache.globs = globs.clone();
             cache.projects = sources.clone();
-            cache.save().await?;
+            cache.save()?;
         }
 
         debug!(

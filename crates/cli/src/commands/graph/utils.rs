@@ -1,11 +1,8 @@
-use super::{
-    common::get_js_url,
-    dto::{GraphEdgeDto, GraphInfoDto, GraphNodeDto},
-};
+use super::dto::{GraphEdgeDto, GraphInfoDto, GraphNodeDto};
 use crate::helpers::AnyError;
-use moon_runner::{DepGraph, NodeIndex};
-use moon_workspace::Workspace;
-use petgraph::Graph;
+use moon_dep_graph::DepGraph;
+use moon_project_graph::ProjectGraph;
+use petgraph::{graph::NodeIndex, Graph};
 use rustc_hash::FxHashSet;
 use serde::Serialize;
 use std::env;
@@ -35,6 +32,7 @@ pub async fn setup_server() -> Result<(Server, Tera), AnyError> {
     let address = format!("{}:{}", host, port);
     let server = Server::http(address).unwrap();
     let tera = Tera::default();
+
     Ok((server, tera))
 }
 
@@ -64,15 +62,15 @@ pub fn extract_nodes_and_edges_from_graph(graph: &Graph<String, ()>) -> GraphInf
     GraphInfoDto { edges, nodes }
 }
 
-/// Get a serialized representation of the workspace graph.
-pub async fn project_graph_repr(workspace: &Workspace) -> GraphInfoDto {
-    let labeled_graph = workspace.projects.labeled_graph();
+/// Get a serialized representation of the project graph.
+pub async fn project_graph_repr(project_graph: &ProjectGraph) -> GraphInfoDto {
+    let labeled_graph = project_graph.labeled_graph();
     extract_nodes_and_edges_from_graph(&labeled_graph)
 }
 
 /// Get a serialized representation of the dependency graph.
-pub async fn dep_graph_repr(graph: &DepGraph) -> GraphInfoDto {
-    let labeled_graph = graph.labeled_graph();
+pub async fn dep_graph_repr(dep_graph: &DepGraph) -> GraphInfoDto {
+    let labeled_graph = dep_graph.labeled_graph();
     extract_nodes_and_edges_from_graph(&labeled_graph)
 }
 
@@ -113,6 +111,18 @@ pub fn respond_to_request(
             response
         }
     };
+
     req.respond(response).unwrap_or_default();
+
     Ok(())
+}
+
+pub fn get_js_url(is_production: bool) -> String {
+    match env::var("MOON_JS_URL") {
+        Ok(url) => url,
+        Err(..) => match is_production {
+            false => "http://localhost:5000".to_string(),
+            true => "https://unpkg.com/@moonrepo/visualizer-browser@latest".to_string(),
+        },
+    }
 }

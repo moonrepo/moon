@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- We've rewritten our project graph to use eager-loading instead of lazy-loading to improve
+  performance, and to avoid mutating borrowed data across threads in Rust. We're no longer cloning
+  project information unnecessarily.
+- We've also rewritten our dependency graph in a similar fashion, and are now able to efficiently
+  reference data from the project graph while building the dependency chain.
+- You may now install the `@moonrepo/cli` package globally with pnpm and yarn. When running these
+  globals, the will attempt to use the binary found in the repo's node modules.
+
 ## 0.20.2
 
 #### 🐞 Fixes

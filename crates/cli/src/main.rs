@@ -2,6 +2,7 @@ use mimalloc::MiMalloc;
 use moon_cli::{run_cli, BIN_NAME};
 use moon_constants::CONFIG_DIRNAME;
 use moon_node_lang::NODE;
+use moon_utils::path;
 use std::env;
 use std::path::{Path, PathBuf};
 use tokio::process::Command;
@@ -9,35 +10,54 @@ use tokio::process::Command;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
+#[cfg(not(windows))]
+fn get_global_lookups(home_dir: &Path) -> Vec<PathBuf> {
+    let mut lookups = vec![];
+
+    // Node
+    lookups.push("/usr/local/lib/node".into());
+    lookups.push(home_dir.join(".nvm/versions/node"));
+    lookups.push(home_dir.join(".nodenv/versions"));
+    lookups.push(home_dir.join(".fnm/node-versions"));
+    lookups.push(home_dir.join("Library/pnpm"));
+    lookups.push(home_dir.join(".local/share/pnpm"));
+    lookups.push(home_dir.join(".config/yarn"));
+
+    lookups
+}
+
+#[cfg(windows)]
+fn get_global_lookups(home_dir: &Path) -> Vec<PathBuf> {
+    let mut lookups = vec![];
+
+    // Node
+    lookups.push(home_dir.join(".nvm\\versions\\node"));
+    lookups.push(home_dir.join(".nodenv\\versions"));
+    lookups.push(home_dir.join(".fnm\\node-versions"));
+    lookups.push(home_dir.join("AppData\\npm"));
+    lookups.push(home_dir.join("AppData\\Roaming\\npm"));
+    lookups.push(home_dir.join("AppData\\Local\\pnpm"));
+    lookups.push(home_dir.join("AppData\\Yarn\\config"));
+
+    lookups
+}
+
 /// Check whether this binary has been installed globally or not.
 /// If we encounter an error, simply abort early instead of failing.
-async fn is_globally_installed() -> bool {
+fn is_globally_installed() -> bool {
     let exe_path = match env::current_exe() {
         Ok(path) => path,
         Err(_) => return false,
     };
 
     // Global installs happen *outside* of moon's toolchain,
-    // so we simply assume that they have and are using npm
-    // in their environment.
-    let output = match Command::new("npm")
-        .args(["config", "get", "prefix"])
-        .output()
-        .await
-    {
-        Ok(out) => out,
-        Err(_) => return false,
-    };
+    // so we simply assume they are using their environment.
+    let home_dir = path::get_home_dir().unwrap_or_else(|| PathBuf::from("."));
+    let lookups = get_global_lookups(&home_dir);
 
     // If our executable path starts with the global dir,
     // then we must have been installed globally!
-    let global_dir = PathBuf::from(
-        String::from_utf8(output.stdout.to_vec())
-            .unwrap_or_default()
-            .trim(),
-    );
-
-    exe_path.starts_with(global_dir)
+    lookups.iter().any(|lookup| exe_path.starts_with(lookup))
 }
 
 fn find_workspace_root(dir: &Path) -> Option<PathBuf> {
@@ -86,7 +106,7 @@ async fn main() {
 
     // Detect if we've been installed globally
     if let Ok(current_dir) = env::current_dir() {
-        if is_globally_installed().await {
+        if is_globally_installed() {
             // If so, find the workspace root so we can locate the
             // locally installed `moon` binary in node modules
             if let Some(workspace_root) = find_workspace_root(&current_dir) {

@@ -92,7 +92,7 @@ pub fn respond_to_request(
             let graph_data = serde_json::to_string(graph)?;
             // Use the local version of the JS file when in development mode otherwise the
             // CDN url.
-            let mut js_url = match cfg!(debug_assertions) {
+            let js_url = match cfg!(debug_assertions) {
                 true => get_js_url(false),
                 false => get_js_url(true),
             };

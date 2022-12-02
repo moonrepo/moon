@@ -13,8 +13,8 @@
     "useDefineForClassFields": true
   },
   "include": [
-    ".eslintrc.js",
     "src/**/*",
-    "vite.config.ts"
+    "vite.config.ts",
+    "*.cjs"
   ]
 }

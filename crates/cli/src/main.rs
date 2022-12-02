@@ -11,8 +11,7 @@ use tokio::process::Command;
 static GLOBAL: MiMalloc = MiMalloc;
 
 #[cfg(target_os = "linux")]
-fn get_global_lookups() -> String<PathBuf> {
-    let home_dir = path::get_home_dir().unwrap_or_else(|| PathBuf::from("."));
+fn get_global_lookups(home_dir: &Path) -> Vec<PathBuf> {
     let mut lookups = vec![];
 
     // Node
@@ -24,8 +23,7 @@ fn get_global_lookups() -> String<PathBuf> {
 }
 
 #[cfg(target_os = "macos")]
-fn get_global_lookups() -> String<PathBuf> {
-    let home_dir = path::get_home_dir().unwrap_or_else(|| PathBuf::from("."));
+fn get_global_lookups(home_dir: &Path) -> Vec<PathBuf> {
     let mut lookups = vec![];
 
     // Node
@@ -37,8 +35,7 @@ fn get_global_lookups() -> String<PathBuf> {
 }
 
 #[cfg(target_os = "windows")]
-fn get_global_lookups() -> String<PathBuf> {
-    let home_dir = path::get_home_dir().unwrap_or_else(|| PathBuf::from("."));
+fn get_global_lookups(home_dir: &Path) -> Vec<PathBuf> {
     let mut lookups = vec![];
 
     // Node
@@ -60,11 +57,12 @@ fn is_globally_installed() -> bool {
 
     // Global installs happen *outside* of moon's toolchain,
     // so we simply assume they are using their environment.
-    let lookups = get_global_lookups();
+    let home_dir = path::get_home_dir().unwrap_or_else(|| PathBuf::from("."));
+    let lookups = get_global_lookups(&home_dir);
 
     // If our executable path starts with the global dir,
     // then we must have been installed globally!
-    lookups.any(|lookup| exe_path.starts_with(lookup))
+    lookups.iter().any(|lookup| exe_path.starts_with(lookup))
 }
 
 fn find_workspace_root(dir: &Path) -> Option<PathBuf> {
@@ -118,9 +116,10 @@ async fn main() {
             // locally installed `moon` binary in node modules
             if let Some(workspace_root) = find_workspace_root(&current_dir) {
                 let moon_bin = workspace_root
-                    .join(NODE.vendor_dir)
-                    .join("@moonrepo")
-                    .join("cli")
+                    // .join(NODE.vendor_dir)
+                    // .join("@moonrepo")
+                    // .join("cli")
+                    .join("target/debug")
                     .join(BIN_NAME);
 
                 // The binary exists! So let's run that one to ensure

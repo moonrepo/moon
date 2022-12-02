@@ -96,7 +96,6 @@ pub fn respond_to_request(
                 true => get_js_url(false),
                 false => get_js_url(true),
             };
-            js_url.push_str("/assets/index.js");
             let context = RenderContext {
                 page_title,
                 graph_data,
@@ -121,8 +120,8 @@ pub fn get_js_url(is_production: bool) -> String {
     match env::var("MOON_JS_URL") {
         Ok(url) => url,
         Err(..) => match is_production {
-            false => "http://localhost:5000".to_string(),
-            true => "https://unpkg.com/@moonrepo/visualizer-browser@latest".to_string(),
+            false => "http://localhost:5000/assets/index.js".to_string(),
+            true => "https://unpkg.com/@moonrepo/visualizer@latest".to_string(),
         },
     }
 }

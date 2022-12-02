@@ -12,10 +12,7 @@ umd/
 *.min.js
 *.map
 *.snap
+*.d.ts
 
 # Test fixtures
 /tests
-
-# Vite
-vite-env.d.ts
-vite.config.ts

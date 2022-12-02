@@ -13,11 +13,8 @@
     "useDefineForClassFields": true
   },
   "include": [
-    "src"
-  ],
-  "references": [
-    {
-      "path": "./tsconfig.node.json"
-    }
+    ".eslintrc.js",
+    "src/**/*",
+    "vite.config.ts"
   ]
 }

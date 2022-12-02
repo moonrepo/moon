@@ -35,9 +35,9 @@ where
     )
 }
 
-async fn extract_hash_from_run(fixture: &Path, target_id: &str) -> String {
-    let engine = CacheEngine::load(fixture).await.unwrap();
-    let cache = engine.cache_run_target_state(target_id).await.unwrap();
+fn extract_hash_from_run(fixture: &Path, target_id: &str) -> String {
+    let engine = CacheEngine::load(fixture).unwrap();
+    let cache = engine.cache_run_target_state(target_id).unwrap();
 
     cache.hash
 }
@@ -237,8 +237,8 @@ mod dependencies {
         assert_snapshot!(assert.output());
     }
 
-    #[tokio::test]
-    async fn generates_unique_hashes_for_each_target() {
+    #[test]
+    fn generates_unique_hashes_for_each_target() {
         let sandbox = cases_sandbox();
         sandbox.enable_git();
 
@@ -247,13 +247,13 @@ mod dependencies {
         });
 
         assert_debug_snapshot!([
-            extract_hash_from_run(sandbox.path(), "outputs:asDep").await,
-            extract_hash_from_run(sandbox.path(), "outputs:withDeps").await
+            extract_hash_from_run(sandbox.path(), "outputs:asDep"),
+            extract_hash_from_run(sandbox.path(), "outputs:withDeps")
         ]);
     }
 
-    #[tokio::test]
-    async fn changes_primary_hash_if_deps_hash_changes() {
+    #[test]
+    fn changes_primary_hash_if_deps_hash_changes() {
         let sandbox = cases_sandbox();
         sandbox.enable_git();
 
@@ -261,8 +261,8 @@ mod dependencies {
             cmd.arg("run").arg("outputs:withDeps");
         });
 
-        let h1 = extract_hash_from_run(sandbox.path(), "outputs:asDep").await;
-        let h2 = extract_hash_from_run(sandbox.path(), "outputs:withDeps").await;
+        let h1 = extract_hash_from_run(sandbox.path(), "outputs:asDep");
+        let h2 = extract_hash_from_run(sandbox.path(), "outputs:withDeps");
 
         // Create an `inputs` file for `outputs:asDep`
         sandbox.create_file("outputs/random.js", "");
@@ -274,8 +274,8 @@ mod dependencies {
         assert_debug_snapshot!([
             h1,
             h2,
-            extract_hash_from_run(sandbox.path(), "outputs:asDep").await,
-            extract_hash_from_run(sandbox.path(), "outputs:withDeps").await
+            extract_hash_from_run(sandbox.path(), "outputs:asDep"),
+            extract_hash_from_run(sandbox.path(), "outputs:withDeps")
         ]);
     }
 }
@@ -359,8 +359,8 @@ mod target_scopes {
 mod hashing {
     use super::*;
 
-    #[tokio::test]
-    async fn generates_diff_hashes_from_inputs() {
+    #[test]
+    fn generates_diff_hashes_from_inputs() {
         let sandbox = cases_sandbox();
         sandbox.enable_git();
 
@@ -368,19 +368,19 @@ mod hashing {
             cmd.arg("run").arg("outputs:noOutput");
         });
 
-        let hash1 = extract_hash_from_run(sandbox.path(), "outputs:noOutput").await;
+        let hash1 = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
 
         sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("outputs:noOutput");
         });
 
-        let hash2 = extract_hash_from_run(sandbox.path(), "outputs:noOutput").await;
+        let hash2 = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
 
         assert_eq!(hash1, hash2);
     }
 
-    #[tokio::test]
-    async fn tracks_input_changes_for_env_files() {
+    #[test]
+    fn tracks_input_changes_for_env_files() {
         let sandbox = cases_sandbox();
         sandbox.enable_git();
 
@@ -390,13 +390,13 @@ mod hashing {
             cmd.arg("run").arg("outputs:envFile");
         });
 
-        let hash1 = extract_hash_from_run(sandbox.path(), "outputs:envFile").await;
+        let hash1 = extract_hash_from_run(sandbox.path(), "outputs:envFile");
 
         sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("outputs:envFile");
         });
 
-        let hash2 = extract_hash_from_run(sandbox.path(), "outputs:envFile").await;
+        let hash2 = extract_hash_from_run(sandbox.path(), "outputs:envFile");
 
         assert_eq!(hash1, hash2);
 
@@ -406,7 +406,7 @@ mod hashing {
             cmd.arg("run").arg("outputs:envFile");
         });
 
-        let hash3 = extract_hash_from_run(sandbox.path(), "outputs:envFile").await;
+        let hash3 = extract_hash_from_run(sandbox.path(), "outputs:envFile");
 
         assert_ne!(hash1, hash3);
         assert_ne!(hash2, hash3);
@@ -416,8 +416,8 @@ mod hashing {
 mod outputs {
     use super::*;
 
-    #[tokio::test]
-    async fn errors_if_output_missing() {
+    #[test]
+    fn errors_if_output_missing() {
         let sandbox = cases_sandbox();
         sandbox.enable_git();
 
@@ -430,8 +430,8 @@ mod outputs {
         assert!(predicate::str::contains("Target outputs:missingOutput defines the output unknown, but this output does not exist after being ran.").eval(&output));
     }
 
-    #[tokio::test]
-    async fn doesnt_cache_if_cache_disabled() {
+    #[test]
+    fn doesnt_cache_if_cache_disabled() {
         let sandbox = cases_sandbox();
         sandbox.enable_git();
 
@@ -439,15 +439,15 @@ mod outputs {
             cmd.arg("run").arg("outputs:noCache");
         });
 
-        let hash = extract_hash_from_run(sandbox.path(), "outputs:noCache").await;
+        let hash = extract_hash_from_run(sandbox.path(), "outputs:noCache");
 
         assert_eq!(hash, "");
 
         // we cant assert the filesystem since the hash is empty!
     }
 
-    #[tokio::test]
-    async fn caches_single_file() {
+    #[test]
+    fn caches_single_file() {
         let sandbox = cases_sandbox();
         sandbox.enable_git();
 
@@ -455,7 +455,7 @@ mod outputs {
             cmd.arg("run").arg("outputs:generateFile");
         });
 
-        let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFile").await;
+        let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFile");
 
         // hash
         assert!(sandbox
@@ -472,8 +472,8 @@ mod outputs {
             .exists());
     }
 
-    #[tokio::test]
-    async fn caches_multiple_files() {
+    #[test]
+    fn caches_multiple_files() {
         let sandbox = cases_sandbox();
         sandbox.enable_git();
 
@@ -481,7 +481,7 @@ mod outputs {
             cmd.arg("run").arg("outputs:generateFiles");
         });
 
-        let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFiles").await;
+        let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFiles");
 
         // hash
         assert!(sandbox
@@ -498,8 +498,8 @@ mod outputs {
             .exists());
     }
 
-    #[tokio::test]
-    async fn caches_single_folder() {
+    #[test]
+    fn caches_single_folder() {
         let sandbox = cases_sandbox();
         sandbox.enable_git();
 
@@ -507,7 +507,7 @@ mod outputs {
             cmd.arg("run").arg("outputs:generateFolder");
         });
 
-        let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFolder").await;
+        let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFolder");
 
         // hash
         assert!(sandbox
@@ -524,8 +524,8 @@ mod outputs {
             .exists());
     }
 
-    #[tokio::test]
-    async fn caches_multiple_folders() {
+    #[test]
+    fn caches_multiple_folders() {
         let sandbox = cases_sandbox();
         sandbox.enable_git();
 
@@ -533,7 +533,7 @@ mod outputs {
             cmd.arg("run").arg("outputs:generateFolders");
         });
 
-        let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFolders").await;
+        let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFolders");
 
         // hash
         assert!(sandbox
@@ -550,8 +550,8 @@ mod outputs {
             .exists());
     }
 
-    #[tokio::test]
-    async fn caches_both_file_and_folder() {
+    #[test]
+    fn caches_both_file_and_folder() {
         let sandbox = cases_sandbox();
         sandbox.enable_git();
 
@@ -559,7 +559,7 @@ mod outputs {
             cmd.arg("run").arg("outputs:generateFileAndFolder");
         });
 
-        let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder").await;
+        let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder");
 
         // hash
         assert!(sandbox
@@ -576,8 +576,8 @@ mod outputs {
             .exists());
     }
 
-    #[tokio::test]
-    async fn caches_output_logs_in_tarball() {
+    #[test]
+    fn caches_output_logs_in_tarball() {
         let sandbox = cases_sandbox();
         sandbox.enable_git();
 
@@ -585,7 +585,7 @@ mod outputs {
             cmd.arg("run").arg("outputs:generateFile");
         });
 
-        let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFile").await;
+        let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFile");
         let tarball = sandbox
             .path()
             .join(".moon/cache/outputs")
@@ -602,8 +602,8 @@ mod outputs {
         use super::*;
         use moon_test_utils::pretty_assertions::assert_eq;
 
-        #[tokio::test]
-        async fn reuses_cache_from_previous_run() {
+        #[test]
+        fn reuses_cache_from_previous_run() {
             let sandbox = cases_sandbox();
             sandbox.enable_git();
 
@@ -611,23 +611,21 @@ mod outputs {
                 cmd.arg("run").arg("outputs:generateFileAndFolder");
             });
 
-            let hash1 =
-                extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder").await;
+            let hash1 = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder");
 
             let assert2 = sandbox.run_moon(|cmd| {
                 cmd.arg("run").arg("outputs:generateFileAndFolder");
             });
 
-            let hash2 =
-                extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder").await;
+            let hash2 = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder");
 
             assert_eq!(hash1, hash2);
             assert_snapshot!(assert1.output());
             assert_snapshot!(assert2.output());
         }
 
-        #[tokio::test]
-        async fn doesnt_keep_output_logs_in_project() {
+        #[test]
+        fn doesnt_keep_output_logs_in_project() {
             let sandbox = cases_sandbox();
             sandbox.enable_git();
 
@@ -643,8 +641,8 @@ mod outputs {
             assert!(!sandbox.path().join("outputs/stderr.log").exists());
         }
 
-        #[tokio::test]
-        async fn hydrates_missing_outputs_from_previous_run() {
+        #[test]
+        fn hydrates_missing_outputs_from_previous_run() {
             let sandbox = cases_sandbox();
             sandbox.enable_git();
 
@@ -668,8 +666,8 @@ mod outputs {
             assert!(sandbox.path().join("outputs/lib").exists());
         }
 
-        #[tokio::test]
-        async fn hydrates_with_a_different_hash_cache() {
+        #[test]
+        fn hydrates_with_a_different_hash_cache() {
             let sandbox = cases_sandbox();
             sandbox.enable_git();
 
@@ -677,8 +675,7 @@ mod outputs {
                 cmd.arg("run").arg("outputs:generateFileAndFolder");
             });
 
-            let hash1 =
-                extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder").await;
+            let hash1 = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder");
             let contents1 = fs::read_to_string(sandbox.path().join("outputs/lib/one.js")).unwrap();
 
             // Create a file to trigger an inputs change
@@ -688,8 +685,7 @@ mod outputs {
                 cmd.arg("run").arg("outputs:generateFileAndFolder");
             });
 
-            let hash2 =
-                extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder").await;
+            let hash2 = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder");
             let contents2 = fs::read_to_string(sandbox.path().join("outputs/lib/one.js")).unwrap();
 
             // Hashes and contents should be different!
@@ -710,8 +706,7 @@ mod outputs {
                 cmd.arg("run").arg("outputs:generateFileAndFolder");
             });
 
-            let hash3 =
-                extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder").await;
+            let hash3 = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder");
             let contents3 = fs::read_to_string(sandbox.path().join("outputs/lib/one.js")).unwrap();
 
             // Hashes and contents should match the original!
@@ -728,8 +723,8 @@ mod outputs {
     mod archiving {
         use super::*;
 
-        #[tokio::test]
-        async fn doesnt_archive_non_build_tasks() {
+        #[test]
+        fn doesnt_archive_non_build_tasks() {
             let sandbox = cases_sandbox();
             sandbox.enable_git();
 
@@ -737,7 +732,7 @@ mod outputs {
                 cmd.arg("run").arg("outputs:noOutput");
             });
 
-            let hash = extract_hash_from_run(sandbox.path(), "outputs:noOutput").await;
+            let hash = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
 
             assert!(!sandbox
                 .path()
@@ -745,8 +740,8 @@ mod outputs {
                 .exists());
         }
 
-        #[tokio::test]
-        async fn archives_non_build_tasks_with_full_target() {
+        #[test]
+        fn archives_non_build_tasks_with_full_target() {
             let sandbox = cases_sandbox_with_config(|cfg| {
                 cfg.runner
                     .archivable_targets
@@ -759,7 +754,7 @@ mod outputs {
                 cmd.arg("run").arg("outputs:noOutput");
             });
 
-            let hash = extract_hash_from_run(sandbox.path(), "outputs:noOutput").await;
+            let hash = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
 
             assert!(sandbox
                 .path()
@@ -767,8 +762,8 @@ mod outputs {
                 .exists());
         }
 
-        #[tokio::test]
-        async fn archives_non_build_tasks_with_all_target() {
+        #[test]
+        fn archives_non_build_tasks_with_all_target() {
             let sandbox = cases_sandbox_with_config(|cfg| {
                 cfg.runner.archivable_targets.push(":noOutput".into());
             });
@@ -779,7 +774,7 @@ mod outputs {
                 cmd.arg("run").arg("outputs:noOutput");
             });
 
-            let hash = extract_hash_from_run(sandbox.path(), "outputs:noOutput").await;
+            let hash = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
 
             assert!(sandbox
                 .path()
@@ -787,8 +782,8 @@ mod outputs {
                 .exists());
         }
 
-        #[tokio::test]
-        async fn doesnt_archive_non_build_tasks_for_nonmatch_target() {
+        #[test]
+        fn doesnt_archive_non_build_tasks_for_nonmatch_target() {
             let sandbox = cases_sandbox_with_config(|cfg| {
                 cfg.runner.archivable_targets.push(":otherTarget".into());
             });
@@ -799,7 +794,7 @@ mod outputs {
                 cmd.arg("run").arg("outputs:noOutput");
             });
 
-            let hash = extract_hash_from_run(sandbox.path(), "outputs:noOutput").await;
+            let hash = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
 
             assert!(!sandbox
                 .path()
@@ -807,8 +802,8 @@ mod outputs {
                 .exists());
         }
 
-        #[tokio::test]
-        async fn archives_std_output() {
+        #[test]
+        fn archives_std_output() {
             let sandbox = cases_sandbox_with_config(|cfg| {
                 cfg.runner.archivable_targets.push(":noOutput".into());
             });
@@ -830,8 +825,8 @@ mod outputs {
             );
         }
 
-        #[tokio::test]
-        async fn can_hydrate_archives() {
+        #[test]
+        fn can_hydrate_archives() {
             let sandbox = cases_sandbox_with_config(|cfg| {
                 cfg.runner.archivable_targets.push(":noOutput".into());
             });
@@ -842,19 +837,19 @@ mod outputs {
                 cmd.arg("run").arg("outputs:noOutput");
             });
 
-            let hash1 = extract_hash_from_run(sandbox.path(), "outputs:noOutput").await;
+            let hash1 = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
 
             sandbox.run_moon(|cmd| {
                 cmd.arg("run").arg("outputs:noOutput");
             });
 
-            let hash2 = extract_hash_from_run(sandbox.path(), "outputs:noOutput").await;
+            let hash2 = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
 
             assert_eq!(hash1, hash2);
         }
 
-        #[tokio::test]
-        async fn errors_for_deps_target() {
+        #[test]
+        fn errors_for_deps_target() {
             let sandbox = cases_sandbox_with_config(|cfg| {
                 cfg.runner.archivable_targets.push("^:otherTarget".into());
             });
@@ -871,8 +866,8 @@ mod outputs {
             .eval(&assert.output()));
         }
 
-        #[tokio::test]
-        async fn errors_for_self_target() {
+        #[test]
+        fn errors_for_self_target() {
             let sandbox = cases_sandbox_with_config(|cfg| {
                 cfg.runner.archivable_targets.push("~:otherTarget".into());
             });

@@ -56,7 +56,7 @@ impl Generator {
 
     /// Load the template with the provided name, using the first match amongst
     /// the list of template paths. Will error if no match is found.
-    pub async fn load_template(&self, name: &str) -> Result<Template, GeneratorError> {
+    pub fn load_template(&self, name: &str) -> Result<Template, GeneratorError> {
         let name = clean_id(name);
 
         trace!(

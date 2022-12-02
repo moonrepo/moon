@@ -33,7 +33,8 @@ mod tests {
     use moon_test_utils::{assert_fs::prelude::*, create_temp_dir, pretty_assertions::assert_eq};
     use moon_utils::string_vec;
 
-    async fn parses_lockfile() {
+    #[test]
+    fn parses_lockfile() {
         let temp = create_temp_dir();
 
         temp.child("yarn.lock").write_str(r#"

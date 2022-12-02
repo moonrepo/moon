@@ -328,7 +328,7 @@ pub async fn generate(name: &str, options: GenerateOptions) -> Result<(), AnyErr
     }
 
     // Create the template instance
-    let mut template = generator.load_template(name).await?;
+    let mut template = generator.load_template(name)?;
     let term = Term::buffered_stdout();
 
     term.write_line("")?;
@@ -376,7 +376,7 @@ pub async fn generate(name: &str, options: GenerateOptions) -> Result<(), AnyErr
     context.insert("workspace_root", &workspace.root);
 
     // Load template files and determine when to overwrite
-    template.load_files(&dest, &context).await?;
+    template.load_files(&dest, &context)?;
 
     for file in &mut template.files {
         if file.is_skipped() {

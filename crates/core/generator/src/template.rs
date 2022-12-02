@@ -185,11 +185,7 @@ impl Template {
 
     /// Load all template files from the source directory and return a list
     /// of template file structs. These will later be used for rendering and generating.
-    pub async fn load_files(
-        &mut self,
-        dest: &Path,
-        context: &Context,
-    ) -> Result<(), GeneratorError> {
+    pub fn load_files(&mut self, dest: &Path, context: &Context) -> Result<(), GeneratorError> {
         let mut files = vec![];
 
         for entry in fs::read_dir_all(&self.root)? {

@@ -47,7 +47,7 @@ pub fn runner_benchmark(c: &mut Criterion) {
     c.bench_function("runner", |b| {
         b.iter(|| async {
             let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
-            let project_graph = generate_project_graph(&mut workspace).await.unwrap();
+            let project_graph = generate_project_graph(&mut workspace).unwrap();
             let dep_graph = generate_dep_graph(&workspace, &project_graph);
 
             black_box(

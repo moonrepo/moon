@@ -32,7 +32,7 @@ pub fn copy_dir_all<T: AsRef<Path> + Send>(
 
         if path.is_file() {
             copy_file(
-                path.to_owned(),
+                &path,
                 to_root.join(path.strip_prefix(from_root).unwrap()),
             )?;
         } else if path.is_dir() {
@@ -52,7 +52,7 @@ pub fn create_dir_all<T: AsRef<Path>>(path: T) -> Result<(), MoonError> {
     let path = path.as_ref();
 
     if !path.exists() {
-        fs::create_dir_all(&path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
+        fs::create_dir_all(path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
     }
 
     Ok(())
@@ -188,7 +188,7 @@ pub fn remove_file<T: AsRef<Path>>(path: T) -> Result<(), MoonError> {
     let path = path.as_ref();
 
     if path.exists() {
-        fs::remove_file(&path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
+        fs::remove_file(path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
     }
 
     Ok(())
@@ -199,7 +199,7 @@ pub fn remove_dir_all<T: AsRef<Path>>(path: T) -> Result<(), MoonError> {
     let path = path.as_ref();
 
     if path.exists() {
-        fs::remove_dir_all(&path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
+        fs::remove_dir_all(path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
     }
 
     Ok(())

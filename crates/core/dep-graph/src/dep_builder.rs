@@ -1,12 +1,16 @@
 use crate::dep_graph::{DepGraph, DepGraphType, IndicesType};
 use crate::errors::DepGraphError;
+use crate::BatchedTopoSort;
 use moon_action::ActionNode;
 use moon_logger::{color, debug, map_list, trace};
 use moon_platform::{PlatformManager, Runtime};
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
 use moon_task::{Target, TargetError, TargetProjectScope, Task, TouchedFilePaths};
+use petgraph::algo::toposort;
+use petgraph::dot::{Config, Dot};
 use petgraph::graph::NodeIndex;
+use petgraph::visit::EdgeRef;
 use petgraph::Graph;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::mem;
@@ -402,9 +406,7 @@ impl<'ws> DepGraphBuilder<'ws> {
 
     fn insert_node(&mut self, node: &ActionNode) -> NodeIndex {
         let index = self.graph.add_node(node.to_owned());
-
         self.indices.insert(node.to_owned(), index);
-
         index
     }
 }

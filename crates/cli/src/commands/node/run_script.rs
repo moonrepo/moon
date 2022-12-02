@@ -1,5 +1,5 @@
 use crate::helpers::AnyError;
-use moon::{generate_project_graph, load_workspace_with_toolchain};
+use moon::{build_project_graph, load_workspace_with_toolchain};
 use moon_error::MoonError;
 use std::env;
 
@@ -16,9 +16,10 @@ pub async fn run_script(name: &str, project: &Option<String>) -> Result<(), AnyE
 
         // Otherwise try and find the project in the graph
     } else if let Some(project_id) = project {
-        let project_graph = generate_project_graph(&mut workspace).await?;
+        let mut project_graph = build_project_graph(&mut workspace).await?;
+        project_graph.load(project_id)?;
 
-        command.cwd(&project_graph.get(project_id)?.root);
+        command.cwd(&project_graph.build().get(project_id)?.root);
 
         // This should rarely happen...
     } else {

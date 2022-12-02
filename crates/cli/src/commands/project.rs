@@ -1,14 +1,17 @@
 use crate::helpers::AnyError;
 use console::Term;
 use itertools::Itertools;
-use moon::{generate_project_graph, load_workspace};
+use moon::{build_project_graph, load_workspace};
 use moon_logger::color;
 use moon_terminal::{ExtendedTerm, Label};
 use moon_utils::is_test_env;
 
 pub async fn project(id: &str, json: bool) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;
-    let project_graph = generate_project_graph(&mut workspace).await?;
+    let mut project_builder = build_project_graph(&mut workspace).await?;
+    project_builder.load(id)?;
+
+    let project_graph = project_builder.build();
     let project = project_graph.get(id)?;
     let config = &project.config;
 

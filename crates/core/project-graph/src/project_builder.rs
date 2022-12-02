@@ -11,51 +11,85 @@ use moon_project::{
 use moon_task::{Target, Task};
 use petgraph::graph::{DiGraph, NodeIndex};
 use rustc_hash::FxHashMap;
+use std::mem;
 use std::path::Path;
 
 pub struct ProjectGraphBuilder<'ws> {
-    pub cache: &'ws CacheEngine,
-    pub config: &'ws GlobalProjectConfig,
-    pub platforms: &'ws mut PlatformManager,
-    pub workspace_config: &'ws WorkspaceConfig,
-    pub workspace_root: &'ws Path,
+    cache: &'ws CacheEngine,
+    config: &'ws GlobalProjectConfig,
+    platforms: &'ws mut PlatformManager,
+    workspace_config: &'ws WorkspaceConfig,
+    workspace_root: &'ws Path,
+
+    aliases: ProjectsAliasesMap,
+    graph: GraphType,
+    indices: IndicesType,
+    sources: ProjectsSourcesMap,
 }
 
 impl<'ws> ProjectGraphBuilder<'ws> {
-    pub async fn build(&mut self) -> Result<ProjectGraph, ProjectError> {
-        let sources = self.load_sources().await?;
-        let aliases = self.load_aliases(&sources).await?;
-        let (graph, indices) = self.build_graph(&sources, &aliases)?;
+    pub async fn new(
+        cache: &'ws CacheEngine,
+        config: &'ws GlobalProjectConfig,
+        platforms: &'ws mut PlatformManager,
+        workspace_config: &'ws WorkspaceConfig,
+        workspace_root: &'ws Path,
+    ) -> Result<ProjectGraphBuilder<'ws>, ProjectError> {
+        debug!(target: LOG_TARGET, "Creating project graph");
 
-        Ok(ProjectGraph::new(graph, indices, sources, aliases))
+        let mut graph = ProjectGraphBuilder {
+            aliases: FxHashMap::default(),
+            cache,
+            config,
+            graph: DiGraph::new(),
+            indices: FxHashMap::default(),
+            platforms,
+            sources: FxHashMap::default(),
+            workspace_config,
+            workspace_root,
+        };
+
+        graph.load_sources().await?;
+        graph.load_aliases().await?;
+
+        Ok(graph)
     }
 
-    fn build_graph(
-        &mut self,
-        sources: &ProjectsSourcesMap,
-        aliases: &ProjectsAliasesMap,
-    ) -> Result<(GraphType, IndicesType), ProjectError> {
-        let mut graph = DiGraph::new();
-        let mut indices = FxHashMap::default();
+    pub fn build(&mut self) -> ProjectGraph {
+        ProjectGraph::new(
+            mem::take(&mut self.graph),
+            mem::take(&mut self.indices),
+            mem::take(&mut self.sources),
+            mem::take(&mut self.aliases),
+        )
+    }
 
-        for id in sources.keys() {
-            self.load(&mut graph, &mut indices, sources, aliases, id)?;
+    pub fn load(&mut self, alias_or_id: &str) -> Result<&Self, ProjectError> {
+        self.internal_load(alias_or_id)?;
+
+        Ok(self)
+    }
+
+    pub fn load_all(&mut self) -> Result<&Self, ProjectError> {
+        let ids = self
+            .sources
+            .keys()
+            .map(|k| k.to_owned())
+            .collect::<Vec<String>>();
+
+        for id in ids {
+            self.internal_load(&id)?;
         }
 
-        Ok((graph, indices))
+        Ok(self)
     }
 
-    fn create_project(
-        &self,
-        aliases: &ProjectsAliasesMap,
-        id: &str,
-        source: &str,
-    ) -> Result<Project, ProjectError> {
+    fn create_project(&self, id: &str, source: &str) -> Result<Project, ProjectError> {
         let mut project = Project::new(id, source, self.workspace_root, self.config)?;
 
         // Find the alias for a given ID. This is currently... not performant,
         // so revisit once it becomes an issue!
-        for (alias, project_id) in aliases {
+        for (alias, project_id) in &self.aliases {
             if project_id == id {
                 project.alias = Some(alias.to_owned());
                 break;
@@ -72,7 +106,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                 id,
                 &project.root,
                 &project.config,
-                aliases,
+                &self.aliases,
             )? {
                 // Implicit deps should not override explicit deps
                 project
@@ -109,28 +143,21 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         Ok(project)
     }
 
-    fn load(
-        &mut self,
-        graph: &mut GraphType,
-        indices: &mut IndicesType,
-        sources: &ProjectsSourcesMap,
-        aliases: &ProjectsAliasesMap,
-        alias_or_id: &str,
-    ) -> Result<NodeIndex, ProjectError> {
-        let id = match aliases.get(alias_or_id) {
+    fn internal_load(&mut self, alias_or_id: &str) -> Result<NodeIndex, ProjectError> {
+        let id = match self.aliases.get(alias_or_id) {
             Some(project_id) => project_id,
             None => alias_or_id,
         };
 
         // Already loaded, abort early
-        if indices.contains_key(id) {
+        if self.indices.contains_key(id) {
             trace!(
                 target: LOG_TARGET,
                 "Project {} already exists in the project graph",
                 color::id(id),
             );
 
-            return Ok(*indices.get(id).unwrap());
+            return Ok(*self.indices.get(id).unwrap());
         }
 
         trace!(
@@ -140,17 +167,17 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         );
 
         // Create project based on ID and source
-        let Some(source) = sources.get(id) else {
+        let Some(source) = self.sources.get(id) else {
             return Err(ProjectError::UnconfiguredID(id.to_owned()));
         };
 
-        let project = self.create_project(aliases, id, source)?;
+        let project = self.create_project(id, source)?;
         let depends_on = project.get_dependency_ids();
 
         // Insert the project into the graph
-        let node_index = graph.add_node(project);
+        let node_index = self.graph.add_node(project);
 
-        indices.insert(id.to_owned(), node_index);
+        self.indices.insert(id.to_owned(), node_index);
 
         if !depends_on.is_empty() {
             trace!(
@@ -161,29 +188,24 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             );
 
             for dep_id in depends_on {
-                let dep_index = self.load(graph, indices, sources, aliases, dep_id.as_str())?;
+                let dep_index = self.internal_load(dep_id.as_str())?;
 
-                graph.add_edge(node_index, dep_index, ());
+                self.graph.add_edge(node_index, dep_index, ());
             }
         }
 
         Ok(node_index)
     }
 
-    async fn load_aliases(
-        &mut self,
-        sources: &ProjectsSourcesMap,
-    ) -> Result<ProjectsAliasesMap, ProjectError> {
-        let mut aliases = FxHashMap::default();
-
+    async fn load_aliases(&mut self) -> Result<(), ProjectError> {
         for platform in self.platforms.list_mut() {
-            platform.load_project_graph_aliases(sources, &mut aliases)?;
+            platform.load_project_graph_aliases(&self.sources, &mut self.aliases)?;
         }
 
-        Ok(aliases)
+        Ok(())
     }
 
-    async fn load_sources(&mut self) -> Result<ProjectsSourcesMap, ProjectError> {
+    async fn load_sources(&mut self) -> Result<(), ProjectError> {
         let mut globs = vec![];
         let mut sources = FxHashMap::default();
 
@@ -211,7 +233,9 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             if !cache.projects.is_empty() {
                 debug!(target: LOG_TARGET, "Loading projects from cache");
 
-                return Ok(cache.projects);
+                self.sources.extend(cache.projects);
+
+                return Ok(());
             }
 
             // Generate a new projects map by globbing the filesystem
@@ -235,6 +259,8 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             sources.len(),
         );
 
-        Ok(sources)
+        self.sources.extend(sources);
+
+        Ok(())
     }
 }

@@ -80,7 +80,7 @@ async fn can_use_map_and_globs_setting() {
             globs: string_vec!["deps/*"],
             sources: FxHashMap::from_iter([
                 ("basic".to_owned(), "basic".to_owned()),
-                ("noConfig".to_owned(), "noConfig".to_owned()),
+                ("noConfig".to_owned(), "no-config".to_owned()),
             ]),
         },
         ..WorkspaceConfig::default()
@@ -94,7 +94,7 @@ async fn can_use_map_and_globs_setting() {
     assert_eq!(
         graph.sources,
         FxHashMap::from_iter([
-            ("noConfig".to_owned(), "noConfig".to_owned()),
+            ("noConfig".to_owned(), "no-config".to_owned()),
             ("bar".to_owned(), "deps/bar".to_owned()),
             ("basic".to_owned(), "basic".to_owned()),
             ("baz".to_owned(), "deps/baz".to_owned()),
@@ -109,15 +109,14 @@ mod globs {
     #[tokio::test]
     async fn ignores_dot_folders() {
         let workspace_config = WorkspaceConfig {
-            projects: WorkspaceProjects::Globs(string_vec!["**"]),
+            projects: WorkspaceProjects::Globs(string_vec!["langs/*"]),
             ..WorkspaceConfig::default()
         };
 
         // Use git so we can test against the .git folder
         let sandbox = create_sandbox_with_config("projects", Some(&workspace_config), None, None);
         sandbox.enable_git();
-
-        // Create fake node modules
+        sandbox.create_file("langs/.foo/moon.yml", "{}");
         sandbox.create_file("node_modules/moon/package.json", "{}");
 
         let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
@@ -126,20 +125,8 @@ mod globs {
         assert_eq!(
             graph.sources,
             FxHashMap::from_iter([
-                ("advanced".to_owned(), "advanced".to_owned()),
-                ("bar".to_owned(), "deps/bar".to_owned()),
                 ("bash".to_owned(), "langs/bash".to_owned()),
-                ("basic".to_owned(), "basic".to_owned()),
-                ("baz".to_owned(), "deps/baz".to_owned()),
-                ("deps".to_owned(), "deps".to_owned()),
-                ("empty-config".to_owned(), "empty-config".to_owned()),
-                ("foo".to_owned(), "deps/foo".to_owned()),
                 ("js".to_owned(), "langs/js".to_owned()),
-                ("langs".to_owned(), "langs".to_owned()),
-                ("platforms".to_owned(), "platforms".to_owned()),
-                ("no-config".to_owned(), "no-config".to_owned()),
-                ("package-json".to_owned(), "package-json".to_owned()),
-                ("tasks".to_owned(), "tasks".to_owned()),
                 ("ts".to_owned(), "langs/ts".to_owned()),
             ])
         );
@@ -217,16 +204,42 @@ mod get_dependents_of {
 }
 
 mod to_dot {
+    use moon::build_project_graph;
+
     use super::*;
 
     #[tokio::test]
     async fn renders_tree() {
         let (graph, _sandbox) = get_dependencies_graph().await;
 
-        graph.get("a").unwrap();
-        graph.get("b").unwrap();
-        graph.get("c").unwrap();
-        graph.get("d").unwrap();
+        assert_snapshot!(graph.to_dot());
+    }
+
+    #[tokio::test]
+    async fn renders_partial_tree() {
+        let workspace_config = WorkspaceConfig {
+            projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
+                ("a".to_owned(), "a".to_owned()),
+                ("b".to_owned(), "b".to_owned()),
+                ("c".to_owned(), "c".to_owned()),
+                ("d".to_owned(), "d".to_owned()),
+            ])),
+            ..WorkspaceConfig::default()
+        };
+
+        let sandbox = create_sandbox_with_config(
+            "project-graph/dependencies",
+            Some(&workspace_config),
+            None,
+            None,
+        );
+
+        let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+        let mut graph = build_project_graph(&mut workspace).await.unwrap();
+
+        graph.load("b").unwrap();
+
+        let graph = graph.build();
 
         assert_snapshot!(graph.to_dot());
     }

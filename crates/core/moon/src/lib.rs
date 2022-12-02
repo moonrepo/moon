@@ -75,16 +75,25 @@ pub fn build_dep_graph<'g>(
     DepGraphBuilder::new(&workspace.platforms, project_graph)
 }
 
+pub async fn build_project_graph(
+    workspace: &mut Workspace,
+) -> Result<ProjectGraphBuilder, ProjectError> {
+    ProjectGraphBuilder::new(
+        &workspace.cache,
+        &workspace.projects_config,
+        &mut workspace.platforms,
+        &workspace.config,
+        &workspace.root,
+    )
+    .await
+}
+
 pub async fn generate_project_graph(
     workspace: &mut Workspace,
 ) -> Result<ProjectGraph, ProjectError> {
-    let mut builder = ProjectGraphBuilder {
-        cache: &workspace.cache,
-        config: &workspace.projects_config,
-        platforms: &mut workspace.platforms,
-        workspace_config: &workspace.config,
-        workspace_root: &workspace.root,
-    };
+    let mut builder = build_project_graph(workspace).await?;
 
-    builder.build().await
+    builder.load_all()?;
+
+    Ok(builder.build())
 }

@@ -18,20 +18,16 @@ type RuntimePair = (Runtime, Runtime);
 /// A directed acyclic graph (DAG) for the work that needs to be processed, based on a
 /// project or task's dependency chain. This is also known as a "task graph" (not to
 /// be confused with our tasks) or a "dependency graph".
-pub struct DepGraphBuilder<'graph> {
+pub struct DepGraphBuilder<'ws> {
     graph: DepGraphType,
-
     indices: IndicesType,
-
-    platforms: &'graph PlatformManager,
-
-    project_graph: &'graph ProjectGraph,
-
+    platforms: &'ws PlatformManager,
+    project_graph: &'ws ProjectGraph,
     runtimes: FxHashMap<String, RuntimePair>,
 }
 
-impl<'graph> DepGraphBuilder<'graph> {
-    pub fn new(platforms: &'graph PlatformManager, project_graph: &'graph ProjectGraph) -> Self {
+impl<'ws> DepGraphBuilder<'ws> {
+    pub fn new(platforms: &'ws PlatformManager, project_graph: &'ws ProjectGraph) -> Self {
         debug!(target: LOG_TARGET, "Creating dependency graph",);
 
         DepGraphBuilder {

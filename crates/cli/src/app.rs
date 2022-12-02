@@ -198,7 +198,7 @@ pub enum Commands {
         #[arg(help = "Target to *only* graph")]
         target: Option<String>,
 
-        #[arg(short, long, help = "Print the graph in the DOT format")]
+        #[arg(long, help = "Print the graph in DOT format")]
         dot: bool,
     },
 
@@ -226,7 +226,7 @@ pub enum Commands {
         #[arg(help = "ID of project to *only* graph")]
         id: Option<ProjectID>,
 
-        #[arg(short, long, help = "Print the graph in the DOT format")]
+        #[arg(long, help = "Print the graph in DOT format")]
         dot: bool,
     },
 

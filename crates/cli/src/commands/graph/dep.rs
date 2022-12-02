@@ -1,10 +1,8 @@
-use crate::{
-    commands::graph::{
-        utils::{dep_graph_repr, respond_to_request, setup_server},
-        LOG_TARGET,
-    },
-    helpers::load_workspace,
+use crate::commands::graph::{
+    utils::{dep_graph_repr, respond_to_request, setup_server},
+    LOG_TARGET,
 };
+use moon::{generate_project_graph, load_workspace};
 use moon_logger::info;
 use moon_runner::DepGraph;
 use moon_task::Target;
@@ -13,8 +11,8 @@ pub async fn dep_graph(
     target_id: &Option<String>,
     dot: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let workspace = load_workspace().await?;
-    let projects = workspace.projects;
+    let mut workspace = load_workspace().await?;
+    let projects = generate_project_graph(&mut workspace).await?;
     let mut graph = DepGraph::default();
 
     // Preload all projects

@@ -7,12 +7,10 @@ use std::path::PathBuf;
 use yarn_lock_parser::{parse_str, Entry};
 
 #[cached(result)]
-pub async fn load_lockfile_dependencies(
-    path: PathBuf,
-) -> Result<LockfileDependencyVersions, MoonError> {
+pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVersions, MoonError> {
     let mut deps: LockfileDependencyVersions = FxHashMap::default();
 
-    let yarn_lock_text = fs::read(&path).await?;
+    let yarn_lock_text = fs::read(&path)?;
     let entries: Vec<Entry> = parse_str(&yarn_lock_text)
         .map_err(|e| MoonError::Generic(format!("Failed to parse lockfile: {}", e)))?;
 
@@ -35,7 +33,6 @@ mod tests {
     use moon_test_utils::{assert_fs::prelude::*, create_temp_dir, pretty_assertions::assert_eq};
     use moon_utils::string_vec;
 
-    #[tokio::test]
     async fn parses_lockfile() {
         let temp = create_temp_dir();
 
@@ -100,7 +97,7 @@ __metadata:
 "#.trim()).unwrap();
 
         assert_eq!(
-            load_lockfile_dependencies(temp.path().join("yarn.lock")).await.unwrap(),
+            load_lockfile_dependencies(temp.path().join("yarn.lock")).unwrap(),
             FxHashMap::from_iter([
                 (
                     "is-buffer".to_owned(),

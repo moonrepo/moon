@@ -78,11 +78,11 @@ impl RunTargetState {
             let stderr_log = project_root.join("stderr.log");
 
             if stdout_log.exists() {
-                fs::rename(&stdout_log, cache_logs.0).await?;
+                fs::rename(&stdout_log, cache_logs.0)?;
             }
 
             if stderr_log.exists() {
-                fs::rename(&stderr_log, cache_logs.1).await?;
+                fs::rename(&stderr_log, cache_logs.1)?;
             }
 
             return Ok(true);
@@ -99,17 +99,17 @@ impl RunTargetState {
     }
 
     /// Load the stdout.log and stderr.log files from the cache directory.
-    pub async fn load_output_logs(&self) -> Result<(String, String), MoonError> {
+    pub fn load_output_logs(&self) -> Result<(String, String), MoonError> {
         let (stdout_path, stderr_path) = self.get_output_logs();
 
         let stdout = if stdout_path.exists() {
-            fs::read(stdout_path).await?
+            fs::read(stdout_path)?
         } else {
             String::new()
         };
 
         let stderr = if stderr_path.exists() {
-            fs::read(stderr_path).await?
+            fs::read(stderr_path)?
         } else {
             String::new()
         };
@@ -118,11 +118,11 @@ impl RunTargetState {
     }
 
     /// Write stdout and stderr log files to the cache directory.
-    pub async fn save_output_logs(&self, stdout: String, stderr: String) -> Result<(), MoonError> {
+    pub fn save_output_logs(&self, stdout: String, stderr: String) -> Result<(), MoonError> {
         let (stdout_path, stderr_path) = self.get_output_logs();
 
-        fs::write(stdout_path, stdout).await?;
-        fs::write(stderr_path, stderr).await?;
+        fs::write(stdout_path, stdout)?;
+        fs::write(stderr_path, stderr)?;
 
         Ok(())
     }

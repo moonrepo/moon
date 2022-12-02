@@ -6,7 +6,7 @@ pub async fn sync() -> Result<(), AnyError> {
     let done = create_progress_bar("Syncing projects...");
 
     let mut workspace = load_workspace().await?;
-    let project_graph = generate_project_graph(&mut workspace).await?;
+    let project_graph = generate_project_graph(&mut workspace)?;
     let mut project_count = 0;
     let mut dep_builder = build_dep_graph(&workspace, &project_graph);
 

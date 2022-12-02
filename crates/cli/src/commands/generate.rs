@@ -312,7 +312,7 @@ pub async fn generate(name: &str, options: GenerateOptions) -> Result<(), AnyErr
 
     // This is a special case for creating a new template with the generator itself!
     if options.template {
-        let template = generator.create_template(name).await?;
+        let template = generator.create_template(name)?;
 
         println!(
             "Created a new template {} at {}",
@@ -431,7 +431,7 @@ pub async fn generate(name: &str, options: GenerateOptions) -> Result<(), AnyErr
 
     // Generate the files in the destination and print the results
     if !options.dry_run {
-        generator.generate(&template).await?;
+        generator.generate(&template)?;
     }
 
     term.write_line("")?;

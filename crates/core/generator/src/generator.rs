@@ -1,6 +1,5 @@
 use crate::errors::GeneratorError;
 use crate::template::Template;
-use futures::future::try_join_all;
 use moon_config::{load_template_config_template, GeneratorConfig};
 use moon_constants::CONFIG_TEMPLATE_FILENAME;
 use moon_logger::{color, debug, map_list, trace};
@@ -27,7 +26,7 @@ impl Generator {
 
     /// Create a new template with a schema, using the first configured template path.
     /// Will error if a template of the same name already exists.
-    pub async fn create_template(&self, name: &str) -> Result<Template, GeneratorError> {
+    pub fn create_template(&self, name: &str) -> Result<Template, GeneratorError> {
         let name = clean_id(name);
         let root = self
             .workspace_root
@@ -45,13 +44,12 @@ impl Generator {
             color::path(&root)
         );
 
-        fs::create_dir_all(&root).await?;
+        fs::create_dir_all(&root)?;
 
         fs::write(
             root.join(CONFIG_TEMPLATE_FILENAME),
             load_template_config_template(),
-        )
-        .await?;
+        )?;
 
         Template::new(name, root)
     }
@@ -81,9 +79,7 @@ impl Generator {
         Err(GeneratorError::MissingTemplate(name))
     }
 
-    pub async fn generate(&self, template: &Template) -> Result<(), GeneratorError> {
-        let mut futures = vec![];
-
+    pub fn generate(&self, template: &Template) -> Result<(), GeneratorError> {
         debug!(
             target: LOG_TARGET,
             "Generating template {} files",
@@ -92,11 +88,9 @@ impl Generator {
 
         for file in &template.files {
             if file.should_write() {
-                futures.push(template.write_file(file));
+                template.write_file(file)?;
             }
         }
-
-        try_join_all(futures).await?;
 
         debug!(target: LOG_TARGET, "Generation complete!");
 

@@ -77,8 +77,7 @@ impl Subscriber for LocalCacheSubscriber {
             Event::RunnerFinished { .. } => {
                 workspace
                     .cache
-                    .clean_stale_cache(&workspace.config.runner.cache_lifetime)
-                    .await?;
+                    .clean_stale_cache(&workspace.config.runner.cache_lifetime)?;
             }
             _ => {}
         }

@@ -106,17 +106,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "async-recursion"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2cda8f4bcc10624c4e85bc66b3f452cca98cfa5ca002dc83a16aad2367641bea"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "async-stream"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1880,13 +1869,11 @@ dependencies = [
 name = "moon_cli"
 version = "0.20.2"
 dependencies = [
- "async-recursion",
  "clap 4.0.23",
  "clap_lex 0.3.0",
  "console",
  "console-subscriber",
  "dialoguer",
- "futures",
  "indicatif",
  "itertools",
  "mimalloc",
@@ -2012,7 +1999,6 @@ name = "moon_generator"
 version = "0.1.0"
 dependencies = [
  "convert_case",
- "futures",
  "lazy_static",
  "moon_config",
  "moon_constants",

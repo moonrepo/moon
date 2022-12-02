@@ -275,7 +275,7 @@ impl Template {
     }
 
     /// Write the template file to the defined destination path.
-    pub async fn write_file(&self, file: &TemplateFile) -> Result<(), GeneratorError> {
+    pub fn write_file(&self, file: &TemplateFile) -> Result<(), GeneratorError> {
         match file.state {
             FileState::Merge => {
                 trace!(
@@ -303,7 +303,7 @@ impl Template {
             }
         }
 
-        fs::create_dir_all(file.dest_path.parent().unwrap()).await?;
+        fs::create_dir_all(file.dest_path.parent().unwrap())?;
 
         if matches!(file.state, FileState::Merge) {
             match file.is_mergeable() {
@@ -322,7 +322,7 @@ impl Template {
                 _ => {}
             }
         } else {
-            fs::write(&file.dest_path, &file.content).await?;
+            fs::write(&file.dest_path, &file.content)?;
         }
 
         Ok(())

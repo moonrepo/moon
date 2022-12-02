@@ -13,10 +13,8 @@ pub async fn clean(options: CleanOptions) -> Result<(), AnyError> {
         options.cache_lifetime
     ));
 
-    let (files_deleted, bytes_saved) = workspace
-        .cache
-        .clean_stale_cache(&options.cache_lifetime)
-        .await?;
+    let (files_deleted, bytes_saved) =
+        workspace.cache.clean_stale_cache(&options.cache_lifetime)?;
 
     done(
         format!(

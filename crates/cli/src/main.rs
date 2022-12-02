@@ -10,35 +10,30 @@ use tokio::process::Command;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
-#[cfg(target_os = "linux")]
+#[cfg(not(windows))]
 fn get_global_lookups(home_dir: &Path) -> Vec<PathBuf> {
     let mut lookups = vec![];
 
     // Node
+    lookups.push("/usr/local/lib/node".into());
     lookups.push(home_dir.join(".nvm/versions/node"));
+    lookups.push(home_dir.join(".nodenv/versions"));
+    lookups.push(home_dir.join(".fnm/node-versions"));
+    lookups.push(home_dir.join("Library/pnpm"));
     lookups.push(home_dir.join(".local/share/pnpm"));
     lookups.push(home_dir.join(".config/yarn"));
 
     lookups
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(windows)]
 fn get_global_lookups(home_dir: &Path) -> Vec<PathBuf> {
     let mut lookups = vec![];
 
     // Node
-    lookups.push(home_dir.join(".nvm/versions/node"));
-    lookups.push(home_dir.join("Library/pnpm"));
-    lookups.push(home_dir.join(".config/yarn"));
-
-    lookups
-}
-
-#[cfg(target_os = "windows")]
-fn get_global_lookups(home_dir: &Path) -> Vec<PathBuf> {
-    let mut lookups = vec![];
-
-    // Node
+    lookups.push(home_dir.join(".nvm\\versions\\node"));
+    lookups.push(home_dir.join(".nodenv\\versions"));
+    lookups.push(home_dir.join(".fnm\\node-versions"));
     lookups.push(home_dir.join("AppData\\npm"));
     lookups.push(home_dir.join("AppData\\Roaming\\npm"));
     lookups.push(home_dir.join("AppData\\Local\\pnpm"));

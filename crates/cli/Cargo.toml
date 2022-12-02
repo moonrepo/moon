@@ -13,8 +13,10 @@ path = "src/lib.rs"
 crate-type = ["rlib"]
 
 [dependencies]
+moon = { path = "../core/moon" }
 moon_config = { path = "../core/config" }
 moon_constants = { path = "../core/constants" }
+moon_dep_graph = { path = "../core/dep-graph" }
 moon_error = { path = "../core/error" }
 moon_generator = { path = "../core/generator" }
 moon_lang = { path = "../core/lang" }
@@ -24,6 +26,7 @@ moon_node_platform = { path = "../node/platform" }
 moon_pipeline_provider = { path = "../core/pipeline-provider" }
 moon_platform = { path = "../core/platform" }
 moon_project = { path = "../core/project" }
+moon_project_graph = { path = "../core/project-graph" }
 moon_runner = { path = "../core/runner" }
 moon_runner_context = { path = "../core/runner-context" }
 moon_system_platform = { path = "../system/platform" }

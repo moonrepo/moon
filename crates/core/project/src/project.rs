@@ -347,7 +347,7 @@ impl Project {
         );
 
         if !root.exists() {
-            return Err(ProjectError::MissingProject(String::from(source)));
+            return Err(ProjectError::MissingProjectAtSource(String::from(source)));
         }
 
         let config = load_project_config(&log_target, &root, source)?;

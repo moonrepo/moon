@@ -9,6 +9,7 @@ use moon_hasher::{convert_paths_to_strings, to_hash, Hasher, TargetHasher};
 use moon_logger::{color, debug, warn};
 use moon_node_platform::actions as node_actions;
 use moon_project::Project;
+use moon_project_graph::ProjectGraph;
 use moon_runner_context::RunnerContext;
 use moon_system_platform::actions as system_actions;
 use moon_task::{Target, TargetError, TargetProjectScope, Task, TaskError};
@@ -821,15 +822,17 @@ pub async fn run_target(
     action: &mut Action,
     context: Arc<RwLock<RunnerContext>>,
     workspace: Arc<RwLock<Workspace>>,
+    project_graph: Arc<RwLock<ProjectGraph>>,
     emitter: Arc<RwLock<Emitter>>,
     target: &Target,
 ) -> Result<ActionStatus, RunnerError> {
     let (project_id, task_id) = target.ids()?;
     let workspace = workspace.read().await;
+    let project_graph = project_graph.read().await;
     let emitter = emitter.read().await;
-    let project = workspace.projects.load(&project_id)?;
+    let project = project_graph.get(&project_id)?;
     let task = project.get_task(&task_id)?;
-    let mut runner = TargetRunner::new(&emitter, &workspace, &project, task).await?;
+    let mut runner = TargetRunner::new(&emitter, &workspace, project, task).await?;
 
     debug!(
         target: LOG_TARGET,
@@ -875,7 +878,7 @@ pub async fn run_target(
                     .is_cached(
                         &mut context,
                         common_hasher,
-                        node_actions::create_target_hasher(&workspace, &project).await?,
+                        node_actions::create_target_hasher(&workspace, project).await?,
                     )
                     .await?
             }
@@ -884,7 +887,7 @@ pub async fn run_target(
                     .is_cached(
                         &mut context,
                         common_hasher,
-                        system_actions::create_target_hasher(&workspace, &project)?,
+                        system_actions::create_target_hasher(&workspace, project)?,
                     )
                     .await?
             }

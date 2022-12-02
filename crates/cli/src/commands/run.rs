@@ -1,8 +1,10 @@
 use crate::enums::TouchedStatus;
-use crate::helpers::load_workspace;
+use crate::helpers::AnyError;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
+use moon::{build_dep_graph, generate_project_graph, load_workspace};
 use moon_logger::{color, map_list};
-use moon_runner::{DepGraph, Runner};
+use moon_project_graph::ProjectGraph;
+use moon_runner::Runner;
 use moon_runner_context::{ProfileType, RunnerContext};
 use moon_utils::is_ci;
 use moon_workspace::Workspace;
@@ -28,16 +30,12 @@ pub fn is_local(options: &RunOptions) -> bool {
     }
 }
 
-pub async fn run(
+pub async fn run_target(
     target_ids: &[String],
     options: RunOptions,
-    base_workspace: Option<Workspace>,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let workspace = match base_workspace {
-        Some(ws) => ws,
-        None => load_workspace().await?,
-    };
-
+    workspace: Workspace,
+    project_graph: ProjectGraph,
+) -> Result<(), AnyError> {
     // Always query for a touched files list as it'll be used by many actions
     let touched_files = if options.affected || workspace.vcs.is_enabled() {
         query_touched_files(
@@ -54,12 +52,11 @@ pub async fn run(
     };
 
     // Generate a dependency graph for all the targets that need to be ran
-    let mut dep_graph = DepGraph::default();
+    let mut dep_builder = build_dep_graph(&workspace, &project_graph);
 
     // Run targets, optionally based on affected files
-    let primary_targets = dep_graph.run_targets_by_id(
+    let primary_targets = dep_builder.run_targets_by_id(
         target_ids,
-        &workspace.projects,
         if options.affected {
             Some(&touched_files)
         } else {
@@ -89,10 +86,8 @@ pub async fn run(
 
     // Run dependents for all primary targets
     if options.dependents {
-        workspace.projects.load_all()?;
-
         for target in &primary_targets {
-            dep_graph.run_dependents_for_target(target, &workspace.projects)?;
+            dep_builder.run_dependents_for_target(target)?;
         }
     }
 
@@ -107,15 +102,28 @@ pub async fn run(
         touched_files,
     };
 
+    let dep_graph = dep_builder.build();
     let mut runner = Runner::new(workspace);
 
     if options.report {
         runner.generate_report("runReport.json");
     }
 
-    let results = runner.bail_on_error().run(dep_graph, Some(context)).await?;
+    let results = runner
+        .bail_on_error()
+        .run(dep_graph, project_graph, Some(context))
+        .await?;
 
     runner.render_stats(&results, true)?;
+
+    Ok(())
+}
+
+pub async fn run(target_ids: &[String], options: RunOptions) -> Result<(), AnyError> {
+    let mut workspace = load_workspace().await?;
+    let project_graph = generate_project_graph(&mut workspace).await?;
+
+    run_target(target_ids, options, workspace, project_graph).await?;
 
     Ok(())
 }

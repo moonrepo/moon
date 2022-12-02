@@ -1,17 +1,18 @@
 use crate::actions;
-use crate::dep_graph::DepGraph;
-use crate::errors::{DepGraphError, RunnerError};
+use crate::errors::RunnerError;
 use crate::run_report::RunReport;
 use crate::subscribers::local_cache::LocalCacheSubscriber;
 use crate::subscribers::moonbase_cache::MoonbaseCacheSubscriber;
 use console::Term;
 use moon_action::{Action, ActionNode, ActionStatus};
+use moon_dep_graph::{DepGraph, DepGraphError};
 use moon_emitter::{Emitter, Event};
 use moon_error::MoonError;
 use moon_logger::{color, debug, error, trace};
 use moon_node_platform::actions as node_actions;
 use moon_notifier::WebhooksSubscriber;
 use moon_platform::Runtime;
+use moon_project_graph::ProjectGraph;
 use moon_runner_context::RunnerContext;
 use moon_task::Target;
 use moon_terminal::{label_to_the_moon, replace_style_tokens, ExtendedTerm};
@@ -38,10 +39,14 @@ async fn run_action(
     action: &mut Action,
     context: Arc<RwLock<RunnerContext>>,
     workspace: Arc<RwLock<Workspace>>,
+    project_graph: Arc<RwLock<ProjectGraph>>,
     emitter: Arc<RwLock<Emitter>>,
 ) -> Result<(), RunnerError> {
     let local_emitter = Arc::clone(&emitter);
     let local_emitter = local_emitter.read().await;
+
+    let local_project_graph = Arc::clone(&project_graph);
+    let local_project_graph = local_project_graph.read().await;
 
     let result = match node {
         // Install dependencies in the workspace root
@@ -75,22 +80,18 @@ async fn run_action(
 
         // Install dependencies in the project root
         ActionNode::InstallProjectDeps(runtime, project_id) => {
-            let project = Arc::clone(&workspace)
-                .read()
-                .await
-                .projects
-                .load(project_id)?;
+            let project = local_project_graph.get(project_id)?;
 
             local_emitter
                 .emit(Event::DependenciesInstalling {
-                    project: Some(&project),
+                    project: Some(project),
                     runtime,
                 })
                 .await?;
 
             let install_result = match runtime {
                 Runtime::Node(_) => {
-                    node_actions::install_deps(action, context, workspace, runtime, Some(&project))
+                    node_actions::install_deps(action, context, workspace, runtime, Some(project))
                         .await
                         .map_err(RunnerError::Workspace)
                 }
@@ -100,7 +101,7 @@ async fn run_action(
             local_emitter
                 .emit(Event::DependenciesInstalled {
                     error: extract_run_error(&install_result),
-                    project: Some(&project),
+                    project: Some(project),
                     runtime,
                 })
                 .await?;
@@ -116,9 +117,15 @@ async fn run_action(
                 .emit(Event::TargetRunning { target: &target })
                 .await?;
 
-            let run_result =
-                actions::run_target(action, context, workspace, Arc::clone(&emitter), &target)
-                    .await;
+            let run_result = actions::run_target(
+                action,
+                context,
+                workspace,
+                project_graph,
+                Arc::clone(&emitter),
+                &target,
+            )
+            .await;
 
             local_emitter
                 .emit(Event::TargetRan {
@@ -152,22 +159,15 @@ async fn run_action(
 
         // Sync a project within the graph
         ActionNode::SyncProject(runtime, project_id) => {
-            let project = Arc::clone(&workspace)
-                .read()
-                .await
-                .projects
-                .load(project_id)?;
+            let project = local_project_graph.get(project_id)?;
 
             local_emitter
-                .emit(Event::ProjectSyncing {
-                    project: &project,
-                    runtime,
-                })
+                .emit(Event::ProjectSyncing { project, runtime })
                 .await?;
 
             let sync_result = match runtime {
                 Runtime::Node(_) => {
-                    node_actions::sync_project(action, context, workspace, &project)
+                    node_actions::sync_project(action, context, workspace, project_graph, project)
                         .await
                         .map_err(RunnerError::Workspace)
                 }
@@ -177,7 +177,7 @@ async fn run_action(
             local_emitter
                 .emit(Event::ProjectSynced {
                     error: extract_run_error(&sync_result),
-                    project: &project,
+                    project,
                     runtime,
                 })
                 .await?;
@@ -257,14 +257,16 @@ impl Runner {
 
     pub async fn run(
         &mut self,
-        graph: DepGraph,
+        dep_graph: DepGraph,
+        project_graph: ProjectGraph,
         context: Option<RunnerContext>,
     ) -> Result<ActionResults, RunnerError> {
         let start = Instant::now();
-        let node_count = graph.graph.node_count();
-        let batches = graph.sort_batched_topological()?;
+        let node_count = dep_graph.get_node_count();
+        let batches = dep_graph.sort_batched_topological()?;
         let batches_count = batches.len();
-        let graph = Arc::new(RwLock::new(graph));
+        let dep_graph = Arc::new(RwLock::new(dep_graph));
+        let project_graph = Arc::new(RwLock::new(project_graph));
         let context = Arc::new(RwLock::new(context.unwrap_or_default()));
         let emitter = Arc::new(RwLock::new(
             self.create_emitter(Arc::clone(&self.workspace)).await,
@@ -299,17 +301,18 @@ impl Runner {
 
             for (i, node_index) in batch.into_iter().enumerate() {
                 let action_count = i + 1;
-                let graph_clone = Arc::clone(&graph);
+                let dep_graph_clone = Arc::clone(&dep_graph);
+                let project_graph_clone = Arc::clone(&project_graph);
                 let context_clone = Arc::clone(&context);
                 let workspace_clone = Arc::clone(&self.workspace);
                 let emitter_clone = Arc::clone(&emitter);
 
                 action_handles.push(task::spawn(async move {
                     let mut action = Action::new(node_index.index(), None);
-                    let own_graph = graph_clone.read().await;
+                    let own_dep_graph = dep_graph_clone.read().await;
                     let own_emitter = emitter_clone.read().await;
 
-                    if let Some(node) = own_graph.get_node_from_index(&node_index) {
+                    if let Some(node) = own_dep_graph.get_node_from_index(&node_index) {
                         action.label = Some(node.label());
 
                         own_emitter
@@ -334,6 +337,7 @@ impl Runner {
                             &mut action,
                             context_clone,
                             workspace_clone,
+                            project_graph_clone,
                             Arc::clone(&emitter_clone),
                         )
                         .await;

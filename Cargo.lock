@@ -2327,7 +2327,6 @@ dependencies = [
 name = "moon_utils"
 version = "0.1.0"
 dependencies = [
- "async-recursion",
  "cached",
  "chrono",
  "chrono-humanize",
@@ -2335,7 +2334,6 @@ dependencies = [
  "dirs",
  "dunce",
  "ec4rs",
- "futures",
  "humantime",
  "json_comments",
  "lazy_static",

@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.options.json",
+  "compilerOptions": {
+    "emitDeclarationOnly": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ESNext"
+    ],
+    "outDir": "../../.moon/cache/types/packages/visualizer",
+    "useDefineForClassFields": true
+  },
+  "include": [
+    "src/**/*",
+    "vite.config.ts",
+    "*.cjs"
+  ]
+}

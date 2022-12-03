@@ -10,7 +10,7 @@ moon_logger = { path = "../../core/logger" }
 moon_utils = { path = "../../core/utils" }
 cached = { workspace = true }
 content_inspector = "0.2.4"
-lazy_static = "1.4.0"
+lazy_static = { workspace = true }
 regex = "1.7.0"
 rustc-hash = { workspace = true }
 serde = { workspace = true }

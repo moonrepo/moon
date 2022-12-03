@@ -7,5 +7,5 @@ edition = "2021"
 moon_logger = { path = "../logger" }
 console = "0.15.2"
 dialoguer = "0.10.2"
-lazy_static = "1.4.0"
+lazy_static = { workspace = true }
 regex = "1.7.0"

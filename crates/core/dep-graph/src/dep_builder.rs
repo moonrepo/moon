@@ -402,9 +402,7 @@ impl<'ws> DepGraphBuilder<'ws> {
 
     fn insert_node(&mut self, node: &ActionNode) -> NodeIndex {
         let index = self.graph.add_node(node.to_owned());
-
         self.indices.insert(node.to_owned(), index);
-
         index
     }
 }

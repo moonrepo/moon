@@ -8,14 +8,13 @@ use crate::commands::bin::bin;
 use crate::commands::check::{check, CheckOptions};
 use crate::commands::ci::{ci, CiOptions};
 use crate::commands::clean::{clean, CleanOptions};
-use crate::commands::dep_graph::dep_graph;
 use crate::commands::docker;
 use crate::commands::generate::{generate, GenerateOptions};
+use crate::commands::graph::{dep::dep_graph, project::project_graph};
 use crate::commands::init::{init, InitOptions};
 use crate::commands::migrate;
 use crate::commands::node;
 use crate::commands::project::project;
-use crate::commands::project_graph::project_graph;
 use crate::commands::query::{self, QueryProjectsOptions, QueryTouchedFilesOptions};
 use crate::commands::run::{run, RunOptions};
 use crate::commands::setup::setup;
@@ -96,7 +95,7 @@ pub async fn run_cli() {
             })
             .await
         }
-        Commands::DepGraph { target } => dep_graph(target).await,
+        Commands::DepGraph { target, dot } => dep_graph(target, *dot).await,
         Commands::Docker { command } => match command {
             DockerCommands::Prune => docker::prune().await,
             DockerCommands::Scaffold { ids, include } => docker::scaffold(ids, include).await,
@@ -151,7 +150,7 @@ pub async fn run_cli() {
             NodeCommands::RunScript { name, project } => node::run_script(name, project).await,
         },
         Commands::Project { id, json } => project(id, *json).await,
-        Commands::ProjectGraph { id } => project_graph(id).await,
+        Commands::ProjectGraph { id, dot } => project_graph(id, *dot).await,
         Commands::Sync => sync().await,
         Commands::Query { command } => match command {
             QueryCommands::Projects {

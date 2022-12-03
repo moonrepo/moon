@@ -197,6 +197,9 @@ pub enum Commands {
     DepGraph {
         #[arg(help = "Target to *only* graph")]
         target: Option<String>,
+
+        #[arg(long, help = "Print the graph in DOT format")]
+        dot: bool,
     },
 
     // moon project <id>
@@ -222,6 +225,9 @@ pub enum Commands {
     ProjectGraph {
         #[arg(help = "ID of project to *only* graph")]
         id: Option<ProjectID>,
+
+        #[arg(long, help = "Print the graph in DOT format")]
+        dot: bool,
     },
 
     #[command(

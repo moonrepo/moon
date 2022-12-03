@@ -8,13 +8,13 @@
     "extraFileExtensions": [".mjs"]
   },
   "include": [
-    "packages/*/.eslintrc.js",
+    "**/.eslintrc.js",
     "packages/*/src/**/*",
     "packages/*/tests/**/*",
     "packages/*/types/**/*",
+    "packages/*/*",
     "scripts/**/*",
     "website/src/**/*",
-    "website/.eslintrc.js",
     "website/*.js"
   ]
 }

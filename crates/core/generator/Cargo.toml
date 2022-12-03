@@ -10,7 +10,7 @@ moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
 moon_utils = { path = "../utils" }
 convert_case = "0.6.0"
-lazy_static = "1.4.0"
+lazy_static = { workspace = true }
 serde_json = { workspace = true }
 tera = { version = "1.17.1", features = ["preserve_order"] }
 thiserror = { workspace = true }

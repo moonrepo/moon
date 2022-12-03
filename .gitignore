@@ -19,6 +19,7 @@ esm/
 lib/
 mjs/
 umd/
+dist/
 
 # Artifacts
 .eslintcache

@@ -16,7 +16,7 @@ dunce = "1.0.3"
 ec4rs = "1.0.1"
 humantime = "2.1.0"
 json_comments = "0.2.1"
-lazy_static = "1.4.0"
+lazy_static = { workspace = true }
 md5 = "0.7.0"
 pathdiff = "0.2.1"
 regex = "1.7.0"

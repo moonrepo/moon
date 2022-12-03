@@ -1,0 +1,36 @@
+language: typescript
+type: library
+
+fileGroups:
+  vite:
+    - 'src/**/*'
+    - 'env.d.ts'
+    - 'index.html'
+    - 'vite.config.*'
+
+tasks:
+  dev:
+    command: 'vite dev'
+    local: true
+
+  build:
+    command: 'vite build'
+    inputs:
+      - '@group(vite)'
+    outputs:
+      - 'dist'
+
+  serve:
+    command:
+      - vite
+      - preview
+      - '--port'
+      - '5000'
+    deps:
+      - '~:build'
+    local: true
+
+workspace:
+  inheritedTasks:
+    exclude:
+      - build

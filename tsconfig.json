@@ -12,6 +12,9 @@
       "path": "packages/types"
     },
     {
+      "path": "packages/visualizer"
+    },
+    {
       "path": "website"
     }
   ]

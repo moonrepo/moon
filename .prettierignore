@@ -11,9 +11,13 @@ lib/
 mjs/
 node_modules/
 umd/
+dist/
 
 # Node.js formats differently
 *.json
 
 # These are Tera templates
 crates/config/templates/
+
+# visualizer
+packages/visualizer/*timestamp*

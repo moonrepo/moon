@@ -107,6 +107,12 @@ impl DepGraph {
         Ok(batches.into_iter().rev().collect())
     }
 
+    /// Get a labelled representation of the dep graph (which can be serialized easily).
+    pub fn labeled_graph(&self) -> DiGraph<String, ()> {
+        let graph = self.graph.clone();
+        graph.map(|_, n| n.label(), |_, e| *e)
+    }
+
     pub fn to_dot(&self) -> String {
         let graph = self.graph.map(|_, n| n.label(), |_, e| e);
 

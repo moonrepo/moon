@@ -8,7 +8,7 @@ fn no_projects() {
     let sandbox = create_sandbox_with_config("base", None, None, None);
 
     let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("project-graph");
+        cmd.arg("project-graph").arg("--dot");
     });
 
     assert_snapshot!(assert.output());
@@ -26,7 +26,7 @@ fn many_projects() {
     );
 
     let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("project-graph");
+        cmd.arg("project-graph").arg("--dot");
     });
 
     assert_snapshot!(assert.output());
@@ -44,7 +44,7 @@ fn single_project_with_dependencies() {
     );
 
     let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("project-graph").arg("foo");
+        cmd.arg("project-graph").arg("foo").arg("--dot");
     });
 
     assert_snapshot!(assert.output());
@@ -62,7 +62,7 @@ fn single_project_no_dependencies() {
     );
 
     let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("project-graph").arg("baz");
+        cmd.arg("project-graph").arg("baz").arg("--dot");
     });
 
     assert_snapshot!(assert.output());
@@ -84,7 +84,7 @@ mod aliases {
         );
 
         let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("project-graph");
+            cmd.arg("project-graph").arg("--dot");
         });
 
         assert_snapshot!(assert.output());
@@ -103,7 +103,7 @@ mod aliases {
         );
 
         let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("project-graph").arg("@scope/pkg-foo");
+            cmd.arg("project-graph").arg("@scope/pkg-foo").arg("--dot");
         });
 
         assert_snapshot!(assert.output());
@@ -122,7 +122,7 @@ mod aliases {
         );
 
         let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("project-graph").arg("noLang");
+            cmd.arg("project-graph").arg("noLang").arg("--dot");
         });
 
         assert_snapshot!(assert.output());

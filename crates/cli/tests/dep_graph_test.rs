@@ -15,7 +15,7 @@ fn all_by_default() {
     );
 
     let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("dep-graph");
+        cmd.arg("dep-graph").arg("--dot");
     });
 
     let dot = assert.output();
@@ -36,7 +36,7 @@ fn focused_by_target() {
     );
 
     let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("dep-graph").arg("basic:lint");
+        cmd.arg("dep-graph").arg("--dot").arg("basic:lint");
     });
 
     assert_snapshot!(assert.output());
@@ -54,7 +54,7 @@ fn includes_dependencies_when_focused() {
     );
 
     let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("dep-graph").arg("chain:e");
+        cmd.arg("dep-graph").arg("--dot").arg("chain:e");
     });
 
     assert_snapshot!(assert.output());
@@ -72,7 +72,7 @@ fn includes_dependents_when_focused() {
     );
 
     let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("dep-graph").arg("basic:build");
+        cmd.arg("dep-graph").arg("--dot").arg("basic:build");
     });
 
     assert_snapshot!(assert.output());
@@ -94,7 +94,7 @@ mod aliases {
         );
 
         let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("dep-graph").arg("@scope/pkg-foo:test");
+            cmd.arg("dep-graph").arg("--dot").arg("@scope/pkg-foo:test");
         });
 
         assert_snapshot!(assert.output());
@@ -113,7 +113,7 @@ mod aliases {
         );
 
         let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("dep-graph").arg("node:aliasDeps");
+            cmd.arg("dep-graph").arg("--dot").arg("node:aliasDeps");
         });
 
         assert_snapshot!(assert.output());

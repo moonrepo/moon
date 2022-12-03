@@ -319,5 +319,18 @@ RUN moon docker prune
 </TabItem>
 </Tabs>
 
+## Troubleshooting
+
+### Process failure for git
+
+Since moon executes `git` commands under the hood, there are some special considerations to be aware
+of when running moon within Docker. There's basically 2 scenarios to choose from:
+
+1. Add the `.git` folder to `.dockerignore`, so that it's not `COPY`'d. moon will continue to work
+   just fine, albeit with some functionality disabled.
+2. Ensure that the `git` library is installed in the container, and copy the `.git` folder with
+   `COPY`. moon will work with full functionality, but it will increase the overall size of the
+   image because of caching.
+
 [prune]: ../commands/docker/prune
 [scaffold]: ../commands/docker/scaffold

@@ -1,14 +1,35 @@
-use crate::validators::validate_child_relative_path;
+use crate::{errors::create_validation_error, validators::validate_child_relative_path};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use validator::{Validate, ValidationError};
 
-fn validate_env_file(file: &TaskOptionEnvFile) -> Result<(), ValidationError> {
-    if let TaskOptionEnvFile::File(path) = file {
-        validate_child_relative_path("envFile", path)?;
+fn validate_affected_files(file: &TaskOptionAffectedFiles) -> Result<(), ValidationError> {
+    if let TaskOptionAffectedFiles::Value(value) = file {
+        if value != "args" && value != "env" {
+            return Err(create_validation_error(
+                "invalid_value",
+                "options.affectedFiles",
+                "expected `args`, `env`, or a boolean",
+            ));
+        }
     }
 
     Ok(())
+}
+
+fn validate_env_file(file: &TaskOptionEnvFile) -> Result<(), ValidationError> {
+    if let TaskOptionEnvFile::File(path) = file {
+        validate_child_relative_path("options.envFile", path)?;
+    }
+
+    Ok(())
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
+#[serde(untagged, expecting = "expected `args`, `env`, or a boolean")]
+pub enum TaskOptionAffectedFiles {
+    Enabled(bool),
+    Value(String),
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
@@ -54,7 +75,8 @@ pub enum TaskOutputStyle {
 #[schemars(default)]
 #[serde(default, rename_all = "camelCase")]
 pub struct TaskOptionsConfig {
-    pub affected_files: Option<bool>,
+    #[validate(custom = "validate_affected_files")]
+    pub affected_files: Option<TaskOptionAffectedFiles>,
 
     pub cache: Option<bool>,
 

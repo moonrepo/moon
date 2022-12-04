@@ -693,7 +693,7 @@ options:
     //             });
     //         }
 
-    mod affected_files2 {
+    mod affected_files {
 
         #[test]
         #[should_panic(

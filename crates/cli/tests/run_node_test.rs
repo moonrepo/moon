@@ -1281,6 +1281,7 @@ mod affected_files {
         let output = assert.output();
 
         assert!(predicate::str::contains("Args: .\n").eval(&output));
+        assert!(predicate::str::contains("Env: .\n").eval(&output));
     }
 
     #[test]
@@ -1297,14 +1298,35 @@ mod affected_files {
         let output = assert.output();
 
         if cfg!(windows) {
-            assert!(predicate::str::contains("Args: .\\input1.js .\\input2.js").eval(&output));
+            assert!(predicate::str::contains("Args: .\\input1.js .\\input2.js\n").eval(&output));
+            assert!(predicate::str::contains("Env: .\\input1.js,.\\input2.js\n").eval(&output));
         } else {
-            assert!(predicate::str::contains("Args: ./input1.js ./input2.js").eval(&output));
+            assert!(predicate::str::contains("Args: ./input1.js ./input2.js\n").eval(&output));
+            assert!(predicate::str::contains("Env: ./input1.js,./input2.js\n").eval(&output));
         }
     }
 
     #[test]
-    fn sets_env_var() {
+    fn sets_args_only() {
+        let sandbox = node_sandbox();
+
+        sandbox.create_file("base/input1.js", "");
+        sandbox.create_file("base/input2.js", "");
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("node:affectedFilesArgs")
+                .arg("--affected");
+        });
+
+        let output = assert.output();
+
+        assert!(predicate::str::contains("Args: ./input1.js ./input2.js\n").eval(&output));
+        assert!(predicate::str::contains("Env: \n").eval(&output));
+    }
+
+    #[test]
+    fn sets_env_var_only() {
         let sandbox = node_sandbox();
 
         sandbox.create_file("base/input1.js", "");
@@ -1318,8 +1340,7 @@ mod affected_files {
 
         let output = assert.output();
 
-        assert!(
-            predicate::str::contains("MOON_AFFECTED_FILES=./input1.js,./input2.js").eval(&output)
-        );
+        assert!(predicate::str::contains("Args: \n").eval(&output));
+        assert!(predicate::str::contains("Env: ./input1.js,./input2.js\n").eval(&output));
     }
 }

@@ -60,13 +60,17 @@ tasks:
       - 'file.txt'
       - 'folder'
   affectedFiles:
-    command: bash ./args.sh
+    command: bash ./affectedFiles.sh
     options:
       affectedFiles: true
+  affectedFilesArgs:
+    command: bash ./affectedFiles.sh
+    options:
+      affectedFiles: 'args'
   affectedFilesEnvVar:
-    command: bash ./envVarsMoon.sh
+    command: bash ./affectedFiles.sh
     options:
-      affectedFiles: true
+      affectedFiles: 'env'
 
   # Misc
   foo:

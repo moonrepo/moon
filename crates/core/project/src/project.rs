@@ -1,12 +1,12 @@
 use crate::errors::ProjectError;
 use moon_config::{
     format_error_line, format_figment_errors, ConfigError, DependencyConfig, DependencyScope,
-    FilePath, GlobalProjectConfig, PlatformType, ProjectConfig, ProjectDependsOn, ProjectID,
-    ProjectLanguage, ProjectType, TaskConfig, TaskID,
+    FilePath, GlobalProjectConfig, ProjectConfig, ProjectDependsOn, ProjectID, ProjectLanguage,
+    ProjectType, TaskID,
 };
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_logger::{color, debug, trace, Logable};
-use moon_task::{FileGroup, ResolverData, Target, Task, TokenResolver, TouchedFilePaths};
+use moon_task::{FileGroup, Target, Task, TouchedFilePaths};
 use moon_utils::path;
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
@@ -370,42 +370,6 @@ impl Project {
         })
     }
 
-    // Expand deps, args, inputs, and outputs after all tasks have been created.
-    pub fn expand_tasks(
-        &mut self,
-        workspace_root: &Path,
-        implicit_deps: &[String],
-        implicit_inputs: &[String],
-    ) -> Result<(), ProjectError> {
-        let resolver_data =
-            ResolverData::new(&self.file_groups, workspace_root, &self.root, &self.config);
-        let depends_on = self.get_dependency_ids();
-
-        for task in self.tasks.values_mut() {
-            if matches!(task.platform, PlatformType::Unknown) {
-                task.platform = TaskConfig::detect_platform(&self.config, &task.command);
-            }
-
-            // Inherit implicits before resolving
-            task.deps.extend(Task::create_dep_targets(implicit_deps)?);
-            task.inputs.extend(implicit_inputs.iter().cloned());
-
-            // Resolve in order!
-            task.expand_env(&resolver_data)?;
-            task.expand_deps(&self.id, &depends_on)?;
-            task.expand_inputs(TokenResolver::for_inputs(&resolver_data))?;
-            task.expand_outputs(TokenResolver::for_outputs(&resolver_data))?;
-
-            // Must be last as it references inputs/outputs
-            task.expand_args(TokenResolver::for_args(&resolver_data))?;
-
-            // Finalize!
-            task.determine_type();
-        }
-
-        Ok(())
-    }
-
     /// Return a list of project IDs this project depends on.
     pub fn get_dependency_ids(&self) -> Vec<ProjectID> {
         let mut depends_on = self.dependencies.keys().cloned().collect::<Vec<String>>();
@@ -415,13 +379,9 @@ impl Project {
 
     /// Return a task with the defined ID.
     pub fn get_task(&self, task_id: &str) -> Result<&Task, ProjectError> {
-        match self.tasks.get(task_id) {
-            Some(t) => Ok(t),
-            None => Err(ProjectError::UnconfiguredTask(
-                task_id.to_owned(),
-                self.id.to_owned(),
-            )),
-        }
+        self.tasks
+            .get(task_id)
+            .ok_or_else(|| ProjectError::UnconfiguredTask(task_id.to_owned(), self.id.to_owned()))
     }
 
     /// Return true if this project is affected based on touched files.

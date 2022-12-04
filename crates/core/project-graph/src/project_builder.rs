@@ -1,14 +1,16 @@
 use crate::project_graph::{GraphType, IndicesType, ProjectGraph, LOG_TARGET};
+use crate::task_expander::TaskExpander;
 use moon_cache::CacheEngine;
 use moon_config::{
-    GlobalProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceConfig, WorkspaceProjects,
+    GlobalProjectConfig, PlatformType, ProjectsAliasesMap, ProjectsSourcesMap, TaskConfig,
+    WorkspaceConfig, WorkspaceProjects,
 };
 use moon_logger::{color, debug, map_list, trace};
 use moon_platform::PlatformManager;
 use moon_project::{
     detect_projects_with_globs, Project, ProjectDependency, ProjectDependencySource, ProjectError,
 };
-use moon_task::{Target, Task};
+use moon_task::{ResolverData, Target, Task};
 use petgraph::graph::{DiGraph, NodeIndex};
 use rustc_hash::FxHashMap;
 use std::mem;
@@ -133,14 +135,49 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             }
         }
 
-        // Expand all tasks for the project (this must happen last)
-        project.expand_tasks(
-            self.workspace_root,
-            &self.workspace_config.runner.implicit_deps,
-            &self.workspace_config.runner.implicit_inputs,
-        )?;
-
         Ok(project)
+    }
+
+    fn expand_tasks(&mut self, index: &NodeIndex) -> Result<(), ProjectError> {
+        let project = self.graph.node_weight_mut(*index).unwrap();
+        let mut dep_projects = FxHashMap::default();
+
+        // Find all dependent projects
+        for dep_id in project.dependencies.keys() {
+            dep_projects.insert(dep_id.to_owned(), self.load(&dep_id).unwrap());
+        }
+
+        // Expand all tasks and resolve tokens
+        let resolver_data = ResolverData::new(
+            &project.file_groups,
+            &self.workspace_root,
+            &project.root,
+            &project.config,
+        );
+        let task_expander = TaskExpander::new(&resolver_data);
+
+        for task in project.tasks.values_mut() {
+            // Inherit implicits before resolving
+            task.deps.extend(Task::create_dep_targets(
+                &self.workspace_config.runner.implicit_deps,
+            )?);
+
+            task.inputs
+                .extend(self.workspace_config.runner.implicit_inputs.iter().cloned());
+
+            // Resolve in this order!
+            task_expander.expand_env(task)?;
+            task_expander.expand_deps(task, &project.id, &dep_projects)?;
+            task_expander.expand_inputs(task)?;
+            task_expander.expand_outputs(task)?;
+            task_expander.expand_args(task)?;
+
+            if matches!(task.platform, PlatformType::Unknown) {
+                task.platform = TaskConfig::detect_platform(&project.config, &task.command);
+            }
+        }
+
+        Ok(())
     }
 
     fn internal_load(&mut self, alias_or_id: &str) -> Result<NodeIndex, ProjectError> {
@@ -172,27 +209,32 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         };
 
         let project = self.create_project(id, source)?;
-        let depends_on = project.get_dependency_ids();
 
         // Insert the project into the graph
         let node_index = self.graph.add_node(project);
 
         self.indices.insert(id.to_owned(), node_index);
 
-        if !depends_on.is_empty() {
-            trace!(
-                target: LOG_TARGET,
-                "Adding dependencies {} to project {}",
-                map_list(&depends_on, |d| color::symbol(d)),
-                color::id(id),
-            );
+        // Create dependent projects
+        let depends_on = project.dependencies.keys();
+
+        if depends_on.len() > 0 {
+            // trace!(
+            //     target: LOG_TARGET,
+            //     "Adding dependencies {} to project {}",
+            //     map_list(&depends_on, |d| color::symbol(d)),
+            //     color::id(id),
+            // );
 
             for dep_id in depends_on {
-                let dep_index = self.internal_load(dep_id.as_str())?;
+                let dep_index = self.internal_load(dep_id)?;
 
                 self.graph.add_edge(node_index, dep_index, ());
             }
         }
+
+        // Expand tasks for the new project
+        self.expand_tasks(&node_index)?;
 
         Ok(node_index)
     }

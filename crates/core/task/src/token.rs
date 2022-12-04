@@ -307,12 +307,10 @@ impl<'a> TokenResolver<'a> {
         let mut globs: Vec<String> = vec![];
         let file_groups = self.data.file_groups;
 
-        let get_file_group = |token: &str, id: &str| match file_groups.get(id) {
-            Some(fg) => Ok(fg),
-            None => Err(TokenError::UnknownFileGroup(
-                token.to_owned(),
-                id.to_owned(),
-            )),
+        let get_file_group = |token: &str, id: &str| {
+            file_groups
+                .get(id)
+                .ok_or_else(|| TokenError::UnknownFileGroup(token.to_owned(), id.to_owned()))
         };
 
         let workspace_root = self.data.workspace_root;

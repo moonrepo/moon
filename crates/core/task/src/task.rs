@@ -1,10 +1,11 @@
 use crate::errors::{TargetError, TaskError};
 use crate::target::{Target, TargetProjectScope};
+use crate::task_options::TaskOptions;
 use crate::token::{ResolverData, TokenResolver};
 use crate::types::{EnvVars, TouchedFilePaths};
 use moon_config::{
     FileGlob, FilePath, InputValue, PlatformType, ProjectID, TaskCommandArgs, TaskConfig,
-    TaskMergeStrategy, TaskOptionEnvFile, TaskOptionsConfig, TaskOutputStyle,
+    TaskMergeStrategy,
 };
 use moon_logger::{color, debug, trace, Logable};
 use moon_utils::{glob, is_ci, path, regex::ENV_VAR, string_vec};
@@ -26,149 +27,6 @@ pub enum TaskType {
     #[default]
     #[strum(serialize = "test")]
     Test,
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TaskOptions {
-    pub affected_files: bool,
-
-    pub cache: bool,
-
-    pub env_file: Option<String>,
-
-    pub merge_args: TaskMergeStrategy,
-
-    pub merge_deps: TaskMergeStrategy,
-
-    pub merge_env: TaskMergeStrategy,
-
-    pub merge_inputs: TaskMergeStrategy,
-
-    pub merge_outputs: TaskMergeStrategy,
-
-    pub output_style: Option<TaskOutputStyle>,
-
-    pub retry_count: u8,
-
-    pub run_deps_in_parallel: bool,
-
-    pub run_in_ci: bool,
-
-    pub run_from_workspace_root: bool,
-}
-
-impl Default for TaskOptions {
-    fn default() -> Self {
-        TaskOptions {
-            affected_files: false,
-            cache: true,
-            env_file: None,
-            merge_args: TaskMergeStrategy::Append,
-            merge_deps: TaskMergeStrategy::Append,
-            merge_env: TaskMergeStrategy::Append,
-            merge_inputs: TaskMergeStrategy::Append,
-            merge_outputs: TaskMergeStrategy::Append,
-            output_style: None,
-            retry_count: 0,
-            run_deps_in_parallel: true,
-            run_in_ci: true,
-            run_from_workspace_root: false,
-        }
-    }
-}
-
-impl TaskOptions {
-    pub fn merge(&mut self, config: &TaskOptionsConfig) {
-        if let Some(affected_files) = &config.affected_files {
-            self.affected_files = *affected_files;
-        }
-
-        if let Some(env_file) = &config.env_file {
-            self.env_file = env_file.to_option();
-        }
-
-        if let Some(merge_args) = &config.merge_args {
-            self.merge_args = merge_args.clone();
-        }
-
-        if let Some(merge_deps) = &config.merge_deps {
-            self.merge_deps = merge_deps.clone();
-        }
-
-        if let Some(merge_env) = &config.merge_env {
-            self.merge_env = merge_env.clone();
-        }
-
-        if let Some(merge_inputs) = &config.merge_inputs {
-            self.merge_inputs = merge_inputs.clone();
-        }
-
-        if let Some(merge_outputs) = &config.merge_outputs {
-            self.merge_outputs = merge_outputs.clone();
-        }
-
-        if let Some(output_style) = &config.output_style {
-            self.output_style = Some(output_style.clone());
-        }
-
-        if let Some(retry_count) = &config.retry_count {
-            self.retry_count = *retry_count;
-        }
-
-        if let Some(run_deps_in_parallel) = &config.run_deps_in_parallel {
-            self.run_deps_in_parallel = *run_deps_in_parallel;
-        }
-
-        if let Some(run_in_ci) = &config.run_in_ci {
-            self.run_in_ci = *run_in_ci;
-        }
-
-        if let Some(run_from_workspace_root) = &config.run_from_workspace_root {
-            self.run_from_workspace_root = *run_from_workspace_root;
-        }
-    }
-
-    pub fn to_config(&self) -> TaskOptionsConfig {
-        let default_options = TaskOptions::default();
-        let mut config = TaskOptionsConfig::default();
-
-        // Skip merge options until we need them
-
-        if self.affected_files != default_options.affected_files {
-            config.affected_files = Some(self.affected_files);
-        }
-
-        if let Some(env_file) = &self.env_file {
-            config.env_file = Some(if env_file == ".env" {
-                TaskOptionEnvFile::Enabled(true)
-            } else {
-                TaskOptionEnvFile::File(env_file.clone())
-            });
-        }
-
-        if let Some(output_style) = &self.output_style {
-            config.output_style = Some(output_style.clone());
-        }
-
-        if self.run_deps_in_parallel != default_options.run_deps_in_parallel {
-            config.run_deps_in_parallel = Some(self.run_deps_in_parallel);
-        }
-
-        if self.retry_count != default_options.retry_count {
-            config.retry_count = Some(self.retry_count);
-        }
-
-        if self.run_in_ci != default_options.run_in_ci {
-            config.run_in_ci = Some(self.run_in_ci);
-        }
-
-        if self.run_from_workspace_root != default_options.run_from_workspace_root {
-            config.run_from_workspace_root = Some(self.run_from_workspace_root);
-        }
-
-        config
-    }
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
@@ -244,25 +102,7 @@ impl Task {
             input_globs: FxHashSet::default(),
             input_paths: FxHashSet::default(),
             log_target,
-            options: TaskOptions {
-                affected_files: cloned_options.affected_files.unwrap_or_default(),
-                cache: cloned_options.cache.unwrap_or(!is_local),
-                env_file: cloned_options
-                    .env_file
-                    .map(|env_file| env_file.to_option().unwrap()),
-                merge_args: cloned_options.merge_args.unwrap_or_default(),
-                merge_deps: cloned_options.merge_deps.unwrap_or_default(),
-                merge_env: cloned_options.merge_env.unwrap_or_default(),
-                merge_inputs: cloned_options.merge_inputs.unwrap_or_default(),
-                merge_outputs: cloned_options.merge_outputs.unwrap_or_default(),
-                output_style: cloned_options
-                    .output_style
-                    .or_else(|| is_local.then_some(TaskOutputStyle::Stream)),
-                retry_count: cloned_options.retry_count.unwrap_or_default(),
-                run_deps_in_parallel: cloned_options.run_deps_in_parallel.unwrap_or(true),
-                run_in_ci: cloned_options.run_in_ci.unwrap_or(!is_local),
-                run_from_workspace_root: cloned_options.run_from_workspace_root.unwrap_or_default(),
-            },
+            options: TaskOptions::from_config(cloned_options, is_local),
             outputs: cloned_config.outputs.unwrap_or_default(),
             output_paths: FxHashSet::default(),
             platform: cloned_config.platform,

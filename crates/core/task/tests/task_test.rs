@@ -1,4 +1,4 @@
-use moon_config::{TaskCommandArgs, TaskConfig, TaskOptionEnvFile, TaskOptionsConfig};
+use moon_config::{TaskCommandArgs, TaskConfig, TaskOptionEnvFileConfig, TaskOptionsConfig};
 use moon_task::test::create_expanded_task;
 use moon_task::{Target, Task, TaskOptions};
 use moon_test_utils::{create_sandbox, get_fixtures_path};
@@ -38,7 +38,7 @@ mod from_config {
         assert_eq!(
             task.options,
             TaskOptions {
-                affected_files: false,
+                affected_files: None,
                 cache: true,
                 env_file: None,
                 merge_args: TaskMergeStrategy::Append,
@@ -131,7 +131,7 @@ mod from_config {
             Target::new("foo", "test").unwrap(),
             &TaskConfig {
                 options: TaskOptionsConfig {
-                    env_file: Some(TaskOptionEnvFile::Enabled(true)),
+                    env_file: Some(TaskOptionEnvFileConfig::Enabled(true)),
                     ..TaskOptionsConfig::default()
                 },
                 ..TaskConfig::default()
@@ -512,7 +512,7 @@ mod is_affected {
             &project_root,
             Some(TaskConfig {
                 options: TaskOptionsConfig {
-                    env_file: Some(TaskOptionEnvFile::Enabled(true)),
+                    env_file: Some(TaskOptionEnvFileConfig::Enabled(true)),
                     ..TaskOptionsConfig::default()
                 },
                 ..TaskConfig::default()
@@ -543,7 +543,7 @@ mod expand_env {
             &project_root,
             Some(TaskConfig {
                 options: TaskOptionsConfig {
-                    env_file: Some(TaskOptionEnvFile::Enabled(true)),
+                    env_file: Some(TaskOptionEnvFileConfig::Enabled(true)),
                     ..TaskOptionsConfig::default()
                 },
                 ..TaskConfig::default()
@@ -569,7 +569,7 @@ mod expand_env {
                 &project_root,
                 Some(TaskConfig {
                     options: TaskOptionsConfig {
-                        env_file: Some(TaskOptionEnvFile::Enabled(true)),
+                        env_file: Some(TaskOptionEnvFileConfig::Enabled(true)),
                         ..TaskOptionsConfig::default()
                     },
                     ..TaskConfig::default()
@@ -591,7 +591,7 @@ mod expand_env {
             &project_root,
             Some(TaskConfig {
                 options: TaskOptionsConfig {
-                    env_file: Some(TaskOptionEnvFile::Enabled(true)),
+                    env_file: Some(TaskOptionEnvFileConfig::Enabled(true)),
                     ..TaskOptionsConfig::default()
                 },
                 ..TaskConfig::default()
@@ -623,7 +623,7 @@ mod expand_env {
             &project_root,
             Some(TaskConfig {
                 options: TaskOptionsConfig {
-                    env_file: Some(TaskOptionEnvFile::File(".env.production".to_owned())),
+                    env_file: Some(TaskOptionEnvFileConfig::File(".env.production".to_owned())),
                     ..TaskOptionsConfig::default()
                 },
                 ..TaskConfig::default()
@@ -661,7 +661,7 @@ mod expand_env {
                     "original".to_owned(),
                 )])),
                 options: TaskOptionsConfig {
-                    env_file: Some(TaskOptionEnvFile::Enabled(true)),
+                    env_file: Some(TaskOptionEnvFileConfig::Enabled(true)),
                     ..TaskOptionsConfig::default()
                 },
                 ..TaskConfig::default()

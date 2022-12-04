@@ -12,7 +12,9 @@ use moon_project::Project;
 use moon_project_graph::ProjectGraph;
 use moon_runner_context::RunnerContext;
 use moon_system_platform::actions as system_actions;
-use moon_task::{Target, TargetError, TargetProjectScope, Task, TaskError};
+use moon_task::{
+    Target, TargetError, TargetProjectScope, Task, TaskError, TaskOptionAffectedFiles,
+};
 use moon_terminal::label_checkpoint;
 use moon_terminal::Checkpoint;
 use moon_utils::{
@@ -263,30 +265,43 @@ impl<'a> TargetRunner<'a> {
         }
 
         // Affected files (must be last args)
-        if self.task.options.affected_files {
-            if context.affected_only {
-                let mut affected_files = self
-                    .task
-                    .get_affected_files(&context.touched_files, &self.project.root)?;
+        if let Some(check_affected) = &self.task.options.affected_files {
+            let mut affected_files = if context.affected_only {
+                self.task
+                    .get_affected_files(&context.touched_files, &self.project.root)?
+            } else {
+                Vec::with_capacity(0)
+            };
 
-                if affected_files.is_empty() {
-                    command.arg_if_missing(".");
-                } else {
-                    affected_files.sort();
+            affected_files.sort();
 
-                    command.env(
-                        "MOON_AFFECTED_FILES",
+            if matches!(
+                check_affected,
+                TaskOptionAffectedFiles::Env | TaskOptionAffectedFiles::Both
+            ) {
+                command.env(
+                    "MOON_AFFECTED_FILES",
+                    if affected_files.is_empty() {
+                        ".".into()
+                    } else {
                         affected_files
                             .iter()
                             .map(|f| f.to_string_lossy())
                             .collect::<Vec<_>>()
-                            .join(","),
-                    );
+                            .join(",")
+                    },
+                );
+            }
 
+            if matches!(
+                check_affected,
+                TaskOptionAffectedFiles::Args | TaskOptionAffectedFiles::Both
+            ) {
+                if affected_files.is_empty() {
+                    command.arg_if_missing(".");
+                } else {
                     command.args(affected_files);
                 }
-            } else {
-                command.arg_if_missing(".");
             }
         }
 

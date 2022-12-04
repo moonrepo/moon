@@ -3,8 +3,8 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use validator::{Validate, ValidationError};
 
-fn validate_affected_files(file: &TaskOptionAffectedFiles) -> Result<(), ValidationError> {
-    if let TaskOptionAffectedFiles::Value(value) = file {
+fn validate_affected_files(file: &TaskOptionAffectedFilesConfig) -> Result<(), ValidationError> {
+    if let TaskOptionAffectedFilesConfig::Value(value) = file {
         if value != "args" && value != "env" {
             return Err(create_validation_error(
                 "invalid_value",
@@ -17,8 +17,8 @@ fn validate_affected_files(file: &TaskOptionAffectedFiles) -> Result<(), Validat
     Ok(())
 }
 
-fn validate_env_file(file: &TaskOptionEnvFile) -> Result<(), ValidationError> {
-    if let TaskOptionEnvFile::File(path) = file {
+fn validate_env_file(file: &TaskOptionEnvFileConfig) -> Result<(), ValidationError> {
+    if let TaskOptionEnvFileConfig::File(path) = file {
         validate_child_relative_path("options.envFile", path)?;
     }
 
@@ -27,7 +27,7 @@ fn validate_env_file(file: &TaskOptionEnvFile) -> Result<(), ValidationError> {
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
 #[serde(untagged, expecting = "expected `args`, `env`, or a boolean")]
-pub enum TaskOptionAffectedFiles {
+pub enum TaskOptionAffectedFilesConfig {
     Enabled(bool),
     Value(String),
 }
@@ -37,17 +37,17 @@ pub enum TaskOptionAffectedFiles {
     untagged,
     expecting = "expected a boolean or a relative file system path"
 )]
-pub enum TaskOptionEnvFile {
+pub enum TaskOptionEnvFileConfig {
     Enabled(bool),
     File(String),
 }
 
-impl TaskOptionEnvFile {
+impl TaskOptionEnvFileConfig {
     pub fn to_option(&self) -> Option<String> {
         match self {
-            TaskOptionEnvFile::Enabled(true) => Some(".env".to_owned()),
-            TaskOptionEnvFile::Enabled(false) => None,
-            TaskOptionEnvFile::File(path) => Some(path.to_owned()),
+            TaskOptionEnvFileConfig::Enabled(true) => Some(".env".to_owned()),
+            TaskOptionEnvFileConfig::Enabled(false) => None,
+            TaskOptionEnvFileConfig::File(path) => Some(path.to_owned()),
         }
     }
 }
@@ -76,12 +76,12 @@ pub enum TaskOutputStyle {
 #[serde(default, rename_all = "camelCase")]
 pub struct TaskOptionsConfig {
     #[validate(custom = "validate_affected_files")]
-    pub affected_files: Option<TaskOptionAffectedFiles>,
+    pub affected_files: Option<TaskOptionAffectedFilesConfig>,
 
     pub cache: Option<bool>,
 
     #[validate(custom = "validate_env_file")]
-    pub env_file: Option<TaskOptionEnvFile>,
+    pub env_file: Option<TaskOptionEnvFileConfig>,
 
     pub merge_args: Option<TaskMergeStrategy>,
 

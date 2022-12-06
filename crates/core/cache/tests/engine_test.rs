@@ -155,6 +155,30 @@ mod cache_run_target_state {
 
     #[test]
     #[serial]
+    fn doesnt_load_if_it_exists_but_cache_is_writeonly() {
+        let dir = create_temp_dir();
+
+        dir.child(".moon/cache/states/foo/bar/lastRun.json")
+                .write_str(r#"{"exitCode":123,"hash":"","lastRunTime":0,"stderr":"","stdout":"","target":"foo:bar"}"#)
+                .unwrap();
+
+        let cache = CacheEngine::load(dir.path()).unwrap();
+        let item = run_with_env("write", || cache.cache_run_target_state("foo:bar")).unwrap();
+
+        assert_eq!(
+            item,
+            RunTargetState {
+                target: String::from("foo:bar"),
+                path: dir.path().join(".moon/cache/states/foo/bar/lastRun.json"),
+                ..RunTargetState::default()
+            }
+        );
+
+        dir.close().unwrap();
+    }
+
+    #[test]
+    #[serial]
     fn saves_to_cache() {
         let dir = create_temp_dir();
         let cache = CacheEngine::load(dir.path()).unwrap();
@@ -163,6 +187,25 @@ mod cache_run_target_state {
         item.exit_code = 123;
 
         run_with_env("", || item.save()).unwrap();
+
+        assert_eq!(
+            fs::read_to_string(item.path).unwrap(),
+            r#"{"exitCode":123,"hash":"","lastRunTime":0,"target":"foo:bar"}"#
+        );
+
+        dir.close().unwrap();
+    }
+
+    #[test]
+    #[serial]
+    fn saves_to_cache_if_writeonly() {
+        let dir = create_temp_dir();
+        let cache = CacheEngine::load(dir.path()).unwrap();
+        let mut item = cache.cache_run_target_state("foo:bar").unwrap();
+
+        item.exit_code = 123;
+
+        run_with_env("write", || item.save()).unwrap();
 
         assert_eq!(
             fs::read_to_string(item.path).unwrap(),

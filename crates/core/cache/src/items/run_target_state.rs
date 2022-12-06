@@ -1,5 +1,5 @@
 use crate::cache_item;
-use crate::helpers::get_cache_level;
+use crate::helpers::get_cache_mode;
 use moon_archive::{untar_with_diff, TarArchiver, TreeDiffer};
 use moon_error::MoonError;
 use moon_logger::{color, trace};
@@ -31,7 +31,7 @@ impl RunTargetState {
         input_root: &Path,
         outputs: &[String],
     ) -> Result<bool, MoonError> {
-        if get_cache_level().is_writable() && !archive_file.exists() {
+        if get_cache_mode().is_writable() && !archive_file.exists() {
             let mut tar = TarArchiver::new(input_root, archive_file);
 
             // Outputs are relative from project root (the input)
@@ -66,7 +66,7 @@ impl RunTargetState {
         project_root: &Path,
         outputs: &[String],
     ) -> Result<bool, MoonError> {
-        if get_cache_level().is_readable() && archive_file.exists() {
+        if get_cache_mode().is_readable() && archive_file.exists() {
             let mut differ = TreeDiffer::load(project_root, outputs)?;
 
             untar_with_diff(&mut differ, archive_file, project_root, None)

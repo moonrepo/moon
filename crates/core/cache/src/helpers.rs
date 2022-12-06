@@ -5,20 +5,20 @@ pub const LOG_TARGET: &str = "moon:cache";
 
 static mut LOGGED_WARNING: bool = false;
 
-pub enum CacheLevel {
+pub enum CacheMode {
     Off,
     Read,
     ReadWrite,
     Write,
 }
 
-impl From<String> for CacheLevel {
+impl From<String> for CacheMode {
     fn from(value: String) -> Self {
         match value.to_lowercase().as_str() {
-            "off" => CacheLevel::Off,
-            "read" => CacheLevel::Read,
-            "read-write" => CacheLevel::ReadWrite,
-            "write" => CacheLevel::Write,
+            "off" => CacheMode::Off,
+            "read" => CacheMode::Read,
+            "read-write" => CacheMode::ReadWrite,
+            "write" => CacheMode::Write,
             val => {
                 // We only want to show this once, not everytime the function is called
                 unsafe {
@@ -33,26 +33,34 @@ impl From<String> for CacheLevel {
                     }
                 }
 
-                CacheLevel::ReadWrite
+                CacheMode::ReadWrite
             }
         }
     }
 }
 
-impl CacheLevel {
+impl CacheMode {
     pub fn is_readable(&self) -> bool {
-        matches!(&self, CacheLevel::Read | CacheLevel::ReadWrite)
+        matches!(&self, CacheMode::Read | CacheMode::ReadWrite)
+    }
+
+    pub fn is_read_only(&self) -> bool {
+        matches!(&self, CacheMode::Read)
     }
 
     pub fn is_writable(&self) -> bool {
-        matches!(&self, CacheLevel::Write | CacheLevel::ReadWrite)
+        matches!(&self, CacheMode::Write | CacheMode::ReadWrite)
+    }
+
+    pub fn is_write_only(&self) -> bool {
+        matches!(&self, CacheMode::Write)
     }
 }
 
-pub fn get_cache_level() -> CacheLevel {
+pub fn get_cache_mode() -> CacheMode {
     if let Ok(var) = env::var("MOON_CACHE") {
-        return CacheLevel::from(var);
+        return CacheMode::from(var);
     }
 
-    CacheLevel::ReadWrite
+    CacheMode::ReadWrite
 }

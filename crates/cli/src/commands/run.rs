@@ -74,7 +74,7 @@ pub async fn run_target(
                 println!(
                     "Target(s) {} not affected by touched files (using status {})",
                     targets_list,
-                    color::symbol(&options.status.to_string().to_lowercase())
+                    color::symbol(&options.status.to_string())
                 );
             }
         } else {

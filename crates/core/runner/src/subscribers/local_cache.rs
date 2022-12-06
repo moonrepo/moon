@@ -1,4 +1,4 @@
-use moon_cache::get_cache_level;
+use moon_cache::get_cache_mode;
 use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_error::MoonError;
 use moon_utils::path;
@@ -30,7 +30,7 @@ impl Subscriber for LocalCacheSubscriber {
             // Check to see if a build with the provided hash has been cached locally.
             // We only check for the archive, as the manifest is purely for local debugging!
             Event::TargetOutputCacheCheck { hash, .. } => {
-                if get_cache_level().is_readable()
+                if get_cache_mode().is_readable()
                     && workspace.cache.get_hash_archive_path(hash).exists()
                 {
                     return Ok(EventFlow::Return("local-cache".into()));

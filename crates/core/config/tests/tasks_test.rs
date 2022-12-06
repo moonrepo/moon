@@ -587,6 +587,8 @@ platform: whatisthis
 }
 
 mod options {
+    use super::*;
+
     #[test]
     #[should_panic(
         expected = "invalid type: found unsigned int `123`, expected struct TaskOptionsConfig for key \"default.options\""
@@ -690,4 +692,121 @@ options:
     //                 Ok(())
     //             });
     //         }
+
+    mod affected_files {
+
+        #[test]
+        #[should_panic(
+            expected = "expected `args`, `env`, or a boolean for key \"default.options.affectedFiles\""
+        )]
+        fn invalid_type() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::CONFIG_FILENAME,
+                    r#"
+command: foo
+options:
+    affectedFiles: 123
+"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "expected `args`, `env`, or a boolean for key \"default.options.affectedFiles\""
+        )]
+        fn invalid_value() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::CONFIG_FILENAME,
+                    r#"
+command: foo
+options:
+    affectedFiles: unknown
+"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        fn supports_bool_true() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::CONFIG_FILENAME,
+                    r#"
+command: foo
+options:
+    affectedFiles: true
+"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        fn supports_bool_false() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::CONFIG_FILENAME,
+                    r#"
+command: foo
+options:
+    affectedFiles: false
+"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        fn supports_args() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::CONFIG_FILENAME,
+                    r#"
+command: foo
+options:
+    affectedFiles: args
+"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+
+        #[test]
+        fn supports_env() {
+            figment::Jail::expect_with(|jail| {
+                jail.create_file(
+                    super::CONFIG_FILENAME,
+                    r#"
+command: foo
+options:
+    affectedFiles: env
+"#,
+                )?;
+
+                super::load_jailed_config()?;
+
+                Ok(())
+            });
+        }
+    }
 }

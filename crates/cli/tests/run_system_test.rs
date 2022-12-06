@@ -266,6 +266,7 @@ mod unix {
             let output = assert.output();
 
             assert!(predicate::str::contains("Args: .\n").eval(&output));
+            assert!(predicate::str::contains("Env: .\n").eval(&output));
         }
 
         #[test]
@@ -281,10 +282,29 @@ mod unix {
             let output = assert.output();
 
             assert!(predicate::str::contains("Args: ./input1.txt ./input2.txt").eval(&output));
+            assert!(predicate::str::contains("Env: ./input1.txt,./input2.txt").eval(&output));
         }
 
         #[test]
-        fn sets_env_var() {
+        fn sets_args_only() {
+            let sandbox = system_sandbox();
+
+            sandbox.create_file("unix/input1.txt", "");
+            sandbox.create_file("unix/input2.txt", "");
+
+            let assert = sandbox.run_moon(|cmd| {
+                cmd.arg("run")
+                    .arg("unix:affectedFilesArgs")
+                    .arg("--affected");
+            });
+            let output = assert.output();
+
+            assert!(predicate::str::contains("Args: ./input1.txt ./input2.txt\n").eval(&output));
+            assert!(predicate::str::contains("Env: \n").eval(&output));
+        }
+
+        #[test]
+        fn sets_env_var_only() {
             let sandbox = system_sandbox();
 
             sandbox.create_file("unix/input1.txt", "");
@@ -297,10 +317,8 @@ mod unix {
             });
             let output = assert.output();
 
-            assert!(
-                predicate::str::contains("MOON_AFFECTED_FILES=./input1.txt,./input2.txt")
-                    .eval(&output)
-            );
+            assert!(predicate::str::contains("Args: \n").eval(&output));
+            assert!(predicate::str::contains("Env: ./input1.txt,./input2.txt\n").eval(&output));
         }
     }
 }

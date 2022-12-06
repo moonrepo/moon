@@ -1,6 +1,7 @@
 use crate::helpers::LOG_TARGET;
 use crate::items::{DependenciesState, ProjectsState, RunTargetState, ToolState};
 use crate::runfiles::Runfile;
+use crate::{get_cache_mode, CacheMode};
 use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_logger::{color, debug, trace};
@@ -179,6 +180,10 @@ impl CacheEngine {
 
     pub fn get_hash_manifest_path(&self, hash: &str) -> PathBuf {
         self.hashes_dir.join(format!("{}.json", hash))
+    }
+
+    pub fn get_mode(&self) -> CacheMode {
+        get_cache_mode()
     }
 
     pub fn get_target_dir<T: AsRef<str>>(&self, target_id: T) -> PathBuf {

@@ -104,10 +104,16 @@ pub async fn install_deps(
 ) -> Result<ActionStatus, WorkspaceError> {
     let workspace = workspace.read().await;
     let context = context.read().await;
-    let node = workspace.toolchain.node.get_for_runtime(runtime)?;
-    let pm = node.get_package_manager();
-    let lock_filename = pm.get_lock_filename();
-    let manifest_filename = pm.get_manifest_filename();
+
+    // When cache is write only, avoid install as user is typically force overwriting cache
+    if workspace.cache.get_mode().is_write_only() {
+        debug!(
+            target: LOG_TARGET,
+            "Force overwriting cache, skipping install",
+        );
+
+        return Ok(ActionStatus::Skipped);
+    }
 
     // When running against affected files, avoid install as it interrupts the workflow
     if context.affected_only {
@@ -118,6 +124,11 @@ pub async fn install_deps(
 
         return Ok(ActionStatus::Skipped);
     }
+
+    let node = workspace.toolchain.node.get_for_runtime(runtime)?;
+    let pm = node.get_package_manager();
+    let lock_filename = pm.get_lock_filename();
+    let manifest_filename = pm.get_manifest_filename();
 
     // Determine the working directory and whether lockfiles and manifests have been modified
     let working_dir;

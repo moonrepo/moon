@@ -131,6 +131,31 @@ mod cache_run_target_state {
 
     #[test]
     #[serial]
+    fn loads_cache_if_it_exists_and_cache_is_readwrite() {
+        let dir = create_temp_dir();
+
+        dir.child(".moon/cache/states/foo/bar/lastRun.json")
+                .write_str(r#"{"exitCode":123,"hash":"","lastRunTime":0,"stderr":"","stdout":"","target":"foo:bar"}"#)
+                .unwrap();
+
+        let cache = CacheEngine::load(dir.path()).unwrap();
+        let item = run_with_env("read", || cache.cache_run_target_state("foo:bar")).unwrap();
+
+        assert_eq!(
+            item,
+            RunTargetState {
+                exit_code: 123,
+                target: String::from("foo:bar"),
+                path: dir.path().join(".moon/cache/states/foo/bar/lastRun.json"),
+                ..RunTargetState::default()
+            }
+        );
+
+        dir.close().unwrap();
+    }
+
+    #[test]
+    #[serial]
     fn doesnt_load_if_it_exists_but_cache_is_off() {
         let dir = create_temp_dir();
 

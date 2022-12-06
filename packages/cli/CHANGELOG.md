@@ -15,6 +15,8 @@
 ##### Runner
 
 - Added `args` and `env` as valid values for the `options.affectedFiles` task option.
+- Added a new cache level, `read-write`, that can be passed to `--cache` or `MOON_CACHE`. This is
+  now the default level, while `write` is a write-only level.
 
 ## 0.20.2
 

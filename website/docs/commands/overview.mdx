@@ -25,7 +25,8 @@ option, or the `MOON_CACHE` environment variable, both of which accept one of th
 
 - `off` - Turn off caching entirely. Every task will run fresh, including dependency installs.
 - `read` - Read existing items from the cache, but do not write to them.
-- `write` (default) - Read and write items to the cache.
+- `read-write` (default) - Read and write items to the cache.
+- `write` - Do not read existing cache item, but write items to the cache.
 
 ```shell
 $ moon --cache off run app:build

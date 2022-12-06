@@ -1,5 +1,5 @@
 use crate::cache_item;
-use crate::helpers::{is_readable, is_writable};
+use crate::helpers::get_cache_level;
 use moon_error::MoonError;
 use moon_logger::{color, trace};
 use moon_utils::{fs, json, time};

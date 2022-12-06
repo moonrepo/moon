@@ -1,4 +1,4 @@
-use crate::helpers::{is_writable, LOG_TARGET};
+use crate::helpers::LOG_TARGET;
 use crate::items::{DependenciesState, ProjectsState, RunTargetState, ToolState};
 use crate::runfiles::Runfile;
 use moon_constants::CONFIG_DIRNAME;
@@ -142,17 +142,15 @@ impl CacheEngine {
     where
         T: ?Sized + Serialize,
     {
-        if is_writable() {
-            let path = self.get_hash_manifest_path(hash);
+        let path = self.get_hash_manifest_path(hash);
 
-            trace!(
-                target: LOG_TARGET,
-                "Writing hash manifest {}",
-                color::path(&path)
-            );
+        trace!(
+            target: LOG_TARGET,
+            "Writing hash manifest {}",
+            color::path(&path)
+        );
 
-            json::write(&path, &hasher, true)?;
-        }
+        json::write(&path, &hasher, true)?;
 
         Ok(())
     }

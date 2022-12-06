@@ -7,6 +7,7 @@ pub enum CacheMode {
     Off,
     Read,
     #[default]
+    ReadWrite,
     Write,
 }
 

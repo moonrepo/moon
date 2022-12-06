@@ -429,8 +429,9 @@ tasks:
 
 When enabled and the [`--affected` option](../run-task#running-based-on-affected-files-only) is
 provided, all affected files that match this task's [`inputs`](#inputs) will be passed as relative
-paths via command line arguments. If there are no affected files, an argument of `.` (current
-directory) will be passed instead.
+file paths as command line arguments, and as a `MOON_AFFECTED_FILES` environment variable. If there
+are no affected files, `.` (current directory) will be passed instead for arguments, and an empty
+value for the environment variable.
 
 ```yaml title="moon.yml" {6}
 tasks:
@@ -438,10 +439,11 @@ tasks:
     command: 'eslint'
     options:
       affectedFiles: true
+      # Only pass args
+      affectedFiles: 'args'
+      # Only set env var
+      affectedFiles: 'env'
 ```
-
-The list of files will also be passed as a comma separated list in the `MOON_AFFECTED_FILES`
-environment variable.
 
 :::caution
 

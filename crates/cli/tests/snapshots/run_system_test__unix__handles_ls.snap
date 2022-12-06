@@ -1,9 +1,10 @@
 ---
 source: crates/cli/tests/run_system_test.rs
-assertion_line: 33
-expression: get_assert_output(&assert)
+assertion_line: 51
+expression: assert.output()
 ---
 ▪▪▪▪ unix:ls
+affectedFiles.sh
 args.sh
 cwd.sh
 envVars.sh

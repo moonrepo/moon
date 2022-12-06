@@ -65,10 +65,14 @@ tasks:
     command: node
     args: ./binExecArgs.js
   affectedFiles:
-    command: node ./args.js
+    command: node ./affectedFiles.js
     options:
       affectedFiles: true
+  affectedFilesArgs:
+    command: node ./affectedFiles.js
+    options:
+      affectedFiles: 'args'
   affectedFilesEnvVar:
-    command: node ./envVarsMoon.js
+    command: node ./affectedFiles.js
     options:
-      affectedFiles: true
+      affectedFiles: 'env'

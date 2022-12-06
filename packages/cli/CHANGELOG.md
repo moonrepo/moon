@@ -5,12 +5,16 @@
 #### 🚀 Updates
 
 - We've rewritten our project graph to use eager-loading instead of lazy-loading to improve
-  performance, and to avoid mutating borrowed data across threads in Rust. We're no longer cloning
-  project information unnecessarily.
+  performance, and to avoid mutating borrowed data across threads in Rust. We're also no longer
+  cloning project information unnecessarily, which is a massive memory reduction boost.
 - We've also rewritten our dependency graph in a similar fashion, and are now able to efficiently
   reference data from the project graph while building the dependency chain.
 - You may now install the `@moonrepo/cli` package globally with pnpm and yarn. When running these
-  globals, the will attempt to use the binary found in the repo's node modules.
+  globals, moon will attempt to use the binary found in the repo's node modules.
+
+##### Runner
+
+- Added `args` and `env` as valid values for the `options.affectedFiles` task option.
 
 ## 0.20.2
 

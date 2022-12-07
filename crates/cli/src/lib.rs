@@ -79,12 +79,18 @@ pub async fn run_cli() {
             })
             .await
         }
-        Commands::Check { ids, report, all } => {
+        Commands::Check {
+            ids,
+            all,
+            report,
+            update_cache,
+        } => {
             check(
                 ids,
                 CheckOptions {
-                    report: *report,
                     all: *all,
+                    report: *report,
+                    update_cache: *update_cache,
                 },
             )
             .await
@@ -195,6 +201,7 @@ pub async fn run_cli() {
             targets,
             affected,
             dependents,
+            update_cache,
             status,
             passthrough,
             profile,
@@ -210,6 +217,7 @@ pub async fn run_cli() {
                     passthrough: passthrough.clone(),
                     profile: profile.clone(),
                     report: *report,
+                    update_cache: *update_cache,
                     upstream: *upstream,
                 },
             )

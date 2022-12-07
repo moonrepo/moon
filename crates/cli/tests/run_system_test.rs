@@ -128,6 +128,19 @@ mod unix {
     }
 
     #[test]
+    fn forces_cache_to_write_only() {
+        let sandbox = system_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("unix:envVarsMoon").arg("--updateCache");
+        });
+
+        let output = assert.output();
+
+        assert!(predicate::str::contains("MOON_CACHE=write").eval(&output));
+    }
+
+    #[test]
     fn runs_from_project_root() {
         let sandbox = system_sandbox();
 
@@ -401,6 +414,21 @@ mod system_windows {
         });
 
         assert_snapshot!(assert.output());
+    }
+
+    #[test]
+    fn forces_cache_to_write_only() {
+        let sandbox = node_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("windows:envVarsMoon")
+                .arg("--updateCache");
+        });
+
+        let output = assert.output();
+
+        assert!(predicate::str::contains("MOON_CACHE=write").eval(&output));
     }
 
     #[test]

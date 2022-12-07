@@ -337,7 +337,7 @@ mod unix {
 }
 
 #[cfg(windows)]
-mod system_windows {
+mod windows {
     use super::*;
 
     #[test]

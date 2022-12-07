@@ -39,6 +39,13 @@ tasks:
     outputs:
       - 'lib/one.js'
       - 'esm'
+  generateFixed:
+    command: node
+    args: generate.js custom test.mjs
+    inputs:
+      - '*.js'
+    outputs:
+      - 'test.mjs'
 
   # Dependency hashing
   asDep:

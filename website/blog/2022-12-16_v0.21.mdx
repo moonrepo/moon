@@ -1,0 +1,32 @@
+---
+slug: v0.21
+title: moon v0.21
+authors: [milesj]
+tags: [runner]
+# image: ./img/v0.20.png
+---
+
+TODO
+
+<!--truncate-->
+
+## New `--updateCache` command line option
+
+Our caching layer is pretty powerful, as it helps to avoid tasks from running unnecessarily.
+However, there are situations where you need to refresh or force update the cache outside of the
+[`inputs`](../docs/config/project#inputs) list. This is currently achieved with the
+[`--cache`](../docs/commands/overview#caching) option, like `moon --cache off run ...`, but this is
+non-ideal for a few reasons:
+
+1. It disables _all caching_, which means dependency installs/dedupes will continually be ran. This
+   adds a lot of unwanted overhead.
+2. It requires you to backspace in the terminal to add the option _before_ `run` or `check`, as it's
+   a global option. A little tedious but important for experience.
+
+So to work around these limitations, we've added a new `--updateCache` (or `-u`) to both
+[`moon run`](../docs/commands/run) and [`moon check`](../docs/commands/run), which will bypass
+reading any existing cache items, but will force update the cache base on the latest run.
+
+```shell
+$ moon run app:build --updateCache
+```

@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_system_test.rs
-expression: "get_path_safe_output(&assert, fixture.path())"
+expression: assert.output()
 ---
 ▪▪▪▪ windows:runFromWorkspace
 <WORKSPACE>

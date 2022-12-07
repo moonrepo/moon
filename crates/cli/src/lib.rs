@@ -52,14 +52,14 @@ pub async fn run_cli() {
 
     // Setup logging
     if env::var("MOON_LOG").is_err() {
-        env::set_var("MOON_LOG", args.log.to_string().to_lowercase());
+        env::set_var("MOON_LOG", args.log.to_string());
     }
 
     Logger::init(map_log_level(args.log), args.log_file);
 
     // Setup caching
     if env::var("MOON_CACHE").is_err() {
-        env::set_var("MOON_CACHE", args.cache.to_string().to_lowercase());
+        env::set_var("MOON_CACHE", args.cache.to_string());
     }
 
     // Match and run subcommand
@@ -79,12 +79,18 @@ pub async fn run_cli() {
             })
             .await
         }
-        Commands::Check { ids, report, all } => {
+        Commands::Check {
+            ids,
+            all,
+            report,
+            update_cache,
+        } => {
             check(
                 ids,
                 CheckOptions {
-                    report: *report,
                     all: *all,
+                    report: *report,
+                    update_cache: *update_cache,
                 },
             )
             .await
@@ -195,6 +201,7 @@ pub async fn run_cli() {
             targets,
             affected,
             dependents,
+            update_cache,
             status,
             passthrough,
             profile,
@@ -210,6 +217,7 @@ pub async fn run_cli() {
                     passthrough: passthrough.clone(),
                     profile: profile.clone(),
                     report: *report,
+                    update_cache: *update_cache,
                     upstream: *upstream,
                 },
             )

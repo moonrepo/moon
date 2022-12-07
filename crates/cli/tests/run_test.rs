@@ -598,6 +598,28 @@ mod outputs {
         assert!(dir.join("stderr.log").exists());
     }
 
+    #[test]
+    fn can_bypass_cache() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputs:generateFixed");
+        });
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputs:generateFixed");
+        });
+
+        assert!(predicate::str::contains("cached from previous run").eval(&assert.output()));
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputs:generateFixed").arg("-u");
+        });
+
+        assert!(!predicate::str::contains("cached from previous run").eval(&assert.output()));
+    }
+
     mod hydration {
         use super::*;
         use moon_test_utils::pretty_assertions::assert_eq;

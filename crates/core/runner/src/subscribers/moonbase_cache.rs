@@ -1,4 +1,4 @@
-use moon_cache::{is_readable, is_writable};
+use moon_cache::get_cache_mode;
 use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_error::MoonError;
 use moon_logger::warn;
@@ -43,7 +43,7 @@ impl Subscriber for MoonbaseCacheSubscriber {
         match event {
             // Check if archive exists in moonbase (the remote) by querying the artifacts endpoint.
             Event::TargetOutputCacheCheck { hash, .. } => {
-                if is_readable() {
+                if get_cache_mode().is_readable() {
                     match moonbase.get_artifact(hash).await {
                         Ok(Some(artifact)) => {
                             self.hash_exists.insert(artifact.hash);
@@ -70,7 +70,7 @@ impl Subscriber for MoonbaseCacheSubscriber {
                 target,
                 ..
             } => {
-                if is_writable() && archive_path.exists() {
+                if get_cache_mode().is_writable() && archive_path.exists() {
                     let auth_token = moonbase.auth_token.to_owned();
                     let hash = (*hash).to_owned();
                     let target = target.id.to_owned();
@@ -92,7 +92,7 @@ impl Subscriber for MoonbaseCacheSubscriber {
             // This runs *before* the local cache. So if the download is successful, abort
             // the event flow, otherwise continue and let local cache attempt to hydrate.
             Event::TargetOutputHydrating { hash, .. } => {
-                if is_readable() && self.hash_exists.contains(*hash) {
+                if get_cache_mode().is_readable() && self.hash_exists.contains(*hash) {
                     let archive_file = workspace.cache.get_hash_archive_path(hash);
 
                     if let Err(error) = moonbase.download_artifact(hash, &archive_file).await {

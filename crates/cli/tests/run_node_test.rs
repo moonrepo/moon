@@ -274,6 +274,17 @@ fn inherits_moon_env_vars() {
 }
 
 #[test]
+fn forces_cache_to_write_only() {
+    let sandbox = node_sandbox();
+
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("node:envVarsMoon").arg("--updateCache");
+    });
+
+    assert!(predicate::str::contains("MOON_CACHE=write").eval(&assert.output()));
+}
+
+#[test]
 fn runs_from_project_root() {
     let sandbox = node_sandbox();
 

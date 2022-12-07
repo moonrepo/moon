@@ -278,19 +278,27 @@ pub enum Commands {
     #[command(
         name = "check",
         about = "Run all build and test related tasks for the current project.",
-        alias = "c"
+        alias = "c",
+        rename_all = "camelCase"
     )]
     Check {
         #[arg(help = "List of project IDs to explicitly check")]
         #[clap(group = "projects")]
         ids: Vec<ProjectID>,
 
-        #[arg(long, help = "Generate a run report for the current actions")]
-        report: bool,
-
         #[arg(long, help = "Run check for all projects in the workspace")]
         #[clap(group = "projects")]
         all: bool,
+
+        #[arg(long, help = "Generate a run report for the current actions")]
+        report: bool,
+
+        #[arg(
+            long,
+            short = 'u',
+            help = "Bypass cache and force update any existing items"
+        )]
+        update_cache: bool,
     },
 
     // moon ci
@@ -317,7 +325,8 @@ pub enum Commands {
     #[command(
         name = "run",
         about = "Run one or many project tasks and their dependent tasks.",
-        alias = "r"
+        alias = "r",
+        rename_all = "camelCase"
     )]
     Run {
         #[arg(required = true, help = "List of targets (project:task) to run")]
@@ -328,6 +337,13 @@ pub enum Commands {
             help = "Run dependents of the primary targets, as well as dependencies"
         )]
         dependents: bool,
+
+        #[arg(
+            long,
+            short = 'u',
+            help = "Bypass cache and force update any existing items"
+        )]
+        update_cache: bool,
 
         // Debugging
         #[arg(

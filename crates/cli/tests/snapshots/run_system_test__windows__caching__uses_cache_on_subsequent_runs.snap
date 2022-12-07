@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_system_test.rs
-expression: get_assert_output(&assert)
+expression: assert.output()
 ---
 ▪▪▪▪ windows:outputs
 ▪▪▪▪ windows:outputs (100ms)

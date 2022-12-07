@@ -281,11 +281,7 @@ fn forces_cache_to_write_only() {
         cmd.arg("run").arg("node:envVarsMoon").arg("--updateCache");
     });
 
-    let output = assert.output();
-
-    dbg!(&output);
-
-    assert!(predicate::str::contains("MOON_CACHE=write").eval(&output));
+    assert!(predicate::str::contains("MOON_CACHE=write").eval(&assert.output()));
 }
 
 #[test]

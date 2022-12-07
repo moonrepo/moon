@@ -54,8 +54,8 @@ pub async fn check(project_ids: &Vec<String>, options: CheckOptions) -> Result<(
     run_target(
         &targets,
         RunOptions {
-            update_cache: options.update_cache,
             report: options.report,
+            update_cache: options.update_cache,
             ..RunOptions::default()
         },
         workspace,

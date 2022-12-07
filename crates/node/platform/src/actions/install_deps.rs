@@ -105,12 +105,9 @@ pub async fn install_deps(
     let workspace = workspace.read().await;
     let context = context.read().await;
 
-    // When cache is write only, avoid install as user is typically force overwriting cache
+    // When cache is write only, avoid install as user is typically force updating cache
     if workspace.cache.get_mode().is_write_only() {
-        debug!(
-            target: LOG_TARGET,
-            "Force overwriting cache, skipping install",
-        );
+        debug!(target: LOG_TARGET, "Force updating cache, skipping install",);
 
         return Ok(ActionStatus::Skipped);
     }

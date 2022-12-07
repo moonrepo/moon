@@ -418,7 +418,7 @@ mod system_windows {
 
     #[test]
     fn forces_cache_to_write_only() {
-        let sandbox = node_sandbox();
+        let sandbox = system_sandbox();
 
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run")

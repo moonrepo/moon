@@ -1,4 +1,4 @@
-use crate::enums::TouchedStatus;
+use crate::enums::{CacheMode, TouchedStatus};
 use crate::helpers::AnyError;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use moon::{build_dep_graph, generate_project_graph, load_workspace};
@@ -9,6 +9,7 @@ use moon_runner_context::{ProfileType, RunnerContext};
 use moon_utils::is_ci;
 use moon_workspace::Workspace;
 use rustc_hash::{FxHashMap, FxHashSet};
+use std::env;
 use std::string::ToString;
 
 #[derive(Default)]
@@ -19,6 +20,7 @@ pub struct RunOptions {
     pub passthrough: Vec<String>,
     pub profile: Option<ProfileType>,
     pub report: bool,
+    pub update_cache: bool,
     pub upstream: bool,
 }
 
@@ -36,6 +38,11 @@ pub async fn run_target(
     workspace: Workspace,
     project_graph: ProjectGraph,
 ) -> Result<(), AnyError> {
+    // Force cache to update using write-only mode
+    if options.update_cache {
+        env::set_var("MOON_CACHE", CacheMode::Write.to_string());
+    }
+
     // Always query for a touched files list as it'll be used by many actions
     let touched_files = if options.affected || workspace.vcs.is_enabled() {
         query_touched_files(
@@ -74,7 +81,7 @@ pub async fn run_target(
                 println!(
                     "Target(s) {} not affected by touched files (using status {})",
                     targets_list,
-                    color::symbol(&options.status.to_string().to_lowercase())
+                    color::symbol(&options.status.to_string())
                 );
             }
         } else {

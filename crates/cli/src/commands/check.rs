@@ -6,8 +6,9 @@ use moon_project::Project;
 use std::env;
 
 pub struct CheckOptions {
-    pub report: bool,
     pub all: bool,
+    pub report: bool,
+    pub update_cache: bool,
 }
 
 const LOG_TARGET: &str = "moon:check";
@@ -54,6 +55,7 @@ pub async fn check(project_ids: &Vec<String>, options: CheckOptions) -> Result<(
         &targets,
         RunOptions {
             report: options.report,
+            update_cache: options.update_cache,
             ..RunOptions::default()
         },
         workspace,

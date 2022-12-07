@@ -10,7 +10,7 @@ macro_rules! cache_item {
                     fs::create_dir_all(parent)?;
                 }
 
-                if is_readable() {
+                if get_cache_mode().is_readable() {
                     if path.exists() {
                         // If stale, treat as a cache miss
                         if stale_ms > 0
@@ -49,7 +49,7 @@ macro_rules! cache_item {
             pub fn save(&self) -> Result<(), MoonError> {
                 let log_target = "moon:cache:item";
 
-                if is_writable() {
+                if get_cache_mode().is_writable() {
                     trace!(
                         target: log_target,
                         "Writing cache {}",

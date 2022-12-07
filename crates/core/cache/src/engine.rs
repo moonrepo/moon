@@ -1,6 +1,7 @@
-use crate::helpers::{is_writable, LOG_TARGET};
+use crate::helpers::LOG_TARGET;
 use crate::items::{DependenciesState, ProjectsState, RunTargetState, ToolState};
 use crate::runfiles::Runfile;
+use crate::{get_cache_mode, CacheMode};
 use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_logger::{color, debug, trace};
@@ -142,17 +143,15 @@ impl CacheEngine {
     where
         T: ?Sized + Serialize,
     {
-        if is_writable() {
-            let path = self.get_hash_manifest_path(hash);
+        let path = self.get_hash_manifest_path(hash);
 
-            trace!(
-                target: LOG_TARGET,
-                "Writing hash manifest {}",
-                color::path(&path)
-            );
+        trace!(
+            target: LOG_TARGET,
+            "Writing hash manifest {}",
+            color::path(&path)
+        );
 
-            json::write(&path, &hasher, true)?;
-        }
+        json::write(&path, &hasher, true)?;
 
         Ok(())
     }
@@ -181,6 +180,10 @@ impl CacheEngine {
 
     pub fn get_hash_manifest_path(&self, hash: &str) -> PathBuf {
         self.hashes_dir.join(format!("{}.json", hash))
+    }
+
+    pub fn get_mode(&self) -> CacheMode {
+        get_cache_mode()
     }
 
     pub fn get_target_dir<T: AsRef<str>>(&self, target_id: T) -> PathBuf {

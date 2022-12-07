@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_system_test.rs
-expression: "fs::read_to_string(fixture.path().join(format!(\".moon/cache/hashes/{}.json\",\n                state.hash))).unwrap()"
+expression: "fs::read_to_string(sandbox.path().join(format!(\".moon/cache/hashes/{}.json\",\n                state.hash))).unwrap()"
 ---
 [
   {
@@ -16,7 +16,7 @@ expression: "fs::read_to_string(fixture.path().join(format!(\".moon/cache/hashes
       "windows/cwd.bat": "f97d5bfb654f63a59a4158e4969707c8e1c29ece",
       "windows/echo.bat": "cf9137992257ec89c223a5d866458a94a361e0fd",
       "windows/envVars.bat": "af068672f8e5f2ca1aa1b5fec93df8fb253bdd0c",
-      "windows/envVarsMoon.bat": "f378867c19344c38e6587248c9a6b1643b49bbca",
+      "windows/envVarsMoon.bat": "87021bcea5907ae2c0e616fa963f0a35e074785d",
       "windows/exitNonZero.bat": "8204ab8df26ed8af772def3d3701a0df93d81ebe",
       "windows/exitZero.bat": "0cc40242e00650f6cf05f8c523f5e9afb268fb1f",
       "windows/moon.yml": "4ed9b777bf245c05de077d64f4e82812d86c6dcc",

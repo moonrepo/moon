@@ -6,11 +6,16 @@ use moon_test_utils::{
 };
 use rustc_hash::FxHashMap;
 
-async fn get_aliases_graph(node_config: NodeConfig) -> (ProjectGraph, Sandbox) {
+async fn get_aliases_graph<C>(callback: C) -> (ProjectGraph, Sandbox)
+where
+    C: FnOnce(&mut NodeConfig),
+{
     let (workspace_config, mut toolchain_config, projects_config) =
         get_project_graph_aliases_fixture_configs();
 
-    toolchain_config.node = Some(node_config);
+    if let Some(node_config) = &mut toolchain_config.node {
+        callback(node_config);
+    }
 
     let sandbox = create_sandbox_with_config(
         "project-graph/aliases",
@@ -27,32 +32,57 @@ async fn get_aliases_graph(node_config: NodeConfig) -> (ProjectGraph, Sandbox) {
 
 #[tokio::test]
 async fn loads_node_aliases_name_only() {
-    let (graph, _sandbox) = get_aliases_graph(NodeConfig {
-        alias_package_names: Some(NodeProjectAliasFormat::NameOnly),
-        ..NodeConfig::default()
+    let (graph, _sandbox) = get_aliases_graph(|cfg| {
+        cfg.alias_package_names = Some(NodeProjectAliasFormat::NameOnly);
     })
     .await;
 
     assert_eq!(
         graph.aliases,
         FxHashMap::from_iter([
+            (
+                "project-graph-aliases-explicit".to_owned(),
+                "explicit".to_owned()
+            ),
+            (
+                "project-graph-aliases-explicit-and-implicit".to_owned(),
+                "explicitAndImplicit".to_owned()
+            ),
+            (
+                "project-graph-aliases-implicit".to_owned(),
+                "implicit".to_owned()
+            ),
+            ("project-graph-aliases-node".to_owned(), "node".to_owned()),
             ("pkg-bar".to_owned(), "nodeNameOnly".to_owned()),
-            ("pkg-foo".to_owned(), "nodeNameScope".to_owned())
+            ("pkg-foo".to_owned(), "nodeNameScope".to_owned()),
+            ("@scope/pkg-foo".to_owned(), "nodeNameScope".to_owned())
         ])
     );
 }
 
 #[tokio::test]
 async fn loads_node_aliases_name_scopes() {
-    let (graph, _sandbox) = get_aliases_graph(NodeConfig {
-        alias_package_names: Some(NodeProjectAliasFormat::NameAndScope),
-        ..NodeConfig::default()
+    let (graph, _sandbox) = get_aliases_graph(|cfg| {
+        cfg.alias_package_names = Some(NodeProjectAliasFormat::NameAndScope);
     })
     .await;
 
     assert_eq!(
         graph.aliases,
         FxHashMap::from_iter([
+            (
+                "project-graph-aliases-explicit".to_owned(),
+                "explicit".to_owned()
+            ),
+            (
+                "project-graph-aliases-explicit-and-implicit".to_owned(),
+                "explicitAndImplicit".to_owned()
+            ),
+            (
+                "project-graph-aliases-implicit".to_owned(),
+                "implicit".to_owned()
+            ),
+            ("project-graph-aliases-node".to_owned(), "node".to_owned()),
             ("pkg-bar".to_owned(), "nodeNameOnly".to_owned()),
             ("@scope/pkg-foo".to_owned(), "nodeNameScope".to_owned())
         ])
@@ -61,9 +91,8 @@ async fn loads_node_aliases_name_scopes() {
 
 #[tokio::test]
 async fn returns_project_using_alias() {
-    let (graph, _sandbox) = get_aliases_graph(NodeConfig {
-        alias_package_names: Some(NodeProjectAliasFormat::NameAndScope),
-        ..NodeConfig::default()
+    let (graph, _sandbox) = get_aliases_graph(|cfg| {
+        cfg.alias_package_names = Some(NodeProjectAliasFormat::NameAndScope);
     })
     .await;
 
@@ -75,10 +104,8 @@ async fn returns_project_using_alias() {
 
 #[tokio::test]
 async fn graph_uses_id_for_nodes() {
-    let (graph, _sandbox) = get_aliases_graph(NodeConfig {
-        alias_package_names: Some(NodeProjectAliasFormat::NameAndScope),
-        version: "18.0.0".into(),
-        ..NodeConfig::default()
+    let (graph, _sandbox) = get_aliases_graph(|cfg| {
+        cfg.alias_package_names = Some(NodeProjectAliasFormat::NameAndScope);
     })
     .await;
 

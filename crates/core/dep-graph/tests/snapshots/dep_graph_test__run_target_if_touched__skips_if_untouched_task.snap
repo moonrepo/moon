@@ -1,0 +1,21 @@
+---
+source: crates/core/dep-graph/tests/dep_graph_test.rs
+assertion_line: 411
+expression: graph.to_dot()
+---
+digraph {
+    0 [ label="SetupNodeTool(16.0.0)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    1 [ label="InstallNodeDeps(16.0.0)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    2 [ label="SyncNodeProject(inputB)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    3 [ label="RunTarget(inputB:b2)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    4 [ label="SyncNodeProject(inputC)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    5 [ label="RunTarget(inputC:c)" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    1 -> 0 [ arrowhead=box, arrowtail=box]
+    2 -> 0 [ arrowhead=box, arrowtail=box]
+    3 -> 1 [ arrowhead=box, arrowtail=box]
+    3 -> 2 [ arrowhead=box, arrowtail=box]
+    4 -> 0 [ arrowhead=box, arrowtail=box]
+    5 -> 1 [ arrowhead=box, arrowtail=box]
+    5 -> 4 [ arrowhead=box, arrowtail=box]
+}
+

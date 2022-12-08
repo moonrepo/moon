@@ -1,10 +1,10 @@
 use moon_config::{ConfigError, NodeConfig, ToolchainConfig};
-use moon_constants::CONFIG_WORKSPACE_FILENAME;
+use moon_constants::CONFIG_TOOLCHAIN_FILENAME;
 use moon_test_utils::get_fixtures_path;
 use std::path::Path;
 
 fn load_jailed_config(root: &Path) -> Result<ToolchainConfig, figment::Error> {
-    match ToolchainConfig::load(root.join(CONFIG_WORKSPACE_FILENAME)) {
+    match ToolchainConfig::load(root.join(CONFIG_TOOLCHAIN_FILENAME)) {
         Ok(cfg) => Ok(cfg),
         Err(err) => Err(match err {
             ConfigError::FailedValidation(errors) => errors.first().unwrap().to_owned(),
@@ -17,14 +17,14 @@ fn load_jailed_config(root: &Path) -> Result<ToolchainConfig, figment::Error> {
 #[test]
 fn loads_defaults() {
     figment::Jail::expect_with(|jail| {
-        jail.create_file(CONFIG_WORKSPACE_FILENAME, "extends: ''")?;
+        jail.create_file(CONFIG_TOOLCHAIN_FILENAME, "{}")?;
 
         let config = load_jailed_config(jail.directory())?;
 
         assert_eq!(
             config,
             ToolchainConfig {
-                extends: Some("".into()),
+                extends: None,
                 node: None,
                 typescript: None,
                 schema: String::new(),
@@ -43,7 +43,7 @@ mod extends {
 
     #[test]
     fn recursive_merges() {
-        let fixture = get_fixtures_path("config-extends/workspace");
+        let fixture = get_fixtures_path("config-extends/toolchain");
         let config = ToolchainConfig::load(fixture.join("base-2.yml")).unwrap();
 
         assert_eq!(
@@ -67,7 +67,7 @@ mod extends {
 
     #[test]
     fn recursive_merges_typescript() {
-        let fixture = get_fixtures_path("config-extends/workspace");
+        let fixture = get_fixtures_path("config-extends/toolchain");
         let config = ToolchainConfig::load(fixture.join("typescript-2.yml")).unwrap();
 
         assert_eq!(
@@ -88,7 +88,7 @@ mod extends {
     // )]
     fn invalid_type() {
         figment::Jail::expect_with(|jail| {
-            jail.create_file(super::CONFIG_WORKSPACE_FILENAME, "extends: 123")?;
+            jail.create_file(super::CONFIG_TOOLCHAIN_FILENAME, "extends: 123")?;
 
             super::load_jailed_config(jail.directory())?;
 
@@ -103,7 +103,7 @@ mod extends {
     // )]
     fn not_a_url_or_file() {
         figment::Jail::expect_with(|jail| {
-            jail.create_file(super::CONFIG_WORKSPACE_FILENAME, "extends: random value")?;
+            jail.create_file(super::CONFIG_TOOLCHAIN_FILENAME, "extends: random value")?;
 
             super::load_jailed_config(jail.directory())?;
 
@@ -116,7 +116,7 @@ mod extends {
     fn not_a_https_url() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_WORKSPACE_FILENAME,
+                super::CONFIG_TOOLCHAIN_FILENAME,
                 "extends: http://domain.com/config.yml",
             )?;
 
@@ -132,7 +132,7 @@ mod extends {
     fn not_a_yaml_url() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_WORKSPACE_FILENAME,
+                super::CONFIG_TOOLCHAIN_FILENAME,
                 "extends: https://domain.com/file.txt",
             )?;
 
@@ -152,7 +152,7 @@ mod extends {
             jail.create_file("shared/file.txt", "")?;
 
             jail.create_file(
-                super::CONFIG_WORKSPACE_FILENAME,
+                super::CONFIG_TOOLCHAIN_FILENAME,
                 "extends: ./shared/file.txt",
             )?;
 
@@ -168,12 +168,12 @@ mod extends {
             fs::create_dir_all(jail.directory().join("shared")).unwrap();
 
             jail.create_file(
-                format!("shared/{}", super::CONFIG_WORKSPACE_FILENAME),
+                format!("shared/{}", super::CONFIG_TOOLCHAIN_FILENAME),
                 include_str!("../../../../tests/fixtures/config-extends/.moon/toolchain.yml"),
             )?;
 
             jail.create_file(
-                super::CONFIG_WORKSPACE_FILENAME,
+                super::CONFIG_TOOLCHAIN_FILENAME,
                 r#"
 extends: ./shared/toolchain.yml
 
@@ -210,7 +210,7 @@ node:
             );
 
             jail.create_file(
-                    super::CONFIG_WORKSPACE_FILENAME,
+                    super::CONFIG_TOOLCHAIN_FILENAME,
 r#"
 extends: https://raw.githubusercontent.com/moonrepo/moon/master/tests/fixtures/config-extends/.moon/toolchain.yml
 
@@ -243,7 +243,7 @@ node:
     // fn handles_invalid_url() {
     //     figment::Jail::expect_with(|jail| {
     //         jail.create_file(
-    //             super::CONFIG_WORKSPACE_FILENAME,
+    //             super::CONFIG_TOOLCHAIN_FILENAME,
     //             "extends: https://raw.githubusercontent.com/this/is/an/invalid/file.yml",
     //         )?;
 
@@ -262,7 +262,7 @@ mod node {
     fn loads_defaults() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                CONFIG_WORKSPACE_FILENAME,
+                CONFIG_TOOLCHAIN_FILENAME,
                 r#"
 node:
     packageManager: yarn"#,
@@ -287,11 +287,11 @@ node:
 
     #[test]
     #[should_panic(
-        expected = "invalid type: found unsigned int `123`, expected struct NodeConfig for key \"workspace.node\""
+        expected = "invalid type: found unsigned int `123`, expected struct NodeConfig for key \"toolchain.node\""
     )]
     fn invalid_type() {
         figment::Jail::expect_with(|jail| {
-            jail.create_file(super::CONFIG_WORKSPACE_FILENAME, "node: 123")?;
+            jail.create_file(super::CONFIG_TOOLCHAIN_FILENAME, "node: 123")?;
 
             super::load_jailed_config(jail.directory())?;
 
@@ -301,12 +301,12 @@ node:
 
     #[test]
     #[should_panic(
-        expected = "Must be a valid semantic version for key \"workspace.node.version\""
+        expected = "Must be a valid semantic version for key \"toolchain.node.version\""
     )]
     fn invalid_version() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_WORKSPACE_FILENAME,
+                super::CONFIG_TOOLCHAIN_FILENAME,
                 r#"
 node:
   version: 'foo bar'"#,
@@ -320,12 +320,12 @@ node:
 
     #[test]
     #[should_panic(
-        expected = "Must be a valid semantic version for key \"workspace.node.version\""
+        expected = "Must be a valid semantic version for key \"toolchain.node.version\""
     )]
     fn no_patch_version() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_WORKSPACE_FILENAME,
+                super::CONFIG_TOOLCHAIN_FILENAME,
                 r#"
 node:
   version: '16.13'"#,
@@ -339,12 +339,12 @@ node:
 
     #[test]
     #[should_panic(
-        expected = "Must be a valid semantic version for key \"workspace.node.version\""
+        expected = "Must be a valid semantic version for key \"toolchain.node.version\""
     )]
     fn no_minor_version() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_WORKSPACE_FILENAME,
+                super::CONFIG_TOOLCHAIN_FILENAME,
                 r#"
 node:
   version: '16'"#,
@@ -358,12 +358,12 @@ node:
 
     #[test]
     #[should_panic(
-        expected = "unknown variant: found `what`, expected `one of `npm`, `pnpm`, `yarn`` for key \"workspace.node.packageManager\""
+        expected = "unknown variant: found `what`, expected `one of `npm`, `pnpm`, `yarn`` for key \"toolchain.node.packageManager\""
     )]
     fn invalid_package_manager() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_WORKSPACE_FILENAME,
+                super::CONFIG_TOOLCHAIN_FILENAME,
                 r#"
 node:
   version: '16.13.0'
@@ -380,7 +380,7 @@ node:
     fn valid_package_manager() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_WORKSPACE_FILENAME,
+                super::CONFIG_TOOLCHAIN_FILENAME,
                 r#"
 node:
   version: '16.13.0'
@@ -399,7 +399,7 @@ node:
             jail.set_env("MOON_NODE_VERSION", "4.5.6");
 
             jail.create_file(
-                super::CONFIG_WORKSPACE_FILENAME,
+                super::CONFIG_TOOLCHAIN_FILENAME,
                 r#"
 node:
     version: '16.13.0'
@@ -418,12 +418,12 @@ node:
 mod npm {
     #[test]
     #[should_panic(
-        expected = "invalid type: found string \"foo\", expected struct NpmConfig for key \"workspace.node.npm\""
+        expected = "invalid type: found string \"foo\", expected struct NpmConfig for key \"toolchain.node.npm\""
     )]
     fn invalid_type() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_WORKSPACE_FILENAME,
+                super::CONFIG_TOOLCHAIN_FILENAME,
                 r#"
 node:
     version: '16.13.0'
@@ -438,12 +438,12 @@ node:
 
     #[test]
     #[should_panic(
-        expected = "Must be a valid semantic version for key \"workspace.node.npm.version\""
+        expected = "Must be a valid semantic version for key \"toolchain.node.npm.version\""
     )]
     fn invalid_version() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_WORKSPACE_FILENAME,
+                super::CONFIG_TOOLCHAIN_FILENAME,
                 r#"
 node:
     version: '16.13.0'
@@ -464,7 +464,7 @@ node:
             jail.set_env("MOON_NPM_VERSION", "4.5.6");
 
             jail.create_file(
-                super::CONFIG_WORKSPACE_FILENAME,
+                super::CONFIG_TOOLCHAIN_FILENAME,
                 r#"
 node:
     version: '16.13.0'
@@ -485,12 +485,12 @@ node:
 mod pnpm {
     #[test]
     #[should_panic(
-        expected = "invalid type: found string \"foo\", expected struct PnpmConfig for key \"workspace.node.pnpm\""
+        expected = "invalid type: found string \"foo\", expected struct PnpmConfig for key \"toolchain.node.pnpm\""
     )]
     fn invalid_type() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_WORKSPACE_FILENAME,
+                super::CONFIG_TOOLCHAIN_FILENAME,
                 r#"
 node:
     version: '16.13.0'
@@ -505,12 +505,12 @@ node:
 
     #[test]
     #[should_panic(
-        expected = "Must be a valid semantic version for key \"workspace.node.pnpm.version\""
+        expected = "Must be a valid semantic version for key \"toolchain.node.pnpm.version\""
     )]
     fn invalid_version() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_WORKSPACE_FILENAME,
+                super::CONFIG_TOOLCHAIN_FILENAME,
                 r#"
 node:
     version: '16.13.0'
@@ -530,7 +530,7 @@ node:
             jail.set_env("MOON_PNPM_VERSION", "4.5.6");
 
             jail.create_file(
-                super::CONFIG_WORKSPACE_FILENAME,
+                super::CONFIG_TOOLCHAIN_FILENAME,
                 r#"
 node:
     version: '16.13.0'
@@ -555,12 +555,12 @@ node:
 mod yarn {
     #[test]
     #[should_panic(
-        expected = "invalid type: found string \"foo\", expected struct YarnConfig for key \"workspace.node.yarn\""
+        expected = "invalid type: found string \"foo\", expected struct YarnConfig for key \"toolchain.node.yarn\""
     )]
     fn invalid_type() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_WORKSPACE_FILENAME,
+                super::CONFIG_TOOLCHAIN_FILENAME,
                 r#"
 node:
     version: '16.13.0'
@@ -575,12 +575,12 @@ node:
 
     #[test]
     #[should_panic(
-        expected = "Must be a valid semantic version for key \"workspace.node.yarn.version\""
+        expected = "Must be a valid semantic version for key \"toolchain.node.yarn.version\""
     )]
     fn invalid_version() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_WORKSPACE_FILENAME,
+                super::CONFIG_TOOLCHAIN_FILENAME,
                 r#"
 node:
     version: '16.13.0'
@@ -600,7 +600,7 @@ node:
             jail.set_env("MOON_YARN_VERSION", "4.5.6");
 
             jail.create_file(
-                super::CONFIG_WORKSPACE_FILENAME,
+                super::CONFIG_TOOLCHAIN_FILENAME,
                 r#"
 node:
     version: '16.13.0'

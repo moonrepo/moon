@@ -1,0 +1,24 @@
+---
+source: crates/node/platform/tests/project_aliases_test.rs
+assertion_line: 88
+expression: graph.to_dot()
+---
+digraph {
+    0 [ label="explicitAndImplicit" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    1 [ label="node" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    2 [ label="nodeNameScope" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    3 [ label="nodeNameOnly" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    4 [ label="explicit" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    5 [ label="noLang" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    6 [ label="implicit" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    1 -> 2 [ arrowhead=box, arrowtail=box]
+    1 -> 3 [ arrowhead=box, arrowtail=box]
+    0 -> 1 [ arrowhead=none]
+    0 -> 3 [ arrowhead=none]
+    0 -> 2 [ arrowhead=none]
+    4 -> 1 [ arrowhead=box, arrowtail=box]
+    4 -> 2 [ arrowhead=box, arrowtail=box]
+    6 -> 1 [ arrowhead=box, arrowtail=box]
+    6 -> 2 [ arrowhead=box, arrowtail=box]
+}
+

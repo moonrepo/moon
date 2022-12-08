@@ -201,7 +201,7 @@ mod resolver {
         let fixture = assert_fs::TempDir::new().unwrap();
         let mut tool = NodeLanguage::new(&create_proto(fixture.path()), None);
 
-        assert_eq!(tool.resolve_version("10.1").await.unwrap(), "18.0.0");
+        assert_eq!(tool.resolve_version("10.1").await.unwrap(), "10.1.0");
     }
 
     #[tokio::test]
@@ -213,7 +213,7 @@ mod resolver {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "VersionUnknownAlias(\"lts-unknown\")")]
+    #[should_panic(expected = "VersionUnknownAlias(\"unknown\")")]
     async fn errors_invalid_lts() {
         let fixture = assert_fs::TempDir::new().unwrap();
         let mut tool = NodeLanguage::new(&create_proto(fixture.path()), None);

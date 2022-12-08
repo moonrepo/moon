@@ -85,9 +85,10 @@ where
 {
     let url = url.as_ref();
     let mut sha = Sha256::new();
-    sha.update(&url);
+    sha.update(url);
 
-    let temp_file = get_temp_dir().join(format!("{:x}.json", sha.finalize()));
+    let temp_dir = get_temp_dir()?;
+    let temp_file = temp_dir.join(format!("{:x}.json", sha.finalize()));
     let handle_http_error = |e: reqwest::Error| ProtoError::Http(url.to_owned(), e.to_string());
     let handle_io_error = |e: io::Error| ProtoError::Fs(temp_file.to_path_buf(), e.to_string());
 
@@ -107,8 +108,8 @@ where
 
                 let contents = fs::read_to_string(&temp_file).map_err(handle_io_error)?;
 
-                return Ok(serde_json::from_str(&contents)
-                    .map_err(|e| ProtoError::Fs(temp_file.to_path_buf(), e.to_string()))?);
+                return serde_json::from_str(&contents)
+                    .map_err(|e| ProtoError::Fs(temp_file.to_path_buf(), e.to_string()));
             }
         }
     }
@@ -123,10 +124,10 @@ where
     let response = reqwest::get(url).await.map_err(handle_http_error)?;
     let contents = response.text().await.map_err(handle_http_error)?;
 
+    fs::create_dir_all(&temp_dir).map_err(handle_io_error)?;
     fs::write(&temp_file, &contents).map_err(handle_io_error)?;
 
-    Ok(serde_json::from_str(&contents)
-        .map_err(|e| ProtoError::Http(url.to_owned(), e.to_string()))?)
+    serde_json::from_str(&contents).map_err(|e| ProtoError::Http(url.to_owned(), e.to_string()))
 }
 
 pub fn parse_version(version: &str) -> Result<Version, ProtoError> {

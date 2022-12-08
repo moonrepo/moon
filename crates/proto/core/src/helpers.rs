@@ -1,17 +1,25 @@
+use crate::ProtoError;
+use dirs::home_dir;
 use std::{env, path::PathBuf};
 
-pub fn get_dir() -> PathBuf {
-    env::var("PROTO_DIR")
-        .expect("Missing PROTO_DIR environment variable.")
-        .into()
+pub fn get_dir() -> Result<PathBuf, ProtoError> {
+    if let Ok(dir) = env::var("PROTO_DIR") {
+        return Ok(dir.into());
+    }
+
+    if let Some(dir) = home_dir() {
+        return Ok(dir.join(".proto"));
+    }
+
+    Err(ProtoError::MissingHomeDir)
 }
 
-pub fn get_temp_dir() -> PathBuf {
-    get_dir().join("temp")
+pub fn get_temp_dir() -> Result<PathBuf, ProtoError> {
+    Ok(get_dir()?.join("temp"))
 }
 
-pub fn get_tools_dir() -> PathBuf {
-    get_dir().join("tools")
+pub fn get_tools_dir() -> Result<PathBuf, ProtoError> {
+    Ok(get_dir()?.join("tools"))
 }
 
 // Aliases are words that map to version. For example, "latest" -> "1.2.3".

@@ -1,14 +1,19 @@
-use crate::errors::ProtoError;
+use crate::{errors::ProtoError, get_temp_dir, is_version_alias, remove_v_prefix};
 use lenient_semver::Version;
 use log::trace;
 use serde::de::DeserializeOwned;
+use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
+use std::time::{Duration, SystemTime};
+use std::{fs, io};
 
+#[derive(Debug)]
 pub struct VersionManifestEntry {
     pub alias: Option<String>,
     pub version: String,
 }
 
+#[derive(Debug)]
 pub struct VersionManifest {
     pub aliases: BTreeMap<String, String>,
     pub versions: BTreeMap<String, VersionManifestEntry>,
@@ -73,50 +78,55 @@ pub trait Resolvable<'tool>: Send + Sync {
     async fn resolve_version(&mut self, initial_version: &str) -> Result<String, ProtoError>;
 }
 
-// Aliases are words that map to version. For example, "latest" -> "1.2.3".
-pub fn is_version_alias(value: &str) -> bool {
-    value
-        .chars()
-        .all(|c| char::is_ascii_alphabetic(&c) || c == '-')
-}
-
-pub fn add_v_prefix(value: &str) -> String {
-    if value.starts_with('v') || value.starts_with('V') {
-        return value.to_lowercase();
-    }
-
-    format!("v{}", value)
-}
-
-pub fn remove_v_prefix(value: &str) -> String {
-    if value.starts_with('v') || value.starts_with('V') {
-        return value[1..].to_owned();
-    }
-
-    value.to_owned()
-}
-
 pub async fn load_versions_manifest<T, U>(url: U) -> Result<T, ProtoError>
 where
     T: DeserializeOwned,
     U: AsRef<str>,
 {
     let url = url.as_ref();
-    let handle_error = |e: reqwest::Error| ProtoError::Http(url.to_owned(), e.to_string());
+    let mut sha = Sha256::new();
+    sha.update(&url);
 
+    let temp_file = get_temp_dir().join(format!("{:x}.json", sha.finalize()));
+    let handle_http_error = |e: reqwest::Error| ProtoError::Http(url.to_owned(), e.to_string());
+    let handle_io_error = |e: io::Error| ProtoError::Fs(temp_file.to_path_buf(), e.to_string());
+
+    // If the resource has been cached within the last 24 hours, use it
+    if temp_file.exists() {
+        let metadata = fs::metadata(&temp_file).map_err(handle_io_error)?;
+
+        if let Ok(modified_time) = metadata.modified().or_else(|_| metadata.created()) {
+            let threshold = SystemTime::now() - Duration::from_secs(60 * 60 * 24);
+
+            if modified_time > threshold {
+                trace!(
+                    target: "proto:resolver",
+                    "Loading versions manifest from locally cached {}",
+                    temp_file.to_string_lossy()
+                );
+
+                let contents = fs::read_to_string(&temp_file).map_err(handle_io_error)?;
+
+                return Ok(serde_json::from_str(&contents)
+                    .map_err(|e| ProtoError::Fs(temp_file.to_path_buf(), e.to_string()))?);
+            }
+        }
+    }
+
+    // Otherwise, request the resource and cache it
     trace!(
         target: "proto:resolver",
         "Loading versions manifest from {}",
         url
     );
 
-    let response = reqwest::get(url).await.map_err(handle_error)?;
-    let content = response.text().await.map_err(handle_error)?;
+    let response = reqwest::get(url).await.map_err(handle_http_error)?;
+    let contents = response.text().await.map_err(handle_http_error)?;
 
-    let manifest: T = serde_json::from_str(&content)
-        .map_err(|e| ProtoError::Http(url.to_owned(), e.to_string()))?;
+    fs::write(&temp_file, &contents).map_err(handle_io_error)?;
 
-    Ok(manifest)
+    Ok(serde_json::from_str(&contents)
+        .map_err(|e| ProtoError::Http(url.to_owned(), e.to_string()))?)
 }
 
 pub fn parse_version(version: &str) -> Result<Version, ProtoError> {

@@ -20,12 +20,14 @@ impl Downloadable<'_> for NodeDependencyManager {
             return Ok(false);
         }
 
+        let pkg_name = self.type_of.get_package_name();
         let from_url = match from_url {
             Some(url) => url.to_owned(),
             None => {
                 format!(
-                    "https://registry.npmjs.org/npm/-/{}-{}.tgz",
-                    self.type_of.get_package_name(),
+                    "https://registry.npmjs.org/{}/-/{}-{}.tgz",
+                    pkg_name,
+                    pkg_name,
                     self.get_resolved_version()
                 )
             }

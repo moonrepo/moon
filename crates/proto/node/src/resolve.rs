@@ -59,7 +59,7 @@ impl Resolvable<'_> for NodeLanguage {
                 entry.alias = Some(alias);
             }
 
-            versions.insert(item.version.clone(), entry);
+            versions.insert(entry.version.clone(), entry);
         }
 
         Ok(VersionManifest { aliases, versions })

@@ -7,7 +7,10 @@ use moon_logger::{color, debug};
 use moon_platform::{Runtime, Version};
 use moon_utils::{fs, path};
 use proto_core::Proto;
-use std::path::{Path, PathBuf};
+use std::{
+    env,
+    path::{Path, PathBuf},
+};
 
 #[derive(Debug)]
 pub struct Toolchain {
@@ -42,6 +45,7 @@ impl Toolchain {
         );
 
         fs::create_dir_all(&dir)?;
+        env::set_var("PROTO_DIR", path::to_string(&dir)?);
 
         let mut toolchain = Toolchain {
             config: config.to_owned(),

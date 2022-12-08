@@ -41,7 +41,7 @@ cwd = "./tests/fixtures/cases"
 
 [tasks.run-tests]
 command = "cargo"
-args = ["nextest", "run", "--config-file", "./.cargo/nextest.toml"]
+args = ["nextest", "run", "--workspace", "--config-file", "./.cargo/nextest.toml"]
 
 [tasks.clean-test]
 script = "rm -rf ./tests/fixtures/cases/.moon/cache"

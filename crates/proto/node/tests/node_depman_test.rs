@@ -1,4 +1,4 @@
-use proto_core::{Downloadable, Executable, Installable, Proto, Resolvable, Tool, Verifiable};
+use proto_core::{Downloadable, Executable, Installable, Proto, Resolvable, Tool};
 use proto_node::{NodeDependencyManager, NodeDependencyManagerType};
 use std::path::Path;
 
@@ -18,8 +18,6 @@ async fn downloads_verifies_installs_npm() {
 
     tool.setup("9.0.0").await.unwrap();
 
-    assert!(!tool.get_download_path().unwrap().exists());
-    assert!(!tool.get_checksum_path().unwrap().exists());
     assert!(tool.get_install_dir().unwrap().exists());
 
     assert_eq!(
@@ -37,8 +35,6 @@ async fn downloads_verifies_installs_pnpm() {
 
     tool.setup("7.0.0").await.unwrap();
 
-    assert!(!tool.get_download_path().unwrap().exists());
-    assert!(!tool.get_checksum_path().unwrap().exists());
     assert!(tool.get_install_dir().unwrap().exists());
 
     assert_eq!(
@@ -56,8 +52,6 @@ async fn downloads_verifies_installs_yarn_classic() {
 
     tool.setup("1.22.0").await.unwrap();
 
-    assert!(!tool.get_download_path().unwrap().exists());
-    assert!(!tool.get_checksum_path().unwrap().exists());
     assert!(tool.get_install_dir().unwrap().exists());
 
     assert_eq!(
@@ -75,8 +69,6 @@ async fn downloads_verifies_installs_yarn_berry() {
 
     tool.setup("3.3.0").await.unwrap();
 
-    assert!(!tool.get_download_path().unwrap().exists());
-    assert!(!tool.get_checksum_path().unwrap().exists());
     assert!(tool.get_install_dir().unwrap().exists());
 
     assert_eq!(tool.get_resolved_version(), "1.22.19");

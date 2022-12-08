@@ -18,8 +18,6 @@ async fn downloads_verifies_installs_tool() {
 
     tool.setup("18.0.0").await.unwrap();
 
-    assert!(!tool.get_download_path().unwrap().exists());
-    assert!(!tool.get_checksum_path().unwrap().exists());
     assert!(tool.get_install_dir().unwrap().exists());
 
     if cfg!(windows) {

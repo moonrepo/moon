@@ -71,7 +71,9 @@ pub trait Tool<'tool>:
         Ok(installed)
     }
 
-    async fn is_setup(&mut self) -> Result<bool, ProtoError> {
+    async fn is_setup(&mut self, initial_version: &str) -> Result<bool, ProtoError> {
+        self.resolve_version(initial_version, None).await?;
+
         let install_dir = self.get_install_dir()?;
 
         if install_dir.exists() {

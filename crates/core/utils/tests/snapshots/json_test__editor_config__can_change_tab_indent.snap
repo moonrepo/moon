@@ -1,0 +1,18 @@
+---
+source: crates/core/utils/tests/json_test.rs
+assertion_line: 115
+expression: "fs::read_to_string(&path).unwrap()"
+---
+{
+	"foo": true,
+	"bar": 123,
+	"baz": [
+		"a",
+		"b",
+		"c"
+	],
+	"qux": {
+		"nested": true
+	}
+}
+

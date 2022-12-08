@@ -1,0 +1,16 @@
+---
+source: crates/core/utils/tests/yaml_test.rs
+assertion_line: 52
+expression: "fs::read_to_string(&path).unwrap()"
+---
+foo: true
+bar: 123
+qux:
+	baz:
+	- a
+	- b
+	- c
+	nested: true
+	deep:
+		nested: yaaa
+

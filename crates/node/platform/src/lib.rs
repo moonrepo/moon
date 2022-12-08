@@ -177,7 +177,9 @@ impl Platform for NodePlatform {
                         continue;
                     }
 
+                    // We need both so that implicit dependencies resolve using the full scope
                     aliases_map.insert(alias, project_id.to_owned());
+                    aliases_map.insert(package_name, project_id.to_owned());
                 }
             }
         }

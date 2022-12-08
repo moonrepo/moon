@@ -1,8 +1,10 @@
+use std::collections::BTreeMap;
+
 use crate::depman::{NodeDependencyManager, NodeDependencyManagerType};
 use log::debug;
 use proto_core::{
-    async_trait, is_version_alias, load_versions_manifest, parse_version, remove_v_prefix,
-    Describable, ProtoError, Resolvable,
+    async_trait, load_versions_manifest, parse_version, remove_v_prefix, Describable, ProtoError,
+    Resolvable, VersionManifest, VersionManifestEntry,
 };
 use rustc_hash::FxHashMap;
 use serde::Deserialize;
@@ -27,7 +29,7 @@ pub struct NDMVersionDist {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct NDMVersion {
-    dist: NDMVersionDist,
+    // dist: NDMVersionDist,
     version: String, // No v prefix
 }
 
@@ -44,11 +46,32 @@ impl Resolvable<'_> for NodeDependencyManager {
         &self.version
     }
 
-    async fn resolve_version(
-        &mut self,
-        initial_version: &str,
-        manifest_url: Option<&str>,
-    ) -> Result<String, ProtoError> {
+    async fn load_manifest(&self) -> Result<VersionManifest, ProtoError> {
+        let mut versions = BTreeMap::new();
+        let response: NDMManifest = load_versions_manifest(format!(
+            "https://registry.npmjs.org/{}/",
+            self.type_of.get_package_name()
+        ))
+        .await?;
+
+        for item in response.versions.values() {
+            versions.insert(
+                item.version.clone(),
+                VersionManifestEntry {
+                    alias: None,
+                    version: item.version.clone(),
+                },
+            );
+        }
+
+        Ok(VersionManifest {
+            // Aliases map to dist tags
+            aliases: BTreeMap::from_iter(response.dist_tags),
+            versions,
+        })
+    }
+
+    async fn resolve_version(&mut self, initial_version: &str) -> Result<String, ProtoError> {
         let mut initial_version = remove_v_prefix(initial_version);
 
         // Yarn is installed through npm, but only v1 exists in the npm registry,
@@ -73,46 +96,22 @@ impl Resolvable<'_> for NodeDependencyManager {
             initial_version,
         );
 
-        let manifest_url = match manifest_url {
-            Some(url) => url.to_owned(),
-            None => format!(
-                "https://registry.npmjs.org/{}/",
-                self.type_of.get_package_name()
-            ),
-        };
-        let manifest: NDMManifest = load_versions_manifest(manifest_url).await?;
-
-        // Aliases map to dist tags
-        if is_version_alias(&initial_version) {
-            initial_version = match manifest.dist_tags.get(&initial_version) {
-                Some(version) => version.to_owned(),
-                None => {
-                    return Err(ProtoError::VersionUnknownAlias(initial_version));
-                }
-            };
-        }
-
-        // Infer the possible candidate from the versions map
-        let candidate = match manifest.versions.get(&initial_version) {
-            Some(version) => Some(&version.version),
-            None => return Err(ProtoError::VersionResolveFailed(initial_version)),
-        };
-
-        let version = parse_version(candidate.unwrap())?.to_string();
+        let manifest = self.load_manifest().await?;
+        let version = parse_version(manifest.find_version(&initial_version)?)?.to_string();
 
         debug!(target: self.get_log_target(), "Resolved to {}", version);
 
         self.version = version.clone();
 
         // Extract dist information for use in downloading and verifying
-        self.dist = Some(
-            manifest
-                .versions
-                .get(candidate.unwrap())
-                .unwrap()
-                .dist
-                .clone(),
-        );
+        // self.dist = Some(
+        //     manifest
+        //         .versions
+        //         .get(candidate.unwrap())
+        //         .unwrap()
+        //         .dist
+        //         .clone(),
+        // );
 
         Ok(version)
     }

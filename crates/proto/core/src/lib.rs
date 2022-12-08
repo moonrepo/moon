@@ -49,7 +49,7 @@ pub trait Tool<'tool>:
 
     async fn setup(&mut self, initial_version: &str) -> Result<bool, ProtoError> {
         // Resolve a semantic version
-        self.resolve_version(initial_version, None).await?;
+        self.resolve_version(initial_version).await?;
 
         // Download the archive
         let download_path = self.get_download_path()?;
@@ -72,7 +72,7 @@ pub trait Tool<'tool>:
     }
 
     async fn is_setup(&mut self, initial_version: &str) -> Result<bool, ProtoError> {
-        self.resolve_version(initial_version, None).await?;
+        self.resolve_version(initial_version).await?;
 
         let install_dir = self.get_install_dir()?;
 

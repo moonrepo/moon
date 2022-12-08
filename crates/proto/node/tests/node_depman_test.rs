@@ -140,11 +140,32 @@ mod resolver {
             None,
         );
 
-        assert_ne!(
-            tool.resolve_version("latest", None).await.unwrap(),
-            "latest"
-        );
+        assert_ne!(tool.resolve_version("latest").await.unwrap(), "latest");
         assert_ne!(tool.get_resolved_version(), "latest");
+    }
+
+    #[tokio::test]
+    async fn resolve_partial_version() {
+        let fixture = assert_fs::TempDir::new().unwrap();
+        let mut tool = NodeDependencyManager::new(
+            &create_proto(fixture.path()),
+            NodeDependencyManagerType::Npm,
+            None,
+        );
+
+        assert_eq!(tool.resolve_version("6").await.unwrap(), "6.9.2");
+    }
+
+    #[tokio::test]
+    async fn resolve_version_with_prefix() {
+        let fixture = assert_fs::TempDir::new().unwrap();
+        let mut tool = NodeDependencyManager::new(
+            &create_proto(fixture.path()),
+            NodeDependencyManagerType::Npm,
+            None,
+        );
+
+        assert_eq!(tool.resolve_version("v9.0.0").await.unwrap(), "9.0.0");
     }
 
     #[tokio::test]
@@ -156,7 +177,7 @@ mod resolver {
             None,
         );
 
-        assert_ne!(tool.resolve_version("berry", None).await.unwrap(), "berry");
+        assert_ne!(tool.resolve_version("berry").await.unwrap(), "berry");
     }
 
     #[tokio::test]
@@ -168,7 +189,7 @@ mod resolver {
             None,
         );
 
-        assert_eq!(tool.resolve_version("9.0.0", None).await.unwrap(), "9.0.0");
+        assert_eq!(tool.resolve_version("9.0.0").await.unwrap(), "9.0.0");
     }
 
     #[tokio::test]
@@ -180,7 +201,7 @@ mod resolver {
             None,
         );
 
-        assert_eq!(tool.resolve_version("7.0.0", None).await.unwrap(), "7.0.0");
+        assert_eq!(tool.resolve_version("7.0.0").await.unwrap(), "7.0.0");
     }
 
     #[tokio::test]
@@ -192,10 +213,7 @@ mod resolver {
             None,
         );
 
-        assert_eq!(
-            tool.resolve_version("1.22.0", None).await.unwrap(),
-            "1.22.0"
-        );
+        assert_eq!(tool.resolve_version("1.22.0").await.unwrap(), "1.22.0");
     }
 
     #[tokio::test]
@@ -208,7 +226,7 @@ mod resolver {
             None,
         );
 
-        tool.resolve_version("unknown", None).await.unwrap();
+        tool.resolve_version("unknown").await.unwrap();
     }
 
     #[tokio::test]
@@ -221,6 +239,6 @@ mod resolver {
             None,
         );
 
-        tool.resolve_version("99.99.99", None).await.unwrap();
+        tool.resolve_version("99.99.99").await.unwrap();
     }
 }

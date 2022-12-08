@@ -39,7 +39,7 @@ fn create_expanded_project(
 }
 
 #[test]
-#[should_panic(expected = "MissingProject(\"projects/missing\")")]
+#[should_panic(expected = "MissingProjectAtSource(\"projects/missing\")")]
 fn doesnt_exist() {
     Project::new(
         "missing",

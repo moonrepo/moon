@@ -553,32 +553,4 @@ mod create_hash_manifest {
 
         dir.close().unwrap();
     }
-
-    #[test]
-    #[serial]
-    fn doesnt_create_if_cache_off() {
-        let dir = create_temp_dir();
-        let cache = CacheEngine::load(dir.path()).unwrap();
-        let hasher = TestHasher::default();
-
-        run_with_env("off", || cache.create_hash_manifest("abc123", &hasher)).unwrap();
-
-        assert!(!cache.hashes_dir.join("abc123.json").exists());
-
-        dir.close().unwrap();
-    }
-
-    #[test]
-    #[serial]
-    fn doesnt_create_if_cache_readonly() {
-        let dir = create_temp_dir();
-        let cache = CacheEngine::load(dir.path()).unwrap();
-        let hasher = TestHasher::default();
-
-        run_with_env("read", || cache.create_hash_manifest("abc123", &hasher)).unwrap();
-
-        assert!(!cache.hashes_dir.join("abc123.json").exists());
-
-        dir.close().unwrap();
-    }
 }

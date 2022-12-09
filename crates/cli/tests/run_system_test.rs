@@ -243,13 +243,6 @@ mod unix {
 
             let state = RunTargetState::load(cache_path, 0).unwrap();
 
-            assert_snapshot!(fs::read_to_string(
-                sandbox
-                    .path()
-                    .join(format!(".moon/cache/hashes/{}.json", state.hash))
-            )
-            .unwrap());
-
             assert!(sandbox
                 .path()
                 .join(".moon/cache/outputs")
@@ -533,13 +526,6 @@ mod windows {
             assert!(cache_path.exists());
 
             let state = RunTargetState::load(cache_path, 0).unwrap();
-
-            assert_snapshot!(fs::read_to_string(
-                sandbox
-                    .path()
-                    .join(format!(".moon/cache/hashes/{}.json", state.hash))
-            )
-            .unwrap());
 
             assert!(sandbox
                 .path()

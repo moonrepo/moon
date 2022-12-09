@@ -1,3 +1,4 @@
+mod detect;
 mod download;
 mod execute;
 mod install;

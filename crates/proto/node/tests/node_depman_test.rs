@@ -1,4 +1,4 @@
-use proto_core::{Downloadable, Executable, Installable, Proto, Resolvable, Tool};
+use proto_core::{Detector, Downloadable, Executable, Installable, Proto, Resolvable, Tool};
 use proto_node::{NodeDependencyManager, NodeDependencyManagerType};
 use std::path::Path;
 
@@ -76,6 +76,135 @@ async fn downloads_verifies_installs_yarn_berry() {
         tool.get_bin_path().unwrap(),
         &proto.tools_dir.join("yarn/1.22.19/bin/yarn.js")
     );
+}
+
+mod detector {
+    use super::*;
+    use assert_fs::prelude::{FileWriteStr, PathChild};
+
+    #[tokio::test]
+    async fn doesnt_match_if_no_json_file() {
+        let fixture = assert_fs::TempDir::new().unwrap();
+        let proto = create_proto(fixture.path());
+        let tool =
+            NodeDependencyManager::new(&proto, NodeDependencyManagerType::Npm, Some("9.0.0"));
+
+        assert_eq!(
+            tool.detect_version_from(fixture.path()).await.unwrap(),
+            None
+        );
+    }
+
+    #[tokio::test]
+    async fn doesnt_match_if_no_field() {
+        let fixture = assert_fs::TempDir::new().unwrap();
+
+        fixture.child("package.json").write_str(r#"{}"#).unwrap();
+
+        let proto = create_proto(fixture.path());
+        let tool =
+            NodeDependencyManager::new(&proto, NodeDependencyManagerType::Npm, Some("9.0.0"));
+
+        assert_eq!(
+            tool.detect_version_from(fixture.path()).await.unwrap(),
+            None
+        );
+    }
+
+    #[tokio::test]
+    async fn doesnt_match_if_diff_package_name() {
+        let fixture = assert_fs::TempDir::new().unwrap();
+
+        fixture
+            .child("package.json")
+            .write_str(r#"{"packageManager":"yarn@1.2.3"}"#)
+            .unwrap();
+
+        let proto = create_proto(fixture.path());
+        let tool =
+            NodeDependencyManager::new(&proto, NodeDependencyManagerType::Npm, Some("9.0.0"));
+
+        assert_eq!(
+            tool.detect_version_from(fixture.path()).await.unwrap(),
+            None
+        );
+    }
+
+    #[tokio::test]
+    async fn defaults_to_latest_version() {
+        let fixture = assert_fs::TempDir::new().unwrap();
+
+        fixture
+            .child("package.json")
+            .write_str(r#"{"packageManager":"npm"}"#)
+            .unwrap();
+
+        let proto = create_proto(fixture.path());
+        let tool =
+            NodeDependencyManager::new(&proto, NodeDependencyManagerType::Npm, Some("9.0.0"));
+
+        assert_eq!(
+            tool.detect_version_from(fixture.path()).await.unwrap(),
+            Some("latest".into())
+        );
+    }
+
+    #[tokio::test]
+    async fn detects_npm() {
+        let fixture = assert_fs::TempDir::new().unwrap();
+
+        fixture
+            .child("package.json")
+            .write_str(r#"{"packageManager":"npm@1.2.3"}"#)
+            .unwrap();
+
+        let proto = create_proto(fixture.path());
+        let tool =
+            NodeDependencyManager::new(&proto, NodeDependencyManagerType::Npm, Some("9.0.0"));
+
+        assert_eq!(
+            tool.detect_version_from(fixture.path()).await.unwrap(),
+            Some("1.2.3".into())
+        );
+    }
+
+    #[tokio::test]
+    async fn detects_pnpm() {
+        let fixture = assert_fs::TempDir::new().unwrap();
+
+        fixture
+            .child("package.json")
+            .write_str(r#"{"packageManager":"pnpm@4.5.6"}"#)
+            .unwrap();
+
+        let proto = create_proto(fixture.path());
+        let tool =
+            NodeDependencyManager::new(&proto, NodeDependencyManagerType::Pnpm, Some("9.0.0"));
+
+        assert_eq!(
+            tool.detect_version_from(fixture.path()).await.unwrap(),
+            Some("4.5.6".into())
+        );
+    }
+
+    #[tokio::test]
+    async fn detects_yarn() {
+        let fixture = assert_fs::TempDir::new().unwrap();
+
+        fixture
+            .child("package.json")
+            .write_str(r#"{"packageManager":"yarn@7.8.9"}"#)
+            .unwrap();
+
+        let proto = create_proto(fixture.path());
+        let tool =
+            NodeDependencyManager::new(&proto, NodeDependencyManagerType::Yarn, Some("9.0.0"));
+
+        assert_eq!(
+            tool.detect_version_from(fixture.path()).await.unwrap(),
+            Some("7.8.9".into())
+        );
+    }
 }
 
 mod downloader {

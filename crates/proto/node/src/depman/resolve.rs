@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use crate::depman::{NodeDependencyManager, NodeDependencyManagerType};
 use log::debug;
 use proto_core::{
@@ -8,6 +6,7 @@ use proto_core::{
 };
 use rustc_hash::FxHashMap;
 use serde::Deserialize;
+use std::collections::BTreeMap;
 
 #[derive(Clone, Debug, Default, Deserialize)]
 pub struct NDMVersionDistSignature {

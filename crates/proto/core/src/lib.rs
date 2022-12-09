@@ -1,4 +1,5 @@
 mod describer;
+mod detector;
 mod downloader;
 mod errors;
 mod executor;
@@ -9,6 +10,7 @@ mod verifier;
 
 pub use async_trait::async_trait;
 pub use describer::*;
+pub use detector::*;
 pub use downloader::*;
 pub use errors::*;
 pub use executor::*;
@@ -39,6 +41,7 @@ pub trait Tool<'tool>:
     Send
     + Sync
     + Describable<'tool>
+    + Detector<'tool>
     + Resolvable<'tool>
     + Downloadable<'tool>
     + Verifiable<'tool>

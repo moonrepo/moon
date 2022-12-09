@@ -1,4 +1,6 @@
-use proto_core::{Downloadable, Executable, Installable, Proto, Resolvable, Tool, Verifiable};
+use proto_core::{
+    Detector, Downloadable, Executable, Installable, Proto, Resolvable, Tool, Verifiable,
+};
 use proto_node::NodeLanguage;
 use std::fs;
 use std::path::Path;
@@ -29,6 +31,51 @@ async fn downloads_verifies_installs_tool() {
         assert_eq!(
             tool.get_bin_path().unwrap(),
             &proto.tools_dir.join("node/18.0.0/bin/node")
+        );
+    }
+}
+
+mod detector {
+    use super::*;
+    use assert_fs::prelude::{FileWriteStr, PathChild};
+
+    #[tokio::test]
+    async fn doesnt_match_if_no_files() {
+        let fixture = assert_fs::TempDir::new().unwrap();
+        let proto = create_proto(fixture.path());
+        let tool = NodeLanguage::new(&proto, Some("18.0.0"));
+
+        assert_eq!(
+            tool.detect_version_from(fixture.path()).await.unwrap(),
+            None
+        );
+    }
+
+    #[tokio::test]
+    async fn detects_nvm() {
+        let fixture = assert_fs::TempDir::new().unwrap();
+        let proto = create_proto(fixture.path());
+        let tool = NodeLanguage::new(&proto, Some("18.0.0"));
+
+        fixture.child(".nvmrc").write_str("1.2.3").unwrap();
+
+        assert_eq!(
+            tool.detect_version_from(fixture.path()).await.unwrap(),
+            Some("1.2.3".into())
+        );
+    }
+
+    #[tokio::test]
+    async fn detects_nodenv() {
+        let fixture = assert_fs::TempDir::new().unwrap();
+        let proto = create_proto(fixture.path());
+        let tool = NodeLanguage::new(&proto, Some("18.0.0"));
+
+        fixture.child(".node-version").write_str("4.5.6\n").unwrap();
+
+        assert_eq!(
+            tool.detect_version_from(fixture.path()).await.unwrap(),
+            Some("4.5.6".into())
         );
     }
 }

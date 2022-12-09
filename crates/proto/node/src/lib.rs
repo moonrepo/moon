@@ -1,4 +1,5 @@
 pub mod depman;
+mod detect;
 pub mod download;
 mod execute;
 mod install;

@@ -1,12 +1,11 @@
-#![allow(clippy::disallowed_types)]
-
 use crate::NodeLanguage;
 use log::debug;
 use proto_core::{
-    add_v_prefix, async_trait, is_version_alias, load_versions_manifest, parse_version,
-    Describable, ProtoError, Resolvable,
+    async_trait, load_versions_manifest, parse_version, remove_v_prefix, Describable, ProtoError,
+    Resolvable, VersionManifest, VersionManifestEntry,
 };
 use serde::Deserialize;
+use std::collections::BTreeMap;
 
 #[derive(Deserialize)]
 #[serde(untagged)]
@@ -27,12 +26,46 @@ impl Resolvable<'_> for NodeLanguage {
         &self.version
     }
 
-    async fn resolve_version(
-        &mut self,
-        initial_version: &str,
-        manifest_url: Option<&str>,
-    ) -> Result<String, ProtoError> {
-        let mut candidate = None;
+    async fn load_manifest(&self) -> Result<VersionManifest, ProtoError> {
+        let mut aliases = BTreeMap::new();
+        let mut versions = BTreeMap::new();
+        let response: Vec<NodeDistVersion> =
+            load_versions_manifest("https://nodejs.org/dist/index.json").await?;
+
+        for (index, item) in response.iter().enumerate() {
+            // First item is always the latest
+            if index == 0 {
+                aliases.insert("latest".into(), item.version.clone());
+            }
+
+            let mut entry = VersionManifestEntry {
+                alias: None,
+                version: remove_v_prefix(&item.version),
+            };
+
+            if let NodeLTS::Name(alias) = &item.lts {
+                let alias = alias.to_lowercase();
+
+                // The first encounter of an lts in general is the latest stable
+                if !aliases.contains_key("stable") {
+                    aliases.insert("stable".into(), item.version.clone());
+                }
+
+                // The first encounter of an lts is the latest version for that alias
+                if !aliases.contains_key(&alias) {
+                    aliases.insert(alias.clone(), item.version.clone());
+                }
+
+                entry.alias = Some(alias);
+            }
+
+            versions.insert(entry.version.clone(), entry);
+        }
+
+        Ok(VersionManifest { aliases, versions })
+    }
+
+    async fn resolve_version(&mut self, initial_version: &str) -> Result<String, ProtoError> {
         let initial_version = initial_version.to_lowercase();
 
         debug!(
@@ -41,71 +74,28 @@ impl Resolvable<'_> for NodeLanguage {
             initial_version,
         );
 
-        let manifest: Vec<NodeDistVersion> =
-            load_versions_manifest(manifest_url.unwrap_or("https://nodejs.org/dist/index.json"))
-                .await?;
+        let manifest = self.load_manifest().await?;
+        let candidate;
 
         // Latest version is always at the top
         if initial_version == "node" || initial_version == "latest" {
-            candidate = Some(&manifest[0].version);
+            candidate = manifest.find_version_from_alias("latest")?;
 
         // Stable version is the first with an LTS
         } else if initial_version == "stable"
             || initial_version == "lts-*"
             || initial_version == "lts/*"
         {
-            for dist in &manifest {
-                if let NodeLTS::Name(_) = &dist.lts {
-                    candidate = Some(&dist.version);
-                    break;
-                }
-            }
+            candidate = manifest.find_version_from_alias("stable")?;
 
             // Find the first version with a matching LTS
         } else if initial_version.starts_with("lts-") || initial_version.starts_with("lts/") {
-            let lts_name = &initial_version[4..];
+            candidate = manifest.find_version_from_alias(&initial_version[4..])?;
 
-            for dist in &manifest {
-                if let NodeLTS::Name(lts) = &dist.lts {
-                    if lts.to_lowercase() == lts_name.to_lowercase() {
-                        candidate = Some(&dist.version);
-                        break;
-                    }
-                }
-            }
-
-            if candidate.is_none() {
-                return Err(ProtoError::VersionUnknownAlias(initial_version));
-            }
-
-            // Find the first version with a matching alias
-        } else if is_version_alias(&initial_version) {
-            for dist in &manifest {
-                if let NodeLTS::Name(lts) = &dist.lts {
-                    if lts.to_lowercase() == initial_version.to_lowercase() {
-                        candidate = Some(&dist.version);
-                        break;
-                    }
-                }
-            }
-
-            if candidate.is_none() {
-                return Err(ProtoError::VersionUnknownAlias(initial_version));
-            }
-
-            // An explicit version? Support optional minor and patch
+            // Either an alias or version
         } else {
-            for dist in &manifest {
-                if dist.version.starts_with(&add_v_prefix(&initial_version)) {
-                    candidate = Some(&dist.version);
-                    break;
-                }
-            }
+            candidate = manifest.find_version(&initial_version)?;
         }
-
-        let Some(candidate) = candidate else {
-            return Err(ProtoError::VersionResolveFailed(initial_version))
-        };
 
         let version = parse_version(candidate)?.to_string();
 

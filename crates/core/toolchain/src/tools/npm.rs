@@ -50,7 +50,7 @@ impl RuntimeTool for NpmTool {
     ) -> Result<u8, ToolchainError> {
         let mut count = 0;
 
-        if self.tool.is_setup().await? {
+        if self.tool.is_setup(&self.config.version).await? {
             debug!(target: self.tool.get_log_target(), "npm has already been setup");
 
             return Ok(count);

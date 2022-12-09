@@ -20,6 +20,14 @@
   now the default level, while `write` is a write-only level.
 - Added `args` and `env` as valid values for the `options.affectedFiles` task option.
 
+##### Toolchain
+
+- Added 24 hour temporary caching to version manifests to improve performance.
+
+#### 🐞 Fixes
+
+- Fixed an issue where "installing yarn" would constantly show.
+
 ## 0.20.3
 
 #### 🐞 Fixes

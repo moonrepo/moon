@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 async-trait = "0.1.58"
+dirs = "4.0.0"
 flate2 = "1.0.25"
 lenient_semver = { version = "0.4.2", features = ["version_lite", "version_serde"] }
 log = "0.4.17"

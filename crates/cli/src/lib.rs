@@ -192,7 +192,7 @@ pub async fn run_cli() {
                     head: head.clone().unwrap_or_default(),
                     local: *local,
                     log: false,
-                    status: *status,
+                    status: status.clone(),
                 })
                 .await
             }
@@ -213,7 +213,7 @@ pub async fn run_cli() {
                 RunOptions {
                     affected: *affected,
                     dependents: *dependents,
-                    status: *status,
+                    status: status.clone(),
                     passthrough: passthrough.clone(),
                     profile: profile.clone(),
                     report: *report,

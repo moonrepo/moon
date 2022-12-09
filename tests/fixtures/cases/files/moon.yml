@@ -1,3 +1,8 @@
 tasks:
   noop:
     command: noop
+  affected:
+    command: node ./affected.js
+    options:
+      affectedFiles: true
+    platform: node

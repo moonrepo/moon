@@ -77,6 +77,12 @@ We can take this a step further by filtering down affected files based on a chan
 $ moon run app:typecheck --affected --status deleted
 ```
 
+Multiple status can be provided by passing the `--status` option multiple times.
+
+```shell
+$ moon run app:typecheck --affected --status deleted --status modified
+```
+
 ## Passing arguments to the underlying command
 
 If you'd like to pass arbitrary arguments to the underlying task command, in addition to the already

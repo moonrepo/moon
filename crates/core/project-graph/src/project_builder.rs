@@ -101,7 +101,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             }
         }
 
-        if let Some(platform) = self.platforms.find(&project.config.language.to_platform()) {
+        if let Some(platform) = self.platforms.find(project.config.language) {
             // Inherit implicit dependencies
             for dep_config in platform.load_project_implicit_dependencies(
                 id,

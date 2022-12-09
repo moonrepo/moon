@@ -75,8 +75,10 @@ pub struct PlatformManager {
 }
 
 impl PlatformManager {
-    pub fn find(&self, type_of: &PlatformType) -> Option<&BoxedPlatform> {
-        self.find_with(|platform| platform.matches(type_of, None))
+    pub fn find<T: Into<PlatformType>>(&self, type_of: T) -> Option<&BoxedPlatform> {
+        let type_of = type_of.into();
+
+        self.find_with(|platform| platform.matches(&type_of, None))
     }
 
     pub fn find_with<P>(&self, predicate: P) -> Option<&BoxedPlatform>
@@ -86,8 +88,10 @@ impl PlatformManager {
         self.cache.values().find(predicate)
     }
 
-    pub fn get(&self, type_of: &PlatformType) -> Option<&BoxedPlatform> {
-        self.cache.get(type_of)
+    pub fn get<T: Into<PlatformType>>(&self, type_of: T) -> Option<&BoxedPlatform> {
+        let type_of = type_of.into();
+
+        self.cache.get(&type_of)
     }
 
     pub fn list_mut(

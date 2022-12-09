@@ -20,6 +20,7 @@
   now the default level, while `write` is now a write-only level.
 - Added `args` and `env` as valid values for the `affectedFiles` task option.
 - Updated `moon run` and `moon query touched-files` to support a list of `--status` options.
+- Updated the system platform to include the operating system and architecture when hashing.
 
 ##### Toolchain
 

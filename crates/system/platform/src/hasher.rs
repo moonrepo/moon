@@ -1,10 +1,16 @@
 use moon_hasher::{Digest, Hasher, Sha256};
 use serde::{Deserialize, Serialize};
+use std::env::consts;
 
-// TODO: track operating system?
 #[derive(Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SystemTargetHasher {
+    // Architecture
+    arch: String,
+
+    // Operating system
+    os: String,
+
     // Version of our hasher
     #[allow(dead_code)]
     version: String,
@@ -13,7 +19,9 @@ pub struct SystemTargetHasher {
 impl SystemTargetHasher {
     pub fn new() -> Self {
         SystemTargetHasher {
-            version: String::from("1"),
+            arch: consts::ARCH.to_owned(),
+            os: consts::OS.to_owned(),
+            version: "1".into(),
         }
     }
 }

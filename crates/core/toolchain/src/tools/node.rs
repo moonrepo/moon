@@ -142,7 +142,7 @@ impl RuntimeTool for NodeTool {
     ) -> Result<u8, ToolchainError> {
         let mut installed = 0;
 
-        if self.tool.is_setup().await? {
+        if self.tool.is_setup(&self.config.version).await? {
             debug!(target: self.tool.get_log_target(), "Node.js has already been setup");
         } else {
             let setup = match last_versions.get("node") {

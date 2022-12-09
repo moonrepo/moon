@@ -1,16 +1,20 @@
 mod describer;
+mod detector;
 mod downloader;
 mod errors;
 mod executor;
+mod helpers;
 mod installer;
 mod resolver;
 mod verifier;
 
 pub use async_trait::async_trait;
 pub use describer::*;
+pub use detector::*;
 pub use downloader::*;
 pub use errors::*;
 pub use executor::*;
+pub use helpers::*;
 pub use installer::*;
 pub use lenient_semver::Version;
 pub use resolver::*;
@@ -37,6 +41,7 @@ pub trait Tool<'tool>:
     Send
     + Sync
     + Describable<'tool>
+    + Detector<'tool>
     + Resolvable<'tool>
     + Downloadable<'tool>
     + Verifiable<'tool>
@@ -49,7 +54,7 @@ pub trait Tool<'tool>:
 
     async fn setup(&mut self, initial_version: &str) -> Result<bool, ProtoError> {
         // Resolve a semantic version
-        self.resolve_version(initial_version, None).await?;
+        self.resolve_version(initial_version).await?;
 
         // Download the archive
         let download_path = self.get_download_path()?;
@@ -71,7 +76,9 @@ pub trait Tool<'tool>:
         Ok(installed)
     }
 
-    async fn is_setup(&mut self) -> Result<bool, ProtoError> {
+    async fn is_setup(&mut self, initial_version: &str) -> Result<bool, ProtoError> {
+        self.resolve_version(initial_version).await?;
+
         let install_dir = self.get_install_dir()?;
 
         if install_dir.exists() {

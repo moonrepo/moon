@@ -1,3 +1,4 @@
+mod detect;
 mod download;
 mod execute;
 mod install;
@@ -5,7 +6,7 @@ mod resolve;
 mod verify;
 
 use proto_core::{Describable, Proto, Tool};
-use resolve::NDMVersionDist;
+// use resolve::NDMVersionDist;
 use std::path::PathBuf;
 
 #[derive(Debug)]
@@ -28,7 +29,7 @@ impl NodeDependencyManagerType {
 #[derive(Debug)]
 pub struct NodeDependencyManager {
     pub bin_path: Option<PathBuf>,
-    pub dist: Option<NDMVersionDist>,
+    // pub dist: Option<NDMVersionDist>,
     pub install_dir: PathBuf,
     pub log_target: String,
     pub temp_dir: PathBuf,
@@ -42,7 +43,7 @@ impl NodeDependencyManager {
 
         NodeDependencyManager {
             bin_path: None,
-            dist: None,
+            // dist: None,
             install_dir: proto.tools_dir.join(&package_name),
             log_target: format!("proto:tool:{}", &package_name),
             temp_dir: proto.temp_dir.join(&package_name),
@@ -51,11 +52,11 @@ impl NodeDependencyManager {
         }
     }
 
-    pub fn get_dist(&self) -> &NDMVersionDist {
-        self.dist
-            .as_ref()
-            .expect("Distribution info not defined for node dependency manager!")
-    }
+    // pub fn get_dist(&self) -> &NDMVersionDist {
+    //     self.dist
+    //         .as_ref()
+    //         .expect("Distribution info not defined for node dependency manager!")
+    // }
 }
 
 impl Describable<'_> for NodeDependencyManager {

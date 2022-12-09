@@ -1135,7 +1135,11 @@ mod affected {
                 .arg("modified");
         });
 
-        assert!(predicate::str::contains("\n./file.txt\n").eval(&assert.output()));
+        if cfg!(windows) {
+            assert!(predicate::str::contains("\n.\\file.txt\n").eval(&assert.output()));
+        } else {
+            assert!(predicate::str::contains("\n./file.txt\n").eval(&assert.output()));
+        }
 
         // Then test added
         sandbox.create_file("files/other.txt", "added");
@@ -1152,7 +1156,11 @@ mod affected {
                 .arg("added");
         });
 
-        assert!(predicate::str::contains("\n./other.txt\n").eval(&assert.output()));
+        if cfg!(windows) {
+            assert!(predicate::str::contains("\n.\\other.txt\n").eval(&assert.output()));
+        } else {
+            assert!(predicate::str::contains("\n./other.txt\n").eval(&assert.output()));
+        }
 
         // Then test both
         let assert = sandbox.run_moon(|cmd| {
@@ -1166,7 +1174,11 @@ mod affected {
                 .arg("added");
         });
 
-        assert!(predicate::str::contains("\n./file.txt,./other.txt\n").eval(&assert.output()));
+        if cfg!(windows) {
+            assert!(predicate::str::contains("\n.\\file.txt,.\\other.txt\n").eval(&assert.output()));
+        } else {
+            assert!(predicate::str::contains("\n./file.txt,./other.txt\n").eval(&assert.output()));
+        }
     }
 
     #[test]

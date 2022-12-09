@@ -1,5 +1,5 @@
 use crate::enums::TouchedStatus;
-use moon_logger::{color, debug, trace};
+use moon_logger::{color, debug, map_list, trace};
 use moon_task::TouchedFilePaths;
 use moon_utils::path;
 use moon_workspace::{Workspace, WorkspaceError};
@@ -18,7 +18,7 @@ pub struct QueryTouchedFilesOptions {
     pub local: bool,
     #[serde(skip)]
     pub log: bool,
-    pub status: TouchedStatus,
+    pub status: Vec<TouchedStatus>,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -77,21 +77,29 @@ pub async fn query_touched_files(
     };
 
     let mut touched_files_to_log = vec![];
+    let mut touched_files = FxHashSet::default();
 
     debug!(
         target: LOG_TARGET,
-        "Filtering based on touched status \"{}\"", options.status
+        "Filtering based on touched status \"{}\"",
+        map_list(&options.status, |f| color::symbol(f.to_string()))
     );
 
-    let touched_files = match options.status {
-        TouchedStatus::Added => touched_files_map.added,
-        TouchedStatus::All => touched_files_map.all,
-        TouchedStatus::Deleted => touched_files_map.deleted,
-        TouchedStatus::Modified => touched_files_map.modified,
-        TouchedStatus::Staged => touched_files_map.staged,
-        TouchedStatus::Unstaged => touched_files_map.unstaged,
-        TouchedStatus::Untracked => touched_files_map.untracked,
-    };
+    if options.status.is_empty() {
+        touched_files.extend(&touched_files_map.all);
+    } else {
+        for status in &options.status {
+            touched_files.extend(match status {
+                TouchedStatus::Added => &touched_files_map.added,
+                TouchedStatus::All => &touched_files_map.all,
+                TouchedStatus::Deleted => &touched_files_map.deleted,
+                TouchedStatus::Modified => &touched_files_map.modified,
+                TouchedStatus::Staged => &touched_files_map.staged,
+                TouchedStatus::Unstaged => &touched_files_map.unstaged,
+                TouchedStatus::Untracked => &touched_files_map.untracked,
+            });
+        }
+    }
 
     let touched_files: FxHashSet<PathBuf> = touched_files
         .iter()

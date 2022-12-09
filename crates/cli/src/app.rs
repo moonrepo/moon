@@ -118,13 +118,8 @@ pub enum QueryCommands {
         #[arg(long, help = "Gather files from you local state instead of upstream")]
         local: bool,
 
-        #[arg(
-            value_enum,
-            long,
-            help = "Filter files based on a touched status",
-            default_value_t
-        )]
-        status: TouchedStatus,
+        #[arg(value_enum, long, help = "Filter files based on a touched status")]
+        status: Vec<TouchedStatus>,
     },
 }
 
@@ -372,9 +367,8 @@ pub enum Commands {
             help = "Filter affected files based on a touched status",
             help_heading = HEADING_AFFECTED,
             requires = "affected-args",
-            default_value_t
         )]
-        status: TouchedStatus,
+        status: Vec<TouchedStatus>,
 
         #[arg(
             long,

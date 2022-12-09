@@ -1,4 +1,3 @@
-use crate::enums::TouchedStatus;
 use crate::helpers::AnyError;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use itertools::Itertools;
@@ -55,9 +54,8 @@ async fn gather_touched_files(
             default_branch: true,
             base: options.base.clone().unwrap_or_default(),
             head: options.head.clone().unwrap_or_default(),
-            local: false,
             log: true,
-            status: TouchedStatus::All,
+            ..QueryTouchedFilesOptions::default()
         },
     )
     .await?;

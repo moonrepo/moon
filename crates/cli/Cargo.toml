@@ -40,7 +40,7 @@ moon_workspace = { path = "../core/workspace" }
 clap = { workspace = true, features = ["derive", "env", "wrap_help"] }
 clap_lex = "0.3.0"
 console = "0.15.2"
-console-subscriber = "0.1.8"
+# console-subscriber = "0.1.8"
 dialoguer = "0.10.2"
 indicatif = "0.17.2"
 itertools = "0.10.5"

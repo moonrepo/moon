@@ -275,7 +275,37 @@ mod touched_files {
 
         assert_eq!(json.options.base, "master".to_string());
         assert_eq!(json.options.head, "branch".to_string());
-        assert_eq!(json.options.status, TouchedStatus::Deleted);
+        assert_eq!(json.options.status, vec![TouchedStatus::Deleted]);
         assert!(!json.options.local);
+    }
+
+    #[test]
+    fn can_supply_multi_status() {
+        let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
+
+        let sandbox = create_sandbox_with_config(
+            "cases",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&projects_config),
+        );
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("query").arg("touched-files").args([
+                "--status", "deleted", "--status", "added", "--status", "modified",
+            ]);
+        });
+
+        let json: QueryTouchedFilesResult = serde_json::from_str(&assert.output()).unwrap();
+
+        assert_eq!(
+            json.options.status,
+            vec![
+                TouchedStatus::Deleted,
+                TouchedStatus::Added,
+                TouchedStatus::Modified
+            ]
+        );
     }
 }

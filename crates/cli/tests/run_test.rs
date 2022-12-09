@@ -1073,10 +1073,33 @@ mod affected {
 
         let output = assert.output();
 
-        assert!(
-            predicate::str::contains("Target(s) files:noop not affected by touched files")
-                .eval(&output)
-        );
+        assert!(predicate::str::contains(
+            "Target(s) files:noop not affected by touched files (using status all)"
+        )
+        .eval(&output));
+    }
+
+    #[test]
+    fn doesnt_run_if_not_affected_by_multi_status() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("files:noop")
+                .arg("--affected")
+                .arg("--status")
+                .arg("untracked")
+                .arg("--status")
+                .arg("deleted");
+        });
+
+        let output = assert.output();
+
+        assert!(predicate::str::contains(
+            "Target(s) files:noop not affected by touched files (using status untracked, deleted)"
+        )
+        .eval(&output));
     }
 
     #[test]
@@ -1093,6 +1116,69 @@ mod affected {
         let output = assert.output();
 
         assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+    }
+
+    #[test]
+    fn runs_if_affected_by_multi_status() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        // Test modified
+        sandbox.create_file("files/file.txt", "modified");
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("files:affected")
+                .arg("-u")
+                .arg("--affected")
+                .arg("--status")
+                .arg("modified");
+        });
+
+        if cfg!(windows) {
+            assert!(predicate::str::contains("\n.\\file.txt\n").eval(&assert.output()));
+        } else {
+            assert!(predicate::str::contains("\n./file.txt\n").eval(&assert.output()));
+        }
+
+        // Then test added
+        sandbox.create_file("files/other.txt", "added");
+        sandbox.run_git(|cmd| {
+            cmd.args(["add", "files/other.txt"]);
+        });
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("files:affected")
+                .arg("-u")
+                .arg("--affected")
+                .arg("--status")
+                .arg("added");
+        });
+
+        if cfg!(windows) {
+            assert!(predicate::str::contains("\n.\\other.txt\n").eval(&assert.output()));
+        } else {
+            assert!(predicate::str::contains("\n./other.txt\n").eval(&assert.output()));
+        }
+
+        // Then test both
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("files:affected")
+                .arg("-u")
+                .arg("--affected")
+                .arg("--status")
+                .arg("modified")
+                .arg("--status")
+                .arg("added");
+        });
+
+        if cfg!(windows) {
+            assert!(predicate::str::contains("\n.\\file.txt,.\\other.txt\n").eval(&assert.output()));
+        } else {
+            assert!(predicate::str::contains("\n./file.txt,./other.txt\n").eval(&assert.output()));
+        }
     }
 
     #[test]

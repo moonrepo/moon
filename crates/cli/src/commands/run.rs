@@ -16,7 +16,7 @@ use std::string::ToString;
 pub struct RunOptions {
     pub affected: bool,
     pub dependents: bool,
-    pub status: TouchedStatus,
+    pub status: Vec<TouchedStatus>,
     pub passthrough: Vec<String>,
     pub profile: Option<ProfileType>,
     pub report: bool,
@@ -49,7 +49,7 @@ pub async fn run_target(
             &workspace,
             &mut QueryTouchedFilesOptions {
                 local: is_local(&options),
-                status: options.status,
+                status: options.status.clone(),
                 ..QueryTouchedFilesOptions::default()
             },
         )
@@ -75,15 +75,16 @@ pub async fn run_target(
         let targets_list = map_list(target_ids, |id| color::target(id));
 
         if options.affected {
-            if matches!(options.status, TouchedStatus::All) {
-                println!("Target(s) {} not affected by touched files", targets_list);
+            let status_list = if options.status.is_empty() {
+                color::symbol(TouchedStatus::All.to_string())
             } else {
-                println!(
-                    "Target(s) {} not affected by touched files (using status {})",
-                    targets_list,
-                    color::symbol(&options.status.to_string())
-                );
-            }
+                map_list(&options.status, |s| color::symbol(s.to_string()))
+            };
+
+            println!(
+                "Target(s) {} not affected by touched files (using status {})",
+                targets_list, status_list
+            );
         } else {
             println!("No tasks found for target(s) {}", targets_list);
         }

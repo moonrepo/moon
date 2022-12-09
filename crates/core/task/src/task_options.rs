@@ -5,6 +5,7 @@ use moon_config::{
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "lowercase")]
 pub enum TaskOptionAffectedFiles {
     Args,
     Env,

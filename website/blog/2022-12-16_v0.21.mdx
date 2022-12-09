@@ -30,3 +30,34 @@ reading any existing cache items, but will force update the cache base on the la
 ```shell
 $ moon run app:build --updateCache
 ```
+
+## New multi-status affected filtering
+
+We support running tasks based on affected files using the
+[`moon run --affected`](../docs/commands/run) command, which is great for reducing the amount of
+tasks being ran, and for applying code quality tooling like git hooks. However, you were only able
+to apply a single status filter, like "deleted" or "modified", which was non-ideal... but no more!
+
+You can now apply multiple statuses by passing the `--status` option multiple times.
+
+```shell
+$ moon run :lint --affected --status modified --status added
+```
+
+This pairs nicely with the recent
+[`affectedFiles` task option](../docs/config/project#affectedfiles) changes!
+
+## Other changes
+
+View the
+[official release](https://github.com/moonrepo/moon/releases/tag/%40moonrepo%2Fcli%400.21.0) for a
+full list of changes.
+
+- Rewritten project and dependency graphs for improved performance.
+- Added args and env var variants to the `affectedFiles` task option.
+
+## What's next?
+
+Expect the following in the v0.21 release!
+
+- Scope tasks defined in `.moon/project.yml` to a project language or type.

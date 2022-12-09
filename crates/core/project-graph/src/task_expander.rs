@@ -1,20 +1,21 @@
+use crate::token_resolver::{TokenData, TokenResolver};
 use moon_config::ProjectID;
 use moon_logger::{debug, Logable};
 use moon_project::Project;
-use moon_task::{
-    ResolverData, Target, TargetError, TargetProjectScope, Task, TaskError, TokenResolver,
-};
+use moon_task::{Target, TargetError, TargetProjectScope, Task, TaskError};
 use moon_utils::{glob, is_ci, path, regex::ENV_VAR};
 use rustc_hash::FxHashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub struct TaskExpander<'data> {
-    data: &'data ResolverData<'data>,
+    data: &'data TokenData<'data>,
 }
 
 impl<'data> TaskExpander<'data> {
-    pub fn new(data: &'data ResolverData) -> Self {
-        TaskExpander { data }
+    pub fn new(project: &'data Project, workspace_root: &'data Path) -> Self {
+        TaskExpander {
+            data: &TokenData::new(project, workspace_root),
+        }
     }
 
     /// Expand the args list to resolve tokens, relative to the project root.
@@ -23,7 +24,6 @@ impl<'data> TaskExpander<'data> {
             return Ok(());
         }
 
-        let token_resolver = TokenResolver::for_args(self.data);
         let mut args: Vec<String> = vec![];
 
         // When running within a project:
@@ -33,11 +33,10 @@ impl<'data> TaskExpander<'data> {
         //  - All paths are absolute
         let handle_path = |path: PathBuf, is_glob: bool| -> Result<String, TaskError> {
             let arg = if !task.options.run_from_workspace_root
-                && path.starts_with(token_resolver.data.workspace_root)
+                && path.starts_with(self.data.workspace_root)
             {
-                let rel_path = path::to_string(
-                    path::relative_from(&path, token_resolver.data.project_root).unwrap(),
-                )?;
+                let rel_path =
+                    path::to_string(path::relative_from(&path, &self.data.project.root).unwrap())?;
 
                 if rel_path.starts_with("..") {
                     rel_path
@@ -59,6 +58,8 @@ impl<'data> TaskExpander<'data> {
 
         // We cant use `TokenResolver.resolve` as args are a mix of strings,
         // strings with tokens, and file paths when tokens are resolved.
+        let token_resolver = TokenResolver::for_args(self.data);
+
         for arg in &task.args {
             if token_resolver.has_token_func(arg) {
                 let (paths, globs) = token_resolver.resolve_func(arg, task)?;
@@ -134,7 +135,7 @@ impl<'data> TaskExpander<'data> {
     /// Expand environment variables by loading a `.env` file if configured.
     pub fn expand_env(&self, task: &mut Task) -> Result<(), TaskError> {
         if let Some(env_file) = &task.options.env_file {
-            let env_path = self.data.project_root.join(env_file);
+            let env_path = self.data.project.root.join(env_file);
             let error_handler =
                 |e: dotenvy::Error| TaskError::InvalidEnvFile(env_path.clone(), e.to_string());
 
@@ -168,7 +169,6 @@ impl<'data> TaskExpander<'data> {
             return Ok(());
         }
 
-        let token_resolver = TokenResolver::for_inputs(self.data);
         let inputs_without_vars = task
             .inputs
             .clone()
@@ -183,6 +183,7 @@ impl<'data> TaskExpander<'data> {
             })
             .collect::<Vec<String>>();
 
+        let token_resolver = TokenResolver::for_inputs(self.data);
         let (paths, globs) = token_resolver.resolve(&inputs_without_vars, task)?;
 
         task.input_paths.extend(paths);

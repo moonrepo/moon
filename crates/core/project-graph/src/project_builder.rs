@@ -10,7 +10,7 @@ use moon_platform::PlatformManager;
 use moon_project::{
     detect_projects_with_globs, Project, ProjectDependency, ProjectDependencySource, ProjectError,
 };
-use moon_task::{ResolverData, Target, Task};
+use moon_task::{Target, Task};
 use petgraph::graph::{DiGraph, NodeIndex};
 use rustc_hash::FxHashMap;
 use std::mem;
@@ -144,17 +144,11 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         // Find all dependent projects
         for dep_id in project.dependencies.keys() {
-            dep_projects.insert(dep_id.to_owned(), self.load(&dep_id).unwrap());
+            // dep_projects.insert(dep_id.to_owned(), self.load(&dep_id).unwrap());
         }
 
         // Expand all tasks and resolve tokens
-        let resolver_data = ResolverData::new(
-            &project.file_groups,
-            &self.workspace_root,
-            &project.root,
-            &project.config,
-        );
-        let task_expander = TaskExpander::new(&resolver_data);
+        let task_expander = TaskExpander::new(&project, &self.workspace_root);
 
         for task in project.tasks.values_mut() {
             // Inherit implicits before resolving

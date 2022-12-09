@@ -34,7 +34,7 @@ pub trait Platform: Debug + Send + Sync {
     /// map of projects that are unique to the platform's ecosystem.
     fn load_project_graph_aliases(
         &mut self,
-        projects_map: &ProjectsSourcesMap,
+        project_sources: &ProjectsSourcesMap,
         aliases_map: &mut ProjectsAliasesMap,
     ) -> Result<(), MoonError> {
         Ok(())
@@ -75,12 +75,19 @@ pub struct PlatformManager {
 }
 
 impl PlatformManager {
-    pub fn get(&self, type_of: &PlatformType) -> Option<&BoxedPlatform> {
-        self.cache.get(type_of)
+    pub fn find(&self, type_of: &PlatformType) -> Option<&BoxedPlatform> {
+        self.find_with(|platform| platform.matches(type_of, None))
     }
 
-    pub fn list(&self) -> std::collections::hash_map::Values<PlatformType, BoxedPlatform> {
-        self.cache.values()
+    pub fn find_with<P>(&self, predicate: P) -> Option<&BoxedPlatform>
+    where
+        P: Fn(&&BoxedPlatform) -> bool,
+    {
+        self.cache.values().find(predicate)
+    }
+
+    pub fn get(&self, type_of: &PlatformType) -> Option<&BoxedPlatform> {
+        self.cache.get(type_of)
     }
 
     pub fn list_mut(

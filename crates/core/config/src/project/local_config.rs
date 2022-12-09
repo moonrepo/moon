@@ -82,9 +82,9 @@ pub enum ProjectLanguage {
 impl ProjectLanguage {
     pub fn to_platform(&self) -> PlatformType {
         match self {
+            ProjectLanguage::Bash | ProjectLanguage::Batch => PlatformType::System,
             ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => PlatformType::Node,
             ProjectLanguage::Unknown => PlatformType::Unknown,
-            _ => PlatformType::System,
         }
     }
 }

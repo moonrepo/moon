@@ -1,7 +1,8 @@
+use crate::errors::TokenError;
 use moon_config::FileGlob;
 use moon_logger::{color, warn};
 use moon_project::Project;
-use moon_task::{Task, TokenError};
+use moon_task::Task;
 use moon_utils::regex::{
     matches_token_func, matches_token_var, TOKEN_FUNC_ANYWHERE_PATTERN, TOKEN_FUNC_PATTERN,
     TOKEN_VAR_PATTERN,
@@ -85,16 +86,16 @@ impl TokenType {
     }
 
     pub fn token_label(&self) -> String {
-        String::from(match self {
-            TokenType::Dirs(_, _) => "@dirs",
-            TokenType::Files(_, _) => "@files",
-            TokenType::Globs(_, _) => "@globs",
-            TokenType::Group(_, _) => "@group",
-            TokenType::In(_, _) => "@in",
-            TokenType::Out(_, _) => "@out",
-            TokenType::Root(_, _) => "@root",
-            TokenType::Var(_) => "$var",
-        })
+        match self {
+            TokenType::Dirs(_, _) => "@dirs".into(),
+            TokenType::Files(_, _) => "@files".into(),
+            TokenType::Globs(_, _) => "@globs".into(),
+            TokenType::Group(_, _) => "@group".into(),
+            TokenType::In(_, _) => "@in".into(),
+            TokenType::Out(_, _) => "@out".into(),
+            TokenType::Root(_, _) => "@root".into(),
+            TokenType::Var(name) => format!("${}", name),
+        }
     }
 }
 
@@ -250,19 +251,17 @@ impl<'task> TokenResolver<'task> {
 
         let token = matches.get(0).unwrap().as_str(); // $var
         let var = matches.get(1).unwrap().as_str(); // var
-
-        let (project_id, task_id) = task.target.ids()?;
         let workspace_root = self.data.workspace_root;
         let project = self.data.project;
 
         let var_value = match var {
             "language" => project.language.to_string(),
-            "project" => project_id,
+            "project" => project.id.to_string(),
             "projectRoot" => path::to_string(&project.root)?,
-            "projectSource" => project.source,
+            "projectSource" => project.source.to_string(),
             "projectType" => project.type_of.to_string(),
-            "target" => task.target.id,
-            "task" => task_id,
+            "target" => task.target.id.to_string(),
+            "task" => task.id.to_string(),
             "taskPlatform" => task.platform.to_string(),
             "taskType" => task.type_of.to_string(),
             "workspaceRoot" => path::to_string(workspace_root)?,
@@ -271,7 +270,7 @@ impl<'task> TokenResolver<'task> {
             }
         };
 
-        Ok(value.to_owned().replace(token, &var_value))
+        Ok(value.replace(token, &var_value))
     }
 
     fn convert_string_to_u8(&self, token: &str, value: String) -> Result<u8, TokenError> {

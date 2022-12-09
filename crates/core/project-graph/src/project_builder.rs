@@ -1,3 +1,4 @@
+use crate::errors::ProjectGraphError;
 use crate::project_graph::{GraphType, IndicesType, ProjectGraph, LOG_TARGET};
 use crate::task_expander::TaskExpander;
 use moon_cache::CacheEngine;
@@ -36,7 +37,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         platforms: &'ws mut PlatformManager,
         workspace_config: &'ws WorkspaceConfig,
         workspace_root: &'ws Path,
-    ) -> Result<ProjectGraphBuilder<'ws>, ProjectError> {
+    ) -> Result<ProjectGraphBuilder<'ws>, ProjectGraphError> {
         debug!(target: LOG_TARGET, "Creating project graph");
 
         let mut graph = ProjectGraphBuilder {
@@ -66,13 +67,15 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         )
     }
 
-    pub fn load(&mut self, alias_or_id: &str) -> Result<&Self, ProjectError> {
+    pub fn load(&mut self, alias_or_id: &str) -> Result<&Self, ProjectGraphError> {
         self.internal_load(alias_or_id)?;
 
         Ok(self)
     }
 
-    pub fn load_all(&mut self) -> Result<&Self, ProjectError> {
+    pub fn load_all(&mut self) -> Result<&Self, ProjectGraphError> {
+        // TODO: Don't clone data here, but satisfying the borrow checker
+        // is almost impossible here without a major refactor!
         let ids = self
             .sources
             .keys()
@@ -86,7 +89,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         Ok(self)
     }
 
-    fn create_project(&self, id: &str, source: &str) -> Result<Project, ProjectError> {
+    fn create_project(&self, id: &str, source: &str) -> Result<Project, ProjectGraphError> {
         let mut project = Project::new(id, source, self.workspace_root, self.config)?;
 
         // Find the alias for a given ID. This is currently... not performant,
@@ -98,13 +101,9 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             }
         }
 
-        for platform in self.platforms.list() {
-            if !platform.matches(&project.config.language.to_platform(), None) {
-                continue;
-            }
-
-            // Determine implicit dependencies
-            for dep_cfg in platform.load_project_implicit_dependencies(
+        if let Some(platform) = self.platforms.find(&project.config.language.to_platform()) {
+            // Inherit implicit dependencies
+            for dep_config in platform.load_project_implicit_dependencies(
                 id,
                 &project.root,
                 &project.config,
@@ -113,9 +112,9 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                 // Implicit deps should not override explicit deps
                 project
                     .dependencies
-                    .entry(dep_cfg.id.clone())
+                    .entry(dep_config.id.clone())
                     .or_insert_with(|| {
-                        let mut dep = ProjectDependency::from_config(&dep_cfg);
+                        let mut dep = ProjectDependency::from_config(&dep_config);
                         dep.source = ProjectDependencySource::Implicit;
                         dep
                     });
@@ -138,8 +137,8 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         Ok(project)
     }
 
-    fn expand_tasks(&mut self, index: &NodeIndex) -> Result<(), ProjectError> {
-        let project = self.graph.node_weight_mut(*index).unwrap();
+    fn expand_tasks(&mut self, index: &NodeIndex) -> Result<(), ProjectGraphError> {
+        let mut project = self.graph.node_weight_mut(*index).unwrap();
         let mut dep_projects = FxHashMap::default();
 
         // Find all dependent projects
@@ -174,7 +173,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         Ok(())
     }
 
-    fn internal_load(&mut self, alias_or_id: &str) -> Result<NodeIndex, ProjectError> {
+    fn internal_load(&mut self, alias_or_id: &str) -> Result<NodeIndex, ProjectGraphError> {
         let id = match self.aliases.get(alias_or_id) {
             Some(project_id) => project_id,
             None => alias_or_id,
@@ -199,7 +198,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         // Create project based on ID and source
         let Some(source) = self.sources.get(id) else {
-            return Err(ProjectError::UnconfiguredID(id.to_owned()));
+            return Err(ProjectGraphError::Project(ProjectError::UnconfiguredID(id.to_owned())));
         };
 
         let project = self.create_project(id, source)?;
@@ -233,7 +232,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         Ok(node_index)
     }
 
-    fn load_aliases(&mut self) -> Result<(), ProjectError> {
+    fn load_aliases(&mut self) -> Result<(), ProjectGraphError> {
         for platform in self.platforms.list_mut() {
             platform.load_project_graph_aliases(&self.sources, &mut self.aliases)?;
         }
@@ -241,7 +240,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         Ok(())
     }
 
-    fn load_sources(&mut self) -> Result<(), ProjectError> {
+    fn load_sources(&mut self) -> Result<(), ProjectGraphError> {
         let mut globs = vec![];
         let mut sources = FxHashMap::default();
 

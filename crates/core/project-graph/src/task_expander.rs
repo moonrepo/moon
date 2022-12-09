@@ -1,3 +1,4 @@
+use crate::errors::ProjectGraphError;
 use crate::token_resolver::{TokenData, TokenResolver};
 use moon_config::ProjectID;
 use moon_logger::{debug, Logable};
@@ -8,18 +9,18 @@ use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
 
 pub struct TaskExpander<'data> {
-    data: &'data TokenData<'data>,
+    data: TokenData<'data>,
 }
 
 impl<'data> TaskExpander<'data> {
     pub fn new(project: &'data Project, workspace_root: &'data Path) -> Self {
         TaskExpander {
-            data: &TokenData::new(project, workspace_root),
+            data: TokenData::new(project, workspace_root),
         }
     }
 
     /// Expand the args list to resolve tokens, relative to the project root.
-    pub fn expand_args(&self, task: &mut Task) -> Result<(), TaskError> {
+    pub fn expand_args(&self, task: &mut Task) -> Result<(), ProjectGraphError> {
         if task.args.is_empty() {
             return Ok(());
         }
@@ -31,7 +32,7 @@ impl<'data> TaskExpander<'data> {
         //  - Workspace paths are relative up to the root
         // When running from the workspace:
         //  - All paths are absolute
-        let handle_path = |path: PathBuf, is_glob: bool| -> Result<String, TaskError> {
+        let handle_path = |path: PathBuf, is_glob: bool| -> Result<String, ProjectGraphError> {
             let arg = if !task.options.run_from_workspace_root
                 && path.starts_with(self.data.workspace_root)
             {
@@ -58,7 +59,7 @@ impl<'data> TaskExpander<'data> {
 
         // We cant use `TokenResolver.resolve` as args are a mix of strings,
         // strings with tokens, and file paths when tokens are resolved.
-        let token_resolver = TokenResolver::for_args(self.data);
+        let token_resolver = TokenResolver::for_args(&self.data);
 
         for arg in &task.args {
             if token_resolver.has_token_func(arg) {
@@ -89,7 +90,7 @@ impl<'data> TaskExpander<'data> {
         task: &mut Task,
         owner_id: &str,
         depends_on: &FxHashMap<ProjectID, Project>,
-    ) -> Result<(), TaskError> {
+    ) -> Result<(), ProjectGraphError> {
         if task.deps.is_empty() {
             return Ok(());
         }
@@ -133,7 +134,7 @@ impl<'data> TaskExpander<'data> {
     }
 
     /// Expand environment variables by loading a `.env` file if configured.
-    pub fn expand_env(&self, task: &mut Task) -> Result<(), TaskError> {
+    pub fn expand_env(&self, task: &mut Task) -> Result<(), ProjectGraphError> {
         if let Some(env_file) = &task.options.env_file {
             let env_path = self.data.project.root.join(env_file);
             let error_handler =
@@ -164,7 +165,7 @@ impl<'data> TaskExpander<'data> {
     }
 
     /// Expand the inputs list to a set of absolute file paths, while resolving tokens.
-    pub fn expand_inputs(&self, task: &mut Task) -> Result<(), TaskError> {
+    pub fn expand_inputs(&self, task: &mut Task) -> Result<(), ProjectGraphError> {
         if task.inputs.is_empty() {
             return Ok(());
         }
@@ -183,7 +184,7 @@ impl<'data> TaskExpander<'data> {
             })
             .collect::<Vec<String>>();
 
-        let token_resolver = TokenResolver::for_inputs(self.data);
+        let token_resolver = TokenResolver::for_inputs(&self.data);
         let (paths, globs) = token_resolver.resolve(&inputs_without_vars, task)?;
 
         task.input_paths.extend(paths);
@@ -193,22 +194,22 @@ impl<'data> TaskExpander<'data> {
     }
 
     /// Expand the outputs list to a set of absolute file paths, while resolving tokens.
-    pub fn expand_outputs(&self, task: &mut Task) -> Result<(), TaskError> {
+    pub fn expand_outputs(&self, task: &mut Task) -> Result<(), ProjectGraphError> {
         if task.outputs.is_empty() {
             return Ok(());
         }
 
-        let token_resolver = TokenResolver::for_outputs(self.data);
+        let token_resolver = TokenResolver::for_outputs(&self.data);
         let (paths, globs) = token_resolver.resolve(&task.outputs, task)?;
 
         task.output_paths.extend(paths);
 
         if !globs.is_empty() {
             if let Some(glob) = globs.get(0) {
-                return Err(TaskError::NoOutputGlob(
+                return Err(ProjectGraphError::Task(TaskError::NoOutputGlob(
                     glob.to_owned(),
                     task.target.id.clone(),
-                ));
+                )));
             }
         }
 

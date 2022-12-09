@@ -75,7 +75,11 @@ pub async fn run_target(
         let targets_list = map_list(target_ids, |id| color::target(id));
 
         if options.affected {
-            let status_list = map_list(&options.status, |s| color::symbol(s.to_string()));
+            let status_list = if options.status.is_empty() {
+                color::symbol(TouchedStatus::All.to_string())
+            } else {
+                map_list(&options.status, |s| color::symbol(s.to_string()))
+            };
 
             println!(
                 "Target(s) {} not affected by touched files (using status {})",

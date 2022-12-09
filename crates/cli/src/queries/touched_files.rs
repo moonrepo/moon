@@ -79,15 +79,21 @@ pub async fn query_touched_files(
     let mut touched_files_to_log = vec![];
     let mut touched_files = FxHashSet::default();
 
-    debug!(
-        target: LOG_TARGET,
-        "Filtering based on touched status \"{}\"",
-        map_list(&options.status, |f| color::symbol(f.to_string()))
-    );
-
     if options.status.is_empty() {
+        debug!(
+            target: LOG_TARGET,
+            "Filtering based on touched status \"{}\"",
+            color::symbol(TouchedStatus::All.to_string())
+        );
+
         touched_files.extend(&touched_files_map.all);
     } else {
+        debug!(
+            target: LOG_TARGET,
+            "Filtering based on touched status \"{}\"",
+            map_list(&options.status, |f| color::symbol(f.to_string()))
+        );
+
         for status in &options.status {
             touched_files.extend(match status {
                 TouchedStatus::Added => &touched_files_map.added,

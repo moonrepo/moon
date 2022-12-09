@@ -16,7 +16,7 @@ export interface FileGroup {
 }
 
 export interface TaskOptions {
-	affectedFiles: boolean;
+	affectedFiles: 'args' | 'both' | 'env';
 	cache: boolean;
 	envFile: string | null;
 	mergeArgs: TaskMergeStrategy;

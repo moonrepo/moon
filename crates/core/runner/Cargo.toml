@@ -34,7 +34,7 @@ moon_toolchain = { path = "../toolchain" }
 moon_utils = { path = "../utils" }
 moon_vcs = { path = "../vcs" }
 moon_workspace = { path = "../workspace" }
-async-trait = "0.1.58"
+async-trait = "0.1.59"
 console = "0.15.2"
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }

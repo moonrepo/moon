@@ -15,5 +15,5 @@ serde = { workspace = true }
 
 [dev-dependencies]
 moon_test_utils = { path = "../test-utils" }
-filetime = "0.2.18"
+filetime = "0.2.19"
 serial_test = "0.9.0"

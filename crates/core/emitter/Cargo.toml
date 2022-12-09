@@ -19,7 +19,7 @@ moon_project = { path = "../project" }
 moon_task = { path = "../task" }
 moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
-async-trait = "0.1.58"
+async-trait = "0.1.59"
 serde = { workspace = true }
 tokio = { workspace = true }
 

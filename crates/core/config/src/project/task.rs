@@ -49,6 +49,7 @@ fn validate_outputs(list: &[String]) -> Result<(), ValidationError> {
 
 #[derive(
     Clone,
+    Copy,
     Debug,
     Default,
     Deserialize,

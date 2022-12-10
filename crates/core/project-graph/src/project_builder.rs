@@ -13,7 +13,7 @@ use moon_project::{
 };
 use moon_task::{Target, Task};
 use petgraph::graph::{DiGraph, NodeIndex};
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::mem;
 use std::path::Path;
 
@@ -137,41 +137,40 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         Ok(project)
     }
 
-    fn expand_tasks(&mut self, index: &NodeIndex) -> Result<(), ProjectGraphError> {
-        let mut project = self.graph.node_weight_mut(*index).unwrap();
-        let mut dep_projects = FxHashMap::default();
+    // fn expand_tasks(&mut self, project: &mut Project) -> Result<(), ProjectGraphError> {
+    //     let mut dep_projects = FxHashMap::default();
 
-        // Find all dependent projects
-        for dep_id in project.dependencies.keys() {
-            // dep_projects.insert(dep_id.to_owned(), self.load(&dep_id).unwrap());
-        }
+    //     // Find all dependent projects
+    //     for dep_id in project.dependencies.keys() {
+    //         // dep_projects.insert(dep_id.to_owned(), self.load(&dep_id).unwrap());
+    //     }
 
-        // Expand all tasks and resolve tokens
-        let task_expander = TaskExpander::new(&project, &self.workspace_root);
+    //     // Expand all tasks and resolve tokens
+    //     let task_expander = TaskExpander::new(&project, &self.workspace_root);
 
-        for task in project.tasks.values_mut() {
-            // Inherit implicits before resolving
-            task.deps.extend(Task::create_dep_targets(
-                &self.workspace_config.runner.implicit_deps,
-            )?);
+    //     for task in project.tasks.values_mut() {
+    //         // Inherit implicits before resolving
+    //         task.deps.extend(Task::create_dep_targets(
+    //             &self.workspace_config.runner.implicit_deps,
+    //         )?);
 
-            task.inputs
-                .extend(self.workspace_config.runner.implicit_inputs.iter().cloned());
+    //         task.inputs
+    //             .extend(self.workspace_config.runner.implicit_inputs.iter().cloned());
 
-            // Resolve in this order!
-            task_expander.expand_env(task)?;
-            task_expander.expand_deps(task, &project.id, &dep_projects)?;
-            task_expander.expand_inputs(task)?;
-            task_expander.expand_outputs(task)?;
-            task_expander.expand_args(task)?;
+    //         // Resolve in this order!
+    //         task_expander.expand_env(task)?;
+    //         task_expander.expand_deps(task, &project.id, &dep_projects)?;
+    //         task_expander.expand_inputs(task)?;
+    //         task_expander.expand_outputs(task)?;
+    //         task_expander.expand_args(task)?;
 
-            if matches!(task.platform, PlatformType::Unknown) {
-                task.platform = TaskConfig::detect_platform(&project.config, &task.command);
-            }
-        }
+    //         if matches!(task.platform, PlatformType::Unknown) {
+    //             task.platform = TaskConfig::detect_platform(&project.config, &task.command);
+    //         }
+    //     }
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 
     fn internal_load(&mut self, alias_or_id: &str) -> Result<NodeIndex, ProjectGraphError> {
         let id = match self.aliases.get(alias_or_id) {
@@ -180,14 +179,14 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         };
 
         // Already loaded, abort early
-        if self.indices.contains_key(id) {
+        if let Some(index) = self.indices.get(id) {
             trace!(
                 target: LOG_TARGET,
                 "Project {} already exists in the project graph",
                 color::id(id),
             );
 
-            return Ok(*self.indices.get(id).unwrap());
+            return Ok(*index);
         }
 
         trace!(
@@ -196,40 +195,34 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             color::id(id),
         );
 
-        // Create project based on ID and source
-        let Some(source) = self.sources.get(id) else {
-            return Err(ProjectGraphError::Project(ProjectError::UnconfiguredID(id.to_owned())));
+        // Create the current project
+        let id = id.to_owned();
+        let Some(source) = self.sources.get(&id) else {
+            return Err(ProjectGraphError::Project(ProjectError::UnconfiguredID(id)));
         };
 
-        let project = self.create_project(id, source)?;
-
-        // Insert the project into the graph
-        let node_index = self.graph.add_node(project);
-
-        self.indices.insert(id.to_owned(), node_index);
+        let project = self.create_project(&id, source)?;
 
         // Create dependent projects
-        let depends_on = project.dependencies.keys();
+        let mut depends_on_indices = FxHashSet::default();
 
-        if depends_on.len() > 0 {
-            // trace!(
-            //     target: LOG_TARGET,
-            //     "Adding dependencies {} to project {}",
-            //     map_list(&depends_on, |d| color::symbol(d)),
-            //     color::id(id),
-            // );
-
-            for dep_id in depends_on {
-                let dep_index = self.internal_load(dep_id)?;
-
-                self.graph.add_edge(node_index, dep_index, ());
-            }
+        for dep_id in project.dependencies.keys() {
+            depends_on_indices.insert(self.internal_load(dep_id)?);
         }
 
-        // Expand tasks for the new project
-        self.expand_tasks(&node_index)?;
+        // Insert into the graph and connect edges
+        let index = self.graph.add_node(project);
 
-        Ok(node_index)
+        self.indices.insert(id, index);
+
+        for dep_index in &depends_on_indices {
+            self.graph.add_edge(index, *dep_index, ());
+        }
+
+        // Expand tasks for the new project before inserting into the graph
+        // self.expand_tasks(&mut project)?;
+
+        Ok(index)
     }
 
     fn load_aliases(&mut self) -> Result<(), ProjectGraphError> {

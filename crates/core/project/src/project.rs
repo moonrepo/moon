@@ -359,13 +359,13 @@ impl Project {
             alias: None,
             dependencies,
             file_groups,
-            id: String::from(id),
-            language: config.language.clone(),
+            id: id.to_owned(),
+            language: config.language,
             log_target,
             root,
-            source: String::from(source),
+            source: source.to_owned(),
             tasks,
-            type_of: config.type_of.clone(),
+            type_of: config.type_of,
             config,
         })
     }

@@ -40,8 +40,14 @@ pub trait Platform: Debug + Send + Sync {
         Ok(())
     }
 
-    /// During project creation (when being lazy loaded and instantiated in the graph),
-    /// scan for any implicit project dependency relations using the platforms manifest.
+    /// During project creation within the project graph, find a matching alias
+    /// for the previously loaded map of aliases, if applicable
+    fn load_project_alias(&self, aliases_map: &ProjectsAliasesMap) -> Option<String> {
+        None
+    }
+
+    /// During project creation within the project graph, scan for any implicit
+    /// project dependency relations using the platforms manifest.
     fn load_project_implicit_dependencies(
         &self,
         project_id: &str,
@@ -52,8 +58,8 @@ pub trait Platform: Debug + Send + Sync {
         Ok(vec![])
     }
 
-    /// During project creation (when being lazy loaded and instantiated in the graph),
-    /// load and infer any *additional* tasks for the platform.
+    /// During project creation within the project graph, load and infer any
+    /// *additional* tasks for the platform.
     fn load_project_tasks(
         &self,
         project_id: &str,

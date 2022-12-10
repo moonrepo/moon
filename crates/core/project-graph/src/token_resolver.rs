@@ -29,20 +29,6 @@ impl TokenContext {
     }
 }
 
-pub struct TokenData<'task> {
-    pub project: &'task Project,
-    pub workspace_root: &'task Path,
-}
-
-impl<'task> TokenData<'task> {
-    pub fn new(project: &'task Project, workspace_root: &'task Path) -> TokenData<'task> {
-        TokenData {
-            project,
-            workspace_root,
-        }
-    }
-}
-
 #[derive(Debug, Eq, PartialEq)]
 pub enum TokenType {
     Var(String),
@@ -101,28 +87,20 @@ impl TokenType {
 
 pub struct TokenResolver<'task> {
     context: TokenContext,
-    pub data: &'task TokenData<'task>,
+    pub project: &'task Project,
+    pub workspace_root: &'task Path,
 }
 
 impl<'task> TokenResolver<'task> {
-    pub fn for_args(data: &'task TokenData<'task>) -> TokenResolver<'task> {
+    pub fn new(
+        context: TokenContext,
+        project: &'task Project,
+        workspace_root: &'task Path,
+    ) -> TokenResolver<'task> {
         TokenResolver {
-            context: TokenContext::Args,
-            data,
-        }
-    }
-
-    pub fn for_inputs(data: &'task TokenData<'task>) -> TokenResolver<'task> {
-        TokenResolver {
-            context: TokenContext::Inputs,
-            data,
-        }
-    }
-
-    pub fn for_outputs(data: &'task TokenData<'task>) -> TokenResolver<'task> {
-        TokenResolver {
-            context: TokenContext::Outputs,
-            data,
+            context,
+            workspace_root,
+            project,
         }
     }
 
@@ -175,8 +153,8 @@ impl<'task> TokenResolver<'task> {
                     } else {
                         value.to_owned()
                     },
-                    self.data.workspace_root,
-                    &self.data.project.root,
+                    self.workspace_root,
+                    &self.project.root,
                 );
 
                 if glob::is_glob(value) {
@@ -251,8 +229,8 @@ impl<'task> TokenResolver<'task> {
 
         let token = matches.get(0).unwrap().as_str(); // $var
         let var = matches.get(1).unwrap().as_str(); // var
-        let workspace_root = self.data.workspace_root;
-        let project = self.data.project;
+        let workspace_root = &self.workspace_root;
+        let project = self.project;
 
         let var_value = match var {
             "language" => project.language.to_string(),
@@ -288,7 +266,7 @@ impl<'task> TokenResolver<'task> {
 
         let mut paths: Vec<PathBuf> = vec![];
         let mut globs: Vec<String> = vec![];
-        let file_groups = &self.data.project.file_groups;
+        let file_groups = &self.project.file_groups;
 
         let get_file_group = |token: &str, id: &str| {
             file_groups
@@ -296,8 +274,8 @@ impl<'task> TokenResolver<'task> {
                 .ok_or_else(|| TokenError::UnknownFileGroup(token.to_owned(), id.to_owned()))
         };
 
-        let workspace_root = self.data.workspace_root;
-        let project_root = &self.data.project.root;
+        let workspace_root = &self.workspace_root;
+        let project_root = &self.project.root;
 
         match token_type {
             TokenType::Dirs(token, group) => {
@@ -353,8 +331,8 @@ impl<'task> TokenResolver<'task> {
             } else {
                 match task.input_paths.get(&path::expand_root_path(
                     input,
-                    self.data.workspace_root,
-                    &self.data.project.root,
+                    self.workspace_root,
+                    &self.project.root,
                 )) {
                     Some(p) => {
                         paths.push(p.clone());
@@ -390,8 +368,8 @@ impl<'task> TokenResolver<'task> {
             } else {
                 match task.output_paths.get(&path::expand_root_path(
                     output,
-                    self.data.workspace_root,
-                    &self.data.project.root,
+                    self.workspace_root,
+                    &self.project.root,
                 )) {
                     Some(p) => {
                         paths.push(p.clone());

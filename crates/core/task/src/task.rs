@@ -140,7 +140,7 @@ impl Task {
         }
 
         if !matches!(self.platform, PlatformType::Unknown) {
-            config.platform = self.platform.clone();
+            config.platform = self.platform;
         }
 
         config
@@ -282,7 +282,7 @@ impl Task {
 
         // Merge options first incase the merge strategy has changed
         self.options.merge(&config.options);
-        self.platform = config.platform.clone();
+        self.platform = config.platform;
 
         // Then merge the actual task fields
         if let Some(cmd) = command {

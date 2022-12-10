@@ -89,7 +89,9 @@ pub enum ProjectLanguage {
     Unknown,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Display, Eq, JsonSchema, PartialEq, Serialize)]
+#[derive(
+    Clone, Copy, Debug, Default, Deserialize, Display, Eq, JsonSchema, PartialEq, Serialize,
+)]
 #[serde(rename_all = "lowercase")]
 pub enum ProjectType {
     #[strum(serialize = "application")]

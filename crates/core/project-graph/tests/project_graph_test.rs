@@ -349,3 +349,204 @@ mod implicit_explicit_deps {
         );
     }
 }
+
+// mod expand_env {
+//     use super::*;
+
+//     #[test]
+//     #[should_panic(expected = "Error parsing line: 'FOO', error at line index: 3")]
+//     fn errors_on_invalid_file() {
+//         let sandbox = create_sandbox("cases");
+//         let project_root = sandbox.path().join("base");
+
+//         sandbox.create_file("base/.env", "FOO");
+
+//         create_expanded_task(
+//             sandbox.path(),
+//             &project_root,
+//             Some(TaskConfig {
+//                 options: TaskOptionsConfig {
+//                     env_file: Some(TaskOptionEnvFileConfig::Enabled(true)),
+//                     ..TaskOptionsConfig::default()
+//                 },
+//                 ..TaskConfig::default()
+//             }),
+//         )
+//         .unwrap();
+//     }
+
+//     #[test]
+//     // Windows = "The system cannot find the file specified"
+//     // Unix = "No such file or directory"
+//     #[should_panic(expected = "InvalidEnvFile")]
+//     fn errors_on_missing_file() {
+//         // `expand_env` has a CI check that avoids this from crashing, so emulate it
+//         if moon_utils::is_ci() {
+//             panic!("InvalidEnvFile");
+//         } else {
+//             let sandbox = create_sandbox("cases");
+//             let project_root = sandbox.path().join("base");
+
+//             create_expanded_task(
+//                 sandbox.path(),
+//                 &project_root,
+//                 Some(TaskConfig {
+//                     options: TaskOptionsConfig {
+//                         env_file: Some(TaskOptionEnvFileConfig::Enabled(true)),
+//                         ..TaskOptionsConfig::default()
+//                     },
+//                     ..TaskConfig::default()
+//                 }),
+//             )
+//             .unwrap();
+//         }
+//     }
+
+//     #[test]
+//     fn loads_using_bool() {
+//         let sandbox = create_sandbox("cases");
+//         let project_root = sandbox.path().join("base");
+
+//         sandbox.create_file("base/.env", "FOO=foo\nBAR=123");
+
+//         let task = create_expanded_task(
+//             sandbox.path(),
+//             &project_root,
+//             Some(TaskConfig {
+//                 options: TaskOptionsConfig {
+//                     env_file: Some(TaskOptionEnvFileConfig::Enabled(true)),
+//                     ..TaskOptionsConfig::default()
+//                 },
+//                 ..TaskConfig::default()
+//             }),
+//         )
+//         .unwrap();
+
+//         assert_eq!(
+//             task.env,
+//             FxHashMap::from_iter([
+//                 ("FOO".to_owned(), "foo".to_owned()),
+//                 ("BAR".to_owned(), "123".to_owned())
+//             ])
+//         );
+
+//         assert!(task.inputs.contains(&".env".to_owned()));
+//         assert!(task.input_paths.contains(&project_root.join(".env")));
+//     }
+
+//     #[test]
+//     fn loads_using_custom_path() {
+//         let sandbox = create_sandbox("cases");
+//         let project_root = sandbox.path().join("base");
+
+//         sandbox.create_file("base/.env.production", "FOO=foo\nBAR=123");
+
+//         let task = create_expanded_task(
+//             sandbox.path(),
+//             &project_root,
+//             Some(TaskConfig {
+//                 options: TaskOptionsConfig {
+//                     env_file: Some(TaskOptionEnvFileConfig::File(".env.production".to_owned())),
+//                     ..TaskOptionsConfig::default()
+//                 },
+//                 ..TaskConfig::default()
+//             }),
+//         )
+//         .unwrap();
+
+//         assert_eq!(
+//             task.env,
+//             FxHashMap::from_iter([
+//                 ("FOO".to_owned(), "foo".to_owned()),
+//                 ("BAR".to_owned(), "123".to_owned())
+//             ])
+//         );
+
+//         assert!(task.inputs.contains(&".env.production".to_owned()));
+//         assert!(task
+//             .input_paths
+//             .contains(&project_root.join(".env.production")));
+//     }
+
+//     #[test]
+//     fn doesnt_override_other_env() {
+//         let sandbox = create_sandbox("cases");
+//         let project_root = sandbox.path().join("base");
+
+//         sandbox.create_file("base/.env", "FOO=foo\nBAR=123");
+
+//         let task = create_expanded_task(
+//             sandbox.path(),
+//             &project_root,
+//             Some(TaskConfig {
+//                 env: Some(FxHashMap::from_iter([(
+//                     "FOO".to_owned(),
+//                     "original".to_owned(),
+//                 )])),
+//                 options: TaskOptionsConfig {
+//                     env_file: Some(TaskOptionEnvFileConfig::Enabled(true)),
+//                     ..TaskOptionsConfig::default()
+//                 },
+//                 ..TaskConfig::default()
+//             }),
+//         )
+//         .unwrap();
+
+//         assert_eq!(
+//             task.env,
+//             FxHashMap::from_iter([
+//                 ("FOO".to_owned(), "original".to_owned()),
+//                 ("BAR".to_owned(), "123".to_owned())
+//             ])
+//         );
+
+//         assert!(task.inputs.contains(&".env".to_owned()));
+//     }
+// }
+
+// mod expand_inputs {
+//     use super::*;
+
+//     #[test]
+//     fn filters_into_correct_types() {
+//         let workspace_root = get_fixtures_path("base");
+//         let project_root = workspace_root.join("files-and-dirs");
+//         let task = create_expanded_task(
+//             &workspace_root,
+//             &project_root,
+//             Some(TaskConfig {
+//                 inputs: Some(string_vec![
+//                     "$VAR",
+//                     "$FOO_BAR",
+//                     "file.ts",
+//                     "folder",
+//                     "glob/**/*",
+//                     "/config.js",
+//                     "/*.cfg"
+//                 ]),
+//                 ..TaskConfig::default()
+//             }),
+//         )
+//         .unwrap();
+
+//         assert_eq!(
+//             task.input_vars,
+//             FxHashSet::from_iter(["VAR".to_owned(), "FOO_BAR".to_owned()])
+//         );
+//         assert_eq!(
+//             task.input_paths,
+//             FxHashSet::from_iter([
+//                 project_root.join("file.ts"),
+//                 project_root.join("folder"),
+//                 workspace_root.join("config.js")
+//             ])
+//         );
+//         assert_eq!(
+//             task.input_globs,
+//             FxHashSet::from_iter([
+//                 glob::normalize(project_root.join("glob/**/*")).unwrap(),
+//                 glob::normalize(workspace_root.join("*.cfg")).unwrap()
+//             ])
+//         );
+//     }
+// }

@@ -1,17 +1,19 @@
 use crate::errors::{TargetError, TaskError};
 use crate::target::Target;
 use crate::task_options::TaskOptions;
-use crate::types::{EnvVars, TouchedFilePaths};
+use crate::types::TouchedFilePaths;
 use moon_config::{
     FileGlob, FilePath, InputValue, PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy,
 };
 use moon_logger::{color, debug, trace, Logable};
 use moon_utils::{glob, string_vec};
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::path::{Path, PathBuf};
 use strum::Display;
+
+type EnvVars = FxHashMap<String, String>;
 
 #[derive(Clone, Debug, Default, Deserialize, Display, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]

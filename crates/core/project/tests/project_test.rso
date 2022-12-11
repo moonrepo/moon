@@ -11,6 +11,32 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::path::Path;
 
+
+pub fn create_file_groups_config() -> FxHashMap<String, Vec<String>> {
+    let mut map = FxHashMap::default();
+
+    map.insert(
+        String::from("static"),
+        string_vec![
+            "file.ts",
+            "dir",
+            "dir/other.tsx",
+            "dir/subdir",
+            "dir/subdir/another.ts",
+        ],
+    );
+
+    map.insert(String::from("dirs_glob"), string_vec!["**/*"]);
+
+    map.insert(String::from("files_glob"), string_vec!["**/*.{ts,tsx}"]);
+
+    map.insert(String::from("globs"), string_vec!["**/*.{ts,tsx}", "*.js"]);
+
+    map.insert(String::from("no_globs"), string_vec!["config.js"]);
+
+    map
+}
+
 fn mock_file_groups() -> FxHashMap<String, FileGroup> {
     FxHashMap::from_iter([(
         String::from("sources"),

@@ -8,3 +8,4 @@ pub use errors::*;
 pub use helpers::*;
 pub use project_builder::ProjectGraphBuilder;
 pub use project_graph::ProjectGraph;
+pub use token_resolver::*;

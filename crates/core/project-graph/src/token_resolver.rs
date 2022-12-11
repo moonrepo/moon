@@ -80,7 +80,13 @@ impl TokenType {
             TokenType::In(_, _) => "@in".into(),
             TokenType::Out(_, _) => "@out".into(),
             TokenType::Root(_, _) => "@root".into(),
-            TokenType::Var(name) => format!("${}", name),
+            TokenType::Var(name) => {
+                if name.is_empty() {
+                    "$var".into()
+                } else {
+                    format!("${}", name)
+                }
+            }
         }
     }
 }

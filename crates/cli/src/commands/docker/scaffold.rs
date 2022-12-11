@@ -140,7 +140,7 @@ fn scaffold_sources_project(
             workspace,
             project_graph,
             docker_sources_root,
-            &dep_id,
+            dep_id,
             manifest,
         )?;
     }

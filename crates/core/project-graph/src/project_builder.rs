@@ -205,7 +205,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         // We cant use `TokenResolver.resolve` as args are a mix of strings,
         // strings with tokens, and file paths when tokens are resolved.
-        let token_resolver = TokenResolver::new(TokenContext::Args, &project, &self.workspace_root);
+        let token_resolver = TokenResolver::new(TokenContext::Args, project, self.workspace_root);
 
         for arg in &task.args {
             if token_resolver.has_token_func(arg) {
@@ -354,7 +354,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             .collect::<Vec<_>>();
 
         let token_resolver =
-            TokenResolver::new(TokenContext::Inputs, &project, &self.workspace_root);
+            TokenResolver::new(TokenContext::Inputs, project, self.workspace_root);
         let (paths, globs) = token_resolver.resolve(&inputs_without_vars, task)?;
 
         task.input_paths.extend(paths);
@@ -374,7 +374,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         }
 
         let token_resolver =
-            TokenResolver::new(TokenContext::Outputs, &project, &self.workspace_root);
+            TokenResolver::new(TokenContext::Outputs, project, self.workspace_root);
         let (paths, globs) = token_resolver.resolve(&task.outputs, task)?;
 
         task.output_paths.extend(paths);

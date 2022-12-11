@@ -4,8 +4,8 @@ assertion_line: 244
 expression: graph.to_dot()
 ---
 digraph {
-    0 [ label="b" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    1 [ label="c" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    0 -> 1 [ arrowhead=none]
+    0 [ label="c" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    1 [ label="b" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    1 -> 0 [ arrowhead=box, arrowtail=box]
 }
 

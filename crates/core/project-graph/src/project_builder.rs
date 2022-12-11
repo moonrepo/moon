@@ -1,4 +1,5 @@
 use crate::errors::ProjectGraphError;
+use crate::helpers::detect_projects_with_globs;
 use crate::project_graph::{GraphType, IndicesType, ProjectGraph, LOG_TARGET};
 use crate::token_resolver::{TokenContext, TokenResolver};
 use moon_cache::CacheEngine;
@@ -8,9 +9,7 @@ use moon_config::{
 };
 use moon_logger::{color, debug, map_list, trace, Logable};
 use moon_platform::PlatformManager;
-use moon_project::{
-    detect_projects_with_globs, Project, ProjectDependency, ProjectDependencySource, ProjectError,
-};
+use moon_project::{Project, ProjectDependency, ProjectDependencySource, ProjectError};
 use moon_task::{Target, TargetError, TargetProjectScope, Task, TaskError};
 use moon_utils::regex::ENV_VAR;
 use moon_utils::{glob, is_ci, path};
@@ -260,7 +259,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             match &target.project {
                 // ^:task
                 TargetProjectScope::Deps => {
-                    for dep_id in project.dependencies.keys() {
+                    for dep_id in project.get_dependency_ids() {
                         let dep_index = self.indices.get(dep_id).unwrap();
                         let dep_project = self.graph.node_weight(*dep_index).unwrap();
 
@@ -426,7 +425,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         // Create dependent projects
         let mut dep_indices = FxHashSet::default();
 
-        for dep_id in project.dependencies.keys() {
+        for dep_id in project.get_dependency_ids() {
             dep_indices.insert(self.internal_load(dep_id)?);
         }
 

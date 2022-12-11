@@ -1,10 +1,14 @@
 use moon_error::MoonError;
 use moon_project::ProjectError;
 use moon_task::{FileGroupError, TargetError, TaskError};
+use moon_utils::glob::GlobError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ProjectGraphError {
+    #[error(transparent)]
+    Glob(#[from] GlobError),
+
     #[error(transparent)]
     Moon(#[from] MoonError),
 

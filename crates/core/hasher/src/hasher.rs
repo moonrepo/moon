@@ -69,8 +69,9 @@ impl TargetHasher {
     }
 
     /// Hash `dependsOn` from the owning project.
-    pub fn hash_project_deps(&mut self, deps: Vec<String>) {
-        self.project_deps = deps; // Sorted
+    pub fn hash_project_deps(&mut self, deps: Vec<&String>) {
+        self.project_deps = deps.into_iter().map(|d| d.to_owned()).collect();
+        self.project_deps.sort();
     }
 
     /// Hash `args`, `inputs`, `deps`, and `env` vars from a task.

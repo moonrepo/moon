@@ -371,10 +371,8 @@ impl Project {
     }
 
     /// Return a list of project IDs this project depends on.
-    pub fn get_dependency_ids(&self) -> Vec<ProjectID> {
-        let mut depends_on = self.dependencies.keys().cloned().collect::<Vec<String>>();
-        depends_on.sort();
-        depends_on
+    pub fn get_dependency_ids(&self) -> Vec<&ProjectID> {
+        self.dependencies.keys().collect::<Vec<_>>()
     }
 
     /// Return a task with the defined ID.

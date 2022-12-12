@@ -67,7 +67,7 @@ impl<'ws> DepGraphBuilder<'ws> {
         let mut project_runtime = None;
         let mut workspace_runtime = None;
 
-        if let Some(platform) = self.platforms.find_with(|p| match task {
+        if let Some(platform) = self.platforms.find(|p| match task {
             Some(task) => p.matches(&task.platform, None),
             None => p.matches(&project.config.language.into(), None),
         }) {

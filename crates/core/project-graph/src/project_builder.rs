@@ -97,7 +97,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
     fn create_project(&self, id: &str, source: &str) -> Result<Project, ProjectGraphError> {
         let mut project = Project::new(id, source, self.workspace_root, self.config)?;
 
-        if let Some(platform) = self.platforms.find(project.config.language) {
+        if let Some(platform) = self.platforms.get(project.config.language) {
             project.alias = platform.load_project_alias(&self.aliases);
 
             // Inherit implicit dependencies
@@ -270,11 +270,17 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                 }
                 // ~:task
                 TargetProjectScope::OwnSelf => {
-                    push_target(Target::new(&project.id, &target.task_id)?);
+                    if target.task_id != task.id {
+                        push_target(Target::new(&project.id, &target.task_id)?);
+                    }
                 }
                 // project:task
-                TargetProjectScope::Id(_) => {
-                    push_target(target.clone());
+                TargetProjectScope::Id(project_id) => {
+                    if project_id == &project.id && target.task_id == task.id {
+                        // Avoid circular references
+                    } else {
+                        push_target(target.clone());
+                    }
                 }
                 _ => {
                     target.fail_with(TargetError::NoProjectAllInTaskDeps(target.id.clone()))?;
@@ -353,8 +359,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             .map(|input| input.to_owned())
             .collect::<Vec<_>>();
 
-        let token_resolver =
-            TokenResolver::new(TokenContext::Inputs, project, self.workspace_root);
+        let token_resolver = TokenResolver::new(TokenContext::Inputs, project, self.workspace_root);
         let (paths, globs) = token_resolver.resolve(&inputs_without_vars, task)?;
 
         task.input_paths.extend(paths);

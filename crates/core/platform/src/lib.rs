@@ -81,13 +81,7 @@ pub struct PlatformManager {
 }
 
 impl PlatformManager {
-    pub fn find<T: Into<PlatformType>>(&self, type_of: T) -> Option<&BoxedPlatform> {
-        let type_of = type_of.into();
-
-        self.find_with(|platform| platform.matches(&type_of, None))
-    }
-
-    pub fn find_with<P>(&self, predicate: P) -> Option<&BoxedPlatform>
+    pub fn find<P>(&self, predicate: P) -> Option<&BoxedPlatform>
     where
         P: Fn(&&BoxedPlatform) -> bool,
     {

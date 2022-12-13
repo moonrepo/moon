@@ -24,3 +24,17 @@ jobs:
       - uses: actions/checkout@v3
       - run: bash ./scripts/checks/cliBinary.sh
         shell: bash
+  installer:
+    name: Install script check
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - run: bash ./website/static/install.sh
+        shell: bash
+        if: ${{ runner.os != 'Windows' }}
+      - run: pwsh.exe ./website/static/install.ps1
+        if: ${{ runner.os == 'Windows' }}

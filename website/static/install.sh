@@ -27,9 +27,9 @@ else
 fi
 
 if [[ "$arch" == "Linux"* ]]; then
-	musl=$(ldd --version 2>&1 || true)
+	deps=$(ldd --version 2>&1 || true)
 
-	if [[ $musl == *"musl"* ]]; then
+	if [[ $deps == *"musl"* ]]; then
 		target="$target-musl"
 	else
 		target="$target-gnu"
@@ -57,3 +57,14 @@ echo "Successfully installed moon to $bin_path"
 echo "Run 'moon --help' to get started!"
 echo
 echo "Need help? Join our Discord https://discord.gg/qCh9MEynv2"
+
+if [ -z "$MOON_TEST" ]; then
+	# Not debugging
+else
+	echo
+	echo "arch=$arch"
+	echo "deps=$deps"
+	echo "target=$target"
+	echo "download_url=$download_url"
+	echo "bin_path=$bin_path"
+fi

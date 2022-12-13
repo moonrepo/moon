@@ -13,7 +13,7 @@ if ($Args.Length -eq 1) {
   $Version = $Args.Get(0)
 }
 
-$DownloadUrl = if ($Version == "latest") {
+$DownloadUrl = if ($Version -eq "latest") {
   "https://github.com/moonrepo/moon/releases/latest/download/${Target}"
 } else {
   "https://github.com/moonrepo/moon/releases/download/%40moonrepo%2Fcli%40/${Version}/${Target}"
@@ -42,3 +42,10 @@ Write-Output "Successfully installed moon to ${BinPath}"
 Write-Output "Run 'moon --help' to get started!"
 Write-Output ""
 Write-Output "Need help? Join our Discord https://discord.gg/qCh9MEynv2"
+
+if (Test-Path "env:MoonTest") {
+	Write-Output ""
+	Write-Output "target=${Target}"
+	Write-Output "download_url=${DownloadUrl}"
+	Write-Output "bin_path=${BinPath}"
+}

@@ -1,6 +1,8 @@
 name: PR
 on:
   pull_request:
+env:
+  MOON_TEST: 'true'
 jobs:
   version:
     name: Version check
@@ -33,8 +35,13 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
+      # Unix
       - run: bash ./website/static/install.sh
-        shell: bash
         if: ${{ runner.os != 'Windows' }}
+      - run: bash ./website/static/install.sh '0.20.0'
+        if: ${{ runner.os != 'Windows' }}
+      # Windows
       - run: pwsh.exe ./website/static/install.ps1
+        if: ${{ runner.os == 'Windows' }}
+      - run: pwsh.exe ./website/static/install.ps1 '0.20.0'
         if: ${{ runner.os == 'Windows' }}

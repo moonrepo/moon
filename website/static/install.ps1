@@ -43,7 +43,12 @@ Write-Output "Run 'moon --help' to get started!"
 Write-Output ""
 Write-Output "Need help? Join our Discord https://discord.gg/qCh9MEynv2"
 
-if ($Env:MoonTest -eq "true") {
+Write-Output [System.Environment]::GetEnvironmentVariable('MOON_TEST')
+Write-Output [System.Environment]::GetEnvironmentVariable('MoonTest')
+
+$Debug = [System.Environment]::GetEnvironmentVariable('Path')
+
+if ($Debug -eq "true") {
 	Write-Output ""
 	Write-Output "target=${Target}"
 	Write-Output "download_url=${DownloadUrl}"

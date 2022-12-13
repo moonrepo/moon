@@ -32,47 +32,18 @@ tool to `~/.moon/tools/<name>/<version>`.
 
 The tools that are managed by the toolchain are configured through the
 [`.moon/toolchain.yml`](../config/toolchain) file, but can be overridden in each project with
-[`moon.yml`](../config/project).
+[`moon.yml`](../config/project#toolchain).
 
 ## Supported tools
 
-The following tools will be managed by the toolchain.
-
-> Although the toolchain was designed for JavaScript projects, mainly powered by Node.js tooling, we
-> will support other languages in the future when deemed necessary, like Ruby or Python.
+The following tools are currently managed by the toolchain.
 
 ### Node.js
 
 Since moon was designed for JavaScript based repo's, we intentionally support Node.js as a
-first-class citizen within the toolchain. Because of this, Node.js is _always enabled_.
+first-class citizen within the toolchain.
 
 - Configured with: [`node`](../config/toolchain#node)
 - Installed to: `~/.moon/tools/node/x.x.x`
-
-#### npm
-
-The `npm` binary comes pre-installed with Node.js, and will _always exist_, regardless of the
-[`node.packageManager`](../config/toolchain#packagemanager) setting.
-
-- Configured with: [`node.npm`](../config/toolchain#npm-pnpm-yarn)
-- Installed to: `~/.moon/tools/npm/x.x.x`
-
-#### pnpm
-
-The [`pnpm`](https://pnpm.io) library can be used as an alternative package manager to npm, and will
-be enabled when [`node.packageManager`](../config/toolchain#packagemanager) is set to "pnpm". The
-binary will be installed as a toolchain global npm dependency.
-
-- Configured with: [`node.pnpm`](../config/toolchain#npm-pnpm-yarn)
-- Installed to: `~/.moon/tools/pnpm/x.x.x`
-
-#### yarn
-
-The [`yarn`](https://yarnpkg.com) library can be used as an alternative package manager to npm, and
-will be enabled when [`node.packageManager`](../config/toolchain#packagemanager) is set to "yarn".
-The binary will be installed as a toolchain global npm dependency.
-
-- Configured with: [`node.yarn`](../config/toolchain#npm-pnpm-yarn)
-- Installed to: `~/.moon/tools/yarn/x.x.x`
-
-> Supports v1 and v2/v3 (only `node-modules` linker mode currently).
+- Dependency managers: [`npm`](../config/toolchain#npm-pnpm-yarn),
+  [`pnpm`](../config/toolchain#npm-pnpm-yarn), [`yarn`](../config/toolchain#npm-pnpm-yarn)

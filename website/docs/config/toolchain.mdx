@@ -12,6 +12,10 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 <VersionLabel header version="0.20" />
 
 The `.moon/toolchain.yml` file configures the toolchain and the workspace development environment.
+This file is _optional_.
+
+Managing tool version's within the toolchain ensures a deterministic environment across any machine
+(whether a developer, CI, or production machine).
 
 ```yaml title=".moon/toolchain.yml"
 $schema: 'https://moonrepo.dev/schemas/toolchain.json'
@@ -40,10 +44,7 @@ taking precedence over those defined in the extended configuration.
 
 <HeadingApiLink to="/api/types/interface/ToolchainConfig#node" />
 
-Defines the Node.js version and package manager to install within the toolchain, as moon _does not_
-use a Node.js binary found on the local machine. Managing the Node.js version within the toolchain
-ensures a deterministic environment across any machine (whether a developer, CI, or production
-machine).
+Defines the Node.js version and package manager to install within the toolchain.
 
 ### `version`
 

@@ -9,7 +9,8 @@ import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
 import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
-The `.moon/workspace.yml` file configures projects and services in the workspace.
+The `.moon/workspace.yml` file configures projects and services in the workspace. This file is
+_required_.
 
 ```yaml title=".moon/workspace.yml"
 $schema: 'https://moonrepo.dev/schemas/workspace.json'
@@ -42,9 +43,6 @@ _does not merge_!
 Defines the location of all [projects](../concepts/project) within the workspace. Supports either a
 manual map of projects (default), a list of globs in which to automatically locate projects, _or_
 both.
-
-> Unlike packages in the JavaScript ecosystem, a moon project _does not_ require a `package.json`,
-> and is not coupled to Yarn workspaces (or similar architectures).
 
 ### Using a map
 

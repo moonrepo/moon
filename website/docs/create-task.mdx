@@ -8,45 +8,41 @@ import NextSteps from '@site/src/components/NextSteps';
 <HeaderLabel text="10 min" />
 
 The primary focus of moon is a build system, and for it to operate in any capacity, it requires
-tasks to run. In moon, a task is an npm binary or system command that is ran as a child process
-within the context of a project (is the current working directory). Tasks are defined per project
-with [`moon.yml`](./config/project), or inherited by all projects with
-[`.moon/project.yml`](./config/global-project), but can also be inferred from `package.json` scripts
+tasks to run. In moon, a task is a binary or system command that is ran as a child process within
+the context of a project (is the current working directory). Tasks are defined per project with
+[`moon.yml`](./config/project), or inherited by all projects with
+[`.moon/project.yml`](./config/global-project), but can also be inferred from a language's ecosystem
 ([we'll talk about this later](./migrate-to-moon)).
 
 ## Configuring a task
 
-Most -- if not all projects -- utilize the same core tasks: linting, testing, code formatting, and
-type-checking. Because these are so universal, let's implement the type-checking task in
-[`.moon/project.yml`](./config/global-project), which will be inherited by all projects.
+Most — if not all projects — utilize the same core tasks: linting, testing, code formatting,
+typechecking, and _building_. Because these are so universal, let's implement the build task within
+a project using [`moon.yml`](./config/project).
 
-> This section assumes that `typescript` is installed as a dependency in your root, and that all
-> `tsconfig.json` files have been setup correctly.
+Begin by creating the `moon.yml` file at the root of a project and add a `build` field to the
+[`tasks`](./config/project#tasks) setting. This task will use [Webpack](https://webpack.js.org/) and
+run the `webpack` binary under the hood, since we defined the [`command`](./config/project#command)
+setting.
 
-Begin by adding a `typecheck` field to the [`tasks`](./config/project#tasks) setting. This task will
-use [TypeScript](https://www.typescriptlang.org/) and run `tsc` under the hood, since we defined the
-[`command`](./config/project#command) setting.
-
-```yaml title=".moon/project.yml" {2,3}
+```yaml title="moon.yml" {2,3}
 tasks:
-	typecheck:
-		command: 'tsc'
+	build:
+		command: 'webpack build'
 ```
 
-By itself, this isn't doing much. So let's add some arguments with the
-[`args`](./config/project#args) setting. We encourage everyone to use
-[TypeScript project references](https://www.typescriptlang.org/docs/handbook/project-references.html)
-for project boundaries and strict encapsulation, and as such, we'll use it below.
+By itself, this isn't doing much, so let's add some arguments. Arguments can also be defined with
+the [`args`](./config/project#args) setting.
 
-```yaml title=".moon/project.yml" {4}
+```yaml title="moon.yml" {3}
 tasks:
-	typecheck:
-		command: 'tsc --build --verbose'
+	build:
+		command: 'webpack build --mode production --no-stats'
 ```
 
 With this, the task can be ran from the command line with
-[`moon run <project>:typecheck`](./commands/run)! This is tasks in its most simplest form, but
-continue reading on how to take full advantage of our build system.
+[`moon run <project>:build`](./commands/run)! This is tasks in its most simplest form, but continue
+reading on how to take full advantage of our build system.
 
 ### Inputs
 
@@ -59,28 +55,25 @@ environment variables that are used by the task when it's ran. moon will use and
 inputs to calculate whether to run, or to return the previous run state from the cache.
 
 If you're a bit confused, let's demonstrate this by expanding the task with the
-[`inputs`](./config/project#inputs) setting. Since this is TypeScript, we expect a `tsconfig.json`
-to exist in the project, and probably in the workspace root too.
+[`inputs`](./config/project#inputs) setting. Since this is Webpack, we expect a `webpack.config.js`
+to exist in the project.
 
-```yaml title=".moon/project.yml" {5-11}
+```yaml title="moon.yml" {4-7}
 tasks:
-	typecheck:
-		command: 'tsc --build --verbose'
+	build:
+		command: 'webpack build --mode production --no-stats'
 		inputs:
 			- 'src/**/*'
-			- 'tests/**/*'
-			- 'types/**/*'
-			- 'tsconfig.json'
-			- '/tsconfig.*.json'
-			- '/tsconfig.json'
+			- 'webpack.config.js'
+			- '/webpack-shared.config.js'
 ```
 
 This list of inputs may look complicated, but they are merely run checks. For example, when moon
 detects a change in...
 
-- Any files within the `src`, `tests`, and `types` folders, relative from the project's root.
-- A `tsconfig.json` in the project's root.
-- A `tsconfig.json` or any `tsconfig.*.json` in the workspace root (denoted by the leading `/`).
+- Any files within the `src` folder, relative from the project's root.
+- A `webpack.config.js` file in the project's root.
+- A `webpack-shared.config.js` file in the workspace root (denoted by the leading `/`).
 
 ...the task will be ran! If the change occurs _outside_ of the project or _outside_ the list of
 inputs, the task will _not_ be ran.
@@ -102,41 +95,29 @@ Now why is declaring outputs important? For incremental builds and smart caching
 encounters a build that has already been built, it hydrates all necessary outputs from the cache,
 then immediately exits. No more waiting for long builds!
 
-Continuing our example, since we're using TypeScript project references and it generates declaration
-files, we'll write them to a project local `dts` folder and mark it as an output. Let's expand our
-task with the [`outputs`](./config/project#outputs) setting.
+Continuing our example, let's route the built files to `build`, and expand our task with the
+[`outputs`](./config/project#outputs) setting.
 
-```yaml title=".moon/project.yml" {12,13}
+```yaml title="moon.yml" {8,9}
 tasks:
-	typecheck:
-		command: 'tsc --build --verbose'
+	build:
+		command: 'webpack build --mode production --no-stats --output-path @out(0)'
 		inputs:
 			- 'src/**/*'
-			- 'tests/**/*'
-			- 'types/**/*'
-			- 'tsconfig.json'
-			- '/tsconfig.*.json'
-			- '/tsconfig.json'
+			- 'webpack.config.js'
+			- '/webpack-shared.config.js'
 		outputs:
-			- 'dts'
+			- 'build'
 ```
 
-```json title="tsconfig.json"
-{
-  // ...
-  "compilerOptions": {
-    // ...
-    "outDir": "dts"
-  }
-}
-```
+> You may have noticed `@out(0)` syntax above. This is an advanced feature known as
+> [tokens](./concepts/token#out)!
 
 ## Depending on other tasks
 
-While not relating to our TypeScript example above, but is important to talk about, is the concept
-of task dependencies. For scenarios where you need run a task _before_ another task, as you're
-expecting some repository state or artifact to exist, can be achieved with the
-[`deps`](./config/project#deps) setting, which requires a list of [targets](./concepts/target):
+For scenarios where you need run a task _before_ another task, as you're expecting some repository
+state or artifact to exist, can be achieved with the [`deps`](./config/project#deps) setting, which
+requires a list of [targets](./concepts/target):
 
 - `<project>:<task>` - Full canonical target.
 - `~:<task>` or `<task>` - A task within the current project.
@@ -164,13 +145,10 @@ grouping of similar file types within a project using
 File groups are defined with the [`fileGroups`](./config/project#filegroups) setting, which maps a
 list of file paths/globs to a group, like so.
 
-```yaml title=".moon/project.yml"
+```yaml title="moon.yml"
 fileGroups:
 	configs:
 		- '*.config.js'
-		- 'tsconfig.json'
-		- '/tsconfig.*.json'
-		- '/tsconfig.json'
 	sources:
 		- 'src/**/*'
 		- 'types/**/*'
@@ -183,16 +161,16 @@ We can then replace the inputs in our task above with these new file groups usin
 [`@files`](./concepts/token#files) token functions. Tokens are an advanced feature, so please refer
 to their documentation for more information!
 
-```yaml title=".moon/project.yml" {6-8}
+```yaml title="moon.yml" {5}
 tasks:
-	typecheck:
-		command: 'tsc --build --verbose'
+	build:
+		command: 'webpack build --mode production --no-stats --output-path @out(0)'
 		inputs:
 			- '@globs(sources)'
-			- '@globs(tests)'
-			- '@files(configs)'
+			- 'webpack.config.js'
+			- '/webpack-shared.config.js'
 		outputs:
-			- 'dts'
+			- 'build'
 ```
 
 With file groups (and tokens), you're able to reduce the amount of configuration required _and_

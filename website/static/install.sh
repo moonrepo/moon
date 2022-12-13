@@ -58,9 +58,7 @@ echo "Run 'moon --help' to get started!"
 echo
 echo "Need help? Join our Discord https://discord.gg/qCh9MEynv2"
 
-if [ -z "$MOON_TEST" ]; then
-	# Not debugging
-else
+if [ "$MOON_TEST" = "true" ]; then
 	echo
 	echo "arch=$arch"
 	echo "deps=$deps"

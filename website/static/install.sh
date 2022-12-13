@@ -1,10 +1,14 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2022 moonrepo LLC
+
+# Thanks to Deno for the original script:
+# https://github.com/denoland/deno_install/blob/master/install.sh
 
 set -e
 
 bin="moon"
 arch=$(uname -sm)
+version="${1:-latest}"
 
 if [ "$OS" = "Windows_NT" ]; then
 	target="moon-x86_64-pc-windows-msvc.exe"
@@ -38,7 +42,6 @@ else
 	download_url="https://github.com/moonrepo/moon/releases/download/%40moonrepo%2Fcli%40${1}/${target}"
 fi
 
-version="${1:-latest}"
 install_dir="$HOME/.moon/tools/moon/$version"
 bin_path="$install_dir/$bin"
 

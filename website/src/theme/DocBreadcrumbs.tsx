@@ -5,7 +5,7 @@ import React from 'react';
 import { useHomePageRoute, useSidebarBreadcrumbs } from '@docusaurus/theme-common/internal';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import { faAngleRight, faHouseBlank } from '@fortawesome/pro-regular-svg-icons';
-import LangSelector from '../components/LangSelector';
+// import LangSelector from '../components/LangSelector';
 import Icon from '../ui/iconography/Icon';
 import Link from '../ui/typography/Link';
 import Text from '../ui/typography/Text';
@@ -84,9 +84,9 @@ export default function DocBreadcrumbs() {
 
 	return (
 		<>
-			<span className="float-right ml-2">
+			{/* <span className="float-right ml-2">
 				<LangSelector />
-			</span>
+	</span> */}
 
 			<nav className="flex pl-1 mb-2" aria-label="Breadcrumb">
 				<ol

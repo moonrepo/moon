@@ -154,7 +154,7 @@ pub struct PackageJson {
 
     // Non-standard
     #[serde(skip)]
-    pub dirty: bool,
+    pub dirty: Vec<String>,
 
     #[serde(skip)]
     pub path: PathBuf,
@@ -162,9 +162,9 @@ pub struct PackageJson {
 
 impl PackageJson {
     pub fn save(&mut self) -> Result<(), MoonError> {
-        if self.dirty {
+        if !self.dirty.is_empty() {
             write_preserved_json(&self.path, self)?;
-            self.dirty = false;
+            self.dirty.clear();
 
             PackageJson::write(self.clone())?;
         }
@@ -174,9 +174,13 @@ impl PackageJson {
 
     /// Add a package and version range to the `dependencies` field.
     pub fn add_dependency<T: AsRef<str>>(&mut self, name: T, range: T, if_missing: bool) -> bool {
-        if let Some(deps) =
-            self.internal_add_dependency(self.dependencies.clone(), name, range, if_missing)
-        {
+        if let Some(deps) = self.internal_add_dependency(
+            "dependencies",
+            self.dependencies.clone(),
+            name,
+            range,
+            if_missing,
+        ) {
             self.dependencies = Some(deps);
 
             return true;
@@ -192,9 +196,13 @@ impl PackageJson {
         range: T,
         if_missing: bool,
     ) -> bool {
-        if let Some(deps) =
-            self.internal_add_dependency(self.dev_dependencies.clone(), name, range, if_missing)
-        {
+        if let Some(deps) = self.internal_add_dependency(
+            "devDependencies",
+            self.dev_dependencies.clone(),
+            name,
+            range,
+            if_missing,
+        ) {
             self.dev_dependencies = Some(deps);
 
             return true;
@@ -210,9 +218,13 @@ impl PackageJson {
         range: T,
         if_missing: bool,
     ) -> bool {
-        if let Some(deps) =
-            self.internal_add_dependency(self.peer_dependencies.clone(), name, range, if_missing)
-        {
+        if let Some(deps) = self.internal_add_dependency(
+            "peerDependencies",
+            self.peer_dependencies.clone(),
+            name,
+            range,
+            if_missing,
+        ) {
             self.peer_dependencies = Some(deps);
 
             return true;
@@ -237,7 +249,7 @@ impl PackageJson {
             self.engines = Some(BTreeMap::from([(engine.to_owned(), range.to_owned())]));
         }
 
-        self.dirty = true;
+        self.dirty.push("engines".into());
 
         true
     }
@@ -251,7 +263,7 @@ impl PackageJson {
             return false;
         }
 
-        self.dirty = true;
+        self.dirty.push("packageManager".into());
         self.package_manager = Some(value.to_owned());
 
         true
@@ -264,7 +276,7 @@ impl PackageJson {
             return false;
         }
 
-        self.dirty = true;
+        self.dirty.push("scripts".into());
 
         if scripts.is_empty() {
             self.scripts = None;
@@ -280,6 +292,7 @@ impl PackageJson {
     /// Return true if the new value is different from the old value.
     fn internal_add_dependency<T: AsRef<str>>(
         &mut self,
+        deps_name: &str,
         deps_map: Option<DepsSet>,
         name: T,
         range: T,
@@ -304,7 +317,7 @@ impl PackageJson {
 
         dependencies.insert(name.to_owned(), range.to_owned());
 
-        self.dirty = true;
+        self.dirty.push(deps_name.to_owned());
 
         Some(dependencies)
     }
@@ -464,38 +477,50 @@ pub enum PackageWorkspaces {
 fn write_preserved_json(path: &Path, package: &PackageJson) -> Result<(), MoonError> {
     let mut data: JsonValue = json::read(path)?;
 
-    // We only need to set fields that we modify within Moon,
+    // We only need to set fields that we modify within moon,
     // otherwise it's a ton of overhead and maintenance!
-    if let Some(dependencies) = &package.dependencies {
-        data["dependencies"] = JsonValue::from_iter(dependencies.clone());
-    } else if let Some(root) = data.as_object_mut() {
-        root.remove("dependencies");
-    }
-
-    if let Some(dev_dependencies) = &package.dev_dependencies {
-        data["devDependencies"] = JsonValue::from_iter(dev_dependencies.clone());
-    } else if let Some(root) = data.as_object_mut() {
-        root.remove("devDependencies");
-    }
-
-    if let Some(peer_dependencies) = &package.peer_dependencies {
-        data["peerDependencies"] = JsonValue::from_iter(peer_dependencies.clone());
-    } else if let Some(root) = data.as_object_mut() {
-        root.remove("peerDependencies");
-    }
-
-    if let Some(engines) = &package.engines {
-        data["engines"] = JsonValue::from_iter(engines.clone());
-    }
-
-    if let Some(package_manager) = &package.package_manager {
-        data["packageManager"] = JsonValue::from(package_manager.clone());
-    }
-
-    if let Some(scripts) = &package.scripts {
-        data["scripts"] = JsonValue::from_iter(scripts.clone());
-    } else if let Some(root) = data.as_object_mut() {
-        root.remove("scripts");
+    for field in &package.dirty {
+        match field.as_ref() {
+            "dependencies" => {
+                if let Some(dependencies) = &package.dependencies {
+                    data[field] = JsonValue::from_iter(dependencies.clone());
+                } else if let Some(root) = data.as_object_mut() {
+                    root.remove(field);
+                }
+            }
+            "devDependencies" => {
+                if let Some(dev_dependencies) = &package.dev_dependencies {
+                    data[field] = JsonValue::from_iter(dev_dependencies.clone());
+                } else if let Some(root) = data.as_object_mut() {
+                    root.remove(field);
+                }
+            }
+            "peerDependencies" => {
+                if let Some(peer_dependencies) = &package.peer_dependencies {
+                    data[field] = JsonValue::from_iter(peer_dependencies.clone());
+                } else if let Some(root) = data.as_object_mut() {
+                    root.remove(field);
+                }
+            }
+            "engines" => {
+                if let Some(engines) = &package.engines {
+                    data[field] = JsonValue::from_iter(engines.clone());
+                }
+            }
+            "packageManager" => {
+                if let Some(package_manager) = &package.package_manager {
+                    data[field] = JsonValue::from(package_manager.clone());
+                }
+            }
+            "scripts" => {
+                if let Some(scripts) = &package.scripts {
+                    data[field] = JsonValue::from_iter(scripts.clone());
+                } else if let Some(root) = data.as_object_mut() {
+                    root.remove(field);
+                }
+            }
+            _ => panic!(),
+        };
     }
 
     json::write_with_config(path, data, true)?;

@@ -194,7 +194,6 @@ mod unix {
     mod caching {
         use super::*;
         use moon_cache::RunTargetState;
-        use std::fs;
 
         #[test]
         fn uses_cache_on_subsequent_runs() {

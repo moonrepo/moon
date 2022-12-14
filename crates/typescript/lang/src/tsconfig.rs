@@ -1,7 +1,7 @@
 // tsconfig.json
 
 use cached::proc_macro::cached;
-use moon_error::{map_io_to_fs_error, map_json_to_error, MoonError};
+use moon_error::{map_json_to_error, MoonError};
 use moon_lang::config_cache;
 use moon_utils::{
     json::{self, read as read_json, JsonValue},
@@ -59,7 +59,7 @@ pub struct TsConfigJson {
 
     // Non-standard
     #[serde(skip)]
-    pub dirty: bool,
+    pub dirty: Vec<String>,
 
     #[serde(skip)]
     pub path: PathBuf,
@@ -111,7 +111,7 @@ impl TsConfigJson {
 
         references.sort_by_key(|r| r.path.clone());
 
-        self.dirty = true;
+        self.dirty.push("references".into());
         self.references = Some(references);
 
         true
@@ -122,14 +122,14 @@ impl TsConfigJson {
             self.compiler_options = Some(CompilerOptions::default());
         }
 
-        self.dirty = true;
+        self.dirty.push("compilerOptions".into());
         self.compiler_options.as_mut().unwrap()
     }
 
     pub fn save(&mut self) -> Result<(), MoonError> {
-        if self.dirty {
+        if !self.dirty.is_empty() {
             write_preserved_json(&self.path, self)?;
-            self.dirty = false;
+            self.dirty.clear();
 
             TsConfigJson::write(self.clone())?;
         }
@@ -155,11 +155,7 @@ fn merge(a: &mut JsonValue, b: JsonValue) {
 
 pub fn load_to_value<T: AsRef<Path>>(path: T, extend: bool) -> Result<JsonValue, MoonError> {
     let path = path.as_ref();
-    let json =
-        std::fs::read_to_string(path).map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
-
-    let mut json: JsonValue = serde_json::from_str(&json::clean(json)?)
-        .map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
+    let mut json: JsonValue = json::read(path)?;
 
     if extend {
         if let JsonValue::String(s) = &json["extends"] {
@@ -730,38 +726,46 @@ impl<'de> Deserialize<'de> for Target {
 fn write_preserved_json(path: &Path, tsconfig: &TsConfigJson) -> Result<(), MoonError> {
     let mut data: JsonValue = json::read(path)?;
 
-    // We only need to set fields that we modify within Moon,
+    // We only need to set fields that we modify within moon,
     // otherwise it's a ton of overhead and maintenance!
-    if let Some(references) = &tsconfig.references {
-        let mut list = vec![];
+    for field in &tsconfig.dirty {
+        match field.as_ref() {
+            "references" => {
+                if let Some(references) = &tsconfig.references {
+                    let mut list = vec![];
 
-        for reference in references {
-            let mut item = json::json!({});
-            item["path"] = JsonValue::from(reference.path.clone());
+                    for reference in references {
+                        let mut item = json::json!({});
+                        item["path"] = JsonValue::from(reference.path.clone());
 
-            if let Some(prepend) = reference.prepend {
-                item["prepend"] = JsonValue::from(prepend);
+                        if let Some(prepend) = reference.prepend {
+                            item["prepend"] = JsonValue::from(prepend);
+                        }
+
+                        list.push(item);
+                    }
+
+                    data[field] = JsonValue::Array(list);
+                }
             }
+            "compilerOptions" => {
+                if let Some(options) = &tsconfig.compiler_options {
+                    if (options.out_dir.is_some() || options.paths.is_some())
+                        && !data[field].is_object()
+                    {
+                        data[field] = json::json!({});
+                    }
 
-            list.push(item);
-        }
+                    if let Some(out_dir) = &options.out_dir {
+                        data[field]["outDir"] = JsonValue::from(out_dir.to_owned());
+                    }
 
-        data["references"] = JsonValue::Array(list);
-    }
-
-    if let Some(options) = &tsconfig.compiler_options {
-        if (options.out_dir.is_some() || options.paths.is_some())
-            && !data["compilerOptions"].is_object()
-        {
-            data["compilerOptions"] = json::json!({});
-        }
-
-        if let Some(out_dir) = &options.out_dir {
-            data["compilerOptions"]["outDir"] = JsonValue::from(out_dir.to_owned());
-        }
-
-        if let Some(paths) = &options.paths {
-            data["compilerOptions"]["paths"] = JsonValue::from_iter(paths.to_owned());
+                    if let Some(paths) = &options.paths {
+                        data[field]["paths"] = JsonValue::from_iter(paths.to_owned());
+                    }
+                }
+            }
+            _ => panic!(),
         }
     }
 

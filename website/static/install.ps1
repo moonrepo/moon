@@ -43,12 +43,7 @@ Write-Output "Run 'moon --help' to get started!"
 Write-Output ""
 Write-Output "Need help? Join our Discord https://discord.gg/qCh9MEynv2"
 
-Write-Output $env:MOON_TEST
-Write-Output $env:MoonTest
-
-$Debug = $env:MOON_TEST
-
-if ($Debug -eq "true") {
+if ($env:MOON_TEST -eq "true") {
 	Write-Output ""
 	Write-Output "target=${Target}"
 	Write-Output "download_url=${DownloadUrl}"

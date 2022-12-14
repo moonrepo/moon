@@ -61,8 +61,8 @@ echo "Need help? Join our Discord https://discord.gg/qCh9MEynv2"
 if [ "$MOON_TEST" = "true" ]; then
 	echo
 	echo "arch=$arch"
-	echo "deps=$deps"
 	echo "target=$target"
 	echo "download_url=$download_url"
 	echo "bin_path=$bin_path"
+	echo "deps=$deps"
 fi

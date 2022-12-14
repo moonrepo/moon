@@ -13,8 +13,9 @@ static GLOBAL: MiMalloc = MiMalloc;
 #[cfg(not(windows))]
 fn get_global_lookups(home_dir: &Path) -> Vec<PathBuf> {
     vec![
+        "/usr/local/bin".into(),
+        home_dir.join(".moon/tools"),
         // Node
-        "/usr/local/lib/node".into(),
         home_dir.join(".nvm/versions/node"),
         home_dir.join(".nodenv/versions"),
         home_dir.join(".fnm/node-versions"),
@@ -27,6 +28,7 @@ fn get_global_lookups(home_dir: &Path) -> Vec<PathBuf> {
 #[cfg(windows)]
 fn get_global_lookups(home_dir: &Path) -> Vec<PathBuf> {
     vec![
+        home_dir.join(".moon\\tools"),
         // Node
         home_dir.join(".nvm\\versions\\node"),
         home_dir.join(".nodenv\\versions"),
@@ -97,7 +99,6 @@ async fn run_bin(bin_path: &Path, current_dir: &Path) -> Result<(), std::io::Err
 #[tokio::main]
 async fn main() {
     // console_subscriber::init();
-
     let mut run = true;
 
     // Detect if we've been installed globally

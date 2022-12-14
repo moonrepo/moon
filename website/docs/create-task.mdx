@@ -5,7 +5,7 @@ title: Create a task
 import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
 import NextSteps from '@site/src/components/NextSteps';
 
-<HeaderLabel text="10 min" />
+<HeaderLabel text="6 min" />
 
 The primary focus of moon is a build system, and for it to operate in any capacity, it requires
 tasks to run. In moon, a task is a binary or system command that is ran as a child process within
@@ -25,7 +25,7 @@ Begin by creating the `moon.yml` file at the root of a project and add a `build`
 run the `webpack` binary under the hood, since we defined the [`command`](./config/project#command)
 setting.
 
-```yaml title="moon.yml" {2,3}
+```yaml title="<project>/moon.yml" {2,3}
 tasks:
 	build:
 		command: 'webpack build'
@@ -34,7 +34,7 @@ tasks:
 By itself, this isn't doing much, so let's add some arguments. Arguments can also be defined with
 the [`args`](./config/project#args) setting.
 
-```yaml title="moon.yml" {3}
+```yaml title="<project>/moon.yml" {3}
 tasks:
 	build:
 		command: 'webpack build --mode production --no-stats'
@@ -58,7 +58,7 @@ If you're a bit confused, let's demonstrate this by expanding the task with the
 [`inputs`](./config/project#inputs) setting. Since this is Webpack, we expect a `webpack.config.js`
 to exist in the project.
 
-```yaml title="moon.yml" {4-7}
+```yaml title="<project>/moon.yml" {4-7}
 tasks:
 	build:
 		command: 'webpack build --mode production --no-stats'
@@ -98,7 +98,7 @@ then immediately exits. No more waiting for long builds!
 Continuing our example, let's route the built files to `build`, and expand our task with the
 [`outputs`](./config/project#outputs) setting.
 
-```yaml title="moon.yml" {8,9}
+```yaml title="<project>/moon.yml" {3,8,9}
 tasks:
 	build:
 		command: 'webpack build --mode production --no-stats --output-path @out(0)'
@@ -123,7 +123,7 @@ requires a list of [targets](./concepts/target):
 - `~:<task>` or `<task>` - A task within the current project.
 - `^:<task>` - A task from all [depended on projects](./concepts/project#dependencies).
 
-```yaml
+```yaml title="<project>/moon.yml" {1,7,8}
 dependsOn:
 	# ...
 
@@ -145,7 +145,7 @@ grouping of similar file types within a project using
 File groups are defined with the [`fileGroups`](./config/project#filegroups) setting, which maps a
 list of file paths/globs to a group, like so.
 
-```yaml title="moon.yml"
+```yaml title="<project>/moon.yml"
 fileGroups:
 	configs:
 		- '*.config.js'
@@ -161,7 +161,10 @@ We can then replace the inputs in our task above with these new file groups usin
 [`@files`](./concepts/token#files) token functions. Tokens are an advanced feature, so please refer
 to their documentation for more information!
 
-```yaml title="moon.yml" {5}
+```yaml title="<project>/moon.yml" {8}
+fileGroups:
+	# ...
+
 tasks:
 	build:
 		command: 'webpack build --mode production --no-stats --output-path @out(0)'

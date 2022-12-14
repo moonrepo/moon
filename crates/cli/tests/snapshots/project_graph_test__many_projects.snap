@@ -11,14 +11,14 @@ digraph {
     4 [ label="bar" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     5 [ label="basic" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     6 [ label="advanced" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    7 [ label="foo" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    8 [ label="baz" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    7 [ label="baz" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    8 [ label="foo" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     9 [ label="ts" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     10 [ label="js" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     11 [ label="tasks" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     5 -> 2 [ arrowhead=box, arrowtail=box]
-    7 -> 4 [ arrowhead=box, arrowtail=box]
-    7 -> 8 [ arrowhead=box, arrowtail=box]
+    8 -> 4 [ arrowhead=box, arrowtail=box]
+    8 -> 7 [ arrowhead=box, arrowtail=box]
 }
 
 

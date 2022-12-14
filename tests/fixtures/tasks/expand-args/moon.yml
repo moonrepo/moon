@@ -1,0 +1,13 @@
+language: javascript
+
+tasks:
+  fileGroups:
+    args:
+      - '--dirs'
+      - '@dirs(static)'
+      - '--files'
+      - '@files(static)'
+      - '--globs'
+      - '@globs(globs)'
+      - '--root'
+      - '@root(static)'

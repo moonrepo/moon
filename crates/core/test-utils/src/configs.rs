@@ -161,6 +161,10 @@ pub fn get_tasks_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, GlobalP
             ("mergePrepend".to_owned(), "merge-prepend".to_owned()),
             ("mergeReplace".to_owned(), "merge-replace".to_owned()),
             ("noTasks".to_owned(), "no-tasks".to_owned()),
+            ("scopeAll".to_owned(), "scope-all".to_owned()),
+            ("scopeDeps".to_owned(), "scope-deps".to_owned()),
+            ("scopeSelf".to_owned(), "scope-self".to_owned()),
+            // ("expandArgs".to_owned(), "expand-args".to_owned()),
         ])),
         ..WorkspaceConfig::default()
     };

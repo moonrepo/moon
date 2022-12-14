@@ -1,5 +1,0 @@
-tasks:
-  build:
-    command: webpack
-    deps:
-      - :build

@@ -1,0 +1,16 @@
+dependsOn:
+  - buildA
+  - buildB
+  - buildC
+
+tasks:
+  build:
+    command: webpack
+    deps:
+      - ^:build
+  buildNoDupes:
+    command: webpack
+    deps:
+      - buildA:build
+      - ^:build
+      - buildC:build

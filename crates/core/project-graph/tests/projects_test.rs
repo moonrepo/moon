@@ -12,6 +12,31 @@ use moon_test_utils::{create_sandbox_with_config, get_tasks_fixture_configs, San
 use moon_utils::string_vec;
 use rustc_hash::{FxHashMap, FxHashSet};
 
+pub fn create_file_groups_config() -> FxHashMap<String, Vec<String>> {
+    let mut map = FxHashMap::default();
+
+    map.insert(
+        String::from("static"),
+        string_vec![
+            "file.ts",
+            "dir",
+            "dir/other.tsx",
+            "dir/subdir",
+            "dir/subdir/another.ts",
+        ],
+    );
+
+    map.insert(String::from("dirs_glob"), string_vec!["**/*"]);
+
+    map.insert(String::from("files_glob"), string_vec!["**/*.{ts,tsx}"]);
+
+    map.insert(String::from("globs"), string_vec!["**/*.{ts,tsx}", "*.js"]);
+
+    map.insert(String::from("no_globs"), string_vec!["config.js"]);
+
+    map
+}
+
 async fn tasks_sandbox() -> (Sandbox, ProjectGraph) {
     tasks_sandbox_with_config(|_, _| {}).await
 }
@@ -374,6 +399,167 @@ mod task_inheritance {
                 ]
             );
             assert_eq!(task.outputs, string_vec!["a.ts", "b.ts"]);
+        }
+    }
+}
+
+mod task_expansion {
+    use super::*;
+
+    mod expand_args {
+        use super::*;
+
+        // #[tokio::test]
+        // async fn resolves_file_group_tokens() {
+        //     let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, projects_config| {
+        //         projects_config
+        //             .file_groups
+        //             .extend(create_file_groups_config());
+        //     })
+        //     .await;
+
+        //     assert_eq!(
+        //         *project_graph
+        //             .get("expandArgs")
+        //             .unwrap()
+        //             .get_task("fileGroups")
+        //             .unwrap()
+        //             .args,
+        //         if cfg!(windows) {
+        //             vec![
+        //                 "--dirs",
+        //                 ".\\dir",
+        //                 ".\\dir\\subdir",
+        //                 "--files",
+        //                 ".\\file.ts",
+        //                 ".\\dir\\other.tsx",
+        //                 ".\\dir\\subdir\\another.ts",
+        //                 "--globs",
+        //                 "./**/*.{ts,tsx}",
+        //                 "./*.js",
+        //                 "--root",
+        //                 ".\\dir",
+        //             ]
+        //         } else {
+        //             vec![
+        //                 "--dirs",
+        //                 "./dir",
+        //                 "./dir/subdir",
+        //                 "--files",
+        //                 "./file.ts",
+        //                 "./dir/other.tsx",
+        //                 "./dir/subdir/another.ts",
+        //                 "--globs",
+        //                 "./**/*.{ts,tsx}",
+        //                 "./*.js",
+        //                 "--root",
+        //                 "./dir",
+        //             ]
+        //         },
+        //     );
+        // }
+    }
+
+    mod expand_deps {
+        use super::*;
+
+        #[tokio::test]
+        async fn resolves_self_scope() {
+            let (_sandbox, project_graph) = tasks_sandbox().await;
+
+            assert_eq!(
+                project_graph
+                    .get("scopeSelf")
+                    .unwrap()
+                    .get_task("lint")
+                    .unwrap()
+                    .deps,
+                vec![
+                    Target::new("scopeSelf", "clean").unwrap(),
+                    Target::new("scopeSelf", "build").unwrap()
+                ]
+            );
+
+            // Dedupes
+            assert_eq!(
+                project_graph
+                    .get("scopeSelf")
+                    .unwrap()
+                    .get_task("lintNoDupes")
+                    .unwrap()
+                    .deps,
+                vec![Target::new("scopeSelf", "build").unwrap()]
+            );
+
+            // Ignores self
+            assert_eq!(
+                project_graph
+                    .get("scopeSelf")
+                    .unwrap()
+                    .get_task("filtersSelf")
+                    .unwrap()
+                    .deps,
+                vec![]
+            );
+        }
+
+        #[tokio::test]
+        async fn resolves_deps_scope() {
+            let (_sandbox, project_graph) = tasks_sandbox().await;
+
+            assert_eq!(
+                project_graph
+                    .get("scopeDeps")
+                    .unwrap()
+                    .get_task("build")
+                    .unwrap()
+                    .deps,
+                vec![
+                    Target::new("buildC", "build").unwrap(),
+                    Target::new("buildA", "build").unwrap(),
+                    Target::new("buildB", "build").unwrap(),
+                ]
+            );
+
+            // Dedupes
+            assert_eq!(
+                project_graph
+                    .get("scopeDeps")
+                    .unwrap()
+                    .get_task("buildNoDupes")
+                    .unwrap()
+                    .deps,
+                vec![
+                    Target::new("buildA", "build").unwrap(),
+                    Target::new("buildC", "build").unwrap(),
+                    Target::new("buildB", "build").unwrap(),
+                ]
+            );
+        }
+
+        #[tokio::test]
+        #[should_panic(expected = "Target(NoProjectAllInTaskDeps(\":build\"))")]
+        async fn errors_for_all_scope() {
+            let (workspace_config, toolchain_config, projects_config) = get_tasks_fixture_configs();
+
+            let sandbox = create_sandbox_with_config(
+                "tasks",
+                Some(&workspace_config),
+                Some(&toolchain_config),
+                Some(&projects_config),
+            );
+
+            sandbox.create_file(
+                "scope-all/moon.yml",
+                r#"tasks:
+            build:
+              command: webpack
+              deps:
+                - :build"#,
+            );
+
+            let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+            generate_project_graph(&mut workspace).unwrap();
         }
     }
 }

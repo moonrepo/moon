@@ -22,7 +22,7 @@ export function Field({ label, name, value, onChange, type = 'text' }: FieldProp
 				name={name}
 				id={name}
 				required
-				className="appearance-none outline-none min-w-0 w-full bg-white border border-solid border-gray-400 dark:border-transparent rounded-md px-1 py-1 text-base text-gray-800 placeholder-gray-600 h-full font-sans w-5/6"
+				className="appearance-none outline-none min-w-0 bg-white border border-solid border-gray-400 dark:border-transparent rounded-md px-1 py-1 text-base text-gray-800 placeholder-gray-600 h-full font-sans w-5/6"
 				onChange={onChange}
 				value={value}
 			/>
@@ -107,7 +107,7 @@ export default function RemoteCacheBeta() {
 						id="region"
 						name="region"
 						required
-						className="outline-none min-w-0 w-full bg-white border border-solid border-gray-400 dark:border-transparent rounded-md px-1 py-1 text-base text-gray-800 placeholder-gray-600 h-full font-sans w-5/6"
+						className="outline-none min-w-0 bg-white border border-solid border-gray-400 dark:border-transparent rounded-md px-1 py-1 text-base text-gray-800 placeholder-gray-600 h-full font-sans w-5/6"
 						onChange={handleRegion}
 						value={region}
 					>

@@ -314,7 +314,7 @@ mod tasks {
 
         // Expanded
         task.input_globs
-            .insert(glob::normalize(&workspace_root.join("tasks/no-tasks/**/*")).unwrap());
+            .insert(glob::normalize(workspace_root.join("tasks/no-tasks/**/*")).unwrap());
 
         assert_eq!(
             project,

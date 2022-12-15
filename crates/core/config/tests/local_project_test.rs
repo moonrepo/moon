@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 use std::path::PathBuf;
 
 fn load_jailed_config() -> Result<ProjectConfig, figment::Error> {
-    match ProjectConfig::load(&PathBuf::from(CONFIG_PROJECT_FILENAME)) {
+    match ProjectConfig::load(PathBuf::from(CONFIG_PROJECT_FILENAME)) {
         Ok(cfg) => Ok(cfg),
         Err(error) => Err(match error {
             ConfigError::FailedValidation(errors) => errors.first().unwrap().to_owned(),

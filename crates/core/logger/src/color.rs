@@ -64,7 +64,7 @@ pub fn url<T: AsRef<str>>(url: T) -> String {
 }
 
 pub fn shell<T: AsRef<str>>(cmd: T) -> String {
-    paint(Color::Pink as u8, &clean_path(cmd))
+    paint(Color::Pink as u8, clean_path(cmd))
 }
 
 pub fn symbol<T: AsRef<str>>(value: T) -> String {

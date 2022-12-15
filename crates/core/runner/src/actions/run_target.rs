@@ -195,7 +195,7 @@ impl<'a> TargetRunner<'a> {
 
             // Input globs are absolute paths, so we must do the same
             hashed_file_tree
-                .retain(|k, _| globset.matches(&workspace.root.join(k)).unwrap_or(false));
+                .retain(|k, _| globset.matches(workspace.root.join(k)).unwrap_or(false));
 
             hasher.hash_inputs(hashed_file_tree);
         }
@@ -212,7 +212,7 @@ impl<'a> TargetRunner<'a> {
                 .filter(|f| {
                     // Deleted files will crash `git hash-object`
                     !local_files.deleted.contains(f)
-                        && globset.matches(&workspace.root.join(f)).unwrap_or(false)
+                        && globset.matches(workspace.root.join(f)).unwrap_or(false)
                 })
                 .collect::<Vec<String>>();
 
@@ -346,7 +346,7 @@ impl<'a> TargetRunner<'a> {
 
         env_vars.insert(
             "MOON_PROJECT_RUNFILE".to_owned(),
-            path::to_string(&runfile.path)?,
+            path::to_string(runfile.path)?,
         );
 
         Ok(env_vars)

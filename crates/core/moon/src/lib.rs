@@ -10,7 +10,7 @@ use std::path::Path;
 use strum::IntoEnumIterator;
 
 pub fn register_platforms(workspace: &mut Workspace) {
-    workspace.register_platform(Box::new(SystemPlatform::default()));
+    workspace.register_platform(Box::<SystemPlatform>::default());
 
     if let Some(node_config) = &workspace.toolchain.config.node {
         workspace.register_platform(Box::new(NodePlatform::new(node_config, &workspace.root)));

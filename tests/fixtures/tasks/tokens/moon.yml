@@ -1,7 +1,7 @@
 language: javascript
 
 tasks:
-  fileGroups:
+  argsFileGroups:
     args:
       - '--dirs'
       - '@dirs(static)'
@@ -11,7 +11,7 @@ tasks:
       - '@globs(globs)'
       - '--root'
       - '@root(static)'
-  fileGroupsWorkspace:
+  argsFileGroupsWorkspace:
     args:
       - '--dirs'
       - '@dirs(static)'
@@ -23,7 +23,7 @@ tasks:
       - '@root(static)'
     options:
       runFromWorkspaceRoot: true
-  vars:
+  argsVars:
     args:
       - 'some/$unknown/var' # Unknown
       - '--pid'
@@ -39,3 +39,27 @@ tasks:
       - '$workspaceRoot' # Alone
       - '--last'
       - '$projectType-$language'
+  inputs:
+    inputs:
+      - 'path.ts'
+      - 'glob/*'
+      - '$VAR'
+      - '$FOO_BAR'
+      - '/glob.*'
+      - '/path/dir'
+  inputsFileGroups:
+    inputs:
+      - 'file.ts'
+      - '@dirs(static)'
+      - '@files(static)'
+      - '@globs(globs)'
+      - '@root(static)'
+      - '/package.json'
+  inputsVars:
+    inputs:
+      - 'dir/$language/file'
+      - '$unknown.*'
+      - 'file.$projectType'
+  outputs:
+    outputs:
+      - 'dir'

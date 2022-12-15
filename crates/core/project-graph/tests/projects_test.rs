@@ -11,6 +11,7 @@ use moon_task::Target;
 use moon_test_utils::{create_sandbox_with_config, get_tasks_fixture_configs, Sandbox};
 use moon_utils::{glob, string_vec};
 use rustc_hash::{FxHashMap, FxHashSet};
+use std::path::PathBuf;
 
 async fn tasks_sandbox() -> (Sandbox, ProjectGraph) {
     tasks_sandbox_with_config(|_, _| {}).await
@@ -79,157 +80,6 @@ mod task_inheritance {
                 .unwrap()
                 .args,
             string_vec!["--foo", "--bar", "baz"]
-        );
-    }
-
-    #[tokio::test]
-    async fn inherits_implicit_deps() {
-        let (_sandbox, project_graph) = tasks_sandbox_with_config(|workspace_config, _| {
-            workspace_config.runner.implicit_deps = string_vec!["build", "~:build", "project:task",]
-        })
-        .await;
-
-        assert_eq!(
-            project_graph
-                .get("basic")
-                .unwrap()
-                .get_task("build")
-                .unwrap()
-                .deps,
-            // No circular!
-            vec![Target::new("project", "task").unwrap()]
-        );
-
-        assert_eq!(
-            project_graph
-                .get("basic")
-                .unwrap()
-                .get_task("lint")
-                .unwrap()
-                .deps,
-            vec![
-                Target::new("basic", "build").unwrap(),
-                Target::new("project", "task").unwrap()
-            ]
-        );
-
-        assert_eq!(
-            project_graph
-                .get("basic")
-                .unwrap()
-                .get_task("test")
-                .unwrap()
-                .deps,
-            vec![
-                Target::new("basic", "build").unwrap(),
-                Target::new("project", "task").unwrap()
-            ]
-        );
-    }
-
-    #[tokio::test]
-    async fn resolves_implicit_deps_parent_depends_on() {
-        let (_sandbox, project_graph) = tasks_sandbox_with_config(|workspace_config, _| {
-            workspace_config.runner.implicit_deps = string_vec!["^:build"]
-        })
-        .await;
-
-        assert_eq!(
-            project_graph
-                .get("buildA")
-                .unwrap()
-                .get_task("build")
-                .unwrap()
-                .deps,
-            vec![
-                Target::new("basic", "build").unwrap(),
-                Target::new("buildC", "build").unwrap()
-            ]
-        );
-    }
-
-    #[tokio::test]
-    async fn avoids_implicit_deps_matching_target() {
-        let (_sandbox, project_graph) = tasks_sandbox_with_config(|workspace_config, _| {
-            workspace_config.runner.implicit_deps = string_vec!["basic:build"]
-        })
-        .await;
-
-        assert_eq!(
-            project_graph
-                .get("basic")
-                .unwrap()
-                .get_task("build")
-                .unwrap()
-                .deps,
-            vec![]
-        );
-
-        assert_eq!(
-            project_graph
-                .get("basic")
-                .unwrap()
-                .get_task("lint")
-                .unwrap()
-                .deps,
-            vec![Target::new("basic", "build").unwrap()]
-        );
-    }
-
-    #[tokio::test]
-    async fn inherits_implicit_inputs() {
-        let (_sandbox, project_graph) = tasks_sandbox_with_config(|workspace_config, _| {
-            workspace_config.runner.implicit_inputs =
-                string_vec!["package.json", "/.moon/workspace.yml"]
-        })
-        .await;
-
-        assert_eq!(
-            project_graph
-                .get("inputA")
-                .unwrap()
-                .get_task("a")
-                .unwrap()
-                .inputs,
-            string_vec!["a.ts", "package.json", "/.moon/workspace.yml"]
-        );
-
-        assert_eq!(
-            project_graph
-                .get("inputC")
-                .unwrap()
-                .get_task("c")
-                .unwrap()
-                .inputs,
-            string_vec!["**/*", "package.json", "/.moon/workspace.yml"]
-        );
-    }
-
-    #[tokio::test]
-    async fn inherits_implicit_inputs_env_vars() {
-        let (_sandbox, project_graph) = tasks_sandbox_with_config(|workspace_config, _| {
-            workspace_config.runner.implicit_inputs = string_vec!["$FOO", "$BAR"]
-        })
-        .await;
-
-        assert_eq!(
-            project_graph
-                .get("inputA")
-                .unwrap()
-                .get_task("a")
-                .unwrap()
-                .input_vars,
-            FxHashSet::from_iter(string_vec!["FOO", "BAR"])
-        );
-
-        assert_eq!(
-            project_graph
-                .get("inputC")
-                .unwrap()
-                .get_task("c")
-                .unwrap()
-                .input_vars,
-            FxHashSet::from_iter(string_vec!["FOO", "BAR"])
         );
     }
 
@@ -407,9 +257,9 @@ mod task_expansion {
 
             assert_eq!(
                 *project_graph
-                    .get("expandArgs")
+                    .get("tokens")
                     .unwrap()
-                    .get_task("fileGroups")
+                    .get_task("argsFileGroups")
                     .unwrap()
                     .args,
                 if cfg!(windows) {
@@ -450,10 +300,10 @@ mod task_expansion {
         async fn resolves_file_group_tokens_from_workspace() {
             let (_sandbox, project_graph) = tasks_sandbox().await;
 
-            let project = project_graph.get("expandArgs").unwrap();
+            let project = project_graph.get("tokens").unwrap();
 
             assert_eq!(
-                *project.get_task("fileGroupsWorkspace").unwrap().args,
+                *project.get_task("argsFileGroupsWorkspace").unwrap().args,
                 vec![
                     "--dirs",
                     project.root.join("dir").to_str().unwrap(),
@@ -485,26 +335,26 @@ mod task_expansion {
         async fn resolves_var_tokens() {
             let (sandbox, project_graph) = tasks_sandbox().await;
 
-            let project = project_graph.get("expandArgs").unwrap();
+            let project = project_graph.get("tokens").unwrap();
 
             assert_eq!(
-                *project.get_task("vars").unwrap().args,
+                *project.get_task("argsVars").unwrap().args,
                 vec![
                     "some/$unknown/var",
                     "--pid",
-                    "expandArgs/foo",
+                    "tokens/foo",
                     "--proot",
                     project.root.to_str().unwrap(),
                     "--psource",
                     // This is wonky but also still valid
                     if cfg!(windows) {
-                        "foo\\expand-args"
+                        "foo\\tokens"
                     } else {
-                        "foo/expand-args"
+                        "foo/tokens"
                     },
                     "--target",
-                    "foo/expandArgs:vars/bar",
-                    "--tid=vars",
+                    "foo/tokens:argsVars/bar",
+                    "--tid=argsVars",
                     "--wsroot",
                     sandbox.path().to_str().unwrap(),
                     "--last",
@@ -516,6 +366,101 @@ mod task_expansion {
 
     mod expand_deps {
         use super::*;
+
+        #[tokio::test]
+        async fn inherits_implicit_deps() {
+            let (_sandbox, project_graph) = tasks_sandbox_with_config(|workspace_config, _| {
+                workspace_config.runner.implicit_deps =
+                    string_vec!["build", "~:build", "project:task",]
+            })
+            .await;
+
+            assert_eq!(
+                project_graph
+                    .get("basic")
+                    .unwrap()
+                    .get_task("build")
+                    .unwrap()
+                    .deps,
+                // No circular!
+                vec![Target::new("project", "task").unwrap()]
+            );
+
+            assert_eq!(
+                project_graph
+                    .get("basic")
+                    .unwrap()
+                    .get_task("lint")
+                    .unwrap()
+                    .deps,
+                vec![
+                    Target::new("basic", "build").unwrap(),
+                    Target::new("project", "task").unwrap()
+                ]
+            );
+
+            assert_eq!(
+                project_graph
+                    .get("basic")
+                    .unwrap()
+                    .get_task("test")
+                    .unwrap()
+                    .deps,
+                vec![
+                    Target::new("basic", "build").unwrap(),
+                    Target::new("project", "task").unwrap()
+                ]
+            );
+        }
+
+        #[tokio::test]
+        async fn resolves_implicit_deps_parent_depends_on() {
+            let (_sandbox, project_graph) = tasks_sandbox_with_config(|workspace_config, _| {
+                workspace_config.runner.implicit_deps = string_vec!["^:build"]
+            })
+            .await;
+
+            assert_eq!(
+                project_graph
+                    .get("buildA")
+                    .unwrap()
+                    .get_task("build")
+                    .unwrap()
+                    .deps,
+                vec![
+                    Target::new("basic", "build").unwrap(),
+                    Target::new("buildC", "build").unwrap()
+                ]
+            );
+        }
+
+        #[tokio::test]
+        async fn avoids_implicit_deps_matching_target() {
+            let (_sandbox, project_graph) = tasks_sandbox_with_config(|workspace_config, _| {
+                workspace_config.runner.implicit_deps = string_vec!["basic:build"]
+            })
+            .await;
+
+            assert_eq!(
+                project_graph
+                    .get("basic")
+                    .unwrap()
+                    .get_task("build")
+                    .unwrap()
+                    .deps,
+                vec![]
+            );
+
+            assert_eq!(
+                project_graph
+                    .get("basic")
+                    .unwrap()
+                    .get_task("lint")
+                    .unwrap()
+                    .deps,
+                vec![Target::new("basic", "build").unwrap()]
+            );
+        }
 
         #[tokio::test]
         async fn resolves_self_scope() {
@@ -690,6 +635,176 @@ mod task_expansion {
                     ("BAR".to_owned(), "123".to_owned())
                 ])
             );
+        }
+    }
+
+    mod expand_inputs {
+        use super::*;
+
+        #[tokio::test]
+        async fn inherits_implicit_inputs() {
+            let (_sandbox, project_graph) = tasks_sandbox_with_config(|workspace_config, _| {
+                workspace_config.runner.implicit_inputs =
+                    string_vec!["package.json", "/.moon/workspace.yml"]
+            })
+            .await;
+
+            assert_eq!(
+                project_graph
+                    .get("inputA")
+                    .unwrap()
+                    .get_task("a")
+                    .unwrap()
+                    .inputs,
+                string_vec!["a.ts", "package.json", "/.moon/workspace.yml"]
+            );
+
+            assert_eq!(
+                project_graph
+                    .get("inputC")
+                    .unwrap()
+                    .get_task("c")
+                    .unwrap()
+                    .inputs,
+                string_vec!["**/*", "package.json", "/.moon/workspace.yml"]
+            );
+        }
+
+        #[tokio::test]
+        async fn inherits_implicit_inputs_env_vars() {
+            let (_sandbox, project_graph) = tasks_sandbox_with_config(|workspace_config, _| {
+                workspace_config.runner.implicit_inputs = string_vec!["$FOO", "$BAR"]
+            })
+            .await;
+
+            assert_eq!(
+                project_graph
+                    .get("inputA")
+                    .unwrap()
+                    .get_task("a")
+                    .unwrap()
+                    .input_vars,
+                FxHashSet::from_iter(string_vec!["FOO", "BAR"])
+            );
+
+            assert_eq!(
+                project_graph
+                    .get("inputC")
+                    .unwrap()
+                    .get_task("c")
+                    .unwrap()
+                    .input_vars,
+                FxHashSet::from_iter(string_vec!["FOO", "BAR"])
+            );
+        }
+
+        #[tokio::test]
+        async fn resolves_file_group_tokens() {
+            let (sandbox, project_graph) = tasks_sandbox().await;
+
+            let project = project_graph.get("tokens").unwrap();
+            let task = project.get_task("inputsFileGroups").unwrap();
+
+            assert_eq!(
+                task.input_globs,
+                FxHashSet::from_iter([
+                    glob::normalize(project.root.join("**/*.{ts,tsx}")).unwrap(),
+                    glob::normalize(project.root.join("*.js")).unwrap()
+                ]),
+            );
+
+            let a: FxHashSet<PathBuf> =
+                FxHashSet::from_iter(task.input_paths.iter().map(PathBuf::from));
+            let b: FxHashSet<PathBuf> = FxHashSet::from_iter(
+                vec![
+                    sandbox.path().join(".moon/workspace.yml"),
+                    sandbox.path().join(".moon/toolchain.yml"),
+                    sandbox.path().join(".moon/project.yml"),
+                    sandbox.path().join("package.json"),
+                    project.root.join("package.json"),
+                    project.root.join("file.ts"),
+                    project.root.join("dir"),
+                    project.root.join("dir/subdir"),
+                    project.root.join("file.ts"),
+                    project.root.join("dir/other.tsx"),
+                    project.root.join("dir/subdir/another.ts"),
+                ]
+                .iter()
+                .map(PathBuf::from),
+            );
+
+            assert_eq!(a, b);
+        }
+
+        #[tokio::test]
+        async fn resolves_var_tokens() {
+            let (_sandbox, project_graph) = tasks_sandbox().await;
+
+            let project = project_graph.get("tokens").unwrap();
+            let task = project.get_task("inputsVars").unwrap();
+
+            assert!(task
+                .input_globs
+                .contains(&glob::normalize(project.root.join("$unknown.*")).unwrap()));
+
+            assert!(task
+                .input_paths
+                .contains(&project.root.join("dir/javascript/file")));
+
+            assert!(task
+                .input_paths
+                .contains(&project.root.join("file.unknown")));
+        }
+
+        #[tokio::test]
+        async fn expands_into_correct_containers() {
+            let (sandbox, project_graph) = tasks_sandbox().await;
+
+            let project = project_graph.get("tokens").unwrap();
+            let task = project.get_task("inputs").unwrap();
+
+            assert!(task
+                .input_globs
+                .contains(&glob::normalize(project.root.join("glob/*")).unwrap()));
+            assert!(task
+                .input_globs
+                .contains(&glob::normalize(sandbox.path().join("glob.*")).unwrap()));
+
+            assert!(task.input_paths.contains(&project.root.join("path.ts")));
+            assert!(task.input_paths.contains(&sandbox.path().join("path/dir")));
+
+            assert!(task.input_vars.contains("VAR"));
+            assert!(task.input_vars.contains("FOO_BAR"));
+            assert!(!task.input_vars.contains("UNKNOWN"));
+        }
+    }
+
+    mod expand_outputs {
+        use super::*;
+
+        #[tokio::test]
+        async fn expands_into_correct_containers() {
+            let (_sandbox, project_graph) = tasks_sandbox().await;
+
+            let project = project_graph.get("tokens").unwrap();
+            let task = project.get_task("outputs").unwrap();
+
+            assert!(task.output_paths.contains(&project.root.join("dir")));
+        }
+
+        #[tokio::test]
+        #[should_panic(expected = "NoOutputGlob")]
+        async fn errors_for_globs() {
+            tasks_sandbox_with_setup(|sandbox| {
+                sandbox.create_file(
+                    "expand-outputs/moon.yml",
+                    r#"tasks:
+                        command:
+                            outputs:
+                                - 'glob/*'"#,
+                );
+            })
+            .await;
         }
     }
 }

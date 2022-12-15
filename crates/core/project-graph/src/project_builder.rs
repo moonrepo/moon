@@ -388,12 +388,10 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         task.output_paths.extend(paths);
 
         if !globs.is_empty() {
-            if let Some(glob) = globs.get(0) {
-                return Err(ProjectGraphError::Task(TaskError::NoOutputGlob(
-                    glob.to_owned(),
-                    task.target.id.clone(),
-                )));
-            }
+            return Err(ProjectGraphError::Task(TaskError::NoOutputGlob(
+                globs.get(0).unwrap().to_owned(),
+                task.target.id.clone(),
+            )));
         }
 
         Ok(())

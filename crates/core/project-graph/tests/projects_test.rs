@@ -83,6 +83,66 @@ mod task_inheritance {
         );
     }
 
+    #[tokio::test]
+    async fn inherits_global_file_groups() {
+        let (_sandbox, project_graph) = tasks_sandbox().await;
+
+        assert_eq!(
+            *project_graph
+                .get("noTasks")
+                .unwrap()
+                .file_groups
+                .get("files_glob")
+                .unwrap()
+                .files,
+            string_vec!["**/*.{ts,tsx}"]
+        );
+
+        assert_eq!(
+            *project_graph
+                .get("noTasks")
+                .unwrap()
+                .file_groups
+                .get("static")
+                .unwrap()
+                .files,
+            string_vec![
+                "file.ts",
+                "dir",
+                "dir/other.tsx",
+                "dir/subdir",
+                "dir/subdir/another.ts"
+            ]
+        );
+    }
+
+    #[tokio::test]
+    async fn can_override_global_file_groups() {
+        let (_sandbox, project_graph) = tasks_sandbox().await;
+
+        assert_eq!(
+            *project_graph
+                .get("fileGroups")
+                .unwrap()
+                .file_groups
+                .get("files_glob")
+                .unwrap()
+                .files,
+            string_vec!["**/*.{ts,tsx}"]
+        );
+
+        assert_eq!(
+            *project_graph
+                .get("fileGroups")
+                .unwrap()
+                .file_groups
+                .get("static")
+                .unwrap()
+                .files,
+            string_vec!["file.js"]
+        );
+    }
+
     mod merge_strategies {
         use super::*;
         use moon_test_utils::pretty_assertions::assert_eq;

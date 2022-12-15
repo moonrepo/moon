@@ -11,46 +11,6 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::path::Path;
 
-
-#[test]
-fn overrides_global_file_groups() {
-    let workspace_root = get_fixtures_root();
-    let project = Project::new(
-        "basic",
-        "projects/basic",
-        &workspace_root,
-        &GlobalProjectConfig {
-            file_groups: FxHashMap::from_iter([(String::from("tests"), string_vec!["tests/**/*"])]),
-            ..GlobalProjectConfig::default()
-        },
-    )
-    .unwrap();
-
-    assert_eq!(
-        project,
-        Project {
-            id: String::from("basic"),
-            config: ProjectConfig {
-                depends_on: vec![ProjectDependsOn::String("noConfig".to_owned())],
-                file_groups: FxHashMap::from_iter([(
-                    String::from("tests"),
-                    string_vec!["**/*_test.rs"]
-                )]),
-                language: ProjectLanguage::JavaScript,
-                ..ProjectConfig::default()
-            },
-            log_target: String::from("moon:project:basic"),
-            root: workspace_root.join("projects/basic"),
-            file_groups: FxHashMap::from_iter([(
-                String::from("tests"),
-                FileGroup::new("tests", string_vec!["**/*_test.rs"],)
-            )]),
-            source: String::from("projects/basic"),
-            ..Project::default()
-        }
-    );
-}
-
 mod workspace {
     use super::*;
     use moon_task::test::create_expanded_task;

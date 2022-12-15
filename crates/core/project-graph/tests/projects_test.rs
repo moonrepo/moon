@@ -9,33 +9,8 @@ use moon_config::{
 use moon_project_graph::ProjectGraph;
 use moon_task::Target;
 use moon_test_utils::{create_sandbox_with_config, get_tasks_fixture_configs, Sandbox};
-use moon_utils::string_vec;
+use moon_utils::{glob, string_vec};
 use rustc_hash::{FxHashMap, FxHashSet};
-
-pub fn create_file_groups_config() -> FxHashMap<String, Vec<String>> {
-    let mut map = FxHashMap::default();
-
-    map.insert(
-        String::from("static"),
-        string_vec![
-            "file.ts",
-            "dir",
-            "dir/other.tsx",
-            "dir/subdir",
-            "dir/subdir/another.ts",
-        ],
-    );
-
-    map.insert(String::from("dirs_glob"), string_vec!["**/*"]);
-
-    map.insert(String::from("files_glob"), string_vec!["**/*.{ts,tsx}"]);
-
-    map.insert(String::from("globs"), string_vec!["**/*.{ts,tsx}", "*.js"]);
-
-    map.insert(String::from("no_globs"), string_vec!["config.js"]);
-
-    map
-}
 
 async fn tasks_sandbox() -> (Sandbox, ProjectGraph) {
     tasks_sandbox_with_config(|_, _| {}).await
@@ -45,9 +20,24 @@ async fn tasks_sandbox_with_config<C>(callback: C) -> (Sandbox, ProjectGraph)
 where
     C: FnOnce(&mut WorkspaceConfig, &mut GlobalProjectConfig),
 {
+    tasks_sandbox_internal(callback, |_| {}).await
+}
+
+async fn tasks_sandbox_with_setup<C>(callback: C) -> (Sandbox, ProjectGraph)
+where
+    C: FnOnce(&Sandbox),
+{
+    tasks_sandbox_internal(|_, _| {}, callback).await
+}
+
+async fn tasks_sandbox_internal<C, S>(cfg_callback: C, box_callback: S) -> (Sandbox, ProjectGraph)
+where
+    C: FnOnce(&mut WorkspaceConfig, &mut GlobalProjectConfig),
+    S: FnOnce(&Sandbox),
+{
     let (mut workspace_config, toolchain_config, mut projects_config) = get_tasks_fixture_configs();
 
-    callback(&mut workspace_config, &mut projects_config);
+    cfg_callback(&mut workspace_config, &mut projects_config);
 
     let sandbox = create_sandbox_with_config(
         "tasks",
@@ -55,6 +45,8 @@ where
         Some(&toolchain_config),
         Some(&projects_config),
     );
+
+    box_callback(&sandbox);
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
     let graph = generate_project_graph(&mut workspace).unwrap();
@@ -409,55 +401,117 @@ mod task_expansion {
     mod expand_args {
         use super::*;
 
-        // #[tokio::test]
-        // async fn resolves_file_group_tokens() {
-        //     let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, projects_config| {
-        //         projects_config
-        //             .file_groups
-        //             .extend(create_file_groups_config());
-        //     })
-        //     .await;
+        #[tokio::test]
+        async fn resolves_file_group_tokens() {
+            let (_sandbox, project_graph) = tasks_sandbox().await;
 
-        //     assert_eq!(
-        //         *project_graph
-        //             .get("expandArgs")
-        //             .unwrap()
-        //             .get_task("fileGroups")
-        //             .unwrap()
-        //             .args,
-        //         if cfg!(windows) {
-        //             vec![
-        //                 "--dirs",
-        //                 ".\\dir",
-        //                 ".\\dir\\subdir",
-        //                 "--files",
-        //                 ".\\file.ts",
-        //                 ".\\dir\\other.tsx",
-        //                 ".\\dir\\subdir\\another.ts",
-        //                 "--globs",
-        //                 "./**/*.{ts,tsx}",
-        //                 "./*.js",
-        //                 "--root",
-        //                 ".\\dir",
-        //             ]
-        //         } else {
-        //             vec![
-        //                 "--dirs",
-        //                 "./dir",
-        //                 "./dir/subdir",
-        //                 "--files",
-        //                 "./file.ts",
-        //                 "./dir/other.tsx",
-        //                 "./dir/subdir/another.ts",
-        //                 "--globs",
-        //                 "./**/*.{ts,tsx}",
-        //                 "./*.js",
-        //                 "--root",
-        //                 "./dir",
-        //             ]
-        //         },
-        //     );
-        // }
+            assert_eq!(
+                *project_graph
+                    .get("expandArgs")
+                    .unwrap()
+                    .get_task("fileGroups")
+                    .unwrap()
+                    .args,
+                if cfg!(windows) {
+                    vec![
+                        "--dirs",
+                        ".\\dir",
+                        ".\\dir\\subdir",
+                        "--files",
+                        ".\\file.ts",
+                        ".\\dir\\other.tsx",
+                        ".\\dir\\subdir\\another.ts",
+                        "--globs",
+                        "./**/*.{ts,tsx}",
+                        "./*.js",
+                        "--root",
+                        ".\\dir",
+                    ]
+                } else {
+                    vec![
+                        "--dirs",
+                        "./dir",
+                        "./dir/subdir",
+                        "--files",
+                        "./file.ts",
+                        "./dir/other.tsx",
+                        "./dir/subdir/another.ts",
+                        "--globs",
+                        "./**/*.{ts,tsx}",
+                        "./*.js",
+                        "--root",
+                        "./dir",
+                    ]
+                },
+            );
+        }
+
+        #[tokio::test]
+        async fn resolves_file_group_tokens_from_workspace() {
+            let (_sandbox, project_graph) = tasks_sandbox().await;
+
+            let project = project_graph.get("expandArgs").unwrap();
+
+            assert_eq!(
+                *project.get_task("fileGroupsWorkspace").unwrap().args,
+                vec![
+                    "--dirs",
+                    project.root.join("dir").to_str().unwrap(),
+                    project.root.join("dir").join("subdir").to_str().unwrap(),
+                    "--files",
+                    project.root.join("file.ts").to_str().unwrap(),
+                    project.root.join("dir").join("other.tsx").to_str().unwrap(),
+                    project
+                        .root
+                        .join("dir")
+                        .join("subdir")
+                        .join("another.ts")
+                        .to_str()
+                        .unwrap(),
+                    "--globs",
+                    glob::remove_drive_prefix(
+                        glob::normalize(project.root.join("**/*.{ts,tsx}")).unwrap()
+                    )
+                    .as_str(),
+                    glob::remove_drive_prefix(glob::normalize(project.root.join("*.js")).unwrap())
+                        .as_str(),
+                    "--root",
+                    project.root.join("dir").to_str().unwrap(),
+                ],
+            );
+        }
+
+        #[tokio::test]
+        async fn resolves_var_tokens() {
+            let (sandbox, project_graph) = tasks_sandbox().await;
+
+            let project = project_graph.get("expandArgs").unwrap();
+
+            assert_eq!(
+                *project.get_task("vars").unwrap().args,
+                vec![
+                    "some/$unknown/var",
+                    "--pid",
+                    "expandArgs/foo",
+                    "--proot",
+                    project.root.to_str().unwrap(),
+                    "--psource",
+                    // This is wonky but also still valid
+                    if cfg!(windows) {
+                        "foo\\expand-args"
+                    } else {
+                        "foo/expand-args"
+                    },
+                    "--target",
+                    "foo/expandArgs:vars/bar",
+                    "--tid=vars",
+                    "--wsroot",
+                    sandbox.path().to_str().unwrap(),
+                    "--last",
+                    "unknown-javascript"
+                ]
+            );
+        }
     }
 
     mod expand_deps {
@@ -540,26 +594,102 @@ mod task_expansion {
         #[tokio::test]
         #[should_panic(expected = "Target(NoProjectAllInTaskDeps(\":build\"))")]
         async fn errors_for_all_scope() {
-            let (workspace_config, toolchain_config, projects_config) = get_tasks_fixture_configs();
+            tasks_sandbox_with_setup(|sandbox| {
+                sandbox.create_file(
+                    "scope-all/moon.yml",
+                    r#"tasks:
+                build:
+                  command: webpack
+                  deps:
+                    - :build"#,
+                );
+            })
+            .await;
+        }
+    }
 
-            let sandbox = create_sandbox_with_config(
-                "tasks",
-                Some(&workspace_config),
-                Some(&toolchain_config),
-                Some(&projects_config),
+    mod expand_env {
+        use super::*;
+
+        #[tokio::test]
+        #[should_panic(expected = "Error parsing line: 'FOO', error at line index: 3")]
+        async fn errors_on_invalid_file() {
+            tasks_sandbox_with_setup(|sandbox| {
+                sandbox.create_file("expand-env/.env", "FOO");
+            })
+            .await;
+        }
+
+        #[tokio::test]
+        // Windows = "The system cannot find the file specified"
+        // Unix = "No such file or directory"
+        #[should_panic(expected = "InvalidEnvFile")]
+        async fn errors_on_missing_file() {
+            // `expand_env` has a CI check that avoids this from crashing, so emulate it
+            if moon_utils::is_ci() {
+                panic!("InvalidEnvFile");
+            } else {
+                tasks_sandbox_with_setup(|sandbox| {
+                    std::fs::remove_file(sandbox.path().join("expand-env/.env")).unwrap();
+                })
+                .await;
+            }
+        }
+
+        #[tokio::test]
+        async fn loads_using_bool() {
+            let (_sandbox, project_graph) = tasks_sandbox().await;
+
+            let project = project_graph.get("expandEnv").unwrap();
+            let task = project.get_task("envFile").unwrap();
+
+            assert_eq!(
+                task.env,
+                FxHashMap::from_iter([
+                    ("FOO".to_owned(), "abc".to_owned()),
+                    ("BAR".to_owned(), "123".to_owned())
+                ])
             );
 
-            sandbox.create_file(
-                "scope-all/moon.yml",
-                r#"tasks:
-            build:
-              command: webpack
-              deps:
-                - :build"#,
+            assert!(task.inputs.contains(&".env".to_owned()));
+            assert!(task.input_paths.contains(&project.root.join(".env")));
+        }
+
+        #[tokio::test]
+        async fn loads_using_custom_name() {
+            let (_sandbox, project_graph) = tasks_sandbox().await;
+
+            let project = project_graph.get("expandEnv").unwrap();
+            let task = project.get_task("envFileNamed").unwrap();
+
+            assert_eq!(
+                task.env,
+                FxHashMap::from_iter([
+                    ("FOO".to_owned(), "xyz".to_owned()),
+                    ("BAR".to_owned(), "456".to_owned())
+                ])
             );
 
-            let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
-            generate_project_graph(&mut workspace).unwrap();
+            assert!(task.inputs.contains(&".env.production".to_owned()));
+            assert!(task
+                .input_paths
+                .contains(&project.root.join(".env.production")));
+        }
+
+        #[tokio::test]
+        async fn doesnt_override_other_env() {
+            let (_sandbox, project_graph) = tasks_sandbox().await;
+
+            let project = project_graph.get("expandEnv").unwrap();
+            let task = project.get_task("mergeWithEnv").unwrap();
+
+            assert_eq!(
+                task.env,
+                FxHashMap::from_iter([
+                    ("FOO".to_owned(), "original".to_owned()),
+                    ("BAR".to_owned(), "123".to_owned())
+                ])
+            );
         }
     }
 }

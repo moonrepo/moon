@@ -11,3 +11,31 @@ tasks:
       - '@globs(globs)'
       - '--root'
       - '@root(static)'
+  fileGroupsWorkspace:
+    args:
+      - '--dirs'
+      - '@dirs(static)'
+      - '--files'
+      - '@files(static)'
+      - '--globs'
+      - '@globs(globs)'
+      - '--root'
+      - '@root(static)'
+    options:
+      runFromWorkspaceRoot: true
+  vars:
+    args:
+      - 'some/$unknown/var' # Unknown
+      - '--pid'
+      - '$project/foo' # At start
+      - '--proot'
+      - '$projectRoot' # Alone
+      - '--psource'
+      - 'foo/$projectSource' # At end
+      - '--target'
+      - 'foo/$target/bar' # In middle
+      - '--tid=$task' # As an arg
+      - '--wsroot'
+      - '$workspaceRoot' # Alone
+      - '--last'
+      - '$projectType-$language'

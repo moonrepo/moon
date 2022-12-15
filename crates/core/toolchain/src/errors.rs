@@ -1,5 +1,4 @@
 use moon_error::MoonError;
-use moon_lang::LangError;
 use moon_platform::Runtime;
 use proto_core::ProtoError;
 use thiserror::Error;
@@ -20,9 +19,6 @@ pub enum ToolchainError {
 
     #[error("This functionality requires workspace tools. Install it with <shell>yarn plugin import workspace-tools</shell>.")]
     RequiresYarnWorkspacesPlugin,
-
-    #[error(transparent)]
-    Lang(#[from] LangError),
 
     #[error(transparent)]
     Moon(#[from] MoonError),

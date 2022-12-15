@@ -27,7 +27,7 @@ pub fn render_template(context: Context) -> Result<String, Error> {
 fn detect_node_version(dest_dir: &Path) -> Result<(String, String), AnyError> {
     if is_using_version_manager(dest_dir, &NVMRC) {
         return Ok((
-            fs::read(dest_dir.join(NVMRC.version_filename))?
+            fs::read(dest_dir.join(NVMRC.version_file))?
                 .trim()
                 .to_owned(),
             NVMRC.binary.to_owned(),
@@ -36,7 +36,7 @@ fn detect_node_version(dest_dir: &Path) -> Result<(String, String), AnyError> {
 
     if is_using_version_manager(dest_dir, &NODENV) {
         return Ok((
-            fs::read(dest_dir.join(NODENV.version_filename))?
+            fs::read(dest_dir.join(NODENV.version_file))?
                 .trim()
                 .to_owned(),
             NODENV.binary.to_owned(),
@@ -140,7 +140,7 @@ fn detect_projects(
                 Select::with_theme(theme)
                     .with_prompt(format!(
                         "Inherit projects from {} workspaces?",
-                        color::file(NPM.manifest_filename)
+                        color::file(NPM.manifest)
                     ))
                     .items(&items)
                     .default(default_index)
@@ -202,7 +202,7 @@ pub async fn init_node(
         Confirm::with_theme(theme)
             .with_prompt(format!(
                 "Use {} names as moon project aliases?",
-                color::file(NPM.manifest_filename)
+                color::file(NPM.manifest)
             ))
             .interact()?
     };
@@ -213,7 +213,7 @@ pub async fn init_node(
         Confirm::with_theme(theme)
             .with_prompt(format!(
                 "Infer {} scripts as moon tasks? {}",
-                color::file(NPM.manifest_filename),
+                color::file(NPM.manifest),
                 color::muted("(not recommended)")
             ))
             .interact()?

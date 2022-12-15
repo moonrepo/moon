@@ -9,12 +9,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-config_cache!(
-    PackageJson,
-    NPM.manifest_filename,
-    read_json,
-    write_preserved_json
-);
+config_cache!(PackageJson, NPM.manifest, read_json, write_preserved_json);
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]

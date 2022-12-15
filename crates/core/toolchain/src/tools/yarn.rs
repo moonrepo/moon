@@ -148,7 +148,7 @@ impl DependencyManager<NodeTool> for YarnTool {
             if working_dir.join(self.get_lock_filename()).exists() {
                 node.exec_package(
                     "yarn-deduplicate",
-                    &["yarn-deduplicate", YARN.lock_filename],
+                    &["yarn-deduplicate", YARN.lockfile],
                     working_dir,
                 )
                 .await?;
@@ -166,18 +166,18 @@ impl DependencyManager<NodeTool> for YarnTool {
     }
 
     fn get_lock_filename(&self) -> String {
-        String::from(YARN.lock_filename)
+        String::from(YARN.lockfile)
     }
 
     fn get_manifest_filename(&self) -> String {
-        String::from(YARN.manifest_filename)
+        String::from(YARN.manifest)
     }
 
     async fn get_resolved_dependencies(
         &self,
         project_root: &Path,
     ) -> Result<LockfileDependencyVersions, ToolchainError> {
-        let Some(lockfile_path) = fs::find_upwards(YARN.lock_filename, project_root) else {
+        let Some(lockfile_path) = fs::find_upwards(YARN.lockfile, project_root) else {
             return Ok(FxHashMap::default());
         };
 

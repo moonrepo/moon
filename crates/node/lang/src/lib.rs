@@ -4,7 +4,7 @@ pub mod package;
 pub mod pnpm;
 pub mod yarn;
 
-use moon_lang::{Language, PackageManager, VersionManager};
+use moon_lang::{DependencyManager, Language, VersionManager};
 pub use package::PackageJson;
 
 pub const NODE: Language = Language {
@@ -17,40 +17,38 @@ pub const NODE: Language = Language {
 
 // Package managers
 
-pub const NPM: PackageManager = PackageManager {
+pub const NPM: DependencyManager = DependencyManager {
     binary: "npm",
-    config_filenames: &[".npmrc"],
+    config_files: &[".npmrc"],
     default_version: "8.19.2",
-    lock_filename: "package-lock.json",
-    manifest_filename: "package.json",
+    lockfile: "package-lock.json",
+    manifest: "package.json",
 };
 
-pub const PNPM: PackageManager = PackageManager {
+pub const PNPM: DependencyManager = DependencyManager {
     binary: "pnpm",
-    config_filenames: &[".npmrc", ".pnpmfile.cjs", "pnpm-workspace.yaml"],
+    config_files: &[".npmrc", ".pnpmfile.cjs", "pnpm-workspace.yaml"],
     default_version: "7.14.0",
-    lock_filename: "pnpm-lock.yaml",
-    manifest_filename: "package.json",
+    lockfile: "pnpm-lock.yaml",
+    manifest: "package.json",
 };
 
-pub const YARN: PackageManager = PackageManager {
+pub const YARN: DependencyManager = DependencyManager {
     binary: "yarn",
-    config_filenames: &[".yarn", ".yarnrc", ".yarnrc.yml"],
+    config_files: &[".yarn", ".yarnrc", ".yarnrc.yml"],
     default_version: "3.2.4",
-    lock_filename: "yarn.lock",
-    manifest_filename: "package.json",
+    lockfile: "yarn.lock",
+    manifest: "package.json",
 };
 
 // Version managers
 
 pub const NVMRC: VersionManager = VersionManager {
     binary: "nvm",
-    config_filename: None,
-    version_filename: ".nvmrc",
+    version_file: ".nvmrc",
 };
 
 pub const NODENV: VersionManager = VersionManager {
     binary: "nodenv",
-    config_filename: None,
-    version_filename: ".node-version",
+    version_file: ".node-version",
 };

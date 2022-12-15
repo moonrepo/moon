@@ -6,7 +6,7 @@ use moon_utils::yaml::read as read_yaml;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
-config_cache!(PnpmWorkspace, PNPM.config_filenames[2], read_yaml);
+config_cache!(PnpmWorkspace, PNPM.config_files[2], read_yaml);
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]

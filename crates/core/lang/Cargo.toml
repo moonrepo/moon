@@ -5,4 +5,3 @@ edition = "2021"
 
 [dependencies]
 rustc-hash = { workspace = true }
-thiserror = { workspace = true }

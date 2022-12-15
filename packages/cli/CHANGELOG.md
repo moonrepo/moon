@@ -29,8 +29,7 @@
 #### 🐞 Fixes
 
 - Fixed an issue where "installing yarn" would constantly show.
-- Fixed an issue on Windows where `package.json` and `tsconfig.json` would be modified and linefeeds
-  would change.
+- Fixed an issue on Windows where `package.json` and `tsconfig.json` would change newlines unexpectedly when saving.
 
 ## 0.20.3
 

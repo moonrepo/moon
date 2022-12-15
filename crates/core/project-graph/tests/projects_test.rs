@@ -755,8 +755,8 @@ mod task_expansion {
                     .deps,
                 vec![
                     Target::new("buildC", "build").unwrap(),
-                    Target::new("buildA", "build").unwrap(),
                     Target::new("buildB", "build").unwrap(),
+                    Target::new("buildA", "build").unwrap(),
                 ]
             );
 

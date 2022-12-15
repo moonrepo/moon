@@ -54,7 +54,7 @@ run_task = { name = ["clean-test", "run-tests"] }
 
 [tasks.run-tests-with-coverage]
 command = "cargo"
-args = ["llvm-cov", "nextest", "--config-file", "./.cargo/nextest.toml"]
+args = ["llvm-cov", "nextest", "--workspace", "--config-file", "./.cargo/nextest.toml"]
 
 [tasks.test-coverage]
 run_task = { name = ["clean-test", "run-tests-with-coverage"] }

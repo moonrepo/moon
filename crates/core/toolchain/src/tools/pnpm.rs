@@ -99,18 +99,14 @@ impl DependencyManager<NodeTool> for PnpmTool {
 
     async fn dedupe_dependencies(
         &self,
-        _node: &NodeTool,
-        _working_dir: &Path,
+        node: &NodeTool,
+        working_dir: &Path,
         _log: bool,
     ) -> Result<(), ToolchainError> {
-        // pnpm doesn't support deduping, but maybe prune is good here?
-        // https://pnpm.io/cli/prune
-        // self.create_command(node)
-        //     .arg("prune")
-        //     .cwd(working_dir)
-        //     .log_running_command(log)
-        //     .exec_capture_output()
-        //     .await?;
+        if working_dir.join(self.get_lock_filename()).exists() {
+            node.exec_package("pnpm-deduplicate", &["pnpm-deduplicate"], working_dir)
+                .await?;
+        }
 
         Ok(())
     }

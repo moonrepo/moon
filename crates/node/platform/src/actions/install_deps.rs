@@ -213,24 +213,17 @@ pub async fn install_deps(
         // dedupe
         if !is_ci() && node.config.dedupe_on_lockfile_change {
             let dedupe_command = match node.config.package_manager {
-                NodePackageManager::Npm => Some("npm dedupe"),
-                NodePackageManager::Pnpm => None,
-                NodePackageManager::Yarn => Some("yarn dedupe"),
+                NodePackageManager::Npm => "npm dedupe",
+                NodePackageManager::Pnpm => "pnpm dedupe",
+                NodePackageManager::Yarn => "yarn dedupe",
             };
 
-            if let Some(dedupe_command) = dedupe_command {
-                debug!(target: LOG_TARGET, "Deduping dependencies");
+            debug!(target: LOG_TARGET, "Deduping dependencies");
 
-                print_checkpoint(dedupe_command, Checkpoint::Setup);
+            print_checkpoint(dedupe_command, Checkpoint::Setup);
 
-                pm.dedupe_dependencies(node, &working_dir, should_log_command)
-                    .await?;
-            } else {
-                debug!(
-                    target: LOG_TARGET,
-                    "Skipping deduping dependencies, not available for current package manager"
-                );
-            }
+            pm.dedupe_dependencies(node, &working_dir, should_log_command)
+                .await?;
         }
 
         // Update the cache with the timestamp

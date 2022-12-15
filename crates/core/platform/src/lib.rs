@@ -40,12 +40,6 @@ pub trait Platform: Debug + Send + Sync {
         Ok(())
     }
 
-    /// During project creation within the project graph, find a matching alias
-    /// for the previously loaded map of aliases, if applicable
-    fn load_project_alias(&self, aliases_map: &ProjectsAliasesMap) -> Option<String> {
-        None
-    }
-
     /// During project creation within the project graph, scan for any implicit
     /// project dependency relations using the platforms manifest.
     fn load_project_implicit_dependencies(

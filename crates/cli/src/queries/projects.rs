@@ -110,10 +110,10 @@ pub async fn query_projects(
         }
 
         if let Some(regex) = &alias_regex {
-            if let Some(alias) = &project.alias {
-                if !regex.is_match(alias) {
-                    continue;
-                }
+            if !project.aliases.is_empty()
+                && project.aliases.iter().all(|alias| !regex.is_match(alias))
+            {
+                continue;
             }
         }
 

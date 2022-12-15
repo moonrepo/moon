@@ -97,9 +97,14 @@ impl<'ws> ProjectGraphBuilder<'ws> {
     fn create_project(&self, id: &str, source: &str) -> Result<Project, ProjectGraphError> {
         let mut project = Project::new(id, source, self.workspace_root, self.config)?;
 
-        if let Some(platform) = self.platforms.get(project.config.language) {
-            project.alias = platform.load_project_alias(&self.aliases);
+        // Collect all aliases for the current project ID
+        for (alias, project_id) in &self.aliases {
+            if project_id == id {
+                project.aliases.push(alias.to_owned());
+            }
+        }
 
+        if let Some(platform) = self.platforms.get(project.config.language) {
             // Inherit implicit dependencies
             for dep_config in platform.load_project_implicit_dependencies(
                 id,

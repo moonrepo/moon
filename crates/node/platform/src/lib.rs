@@ -146,14 +146,31 @@ impl Platform for NodePlatform {
                         continue;
                     }
 
-                    let alias = match alias_format {
-                        NodeProjectAliasFormat::NameAndScope => package_name.clone(),
-                        NodeProjectAliasFormat::NameOnly => parse_package_name(&package_name).1,
+                    let mut aliases = vec![];
+
+                    // We need to support both formats regardless of what the setting is.
+                    // The setting just allows consumers to use a shorthand in addition
+                    // to the full original name!
+                    match alias_format {
+                        NodeProjectAliasFormat::NameAndScope => {
+                            aliases.push(package_name.clone());
+                        }
+                        NodeProjectAliasFormat::NameOnly => {
+                            let name_only = parse_package_name(&package_name).1;
+
+                            if name_only == package_name {
+                                aliases.push(name_only);
+                            } else {
+                                aliases.push(name_only);
+                                aliases.push(package_name.clone());
+                            }
+                        }
                     };
 
-                    if let Some(existing_source) = projects_map.get(&alias) {
-                        if existing_source != project_source {
-                            warn!(
+                    for alias in aliases {
+                        if let Some(existing_source) = projects_map.get(&alias) {
+                            if existing_source != project_source {
+                                warn!(
                                 target: LOG_TARGET,
                                 "A project already exists with the ID {} ({}), skipping alias of the same name ({})",
                                 color::id(alias),
@@ -161,12 +178,12 @@ impl Platform for NodePlatform {
                                 color::file(project_source)
                             );
 
-                            continue;
+                                continue;
+                            }
                         }
-                    }
 
-                    if let Some(existing_id) = aliases_map.get(&alias) {
-                        warn!(
+                        if let Some(existing_id) = aliases_map.get(&alias) {
+                            warn!(
                             target: LOG_TARGET,
                             "A project already exists with the alias {} (for ID {}), skipping conflicting alias (from {})",
                             color::id(alias),
@@ -174,12 +191,11 @@ impl Platform for NodePlatform {
                             color::file(project_source)
                         );
 
-                        continue;
-                    }
+                            continue;
+                        }
 
-                    // We need both so that implicit dependencies resolve using the full scope
-                    aliases_map.insert(alias, project_id.to_owned());
-                    aliases_map.insert(package_name, project_id.to_owned());
+                        aliases_map.insert(alias, project_id.to_owned());
+                    }
                 }
             }
         }

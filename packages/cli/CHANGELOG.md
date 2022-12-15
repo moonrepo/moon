@@ -33,6 +33,7 @@
 - Fixed an issue where "installing yarn" would constantly show.
 - Fixed an issue on Windows where `package.json` and `tsconfig.json` would change newlines
   unexpectedly when saving.
+- Fixed an issue with `^:deps` that would resolve projects with a non-matching task.
 
 #### ⚙️ Internal
 

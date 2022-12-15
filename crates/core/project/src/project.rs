@@ -267,9 +267,9 @@ impl ProjectDependency {
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Project {
-    /// Unique alias of the project, alongside its official ID.
+    /// Unique aliases of the project, alongside its official ID.
     /// This is typically reserved for language specific semantics, like `name` from `package.json`.
-    pub alias: Option<String>,
+    pub aliases: Vec<String>,
 
     /// Project configuration loaded from "moon.yml", if it exists.
     pub config: ProjectConfig,
@@ -356,7 +356,7 @@ impl Project {
         let tasks = create_tasks_from_config(&log_target, id, &config, global_config)?;
 
         Ok(Project {
-            alias: None,
+            aliases: vec![],
             dependencies,
             file_groups,
             id: id.to_owned(),

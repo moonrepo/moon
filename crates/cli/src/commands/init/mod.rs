@@ -183,7 +183,7 @@ pub async fn init(
 
     // Create config files
     fs::write(
-        &moon_dir.join(CONFIG_TOOLCHAIN_FILENAME),
+        moon_dir.join(CONFIG_TOOLCHAIN_FILENAME),
         toolchain_configs
             .into_iter()
             .map(|c| c.trim().to_owned())
@@ -192,12 +192,12 @@ pub async fn init(
     )?;
 
     fs::write(
-        &moon_dir.join(CONFIG_WORKSPACE_FILENAME),
+        moon_dir.join(CONFIG_WORKSPACE_FILENAME),
         render_workspace_template(&context)?,
     )?;
 
     fs::write(
-        &moon_dir.join(CONFIG_GLOBAL_PROJECT_FILENAME),
+        moon_dir.join(CONFIG_GLOBAL_PROJECT_FILENAME),
         Tera::one_off(load_global_project_config_template(), &context, false)?,
     )?;
 

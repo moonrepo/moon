@@ -104,7 +104,7 @@ impl WorkspaceConfig {
         let mut figment =
             Figment::from(Serialized::defaults(WorkspaceConfig::default()).profile(profile_name));
 
-        for source in gather_extended_sources(&path)? {
+        for source in gather_extended_sources(path)? {
             figment = figment.merge(YamlExtended::file(source).profile(profile_name));
         }
 

@@ -83,7 +83,7 @@ fn sync_workspace(workspace: &Workspace, node: &NodeTool) -> Result<(), MoonErro
         let rc_name = version_manager.get_config_filename();
         let rc_path = workspace.root.join(&rc_name);
 
-        fs::write(&rc_path, &node.config.version)?;
+        fs::write(rc_path, &node.config.version)?;
 
         debug!(
             target: LOG_TARGET,

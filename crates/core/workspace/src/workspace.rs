@@ -46,7 +46,7 @@ fn load_global_project_config(root_dir: &Path) -> Result<GlobalProjectConfig, Wo
     trace!(
         target: LOG_TARGET,
         "Attempting to find {} in {}",
-        color::file(&format!(
+        color::file(format!(
             "{}/{}",
             constants::CONFIG_DIRNAME,
             constants::CONFIG_GLOBAL_PROJECT_FILENAME,
@@ -79,7 +79,7 @@ fn load_toolchain_config(root_dir: &Path) -> Result<ToolchainConfig, WorkspaceEr
     trace!(
         target: LOG_TARGET,
         "Loading {} from {}",
-        color::file(&format!(
+        color::file(format!(
             "{}/{}",
             constants::CONFIG_DIRNAME,
             constants::CONFIG_TOOLCHAIN_FILENAME,
@@ -112,7 +112,7 @@ fn load_workspace_config(root_dir: &Path) -> Result<WorkspaceConfig, WorkspaceEr
     trace!(
         target: LOG_TARGET,
         "Loading {} from {}",
-        color::file(&format!(
+        color::file(format!(
             "{}/{}",
             constants::CONFIG_DIRNAME,
             constants::CONFIG_WORKSPACE_FILENAME,

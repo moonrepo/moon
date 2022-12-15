@@ -34,6 +34,10 @@
 - Fixed an issue on Windows where `package.json` and `tsconfig.json` would change newlines
   unexpectedly when saving.
 
+#### ⚙️ Internal
+
+- Updated Rust to v1.66.
+
 ## 0.20.3
 
 #### 🐞 Fixes

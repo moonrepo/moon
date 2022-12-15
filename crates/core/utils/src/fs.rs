@@ -149,7 +149,7 @@ pub fn read_dir_all<T: AsRef<Path> + Send>(path: T) -> Result<Vec<fs::DirEntry>,
     for entry in entries {
         if let Ok(file_type) = entry.file_type() {
             if file_type.is_dir() {
-                results.extend(read_dir_all(&entry.path())?);
+                results.extend(read_dir_all(entry.path())?);
             } else {
                 results.push(entry);
             }

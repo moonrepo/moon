@@ -160,7 +160,7 @@ pub fn load_to_value<T: AsRef<Path>>(path: T, extend: bool) -> Result<JsonValue,
     if extend {
         if let JsonValue::String(s) = &json["extends"] {
             let extends_path = path.parent().unwrap_or_else(|| Path::new("")).join(s);
-            let extends_value = load_to_value(&extends_path, extend)?;
+            let extends_value = load_to_value(extends_path, extend)?;
 
             merge(&mut json, extends_value);
         }
@@ -934,7 +934,7 @@ mod test {
     #[test]
     fn parse_inheriting_file() {
         let path = get_fixtures_path("base/tsconfig-json/tsconfig.inherits.json");
-        let config = TsConfigJson::load_with_extends(&path).unwrap();
+        let config = TsConfigJson::load_with_extends(path).unwrap();
 
         assert_eq!(
             config
@@ -959,7 +959,7 @@ mod test {
     #[test]
     fn parse_inheritance_chain() {
         let path = get_fixtures_path("base/tsconfig-json/a/tsconfig.json");
-        let config = TsConfigJson::load_with_extends(&path).unwrap();
+        let config = TsConfigJson::load_with_extends(path).unwrap();
 
         assert_eq!(
             config

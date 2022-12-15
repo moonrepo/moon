@@ -765,7 +765,7 @@ fn write_preserved_json(path: &Path, tsconfig: &TsConfigJson) -> Result<(), Moon
                     }
                 }
             }
-            _ => panic!(),
+            _ => {}
         }
     }
 
@@ -777,8 +777,26 @@ fn write_preserved_json(path: &Path, tsconfig: &TsConfigJson) -> Result<(), Moon
 #[cfg(test)]
 mod test {
     use super::*;
-    use moon_test_utils::get_fixtures_path;
+    use moon_test_utils::{assert_fs::prelude::*, create_temp_dir, get_fixtures_path};
     use moon_utils::string_vec;
+
+    #[test]
+    fn preserves_when_saving() {
+        let json = "{\n  \"compilerOptions\": {},\n  \"files\": [\n    \"**/*\"\n  ]\n}\n";
+
+        let dir = create_temp_dir();
+        let file = dir.child("tsconfig.json");
+        file.write_str(json).unwrap();
+
+        let mut package = TsConfigJson::read(dir.path()).unwrap().unwrap();
+
+        // Trigger dirty
+        package.dirty.push("unknown".into());
+
+        package.save().unwrap();
+
+        assert_eq!(json::read_to_string(file.path()).unwrap(), json);
+    }
 
     #[test]
     fn serializes_special_fields() {

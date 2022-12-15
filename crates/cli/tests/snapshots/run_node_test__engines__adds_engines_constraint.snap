@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/run_node_test.rs
-assertion_line: 439
+assertion_line: 446
 expression: "read_to_string(sandbox.path().join(\"package.json\")).unwrap()"
 ---
 {
@@ -13,9 +13,9 @@ expression: "read_to_string(sandbox.path().join(\"package.json\")).unwrap()"
     "swc",
     "version-override"
   ],
+  "packageManager": "npm@8.19.2",
   "engines": {
     "node": "18.0.0"
-  },
-  "packageManager": "npm@8.19.2"
+  }
 }
 

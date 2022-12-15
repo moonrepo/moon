@@ -519,7 +519,7 @@ fn write_preserved_json(path: &Path, package: &PackageJson) -> Result<(), MoonEr
                     root.remove(field);
                 }
             }
-            _ => panic!(),
+            _ => {}
         };
     }
 
@@ -534,8 +534,9 @@ mod test {
     use moon_test_utils::{assert_fs::prelude::*, create_temp_dir};
 
     #[test]
-    fn preserves_order_when_de_to_ser() {
-        let json = r#"{"name": "hello", "description": "world", "private": true}"#;
+    fn preserves_when_saving() {
+        let json =
+            "{\n  \"name\": \"hello\",\n  \"description\": \"world\",\n  \"private\": true\n}\n";
 
         let dir = create_temp_dir();
         let file = dir.child("package.json");
@@ -543,9 +544,12 @@ mod test {
 
         let mut package = PackageJson::read(dir.path()).unwrap().unwrap();
 
+        // Trigger dirty
+        package.dirty.push("unknown".into());
+
         package.save().unwrap();
 
-        assert_eq!(json::read_to_string(file.path()).unwrap(), json,);
+        assert_eq!(json::read_to_string(file.path()).unwrap(), json);
     }
 
     mod add_dependency {

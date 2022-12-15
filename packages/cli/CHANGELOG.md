@@ -21,6 +21,8 @@
 - Added `args` and `env` as valid values for the `affectedFiles` task option.
 - Updated `moon run` and `moon query touched-files` to support a list of `--status` options.
 - Updated the system platform to include the operating system and architecture when hashing.
+- Updated pnpm prune to use the [pnpm-deduplicate](https://www.npmjs.com/package/pnpm-deduplicate)
+  package.
 
 ##### Toolchain
 
@@ -29,7 +31,8 @@
 #### 🐞 Fixes
 
 - Fixed an issue where "installing yarn" would constantly show.
-- Fixed an issue on Windows where `package.json` and `tsconfig.json` would change newlines unexpectedly when saving.
+- Fixed an issue on Windows where `package.json` and `tsconfig.json` would change newlines
+  unexpectedly when saving.
 
 ## 0.20.3
 

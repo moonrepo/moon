@@ -96,7 +96,7 @@ mod tests {
 
     fn load_jailed_config() -> Result<RunnerConfig, figment::Error> {
         let figment = Figment::from(Serialized::defaults(RunnerConfig::default()))
-            .merge(YamlExtended::file(&PathBuf::from(CONFIG_FILENAME)));
+            .merge(YamlExtended::file(PathBuf::from(CONFIG_FILENAME)));
         let config: RunnerConfig = figment.extract()?;
 
         config

@@ -406,7 +406,7 @@ mod args {
             resolver.resolve(&string_vec!["@in(0)"], &task).unwrap(),
             (
                 vec![],
-                vec![glob::normalize(&project_root.join("src/**/*")).unwrap()]
+                vec![glob::normalize(project_root.join("src/**/*")).unwrap()]
             )
         );
     }

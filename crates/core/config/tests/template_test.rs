@@ -3,7 +3,7 @@ use moon_constants::CONFIG_TEMPLATE_FILENAME;
 use std::path::PathBuf;
 
 fn load_jailed_config() -> Result<TemplateConfig, figment::Error> {
-    match TemplateConfig::load(&PathBuf::from(CONFIG_TEMPLATE_FILENAME)) {
+    match TemplateConfig::load(PathBuf::from(CONFIG_TEMPLATE_FILENAME)) {
         Ok(cfg) => Ok(cfg),
         Err(error) => Err(match error {
             ConfigError::FailedValidation(errors) => errors.first().unwrap().to_owned(),

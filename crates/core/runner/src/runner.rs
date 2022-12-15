@@ -324,7 +324,7 @@ impl Runner {
 
                         let log_target_name =
                             format!("{}:batch:{}:{}", LOG_TARGET, batch_count, action_count);
-                        let log_action_label = color::muted_light(&node.label());
+                        let log_action_label = color::muted_light(node.label());
 
                         trace!(
                             target: &log_target_name,

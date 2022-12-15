@@ -10,6 +10,7 @@ fn is_program_on_path(program_name: String) -> bool {
     };
 
     for path_dir in env::split_paths(&system_path) {
+        #[allow(clippy::needless_borrow)]
         if path_dir.join(&program_name).exists() {
             return true;
         }

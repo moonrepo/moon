@@ -59,7 +59,7 @@ impl Logger {
                             "{}{} {}{}",
                             color::muted("["),
                             color::log_level(record.level()),
-                            color::muted(&formatted_timestamp),
+                            color::muted(formatted_timestamp),
                             color::muted("]"),
                         );
 

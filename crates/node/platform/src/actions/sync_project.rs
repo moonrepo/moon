@@ -38,7 +38,7 @@ pub fn create_missing_tsconfig(
 
     let json = TsConfigJson {
         extends: Some(path::to_virtual_string(
-            path::relative_from(&tsconfig_options_path, &project.root).unwrap(),
+            path::relative_from(tsconfig_options_path, &project.root).unwrap(),
         )?),
         include: Some(string_vec!["**/*"]),
         references: Some(vec![]),
@@ -293,7 +293,7 @@ pub async fn sync_project(
 
                         tsconfig_json.update_compiler_options().out_dir =
                             Some(path::to_virtual_string(
-                                path::relative_from(&cache_route, &project.root).unwrap(),
+                                path::relative_from(cache_route, &project.root).unwrap(),
                             )?);
                     }
 

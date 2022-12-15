@@ -11,7 +11,7 @@ const CONFIG_FILENAME: &str = "tasks.yml";
 
 // Not a config file, but we want to test in isolation
 fn load_jailed_config() -> Result<TaskConfig, figment::Error> {
-    let figment = Figment::new().merge(YamlExtended::file(&PathBuf::from(CONFIG_FILENAME)));
+    let figment = Figment::new().merge(YamlExtended::file(PathBuf::from(CONFIG_FILENAME)));
     let config: TaskConfig = figment.extract()?;
 
     config

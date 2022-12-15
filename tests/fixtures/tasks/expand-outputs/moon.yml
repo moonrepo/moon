@@ -1,2 +1,2 @@
-# This is overwritten in the test case
+# This is configured in the test, otherwise it crashes other tests
 tasks: {}

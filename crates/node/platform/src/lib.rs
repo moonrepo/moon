@@ -5,7 +5,8 @@ pub mod task;
 pub use hasher::NodeTargetHasher;
 use moon_config::{
     DependencyConfig, DependencyScope, NodeConfig, NodeProjectAliasFormat, PlatformType,
-    ProjectConfig, ProjectID, ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap,
+    ProjectConfig, ProjectID, ProjectLanguage, ProjectsAliasesMap, ProjectsSourcesMap,
+    TasksConfigsMap,
 };
 use moon_error::MoonError;
 use moon_logger::{color, debug, warn};
@@ -65,6 +66,16 @@ impl NodePlatform {
 }
 
 impl Platform for NodePlatform {
+    fn detect_project_language(&self, project_root: &Path) -> Option<ProjectLanguage> {
+        if project_root.join("tsconfig.json").exists() {
+            Some(ProjectLanguage::TypeScript)
+        } else if project_root.join("package.json").exists() {
+            Some(ProjectLanguage::JavaScript)
+        } else {
+            None
+        }
+    }
+
     fn get_type(&self) -> PlatformType {
         PlatformType::Node
     }
@@ -84,7 +95,7 @@ impl Platform for NodePlatform {
         )))
     }
 
-    fn is_project_in_package_manager_workspace(
+    fn is_project_in_dependency_workspace(
         &self,
         project_id: &str,
         project_root: &Path,

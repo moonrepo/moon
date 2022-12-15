@@ -4,8 +4,9 @@
 use moon::{generate_project_graph, load_workspace_from};
 use moon_config::{
     GlobalProjectConfig, PlatformType, TaskCommandArgs, TaskConfig, TaskOptionsConfig,
-    WorkspaceConfig,
+    WorkspaceConfig, WorkspaceProjects,
 };
+use moon_project::Project;
 use moon_project_graph::ProjectGraph;
 use moon_task::Target;
 use moon_test_utils::{create_sandbox_with_config, get_tasks_fixture_configs, Sandbox};
@@ -301,6 +302,185 @@ mod task_inheritance {
                 ]
             );
             assert_eq!(task.outputs, string_vec!["a.ts", "b.ts"]);
+        }
+    }
+
+    mod workspace_override {
+        use super::*;
+        use std::collections::BTreeMap;
+
+        async fn tasks_inheritance_sandbox() -> (Sandbox, ProjectGraph) {
+            let workspace_config = WorkspaceConfig {
+                projects: WorkspaceProjects::Globs(string_vec!["*"]),
+                ..WorkspaceConfig::default()
+            };
+
+            let projects_config = GlobalProjectConfig {
+                tasks: BTreeMap::from_iter([
+                    (
+                        "a".to_owned(),
+                        TaskConfig {
+                            command: Some(TaskCommandArgs::String("a".into())),
+                            ..TaskConfig::default()
+                        },
+                    ),
+                    (
+                        "b".to_owned(),
+                        TaskConfig {
+                            command: Some(TaskCommandArgs::String("b".into())),
+                            ..TaskConfig::default()
+                        },
+                    ),
+                    (
+                        "c".to_owned(),
+                        TaskConfig {
+                            command: Some(TaskCommandArgs::String("c".into())),
+                            ..TaskConfig::default()
+                        },
+                    ),
+                ]),
+                ..GlobalProjectConfig::default()
+            };
+
+            let sandbox = create_sandbox_with_config(
+                "task-inheritance",
+                Some(&workspace_config),
+                None,
+                Some(&projects_config),
+            );
+
+            let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+            let graph = generate_project_graph(&mut workspace).unwrap();
+
+            (sandbox, graph)
+        }
+
+        fn get_project_task_ids(project: &Project) -> Vec<String> {
+            let mut ids = project
+                .tasks
+                .keys()
+                .map(|k| k.to_owned())
+                .collect::<Vec<String>>();
+            ids.sort();
+            ids
+        }
+
+        #[tokio::test]
+        async fn include() {
+            let (_sandbox, project_graph) = tasks_inheritance_sandbox().await;
+
+            assert_eq!(
+                get_project_task_ids(project_graph.get("include").unwrap()),
+                string_vec!["a", "c"]
+            );
+        }
+
+        #[tokio::test]
+        async fn include_none() {
+            let (_sandbox, project_graph) = tasks_inheritance_sandbox().await;
+
+            assert_eq!(
+                get_project_task_ids(project_graph.get("include-none").unwrap()),
+                string_vec![]
+            );
+        }
+
+        #[tokio::test]
+        async fn exclude() {
+            let (_sandbox, project_graph) = tasks_inheritance_sandbox().await;
+
+            assert_eq!(
+                get_project_task_ids(project_graph.get("exclude").unwrap()),
+                string_vec!["b"]
+            );
+        }
+
+        #[tokio::test]
+        async fn exclude_all() {
+            let (_sandbox, project_graph) = tasks_inheritance_sandbox().await;
+
+            assert_eq!(
+                get_project_task_ids(project_graph.get("exclude-all").unwrap()),
+                string_vec![]
+            );
+        }
+
+        #[tokio::test]
+        async fn exclude_none() {
+            let (_sandbox, project_graph) = tasks_inheritance_sandbox().await;
+
+            assert_eq!(
+                get_project_task_ids(project_graph.get("exclude-none").unwrap()),
+                string_vec!["a", "b", "c"]
+            );
+        }
+
+        #[tokio::test]
+        async fn rename() {
+            let (_sandbox, project_graph) = tasks_inheritance_sandbox().await;
+
+            let ids = string_vec!["bar", "baz", "foo"];
+
+            assert_eq!(
+                get_project_task_ids(project_graph.get("rename").unwrap()),
+                ids
+            );
+
+            for id in &ids {
+                let task = project_graph.get("rename").unwrap().get_task(id).unwrap();
+
+                assert_eq!(task.id, id.to_owned());
+                assert_eq!(task.target.id, format!("rename:{}", id));
+            }
+        }
+
+        #[tokio::test]
+        async fn rename_merge() {
+            let (_sandbox, project_graph) = tasks_inheritance_sandbox().await;
+
+            assert_eq!(
+                get_project_task_ids(project_graph.get("rename-merge").unwrap()),
+                string_vec!["b", "c", "foo"]
+            );
+
+            let task = project_graph
+                .get("rename-merge")
+                .unwrap()
+                .get_task("foo")
+                .unwrap();
+
+            assert_eq!(task.id, "foo");
+            assert_eq!(task.target.id, "rename-merge:foo");
+            assert_eq!(task.args, string_vec!["renamed-and-merge-foo"]);
+        }
+
+        #[tokio::test]
+        async fn include_exclude() {
+            let (_sandbox, project_graph) = tasks_inheritance_sandbox().await;
+
+            assert_eq!(
+                get_project_task_ids(project_graph.get("include-exclude").unwrap()),
+                string_vec!["a"]
+            );
+        }
+
+        #[tokio::test]
+        async fn include_exclude_rename() {
+            let (_sandbox, project_graph) = tasks_inheritance_sandbox().await;
+
+            assert_eq!(
+                get_project_task_ids(project_graph.get("include-exclude-rename").unwrap()),
+                string_vec!["only"]
+            );
+
+            let task = project_graph
+                .get("include-exclude-rename")
+                .unwrap()
+                .get_task("only")
+                .unwrap();
+
+            assert_eq!(task.id, "only");
+            assert_eq!(task.target.id, "include-exclude-rename:only");
         }
     }
 }

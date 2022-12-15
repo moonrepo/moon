@@ -335,7 +335,7 @@ mod resolve_args {
             resolver.resolve(&string_vec!["@in(0)"], &task).unwrap(),
             (
                 vec![],
-                vec![glob::normalize(&project.root.join("src/**/*")).unwrap()]
+                vec![glob::normalize(project.root.join("src/**/*")).unwrap()]
             )
         );
     }

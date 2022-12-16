@@ -28,6 +28,7 @@ pub async fn init_typescript(
         }
     } else {
         options.yes
+            || options.minimal
             || Confirm::with_theme(theme)
                 .with_prompt("Use project references?")
                 .interact()?
@@ -36,7 +37,7 @@ pub async fn init_typescript(
     let mut route_cache = false;
     let mut sync_paths = false;
 
-    if project_refs {
+    if project_refs && !options.minimal {
         route_cache = options.yes
             || Confirm::with_theme(theme)
                 .with_prompt("Route declaration output to moons cache?")
@@ -52,6 +53,7 @@ pub async fn init_typescript(
     context.insert("project_refs", &project_refs);
     context.insert("route_cache", &route_cache);
     context.insert("sync_paths", &sync_paths);
+    context.insert("minimal", &options.minimal);
 
     Ok(render_template(context)?)
 }
@@ -67,6 +69,17 @@ mod tests {
         context.insert("project_refs", &false);
         context.insert("route_cache", &false);
         context.insert("sync_paths", &false);
+
+        assert_snapshot!(render_template(context).unwrap());
+    }
+
+    #[test]
+    fn renders_minimal() {
+        let mut context = Context::new();
+        context.insert("project_refs", &false);
+        context.insert("route_cache", &false);
+        context.insert("sync_paths", &false);
+        context.insert("minimal", &true);
 
         assert_snapshot!(render_template(context).unwrap());
     }

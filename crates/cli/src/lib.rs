@@ -131,6 +131,7 @@ pub async fn run_cli() {
         Commands::Init {
             dest,
             force,
+            minimal,
             tool,
             yes,
         } => {
@@ -139,6 +140,7 @@ pub async fn run_cli() {
                 tool.as_ref(),
                 InitOptions {
                     force: *force,
+                    minimal: *minimal,
                     yes: *yes,
                 },
             )

@@ -196,7 +196,7 @@ pub async fn init_node(
         detect_projects(dest_dir, options, parent_context, theme)?;
     }
 
-    let alias_names = if options.yes {
+    let alias_names = if options.yes || options.minimal {
         false
     } else {
         Confirm::with_theme(theme)
@@ -207,7 +207,7 @@ pub async fn init_node(
             .interact()?
     };
 
-    let infer_tasks = if options.yes {
+    let infer_tasks = if options.yes || options.minimal {
         false
     } else {
         Confirm::with_theme(theme)
@@ -226,6 +226,7 @@ pub async fn init_node(
     context.insert("package_manager_version", &package_manager.1);
     context.insert("alias_names", &alias_names);
     context.insert("infer_tasks", &infer_tasks);
+    context.insert("minimal", &options.minimal);
 
     Ok(render_template(context)?)
 }
@@ -244,6 +245,20 @@ mod tests {
         context.insert("package_manager_version", &"8.0.0");
         context.insert("alias_names", &false);
         context.insert("infer_tasks", &false);
+
+        assert_snapshot!(render_template(context).unwrap());
+    }
+
+    #[test]
+    fn renders_minimal() {
+        let mut context = Context::new();
+        context.insert("node_version", &"16.0.0");
+        context.insert("node_version_manager", &"");
+        context.insert("package_manager", &"npm");
+        context.insert("package_manager_version", &"8.0.0");
+        context.insert("alias_names", &false);
+        context.insert("infer_tasks", &false);
+        context.insert("minimal", &true);
 
         assert_snapshot!(render_template(context).unwrap());
     }

@@ -53,6 +53,7 @@ fn create_default_context() -> Context {
 
 pub struct InitOptions {
     pub force: bool,
+    pub minimal: bool,
     pub yes: bool,
 }
 
@@ -196,10 +197,12 @@ pub async fn init(
         render_workspace_template(&context)?,
     )?;
 
-    fs::write(
-        moon_dir.join(CONFIG_GLOBAL_PROJECT_FILENAME),
-        Tera::one_off(load_global_project_config_template(), &context, false)?,
-    )?;
+    if !options.minimal {
+        fs::write(
+            moon_dir.join(CONFIG_GLOBAL_PROJECT_FILENAME),
+            Tera::one_off(load_global_project_config_template(), &context, false)?,
+        )?;
+    }
 
     // Append to ignore file
     let mut file = OpenOptions::new()

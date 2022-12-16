@@ -140,6 +140,9 @@ pub enum Commands {
         #[arg(long, help = "Overwrite existing configurations")]
         force: bool,
 
+        #[arg(long, help = "Initialize with minimal configuration and prompts")]
+        minimal: bool,
+
         #[arg(long, help = "Skip prompts and use default values")]
         yes: bool,
 

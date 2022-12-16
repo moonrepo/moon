@@ -1,3 +1,10 @@
+{%- if minimal %}
+
+typescript:
+  syncProjectReferences: {{ project_refs }}
+
+{%- else %}
+
 # Configures how moon integrates with TypeScript.
 typescript:
   # When `syncProjectReferences` is enabled and a dependent project reference
@@ -25,3 +32,5 @@ typescript:
   # Sync a project's project references as import aliases to the `paths`
   # compiler option in each applicable project.
   syncProjectReferencesToPaths: {{ project_refs and sync_paths }}
+
+{%- endif %}

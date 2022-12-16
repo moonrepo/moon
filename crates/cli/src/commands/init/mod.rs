@@ -53,6 +53,7 @@ fn create_default_context() -> Context {
 
 pub struct InitOptions {
     pub force: bool,
+    pub minimal: bool,
     pub yes: bool,
 }
 

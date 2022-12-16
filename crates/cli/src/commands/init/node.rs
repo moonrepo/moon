@@ -196,7 +196,7 @@ pub async fn init_node(
         detect_projects(dest_dir, options, parent_context, theme)?;
     }
 
-    let alias_names = if options.yes {
+    let alias_names = if options.yes || options.minimal {
         false
     } else {
         Confirm::with_theme(theme)
@@ -207,7 +207,7 @@ pub async fn init_node(
             .interact()?
     };
 
-    let infer_tasks = if options.yes {
+    let infer_tasks = if options.yes || options.minimal {
         false
     } else {
         Confirm::with_theme(theme)
@@ -226,6 +226,7 @@ pub async fn init_node(
     context.insert("package_manager_version", &package_manager.1);
     context.insert("alias_names", &alias_names);
     context.insert("infer_tasks", &infer_tasks);
+    context.insert("minimal", &options.minimal);
 
     Ok(render_template(context)?)
 }

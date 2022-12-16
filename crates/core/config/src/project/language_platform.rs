@@ -23,8 +23,26 @@ pub enum ProjectLanguage {
     #[strum(serialize = "batch")]
     Batch,
 
+    #[strum(serialize = "deno")]
+    Deno,
+
+    #[strum(serialize = "go")]
+    Go,
+
     #[strum(serialize = "javascript")]
     JavaScript,
+
+    #[strum(serialize = "php")]
+    Php,
+
+    #[strum(serialize = "python")]
+    Python,
+
+    #[strum(serialize = "ruby")]
+    Ruby,
+
+    #[strum(serialize = "rust")]
+    Rust,
 
     #[strum(serialize = "typescript")]
     TypeScript,
@@ -67,6 +85,13 @@ impl From<ProjectLanguage> for PlatformType {
             ProjectLanguage::Bash | ProjectLanguage::Batch => PlatformType::System,
             ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => PlatformType::Node,
             ProjectLanguage::Unknown => PlatformType::Unknown,
+            // TODO: Move to these to their own platform once it's been implemented!
+            ProjectLanguage::Deno
+            | ProjectLanguage::Go
+            | ProjectLanguage::Php
+            | ProjectLanguage::Python
+            | ProjectLanguage::Ruby
+            | ProjectLanguage::Rust => PlatformType::System,
         }
     }
 }

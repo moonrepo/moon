@@ -1797,6 +1797,13 @@ name = "moon_constants"
 version = "0.1.0"
 
 [[package]]
+name = "moon_deno_lang"
+version = "0.1.0"
+dependencies = [
+ "moon_lang",
+]
+
+[[package]]
 name = "moon_dep_graph"
 version = "0.1.0"
 dependencies = [

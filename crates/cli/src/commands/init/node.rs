@@ -9,7 +9,7 @@ use moon_config::{
 use moon_lang::{is_using_package_manager, is_using_version_manager};
 use moon_logger::color;
 use moon_node_lang::package::{PackageJson, PackageWorkspaces};
-use moon_node_lang::{NODENV, NPM, NVMRC, PNPM, YARN};
+use moon_node_lang::{NODENV, NPM, NVM, PNPM, YARN};
 use moon_project_graph::detect_projects_with_globs;
 use moon_terminal::label_header;
 use moon_utils::fs;
@@ -25,12 +25,10 @@ pub fn render_template(context: Context) -> Result<String, Error> {
 /// Detect the Node.js version from local configuration files,
 /// otherwise fallback to the configuration default.
 fn detect_node_version(dest_dir: &Path) -> Result<(String, String), AnyError> {
-    if is_using_version_manager(dest_dir, &NVMRC) {
+    if is_using_version_manager(dest_dir, &NVM) {
         return Ok((
-            fs::read(dest_dir.join(NVMRC.version_file))?
-                .trim()
-                .to_owned(),
-            NVMRC.binary.to_owned(),
+            fs::read(dest_dir.join(NVM.version_file))?.trim().to_owned(),
+            NVM.binary.to_owned(),
         ));
     }
 

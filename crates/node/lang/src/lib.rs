@@ -43,7 +43,7 @@ pub const YARN: DependencyManager = DependencyManager {
 
 // Version managers
 
-pub const NVMRC: VersionManager = VersionManager {
+pub const NVM: VersionManager = VersionManager {
     binary: "nvm",
     version_file: ".nvmrc",
 };

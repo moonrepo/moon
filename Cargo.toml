@@ -3,6 +3,7 @@ resolver = "2"
 members = [
 	"crates/cli",
 	"crates/core/*",
+	"crates/deno/*",
 	"crates/node/*",
 	"crates/system/*",
 	"crates/typescript/*",

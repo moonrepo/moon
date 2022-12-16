@@ -1,7 +1,7 @@
 use moon_config::PlatformType;
 use moon_dep_graph::DepGraphBuilder;
 use moon_node_platform::NodePlatform;
-use moon_project_graph::{ProjectError, ProjectGraph, ProjectGraphBuilder};
+use moon_project_graph::{ProjectGraph, ProjectGraphBuilder, ProjectGraphError};
 use moon_system_platform::SystemPlatform;
 use moon_utils::is_test_env;
 use moon_workspace::{Workspace, WorkspaceError};
@@ -75,7 +75,9 @@ pub fn build_dep_graph<'g>(
     DepGraphBuilder::new(&workspace.platforms, project_graph)
 }
 
-pub fn build_project_graph(workspace: &mut Workspace) -> Result<ProjectGraphBuilder, ProjectError> {
+pub fn build_project_graph(
+    workspace: &mut Workspace,
+) -> Result<ProjectGraphBuilder, ProjectGraphError> {
     ProjectGraphBuilder::new(
         &workspace.cache,
         &workspace.projects_config,
@@ -85,7 +87,9 @@ pub fn build_project_graph(workspace: &mut Workspace) -> Result<ProjectGraphBuil
     )
 }
 
-pub fn generate_project_graph(workspace: &mut Workspace) -> Result<ProjectGraph, ProjectError> {
+pub fn generate_project_graph(
+    workspace: &mut Workspace,
+) -> Result<ProjectGraph, ProjectGraphError> {
     let mut builder = build_project_graph(workspace)?;
 
     builder.load_all()?;

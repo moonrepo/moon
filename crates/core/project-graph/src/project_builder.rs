@@ -1,18 +1,23 @@
+use crate::errors::ProjectGraphError;
+use crate::helpers::detect_projects_with_globs;
 use crate::project_graph::{GraphType, IndicesType, ProjectGraph, LOG_TARGET};
+use crate::token_resolver::{TokenContext, TokenResolver};
 use moon_cache::CacheEngine;
 use moon_config::{
-    GlobalProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceConfig, WorkspaceProjects,
+    GlobalProjectConfig, PlatformType, ProjectsAliasesMap, ProjectsSourcesMap, TaskConfig,
+    WorkspaceConfig, WorkspaceProjects,
 };
-use moon_logger::{color, debug, map_list, trace};
+use moon_logger::{color, debug, map_list, trace, Logable};
 use moon_platform::PlatformManager;
-use moon_project::{
-    detect_projects_with_globs, Project, ProjectDependency, ProjectDependencySource, ProjectError,
-};
-use moon_task::{Target, Task};
+use moon_project::{Project, ProjectDependency, ProjectDependencySource, ProjectError};
+use moon_task::{Target, TargetError, TargetProjectScope, Task, TaskError};
+use moon_utils::regex::ENV_VAR;
+use moon_utils::{glob, is_ci, path};
 use petgraph::graph::{DiGraph, NodeIndex};
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
+use std::collections::BTreeMap;
 use std::mem;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 pub struct ProjectGraphBuilder<'ws> {
     cache: &'ws CacheEngine,
@@ -34,7 +39,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         platforms: &'ws mut PlatformManager,
         workspace_config: &'ws WorkspaceConfig,
         workspace_root: &'ws Path,
-    ) -> Result<ProjectGraphBuilder<'ws>, ProjectError> {
+    ) -> Result<ProjectGraphBuilder<'ws>, ProjectGraphError> {
         debug!(target: LOG_TARGET, "Creating project graph");
 
         let mut graph = ProjectGraphBuilder {
@@ -64,13 +69,15 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         )
     }
 
-    pub fn load(&mut self, alias_or_id: &str) -> Result<&Self, ProjectError> {
+    pub fn load(&mut self, alias_or_id: &str) -> Result<&Self, ProjectGraphError> {
         self.internal_load(alias_or_id)?;
 
         Ok(self)
     }
 
-    pub fn load_all(&mut self) -> Result<&Self, ProjectError> {
+    pub fn load_all(&mut self) -> Result<&Self, ProjectGraphError> {
+        // TODO: Don't clone data here, but satisfying the borrow checker
+        // is almost impossible here without a major refactor!
         let ids = self
             .sources
             .keys()
@@ -84,36 +91,33 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         Ok(self)
     }
 
-    fn create_project(&self, id: &str, source: &str) -> Result<Project, ProjectError> {
+    /// Create a project with the provided ID and file path source. Based on the project's
+    /// configured language, detect and infer implicit dependencies and tasks for the
+    /// matching platform. Do *not* expand tasks until after dependents have been created.
+    fn create_project(&self, id: &str, source: &str) -> Result<Project, ProjectGraphError> {
         let mut project = Project::new(id, source, self.workspace_root, self.config)?;
 
-        // Find the alias for a given ID. This is currently... not performant,
-        // so revisit once it becomes an issue!
+        // Collect all aliases for the current project ID
         for (alias, project_id) in &self.aliases {
             if project_id == id {
-                project.alias = Some(alias.to_owned());
-                break;
+                project.aliases.push(alias.to_owned());
             }
         }
 
-        for platform in self.platforms.list() {
-            if !platform.matches(&project.config.language.to_platform(), None) {
-                continue;
-            }
-
-            // Determine implicit dependencies
-            for dep_cfg in platform.load_project_implicit_dependencies(
+        if let Some(platform) = self.platforms.get(project.config.language) {
+            // Inherit implicit dependencies
+            for dep_config in platform.load_project_implicit_dependencies(
                 id,
                 &project.root,
                 &project.config,
                 &self.aliases,
             )? {
-                // Implicit deps should not override explicit deps
+                // Implicit must not override explicit
                 project
                     .dependencies
-                    .entry(dep_cfg.id.clone())
+                    .entry(dep_config.id.clone())
                     .or_insert_with(|| {
-                        let mut dep = ProjectDependency::from_config(&dep_cfg);
+                        let mut dep = ProjectDependency::from_config(&dep_config);
                         dep.source = ProjectDependencySource::Implicit;
                         dep
                     });
@@ -123,7 +127,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             for (task_id, task_config) in
                 platform.load_project_tasks(id, &project.root, &project.config)?
             {
-                // Inferred tasks should not override explicit tasks
+                // Inferred mut not override explicit
                 #[allow(clippy::map_entry)]
                 if !project.tasks.contains_key(&task_id) {
                     let task = Task::from_config(Target::new(id, &task_id)?, &task_config)?;
@@ -133,31 +137,286 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             }
         }
 
-        // Expand all tasks for the project (this must happen last)
-        project.expand_tasks(
-            self.workspace_root,
-            &self.workspace_config.runner.implicit_deps,
-            &self.workspace_config.runner.implicit_inputs,
-        )?;
-
         Ok(project)
     }
 
-    fn internal_load(&mut self, alias_or_id: &str) -> Result<NodeIndex, ProjectError> {
+    /// Expand all tasks within a project, by expanding data and resolving any tokens.
+    /// This must run *after* dependent projects have been created, as we require them
+    /// to resolve "parent" relations.
+    fn expand_project(&mut self, project: &mut Project) -> Result<(), ProjectGraphError> {
+        let mut tasks = BTreeMap::new();
+
+        // Use `mem::take` so that we can mutably borrow the project and tasks in parallel
+        for (task_id, mut task) in mem::take(&mut project.tasks) {
+            if matches!(task.platform, PlatformType::Unknown) {
+                task.platform = TaskConfig::detect_platform(&project.config, &task.command);
+            }
+
+            // Resolve in this order!
+            self.expand_task_env(project, &mut task)?;
+            self.expand_task_deps(project, &mut task)?;
+            self.expand_task_inputs(project, &mut task)?;
+            self.expand_task_outputs(project, &mut task)?;
+            self.expand_task_args(project, &mut task)?;
+
+            // Determine type after expanding
+            task.determine_type();
+
+            tasks.insert(task_id, task);
+        }
+
+        project.tasks.extend(tasks);
+
+        Ok(())
+    }
+
+    /// Expand the args list to resolve tokens, relative to the project root.
+    pub fn expand_task_args(
+        &self,
+        project: &mut Project,
+        task: &mut Task,
+    ) -> Result<(), ProjectGraphError> {
+        if task.args.is_empty() {
+            return Ok(());
+        }
+
+        let mut args: Vec<String> = vec![];
+
+        // When running within a project:
+        //  - Project paths are relative and start with "./"
+        //  - Workspace paths are relative up to the root
+        // When running from the workspace:
+        //  - All paths are absolute
+        let handle_path = |path: PathBuf, is_glob: bool| -> Result<String, ProjectGraphError> {
+            let arg = if !task.options.run_from_workspace_root
+                && path.starts_with(self.workspace_root)
+            {
+                let rel_path = path::to_string(path::relative_from(&path, &project.root).unwrap())?;
+
+                if rel_path.starts_with("..") {
+                    rel_path
+                } else {
+                    format!(".{}{}", std::path::MAIN_SEPARATOR, rel_path)
+                }
+            } else {
+                path::to_string(path)?
+            };
+
+            // Annoying, but we need to force forward slashes,
+            // and remove drive/UNC prefixes...
+            if cfg!(windows) && is_glob {
+                return Ok(glob::remove_drive_prefix(path::standardize_separators(arg)));
+            }
+
+            Ok(arg)
+        };
+
+        // We cant use `TokenResolver.resolve` as args are a mix of strings,
+        // strings with tokens, and file paths when tokens are resolved.
+        let token_resolver = TokenResolver::new(TokenContext::Args, project, self.workspace_root);
+
+        for arg in &task.args {
+            if token_resolver.has_token_func(arg) {
+                let (paths, globs) = token_resolver.resolve_func(arg, task)?;
+
+                for path in paths {
+                    args.push(handle_path(path, false)?);
+                }
+
+                for glob in globs {
+                    args.push(handle_path(PathBuf::from(glob), true)?);
+                }
+            } else if token_resolver.has_token_var(arg) {
+                args.push(token_resolver.resolve_vars(arg, task)?);
+            } else {
+                args.push(arg.clone());
+            }
+        }
+
+        task.args = args;
+
+        Ok(())
+    }
+
+    /// Expand the deps list and resolve parent/self scopes.
+    pub fn expand_task_deps(
+        &self,
+        project: &mut Project,
+        task: &mut Task,
+    ) -> Result<(), ProjectGraphError> {
+        if !self.workspace_config.runner.implicit_deps.is_empty() {
+            task.deps.extend(Task::create_dep_targets(
+                &self.workspace_config.runner.implicit_deps,
+            )?);
+        }
+
+        if task.deps.is_empty() {
+            return Ok(());
+        }
+
+        let mut dep_targets: Vec<Target> = vec![];
+
+        // Dont use a `HashSet` as we want to preserve order
+        let mut push_target = |dep: Target| {
+            if !dep_targets.contains(&dep) {
+                dep_targets.push(dep);
+            }
+        };
+
+        for target in &task.deps {
+            match &target.project {
+                // ^:task
+                TargetProjectScope::Deps => {
+                    for dep_id in project.get_dependency_ids() {
+                        let dep_index = self.indices.get(dep_id).unwrap();
+                        let dep_project = self.graph.node_weight(*dep_index).unwrap();
+
+                        if let Some(dep_task) = dep_project.tasks.get(&target.task_id) {
+                            push_target(dep_task.target.clone());
+                        }
+                    }
+                }
+                // ~:task
+                TargetProjectScope::OwnSelf => {
+                    if target.task_id != task.id {
+                        push_target(Target::new(&project.id, &target.task_id)?);
+                    }
+                }
+                // project:task
+                TargetProjectScope::Id(project_id) => {
+                    if project_id == &project.id && target.task_id == task.id {
+                        // Avoid circular references
+                    } else {
+                        push_target(target.clone());
+                    }
+                }
+                _ => {
+                    target.fail_with(TargetError::NoProjectAllInTaskDeps(target.id.clone()))?;
+                }
+            };
+        }
+
+        task.deps = dep_targets;
+
+        Ok(())
+    }
+
+    /// Expand environment variables by loading a `.env` file if configured.
+    pub fn expand_task_env(
+        &self,
+        project: &mut Project,
+        task: &mut Task,
+    ) -> Result<(), ProjectGraphError> {
+        let Some(env_file) = &task.options.env_file else {
+            return Ok(());
+        };
+
+        let env_path = project.root.join(env_file);
+        let error_handler =
+            |e: dotenvy::Error| TaskError::InvalidEnvFile(env_path.clone(), e.to_string());
+
+        // Add as an input
+        task.inputs.push(env_file.to_owned());
+
+        // The `.env` file may not have been committed, so avoid crashing in CI
+        if is_ci() && !env_path.exists() {
+            debug!(
+                target: task.get_log_target(),
+                "The `envFile` option is enabled but no `.env` file exists in CI, skipping as this may be intentional",
+            );
+
+            return Ok(());
+        }
+
+        for entry in dotenvy::from_path_iter(&env_path).map_err(error_handler)? {
+            let (key, value) = entry.map_err(error_handler)?;
+
+            // Vars defined in `env` take precedence over those in the env file
+            task.env.entry(key).or_insert(value);
+        }
+
+        Ok(())
+    }
+
+    /// Expand the inputs list to a set of absolute file paths, while resolving tokens.
+    pub fn expand_task_inputs(
+        &self,
+        project: &mut Project,
+        task: &mut Task,
+    ) -> Result<(), ProjectGraphError> {
+        if !self.workspace_config.runner.implicit_inputs.is_empty() {
+            task.inputs
+                .extend(self.workspace_config.runner.implicit_inputs.clone());
+        }
+
+        if task.inputs.is_empty() {
+            return Ok(());
+        }
+
+        let inputs_without_vars = task
+            .inputs
+            .iter()
+            .filter(|input| {
+                if ENV_VAR.is_match(input) {
+                    task.input_vars.insert(input[1..].to_owned());
+                    false
+                } else {
+                    true
+                }
+            })
+            .map(|input| input.to_owned())
+            .collect::<Vec<_>>();
+
+        let token_resolver = TokenResolver::new(TokenContext::Inputs, project, self.workspace_root);
+        let (paths, globs) = token_resolver.resolve(&inputs_without_vars, task)?;
+
+        task.input_paths.extend(paths);
+        task.input_globs.extend(globs);
+
+        Ok(())
+    }
+
+    /// Expand the outputs list to a set of absolute file paths, while resolving tokens.
+    pub fn expand_task_outputs(
+        &self,
+        project: &mut Project,
+        task: &mut Task,
+    ) -> Result<(), ProjectGraphError> {
+        if task.outputs.is_empty() {
+            return Ok(());
+        }
+
+        let token_resolver =
+            TokenResolver::new(TokenContext::Outputs, project, self.workspace_root);
+        let (paths, globs) = token_resolver.resolve(&task.outputs, task)?;
+
+        task.output_paths.extend(paths);
+
+        if !globs.is_empty() {
+            return Err(ProjectGraphError::Task(TaskError::NoOutputGlob(
+                globs.get(0).unwrap().to_owned(),
+                task.target.id.clone(),
+            )));
+        }
+
+        Ok(())
+    }
+
+    fn internal_load(&mut self, alias_or_id: &str) -> Result<NodeIndex, ProjectGraphError> {
         let id = match self.aliases.get(alias_or_id) {
             Some(project_id) => project_id,
             None => alias_or_id,
         };
 
         // Already loaded, abort early
-        if self.indices.contains_key(id) {
+        if let Some(index) = self.indices.get(id) {
             trace!(
                 target: LOG_TARGET,
                 "Project {} already exists in the project graph",
                 color::id(id),
             );
 
-            return Ok(*self.indices.get(id).unwrap());
+            return Ok(*index);
         }
 
         trace!(
@@ -166,38 +425,37 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             color::id(id),
         );
 
-        // Create project based on ID and source
-        let Some(source) = self.sources.get(id) else {
-            return Err(ProjectError::UnconfiguredID(id.to_owned()));
+        // Create the current project
+        let id = id.to_owned();
+        let Some(source) = self.sources.get(&id) else {
+            return Err(ProjectGraphError::Project(ProjectError::UnconfiguredID(id)));
         };
 
-        let project = self.create_project(id, source)?;
-        let depends_on = project.get_dependency_ids();
+        let mut project = self.create_project(&id, source)?;
 
-        // Insert the project into the graph
-        let node_index = self.graph.add_node(project);
+        // Create dependent projects
+        let mut dep_indices = FxHashSet::default();
 
-        self.indices.insert(id.to_owned(), node_index);
-
-        if !depends_on.is_empty() {
-            trace!(
-                target: LOG_TARGET,
-                "Adding dependencies {} to project {}",
-                map_list(&depends_on, |d| color::symbol(d)),
-                color::id(id),
-            );
-
-            for dep_id in depends_on {
-                let dep_index = self.internal_load(dep_id.as_str())?;
-
-                self.graph.add_edge(node_index, dep_index, ());
-            }
+        for dep_id in project.get_dependency_ids() {
+            dep_indices.insert(self.internal_load(dep_id)?);
         }
 
-        Ok(node_index)
+        // Expand tasks for the current project
+        self.expand_project(&mut project)?;
+
+        // Insert into the graph and connect edges
+        let index = self.graph.add_node(project);
+
+        self.indices.insert(id, index);
+
+        for dep_index in dep_indices {
+            self.graph.add_edge(index, dep_index, ());
+        }
+
+        Ok(index)
     }
 
-    fn load_aliases(&mut self) -> Result<(), ProjectError> {
+    fn load_aliases(&mut self) -> Result<(), ProjectGraphError> {
         for platform in self.platforms.list_mut() {
             platform.load_project_graph_aliases(&self.sources, &mut self.aliases)?;
         }
@@ -205,7 +463,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         Ok(())
     }
 
-    fn load_sources(&mut self) -> Result<(), ProjectError> {
+    fn load_sources(&mut self) -> Result<(), ProjectGraphError> {
         let mut globs = vec![];
         let mut sources = FxHashMap::default();
 

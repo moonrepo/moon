@@ -19,6 +19,7 @@ moon_platform = { path = "../platform" }
 moon_project = { path = "../project" }
 moon_task = { path = "../task" }
 moon_utils = { path = "../utils" }
+dotenvy = "0.15.6"
 petgraph = {  workspace = true, features = ["serde"] }
 rustc-hash = { workspace = true }
 thiserror = { workspace = true }

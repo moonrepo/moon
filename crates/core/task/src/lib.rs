@@ -3,15 +3,12 @@ mod file_group;
 mod target;
 mod task;
 mod task_options;
-pub mod test;
-mod token;
 mod types;
 
 pub use errors::*;
-pub use file_group::FileGroup;
+pub use file_group::*;
 pub use moon_config::{PlatformType, TargetID, TaskConfig, TaskID, TaskOptionsConfig};
-pub use target::{Target, TargetProjectScope};
+pub use target::*;
 pub use task::*;
 pub use task_options::*;
-pub use token::{ResolverData, ResolverType, TokenResolver, TokenType};
 pub use types::*;

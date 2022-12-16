@@ -1,19 +1,19 @@
 use crate::errors::{TargetError, TaskError};
-use crate::target::{Target, TargetProjectScope};
+use crate::target::Target;
 use crate::task_options::TaskOptions;
-use crate::token::{ResolverData, TokenResolver};
-use crate::types::{EnvVars, TouchedFilePaths};
+use crate::types::TouchedFilePaths;
 use moon_config::{
-    FileGlob, FilePath, InputValue, PlatformType, ProjectID, TaskCommandArgs, TaskConfig,
-    TaskMergeStrategy,
+    FileGlob, FilePath, InputValue, PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy,
 };
 use moon_logger::{color, debug, trace, Logable};
-use moon_utils::{glob, is_ci, path, regex::ENV_VAR, string_vec};
-use rustc_hash::FxHashSet;
+use moon_utils::{glob, string_vec};
+use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::path::{Path, PathBuf};
 use strum::Display;
+
+type EnvVars = FxHashMap<String, String>;
 
 #[derive(Clone, Debug, Default, Deserialize, Display, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
@@ -142,7 +142,7 @@ impl Task {
         }
 
         if !matches!(self.platform, PlatformType::Unknown) {
-            config.platform = self.platform.clone();
+            config.platform = self.platform;
         }
 
         config
@@ -187,197 +187,6 @@ impl Task {
         } else {
             self.type_of = TaskType::Test;
         }
-    }
-
-    /// Expand the args list to resolve tokens, relative to the project root.
-    pub fn expand_args(&mut self, token_resolver: TokenResolver) -> Result<(), TaskError> {
-        if self.args.is_empty() {
-            return Ok(());
-        }
-
-        let mut args: Vec<String> = vec![];
-
-        // When running within a project:
-        //  - Project paths are relative and start with "./"
-        //  - Workspace paths are relative up to the root
-        // When running from the workspace:
-        //  - All paths are absolute
-        let handle_path = |path: PathBuf, is_glob: bool| -> Result<String, TaskError> {
-            let arg = if !self.options.run_from_workspace_root
-                && path.starts_with(token_resolver.data.workspace_root)
-            {
-                let rel_path = path::to_string(
-                    path::relative_from(&path, token_resolver.data.project_root).unwrap(),
-                )?;
-
-                if rel_path.starts_with("..") {
-                    rel_path
-                } else {
-                    format!(".{}{}", std::path::MAIN_SEPARATOR, rel_path)
-                }
-            } else {
-                path::to_string(path)?
-            };
-
-            // Annoying, but we need to force forward slashes,
-            // and remove drive/UNC prefixes...
-            if cfg!(windows) && is_glob {
-                return Ok(glob::remove_drive_prefix(path::standardize_separators(arg)));
-            }
-
-            Ok(arg)
-        };
-
-        // We cant use `TokenResolver.resolve` as args are a mix of strings,
-        // strings with tokens, and file paths when tokens are resolved.
-        for arg in &self.args {
-            if token_resolver.has_token_func(arg) {
-                let (paths, globs) = token_resolver.resolve_func(arg, self)?;
-
-                for path in paths {
-                    args.push(handle_path(path, false)?);
-                }
-
-                for glob in globs {
-                    args.push(handle_path(PathBuf::from(glob), true)?);
-                }
-            } else if token_resolver.has_token_var(arg) {
-                args.push(token_resolver.resolve_vars(arg, self)?);
-            } else {
-                args.push(arg.clone());
-            }
-        }
-
-        self.args = args;
-
-        Ok(())
-    }
-
-    /// Expand the deps list and resolve parent/self scopes.
-    pub fn expand_deps(
-        &mut self,
-        owner_id: &str,
-        depends_on: &[ProjectID],
-    ) -> Result<(), TaskError> {
-        if self.deps.is_empty() {
-            return Ok(());
-        }
-
-        let mut dep_targets: Vec<Target> = vec![];
-
-        // Dont use a `HashSet` as we want to preserve order
-        let mut push_target = |dep: Target| {
-            if !dep_targets.contains(&dep) {
-                dep_targets.push(dep);
-            }
-        };
-
-        for target in &self.deps {
-            match &target.project {
-                // ^:task
-                TargetProjectScope::Deps => {
-                    for dep_id in depends_on {
-                        push_target(Target::new(dep_id, &target.task_id)?);
-                    }
-                }
-                // ~:task
-                TargetProjectScope::OwnSelf => {
-                    push_target(Target::new(owner_id, &target.task_id)?);
-                }
-                // project:task
-                TargetProjectScope::Id(_) => {
-                    push_target(target.clone());
-                }
-                _ => {
-                    target.fail_with(TargetError::NoProjectAllInTaskDeps(target.id.clone()))?;
-                }
-            };
-        }
-
-        self.deps = dep_targets;
-
-        Ok(())
-    }
-
-    /// Expand environment variables by loading a `.env` file if configured.
-    pub fn expand_env(&mut self, data: &ResolverData) -> Result<(), TaskError> {
-        if let Some(env_file) = &self.options.env_file {
-            let env_path = data.project_root.join(env_file);
-            let error_handler =
-                |e: dotenvy::Error| TaskError::InvalidEnvFile(env_path.clone(), e.to_string());
-
-            // Add as an input
-            self.inputs.push(env_file.to_owned());
-
-            // The `.env` file may not have been committed, so avoid crashing in CI
-            if is_ci() && !env_path.exists() {
-                debug!(
-                    target: self.get_log_target(),
-                    "The `envFile` option is enabled but no `.env` file exists in CI, skipping as this may be intentional",
-                );
-
-                return Ok(());
-            }
-
-            for entry in dotenvy::from_path_iter(&env_path).map_err(error_handler)? {
-                let (key, value) = entry.map_err(error_handler)?;
-
-                // Vars defined in `env` take precedence over those in the env file
-                self.env.entry(key).or_insert(value);
-            }
-        }
-
-        Ok(())
-    }
-
-    /// Expand the inputs list to a set of absolute file paths, while resolving tokens.
-    pub fn expand_inputs(&mut self, token_resolver: TokenResolver) -> Result<(), TaskError> {
-        if self.inputs.is_empty() {
-            return Ok(());
-        }
-
-        let inputs_without_vars = self
-            .inputs
-            .clone()
-            .into_iter()
-            .filter(|i| {
-                if ENV_VAR.is_match(i) {
-                    self.input_vars.insert(i[1..].to_owned());
-                    false
-                } else {
-                    true
-                }
-            })
-            .collect::<Vec<String>>();
-
-        let (paths, globs) = token_resolver.resolve(&inputs_without_vars, self)?;
-
-        self.input_paths.extend(paths);
-        self.input_globs.extend(globs);
-
-        Ok(())
-    }
-
-    /// Expand the outputs list to a set of absolute file paths, while resolving tokens.
-    pub fn expand_outputs(&mut self, token_resolver: TokenResolver) -> Result<(), TaskError> {
-        if self.outputs.is_empty() {
-            return Ok(());
-        }
-
-        let (paths, globs) = token_resolver.resolve(&self.outputs, self)?;
-
-        self.output_paths.extend(paths);
-
-        if !globs.is_empty() {
-            if let Some(glob) = globs.get(0) {
-                return Err(TaskError::NoOutputGlob(
-                    glob.to_owned(),
-                    self.target.id.clone(),
-                ));
-            }
-        }
-
-        Ok(())
     }
 
     /// Return a list of affected files filtered down from the provided touched files list.
@@ -475,7 +284,7 @@ impl Task {
 
         // Merge options first incase the merge strategy has changed
         self.options.merge(&config.options);
-        self.platform = config.platform.clone();
+        self.platform = config.platform;
 
         // Then merge the actual task fields
         if let Some(cmd) = command {

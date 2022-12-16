@@ -176,7 +176,7 @@ mod get_dependencies_of {
         assert_eq!(graph.get_dependencies_of(c).unwrap(), string_vec![]);
         assert_eq!(
             graph.get_dependencies_of(d).unwrap(),
-            string_vec!["c", "b", "a"]
+            string_vec!["a", "b", "c"]
         );
     }
 }
@@ -204,9 +204,8 @@ mod get_dependents_of {
 }
 
 mod to_dot {
-    use moon::build_project_graph;
-
     use super::*;
+    use moon::build_project_graph;
 
     #[tokio::test]
     async fn renders_tree() {

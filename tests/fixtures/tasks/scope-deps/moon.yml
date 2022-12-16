@@ -1,0 +1,18 @@
+dependsOn:
+  - buildA
+  - buildB
+  - buildC
+  # Should be ignored
+  - noTasks
+
+tasks:
+  build:
+    command: webpack
+    deps:
+      - ^:build
+  buildNoDupes:
+    command: webpack
+    deps:
+      - buildA:build
+      - ^:build
+      - buildC:build

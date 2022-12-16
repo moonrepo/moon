@@ -2,7 +2,7 @@ use crate::helpers::AnyError;
 use console::Term;
 use itertools::Itertools;
 use moon::{build_project_graph, load_workspace};
-use moon_logger::color;
+use moon_logger::{color, map_list};
 use moon_terminal::{ExtendedTerm, Label};
 use moon_utils::is_test_env;
 
@@ -27,8 +27,15 @@ pub async fn project(id: &str, json: bool) -> Result<(), AnyError> {
     term.render_label(Label::Brand, &project.id)?;
     term.render_entry("ID", color::id(&project.id))?;
 
-    if let Some(alias) = &project.alias {
-        term.render_entry("Alias", color::id(alias))?;
+    if !project.aliases.is_empty() {
+        term.render_entry(
+            if project.aliases.len() == 1 {
+                "Alias"
+            } else {
+                "Aliases"
+            },
+            map_list(&project.aliases, |alias| color::id(alias)),
+        )?;
     }
 
     term.render_entry("Source", color::file(&project.source))?;

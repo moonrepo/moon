@@ -3,6 +3,8 @@ language: javascript
 dependsOn:
   - basic
   - buildC
+  # Will not include a task when using ^
+  - noTasks
 
 tasks:
   build:

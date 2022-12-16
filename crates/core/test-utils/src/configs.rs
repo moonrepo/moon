@@ -161,6 +161,13 @@ pub fn get_tasks_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, GlobalP
             ("mergePrepend".to_owned(), "merge-prepend".to_owned()),
             ("mergeReplace".to_owned(), "merge-replace".to_owned()),
             ("noTasks".to_owned(), "no-tasks".to_owned()),
+            ("scopeAll".to_owned(), "scope-all".to_owned()),
+            ("scopeDeps".to_owned(), "scope-deps".to_owned()),
+            ("scopeSelf".to_owned(), "scope-self".to_owned()),
+            ("tokens".to_owned(), "tokens".to_owned()),
+            ("expandEnv".to_owned(), "expand-env".to_owned()),
+            ("expandOutputs".to_owned(), "expand-outputs".to_owned()),
+            ("fileGroups".to_owned(), "file-groups".to_owned()),
         ])),
         ..WorkspaceConfig::default()
     };
@@ -168,6 +175,22 @@ pub fn get_tasks_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, GlobalP
     let toolchain_config = get_default_toolchain();
 
     let projects_config = GlobalProjectConfig {
+        file_groups: FxHashMap::from_iter([
+            (
+                "static".into(),
+                vec![
+                    "file.ts".into(),
+                    "dir".into(),
+                    "dir/other.tsx".into(),
+                    "dir/subdir".into(),
+                    "dir/subdir/another.ts".into(),
+                ],
+            ),
+            ("dirs_glob".into(), vec!["**/*".into()]),
+            ("files_glob".into(), vec!["**/*.{ts,tsx}".into()]),
+            ("globs".into(), vec!["**/*.{ts,tsx}".into(), "*.js".into()]),
+            ("no_globs".into(), vec!["config.js".into()]),
+        ]),
         tasks: BTreeMap::from_iter([
             (
                 "standard".to_owned(),

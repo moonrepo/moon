@@ -1,0 +1,12 @@
+tasks:
+  envFile:
+    options:
+      envFile: true
+  envFileNamed:
+    options:
+      envFile: '.env.production'
+  mergeWithEnv:
+    env:
+      FOO: original
+    options:
+      envFile: true

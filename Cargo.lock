@@ -2105,6 +2105,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_rust_lang"
+version = "0.1.0"
+dependencies = [
+ "moon_lang",
+]
+
+[[package]]
 name = "moon_system_platform"
 version = "0.1.0"
 dependencies = [

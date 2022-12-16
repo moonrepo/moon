@@ -6,6 +6,7 @@ members = [
 	"crates/deno/*",
 	"crates/go/*",
 	"crates/node/*",
+	"crates/php/*",
 	"crates/system/*",
 	"crates/typescript/*",
 	"crates/proto/*",

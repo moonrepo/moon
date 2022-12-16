@@ -28,6 +28,7 @@ use enums::LogLevel;
 use moon_logger::{LevelFilter, Logger};
 use moon_terminal::ExtendedTerm;
 use std::env;
+use tokio::runtime::{Builder, Runtime};
 
 pub use app::BIN_NAME;
 
@@ -44,7 +45,19 @@ fn map_log_level(level: LogLevel) -> LevelFilter {
     }
 }
 
-pub async fn run_cli() {
+fn create_runtime(concurrency: Option<usize>) -> Runtime {
+    let mut builder = Builder::new_multi_thread();
+    builder.enable_all();
+    builder.thread_name("moon");
+
+    if let Some(concurrency) = concurrency {
+        builder.worker_threads(concurrency);
+    }
+
+    builder.build().unwrap()
+}
+
+pub fn run_cli() {
     // Create app and parse arguments
     let args = App::parse();
 
@@ -63,182 +76,186 @@ pub async fn run_cli() {
     }
 
     // Match and run subcommand
-    let result = match &args.command {
-        Commands::Bin { tool } => bin(tool).await,
-        Commands::Ci {
-            base,
-            head,
-            job,
-            job_total,
-        } => {
-            ci(CiOptions {
-                base: base.clone(),
-                head: head.clone(),
-                job: *job,
-                job_total: *job_total,
-            })
-            .await
-        }
-        Commands::Check {
-            ids,
-            all,
-            report,
-            update_cache,
-        } => {
-            check(
-                ids,
-                CheckOptions {
-                    all: *all,
-                    report: *report,
-                    update_cache: *update_cache,
-                },
-            )
-            .await
-        }
-        Commands::Clean { lifetime } => {
-            clean(CleanOptions {
-                cache_lifetime: lifetime.to_owned(),
-            })
-            .await
-        }
-        Commands::DepGraph { target, dot } => dep_graph(target, *dot).await,
-        Commands::Docker { command } => match command {
-            DockerCommands::Prune => docker::prune().await,
-            DockerCommands::Scaffold { ids, include } => docker::scaffold(ids, include).await,
-        },
-        Commands::Generate {
-            name,
-            dest,
-            defaults,
-            dry_run,
-            force,
-            template,
-            vars,
-        } => {
-            generate(
-                name,
-                GenerateOptions {
-                    defaults: *defaults,
-                    dest: dest.clone(),
-                    dry_run: *dry_run,
-                    force: *force,
-                    template: *template,
-                    vars: vars.clone(),
-                },
-            )
-            .await
-        }
-        Commands::Init {
-            dest,
-            force,
-            minimal,
-            tool,
-            yes,
-        } => {
-            init(
-                dest,
-                tool.as_ref(),
-                InitOptions {
-                    force: *force,
-                    minimal: *minimal,
-                    yes: *yes,
-                },
-            )
-            .await
-        }
-        Commands::Migrate {
-            command,
-            skip_touched_files_check,
-        } => match command {
-            MigrateCommands::FromPackageJson { id } => {
-                migrate::from_package_json(id, skip_touched_files_check).await
-            }
-        },
-        Commands::Node { command } => match command {
-            NodeCommands::RunScript { name, project } => node::run_script(name, project).await,
-        },
-        Commands::Project { id, json } => project(id, *json).await,
-        Commands::ProjectGraph { id, dot } => project_graph(id, *dot).await,
-        Commands::Sync => sync().await,
-        Commands::Query { command } => match command {
-            QueryCommands::Projects {
-                alias,
-                affected,
-                id,
-                language,
-                source,
-                tasks,
-                type_of,
-            } => {
-                query::projects(&QueryProjectsOptions {
-                    alias: alias.clone(),
-                    affected: *affected,
-                    id: id.clone(),
-                    language: language.clone(),
-                    source: source.clone(),
-                    tasks: tasks.clone(),
-                    type_of: type_of.clone(),
-                })
-                .await
-            }
-            QueryCommands::TouchedFiles {
+    let runtime = create_runtime(None);
+
+    runtime.block_on(async {
+        let result = match &args.command {
+            Commands::Bin { tool } => bin(tool).await,
+            Commands::Ci {
                 base,
-                default_branch,
                 head,
-                local,
-                status,
+                job,
+                job_total,
             } => {
-                query::touched_files(&mut QueryTouchedFilesOptions {
-                    base: base.clone().unwrap_or_default(),
-                    default_branch: *default_branch,
-                    head: head.clone().unwrap_or_default(),
-                    local: *local,
-                    log: false,
-                    status: status.clone(),
+                ci(CiOptions {
+                    base: base.clone(),
+                    head: head.clone(),
+                    job: *job,
+                    job_total: *job_total,
                 })
                 .await
             }
-        },
-        Commands::Run {
-            targets,
-            affected,
-            dependents,
-            update_cache,
-            status,
-            passthrough,
-            profile,
-            report,
-            upstream,
-        } => {
-            run(
+            Commands::Check {
+                ids,
+                all,
+                report,
+                update_cache,
+            } => {
+                check(
+                    ids,
+                    CheckOptions {
+                        all: *all,
+                        report: *report,
+                        update_cache: *update_cache,
+                    },
+                )
+                .await
+            }
+            Commands::Clean { lifetime } => {
+                clean(CleanOptions {
+                    cache_lifetime: lifetime.to_owned(),
+                })
+                .await
+            }
+            Commands::DepGraph { target, dot } => dep_graph(target, *dot).await,
+            Commands::Docker { command } => match command {
+                DockerCommands::Prune => docker::prune().await,
+                DockerCommands::Scaffold { ids, include } => docker::scaffold(ids, include).await,
+            },
+            Commands::Generate {
+                name,
+                dest,
+                defaults,
+                dry_run,
+                force,
+                template,
+                vars,
+            } => {
+                generate(
+                    name,
+                    GenerateOptions {
+                        defaults: *defaults,
+                        dest: dest.clone(),
+                        dry_run: *dry_run,
+                        force: *force,
+                        template: *template,
+                        vars: vars.clone(),
+                    },
+                )
+                .await
+            }
+            Commands::Init {
+                dest,
+                force,
+                minimal,
+                tool,
+                yes,
+            } => {
+                init(
+                    dest,
+                    tool.as_ref(),
+                    InitOptions {
+                        force: *force,
+                        minimal: *minimal,
+                        yes: *yes,
+                    },
+                )
+                .await
+            }
+            Commands::Migrate {
+                command,
+                skip_touched_files_check,
+            } => match command {
+                MigrateCommands::FromPackageJson { id } => {
+                    migrate::from_package_json(id, skip_touched_files_check).await
+                }
+            },
+            Commands::Node { command } => match command {
+                NodeCommands::RunScript { name, project } => node::run_script(name, project).await,
+            },
+            Commands::Project { id, json } => project(id, *json).await,
+            Commands::ProjectGraph { id, dot } => project_graph(id, *dot).await,
+            Commands::Sync => sync().await,
+            Commands::Query { command } => match command {
+                QueryCommands::Projects {
+                    alias,
+                    affected,
+                    id,
+                    language,
+                    source,
+                    tasks,
+                    type_of,
+                } => {
+                    query::projects(&QueryProjectsOptions {
+                        alias: alias.clone(),
+                        affected: *affected,
+                        id: id.clone(),
+                        language: language.clone(),
+                        source: source.clone(),
+                        tasks: tasks.clone(),
+                        type_of: type_of.clone(),
+                    })
+                    .await
+                }
+                QueryCommands::TouchedFiles {
+                    base,
+                    default_branch,
+                    head,
+                    local,
+                    status,
+                } => {
+                    query::touched_files(&mut QueryTouchedFilesOptions {
+                        base: base.clone().unwrap_or_default(),
+                        default_branch: *default_branch,
+                        head: head.clone().unwrap_or_default(),
+                        local: *local,
+                        log: false,
+                        status: status.clone(),
+                    })
+                    .await
+                }
+            },
+            Commands::Run {
                 targets,
-                RunOptions {
-                    affected: *affected,
-                    dependents: *dependents,
-                    status: status.clone(),
-                    passthrough: passthrough.clone(),
-                    profile: profile.clone(),
-                    report: *report,
-                    update_cache: *update_cache,
-                    upstream: *upstream,
-                },
-            )
-            .await
-        }
-        Commands::Setup => setup().await,
-        Commands::Teardown => teardown().await,
-    };
+                affected,
+                dependents,
+                update_cache,
+                status,
+                passthrough,
+                profile,
+                report,
+                upstream,
+            } => {
+                run(
+                    targets,
+                    RunOptions {
+                        affected: *affected,
+                        dependents: *dependents,
+                        status: status.clone(),
+                        passthrough: passthrough.clone(),
+                        profile: profile.clone(),
+                        report: *report,
+                        update_cache: *update_cache,
+                        upstream: *upstream,
+                    },
+                )
+                .await
+            }
+            Commands::Setup => setup().await,
+            Commands::Teardown => teardown().await,
+        };
 
-    if let Err(error) = result {
-        let error_message = error.to_string();
+        if let Err(error) = result {
+            let error_message = error.to_string();
 
-        // Rust crashes with a broken pipe error by default,
-        // so we unfortunately need to work around it with this hack!
-        // https://github.com/rust-lang/rust/issues/46016
-        if error_message.to_lowercase().contains("broken pipe") {
-            std::process::exit(0);
-        } else {
-            Term::buffered_stderr().render_error(error);
+            // Rust crashes with a broken pipe error by default,
+            // so we unfortunately need to work around it with this hack!
+            // https://github.com/rust-lang/rust/issues/46016
+            if error_message.to_lowercase().contains("broken pipe") {
+                std::process::exit(0);
+            } else {
+                Term::buffered_stderr().render_error(error);
+            }
         }
-    }
+    });
 }

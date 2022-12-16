@@ -5,7 +5,7 @@ use moon_node_lang::NODE;
 use moon_utils::path;
 use std::env;
 use std::path::{Path, PathBuf};
-use tokio::process::Command;
+use std::process::Command;
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
@@ -71,7 +71,7 @@ fn find_workspace_root(dir: &Path) -> Option<PathBuf> {
     }
 }
 
-async fn run_bin(bin_path: &Path, current_dir: &Path) -> Result<(), std::io::Error> {
+fn run_bin(bin_path: &Path, current_dir: &Path) -> Result<(), std::io::Error> {
     // Remove the binary path from the current args list
     let args = env::args()
         .enumerate()
@@ -90,14 +90,12 @@ async fn run_bin(bin_path: &Path, current_dir: &Path) -> Result<(), std::io::Err
         .args(args)
         .current_dir(current_dir)
         .spawn()?
-        .wait()
-        .await?;
+        .wait()?;
 
     Ok(())
 }
 
-#[tokio::main]
-async fn main() {
+fn main() {
     // console_subscriber::init();
     let mut run = true;
 
@@ -119,9 +117,7 @@ async fn main() {
                 if moon_bin.exists() {
                     run = false;
 
-                    run_bin(&moon_bin, &current_dir)
-                        .await
-                        .expect("Failed to run moon binary!");
+                    run_bin(&moon_bin, &current_dir).expect("Failed to run moon binary!");
                 }
             }
         }
@@ -129,6 +125,6 @@ async fn main() {
 
     // Otherwise just run the CLI
     if run {
-        run_cli().await
+        run_cli();
     }
 }

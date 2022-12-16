@@ -28,6 +28,21 @@ fn creates_files_in_dest() {
 }
 
 #[test]
+fn doesnt_create_project_config_when_minimal() {
+    let sandbox = create_sandbox("init-sandbox");
+    let root = sandbox.path().to_path_buf();
+    let project_config = root.join(".moon").join(CONFIG_GLOBAL_PROJECT_FILENAME);
+
+    assert!(!project_config.exists());
+
+    sandbox.run_moon(|cmd| {
+        cmd.arg("init").arg("--yes").arg("--minimal").arg(root);
+    });
+
+    assert!(!project_config.exists());
+}
+
+#[test]
 fn creates_workspace_config_from_template() {
     let sandbox = create_sandbox("init-sandbox");
     let root = sandbox.path().to_path_buf();

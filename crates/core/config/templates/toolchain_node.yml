@@ -1,4 +1,4 @@
-{%- if minimal %}
+{%- if minimal -%}
 
 node:
   version: '{{ node_version }}'
@@ -6,7 +6,7 @@ node:
   {{ package_manager }}:
     version: '{{ package_manager_version }}'
 
-{%- else %}
+{%- else -%}
 
 # Configures Node.js within the toolchain. moon manages its own version of Node.js
 # instead of relying on a version found on the host machine. This ensures deterministic

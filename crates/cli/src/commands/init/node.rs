@@ -250,6 +250,20 @@ mod tests {
     }
 
     #[test]
+    fn renders_minimal() {
+        let mut context = Context::new();
+        context.insert("node_version", &"16.0.0");
+        context.insert("node_version_manager", &"");
+        context.insert("package_manager", &"npm");
+        context.insert("package_manager_version", &"8.0.0");
+        context.insert("alias_names", &false);
+        context.insert("infer_tasks", &false);
+        context.insert("minimal", &true);
+
+        assert_snapshot!(render_template(context).unwrap());
+    }
+
+    #[test]
     fn renders_nvm() {
         let mut context = Context::new();
         context.insert("node_version", &"18.1.0");

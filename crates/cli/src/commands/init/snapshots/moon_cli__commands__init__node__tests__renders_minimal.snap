@@ -1,0 +1,11 @@
+---
+source: crates/cli/src/commands/init/node.rs
+assertion_line: 263
+expression: render_template(context).unwrap()
+---
+node:
+  version: '16.0.0'
+  packageManager: 'npm'
+  npm:
+    version: '8.0.0'
+

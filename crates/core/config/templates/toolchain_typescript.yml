@@ -1,9 +1,9 @@
-{%- if minimal %}
+{%- if minimal -%}
 
 typescript:
   syncProjectReferences: {{ project_refs }}
 
-{%- else %}
+{%- else -%}
 
 # Configures how moon integrates with TypeScript.
 typescript:

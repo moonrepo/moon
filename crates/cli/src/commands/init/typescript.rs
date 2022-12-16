@@ -74,6 +74,17 @@ mod tests {
     }
 
     #[test]
+    fn renders_minimal() {
+        let mut context = Context::new();
+        context.insert("project_refs", &false);
+        context.insert("route_cache", &false);
+        context.insert("sync_paths", &false);
+        context.insert("minimal", &true);
+
+        assert_snapshot!(render_template(context).unwrap());
+    }
+
+    #[test]
     fn renders_project_refs() {
         let mut context = Context::new();
         context.insert("project_refs", &true);

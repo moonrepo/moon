@@ -17,7 +17,7 @@ lazy_static! {
 
 pub fn detect_project_language(root: &Path) -> ProjectLanguage {
     // Go
-    if is_using_dependency_manager(root, &GOMOD)
+    if is_using_dependency_manager(root, &GOMOD, true)
         || is_using_version_manager(root, &G)
         || is_using_version_manager(root, &GVM)
         || is_using_version_manager(root, &GOENV)
@@ -26,7 +26,7 @@ pub fn detect_project_language(root: &Path) -> ProjectLanguage {
     }
 
     // PHP
-    if is_using_dependency_manager(root, &COMPOSER)
+    if is_using_dependency_manager(root, &COMPOSER, true)
         || is_using_version_manager(root, &PHPENV)
         || is_using_version_manager(root, &PHPBREW)
     {
@@ -34,15 +34,15 @@ pub fn detect_project_language(root: &Path) -> ProjectLanguage {
     }
 
     // Python
-    if is_using_dependency_manager(root, &PIP)
-        || is_using_dependency_manager(root, &PIPENV)
+    if is_using_dependency_manager(root, &PIP, true)
+        || is_using_dependency_manager(root, &PIPENV, true)
         || is_using_version_manager(root, &PYENV)
     {
         return ProjectLanguage::Python;
     }
 
     // Ruby
-    if is_using_dependency_manager(root, &BUNDLER)
+    if is_using_dependency_manager(root, &BUNDLER, true)
         || is_using_version_manager(root, &RVM)
         || is_using_version_manager(root, &RBENV)
     {
@@ -50,7 +50,7 @@ pub fn detect_project_language(root: &Path) -> ProjectLanguage {
     }
 
     // Rust
-    if is_using_dependency_manager(root, &CARGO) || is_using_version_manager(root, &RUSTUP) {
+    if is_using_dependency_manager(root, &CARGO, true) || is_using_version_manager(root, &RUSTUP) {
         return ProjectLanguage::Rust;
     }
 
@@ -63,9 +63,9 @@ pub fn detect_project_language(root: &Path) -> ProjectLanguage {
     }
 
     // JavaScript (last since everyone uses it)
-    if is_using_dependency_manager(root, &NPM)
-        || is_using_dependency_manager(root, &PNPM)
-        || is_using_dependency_manager(root, &YARN)
+    if is_using_dependency_manager(root, &NPM, true)
+        || is_using_dependency_manager(root, &PNPM, true)
+        || is_using_dependency_manager(root, &YARN, true)
         || is_using_version_manager(root, &NVM)
         || is_using_version_manager(root, &NODENV)
     {
@@ -86,5 +86,7 @@ pub fn detect_task_platform(command: &str, language: ProjectLanguage) -> Platfor
     }
 
     // Default to the platform of the project's language
-    language.into()
+    let platform: PlatformType = language.into();
+
+    platform
 }

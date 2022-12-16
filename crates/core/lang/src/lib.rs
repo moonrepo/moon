@@ -59,14 +59,22 @@ pub fn has_vendor_installed_dependencies<T: AsRef<Path>>(dir: T, lang: &Language
 }
 
 #[inline]
-pub fn is_using_dependency_manager<T: AsRef<Path>>(base_dir: T, pm: &DependencyManager) -> bool {
+pub fn is_using_dependency_manager<T: AsRef<Path>>(
+    base_dir: T,
+    manager: &DependencyManager,
+    check_manifest: bool,
+) -> bool {
     let base_dir = base_dir.as_ref();
 
-    if base_dir.join(pm.lockfile).exists() {
+    if base_dir.join(manager.lockfile).exists() {
         return true;
     }
 
-    for config in pm.config_files {
+    if check_manifest && base_dir.join(manager.manifest).exists() {
+        return true;
+    }
+
+    for config in manager.config_files {
         if base_dir.join(config).exists() {
             return true;
         }
@@ -76,10 +84,10 @@ pub fn is_using_dependency_manager<T: AsRef<Path>>(base_dir: T, pm: &DependencyM
 }
 
 #[inline]
-pub fn is_using_version_manager<T: AsRef<Path>>(base_dir: T, vm: &VersionManager) -> bool {
+pub fn is_using_version_manager<T: AsRef<Path>>(base_dir: T, manager: &VersionManager) -> bool {
     let base_dir = base_dir.as_ref();
 
-    if base_dir.join(vm.version_file).exists() {
+    if base_dir.join(manager.version_file).exists() {
         return true;
     }
 

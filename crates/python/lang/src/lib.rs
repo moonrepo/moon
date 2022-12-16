@@ -14,7 +14,7 @@ pub const PIP: DependencyManager = DependencyManager {
     binary: "pip",
     config_files: &["constraints.txt"],
     default_version: "22.3.1",
-    lockfile: "",
+    lockfile: ".pylock.toml", // https://peps.python.org/pep-0665/
     manifest: "requirements.txt",
 };
 

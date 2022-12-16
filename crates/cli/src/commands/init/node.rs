@@ -70,11 +70,11 @@ fn detect_package_manager(
 
     // If no value, detect based on files
     if pm_type.is_empty() {
-        if is_using_dependency_manager(dest_dir, &YARN) {
+        if is_using_dependency_manager(dest_dir, &YARN, false) {
             pm_type = YARN.binary.to_owned();
-        } else if is_using_dependency_manager(dest_dir, &PNPM) {
+        } else if is_using_dependency_manager(dest_dir, &PNPM, false) {
             pm_type = PNPM.binary.to_owned();
-        } else if is_using_dependency_manager(dest_dir, &NPM) {
+        } else if is_using_dependency_manager(dest_dir, &NPM, false) {
             pm_type = NPM.binary.to_owned();
         }
     }

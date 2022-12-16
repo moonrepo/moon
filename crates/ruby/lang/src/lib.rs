@@ -4,8 +4,8 @@ pub const RUBY: Language = Language {
     binary: "ruby",
     default_version: "3.1.3",
     file_exts: &["rb"],
-    vendor_bins_dir: "",
-    vendor_dir: "vendor",
+    vendor_bins_dir: None,
+    vendor_dir: Some("vendor"),
 };
 
 // Package managers

@@ -15,9 +15,9 @@ pub struct Language {
 
     pub file_exts: StaticStringList,
 
-    pub vendor_bins_dir: StaticString,
+    pub vendor_bins_dir: Option<StaticString>,
 
-    pub vendor_dir: StaticString,
+    pub vendor_dir: Option<StaticString>,
 }
 
 pub struct DependencyManager {
@@ -42,7 +42,11 @@ pub type LockfileDependencyVersions = FxHashMap<String, Vec<String>>;
 
 #[inline]
 pub fn has_vendor_installed_dependencies<T: AsRef<Path>>(dir: T, lang: &Language) -> bool {
-    let vendor_path = dir.as_ref().join(lang.vendor_dir);
+    let Some(vendor_dir) = lang.vendor_dir else {
+        return false;
+    };
+
+    let vendor_path = dir.as_ref().join(vendor_dir);
 
     if !vendor_path.exists() {
         return false;

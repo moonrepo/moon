@@ -4,8 +4,8 @@ pub const PHP: Language = Language {
     binary: "php",
     default_version: "8.2.0",
     file_exts: &["php"],
-    vendor_bins_dir: "vendor/bin",
-    vendor_dir: "vendor",
+    vendor_bins_dir: Some("vendor/bin"),
+    vendor_dir: Some("vendor"),
 };
 
 // Package managers

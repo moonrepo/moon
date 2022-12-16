@@ -1,11 +1,11 @@
-use moon_lang::{DependencyManager, Language, VersionManager};
+use moon_lang::{Language, VersionManager};
 
 pub const GO: Language = Language {
     binary: "go",
     default_version: "1.19.4",
     file_exts: &["go"],
-    vendor_bins_dir: "",
-    vendor_dir: "vendor",
+    vendor_bins_dir: None,
+    vendor_dir: Some("vendor"),
 };
 
 // Version managers

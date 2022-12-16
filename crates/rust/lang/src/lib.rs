@@ -4,8 +4,8 @@ pub const RUST: Language = Language {
     binary: "rustc",
     default_version: "1.66.0",
     file_exts: &["rs", "rlib"],
-    vendor_bins_dir: "",
-    vendor_dir: "",
+    vendor_bins_dir: None,
+    vendor_dir: None,
 };
 
 // Package managers

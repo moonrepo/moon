@@ -4,8 +4,8 @@ pub const PYTHON: Language = Language {
     binary: "python",
     default_version: "3.11.1",
     file_exts: &["py", "pyc", "pyo", "pyd"],
-    vendor_bins_dir: "",
-    vendor_dir: "",
+    vendor_bins_dir: None,
+    vendor_dir: None,
 };
 
 // Package managers

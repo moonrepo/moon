@@ -93,7 +93,7 @@ pub fn find_package_bin<P: AsRef<Path>, B: AsRef<str>>(
     let starting_dir = starting_dir.as_ref();
     let bin_name = bin_name.as_ref();
     let bin_path = starting_dir
-        .join(NODE.vendor_bins_dir)
+        .join(NODE.vendor_bins_dir.unwrap())
         .join(get_bin_name_suffix(bin_name, "cmd", true));
 
     if bin_path.exists() {

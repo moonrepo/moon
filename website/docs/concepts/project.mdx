@@ -51,23 +51,3 @@ and in turn, a dependency graph for executing [tasks](./task). Project dependenc
 
 Projects can be configured with an optional [`moon.yml`](../config/project) in the project root, or
 through the optional [`.moon/project.yml`](../config/global-project) which applies to all projects.
-
-### `package.json`
-
-A moon project _does not require_ a `package.json`, but when one exists, the following functionality
-is enabled.
-
-- Dependency versions are included when computing cache keys and hashes.
-- Depended on projects ([`dependsOn`](../config/project#dependson)) are mapped as workspace
-  dependencies (when applicable).
-
-### `tsconfig.json`
-
-A moon project _does not require_ TypeScript or a `tsconfig.json`, but when one exists, the
-following functionality is enabled.
-
-- Depended on projects ([`dependsOn`](../config/project#dependson)) are mapped as TypeScript project
-  references (when applicable).
-
-> File name can be customized with the
-> [`typescript.projectConfigFileName`](../config/toolchain#projectconfigfilename) setting.

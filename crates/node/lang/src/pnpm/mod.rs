@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
 use std::path::{Path, PathBuf};
 
-config_cache!(PnpmLock, PNPM.lock_filename, read_yaml);
+config_cache!(PnpmLock, PNPM.lockfile, read_yaml);
 
 type DependencyMap = FxHashMap<String, Value>;
 

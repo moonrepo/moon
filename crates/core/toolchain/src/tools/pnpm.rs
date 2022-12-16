@@ -112,18 +112,18 @@ impl DependencyManager<NodeTool> for PnpmTool {
     }
 
     fn get_lock_filename(&self) -> String {
-        String::from(PNPM.lock_filename)
+        String::from(PNPM.lockfile)
     }
 
     fn get_manifest_filename(&self) -> String {
-        String::from(PNPM.manifest_filename)
+        String::from(PNPM.manifest)
     }
 
     async fn get_resolved_dependencies(
         &self,
         project_root: &Path,
     ) -> Result<LockfileDependencyVersions, ToolchainError> {
-        let Some(lockfile_path) = fs::find_upwards(PNPM.lock_filename, project_root) else {
+        let Some(lockfile_path) = fs::find_upwards(PNPM.lockfile, project_root) else {
             return Ok(FxHashMap::default());
         };
 

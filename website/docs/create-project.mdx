@@ -20,8 +20,8 @@ mapped in the [`projects`](./config/workspace#projects) setting found in
 [`.moon/workspace.yml`](./config/workspace). When mapping a project, we require a unique name for
 the project, and a project source location (path relative from the workspace root).
 
-Let's say we have a frontend web application called "client", and a backend Node.js application
-called "server", our `projects` setting would look like the following.
+Let's say we have a frontend web application called "client", and a backend application called
+"server", our `projects` setting would look like the following.
 
 ```yaml title=".moon/workspace.yml"
 projects:
@@ -53,7 +53,7 @@ A project can be configured in 1 of 2 ways:
 
 - Through the [`.moon/project.yml`](./config/global-project) config file, which defines file groups
   and tasks that are inherited by _all_ projects within the workspace. Perfect for standardizing
-  common tasks like linting, type-checking, and code formatting.
+  common tasks like linting, typechecking, and code formatting.
 - Through the [`moon.yml`](./config/project) config file, found at the root of each project, which
   defines files groups, tasks, dependencies, and more that are unique to that project.
 
@@ -138,7 +138,7 @@ Furthermore, we also support the [`type`](./config/project#type) and
 [`language`](./config/project#language) settings for a more granular breakdown of what exists in the
 repository.
 
-```yaml title="moon.yml"
+```yaml title="<project>/moon.yml"
 type: 'tool'
 language: 'typescript'
 

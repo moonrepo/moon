@@ -7,7 +7,7 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 The `.moon/project.yml` file configures file groups and tasks that are inherited by _every_ project
 in the workspace. Projects can override or merge with these settings within their respective
-[`moon.yml`](./project).
+[`moon.yml`](./project). This file is _optional_.
 
 ```yaml title=".moon/project.yml"
 $schema: 'https://moonrepo.dev/schemas/global-project.json'
@@ -74,10 +74,10 @@ fileGroups:
 
 As mentioned in the link above, [tasks](../concepts/task) are actions that are ran within the
 context of a project, and commonly wrap an npm binary or system command. For most workspaces, every
-project _should_ have linting, type-checking, testing, code formatting, so on and so forth. To
-reduce the amount of boilerplate that _every_ project would require, this setting offers the ability
-to define tasks that are inherited by all projects within the workspace, but can also be overridden
-per project.
+project _should_ have linting, typechecking, testing, code formatting, so on and so forth. To reduce
+the amount of boilerplate that _every_ project would require, this setting offers the ability to
+define tasks that are inherited by all projects within the workspace, but can also be overridden per
+project.
 
 ```yaml title=".moon/project.yml"
 tasks:

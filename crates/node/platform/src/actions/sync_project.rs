@@ -156,7 +156,7 @@ pub async fn sync_project(
                         "Syncing {} as a dependency to {}'s {}",
                         color::id(&dep_project.id),
                         color::id(&project.id),
-                        color::file(NPM.manifest_filename)
+                        color::file(NPM.manifest)
                     );
                 }
             }

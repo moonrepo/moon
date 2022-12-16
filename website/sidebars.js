@@ -13,6 +13,7 @@ const sidebars = {
 			items: [
 				'install',
 				'setup-workspace',
+				'setup-toolchain',
 				'create-project',
 				'create-task',
 				'run-task',

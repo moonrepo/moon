@@ -2,25 +2,26 @@ use super::check_dirty_repo;
 use crate::helpers::AnyError;
 use moon::{generate_project_graph, load_workspace};
 use moon_config::{
-    DependencyConfig, DependencyScope, PlatformType, ProjectConfig, ProjectDependsOn,
-    TaskCommandArgs,
+    DependencyConfig, DependencyScope, PlatformType, ProjectDependsOn, TaskCommandArgs,
 };
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_error::MoonError;
 use moon_logger::info;
 use moon_node_lang::package::{DepsSet, PackageJson};
 use moon_node_platform::create_tasks_from_scripts;
+use moon_project::Project;
 use moon_utils::yaml::{self, Mapping, YamlValue};
 use rustc_hash::FxHashMap;
 use serde_yaml::to_string;
 
 // Don't use serde since it writes *everything*, which is a ton of nulled fields!
-pub fn convert_to_yaml(config: &ProjectConfig) -> Result<YamlValue, AnyError> {
+pub fn convert_to_yaml(project: &Project) -> Result<YamlValue, AnyError> {
     let mut root = Mapping::new();
+    let config = &project.config;
 
     root.insert(
         YamlValue::String("language".to_owned()),
-        YamlValue::String(to_string(&config.language)?.trim().to_owned()),
+        YamlValue::String(to_string(&project.language)?.trim().to_owned()),
     );
 
     if !config.depends_on.is_empty() {
@@ -211,7 +212,7 @@ pub async fn from_package_json(
 
     yaml::write_with_config(
         project.root.join(CONFIG_PROJECT_FILENAME),
-        convert_to_yaml(&project.config)?,
+        convert_to_yaml(&project)?,
     )?;
 
     Ok(())

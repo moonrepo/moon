@@ -48,7 +48,7 @@ fn load_project_config(
         });
     }
 
-    Ok(ProjectConfig::new(project_root))
+    Ok(ProjectConfig::default())
 }
 
 fn create_file_groups_from_config(

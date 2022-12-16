@@ -7,15 +7,15 @@ import TabItem from '@theme/TabItem';
 import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
 import NextSteps from '@site/src/components/NextSteps';
 
-<HeaderLabel text="1 min" />
+<HeaderLabel text="2 min" />
 
 Even though we've [created a task](./create-task), it's not useful unless we _run it_, which is done
 with the [`moon run <target>`](./commands/run) command. This command requires a single argument, a
 [primary target](./concepts/target), which is the pairing of a project name and task name. In the
-example below, our project is `app`, the task is `typecheck`, and the target is `app:typecheck`.
+example below, our project is `app`, the task is `build`, and the target is `app:build`.
 
 ```shell
-$ moon run app:typecheck
+$ moon run app:build
 ```
 
 When this command is ran, it will do the following:
@@ -39,7 +39,7 @@ achieved by passing the `--dependents` option, which will run dependent targets 
 name) _after_ the primary target.
 
 ```shell
-$ moon run app:typecheck --dependents
+$ moon run app:build --dependents
 ```
 
 ## Running based on affected files only
@@ -50,7 +50,7 @@ actually changed. However, this is typically fine because of our
 target if files have changed, pass the `--affected` flag.
 
 ```shell
-$ moon run app:typecheck --affected
+$ moon run app:build --affected
 ```
 
 Under the hood, we extract locally touched (created, modified, staged, etc) files from your
@@ -64,7 +64,7 @@ the `--upstream` flag. This will extract touched files by comparing the current 
 [`vcs.defaultBranch`](./config/workspace#defaultbranch).
 
 ```shell
-$ moon run app:typecheck --affected --upstream
+$ moon run app:build --affected --upstream
 ```
 
 ### Filtering based on change status
@@ -74,13 +74,13 @@ We can take this a step further by filtering down affected files based on a chan
 `staged`, `unstaged`, `untracked`. If not provided, the option defaults to all.
 
 ```shell
-$ moon run app:typecheck --affected --status deleted
+$ moon run app:build --affected --status deleted
 ```
 
 Multiple status can be provided by passing the `--status` option multiple times.
 
 ```shell
-$ moon run app:typecheck --affected --status deleted --status modified
+$ moon run app:build --affected --status deleted --status modified
 ```
 
 ## Passing arguments to the underlying command
@@ -90,7 +90,7 @@ defined [`args`](./config/project#args), you can pass them after `--`. These arg
 as-is_.
 
 ```shell
-$ moon run app:typecheck -- --force
+$ moon run app:build -- --force
 ```
 
 > The `--` delimiter and any arguments _must_ be defined last on the command line.

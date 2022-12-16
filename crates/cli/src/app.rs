@@ -463,6 +463,14 @@ pub struct App {
     pub color: bool,
 
     #[arg(
+        long,
+        short = 'c',
+        env = "MOON_CONCURRENCY",
+        help = "Maximum number of threads to utilize"
+    )]
+    pub concurrency: Option<usize>,
+
+    #[arg(
         value_enum,
         long,
         env = "MOON_LOG",

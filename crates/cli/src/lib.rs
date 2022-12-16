@@ -46,12 +46,19 @@ fn map_log_level(level: LogLevel) -> LevelFilter {
 }
 
 fn create_runtime(concurrency: Option<usize>) -> Runtime {
-    let mut builder = Builder::new_multi_thread();
+    let threads = concurrency.unwrap_or(0);
+
+    let mut builder = if threads == 1 {
+        Builder::new_current_thread()
+    } else {
+        Builder::new_multi_thread()
+    };
+
     builder.enable_all();
     builder.thread_name("moon");
 
-    if let Some(concurrency) = concurrency {
-        builder.worker_threads(concurrency);
+    if threads > 1 {
+        builder.worker_threads(threads);
     }
 
     builder.build().unwrap()
@@ -76,7 +83,7 @@ pub fn run_cli() {
     }
 
     // Match and run subcommand
-    let runtime = create_runtime(None);
+    let runtime = create_runtime(args.concurrency);
 
     runtime.block_on(async {
         let result = match &args.command {

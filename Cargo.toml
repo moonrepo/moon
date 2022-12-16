@@ -4,6 +4,7 @@ members = [
 	"crates/cli",
 	"crates/core/*",
 	"crates/deno/*",
+	"crates/go/*",
 	"crates/node/*",
 	"crates/system/*",
 	"crates/typescript/*",

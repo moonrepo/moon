@@ -59,7 +59,7 @@ pub fn has_vendor_installed_dependencies<T: AsRef<Path>>(dir: T, lang: &Language
 }
 
 #[inline]
-pub fn is_using_package_manager<T: AsRef<Path>>(base_dir: T, pm: &DependencyManager) -> bool {
+pub fn is_using_dependency_manager<T: AsRef<Path>>(base_dir: T, pm: &DependencyManager) -> bool {
     let base_dir = base_dir.as_ref();
 
     if base_dir.join(pm.lockfile).exists() {

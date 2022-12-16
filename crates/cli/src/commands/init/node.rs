@@ -6,7 +6,7 @@ use moon_config::{
     default_node_version, default_npm_version, default_pnpm_version, default_yarn_version,
     load_toolchain_node_config_template,
 };
-use moon_lang::{is_using_package_manager, is_using_version_manager};
+use moon_lang::{is_using_dependency_manager, is_using_version_manager};
 use moon_logger::color;
 use moon_node_lang::package::{PackageJson, PackageWorkspaces};
 use moon_node_lang::{NODENV, NPM, NVM, PNPM, YARN};
@@ -70,11 +70,11 @@ fn detect_package_manager(
 
     // If no value, detect based on files
     if pm_type.is_empty() {
-        if is_using_package_manager(dest_dir, &YARN) {
+        if is_using_dependency_manager(dest_dir, &YARN) {
             pm_type = YARN.binary.to_owned();
-        } else if is_using_package_manager(dest_dir, &PNPM) {
+        } else if is_using_dependency_manager(dest_dir, &PNPM) {
             pm_type = PNPM.binary.to_owned();
-        } else if is_using_package_manager(dest_dir, &NPM) {
+        } else if is_using_dependency_manager(dest_dir, &NPM) {
             pm_type = NPM.binary.to_owned();
         }
     }

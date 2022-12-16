@@ -9,6 +9,8 @@ pub mod shell;
 pub mod time;
 pub mod yaml;
 
+pub use lazy_static::lazy_static;
+
 use cached::proc_macro::cached;
 use moon_constants as constants;
 use std::env;

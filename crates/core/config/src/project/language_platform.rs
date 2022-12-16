@@ -23,9 +23,6 @@ pub enum ProjectLanguage {
     #[strum(serialize = "batch")]
     Batch,
 
-    #[strum(serialize = "deno")]
-    Deno,
-
     #[strum(serialize = "go")]
     Go,
 
@@ -86,8 +83,7 @@ impl From<ProjectLanguage> for PlatformType {
             ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => PlatformType::Node,
             ProjectLanguage::Unknown => PlatformType::Unknown,
             // TODO: Move to these to their own platform once it's been implemented!
-            ProjectLanguage::Deno
-            | ProjectLanguage::Go
+            ProjectLanguage::Go
             | ProjectLanguage::Php
             | ProjectLanguage::Python
             | ProjectLanguage::Ruby

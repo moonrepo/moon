@@ -6,12 +6,13 @@ The following options are available for _all_ moon commands.
 
 - `--cache <mode>` - The mode for [cache operations](#caching).
 - `--color` - Force [colored output](#colors) for moon (not tasks).
+- `--concurrency`, `-c` - Maximum number of threads to utilize.
 - `--help` - Display the help menu for the current command.
 - `--log <level>` - The lowest [log level to output](#logging).
 - `--logFile <file>` - Write logs to the defined file.
 - `--version` - Display the version of the CLI.
 
-Global options _must_ be passed after the `moon` binary and before the command.
+Global options **must** be passed _after_ the `moon` binary and _before_ the command.
 
 ```shell
 $ moon --log error <command>
@@ -70,6 +71,19 @@ To mitigate this problem as a whole, and to avoid requiring `--color` for every 
 the [`runner.inheritColorsForPipedTasks`](../config/workspace#inheritcolorsforpipedtasks)
 configuration setting. When enabled, all piped child processes will inherit the color settings of
 the currently running terminal.
+
+## Concurrency
+
+The `--concurrency` option or `MOON_CONCURRENCY` environment variable can be used to control the
+maximum amount of threads to utilize in our thread pool, as dictated by the Tokio runtime. When
+changing this value, it _does not_ change how many tasks run in parallel, but _does_ change how many
+cores will be utilized by the operating system.
+
+```shell
+$ moon --concurrency 1 run app:build
+# Or
+$ MOON_CONCURRENCY=1 moon run app:build
+```
 
 ## Debugging
 

@@ -166,19 +166,6 @@ pub struct ProjectConfig {
 }
 
 impl ProjectConfig {
-    pub fn detect_language<T: AsRef<Path>>(root: T) -> ProjectLanguage {
-        let root = root.as_ref();
-
-        if root.join("tsconfig.json").exists() {
-            ProjectLanguage::TypeScript
-        } else if root.join("package.json").exists() {
-            ProjectLanguage::JavaScript
-        } else {
-            ProjectLanguage::Unknown
-        }
-    }
-
-    #[track_caller]
     pub fn load<T: AsRef<Path>>(path: T) -> Result<ProjectConfig, ConfigError> {
         let path = path.as_ref();
         let profile_name = "project";
@@ -187,7 +174,7 @@ impl ProjectConfig {
                 .merge(YamlExtended::file(path).profile(profile_name))
                 .select(profile_name);
 
-        let mut config: ProjectConfig = figment.extract()?;
+        let config: ProjectConfig = figment.extract()?;
 
         if let Err(errors) = config.validate() {
             return Err(ConfigError::FailedValidation(
@@ -195,17 +182,6 @@ impl ProjectConfig {
             ));
         }
 
-        if matches!(config.language, ProjectLanguage::Unknown) {
-            config.language = ProjectConfig::detect_language(path.parent().unwrap());
-        }
-
         Ok(config)
-    }
-
-    pub fn new<T: AsRef<Path>>(root: T) -> Self {
-        ProjectConfig {
-            language: ProjectConfig::detect_language(root.as_ref()),
-            ..ProjectConfig::default()
-        }
     }
 }

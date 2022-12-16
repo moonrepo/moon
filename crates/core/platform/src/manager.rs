@@ -1,5 +1,7 @@
+use std::path::Path;
+
 use crate::platform::Platform;
-use moon_config::PlatformType;
+use moon_config::{PlatformType, ProjectLanguage};
 use rustc_hash::FxHashMap;
 
 pub type BoxedPlatform = Box<dyn Platform>;
@@ -10,6 +12,16 @@ pub struct PlatformManager {
 }
 
 impl PlatformManager {
+    pub fn detect_project_language(&self, root: &Path) -> ProjectLanguage {
+        for platform in self.list() {
+            if let Some(language) = platform.detect_project_language(root) {
+                return language;
+            }
+        }
+
+        ProjectLanguage::Unknown
+    }
+
     pub fn find<P>(&self, predicate: P) -> Option<&BoxedPlatform>
     where
         P: Fn(&&BoxedPlatform) -> bool,
@@ -21,6 +33,10 @@ impl PlatformManager {
         let type_of = type_of.into();
 
         self.cache.get(&type_of)
+    }
+
+    pub fn list(&self) -> std::collections::hash_map::Values<PlatformType, BoxedPlatform> {
+        self.cache.values()
     }
 
     pub fn list_mut(

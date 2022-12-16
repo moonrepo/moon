@@ -4,8 +4,8 @@ use crate::project_graph::{GraphType, IndicesType, ProjectGraph, LOG_TARGET};
 use crate::token_resolver::{TokenContext, TokenResolver};
 use moon_cache::CacheEngine;
 use moon_config::{
-    GlobalProjectConfig, PlatformType, ProjectsAliasesMap, ProjectsSourcesMap, TaskConfig,
-    WorkspaceConfig, WorkspaceProjects,
+    GlobalProjectConfig, PlatformType, ProjectLanguage, ProjectsAliasesMap, ProjectsSourcesMap,
+    TaskConfig, WorkspaceConfig, WorkspaceProjects,
 };
 use moon_logger::{color, debug, map_list, trace, Logable};
 use moon_platform::PlatformManager;
@@ -104,7 +104,12 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             }
         }
 
-        if let Some(platform) = self.platforms.get(project.config.language) {
+        // Detect the language if its unknown
+        if matches!(project.language, ProjectLanguage::Unknown) {
+            project.language = self.platforms.detect_project_language(&project.root);
+        }
+
+        if let Some(platform) = self.platforms.get(project.language) {
             // Inherit implicit dependencies
             for dep_config in platform.load_project_implicit_dependencies(
                 id,

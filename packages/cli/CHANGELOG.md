@@ -16,6 +16,7 @@
 
 - Added `--updateCache` (`-u`) to `moon check` and `moon run` that force updates the cache and
   bypasses any existing cache.
+- Added `--minimal` to `moon init` for quick scaffolding and prototyping.
 - Added a new cache level, `read-write`, that can be passed to `--cache` or `MOON_CACHE`. This is
   now the default level, while `write` is now a write-only level.
 - Added `args` and `env` as valid values for the `affectedFiles` task option.

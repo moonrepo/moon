@@ -1,0 +1,8 @@
+---
+source: crates/cli/src/commands/init/typescript.rs
+assertion_line: 84
+expression: render_template(context).unwrap()
+---
+typescript:
+  syncProjectReferences: false
+

@@ -1,8 +1,21 @@
-use moon_test_utils::{create_sandbox, predicates::prelude::*};
+use moon_test_utils::{assert_snapshot, create_sandbox, predicates::prelude::*};
 use std::fs;
 
 mod init_node {
     use super::*;
+
+    #[test]
+    fn minimal() {
+        let sandbox = create_sandbox("init-sandbox");
+        let root = sandbox.path().to_path_buf();
+        let config = root.join(".moon").join("toolchain.yml");
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("init").arg("--yes").arg("--minimal").arg(root);
+        });
+
+        assert_snapshot!(fs::read_to_string(config).unwrap());
+    }
 
     #[test]
     fn infers_version_from_nvm() {

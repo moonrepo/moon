@@ -5,7 +5,7 @@ use crate::token_resolver::{TokenContext, TokenResolver};
 use moon_cache::CacheEngine;
 use moon_config::{
     GlobalProjectConfig, PlatformType, ProjectLanguage, ProjectsAliasesMap, ProjectsSourcesMap,
-    TaskConfig, WorkspaceConfig, WorkspaceProjects,
+    WorkspaceConfig, WorkspaceProjects,
 };
 use moon_logger::{color, debug, map_list, trace, Logable};
 use moon_platform::PlatformManager;
@@ -106,7 +106,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         // Detect the language if its unknown
         if matches!(project.language, ProjectLanguage::Unknown) {
-            project.language = self.platforms.detect_project_language(&project.root);
+            project.language = self.platforms.detect_project_language(&project.root)?;
         }
 
         if let Some(platform) = self.platforms.get(project.language) {
@@ -153,8 +153,11 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         // Use `mem::take` so that we can mutably borrow the project and tasks in parallel
         for (task_id, mut task) in mem::take(&mut project.tasks) {
+            // Detect the platform if its unknown
             if matches!(task.platform, PlatformType::Unknown) {
-                task.platform = TaskConfig::detect_platform(&project.config, &task.command);
+                task.platform = self
+                    .platforms
+                    .detect_task_platform(&task.command, project.language)?;
             }
 
             // Resolve in this order!

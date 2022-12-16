@@ -3,6 +3,7 @@ mod hasher;
 pub mod task;
 
 pub use hasher::NodeTargetHasher;
+use lazy_static::lazy_static;
 use moon_config::{
     DependencyConfig, DependencyScope, NodeConfig, NodeProjectAliasFormat, PlatformType,
     ProjectConfig, ProjectID, ProjectLanguage, ProjectsAliasesMap, ProjectsSourcesMap,
@@ -15,12 +16,18 @@ use moon_node_lang::{PackageJson, NPM};
 use moon_platform::{Platform, Runtime, Version};
 use moon_task::TaskError;
 use moon_utils::glob::GlobSet;
+use moon_utils::regex::Regex;
 use rustc_hash::FxHashMap;
 use std::path::PathBuf;
 use std::{collections::BTreeMap, path::Path};
 use task::ScriptParser;
 
 pub const LOG_TARGET: &str = "moon:node-platform";
+
+lazy_static! {
+    pub static ref NODE_COMMAND: Regex =
+        Regex::new("^(node|nodejs|npm|npx|yarn|yarnpkg|pnpm|pnpx|corepack)$").unwrap();
+}
 
 pub fn create_tasks_from_scripts(
     project_id: &str,
@@ -66,7 +73,7 @@ impl NodePlatform {
 }
 
 impl Platform for NodePlatform {
-    fn detect_project_language(&self, project_root: &Path) -> Option<ProjectLanguage> {
+    fn is_project_language(&self, project_root: &Path) -> Option<ProjectLanguage> {
         if project_root.join("tsconfig.json").exists() {
             Some(ProjectLanguage::TypeScript)
         } else if project_root.join("package.json").exists() {
@@ -74,6 +81,10 @@ impl Platform for NodePlatform {
         } else {
             None
         }
+    }
+
+    fn is_task_command(&self, command: &str) -> bool {
+        NODE_COMMAND.is_match(command)
     }
 
     fn get_type(&self) -> PlatformType {

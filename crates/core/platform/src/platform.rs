@@ -9,11 +9,6 @@ use std::fmt::Debug;
 use std::path::Path;
 
 pub trait Platform: Debug + Send + Sync {
-    /// Detect the language of project at the provided path.
-    fn detect_project_language(&self, project_root: &Path) -> Option<ProjectLanguage> {
-        None
-    }
-
     /// Return the type of this platform.
     fn get_type(&self) -> PlatformType;
 
@@ -28,6 +23,17 @@ pub trait Platform: Debug + Send + Sync {
         project_root: &Path,
     ) -> Result<bool, MoonError> {
         Ok(true)
+    }
+
+    /// Determine the language of project at the provided path by locating
+    /// and inspecting manifest or config files.
+    fn is_project_language(&self, project_root: &Path) -> Option<ProjectLanguage> {
+        None
+    }
+
+    /// Determine if the command of a task applies to the current platform.
+    fn is_task_command(&self, command: &str) -> bool {
+        false
     }
 
     /// During project graph creation, load project aliases for the resolved

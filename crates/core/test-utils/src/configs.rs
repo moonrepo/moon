@@ -7,7 +7,7 @@ use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 
 // Turn everything off by default
-fn get_default_toolchain() -> ToolchainConfig {
+pub fn get_default_toolchain() -> ToolchainConfig {
     ToolchainConfig {
         node: Some(NodeConfig {
             version: "18.0.0".into(),

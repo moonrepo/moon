@@ -25,9 +25,6 @@ lazy_static! {
     pub static ref TOKEN_VAR_PATTERN: Regex = Regex::new("\\$(language|projectRoot|projectSource|projectType|project|target|taskPlatform|taskType|task|workspaceRoot)").unwrap();
 
     // Task commands (these are not exhaustive)
-    pub static ref NODE_COMMAND: regex::Regex =
-                Regex::new("^(node|nodejs|npm|npx|yarn|yarnpkg|pnpm|pnpx|corepack)$").unwrap();
-
     pub static ref UNIX_SYSTEM_COMMAND: regex::Regex =
                 Regex::new("^(bash|cat|cd|chmod|cp|docker|echo|find|git|grep|make|mkdir|mv|pwd|rm|rsync|svn)$").unwrap();
 

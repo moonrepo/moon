@@ -10,11 +10,12 @@ use std::path::Path;
 use strum::IntoEnumIterator;
 
 pub fn register_platforms(workspace: &mut Workspace) {
-    workspace.register_platform(Box::<SystemPlatform>::default());
-
     if let Some(node_config) = &workspace.toolchain.config.node {
         workspace.register_platform(Box::new(NodePlatform::new(node_config, &workspace.root)));
     }
+
+    // Should be last since it's the last resort
+    workspace.register_platform(Box::<SystemPlatform>::default());
 }
 
 /// Loads the workspace from the current working directory.

@@ -67,18 +67,12 @@ impl<'ws> DepGraphBuilder<'ws> {
         let mut project_runtime = None;
         let mut workspace_runtime = None;
 
-        for platform in self.platforms.list() {
-            let is_match = match task {
-                Some(task) => platform.matches(&task.platform, None),
-                None => platform.matches(&project.config.language.to_platform(), None),
-            };
-
-            if is_match {
-                project_runtime = platform.get_runtime_from_config(Some(&project.config));
-                workspace_runtime = platform.get_runtime_from_config(None);
-
-                break;
-            }
+        if let Some(platform) = self.platforms.find(|p| match task {
+            Some(task) => p.matches(&task.platform, None),
+            None => p.matches(&project.config.language.into(), None),
+        }) {
+            project_runtime = platform.get_runtime_from_config(Some(&project.config));
+            workspace_runtime = platform.get_runtime_from_config(None);
         }
 
         let pair = (
@@ -102,7 +96,7 @@ impl<'ws> DepGraphBuilder<'ws> {
 
         // If project is NOT in the package manager workspace, then we should
         // install dependencies in the project, not the workspace root.
-        if let Some(platform) = self.platforms.get(&project.language.to_platform()) {
+        if let Some(platform) = self.platforms.get(project.language) {
             if !platform.is_project_in_package_manager_workspace(&project.id, &project.root)? {
                 installs_in_project = true;
             }

@@ -49,6 +49,7 @@ fn validate_outputs(list: &[String]) -> Result<(), ValidationError> {
 
 #[derive(
     Clone,
+    Copy,
     Debug,
     Default,
     Deserialize,
@@ -71,6 +72,16 @@ pub enum PlatformType {
     #[default]
     #[strum(serialize = "unknown")]
     Unknown,
+}
+
+impl From<ProjectLanguage> for PlatformType {
+    fn from(language: ProjectLanguage) -> Self {
+        match language {
+            ProjectLanguage::Bash | ProjectLanguage::Batch => PlatformType::System,
+            ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => PlatformType::Node,
+            ProjectLanguage::Unknown => PlatformType::Unknown,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]

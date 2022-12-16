@@ -54,7 +54,7 @@ export interface ProjectDependency extends DependencyConfig {
 }
 
 export interface Project {
-	alias: string | null;
+	aliases: string[];
 	config: ProjectConfig;
 	dependencies: Record<string, ProjectDependency>;
 	fileGroups: Record<string, FileGroup>;

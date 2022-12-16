@@ -1,0 +1,65 @@
+language: javascript
+
+tasks:
+  argsFileGroups:
+    args:
+      - '--dirs'
+      - '@dirs(static)'
+      - '--files'
+      - '@files(static)'
+      - '--globs'
+      - '@globs(globs)'
+      - '--root'
+      - '@root(static)'
+  argsFileGroupsWorkspace:
+    args:
+      - '--dirs'
+      - '@dirs(static)'
+      - '--files'
+      - '@files(static)'
+      - '--globs'
+      - '@globs(globs)'
+      - '--root'
+      - '@root(static)'
+    options:
+      runFromWorkspaceRoot: true
+  argsVars:
+    args:
+      - 'some/$unknown/var' # Unknown
+      - '--pid'
+      - '$project/foo' # At start
+      - '--proot'
+      - '$projectRoot' # Alone
+      - '--psource'
+      - 'foo/$projectSource' # At end
+      - '--target'
+      - 'foo/$target/bar' # In middle
+      - '--tid=$task' # As an arg
+      - '--wsroot'
+      - '$workspaceRoot' # Alone
+      - '--last'
+      - '$projectType-$language'
+  inputs:
+    inputs:
+      - 'path.ts'
+      - 'glob/*'
+      - '$VAR'
+      - '$FOO_BAR'
+      - '/glob.*'
+      - '/path/dir'
+  inputsFileGroups:
+    inputs:
+      - 'file.ts'
+      - '@dirs(static)'
+      - '@files(static)'
+      - '@globs(globs)'
+      - '@root(static)'
+      - '/package.json'
+  inputsVars:
+    inputs:
+      - 'dir/$language/file'
+      - '$unknown.*'
+      - 'file.$projectType'
+  outputs:
+    outputs:
+      - 'dir'

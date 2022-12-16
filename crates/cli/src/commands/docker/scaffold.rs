@@ -3,8 +3,7 @@ use moon_config::{NodePackageManager, ProjectID, ProjectLanguage};
 use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_node_lang::{NODE, NPM, PNPM, YARN};
-use moon_project::ProjectError;
-use moon_project_graph::ProjectGraph;
+use moon_project_graph::{ProjectGraph, ProjectGraphError};
 use moon_utils::{fs, glob, json, path};
 use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
@@ -40,7 +39,7 @@ fn scaffold_workspace(
     workspace: &Workspace,
     project_graph: &ProjectGraph,
     docker_root: &Path,
-) -> Result<(), ProjectError> {
+) -> Result<(), ProjectGraphError> {
     let docker_workspace_root = docker_root.join("workspace");
 
     fs::create_dir_all(&docker_workspace_root)?;
@@ -129,7 +128,7 @@ fn scaffold_sources_project(
     docker_sources_root: &Path,
     project_id: &str,
     manifest: &mut DockerManifest,
-) -> Result<(), ProjectError> {
+) -> Result<(), ProjectGraphError> {
     let project = project_graph.get(project_id)?;
 
     manifest.focused_projects.insert(project_id.to_owned());
@@ -141,7 +140,7 @@ fn scaffold_sources_project(
             workspace,
             project_graph,
             docker_sources_root,
-            &dep_id,
+            dep_id,
             manifest,
         )?;
     }
@@ -155,7 +154,7 @@ fn scaffold_sources(
     docker_root: &Path,
     project_ids: &[String],
     include: &[String],
-) -> Result<(), ProjectError> {
+) -> Result<(), ProjectGraphError> {
     let docker_sources_root = docker_root.join("sources");
     let mut manifest = DockerManifest {
         focused_projects: FxHashSet::default(),

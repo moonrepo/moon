@@ -8,7 +8,7 @@ use crate::project::task::TaskConfig;
 use crate::project::workspace::ProjectWorkspaceConfig;
 use crate::types::{FileGroups, ProjectID};
 use crate::validators::validate_id;
-use crate::{PlatformType, ProjectToolchainConfig};
+use crate::ProjectToolchainConfig;
 use figment::{
     providers::{Format, Serialized, YamlExtended},
     Figment,
@@ -58,7 +58,17 @@ fn validate_channel(value: &str) -> Result<(), ValidationError> {
 }
 
 #[derive(
-    Clone, Debug, Default, Deserialize, Display, EnumIter, Eq, JsonSchema, PartialEq, Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Default,
+    Deserialize,
+    Display,
+    EnumIter,
+    Eq,
+    JsonSchema,
+    PartialEq,
+    Serialize,
 )]
 #[serde(rename_all = "lowercase")]
 pub enum ProjectLanguage {
@@ -79,17 +89,9 @@ pub enum ProjectLanguage {
     Unknown,
 }
 
-impl ProjectLanguage {
-    pub fn to_platform(&self) -> PlatformType {
-        match self {
-            ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => PlatformType::Node,
-            ProjectLanguage::Unknown => PlatformType::Unknown,
-            _ => PlatformType::System,
-        }
-    }
-}
-
-#[derive(Clone, Debug, Default, Deserialize, Display, Eq, JsonSchema, PartialEq, Serialize)]
+#[derive(
+    Clone, Copy, Debug, Default, Deserialize, Display, Eq, JsonSchema, PartialEq, Serialize,
+)]
 #[serde(rename_all = "lowercase")]
 pub enum ProjectType {
     #[strum(serialize = "application")]

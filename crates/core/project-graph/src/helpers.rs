@@ -1,4 +1,4 @@
-use crate::errors::ProjectError;
+use crate::errors::ProjectGraphError;
 use moon_config::ProjectsSourcesMap;
 use moon_logger::{color, warn};
 use moon_utils::{glob, path, regex};
@@ -23,7 +23,7 @@ pub fn detect_projects_with_globs(
     workspace_root: &Path,
     globs: &[String],
     projects: &mut ProjectsSourcesMap,
-) -> Result<(), ProjectError> {
+) -> Result<(), ProjectGraphError> {
     let root_source = ".".to_owned();
 
     // Root-level project has special handling

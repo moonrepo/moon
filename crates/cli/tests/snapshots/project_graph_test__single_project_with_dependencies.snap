@@ -4,11 +4,11 @@ assertion_line: 50
 expression: assert.output()
 ---
 digraph {
-    0 [ label="foo" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    1 [ label="bar" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    2 [ label="baz" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    0 -> 1 [ arrowhead=none]
-    0 -> 2 [ arrowhead=none]
+    0 [ label="bar" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    1 [ label="baz" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    2 [ label="foo" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    2 -> 0 [ arrowhead=box, arrowtail=box]
+    2 -> 1 [ arrowhead=box, arrowtail=box]
 }
 
 

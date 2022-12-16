@@ -1,8 +1,0 @@
-tasks:
-  build:
-    command: tsc
-  lint:
-    command: eslint
-    deps:
-      - id:build
-      - ~:build

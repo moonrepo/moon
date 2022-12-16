@@ -1,0 +1,2 @@
+# This is configured in the test, otherwise it crashes other tests
+tasks: {}

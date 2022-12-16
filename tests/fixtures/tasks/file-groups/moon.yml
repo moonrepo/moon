@@ -1,0 +1,4 @@
+fileGroups:
+  # This overrides the global!
+  static:
+    - 'file.js'

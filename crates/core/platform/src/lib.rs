@@ -34,14 +34,14 @@ pub trait Platform: Debug + Send + Sync {
     /// map of projects that are unique to the platform's ecosystem.
     fn load_project_graph_aliases(
         &mut self,
-        projects_map: &ProjectsSourcesMap,
+        project_sources: &ProjectsSourcesMap,
         aliases_map: &mut ProjectsAliasesMap,
     ) -> Result<(), MoonError> {
         Ok(())
     }
 
-    /// During project creation (when being lazy loaded and instantiated in the graph),
-    /// scan for any implicit project dependency relations using the platforms manifest.
+    /// During project creation within the project graph, scan for any implicit
+    /// project dependency relations using the platforms manifest.
     fn load_project_implicit_dependencies(
         &self,
         project_id: &str,
@@ -52,8 +52,8 @@ pub trait Platform: Debug + Send + Sync {
         Ok(vec![])
     }
 
-    /// During project creation (when being lazy loaded and instantiated in the graph),
-    /// load and infer any *additional* tasks for the platform.
+    /// During project creation within the project graph, load and infer any
+    /// *additional* tasks for the platform.
     fn load_project_tasks(
         &self,
         project_id: &str,
@@ -75,12 +75,17 @@ pub struct PlatformManager {
 }
 
 impl PlatformManager {
-    pub fn get(&self, type_of: &PlatformType) -> Option<&BoxedPlatform> {
-        self.cache.get(type_of)
+    pub fn find<P>(&self, predicate: P) -> Option<&BoxedPlatform>
+    where
+        P: Fn(&&BoxedPlatform) -> bool,
+    {
+        self.cache.values().find(predicate)
     }
 
-    pub fn list(&self) -> std::collections::hash_map::Values<PlatformType, BoxedPlatform> {
-        self.cache.values()
+    pub fn get<T: Into<PlatformType>>(&self, type_of: T) -> Option<&BoxedPlatform> {
+        let type_of = type_of.into();
+
+        self.cache.get(&type_of)
     }
 
     pub fn list_mut(

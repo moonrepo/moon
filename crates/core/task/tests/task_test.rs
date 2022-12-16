@@ -1,26 +1,12 @@
 use moon_config::{TaskCommandArgs, TaskConfig, TaskOptionEnvFileConfig, TaskOptionsConfig};
-use moon_task::test::create_expanded_task;
 use moon_task::{Target, Task, TaskOptions};
 use moon_test_utils::{create_sandbox, get_fixtures_path};
 use moon_utils::{glob, string_vec};
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashSet;
 use std::env;
 
-#[test]
-#[should_panic(expected = "NoOutputGlob")]
-fn errors_for_output_glob() {
-    let workspace_root = get_fixtures_path("projects");
-    let project_root = workspace_root.join("basic");
-
-    create_expanded_task(
-        &workspace_root,
-        &project_root,
-        Some(TaskConfig {
-            outputs: Some(string_vec!["some/**/glob"]),
-            ..TaskConfig::default()
-        }),
-    )
-    .unwrap();
+pub fn create_task(config: TaskConfig) -> Task {
+    Task::from_config(Target::new("project", "task").unwrap(), &config).unwrap()
 }
 
 mod from_config {
@@ -343,17 +329,12 @@ mod is_affected {
 
     #[test]
     fn returns_true_if_var_truthy() {
-        let workspace_root = get_fixtures_path("base");
-        let project_root = workspace_root.join("files-and-dirs");
-        let task = create_expanded_task(
-            &workspace_root,
-            &project_root,
-            Some(TaskConfig {
-                inputs: Some(string_vec!["$FOO"]),
-                ..TaskConfig::default()
-            }),
-        )
-        .unwrap();
+        let mut task = create_task(TaskConfig {
+            inputs: Some(string_vec!["$FOO"]),
+            ..TaskConfig::default()
+        });
+
+        task.input_vars.insert("FOO".into());
 
         env::set_var("FOO", "foo");
 
@@ -364,34 +345,24 @@ mod is_affected {
 
     #[test]
     fn returns_false_if_var_missing() {
-        let workspace_root = get_fixtures_path("base");
-        let project_root = workspace_root.join("files-and-dirs");
-        let task = create_expanded_task(
-            &workspace_root,
-            &project_root,
-            Some(TaskConfig {
-                inputs: Some(string_vec!["$BAR"]),
-                ..TaskConfig::default()
-            }),
-        )
-        .unwrap();
+        let mut task = create_task(TaskConfig {
+            inputs: Some(string_vec!["$BAR"]),
+            ..TaskConfig::default()
+        });
+
+        task.input_vars.insert("BAR".into());
 
         assert!(!task.is_affected(&FxHashSet::default()).unwrap());
     }
 
     #[test]
     fn returns_false_if_var_empty() {
-        let workspace_root = get_fixtures_path("base");
-        let project_root = workspace_root.join("files-and-dirs");
-        let task = create_expanded_task(
-            &workspace_root,
-            &project_root,
-            Some(TaskConfig {
-                inputs: Some(string_vec!["$BAZ"]),
-                ..TaskConfig::default()
-            }),
-        )
-        .unwrap();
+        let mut task = create_task(TaskConfig {
+            inputs: Some(string_vec!["$BAZ"]),
+            ..TaskConfig::default()
+        });
+
+        task.input_vars.insert("BAZ".into());
 
         env::set_var("BAZ", "");
 
@@ -404,15 +375,12 @@ mod is_affected {
     fn returns_true_if_matches_file() {
         let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
-        let task = create_expanded_task(
-            &workspace_root,
-            &project_root,
-            Some(TaskConfig {
-                inputs: Some(string_vec!["file.ts"]),
-                ..TaskConfig::default()
-            }),
-        )
-        .unwrap();
+        let mut task = create_task(TaskConfig {
+            inputs: Some(string_vec!["file.ts"]),
+            ..TaskConfig::default()
+        });
+
+        task.input_paths.insert(project_root.join("file.ts"));
 
         let mut set = FxHashSet::default();
         set.insert(project_root.join("file.ts"));
@@ -424,15 +392,13 @@ mod is_affected {
     fn returns_true_if_matches_glob() {
         let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
-        let task = create_expanded_task(
-            &workspace_root,
-            &project_root,
-            Some(TaskConfig {
-                inputs: Some(string_vec!["file.*"]),
-                ..TaskConfig::default()
-            }),
-        )
-        .unwrap();
+        let mut task = create_task(TaskConfig {
+            inputs: Some(string_vec!["file.*"]),
+            ..TaskConfig::default()
+        });
+
+        task.input_globs
+            .insert(glob::normalize(project_root.join("file.*")).unwrap());
 
         let mut set = FxHashSet::default();
         set.insert(project_root.join("file.ts"));
@@ -443,16 +409,12 @@ mod is_affected {
     #[test]
     fn returns_true_when_referencing_root_files() {
         let workspace_root = get_fixtures_path("base");
-        let project_root = workspace_root.join("files-and-dirs");
-        let task = create_expanded_task(
-            &workspace_root,
-            &project_root,
-            Some(TaskConfig {
-                inputs: Some(string_vec!["/package.json"]),
-                ..TaskConfig::default()
-            }),
-        )
-        .unwrap();
+        let mut task = create_task(TaskConfig {
+            inputs: Some(string_vec!["/package.json"]),
+            ..TaskConfig::default()
+        });
+
+        task.input_paths.insert(workspace_root.join("package.json"));
 
         let mut set = FxHashSet::default();
         set.insert(workspace_root.join("package.json"));
@@ -464,15 +426,12 @@ mod is_affected {
     fn returns_false_if_outside_project() {
         let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
-        let task = create_expanded_task(
-            &workspace_root,
-            &project_root,
-            Some(TaskConfig {
-                inputs: Some(string_vec!["file.ts"]),
-                ..TaskConfig::default()
-            }),
-        )
-        .unwrap();
+        let mut task = create_task(TaskConfig {
+            inputs: Some(string_vec!["file.ts"]),
+            ..TaskConfig::default()
+        });
+
+        task.input_paths.insert(project_root.join("file.ts"));
 
         let mut set = FxHashSet::default();
         set.insert(workspace_root.join("base/other/outside.ts"));
@@ -484,15 +443,14 @@ mod is_affected {
     fn returns_false_if_no_match() {
         let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
-        let task = create_expanded_task(
-            &workspace_root,
-            &project_root,
-            Some(TaskConfig {
-                inputs: Some(string_vec!["file.ts", "src/*"]),
-                ..TaskConfig::default()
-            }),
-        )
-        .unwrap();
+        let mut task = create_task(TaskConfig {
+            inputs: Some(string_vec!["file.ts", "src/*"]),
+            ..TaskConfig::default()
+        });
+
+        task.input_paths.insert(project_root.join("file.ts"));
+        task.input_globs
+            .insert(glob::normalize(project_root.join("src/*")).unwrap());
 
         let mut set = FxHashSet::default();
         set.insert(project_root.join("another.rs"));
@@ -503,227 +461,22 @@ mod is_affected {
     #[test]
     fn returns_true_for_env_file() {
         let sandbox = create_sandbox("base");
-
         sandbox.create_file("files-and-dirs/.env", "");
 
         let project_root = sandbox.path().join("files-and-dirs");
-        let task = create_expanded_task(
-            sandbox.path(),
-            &project_root,
-            Some(TaskConfig {
-                options: TaskOptionsConfig {
-                    env_file: Some(TaskOptionEnvFileConfig::Enabled(true)),
-                    ..TaskOptionsConfig::default()
-                },
-                ..TaskConfig::default()
-            }),
-        )
-        .unwrap();
+        let mut task = create_task(TaskConfig {
+            options: TaskOptionsConfig {
+                env_file: Some(TaskOptionEnvFileConfig::Enabled(true)),
+                ..TaskOptionsConfig::default()
+            },
+            ..TaskConfig::default()
+        });
+
+        task.input_paths.insert(project_root.join(".env"));
 
         let mut set = FxHashSet::default();
         set.insert(project_root.join(".env"));
 
         assert!(task.is_affected(&set).unwrap());
-    }
-}
-
-mod expand_env {
-    use super::*;
-
-    #[test]
-    #[should_panic(expected = "Error parsing line: 'FOO', error at line index: 3")]
-    fn errors_on_invalid_file() {
-        let sandbox = create_sandbox("cases");
-        let project_root = sandbox.path().join("base");
-
-        sandbox.create_file("base/.env", "FOO");
-
-        create_expanded_task(
-            sandbox.path(),
-            &project_root,
-            Some(TaskConfig {
-                options: TaskOptionsConfig {
-                    env_file: Some(TaskOptionEnvFileConfig::Enabled(true)),
-                    ..TaskOptionsConfig::default()
-                },
-                ..TaskConfig::default()
-            }),
-        )
-        .unwrap();
-    }
-
-    #[test]
-    // Windows = "The system cannot find the file specified"
-    // Unix = "No such file or directory"
-    #[should_panic(expected = "InvalidEnvFile")]
-    fn errors_on_missing_file() {
-        // `expand_env` has a CI check that avoids this from crashing, so emulate it
-        if moon_utils::is_ci() {
-            panic!("InvalidEnvFile");
-        } else {
-            let sandbox = create_sandbox("cases");
-            let project_root = sandbox.path().join("base");
-
-            create_expanded_task(
-                sandbox.path(),
-                &project_root,
-                Some(TaskConfig {
-                    options: TaskOptionsConfig {
-                        env_file: Some(TaskOptionEnvFileConfig::Enabled(true)),
-                        ..TaskOptionsConfig::default()
-                    },
-                    ..TaskConfig::default()
-                }),
-            )
-            .unwrap();
-        }
-    }
-
-    #[test]
-    fn loads_using_bool() {
-        let sandbox = create_sandbox("cases");
-        let project_root = sandbox.path().join("base");
-
-        sandbox.create_file("base/.env", "FOO=foo\nBAR=123");
-
-        let task = create_expanded_task(
-            sandbox.path(),
-            &project_root,
-            Some(TaskConfig {
-                options: TaskOptionsConfig {
-                    env_file: Some(TaskOptionEnvFileConfig::Enabled(true)),
-                    ..TaskOptionsConfig::default()
-                },
-                ..TaskConfig::default()
-            }),
-        )
-        .unwrap();
-
-        assert_eq!(
-            task.env,
-            FxHashMap::from_iter([
-                ("FOO".to_owned(), "foo".to_owned()),
-                ("BAR".to_owned(), "123".to_owned())
-            ])
-        );
-
-        assert!(task.inputs.contains(&".env".to_owned()));
-        assert!(task.input_paths.contains(&project_root.join(".env")));
-    }
-
-    #[test]
-    fn loads_using_custom_path() {
-        let sandbox = create_sandbox("cases");
-        let project_root = sandbox.path().join("base");
-
-        sandbox.create_file("base/.env.production", "FOO=foo\nBAR=123");
-
-        let task = create_expanded_task(
-            sandbox.path(),
-            &project_root,
-            Some(TaskConfig {
-                options: TaskOptionsConfig {
-                    env_file: Some(TaskOptionEnvFileConfig::File(".env.production".to_owned())),
-                    ..TaskOptionsConfig::default()
-                },
-                ..TaskConfig::default()
-            }),
-        )
-        .unwrap();
-
-        assert_eq!(
-            task.env,
-            FxHashMap::from_iter([
-                ("FOO".to_owned(), "foo".to_owned()),
-                ("BAR".to_owned(), "123".to_owned())
-            ])
-        );
-
-        assert!(task.inputs.contains(&".env.production".to_owned()));
-        assert!(task
-            .input_paths
-            .contains(&project_root.join(".env.production")));
-    }
-
-    #[test]
-    fn doesnt_override_other_env() {
-        let sandbox = create_sandbox("cases");
-        let project_root = sandbox.path().join("base");
-
-        sandbox.create_file("base/.env", "FOO=foo\nBAR=123");
-
-        let task = create_expanded_task(
-            sandbox.path(),
-            &project_root,
-            Some(TaskConfig {
-                env: Some(FxHashMap::from_iter([(
-                    "FOO".to_owned(),
-                    "original".to_owned(),
-                )])),
-                options: TaskOptionsConfig {
-                    env_file: Some(TaskOptionEnvFileConfig::Enabled(true)),
-                    ..TaskOptionsConfig::default()
-                },
-                ..TaskConfig::default()
-            }),
-        )
-        .unwrap();
-
-        assert_eq!(
-            task.env,
-            FxHashMap::from_iter([
-                ("FOO".to_owned(), "original".to_owned()),
-                ("BAR".to_owned(), "123".to_owned())
-            ])
-        );
-
-        assert!(task.inputs.contains(&".env".to_owned()));
-    }
-}
-
-mod expand_inputs {
-    use super::*;
-
-    #[test]
-    fn filters_into_correct_types() {
-        let workspace_root = get_fixtures_path("base");
-        let project_root = workspace_root.join("files-and-dirs");
-        let task = create_expanded_task(
-            &workspace_root,
-            &project_root,
-            Some(TaskConfig {
-                inputs: Some(string_vec![
-                    "$VAR",
-                    "$FOO_BAR",
-                    "file.ts",
-                    "folder",
-                    "glob/**/*",
-                    "/config.js",
-                    "/*.cfg"
-                ]),
-                ..TaskConfig::default()
-            }),
-        )
-        .unwrap();
-
-        assert_eq!(
-            task.input_vars,
-            FxHashSet::from_iter(["VAR".to_owned(), "FOO_BAR".to_owned()])
-        );
-        assert_eq!(
-            task.input_paths,
-            FxHashSet::from_iter([
-                project_root.join("file.ts"),
-                project_root.join("folder"),
-                workspace_root.join("config.js")
-            ])
-        );
-        assert_eq!(
-            task.input_globs,
-            FxHashSet::from_iter([
-                glob::normalize(project_root.join("glob/**/*")).unwrap(),
-                glob::normalize(workspace_root.join("*.cfg")).unwrap()
-            ])
-        );
     }
 }

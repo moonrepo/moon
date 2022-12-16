@@ -1,58 +1,31 @@
 use crate::errors::TokenError;
-use crate::file_group::FileGroup;
-use crate::task::Task;
-use moon_config::{FileGlob, ProjectConfig};
+use moon_config::FileGlob;
 use moon_logger::{color, warn};
+use moon_project::Project;
+use moon_task::Task;
 use moon_utils::regex::{
     matches_token_func, matches_token_var, TOKEN_FUNC_ANYWHERE_PATTERN, TOKEN_FUNC_PATTERN,
     TOKEN_VAR_PATTERN,
 };
 use moon_utils::{glob, path};
-use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
 
 type PathsGlobsNormalized = (Vec<PathBuf>, Vec<FileGlob>);
 
 #[derive(Debug, Eq, PartialEq)]
-pub enum ResolverType {
+pub enum TokenContext {
     Args,
     Inputs,
     Outputs,
 }
 
-impl ResolverType {
+impl TokenContext {
     pub fn context_label(&self) -> String {
         String::from(match self {
-            ResolverType::Args => "args",
-            ResolverType::Inputs => "inputs",
-            ResolverType::Outputs => "outputs",
+            TokenContext::Args => "args",
+            TokenContext::Inputs => "inputs",
+            TokenContext::Outputs => "outputs",
         })
-    }
-}
-
-pub struct ResolverData<'a> {
-    pub file_groups: &'a FxHashMap<String, FileGroup>,
-
-    pub project_config: &'a ProjectConfig,
-
-    pub project_root: &'a Path,
-
-    pub workspace_root: &'a Path,
-}
-
-impl<'a> ResolverData<'a> {
-    pub fn new(
-        file_groups: &'a FxHashMap<String, FileGroup>,
-        workspace_root: &'a Path,
-        project_root: &'a Path,
-        project_config: &'a ProjectConfig,
-    ) -> ResolverData<'a> {
-        ResolverData {
-            file_groups,
-            project_config,
-            project_root,
-            workspace_root,
-        }
     }
 }
 
@@ -73,7 +46,7 @@ pub enum TokenType {
 }
 
 impl TokenType {
-    pub fn check_context(&self, context: &ResolverType) -> Result<(), TokenError> {
+    pub fn check_context(&self, context: &TokenContext) -> Result<(), TokenError> {
         let allowed = match self {
             TokenType::Dirs(_, _)
             | TokenType::Files(_, _)
@@ -81,10 +54,10 @@ impl TokenType {
             | TokenType::Group(_, _)
             | TokenType::Root(_, _)
             | TokenType::Var(_) => {
-                matches!(context, ResolverType::Args) || matches!(context, ResolverType::Inputs)
+                matches!(context, TokenContext::Args) || matches!(context, TokenContext::Inputs)
             }
             TokenType::In(_, _) | TokenType::Out(_, _) => {
-                matches!(context, ResolverType::Args)
+                matches!(context, TokenContext::Args)
             }
         };
 
@@ -99,44 +72,41 @@ impl TokenType {
     }
 
     pub fn token_label(&self) -> String {
-        String::from(match self {
-            TokenType::Dirs(_, _) => "@dirs",
-            TokenType::Files(_, _) => "@files",
-            TokenType::Globs(_, _) => "@globs",
-            TokenType::Group(_, _) => "@group",
-            TokenType::In(_, _) => "@in",
-            TokenType::Out(_, _) => "@out",
-            TokenType::Root(_, _) => "@root",
-            TokenType::Var(_) => "$var",
-        })
+        match self {
+            TokenType::Dirs(_, _) => "@dirs".into(),
+            TokenType::Files(_, _) => "@files".into(),
+            TokenType::Globs(_, _) => "@globs".into(),
+            TokenType::Group(_, _) => "@group".into(),
+            TokenType::In(_, _) => "@in".into(),
+            TokenType::Out(_, _) => "@out".into(),
+            TokenType::Root(_, _) => "@root".into(),
+            TokenType::Var(name) => {
+                if name.is_empty() {
+                    "$var".into()
+                } else {
+                    format!("${}", name)
+                }
+            }
+        }
     }
 }
 
-pub struct TokenResolver<'a> {
-    context: ResolverType,
-
-    pub data: &'a ResolverData<'a>,
+pub struct TokenResolver<'task> {
+    context: TokenContext,
+    pub project: &'task Project,
+    pub workspace_root: &'task Path,
 }
 
-impl<'a> TokenResolver<'a> {
-    pub fn for_args(data: &'a ResolverData<'a>) -> TokenResolver<'a> {
+impl<'task> TokenResolver<'task> {
+    pub fn new(
+        context: TokenContext,
+        project: &'task Project,
+        workspace_root: &'task Path,
+    ) -> TokenResolver<'task> {
         TokenResolver {
-            context: ResolverType::Args,
-            data,
-        }
-    }
-
-    pub fn for_inputs(data: &'a ResolverData<'a>) -> TokenResolver<'a> {
-        TokenResolver {
-            context: ResolverType::Inputs,
-            data,
-        }
-    }
-
-    pub fn for_outputs(data: &'a ResolverData<'a>) -> TokenResolver<'a> {
-        TokenResolver {
-            context: ResolverType::Outputs,
-            data,
+            context,
+            workspace_root,
+            project,
         }
     }
 
@@ -189,8 +159,8 @@ impl<'a> TokenResolver<'a> {
                     } else {
                         value.to_owned()
                     },
-                    self.data.workspace_root,
-                    self.data.project_root,
+                    self.workspace_root,
+                    &self.project.root,
                 );
 
                 if glob::is_glob(value) {
@@ -265,20 +235,17 @@ impl<'a> TokenResolver<'a> {
 
         let token = matches.get(0).unwrap().as_str(); // $var
         let var = matches.get(1).unwrap().as_str(); // var
-
-        let (project_id, task_id) = task.target.ids()?;
-        let workspace_root = self.data.workspace_root;
-        let project_root = self.data.project_root;
-        let project_config = self.data.project_config;
+        let workspace_root = &self.workspace_root;
+        let project = self.project;
 
         let var_value = match var {
-            "language" => project_config.language.to_string(),
-            "project" => project_id,
-            "projectRoot" => path::to_string(project_root)?,
-            "projectSource" => path::to_string(project_root.strip_prefix(workspace_root).unwrap())?,
-            "projectType" => project_config.type_of.to_string(),
-            "target" => task.target.id.clone(),
-            "task" => task_id,
+            "language" => project.language.to_string(),
+            "project" => project.id.to_string(),
+            "projectRoot" => path::to_string(&project.root)?,
+            "projectSource" => project.source.to_string(),
+            "projectType" => project.type_of.to_string(),
+            "target" => task.target.id.to_string(),
+            "task" => task.id.to_string(),
             "taskPlatform" => task.platform.to_string(),
             "taskType" => task.type_of.to_string(),
             "workspaceRoot" => path::to_string(workspace_root)?,
@@ -287,7 +254,7 @@ impl<'a> TokenResolver<'a> {
             }
         };
 
-        Ok(value.to_owned().replace(token, &var_value))
+        Ok(value.replace(token, &var_value))
     }
 
     fn convert_string_to_u8(&self, token: &str, value: String) -> Result<u8, TokenError> {
@@ -305,18 +272,16 @@ impl<'a> TokenResolver<'a> {
 
         let mut paths: Vec<PathBuf> = vec![];
         let mut globs: Vec<String> = vec![];
-        let file_groups = self.data.file_groups;
+        let file_groups = &self.project.file_groups;
 
-        let get_file_group = |token: &str, id: &str| match file_groups.get(id) {
-            Some(fg) => Ok(fg),
-            None => Err(TokenError::UnknownFileGroup(
-                token.to_owned(),
-                id.to_owned(),
-            )),
+        let get_file_group = |token: &str, id: &str| {
+            file_groups
+                .get(id)
+                .ok_or_else(|| TokenError::UnknownFileGroup(token.to_owned(), id.to_owned()))
         };
 
-        let workspace_root = self.data.workspace_root;
-        let project_root = self.data.project_root;
+        let workspace_root = &self.workspace_root;
+        let project_root = &self.project.root;
 
         match token_type {
             TokenType::Dirs(token, group) => {
@@ -372,8 +337,8 @@ impl<'a> TokenResolver<'a> {
             } else {
                 match task.input_paths.get(&path::expand_root_path(
                     input,
-                    self.data.workspace_root,
-                    self.data.project_root,
+                    self.workspace_root,
+                    &self.project.root,
                 )) {
                     Some(p) => {
                         paths.push(p.clone());
@@ -409,8 +374,8 @@ impl<'a> TokenResolver<'a> {
             } else {
                 match task.output_paths.get(&path::expand_root_path(
                     output,
-                    self.data.workspace_root,
-                    self.data.project_root,
+                    self.workspace_root,
+                    &self.project.root,
                 )) {
                     Some(p) => {
                         paths.push(p.clone());

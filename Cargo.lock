@@ -2004,6 +2004,7 @@ name = "moon_project_graph"
 version = "0.1.0"
 dependencies = [
  "criterion",
+ "dotenvy",
  "moon",
  "moon_cache",
  "moon_config",
@@ -2088,7 +2089,6 @@ name = "moon_task"
 version = "0.1.0"
 dependencies = [
  "common-path",
- "dotenvy",
  "moon_config",
  "moon_error",
  "moon_logger",

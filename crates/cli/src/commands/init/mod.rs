@@ -161,7 +161,7 @@ pub async fn init(
     let mut toolchain_configs = VecDeque::new();
 
     if options.yes
-        || dest_dir.join(NPM.manifest_filename).exists()
+        || dest_dir.join(NPM.manifest).exists()
         || Confirm::with_theme(&theme)
             .with_prompt("Initialize Node.js?")
             .interact()?

@@ -57,7 +57,7 @@ fn scaffold_workspace(
             match lang {
                 ProjectLanguage::JavaScript => {
                     if workspace.toolchain.config.node.is_some() {
-                        files.push(NPM.manifest_filename.to_owned());
+                        files.push(NPM.manifest.to_owned());
 
                         for ext in NODE.file_exts {
                             files.push(format!("postinstall.{ext}"));
@@ -93,9 +93,9 @@ fn scaffold_workspace(
                         NodePackageManager::Yarn => YARN,
                     };
 
-                    files.push(package_manager.manifest_filename);
-                    files.push(package_manager.lock_filename);
-                    files.extend_from_slice(package_manager.config_filenames);
+                    files.push(package_manager.manifest);
+                    files.push(package_manager.lockfile);
+                    files.extend_from_slice(package_manager.config_files);
                 }
             }
             ProjectLanguage::TypeScript => {

@@ -111,18 +111,18 @@ impl DependencyManager<NodeTool> for NpmTool {
     }
 
     fn get_lock_filename(&self) -> String {
-        String::from(NPM.lock_filename)
+        String::from(NPM.lockfile)
     }
 
     fn get_manifest_filename(&self) -> String {
-        String::from(NPM.manifest_filename)
+        String::from(NPM.manifest)
     }
 
     async fn get_resolved_dependencies(
         &self,
         project_root: &Path,
     ) -> Result<LockfileDependencyVersions, ToolchainError> {
-        let Some(lockfile_path) = fs::find_upwards(NPM.lock_filename, project_root) else {
+        let Some(lockfile_path) = fs::find_upwards(NPM.lockfile, project_root) else {
             return Ok(FxHashMap::default());
         };
 

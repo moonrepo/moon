@@ -1,7 +1,5 @@
 mod config;
-mod errors;
 
-pub use errors::LangError;
 use rustc_hash::FxHashMap;
 use std::fs;
 use std::path::Path;
@@ -22,24 +20,22 @@ pub struct Language {
     pub vendor_dir: StaticString,
 }
 
-pub struct PackageManager {
+pub struct DependencyManager {
     pub binary: StaticString,
 
-    pub config_filenames: StaticStringList,
+    pub config_files: StaticStringList,
 
     pub default_version: StaticString,
 
-    pub lock_filename: StaticString,
+    pub lockfile: StaticString,
 
-    pub manifest_filename: StaticString,
+    pub manifest: StaticString,
 }
 
 pub struct VersionManager {
     pub binary: StaticString,
 
-    pub config_filename: Option<StaticString>,
-
-    pub version_filename: StaticString,
+    pub version_file: StaticString,
 }
 
 pub type LockfileDependencyVersions = FxHashMap<String, Vec<String>>;
@@ -59,14 +55,14 @@ pub fn has_vendor_installed_dependencies<T: AsRef<Path>>(dir: T, lang: &Language
 }
 
 #[inline]
-pub fn is_using_package_manager<T: AsRef<Path>>(base_dir: T, pm: &PackageManager) -> bool {
+pub fn is_using_package_manager<T: AsRef<Path>>(base_dir: T, pm: &DependencyManager) -> bool {
     let base_dir = base_dir.as_ref();
 
-    if base_dir.join(pm.lock_filename).exists() {
+    if base_dir.join(pm.lockfile).exists() {
         return true;
     }
 
-    for config in pm.config_filenames {
+    for config in pm.config_files {
         if base_dir.join(config).exists() {
             return true;
         }
@@ -79,14 +75,8 @@ pub fn is_using_package_manager<T: AsRef<Path>>(base_dir: T, pm: &PackageManager
 pub fn is_using_version_manager<T: AsRef<Path>>(base_dir: T, vm: &VersionManager) -> bool {
     let base_dir = base_dir.as_ref();
 
-    if base_dir.join(vm.version_filename).exists() {
+    if base_dir.join(vm.version_file).exists() {
         return true;
-    }
-
-    if let Some(config) = vm.config_filename {
-        if base_dir.join(config).exists() {
-            return true;
-        }
     }
 
     false

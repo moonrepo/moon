@@ -1,4 +1,4 @@
-use crate::project::local_config::ProjectLanguage;
+use crate::project::language_platform::PlatformType;
 use crate::project::task_options::TaskOptionsConfig;
 use crate::types::{FilePath, InputValue, TargetID};
 use crate::validators::{validate_child_or_root_path, validate_id, validate_target};
@@ -8,7 +8,6 @@ use moon_utils::regex::ENV_VAR;
 use rustc_hash::FxHashMap;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use strum::{Display, EnumIter};
 use validator::{Validate, ValidationError};
 
 // These structs utilize optional fields so that we can handle merging effectively,
@@ -45,43 +44,6 @@ fn validate_outputs(list: &[String]) -> Result<(), ValidationError> {
     }
 
     Ok(())
-}
-
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Default,
-    Deserialize,
-    Display,
-    Eq,
-    EnumIter,
-    Hash,
-    JsonSchema,
-    PartialEq,
-    Serialize,
-)]
-#[serde(rename_all = "lowercase")]
-pub enum PlatformType {
-    #[strum(serialize = "node")]
-    Node,
-
-    #[strum(serialize = "system")]
-    System,
-
-    #[default]
-    #[strum(serialize = "unknown")]
-    Unknown,
-}
-
-impl From<ProjectLanguage> for PlatformType {
-    fn from(language: ProjectLanguage) -> Self {
-        match language {
-            ProjectLanguage::Bash | ProjectLanguage::Batch => PlatformType::System,
-            ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => PlatformType::Node,
-            ProjectLanguage::Unknown => PlatformType::Unknown,
-        }
-    }
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]

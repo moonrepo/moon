@@ -586,12 +586,7 @@ mod task_expansion {
                     "--proot",
                     project.root.to_str().unwrap(),
                     "--psource",
-                    // This is wonky but also still valid
-                    if cfg!(windows) {
-                        "foo\\tokens"
-                    } else {
-                        "foo/tokens"
-                    },
+                    "foo/tokens",
                     "--target",
                     "foo/tokens:argsVars/bar",
                     "--tid=argsVars",

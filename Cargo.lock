@@ -2042,6 +2042,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_python_lang"
+version = "0.1.0"
+dependencies = [
+ "moon_lang",
+]
+
+[[package]]
 name = "moon_runner"
 version = "0.1.0"
 dependencies = [

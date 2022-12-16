@@ -8,6 +8,7 @@ members = [
 	"crates/node/*",
 	"crates/php/*",
 	"crates/python/*",
+	"crates/ruby/*",
 	"crates/system/*",
 	"crates/typescript/*",
 	"crates/proto/*",

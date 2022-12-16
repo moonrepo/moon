@@ -114,7 +114,8 @@ mod globs {
         };
 
         // Use git so we can test against the .git folder
-        let sandbox = create_sandbox_with_config("projects", Some(&workspace_config), None, None);
+        let sandbox =
+            create_sandbox_with_config("project-graph/langs", Some(&workspace_config), None, None);
         sandbox.enable_git();
         sandbox.create_file("langs/.foo/moon.yml", "{}");
         sandbox.create_file("node_modules/moon/package.json", "{}");

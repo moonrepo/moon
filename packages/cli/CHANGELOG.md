@@ -12,16 +12,24 @@
 - You may now install the `@moonrepo/cli` package globally with pnpm and yarn. When running these
   globals, moon will attempt to use the binary found in the repo's node modules.
 
+##### Core
+
+- Added a new cache level, `read-write`, that can be passed to `--cache` or `MOON_CACHE`. This is
+  now the default level, while `write` is now a write-only level.
+- Added `--minimal` to `moon init` for quick scaffolding and prototyping.
+- Updated the system platform to include the operating system and architecture when hashing.
+
+##### Graphs
+
+- Updated `moon dep-graph` and `moon project-graph` to serve interactive graph visualizers using the
+  cytoscape library. The DOT output has moved behind a `--dot` flag.
+
 ##### Runner
 
 - Added `--updateCache` (`-u`) to `moon check` and `moon run` that force updates the cache and
   bypasses any existing cache.
-- Added `--minimal` to `moon init` for quick scaffolding and prototyping.
-- Added a new cache level, `read-write`, that can be passed to `--cache` or `MOON_CACHE`. This is
-  now the default level, while `write` is now a write-only level.
 - Added `args` and `env` as valid values for the `affectedFiles` task option.
 - Updated `moon run` and `moon query touched-files` to support a list of `--status` options.
-- Updated the system platform to include the operating system and architecture when hashing.
 - Updated pnpm prune to use the [pnpm-deduplicate](https://www.npmjs.com/package/pnpm-deduplicate)
   package.
 

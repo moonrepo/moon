@@ -4,6 +4,7 @@ title: Create a task
 
 import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
 import NextSteps from '@site/src/components/NextSteps';
+import LangPartials from '@site/src/components/LangPartials';
 
 <HeaderLabel text="6 min" />
 
@@ -20,25 +21,23 @@ Most — if not all projects — utilize the same core tasks: linting, testing, 
 typechecking, and _building_. Because these are so universal, let's implement the build task within
 a project using [`moon.yml`](./config/project).
 
-Begin by creating the `moon.yml` file at the root of a project and add a `build` field to the
-[`tasks`](./config/project#tasks) setting. This task will use [Webpack](https://webpack.js.org/) and
-run the `webpack` binary under the hood, since we defined the [`command`](./config/project#command)
-setting.
+Begin by creating the `moon.yml` file at the root of a project and add `build` to the
+[`tasks`](./config/project#tasks) field, with a [`command`](./config/project#command) parameter.
 
-```yaml title="<project>/moon.yml" {2,3}
-tasks:
-	build:
-		command: 'webpack build'
-```
+import BaseNode from './__partials__/create-task/node/base.mdx';
+
+<LangPartials>
+  <BaseNode key="node" />
+</LangPartials>
 
 By itself, this isn't doing much, so let's add some arguments. Arguments can also be defined with
 the [`args`](./config/project#args) setting.
 
-```yaml title="<project>/moon.yml" {3}
-tasks:
-	build:
-		command: 'webpack build --mode production --no-stats'
-```
+import ArgsNode from './__partials__/create-task/node/args.mdx';
+
+<LangPartials>
+  <ArgsNode key="node" />
+</LangPartials>
 
 With this, the task can be ran from the command line with
 [`moon run <project>:build`](./commands/run)! This is tasks in its most simplest form, but continue
@@ -55,25 +54,20 @@ environment variables that are used by the task when it's ran. moon will use and
 inputs to calculate whether to run, or to return the previous run state from the cache.
 
 If you're a bit confused, let's demonstrate this by expanding the task with the
-[`inputs`](./config/project#inputs) setting. Since this is Webpack, we expect a `webpack.config.js`
-to exist in the project.
+[`inputs`](./config/project#inputs) setting.
 
-```yaml title="<project>/moon.yml" {4-7}
-tasks:
-	build:
-		command: 'webpack build --mode production --no-stats'
-		inputs:
-			- 'src/**/*'
-			- 'webpack.config.js'
-			- '/webpack-shared.config.js'
-```
+import InputsNode from './__partials__/create-task/node/inputs.mdx';
+
+<LangPartials>
+  <InputsNode key="node" />
+</LangPartials>
 
 This list of inputs may look complicated, but they are merely run checks. For example, when moon
 detects a change in...
 
 - Any files within the `src` folder, relative from the project's root.
-- A `webpack.config.js` file in the project's root.
-- A `webpack-shared.config.js` file in the workspace root (denoted by the leading `/`).
+- A config file in the project's root.
+- A shared config file in the workspace root (denoted by the leading `/`).
 
 ...the task will be ran! If the change occurs _outside_ of the project or _outside_ the list of
 inputs, the task will _not_ be ran.
@@ -95,20 +89,14 @@ Now why is declaring outputs important? For incremental builds and smart caching
 encounters a build that has already been built, it hydrates all necessary outputs from the cache,
 then immediately exits. No more waiting for long builds!
 
-Continuing our example, let's route the built files to `build`, and expand our task with the
+Continuing our example, let's route the built files and expand our task with the
 [`outputs`](./config/project#outputs) setting.
 
-```yaml title="<project>/moon.yml" {3,8,9}
-tasks:
-	build:
-		command: 'webpack build --mode production --no-stats --output-path @out(0)'
-		inputs:
-			- 'src/**/*'
-			- 'webpack.config.js'
-			- '/webpack-shared.config.js'
-		outputs:
-			- 'build'
-```
+import OutputsNode from './__partials__/create-task/node/outputs.mdx';
+
+<LangPartials>
+  <OutputsNode key="node" />
+</LangPartials>
 
 > You may have noticed `@out(0)` syntax above. This is an advanced feature known as
 > [tokens](./concepts/token#out)!
@@ -161,20 +149,11 @@ We can then replace the inputs in our task above with these new file groups usin
 [`@files`](./concepts/token#files) token functions. Tokens are an advanced feature, so please refer
 to their documentation for more information!
 
-```yaml title="<project>/moon.yml" {8}
-fileGroups:
-	# ...
+import FilegroupsNode from './__partials__/create-task/node/filegroups.mdx';
 
-tasks:
-	build:
-		command: 'webpack build --mode production --no-stats --output-path @out(0)'
-		inputs:
-			- '@globs(sources)'
-			- 'webpack.config.js'
-			- '/webpack-shared.config.js'
-		outputs:
-			- 'build'
-```
+<LangPartials>
+  <FilegroupsNode key="node" />
+</LangPartials>
 
 With file groups (and tokens), you're able to reduce the amount of configuration required _and_
 encourage certain file structures for consuming projects!

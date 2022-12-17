@@ -1,13 +1,33 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 function hasLocalStorage() {
 	return typeof window !== 'undefined' && 'localStorage' in window;
 }
 
+export function getSelectedLanguage() {
+	return (hasLocalStorage() && localStorage.getItem('moonrepo.language')) || 'node';
+}
+
+export function useSelectedLanguage() {
+	const [lang, setLang] = useState(getSelectedLanguage());
+
+	useEffect(() => {
+		const handler = (event: Event) => {
+			setLang((event as CustomEvent<string>).detail);
+		};
+
+		window.addEventListener('onMoonrepoChangeLanguage', handler);
+
+		return () => {
+			window.removeEventListener('onMoonrepoChangeLanguage', handler);
+		};
+	});
+
+	return lang;
+}
+
 export default function LangSelector() {
-	const [lang, setLang] = useState(
-		(hasLocalStorage() && localStorage.getItem('moonrepo.language')) || 'node',
-	);
+	const [lang, setLang] = useState(getSelectedLanguage());
 
 	const handleChange = useCallback(({ target }: React.ChangeEvent<HTMLSelectElement>) => {
 		const nextLang = target.value;
@@ -24,7 +44,9 @@ export default function LangSelector() {
 		}
 
 		// Dispatch an event so markdown pages re-render
-		dispatchEvent(new CustomEvent('onMoonrepoChangeLanguage', { bubbles: true, detail: nextLang }));
+		window.dispatchEvent(
+			new CustomEvent('onMoonrepoChangeLanguage', { bubbles: true, detail: nextLang }),
+		);
 	}, []);
 
 	return (

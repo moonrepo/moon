@@ -10,9 +10,10 @@ const LABELS: Record<string, string> = {
 
 export interface LangPartialsProps {
 	children: React.ReactNode;
+	noError?: boolean;
 }
 
-export default function LangPartials({ children }: LangPartialsProps) {
+export default function LangPartials({ children, noError }: LangPartialsProps) {
 	const lang = useSelectedLanguage();
 
 	const selected = Children.toArray(children).find((child) => {
@@ -24,6 +25,10 @@ export default function LangPartials({ children }: LangPartialsProps) {
 	});
 
 	if (!selected) {
+		if (noError) {
+			return null;
+		}
+
 		return (
 			<Admonition type="danger">
 				Sorry, there's no example for {LABELS[lang] || lang}. Try switching to another language for

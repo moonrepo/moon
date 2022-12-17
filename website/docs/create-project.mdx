@@ -6,6 +6,7 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
 import NextSteps from '@site/src/components/NextSteps';
+import LangPartials from '@site/src/components/LangPartials';
 
 <HeaderLabel text="3 min" />
 
@@ -40,12 +41,11 @@ to not manually curate the projects list!
 
 :::
 
-:::info
+import AliasesNode from './__partials__/create-project/node/aliases.mdx';
 
-Want to use `package.json` names? Enable the
-[`node.aliasPackageNames`](./config/toolchain#aliaspackagenames) setting!
-
-:::
+<LangPartials noError>
+  <AliasesNode key="node" />
+</LangPartials>
 
 ## Configuring a project
 

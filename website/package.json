@@ -17,10 +17,10 @@
     "@docusaurus/core": "^2.2.0",
     "@docusaurus/preset-classic": "^2.2.0",
     "@docusaurus/theme-common": "^2.2.0",
-    "@fortawesome/fontawesome-svg-core": "^6.2.0",
-    "@fortawesome/free-brands-svg-icons": "^6.2.0",
-    "@fortawesome/pro-duotone-svg-icons": "^6.2.0",
-    "@fortawesome/pro-regular-svg-icons": "^6.2.0",
+    "@fortawesome/fontawesome-svg-core": "^6.2.1",
+    "@fortawesome/free-brands-svg-icons": "^6.2.1",
+    "@fortawesome/pro-duotone-svg-icons": "^6.2.1",
+    "@fortawesome/pro-regular-svg-icons": "^6.2.1",
     "@fortawesome/react-fontawesome": "^0.2.0",
     "@mdx-js/react": "^1.6.22",
     "clsx": "^1.2.1",
@@ -33,7 +33,7 @@
     "@docusaurus/module-type-aliases": "^2.2.0",
     "@moonrepo/runtime": "workspace:^",
     "@moonrepo/types": "workspace:^",
-    "tailwindcss": "^3.1.8"
+    "tailwindcss": "^3.2.4"
   },
   "browserslist": {
     "production": [

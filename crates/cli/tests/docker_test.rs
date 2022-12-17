@@ -215,15 +215,16 @@ mod scaffold_sources {
         );
 
         sandbox.run_moon(|cmd| {
-            cmd.arg("docker").arg("scaffold").arg("foo").arg("bar");
+            cmd.arg("docker").arg("scaffold").arg("tasks").arg("bar");
         });
 
         let docker = sandbox.path().join(".moon/docker/sources");
 
-        assert!(docker.join("deps/foo").exists());
         assert!(docker.join("deps/bar").exists());
+        assert!(docker.join("tasks").exists());
 
         // Check that some others DO NOT exist
+        assert!(!docker.join("deps/foo").exists());
         assert!(!docker.join("deps/baz").exists());
     }
 

@@ -4,21 +4,18 @@ assertion_line: 32
 expression: assert.output()
 ---
 digraph {
-    0 [ label="bash" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    0 [ label="tasks" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     1 [ label="emptyConfig" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    2 [ label="noConfig" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    3 [ label="platforms" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    4 [ label="bar" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    2 [ label="platforms" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    3 [ label="bar" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
+    4 [ label="noConfig" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     5 [ label="basic" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     6 [ label="advanced" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     7 [ label="baz" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     8 [ label="foo" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    9 [ label="ts" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    10 [ label="js" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    11 [ label="tasks" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    5 -> 2 [ arrowhead=box, arrowtail=box]
-    8 -> 4 [ arrowhead=box, arrowtail=box]
+    5 -> 4 [ arrowhead=box, arrowtail=box]
     8 -> 7 [ arrowhead=box, arrowtail=box]
+    8 -> 3 [ arrowhead=box, arrowtail=box]
 }
 
 

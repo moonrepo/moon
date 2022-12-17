@@ -4,6 +4,7 @@ import { useSelectedLanguage } from './LangSelector';
 
 const LABELS: Record<string, string> = {
 	deno: 'Deno',
+	go: 'Go',
 	node: 'Node.js',
 	python: 'Python',
 	ruby: 'Ruby',

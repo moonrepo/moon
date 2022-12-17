@@ -31,12 +31,12 @@ pub async fn project_graph(
 
     info!(
         target: LOG_TARGET,
-        r#"Starting server on "{}""#,
+        "Started server on http://{}",
         server.server_addr()
     );
 
     for req in server.incoming_requests() {
-        respond_to_request(req, &mut tera, &graph_info, "Project".to_owned())?;
+        respond_to_request(req, &mut tera, &graph_info, "Project graph".to_owned())?;
     }
 
     Ok(())

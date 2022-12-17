@@ -27,10 +27,12 @@ pub async fn prune_node(
     }
 
     // Some package managers do not delete stale node modules
-    fs::remove_dir_all(workspace.root.join(NODE.vendor_dir))?;
+    if let Some(vendor_dir) = NODE.vendor_dir {
+        fs::remove_dir_all(workspace.root.join(vendor_dir))?;
 
-    for project_source in project_graph.sources.values() {
-        fs::remove_dir_all(workspace.root.join(project_source).join(NODE.vendor_dir))?;
+        for project_source in project_graph.sources.values() {
+            fs::remove_dir_all(workspace.root.join(project_source).join(vendor_dir))?;
+        }
     }
 
     // Install production only dependencies for focused projects

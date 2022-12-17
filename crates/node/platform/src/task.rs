@@ -1,10 +1,9 @@
-use lazy_static::lazy_static;
 use moon_config::{TaskCommandArgs, TaskConfig, TasksConfigsMap};
 use moon_logger::{color, debug, warn};
 use moon_node_lang::package::{PackageJson, ScriptsSet};
 use moon_task::{PlatformType, Target, TaskError, TaskID};
 use moon_utils::regex::{UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
-use moon_utils::{process, regex, string_vec};
+use moon_utils::{lazy_static, process, regex, string_vec};
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 

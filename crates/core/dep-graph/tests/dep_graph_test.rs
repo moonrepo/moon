@@ -24,10 +24,6 @@ async fn create_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
             ("baz".to_owned(), "deps/baz".to_owned()),
             // Tasks
             ("tasks".to_owned(), "tasks".to_owned()),
-            // Languages
-            ("js".to_owned(), "langs/js".to_owned()),
-            ("ts".to_owned(), "langs/ts".to_owned()),
-            ("bash".to_owned(), "langs/bash".to_owned()),
             ("platforms".to_owned(), "platforms".to_owned()),
         ])),
         ..WorkspaceConfig::default()

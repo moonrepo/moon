@@ -4,6 +4,7 @@ use crate::errors::{
     create_validation_error, map_validation_errors_to_figment_errors, ConfigError,
 };
 use crate::project::dep::DependencyConfig;
+use crate::project::language_platform::ProjectLanguage;
 use crate::project::task::TaskConfig;
 use crate::project::workspace::ProjectWorkspaceConfig;
 use crate::types::{FileGroups, ProjectID};
@@ -17,7 +18,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::Path;
-use strum::{Display, EnumIter};
+use strum::Display;
 use validator::{Validate, ValidationError};
 
 fn validate_file_groups(map: &FileGroups) -> Result<(), ValidationError> {
@@ -55,38 +56,6 @@ fn validate_channel(value: &str) -> Result<(), ValidationError> {
     }
 
     Ok(())
-}
-
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Default,
-    Deserialize,
-    Display,
-    EnumIter,
-    Eq,
-    JsonSchema,
-    PartialEq,
-    Serialize,
-)]
-#[serde(rename_all = "lowercase")]
-pub enum ProjectLanguage {
-    #[strum(serialize = "bash")]
-    Bash,
-
-    #[strum(serialize = "batch")]
-    Batch,
-
-    #[strum(serialize = "javascript")]
-    JavaScript,
-
-    #[strum(serialize = "typescript")]
-    TypeScript,
-
-    #[default]
-    #[strum(serialize = "unknown")]
-    Unknown,
 }
 
 #[derive(

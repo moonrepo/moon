@@ -9,6 +9,7 @@ use moon_config::{
 };
 use moon_logger::{color, debug, map_list, trace, Logable};
 use moon_platform::PlatformManager;
+use moon_platform_detector::{detect_project_language, detect_task_platform};
 use moon_project::{Project, ProjectDependency, ProjectDependencySource, ProjectError};
 use moon_task::{Target, TargetError, TargetProjectScope, Task, TaskError};
 use moon_utils::regex::ENV_VAR;
@@ -106,7 +107,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         // Detect the language if its unknown
         if matches!(project.language, ProjectLanguage::Unknown) {
-            project.language = self.platforms.detect_project_language(&project.root)?;
+            project.language = detect_project_language(&project.root);
         }
 
         if let Some(platform) = self.platforms.get(project.language) {
@@ -155,9 +156,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         for (task_id, mut task) in mem::take(&mut project.tasks) {
             // Detect the platform if its unknown
             if matches!(task.platform, PlatformType::Unknown) {
-                task.platform = self
-                    .platforms
-                    .detect_task_platform(&task.command, project.language)?;
+                task.platform = detect_task_platform(&task.command, project.language);
             }
 
             // Resolve in this order!

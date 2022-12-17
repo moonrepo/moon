@@ -1,13 +1,12 @@
 use crate::filters;
 use crate::GeneratorError;
-use lazy_static::lazy_static;
 use moon_config::{
     format_error_line, format_figment_errors, ConfigError, TemplateConfig,
     TemplateFrontmatterConfig,
 };
 use moon_constants::CONFIG_TEMPLATE_FILENAME;
 use moon_logger::{color, debug, trace};
-use moon_utils::{fs, json, path, regex, yaml};
+use moon_utils::{fs, json, lazy_static, path, regex, yaml};
 use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
 

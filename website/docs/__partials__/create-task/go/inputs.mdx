@@ -1,0 +1,11 @@
+```yaml title="<project>/moon.yml" {6-9}
+language: 'go'
+
+tasks:
+	build:
+		command: 'go build -o build'
+		inputs:
+			- 'src/**/*'
+			- 'go.mod'
+			- '/go.mod'
+```

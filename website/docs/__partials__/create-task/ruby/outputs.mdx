@@ -1,0 +1,13 @@
+```yaml title="<project>/moon.yml" {10,11}
+language: 'ruby'
+
+tasks:
+	build:
+		command: 'rake build --quiet'
+		inputs:
+			- 'src/**/*'
+			- 'Rakefile'
+			- '/Gemfile'
+		outputs:
+			- 'build' # Just an example!
+```

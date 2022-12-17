@@ -6,10 +6,10 @@ use moon_config::{
     default_node_version, default_npm_version, default_pnpm_version, default_yarn_version,
     load_toolchain_node_config_template,
 };
-use moon_lang::{is_using_package_manager, is_using_version_manager};
+use moon_lang::{is_using_dependency_manager, is_using_version_manager};
 use moon_logger::color;
 use moon_node_lang::package::{PackageJson, PackageWorkspaces};
-use moon_node_lang::{NODENV, NPM, NVMRC, PNPM, YARN};
+use moon_node_lang::{NODENV, NPM, NVM, PNPM, YARN};
 use moon_project_graph::detect_projects_with_globs;
 use moon_terminal::label_header;
 use moon_utils::fs;
@@ -25,12 +25,10 @@ pub fn render_template(context: Context) -> Result<String, Error> {
 /// Detect the Node.js version from local configuration files,
 /// otherwise fallback to the configuration default.
 fn detect_node_version(dest_dir: &Path) -> Result<(String, String), AnyError> {
-    if is_using_version_manager(dest_dir, &NVMRC) {
+    if is_using_version_manager(dest_dir, &NVM) {
         return Ok((
-            fs::read(dest_dir.join(NVMRC.version_file))?
-                .trim()
-                .to_owned(),
-            NVMRC.binary.to_owned(),
+            fs::read(dest_dir.join(NVM.version_file))?.trim().to_owned(),
+            NVM.binary.to_owned(),
         ));
     }
 
@@ -72,11 +70,11 @@ fn detect_package_manager(
 
     // If no value, detect based on files
     if pm_type.is_empty() {
-        if is_using_package_manager(dest_dir, &YARN) {
+        if is_using_dependency_manager(dest_dir, &YARN, false) {
             pm_type = YARN.binary.to_owned();
-        } else if is_using_package_manager(dest_dir, &PNPM) {
+        } else if is_using_dependency_manager(dest_dir, &PNPM, false) {
             pm_type = PNPM.binary.to_owned();
-        } else if is_using_package_manager(dest_dir, &NPM) {
+        } else if is_using_dependency_manager(dest_dir, &NPM, false) {
             pm_type = NPM.binary.to_owned();
         }
     }

@@ -77,15 +77,11 @@ pub fn get_projects_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Glob
             ("emptyConfig".to_owned(), "empty-config".to_owned()),
             ("noConfig".to_owned(), "no-config".to_owned()),
             ("tasks".to_owned(), "tasks".to_owned()),
+            ("platforms".to_owned(), "platforms".to_owned()),
             // Deps
             ("foo".to_owned(), "deps/foo".to_owned()),
             ("bar".to_owned(), "deps/bar".to_owned()),
             ("baz".to_owned(), "deps/baz".to_owned()),
-            // Langs
-            ("js".to_owned(), "langs/js".to_owned()),
-            ("ts".to_owned(), "langs/ts".to_owned()),
-            ("bash".to_owned(), "langs/bash".to_owned()),
-            ("platforms".to_owned(), "platforms".to_owned()),
         ])),
         ..WorkspaceConfig::default()
     };

@@ -1,8 +1,7 @@
 use crate::infer_tasks_from_scripts;
 use moon_config::{
     DependencyConfig, DependencyScope, NodeConfig, NodeProjectAliasFormat, PlatformType,
-    ProjectConfig, ProjectID, ProjectLanguage, ProjectsAliasesMap, ProjectsSourcesMap,
-    TasksConfigsMap,
+    ProjectConfig, ProjectID, ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap,
 };
 use moon_error::MoonError;
 use moon_logger::{color, debug, warn};
@@ -15,10 +14,6 @@ use std::path::PathBuf;
 use std::{collections::BTreeMap, path::Path};
 
 const LOG_TARGET: &str = "moon:node-platform";
-
-const NODE_COMMANDS: [&str; 9] = [
-    "node", "nodejs", "npm", "npx", "yarn", "yarnpkg", "pnpm", "pnpx", "corepack",
-];
 
 #[derive(Debug)]
 pub struct NodePlatform {
@@ -41,20 +36,6 @@ impl NodePlatform {
 }
 
 impl Platform for NodePlatform {
-    fn is_project_language(&self, project_root: &Path) -> Option<ProjectLanguage> {
-        if project_root.join("tsconfig.json").exists() {
-            Some(ProjectLanguage::TypeScript)
-        } else if project_root.join("package.json").exists() {
-            Some(ProjectLanguage::JavaScript)
-        } else {
-            None
-        }
-    }
-
-    fn is_task_command(&self, command: &str) -> bool {
-        NODE_COMMANDS.contains(&command)
-    }
-
     fn get_type(&self) -> PlatformType {
         PlatformType::Node
     }

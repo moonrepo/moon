@@ -2,9 +2,8 @@ use crate::package::{PackageJson, PackageWorkspaces};
 use crate::pnpm::workspace::PnpmWorkspace;
 use crate::NODE;
 use cached::proc_macro::cached;
-use lazy_static::lazy_static;
 use moon_error::{map_io_to_fs_error, MoonError};
-use moon_utils::path;
+use moon_utils::{lazy_static, path};
 use regex::Regex;
 use std::env;
 use std::fs;
@@ -93,7 +92,7 @@ pub fn find_package_bin<P: AsRef<Path>, B: AsRef<str>>(
     let starting_dir = starting_dir.as_ref();
     let bin_name = bin_name.as_ref();
     let bin_path = starting_dir
-        .join(NODE.vendor_bins_dir)
+        .join(NODE.vendor_bins_dir.unwrap())
         .join(get_bin_name_suffix(bin_name, "cmd", true));
 
     if bin_path.exists() {

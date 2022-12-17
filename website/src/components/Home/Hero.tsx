@@ -30,11 +30,8 @@ export default function Hero() {
 					</p>
 
 					<p className="mt-1 text-white opacity-50 text-sm md:text-base">
-						Supports JavaScript, TypeScript, Bash, Batch,{' '}
-						<DocLink
-							href="/docs/faq#will-moon-support-other-languages-besides-javascript"
-							variant="muted"
-						>
+						Supports JavaScript, TypeScript, Rust, Go, Ruby,{' '}
+						<DocLink href="/docs#supported-languages" variant="muted">
 							and more
 						</DocLink>
 						.

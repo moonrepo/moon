@@ -1,0 +1,11 @@
+```yaml title="<project>/moon.yml" {6-9}
+language: 'rust'
+
+tasks:
+	build:
+		command: 'cargo build --release'
+		inputs:
+			- 'src/**/*'
+			- 'Cargo.toml'
+			- '/Cargo.toml'
+```

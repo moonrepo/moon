@@ -1,0 +1,11 @@
+```yaml title="<project>/moon.yml" {6-9}
+language: 'python'
+
+tasks:
+	build:
+		command: 'python -m build'
+		inputs:
+			- 'src/**/*'
+			- 'pyproject.toml'
+			- '/.python-version'
+```

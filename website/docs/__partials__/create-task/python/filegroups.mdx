@@ -1,0 +1,16 @@
+```yaml title="<project>/moon.yml" {10}
+language: 'python'
+
+fileGroups:
+	# ...
+
+tasks:
+	build:
+		command: 'python -m build'
+		inputs:
+			- '@globs(sources)'
+			- 'pyproject.toml'
+			- '/.python-version'
+		outputs:
+			- 'dist'
+```

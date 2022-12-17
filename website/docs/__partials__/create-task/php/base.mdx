@@ -1,0 +1,14 @@
+```yaml title="<project>/moon.yml" {4,5}
+language: 'php'
+
+tasks:
+	build:
+		command: 'phar pack'
+```
+
+:::caution
+
+PHP doesn't have a concept of building like compiled languages, so these examples will reference
+[PHAR creation](https://www.mankier.com/1/phar) using the command line.
+
+:::

@@ -1,0 +1,11 @@
+```yaml title="<project>/moon.yml" {6-9}
+language: 'php'
+
+tasks:
+	build:
+		command: 'phar pack -h sha256'
+		inputs:
+			- 'src/**/*'
+			- 'composer.json'
+			- '/composer.json'
+```

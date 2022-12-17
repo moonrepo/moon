@@ -6,6 +6,7 @@ const LABELS: Record<string, string> = {
 	deno: 'Deno',
 	go: 'Go',
 	node: 'Node.js',
+	php: 'PHP',
 	python: 'Python',
 	ruby: 'Ruby',
 	rust: 'Rust',

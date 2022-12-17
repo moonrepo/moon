@@ -57,6 +57,7 @@ export default function LangSelector() {
 		>
 			<option value="go">Go</option>
 			<option value="node">Node.js</option>
+			<option value="php">PHP</option>
 			<option value="python">Python</option>
 			<option value="ruby">Ruby</option>
 			<option value="rust">Rust</option>

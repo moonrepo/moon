@@ -52,6 +52,7 @@
     },
     "runner": {
       "default": {
+        "archivableTargets": [],
         "cacheLifetime": "7 days",
         "implicitDeps": [],
         "implicitInputs": [
@@ -135,6 +136,13 @@
     "RunnerConfig": {
       "type": "object",
       "properties": {
+        "archivableTargets": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "cacheLifetime": {
           "default": "7 days",
           "type": "string"

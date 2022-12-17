@@ -41,7 +41,18 @@ export interface TaskConfig {
 	platform: Platform;
 }
 
-export type ProjectLanguage = 'bash' | 'batch' | 'javascript' | 'typescript' | 'unknown';
+export type ProjectLanguage =
+	| 'bash'
+	| 'batch'
+	| 'deno'
+	| 'go'
+	| 'javascript'
+	| 'php'
+	| 'python'
+	| 'ruby'
+	| 'rust'
+	| 'typescript'
+	| 'unknown';
 
 export type ProjectType = 'application' | 'library' | 'tool' | 'unknown';
 

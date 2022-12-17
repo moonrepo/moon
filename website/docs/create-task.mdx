@@ -31,10 +31,12 @@ Begin by creating the `moon.yml` file at the root of a project and add `build` t
 [`tasks`](./config/project#tasks) field, with a [`command`](./config/project#command) parameter.
 
 import BaseNode from './__partials__/create-task/node/base.mdx';
+import BaseRuby from './__partials__/create-task/ruby/base.mdx';
 import BaseRust from './__partials__/create-task/rust/base.mdx';
 
 <LangPartials>
   <BaseNode key="node" />
+  <BaseRuby key="ruby" />
   <BaseRust key="rust" />
 </LangPartials>
 
@@ -42,10 +44,12 @@ By itself, this isn't doing much, so let's add some arguments. Arguments can als
 the [`args`](./config/project#args) setting.
 
 import ArgsNode from './__partials__/create-task/node/args.mdx';
+import ArgsRuby from './__partials__/create-task/ruby/args.mdx';
 import ArgsRust from './__partials__/create-task/rust/args.mdx';
 
 <LangPartials>
   <ArgsNode key="node" />
+  <ArgsRuby key="ruby" />
   <ArgsRust key="rust" />
 </LangPartials>
 
@@ -67,10 +71,12 @@ If you're a bit confused, let's demonstrate this by expanding the task with the
 [`inputs`](./config/project#inputs) setting.
 
 import InputsNode from './__partials__/create-task/node/inputs.mdx';
+import InputsRuby from './__partials__/create-task/ruby/inputs.mdx';
 import InputsRust from './__partials__/create-task/rust/inputs.mdx';
 
 <LangPartials>
   <InputsNode key="node" />
+  <InputsRuby key="ruby" />
   <InputsRust key="rust" />
 </LangPartials>
 
@@ -105,10 +111,12 @@ Continuing our example, let's route the built files and expand our task with the
 [`outputs`](./config/project#outputs) setting.
 
 import OutputsNode from './__partials__/create-task/node/outputs.mdx';
+import OutputsRuby from './__partials__/create-task/ruby/outputs.mdx';
 import OutputsRust from './__partials__/create-task/rust/outputs.mdx';
 
 <LangPartials>
   <OutputsNode key="node" />
+  <OutputsRuby key="ruby" />
   <OutputsRust key="rust" />
 </LangPartials>
 
@@ -161,10 +169,12 @@ We can then replace the inputs in our task above with these new file groups usin
 to their documentation for more information!
 
 import FilegroupsNode from './__partials__/create-task/node/filegroups.mdx';
+import FilegroupsRuby from './__partials__/create-task/ruby/filegroups.mdx';
 import FilegroupsRust from './__partials__/create-task/rust/filegroups.mdx';
 
 <LangPartials>
   <FilegroupsNode key="node" />
+  <FilegroupsRuby key="ruby" />
   <FilegroupsRust key="rust" />
 </LangPartials>
 

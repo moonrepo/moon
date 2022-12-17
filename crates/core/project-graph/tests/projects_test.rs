@@ -12,6 +12,7 @@ use moon_task::Target;
 use moon_test_utils::{create_sandbox_with_config, get_tasks_fixture_configs, Sandbox};
 use moon_utils::{glob, string_vec};
 use rustc_hash::{FxHashMap, FxHashSet};
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 
 async fn tasks_sandbox() -> (Sandbox, ProjectGraph) {
@@ -1040,6 +1041,361 @@ mod task_expansion {
                 );
             })
             .await;
+        }
+    }
+}
+
+mod detection {
+    use super::*;
+    use moon_config::ProjectLanguage;
+
+    async fn langs_sandbox() -> (Sandbox, ProjectGraph) {
+        let workspace_config = WorkspaceConfig {
+            projects: WorkspaceProjects::Globs(string_vec!["*"]),
+            ..WorkspaceConfig::default()
+        };
+
+        let projects_config = GlobalProjectConfig {
+            tasks: BTreeMap::from_iter([(
+                "command".to_owned(),
+                TaskConfig {
+                    command: Some(TaskCommandArgs::String("command".into())),
+                    ..TaskConfig::default()
+                },
+            )]),
+            ..GlobalProjectConfig::default()
+        };
+
+        let sandbox = create_sandbox_with_config(
+            "project-graph/langs",
+            Some(&workspace_config),
+            None,
+            Some(&projects_config),
+        );
+
+        let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+        let graph = generate_project_graph(&mut workspace).unwrap();
+
+        (sandbox, graph)
+    }
+
+    #[tokio::test]
+    async fn detects_bash() {
+        let (_sandbox, project_graph) = langs_sandbox().await;
+
+        assert_eq!(
+            project_graph.get("bash").unwrap().language,
+            ProjectLanguage::Bash
+        );
+    }
+
+    #[tokio::test]
+    async fn detects_batch() {
+        let (_sandbox, project_graph) = langs_sandbox().await;
+
+        assert_eq!(
+            project_graph.get("batch").unwrap().language,
+            ProjectLanguage::Batch
+        );
+    }
+
+    #[tokio::test]
+    async fn detects_go() {
+        let (_sandbox, project_graph) = langs_sandbox().await;
+
+        assert_eq!(
+            project_graph.get("go").unwrap().language,
+            ProjectLanguage::Go
+        );
+        assert_eq!(
+            project_graph.get("go-config").unwrap().language,
+            ProjectLanguage::Go
+        );
+    }
+
+    #[tokio::test]
+    async fn detects_js() {
+        let (_sandbox, project_graph) = langs_sandbox().await;
+
+        assert_eq!(
+            project_graph.get("js").unwrap().language,
+            ProjectLanguage::JavaScript
+        );
+        assert_eq!(
+            project_graph.get("js-config").unwrap().language,
+            ProjectLanguage::JavaScript
+        );
+    }
+
+    #[tokio::test]
+    async fn detects_php() {
+        let (_sandbox, project_graph) = langs_sandbox().await;
+
+        assert_eq!(
+            project_graph.get("php").unwrap().language,
+            ProjectLanguage::Php
+        );
+        assert_eq!(
+            project_graph.get("php-config").unwrap().language,
+            ProjectLanguage::Php
+        );
+    }
+
+    #[tokio::test]
+    async fn detects_python() {
+        let (_sandbox, project_graph) = langs_sandbox().await;
+
+        assert_eq!(
+            project_graph.get("python").unwrap().language,
+            ProjectLanguage::Python
+        );
+        assert_eq!(
+            project_graph.get("python-config").unwrap().language,
+            ProjectLanguage::Python
+        );
+    }
+
+    #[tokio::test]
+    async fn detects_ruby() {
+        let (_sandbox, project_graph) = langs_sandbox().await;
+
+        assert_eq!(
+            project_graph.get("ruby").unwrap().language,
+            ProjectLanguage::Ruby
+        );
+        assert_eq!(
+            project_graph.get("ruby-config").unwrap().language,
+            ProjectLanguage::Ruby
+        );
+    }
+
+    #[tokio::test]
+    async fn detects_rust() {
+        let (_sandbox, project_graph) = langs_sandbox().await;
+
+        assert_eq!(
+            project_graph.get("rust").unwrap().language,
+            ProjectLanguage::Rust
+        );
+        assert_eq!(
+            project_graph.get("rust-config").unwrap().language,
+            ProjectLanguage::Rust
+        );
+    }
+
+    #[tokio::test]
+    async fn detects_ts() {
+        let (_sandbox, project_graph) = langs_sandbox().await;
+
+        assert_eq!(
+            project_graph.get("ts").unwrap().language,
+            ProjectLanguage::TypeScript
+        );
+        assert_eq!(
+            project_graph.get("ts-config").unwrap().language,
+            ProjectLanguage::TypeScript
+        );
+    }
+
+    mod task_platform {
+        use super::*;
+
+        #[tokio::test]
+        async fn detects_bash() {
+            let (_sandbox, project_graph) = langs_sandbox().await;
+
+            assert_eq!(
+                project_graph
+                    .get("bash")
+                    .unwrap()
+                    .get_task("command")
+                    .unwrap()
+                    .platform,
+                PlatformType::System
+            );
+        }
+
+        #[tokio::test]
+        async fn detects_batch() {
+            let (_sandbox, project_graph) = langs_sandbox().await;
+
+            assert_eq!(
+                project_graph
+                    .get("batch")
+                    .unwrap()
+                    .get_task("command")
+                    .unwrap()
+                    .platform,
+                PlatformType::System
+            );
+        }
+
+        #[tokio::test]
+        async fn detects_go() {
+            let (_sandbox, project_graph) = langs_sandbox().await;
+
+            assert_eq!(
+                project_graph
+                    .get("go")
+                    .unwrap()
+                    .get_task("command")
+                    .unwrap()
+                    .platform,
+                PlatformType::System
+            );
+            assert_eq!(
+                project_graph
+                    .get("go-config")
+                    .unwrap()
+                    .get_task("command")
+                    .unwrap()
+                    .platform,
+                PlatformType::System
+            );
+        }
+
+        #[tokio::test]
+        async fn detects_js() {
+            let (_sandbox, project_graph) = langs_sandbox().await;
+
+            assert_eq!(
+                project_graph
+                    .get("js")
+                    .unwrap()
+                    .get_task("command")
+                    .unwrap()
+                    .platform,
+                PlatformType::Node
+            );
+            assert_eq!(
+                project_graph
+                    .get("js-config")
+                    .unwrap()
+                    .get_task("command")
+                    .unwrap()
+                    .platform,
+                PlatformType::Node
+            );
+        }
+
+        #[tokio::test]
+        async fn detects_php() {
+            let (_sandbox, project_graph) = langs_sandbox().await;
+
+            assert_eq!(
+                project_graph
+                    .get("php")
+                    .unwrap()
+                    .get_task("command")
+                    .unwrap()
+                    .platform,
+                PlatformType::System
+            );
+            assert_eq!(
+                project_graph
+                    .get("php-config")
+                    .unwrap()
+                    .get_task("command")
+                    .unwrap()
+                    .platform,
+                PlatformType::System
+            );
+        }
+
+        #[tokio::test]
+        async fn detects_python() {
+            let (_sandbox, project_graph) = langs_sandbox().await;
+
+            assert_eq!(
+                project_graph
+                    .get("python")
+                    .unwrap()
+                    .get_task("command")
+                    .unwrap()
+                    .platform,
+                PlatformType::System
+            );
+            assert_eq!(
+                project_graph
+                    .get("python-config")
+                    .unwrap()
+                    .get_task("command")
+                    .unwrap()
+                    .platform,
+                PlatformType::System
+            );
+        }
+
+        #[tokio::test]
+        async fn detects_ruby() {
+            let (_sandbox, project_graph) = langs_sandbox().await;
+
+            assert_eq!(
+                project_graph
+                    .get("ruby")
+                    .unwrap()
+                    .get_task("command")
+                    .unwrap()
+                    .platform,
+                PlatformType::System
+            );
+            assert_eq!(
+                project_graph
+                    .get("ruby-config")
+                    .unwrap()
+                    .get_task("command")
+                    .unwrap()
+                    .platform,
+                PlatformType::System
+            );
+        }
+
+        #[tokio::test]
+        async fn detects_rust() {
+            let (_sandbox, project_graph) = langs_sandbox().await;
+
+            assert_eq!(
+                project_graph
+                    .get("rust")
+                    .unwrap()
+                    .get_task("command")
+                    .unwrap()
+                    .platform,
+                PlatformType::System
+            );
+            assert_eq!(
+                project_graph
+                    .get("rust-config")
+                    .unwrap()
+                    .get_task("command")
+                    .unwrap()
+                    .platform,
+                PlatformType::System
+            );
+        }
+
+        #[tokio::test]
+        async fn detects_ts() {
+            let (_sandbox, project_graph) = langs_sandbox().await;
+
+            assert_eq!(
+                project_graph
+                    .get("ts")
+                    .unwrap()
+                    .get_task("command")
+                    .unwrap()
+                    .platform,
+                PlatformType::Node
+            );
+            assert_eq!(
+                project_graph
+                    .get("ts-config")
+                    .unwrap()
+                    .get_task("command")
+                    .unwrap()
+                    .platform,
+                PlatformType::Node
+            );
         }
     }
 }

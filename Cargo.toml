@@ -3,7 +3,13 @@ resolver = "2"
 members = [
 	"crates/cli",
 	"crates/core/*",
+	"crates/deno/*",
+	"crates/go/*",
 	"crates/node/*",
+	"crates/php/*",
+	"crates/python/*",
+	"crates/ruby/*",
+	"crates/rust/*",
 	"crates/system/*",
 	"crates/typescript/*",
 	"crates/proto/*",

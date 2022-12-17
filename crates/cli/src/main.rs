@@ -108,7 +108,7 @@ async fn main() {
             // locally installed `moon` binary in node modules
             if let Some(workspace_root) = find_workspace_root(&current_dir) {
                 let moon_bin = workspace_root
-                    .join(NODE.vendor_dir)
+                    .join(NODE.vendor_dir.unwrap())
                     .join("@moonrepo")
                     .join("cli")
                     .join(BIN_NAME);

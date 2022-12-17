@@ -21,7 +21,6 @@ moon_toolchain = { path = "../../core/toolchain" }
 moon_typescript_lang = { path = "../../typescript/lang" }
 moon_utils = { path = "../../core/utils" }
 moon_workspace = { path = "../../core/workspace" }
-lazy_static = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 tokio = { workspace = true }

@@ -1,0 +1,13 @@
+```yaml title="<project>/moon.yml" {5,10,11}
+language: 'javascript'
+
+tasks:
+	build:
+		command: 'webpack build --mode production --no-stats --output-path @out(0)'
+		inputs:
+			- 'src/**/*'
+			- 'webpack.config.js'
+			- '/webpack-shared.config.js'
+		outputs:
+			- 'build'
+```

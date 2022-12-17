@@ -11,8 +11,8 @@ pub const NODE: Language = Language {
     binary: "node",
     default_version: "18.12.0",
     file_exts: &["js", "cjs", "mjs"],
-    vendor_bins_dir: "node_modules/.bin",
-    vendor_dir: "node_modules",
+    vendor_bins_dir: Some("node_modules/.bin"),
+    vendor_dir: Some("node_modules"),
 };
 
 // Package managers
@@ -43,7 +43,7 @@ pub const YARN: DependencyManager = DependencyManager {
 
 // Version managers
 
-pub const NVMRC: VersionManager = VersionManager {
+pub const NVM: VersionManager = VersionManager {
     binary: "nvm",
     version_file: ".nvmrc",
 };

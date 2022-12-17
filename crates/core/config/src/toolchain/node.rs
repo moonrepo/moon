@@ -1,5 +1,5 @@
 use crate::validators::validate_semver_version;
-use moon_node_lang::{NODE, NODENV, NPM, NVMRC, PNPM, YARN};
+use moon_node_lang::{NODE, NODENV, NPM, NVM, PNPM, YARN};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -95,7 +95,7 @@ impl NodeVersionManager {
     pub fn get_config_filename(&self) -> String {
         match self {
             NodeVersionManager::Nodenv => String::from(NODENV.version_file),
-            NodeVersionManager::Nvm => String::from(NVMRC.version_file),
+            NodeVersionManager::Nvm => String::from(NVM.version_file),
         }
     }
 }

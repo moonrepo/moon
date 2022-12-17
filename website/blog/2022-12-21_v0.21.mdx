@@ -1,0 +1,133 @@
+---
+slug: v0.21
+title: moon v0.21 - Tiered language support with initial Go, PHP, Python, Ruby, and Rust
+authors: [milesj]
+tags: [runner, language, platform, cache, graph]
+# image: ./img/v0.20.png
+---
+
+import Label from '@site/src/ui/typography/Label';
+
+Happy Holidays 🎄☃️! With our last release of the year, we're very excited to announce our tiered
+language support structure, which lays the foundation for turning moon into a multi-language build
+system! On top of this, we've worked heavily on bug fixing, optimizations, and overall quality of
+life improvements.
+
+<!--truncate-->
+
+## New tiered language support
+
+The most common question we receive is whether we plan to support additional languages besides
+Node.js, with Rust, Deno, and Bun being top of that list. Adding new languages is non-trivial, as we
+need to build abstractions that support and integrate with the language's ecosystem, primarily
+dependency managers and resolution algorithms.
+
+This is a very large upfront cost, with a huge time and resource commitment. To reduce this burden,
+we're introducing a tiered support structure, so that languages can be incrementally integrated into
+moon and adopted by consumers.
+
+The tiers break down as follows:
+
+- &nbsp;<Label text="Tier 0" variant="failure" /> &nbsp; **No direct integration** - Tool is not
+  directly supported in moon, but can still be ran using the
+  ["system" task platform](../docs/faq#can-we-run-other-languages), which expects the tool to exist
+  in the current environment.
+- &nbsp;<Label text="Tier 1" variant="warning" /> &nbsp; **Project categorization** - Projects can
+  configure their primary [language in `moon.yml`](../docs/config/project#language).
+- &nbsp;<Label text="Tier 2" variant="info" /> &nbsp; **Ecosystem platformization** - moon deeply
+  integrates with the language's ecosystem by parsing manifests, lockfiles, and other semantic files
+  to infer dependencies, tasks, and other necessary information.
+- &nbsp;<Label text="Tier 3" variant="success" /> &nbsp; **Toolchain integration** - Language is
+  directly supported in the toolchain, configured in
+  [`.moon/toolchain.yml`](../docs/config/toolchain), and will automatically be downloaded and
+  installed.
+
+To learn more about our currently supported languages and their tiers,
+[jump to the official documentation](/docs#supported-languages).
+
+> One important facet we'd like to express, is that _all_ languages and tools fall into Tier 0. Feel
+> free to use anything you'd like as a task command!
+
+## Basic support for Go, PHP, Python, Ruby, and, Rust
+
+As announced above, we now incrementally support new languages, and have integrated the following 5
+languages with Tier 1 support: Go, PHP, Python, Ruby, and, Rust! Start using these languages today
+by setting the [`language`](../docs/config/project#language) field in `moon.yml`, or by letting moon
+infer the language based on files in the project root (for example, `Cargo.toml` is Rust).
+
+```yaml title="<project>/moon.yml"
+language: 'rust'
+
+tasks:
+  build:
+    command: 'cargo build'
+    inputs:
+      - 'src/**/*'
+      - 'Cargo.toml'
+  test:
+    command: 'cargo test'
+    inputs:
+      - 'src/**/*'
+      - 'tests/**/*'
+      - 'Cargo.toml'
+```
+
+> Because these languages are Tier 1, moon _does not_ install the language automatically, and will
+> require the command to already exist in the environment. Furthermore, the project language will
+> automatically set all task's `platform` as "system", at least until it's supported directly in the
+> toolchain.
+
+## New `--updateCache` command line option
+
+Our caching layer is pretty powerful, as it helps to avoid tasks from running unnecessarily.
+However, there are situations where you need to refresh or force update the cache outside of the
+[`inputs`](../docs/config/project#inputs) list. This is currently achieved with the
+[`--cache`](../docs/commands/overview#caching) option, like `moon --cache off run ...`, but this is
+non-ideal for a few reasons:
+
+1. It disables _all caching_, which means dependency installs/dedupes will continually be ran. This
+   adds a lot of unwanted overhead.
+2. It requires you to backspace in the terminal to add the option _before_ `run` or `check`, as it's
+   a global option. A little tedious but important for experience.
+
+So to work around these limitations, we've added a new `--updateCache` (or `-u`) to both
+[`moon run`](../docs/commands/run) and [`moon check`](../docs/commands/run), which will bypass
+reading any existing cache items, but will force update the cache base on the latest run.
+
+```shell
+$ moon run app:build --updateCache
+```
+
+## New multi-status affected filtering
+
+We support running tasks based on affected files using the
+[`moon run --affected`](../docs/commands/run) command, which is great for reducing the amount of
+tasks being ran, and for applying code quality tooling like git hooks. However, you were only able
+to apply a single status filter, like "deleted" or "modified", which was non-ideal... but no more!
+
+You can now apply multiple statuses by passing the `--status` option multiple times.
+
+```shell
+$ moon run :lint --affected --status modified --status added
+```
+
+This pairs nicely with the recent
+[`affectedFiles` task option](../docs/config/project#affectedfiles) changes!
+
+## Other changes
+
+View the
+[official release](https://github.com/moonrepo/moon/releases/tag/%40moonrepo%2Fcli%400.21.0) for a
+full list of changes.
+
+- Refactored project and dependency graphs for improved performance.
+- Added args and env var variants to the `affectedFiles` task option.
+- Added `--minimal` to `moon init` for quick scaffolding and prototyping.
+
+## What's next?
+
+Expect the following in the v0.21 release!
+
+- Scope tasks defined in `.moon/project.yml` to a project language or type.
+- Generalized hashing for use in any context (improved deps installation).
+- More work on language integrations.

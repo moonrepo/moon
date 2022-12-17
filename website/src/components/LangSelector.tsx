@@ -55,8 +55,8 @@ export default function LangSelector() {
 			onChange={handleChange}
 			className="outline-none min-w-0 bg-white border border-solid border-gray-400 dark:border-transparent rounded-md p-0.5 text-sm text-gray-800 placeholder-gray-600 h-full font-sans"
 		>
-			<option value="deno">Deno</option>
 			<option value="node">Node</option>
+			<option value="rust">Rust</option>
 		</select>
 	);
 }

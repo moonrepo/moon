@@ -5,6 +5,7 @@ import { useSelectedLanguage } from './LangSelector';
 const LABELS: Record<string, string> = {
 	deno: 'Deno',
 	node: 'Node.js',
+	rust: 'Rust',
 };
 
 export interface LangPartialsProps {

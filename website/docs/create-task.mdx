@@ -15,6 +15,12 @@ the context of a project (is the current working directory). Tasks are defined p
 [`.moon/project.yml`](./config/global-project), but can also be inferred from a language's ecosystem
 ([we'll talk about this later](./migrate-to-moon)).
 
+:::tip
+
+Change the language dropdown at the top right to switch the examples!
+
+:::
+
 ## Configuring a task
 
 Most — if not all projects — utilize the same core tasks: linting, testing, code formatting,
@@ -25,18 +31,22 @@ Begin by creating the `moon.yml` file at the root of a project and add `build` t
 [`tasks`](./config/project#tasks) field, with a [`command`](./config/project#command) parameter.
 
 import BaseNode from './__partials__/create-task/node/base.mdx';
+import BaseRust from './__partials__/create-task/rust/base.mdx';
 
 <LangPartials>
   <BaseNode key="node" />
+  <BaseRust key="rust" />
 </LangPartials>
 
 By itself, this isn't doing much, so let's add some arguments. Arguments can also be defined with
 the [`args`](./config/project#args) setting.
 
 import ArgsNode from './__partials__/create-task/node/args.mdx';
+import ArgsRust from './__partials__/create-task/rust/args.mdx';
 
 <LangPartials>
   <ArgsNode key="node" />
+  <ArgsRust key="rust" />
 </LangPartials>
 
 With this, the task can be ran from the command line with
@@ -57,9 +67,11 @@ If you're a bit confused, let's demonstrate this by expanding the task with the
 [`inputs`](./config/project#inputs) setting.
 
 import InputsNode from './__partials__/create-task/node/inputs.mdx';
+import InputsRust from './__partials__/create-task/rust/inputs.mdx';
 
 <LangPartials>
   <InputsNode key="node" />
+  <InputsRust key="rust" />
 </LangPartials>
 
 This list of inputs may look complicated, but they are merely run checks. For example, when moon
@@ -93,13 +105,12 @@ Continuing our example, let's route the built files and expand our task with the
 [`outputs`](./config/project#outputs) setting.
 
 import OutputsNode from './__partials__/create-task/node/outputs.mdx';
+import OutputsRust from './__partials__/create-task/rust/outputs.mdx';
 
 <LangPartials>
   <OutputsNode key="node" />
+  <OutputsRust key="rust" />
 </LangPartials>
-
-> You may have noticed `@out(0)` syntax above. This is an advanced feature known as
-> [tokens](./concepts/token#out)!
 
 ## Depending on other tasks
 
@@ -150,9 +161,11 @@ We can then replace the inputs in our task above with these new file groups usin
 to their documentation for more information!
 
 import FilegroupsNode from './__partials__/create-task/node/filegroups.mdx';
+import FilegroupsRust from './__partials__/create-task/rust/filegroups.mdx';
 
 <LangPartials>
   <FilegroupsNode key="node" />
+  <FilegroupsRust key="rust" />
 </LangPartials>
 
 With file groups (and tokens), you're able to reduce the amount of configuration required _and_

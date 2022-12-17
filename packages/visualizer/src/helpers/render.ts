@@ -36,7 +36,13 @@ export function render(element: HTMLElement, data: GraphInfo) {
 	return cytoscape({
 		container: element,
 		elements: { edges, nodes },
-		layout: { fit: true, name: 'dagre', nodeDimensionsIncludeLabels: true, spacingFactor: 1.5 },
+		layout: {
+			fit: true,
+			// @ts-expect-error Types incorrect
+			name: 'dagre',
+			nodeDimensionsIncludeLabels: true,
+			spacingFactor: 1.5,
+		},
 		style: [
 			{
 				selector: 'edges',
@@ -54,6 +60,7 @@ export function render(element: HTMLElement, data: GraphInfo) {
 			{
 				selector: 'node',
 				style: {
+					// @ts-expect-error Types incorrect
 					'background-fill': 'linear-gradient',
 					'background-gradient-direction': 'to-bottom-right',
 					'background-gradient-stop-colors': '#d7dfe9 #bdc9db #97a1af',
@@ -74,24 +81,28 @@ export function render(element: HTMLElement, data: GraphInfo) {
 			{
 				selector: 'node[type="run-target"]',
 				style: {
+					// @ts-expect-error Types incorrect
 					'background-gradient-stop-colors': '#6e58d1 #4a2ec6 #3b259e',
 				},
 			},
 			{
 				selector: 'node[type="sync-project"]',
 				style: {
+					// @ts-expect-error Types incorrect
 					'background-gradient-stop-colors': '#ffafff #ff79ff #cc61cc',
 				},
 			},
 			{
 				selector: 'node[type="install-deps"]',
 				style: {
+					// @ts-expect-error Types incorrect
 					'background-gradient-stop-colors': '#afe6f2 #79d5e9 #61aaba',
 				},
 			},
 			{
 				selector: 'node[type="setup-tool"]',
 				style: {
+					// @ts-expect-error Types incorrect
 					'background-gradient-stop-colors': '#ff9da6 #ff5b6b #cc4956',
 				},
 			},

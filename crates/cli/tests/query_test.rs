@@ -58,16 +58,13 @@ mod projects {
             string_vec![
                 "advanced",
                 "bar",
-                "bash",
                 "basic",
                 "baz",
                 "emptyConfig",
                 "foo",
-                "js",
                 "noConfig",
                 "platforms",
                 "tasks",
-                "ts"
             ]
         );
     }
@@ -221,7 +218,7 @@ mod projects {
         let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
         let ids: Vec<String> = json.projects.iter().map(|p| p.id.clone()).collect();
 
-        assert_eq!(ids, string_vec!["bash", "basic", "foo", "js"]);
+        assert_eq!(ids, string_vec!["basic", "foo"]);
         assert_eq!(json.options.language.unwrap(), "java|bash".to_string());
     }
 
@@ -243,7 +240,7 @@ mod projects {
         let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
         let ids: Vec<String> = json.projects.iter().map(|p| p.id.clone()).collect();
 
-        assert_eq!(ids, string_vec!["advanced", "foo", "ts"]);
+        assert_eq!(ids, string_vec!["advanced", "foo"]);
         assert_eq!(json.options.type_of.unwrap(), "app".to_string());
     }
 }

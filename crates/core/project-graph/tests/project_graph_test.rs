@@ -109,7 +109,7 @@ mod globs {
     #[tokio::test]
     async fn ignores_dot_folders() {
         let workspace_config = WorkspaceConfig {
-            projects: WorkspaceProjects::Globs(string_vec!["langs/*"]),
+            projects: WorkspaceProjects::Globs(string_vec!["*"]),
             ..WorkspaceConfig::default()
         };
 
@@ -117,20 +117,15 @@ mod globs {
         let sandbox =
             create_sandbox_with_config("project-graph/langs", Some(&workspace_config), None, None);
         sandbox.enable_git();
-        sandbox.create_file("langs/.foo/moon.yml", "{}");
+        sandbox.create_file(".foo/moon.yml", "{}");
         sandbox.create_file("node_modules/moon/package.json", "{}");
 
         let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
         let graph = generate_project_graph(&mut workspace).unwrap();
 
-        assert_eq!(
-            graph.sources,
-            FxHashMap::from_iter([
-                ("bash".to_owned(), "langs/bash".to_owned()),
-                ("js".to_owned(), "langs/js".to_owned()),
-                ("ts".to_owned(), "langs/ts".to_owned()),
-            ])
-        );
+        assert!(!graph.sources.contains_key(".foo"));
+        assert!(!graph.sources.contains_key(".git"));
+        assert!(!graph.sources.contains_key("node_modules"));
     }
 
     #[tokio::test]

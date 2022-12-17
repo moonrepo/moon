@@ -44,7 +44,6 @@ export interface TaskConfig {
 export type ProjectLanguage =
 	| 'bash'
 	| 'batch'
-	| 'deno'
 	| 'go'
 	| 'javascript'
 	| 'php'

@@ -63,7 +63,7 @@ The primary programming language the project is written in. Supports the followi
 - `go` - A [Go](https://go.dev/) based project.
   <VersionLabel version="0.21" />
 - `javascript` - A [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript) based
-  project. Inferred when `package.json` exists.
+  project.
 - `php` - A [PHP](https://www.php.net) based project.
   <VersionLabel version="0.21" />
 - `python` - A [Python](https://www.python.org/) based project.
@@ -72,8 +72,7 @@ The primary programming language the project is written in. Supports the followi
   <VersionLabel version="0.21" />
 - `rust` - A [Rust](https://www.rust-lang.org/) based project.
   <VersionLabel version="0.21" />
-- `typescript` - A [TypeScript](https://www.typescriptlang.org/) based project. Inferred when
-  `tsconfig.json` exists.
+- `typescript` - A [TypeScript](https://www.typescriptlang.org/) based project.
 - `unknown` (default) - When not configured or inferred.
 
 ```yaml title="moon.yml"
@@ -633,8 +632,7 @@ The `platform` field defines the platform the command runs on, where to locate i
 which tool to execute it with. By default moon will set to a value based on the project's
 [`language`](#language).
 
-- `node` - Command is a binary within node modules and will be executed with Node.js (via our
-  toolchain).
+- `node` - Command is a binary within node modules and will be executed with Node.js.
 - `system` - Command is expected to exist within the system's environment / user's shell.
 - `unknown` - When not inferred.
 

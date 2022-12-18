@@ -1,39 +1,43 @@
 ```yaml title="<project>/moon.yml"
-language: 'ruby'
+language: 'python'
 
 fileGroups:
 	sources:
-		- 'lib/**/*'
-		- 'view/**/*'
+		- 'flaskr/**/*'
+		- 'setup.py'
 	tests:
-		- 'spec/**/*'
+		- 'tests/**/*'
 
 tasks:
 	dev:
-		command: './bin/rails server'
+		command: 'flask run'
+		inputs:
+			- '@globs(sources)'
 		local: true
 	format:
-		command: 'rubocop -x'
+		command: 'black --check .'
 		inputs:
 			- '@globs(sources)'
 			- '@globs(tests)'
-			- '.rubocop.yml'
+			- 'pyproject.toml'
 	lint:
-		command: 'rubocop -l'
+		command: 'pylint .'
 		inputs:
 			- '@globs(sources)'
 			- '@globs(tests)'
-			- '.rubocop.yml'
+			- 'pyproject.toml'
+			- '.pylintrc'
 	test:
-		command: 'rspec'
+		command: 'python -m unittest'
 		inputs:
 			- '@globs(sources)'
 			- '@globs(tests)'
-			- '.rspec'
+			- 'pyproject.toml'
 	typecheck:
-		command: 'srb tc'
+		command: 'mypy .'
 		inputs:
 			- '@globs(sources)'
 			- '@globs(tests)'
-			- 'sorbet/config'
+			- 'mypy.ini'
+			- 'pyproject.toml'
 ```

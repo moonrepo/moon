@@ -1,6 +1,12 @@
 ```yaml title="<project>/moon.yml"
 language: 'javascript'
 
+fileGroups:
+	sources:
+		- 'src/**/*'
+	tests:
+		- 'tests/**/*'
+
 tasks:
 	build:
 		command: 'webpack build --output-path @out(0)'

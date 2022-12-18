@@ -11,5 +11,5 @@ export const Graph = () => {
 		}
 	}, []);
 
-	return <div ref={graphRef} style={{ height: '80vh', width: '100%' }} />;
+	return <div id="graph" ref={graphRef} style={{ height: '80vh', width: '100%' }} />;
 };

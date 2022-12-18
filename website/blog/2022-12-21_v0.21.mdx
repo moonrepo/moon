@@ -7,6 +7,7 @@ tags: [runner, language, platform, cache, graph]
 ---
 
 import Label from '@site/src/ui/typography/Label';
+import Image from '@site/src/components/Image';
 
 Happy Holidays 🎄☃️! With our last release of the year, we're very excited to announce our tiered
 language support structure, which lays the foundation for turning moon into a multi-language build
@@ -74,8 +75,20 @@ tasks:
 
 > Because these languages are Tier 1, moon _does not_ install the language automatically, and will
 > require the command to already exist in the environment. Furthermore, the project language will
-> automatically set all task's `platform` as "system", at least until it's supported directly in the
+> automatically set all task's `platform` to "system", at least until it's supported directly in the
 > toolchain.
+
+## Interactive project and dependency graphs
+
+Thanks to the amazing contribution from [Diptesh Choudhuri](https://github.com/IgnisDa), we now have
+interactive project and dependency graphs when running the
+[`moon project-graph`](../docs/commands/project-graph) and
+[`moon dep-graph`](../docs/commands/dep-graph) commands respectively.
+
+This is only the first iteration of these graphs. Expect more advanced features in the future, like
+filtering, node/edge inspection, exporting, and more!
+
+<Image src={require('./img/v0.21/graph.png')} width="80%" />
 
 ## New `--updateCache` command line option
 

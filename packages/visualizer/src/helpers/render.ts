@@ -33,6 +33,7 @@ export function render(element: HTMLElement, data: GraphInfo) {
 		data: { id: e.id.toString(), source: e.source.toString(), target: e.target.toString() },
 	}));
 
+	// https://js.cytoscape.org/
 	return cytoscape({
 		container: element,
 		elements: { edges, nodes },
@@ -50,9 +51,10 @@ export function render(element: HTMLElement, data: GraphInfo) {
 					'arrow-scale': 2,
 					'curve-style': 'straight',
 					'line-cap': 'round',
-					'line-color': '#012a4a',
-					'overlay-color': '#99aab7',
-					'target-arrow-color': '#1a3f5c',
+					'line-color': '#c9eef6', // '#012a4a',
+					'line-opacity': 0.15,
+					'overlay-color': '#c9eef6',
+					'target-arrow-color': '#c9eef6', // '#1a3f5c',
 					'target-arrow-shape': 'tee',
 					width: 3,
 				},
@@ -90,6 +92,8 @@ export function render(element: HTMLElement, data: GraphInfo) {
 				style: {
 					// @ts-expect-error Types incorrect
 					'background-gradient-stop-colors': '#ffafff #ff79ff #cc61cc',
+					height: 80,
+					width: 80,
 				},
 			},
 			{
@@ -97,6 +101,8 @@ export function render(element: HTMLElement, data: GraphInfo) {
 				style: {
 					// @ts-expect-error Types incorrect
 					'background-gradient-stop-colors': '#afe6f2 #79d5e9 #61aaba',
+					height: 100,
+					width: 100,
 				},
 			},
 			{
@@ -104,6 +110,8 @@ export function render(element: HTMLElement, data: GraphInfo) {
 				style: {
 					// @ts-expect-error Types incorrect
 					'background-gradient-stop-colors': '#ff9da6 #ff5b6b #cc4956',
+					height: 120,
+					width: 120,
 				},
 			},
 		],

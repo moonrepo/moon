@@ -3,10 +3,11 @@ title: Migrate to moon
 ---
 
 import NextSteps from '@site/src/components/NextSteps';
+import LangPartials from '@site/src/components/LangPartials';
 
 Now that we've talked about the workspace, projects, tasks, and more, we must talk about something
-important... Should you embrace moon tasks? Or keep using `package.json` scripts? Or both
-(incremental adoption)?
+important... Should you embrace moon tasks? Or keep using language/ecosystem specific scripts? Or
+both (incremental adoption)?
 
 ## Migrate to moon tasks
 
@@ -15,45 +16,22 @@ options than scripts, and a `moon.yml` is a better
 [source of truth](./faq#what-should-be-considered-the-source-of-truth). Scripts aren't powerful
 enough to scale for large codebases.
 
-To ease the migration process, we offer the
-[`moon migrate from-package-json`](./commands/migrate/from-package-json) command, which will convert
-a project's `package.json` scripts into `moon.yml` tasks, while also determining project
-dependencies ([`dependsOn`](./config/project#dependsOn)). This needs to be ran _per project_.
+An example of what this may look like can be found below. This _may_ look like a lot, but it pays
+dividends in the long-term.
 
-```shell
-$ moon migrate from-package-json app
-```
+import MigrateNode from './__partials__/migrate/node/migrate.mdx';
 
-This command will do its best to parse and convert scripts, but this isn't always a simple 1:1
-conversion, especially when determining dependency chains. For this reason alone, we suggest
-_manually curating_ tasks, but the migrate command well get you most of the way!
+<LangPartials>
+  <MigrateNode key="node" />
+</LangPartials>
 
-## Keep using `package.json` scripts
+## Keep using scripts
 
-As a frontend developer you're already familiar with the Node.js ecosystem, specifically around
-defining and using `package.json` scripts, and you may not want to deviate from this. Don't worry,
-simply enable the [`node.inferTasksFromScripts`](./config/toolchain#infertasksfromscripts) setting
-to automatically create moon tasks from a project's scripts! These can then be ran with
-[`moon run`](./commands/run).
+import ScriptsNode from './__partials__/migrate/node/scripts.mdx';
 
-This implementation is a simple abstraction that runs `npm run <script>` (or pnpm/yarn) in the
-project directory as a child process. While this works, relying on `package.json` scripts incurs the
-following risks and disadvantages:
-
-- [Inputs](./config/project#inputs) default to `**/*`:
-  - A change to every project relative file will mark the task as affected, even those not necessary
-    for the task. Granular input control is lost.
-  - A change to workspace relative files _will not_ mark the task as affected. For example, a change
-    to `/prettier.config.js` would not be detected for a `npm run format` script.
-- [Outputs](./config/project#outputs) default to an empty list unless:
-  - moon will attempt to extract outputs from arguments, by looking for variations of `--out`,
-    `--outFile`, `--dist-dir`, etc.
-  - If no output could be determined, builds will not be cached and hydrated.
-- Tasks will always [run in CI](./config/project#runinci) unless:
-  - moon will attempt to determine invalid CI tasks by looking for popular command usage, for
-    example: `webpack serve`, `next dev`, `--watch` usage, and more. This _is not_ an exhaustive
-    check.
-  - The script name contains variations of `dev`, `start`, or `serve`.
+<LangPartials>
+  <ScriptsNode key="node" />
+</LangPartials>
 
 ## Next steps
 

@@ -1,9 +1,5 @@
-use crate::commands::graph::{
-    utils::{project_graph_repr, respond_to_request, setup_server},
-    LOG_TARGET,
-};
+use crate::commands::graph::utils::{project_graph_repr, respond_to_request, setup_server};
 use moon::{build_project_graph, load_workspace};
-use moon_logger::info;
 
 pub async fn project_graph(
     project_id: &Option<String>,
@@ -29,11 +25,7 @@ pub async fn project_graph(
     let (server, mut tera) = setup_server().await?;
     let graph_info = project_graph_repr(&project_graph).await;
 
-    info!(
-        target: LOG_TARGET,
-        "Started server on http://{}",
-        server.server_addr()
-    );
+    println!("Started server on http://{}", server.server_addr());
 
     for req in server.incoming_requests() {
         respond_to_request(req, &mut tera, &graph_info, "Project graph".to_owned())?;

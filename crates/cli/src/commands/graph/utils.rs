@@ -90,12 +90,7 @@ pub fn respond_to_request(
         }
         _ => {
             let graph_data = serde_json::to_string(graph)?;
-            // Use the local version of the JS file when in development mode otherwise the
-            // CDN url.
-            let js_url = match cfg!(debug_assertions) {
-                true => get_js_url(false),
-                false => get_js_url(true),
-            };
+            let js_url = get_js_url();
             let context = RenderContext {
                 page_title,
                 graph_data,
@@ -116,12 +111,13 @@ pub fn respond_to_request(
     Ok(())
 }
 
-pub fn get_js_url(is_production: bool) -> String {
+// Use the local version of the JS file when in development mode otherwise the CDN URL.
+pub fn get_js_url() -> String {
     match env::var("MOON_JS_URL") {
         Ok(url) => url,
-        Err(..) => match is_production {
-            false => "http://localhost:5000/assets/index.js".to_string(),
-            true => "https://unpkg.com/@moonrepo/visualizer@latest".to_string(),
+        Err(..) => match cfg!(debug_assertions) {
+            true => "http://localhost:5000/assets/index.js".to_string(),
+            false => "https://unpkg.com/@moonrepo/visualizer@latest".to_string(),
         },
     }
 }

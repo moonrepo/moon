@@ -1,0 +1,22 @@
+The PHP ecosystem has standardized (somewhat) around
+[Composer scripts](https://getcomposer.org/doc/articles/scripts.md#writing-custom-commands) for
+reusability. While these work, they're not as efficient as moon. They _do not_ support granular
+inputs, smart hashing, incremental caching, and all the other performance benefits that moon
+provides.
+
+With that being said, you _do not_ have to migrate away from Composer. Instead, you can simply run
+these scripts from within moon tasks. This gives you the best of both worlds.
+
+```yaml title="<project>/moon.yml"
+language: 'php'
+
+tasks:
+	test:
+		command: 'php composer.phar run-script test'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+			- 'composer.json'
+```
+
+In the future, we aim to infer these scripts automatically, and provide migration scripts.

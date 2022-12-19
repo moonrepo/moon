@@ -1,9 +1,5 @@
-use crate::commands::graph::{
-    utils::{dep_graph_repr, respond_to_request, setup_server},
-    LOG_TARGET,
-};
+use crate::commands::graph::utils::{dep_graph_repr, respond_to_request, setup_server};
 use moon::{build_dep_graph, generate_project_graph, load_workspace};
-use moon_logger::info;
 use moon_task::Target;
 
 pub async fn dep_graph(
@@ -41,11 +37,7 @@ pub async fn dep_graph(
     let (server, mut tera) = setup_server().await?;
     let graph_info = dep_graph_repr(&dep_graph).await;
 
-    info!(
-        target: LOG_TARGET,
-        "Started server on http://{}",
-        server.server_addr()
-    );
+    println!("Started server on http://{}", server.server_addr());
 
     for req in server.incoming_requests() {
         respond_to_request(req, &mut tera, &graph_info, "Dependency graph".to_owned())?;

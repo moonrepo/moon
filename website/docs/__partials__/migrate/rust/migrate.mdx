@@ -1,0 +1,47 @@
+```yaml title="<project>/moon.yml"
+language: 'rust'
+
+fileGroups:
+	sources:
+		- 'src/**/*'
+	tests:
+		- 'benches/**/*'
+		- 'tests/**/*'
+
+tasks:
+	build:
+		command: 'cargo build'
+		inputs:
+			- '@globs(sources)'
+			- 'Cargo.toml'
+	dev:
+		command: 'cargo run'
+		inputs:
+			- '@globs(sources)'
+			- 'Cargo.toml'
+		local: true
+	format:
+		command: 'cargo fmt --all --check'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+			- 'Cargo.toml'
+	lint:
+		command: 'cargo clippy --workspace --all-targets'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+			- 'Cargo.toml'
+	test:
+		command: 'cargo test --workspace'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+			- 'Cargo.toml'
+	typecheck:
+		command: 'cargo check --workspace'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+			- 'Cargo.toml'
+```

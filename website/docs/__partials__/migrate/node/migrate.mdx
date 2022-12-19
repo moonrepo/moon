@@ -1,0 +1,64 @@
+```yaml title="<project>/moon.yml"
+language: 'javascript'
+
+fileGroups:
+	sources:
+		- 'src/**/*'
+	tests:
+		- 'tests/**/*'
+
+tasks:
+	build:
+		command: 'webpack build --output-path @out(0)'
+		inputs:
+			- '@globs(sources)'
+			- 'webpack.config.js'
+		outputs:
+			- 'build'
+	dev:
+		command: 'webpack server'
+		inputs:
+			- '@globs(sources)'
+			- 'webpack.config.js'
+		local: true
+	format:
+		command: 'prettier --check .'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+			- '/prettier.config.js'
+	lint:
+		command: 'eslint .'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+			- '.eslintignore'
+			- '.eslintrc.js'
+			- '/.eslintrc.js'
+	test:
+		command: 'jest .'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+			- 'jest.config.js'
+	typecheck:
+		command: 'tsc --build'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+			- 'tsconfig.json'
+			- '/tsconfig.json'
+```
+
+To ease the migration process, we offer the
+[`moon migrate from-package-json`](./commands/migrate/from-package-json) command, which will convert
+a project's `package.json` scripts into `moon.yml` tasks, while also determining project
+dependencies ([`dependsOn`](./config/project#dependsOn)). This needs to be ran _per project_.
+
+```shell
+$ moon migrate from-package-json <project>
+```
+
+This command will do its best to parse and convert scripts, but this isn't always a simple 1:1
+conversion, especially when determining dependency chains. For this reason alone, we suggest
+_manually curating_ tasks, but the migrate command well get you most of the way!

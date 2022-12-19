@@ -1,0 +1,34 @@
+```yaml title="<project>/moon.yml"
+language: 'php'
+
+fileGroups:
+	sources:
+		- 'app/**/*'
+	tests:
+		- 'tests/**/*'
+
+tasks:
+	dev:
+		command: 'php artisan serve'
+		inputs:
+			- '@globs(sources)'
+		local: true
+	format:
+		command: './vendor/bin/phpcbf .'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+			- '.phpcs.xml'
+	lint:
+		command: './vendor/bin/phpstan analyse'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+			- 'phpstan.neon'
+	test:
+		command: './vendor/bin/phpunit .'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+			- 'phpunit.xml'
+```

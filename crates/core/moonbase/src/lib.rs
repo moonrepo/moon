@@ -106,16 +106,16 @@ impl Moonbase {
         dest_path: &Path,
         download_url: &Option<String>,
     ) -> Result<(), MoonbaseError> {
-        let response = reqwest::Client::new()
-            .get(if let Some(url) = download_url {
-                url.to_owned()
-            } else {
-                format!("{}/artifacts/{}/download", get_host(), hash)
-            })
-            .bearer_auth(&self.auth_token)
-            .header("Accept", "application/json")
-            .send()
-            .await?;
+        let response = if let Some(url) = download_url {
+            reqwest::Client::new().get(url)
+        } else {
+            reqwest::Client::new()
+                .get(format!("{}/artifacts/{}/download", get_host(), hash))
+                .bearer_auth(&self.auth_token)
+                .header("Accept", "application/json")
+        };
+
+        let response = response.send().await?;
         let status = response.status();
 
         if status.is_success() {

@@ -130,7 +130,12 @@
       "enum": [
         "bash",
         "batch",
+        "go",
         "javascript",
+        "php",
+        "python",
+        "ruby",
+        "rust",
         "typescript",
         "unknown"
       ]
@@ -380,7 +385,17 @@
         "replace"
       ]
     },
-    "TaskOptionEnvFile": {
+    "TaskOptionAffectedFilesConfig": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "string"
+        }
+      ]
+    },
+    "TaskOptionEnvFileConfig": {
       "anyOf": [
         {
           "type": "boolean"
@@ -395,9 +410,13 @@
       "properties": {
         "affectedFiles": {
           "default": null,
-          "type": [
-            "boolean",
-            "null"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskOptionAffectedFilesConfig"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "cache": {
@@ -411,7 +430,7 @@
           "default": null,
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskOptionEnvFile"
+              "$ref": "#/definitions/TaskOptionEnvFileConfig"
             },
             {
               "type": "null"

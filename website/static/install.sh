@@ -36,6 +36,12 @@ if [[ "$arch" == "Linux"* ]]; then
 	fi
 fi
 
+if [ -f /proc/version ] && cat /proc/version | grep -i Microsoft; then
+  is_wsl=true
+else
+  is_wsl=false
+fi
+
 if [ $# -eq 0 ]; then
 	download_url="https://github.com/moonrepo/moon/releases/latest/download/${target}"
 else
@@ -51,7 +57,12 @@ fi
 
 curl --fail --location --progress-bar --output "$bin_path" "$download_url"
 chmod +x "$bin_path"
-ln -sf "$bin_path" "/usr/local/bin/$bin"
+
+if [[ $is_wsl == true ]]; then
+  export PATH="$install_dir:$PATH"
+else
+  ln -sf "$bin_path" "/usr/local/bin/$bin"
+fi
 
 echo "Successfully installed moon to $bin_path"
 echo "Run 'moon --help' to get started!"

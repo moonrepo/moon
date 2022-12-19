@@ -34,8 +34,8 @@ $User = [System.EnvironmentVariableTarget]::User
 $Path = [System.Environment]::GetEnvironmentVariable('Path', $User)
 
 if (!(";${Path};".ToLower() -like "*;${InstallDir};*".ToLower())) {
-  [System.Environment]::SetEnvironmentVariable('Path', "${Path};${InstallDir}", $User)
-  $Env:Path += ";${InstallDir}"
+  [System.Environment]::SetEnvironmentVariable('Path', "${InstallDir};${Path}", $User)
+  $Env:Path = "${InstallDir};${Env:Path}"
 }
 
 Write-Output "Successfully installed moon to ${BinPath}"

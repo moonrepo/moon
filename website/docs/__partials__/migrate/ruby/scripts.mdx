@@ -1,0 +1,19 @@
+The Ruby ecosystem has standardized around the task runner [Rake](https://ruby.github.io/rake/),
+which is a Makefile like system written in Ruby. While Rake is great and it accomplishes everything
+it set out to do, it's not as efficient as moon. It _does not_ support granular inputs, smart
+hashing, incremental caching, and all the other performance benefits that moon provides.
+
+With that being said, you _do not_ have to migrate away from Rake. Instead, you can simply run Rake
+commands from within moon tasks. This gives you the best of both worlds.
+
+```yaml title="<project>/moon.yml"
+language: 'ruby'
+
+tasks:
+	test:
+		command: 'rake test'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+			- 'Rakefile'
+```

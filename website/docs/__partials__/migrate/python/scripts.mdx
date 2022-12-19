@@ -1,0 +1,19 @@
+The Python ecosystem has support for many task runners such as [doit](https://pydoit.org/) and
+[pypyr](https://pypyr.io/). While these are great, they're not as efficient as moon. They _do not_
+support granular inputs, smart hashing, incremental caching, and all the other performance benefits
+that moon provides.
+
+With that being said, you _do not_ have to migrate away from these tools. Instead, you can simply
+run their commands from within moon tasks. This gives you the best of both worlds.
+
+```yaml title="<project>/moon.yml"
+language: 'python'
+
+tasks:
+	test:
+		command: 'doit test'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+			- 'pyproject.toml'
+```

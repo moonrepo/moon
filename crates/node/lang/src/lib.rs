@@ -28,7 +28,7 @@ pub const NPM: DependencyManager = DependencyManager {
 pub const PNPM: DependencyManager = DependencyManager {
     binary: "pnpm",
     config_files: &[".npmrc", ".pnpmfile.cjs", "pnpm-workspace.yaml"],
-    default_version: "7.14.0",
+    default_version: "7.18.2",
     lockfile: "pnpm-lock.yaml",
     manifest: "package.json",
 };
@@ -36,7 +36,7 @@ pub const PNPM: DependencyManager = DependencyManager {
 pub const YARN: DependencyManager = DependencyManager {
     binary: "yarn",
     config_files: &[".yarn", ".yarnrc", ".yarnrc.yml"],
-    default_version: "3.2.4",
+    default_version: "3.3.0",
     lockfile: "yarn.lock",
     manifest: "package.json",
 };

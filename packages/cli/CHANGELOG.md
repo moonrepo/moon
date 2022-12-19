@@ -36,6 +36,9 @@
 ##### Toolchain
 
 - Added 24 hour temporary caching to version manifests to improve performance.
+- Updated default versions of tools:
+  - pnpm 7.14.0 -> 7.18.2
+  - yarn 3.2.4 -> 3.3.0
 
 #### 🐞 Fixes
 

@@ -1,0 +1,43 @@
+```yaml title="<project>/moon.yml"
+language: 'python'
+
+fileGroups:
+	sources:
+		- 'flaskr/**/*'
+		- 'setup.py'
+	tests:
+		- 'tests/**/*'
+
+tasks:
+	dev:
+		command: 'flask run'
+		inputs:
+			- '@globs(sources)'
+		local: true
+	format:
+		command: 'black --check .'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+			- 'pyproject.toml'
+	lint:
+		command: 'pylint .'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+			- 'pyproject.toml'
+			- '.pylintrc'
+	test:
+		command: 'python -m unittest'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+			- 'pyproject.toml'
+	typecheck:
+		command: 'mypy .'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+			- 'mypy.ini'
+			- 'pyproject.toml'
+```

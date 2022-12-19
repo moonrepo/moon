@@ -18,6 +18,7 @@
   now the default level, while `write` is now a write-only level.
 - Added `--minimal` to `moon init` for quick scaffolding and prototyping.
 - Updated the system platform to include the operating system and architecture when hashing.
+- Updated remote caching to use presigned URLs when available.
 
 ##### Graphs
 

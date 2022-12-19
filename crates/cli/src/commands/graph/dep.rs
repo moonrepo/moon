@@ -17,7 +17,7 @@ pub async fn dep_graph(
         dep_builder.run_target(&target, None)?;
         dep_builder.run_dependents_for_target(&target)?;
 
-    // Show all targets and actions
+        // Show all targets and actions
     } else {
         for project in project_graph.get_all()? {
             for task in project.tasks.values() {
@@ -36,8 +36,10 @@ pub async fn dep_graph(
 
     let (server, mut tera) = setup_server().await?;
     let graph_info = dep_graph_repr(&dep_graph).await;
+    let url = format!("http://{}", server.server_addr());
+    let _ = open::that(&url);
 
-    println!("Started server on http://{}", server.server_addr());
+    println!("Started server on {}", url);
 
     for req in server.incoming_requests() {
         respond_to_request(req, &mut tera, &graph_info, "Dependency graph".to_owned())?;

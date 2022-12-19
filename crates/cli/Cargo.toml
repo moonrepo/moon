@@ -46,6 +46,7 @@ indicatif = "0.17.2"
 itertools = "0.10.5"
 lazy_static = { workspace = true }
 mimalloc = { version = "0.1.32", default-features = false }
+open = "3.2.0"
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }

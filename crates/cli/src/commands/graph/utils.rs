@@ -3,7 +3,7 @@ use crate::helpers::AnyError;
 use moon_dep_graph::DepGraph;
 use moon_project_graph::ProjectGraph;
 use petgraph::{graph::NodeIndex, Graph};
-use rustc_hash::FxHashSet;
+use rustc_hash::FxHashMap;
 use serde::Serialize;
 use std::env;
 use tera::{Context, Tera};
@@ -36,42 +36,54 @@ pub async fn setup_server() -> Result<(Server, Tera), AnyError> {
     Ok((server, tera))
 }
 
-pub fn extract_nodes_and_edges_from_graph(graph: &Graph<String, ()>) -> GraphInfoDto {
+pub fn extract_nodes_and_edges_from_graph(
+    graph: &Graph<String, ()>,
+    include_orphans: bool,
+) -> GraphInfoDto {
+    let mut nodes = FxHashMap::default();
     let edges = graph
         .raw_edges()
         .iter()
         .map(|e| GraphEdgeDto {
             source: e.source().index(),
             target: e.target().index(),
-            id: format!("{}->{}", e.source().index(), e.target().index()),
+            id: format!("{} -> {}", e.source().index(), e.target().index()),
         })
         .collect::<Vec<_>>();
-    let mut nodes = FxHashSet::default();
+
+    let get_graph_node = |ni: NodeIndex| GraphNodeDto {
+        id: ni.index(),
+        label: graph
+            .node_weight(ni)
+            .expect("Unable to get node weight")
+            .clone(),
+    };
+
     for edge in graph.raw_edges().iter() {
-        let get_graph_node = |ni: NodeIndex| GraphNodeDto {
-            id: ni.index(),
-            label: graph
-                .node_weight(ni)
-                .expect("Unable to get node weight")
-                .clone(),
-        };
-        nodes.insert(get_graph_node(edge.source()));
-        nodes.insert(get_graph_node(edge.target()));
+        nodes.insert(edge.source(), get_graph_node(edge.source()));
+        nodes.insert(edge.target(), get_graph_node(edge.target()));
     }
-    let nodes = nodes.into_iter().collect();
+
+    if include_orphans {
+        for ni in graph.node_indices() {
+            nodes.entry(ni).or_insert_with(|| get_graph_node(ni));
+        }
+    }
+
+    let nodes = nodes.into_values().collect();
     GraphInfoDto { edges, nodes }
 }
 
 /// Get a serialized representation of the project graph.
 pub async fn project_graph_repr(project_graph: &ProjectGraph) -> GraphInfoDto {
     let labeled_graph = project_graph.labeled_graph();
-    extract_nodes_and_edges_from_graph(&labeled_graph)
+    extract_nodes_and_edges_from_graph(&labeled_graph, true)
 }
 
 /// Get a serialized representation of the dependency graph.
 pub async fn dep_graph_repr(dep_graph: &DepGraph) -> GraphInfoDto {
     let labeled_graph = dep_graph.labeled_graph();
-    extract_nodes_and_edges_from_graph(&labeled_graph)
+    extract_nodes_and_edges_from_graph(&labeled_graph, false)
 }
 
 pub fn respond_to_request(

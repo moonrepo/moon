@@ -36,12 +36,16 @@ const pkgPath = path.dirname(require.resolve(`@moonrepo/core-${triple}/package.j
 const binPath = path.join(pkgPath, binary);
 
 try {
+	const linkPath = path.join(__dirname, binary);
+
 	if (fs.existsSync(binPath)) {
 		try {
-			fs.linkSync(binPath, path.join(__dirname, binary));
+			fs.linkSync(binPath, linkPath);
 		} catch {
-			fs.copyFileSync(binPath, path.join(__dirname, binary));
+			fs.copyFileSync(binPath, linkPath);
 		}
+
+		fs.chmodSync(linkPath, 0o755);
 	} else {
 		throw new Error();
 	}
@@ -62,5 +66,5 @@ if (isWindows && !isMoonLocal) {
 		pkg.bin.moon = binary;
 
 		fs.writeFileSync(path.join(__dirname, 'package.json'), JSON.stringify(pkg, null, 2));
-	} catch (error) {}
+	} catch {}
 }

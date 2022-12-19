@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue with `moon project-graph` that would not include nodes without edges.
+
 ## 0.21.0
 
 #### 🚀 Updates

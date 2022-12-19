@@ -1758,6 +1758,7 @@ dependencies = [
  "moon_utils",
  "moon_vcs",
  "moon_workspace",
+ "open",
  "petgraph",
  "rustc-hash",
  "serde",
@@ -2404,6 +2405,16 @@ name = "opaque-debug"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
+
+[[package]]
+name = "open"
+version = "3.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2078c0039e6a54a0c42c28faa984e115fb4c2d5bf2208f77d1961002df8576f8"
+dependencies = [
+ "pathdiff",
+ "windows-sys 0.42.0",
+]
 
 [[package]]
 name = "openssl"

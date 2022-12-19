@@ -24,8 +24,10 @@ pub async fn project_graph(
 
     let (server, mut tera) = setup_server().await?;
     let graph_info = project_graph_repr(&project_graph).await;
+    let url = format!("http://{}", server.server_addr());
+    let _ = open::that(&url);
 
-    println!("Started server on http://{}", server.server_addr());
+    println!("Started server on {}", url);
 
     for req in server.incoming_requests() {
         respond_to_request(req, &mut tera, &graph_info, "Project graph".to_owned())?;

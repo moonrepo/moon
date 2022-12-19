@@ -36,4 +36,5 @@ pub struct Artifact {
 #[serde(rename_all = "camelCase")]
 pub struct ArtifactResponse {
     pub artifact: Artifact,
+    pub presigned_url: Option<String>,
 }

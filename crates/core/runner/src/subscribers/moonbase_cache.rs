@@ -4,7 +4,7 @@ use moon_error::MoonError;
 use moon_logger::warn;
 use moon_workspace::Workspace;
 use moonbase::{upload_artifact, MoonbaseError};
-use rustc_hash::FxHashSet;
+use rustc_hash::FxHashMap;
 use tokio::task::JoinHandle;
 
 const LOG_TARGET: &str = "moonbase:remote-cache";
@@ -16,14 +16,14 @@ fn handle_error(error: MoonbaseError) {
 }
 
 pub struct MoonbaseCacheSubscriber {
-    hash_exists: FxHashSet<String>,
+    hash_urls: FxHashMap<String, Option<String>>,
     requests: Vec<JoinHandle<()>>,
 }
 
 impl MoonbaseCacheSubscriber {
     pub fn new() -> Self {
         MoonbaseCacheSubscriber {
-            hash_exists: FxHashSet::default(),
+            hash_urls: FxHashMap::default(),
             requests: vec![],
         }
     }
@@ -45,8 +45,8 @@ impl Subscriber for MoonbaseCacheSubscriber {
             Event::TargetOutputCacheCheck { hash, .. } => {
                 if get_cache_mode().is_readable() {
                     match moonbase.get_artifact(hash).await {
-                        Ok(Some(artifact)) => {
-                            self.hash_exists.insert(artifact.hash);
+                        Ok(Some((artifact, presigned_url))) => {
+                            self.hash_urls.insert(artifact.hash, presigned_url);
 
                             return Ok(EventFlow::Return("remote-cache".into()));
                         }
@@ -92,10 +92,14 @@ impl Subscriber for MoonbaseCacheSubscriber {
             // This runs *before* the local cache. So if the download is successful, abort
             // the event flow, otherwise continue and let local cache attempt to hydrate.
             Event::TargetOutputHydrating { hash, .. } => {
-                if get_cache_mode().is_readable() && self.hash_exists.contains(*hash) {
+                if get_cache_mode().is_readable() && self.hash_urls.contains_key(*hash) {
                     let archive_file = workspace.cache.get_hash_archive_path(hash);
+                    let download_url = self.hash_urls.get(*hash).unwrap();
 
-                    if let Err(error) = moonbase.download_artifact(hash, &archive_file).await {
+                    if let Err(error) = moonbase
+                        .download_artifact(hash, &archive_file, download_url)
+                        .await
+                    {
                         handle_error(error);
                     }
 

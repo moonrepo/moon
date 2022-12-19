@@ -76,11 +76,17 @@ impl Moonbase {
         }
     }
 
-    pub async fn get_artifact(&self, hash: &str) -> Result<Option<Artifact>, MoonbaseError> {
+    pub async fn get_artifact(
+        &self,
+        hash: &str,
+    ) -> Result<Option<(Artifact, Option<String>)>, MoonbaseError> {
         let response = get_request(format!("artifacts/{}", hash), Some(&self.auth_token)).await?;
 
         match response {
-            Response::Success(ArtifactResponse { artifact }) => Ok(Some(artifact)),
+            Response::Success(ArtifactResponse {
+                artifact,
+                presigned_url,
+            }) => Ok(Some((artifact, presigned_url))),
             Response::Failure { message, status } => {
                 if status == 404 {
                     Ok(None)
@@ -98,9 +104,14 @@ impl Moonbase {
         &self,
         hash: &str,
         dest_path: &Path,
+        download_url: &Option<String>,
     ) -> Result<(), MoonbaseError> {
         let response = reqwest::Client::new()
-            .get(format!("{}/artifacts/{}/download", get_host(), hash))
+            .get(if let Some(url) = download_url {
+                url.to_owned()
+            } else {
+                format!("{}/artifacts/{}/download", get_host(), hash)
+            })
             .bearer_auth(&self.auth_token)
             .header("Accept", "application/json")
             .send()
@@ -179,7 +190,7 @@ pub async fn upload_artifact(
     let data: Response<ArtifactResponse> = parse_response(response.text().await?)?;
 
     match data {
-        Response::Success(ArtifactResponse { artifact }) => Ok(artifact),
+        Response::Success(ArtifactResponse { artifact, .. }) => Ok(artifact),
         Response::Failure { message, .. } => Err(MoonbaseError::ArtifactUploadFailure(
             hash.to_string(),
             message,

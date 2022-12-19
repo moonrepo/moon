@@ -5,6 +5,7 @@
 #### 🐞 Fixes
 
 - Fixed an issue with `moon project-graph` that would not include nodes without edges.
+- Fixed an issue running the install script in WSL.
 
 ## 0.21.0
 

@@ -27,7 +27,8 @@ In a shell that supports Bash, run:
 curl -fsSL https://moonrepo.dev/install.sh | bash
 ```
 
-This will install moon to `~/.moon/tools/moon` and create a symlink in `/usr/local/bin`.
+This will install moon to `~/.moon/tools/moon` and create a symlink in `/usr/local/bin`. On WSL, we
+prepand the `PATH` environment variable.
 
 ### Windows
 
@@ -37,8 +38,8 @@ In Powershell or Windows Terminal, run:
 irm https://moonrepo.dev/install.ps1 | iex
 ```
 
-This will install moon to `~\.moon\tools\moon` and append to the `PATH` environment variable for the
-current session. To persist across sessions, update `PATH` manually.
+This will install moon to `~\.moon\tools\moon` and prepend to the `PATH` environment variable for
+the current session. To persist across sessions, update `PATH` manually.
 
 ### Node.js
 

@@ -36,7 +36,8 @@ if [[ "$arch" == "Linux"* ]]; then
 	fi
 fi
 
-if [ -f /proc/version ] && cat /proc/version | grep -i Microsoft; then
+wsl=$(uname -a)
+if [[ "$wsl" == *"Microsoft"* || "$wsl" == *"microsoft"* ]]; then
   is_wsl=true
 else
   is_wsl=false
@@ -58,14 +59,16 @@ fi
 curl --fail --location --progress-bar --output "$bin_path" "$download_url"
 chmod +x "$bin_path"
 
-if [[ $is_wsl == true ]]; then
-  export PATH="$install_dir:$PATH"
+echo "Successfully installed moon to $bin_path"
+
+if ln -sf "$bin_path" "/usr/local/bin/$bin" &> /dev/null; then
+	echo "Run 'moon --help' to get started!"
 else
-  ln -sf "$bin_path" "/usr/local/bin/$bin"
+    echo "Manually update PATH in your shell to get started!"
+	echo
+	echo "  export PATH=\"$install_dir:\$PATH\""
 fi
 
-echo "Successfully installed moon to $bin_path"
-echo "Run 'moon --help' to get started!"
 echo
 echo "Need help? Join our Discord https://discord.gg/qCh9MEynv2"
 
@@ -75,5 +78,6 @@ if [ "$MOON_TEST" = "true" ]; then
 	echo "target=$target"
 	echo "download_url=$download_url"
 	echo "bin_path=$bin_path"
+	echo "is_wsl=$is_wsl"
 	echo "deps=$deps"
 fi

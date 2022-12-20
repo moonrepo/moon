@@ -4,6 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-moon_platform = { path = "../platform" }
+moon_platform_runtime = { path = "../platform-runtime" }
 moon_utils = { path = "../utils" }
 serde = { workspace = true }

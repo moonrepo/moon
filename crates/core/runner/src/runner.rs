@@ -11,7 +11,7 @@ use moon_error::MoonError;
 use moon_logger::{color, debug, error, trace};
 use moon_node_platform::actions as node_actions;
 use moon_notifier::WebhooksSubscriber;
-use moon_platform::Runtime;
+use moon_platform_runtime::Runtime;
 use moon_project_graph::ProjectGraph;
 use moon_runner_context::RunnerContext;
 use moon_task::Target;

@@ -1,9 +1,9 @@
-use crate::runtime::Runtime;
 use moon_config::{
     DependencyConfig, PlatformType, ProjectConfig, ProjectLanguage, ProjectsAliasesMap,
     ProjectsSourcesMap, TasksConfigsMap,
 };
 use moon_error::MoonError;
+use moon_platform_runtime::Runtime;
 use std::collections::BTreeMap;
 use std::fmt::Debug;
 use std::path::Path;

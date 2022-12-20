@@ -4,7 +4,7 @@ use crate::tools::node::NodeTool;
 use moon_config::ToolchainConfig;
 use moon_constants::CONFIG_DIRNAME;
 use moon_logger::{color, debug};
-use moon_platform::{Runtime, Version};
+use moon_platform_runtime::{Runtime, Version};
 use moon_utils::{fs, path};
 use proto_core::Proto;
 use std::{

@@ -1,5 +1,5 @@
 use crate::{RuntimeTool, ToolchainError};
-use moon_platform::{Runtime, Version};
+use moon_platform_runtime::{Runtime, Version};
 use rustc_hash::FxHashMap;
 use std::fmt::Debug;
 

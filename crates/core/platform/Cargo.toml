@@ -6,5 +6,6 @@ edition = "2021"
 [dependencies]
 moon_config = { path = "../config" }
 moon_error = { path = "../error" }
+moon_platform_runtime = { path = "../platform-runtime" }
 rustc-hash = { workspace = true }
 serde = { workspace = true }

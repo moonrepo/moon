@@ -8,7 +8,7 @@ moon_archive = { path = "../archive" }
 moon_constants = { path = "../constants" }
 moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
-moon_platform = { path = "../platform" }
+moon_platform_runtime = { path = "../platform-runtime" }
 moon_utils = { path = "../utils" }
 rustc-hash = { workspace = true }
 serde = { workspace = true }

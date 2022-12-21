@@ -1,8 +1,9 @@
 use crate::helpers::AnyError;
 use clap::ValueEnum;
 use moon::load_workspace;
+use moon_node_tool::NodeTool;
 use moon_terminal::safe_exit;
-use moon_toolchain::RuntimeTool;
+use moon_toolchain::Tool;
 
 #[derive(ValueEnum, Clone, Debug)]
 #[value(rename_all = "lowercase")]
@@ -18,7 +19,7 @@ enum BinExitCodes {
     NotInstalled = 2,
 }
 
-fn is_installed(tool: &dyn RuntimeTool) {
+fn is_installed(tool: &dyn Tool) {
     match tool.get_bin_path() {
         Ok(path) => {
             println!("{}", path.display());
@@ -39,10 +40,10 @@ pub async fn bin(tool_type: &BinTool) -> Result<(), AnyError> {
 
     match tool_type {
         BinTool::Node => {
-            is_installed(toolchain.node.get()?);
+            is_installed(toolchain.node.get::<NodeTool>()?);
         }
         BinTool::Npm | BinTool::Pnpm | BinTool::Yarn => {
-            let node = toolchain.node.get()?;
+            let node = toolchain.node.get::<NodeTool>()?;
 
             match tool_type {
                 BinTool::Npm => match node.get_npm() {

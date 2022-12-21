@@ -28,7 +28,7 @@ pub struct NodeTool {
 }
 
 impl NodeTool {
-    pub fn new(proto: &Proto, config: &NodeConfig) -> Result<NodeTool, ToolError> {
+    pub fn new(config: NodeConfig, proto: &Proto) -> Result<NodeTool, ToolError> {
         let mut node = NodeTool {
             config: config.to_owned(),
             tool: NodeLanguage::new(proto, Some(&config.version)),

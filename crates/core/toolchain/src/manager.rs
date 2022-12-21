@@ -2,6 +2,7 @@ use crate::errors::ToolchainError;
 use moon_platform_runtime::{Runtime, Version};
 use moon_tool::Tool;
 use rustc_hash::FxHashMap;
+use std::any::Any;
 use std::fmt::Debug;
 
 pub type CachedTool = Box<dyn Tool>;
@@ -20,18 +21,18 @@ impl ToolManager {
         }
     }
 
-    pub fn get(&self) -> Result<&CachedTool, ToolchainError> {
-        self.get_for_runtime(&self.runtime)
+    pub fn get<T: 'static>(&self) -> Result<&T, ToolchainError> {
+        self.get_for_runtime::<T>(&self.runtime)
     }
 
-    pub fn get_for_runtime(&self, runtime: &Runtime) -> Result<&CachedTool, ToolchainError> {
+    pub fn get_for_runtime<T: 'static>(&self, runtime: &Runtime) -> Result<&T, ToolchainError> {
         match &runtime {
             Runtime::Node(version) => self.get_for_version(&version.0),
             _ => Err(ToolchainError::UnsupportedRuntime(runtime.to_owned())),
         }
     }
 
-    pub fn get_for_version(&self, version: &str) -> Result<&CachedTool, ToolchainError> {
+    pub fn get_for_version<T: 'static>(&self, version: &str) -> Result<&T, ToolchainError> {
         if !self.has(version) {
             return Err(ToolchainError::MissingTool(format!(
                 "{} v{}",
@@ -39,7 +40,9 @@ impl ToolManager {
             )));
         }
 
-        Ok(self.cache.get(version).unwrap())
+        let item = self.cache.get(version).unwrap() as &dyn Any;
+
+        Ok(item.downcast_ref::<T>().unwrap())
     }
 
     pub fn has(&self, version: &str) -> bool {

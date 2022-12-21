@@ -46,21 +46,12 @@ impl Toolchain {
         fs::create_dir_all(&dir)?;
         env::set_var("PROTO_DIR", path::to_string(&dir)?);
 
-        let toolchain = Toolchain {
+        Ok(Toolchain {
             config: config.to_owned(),
             dir,
             // Tools
             node: ToolManager::new(Runtime::Node(Version::default())),
-        };
-        // let proto = toolchain.get_paths();
-
-        // if let Some(node_config) = &config.node {
-        //     toolchain
-        //         .node
-        //         .register(NodeTool::new(&proto, node_config)?, true);
-        // }
-
-        Ok(toolchain)
+        })
     }
 
     pub fn get_paths(&self) -> Proto {

@@ -6,10 +6,11 @@ use moon_node_lang::{
     node::{self, BinFile},
     PackageJson,
 };
+use moon_node_tool::NodeTool;
 use moon_project::Project;
 use moon_runner_context::{ProfileType, RunnerContext};
 use moon_task::Task;
-use moon_toolchain::{get_path_env_var, RuntimeTool};
+use moon_tool::{get_path_env_var, Tool};
 use moon_typescript_lang::TsConfigJson;
 use moon_utils::process::Command;
 use moon_utils::{path, string_vec};
@@ -92,7 +93,7 @@ pub fn create_target_command(
     project: &Project,
     task: &Task,
 ) -> Result<Command, WorkspaceError> {
-    let mut node = workspace.toolchain.node.get()?;
+    let mut node = workspace.toolchain.node.get::<NodeTool>()?;
 
     // If a version override exists, use it for the cmmand
     if let Some(node_config) = &project.config.toolchain.node {
@@ -163,7 +164,7 @@ pub async fn create_target_hasher(
     workspace: &Workspace,
     project: &Project,
 ) -> Result<NodeTargetHasher, WorkspaceError> {
-    let node = workspace.toolchain.node.get()?;
+    let node = workspace.toolchain.node.get::<NodeTool>()?;
     let mut hasher = NodeTargetHasher::new(node.config.version.clone());
 
     let resolved_dependencies = if matches!(

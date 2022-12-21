@@ -3,6 +3,7 @@ use moon_config::{DependencyScope, NodeVersionFormat, TypeScriptConfig};
 use moon_error::MoonError;
 use moon_logger::{color, debug};
 use moon_node_lang::{PackageJson, NPM};
+use moon_node_tool::NodeTool;
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
 use moon_runner_context::RunnerContext;
@@ -86,7 +87,7 @@ pub async fn sync_project(
     let mut mutated_files = false;
     let workspace = workspace.read().await;
     let project_graph = project_graph.read().await;
-    let node = workspace.toolchain.node.get()?;
+    let node = workspace.toolchain.node.get::<NodeTool>()?;
     let is_project_typescript_enabled = project.config.toolchain.typescript;
 
     // Sync each dependency to `tsconfig.json` and `package.json`

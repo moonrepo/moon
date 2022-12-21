@@ -5,11 +5,11 @@ use moon_error::MoonError;
 use moon_lang::has_vendor_installed_dependencies;
 use moon_logger::{color, debug, warn};
 use moon_node_lang::{PackageJson, NODE, NPM};
+use moon_node_tool::NodeTool;
 use moon_platform::Runtime;
 use moon_project::Project;
 use moon_runner_context::RunnerContext;
 use moon_terminal::{print_checkpoint, Checkpoint};
-use moon_toolchain::tools::node::NodeTool;
 use moon_utils::{fs, is_ci, is_offline, time};
 use moon_workspace::{Workspace, WorkspaceError};
 use std::sync::Arc;
@@ -122,7 +122,10 @@ pub async fn install_deps(
         return Ok(ActionStatus::Skipped);
     }
 
-    let node = workspace.toolchain.node.get_for_runtime(runtime)?;
+    let node = workspace
+        .toolchain
+        .node
+        .get_for_runtime::<NodeTool>(runtime)?;
     let pm = node.get_package_manager();
     let lock_filename = pm.get_lock_filename();
     let manifest_filename = pm.get_manifest_filename();

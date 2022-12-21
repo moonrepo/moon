@@ -10,7 +10,7 @@ pub enum ToolError {
     #[error("{0} has not been configured or installed, unable to proceed.")]
     UnknownTool(String),
 
-    #[error("{0}")]
+    #[error("This functionality requires a plugin. Install it with <shell>{0}</shell>.")]
     RequiresPlugin(String),
 
     #[error(transparent)]

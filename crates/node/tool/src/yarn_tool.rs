@@ -236,7 +236,9 @@ impl DependencyManager<NodeTool> for YarnTool {
                 get_workspace_root().join(".yarn/plugins/@yarnpkg/plugin-workspace-tools.cjs");
 
             if !workspace_plugin.exists() {
-                return Err(ToolError::RequiresPlugin("This functionality requires workspace tools. Install it with <shell>yarn plugin import workspace-tools</shell>.".into()));
+                return Err(ToolError::RequiresPlugin(
+                    "yarn plugin import workspace-tools".into(),
+                ));
             }
         };
 

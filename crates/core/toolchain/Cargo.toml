@@ -10,7 +10,6 @@ moon_error = { path = "../error" }
 moon_lang = { path = "../lang" }
 moon_logger = { path = "../logger" }
 moon_platform_runtime = { path = "../platform-runtime" }
-moon_terminal = { path = "../terminal" }
 moon_tool = { path = "../tool" }
 moon_utils = { path = "../utils" }
 proto_core = { path = "../../proto/core" }

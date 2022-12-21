@@ -1970,12 +1970,10 @@ dependencies = [
  "moon_logger",
  "moon_node_lang",
  "moon_terminal",
- "moon_test_utils",
  "moon_tool",
  "moon_utils",
  "proto_core",
  "proto_node",
- "reqwest",
  "rustc-hash",
 ]
 
@@ -2237,7 +2235,6 @@ dependencies = [
  "moon_lang",
  "moon_logger",
  "moon_platform_runtime",
- "moon_terminal",
  "moon_tool",
  "moon_utils",
  "proto_core",

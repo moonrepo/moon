@@ -143,9 +143,12 @@ async fn run_action(
                 .emit(Event::ToolInstalling { runtime })
                 .await?;
 
-            let tool_result = actions::setup_toolchain(action, context, workspace, runtime)
-                .await
-                .map_err(RunnerError::Workspace);
+            let tool_result = match runtime {
+                Runtime::Node(_) => node_actions::setup_tool(action, context, workspace, runtime)
+                    .await
+                    .map_err(RunnerError::Workspace),
+                _ => Ok(ActionStatus::Passed),
+            };
 
             local_emitter
                 .emit(Event::ToolInstalled {

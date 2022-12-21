@@ -1,16 +1,16 @@
 use moon_action::{Action, ActionStatus};
 use moon_logger::debug;
-use moon_platform_runtime::Runtime;
+use moon_node_tool::NodeTool;
+use moon_platform::Runtime;
 use moon_runner_context::RunnerContext;
-// use moon_toolchain::tools::node::NodeTool;
 use moon_utils::time;
 use moon_workspace::{Workspace, WorkspaceError};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-const LOG_TARGET: &str = "moon:action:setup-toolchain";
+const LOG_TARGET: &str = "moon:node-platform:setup-tool";
 
-pub async fn setup_toolchain(
+pub async fn setup_tool(
     _action: &mut Action,
     _context: Arc<RwLock<RunnerContext>>,
     workspace: Arc<RwLock<Workspace>>,
@@ -28,7 +28,7 @@ pub async fn setup_toolchain(
 
     let mut workspace = workspace.write().await;
     let mut cache = workspace.cache.cache_tool_state(runtime)?;
-    // let toolchain_paths = workspace.toolchain.get_paths();
+    let toolchain_paths = workspace.toolchain.get_paths();
 
     // Install and setup the specific tool + version in the toolchain!
     let installed = match runtime {
@@ -38,15 +38,17 @@ pub async fn setup_toolchain(
             // The workspace version is pre-registered when the toolchain
             // is created, so any missing version must be an override at
             // the project-level. If so clone, and update defaults.
-            // if !node.has(&version.0) {
-            //     node.register(
-            //         NodeTool::new(
-            //             &toolchain_paths,
-            //             &node.get()?.config.with_project_override(&version.0),
-            //         )?,
-            //         false,
-            //     );
-            // }
+            if !node.has(&version.0) {
+                node.register(
+                    Box::new(NodeTool::new(
+                        node.get::<NodeTool>()?
+                            .config
+                            .with_project_override(&version.0),
+                        &toolchain_paths,
+                    )?),
+                    false,
+                );
+            }
 
             node.setup(&version.0, &mut cache.last_versions).await?
         }

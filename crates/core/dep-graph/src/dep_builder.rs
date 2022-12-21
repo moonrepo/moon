@@ -97,7 +97,7 @@ impl<'ws> DepGraphBuilder<'ws> {
         // If project is NOT in the package manager workspace, then we should
         // install dependencies in the project, not the workspace root.
         if let Some(platform) = self.platforms.get(project.language) {
-            if !platform.is_project_in_dependency_workspace(&project.id, &project.root)? {
+            if !platform.is_project_in_dependency_workspace(project)? {
                 installs_in_project = true;
             }
         }

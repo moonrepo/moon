@@ -1997,6 +1997,7 @@ dependencies = [
  "moon_config",
  "moon_error",
  "moon_platform_runtime",
+ "moon_project",
  "rustc-hash",
  "serde",
 ]

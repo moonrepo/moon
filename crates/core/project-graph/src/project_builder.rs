@@ -112,12 +112,9 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         if let Some(platform) = self.platforms.get(project.language) {
             // Inherit implicit dependencies
-            for dep_config in platform.load_project_implicit_dependencies(
-                id,
-                &project.root,
-                &project.config,
-                &self.aliases,
-            )? {
+            for dep_config in
+                platform.load_project_implicit_dependencies(&project, &self.aliases)?
+            {
                 // Implicit must not override explicit
                 project
                     .dependencies
@@ -130,9 +127,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             }
 
             // Inherit platform specific tasks
-            for (task_id, task_config) in
-                platform.load_project_tasks(id, &project.root, &project.config)?
-            {
+            for (task_id, task_config) in platform.load_project_tasks(&project)? {
                 // Inferred mut not override explicit
                 #[allow(clippy::map_entry)]
                 if !project.tasks.contains_key(&task_id) {

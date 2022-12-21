@@ -4,6 +4,7 @@ use moon_config::{
 };
 use moon_error::MoonError;
 use moon_platform_runtime::Runtime;
+use moon_project::Project;
 use std::collections::BTreeMap;
 use std::fmt::Debug;
 use std::path::Path;
@@ -17,11 +18,7 @@ pub trait Platform: Debug + Send + Sync {
 
     /// Determine if the provided project is within the platform's dependency manager
     /// workspace (not to be confused with moon's workspace).
-    fn is_project_in_dependency_workspace(
-        &self,
-        project_id: &str,
-        project_root: &Path,
-    ) -> Result<bool, MoonError> {
+    fn is_project_in_dependency_workspace(&self, project: &Project) -> Result<bool, MoonError> {
         Ok(true)
     }
 
@@ -50,9 +47,7 @@ pub trait Platform: Debug + Send + Sync {
     /// scan for any implicit project dependency relations using the platforms manifest.
     fn load_project_implicit_dependencies(
         &self,
-        project_id: &str,
-        project_root: &Path,
-        project_config: &ProjectConfig,
+        project: &Project,
         aliases_map: &ProjectsAliasesMap,
     ) -> Result<Vec<DependencyConfig>, MoonError> {
         Ok(vec![])
@@ -60,12 +55,7 @@ pub trait Platform: Debug + Send + Sync {
 
     /// During project creation (when being lazy loaded and instantiated in the graph),
     /// load and infer any *additional* tasks for the platform.
-    fn load_project_tasks(
-        &self,
-        project_id: &str,
-        project_root: &Path,
-        project_config: &ProjectConfig,
-    ) -> Result<TasksConfigsMap, MoonError> {
+    fn load_project_tasks(&self, project: &Project) -> Result<TasksConfigsMap, MoonError> {
         Ok(BTreeMap::new())
     }
 

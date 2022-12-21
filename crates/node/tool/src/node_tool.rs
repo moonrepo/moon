@@ -1,14 +1,15 @@
-use crate::get_path_env_var;
-use crate::tools::npm::NpmTool;
-use crate::tools::pnpm::PnpmTool;
-use crate::tools::yarn::YarnTool;
-use crate::{errors::ToolchainError, DependencyManager, RuntimeTool};
+use crate::npm_tool::NpmTool;
+use crate::pnpm_tool::PnpmTool;
+use crate::yarn_tool::YarnTool;
 use moon_config::{NodeConfig, NodePackageManager};
 use moon_logger::debug;
 use moon_node_lang::node;
 use moon_terminal::{print_checkpoint, Checkpoint};
+use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
 use moon_utils::process::Command;
-use proto_core::{async_trait, Describable, Executable, Installable, Proto, Resolvable, Tool};
+use proto_core::{
+    async_trait, Describable, Executable, Installable, Proto, Resolvable, Tool as ProtoTool,
+};
 use proto_node::NodeLanguage;
 use rustc_hash::FxHashMap;
 use std::path::Path;
@@ -27,7 +28,7 @@ pub struct NodeTool {
 }
 
 impl NodeTool {
-    pub fn new(proto: &Proto, config: &NodeConfig) -> Result<NodeTool, ToolchainError> {
+    pub fn new(proto: &Proto, config: &NodeConfig) -> Result<NodeTool, ToolError> {
         let mut node = NodeTool {
             config: config.to_owned(),
             tool: NodeLanguage::new(proto, Some(&config.version)),
@@ -56,7 +57,7 @@ impl NodeTool {
         package: &str,
         args: &[&str],
         working_dir: &Path,
-    ) -> Result<(), ToolchainError> {
+    ) -> Result<(), ToolError> {
         let mut exec_args = vec!["--silent", "--package", package, "--"];
         let install_dir = self.tool.get_install_dir()?;
 
@@ -78,34 +79,34 @@ impl NodeTool {
         &self,
         starting_dir: &Path,
         bin_name: &str,
-    ) -> Result<node::BinFile, ToolchainError> {
+    ) -> Result<node::BinFile, ToolError> {
         match node::find_package_bin(starting_dir, bin_name)? {
             Some(bin) => Ok(bin),
-            None => Err(ToolchainError::MissingNodeModuleBin(bin_name.to_owned())),
+            None => Err(ToolError::MissingBinary(bin_name.to_owned())),
         }
     }
 
     /// Return the `npm` package manager.
-    pub fn get_npm(&self) -> Result<&NpmTool, ToolchainError> {
+    pub fn get_npm(&self) -> Result<&NpmTool, ToolError> {
         match &self.npm {
             Some(npm) => Ok(npm),
-            None => Err(ToolchainError::MissingTool("npm".into())),
+            None => Err(ToolError::UnknownTool("npm".into())),
         }
     }
 
     /// Return the `pnpm` package manager.
-    pub fn get_pnpm(&self) -> Result<&PnpmTool, ToolchainError> {
+    pub fn get_pnpm(&self) -> Result<&PnpmTool, ToolError> {
         match &self.pnpm {
             Some(pnpm) => Ok(pnpm),
-            None => Err(ToolchainError::MissingTool("pnpm".into())),
+            None => Err(ToolError::UnknownTool("pnpm".into())),
         }
     }
 
     /// Return the `yarn` package manager.
-    pub fn get_yarn(&self) -> Result<&YarnTool, ToolchainError> {
+    pub fn get_yarn(&self) -> Result<&YarnTool, ToolError> {
         match &self.yarn {
             Some(yarn) => Ok(yarn),
-            None => Err(ToolchainError::MissingTool("yarn".into())),
+            None => Err(ToolError::UnknownTool("yarn".into())),
         }
     }
 
@@ -127,8 +128,8 @@ impl NodeTool {
 }
 
 #[async_trait]
-impl RuntimeTool for NodeTool {
-    fn get_bin_path(&self) -> Result<&Path, ToolchainError> {
+impl Tool for NodeTool {
+    fn get_bin_path(&self) -> Result<&Path, ToolError> {
         Ok(self.tool.get_bin_path()?)
     }
 
@@ -139,7 +140,7 @@ impl RuntimeTool for NodeTool {
     async fn setup(
         &mut self,
         last_versions: &mut FxHashMap<String, String>,
-    ) -> Result<u8, ToolchainError> {
+    ) -> Result<u8, ToolError> {
         let mut installed = 0;
 
         if self.tool.is_setup(&self.config.version).await? {
@@ -183,7 +184,7 @@ impl RuntimeTool for NodeTool {
         Ok(installed)
     }
 
-    async fn teardown(&mut self) -> Result<(), ToolchainError> {
+    async fn teardown(&mut self) -> Result<(), ToolError> {
         self.tool.teardown().await?;
 
         Ok(())

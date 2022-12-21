@@ -1959,6 +1959,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_node_tool"
+version = "0.1.0"
+dependencies = [
+ "moon_config",
+ "moon_lang",
+ "moon_logger",
+ "moon_node_lang",
+ "moon_terminal",
+ "moon_test_utils",
+ "moon_tool",
+ "moon_utils",
+ "proto_core",
+ "proto_node",
+ "reqwest",
+ "rustc-hash",
+]
+
+[[package]]
 name = "moon_notifier"
 version = "0.1.0"
 dependencies = [
@@ -2194,6 +2212,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_tool"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "moon_error",
+ "moon_lang",
+ "moon_utils",
+ "proto_error",
+ "rustc-hash",
+ "thiserror",
+]
+
+[[package]]
 name = "moon_toolchain"
 version = "0.1.0"
 dependencies = [
@@ -2202,12 +2233,11 @@ dependencies = [
  "moon_error",
  "moon_lang",
  "moon_logger",
- "moon_node_lang",
  "moon_platform_runtime",
  "moon_terminal",
+ "moon_tool",
  "moon_utils",
  "proto_core",
- "proto_node",
  "rustc-hash",
  "thiserror",
 ]
@@ -2813,6 +2843,7 @@ dependencies = [
  "flate2",
  "lenient_semver",
  "log",
+ "proto_error",
  "reqwest",
  "serde",
  "serde_json",
@@ -2821,6 +2852,13 @@ dependencies = [
  "thiserror",
  "tokio",
  "zip",
+]
+
+[[package]]
+name = "proto_error"
+version = "0.1.0"
+dependencies = [
+ "thiserror",
 ]
 
 [[package]]

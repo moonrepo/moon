@@ -1,0 +1,13 @@
+[package]
+name = "moon_tool"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_error = { path = "../error" }
+moon_lang = { path = "../lang" }
+moon_utils = { path = "../utils" }
+proto_error = { path = "../../proto/error" }
+async-trait = "0.1.59"
+rustc-hash = { workspace = true }
+thiserror = { workspace = true }

@@ -1,0 +1,29 @@
+[package]
+name = "moon_node_tool"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_config = { path = "../../core/config" }
+# moon_error = { path = "../../core/error" }
+moon_lang = { path = "../../core/lang" }
+moon_logger = { path = "../../core/logger" }
+moon_node_lang = { path = "../lang" }
+moon_terminal = { path = "../../core/terminal" }
+moon_tool = { path = "../../core/tool" }
+moon_utils = { path = "../../core/utils" }
+proto_core = { path = "../../proto/core" }
+proto_node = { path = "../../proto/node" }
+# cached = { workspace = true }
+# content_inspector = "0.2.4"
+# regex = "1.7.0"
+rustc-hash = { workspace = true }
+# serde = { workspace = true }
+# serde_json = { workspace = true, features = ["preserve_order"] }
+# serde_yaml = { workspace = true }
+# thiserror = { workspace = true }
+# yarn-lock-parser = "0.4.1"
+
+[dev-dependencies]
+moon_test_utils = { path = "../../core/test-utils" }
+reqwest = { workspace = true, features = ["blocking"] }

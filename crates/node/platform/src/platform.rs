@@ -27,9 +27,9 @@ pub struct NodePlatform {
 }
 
 impl NodePlatform {
-    pub fn new(config: NodeConfig, workspace_root: &Path) -> Self {
+    pub fn new(config: &NodeConfig, workspace_root: &Path) -> Self {
         NodePlatform {
-            config,
+            config: config.to_owned(),
             package_names: FxHashMap::default(),
             workspace_root: workspace_root.to_path_buf(),
         }

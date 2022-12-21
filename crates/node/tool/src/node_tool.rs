@@ -28,7 +28,7 @@ pub struct NodeTool {
 }
 
 impl NodeTool {
-    pub fn new(config: NodeConfig, proto: &Proto) -> Result<NodeTool, ToolError> {
+    pub fn new(config: &NodeConfig, proto: &Proto) -> Result<NodeTool, ToolError> {
         let mut node = NodeTool {
             config: config.to_owned(),
             tool: NodeLanguage::new(proto, Some(&config.version)),
@@ -129,6 +129,10 @@ impl NodeTool {
 
 #[async_trait]
 impl Tool for NodeTool {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
     fn get_bin_path(&self) -> Result<&Path, ToolError> {
         Ok(self.tool.get_bin_path()?)
     }

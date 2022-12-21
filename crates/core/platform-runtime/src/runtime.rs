@@ -1,4 +1,3 @@
-use moon_config::PlatformType;
 use serde::Serialize;
 use std::fmt::{self, Debug};
 
@@ -42,15 +41,6 @@ impl Runtime {
         match self {
             Runtime::Node(version) => version.to_owned(),
             _ => Version("latest".into(), false),
-        }
-    }
-}
-
-impl Into<PlatformType> for Runtime {
-    fn into(self) -> PlatformType {
-        match self {
-            Runtime::Node(_) => PlatformType::Node,
-            Runtime::System => PlatformType::System,
         }
     }
 }

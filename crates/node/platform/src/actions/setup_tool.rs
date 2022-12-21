@@ -41,7 +41,8 @@ pub async fn setup_tool(
             if !node.has(&version.0) {
                 node.register(
                     Box::new(NodeTool::new(
-                        node.get::<NodeTool>()?
+                        &node
+                            .get::<NodeTool>()?
                             .config
                             .with_project_override(&version.0),
                         &toolchain_paths,

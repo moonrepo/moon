@@ -75,6 +75,10 @@ impl YarnTool {
 
 #[async_trait]
 impl Tool for YarnTool {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
     fn get_bin_path(&self) -> Result<&Path, ToolError> {
         Ok(self.tool.get_bin_path()?)
     }

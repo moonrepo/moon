@@ -2,7 +2,6 @@ use crate::errors::ToolchainError;
 use moon_platform_runtime::{Runtime, Version};
 use moon_tool::Tool;
 use rustc_hash::FxHashMap;
-use std::any::Any;
 use std::fmt::Debug;
 
 pub type CachedTool = Box<dyn Tool>;
@@ -40,7 +39,7 @@ impl ToolManager {
             )));
         }
 
-        let item = self.cache.get(version).unwrap() as &dyn Any;
+        let item = self.cache.get(version).unwrap().as_any();
 
         Ok(item.downcast_ref::<T>().unwrap())
     }

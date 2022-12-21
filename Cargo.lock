@@ -2041,7 +2041,6 @@ dependencies = [
 name = "moon_platform_runtime"
 version = "0.1.0"
 dependencies = [
- "moon_config",
  "serde",
 ]
 

@@ -14,15 +14,12 @@ pub fn register_platforms(workspace: &mut Workspace) -> Result<(), WorkspaceErro
     let paths = { workspace.toolchain.get_paths() };
 
     if let Some(node_config) = workspace.toolchain.config.node.clone() {
-        workspace.register_platform(Box::new(NodePlatform::new(
-            node_config.clone(),
-            &workspace.root,
-        )));
+        workspace.register_platform(Box::new(NodePlatform::new(&node_config, &workspace.root)));
 
         workspace
             .toolchain
             .node
-            .register(Box::new(NodeTool::new(node_config, &paths)?), true);
+            .register(Box::new(NodeTool::new(&node_config, &paths)?), true);
     }
 
     // Should be last since it's the last resort

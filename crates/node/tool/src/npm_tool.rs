@@ -34,6 +34,10 @@ impl NpmTool {
 
 #[async_trait]
 impl Tool for NpmTool {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
     fn get_bin_path(&self) -> Result<&Path, ToolError> {
         Ok(self.tool.get_bin_path()?)
     }

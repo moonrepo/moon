@@ -1,8 +1,7 @@
 use crate::node_tool::NodeTool;
 use moon_config::YarnConfig;
-use moon_lang::LockfileDependencyVersions;
 use moon_logger::{color, debug};
-use moon_node_lang::{yarn, YARN};
+use moon_node_lang::{yarn, LockfileDependencyVersions, YARN};
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
 use moon_utils::process::Command;

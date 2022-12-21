@@ -4,8 +4,10 @@ pub mod package;
 pub mod pnpm;
 pub mod yarn;
 
-use moon_lang::{DependencyManager, Language, VersionManager};
+pub use moon_lang::LockfileDependencyVersions;
 pub use package::PackageJson;
+
+use moon_lang::{DependencyManager, Language, VersionManager};
 
 pub const NODE: Language = Language {
     binary: "node",

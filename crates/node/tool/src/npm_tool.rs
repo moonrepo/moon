@@ -1,8 +1,7 @@
 use crate::node_tool::NodeTool;
 use moon_config::NpmConfig;
-use moon_lang::LockfileDependencyVersions;
 use moon_logger::debug;
-use moon_node_lang::{npm, NPM};
+use moon_node_lang::{npm, LockfileDependencyVersions, NPM};
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
 use moon_utils::process::Command;

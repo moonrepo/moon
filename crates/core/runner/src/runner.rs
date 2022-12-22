@@ -11,7 +11,7 @@ use moon_error::MoonError;
 use moon_logger::{color, debug, error, trace};
 use moon_node_platform::actions as node_actions;
 use moon_notifier::WebhooksSubscriber;
-use moon_platform::Runtime;
+use moon_platform_runtime::Runtime;
 use moon_project_graph::ProjectGraph;
 use moon_runner_context::RunnerContext;
 use moon_task::Target;
@@ -143,9 +143,12 @@ async fn run_action(
                 .emit(Event::ToolInstalling { runtime })
                 .await?;
 
-            let tool_result = actions::setup_toolchain(action, context, workspace, runtime)
-                .await
-                .map_err(RunnerError::Workspace);
+            let tool_result = match runtime {
+                Runtime::Node(_) => node_actions::setup_tool(action, context, workspace, runtime)
+                    .await
+                    .map_err(RunnerError::Workspace),
+                _ => Ok(ActionStatus::Skipped),
+            };
 
             local_emitter
                 .emit(Event::ToolInstalled {

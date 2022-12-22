@@ -22,7 +22,7 @@ moon_hasher = { path = "../hasher" }
 moon_lang = { path = "../lang" }
 moon_logger = { path = "../logger" }
 moon_notifier = { path = "../notifier" }
-moon_platform = { path = "../platform" }
+moon_platform_runtime = { path = "../platform-runtime" }
 moon_node_platform = { path = "../../node/platform" }
 moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }

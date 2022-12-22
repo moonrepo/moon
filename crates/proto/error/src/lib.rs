@@ -49,5 +49,5 @@ pub enum ProtoError {
     VersionResolveFailed(String),
 
     #[error("Failed zip archive. {0}")]
-    Zip(#[from] zip::result::ZipError),
+    Zip(String),
 }

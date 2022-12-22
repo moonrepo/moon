@@ -1,10 +1,9 @@
 use crate::errors::ToolchainError;
 use crate::manager::ToolManager;
-use crate::tools::node::NodeTool;
 use moon_config::ToolchainConfig;
 use moon_constants::CONFIG_DIRNAME;
 use moon_logger::{color, debug};
-use moon_platform::{Runtime, Version};
+use moon_platform_runtime::{Runtime, Version};
 use moon_utils::{fs, path};
 use proto_core::Proto;
 use std::{
@@ -21,7 +20,7 @@ pub struct Toolchain {
     pub dir: PathBuf,
 
     /// Tools:
-    pub node: ToolManager<NodeTool>,
+    pub node: ToolManager,
 }
 
 impl Toolchain {
@@ -47,21 +46,12 @@ impl Toolchain {
         fs::create_dir_all(&dir)?;
         env::set_var("PROTO_DIR", path::to_string(&dir)?);
 
-        let mut toolchain = Toolchain {
+        Ok(Toolchain {
             config: config.to_owned(),
             dir,
             // Tools
             node: ToolManager::new(Runtime::Node(Version::default())),
-        };
-        let proto = toolchain.get_paths();
-
-        if let Some(node_config) = &config.node {
-            toolchain
-                .node
-                .register(NodeTool::new(&proto, node_config)?, true);
-        }
-
-        Ok(toolchain)
+        })
     }
 
     pub fn get_paths(&self) -> Proto {

@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+proto_error = { path = "../error" }
 async-trait = "0.1.59"
 dirs = "4.0.0"
 flate2 = "1.0.25"

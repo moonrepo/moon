@@ -1666,6 +1666,7 @@ dependencies = [
  "moon_config",
  "moon_dep_graph",
  "moon_node_platform",
+ "moon_node_tool",
  "moon_project_graph",
  "moon_system_platform",
  "moon_utils",
@@ -1678,7 +1679,7 @@ dependencies = [
 name = "moon_action"
 version = "0.1.0"
 dependencies = [
- "moon_platform",
+ "moon_platform_runtime",
  "moon_utils",
  "serde",
 ]
@@ -1710,7 +1711,7 @@ dependencies = [
  "moon_constants",
  "moon_error",
  "moon_logger",
- "moon_platform",
+ "moon_platform_runtime",
  "moon_test_utils",
  "moon_utils",
  "rustc-hash",
@@ -1742,6 +1743,7 @@ dependencies = [
  "moon_logger",
  "moon_node_lang",
  "moon_node_platform",
+ "moon_node_tool",
  "moon_notifier",
  "moon_pipeline_provider",
  "moon_platform",
@@ -1836,7 +1838,7 @@ dependencies = [
  "moon_action",
  "moon_cache",
  "moon_error",
- "moon_platform",
+ "moon_platform_runtime",
  "moon_project",
  "moon_task",
  "moon_test_utils",
@@ -1942,6 +1944,7 @@ dependencies = [
  "moon_lang",
  "moon_logger",
  "moon_node_lang",
+ "moon_node_tool",
  "moon_platform",
  "moon_project",
  "moon_project_graph",
@@ -1949,13 +1952,28 @@ dependencies = [
  "moon_task",
  "moon_terminal",
  "moon_test_utils",
- "moon_toolchain",
+ "moon_tool",
  "moon_typescript_lang",
  "moon_utils",
  "moon_workspace",
  "rustc-hash",
  "serde",
  "tokio",
+]
+
+[[package]]
+name = "moon_node_tool"
+version = "0.1.0"
+dependencies = [
+ "moon_config",
+ "moon_logger",
+ "moon_node_lang",
+ "moon_terminal",
+ "moon_tool",
+ "moon_utils",
+ "proto_core",
+ "proto_node",
+ "rustc-hash",
 ]
 
 [[package]]
@@ -1996,6 +2014,8 @@ version = "0.1.0"
 dependencies = [
  "moon_config",
  "moon_error",
+ "moon_platform_runtime",
+ "moon_project",
  "rustc-hash",
  "serde",
 ]
@@ -2015,6 +2035,13 @@ dependencies = [
  "moon_ruby_lang",
  "moon_rust_lang",
  "moon_utils",
+]
+
+[[package]]
+name = "moon_platform_runtime"
+version = "0.1.0"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
@@ -2090,7 +2117,7 @@ dependencies = [
  "moon_logger",
  "moon_node_platform",
  "moon_notifier",
- "moon_platform",
+ "moon_platform_runtime",
  "moon_project",
  "moon_project_graph",
  "moon_runner_context",
@@ -2185,6 +2212,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_tool"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "moon_error",
+ "moon_lang",
+ "moon_utils",
+ "proto_error",
+ "rustc-hash",
+ "thiserror",
+]
+
+[[package]]
 name = "moon_toolchain"
 version = "0.1.0"
 dependencies = [
@@ -2193,12 +2233,10 @@ dependencies = [
  "moon_error",
  "moon_lang",
  "moon_logger",
- "moon_node_lang",
- "moon_platform",
- "moon_terminal",
+ "moon_platform_runtime",
+ "moon_tool",
  "moon_utils",
  "proto_core",
- "proto_node",
  "rustc-hash",
  "thiserror",
 ]
@@ -2804,6 +2842,7 @@ dependencies = [
  "flate2",
  "lenient_semver",
  "log",
+ "proto_error",
  "reqwest",
  "serde",
  "serde_json",
@@ -2812,6 +2851,13 @@ dependencies = [
  "thiserror",
  "tokio",
  "zip",
+]
+
+[[package]]
+name = "proto_error"
+version = "0.1.0"
+dependencies = [
+ "thiserror",
 ]
 
 [[package]]

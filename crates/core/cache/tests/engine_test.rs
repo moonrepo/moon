@@ -275,7 +275,7 @@ mod cache_run_target_state {
 
 mod cache_tool_state {
     use super::*;
-    use moon_platform::{Runtime, Version};
+    use moon_platform_runtime::{Runtime, Version};
     use rustc_hash::FxHashMap;
 
     #[test]

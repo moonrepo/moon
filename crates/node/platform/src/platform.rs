@@ -8,6 +8,7 @@ use moon_logger::{color, debug, warn};
 use moon_node_lang::node::{get_package_manager_workspaces, parse_package_name};
 use moon_node_lang::{PackageJson, NPM};
 use moon_platform::{Platform, Runtime, Version};
+use moon_project::Project;
 use moon_utils::glob::GlobSet;
 use rustc_hash::FxHashMap;
 use std::path::PathBuf;
@@ -55,29 +56,25 @@ impl Platform for NodePlatform {
         )))
     }
 
-    fn is_project_in_dependency_workspace(
-        &self,
-        project_id: &str,
-        project_root: &Path,
-    ) -> Result<bool, MoonError> {
+    fn is_project_in_dependency_workspace(&self, project: &Project) -> Result<bool, MoonError> {
         let mut in_workspace = false;
 
         // Root package is always considered within the workspace
-        if project_root == self.workspace_root {
+        if project.root == self.workspace_root {
             return Ok(true);
         }
 
         if let Some(globs) = get_package_manager_workspaces(self.workspace_root.to_owned())? {
             in_workspace = GlobSet::new(globs)
                 .map_err(|e| MoonError::Generic(e.to_string()))?
-                .matches(project_root.strip_prefix(&self.workspace_root).unwrap())?;
+                .matches(project.root.strip_prefix(&self.workspace_root).unwrap())?;
         }
 
         if !in_workspace {
             debug!(
                 target: LOG_TARGET,
                 "Project {} not within root {} workspaces, will be handled externally",
-                color::id(project_id),
+                color::id(&project.id),
                 color::file(NPM.manifest)
             );
         }
@@ -176,9 +173,7 @@ impl Platform for NodePlatform {
 
     fn load_project_implicit_dependencies(
         &self,
-        project_id: &str,
-        project_root: &Path,
-        _project_config: &ProjectConfig,
+        project: &Project,
         _aliases_map: &ProjectsAliasesMap,
     ) -> Result<Vec<DependencyConfig>, MoonError> {
         let mut implicit_deps = vec![];
@@ -186,10 +181,10 @@ impl Platform for NodePlatform {
         debug!(
             target: LOG_TARGET,
             "Scanning {} for implicit dependency relations",
-            color::id(project_id),
+            color::id(&project.id),
         );
 
-        if let Some(package_json) = PackageJson::read(project_root)? {
+        if let Some(package_json) = PackageJson::read(&project.root)? {
             let mut find_implicit_relations =
                 |package_deps: &BTreeMap<String, String>, scope: &DependencyScope| {
                     for dep_name in package_deps.keys() {
@@ -219,12 +214,7 @@ impl Platform for NodePlatform {
         Ok(implicit_deps)
     }
 
-    fn load_project_tasks(
-        &self,
-        project_id: &str,
-        project_root: &Path,
-        _project_config: &ProjectConfig,
-    ) -> Result<TasksConfigsMap, MoonError> {
+    fn load_project_tasks(&self, project: &Project) -> Result<TasksConfigsMap, MoonError> {
         let mut tasks = BTreeMap::new();
 
         if !self.config.infer_tasks_from_scripts {
@@ -234,13 +224,13 @@ impl Platform for NodePlatform {
         debug!(
             target: LOG_TARGET,
             "Inferring {} tasks from {}",
-            color::id(project_id),
+            color::id(&project.id),
             color::file(NPM.manifest)
         );
 
-        if let Some(package_json) = PackageJson::read(project_root)? {
+        if let Some(package_json) = PackageJson::read(&project.root)? {
             tasks.extend(
-                infer_tasks_from_scripts(project_id, &package_json)
+                infer_tasks_from_scripts(&project.id, &package_json)
                     .map_err(|e| MoonError::Generic(e.to_string()))?,
             );
         }

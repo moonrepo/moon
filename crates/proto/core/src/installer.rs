@@ -1,10 +1,11 @@
-use crate::errors::ProtoError;
 use flate2::read::GzDecoder;
 use log::trace;
+use proto_error::ProtoError;
 use std::fs::{self, File};
 use std::io;
 use std::path::{Path, PathBuf};
 use tar::Archive;
+use zip::result::ZipError;
 use zip::ZipArchive;
 
 #[async_trait::async_trait]
@@ -86,6 +87,7 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
     let handle_input_error = |e: io::Error| ProtoError::Fs(input_file.to_path_buf(), e.to_string());
     let handle_output_error =
         |e: io::Error| ProtoError::Fs(output_dir.to_path_buf(), e.to_string());
+    let handle_zip_error = |e: ZipError| ProtoError::Zip(e.to_string());
 
     trace!(
         target: "proto:installer",
@@ -102,10 +104,10 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
     let zip = File::open(input_file).map_err(handle_input_error)?;
 
     // Unpack the archive into the output dir
-    let mut archive = ZipArchive::new(zip)?;
+    let mut archive = ZipArchive::new(zip).map_err(handle_zip_error)?;
 
     for i in 0..archive.len() {
-        let mut file = archive.by_index(i)?;
+        let mut file = archive.by_index(i).map_err(handle_zip_error)?;
 
         let mut path = match file.enclosed_name() {
             Some(path) => path.to_owned(),

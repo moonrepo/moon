@@ -1,0 +1,15 @@
+[package]
+name = "moon_node_tool"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_config = { path = "../../core/config" }
+moon_logger = { path = "../../core/logger" }
+moon_node_lang = { path = "../lang" }
+moon_terminal = { path = "../../core/terminal" }
+moon_tool = { path = "../../core/tool" }
+moon_utils = { path = "../../core/utils" }
+proto_core = { path = "../../proto/core" }
+proto_node = { path = "../../proto/node" }
+rustc-hash = { workspace = true }

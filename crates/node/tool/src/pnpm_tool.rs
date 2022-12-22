@@ -1,42 +1,47 @@
-use crate::get_path_env_var;
-use crate::tools::node::NodeTool;
-use crate::{errors::ToolchainError, DependencyManager, RuntimeTool};
-use moon_config::NpmConfig;
-use moon_lang::LockfileDependencyVersions;
+use crate::node_tool::NodeTool;
+use moon_config::PnpmConfig;
 use moon_logger::debug;
-use moon_node_lang::{npm, NPM};
+use moon_node_lang::{pnpm, LockfileDependencyVersions, PNPM};
 use moon_terminal::{print_checkpoint, Checkpoint};
+use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
 use moon_utils::process::Command;
 use moon_utils::{fs, is_ci};
-use proto_core::{async_trait, Describable, Executable, Proto, Resolvable, Tool};
+use proto_core::{async_trait, Describable, Executable, Proto, Resolvable, Tool as ProtoTool};
 use proto_node::NodeDependencyManager;
 use rustc_hash::FxHashMap;
 use std::env;
 use std::path::Path;
 
 #[derive(Debug)]
-pub struct NpmTool {
-    pub config: NpmConfig,
+pub struct PnpmTool {
+    pub config: PnpmConfig,
 
     tool: NodeDependencyManager,
 }
 
-impl NpmTool {
-    pub fn new(proto: &Proto, config: &NpmConfig) -> Result<NpmTool, ToolchainError> {
-        Ok(NpmTool {
-            config: config.to_owned(),
+impl PnpmTool {
+    pub fn new(proto: &Proto, config: &Option<PnpmConfig>) -> Result<PnpmTool, ToolError> {
+        Ok(PnpmTool {
+            config: config.to_owned().unwrap_or_default(),
             tool: NodeDependencyManager::new(
                 proto,
-                proto_node::NodeDependencyManagerType::Npm,
-                Some(&config.version),
+                proto_node::NodeDependencyManagerType::Pnpm,
+                match &config {
+                    Some(cfg) => Some(&cfg.version),
+                    None => None,
+                },
             ),
         })
     }
 }
 
 #[async_trait]
-impl RuntimeTool for NpmTool {
-    fn get_bin_path(&self) -> Result<&Path, ToolchainError> {
+impl Tool for PnpmTool {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
+    fn get_bin_path(&self) -> Result<&Path, ToolError> {
         Ok(self.tool.get_bin_path()?)
     }
 
@@ -47,35 +52,35 @@ impl RuntimeTool for NpmTool {
     async fn setup(
         &mut self,
         last_versions: &mut FxHashMap<String, String>,
-    ) -> Result<u8, ToolchainError> {
+    ) -> Result<u8, ToolError> {
         let mut count = 0;
 
         if self.tool.is_setup(&self.config.version).await? {
-            debug!(target: self.tool.get_log_target(), "npm has already been setup");
+            debug!(target: self.tool.get_log_target(), "pnpm has already been setup");
 
             return Ok(count);
         }
 
-        if let Some(last) = last_versions.get("npm") {
+        if let Some(last) = last_versions.get("pnpm") {
             if last == &self.config.version {
                 return Ok(count);
             }
         }
 
         print_checkpoint(
-            format!("installing node v{}", self.config.version),
+            format!("installing pnpm v{}", self.config.version),
             Checkpoint::Setup,
         );
 
         if self.tool.setup(&self.config.version).await? {
-            last_versions.insert("npm".into(), self.config.version.clone());
+            last_versions.insert("pnpm".into(), self.config.version.clone());
             count += 1;
         }
 
         Ok(count)
     }
 
-    async fn teardown(&mut self) -> Result<(), ToolchainError> {
+    async fn teardown(&mut self) -> Result<(), ToolError> {
         self.tool.teardown().await?;
 
         Ok(())
@@ -83,8 +88,8 @@ impl RuntimeTool for NpmTool {
 }
 
 #[async_trait]
-impl DependencyManager<NodeTool> for NpmTool {
-    fn create_command(&self, node: &NodeTool) -> Result<Command, ToolchainError> {
+impl DependencyManager<NodeTool> for PnpmTool {
+    fn create_command(&self, node: &NodeTool) -> Result<Command, ToolError> {
         let bin_path = self.get_bin_path()?;
 
         let mut cmd = Command::new(node.get_bin_path()?);
@@ -98,35 +103,33 @@ impl DependencyManager<NodeTool> for NpmTool {
         &self,
         node: &NodeTool,
         working_dir: &Path,
-        log: bool,
-    ) -> Result<(), ToolchainError> {
-        self.create_command(node)?
-            .args(["dedupe"])
-            .cwd(working_dir)
-            .log_running_command(log)
-            .exec_capture_output()
-            .await?;
+        _log: bool,
+    ) -> Result<(), ToolError> {
+        if working_dir.join(self.get_lock_filename()).exists() {
+            node.exec_package("pnpm-deduplicate", &["pnpm-deduplicate"], working_dir)
+                .await?;
+        }
 
         Ok(())
     }
 
     fn get_lock_filename(&self) -> String {
-        String::from(NPM.lockfile)
+        String::from(PNPM.lockfile)
     }
 
     fn get_manifest_filename(&self) -> String {
-        String::from(NPM.manifest)
+        String::from(PNPM.manifest)
     }
 
     async fn get_resolved_dependencies(
         &self,
         project_root: &Path,
-    ) -> Result<LockfileDependencyVersions, ToolchainError> {
-        let Some(lockfile_path) = fs::find_upwards(NPM.lockfile, project_root) else {
+    ) -> Result<LockfileDependencyVersions, ToolError> {
+        let Some(lockfile_path) = fs::find_upwards(PNPM.lockfile, project_root) else {
             return Ok(FxHashMap::default());
         };
 
-        Ok(npm::load_lockfile_dependencies(lockfile_path)?)
+        Ok(pnpm::load_lockfile_dependencies(lockfile_path)?)
     }
 
     async fn install_dependencies(
@@ -134,22 +137,17 @@ impl DependencyManager<NodeTool> for NpmTool {
         node: &NodeTool,
         working_dir: &Path,
         log: bool,
-    ) -> Result<(), ToolchainError> {
+    ) -> Result<(), ToolError> {
         let mut args = vec!["install"];
 
         if is_ci() {
             let lockfile = working_dir.join(self.get_lock_filename());
 
-            // npm will error if using `ci` and a lockfile does not exist!
+            // Will fail with "Headless installation requires a pnpm-lock.yaml file"
             if lockfile.exists() {
-                args.clear();
-                args.push("ci");
+                args.push("--frozen-lockfile");
             }
-        } else {
-            args.push("--no-audit");
         }
-
-        args.push("--no-fund");
 
         let mut cmd = self.create_command(node)?;
 
@@ -167,18 +165,25 @@ impl DependencyManager<NodeTool> for NpmTool {
     async fn install_focused_dependencies(
         &self,
         node: &NodeTool,
-        package_names: &[String],
+        packages: &[String],
         production_only: bool,
-    ) -> Result<(), ToolchainError> {
+    ) -> Result<(), ToolError> {
         let mut cmd = self.create_command(node)?;
-        cmd.args(["install"]);
+        cmd.arg("install");
 
         if production_only {
-            cmd.arg("--production");
+            cmd.arg("--prod");
         }
 
-        for package_name in package_names {
-            cmd.args(["--workspace", package_name]);
+        for package in packages {
+            cmd.arg(if production_only {
+                "--filter-prod"
+            } else {
+                "--filter"
+            });
+
+            // https://pnpm.io/filtering#--filter-package_name-1
+            cmd.arg(format!("{}...", package));
         }
 
         cmd.exec_stream_output().await?;

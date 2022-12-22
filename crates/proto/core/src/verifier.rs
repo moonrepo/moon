@@ -1,6 +1,6 @@
 use crate::downloader::Downloadable;
-use crate::errors::ProtoError;
 use log::trace;
+use proto_error::ProtoError;
 use sha2::{Digest, Sha256};
 use std::fs::File;
 use std::io;

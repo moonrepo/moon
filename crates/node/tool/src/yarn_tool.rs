@@ -1,14 +1,12 @@
-use crate::get_path_env_var;
-use crate::tools::node::NodeTool;
-use crate::{errors::ToolchainError, DependencyManager, RuntimeTool};
+use crate::node_tool::NodeTool;
 use moon_config::YarnConfig;
-use moon_lang::LockfileDependencyVersions;
 use moon_logger::{color, debug};
-use moon_node_lang::{yarn, YARN};
+use moon_node_lang::{yarn, LockfileDependencyVersions, YARN};
 use moon_terminal::{print_checkpoint, Checkpoint};
+use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
 use moon_utils::process::Command;
 use moon_utils::{fs, get_workspace_root, is_ci};
-use proto_core::{async_trait, Describable, Executable, Proto, Resolvable, Tool};
+use proto_core::{async_trait, Describable, Executable, Proto, Resolvable, Tool as ProtoTool};
 use proto_node::NodeDependencyManager;
 use rustc_hash::FxHashMap;
 use std::env;
@@ -22,7 +20,7 @@ pub struct YarnTool {
 }
 
 impl YarnTool {
-    pub fn new(proto: &Proto, config: &Option<YarnConfig>) -> Result<YarnTool, ToolchainError> {
+    pub fn new(proto: &Proto, config: &Option<YarnConfig>) -> Result<YarnTool, ToolError> {
         Ok(YarnTool {
             config: config.to_owned().unwrap_or_default(),
             tool: NodeDependencyManager::new(
@@ -40,7 +38,7 @@ impl YarnTool {
         self.config.version.starts_with('1')
     }
 
-    pub async fn set_version(&mut self, node: &NodeTool) -> Result<(), ToolchainError> {
+    pub async fn set_version(&mut self, node: &NodeTool) -> Result<(), ToolError> {
         if self.is_v1() {
             return Ok(());
         }
@@ -76,8 +74,12 @@ impl YarnTool {
 }
 
 #[async_trait]
-impl RuntimeTool for YarnTool {
-    fn get_bin_path(&self) -> Result<&Path, ToolchainError> {
+impl Tool for YarnTool {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
+    fn get_bin_path(&self) -> Result<&Path, ToolError> {
         Ok(self.tool.get_bin_path()?)
     }
 
@@ -88,7 +90,7 @@ impl RuntimeTool for YarnTool {
     async fn setup(
         &mut self,
         last_versions: &mut FxHashMap<String, String>,
-    ) -> Result<u8, ToolchainError> {
+    ) -> Result<u8, ToolError> {
         let mut count = 0;
 
         if self.tool.is_setup(&self.config.version).await? {
@@ -116,7 +118,7 @@ impl RuntimeTool for YarnTool {
         Ok(count)
     }
 
-    async fn teardown(&mut self) -> Result<(), ToolchainError> {
+    async fn teardown(&mut self) -> Result<(), ToolError> {
         self.tool.teardown().await?;
 
         Ok(())
@@ -125,7 +127,7 @@ impl RuntimeTool for YarnTool {
 
 #[async_trait]
 impl DependencyManager<NodeTool> for YarnTool {
-    fn create_command(&self, node: &NodeTool) -> Result<Command, ToolchainError> {
+    fn create_command(&self, node: &NodeTool) -> Result<Command, ToolError> {
         let bin_path = self.get_bin_path()?;
 
         let mut cmd = Command::new(node.get_bin_path()?);
@@ -140,7 +142,7 @@ impl DependencyManager<NodeTool> for YarnTool {
         node: &NodeTool,
         working_dir: &Path,
         log: bool,
-    ) -> Result<(), ToolchainError> {
+    ) -> Result<(), ToolError> {
         // Yarn v1 doesnt dedupe natively, so use:
         // npx yarn-deduplicate yarn.lock
         if self.is_v1() {
@@ -176,7 +178,7 @@ impl DependencyManager<NodeTool> for YarnTool {
     async fn get_resolved_dependencies(
         &self,
         project_root: &Path,
-    ) -> Result<LockfileDependencyVersions, ToolchainError> {
+    ) -> Result<LockfileDependencyVersions, ToolError> {
         let Some(lockfile_path) = fs::find_upwards(YARN.lockfile, project_root) else {
             return Ok(FxHashMap::default());
         };
@@ -189,7 +191,7 @@ impl DependencyManager<NodeTool> for YarnTool {
         node: &NodeTool,
         working_dir: &Path,
         log: bool,
-    ) -> Result<(), ToolchainError> {
+    ) -> Result<(), ToolError> {
         let mut args = vec!["install"];
 
         if self.is_v1() {
@@ -224,7 +226,7 @@ impl DependencyManager<NodeTool> for YarnTool {
         node: &NodeTool,
         packages: &[String],
         production_only: bool,
-    ) -> Result<(), ToolchainError> {
+    ) -> Result<(), ToolError> {
         let mut cmd = self.create_command(node)?;
 
         if self.is_v1() {
@@ -237,7 +239,9 @@ impl DependencyManager<NodeTool> for YarnTool {
                 get_workspace_root().join(".yarn/plugins/@yarnpkg/plugin-workspace-tools.cjs");
 
             if !workspace_plugin.exists() {
-                return Err(ToolchainError::RequiresYarnWorkspacesPlugin);
+                return Err(ToolError::RequiresPlugin(
+                    "yarn plugin import workspace-tools".into(),
+                ));
             }
         };
 

@@ -1,16 +1,16 @@
 use moon_action::{Action, ActionStatus};
 use moon_logger::debug;
+use moon_node_tool::NodeTool;
 use moon_platform::Runtime;
 use moon_runner_context::RunnerContext;
-use moon_toolchain::tools::node::NodeTool;
 use moon_utils::time;
 use moon_workspace::{Workspace, WorkspaceError};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-const LOG_TARGET: &str = "moon:action:setup-toolchain";
+const LOG_TARGET: &str = "moon:node-platform:setup-tool";
 
-pub async fn setup_toolchain(
+pub async fn setup_tool(
     _action: &mut Action,
     _context: Arc<RwLock<RunnerContext>>,
     workspace: Arc<RwLock<Workspace>>,
@@ -40,10 +40,13 @@ pub async fn setup_toolchain(
             // the project-level. If so clone, and update defaults.
             if !node.has(&version.0) {
                 node.register(
-                    NodeTool::new(
+                    Box::new(NodeTool::new(
+                        &node
+                            .get::<NodeTool>()?
+                            .config
+                            .with_project_override(&version.0),
                         &toolchain_paths,
-                        &node.get()?.config.with_project_override(&version.0),
-                    )?,
+                    )?),
                     false,
                 );
             }

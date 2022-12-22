@@ -1,14 +1,18 @@
-use crate::errors::ToolchainError;
+use crate::errors::ToolError;
+use async_trait::async_trait;
 use moon_lang::LockfileDependencyVersions;
 use moon_utils::process::Command;
-use proto_core::async_trait;
 use rustc_hash::FxHashMap;
+use std::any::Any;
+use std::fmt::Debug;
 use std::path::Path;
 
 #[async_trait]
-pub trait RuntimeTool: Send + Sync {
+pub trait Tool: Any + Debug + Send + Sync {
+    fn as_any(&self) -> &dyn Any;
+
     /// Return an absolute path to the tool's binary.
-    fn get_bin_path(&self) -> Result<&Path, ToolchainError>;
+    fn get_bin_path(&self) -> Result<&Path, ToolError>;
 
     /// Return the resolved version of the current tool.
     fn get_version(&self) -> &str;
@@ -18,20 +22,20 @@ pub trait RuntimeTool: Send + Sync {
     async fn setup(
         &mut self,
         _last_versions: &mut FxHashMap<String, String>,
-    ) -> Result<u8, ToolchainError> {
+    ) -> Result<u8, ToolError> {
         Ok(0)
     }
 
     /// Teardown the tool by uninstalling and deleting files.
-    async fn teardown(&mut self) -> Result<(), ToolchainError> {
+    async fn teardown(&mut self) -> Result<(), ToolError> {
         Ok(())
     }
 }
 
 #[async_trait]
-pub trait DependencyManager<T: Send + Sync>: Send + Sync + RuntimeTool {
+pub trait DependencyManager<T: Send + Sync>: Send + Sync + Tool {
     /// Create a command to run that wraps the binary.
-    fn create_command(&self, tool: &T) -> Result<Command, ToolchainError>;
+    fn create_command(&self, tool: &T) -> Result<Command, ToolError>;
 
     /// Dedupe dependencies after they have been installed.
     async fn dedupe_dependencies(
@@ -39,7 +43,7 @@ pub trait DependencyManager<T: Send + Sync>: Send + Sync + RuntimeTool {
         tool: &T,
         working_dir: &Path,
         log: bool,
-    ) -> Result<(), ToolchainError>;
+    ) -> Result<(), ToolError>;
 
     /// Return the name of the lockfile.
     fn get_lock_filename(&self) -> String;
@@ -52,7 +56,7 @@ pub trait DependencyManager<T: Send + Sync>: Send + Sync + RuntimeTool {
     async fn get_resolved_dependencies(
         &self,
         project_root: &Path,
-    ) -> Result<LockfileDependencyVersions, ToolchainError>;
+    ) -> Result<LockfileDependencyVersions, ToolError>;
 
     /// Install dependencies for a defined manifest.
     async fn install_dependencies(
@@ -60,7 +64,7 @@ pub trait DependencyManager<T: Send + Sync>: Send + Sync + RuntimeTool {
         tool: &T,
         working_dir: &Path,
         log: bool,
-    ) -> Result<(), ToolchainError>;
+    ) -> Result<(), ToolError>;
 
     /// Install dependencies for a single package in the workspace.
     async fn install_focused_dependencies(
@@ -68,5 +72,5 @@ pub trait DependencyManager<T: Send + Sync>: Send + Sync + RuntimeTool {
         tool: &T,
         packages: &[String],
         production_only: bool,
-    ) -> Result<(), ToolchainError>;
+    ) -> Result<(), ToolError>;
 }

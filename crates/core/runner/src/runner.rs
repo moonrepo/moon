@@ -147,7 +147,7 @@ async fn run_action(
                 Runtime::Node(_) => node_actions::setup_tool(action, context, workspace, runtime)
                     .await
                     .map_err(RunnerError::Workspace),
-                _ => Ok(ActionStatus::Passed),
+                _ => Ok(ActionStatus::Skipped),
             };
 
             local_emitter

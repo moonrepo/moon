@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- We now include the version and file path of the moon binary being executed in the logs for
+  debugging purposes.
+
 ## 0.21.1
 
 #### 🐞 Fixes

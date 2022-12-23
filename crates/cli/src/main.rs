@@ -2,7 +2,7 @@ use mimalloc::MiMalloc;
 use moon_cli::{run_cli, BIN_NAME};
 use moon_constants::CONFIG_DIRNAME;
 use moon_node_lang::NODE;
-use moon_utils::path;
+use moon_utils::{is_test_env, path};
 use std::env;
 use std::path::{Path, PathBuf};
 use tokio::process::Command;
@@ -40,6 +40,12 @@ fn get_global_lookups(home_dir: &Path) -> Vec<PathBuf> {
     ]
 }
 
+fn set_executed_with(path: &Path) {
+    if !is_test_env() {
+        env::set_var("MOON_EXECUTED_WITH", path.to_string_lossy().to_string());
+    }
+}
+
 /// Check whether this binary has been installed globally or not.
 /// If we encounter an error, simply abort early instead of failing.
 fn is_globally_installed() -> bool {
@@ -48,7 +54,7 @@ fn is_globally_installed() -> bool {
         Err(_) => return false,
     };
 
-    env::set_var("MOON_EXECUTED_WITH", exe_path.to_string_lossy().to_string());
+    set_executed_with(&exe_path);
 
     // Global installs happen *outside* of moon's toolchain,
     // so we simply assume they are using their environment.
@@ -121,7 +127,7 @@ async fn main() {
                 if moon_bin.exists() {
                     run = false;
 
-                    env::set_var("MOON_EXECUTED_WITH", moon_bin.to_string_lossy().to_string());
+                    set_executed_with(&moon_bin);
 
                     run_bin(&moon_bin, &current_dir)
                         .await

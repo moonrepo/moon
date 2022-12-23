@@ -48,6 +48,8 @@ fn is_globally_installed() -> bool {
         Err(_) => return false,
     };
 
+    env::set_var("MOON_EXECUTED_WITH", exe_path.to_string_lossy().to_string());
+
     // Global installs happen *outside* of moon's toolchain,
     // so we simply assume they are using their environment.
     let home_dir = path::get_home_dir().unwrap_or_else(|| PathBuf::from("."));
@@ -118,6 +120,8 @@ async fn main() {
                 // instead of this global one!
                 if moon_bin.exists() {
                     run = false;
+
+                    env::set_var("MOON_EXECUTED_WITH", moon_bin.to_string_lossy().to_string());
 
                     run_bin(&moon_bin, &current_dir)
                         .await

@@ -24,23 +24,50 @@ use crate::helpers::setup_colors;
 use app::{App, Commands, DockerCommands, MigrateCommands, NodeCommands, QueryCommands};
 use clap::Parser;
 use console::Term;
-use enums::LogLevel;
-use moon_logger::{LevelFilter, Logger};
+use enums::{CacheMode, LogLevel};
+use moon_logger::{color, debug, LevelFilter, Logger};
 use moon_terminal::ExtendedTerm;
 use std::env;
+use std::path::PathBuf;
 
 pub use app::BIN_NAME;
 
-// This is annoying, but clap requires applying the `ValueEnum`
-// trait onto the enum, which we can't apply to the log package.
-fn map_log_level(level: LogLevel) -> LevelFilter {
-    match level {
-        LogLevel::Off => LevelFilter::Off,
-        LogLevel::Error => LevelFilter::Error,
-        LogLevel::Warn => LevelFilter::Warn,
-        LogLevel::Info => LevelFilter::Info,
-        LogLevel::Debug => LevelFilter::Debug,
-        LogLevel::Trace => LevelFilter::Trace,
+fn setup_logging(level: &LogLevel, log_file: Option<PathBuf>) {
+    if env::var("MOON_LOG").is_err() {
+        env::set_var("MOON_LOG", level.to_string());
+    }
+
+    // This is annoying, but clap requires applying the `ValueEnum`
+    // trait onto the enum, which we can't apply to the log package.
+    Logger::init(
+        match level {
+            LogLevel::Off => LevelFilter::Off,
+            LogLevel::Error => LevelFilter::Error,
+            LogLevel::Warn => LevelFilter::Warn,
+            LogLevel::Info => LevelFilter::Info,
+            LogLevel::Debug => LevelFilter::Debug,
+            LogLevel::Trace => LevelFilter::Trace,
+        },
+        log_file,
+    );
+
+    let version = env!("CARGO_PKG_VERSION");
+
+    if let Ok(exe_with) = env::var("MOON_EXECUTED_WITH") {
+        debug!(
+            target: "moon",
+            "Running moon v{} (with {})",
+            version,
+            color::file(exe_with),
+        );
+    } else {
+        debug!(target: "moon", "Running moon v{}", version);
+    }
+}
+
+fn setup_caching(mode: &CacheMode) {
+    if env::var("MOON_CACHE").is_err() {
+        env::set_var("MOON_CACHE", mode.to_string());
     }
 }
 
@@ -49,18 +76,8 @@ pub async fn run_cli() {
     let args = App::parse();
 
     setup_colors(args.color);
-
-    // Setup logging
-    if env::var("MOON_LOG").is_err() {
-        env::set_var("MOON_LOG", args.log.to_string());
-    }
-
-    Logger::init(map_log_level(args.log), args.log_file);
-
-    // Setup caching
-    if env::var("MOON_CACHE").is_err() {
-        env::set_var("MOON_CACHE", args.cache.to_string());
-    }
+    setup_logging(&args.log, args.log_file);
+    setup_caching(&args.cache);
 
     // Match and run subcommand
     let result = match &args.command {

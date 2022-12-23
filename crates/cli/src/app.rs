@@ -1,7 +1,5 @@
 // https://github.com/clap-rs/clap/tree/master/examples/derive_ref#app-attributes
 
-use std::path::PathBuf;
-
 use crate::commands::bin::BinTool;
 use crate::commands::init::InitTool;
 use crate::enums::{CacheMode, LogLevel, TouchedStatus};
@@ -9,6 +7,7 @@ use clap::{Parser, Subcommand};
 use moon_config::{FileGlob, ProjectID};
 use moon_runner_context::ProfileType;
 use moon_task::TargetID;
+use std::path::PathBuf;
 
 pub const BIN_NAME: &str = if cfg!(windows) { "moon.exe" } else { "moon" };
 

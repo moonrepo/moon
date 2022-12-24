@@ -1,0 +1,8 @@
+---
+source: crates/cli/tests/project_graph_test.rs
+assertion_line: 86
+expression: assert.output()
+---
+{"nodes":[{"id":0,"label":"bar"},{"id":1,"label":"baz"},{"id":2,"label":"foo"}],"edges":[{"id":"2 -> 0","source":2,"target":0},{"id":"2 -> 1","source":2,"target":1}]}
+
+

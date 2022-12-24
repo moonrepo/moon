@@ -68,6 +68,24 @@ fn single_project_no_dependencies() {
     assert_snapshot!(assert.output());
 }
 
+#[test]
+fn outputs_json() {
+    let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
+
+    let sandbox = create_sandbox_with_config(
+        "projects",
+        Some(&workspace_config),
+        Some(&toolchain_config),
+        Some(&projects_config),
+    );
+
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("project-graph").arg("foo").arg("--json");
+    });
+
+    assert_snapshot!(assert.output());
+}
+
 mod aliases {
     use super::*;
 

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Added a `--json` flag to `moon dep-graph` and `moon project-graph` that will return the nodes and
+  edges data as JSON.
+
 #### ⚙️ Internal
 
 - We now include the version and file path of the moon binary being executed in the logs for

@@ -5,6 +5,7 @@ use moon_task::Target;
 pub async fn dep_graph(
     target_id: &Option<String>,
     dot: bool,
+    json: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut workspace = load_workspace().await?;
     let project_graph = generate_project_graph(&mut workspace)?;
@@ -34,8 +35,15 @@ pub async fn dep_graph(
         return Ok(());
     }
 
-    let (server, mut tera) = setup_server().await?;
     let graph_info = dep_graph_repr(&dep_graph).await;
+
+    if json {
+        println!("{}", serde_json::to_string(&graph_info)?);
+
+        return Ok(());
+    }
+
+    let (server, mut tera) = setup_server().await?;
     let url = format!("http://{}", server.server_addr());
     let _ = open::that(&url);
 

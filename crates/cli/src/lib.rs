@@ -118,7 +118,7 @@ pub async fn run_cli() {
             })
             .await
         }
-        Commands::DepGraph { target, dot } => dep_graph(target, *dot).await,
+        Commands::DepGraph { target, dot, json } => dep_graph(target, *dot, *json).await,
         Commands::Docker { command } => match command {
             DockerCommands::Prune => docker::prune().await,
             DockerCommands::Scaffold { ids, include } => docker::scaffold(ids, include).await,
@@ -175,7 +175,7 @@ pub async fn run_cli() {
             NodeCommands::RunScript { name, project } => node::run_script(name, project).await,
         },
         Commands::Project { id, json } => project(id, *json).await,
-        Commands::ProjectGraph { id, dot } => project_graph(id, *dot).await,
+        Commands::ProjectGraph { id, dot, json } => project_graph(id, *dot, *json).await,
         Commands::Sync => sync().await,
         Commands::Query { command } => match command {
             QueryCommands::Projects {

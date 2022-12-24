@@ -1,0 +1,8 @@
+---
+source: crates/cli/tests/dep_graph_test.rs
+assertion_line: 96
+expression: assert.output()
+---
+{"nodes":[{"id":0,"label":"SetupNodeTool(18.0.0)"},{"id":2,"label":"SyncNodeProject(basic)"},{"id":1,"label":"InstallNodeDeps(18.0.0)"},{"id":3,"label":"RunTarget(basic:lint)"}],"edges":[{"id":"1 -> 0","source":1,"target":0},{"id":"2 -> 0","source":2,"target":0},{"id":"3 -> 1","source":3,"target":1},{"id":"3 -> 2","source":3,"target":2}]}
+
+

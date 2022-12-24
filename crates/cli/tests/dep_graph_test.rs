@@ -78,6 +78,24 @@ fn includes_dependents_when_focused() {
     assert_snapshot!(assert.output());
 }
 
+#[test]
+fn outputs_json() {
+    let (workspace_config, toolchain_config, projects_config) = get_tasks_fixture_configs();
+
+    let sandbox = create_sandbox_with_config(
+        "tasks",
+        Some(&workspace_config),
+        Some(&toolchain_config),
+        Some(&projects_config),
+    );
+
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("dep-graph").arg("--json").arg("basic:lint");
+    });
+
+    assert_snapshot!(assert.output());
+}
+
 mod aliases {
     use super::*;
 

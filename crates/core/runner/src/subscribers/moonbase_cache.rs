@@ -80,7 +80,7 @@ impl Subscriber for MoonbaseCacheSubscriber {
                     // while waiting for very large archives to upload.
                     self.requests.push(tokio::spawn(async move {
                         if let Err(error) =
-                            upload_artifact(auth_token, hash, target, archive_path).await
+                            upload_artifact(auth_token, hash, target, archive_path, None).await
                         {
                             handle_error(error);
                         }

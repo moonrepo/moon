@@ -197,6 +197,9 @@ pub enum Commands {
 
         #[arg(long, help = "Print the graph in DOT format")]
         dot: bool,
+
+        #[arg(long, help = "Print the graph data in JSON format")]
+        json: bool,
     },
 
     // moon project <id>
@@ -225,6 +228,9 @@ pub enum Commands {
 
         #[arg(long, help = "Print the graph in DOT format")]
         dot: bool,
+
+        #[arg(long, help = "Print the graph data in JSON format")]
+        json: bool,
     },
 
     #[command(

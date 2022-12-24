@@ -106,7 +106,7 @@ impl Moonbase {
         dest_path: &Path,
         download_url: &Option<String>,
     ) -> Result<(), MoonbaseError> {
-        let response = if let Some(url) = download_url {
+        let request = if let Some(url) = download_url {
             reqwest::Client::new().get(url)
         } else {
             reqwest::Client::new()
@@ -115,7 +115,7 @@ impl Moonbase {
                 .header("Accept", "application/json")
         };
 
-        let response = response.send().await?;
+        let response = request.send().await?;
         let status = response.status();
 
         if status.is_success() {
@@ -148,6 +148,7 @@ pub async fn upload_artifact(
     hash: String,
     target_id: String,
     path: PathBuf,
+    upload_url: Option<String>,
 ) -> Result<Artifact, MoonbaseError> {
     let file = fs::File::open(&path)
         .await
@@ -169,11 +170,15 @@ pub async fn upload_artifact(
             .mime_str("application/gzip")?,
     );
 
-    let request = reqwest::Client::new()
-        .post(format!("{}/artifacts/{}", get_host(), hash))
-        .multipart(form)
-        .bearer_auth(auth_token)
-        .header("Accept", "application/json");
+    let request = if let Some(url) = upload_url {
+        reqwest::Client::new().post(url).multipart(form)
+    } else {
+        reqwest::Client::new()
+            .post(format!("{}/artifacts/{}/upload", get_host(), hash))
+            .multipart(form)
+            .bearer_auth(auth_token)
+            .header("Accept", "application/json")
+    };
 
     trace!(
         target: LOG_TARGET,

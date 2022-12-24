@@ -11,6 +11,7 @@
 
 - We now include the version and file path of the moon binary being executed in the logs for
   debugging purposes.
+- Updated remote caching to use a new upload endpoint.
 
 ## 0.21.1
 

@@ -1,0 +1,13 @@
+[package]
+name = "moon_action_pipeline"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# regex = "1.7.0"
+# serde_json = { workspace = true, default-features = false }
+# serde_yaml = { workspace = true, default-features = false }
+# thiserror = { workspace = true }
+moon_action = { path = "../action" }
+moon_dep_graph = { path = "../dep-graph" }
+tokio = { workspace = true }

@@ -1685,6 +1685,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_action_context"
+version = "0.1.0"
+dependencies = [
+ "clap 4.0.23",
+ "moon_task",
+ "rustc-hash",
+ "serde",
+]
+
+[[package]]
+name = "moon_action_pipeline"
+version = "0.1.0"
+dependencies = [
+ "moon_action",
+ "moon_dep_graph",
+ "tokio",
+]
+
+[[package]]
 name = "moon_archive"
 version = "0.1.0"
 dependencies = [

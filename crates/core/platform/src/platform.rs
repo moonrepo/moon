@@ -6,10 +6,14 @@ use moon_config::{
 use moon_error::MoonError;
 use moon_platform_runtime::{Runtime, Version};
 use moon_project::Project;
+use moon_tool::{DependencyManager, Tool, ToolError};
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::fmt::Debug;
 use std::path::Path;
+
+pub type BoxedTool = Box<dyn Tool>;
+pub type BoxedDependencyManager = Box<dyn DependencyManager<BoxedTool>>;
 
 #[async_trait]
 pub trait Platform: Debug + Send + Sync {
@@ -18,6 +22,11 @@ pub trait Platform: Debug + Send + Sync {
 
     /// Return a runtime with an appropriate version based on the provided configs.
     fn get_runtime_from_config(&self, project_config: Option<&ProjectConfig>) -> Option<Runtime>;
+
+    /// Return true if the current platform is for the provided project or runtime.
+    fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool;
+
+    // PROJECT GRAPH
 
     /// Determine if the provided project is within the platform's dependency manager
     /// workspace (not to be confused with moon's workspace).
@@ -62,10 +71,20 @@ pub trait Platform: Debug + Send + Sync {
         Ok(BTreeMap::new())
     }
 
-    /// Return true if the current platform is for the provided project or runtime.
-    fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool;
+    // TOOLCHAIN
 
-    async fn setup_tool(
+    fn get_language_tool(&self, version: Version) -> Result<&BoxedTool, ToolError>;
+
+    fn get_dependency_manager(
+        &self,
+        version: Version,
+    ) -> Result<Option<&BoxedDependencyManager>, ToolError> {
+        Ok(None)
+    }
+
+    // ACTIONS
+
+    async fn setup_toolchain(
         &mut self,
         version: Version,
         last_versions: &mut FxHashMap<String, String>,

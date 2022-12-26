@@ -7,8 +7,10 @@ use moon_error::MoonError;
 use moon_logger::{color, debug, warn};
 use moon_node_lang::node::{get_package_manager_workspaces, parse_package_name};
 use moon_node_lang::{PackageJson, NPM};
+use moon_node_tool::NodeTool;
 use moon_platform::{Platform, Runtime, Version};
 use moon_project::Project;
+use moon_tool::{DependencyManager, Tool, ToolError, ToolManager};
 use moon_utils::glob::GlobSet;
 use rustc_hash::FxHashMap;
 use std::path::PathBuf;
@@ -23,6 +25,8 @@ pub struct NodePlatform {
     /// Maps `package.json` names to project IDs.
     package_names: FxHashMap<String, ProjectID>,
 
+    toolchain: ToolManager<NodeTool>,
+
     workspace_root: PathBuf,
 }
 
@@ -31,6 +35,7 @@ impl NodePlatform {
         NodePlatform {
             config: config.to_owned(),
             package_names: FxHashMap::default(),
+            toolchain: ToolManager::new(Runtime::Node(Version::default())),
             workspace_root: workspace_root.to_path_buf(),
         }
     }
@@ -249,5 +254,20 @@ impl Platform for NodePlatform {
         }
 
         false
+    }
+
+    // TOOLCHAIN
+
+    fn get_language_tool(&self, version: Version) -> Result<Box<&dyn Tool>, ToolError> {
+        Ok(Box::new(self.toolchain.get_for_version(&version)?))
+    }
+
+    fn get_dependency_manager(
+        &self,
+        _version: Version,
+    ) -> Result<Option<Box<&dyn DependencyManager<&dyn Tool>>>, ToolError> {
+        // let tool = self.get_language_tool(version)?;
+
+        Ok(None)
     }
 }

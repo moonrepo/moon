@@ -12,9 +12,6 @@ use std::collections::BTreeMap;
 use std::fmt::Debug;
 use std::path::Path;
 
-pub type BoxedTool = Box<dyn Tool>;
-pub type BoxedDependencyManager = Box<dyn DependencyManager<BoxedTool>>;
-
 #[async_trait]
 pub trait Platform: Debug + Send + Sync {
     /// Return the type of this platform.
@@ -73,12 +70,12 @@ pub trait Platform: Debug + Send + Sync {
 
     // TOOLCHAIN
 
-    fn get_language_tool(&self, version: Version) -> Result<&BoxedTool, ToolError>;
+    fn get_language_tool(&self, version: Version) -> Result<Box<&dyn Tool>, ToolError>;
 
     fn get_dependency_manager(
         &self,
         version: Version,
-    ) -> Result<Option<&BoxedDependencyManager>, ToolError> {
+    ) -> Result<Option<Box<&dyn DependencyManager<&dyn Tool>>>, ToolError> {
         Ok(None)
     }
 

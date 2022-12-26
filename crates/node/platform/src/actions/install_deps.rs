@@ -130,124 +130,124 @@ pub async fn install_deps(
         return Ok(ActionStatus::Skipped);
     }
 
-    let node = workspace
-        .toolchain
-        .node
-        .get_for_runtime::<NodeTool>(runtime)?;
-    let pm = node.get_package_manager();
-    let lock_filename = pm.get_lock_filename();
-    let manifest_filename = pm.get_manifest_filename();
+    // let node = workspace
+    //     .toolchain
+    //     .node
+    //     .get_for_runtime::<NodeTool>(runtime)?;
+    // let pm = node.get_package_manager();
+    // let lock_filename = pm.get_lock_filename();
+    // let manifest_filename = pm.get_manifest_filename();
 
-    // Determine the working directory and whether lockfiles and manifests have been modified
-    let working_dir;
-    let has_modified_files;
+    // // Determine the working directory and whether lockfiles and manifests have been modified
+    // let working_dir;
+    // let has_modified_files;
 
-    if let Some(project) = project {
-        working_dir = project.root.clone();
-        has_modified_files = context
-            .touched_files
-            .contains(&working_dir.join(&lock_filename))
-            || context
-                .touched_files
-                .contains(&working_dir.join(&manifest_filename));
-    } else {
-        working_dir = workspace.root.clone();
-        has_modified_files = context
-            .touched_files
-            .iter()
-            .any(|f| f.ends_with(&lock_filename) || f.ends_with(&manifest_filename));
+    // if let Some(project) = project {
+    //     working_dir = project.root.clone();
+    //     has_modified_files = context
+    //         .touched_files
+    //         .contains(&working_dir.join(&lock_filename))
+    //         || context
+    //             .touched_files
+    //             .contains(&working_dir.join(&manifest_filename));
+    // } else {
+    //     working_dir = workspace.root.clone();
+    //     has_modified_files = context
+    //         .touched_files
+    //         .iter()
+    //         .any(|f| f.ends_with(&lock_filename) || f.ends_with(&manifest_filename));
 
-        // When installing deps in the workspace root, also sync applicable settings
-        sync_workspace(&workspace, node)?;
-    }
+    //     // When installing deps in the workspace root, also sync applicable settings
+    //     sync_workspace(&workspace, node)?;
+    // }
 
-    // Install dependencies in the current project or workspace
-    let lock_filepath = working_dir.join(&lock_filename);
-    let mut last_modified = 0;
-    let mut cache = workspace
-        .cache
-        .cache_deps_state(runtime, project.map(|p| p.id.as_ref()))?;
+    // // Install dependencies in the current project or workspace
+    // let lock_filepath = working_dir.join(&lock_filename);
+    // let mut last_modified = 0;
+    // let mut cache = workspace
+    //     .cache
+    //     .cache_deps_state(runtime, project.map(|p| p.id.as_ref()))?;
 
-    if lock_filepath.exists() {
-        last_modified = time::to_millis(
-            fs::metadata(&lock_filepath)?
-                .modified()
-                .map_err(|e| map_io_to_fs_error(e, lock_filepath.clone()))?,
-        );
-    }
+    // if lock_filepath.exists() {
+    //     last_modified = time::to_millis(
+    //         fs::metadata(&lock_filepath)?
+    //             .modified()
+    //             .map_err(|e| map_io_to_fs_error(e, lock_filepath.clone()))?,
+    //     );
+    // }
 
-    // Install deps if the lockfile has been modified since the last time they were installed!
-    if has_modified_files || last_modified == 0 || last_modified > cache.last_install_time {
-        debug!(
-            target: LOG_TARGET,
-            "Installing {} dependencies in {}",
-            runtime.label(),
-            color::path(&working_dir)
-        );
+    // // Install deps if the lockfile has been modified since the last time they were installed!
+    // if has_modified_files || last_modified == 0 || last_modified > cache.last_install_time {
+    //     debug!(
+    //         target: LOG_TARGET,
+    //         "Installing {} dependencies in {}",
+    //         runtime.label(),
+    //         color::path(&working_dir)
+    //     );
 
-        // When in CI, we can avoid installing dependencies because
-        // we can assume they've already been installed before moon runs!
-        if is_ci() && has_vendor_installed_dependencies(&working_dir, &NODE) {
-            warn!(
-                target: LOG_TARGET,
-                "In a CI environment and dependencies already exist, skipping install"
-            );
+    //     // When in CI, we can avoid installing dependencies because
+    //     // we can assume they've already been installed before moon runs!
+    //     if is_ci() && has_vendor_installed_dependencies(&working_dir, &NODE) {
+    //         warn!(
+    //             target: LOG_TARGET,
+    //             "In a CI environment and dependencies already exist, skipping install"
+    //         );
 
-            return Ok(ActionStatus::Skipped);
-        }
+    //         return Ok(ActionStatus::Skipped);
+    //     }
 
-        if is_offline() {
-            warn!(
-                target: LOG_TARGET,
-                "No internet connection, assuming offline and skipping install"
-            );
+    //     if is_offline() {
+    //         warn!(
+    //             target: LOG_TARGET,
+    //             "No internet connection, assuming offline and skipping install"
+    //         );
 
-            return Ok(ActionStatus::Skipped);
-        }
+    //         return Ok(ActionStatus::Skipped);
+    //     }
 
-        let should_log_command = workspace.config.runner.log_running_command;
+    //     let should_log_command = workspace.config.runner.log_running_command;
 
-        // install
-        {
-            let install_command = match node.config.package_manager {
-                NodePackageManager::Npm => "npm install",
-                NodePackageManager::Pnpm => "pnpm install",
-                NodePackageManager::Yarn => "yarn install",
-            };
+    //     // install
+    //     {
+    //         let install_command = match node.config.package_manager {
+    //             NodePackageManager::Npm => "npm install",
+    //             NodePackageManager::Pnpm => "pnpm install",
+    //             NodePackageManager::Yarn => "yarn install",
+    //         };
 
-            print_checkpoint(install_command, Checkpoint::Setup);
+    //         print_checkpoint(install_command, Checkpoint::Setup);
 
-            pm.install_dependencies(node, &working_dir, should_log_command)
-                .await?;
-        }
+    //         pm.install_dependencies(node, &working_dir, should_log_command)
+    //             .await?;
+    //     }
 
-        // dedupe
-        if !is_ci() && node.config.dedupe_on_lockfile_change {
-            let dedupe_command = match node.config.package_manager {
-                NodePackageManager::Npm => "npm dedupe",
-                NodePackageManager::Pnpm => "pnpm dedupe",
-                NodePackageManager::Yarn => "yarn dedupe",
-            };
+    //     // dedupe
+    //     if !is_ci() && node.config.dedupe_on_lockfile_change {
+    //         let dedupe_command = match node.config.package_manager {
+    //             NodePackageManager::Npm => "npm dedupe",
+    //             NodePackageManager::Pnpm => "pnpm dedupe",
+    //             NodePackageManager::Yarn => "yarn dedupe",
+    //         };
 
-            debug!(target: LOG_TARGET, "Deduping dependencies");
+    //         debug!(target: LOG_TARGET, "Deduping dependencies");
 
-            print_checkpoint(dedupe_command, Checkpoint::Setup);
+    //         print_checkpoint(dedupe_command, Checkpoint::Setup);
 
-            pm.dedupe_dependencies(node, &working_dir, should_log_command)
-                .await?;
-        }
+    //         pm.dedupe_dependencies(node, &working_dir, should_log_command)
+    //             .await?;
+    //     }
 
-        // Update the cache with the timestamp
-        cache.last_install_time = time::now_millis();
-        cache.save()?;
+    //     // Update the cache with the timestamp
+    //     cache.last_install_time = time::now_millis();
+    //     cache.save()?;
 
-        return Ok(ActionStatus::Passed);
-    }
+    //     return Ok(ActionStatus::Passed);
+    // }
 
-    debug!(
-        target: LOG_TARGET,
-        "Lockfile has not changed since last install, skipping Node.js dependencies",
-    );
+    // debug!(
+    //     target: LOG_TARGET,
+    //     "Lockfile has not changed since last install, skipping Node.js dependencies",
+    // );
 
     Ok(ActionStatus::Skipped)
 }

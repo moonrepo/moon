@@ -51,20 +51,18 @@ pub async fn install_deps(
         return Ok(ActionStatus::Skipped);
     }
 
-    let Some(depman) = workspace
-        .platforms
-        .get(runtime)?
-        .get_dependency_manager(runtime.version())? else  {
-        debug!(
-            target: LOG_TARGET,
-            "No dependency manager for language, skipping install",
-        );
+    // let platform = workspace.platforms.get(runtime)?;
+    // let Some(depman) = platform.get_dependency_manager(runtime.version())? else  {
+    //     debug!(
+    //         target: LOG_TARGET,
+    //         "No dependency manager for language, skipping install",
+    //     );
 
-        return Ok(ActionStatus::Skipped);
-    };
+    //     return Ok(ActionStatus::Skipped);
+    // };
 
-    let lockfile = depman.get_lock_filename();
-    let manifest = depman.get_manifest_filename();
+    let lockfile = ""; // depman.get_lock_filename();
+    let manifest = ""; // depman.get_manifest_filename();
 
     // Determine the working directory and whether lockfiles and manifests have been modified
     let working_dir;

@@ -1781,7 +1781,6 @@ dependencies = [
  "figment",
  "moon_constants",
  "moon_error",
- "moon_node_lang",
  "moon_test_utils",
  "moon_utils",
  "reqwest",

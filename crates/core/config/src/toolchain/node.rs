@@ -1,24 +1,23 @@
 use crate::validators::validate_semver_version;
-use moon_node_lang::{NODE, NODENV, NPM, NVM, PNPM, YARN};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::env;
 use validator::{Validate, ValidationError};
 
 pub fn default_node_version() -> String {
-    env::var("MOON_NODE_VERSION").unwrap_or_else(|_| NODE.default_version.to_string())
+    env::var("MOON_NODE_VERSION").unwrap_or_else(|_| "18.12.0".to_string())
 }
 
 pub fn default_npm_version() -> String {
-    env::var("MOON_NPM_VERSION").unwrap_or_else(|_| NPM.default_version.to_string())
+    env::var("MOON_NPM_VERSION").unwrap_or_else(|_| "8.19.2".to_string())
 }
 
 pub fn default_pnpm_version() -> String {
-    env::var("MOON_PNPM_VERSION").unwrap_or_else(|_| PNPM.default_version.to_string())
+    env::var("MOON_PNPM_VERSION").unwrap_or_else(|_| "7.18.2".to_string())
 }
 
 pub fn default_yarn_version() -> String {
-    env::var("MOON_YARN_VERSION").unwrap_or_else(|_| YARN.default_version.to_string())
+    env::var("MOON_YARN_VERSION").unwrap_or_else(|_| "3.3.0".to_string())
 }
 
 fn validate_node_version(value: &str) -> Result<(), ValidationError> {
@@ -89,15 +88,6 @@ pub enum NodePackageManager {
 pub enum NodeVersionManager {
     Nodenv,
     Nvm,
-}
-
-impl NodeVersionManager {
-    pub fn get_config_filename(&self) -> String {
-        match self {
-            NodeVersionManager::Nodenv => String::from(NODENV.version_file),
-            NodeVersionManager::Nvm => String::from(NVM.version_file),
-        }
-    }
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]

@@ -11,8 +11,6 @@ type StaticStringList = &'static [StaticString];
 pub struct Language {
     pub binary: StaticString,
 
-    pub default_version: StaticString,
-
     pub file_exts: StaticStringList,
 
     pub vendor_bins_dir: Option<StaticString>,
@@ -24,8 +22,6 @@ pub struct DependencyManager {
     pub binary: StaticString,
 
     pub config_files: StaticStringList,
-
-    pub default_version: StaticString,
 
     pub lockfile: StaticString,
 

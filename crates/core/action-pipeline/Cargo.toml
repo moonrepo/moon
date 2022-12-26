@@ -9,5 +9,8 @@ edition = "2021"
 # serde_yaml = { workspace = true, default-features = false }
 # thiserror = { workspace = true }
 moon_action = { path = "../action" }
+moon_action_context = { path = "../action-context" }
+moon_logger = { path = "../logger" }
 moon_dep_graph = { path = "../dep-graph" }
+async-channel = "1.8.0"
 tokio = { workspace = true }

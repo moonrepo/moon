@@ -11,6 +11,7 @@ moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
 moon_platform = { path = "../platform" }
 moon_project = { path = "../project" }
+moon_project_graph = { path = "../project-graph" }
 moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
 async-channel = "1.8.0"

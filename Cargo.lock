@@ -1699,6 +1699,7 @@ dependencies = [
  "moon_logger",
  "moon_platform",
  "moon_project",
+ "moon_project_graph",
  "moon_utils",
  "moon_workspace",
  "thiserror",

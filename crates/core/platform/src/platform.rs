@@ -1,14 +1,17 @@
+use async_trait::async_trait;
 use moon_config::{
     DependencyConfig, PlatformType, ProjectConfig, ProjectLanguage, ProjectsAliasesMap,
     ProjectsSourcesMap, TasksConfigsMap,
 };
 use moon_error::MoonError;
-use moon_platform_runtime::Runtime;
+use moon_platform_runtime::{Runtime, Version};
 use moon_project::Project;
+use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::fmt::Debug;
 use std::path::Path;
 
+#[async_trait]
 pub trait Platform: Debug + Send + Sync {
     /// Return the type of this platform.
     fn get_type(&self) -> PlatformType;
@@ -61,4 +64,12 @@ pub trait Platform: Debug + Send + Sync {
 
     /// Return true if the current platform is for the provided project or runtime.
     fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool;
+
+    async fn setup_tool(
+        &mut self,
+        version: Version,
+        last_versions: &mut FxHashMap<String, String>,
+    ) -> Result<u8, MoonError> {
+        Ok(0) // TODO
+    }
 }

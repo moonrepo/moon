@@ -8,5 +8,6 @@ moon_config = { path = "../config" }
 moon_error = { path = "../error" }
 moon_platform_runtime = { path = "../platform-runtime" }
 moon_project = { path = "../project" }
+async-trait = "0.1.59"
 rustc-hash = { workspace = true }
 serde = { workspace = true }

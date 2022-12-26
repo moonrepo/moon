@@ -1,3 +1,5 @@
+use crate::errors::PipelineError;
+use crate::processor::process_action;
 use moon_action::{Action, ActionNode};
 use moon_action_context::ActionContext;
 use moon_dep_graph::DepGraph;
@@ -38,7 +40,7 @@ impl Pipeline {
         self
     }
 
-    pub async fn run(&mut self, context: Option<ActionContext>) {
+    pub async fn run(&mut self, context: Option<ActionContext>) -> Result<(), PipelineError> {
         let start = Instant::now();
         let context = context.unwrap_or_default();
         let mut results: ActionResults = vec![];
@@ -52,13 +54,8 @@ impl Pipeline {
             let receiver = receiver.clone();
 
             tokio::spawn(async move {
-                while let Ok((action, permit)) = receiver.recv().await {
-                    trace!(
-                        target: &action.log_target,
-                        "Running action {}",
-                        color::muted_light(&action.label)
-                    );
-
+                while let Ok((mut action, permit)) = receiver.recv().await {
+                    process_action(&mut action).await.unwrap();
                     drop(permit);
                 }
             });
@@ -67,7 +64,7 @@ impl Pipeline {
         // Queue actions in topological order that need to be processed,
         // grouped into batches based on dependency requirements
         let total_actions_count = self.dep_graph.get_node_count();
-        let batches = self.dep_graph.sort_batched_topological().unwrap();
+        let batches = self.dep_graph.sort_batched_topological()?;
         let batches_count = batches.len();
 
         debug!(
@@ -122,5 +119,7 @@ impl Pipeline {
         );
 
         self.duration = Some(duration);
+
+        Ok(())
     }
 }

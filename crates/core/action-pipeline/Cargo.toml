@@ -4,13 +4,14 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-# regex = "1.7.0"
-# serde_json = { workspace = true, default-features = false }
-# serde_yaml = { workspace = true, default-features = false }
-# thiserror = { workspace = true }
 moon_action = { path = "../action" }
 moon_action_context = { path = "../action-context" }
-moon_logger = { path = "../logger" }
 moon_dep_graph = { path = "../dep-graph" }
+moon_error = { path = "../error" }
+moon_logger = { path = "../logger" }
+moon_platform = { path = "../platform" }
+moon_utils = { path = "../utils" }
+moon_workspace = { path = "../workspace" }
 async-channel = "1.8.0"
+thiserror = { workspace = true }
 tokio = { workspace = true }

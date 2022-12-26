@@ -1,7 +1,9 @@
 mod errors;
+mod manager;
 mod tool;
 
 pub use errors::*;
+pub use manager::*;
 pub use tool::*;
 
 use std::env;

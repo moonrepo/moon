@@ -1695,7 +1695,12 @@ dependencies = [
  "moon_action",
  "moon_action_context",
  "moon_dep_graph",
+ "moon_error",
  "moon_logger",
+ "moon_platform",
+ "moon_utils",
+ "moon_workspace",
+ "thiserror",
  "tokio",
 ]
 
@@ -2027,6 +2032,7 @@ dependencies = [
 name = "moon_platform"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "moon_config",
  "moon_error",
  "moon_platform_runtime",
@@ -2056,6 +2062,7 @@ dependencies = [
 name = "moon_platform_runtime"
 version = "0.1.0"
 dependencies = [
+ "moon_config",
  "serde",
 ]
 
@@ -2233,6 +2240,7 @@ dependencies = [
  "async-trait",
  "moon_error",
  "moon_lang",
+ "moon_platform_runtime",
  "moon_utils",
  "proto_error",
  "rustc-hash",

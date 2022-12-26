@@ -300,7 +300,7 @@ impl Runner {
                 actions_count
             );
 
-            let mut action_handles = vec![];
+            // let mut action_handles = vec![];
 
             for (i, node_index) in batch.into_iter().enumerate() {
                 let action_count = i + 1;
@@ -310,133 +310,133 @@ impl Runner {
                 let workspace_clone = Arc::clone(&self.workspace);
                 let emitter_clone = Arc::clone(&emitter);
 
-                action_handles.push(task::spawn(async move {
-                    let mut action = Action::new(node_index.index(), None);
-                    let own_dep_graph = dep_graph_clone.read().await;
-                    let own_emitter = emitter_clone.read().await;
+                // action_handles.push(task::spawn(async move {
+                // let mut action = Action::new(node_index.index(), None);
+                // let own_dep_graph = dep_graph_clone.read().await;
+                // let own_emitter = emitter_clone.read().await;
 
-                    if let Some(node) = own_dep_graph.get_node_from_index(&node_index) {
-                        action.label = Some(node.label());
+                // if let Some(node) = own_dep_graph.get_node_from_index(&node_index) {
+                //     action.label = Some(node.label());
 
-                        own_emitter
-                            .emit(Event::ActionStarted {
-                                action: &action,
-                                node,
-                            })
-                            .await?;
+                //     own_emitter
+                //         .emit(Event::ActionStarted {
+                //             action: &action,
+                //             node,
+                //         })
+                //         .await?;
 
-                        let log_target_name =
-                            format!("{}:batch:{}:{}", LOG_TARGET, batch_count, action_count);
-                        let log_action_label = color::muted_light(node.label());
+                //     let log_target_name =
+                //         format!("{}:batch:{}:{}", LOG_TARGET, batch_count, action_count);
+                //     let log_action_label = color::muted_light(node.label());
 
-                        trace!(
-                            target: &log_target_name,
-                            "Running action {}",
-                            log_action_label
-                        );
+                //     trace!(
+                //         target: &log_target_name,
+                //         "Running action {}",
+                //         log_action_label
+                //     );
 
-                        let result = run_action(
-                            node,
-                            &mut action,
-                            context_clone,
-                            workspace_clone,
-                            project_graph_clone,
-                            Arc::clone(&emitter_clone),
-                        )
-                        .await;
+                //     let result = run_action(
+                //         node,
+                //         &mut action,
+                //         context_clone,
+                //         workspace_clone,
+                //         project_graph_clone,
+                //         Arc::clone(&emitter_clone),
+                //     )
+                //     .await;
 
-                        own_emitter
-                            .emit(Event::ActionFinished {
-                                action: &action,
-                                error: extract_run_error(&result),
-                                node,
-                            })
-                            .await?;
+                //     own_emitter
+                //         .emit(Event::ActionFinished {
+                //             action: &action,
+                //             error: extract_run_error(&result),
+                //             node,
+                //         })
+                //         .await?;
 
-                        if action.has_failed() {
-                            trace!(
-                                target: &log_target_name,
-                                "Failed to run action {} in {:?}",
-                                log_action_label,
-                                action.duration.unwrap()
-                            );
-                        } else {
-                            trace!(
-                                target: &log_target_name,
-                                "Ran action {} in {:?}",
-                                log_action_label,
-                                action.duration.unwrap()
-                            );
-                        }
+                //     if action.has_failed() {
+                //         trace!(
+                //             target: &log_target_name,
+                //             "Failed to run action {} in {:?}",
+                //             log_action_label,
+                //             action.duration.unwrap()
+                //         );
+                //     } else {
+                //         trace!(
+                //             target: &log_target_name,
+                //             "Ran action {} in {:?}",
+                //             log_action_label,
+                //             action.duration.unwrap()
+                //         );
+                //     }
 
-                        // Bubble up any failure
-                        result?;
-                    } else {
-                        action.status = ActionStatus::Invalid;
+                //     // Bubble up any failure
+                //     result?;
+                // } else {
+                //     action.status = ActionStatus::Invalid;
 
-                        return Err(RunnerError::DepGraph(DepGraphError::UnknownNode(
-                            node_index.index(),
-                        )));
-                    }
+                //     return Err(RunnerError::DepGraph(DepGraphError::UnknownNode(
+                //         node_index.index(),
+                //     )));
+                // }
 
-                    Ok(action)
-                }));
+                //  Ok(())
+                //}));
             }
 
             // Wait for all actions in this batch to complete,
             // while also handling and propagating errors
-            for handle in action_handles {
-                match handle.await {
-                    Ok(Ok(result)) => {
-                        if result.should_abort() {
-                            error!(
-                                target: &batch_target_name,
-                                "Encountered a critical error, aborting the action runner"
-                            );
-                        }
+            // for handle in action_handles {
+            // match handle.await {
+            //     Ok(Ok(result)) => {
+            //         if result.should_abort() {
+            //             error!(
+            //                 target: &batch_target_name,
+            //                 "Encountered a critical error, aborting the action runner"
+            //             );
+            //         }
 
-                        if result.has_failed() {
-                            self.failed_count += 1;
-                        } else if result.was_cached() {
-                            self.cached_count += 1;
-                        } else {
-                            self.passed_count += 1;
-                        }
+            //         if result.has_failed() {
+            //             self.failed_count += 1;
+            //         } else if result.was_cached() {
+            //             self.cached_count += 1;
+            //         } else {
+            //             self.passed_count += 1;
+            //         }
 
-                        if self.bail && result.has_failed() || result.should_abort() {
-                            local_emitter
-                                .emit(Event::RunnerAborted {
-                                    error: result.error.clone().unwrap_or_default(),
-                                })
-                                .await?;
+            //         if self.bail && result.has_failed() || result.should_abort() {
+            //             local_emitter
+            //                 .emit(Event::RunnerAborted {
+            //                     error: result.error.clone().unwrap_or_default(),
+            //                 })
+            //                 .await?;
 
-                            return Err(RunnerError::Failure(result.error.unwrap()));
-                        }
+            //             return Err(RunnerError::Failure(result.error.unwrap()));
+            //         }
 
-                        results.push(result);
-                    }
-                    Ok(Err(e)) => {
-                        self.failed_count += 1;
-                        local_emitter
-                            .emit(Event::RunnerAborted {
-                                error: e.to_string(),
-                            })
-                            .await?;
+            //         results.push(result);
+            //     }
+            //     Ok(Err(e)) => {
+            //         self.failed_count += 1;
+            //         local_emitter
+            //             .emit(Event::RunnerAborted {
+            //                 error: e.to_string(),
+            //             })
+            //             .await?;
 
-                        return Err(e);
-                    }
-                    Err(e) => {
-                        self.failed_count += 1;
-                        local_emitter
-                            .emit(Event::RunnerAborted {
-                                error: e.to_string(),
-                            })
-                            .await?;
+            //         return Err(e);
+            //     }
+            //     Err(e) => {
+            //         self.failed_count += 1;
+            //         local_emitter
+            //             .emit(Event::RunnerAborted {
+            //                 error: e.to_string(),
+            //             })
+            //             .await?;
 
-                        return Err(RunnerError::Failure(e.to_string()));
-                    }
-                }
-            }
+            //         return Err(RunnerError::Failure(e.to_string()));
+            //     }
+            // }
+            // }
         }
 
         let duration = start.elapsed();
@@ -489,12 +489,12 @@ impl Runner {
                 meta.push(time::elapsed(duration));
             }
 
-            term.write_line(&format!(
-                "{} {} {}",
-                status,
-                color::style(result.label.as_ref().unwrap()).bold(),
-                color::muted(format!("({})", meta.join(", ")))
-            ))?;
+            // term.write_line(&format!(
+            //     "{} {} {}",
+            //     status,
+            //     color::style(result.label.as_ref().unwrap()).bold(),
+            //     color::muted(format!("({})", meta.join(", ")))
+            // ))?;
 
             if let Some(error) = &result.error {
                 term.write_line(&format!(
@@ -517,11 +517,11 @@ impl Runner {
         let mut invalid_count = 0;
 
         for result in results {
-            if let Some(label) = &result.label {
-                if compact && !label.contains("RunTarget") {
-                    continue;
-                }
-            }
+            // if let Some(label) = &result.label {
+            //     if compact && !label.contains("RunTarget") {
+            //         continue;
+            //     }
+            // }
 
             match result.status {
                 ActionStatus::Cached | ActionStatus::CachedFromRemote => {

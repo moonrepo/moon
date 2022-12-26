@@ -6,8 +6,7 @@ use std::num::NonZeroUsize;
 use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
-use tokio::sync::mpsc;
-use tokio::sync::RwLock;
+use tokio::sync::{OwnedSemaphorePermit, Semaphore};
 
 const LOG_TARGET: &str = "moon:action-pipeline";
 
@@ -15,7 +14,10 @@ pub type ActionResults = Vec<Action>;
 
 pub struct Pipeline {
     concurrency: usize,
+
     dep_graph: DepGraph,
+
+    duration: Option<Duration>,
 }
 
 impl Pipeline {
@@ -27,6 +29,7 @@ impl Pipeline {
         Pipeline {
             concurrency,
             dep_graph,
+            duration: None,
         }
     }
 
@@ -35,84 +38,89 @@ impl Pipeline {
         self
     }
 
-    pub async fn run(&self, context: Option<ActionContext>) {
-        let (sender, receiver) = async_channel::unbounded();
+    pub async fn run(&mut self, context: Option<ActionContext>) {
+        let start = Instant::now();
+        let context = context.unwrap_or_default();
         let mut results: ActionResults = vec![];
+
+        // We use an async channel to coordinate actions (tasks) to process
+        // across a bounded worker pool, as defined by the provided concurrency
+        let (sender, receiver) = async_channel::unbounded::<(Action, OwnedSemaphorePermit)>();
 
         // Spawn worker threads that will process the action queue
         for _ in 0..self.concurrency {
             let receiver = receiver.clone();
 
             tokio::spawn(async move {
-                while let Ok(action) = receiver.recv().await {
-                    dbg!("RECEIVED", &action);
+                while let Ok((action, permit)) = receiver.recv().await {
+                    trace!(
+                        target: &action.log_target,
+                        "Running action {}",
+                        color::muted_light(&action.label)
+                    );
+
+                    drop(permit);
                 }
             });
         }
 
-        // Spawn tasks for actions that need to be executed
-        let start = Instant::now();
-        let node_count = self.dep_graph.get_node_count();
+        // Queue actions in topological order that need to be processed,
+        // grouped into batches based on dependency requirements
+        let total_actions_count = self.dep_graph.get_node_count();
         let batches = self.dep_graph.sort_batched_topological().unwrap();
         let batches_count = batches.len();
-        let context = context.unwrap_or_default();
 
         debug!(
             target: LOG_TARGET,
-            "Running {} actions across {} batches", node_count, batches_count
+            "Running {} actions across {} batches", total_actions_count, batches_count
         );
 
         for (b, batch) in batches.into_iter().enumerate() {
-            let batch_count = b + 1;
-            let batch_target_name = format!("{}:batch:{}", LOG_TARGET, batch_count);
+            let batch_index = b + 1;
+            let batch_target_name = format!("{}:batch:{}", LOG_TARGET, batch_index);
             let actions_count = batch.len();
-            let mut action_handles = vec![];
 
             trace!(
                 target: &batch_target_name,
-                "Running {} actions",
-                actions_count
+                "Running {} actions in batch {}",
+                actions_count,
+                batch_index
             );
 
+            // We use a semaphore for ensuring that all actions within this batch
+            // have completed processing before continuing to the next batch
+            let semaphore = Arc::new(Semaphore::new(actions_count));
+
             for (i, node_index) in batch.into_iter().enumerate() {
-                let action_count = i + 1;
+                let action_index = i + 1;
 
                 if let Some(node) = self.dep_graph.get_node_from_index(&node_index) {
-                    let sender = sender.clone();
-                    let log_target_name =
-                        format!("{}:batch:{}:{}", LOG_TARGET, batch_count, action_count);
-                    let log_action_label = color::muted_light(node.label());
+                    let permit = semaphore.clone().acquire_owned().await.unwrap();
+                    let mut action = Action::new(node.to_owned());
 
-                    trace!(
-                        target: &log_target_name,
-                        "Running action {}",
-                        log_action_label
-                    );
+                    action.log_target = format!("{}:{}", batch_target_name, action_index);
 
-                    action_handles.push(tokio::spawn(async move {
-                        let mut action = Action::new(node_index.index(), None);
-
-                        sender.send(action).await.unwrap();
-
-                        // action
-                    }));
+                    let _ = sender.send((action, permit)).await;
                 } else {
                     panic!("HOW?");
                 }
             }
 
-            // Wait for all actions in this batch to complete,
-            // while also handling and propagating errors
-            for handle in action_handles {
-                handle.await.unwrap();
+            // Wait for all actions in this batch to complete
+            while semaphore.available_permits() != actions_count {
+                continue;
             }
+
+            semaphore.close();
         }
 
         let duration = start.elapsed();
 
         debug!(
             target: LOG_TARGET,
-            "Finished running {} actions in {:?}", node_count, &duration
+            "Finished running {} actions in {:?}", total_actions_count, &duration
         );
+
+        self.duration = Some(duration);
     }
 }

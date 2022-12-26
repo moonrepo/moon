@@ -2,6 +2,7 @@ use crate::enums::{CacheMode, TouchedStatus};
 use crate::helpers::AnyError;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use moon::{build_dep_graph, generate_project_graph, load_workspace};
+use moon_action_pipeline::{ActionContext, Pipeline};
 use moon_logger::{color, map_list};
 use moon_project_graph::ProjectGraph;
 use moon_runner::Runner;
@@ -100,29 +101,44 @@ pub async fn run_target(
     }
 
     // Process all tasks in the graph
-    let context = RunnerContext {
+    // let context = RunnerContext {
+    //     affected_only: options.affected,
+    //     initial_targets: FxHashSet::from_iter(target_ids.to_owned()),
+    //     passthrough_args: options.passthrough,
+    //     primary_targets: FxHashSet::from_iter(primary_targets),
+    //     profile: options.profile,
+    //     target_hashes: FxHashMap::default(),
+    //     touched_files,
+    // };
+
+    // let dep_graph = dep_builder.build();
+    // let mut runner = Runner::new(workspace);
+
+    // if options.report {
+    //     runner.generate_report("runReport.json");
+    // }
+
+    // let results = runner
+    //     .bail_on_error()
+    //     .run(dep_graph, project_graph, Some(context))
+    //     .await?;
+
+    // runner.render_stats(&results, true)?;
+
+    let dep_graph = dep_builder.build();
+
+    let context = ActionContext {
         affected_only: options.affected,
         initial_targets: FxHashSet::from_iter(target_ids.to_owned()),
         passthrough_args: options.passthrough,
         primary_targets: FxHashSet::from_iter(primary_targets),
-        profile: options.profile,
+        // profile: options.profile,
         target_hashes: FxHashMap::default(),
         touched_files,
+        ..ActionContext::default()
     };
 
-    let dep_graph = dep_builder.build();
-    let mut runner = Runner::new(workspace);
-
-    if options.report {
-        runner.generate_report("runReport.json");
-    }
-
-    let results = runner
-        .bail_on_error()
-        .run(dep_graph, project_graph, Some(context))
-        .await?;
-
-    runner.render_stats(&results, true)?;
+    Pipeline::new(dep_graph).run(Some(context)).await;
 
     Ok(())
 }

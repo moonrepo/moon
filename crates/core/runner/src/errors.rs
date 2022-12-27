@@ -6,9 +6,6 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum RunnerError {
-    #[error("{0}")]
-    Failure(String),
-
     #[error(transparent)]
     Moon(#[from] MoonError),
 

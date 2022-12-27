@@ -1,7 +1,4 @@
-use moon_action::{Action, ActionStatus};
 use moon_config::{NodePackageManager, NodeVersionManager};
-use moon_error::map_io_to_fs_error;
-use moon_error::MoonError;
 use moon_lang::has_vendor_installed_dependencies;
 use moon_logger::{color, debug, warn};
 use moon_node_lang::{PackageJson, NODE, NODENV, NPM, NVM};

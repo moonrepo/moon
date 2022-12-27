@@ -58,16 +58,6 @@ impl Runner {
         }
     }
 
-    pub fn bail_on_error(&mut self) -> &mut Self {
-        self.bail = true;
-        self
-    }
-
-    pub fn generate_report(&mut self, name: &str) -> &mut Self {
-        self.report_name = Some(name.to_owned());
-        self
-    }
-
     pub fn get_duration(&self) -> Duration {
         self.duration
             .expect("Cannot get duration, action runner not ran!")
@@ -95,168 +85,7 @@ impl Runner {
         ));
         let local_emitter = emitter.read().await;
 
-        debug!(
-            target: LOG_TARGET,
-            "Running {} actions across {} batches", node_count, batches_count
-        );
-
-        local_emitter
-            .emit(Event::RunnerStarted {
-                actions_count: node_count,
-            })
-            .await?;
-
         let mut results: ActionResults = vec![];
-
-        for (b, batch) in batches.into_iter().enumerate() {
-            let batch_count = b + 1;
-            let batch_target_name = format!("{}:batch:{}", LOG_TARGET, batch_count);
-            let actions_count = batch.len();
-
-            trace!(
-                target: &batch_target_name,
-                "Running {} actions",
-                actions_count
-            );
-
-            // let mut action_handles = vec![];
-
-            for (i, node_index) in batch.into_iter().enumerate() {
-                let action_count = i + 1;
-                let dep_graph_clone = Arc::clone(&dep_graph);
-                let project_graph_clone = Arc::clone(&project_graph);
-                let context_clone = Arc::clone(&context);
-                let workspace_clone = Arc::clone(&self.workspace);
-                let emitter_clone = Arc::clone(&emitter);
-
-                // action_handles.push(task::spawn(async move {
-                // let mut action = Action::new(node_index.index(), None);
-                // let own_dep_graph = dep_graph_clone.read().await;
-                // let own_emitter = emitter_clone.read().await;
-
-                // if let Some(node) = own_dep_graph.get_node_from_index(&node_index) {
-                //     action.label = Some(node.label());
-
-                //     own_emitter
-                //         .emit(Event::ActionStarted {
-                //             action: &action,
-                //             node,
-                //         })
-                //         .await?;
-
-                //     let log_target_name =
-                //         format!("{}:batch:{}:{}", LOG_TARGET, batch_count, action_count);
-                //     let log_action_label = color::muted_light(node.label());
-
-                //     trace!(
-                //         target: &log_target_name,
-                //         "Running action {}",
-                //         log_action_label
-                //     );
-
-                //     let result = run_action(
-                //         node,
-                //         &mut action,
-                //         context_clone,
-                //         workspace_clone,
-                //         project_graph_clone,
-                //         Arc::clone(&emitter_clone),
-                //     )
-                //     .await;
-
-                //     own_emitter
-                //         .emit(Event::ActionFinished {
-                //             action: &action,
-                //             error: extract_run_error(&result),
-                //             node,
-                //         })
-                //         .await?;
-
-                //     if action.has_failed() {
-                //         trace!(
-                //             target: &log_target_name,
-                //             "Failed to run action {} in {:?}",
-                //             log_action_label,
-                //             action.duration.unwrap()
-                //         );
-                //     } else {
-                //         trace!(
-                //             target: &log_target_name,
-                //             "Ran action {} in {:?}",
-                //             log_action_label,
-                //             action.duration.unwrap()
-                //         );
-                //     }
-
-                //     // Bubble up any failure
-                //     result?;
-                // } else {
-                //     action.status = ActionStatus::Invalid;
-
-                //     return Err(RunnerError::DepGraph(DepGraphError::UnknownNode(
-                //         node_index.index(),
-                //     )));
-                // }
-
-                //  Ok(())
-                //}));
-            }
-
-            // Wait for all actions in this batch to complete,
-            // while also handling and propagating errors
-            // for handle in action_handles {
-            // match handle.await {
-            //     Ok(Ok(result)) => {
-            //         if result.should_abort() {
-            //             error!(
-            //                 target: &batch_target_name,
-            //                 "Encountered a critical error, aborting the action runner"
-            //             );
-            //         }
-
-            //         if result.has_failed() {
-            //             self.failed_count += 1;
-            //         } else if result.was_cached() {
-            //             self.cached_count += 1;
-            //         } else {
-            //             self.passed_count += 1;
-            //         }
-
-            //         if self.bail && result.has_failed() || result.should_abort() {
-            //             local_emitter
-            //                 .emit(Event::RunnerAborted {
-            //                     error: result.error.clone().unwrap_or_default(),
-            //                 })
-            //                 .await?;
-
-            //             return Err(RunnerError::Failure(result.error.unwrap()));
-            //         }
-
-            //         results.push(result);
-            //     }
-            //     Ok(Err(e)) => {
-            //         self.failed_count += 1;
-            //         local_emitter
-            //             .emit(Event::RunnerAborted {
-            //                 error: e.to_string(),
-            //             })
-            //             .await?;
-
-            //         return Err(e);
-            //     }
-            //     Err(e) => {
-            //         self.failed_count += 1;
-            //         local_emitter
-            //             .emit(Event::RunnerAborted {
-            //                 error: e.to_string(),
-            //             })
-            //             .await?;
-
-            //         return Err(RunnerError::Failure(e.to_string()));
-            //     }
-            // }
-            // }
-        }
 
         let duration = start.elapsed();
 
@@ -275,7 +104,6 @@ impl Runner {
             .await?;
 
         self.duration = Some(duration);
-        self.create_run_report(&results, context).await?;
 
         Ok(results)
     }

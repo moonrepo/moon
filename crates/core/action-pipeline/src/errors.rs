@@ -9,6 +9,9 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum PipelineError {
+    #[error("Pipeline has been aborted because: {0}")]
+    Aborted(String),
+
     #[error(transparent)]
     DepGraph(#[from] DepGraphError),
 

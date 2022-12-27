@@ -27,10 +27,13 @@ pub async fn process_action(
     workspace: Arc<RwLock<Workspace>>,
     project_graph: Arc<RwLock<ProjectGraph>>,
 ) -> Result<(), PipelineError> {
+    let node = action.node.take().unwrap();
+    let log_action_label = color::muted_light(&action.label);
+
     trace!(
         target: &action.log_target,
         "Running action {}",
-        color::muted_light(&action.label)
+        log_action_label
     );
 
     let local_emitter = Arc::clone(&emitter);
@@ -39,7 +42,13 @@ pub async fn process_action(
     let local_project_graph = Arc::clone(&project_graph);
     let local_project_graph = local_project_graph.read().await;
 
-    let node = action.node.take().unwrap();
+    local_emitter
+        .emit(Event::ActionStarted {
+            action: &action,
+            node: &node,
+        })
+        .await?;
+
     let result = match &node {
         // Setup and install the specific tool
         ActionNode::SetupTool(runtime) => {
@@ -151,6 +160,14 @@ pub async fn process_action(
         }
     };
 
+    local_emitter
+        .emit(Event::ActionFinished {
+            action: &action,
+            error: extract_error(&result),
+            node: &node,
+        })
+        .await?;
+
     match result {
         Ok(status) => {
             action.done(status);
@@ -165,6 +182,22 @@ pub async fn process_action(
                 action.abort();
             }
         }
+    }
+
+    if action.has_failed() {
+        trace!(
+            target: &action.log_target,
+            "Failed to run action {} in {:?}",
+            log_action_label,
+            action.duration.unwrap()
+        );
+    } else {
+        trace!(
+            target: &action.log_target,
+            "Ran action {} in {:?}",
+            log_action_label,
+            action.duration.unwrap()
+        );
     }
 
     Ok(())

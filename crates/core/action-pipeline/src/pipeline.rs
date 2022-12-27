@@ -5,7 +5,7 @@ use crate::subscribers::moonbase_cache::MoonbaseCacheSubscriber;
 use moon_action::{Action, ActionNode};
 use moon_action_context::ActionContext;
 use moon_dep_graph::DepGraph;
-use moon_emitter::Emitter;
+use moon_emitter::{Emitter, Event};
 use moon_logger::{color, debug, error, trace};
 use moon_notifier::WebhooksSubscriber;
 use moon_project_graph::ProjectGraph;
@@ -22,11 +22,15 @@ const LOG_TARGET: &str = "moon:action-pipeline";
 pub type ActionResults = Vec<Action>;
 
 pub struct Pipeline {
+    bail: bool,
+
     concurrency: usize,
 
     duration: Option<Duration>,
 
     project_graph: Arc<RwLock<ProjectGraph>>,
+
+    report_name: Option<String>,
 
     workspace: Arc<RwLock<Workspace>>,
 }
@@ -38,15 +42,27 @@ impl Pipeline {
             .get();
 
         Pipeline {
+            bail: false,
             concurrency,
             duration: None,
             project_graph: Arc::new(RwLock::new(project_graph)),
+            report_name: None,
             workspace: Arc::new(RwLock::new(workspace)),
         }
     }
 
+    pub fn bail_on_error(&mut self) -> &mut Self {
+        self.bail = true;
+        self
+    }
+
     pub fn concurrency(&mut self, value: usize) -> &Self {
         self.concurrency = value;
+        self
+    }
+
+    pub fn generate_report(&mut self, name: &str) -> &mut Self {
+        self.report_name = Some(name.to_owned());
         self
     }
 
@@ -64,7 +80,12 @@ impl Pipeline {
         // We use an async channel to coordinate actions (tasks) to process
         // across a bounded worker pool, as defined by the provided concurrency
         let (sender, receiver) = async_channel::unbounded::<(Action, OwnedSemaphorePermit)>();
+        let local_emitter = emitter.read().await;
         let mut results: ActionResults = vec![];
+        let mut passed_count = 0;
+        let mut cached_count = 0;
+        let mut failed_count = 0;
+        let mut abort: Option<String> = None;
 
         // Spawn worker threads that will process the action queue
         for _ in 0..self.concurrency {
@@ -86,6 +107,20 @@ impl Pipeline {
                     .await
                     .unwrap();
 
+                    if action.has_failed() {
+                        failed_count += 1;
+                    } else if action.was_cached() {
+                        cached_count += 1;
+                    } else {
+                        passed_count += 1;
+                    }
+
+                    // if self.bail && action.has_failed() || action.should_abort() {
+                    //     abort = action.error.clone();
+                    // }
+
+                    // results.push(action);
+
                     drop(permit);
                 }
             });
@@ -102,10 +137,34 @@ impl Pipeline {
             "Running {} actions across {} batches", total_actions_count, batches_count
         );
 
+        local_emitter
+            .emit(Event::RunnerStarted {
+                actions_count: total_actions_count,
+            })
+            .await?;
+
         for (b, batch) in batches.into_iter().enumerate() {
             let batch_index = b + 1;
             let batch_target_name = format!("{}:batch:{}", LOG_TARGET, batch_index);
             let actions_count = batch.len();
+
+            // If a previous batch encountered an error that should abort,
+            // handle it at the start of the next batch so that currently running
+            // processes have time to finish.
+            if let Some(abort_message) = abort {
+                error!(
+                    target: &batch_target_name,
+                    "Encountered a critical error, aborting the action pipeline"
+                );
+
+                local_emitter
+                    .emit(Event::RunnerAborted {
+                        error: abort_message.clone(),
+                    })
+                    .await?;
+
+                return Err(PipelineError::Aborted(abort_message));
+            }
 
             trace!(
                 target: &batch_target_name,
@@ -148,7 +207,17 @@ impl Pipeline {
             "Finished running {} actions in {:?}", total_actions_count, &duration
         );
 
+        local_emitter
+            .emit(Event::RunnerFinished {
+                duration: &duration,
+                cached_count,
+                failed_count,
+                passed_count,
+            })
+            .await?;
+
         self.duration = Some(duration);
+        // self.create_run_report(&results, context).await?;
 
         Ok(())
     }

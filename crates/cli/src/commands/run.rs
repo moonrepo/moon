@@ -137,8 +137,8 @@ pub async fn run_target(
         ..ActionContext::default()
     };
 
-    Pipeline::new(dep_graph, project_graph)
-        .run(workspace, Some(context))
+    Pipeline::new(workspace, project_graph)
+        .run(dep_graph, Some(context))
         .await
         .unwrap();
 

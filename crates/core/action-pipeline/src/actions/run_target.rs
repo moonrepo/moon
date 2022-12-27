@@ -17,9 +17,8 @@ pub async fn run_target(
     project: &Project,
     target: &Target,
 ) -> Result<ActionStatus, PipelineError> {
-    let (project_id, task_id) = target.ids()?;
     let workspace = workspace.read().await;
-    let task = project.get_task(&task_id)?;
+    let task = project.get_task(&target.task_id)?;
     // let mut runner = TargetRunner::new(&emitter, &workspace, project, task)?;
 
     debug!(

@@ -11,9 +11,11 @@ moon_dep_graph = { path = "../dep-graph" }
 moon_emitter = { path = "../emitter" }
 moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
+moon_notifier = { path = "../notifier" }
 moon_platform = { path = "../platform" }
 moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
+moon_runner = { path = "../runner" }
 moon_task = { path = "../task" }
 moon_tool = { path = "../tool" }
 moon_utils = { path = "../utils" }

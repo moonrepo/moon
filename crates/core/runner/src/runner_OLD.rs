@@ -586,37 +586,6 @@ impl Runner {
         Ok(())
     }
 
-    async fn create_emitter(&self, workspace: Arc<RwLock<Workspace>>) -> Emitter {
-        let mut emitter = Emitter::new(Arc::clone(&workspace));
-
-        {
-            let local_workspace = workspace.read().await;
-
-            // For security and privacy purposes, only send webhooks from a CI environment
-            if is_ci() || is_test_env() {
-                if let Some(webhook_url) = &local_workspace.config.notifier.webhook_url {
-                    emitter
-                        .subscribers
-                        .push(Arc::new(RwLock::new(WebhooksSubscriber::new(
-                            webhook_url.to_owned(),
-                        ))));
-                }
-            }
-
-            if local_workspace.session.is_some() {
-                emitter
-                    .subscribers
-                    .push(Arc::new(RwLock::new(MoonbaseCacheSubscriber::new())));
-            }
-        }
-
-        emitter
-            .subscribers
-            .push(Arc::new(RwLock::new(LocalCacheSubscriber::new())));
-
-        emitter
-    }
-
     async fn create_run_report(
         &self,
         actions: &ActionResults,

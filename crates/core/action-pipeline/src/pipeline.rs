@@ -1,10 +1,15 @@
 use crate::errors::PipelineError;
 use crate::processor::process_action;
+use crate::subscribers::local_cache::LocalCacheSubscriber;
+use crate::subscribers::moonbase_cache::MoonbaseCacheSubscriber;
 use moon_action::{Action, ActionNode};
 use moon_action_context::ActionContext;
 use moon_dep_graph::DepGraph;
+use moon_emitter::Emitter;
 use moon_logger::{color, debug, error, trace};
+use moon_notifier::WebhooksSubscriber;
 use moon_project_graph::ProjectGraph;
+use moon_utils::{is_ci, is_test_env};
 use moon_workspace::Workspace;
 use std::num::NonZeroUsize;
 use std::sync::Arc;
@@ -19,24 +24,24 @@ pub type ActionResults = Vec<Action>;
 pub struct Pipeline {
     concurrency: usize,
 
-    dep_graph: DepGraph,
-
     duration: Option<Duration>,
 
-    project_graph: Option<ProjectGraph>,
+    project_graph: Arc<RwLock<ProjectGraph>>,
+
+    workspace: Arc<RwLock<Workspace>>,
 }
 
 impl Pipeline {
-    pub fn new(dep_graph: DepGraph, project_graph: ProjectGraph) -> Self {
+    pub fn new(workspace: Workspace, project_graph: ProjectGraph) -> Self {
         let concurrency = thread::available_parallelism()
             .unwrap_or(NonZeroUsize::new(8).unwrap())
             .get();
 
         Pipeline {
             concurrency,
-            dep_graph,
-            project_graph: Some(project_graph),
             duration: None,
+            project_graph: Arc::new(RwLock::new(project_graph)),
+            workspace: Arc::new(RwLock::new(workspace)),
         }
     }
 
@@ -47,13 +52,12 @@ impl Pipeline {
 
     pub async fn run(
         &mut self,
-        workspace: Workspace,
+        dep_graph: DepGraph,
         context: Option<ActionContext>,
     ) -> Result<(), PipelineError> {
         let start = Instant::now();
         let context = Arc::new(RwLock::new(context.unwrap_or_default()));
-        let workspace = Arc::new(RwLock::new(workspace));
-        let project_graph = Arc::new(RwLock::new(self.project_graph.take().unwrap()));
+        let emitter = Arc::new(RwLock::new(create_emitter(Arc::clone(&self.workspace))));
         let mut results: ActionResults = vec![];
 
         // We use an async channel to coordinate actions (tasks) to process
@@ -64,8 +68,8 @@ impl Pipeline {
         for _ in 0..self.concurrency {
             let receiver = receiver.clone();
             let context_clone = Arc::clone(&context);
-            let workspace_clone = Arc::clone(&workspace);
-            let project_graph_clone = Arc::clone(&project_graph);
+            let workspace_clone = Arc::clone(&self.workspace);
+            let project_graph_clone = Arc::clone(&self.project_graph);
 
             tokio::spawn(async move {
                 while let Ok((mut action, permit)) = receiver.recv().await {
@@ -85,8 +89,8 @@ impl Pipeline {
 
         // Queue actions in topological order that need to be processed,
         // grouped into batches based on dependency requirements
-        let total_actions_count = self.dep_graph.get_node_count();
-        let batches = self.dep_graph.sort_batched_topological()?;
+        let total_actions_count = dep_graph.get_node_count();
+        let batches = dep_graph.sort_batched_topological()?;
         let batches_count = batches.len();
 
         debug!(
@@ -113,7 +117,7 @@ impl Pipeline {
             for (i, node_index) in batch.into_iter().enumerate() {
                 let action_index = i + 1;
 
-                if let Some(node) = self.dep_graph.get_node_from_index(&node_index) {
+                if let Some(node) = dep_graph.get_node_from_index(&node_index) {
                     let permit = semaphore.clone().acquire_owned().await.unwrap();
                     let mut action = Action::new(node.to_owned());
 
@@ -144,4 +148,36 @@ impl Pipeline {
 
         Ok(())
     }
+}
+
+async fn create_emitter(workspace: Arc<RwLock<Workspace>>) -> Emitter {
+    let mut emitter = Emitter::new(Arc::clone(&workspace));
+
+    {
+        let local_workspace = workspace.read().await;
+
+        // For security and privacy purposes, only send webhooks from a CI environment
+        if is_ci() || is_test_env() {
+            if let Some(webhook_url) = &local_workspace.config.notifier.webhook_url {
+                emitter
+                    .subscribers
+                    .push(Arc::new(RwLock::new(WebhooksSubscriber::new(
+                        webhook_url.to_owned(),
+                    ))));
+            }
+        }
+
+        if local_workspace.session.is_some() {
+            emitter
+                .subscribers
+                .push(Arc::new(RwLock::new(MoonbaseCacheSubscriber::new())));
+        }
+    }
+
+    // Must be last as its the final line of defense
+    emitter
+        .subscribers
+        .push(Arc::new(RwLock::new(LocalCacheSubscriber::new())));
+
+    emitter
 }

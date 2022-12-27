@@ -28,7 +28,7 @@ pub struct NodeTool {
 }
 
 impl NodeTool {
-    pub fn new(config: &NodeConfig, proto: &Proto) -> Result<NodeTool, ToolError> {
+    pub fn new(proto: &Proto, config: &NodeConfig, version: &str) -> Result<NodeTool, ToolError> {
         let mut node = NodeTool {
             config: config.to_owned(),
             tool: NodeLanguage::new(proto, Some(config.version.as_ref().unwrap())),
@@ -36,6 +36,8 @@ impl NodeTool {
             pnpm: None,
             yarn: None,
         };
+
+        node.config.version = version.to_owned();
 
         match config.package_manager {
             NodePackageManager::Npm => {

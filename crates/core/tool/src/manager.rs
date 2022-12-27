@@ -42,7 +42,7 @@ impl<T: Tool> ToolManager<T> {
     pub fn register(&mut self, version: &Version, tool: T) {
         // Nothing exists in the cache yet, so this tool must be the top-level
         // workspace tool. If so, update the default version within the platform.
-        if self.cache.is_empty() && !version.1 {
+        if self.cache.is_empty() && !version.is_override() {
             self.default_version = version.to_owned();
         }
 

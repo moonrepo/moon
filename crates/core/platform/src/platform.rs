@@ -81,11 +81,11 @@ pub trait Platform: Debug + Send + Sync {
 
     // ACTIONS
 
-    async fn setup_toolchain(
+    async fn setup_tool(
         &mut self,
         version: Version,
         last_versions: &mut FxHashMap<String, String>,
-    ) -> Result<u8, MoonError> {
-        Ok(0) // TODO
+    ) -> Result<u8, ToolError> {
+        Ok(0)
     }
 }

@@ -1,5 +1,6 @@
 use moon_dep_graph::DepGraphError;
 use moon_error::MoonError;
+use moon_tool::ToolError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -9,4 +10,7 @@ pub enum PipelineError {
 
     #[error(transparent)]
     Moon(#[from] MoonError),
+
+    #[error(transparent)]
+    Tool(#[from] ToolError),
 }

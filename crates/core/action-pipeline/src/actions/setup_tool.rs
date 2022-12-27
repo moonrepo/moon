@@ -33,7 +33,7 @@ pub async fn setup_tool(
     let installed_count = workspace
         .platforms
         .get_mut(runtime)?
-        .setup_toolchain(runtime.version(), &mut cache.last_versions)
+        .setup_tool(runtime.version(), &mut cache.last_versions)
         .await?;
 
     // Update the cache with the timestamp

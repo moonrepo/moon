@@ -17,10 +17,10 @@ pub fn register_platforms(workspace: &mut Workspace) -> Result<(), WorkspaceErro
         workspace.register_platform(Box::new(NodePlatform::new(&node_config, &workspace.root)));
 
         if node_config.version.is_some() {
-            workspace
-                .toolchain
-                .node
-                .register(Box::new(NodeTool::new(&node_config, &paths)?), true);
+            workspace.toolchain.node.register(
+                Box::new(NodeTool::new(&paths, &node_config, &node_config.version)?),
+                true,
+            );
         }
     }
 

@@ -11,7 +11,8 @@ use moon_node_tool::NodeTool;
 use moon_platform::{Platform, Runtime, Version};
 use moon_project::Project;
 use moon_tool::{DependencyManager, Tool, ToolError, ToolManager};
-use moon_utils::glob::GlobSet;
+use moon_utils::{async_trait, glob::GlobSet};
+use proto_core::Proto;
 use rustc_hash::FxHashMap;
 use std::path::PathBuf;
 use std::{collections::BTreeMap, path::Path};
@@ -41,6 +42,7 @@ impl NodePlatform {
     }
 }
 
+#[async_trait]
 impl Platform for NodePlatform {
     fn get_type(&self) -> PlatformType {
         PlatformType::Node
@@ -269,5 +271,22 @@ impl Platform for NodePlatform {
         // let tool = self.get_language_tool(version)?;
 
         Ok(None)
+    }
+
+    // ACTIONS
+
+    async fn setup_tool(
+        &mut self,
+        version: Version,
+        last_versions: &mut FxHashMap<String, String>,
+    ) -> Result<u8, ToolError> {
+        if !self.toolchain.has(&version) {
+            self.toolchain.register(
+                &version,
+                NodeTool::new(&Proto::new()?, &self.config, &version.0)?,
+            );
+        }
+
+        Ok(self.toolchain.setup(&version, last_versions).await?)
     }
 }

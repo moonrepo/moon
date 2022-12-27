@@ -144,9 +144,9 @@ async fn run_action(
                 .await?;
 
             let tool_result = match runtime {
-                Runtime::Node(_) => node_actions::setup_tool(action, context, workspace, runtime)
-                    .await
-                    .map_err(RunnerError::Workspace),
+                // Runtime::Node(_) => node_actions::setup_tool(action, context, workspace, runtime)
+                //     .await
+                //     .map_err(RunnerError::Workspace),
                 _ => Ok(ActionStatus::Skipped),
             };
 

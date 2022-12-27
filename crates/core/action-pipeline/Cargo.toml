@@ -6,7 +6,9 @@ edition = "2021"
 [dependencies]
 moon_action = { path = "../action" }
 moon_action_context = { path = "../action-context" }
+moon_cache = { path = "../cache" }
 moon_dep_graph = { path = "../dep-graph" }
+moon_emitter = { path = "../emitter" }
 moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
 moon_platform = { path = "../platform" }
@@ -16,6 +18,7 @@ moon_task = { path = "../task" }
 moon_tool = { path = "../tool" }
 moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
+moonbase = { path = "../moonbase" }
 async-channel = "1.8.0"
 rustc-hash = { workspace = true }
 serde = { workspace = true }

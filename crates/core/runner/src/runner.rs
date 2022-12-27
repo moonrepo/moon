@@ -26,7 +26,7 @@ use serde::Serialize;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-const LOG_TARGET: &str = "moon:action:run-target";
+const LOG_TARGET: &str = "moon:runner";
 
 pub enum HydrateFrom {
     LocalCache,
@@ -34,7 +34,7 @@ pub enum HydrateFrom {
     RemoteCache,
 }
 
-pub struct TargetRunner<'a> {
+pub struct Runner<'a> {
     pub cache: RunTargetState,
 
     emitter: &'a Emitter,
@@ -50,14 +50,14 @@ pub struct TargetRunner<'a> {
     workspace: &'a Workspace,
 }
 
-impl<'a> TargetRunner<'a> {
+impl<'a> Runner<'a> {
     pub fn new(
         emitter: &'a Emitter,
         workspace: &'a Workspace,
         project: &'a Project,
         task: &'a Task,
-    ) -> Result<TargetRunner<'a>, MoonError> {
-        Ok(TargetRunner {
+    ) -> Result<Runner<'a>, MoonError> {
+        Ok(Runner {
             cache: workspace.cache.cache_run_target_state(&task.target)?,
             emitter,
             project,

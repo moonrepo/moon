@@ -11,7 +11,6 @@ name = "runner_benchmark"
 harness = false
 
 [dependencies]
-moonbase = { path = "../moonbase" }
 moon_action = { path = "../action" }
 moon_action_context = { path = "../action-context" }
 moon_cache = { path = "../cache" }
@@ -20,7 +19,6 @@ moon_emitter = { path = "../emitter" }
 moon_error = { path = "../error" }
 moon_hasher = { path = "../hasher" }
 moon_logger = { path = "../logger" }
-moon_notifier = { path = "../notifier" }
 moon_node_platform = { path = "../../node/platform" }
 moon_project = { path = "../project" }
 moon_system_platform = { path = "../../system/platform" }

@@ -1,6 +1,7 @@
 use moon_cache::get_cache_mode;
 use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_error::MoonError;
+use moon_utils::async_trait;
 use moon_utils::path;
 use moon_workspace::Workspace;
 
@@ -19,7 +20,7 @@ impl LocalCacheSubscriber {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait]
 impl Subscriber for LocalCacheSubscriber {
     async fn on_emit<'e>(
         &mut self,

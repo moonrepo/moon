@@ -13,10 +13,13 @@ moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
 moon_notifier = { path = "../notifier" }
 moon_platform = { path = "../platform" }
+moon_node_platform = { path = "../../node/platform" }
 moon_project = { path = "../project" }
+moon_system_platform = { path = "../../system/platform" }
 moon_project_graph = { path = "../project-graph" }
 moon_runner = { path = "../runner" }
 moon_task = { path = "../task" }
+moon_terminal = { path = "../terminal" }
 moon_tool = { path = "../tool" }
 moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }

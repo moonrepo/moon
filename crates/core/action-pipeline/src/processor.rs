@@ -137,7 +137,8 @@ pub async fn process_action(
                 .emit(Event::TargetRunning { target: &target })
                 .await?;
 
-            let run_result = run_target(action, context, workspace, project, &target).await;
+            let run_result =
+                run_target(action, context, emitter, workspace, project, &target).await;
 
             local_emitter
                 .emit(Event::TargetRan {

@@ -820,7 +820,7 @@ impl<'a> Runner<'a> {
         Ok(())
     }
 
-    fn should_print_short_hash(&self) -> bool {
+    pub fn should_print_short_hash(&self) -> bool {
         // Do not include the hash while testing, as the hash
         // constantly changes and breaks our local snapshots
         !is_test_env() && self.task.options.cache && !self.cache.hash.is_empty()

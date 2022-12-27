@@ -1,6 +1,7 @@
 use moon_config::PlatformType;
 use moon_dep_graph::DepGraphBuilder;
 use moon_node_platform::NodePlatform;
+use moon_node_tool::NodeTool;
 use moon_project_graph::{ProjectGraph, ProjectGraphBuilder, ProjectGraphError};
 use moon_system_platform::SystemPlatform;
 use moon_utils::is_test_env;
@@ -10,12 +11,22 @@ use std::path::Path;
 use strum::IntoEnumIterator;
 
 pub fn register_platforms(workspace: &mut Workspace) -> Result<(), WorkspaceError> {
-    if let Some(node_config) = &workspace.toolchain.config.node {
+    let paths = { workspace.toolchain.get_paths() };
+
+    if let Some(node_config) = workspace.toolchain.config.node.clone() {
         workspace.register_platform(Box::new(NodePlatform::new(
-            node_config,
+            &node_config,
             &workspace.toolchain.config.typescript,
             &workspace.root,
         )));
+
+        // TODO remove in follow-up
+        if let Some(node_version) = &node_config.version {
+            workspace.toolchain.node.register(
+                Box::new(NodeTool::new(&paths, &node_config, node_version)?),
+                true,
+            );
+        }
     }
 
     // Should be last since it's the most common

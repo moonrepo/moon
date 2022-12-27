@@ -20,12 +20,12 @@ pub fn register_platforms(workspace: &mut Workspace) -> Result<(), WorkspaceErro
             &workspace.root,
         )));
 
-        if node_config.version.is_some() {
-            workspace.toolchain.node.register(
-                Box::new(NodeTool::new(&paths, &node_config, &node_config.version)?),
-                true,
-            );
-        }
+        // if node_config.version.is_some() {
+        //     workspace.toolchain.node.register(
+        //         Box::new(NodeTool::new(&paths, &node_config, &node_config.version)?),
+        //         true,
+        //     );
+        // }
     }
 
     // Should be last since it's the last resort

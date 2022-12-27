@@ -37,7 +37,7 @@ impl NodeTool {
             yarn: None,
         };
 
-        node.config.version = version.to_owned();
+        node.config.version = Some(version.to_owned());
 
         match config.package_manager {
             NodePackageManager::Npm => {

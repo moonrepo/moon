@@ -95,14 +95,14 @@ pub async fn install_deps(node: &NodeTool, working_dir: &Path) -> Result<(), Too
         };
 
         if let Some(node_version) = &node.config.version {
-            let rc_path = workspace.root.join(&rc_name);
+            let rc_path = working_dir.join(&rc_name);
 
-            fs::write(rc_path, node_version)?;
+            fs::write(&rc_path, node_version)?;
 
             debug!(
                 target: LOG_TARGET,
                 "Syncing Node.js version to {}",
-                color::file(&rc_name)
+                color::path(&rc_path)
             );
         }
     }

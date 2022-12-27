@@ -57,17 +57,20 @@ impl Pipeline {
     ) -> Result<(), PipelineError> {
         let start = Instant::now();
         let context = Arc::new(RwLock::new(context.unwrap_or_default()));
-        let emitter = Arc::new(RwLock::new(create_emitter(Arc::clone(&self.workspace))));
-        let mut results: ActionResults = vec![];
+        let emitter = Arc::new(RwLock::new(
+            create_emitter(Arc::clone(&self.workspace)).await,
+        ));
 
         // We use an async channel to coordinate actions (tasks) to process
         // across a bounded worker pool, as defined by the provided concurrency
         let (sender, receiver) = async_channel::unbounded::<(Action, OwnedSemaphorePermit)>();
+        let mut results: ActionResults = vec![];
 
         // Spawn worker threads that will process the action queue
         for _ in 0..self.concurrency {
             let receiver = receiver.clone();
             let context_clone = Arc::clone(&context);
+            let emitter_clone = Arc::clone(&emitter);
             let workspace_clone = Arc::clone(&self.workspace);
             let project_graph_clone = Arc::clone(&self.project_graph);
 
@@ -76,6 +79,7 @@ impl Pipeline {
                     process_action(
                         &mut action,
                         Arc::clone(&context_clone),
+                        Arc::clone(&emitter_clone),
                         Arc::clone(&workspace_clone),
                         Arc::clone(&project_graph_clone),
                     )

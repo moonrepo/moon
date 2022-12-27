@@ -1,6 +1,8 @@
+use crate::errors::PipelineError;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
-use moon_project::{Project, ProjectError};
+use moon_platform::Runtime;
+use moon_project::Project;
 use moon_project_graph::ProjectGraph;
 use moon_utils::is_ci;
 use moon_workspace::Workspace;
@@ -16,7 +18,8 @@ pub async fn sync_project(
     workspace: Arc<RwLock<Workspace>>,
     project_graph: Arc<RwLock<ProjectGraph>>,
     project: &Project,
-) -> Result<ActionStatus, ProjectError> {
+    runtime: &Runtime,
+) -> Result<ActionStatus, PipelineError> {
     let workspace = workspace.read().await;
     let project_graph = project_graph.read().await;
 
@@ -31,7 +34,7 @@ pub async fn sync_project(
     // Sync the projects and return true if any files have been mutated
     let mutated_files = workspace
         .platforms
-        .get(project.language)?
+        .get(runtime)?
         .sync_project(project, &dependencies)
         .await?;
 

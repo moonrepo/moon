@@ -4,11 +4,13 @@ use moon_action::{Action, ActionNode};
 use moon_action_context::ActionContext;
 use moon_dep_graph::DepGraph;
 use moon_logger::{color, debug, error, trace};
+use moon_project_graph::ProjectGraph;
+use moon_workspace::Workspace;
 use std::num::NonZeroUsize;
 use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
-use tokio::sync::{OwnedSemaphorePermit, Semaphore};
+use tokio::sync::{OwnedSemaphorePermit, RwLock, Semaphore};
 
 const LOG_TARGET: &str = "moon:action-pipeline";
 
@@ -20,10 +22,12 @@ pub struct Pipeline {
     dep_graph: DepGraph,
 
     duration: Option<Duration>,
+
+    project_graph: Option<ProjectGraph>,
 }
 
 impl Pipeline {
-    pub fn new(dep_graph: DepGraph) -> Self {
+    pub fn new(dep_graph: DepGraph, project_graph: ProjectGraph) -> Self {
         let concurrency = thread::available_parallelism()
             .unwrap_or(NonZeroUsize::new(8).unwrap())
             .get();
@@ -31,6 +35,7 @@ impl Pipeline {
         Pipeline {
             concurrency,
             dep_graph,
+            project_graph: Some(project_graph),
             duration: None,
         }
     }
@@ -40,9 +45,15 @@ impl Pipeline {
         self
     }
 
-    pub async fn run(&mut self, context: Option<ActionContext>) -> Result<(), PipelineError> {
+    pub async fn run(
+        &mut self,
+        workspace: Workspace,
+        context: Option<ActionContext>,
+    ) -> Result<(), PipelineError> {
         let start = Instant::now();
-        let context = context.unwrap_or_default();
+        let context = Arc::new(RwLock::new(context.unwrap_or_default()));
+        let workspace = Arc::new(RwLock::new(workspace));
+        let project_graph = Arc::new(RwLock::new(self.project_graph.take().unwrap()));
         let mut results: ActionResults = vec![];
 
         // We use an async channel to coordinate actions (tasks) to process
@@ -52,10 +63,21 @@ impl Pipeline {
         // Spawn worker threads that will process the action queue
         for _ in 0..self.concurrency {
             let receiver = receiver.clone();
+            let context_clone = Arc::clone(&context);
+            let workspace_clone = Arc::clone(&workspace);
+            let project_graph_clone = Arc::clone(&project_graph);
 
             tokio::spawn(async move {
                 while let Ok((mut action, permit)) = receiver.recv().await {
-                    process_action(&mut action).await.unwrap();
+                    process_action(
+                        &mut action,
+                        Arc::clone(&context_clone),
+                        Arc::clone(&workspace_clone),
+                        Arc::clone(&project_graph_clone),
+                    )
+                    .await
+                    .unwrap();
+
                     drop(permit);
                 }
             });

@@ -11,7 +11,6 @@ use moon_lang::{DependencyManager, Language, VersionManager};
 
 pub const NODE: Language = Language {
     binary: "node",
-    default_version: "18.12.0",
     file_exts: &["js", "cjs", "mjs"],
     vendor_bins_dir: Some("node_modules/.bin"),
     vendor_dir: Some("node_modules"),
@@ -22,7 +21,6 @@ pub const NODE: Language = Language {
 pub const NPM: DependencyManager = DependencyManager {
     binary: "npm",
     config_files: &[".npmrc"],
-    default_version: "8.19.2",
     lockfile: "package-lock.json",
     manifest: "package.json",
 };
@@ -30,7 +28,6 @@ pub const NPM: DependencyManager = DependencyManager {
 pub const PNPM: DependencyManager = DependencyManager {
     binary: "pnpm",
     config_files: &[".npmrc", ".pnpmfile.cjs", "pnpm-workspace.yaml"],
-    default_version: "7.18.2",
     lockfile: "pnpm-lock.yaml",
     manifest: "package.json",
 };
@@ -38,7 +35,6 @@ pub const PNPM: DependencyManager = DependencyManager {
 pub const YARN: DependencyManager = DependencyManager {
     binary: "yarn",
     config_files: &[".yarn", ".yarnrc", ".yarnrc.yml"],
-    default_version: "3.3.0",
     lockfile: "yarn.lock",
     manifest: "package.json",
 };

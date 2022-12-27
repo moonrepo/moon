@@ -31,7 +31,7 @@ impl NodeTool {
     pub fn new(config: &NodeConfig, proto: &Proto) -> Result<NodeTool, ToolError> {
         let mut node = NodeTool {
             config: config.to_owned(),
-            tool: NodeLanguage::new(proto, Some(&config.version)),
+            tool: NodeLanguage::new(proto, Some(config.version.as_ref().unwrap())),
             npm: None,
             pnpm: None,
             yarn: None,
@@ -146,23 +146,25 @@ impl Tool for NodeTool {
         last_versions: &mut FxHashMap<String, String>,
     ) -> Result<u8, ToolError> {
         let mut installed = 0;
+        let version_clone = self.config.version.clone();
 
-        if self.tool.is_setup(&self.config.version).await? {
+        let Some(version) = version_clone else {
+            return Ok(installed);
+        };
+
+        if self.tool.is_setup(&version).await? {
             debug!(target: self.tool.get_log_target(), "Node.js has already been setup");
         } else {
             let setup = match last_versions.get("node") {
-                Some(last) => &self.config.version != last,
+                Some(last) => &version != last,
                 None => true,
             };
 
             if setup {
-                print_checkpoint(
-                    format!("installing node v{}", self.config.version),
-                    Checkpoint::Setup,
-                );
+                print_checkpoint(format!("installing node v{}", version), Checkpoint::Setup);
 
-                if self.tool.setup(&self.config.version).await? {
-                    last_versions.insert("node".into(), self.config.version.clone());
+                if self.tool.setup(&version).await? {
+                    last_versions.insert("node".into(), version.to_string());
                     installed += 1;
                 }
             }

@@ -11,7 +11,7 @@ use rustc_hash::FxHashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-const LOG_TARGET: &str = "moon:action-pipeline:sync-project";
+const LOG_TARGET: &str = "moon:action:sync-project";
 
 pub async fn sync_project(
     _action: &mut Action,

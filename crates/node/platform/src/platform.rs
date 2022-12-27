@@ -41,12 +41,6 @@ impl NodePlatform {
         typescript_config: &Option<TypeScriptConfig>,
         workspace_root: &Path,
     ) -> Self {
-        // if config.version.is_some() {
-        //     platform
-        //         .toolchain
-        //         .register(NodeTool::new(&paths, &node_config, &node_config.version)?);
-        // }
-
         NodePlatform {
             config: config.to_owned(),
             package_names: FxHashMap::default(),

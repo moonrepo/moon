@@ -14,7 +14,7 @@ use moon_workspace::Workspace;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-const LOG_TARGET: &str = "moon:action-pipeline:run-target";
+const LOG_TARGET: &str = "moon:action:run-target";
 
 pub async fn run_target(
     action: &mut Action,

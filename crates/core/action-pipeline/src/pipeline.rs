@@ -81,7 +81,7 @@ impl Pipeline {
             create_emitter(Arc::clone(&self.workspace)).await,
         ));
 
-        // We use an mpsc channel to aggregate the action results of the workers
+        // We use an mpsc channel to aggregate results from the worker pool
         let (sender, mut aggregator) = mpsc::channel(100);
         let mut results: ActionResults = vec![];
         let mut passed_count = 0;
@@ -167,7 +167,7 @@ impl Pipeline {
 
                     let _ = queuer.send((action, permit)).await;
                 } else {
-                    panic!("HOW?");
+                    return Err(PipelineError::UnknownActionNode);
                 }
             }
 

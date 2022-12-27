@@ -9,7 +9,7 @@ use moon_workspace::Workspace;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-const LOG_TARGET: &str = "moon:action-pipeline:setup-tool";
+const LOG_TARGET: &str = "moon:action:setup-tool";
 
 pub async fn setup_tool(
     _action: &mut Action,

@@ -9,8 +9,11 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum PipelineError {
-    #[error("Aborted pipeline! {0}")]
+    #[error("{0}")]
     Aborted(String),
+
+    #[error("An unknown action was encountered in the pipeline. Unable to proceed!")]
+    UnknownActionNode,
 
     #[error(transparent)]
     DepGraph(#[from] DepGraphError),

@@ -5,7 +5,7 @@ use moon_node_lang::{PackageJson, NODE, NODENV, NPM, NVM};
 use moon_node_tool::NodeTool;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::ToolError;
-use moon_utils::{fs, is_ci};
+use moon_utils::{fs, is_ci, is_test_env};
 use std::path::Path;
 
 const LOG_TARGET: &str = "moon:node-platform:install-deps";
@@ -120,7 +120,7 @@ pub async fn install_deps(node: &NodeTool, working_dir: &Path) -> Result<(), Too
         );
 
         package_manager
-            .install_dependencies(node, working_dir, true)
+            .install_dependencies(node, working_dir, !is_test_env())
             .await?;
     }
 
@@ -138,7 +138,7 @@ pub async fn install_deps(node: &NodeTool, working_dir: &Path) -> Result<(), Too
         );
 
         package_manager
-            .dedupe_dependencies(node, working_dir, true)
+            .dedupe_dependencies(node, working_dir, !is_test_env())
             .await?;
     }
 

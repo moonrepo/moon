@@ -74,12 +74,17 @@ pub trait Platform: Debug + Send + Sync {
     /// If the version does not exist in the toolchain, return an error.
     fn get_language_tool(&self, version: Version) -> Result<Box<&dyn Tool>, ToolError>;
 
+    /// Return the filename of the lockfile and manifest (in this order)
+    /// for the language's dependency manager, if applicable.
     fn get_dependency_configs(&self) -> Result<Option<(String, String)>, ToolError> {
         Ok(None)
     }
 
     // ACTIONS
 
+    /// Setup a tool by registering it into the toolchain with the provided version
+    /// (if it hasn't already been registered). Once registered, download and install.
+    /// Return a count of how many tools were installed.
     async fn setup_tool(
         &mut self,
         tool_version: Version,
@@ -88,6 +93,8 @@ pub trait Platform: Debug + Send + Sync {
         Ok(0)
     }
 
+    /// Install dependencies in the target working directory with a tool and its
+    /// dependency manager using the provided version.
     async fn install_deps(
         &self,
         tool_version: Version,
@@ -96,6 +103,8 @@ pub trait Platform: Debug + Send + Sync {
         Ok(())
     }
 
+    /// Sync a project (and its dependencies) when applicable.
+    /// Return true if any files were modified as a result of syncing.
     async fn sync_project(
         &self,
         project: &Project,

@@ -10,7 +10,7 @@ use moon_workspace::Workspace;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-const LOG_TARGET: &str = "moon:action-pipeline:install-deps";
+const LOG_TARGET: &str = "moon:action:install-deps";
 
 pub async fn install_deps(
     _action: &mut Action,

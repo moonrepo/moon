@@ -50,10 +50,11 @@ impl Platform for NodePlatform {
             }
         }
 
-        Some(Runtime::Node(Version(
-            self.config.version.to_owned(),
-            false,
-        )))
+        if let Some(node_version) = &self.config.version {
+            return Some(Runtime::Node(Version(node_version.to_owned(), false)));
+        }
+
+        None
     }
 
     fn is_project_in_dependency_workspace(&self, project: &Project) -> Result<bool, MoonError> {

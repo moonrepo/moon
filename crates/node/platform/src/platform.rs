@@ -1,3 +1,4 @@
+use crate::actions;
 use crate::infer_tasks_from_scripts;
 use moon_config::{
     DependencyConfig, DependencyScope, NodeConfig, NodeProjectAliasFormat, PlatformType,
@@ -288,5 +289,13 @@ impl Platform for NodePlatform {
         }
 
         Ok(self.toolchain.setup(&version, last_versions).await?)
+    }
+
+    async fn install_deps(&self, version: Version, working_dir: &Path) -> Result<(), ToolError> {
+        let tool = self.toolchain.get_for_version(&version)?;
+
+        actions::install_deps(&tool, working_dir).await?;
+
+        Ok(())
     }
 }

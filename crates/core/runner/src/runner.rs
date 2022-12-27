@@ -59,11 +59,11 @@ async fn run_action(
                 .await?;
 
             let install_result = match runtime {
-                Runtime::Node(_) => {
-                    node_actions::install_deps(action, context, workspace, runtime, None)
-                        .await
-                        .map_err(RunnerError::Workspace)
-                }
+                // Runtime::Node(_) => {
+                //     node_actions::install_deps(action, context, workspace, runtime, None)
+                //         .await
+                //         .map_err(RunnerError::Workspace)
+                // }
                 _ => Ok(ActionStatus::Passed),
             };
 
@@ -90,11 +90,11 @@ async fn run_action(
                 .await?;
 
             let install_result = match runtime {
-                Runtime::Node(_) => {
-                    node_actions::install_deps(action, context, workspace, runtime, Some(project))
-                        .await
-                        .map_err(RunnerError::Workspace)
-                }
+                // Runtime::Node(_) => {
+                //     node_actions::install_deps(action, context, workspace, runtime, Some(project))
+                //         .await
+                //         .map_err(RunnerError::Workspace)
+                // }
                 _ => Ok(ActionStatus::Passed),
             };
 

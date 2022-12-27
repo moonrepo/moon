@@ -1,3 +1,4 @@
+use crate::errors::PipelineError;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_error::map_io_to_fs_error;
@@ -5,7 +6,7 @@ use moon_logger::{color, debug, warn};
 use moon_platform::Runtime;
 use moon_project::Project;
 use moon_utils::{fs, is_offline, time};
-use moon_workspace::{Workspace, WorkspaceError};
+use moon_workspace::Workspace;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -17,7 +18,7 @@ pub async fn install_deps(
     workspace: Arc<RwLock<Workspace>>,
     runtime: &Runtime,
     project: Option<&Project>,
-) -> Result<ActionStatus, WorkspaceError> {
+) -> Result<ActionStatus, PipelineError> {
     if matches!(runtime, Runtime::System) {
         return Ok(ActionStatus::Skipped);
     }
@@ -51,7 +52,8 @@ pub async fn install_deps(
         return Ok(ActionStatus::Skipped);
     }
 
-    // let platform = workspace.platforms.get(runtime)?;
+    let platform = workspace.platforms.get(runtime)?;
+
     // let Some(depman) = platform.get_dependency_manager(runtime.version())? else  {
     //     debug!(
     //         target: LOG_TARGET,
@@ -104,9 +106,9 @@ pub async fn install_deps(
             color::path(&working_dir)
         );
 
-        let should_log_command = workspace.config.runner.log_running_command;
-
-        // RUN
+        platform
+            .install_deps(runtime.version(), &working_dir)
+            .await?;
 
         // Update the cache with the timestamp
         cache.last_install_time = time::now_millis();

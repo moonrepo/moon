@@ -83,9 +83,17 @@ pub trait Platform: Debug + Send + Sync {
 
     async fn setup_tool(
         &mut self,
-        version: Version,
+        tool_version: Version,
         last_versions: &mut FxHashMap<String, String>,
     ) -> Result<u8, ToolError> {
         Ok(0)
+    }
+
+    async fn install_deps(
+        &self,
+        tool_version: Version,
+        working_dir: &Path,
+    ) -> Result<(), ToolError> {
+        Ok(())
     }
 }

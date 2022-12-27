@@ -6,25 +6,21 @@ use moon_lang::has_vendor_installed_dependencies;
 use moon_logger::{color, debug, warn};
 use moon_node_lang::{PackageJson, NODE, NODENV, NPM, NVM};
 use moon_node_tool::NodeTool;
-use moon_platform::Runtime;
-use moon_project::Project;
-use moon_runner_context::RunnerContext;
 use moon_terminal::{print_checkpoint, Checkpoint};
-use moon_utils::{fs, is_ci, is_offline, time};
-use moon_workspace::{Workspace, WorkspaceError};
-use std::sync::Arc;
-use tokio::sync::RwLock;
+use moon_tool::ToolError;
+use moon_utils::{fs, is_ci};
+use std::path::Path;
 
 const LOG_TARGET: &str = "moon:node-platform:install-deps";
 
-/// Add `packageManager` to root `package.json`.
+/// Add `packageManager` to `package.json`.
 fn add_package_manager(node: &NodeTool, package_json: &mut PackageJson) -> bool {
     let manager_version = match node.config.package_manager {
         NodePackageManager::Npm => format!("npm@{}", node.config.npm.version),
         NodePackageManager::Pnpm => format!(
             "pnpm@{}",
             match &node.config.pnpm {
-                Some(pnpm) => pnpm.version.clone(),
+                Some(pnpm) => &pnpm.version,
                 None => {
                     return false;
                 }
@@ -33,7 +29,7 @@ fn add_package_manager(node: &NodeTool, package_json: &mut PackageJson) -> bool 
         NodePackageManager::Yarn => format!(
             "yarn@{}",
             match &node.config.yarn {
-                Some(yarn) => yarn.version.clone(),
+                Some(yarn) => &yarn.version,
                 None => {
                     return false;
                 }
@@ -44,7 +40,7 @@ fn add_package_manager(node: &NodeTool, package_json: &mut PackageJson) -> bool 
     if package_json.set_package_manager(&manager_version) {
         debug!(
             target: LOG_TARGET,
-            "Adding package manager version to root {}",
+            "Adding package manager version to {}",
             color::file(NPM.manifest)
         );
 
@@ -54,13 +50,13 @@ fn add_package_manager(node: &NodeTool, package_json: &mut PackageJson) -> bool 
     false
 }
 
-/// Add `engines` constraint to root `package.json`.
+/// Add `engines` constraint to `package.json`.
 fn add_engines_constraint(node: &NodeTool, package_json: &mut PackageJson) -> bool {
     if let Some(node_version) = &node.config.version {
         if node.config.add_engines_constraint && package_json.add_engine("node", node_version) {
             debug!(
                 target: LOG_TARGET,
-                "Adding engines version constraint to root {}",
+                "Adding engines version constraint to {}",
                 color::file(NPM.manifest)
             );
 
@@ -71,9 +67,20 @@ fn add_engines_constraint(node: &NodeTool, package_json: &mut PackageJson) -> bo
     false
 }
 
-fn sync_workspace(workspace: &Workspace, node: &NodeTool) -> Result<(), MoonError> {
-    // Sync values to root `package.json`
-    PackageJson::sync(&workspace.root, |package_json| {
+pub async fn install_deps(node: &NodeTool, working_dir: &Path) -> Result<(), ToolError> {
+    // When in CI, we can avoid installing dependencies because
+    // we can assume they've already been installed before moon runs!
+    if is_ci() && has_vendor_installed_dependencies(&working_dir, &NODE) {
+        warn!(
+            target: LOG_TARGET,
+            "In a CI environment and dependencies already exist, skipping install"
+        );
+
+        return Ok(());
+    }
+
+    // Sync values to `package.json`
+    PackageJson::sync(working_dir, |package_json| {
         add_package_manager(node, package_json);
         add_engines_constraint(node, package_json);
 
@@ -94,160 +101,49 @@ fn sync_workspace(workspace: &Workspace, node: &NodeTool) -> Result<(), MoonErro
 
             debug!(
                 target: LOG_TARGET,
-                "Syncing Node.js version to root {}",
+                "Syncing Node.js version to {}",
                 color::file(&rc_name)
             );
         }
     }
 
-    Ok(())
-}
+    let package_manager = node.get_package_manager();
 
-pub async fn install_deps(
-    _action: &mut Action,
-    context: Arc<RwLock<RunnerContext>>,
-    workspace: Arc<RwLock<Workspace>>,
-    runtime: &Runtime,
-    project: Option<&Project>,
-) -> Result<ActionStatus, WorkspaceError> {
-    let workspace = workspace.read().await;
-    let context = context.read().await;
+    // Install dependencies
+    {
+        debug!(target: LOG_TARGET, "Installing dependencies");
 
-    // When cache is write only, avoid install as user is typically force updating cache
-    if workspace.cache.get_mode().is_write_only() {
-        debug!(target: LOG_TARGET, "Force updating cache, skipping install",);
-
-        return Ok(ActionStatus::Skipped);
-    }
-
-    // When running against affected files, avoid install as it interrupts the workflow
-    if context.affected_only {
-        debug!(
-            target: LOG_TARGET,
-            "Running against affected files, skipping install",
+        print_checkpoint(
+            match node.config.package_manager {
+                NodePackageManager::Npm => "npm install",
+                NodePackageManager::Pnpm => "pnpm install",
+                NodePackageManager::Yarn => "yarn install",
+            },
+            Checkpoint::Setup,
         );
 
-        return Ok(ActionStatus::Skipped);
+        package_manager
+            .install_dependencies(node, &working_dir, true)
+            .await?;
     }
 
-    // let node = workspace
-    //     .toolchain
-    //     .node
-    //     .get_for_runtime::<NodeTool>(runtime)?;
-    // let pm = node.get_package_manager();
-    // let lock_filename = pm.get_lock_filename();
-    // let manifest_filename = pm.get_manifest_filename();
+    // Dedupe dependencies
+    if !is_ci() && node.config.dedupe_on_lockfile_change {
+        debug!(target: LOG_TARGET, "Deduping dependencies");
 
-    // // Determine the working directory and whether lockfiles and manifests have been modified
-    // let working_dir;
-    // let has_modified_files;
+        print_checkpoint(
+            match node.config.package_manager {
+                NodePackageManager::Npm => "npm dedupe",
+                NodePackageManager::Pnpm => "pnpm dedupe",
+                NodePackageManager::Yarn => "yarn dedupe",
+            },
+            Checkpoint::Setup,
+        );
 
-    // if let Some(project) = project {
-    //     working_dir = project.root.clone();
-    //     has_modified_files = context
-    //         .touched_files
-    //         .contains(&working_dir.join(&lock_filename))
-    //         || context
-    //             .touched_files
-    //             .contains(&working_dir.join(&manifest_filename));
-    // } else {
-    //     working_dir = workspace.root.clone();
-    //     has_modified_files = context
-    //         .touched_files
-    //         .iter()
-    //         .any(|f| f.ends_with(&lock_filename) || f.ends_with(&manifest_filename));
+        package_manager
+            .dedupe_dependencies(node, &working_dir, true)
+            .await?;
+    }
 
-    //     // When installing deps in the workspace root, also sync applicable settings
-    //     sync_workspace(&workspace, node)?;
-    // }
-
-    // // Install dependencies in the current project or workspace
-    // let lock_filepath = working_dir.join(&lock_filename);
-    // let mut last_modified = 0;
-    // let mut cache = workspace
-    //     .cache
-    //     .cache_deps_state(runtime, project.map(|p| p.id.as_ref()))?;
-
-    // if lock_filepath.exists() {
-    //     last_modified = time::to_millis(
-    //         fs::metadata(&lock_filepath)?
-    //             .modified()
-    //             .map_err(|e| map_io_to_fs_error(e, lock_filepath.clone()))?,
-    //     );
-    // }
-
-    // // Install deps if the lockfile has been modified since the last time they were installed!
-    // if has_modified_files || last_modified == 0 || last_modified > cache.last_install_time {
-    //     debug!(
-    //         target: LOG_TARGET,
-    //         "Installing {} dependencies in {}",
-    //         runtime.label(),
-    //         color::path(&working_dir)
-    //     );
-
-    //     // When in CI, we can avoid installing dependencies because
-    //     // we can assume they've already been installed before moon runs!
-    //     if is_ci() && has_vendor_installed_dependencies(&working_dir, &NODE) {
-    //         warn!(
-    //             target: LOG_TARGET,
-    //             "In a CI environment and dependencies already exist, skipping install"
-    //         );
-
-    //         return Ok(ActionStatus::Skipped);
-    //     }
-
-    //     if is_offline() {
-    //         warn!(
-    //             target: LOG_TARGET,
-    //             "No internet connection, assuming offline and skipping install"
-    //         );
-
-    //         return Ok(ActionStatus::Skipped);
-    //     }
-
-    //     let should_log_command = workspace.config.runner.log_running_command;
-
-    //     // install
-    //     {
-    //         let install_command = match node.config.package_manager {
-    //             NodePackageManager::Npm => "npm install",
-    //             NodePackageManager::Pnpm => "pnpm install",
-    //             NodePackageManager::Yarn => "yarn install",
-    //         };
-
-    //         print_checkpoint(install_command, Checkpoint::Setup);
-
-    //         pm.install_dependencies(node, &working_dir, should_log_command)
-    //             .await?;
-    //     }
-
-    //     // dedupe
-    //     if !is_ci() && node.config.dedupe_on_lockfile_change {
-    //         let dedupe_command = match node.config.package_manager {
-    //             NodePackageManager::Npm => "npm dedupe",
-    //             NodePackageManager::Pnpm => "pnpm dedupe",
-    //             NodePackageManager::Yarn => "yarn dedupe",
-    //         };
-
-    //         debug!(target: LOG_TARGET, "Deduping dependencies");
-
-    //         print_checkpoint(dedupe_command, Checkpoint::Setup);
-
-    //         pm.dedupe_dependencies(node, &working_dir, should_log_command)
-    //             .await?;
-    //     }
-
-    //     // Update the cache with the timestamp
-    //     cache.last_install_time = time::now_millis();
-    //     cache.save()?;
-
-    //     return Ok(ActionStatus::Passed);
-    // }
-
-    // debug!(
-    //     target: LOG_TARGET,
-    //     "Lockfile has not changed since last install, skipping Node.js dependencies",
-    // );
-
-    Ok(ActionStatus::Skipped)
+    Ok(())
 }

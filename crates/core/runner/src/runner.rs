@@ -1,6 +1,6 @@
 use crate::RunnerError;
 use console::Term;
-use moon_action::{Action, ActionStatus, Attempt};
+use moon_action::{ActionStatus, Attempt};
 use moon_action_context::ActionContext;
 use moon_cache::RunTargetState;
 use moon_config::{PlatformType, TaskOutputStyle};
@@ -23,8 +23,6 @@ use moon_utils::{
 use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
 use serde::Serialize;
-use std::sync::Arc;
-use tokio::sync::RwLock;
 
 const LOG_TARGET: &str = "moon:runner";
 

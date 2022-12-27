@@ -1,5 +1,6 @@
 use crate::helpers::{create_progress_bar, AnyError};
 use moon::{build_dep_graph, generate_project_graph, load_workspace};
+use moon_action_pipeline::Pipeline;
 use moon_platform::{Runtime, Version};
 use moon_utils::is_test_env;
 
@@ -24,9 +25,9 @@ pub async fn setup() -> Result<(), AnyError> {
 
     let dep_graph = dep_builder.build();
 
-    // Runner::new(workspace)
-    //     .run(dep_graph, project_graph, None)
-    //     .await?;
+    Pipeline::new(workspace, project_graph)
+        .run(dep_graph, None)
+        .await?;
 
     done("Setup complete", true);
 

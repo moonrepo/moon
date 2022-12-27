@@ -220,14 +220,16 @@ impl Pipeline {
             .await?;
 
         self.duration = Some(duration);
-        // self.create_run_report(&results, context).await?;
+        self.create_run_report(&results, context).await?;
 
         Ok(results)
     }
 
-    pub fn render_results(&self, results: &ActionResults) -> Result<(), MoonError> {
+    pub fn render_results(&self, results: &ActionResults) -> Result<bool, MoonError> {
         let term = Term::buffered_stdout();
         term.write_line("")?;
+
+        let mut failed = false;
 
         for result in results {
             let status = match result.status {
@@ -235,7 +237,10 @@ impl Pipeline {
                 | ActionStatus::Cached
                 | ActionStatus::CachedFromRemote
                 | ActionStatus::Skipped => color::success("pass"),
-                ActionStatus::Failed | ActionStatus::FailedAndAbort => color::failure("fail"),
+                ActionStatus::Failed | ActionStatus::FailedAndAbort => {
+                    failed = true;
+                    color::failure("fail")
+                }
                 ActionStatus::Invalid => color::invalid("warn"),
                 _ => color::muted_light("oops"),
             };
@@ -253,12 +258,12 @@ impl Pipeline {
                 meta.push(time::elapsed(duration));
             }
 
-            // term.write_line(&format!(
-            //     "{} {} {}",
-            //     status,
-            //     color::style(result.label.as_ref().unwrap()).bold(),
-            //     color::muted(format!("({})", meta.join(", ")))
-            // ))?;
+            term.write_line(&format!(
+                "{} {} {}",
+                status,
+                color::style(&result.label).bold(),
+                color::muted(format!("({})", meta.join(", ")))
+            ))?;
 
             if let Some(error) = &result.error {
                 term.write_line(&format!(
@@ -271,7 +276,7 @@ impl Pipeline {
         term.write_line("")?;
         term.flush()?;
 
-        Ok(())
+        Ok(failed)
     }
 
     pub fn render_stats(&self, results: &ActionResults, compact: bool) -> Result<(), MoonError> {
@@ -281,11 +286,9 @@ impl Pipeline {
         let mut invalid_count = 0;
 
         for result in results {
-            // if let Some(label) = &result.label {
-            //     if compact && !label.contains("RunTarget") {
-            //         continue;
-            //     }
-            // }
+            if compact && !result.label.contains("RunTarget") {
+                continue;
+            }
 
             match result.status {
                 ActionStatus::Cached | ActionStatus::CachedFromRemote => {

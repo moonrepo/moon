@@ -100,30 +100,6 @@ pub async fn run_target(
     }
 
     // Process all tasks in the graph
-    // let context = ActionContext {
-    //     affected_only: options.affected,
-    //     initial_targets: FxHashSet::from_iter(target_ids.to_owned()),
-    //     passthrough_args: options.passthrough,
-    //     primary_targets: FxHashSet::from_iter(primary_targets),
-    //     profile: options.profile,
-    //     target_hashes: FxHashMap::default(),
-    //     touched_files,
-    // };
-
-    // let dep_graph = dep_builder.build();
-    // let mut runner = Runner::new(workspace);
-
-    // if options.report {
-    //     runner.generate_report("runReport.json");
-    // }
-
-    // let results = runner
-    //     .bail_on_error()
-    //     .run(dep_graph, project_graph, Some(context))
-    //     .await?;
-
-    // runner.render_stats(&results, true)?;
-
     let dep_graph = dep_builder.build();
 
     let context = ActionContext {
@@ -131,16 +107,20 @@ pub async fn run_target(
         initial_targets: FxHashSet::from_iter(target_ids.to_owned()),
         passthrough_args: options.passthrough,
         primary_targets: FxHashSet::from_iter(primary_targets),
-        // profile: options.profile,
+        profile: options.profile,
         target_hashes: FxHashMap::default(),
         touched_files,
-        ..ActionContext::default()
     };
 
-    Pipeline::new(workspace, project_graph)
+    let mut pipeline = Pipeline::new(workspace, project_graph);
+
+    let results = pipeline
+        .bail_on_error()
+        .generate_report("runReport.json")
         .run(dep_graph, Some(context))
-        .await
-        .unwrap();
+        .await?;
+
+    pipeline.render_stats(&results, true)?;
 
     Ok(())
 }

@@ -121,7 +121,10 @@
         },
         "version": {
           "default": "18.12.0",
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "yarn": {
           "default": null,

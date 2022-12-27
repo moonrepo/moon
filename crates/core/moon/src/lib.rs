@@ -16,10 +16,12 @@ pub fn register_platforms(workspace: &mut Workspace) -> Result<(), WorkspaceErro
     if let Some(node_config) = workspace.toolchain.config.node.clone() {
         workspace.register_platform(Box::new(NodePlatform::new(&node_config, &workspace.root)));
 
-        workspace
-            .toolchain
-            .node
-            .register(Box::new(NodeTool::new(&node_config, &paths)?), true);
+        if node_config.version.is_some() {
+            workspace
+                .toolchain
+                .node
+                .register(Box::new(NodeTool::new(&node_config, &paths)?), true);
+        }
     }
 
     // Should be last since it's the last resort
@@ -65,11 +67,13 @@ pub async fn load_workspace_with_toolchain() -> Result<Workspace, WorkspaceError
         match platform {
             PlatformType::Node => {
                 if let Some(node_config) = &workspace.toolchain.config.node {
-                    workspace
-                        .toolchain
-                        .node
-                        .setup(&node_config.version, &mut last_versions)
-                        .await?;
+                    if let Some(node_version) = &node_config.version {
+                        workspace
+                            .toolchain
+                            .node
+                            .setup(node_version, &mut last_versions)
+                            .await?;
+                    }
                 }
             }
             PlatformType::System | PlatformType::Unknown => {}

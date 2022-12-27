@@ -11,13 +11,15 @@ pub async fn setup() -> Result<(), AnyError> {
     let project_graph = generate_project_graph(&mut workspace)?;
     let mut dep_builder = build_dep_graph(&workspace, &project_graph);
 
-    if let Some(node) = &workspace.toolchain.config.node {
-        let runtime = Runtime::Node(Version(node.version.to_owned(), false));
+    if let Some(node_config) = &workspace.toolchain.config.node {
+        if let Some(node_version) = &node_config.version {
+            let runtime = Runtime::Node(Version(node_version.to_owned(), false));
 
-        if is_test_env() {
-            dep_builder.setup_tool(&runtime);
-        } else {
-            dep_builder.install_workspace_deps(&runtime);
+            if is_test_env() {
+                dep_builder.setup_tool(&runtime);
+            } else {
+                dep_builder.install_workspace_deps(&runtime);
+            }
         }
     }
 

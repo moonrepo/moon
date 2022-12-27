@@ -50,7 +50,7 @@ mod extends {
             config,
             ToolchainConfig {
                 node: Some(NodeConfig {
-                    version: "4.5.6".into(),
+                    version: Some("4.5.6".into()),
                     add_engines_constraint: true,
                     dedupe_on_lockfile_change: false,
                     package_manager: NodePackageManager::Yarn,
@@ -191,7 +191,10 @@ node:
             assert!(!config.typescript.unwrap().sync_project_references);
 
             // Ensure we can override the extended config
-            assert_eq!(config.node.as_ref().unwrap().version, "18.0.0".to_owned());
+            assert_eq!(
+                config.node.as_ref().unwrap().version.as_ref().unwrap(),
+                "18.0.0"
+            );
             assert_eq!(
                 config.node.as_ref().unwrap().npm.version,
                 "8.0.0".to_owned()
@@ -228,7 +231,10 @@ node:
             assert!(!config.typescript.unwrap().sync_project_references);
 
             // Ensure we can override the extended config
-            assert_eq!(config.node.as_ref().unwrap().version, "18.0.0".to_owned());
+            assert_eq!(
+                config.node.as_ref().unwrap().version.as_ref().unwrap(),
+                "18.0.0"
+            );
             assert_eq!(
                 config.node.as_ref().unwrap().npm.version,
                 "8.0.0".to_owned()
@@ -408,7 +414,7 @@ node:
 
             let config = super::load_jailed_config(jail.directory())?;
 
-            assert_eq!(config.node.unwrap().version, String::from("4.5.6"));
+            assert_eq!(config.node.unwrap().version.unwrap(), String::from("4.5.6"));
 
             Ok(())
         });

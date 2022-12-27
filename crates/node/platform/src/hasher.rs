@@ -24,10 +24,10 @@ pub struct NodeTargetHasher {
 }
 
 impl NodeTargetHasher {
-    pub fn new(node_version: String) -> Self {
+    pub fn new(node_version: Option<String>) -> Self {
         NodeTargetHasher {
-            node_version,
-            version: String::from("1"),
+            node_version: node_version.unwrap_or_else(|| "unknown".into()),
+            version: "1".into(),
             ..NodeTargetHasher::default()
         }
     }
@@ -107,7 +107,7 @@ mod tests {
 
     #[test]
     fn returns_default_hash() {
-        let hasher = NodeTargetHasher::new(String::from("0.0.0"));
+        let hasher = NodeTargetHasher::new(Some("0.0.0".into()));
 
         assert_eq!(
             to_hash_only(&hasher),
@@ -117,15 +117,15 @@ mod tests {
 
     #[test]
     fn returns_same_hash_if_called_again() {
-        let hasher = NodeTargetHasher::new(String::from("0.0.0"));
+        let hasher = NodeTargetHasher::new(Some("0.0.0".into()));
 
         assert_eq!(to_hash_only(&hasher), to_hash_only(&hasher));
     }
 
     #[test]
     fn returns_different_hash_for_diff_contents() {
-        let hasher1 = NodeTargetHasher::new(String::from("0.0.0"));
-        let hasher2 = NodeTargetHasher::new(String::from("1.0.0"));
+        let hasher1 = NodeTargetHasher::new(Some("0.0.0".into()));
+        let hasher2 = NodeTargetHasher::new(Some("1.0.0".into()));
 
         assert_ne!(to_hash_only(&hasher1), to_hash_only(&hasher2));
     }
@@ -140,10 +140,10 @@ mod tests {
             let mut package1 = PackageJson::default();
             package1.add_dependency("react", "17.0.0", true);
 
-            let mut hasher1 = NodeTargetHasher::new(String::from("0.0.0"));
+            let mut hasher1 = NodeTargetHasher::new(Some("0.0.0".into()));
             hasher1.hash_package_json(&package1, &resolved_deps);
 
-            let mut hasher2 = NodeTargetHasher::new(String::from("0.0.0"));
+            let mut hasher2 = NodeTargetHasher::new(Some("0.0.0".into()));
             hasher2.hash_package_json(&package1, &resolved_deps);
             hasher2.hash_package_json(&package1, &resolved_deps);
 
@@ -160,11 +160,11 @@ mod tests {
             let mut package2 = PackageJson::default();
             package2.add_dependency("react-dom", "17.0.0", true);
 
-            let mut hasher1 = NodeTargetHasher::new(String::from("0.0.0"));
+            let mut hasher1 = NodeTargetHasher::new(Some("0.0.0".into()));
             hasher1.hash_package_json(&package2, &resolved_deps);
             hasher1.hash_package_json(&package1, &resolved_deps);
 
-            let mut hasher2 = NodeTargetHasher::new(String::from("0.0.0"));
+            let mut hasher2 = NodeTargetHasher::new(Some("0.0.0".into()));
             hasher2.hash_package_json(&package1, &resolved_deps);
             hasher2.hash_package_json(&package2, &resolved_deps);
 
@@ -181,7 +181,7 @@ mod tests {
             let mut package2 = PackageJson::default();
             package2.add_dependency("react", "18.0.0", true);
 
-            let mut hasher1 = NodeTargetHasher::new(String::from("0.0.0"));
+            let mut hasher1 = NodeTargetHasher::new(Some("0.0.0".into()));
             hasher1.hash_package_json(&package1, &resolved_deps);
 
             let hash1 = to_hash_only(&hasher1);
@@ -204,21 +204,21 @@ mod tests {
             let mut package = PackageJson::default();
             package.add_dependency("moment", "10.0.0", true);
 
-            let mut hasher1 = NodeTargetHasher::new(String::from("0.0.0"));
+            let mut hasher1 = NodeTargetHasher::new(Some("0.0.0".into()));
             hasher1.hash_package_json(&package, &resolved_deps);
             let hash1 = to_hash_only(&hasher1);
 
             package.dev_dependencies =
                 Some(BTreeMap::from([("eslint".to_owned(), "8.0.0".to_owned())]));
 
-            let mut hasher2 = NodeTargetHasher::new(String::from("0.0.0"));
+            let mut hasher2 = NodeTargetHasher::new(Some("0.0.0".into()));
             hasher2.hash_package_json(&package, &resolved_deps);
             let hash2 = to_hash_only(&hasher2);
 
             package.peer_dependencies =
                 Some(BTreeMap::from([("react".to_owned(), "18.0.0".to_owned())]));
 
-            let mut hasher3 = NodeTargetHasher::new(String::from("0.0.0"));
+            let mut hasher3 = NodeTargetHasher::new(Some("0.0.0".into()));
             hasher3.hash_package_json(&package, &resolved_deps);
             let hash3 = to_hash_only(&hasher3);
 
@@ -236,7 +236,7 @@ mod tests {
             package.add_dependency("prettier", "^2.0.0", true);
             package.add_dependency("rollup", "^2.0.0", true);
 
-            let mut hasher = NodeTargetHasher::new(String::from("0.0.0"));
+            let mut hasher = NodeTargetHasher::new(Some("0.0.0".into()));
             hasher.hash_package_json(&package, &resolved_deps);
 
             assert_eq!(
@@ -258,7 +258,7 @@ mod tests {
             let mut package = PackageJson::default();
             package.add_dependency("prettier", "^2.0.0", true);
 
-            let mut hasher = NodeTargetHasher::new(String::from("0.0.0"));
+            let mut hasher = NodeTargetHasher::new(Some("0.0.0".into()));
             hasher.hash_package_json(&package, &resolved_deps);
 
             assert_eq!(
@@ -287,7 +287,7 @@ mod tests {
 
             tsconfig.compiler_options.as_mut().unwrap().module = Some(Module::Es2022);
 
-            let mut hasher1 = NodeTargetHasher::new(String::from("0.0.0"));
+            let mut hasher1 = NodeTargetHasher::new(Some("0.0.0".into()));
             hasher1.hash_tsconfig_json(&tsconfig);
             let hash1 = to_hash_only(&hasher1);
 
@@ -297,13 +297,13 @@ mod tests {
                 .unwrap()
                 .module_resolution = Some(ModuleResolution::NodeNext);
 
-            let mut hasher2 = NodeTargetHasher::new(String::from("0.0.0"));
+            let mut hasher2 = NodeTargetHasher::new(Some("0.0.0".into()));
             hasher2.hash_tsconfig_json(&tsconfig);
             let hash2 = to_hash_only(&hasher2);
 
             tsconfig.compiler_options.as_mut().unwrap().target = Some(Target::Es2019);
 
-            let mut hasher3 = NodeTargetHasher::new(String::from("0.0.0"));
+            let mut hasher3 = NodeTargetHasher::new(Some("0.0.0".into()));
             hasher3.hash_tsconfig_json(&tsconfig);
             let hash3 = to_hash_only(&hasher3);
 

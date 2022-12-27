@@ -30,7 +30,7 @@ async fn create_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
     };
     let toolchain_config = ToolchainConfig {
         node: Some(NodeConfig {
-            version: "16.0.0".into(),
+            version: Some("16.0.0".into()),
             dedupe_on_lockfile_change: false,
             ..NodeConfig::default()
         }),
@@ -82,7 +82,7 @@ async fn create_tasks_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
     };
     let toolchain_config = ToolchainConfig {
         node: Some(NodeConfig {
-            version: "16.0.0".into(),
+            version: Some("16.0.0".into()),
             ..NodeConfig::default()
         }),
         ..ToolchainConfig::default()

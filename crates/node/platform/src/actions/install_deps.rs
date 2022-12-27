@@ -56,14 +56,16 @@ fn add_package_manager(node: &NodeTool, package_json: &mut PackageJson) -> bool 
 
 /// Add `engines` constraint to root `package.json`.
 fn add_engines_constraint(node: &NodeTool, package_json: &mut PackageJson) -> bool {
-    if node.config.add_engines_constraint && package_json.add_engine("node", &node.config.version) {
-        debug!(
-            target: LOG_TARGET,
-            "Adding engines version constraint to root {}",
-            color::file(NPM.manifest)
-        );
+    if let Some(node_version) = &node.config.version {
+        if node.config.add_engines_constraint && package_json.add_engine("node", node_version) {
+            debug!(
+                target: LOG_TARGET,
+                "Adding engines version constraint to root {}",
+                color::file(NPM.manifest)
+            );
 
-        return true;
+            return true;
+        }
     }
 
     false
@@ -85,15 +87,17 @@ fn sync_workspace(workspace: &Workspace, node: &NodeTool) -> Result<(), MoonErro
             NodeVersionManager::Nvm => NVM.version_file.to_string(),
         };
 
-        let rc_path = workspace.root.join(&rc_name);
+        if let Some(node_version) = &node.config.version {
+            let rc_path = workspace.root.join(&rc_name);
 
-        fs::write(rc_path, &node.config.version)?;
+            fs::write(rc_path, node_version)?;
 
-        debug!(
-            target: LOG_TARGET,
-            "Syncing Node.js version to root {}",
-            color::file(&rc_name)
-        );
+            debug!(
+                target: LOG_TARGET,
+                "Syncing Node.js version to root {}",
+                color::file(&rc_name)
+            );
+        }
     }
 
     Ok(())

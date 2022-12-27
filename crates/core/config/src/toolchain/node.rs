@@ -166,7 +166,7 @@ pub struct NodeConfig {
     pub sync_version_manager_config: Option<NodeVersionManager>,
 
     #[validate(custom = "validate_node_version")]
-    pub version: String,
+    pub version: Option<String>,
 
     #[validate]
     pub yarn: Option<YarnConfig>,
@@ -186,7 +186,7 @@ impl Default for NodeConfig {
             pnpm: None,
             sync_project_workspace_dependencies: true,
             sync_version_manager_config: None,
-            version: default_node_version(),
+            version: Some(default_node_version()),
             yarn: None,
         }
     }
@@ -195,7 +195,7 @@ impl Default for NodeConfig {
 impl NodeConfig {
     pub fn with_project_override(&self, version: &str) -> Self {
         let mut config = self.clone();
-        config.version = version.to_owned();
+        config.version = Some(version.to_owned());
 
         // These settings should not be ran in a project, only the root
         config.add_engines_constraint = false;

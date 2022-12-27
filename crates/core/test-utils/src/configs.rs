@@ -10,7 +10,7 @@ use std::collections::BTreeMap;
 pub fn get_default_toolchain() -> ToolchainConfig {
     ToolchainConfig {
         node: Some(NodeConfig {
-            version: "18.0.0".into(),
+            version: Some("18.0.0".into()),
             add_engines_constraint: false,
             dedupe_on_lockfile_change: false,
             infer_tasks_from_scripts: false,
@@ -123,7 +123,7 @@ pub fn get_project_graph_aliases_fixture_configs(
 
     let toolchain_config = ToolchainConfig {
         node: Some(NodeConfig {
-            version: "18.0.0".into(),
+            version: Some("18.0.0".into()),
             add_engines_constraint: false,
             alias_package_names: Some(NodeProjectAliasFormat::NameAndScope),
             dedupe_on_lockfile_change: false,

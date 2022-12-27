@@ -2,13 +2,12 @@ use crate::helpers::AnyError;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use itertools::Itertools;
 use moon::{build_dep_graph, generate_project_graph, load_workspace};
+use moon_action_context::ActionContext;
 use moon_dep_graph::{DepGraph, DepGraphError};
 use moon_logger::{color, debug};
 use moon_pipeline_provider::{get_pipeline_output, PipelineOutput};
 use moon_project::ProjectError;
 use moon_project_graph::ProjectGraph;
-use moon_runner::Runner;
-use moon_runner_context::RunnerContext;
 use moon_task::{Target, TouchedFilePaths};
 use moon_terminal::safe_exit;
 use moon_workspace::{Workspace, WorkspaceError};
@@ -194,31 +193,31 @@ pub async fn ci(options: CiOptions) -> Result<(), AnyError> {
     // Process all tasks in the graph
     print_header(&ci_provider, "Running all targets");
 
-    let mut runner = Runner::new(workspace);
+    // let mut runner = Runner::new(workspace);
 
-    let results = runner
-        .generate_report("ciReport.json")
-        .run(
-            dep_graph,
-            project_graph,
-            Some(RunnerContext {
-                touched_files,
-                ..RunnerContext::default()
-            }),
-        )
-        .await?;
+    // let results = runner
+    //     .generate_report("ciReport.json")
+    //     .run(
+    //         dep_graph,
+    //         project_graph,
+    //         Some(RunnerContext {
+    //             touched_files,
+    //             ..RunnerContext::default()
+    //         }),
+    //     )
+    //     .await?;
 
     print_footer(&ci_provider);
 
     // Print out the results and exit if an error occurs
     print_header(&ci_provider, "Results");
 
-    runner.render_results(&results)?;
-    runner.render_stats(&results, false)?;
+    // runner.render_results(&results)?;
+    // runner.render_stats(&results, false)?;
 
-    if runner.has_failed() {
-        safe_exit(1);
-    }
+    // if runner.has_failed() {
+    //     safe_exit(1);
+    // }
 
     Ok(())
 }

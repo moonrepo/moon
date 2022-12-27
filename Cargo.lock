@@ -1758,6 +1758,7 @@ dependencies = [
  "lazy_static",
  "mimalloc",
  "moon",
+ "moon_action_context",
  "moon_action_pipeline",
  "moon_archive",
  "moon_cache",
@@ -1777,7 +1778,6 @@ dependencies = [
  "moon_project",
  "moon_project_graph",
  "moon_runner",
- "moon_runner_context",
  "moon_system_platform",
  "moon_task",
  "moon_terminal",
@@ -1964,6 +1964,7 @@ version = "0.1.0"
 dependencies = [
  "moon",
  "moon_action",
+ "moon_action_context",
  "moon_config",
  "moon_error",
  "moon_hasher",
@@ -1974,7 +1975,6 @@ dependencies = [
  "moon_platform",
  "moon_project",
  "moon_project_graph",
- "moon_runner_context",
  "moon_task",
  "moon_terminal",
  "moon_test_utils",
@@ -2132,49 +2132,31 @@ dependencies = [
 name = "moon_runner"
 version = "0.1.0"
 dependencies = [
- "async-trait",
  "console",
  "criterion",
  "moon",
  "moon_action",
+ "moon_action_context",
  "moon_cache",
  "moon_config",
- "moon_dep_graph",
  "moon_emitter",
  "moon_error",
  "moon_hasher",
- "moon_lang",
  "moon_logger",
  "moon_node_platform",
  "moon_notifier",
- "moon_platform_runtime",
  "moon_project",
- "moon_project_graph",
- "moon_runner_context",
  "moon_system_platform",
  "moon_task",
  "moon_terminal",
  "moon_test_utils",
- "moon_toolchain",
  "moon_utils",
- "moon_vcs",
  "moon_workspace",
  "moonbase",
- "petgraph",
  "rustc-hash",
  "serde",
  "thiserror",
  "tokio",
-]
-
-[[package]]
-name = "moon_runner_context"
-version = "0.1.0"
-dependencies = [
- "clap 4.0.23",
- "moon_task",
- "rustc-hash",
- "serde",
 ]
 
 [[package]]

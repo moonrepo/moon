@@ -1,6 +1,5 @@
 use crate::helpers::{create_progress_bar, AnyError};
 use moon::{build_dep_graph, generate_project_graph, load_workspace};
-use moon_runner::Runner;
 
 pub async fn sync() -> Result<(), AnyError> {
     let done = create_progress_bar("Syncing projects...");
@@ -16,19 +15,19 @@ pub async fn sync() -> Result<(), AnyError> {
     }
 
     let dep_graph = dep_builder.build();
-    let mut runner = Runner::new(workspace);
-    let results = runner.run(dep_graph, project_graph, None).await?;
+    // let mut runner = Runner::new(workspace);
+    // let results = runner.run(dep_graph, project_graph, None).await?;
 
-    if runner.has_failed() {
-        done("Failed to sync projects", false);
-    } else {
-        done(
-            format!("Successfully synced {} projects", project_count).as_ref(),
-            true,
-        );
-    }
-
-    runner.render_results(&results)?;
+    // if runner.has_failed() {
+    //     done("Failed to sync projects", false);
+    // } else {
+    //     done(
+    //         format!("Successfully synced {} projects", project_count).as_ref(),
+    //         true,
+    //     );
+    // }
+    done("Failed to sync projects", false);
+    // runner.render_results(&results)?;
 
     Ok(())
 }

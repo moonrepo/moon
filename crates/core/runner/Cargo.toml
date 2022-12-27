@@ -13,30 +13,22 @@ harness = false
 [dependencies]
 moonbase = { path = "../moonbase" }
 moon_action = { path = "../action" }
+moon_action_context = { path = "../action-context" }
 moon_cache = { path = "../cache" }
 moon_config = { path = "../config" }
-moon_dep_graph = { path = "../dep-graph" }
 moon_emitter = { path = "../emitter" }
 moon_error = { path = "../error" }
 moon_hasher = { path = "../hasher" }
-moon_lang = { path = "../lang" }
 moon_logger = { path = "../logger" }
 moon_notifier = { path = "../notifier" }
-moon_platform_runtime = { path = "../platform-runtime" }
 moon_node_platform = { path = "../../node/platform" }
 moon_project = { path = "../project" }
-moon_project_graph = { path = "../project-graph" }
-moon_runner_context = { path = "../runner-context" }
 moon_system_platform = { path = "../../system/platform" }
 moon_task = { path = "../task" }
 moon_terminal = { path = "../terminal" }
-moon_toolchain = { path = "../toolchain" }
 moon_utils = { path = "../utils" }
-moon_vcs = { path = "../vcs" }
 moon_workspace = { path = "../workspace" }
-async-trait = "0.1.59"
 console = "0.15.2"
-petgraph = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }

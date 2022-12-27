@@ -21,18 +21,18 @@ fn extract_error<T>(result: &Result<T, PipelineError>) -> Option<String> {
 }
 
 pub async fn process_action(
-    action: &mut Action,
+    mut action: Action,
     context: Arc<RwLock<ActionContext>>,
     emitter: Arc<RwLock<Emitter>>,
     workspace: Arc<RwLock<Workspace>>,
     project_graph: Arc<RwLock<ProjectGraph>>,
-) -> Result<(), PipelineError> {
+) -> Result<Action, PipelineError> {
     let node = action.node.take().unwrap();
     let log_action_label = color::muted_light(&action.label);
 
     trace!(
         target: &action.log_target,
-        "Running action {}",
+        "Processing action {}",
         log_action_label
     );
 
@@ -44,7 +44,7 @@ pub async fn process_action(
 
     local_emitter
         .emit(Event::ActionStarted {
-            action,
+            action: &action,
             node: &node,
         })
         .await?;
@@ -56,7 +56,7 @@ pub async fn process_action(
                 .emit(Event::ToolInstalling { runtime })
                 .await?;
 
-            let setup_result = setup_tool(action, context, workspace, runtime).await;
+            let setup_result = setup_tool(&mut action, context, workspace, runtime).await;
 
             local_emitter
                 .emit(Event::ToolInstalled {
@@ -77,7 +77,7 @@ pub async fn process_action(
                 })
                 .await?;
 
-            let install_result = install_deps(action, context, workspace, runtime, None).await;
+            let install_result = install_deps(&mut action, context, workspace, runtime, None).await;
 
             local_emitter
                 .emit(Event::DependenciesInstalled {
@@ -102,7 +102,7 @@ pub async fn process_action(
                 .await?;
 
             let install_result =
-                install_deps(action, context, workspace, runtime, Some(project)).await;
+                install_deps(&mut action, context, workspace, runtime, Some(project)).await;
 
             local_emitter
                 .emit(Event::DependenciesInstalled {
@@ -123,8 +123,15 @@ pub async fn process_action(
                 .emit(Event::ProjectSyncing { project, runtime })
                 .await?;
 
-            let sync_result =
-                sync_project(action, context, workspace, project_graph, project, runtime).await;
+            let sync_result = sync_project(
+                &mut action,
+                context,
+                workspace,
+                project_graph,
+                project,
+                runtime,
+            )
+            .await;
 
             local_emitter
                 .emit(Event::ProjectSynced {
@@ -147,7 +154,7 @@ pub async fn process_action(
                 .await?;
 
             let run_result =
-                run_target(action, context, emitter, workspace, project, &target).await;
+                run_target(&mut action, context, emitter, workspace, project, &target).await;
 
             local_emitter
                 .emit(Event::TargetRan {
@@ -162,7 +169,7 @@ pub async fn process_action(
 
     local_emitter
         .emit(Event::ActionFinished {
-            action,
+            action: &action,
             error: extract_error(&result),
             node: &node,
         })
@@ -187,18 +194,18 @@ pub async fn process_action(
     if action.has_failed() {
         trace!(
             target: &action.log_target,
-            "Failed to run action {} in {:?}",
+            "Failed to process action {} in {:?}",
             log_action_label,
             action.duration.unwrap()
         );
     } else {
         trace!(
             target: &action.log_target,
-            "Ran action {} in {:?}",
+            "Processed action {} in {:?}",
             log_action_label,
             action.duration.unwrap()
         );
     }
 
-    Ok(())
+    Ok(action)
 }

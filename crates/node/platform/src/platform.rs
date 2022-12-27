@@ -320,16 +320,11 @@ impl Platform for NodePlatform {
         project: &Project,
         dependencies: &FxHashMap<String, &Project>,
     ) -> Result<bool, ProjectError> {
-        let tool = self
-            .toolchain
-            .get()
-            .map_err(|e| ProjectError::Moon(MoonError::Generic(e.to_string())))?;
-
         let mutated = actions::sync_project(
-            tool,
             project,
             dependencies,
             &self.workspace_root,
+            &self.config,
             &self.typescript_config,
         )
         .await?;

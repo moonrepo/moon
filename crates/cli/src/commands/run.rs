@@ -100,8 +100,6 @@ pub async fn run_target(
     }
 
     // Process all tasks in the graph
-    let dep_graph = dep_builder.build();
-
     let context = ActionContext {
         affected_only: options.affected,
         initial_targets: FxHashSet::from_iter(target_ids.to_owned()),
@@ -112,6 +110,7 @@ pub async fn run_target(
         touched_files,
     };
 
+    let dep_graph = dep_builder.build();
     let mut pipeline = Pipeline::new(workspace, project_graph);
 
     let results = pipeline

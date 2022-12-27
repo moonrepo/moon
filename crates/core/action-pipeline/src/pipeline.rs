@@ -101,18 +101,22 @@ impl Pipeline {
             let project_graph_clone = Arc::clone(&self.project_graph);
 
             tokio::spawn(async move {
-                while let Ok((mut action, permit)) = worker.recv().await {
-                    process_action(
-                        &mut action,
-                        Arc::clone(&context_clone),
-                        Arc::clone(&emitter_clone),
-                        Arc::clone(&workspace_clone),
-                        Arc::clone(&project_graph_clone),
-                    )
-                    .await
-                    .unwrap();
-
-                    sender.send(action).await.unwrap();
+                while let Ok((action, permit)) = worker.recv().await {
+                    if let Err(error) = sender
+                        .send(
+                            process_action(
+                                action,
+                                Arc::clone(&context_clone),
+                                Arc::clone(&emitter_clone),
+                                Arc::clone(&workspace_clone),
+                                Arc::clone(&project_graph_clone),
+                            )
+                            .await,
+                        )
+                        .await
+                    {
+                        dbg!(error);
+                    }
 
                     drop(permit);
                 }
@@ -171,6 +175,8 @@ impl Pipeline {
             // Wait for all actions in this batch to complete
             while semaphore.available_permits() != actions_count {
                 if let Some(result) = aggregator.recv().await {
+                    let result = result?;
+
                     if result.has_failed() {
                         failed_count += 1;
                     } else if result.was_cached() {

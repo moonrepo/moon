@@ -1,8 +1,9 @@
-use moon_config::{DependencyScope, NodeVersionFormat, TypeScriptConfig, CONFIG_DIRNAME};
+use moon_config::{
+    DependencyScope, NodeConfig, NodeVersionFormat, TypeScriptConfig, CONFIG_DIRNAME,
+};
 use moon_error::MoonError;
 use moon_logger::{color, debug};
 use moon_node_lang::{PackageJson, NPM};
-use moon_node_tool::NodeTool;
 use moon_project::{Project, ProjectError};
 use moon_typescript_lang::tsconfig::CompilerOptionsPaths;
 use moon_typescript_lang::TsConfigJson;
@@ -72,10 +73,10 @@ fn sync_root_tsconfig(
 }
 
 pub async fn sync_project(
-    node: &NodeTool,
     project: &Project,
-    project_dependencies: &FxHashMap<String, &Project>,
+    dependencies: &FxHashMap<String, &Project>,
     workspace_root: &Path,
+    node_config: &NodeConfig,
     typescript_config: &Option<TypeScriptConfig>,
 ) -> Result<bool, ProjectError> {
     let mut mutated_files = false;
@@ -89,9 +90,8 @@ pub async fn sync_project(
     let mut tsconfig_paths: CompilerOptionsPaths = BTreeMap::new();
 
     for (dep_id, dep_cfg) in &project.dependencies {
-        let dep_project = match project_dependencies.get(dep_id) {
-            Some(dep) => dep,
-            None => continue,
+        let Some(dep_project) = dependencies.get(dep_id) else {
+            continue;
         };
 
         let dep_relative_path =
@@ -101,8 +101,8 @@ pub async fn sync_project(
         // Update dependencies within this project's `package.json`.
         // Only add if the dependent project has a `package.json`,
         // and this `package.json` has not already declared the dep.
-        if node.config.sync_project_workspace_dependencies {
-            let format = &node.config.dependency_version_format;
+        if node_config.sync_project_workspace_dependencies {
+            let format = &node_config.dependency_version_format;
 
             if let Some(dep_package_json) = PackageJson::read(&dep_project.root)? {
                 if let Some(dep_package_name) = &dep_package_json.name {

@@ -194,8 +194,6 @@ pub async fn ci(options: CiOptions) -> Result<(), AnyError> {
     // Process all tasks in the graph
     print_header(&ci_provider, "Running all targets");
 
-    // let mut runner = Runner::new(workspace);
-
     let mut pipeline = Pipeline::new(workspace, project_graph);
 
     let results = pipeline

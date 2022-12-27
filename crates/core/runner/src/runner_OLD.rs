@@ -67,47 +67,6 @@ impl Runner {
         self.failed_count > 0
     }
 
-    pub async fn run(
-        &mut self,
-        dep_graph: DepGraph,
-        project_graph: ProjectGraph,
-        context: Option<RunnerContext>,
-    ) -> Result<ActionResults, RunnerError> {
-        let start = Instant::now();
-        let node_count = dep_graph.get_node_count();
-        let batches = dep_graph.sort_batched_topological()?;
-        let batches_count = batches.len();
-        let dep_graph = Arc::new(RwLock::new(dep_graph));
-        let project_graph = Arc::new(RwLock::new(project_graph));
-        let context = Arc::new(RwLock::new(context.unwrap_or_default()));
-        let emitter = Arc::new(RwLock::new(
-            self.create_emitter(Arc::clone(&self.workspace)).await,
-        ));
-        let local_emitter = emitter.read().await;
-
-        let mut results: ActionResults = vec![];
-
-        let duration = start.elapsed();
-
-        debug!(
-            target: LOG_TARGET,
-            "Finished running {} actions in {:?}", node_count, &duration
-        );
-
-        local_emitter
-            .emit(Event::RunnerFinished {
-                duration: &duration,
-                cached_count: self.cached_count,
-                failed_count: self.failed_count,
-                passed_count: self.passed_count,
-            })
-            .await?;
-
-        self.duration = Some(duration);
-
-        Ok(results)
-    }
-
     pub fn render_results(&self, results: &ActionResults) -> Result<(), MoonError> {
         let term = Term::buffered_stdout();
         term.write_line("")?;

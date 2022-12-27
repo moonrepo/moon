@@ -2,11 +2,11 @@ use crate::errors::PipelineError;
 use crate::processor::process_action;
 use crate::subscribers::local_cache::LocalCacheSubscriber;
 use crate::subscribers::moonbase_cache::MoonbaseCacheSubscriber;
-use moon_action::{Action, ActionNode};
+use moon_action::Action;
 use moon_action_context::ActionContext;
 use moon_dep_graph::DepGraph;
 use moon_emitter::{Emitter, Event};
-use moon_logger::{color, debug, error, trace};
+use moon_logger::{debug, error, trace};
 use moon_notifier::WebhooksSubscriber;
 use moon_project_graph::ProjectGraph;
 use moon_utils::{is_ci, is_test_env};
@@ -15,7 +15,7 @@ use std::num::NonZeroUsize;
 use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
-use tokio::sync::{OwnedSemaphorePermit, RwLock, Semaphore};
+use tokio::sync::{mpsc, OwnedSemaphorePermit, RwLock, Semaphore};
 
 const LOG_TARGET: &str = "moon:action-pipeline";
 
@@ -70,33 +70,34 @@ impl Pipeline {
         &mut self,
         dep_graph: DepGraph,
         context: Option<ActionContext>,
-    ) -> Result<(), PipelineError> {
+    ) -> Result<ActionResults, PipelineError> {
         let start = Instant::now();
         let context = Arc::new(RwLock::new(context.unwrap_or_default()));
         let emitter = Arc::new(RwLock::new(
             create_emitter(Arc::clone(&self.workspace)).await,
         ));
 
-        // We use an async channel to coordinate actions (tasks) to process
-        // across a bounded worker pool, as defined by the provided concurrency
-        let (sender, receiver) = async_channel::unbounded::<(Action, OwnedSemaphorePermit)>();
-        let local_emitter = emitter.read().await;
+        // We use an mpsc channel to aggregate the action results of the workers
+        let (sender, mut aggregator) = mpsc::channel(100);
         let mut results: ActionResults = vec![];
         let mut passed_count = 0;
         let mut cached_count = 0;
         let mut failed_count = 0;
-        let mut abort: Option<String> = None;
 
-        // Spawn worker threads that will process the action queue
+        // We use an async channel to coordinate actions (tasks) to process
+        // across a bounded worker pool, as defined by the provided concurrency
+        let (queuer, worker) = async_channel::unbounded::<(Action, OwnedSemaphorePermit)>();
+
         for _ in 0..self.concurrency {
-            let receiver = receiver.clone();
+            let sender = sender.clone();
+            let worker = worker.clone();
             let context_clone = Arc::clone(&context);
             let emitter_clone = Arc::clone(&emitter);
             let workspace_clone = Arc::clone(&self.workspace);
             let project_graph_clone = Arc::clone(&self.project_graph);
 
             tokio::spawn(async move {
-                while let Ok((mut action, permit)) = receiver.recv().await {
+                while let Ok((mut action, permit)) = worker.recv().await {
                     process_action(
                         &mut action,
                         Arc::clone(&context_clone),
@@ -107,19 +108,7 @@ impl Pipeline {
                     .await
                     .unwrap();
 
-                    if action.has_failed() {
-                        failed_count += 1;
-                    } else if action.was_cached() {
-                        cached_count += 1;
-                    } else {
-                        passed_count += 1;
-                    }
-
-                    // if self.bail && action.has_failed() || action.should_abort() {
-                    //     abort = action.error.clone();
-                    // }
-
-                    // results.push(action);
+                    sender.send(action).await.unwrap();
 
                     drop(permit);
                 }
@@ -131,6 +120,7 @@ impl Pipeline {
         let total_actions_count = dep_graph.get_node_count();
         let batches = dep_graph.sort_batched_topological()?;
         let batches_count = batches.len();
+        let local_emitter = emitter.read().await;
 
         debug!(
             target: LOG_TARGET,
@@ -147,24 +137,6 @@ impl Pipeline {
             let batch_index = b + 1;
             let batch_target_name = format!("{}:batch:{}", LOG_TARGET, batch_index);
             let actions_count = batch.len();
-
-            // If a previous batch encountered an error that should abort,
-            // handle it at the start of the next batch so that currently running
-            // processes have time to finish.
-            if let Some(abort_message) = abort {
-                error!(
-                    target: &batch_target_name,
-                    "Encountered a critical error, aborting the action pipeline"
-                );
-
-                local_emitter
-                    .emit(Event::RunnerAborted {
-                        error: abort_message.clone(),
-                    })
-                    .await?;
-
-                return Err(PipelineError::Aborted(abort_message));
-            }
 
             trace!(
                 target: &batch_target_name,
@@ -186,7 +158,7 @@ impl Pipeline {
 
                     action.log_target = format!("{}:{}", batch_target_name, action_index);
 
-                    let _ = sender.send((action, permit)).await;
+                    let _ = queuer.send((action, permit)).await;
                 } else {
                     panic!("HOW?");
                 }
@@ -194,7 +166,34 @@ impl Pipeline {
 
             // Wait for all actions in this batch to complete
             while semaphore.available_permits() != actions_count {
-                continue;
+                if let Some(result) = aggregator.recv().await {
+                    if result.has_failed() {
+                        failed_count += 1;
+                    } else if result.was_cached() {
+                        cached_count += 1;
+                    } else {
+                        passed_count += 1;
+                    }
+
+                    if self.bail && result.has_failed() || result.should_abort() {
+                        error!(
+                            target: &batch_target_name,
+                            "Encountered a critical error, aborting the action pipeline"
+                        );
+
+                        let abort_error = result.error.unwrap_or_else(|| "Unknown error!".into());
+
+                        local_emitter
+                            .emit(Event::RunnerAborted {
+                                error: abort_error.clone(),
+                            })
+                            .await?;
+
+                        return Err(PipelineError::Aborted(abort_error));
+                    }
+
+                    results.push(result);
+                }
             }
 
             semaphore.close();
@@ -219,7 +218,7 @@ impl Pipeline {
         self.duration = Some(duration);
         // self.create_run_report(&results, context).await?;
 
-        Ok(())
+        Ok(results)
     }
 }
 

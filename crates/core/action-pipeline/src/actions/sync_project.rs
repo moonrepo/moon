@@ -1,6 +1,7 @@
 use crate::errors::PipelineError;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
+use moon_logger::{color, debug};
 use moon_platform::Runtime;
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
@@ -22,6 +23,12 @@ pub async fn sync_project(
 ) -> Result<ActionStatus, PipelineError> {
     let workspace = workspace.read().await;
     let project_graph = project_graph.read().await;
+
+    debug!(
+        target: LOG_TARGET,
+        "Syncing project {}",
+        color::id(&project.id)
+    );
 
     // Collect all project dependencies so we can pass them along.
     // We can't pass the graph itself because of circuler references between crates!

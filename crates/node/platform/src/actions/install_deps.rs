@@ -67,7 +67,7 @@ fn add_engines_constraint(node: &NodeTool, package_json: &mut PackageJson) -> bo
 pub async fn install_deps(node: &NodeTool, working_dir: &Path) -> Result<(), ToolError> {
     // When in CI, we can avoid installing dependencies because
     // we can assume they've already been installed before moon runs!
-    if is_ci() && has_vendor_installed_dependencies(&working_dir, &NODE) {
+    if is_ci() && has_vendor_installed_dependencies(working_dir, &NODE) {
         warn!(
             target: LOG_TARGET,
             "In a CI environment and dependencies already exist, skipping install"
@@ -92,7 +92,7 @@ pub async fn install_deps(node: &NodeTool, working_dir: &Path) -> Result<(), Too
         };
 
         if let Some(node_version) = &node.config.version {
-            let rc_path = working_dir.join(&rc_name);
+            let rc_path = working_dir.join(rc_name);
 
             fs::write(&rc_path, node_version)?;
 
@@ -120,7 +120,7 @@ pub async fn install_deps(node: &NodeTool, working_dir: &Path) -> Result<(), Too
         );
 
         package_manager
-            .install_dependencies(node, &working_dir, true)
+            .install_dependencies(node, working_dir, true)
             .await?;
     }
 
@@ -138,7 +138,7 @@ pub async fn install_deps(node: &NodeTool, working_dir: &Path) -> Result<(), Too
         );
 
         package_manager
-            .dedupe_dependencies(node, &working_dir, true)
+            .dedupe_dependencies(node, working_dir, true)
             .await?;
     }
 

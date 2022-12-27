@@ -44,7 +44,7 @@ pub async fn process_action(
 
     local_emitter
         .emit(Event::ActionStarted {
-            action: &action,
+            action,
             node: &node,
         })
         .await?;
@@ -162,7 +162,7 @@ pub async fn process_action(
 
     local_emitter
         .emit(Event::ActionFinished {
-            action: &action,
+            action,
             error: extract_error(&result),
             node: &node,
         })

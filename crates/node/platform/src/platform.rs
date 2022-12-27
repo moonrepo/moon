@@ -310,7 +310,7 @@ impl Platform for NodePlatform {
     async fn install_deps(&self, version: Version, working_dir: &Path) -> Result<(), ToolError> {
         let tool = self.toolchain.get_for_version(&version)?;
 
-        actions::install_deps(&tool, working_dir).await?;
+        actions::install_deps(tool, working_dir).await?;
 
         Ok(())
     }

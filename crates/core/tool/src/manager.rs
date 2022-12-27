@@ -25,7 +25,7 @@ impl<T: Tool> ToolManager<T> {
     }
 
     pub fn get_for_version(&self, version: &Version) -> Result<&T, ToolError> {
-        if !self.has(&version) {
+        if !self.has(version) {
             return Err(ToolError::UnknownTool(format!(
                 "{} v{}",
                 self.runtime, version.0

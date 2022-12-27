@@ -46,21 +46,21 @@ impl Runtime {
     }
 }
 
-impl Into<PlatformType> for &Runtime {
-    fn into(self) -> PlatformType {
-        match self {
-            Runtime::Node(_) => PlatformType::Node,
-            Runtime::System => PlatformType::System,
-        }
-    }
-}
-
 impl fmt::Display for Runtime {
     // Primarily used in action graph node labels
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Runtime::Node(_) => write!(f, "Node"),
             Runtime::System => write!(f, "System"),
+        }
+    }
+}
+
+impl From<&Runtime> for PlatformType {
+    fn from(value: &Runtime) -> Self {
+        match value {
+            Runtime::Node(_) => PlatformType::Node,
+            Runtime::System => PlatformType::System,
         }
     }
 }

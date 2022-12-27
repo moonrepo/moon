@@ -3,17 +3,9 @@ use moon_config::{PlatformType, ProjectConfig};
 use moon_platform::{Platform, Runtime, Version};
 use moon_tool::{Tool, ToolError};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct SystemPlatform {
     tool: SystemToolStub,
-}
-
-impl SystemPlatform {
-    pub fn new() -> Self {
-        SystemPlatform {
-            tool: SystemToolStub::default(),
-        }
-    }
 }
 
 impl Platform for SystemPlatform {

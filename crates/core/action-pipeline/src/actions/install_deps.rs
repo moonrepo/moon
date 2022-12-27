@@ -72,18 +72,18 @@ pub async fn install_deps(
 
     if let Some(project) = project {
         working_dir = &project.root;
-        has_modified_files = context.touched_files.contains(&working_dir.join(&lockfile))
-            || context.touched_files.contains(&working_dir.join(&manifest));
+        has_modified_files = context.touched_files.contains(&working_dir.join(lockfile))
+            || context.touched_files.contains(&working_dir.join(manifest));
     } else {
         working_dir = &workspace.root;
         has_modified_files = context
             .touched_files
             .iter()
-            .any(|f| f.ends_with(&lockfile) || f.ends_with(&manifest));
+            .any(|f| f.ends_with(lockfile) || f.ends_with(manifest));
     }
 
     // Install dependencies in the current project or workspace
-    let lockfile_path = working_dir.join(&lockfile);
+    let lockfile_path = working_dir.join(lockfile);
     let mut last_modified = 0;
     let mut cache = workspace
         .cache
@@ -103,11 +103,11 @@ pub async fn install_deps(
             target: LOG_TARGET,
             "Installing {} dependencies in {}",
             runtime.label(),
-            color::path(&working_dir)
+            color::path(working_dir)
         );
 
         platform
-            .install_deps(runtime.version(), &working_dir)
+            .install_deps(runtime.version(), working_dir)
             .await?;
 
         // Update the cache with the timestamp

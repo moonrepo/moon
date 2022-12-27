@@ -19,7 +19,7 @@ pub fn register_platforms(workspace: &mut Workspace) -> Result<(), WorkspaceErro
     }
 
     // Should be last since it's the most common
-    workspace.register_platform(Box::new(SystemPlatform::new()));
+    workspace.register_platform(Box::<SystemPlatform>::default());
 
     Ok(())
 }

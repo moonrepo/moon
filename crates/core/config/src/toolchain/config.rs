@@ -52,7 +52,7 @@ impl ToolchainConfig {
         if let Some(node_config) = &mut config.node {
             // Versions from env vars should take precedence
             if let Ok(node_version) = env::var("MOON_NODE_VERSION") {
-                node_config.version = node_version;
+                node_config.version = Some(node_version);
             }
 
             if let Ok(npm_version) = env::var("MOON_NPM_VERSION") {

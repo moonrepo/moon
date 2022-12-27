@@ -1,15 +1,19 @@
 use crate::errors::PipelineError;
 use crate::processor::process_action;
+use crate::run_report::RunReport;
 use crate::subscribers::local_cache::LocalCacheSubscriber;
 use crate::subscribers::moonbase_cache::MoonbaseCacheSubscriber;
-use moon_action::Action;
+use console::Term;
+use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_dep_graph::DepGraph;
 use moon_emitter::{Emitter, Event};
-use moon_logger::{debug, error, trace};
+use moon_error::MoonError;
+use moon_logger::{color, debug, error, trace};
 use moon_notifier::WebhooksSubscriber;
 use moon_project_graph::ProjectGraph;
-use moon_utils::{is_ci, is_test_env};
+use moon_terminal::{label_to_the_moon, replace_style_tokens, ExtendedTerm};
+use moon_utils::{is_ci, is_test_env, time};
 use moon_workspace::Workspace;
 use std::num::NonZeroUsize;
 use std::sync::Arc;
@@ -219,6 +223,149 @@ impl Pipeline {
         // self.create_run_report(&results, context).await?;
 
         Ok(results)
+    }
+
+    pub fn render_results(&self, results: &ActionResults) -> Result<(), MoonError> {
+        let term = Term::buffered_stdout();
+        term.write_line("")?;
+
+        for result in results {
+            let status = match result.status {
+                ActionStatus::Passed
+                | ActionStatus::Cached
+                | ActionStatus::CachedFromRemote
+                | ActionStatus::Skipped => color::success("pass"),
+                ActionStatus::Failed | ActionStatus::FailedAndAbort => color::failure("fail"),
+                ActionStatus::Invalid => color::invalid("warn"),
+                _ => color::muted_light("oops"),
+            };
+
+            let mut meta: Vec<String> = vec![];
+
+            if matches!(
+                result.status,
+                ActionStatus::Cached | ActionStatus::CachedFromRemote
+            ) {
+                meta.push(String::from("cached"));
+            } else if matches!(result.status, ActionStatus::Skipped) {
+                meta.push(String::from("skipped"));
+            } else if let Some(duration) = result.duration {
+                meta.push(time::elapsed(duration));
+            }
+
+            // term.write_line(&format!(
+            //     "{} {} {}",
+            //     status,
+            //     color::style(result.label.as_ref().unwrap()).bold(),
+            //     color::muted(format!("({})", meta.join(", ")))
+            // ))?;
+
+            if let Some(error) = &result.error {
+                term.write_line(&format!(
+                    "     {}",
+                    color::muted_light(replace_style_tokens(error))
+                ))?;
+            }
+        }
+
+        term.write_line("")?;
+        term.flush()?;
+
+        Ok(())
+    }
+
+    pub fn render_stats(&self, results: &ActionResults, compact: bool) -> Result<(), MoonError> {
+        let mut cached_count = 0;
+        let mut pass_count = 0;
+        let mut fail_count = 0;
+        let mut invalid_count = 0;
+
+        for result in results {
+            // if let Some(label) = &result.label {
+            //     if compact && !label.contains("RunTarget") {
+            //         continue;
+            //     }
+            // }
+
+            match result.status {
+                ActionStatus::Cached | ActionStatus::CachedFromRemote => {
+                    cached_count += 1;
+                    pass_count += 1;
+                }
+                ActionStatus::Passed | ActionStatus::Skipped => {
+                    pass_count += 1;
+                }
+                ActionStatus::Failed | ActionStatus::FailedAndAbort => {
+                    fail_count += 1;
+                }
+                ActionStatus::Invalid => {
+                    invalid_count += 1;
+                }
+                _ => {}
+            }
+        }
+
+        let mut counts_message = vec![];
+
+        if pass_count > 0 {
+            if cached_count > 0 {
+                counts_message.push(color::success(format!(
+                    "{} completed ({} cached)",
+                    pass_count, cached_count
+                )));
+            } else {
+                counts_message.push(color::success(format!("{} completed", pass_count)));
+            }
+        }
+
+        if fail_count > 0 {
+            counts_message.push(color::failure(format!("{} failed", fail_count)));
+        }
+
+        if invalid_count > 0 {
+            counts_message.push(color::invalid(format!("{} invalid", invalid_count)));
+        }
+
+        let term = Term::buffered_stdout();
+        term.write_line("")?;
+
+        let counts_message = counts_message.join(&color::muted(", "));
+        let mut elapsed_time = time::elapsed(self.duration.unwrap());
+
+        if pass_count == cached_count && fail_count == 0 {
+            elapsed_time = format!("{} {}", elapsed_time, label_to_the_moon());
+        }
+
+        if compact {
+            term.render_entry("Tasks", &counts_message)?;
+            term.render_entry(" Time", &elapsed_time)?;
+        } else {
+            term.render_entry("Actions", &counts_message)?;
+            term.render_entry("   Time", &elapsed_time)?;
+        }
+
+        term.write_line("")?;
+        term.flush()?;
+
+        Ok(())
+    }
+
+    async fn create_run_report(
+        &self,
+        actions: &ActionResults,
+        context: Arc<RwLock<ActionContext>>,
+    ) -> Result<(), PipelineError> {
+        if let Some(name) = &self.report_name {
+            let workspace = self.workspace.read().await;
+            let duration = self.duration.unwrap();
+            let context = context.read().await;
+
+            workspace
+                .cache
+                .create_json_report(name, RunReport::new(actions, &context, duration))?;
+        }
+
+        Ok(())
     }
 }
 

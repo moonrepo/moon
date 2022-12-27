@@ -1692,6 +1692,7 @@ name = "moon_action_pipeline"
 version = "0.1.0"
 dependencies = [
  "async-channel",
+ "console",
  "moon_action",
  "moon_action_context",
  "moon_cache",

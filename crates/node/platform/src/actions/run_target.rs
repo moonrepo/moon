@@ -93,11 +93,7 @@ pub fn create_target_command(
     project: &Project,
     task: &Task,
 ) -> Result<Command, WorkspaceError> {
-    dbg!("create_target_command");
-
     let mut node = workspace.toolchain.node.get::<NodeTool>()?;
-
-    dbg!(&node);
 
     // If a version override exists, use it for the cmmand
     if let Some(node_config) = &project.config.toolchain.node {
@@ -168,12 +164,8 @@ pub async fn create_target_hasher(
     workspace: &Workspace,
     project: &Project,
 ) -> Result<NodeTargetHasher, WorkspaceError> {
-    dbg!("create_target_hasher");
-
     let node = workspace.toolchain.node.get::<NodeTool>()?;
     let mut hasher = NodeTargetHasher::new(node.config.version.clone());
-
-    dbg!(&node);
 
     let resolved_dependencies = if matches!(
         workspace.config.hasher.optimization,

@@ -6,7 +6,7 @@ use moon_config::{
 use moon_error::MoonError;
 use moon_platform_runtime::{Runtime, Version};
 use moon_project::{Project, ProjectError};
-use moon_tool::{DependencyManager, Tool, ToolError};
+use moon_tool::{Tool, ToolError};
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::fmt::Debug;
@@ -70,12 +70,11 @@ pub trait Platform: Debug + Send + Sync {
 
     // TOOLCHAIN
 
+    /// Return a tool instance from the internal toolchain for the provided version.
+    /// If the version does not exist in the toolchain, return an error.
     fn get_language_tool(&self, version: Version) -> Result<Box<&dyn Tool>, ToolError>;
 
-    fn get_dependency_manager(
-        &self,
-        version: Version,
-    ) -> Result<Option<Box<&dyn DependencyManager<&dyn Tool>>>, ToolError> {
+    fn get_dependency_configs(&self) -> Result<Option<(String, String)>, ToolError> {
         Ok(None)
     }
 

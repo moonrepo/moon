@@ -13,7 +13,7 @@ use moon_node_tool::NodeTool;
 use moon_platform::{Platform, Runtime, Version};
 use moon_project::Project;
 use moon_project::ProjectError;
-use moon_tool::{DependencyManager, Tool, ToolError, ToolManager};
+use moon_tool::{Tool, ToolError, ToolManager};
 use moon_utils::{async_trait, glob::GlobSet};
 use proto_core::Proto;
 use rustc_hash::FxHashMap;
@@ -281,13 +281,14 @@ impl Platform for NodePlatform {
         Ok(Box::new(self.toolchain.get_for_version(&version)?))
     }
 
-    fn get_dependency_manager(
-        &self,
-        _version: Version,
-    ) -> Result<Option<Box<&dyn DependencyManager<&dyn Tool>>>, ToolError> {
-        // let tool = self.get_language_tool(version)?;
+    fn get_dependency_configs(&self) -> Result<Option<(String, String)>, ToolError> {
+        let tool = self.toolchain.get()?;
+        let depman = tool.get_package_manager();
 
-        Ok(None)
+        Ok(Some((
+            depman.get_lock_filename(),
+            depman.get_manifest_filename(),
+        )))
     }
 
     // ACTIONS

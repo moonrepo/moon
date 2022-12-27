@@ -1701,6 +1701,7 @@ dependencies = [
  "moon_error",
  "moon_logger",
  "moon_node_platform",
+ "moon_node_tool",
  "moon_notifier",
  "moon_platform",
  "moon_project",

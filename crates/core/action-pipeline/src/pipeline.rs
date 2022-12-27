@@ -102,7 +102,9 @@ impl Pipeline {
 
             tokio::spawn(async move {
                 while let Ok((action, permit)) = worker.recv().await {
-                    if let Err(error) = sender
+                    // Ignore failures, as it typically means the pipeline
+                    // has been aborted and we're trying to send another result
+                    let _ = sender
                         .send(
                             process_action(
                                 action,
@@ -113,10 +115,7 @@ impl Pipeline {
                             )
                             .await,
                         )
-                        .await
-                    {
-                        dbg!(error);
-                    }
+                        .await;
 
                     drop(permit);
                 }

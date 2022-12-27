@@ -1,637 +1,830 @@
-use crate::actions;
-use crate::errors::RunnerError;
-use crate::run_report::RunReport;
-use crate::subscribers::local_cache::LocalCacheSubscriber;
-use crate::subscribers::moonbase_cache::MoonbaseCacheSubscriber;
+use crate::RunnerError;
 use console::Term;
-use moon_action::{Action, ActionNode, ActionStatus};
-use moon_dep_graph::{DepGraph, DepGraphError};
-use moon_emitter::{Emitter, Event};
+use moon_action::{Action, ActionStatus, Attempt};
+use moon_cache::RunTargetState;
+use moon_config::{PlatformType, TaskOutputStyle};
+use moon_emitter::{Emitter, Event, EventFlow};
 use moon_error::MoonError;
-use moon_logger::{color, debug, error, trace};
+use moon_hasher::{convert_paths_to_strings, to_hash, Hasher, TargetHasher};
+use moon_logger::{color, debug, warn};
 use moon_node_platform::actions as node_actions;
-use moon_notifier::WebhooksSubscriber;
-use moon_platform_runtime::Runtime;
+use moon_project::Project;
 use moon_project_graph::ProjectGraph;
 use moon_runner_context::RunnerContext;
-use moon_task::Target;
-use moon_terminal::{label_to_the_moon, replace_style_tokens, ExtendedTerm};
-use moon_utils::{is_ci, is_test_env, time};
+use moon_system_platform::actions as system_actions;
+use moon_task::{
+    Target, TargetError, TargetProjectScope, Task, TaskError, TaskOptionAffectedFiles,
+};
+use moon_terminal::label_checkpoint;
+use moon_terminal::Checkpoint;
+use moon_utils::{
+    is_ci, is_test_env, path,
+    process::{self, format_running_command, output_to_string, Command, Output},
+    time,
+};
 use moon_workspace::Workspace;
+use rustc_hash::FxHashMap;
+use serde::Serialize;
 use std::sync::Arc;
-use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
-use tokio::task;
 
-const LOG_TARGET: &str = "moon:runner";
+const LOG_TARGET: &str = "moon:action:run-target";
 
-pub type ActionResults = Vec<Action>;
-
-fn extract_run_error<T>(result: &Result<T, RunnerError>) -> Option<String> {
-    match result {
-        Ok(_) => None,
-        Err(error) => Some(error.to_string()),
-    }
+pub enum HydrateFrom {
+    LocalCache,
+    PreviousOutput,
+    RemoteCache,
 }
 
-async fn run_action(
-    node: &ActionNode,
-    action: &mut Action,
-    context: Arc<RwLock<RunnerContext>>,
-    workspace: Arc<RwLock<Workspace>>,
-    project_graph: Arc<RwLock<ProjectGraph>>,
-    emitter: Arc<RwLock<Emitter>>,
-) -> Result<(), RunnerError> {
-    let local_emitter = Arc::clone(&emitter);
-    let local_emitter = local_emitter.read().await;
+pub struct TargetRunner<'a> {
+    pub cache: RunTargetState,
 
-    let local_project_graph = Arc::clone(&project_graph);
-    let local_project_graph = local_project_graph.read().await;
+    emitter: &'a Emitter,
 
-    let result = match node {
-        // Install dependencies in the workspace root
-        ActionNode::InstallDeps(runtime) => {
-            local_emitter
-                .emit(Event::DependenciesInstalling {
-                    project: None,
-                    runtime,
-                })
-                .await?;
+    project: &'a Project,
 
-            let install_result = match runtime {
-                // Runtime::Node(_) => {
-                //     node_actions::install_deps(action, context, workspace, runtime, None)
-                //         .await
-                //         .map_err(RunnerError::Workspace)
-                // }
-                _ => Ok(ActionStatus::Passed),
-            };
+    stderr: Term,
 
-            local_emitter
-                .emit(Event::DependenciesInstalled {
-                    error: extract_run_error(&install_result),
-                    project: None,
-                    runtime,
-                })
-                .await?;
+    stdout: Term,
 
-            install_result
+    task: &'a Task,
+
+    workspace: &'a Workspace,
+}
+
+impl<'a> TargetRunner<'a> {
+    pub fn new(
+        emitter: &'a Emitter,
+        workspace: &'a Workspace,
+        project: &'a Project,
+        task: &'a Task,
+    ) -> Result<TargetRunner<'a>, MoonError> {
+        Ok(TargetRunner {
+            cache: workspace.cache.cache_run_target_state(&task.target)?,
+            emitter,
+            project,
+            stderr: Term::buffered_stderr(),
+            stdout: Term::buffered_stdout(),
+            task,
+            workspace,
+        })
+    }
+
+    /// Cache outputs to the `.moon/cache/outputs` folder and to the cloud,
+    /// so that subsequent builds are faster, and any local outputs
+    /// can be hydrated easily.
+    pub async fn archive_outputs(&self) -> Result<(), RunnerError> {
+        let hash = &self.cache.hash;
+
+        if hash.is_empty() || !self.is_archivable()? {
+            return Ok(());
         }
 
-        // Install dependencies in the project root
-        ActionNode::InstallProjectDeps(runtime, project_id) => {
-            let project = local_project_graph.get(project_id)?;
-
-            local_emitter
-                .emit(Event::DependenciesInstalling {
-                    project: Some(project),
-                    runtime,
-                })
-                .await?;
-
-            let install_result = match runtime {
-                // Runtime::Node(_) => {
-                //     node_actions::install_deps(action, context, workspace, runtime, Some(project))
-                //         .await
-                //         .map_err(RunnerError::Workspace)
-                // }
-                _ => Ok(ActionStatus::Passed),
-            };
-
-            local_emitter
-                .emit(Event::DependenciesInstalled {
-                    error: extract_run_error(&install_result),
-                    project: Some(project),
-                    runtime,
-                })
-                .await?;
-
-            install_result
-        }
-
-        // Run a task within a project
-        ActionNode::RunTarget(target_id) => {
-            let target = Target::parse(target_id)?;
-
-            local_emitter
-                .emit(Event::TargetRunning { target: &target })
-                .await?;
-
-            let run_result = actions::run_target(
-                action,
-                context,
-                workspace,
-                project_graph,
-                Arc::clone(&emitter),
-                &target,
-            )
-            .await;
-
-            local_emitter
-                .emit(Event::TargetRan {
-                    error: extract_run_error(&run_result),
-                    target: &target,
-                })
-                .await?;
-
-            run_result
-        }
-
-        // Setup and install the specific tool
-        ActionNode::SetupTool(runtime) => {
-            local_emitter
-                .emit(Event::ToolInstalling { runtime })
-                .await?;
-
-            let tool_result = match runtime {
-                // Runtime::Node(_) => node_actions::setup_tool(action, context, workspace, runtime)
-                //     .await
-                //     .map_err(RunnerError::Workspace),
-                _ => Ok(ActionStatus::Skipped),
-            };
-
-            local_emitter
-                .emit(Event::ToolInstalled {
-                    error: extract_run_error(&tool_result),
-                    runtime,
-                })
-                .await?;
-
-            tool_result
-        }
-
-        // Sync a project within the graph
-        ActionNode::SyncProject(runtime, project_id) => {
-            let project = local_project_graph.get(project_id)?;
-
-            local_emitter
-                .emit(Event::ProjectSyncing { project, runtime })
-                .await?;
-
-            let sync_result = match runtime {
-                // Runtime::Node(_) => {
-                //     node_actions::sync_project(action, context, workspace, project_graph, project)
-                //         .await
-                //         .map_err(RunnerError::Workspace)
-                // }
-                _ => Ok(ActionStatus::Passed),
-            };
-
-            local_emitter
-                .emit(Event::ProjectSynced {
-                    error: extract_run_error(&sync_result),
-                    project,
-                    runtime,
-                })
-                .await?;
-
-            sync_result
-        }
-    };
-
-    match result {
-        Ok(status) => {
-            action.done(status);
-        }
-        Err(error) => {
-            action.fail(error.to_string());
-
-            // If these fail, we should abort instead of trying to continue
-            if matches!(node, ActionNode::SetupTool(_))
-                || matches!(node, ActionNode::InstallDeps(_))
-            {
-                action.abort();
+        // Check that outputs actually exist
+        if !self.task.outputs.is_empty() {
+            for (i, output) in self.task.output_paths.iter().enumerate() {
+                if !output.exists() {
+                    return Err(RunnerError::Task(TaskError::MissingOutput(
+                        self.task.target.id.clone(),
+                        self.task.outputs.get(i).unwrap().to_owned(),
+                    )));
+                }
             }
         }
-    }
 
-    Ok(())
-}
-
-pub struct Runner {
-    bail: bool,
-
-    cached_count: usize,
-
-    duration: Option<Duration>,
-
-    failed_count: usize,
-
-    passed_count: usize,
-
-    report_name: Option<String>,
-
-    workspace: Arc<RwLock<Workspace>>,
-}
-
-impl Runner {
-    pub fn new(workspace: Workspace) -> Self {
-        debug!(target: LOG_TARGET, "Creating action runner");
-
-        Runner {
-            bail: false,
-            cached_count: 0,
-            duration: None,
-            failed_count: 0,
-            passed_count: 0,
-            report_name: None,
-            workspace: Arc::new(RwLock::new(workspace)),
-        }
-    }
-
-    pub fn bail_on_error(&mut self) -> &mut Self {
-        self.bail = true;
-        self
-    }
-
-    pub fn generate_report(&mut self, name: &str) -> &mut Self {
-        self.report_name = Some(name.to_owned());
-        self
-    }
-
-    pub fn get_duration(&self) -> Duration {
-        self.duration
-            .expect("Cannot get duration, action runner not ran!")
-    }
-
-    pub fn has_failed(&self) -> bool {
-        self.failed_count > 0
-    }
-
-    pub async fn run(
-        &mut self,
-        dep_graph: DepGraph,
-        project_graph: ProjectGraph,
-        context: Option<RunnerContext>,
-    ) -> Result<ActionResults, RunnerError> {
-        let start = Instant::now();
-        let node_count = dep_graph.get_node_count();
-        let batches = dep_graph.sort_batched_topological()?;
-        let batches_count = batches.len();
-        let dep_graph = Arc::new(RwLock::new(dep_graph));
-        let project_graph = Arc::new(RwLock::new(project_graph));
-        let context = Arc::new(RwLock::new(context.unwrap_or_default()));
-        let emitter = Arc::new(RwLock::new(
-            self.create_emitter(Arc::clone(&self.workspace)).await,
-        ));
-        let local_emitter = emitter.read().await;
-
-        debug!(
-            target: LOG_TARGET,
-            "Running {} actions across {} batches", node_count, batches_count
-        );
-
-        local_emitter
-            .emit(Event::RunnerStarted {
-                actions_count: node_count,
+        // If so, then cache the archive
+        if let EventFlow::Return(archive_path) = self
+            .emitter
+            .emit(Event::TargetOutputArchiving {
+                cache: &self.cache,
+                hash,
+                project: self.project,
+                target: &self.task.target,
+                task: self.task,
             })
-            .await?;
-
-        let mut results: ActionResults = vec![];
-
-        for (b, batch) in batches.into_iter().enumerate() {
-            let batch_count = b + 1;
-            let batch_target_name = format!("{}:batch:{}", LOG_TARGET, batch_count);
-            let actions_count = batch.len();
-
-            trace!(
-                target: &batch_target_name,
-                "Running {} actions",
-                actions_count
-            );
-
-            // let mut action_handles = vec![];
-
-            for (i, node_index) in batch.into_iter().enumerate() {
-                let action_count = i + 1;
-                let dep_graph_clone = Arc::clone(&dep_graph);
-                let project_graph_clone = Arc::clone(&project_graph);
-                let context_clone = Arc::clone(&context);
-                let workspace_clone = Arc::clone(&self.workspace);
-                let emitter_clone = Arc::clone(&emitter);
-
-                // action_handles.push(task::spawn(async move {
-                // let mut action = Action::new(node_index.index(), None);
-                // let own_dep_graph = dep_graph_clone.read().await;
-                // let own_emitter = emitter_clone.read().await;
-
-                // if let Some(node) = own_dep_graph.get_node_from_index(&node_index) {
-                //     action.label = Some(node.label());
-
-                //     own_emitter
-                //         .emit(Event::ActionStarted {
-                //             action: &action,
-                //             node,
-                //         })
-                //         .await?;
-
-                //     let log_target_name =
-                //         format!("{}:batch:{}:{}", LOG_TARGET, batch_count, action_count);
-                //     let log_action_label = color::muted_light(node.label());
-
-                //     trace!(
-                //         target: &log_target_name,
-                //         "Running action {}",
-                //         log_action_label
-                //     );
-
-                //     let result = run_action(
-                //         node,
-                //         &mut action,
-                //         context_clone,
-                //         workspace_clone,
-                //         project_graph_clone,
-                //         Arc::clone(&emitter_clone),
-                //     )
-                //     .await;
-
-                //     own_emitter
-                //         .emit(Event::ActionFinished {
-                //             action: &action,
-                //             error: extract_run_error(&result),
-                //             node,
-                //         })
-                //         .await?;
-
-                //     if action.has_failed() {
-                //         trace!(
-                //             target: &log_target_name,
-                //             "Failed to run action {} in {:?}",
-                //             log_action_label,
-                //             action.duration.unwrap()
-                //         );
-                //     } else {
-                //         trace!(
-                //             target: &log_target_name,
-                //             "Ran action {} in {:?}",
-                //             log_action_label,
-                //             action.duration.unwrap()
-                //         );
-                //     }
-
-                //     // Bubble up any failure
-                //     result?;
-                // } else {
-                //     action.status = ActionStatus::Invalid;
-
-                //     return Err(RunnerError::DepGraph(DepGraphError::UnknownNode(
-                //         node_index.index(),
-                //     )));
-                // }
-
-                //  Ok(())
-                //}));
-            }
-
-            // Wait for all actions in this batch to complete,
-            // while also handling and propagating errors
-            // for handle in action_handles {
-            // match handle.await {
-            //     Ok(Ok(result)) => {
-            //         if result.should_abort() {
-            //             error!(
-            //                 target: &batch_target_name,
-            //                 "Encountered a critical error, aborting the action runner"
-            //             );
-            //         }
-
-            //         if result.has_failed() {
-            //             self.failed_count += 1;
-            //         } else if result.was_cached() {
-            //             self.cached_count += 1;
-            //         } else {
-            //             self.passed_count += 1;
-            //         }
-
-            //         if self.bail && result.has_failed() || result.should_abort() {
-            //             local_emitter
-            //                 .emit(Event::RunnerAborted {
-            //                     error: result.error.clone().unwrap_or_default(),
-            //                 })
-            //                 .await?;
-
-            //             return Err(RunnerError::Failure(result.error.unwrap()));
-            //         }
-
-            //         results.push(result);
-            //     }
-            //     Ok(Err(e)) => {
-            //         self.failed_count += 1;
-            //         local_emitter
-            //             .emit(Event::RunnerAborted {
-            //                 error: e.to_string(),
-            //             })
-            //             .await?;
-
-            //         return Err(e);
-            //     }
-            //     Err(e) => {
-            //         self.failed_count += 1;
-            //         local_emitter
-            //             .emit(Event::RunnerAborted {
-            //                 error: e.to_string(),
-            //             })
-            //             .await?;
-
-            //         return Err(RunnerError::Failure(e.to_string()));
-            //     }
-            // }
-            // }
+            .await?
+        {
+            self.emitter
+                .emit(Event::TargetOutputArchived {
+                    archive_path: archive_path.into(),
+                    hash,
+                    project: self.project,
+                    target: &self.task.target,
+                    task: self.task,
+                })
+                .await?;
         }
-
-        let duration = start.elapsed();
-
-        debug!(
-            target: LOG_TARGET,
-            "Finished running {} actions in {:?}", node_count, &duration
-        );
-
-        local_emitter
-            .emit(Event::RunnerFinished {
-                duration: &duration,
-                cached_count: self.cached_count,
-                failed_count: self.failed_count,
-                passed_count: self.passed_count,
-            })
-            .await?;
-
-        self.duration = Some(duration);
-        self.create_run_report(&results, context).await?;
-
-        Ok(results)
-    }
-
-    pub fn render_results(&self, results: &ActionResults) -> Result<(), MoonError> {
-        let term = Term::buffered_stdout();
-        term.write_line("")?;
-
-        for result in results {
-            let status = match result.status {
-                ActionStatus::Passed
-                | ActionStatus::Cached
-                | ActionStatus::CachedFromRemote
-                | ActionStatus::Skipped => color::success("pass"),
-                ActionStatus::Failed | ActionStatus::FailedAndAbort => color::failure("fail"),
-                ActionStatus::Invalid => color::invalid("warn"),
-                _ => color::muted_light("oops"),
-            };
-
-            let mut meta: Vec<String> = vec![];
-
-            if matches!(
-                result.status,
-                ActionStatus::Cached | ActionStatus::CachedFromRemote
-            ) {
-                meta.push(String::from("cached"));
-            } else if matches!(result.status, ActionStatus::Skipped) {
-                meta.push(String::from("skipped"));
-            } else if let Some(duration) = result.duration {
-                meta.push(time::elapsed(duration));
-            }
-
-            // term.write_line(&format!(
-            //     "{} {} {}",
-            //     status,
-            //     color::style(result.label.as_ref().unwrap()).bold(),
-            //     color::muted(format!("({})", meta.join(", ")))
-            // ))?;
-
-            if let Some(error) = &result.error {
-                term.write_line(&format!(
-                    "     {}",
-                    color::muted_light(replace_style_tokens(error))
-                ))?;
-            }
-        }
-
-        term.write_line("")?;
-        term.flush()?;
 
         Ok(())
     }
 
-    pub fn render_stats(&self, results: &ActionResults, compact: bool) -> Result<(), MoonError> {
-        let mut cached_count = 0;
-        let mut pass_count = 0;
-        let mut fail_count = 0;
-        let mut invalid_count = 0;
+    /// If we are cached (hash match), hydrate the project with the
+    /// cached task outputs found in the hashed archive.
+    pub async fn hydrate_outputs(&self) -> Result<(), RunnerError> {
+        let hash = &self.cache.hash;
 
-        for result in results {
-            // if let Some(label) = &result.label {
-            //     if compact && !label.contains("RunTarget") {
-            //         continue;
-            //     }
-            // }
+        if hash.is_empty() {
+            return Ok(());
+        }
 
-            match result.status {
-                ActionStatus::Cached | ActionStatus::CachedFromRemote => {
-                    cached_count += 1;
-                    pass_count += 1;
+        // Hydrate outputs from the cache
+        if let EventFlow::Return(archive_path) = self
+            .emitter
+            .emit(Event::TargetOutputHydrating {
+                cache: &self.cache,
+                hash,
+                project: self.project,
+                target: &self.task.target,
+                task: self.task,
+            })
+            .await?
+        {
+            self.emitter
+                .emit(Event::TargetOutputHydrated {
+                    archive_path: archive_path.into(),
+                    hash,
+                    project: self.project,
+                    target: &self.task.target,
+                    task: self.task,
+                })
+                .await?;
+        }
+
+        // Update the run state with the new hash
+        self.cache.save()?;
+
+        Ok(())
+    }
+
+    /// Create a hasher that is shared amongst all platforms.
+    /// Primarily includes task information.
+    pub async fn create_common_hasher(
+        &self,
+        context: &RunnerContext,
+    ) -> Result<TargetHasher, RunnerError> {
+        let vcs = &self.workspace.vcs;
+        let task = &self.task;
+        let project = &self.project;
+        let workspace = &self.workspace;
+        let globset = task.create_globset()?;
+        let mut hasher = TargetHasher::new();
+
+        hasher.hash_project_deps(self.project.get_dependency_ids());
+        hasher.hash_task(task);
+        hasher.hash_task_deps(task, &context.target_hashes);
+
+        if context.should_inherit_args(&task.target) {
+            hasher.hash_args(&context.passthrough_args);
+        }
+
+        // For input files, hash them with the vcs layer first
+        if !task.input_paths.is_empty() {
+            let files = convert_paths_to_strings(&task.input_paths, &workspace.root)?;
+
+            if !files.is_empty() {
+                hasher.hash_inputs(vcs.get_file_hashes(&files, true).await?);
+            }
+        }
+
+        // For input globs, it's much more performant to:
+        //  `git ls-tree` -> match against glob patterns
+        // Then it is to:
+        //  glob + walk the file system -> `git hash-object`
+        if !task.input_globs.is_empty() {
+            let mut hashed_file_tree = vcs.get_file_tree_hashes(&project.source).await?;
+
+            // Input globs are absolute paths, so we must do the same
+            hashed_file_tree
+                .retain(|k, _| globset.matches(workspace.root.join(k)).unwrap_or(false));
+
+            hasher.hash_inputs(hashed_file_tree);
+        }
+
+        // Include local file changes so that development builds work.
+        // Also run this LAST as it should take highest precedence!
+        let local_files = vcs.get_touched_files().await?;
+
+        if !local_files.all.is_empty() {
+            // Only hash files that are within the task's inputs
+            let files = local_files
+                .all
+                .into_iter()
+                .filter(|f| {
+                    // Deleted files will crash `git hash-object`
+                    !local_files.deleted.contains(f)
+                        && globset.matches(workspace.root.join(f)).unwrap_or(false)
+                })
+                .collect::<Vec<String>>();
+
+            if !files.is_empty() {
+                hasher.hash_inputs(vcs.get_file_hashes(&files, false).await?);
+            }
+        }
+
+        Ok(hasher)
+    }
+
+    pub async fn create_command(&self, context: &RunnerContext) -> Result<Command, RunnerError> {
+        let workspace = &self.workspace;
+        let project = &self.project;
+        let task = &self.task;
+        let working_dir = if task.options.run_from_workspace_root {
+            &workspace.root
+        } else {
+            &project.root
+        };
+
+        debug!(
+            target: LOG_TARGET,
+            "Creating {} command (in working directory {})",
+            color::target(&task.target),
+            color::path(working_dir)
+        );
+
+        let mut command = match task.platform {
+            PlatformType::Node => {
+                node_actions::create_target_command(context, workspace, project, task)?
+            }
+            _ => system_actions::create_target_command(task, working_dir),
+        };
+
+        command
+            .cwd(working_dir)
+            .envs(self.create_env_vars().await?)
+            // We need to handle non-zero's manually
+            .no_error_on_failure();
+
+        // Passthrough args
+        if context.should_inherit_args(&self.task.target) {
+            command.args(&context.passthrough_args);
+        }
+
+        // Terminal colors
+        if self.workspace.config.runner.inherit_colors_for_piped_tasks {
+            command.inherit_colors();
+        }
+
+        // Affected files (must be last args)
+        if let Some(check_affected) = &self.task.options.affected_files {
+            let mut affected_files = if context.affected_only {
+                self.task
+                    .get_affected_files(&context.touched_files, &self.project.root)?
+            } else {
+                Vec::with_capacity(0)
+            };
+
+            affected_files.sort();
+
+            if matches!(
+                check_affected,
+                TaskOptionAffectedFiles::Env | TaskOptionAffectedFiles::Both
+            ) {
+                command.env(
+                    "MOON_AFFECTED_FILES",
+                    if affected_files.is_empty() {
+                        ".".into()
+                    } else {
+                        affected_files
+                            .iter()
+                            .map(|f| f.to_string_lossy())
+                            .collect::<Vec<_>>()
+                            .join(",")
+                    },
+                );
+            }
+
+            if matches!(
+                check_affected,
+                TaskOptionAffectedFiles::Args | TaskOptionAffectedFiles::Both
+            ) {
+                if affected_files.is_empty() {
+                    command.arg_if_missing(".");
+                } else {
+                    command.args(affected_files);
                 }
-                ActionStatus::Passed | ActionStatus::Skipped => {
-                    pass_count += 1;
+            }
+        }
+
+        Ok(command)
+    }
+
+    pub async fn create_env_vars(&self) -> Result<FxHashMap<String, String>, MoonError> {
+        let mut env_vars = FxHashMap::default();
+
+        env_vars.insert(
+            "MOON_CACHE_DIR".to_owned(),
+            path::to_string(&self.workspace.cache.dir)?,
+        );
+        env_vars.insert("MOON_PROJECT_ID".to_owned(), self.project.id.clone());
+        env_vars.insert(
+            "MOON_PROJECT_ROOT".to_owned(),
+            path::to_string(&self.project.root)?,
+        );
+        env_vars.insert(
+            "MOON_PROJECT_SOURCE".to_owned(),
+            self.project.source.clone(),
+        );
+        env_vars.insert("MOON_TARGET".to_owned(), self.task.target.id.clone());
+        env_vars.insert(
+            "MOON_TOOLCHAIN_DIR".to_owned(),
+            path::to_string(&self.workspace.toolchain.dir)?,
+        );
+        env_vars.insert(
+            "MOON_WORKSPACE_ROOT".to_owned(),
+            path::to_string(&self.workspace.root)?,
+        );
+        env_vars.insert(
+            "MOON_WORKING_DIR".to_owned(),
+            path::to_string(&self.workspace.working_dir)?,
+        );
+
+        // Store runtime data on the file system so that downstream commands can utilize it
+        let runfile = self
+            .workspace
+            .cache
+            .create_runfile(&self.project.id, self.project)?;
+
+        env_vars.insert(
+            "MOON_PROJECT_RUNFILE".to_owned(),
+            path::to_string(runfile.path)?,
+        );
+
+        Ok(env_vars)
+    }
+
+    pub fn get_short_hash(&self) -> &str {
+        if self.cache.hash.is_empty() {
+            "" // Empty when cache is disabled
+        } else {
+            &self.cache.hash[0..8]
+        }
+    }
+
+    pub fn flush_output(&self) -> Result<(), MoonError> {
+        self.stdout.flush()?;
+        self.stderr.flush()?;
+
+        Ok(())
+    }
+
+    /// Determine if the current task can be archived.
+    pub fn is_archivable(&self) -> Result<bool, TargetError> {
+        let task = self.task;
+
+        if task.is_build_type() {
+            return Ok(true);
+        }
+
+        for target in &self.workspace.config.runner.archivable_targets {
+            let target = Target::parse(target)?;
+
+            match &target.project {
+                TargetProjectScope::All => {
+                    if task.target.task_id == target.task_id {
+                        return Ok(true);
+                    }
                 }
-                ActionStatus::Failed | ActionStatus::FailedAndAbort => {
-                    fail_count += 1;
+                TargetProjectScope::Id(project_id) => {
+                    if let Some(owner_id) = &task.target.project_id {
+                        if owner_id == project_id && task.target.task_id == target.task_id {
+                            return Ok(true);
+                        }
+                    }
                 }
-                ActionStatus::Invalid => {
-                    invalid_count += 1;
+                TargetProjectScope::Deps => return Err(TargetError::NoProjectDepsInRunContext),
+                TargetProjectScope::OwnSelf => return Err(TargetError::NoProjectSelfInRunContext),
+            };
+        }
+
+        Ok(false)
+    }
+
+    /// Hash the target based on all current parameters and return early
+    /// if this target hash has already been cached. Based on the state
+    /// of the target and project, determine the hydration strategy as well.
+    pub async fn is_cached(
+        &mut self,
+        context: &mut RunnerContext,
+        common_hasher: impl Hasher + Serialize,
+        platform_hasher: impl Hasher + Serialize,
+    ) -> Result<Option<HydrateFrom>, MoonError> {
+        let hash = to_hash(&common_hasher, &platform_hasher);
+
+        debug!(
+            target: LOG_TARGET,
+            "Generated hash {} for target {}",
+            color::symbol(&hash),
+            color::id(&self.task.target)
+        );
+
+        context
+            .target_hashes
+            .insert(self.task.target.id.clone(), hash.clone());
+
+        // Hash is the same as the previous build, so simply abort!
+        // However, ensure the outputs also exist, otherwise we should hydrate.
+        if self.cache.hash == hash && self.has_outputs() {
+            debug!(
+                target: LOG_TARGET,
+                "Cache hit for hash {}, reusing previous build",
+                color::symbol(&hash),
+            );
+
+            return Ok(Some(HydrateFrom::PreviousOutput));
+        }
+
+        self.cache.hash = hash.clone();
+
+        // Refresh the hash manifest
+        self.workspace
+            .cache
+            .create_hash_manifest(&hash, &(common_hasher, platform_hasher))?;
+
+        // Check if that hash exists in the cache
+        if let EventFlow::Return(value) = self
+            .emitter
+            .emit(Event::TargetOutputCacheCheck {
+                hash: &hash,
+                target: &self.task.target,
+            })
+            .await?
+        {
+            match value.as_ref() {
+                "local-cache" => {
+                    debug!(
+                        target: LOG_TARGET,
+                        "Cache hit for hash {}, hydrating from local cache",
+                        color::symbol(&hash),
+                    );
+
+                    return Ok(Some(HydrateFrom::LocalCache));
+                }
+                "remote-cache" => {
+                    debug!(
+                        target: LOG_TARGET,
+                        "Cache hit for hash {}, hydrating from remote cache",
+                        color::symbol(&hash),
+                    );
+
+                    return Ok(Some(HydrateFrom::RemoteCache));
                 }
                 _ => {}
             }
         }
 
-        let mut counts_message = vec![];
+        debug!(
+            target: LOG_TARGET,
+            "Cache miss for hash {}, continuing run",
+            color::symbol(&hash),
+        );
 
-        if pass_count > 0 {
-            if cached_count > 0 {
-                counts_message.push(color::success(format!(
-                    "{} completed ({} cached)",
-                    pass_count, cached_count
-                )));
-            } else {
-                counts_message.push(color::success(format!("{} completed", pass_count)));
-            }
-        }
-
-        if fail_count > 0 {
-            counts_message.push(color::failure(format!("{} failed", fail_count)));
-        }
-
-        if invalid_count > 0 {
-            counts_message.push(color::invalid(format!("{} invalid", invalid_count)));
-        }
-
-        let term = Term::buffered_stdout();
-        term.write_line("")?;
-
-        let counts_message = counts_message.join(&color::muted(", "));
-        let mut elapsed_time = time::elapsed(self.get_duration());
-
-        if pass_count == cached_count && fail_count == 0 {
-            elapsed_time = format!("{} {}", elapsed_time, label_to_the_moon());
-        }
-
-        if compact {
-            term.render_entry("Tasks", &counts_message)?;
-            term.render_entry(" Time", &elapsed_time)?;
-        } else {
-            term.render_entry("Actions", &counts_message)?;
-            term.render_entry("   Time", &elapsed_time)?;
-        }
-
-        term.write_line("")?;
-        term.flush()?;
-
-        Ok(())
+        Ok(None)
     }
 
-    async fn create_emitter(&self, workspace: Arc<RwLock<Workspace>>) -> Emitter {
-        let mut emitter = Emitter::new(Arc::clone(&workspace));
+    /// Return true if this target is a no-op.
+    pub fn is_no_op(&self) -> bool {
+        self.task.is_no_op()
+    }
 
-        {
-            let local_workspace = workspace.read().await;
+    /// Verify that all task outputs exist for the current target.
+    pub fn has_outputs(&self) -> bool {
+        self.task.output_paths.iter().all(|p| p.exists())
+    }
 
-            // For security and privacy purposes, only send webhooks from a CI environment
-            if is_ci() || is_test_env() {
-                if let Some(webhook_url) = &local_workspace.config.notifier.webhook_url {
-                    emitter
-                        .subscribers
-                        .push(Arc::new(RwLock::new(WebhooksSubscriber::new(
-                            webhook_url.to_owned(),
-                        ))));
+    /// Run the command as a child process and capture its output. If the process fails
+    /// and `retry_count` is greater than 0, attempt the process again in case it passes.
+    pub async fn run_command(
+        &mut self,
+        context: &RunnerContext,
+        command: &mut Command,
+    ) -> Result<Vec<Attempt>, RunnerError> {
+        let attempt_total = self.task.options.retry_count + 1;
+        let mut attempt_index = 1;
+        let mut attempts = vec![];
+        let primary_longest_width = context.primary_targets.iter().map(|t| t.id.len()).max();
+        let is_primary = context.primary_targets.contains(&self.task.target);
+        let is_real_ci = is_ci() && !is_test_env();
+        let output;
+
+        // When the primary target, always stream the output for a better developer experience.
+        // However, transitive targets can opt into streaming as well.
+        let should_stream_output = if let Some(output_style) = &self.task.options.output_style {
+            matches!(output_style, TaskOutputStyle::Stream)
+        } else {
+            is_primary || is_real_ci
+        };
+
+        // Transitive targets may run concurrently, so differentiate them with a prefix.
+        let stream_prefix = if is_real_ci || !is_primary || context.primary_targets.len() > 1 {
+            Some(&self.task.target.id)
+        } else {
+            None
+        };
+
+        loop {
+            let mut attempt = Attempt::new(attempt_index);
+
+            self.print_target_label(
+                Checkpoint::RunStart,
+                // NOTE: Old streaming output format. Revisit or remove?
+                // Mark primary streamed output as passed, since it may stay open forever,
+                // or it may use ANSI escape codes to alter the terminal!
+                // if is_primary && should_stream_output {
+                //     Checkpoint::Pass
+                // } else {
+                //     Checkpoint::Start
+                // },
+                &attempt,
+                attempt_total,
+            )?;
+
+            self.print_target_command(context)?;
+
+            self.flush_output()?;
+
+            let possible_output = if should_stream_output {
+                if let Some(prefix) = stream_prefix {
+                    command.set_prefix(prefix, primary_longest_width);
+                }
+
+                command.exec_stream_and_capture_output().await
+            } else {
+                command.exec_capture_output().await
+            };
+
+            match possible_output {
+                // zero and non-zero exit codes
+                Ok(out) => {
+                    attempt.done(if out.status.success() {
+                        ActionStatus::Passed
+                    } else {
+                        ActionStatus::Failed
+                    });
+
+                    if should_stream_output {
+                        self.handle_streamed_output(&attempt, attempt_total, &out)?;
+                    } else {
+                        self.handle_captured_output(&attempt, attempt_total, &out)?;
+                    }
+
+                    attempts.push(attempt);
+
+                    if out.status.success() {
+                        output = out;
+                        break;
+                    } else if attempt_index >= attempt_total {
+                        return Err(RunnerError::Moon(command.output_to_error(&out, false)));
+                    } else {
+                        attempt_index += 1;
+
+                        warn!(
+                            target: LOG_TARGET,
+                            "Target {} failed, running again with attempt {}",
+                            color::target(&self.task.target),
+                            attempt_index
+                        );
+                    }
+                }
+                // process itself failed
+                Err(error) => {
+                    attempt.done(ActionStatus::Failed);
+                    attempts.push(attempt);
+
+                    return Err(RunnerError::Moon(error));
                 }
             }
-
-            if local_workspace.session.is_some() {
-                emitter
-                    .subscribers
-                    .push(Arc::new(RwLock::new(MoonbaseCacheSubscriber::new())));
-            }
         }
 
-        emitter
-            .subscribers
-            .push(Arc::new(RwLock::new(LocalCacheSubscriber::new())));
+        // Write the cache with the result and output
+        self.cache.exit_code = output.status.code().unwrap_or(0);
+        self.cache.last_run_time = time::now_millis();
+        self.cache.save()?;
+        self.cache.save_output_logs(
+            output_to_string(&output.stdout),
+            output_to_string(&output.stderr),
+        )?;
 
-        emitter
+        Ok(attempts)
     }
 
-    async fn create_run_report(
-        &self,
-        actions: &ActionResults,
-        context: Arc<RwLock<RunnerContext>>,
-    ) -> Result<(), RunnerError> {
-        if let Some(name) = &self.report_name {
-            let workspace = self.workspace.read().await;
-            let duration = self.duration.unwrap();
-            let context = context.read().await;
+    pub fn print_cache_item(&self) -> Result<(), MoonError> {
+        let item = &self.cache;
+        let (stdout, stderr) = item.load_output_logs()?;
 
-            workspace
-                .cache
-                .create_json_report(name, RunReport::new(actions, &context, duration))?;
+        self.print_output_with_style(&stdout, &stderr, item.exit_code != 0)?;
+
+        Ok(())
+    }
+
+    pub fn print_checkpoint<T: AsRef<str>>(
+        &self,
+        checkpoint: Checkpoint,
+        comments: &[T],
+    ) -> Result<(), MoonError> {
+        let label = label_checkpoint(&self.task.target, checkpoint);
+
+        if comments.is_empty() {
+            self.stdout.write_line(&label)?;
+        } else {
+            self.stdout.write_line(&format!(
+                "{} {}",
+                label,
+                color::muted(format!(
+                    "({})",
+                    comments
+                        .iter()
+                        .map(|c| c.as_ref())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                ))
+            ))?;
         }
 
         Ok(())
+    }
+
+    pub fn print_output_with_style(
+        &self,
+        stdout: &str,
+        stderr: &str,
+        failed: bool,
+    ) -> Result<(), MoonError> {
+        let print_stdout = || -> Result<(), MoonError> {
+            if !stdout.is_empty() {
+                self.stdout.write_line(stdout)?;
+            }
+
+            Ok(())
+        };
+
+        let print_stderr = || -> Result<(), MoonError> {
+            if !stderr.is_empty() {
+                self.stderr.write_line(stderr)?;
+            }
+
+            Ok(())
+        };
+
+        match self.task.options.output_style {
+            // Only show output on failure
+            Some(TaskOutputStyle::BufferOnlyFailure) => {
+                if failed {
+                    print_stdout()?;
+                    print_stderr()?;
+                }
+            }
+            // Only show the hash
+            Some(TaskOutputStyle::Hash) => {
+                let hash = &self.cache.hash;
+
+                if !hash.is_empty() {
+                    // Print to stderr so it can be captured
+                    self.stderr.write_line(hash)?;
+                }
+            }
+            // Show nothing
+            Some(TaskOutputStyle::None) => {}
+            // Show output on both success and failure
+            _ => {
+                print_stdout()?;
+                print_stderr()?;
+            }
+        };
+
+        Ok(())
+    }
+
+    pub fn print_target_command(&self, context: &RunnerContext) -> Result<(), MoonError> {
+        if !self.workspace.config.runner.log_running_command {
+            return Ok(());
+        }
+
+        let task = &self.task;
+        let mut args = vec![];
+        args.extend(&task.args);
+
+        if context.should_inherit_args(&task.target) {
+            args.extend(&context.passthrough_args);
+        }
+
+        let command_line = if args.is_empty() {
+            task.command.clone()
+        } else {
+            format!("{} {}", task.command, process::join_args(args))
+        };
+
+        let message = format_running_command(
+            &command_line,
+            Some(if task.options.run_from_workspace_root {
+                &self.workspace.root
+            } else {
+                &self.project.root
+            }),
+            Some(&self.workspace.root),
+        );
+
+        self.stdout.write_line(&message)?;
+
+        Ok(())
+    }
+
+    pub fn print_target_label(
+        &self,
+        checkpoint: Checkpoint,
+        attempt: &Attempt,
+        attempt_total: u8,
+    ) -> Result<(), MoonError> {
+        let mut comments = vec![];
+
+        if attempt.index > 1 {
+            comments.push(format!("{}/{}", attempt.index, attempt_total));
+        }
+
+        if let Some(duration) = attempt.duration {
+            comments.push(time::elapsed(duration));
+        }
+
+        if self.should_print_short_hash() && attempt.finished_at.is_some() {
+            comments.push(self.get_short_hash().to_owned());
+        }
+
+        self.print_checkpoint(checkpoint, &comments)?;
+
+        Ok(())
+    }
+
+    // Print label *after* output has been captured, so parallel tasks
+    // aren't intertwined and the labels align with the output.
+    fn handle_captured_output(
+        &self,
+        attempt: &Attempt,
+        attempt_total: u8,
+        output: &Output,
+    ) -> Result<(), MoonError> {
+        self.print_target_label(
+            if output.status.success() {
+                Checkpoint::RunPassed
+            } else {
+                Checkpoint::RunFailed
+            },
+            attempt,
+            attempt_total,
+        )?;
+
+        let stdout = output_to_string(&output.stdout);
+        let stderr = output_to_string(&output.stderr);
+
+        self.print_output_with_style(&stdout, &stderr, !output.status.success())?;
+
+        self.flush_output()?;
+
+        Ok(())
+    }
+
+    // Only print the label when the process has failed,
+    // as the actual output has already been streamed to the console.
+    fn handle_streamed_output(
+        &self,
+        attempt: &Attempt,
+        attempt_total: u8,
+        output: &Output,
+    ) -> Result<(), MoonError> {
+        self.print_target_label(
+            if output.status.success() {
+                Checkpoint::RunPassed
+            } else {
+                Checkpoint::RunFailed
+            },
+            attempt,
+            attempt_total,
+        )?;
+
+        // NOTE: Old streaming output format. Revisit or remove?
+        // // Transitive target finished streaming, so display the success checkpoint
+        // if let Some(TaskOutputStyle::Stream) = self.task.options.output_style {
+        //     self.print_target_label(
+        //         if output.status.success() {
+        //             Checkpoint::Pass
+        //         } else {
+        //             Checkpoint::Fail
+        //         },
+        //         attempt,
+        //         attempt_total,
+        //     )?;
+
+        //     // Otherwise the primary target failed for some reason
+        // } else if !output.status.success() {
+        //     self.print_target_label(Checkpoint::Fail, attempt, attempt_total)?;
+        // }
+
+        self.flush_output()?;
+
+        Ok(())
+    }
+
+    fn should_print_short_hash(&self) -> bool {
+        // Do not include the hash while testing, as the hash
+        // constantly changes and breaks our local snapshots
+        !is_test_env() && self.task.options.cache && !self.cache.hash.is_empty()
     }
 }

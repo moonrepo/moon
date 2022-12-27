@@ -1,4 +1,5 @@
 use crate::actions::install_deps::install_deps;
+use crate::actions::run_target::run_target;
 use crate::actions::setup_tool::setup_tool;
 use crate::actions::sync_project::sync_project;
 use crate::errors::PipelineError;
@@ -6,6 +7,7 @@ use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_logger::{color, debug, error, trace};
 use moon_project_graph::ProjectGraph;
+use moon_task::Target;
 use moon_workspace::Workspace;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -50,7 +52,12 @@ pub async fn process_action(
         }
 
         // Run a task within a project
-        ActionNode::RunTarget(target_id) => Ok(ActionStatus::Skipped),
+        ActionNode::RunTarget(target_id) => {
+            let target = Target::parse(target_id)?;
+            let project = local_project_graph.get(target.project_id.as_ref().unwrap())?;
+
+            run_target(action, context, workspace, project, &target).await
+        }
     };
 
     match result {

@@ -12,10 +12,12 @@ moon_logger = { path = "../logger" }
 moon_platform = { path = "../platform" }
 moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
+moon_task = { path = "../task" }
 moon_tool = { path = "../tool" }
 moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
 async-channel = "1.8.0"
 rustc-hash = { workspace = true }
+serde = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }

@@ -1700,10 +1700,12 @@ dependencies = [
  "moon_platform",
  "moon_project",
  "moon_project_graph",
+ "moon_task",
  "moon_tool",
  "moon_utils",
  "moon_workspace",
  "rustc-hash",
+ "serde",
  "thiserror",
  "tokio",
 ]

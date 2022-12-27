@@ -1,10 +1,8 @@
 use crate::platform::Platform;
 use moon_config::PlatformType;
 use moon_error::MoonError;
-use moon_tool::Tool;
 use rustc_hash::FxHashMap;
 
-// pub type BoxedPlatform = Box<dyn Platform<Tool = dyn Tool>>;
 pub type BoxedPlatform = Box<dyn Platform>;
 
 #[derive(Debug, Default)]

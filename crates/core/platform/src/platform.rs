@@ -5,7 +5,7 @@ use moon_config::{
 };
 use moon_error::MoonError;
 use moon_platform_runtime::{Runtime, Version};
-use moon_project::Project;
+use moon_project::{Project, ProjectError};
 use moon_tool::{DependencyManager, Tool, ToolError};
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
@@ -95,5 +95,13 @@ pub trait Platform: Debug + Send + Sync {
         working_dir: &Path,
     ) -> Result<(), ToolError> {
         Ok(())
+    }
+
+    async fn sync_project(
+        &self,
+        project: &Project,
+        dependencies: &FxHashMap<String, &Project>,
+    ) -> Result<bool, ProjectError> {
+        Ok(false)
     }
 }

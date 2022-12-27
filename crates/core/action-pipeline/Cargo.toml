@@ -16,5 +16,6 @@ moon_tool = { path = "../tool" }
 moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
 async-channel = "1.8.0"
+rustc-hash = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }

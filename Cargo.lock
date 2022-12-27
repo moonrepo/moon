@@ -1703,6 +1703,7 @@ dependencies = [
  "moon_tool",
  "moon_utils",
  "moon_workspace",
+ "rustc-hash",
  "thiserror",
  "tokio",
 ]

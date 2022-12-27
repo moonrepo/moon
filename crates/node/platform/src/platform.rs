@@ -1,5 +1,6 @@
 use crate::actions;
 use crate::infer_tasks_from_scripts;
+use moon_config::TypeScriptConfig;
 use moon_config::{
     DependencyConfig, DependencyScope, NodeConfig, NodeProjectAliasFormat, PlatformType,
     ProjectConfig, ProjectID, ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap,
@@ -11,6 +12,7 @@ use moon_node_lang::{PackageJson, NPM};
 use moon_node_tool::NodeTool;
 use moon_platform::{Platform, Runtime, Version};
 use moon_project::Project;
+use moon_project::ProjectError;
 use moon_tool::{DependencyManager, Tool, ToolError, ToolManager};
 use moon_utils::{async_trait, glob::GlobSet};
 use proto_core::Proto;
@@ -24,20 +26,26 @@ const LOG_TARGET: &str = "moon:node-platform";
 pub struct NodePlatform {
     config: NodeConfig,
 
-    /// Maps `package.json` names to project IDs.
     package_names: FxHashMap<String, ProjectID>,
 
     toolchain: ToolManager<NodeTool>,
+
+    typescript_config: Option<TypeScriptConfig>,
 
     workspace_root: PathBuf,
 }
 
 impl NodePlatform {
-    pub fn new(config: &NodeConfig, workspace_root: &Path) -> Self {
+    pub fn new(
+        config: &NodeConfig,
+        typescript_config: &Option<TypeScriptConfig>,
+        workspace_root: &Path,
+    ) -> Self {
         NodePlatform {
             config: config.to_owned(),
             package_names: FxHashMap::default(),
             toolchain: ToolManager::new(Runtime::Node(Version::default())),
+            typescript_config: typescript_config.to_owned(),
             workspace_root: workspace_root.to_path_buf(),
         }
     }
@@ -64,6 +72,20 @@ impl Platform for NodePlatform {
 
         None
     }
+
+    fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool {
+        if matches!(platform, PlatformType::Node) {
+            return true;
+        }
+
+        if let Some(runtime) = &runtime {
+            return matches!(runtime, Runtime::Node(_));
+        }
+
+        false
+    }
+
+    // PROJECT GRAPH
 
     fn is_project_in_dependency_workspace(&self, project: &Project) -> Result<bool, MoonError> {
         let mut in_workspace = false;
@@ -247,18 +269,6 @@ impl Platform for NodePlatform {
         Ok(tasks)
     }
 
-    fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool {
-        if matches!(platform, PlatformType::Node) {
-            return true;
-        }
-
-        if let Some(runtime) = &runtime {
-            return matches!(runtime, Runtime::Node(_));
-        }
-
-        false
-    }
-
     // TOOLCHAIN
 
     fn get_language_tool(&self, version: Version) -> Result<Box<&dyn Tool>, ToolError> {
@@ -297,5 +307,27 @@ impl Platform for NodePlatform {
         actions::install_deps(&tool, working_dir).await?;
 
         Ok(())
+    }
+
+    async fn sync_project(
+        &self,
+        project: &Project,
+        dependencies: &FxHashMap<String, &Project>,
+    ) -> Result<bool, ProjectError> {
+        let tool = self
+            .toolchain
+            .get()
+            .map_err(|e| ProjectError::Moon(MoonError::Generic(e.to_string())))?;
+
+        let mutated = actions::sync_project(
+            tool,
+            project,
+            dependencies,
+            &self.workspace_root,
+            &self.typescript_config,
+        )
+        .await?;
+
+        Ok(mutated)
     }
 }

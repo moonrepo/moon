@@ -169,11 +169,11 @@ async fn run_action(
                 .await?;
 
             let sync_result = match runtime {
-                Runtime::Node(_) => {
-                    node_actions::sync_project(action, context, workspace, project_graph, project)
-                        .await
-                        .map_err(RunnerError::Workspace)
-                }
+                // Runtime::Node(_) => {
+                //     node_actions::sync_project(action, context, workspace, project_graph, project)
+                //         .await
+                //         .map_err(RunnerError::Workspace)
+                // }
                 _ => Ok(ActionStatus::Passed),
             };
 

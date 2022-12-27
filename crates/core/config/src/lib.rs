@@ -10,6 +10,7 @@ mod workspace;
 pub use errors::{
     format_error_line, format_figment_errors, map_validation_errors_to_figment_errors, ConfigError,
 };
+pub use moon_constants::*;
 pub use project::*;
 pub use template::*;
 pub use toolchain::*;

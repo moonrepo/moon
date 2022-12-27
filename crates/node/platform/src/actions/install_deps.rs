@@ -1,10 +1,10 @@
 use moon_action::{Action, ActionStatus};
-use moon_config::NodePackageManager;
+use moon_config::{NodePackageManager, NodeVersionManager};
 use moon_error::map_io_to_fs_error;
 use moon_error::MoonError;
 use moon_lang::has_vendor_installed_dependencies;
 use moon_logger::{color, debug, warn};
-use moon_node_lang::{PackageJson, NODE, NPM};
+use moon_node_lang::{PackageJson, NODE, NODENV, NPM, NVM};
 use moon_node_tool::NodeTool;
 use moon_platform::Runtime;
 use moon_project::Project;
@@ -56,14 +56,16 @@ fn add_package_manager(node: &NodeTool, package_json: &mut PackageJson) -> bool 
 
 /// Add `engines` constraint to root `package.json`.
 fn add_engines_constraint(node: &NodeTool, package_json: &mut PackageJson) -> bool {
-    if node.config.add_engines_constraint && package_json.add_engine("node", &node.config.version) {
-        debug!(
-            target: LOG_TARGET,
-            "Adding engines version constraint to root {}",
-            color::file(NPM.manifest)
-        );
+    if let Some(node_version) = &node.config.version {
+        if node.config.add_engines_constraint && package_json.add_engine("node", node_version) {
+            debug!(
+                target: LOG_TARGET,
+                "Adding engines version constraint to root {}",
+                color::file(NPM.manifest)
+            );
 
-        return true;
+            return true;
+        }
     }
 
     false
@@ -80,16 +82,22 @@ fn sync_workspace(workspace: &Workspace, node: &NodeTool) -> Result<(), MoonErro
 
     // Create nvm/nodenv version file
     if let Some(version_manager) = &node.config.sync_version_manager_config {
-        let rc_name = version_manager.get_config_filename();
-        let rc_path = workspace.root.join(&rc_name);
+        let rc_name = match version_manager {
+            NodeVersionManager::Nodenv => NODENV.version_file.to_string(),
+            NodeVersionManager::Nvm => NVM.version_file.to_string(),
+        };
 
-        fs::write(rc_path, &node.config.version)?;
+        if let Some(node_version) = &node.config.version {
+            let rc_path = workspace.root.join(&rc_name);
 
-        debug!(
-            target: LOG_TARGET,
-            "Syncing Node.js version to root {}",
-            color::file(&rc_name)
-        );
+            fs::write(rc_path, node_version)?;
+
+            debug!(
+                target: LOG_TARGET,
+                "Syncing Node.js version to root {}",
+                color::file(&rc_name)
+            );
+        }
     }
 
     Ok(())

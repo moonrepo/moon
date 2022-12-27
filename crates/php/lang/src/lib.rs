@@ -2,7 +2,6 @@ use moon_lang::{DependencyManager, Language, VersionManager};
 
 pub const PHP: Language = Language {
     binary: "php",
-    default_version: "8.2.0",
     file_exts: &["php"],
     vendor_bins_dir: Some("vendor/bin"),
     vendor_dir: Some("vendor"),
@@ -13,7 +12,6 @@ pub const PHP: Language = Language {
 pub const COMPOSER: DependencyManager = DependencyManager {
     binary: "composer",
     config_files: &[],
-    default_version: "2.4.4",
     lockfile: "composer.lock",
     manifest: "composer.json",
 };

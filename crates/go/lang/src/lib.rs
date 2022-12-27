@@ -2,7 +2,6 @@ use moon_lang::{DependencyManager, Language, VersionManager};
 
 pub const GO: Language = Language {
     binary: "go",
-    default_version: "1.19.4",
     file_exts: &["go"],
     vendor_bins_dir: None,
     vendor_dir: Some("vendor"),
@@ -13,7 +12,6 @@ pub const GO: Language = Language {
 pub const GOMOD: DependencyManager = DependencyManager {
     binary: "go mod",
     config_files: &[],
-    default_version: "1.19.4",
     lockfile: "go.sum",
     manifest: "go.mod",
 };

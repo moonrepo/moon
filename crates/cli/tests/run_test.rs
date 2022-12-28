@@ -86,6 +86,18 @@ fn errors_for_cycle_in_task_deps() {
     assert_snapshot!(assert.output());
 }
 
+#[test]
+fn creates_run_report() {
+    let sandbox = cases_sandbox();
+    sandbox.enable_git();
+
+    sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("base:base");
+    });
+
+    assert!(sandbox.path().join(".moon/cache/runReport.json").exists());
+}
+
 #[cfg(not(windows))]
 mod general {
     use super::*;
@@ -1028,34 +1040,6 @@ mod output_styles {
         });
 
         assert_snapshot!(assert.output());
-    }
-}
-
-mod reports {
-    use super::*;
-
-    #[test]
-    fn doesnt_create_a_report_by_default() {
-        let sandbox = cases_sandbox();
-        sandbox.enable_git();
-
-        sandbox.run_moon(|cmd| {
-            cmd.arg("run").arg("base:base");
-        });
-
-        assert!(!sandbox.path().join(".moon/cache/runReport.json").exists());
-    }
-
-    #[test]
-    fn creates_report_when_option_passed() {
-        let sandbox = cases_sandbox();
-        sandbox.enable_git();
-
-        sandbox.run_moon(|cmd| {
-            cmd.arg("run").arg("base:base").arg("--report");
-        });
-
-        assert!(sandbox.path().join(".moon/cache/runReport.json").exists());
     }
 }
 

@@ -1254,29 +1254,29 @@ mod typescript {
     }
 }
 
-mod workspace_overrides {
-    use super::*;
+// mod workspace_overrides {
+//     use super::*;
 
-    #[test]
-    fn can_override_version() {
-        let sandbox = node_sandbox_with_config(|cfg| {
-            cfg.dedupe_on_lockfile_change = false;
-        });
+//     #[test]
+//     fn can_override_version() {
+//         let sandbox = node_sandbox_with_config(|cfg| {
+//             cfg.dedupe_on_lockfile_change = false;
+//         });
 
-        let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("run")
-                .arg("node:version")
-                .arg("versionOverride:version");
-        });
+//         let assert = sandbox.run_moon(|cmd| {
+//             cmd.arg("run")
+//                 .arg("node:version")
+//                 .arg("versionOverride:version");
+//         });
 
-        let output = assert.output();
+//         let output = assert.output();
 
-        assert!(predicate::str::contains("v18.0.0").eval(&output));
-        assert!(predicate::str::contains("v19.0.0").eval(&output));
+//         assert!(predicate::str::contains("v18.0.0").eval(&output));
+//         assert!(predicate::str::contains("v19.0.0").eval(&output));
 
-        assert.success();
-    }
-}
+//         assert.success();
+//     }
+// }
 
 mod affected_files {
     use super::*;

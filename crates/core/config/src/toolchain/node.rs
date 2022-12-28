@@ -191,16 +191,3 @@ impl Default for NodeConfig {
         }
     }
 }
-
-impl NodeConfig {
-    pub fn with_project_override(&self, version: &str) -> Self {
-        let mut config = self.clone();
-        config.version = Some(version.to_owned());
-
-        // These settings should not be ran in a project, only the root
-        config.add_engines_constraint = false;
-        config.sync_version_manager_config = None;
-
-        config
-    }
-}

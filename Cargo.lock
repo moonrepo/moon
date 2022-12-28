@@ -102,9 +102,9 @@ dependencies = [
 
 [[package]]
 name = "async-channel"
-version = "1.7.1"
+version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e14485364214912d3b19cc3435dde4df66065127f05fa0d75c712f36f12c2f28"
+checksum = "cf46fee83e5ccffc220104713af3292ff9bc7c64c7de289f66dae8e38d826833"
 dependencies = [
  "concurrent-queue",
  "event-listener",
@@ -251,12 +251,6 @@ dependencies = [
  "libc",
  "pkg-config",
 ]
-
-[[package]]
-name = "cache-padded"
-version = "1.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c1db59621ec70f09c5e9b597b220c7a2b43611f4710dc03ceb8748637775692c"
 
 [[package]]
 name = "cached"
@@ -469,11 +463,11 @@ checksum = "2382f75942f4b3be3690fe4f86365e9c853c1587d6ee58212cebf6e2a9ccd101"
 
 [[package]]
 name = "concurrent-queue"
-version = "1.2.4"
+version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af4780a44ab5696ea9e28294517f1fffb421a83a25af521333c838635509db9c"
+checksum = "bd7bef69dc86e3c610e4e7aed41035e2a7ed12e72dd7530f61327a6579a4390b"
 dependencies = [
- "cache-padded",
+ "crossbeam-utils",
 ]
 
 [[package]]
@@ -642,12 +636,11 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-utils"
-version = "0.8.10"
+version = "0.8.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7d82ee10ce34d7bc12c2122495e7593a9c41347ecdd64185af4ecf72cb1a7f83"
+checksum = "4fb766fa798726286dbbb842f174001dab8abc7b627a1dd86e0b7222a95d929f"
 dependencies = [
  "cfg-if",
- "once_cell",
 ]
 
 [[package]]
@@ -1685,6 +1678,53 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_action_context"
+version = "0.1.0"
+dependencies = [
+ "clap 4.0.23",
+ "moon_task",
+ "rustc-hash",
+ "serde",
+]
+
+[[package]]
+name = "moon_action_pipeline"
+version = "0.1.0"
+dependencies = [
+ "async-channel",
+ "console",
+ "criterion",
+ "futures",
+ "moon",
+ "moon_action",
+ "moon_action_context",
+ "moon_cache",
+ "moon_dep_graph",
+ "moon_emitter",
+ "moon_error",
+ "moon_logger",
+ "moon_node_platform",
+ "moon_node_tool",
+ "moon_notifier",
+ "moon_platform",
+ "moon_project",
+ "moon_project_graph",
+ "moon_runner",
+ "moon_system_platform",
+ "moon_task",
+ "moon_terminal",
+ "moon_test_utils",
+ "moon_tool",
+ "moon_utils",
+ "moon_workspace",
+ "moonbase",
+ "rustc-hash",
+ "serde",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
 name = "moon_archive"
 version = "0.1.0"
 dependencies = [
@@ -1732,6 +1772,8 @@ dependencies = [
  "lazy_static",
  "mimalloc",
  "moon",
+ "moon_action_context",
+ "moon_action_pipeline",
  "moon_archive",
  "moon_cache",
  "moon_config",
@@ -1749,8 +1791,6 @@ dependencies = [
  "moon_platform",
  "moon_project",
  "moon_project_graph",
- "moon_runner",
- "moon_runner_context",
  "moon_system_platform",
  "moon_task",
  "moon_terminal",
@@ -1936,7 +1976,7 @@ name = "moon_node_platform"
 version = "0.1.0"
 dependencies = [
  "moon",
- "moon_action",
+ "moon_action_context",
  "moon_config",
  "moon_error",
  "moon_hasher",
@@ -1947,7 +1987,6 @@ dependencies = [
  "moon_platform",
  "moon_project",
  "moon_project_graph",
- "moon_runner_context",
  "moon_task",
  "moon_terminal",
  "moon_test_utils",
@@ -1955,6 +1994,7 @@ dependencies = [
  "moon_typescript_lang",
  "moon_utils",
  "moon_workspace",
+ "proto_core",
  "rustc-hash",
  "serde",
  "tokio",
@@ -2011,10 +2051,12 @@ dependencies = [
 name = "moon_platform"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "moon_config",
  "moon_error",
  "moon_platform_runtime",
  "moon_project",
+ "moon_tool",
  "rustc-hash",
  "serde",
 ]
@@ -2024,12 +2066,10 @@ name = "moon_platform_detector"
 version = "0.1.0"
 dependencies = [
  "moon_config",
- "moon_deno_lang",
  "moon_go_lang",
  "moon_lang",
  "moon_node_lang",
  "moon_php_lang",
- "moon_platform",
  "moon_python_lang",
  "moon_ruby_lang",
  "moon_rust_lang",
@@ -2040,6 +2080,7 @@ dependencies = [
 name = "moon_platform_runtime"
 version = "0.1.0"
 dependencies = [
+ "moon_config",
  "serde",
 ]
 
@@ -2101,49 +2142,26 @@ dependencies = [
 name = "moon_runner"
 version = "0.1.0"
 dependencies = [
- "async-trait",
  "console",
- "criterion",
- "moon",
  "moon_action",
+ "moon_action_context",
  "moon_cache",
  "moon_config",
- "moon_dep_graph",
  "moon_emitter",
  "moon_error",
  "moon_hasher",
- "moon_lang",
  "moon_logger",
  "moon_node_platform",
- "moon_notifier",
- "moon_platform_runtime",
  "moon_project",
- "moon_project_graph",
- "moon_runner_context",
  "moon_system_platform",
  "moon_task",
  "moon_terminal",
- "moon_test_utils",
- "moon_toolchain",
  "moon_utils",
- "moon_vcs",
  "moon_workspace",
- "moonbase",
- "petgraph",
  "rustc-hash",
  "serde",
  "thiserror",
  "tokio",
-]
-
-[[package]]
-name = "moon_runner_context"
-version = "0.1.0"
-dependencies = [
- "clap 4.0.23",
- "moon_task",
- "rustc-hash",
- "serde",
 ]
 
 [[package]]
@@ -2162,6 +2180,7 @@ dependencies = [
  "moon_platform",
  "moon_project",
  "moon_task",
+ "moon_tool",
  "moon_utils",
  "moon_workspace",
  "serde",
@@ -2217,6 +2236,7 @@ dependencies = [
  "async-trait",
  "moon_error",
  "moon_lang",
+ "moon_platform_runtime",
  "moon_utils",
  "proto_error",
  "rustc-hash",
@@ -2258,6 +2278,7 @@ dependencies = [
 name = "moon_utils"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "cached",
  "chrono",
  "clean-path",

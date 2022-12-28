@@ -1,20 +1,29 @@
+use async_trait::async_trait;
 use moon_config::{
     DependencyConfig, PlatformType, ProjectConfig, ProjectLanguage, ProjectsAliasesMap,
     ProjectsSourcesMap, TasksConfigsMap,
 };
 use moon_error::MoonError;
-use moon_platform_runtime::Runtime;
-use moon_project::Project;
+use moon_platform_runtime::{Runtime, Version};
+use moon_project::{Project, ProjectError};
+use moon_tool::{Tool, ToolError};
+use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::fmt::Debug;
 use std::path::Path;
 
+#[async_trait]
 pub trait Platform: Debug + Send + Sync {
     /// Return the type of this platform.
     fn get_type(&self) -> PlatformType;
 
     /// Return a runtime with an appropriate version based on the provided configs.
     fn get_runtime_from_config(&self, project_config: Option<&ProjectConfig>) -> Option<Runtime>;
+
+    /// Return true if the current platform is for the provided project or runtime.
+    fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool;
+
+    // PROJECT GRAPH
 
     /// Determine if the provided project is within the platform's dependency manager
     /// workspace (not to be confused with moon's workspace).
@@ -59,6 +68,48 @@ pub trait Platform: Debug + Send + Sync {
         Ok(BTreeMap::new())
     }
 
-    /// Return true if the current platform is for the provided project or runtime.
-    fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool;
+    // TOOLCHAIN
+
+    /// Return a tool instance from the internal toolchain for the provided version.
+    /// If the version does not exist in the toolchain, return an error.
+    fn get_language_tool(&self, version: Version) -> Result<Box<&dyn Tool>, ToolError>;
+
+    /// Return the filename of the lockfile and manifest (in this order)
+    /// for the language's dependency manager, if applicable.
+    fn get_dependency_configs(&self) -> Result<Option<(String, String)>, ToolError> {
+        Ok(None)
+    }
+
+    // ACTIONS
+
+    /// Setup a tool by registering it into the toolchain with the provided version
+    /// (if it hasn't already been registered). Once registered, download and install.
+    /// Return a count of how many tools were installed.
+    async fn setup_tool(
+        &mut self,
+        tool_version: Version,
+        last_versions: &mut FxHashMap<String, String>,
+    ) -> Result<u8, ToolError> {
+        Ok(0)
+    }
+
+    /// Install dependencies in the target working directory with a tool and its
+    /// dependency manager using the provided version.
+    async fn install_deps(
+        &self,
+        tool_version: Version,
+        working_dir: &Path,
+    ) -> Result<(), ToolError> {
+        Ok(())
+    }
+
+    /// Sync a project (and its dependencies) when applicable.
+    /// Return true if any files were modified as a result of syncing.
+    async fn sync_project(
+        &self,
+        project: &Project,
+        dependencies: &FxHashMap<String, &Project>,
+    ) -> Result<bool, ProjectError> {
+        Ok(false)
+    }
 }

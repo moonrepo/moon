@@ -1,3 +1,4 @@
+use crate::node::ActionNode;
 use moon_utils::time::{chrono::prelude::*, now_timestamp};
 use serde::{Deserialize, Serialize};
 use std::time::{Duration, Instant};
@@ -73,9 +74,13 @@ pub struct Action {
 
     pub flaky: bool,
 
-    pub label: Option<String>,
+    pub label: String,
 
-    pub node_index: usize,
+    #[serde(skip)]
+    pub log_target: String,
+
+    #[serde(skip)]
+    pub node: Option<ActionNode>,
 
     #[serde(skip)]
     pub start_time: Option<Instant>,
@@ -84,7 +89,7 @@ pub struct Action {
 }
 
 impl Action {
-    pub fn new(node_index: usize, label: Option<String>) -> Self {
+    pub fn new(node: ActionNode) -> Self {
         Action {
             attempts: None,
             created_at: now_timestamp(),
@@ -92,8 +97,9 @@ impl Action {
             error: None,
             finished_at: None,
             flaky: false,
-            label,
-            node_index,
+            label: node.label(),
+            log_target: String::new(),
+            node: Some(node),
             start_time: Some(Instant::now()),
             status: ActionStatus::Running,
         }

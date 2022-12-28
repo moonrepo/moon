@@ -1,5 +1,12 @@
 # Changelog
 
+#### Unreleased
+
+#### 🚀 Updates
+
+- We've refactored the pipeline to use a new worker pool strategy so that we have more control over
+  concurrency. This also paves the way for future output reporters.
+
 ## 0.21.2
 
 #### 🚀 Updates

@@ -1,4 +1,6 @@
+use crate::actions;
 use crate::infer_tasks_from_scripts;
+use moon_config::TypeScriptConfig;
 use moon_config::{
     DependencyConfig, DependencyScope, NodeConfig, NodeProjectAliasFormat, PlatformType,
     ProjectConfig, ProjectID, ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap,
@@ -7,9 +9,13 @@ use moon_error::MoonError;
 use moon_logger::{color, debug, warn};
 use moon_node_lang::node::{get_package_manager_workspaces, parse_package_name};
 use moon_node_lang::{PackageJson, NPM};
+use moon_node_tool::NodeTool;
 use moon_platform::{Platform, Runtime, Version};
 use moon_project::Project;
-use moon_utils::glob::GlobSet;
+use moon_project::ProjectError;
+use moon_tool::{Tool, ToolError, ToolManager};
+use moon_utils::{async_trait, glob::GlobSet};
+use proto_core::Proto;
 use rustc_hash::FxHashMap;
 use std::path::PathBuf;
 use std::{collections::BTreeMap, path::Path};
@@ -20,22 +26,32 @@ const LOG_TARGET: &str = "moon:node-platform";
 pub struct NodePlatform {
     config: NodeConfig,
 
-    /// Maps `package.json` names to project IDs.
     package_names: FxHashMap<String, ProjectID>,
+
+    toolchain: ToolManager<NodeTool>,
+
+    typescript_config: Option<TypeScriptConfig>,
 
     workspace_root: PathBuf,
 }
 
 impl NodePlatform {
-    pub fn new(config: &NodeConfig, workspace_root: &Path) -> Self {
+    pub fn new(
+        config: &NodeConfig,
+        typescript_config: &Option<TypeScriptConfig>,
+        workspace_root: &Path,
+    ) -> Self {
         NodePlatform {
             config: config.to_owned(),
             package_names: FxHashMap::default(),
+            toolchain: ToolManager::new(Runtime::Node(Version::default())),
+            typescript_config: typescript_config.to_owned(),
             workspace_root: workspace_root.to_path_buf(),
         }
     }
 }
 
+#[async_trait]
 impl Platform for NodePlatform {
     fn get_type(&self) -> PlatformType {
         PlatformType::Node
@@ -56,6 +72,20 @@ impl Platform for NodePlatform {
 
         None
     }
+
+    fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool {
+        if matches!(platform, PlatformType::Node) {
+            return true;
+        }
+
+        if let Some(runtime) = &runtime {
+            return matches!(runtime, Runtime::Node(_));
+        }
+
+        false
+    }
+
+    // PROJECT GRAPH
 
     fn is_project_in_dependency_workspace(&self, project: &Project) -> Result<bool, MoonError> {
         let mut in_workspace = false;
@@ -239,15 +269,61 @@ impl Platform for NodePlatform {
         Ok(tasks)
     }
 
-    fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool {
-        if matches!(platform, PlatformType::Node) {
-            return true;
+    // TOOLCHAIN
+
+    fn get_language_tool(&self, version: Version) -> Result<Box<&dyn Tool>, ToolError> {
+        Ok(Box::new(self.toolchain.get_for_version(&version)?))
+    }
+
+    fn get_dependency_configs(&self) -> Result<Option<(String, String)>, ToolError> {
+        let tool = self.toolchain.get()?;
+        let depman = tool.get_package_manager();
+
+        Ok(Some((
+            depman.get_lock_filename(),
+            depman.get_manifest_filename(),
+        )))
+    }
+
+    // ACTIONS
+
+    async fn setup_tool(
+        &mut self,
+        version: Version,
+        last_versions: &mut FxHashMap<String, String>,
+    ) -> Result<u8, ToolError> {
+        if !self.toolchain.has(&version) {
+            self.toolchain.register(
+                &version,
+                NodeTool::new(&Proto::new()?, &self.config, &version.0)?,
+            );
         }
 
-        if let Some(runtime) = &runtime {
-            return matches!(runtime, Runtime::Node(_));
-        }
+        Ok(self.toolchain.setup(&version, last_versions).await?)
+    }
 
-        false
+    async fn install_deps(&self, version: Version, working_dir: &Path) -> Result<(), ToolError> {
+        let tool = self.toolchain.get_for_version(&version)?;
+
+        actions::install_deps(tool, working_dir, &self.workspace_root).await?;
+
+        Ok(())
+    }
+
+    async fn sync_project(
+        &self,
+        project: &Project,
+        dependencies: &FxHashMap<String, &Project>,
+    ) -> Result<bool, ProjectError> {
+        let mutated = actions::sync_project(
+            project,
+            dependencies,
+            &self.workspace_root,
+            &self.config,
+            &self.typescript_config,
+        )
+        .await?;
+
+        Ok(mutated)
     }
 }

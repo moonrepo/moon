@@ -14,6 +14,8 @@ crate-type = ["rlib"]
 
 [dependencies]
 moon = { path = "../core/moon" }
+moon_action_context = { path = "../core/action-context" }
+moon_action_pipeline = { path = "../core/action-pipeline" }
 moon_config = { path = "../core/config" }
 moon_constants = { path = "../core/constants" }
 moon_dep_graph = { path = "../core/dep-graph" }
@@ -28,8 +30,6 @@ moon_pipeline_provider = { path = "../core/pipeline-provider" }
 moon_platform = { path = "../core/platform" }
 moon_project = { path = "../core/project" }
 moon_project_graph = { path = "../core/project-graph" }
-moon_runner = { path = "../core/runner" }
-moon_runner_context = { path = "../core/runner-context" }
 moon_system_platform = { path = "../system/platform" }
 moon_task = { path = "../core/task" }
 moon_terminal = { path = "../core/terminal" }

@@ -107,28 +107,13 @@ fn runs_on_all_projects_from_root_directory() {
         .stderr(predicate::str::contains("all projects"));
 }
 
-mod reports {
-    use super::*;
+#[test]
+fn creates_run_report() {
+    let sandbox = cases_sandbox();
 
-    #[test]
-    fn does_not_create_a_report_by_default() {
-        let sandbox = cases_sandbox();
+    sandbox.run_moon(|cmd| {
+        cmd.arg("check").arg("base");
+    });
 
-        sandbox.run_moon(|cmd| {
-            cmd.arg("check").arg("base");
-        });
-
-        assert!(!sandbox.path().join(".moon/cache/runReport.json").exists());
-    }
-
-    #[test]
-    fn creates_report_when_option_passed() {
-        let sandbox = cases_sandbox();
-
-        sandbox.run_moon(|cmd| {
-            cmd.arg("check").arg("base").arg("--report");
-        });
-
-        assert!(sandbox.path().join(".moon/cache/runReport.json").exists());
-    }
+    assert!(sandbox.path().join(".moon/cache/runReport.json").exists());
 }

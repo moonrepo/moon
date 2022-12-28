@@ -55,7 +55,7 @@ impl Toolchain {
     }
 
     pub fn get_paths(&self) -> Proto {
-        Proto::new(&self.dir)
+        Proto::from(&self.dir)
     }
 
     /// Uninstall all tools from the toolchain, and delete any temporary files.

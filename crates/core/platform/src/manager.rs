@@ -26,6 +26,17 @@ impl PlatformManager {
             .ok_or_else(|| MoonError::UnsupportedPlatform(type_of.to_string()))
     }
 
+    pub fn get_mut<T: Into<PlatformType>>(
+        &mut self,
+        type_of: T,
+    ) -> Result<&mut BoxedPlatform, MoonError> {
+        let type_of = type_of.into();
+
+        self.cache
+            .get_mut(&type_of)
+            .ok_or_else(|| MoonError::UnsupportedPlatform(type_of.to_string()))
+    }
+
     pub fn list(&self) -> std::collections::hash_map::Values<PlatformType, BoxedPlatform> {
         self.cache.values()
     }

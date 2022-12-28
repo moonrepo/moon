@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     # strategy:
     #   matrix:
-    #     bench: [dep_graph_benchmark, emitter_benchmark, project_graph_benchmark, runner_benchmark]
+    #     bench: [dep_graph_benchmark, emitter_benchmark, project_graph_benchmark, pipeline_benchmark]
     #   fail-fast: false
     steps:
       - run: echo ${{ github.event.pull_request.head.sha }}
@@ -46,7 +46,7 @@ jobs:
           command: bench
           # args: --workspace --bench ${{ matrix.bench }} -- --save-baseline base-sha
           args: |
-            --workspace --bench dep_graph_benchmark --bench emitter_benchmark --bench project_graph_benchmark --bench runner_benchmark --bench tar_benchmark -- --save-baseline head-sha
+            --workspace --bench dep_graph_benchmark --bench emitter_benchmark --bench project_graph_benchmark --bench pipeline_benchmark --bench tar_benchmark -- --save-baseline head-sha
 
       # Run on base branch to get a baseline
       - name: Checkout base branch

@@ -1,5 +1,5 @@
 [package]
-name = "moon_runner_context"
+name = "moon_action_context"
 version = "0.1.0"
 edition = "2021"
 

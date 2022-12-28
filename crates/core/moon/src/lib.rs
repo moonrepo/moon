@@ -14,17 +14,22 @@ pub fn register_platforms(workspace: &mut Workspace) -> Result<(), WorkspaceErro
     let paths = { workspace.toolchain.get_paths() };
 
     if let Some(node_config) = workspace.toolchain.config.node.clone() {
-        workspace.register_platform(Box::new(NodePlatform::new(&node_config, &workspace.root)));
+        workspace.register_platform(Box::new(NodePlatform::new(
+            &node_config,
+            &workspace.toolchain.config.typescript,
+            &workspace.root,
+        )));
 
-        if node_config.version.is_some() {
-            workspace
-                .toolchain
-                .node
-                .register(Box::new(NodeTool::new(&node_config, &paths)?), true);
+        // TODO remove in follow-up
+        if let Some(node_version) = &node_config.version {
+            workspace.toolchain.node.register(
+                Box::new(NodeTool::new(&paths, &node_config, node_version)?),
+                true,
+            );
         }
     }
 
-    // Should be last since it's the last resort
+    // Should be last since it's the most common
     workspace.register_platform(Box::<SystemPlatform>::default());
 
     Ok(())

@@ -1,26 +1,46 @@
 [package]
-name = "moon_runner"
+name = "moon_action_pipeline"
 version = "0.1.0"
 edition = "2021"
+
+[lib]
+bench = false
+
+[[bench]]
+name = "pipeline_benchmark"
+harness = false
 
 [dependencies]
 moon_action = { path = "../action" }
 moon_action_context = { path = "../action-context" }
 moon_cache = { path = "../cache" }
-moon_config = { path = "../config" }
+moon_dep_graph = { path = "../dep-graph" }
 moon_emitter = { path = "../emitter" }
 moon_error = { path = "../error" }
-moon_hasher = { path = "../hasher" }
 moon_logger = { path = "../logger" }
+moon_notifier = { path = "../notifier" }
+moon_platform = { path = "../platform" }
 moon_node_platform = { path = "../../node/platform" }
+moon_node_tool = { path = "../../node/tool" }
 moon_project = { path = "../project" }
 moon_system_platform = { path = "../../system/platform" }
+moon_project_graph = { path = "../project-graph" }
+moon_runner = { path = "../runner" }
 moon_task = { path = "../task" }
 moon_terminal = { path = "../terminal" }
+moon_tool = { path = "../tool" }
 moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
+moonbase = { path = "../moonbase" }
+async-channel = "1.8.0"
 console = "0.15.2"
+futures = "0.3.25"
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
+
+[dev-dependencies]
+moon = { path = "../moon" }
+moon_test_utils = { path = "../test-utils" }
+criterion = { workspace = true }

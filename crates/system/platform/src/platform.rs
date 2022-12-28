@@ -1,8 +1,12 @@
+use crate::tool::SystemToolStub;
 use moon_config::{PlatformType, ProjectConfig};
-use moon_platform::{Platform, Runtime};
+use moon_platform::{Platform, Runtime, Version};
+use moon_tool::{Tool, ToolError};
 
 #[derive(Debug, Default)]
-pub struct SystemPlatform;
+pub struct SystemPlatform {
+    tool: SystemToolStub,
+}
 
 impl Platform for SystemPlatform {
     fn get_type(&self) -> PlatformType {
@@ -23,5 +27,11 @@ impl Platform for SystemPlatform {
         }
 
         false
+    }
+
+    // TOOLCHAIN
+
+    fn get_language_tool(&self, _version: Version) -> Result<Box<&dyn Tool>, ToolError> {
+        Ok(Box::new(&self.tool))
     }
 }

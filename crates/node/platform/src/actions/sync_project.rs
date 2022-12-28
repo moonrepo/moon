@@ -1,21 +1,16 @@
-use moon_action::{Action, ActionStatus};
-use moon_config::{DependencyScope, NodeVersionFormat, TypeScriptConfig};
+use moon_config::{
+    DependencyScope, NodeConfig, NodeVersionFormat, TypeScriptConfig, CONFIG_DIRNAME,
+};
 use moon_error::MoonError;
 use moon_logger::{color, debug};
 use moon_node_lang::{PackageJson, NPM};
-use moon_node_tool::NodeTool;
-use moon_project::Project;
-use moon_project_graph::ProjectGraph;
-use moon_runner_context::RunnerContext;
+use moon_project::{Project, ProjectError};
 use moon_typescript_lang::tsconfig::CompilerOptionsPaths;
 use moon_typescript_lang::TsConfigJson;
-use moon_utils::{is_ci, json, path, semver, string_vec};
-use moon_workspace::{Workspace, WorkspaceError};
-use rustc_hash::FxHashSet;
+use moon_utils::{get_workspace_root, json, path, semver, string_vec};
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::path::Path;
-use std::sync::Arc;
-use tokio::sync::RwLock;
 
 const LOG_TARGET: &str = "moon:node-platform:sync-project";
 
@@ -25,7 +20,7 @@ pub fn create_missing_tsconfig(
     project: &Project,
     typescript_config: &TypeScriptConfig,
     workspace_root: &Path,
-) -> Result<bool, WorkspaceError> {
+) -> Result<bool, MoonError> {
     let tsconfig_path = project
         .root
         .join(&typescript_config.project_config_file_name);
@@ -78,16 +73,13 @@ fn sync_root_tsconfig(
 }
 
 pub async fn sync_project(
-    _action: &mut Action,
-    _context: Arc<RwLock<RunnerContext>>,
-    workspace: Arc<RwLock<Workspace>>,
-    project_graph: Arc<RwLock<ProjectGraph>>,
     project: &Project,
-) -> Result<ActionStatus, WorkspaceError> {
+    dependencies: &FxHashMap<String, &Project>,
+    workspace_root: &Path,
+    node_config: &NodeConfig,
+    typescript_config: &Option<TypeScriptConfig>,
+) -> Result<bool, ProjectError> {
     let mut mutated_files = false;
-    let workspace = workspace.read().await;
-    let project_graph = project_graph.read().await;
-    let node = workspace.toolchain.node.get::<NodeTool>()?;
     let is_project_typescript_enabled = project.config.toolchain.typescript;
 
     // Sync each dependency to `tsconfig.json` and `package.json`
@@ -98,9 +90,9 @@ pub async fn sync_project(
     let mut tsconfig_paths: CompilerOptionsPaths = BTreeMap::new();
 
     for (dep_id, dep_cfg) in &project.dependencies {
-        let dep_project = project_graph
-            .get(dep_id)
-            .map_err(|e| WorkspaceError::Moon(MoonError::Generic(e.to_string())))?;
+        let Some(dep_project) = dependencies.get(dep_id) else {
+            continue;
+        };
 
         let dep_relative_path =
             path::relative_from(&dep_project.root, &project.root).unwrap_or_default();
@@ -109,8 +101,8 @@ pub async fn sync_project(
         // Update dependencies within this project's `package.json`.
         // Only add if the dependent project has a `package.json`,
         // and this `package.json` has not already declared the dep.
-        if node.config.sync_project_workspace_dependencies {
-            let format = &node.config.dependency_version_format;
+        if node_config.sync_project_workspace_dependencies {
+            let format = &node_config.dependency_version_format;
 
             if let Some(dep_package_json) = PackageJson::read(&dep_project.root)? {
                 if let Some(dep_package_name) = &dep_package_json.name {
@@ -163,7 +155,7 @@ pub async fn sync_project(
             }
         }
 
-        if let Some(typescript_config) = &workspace.toolchain.config.typescript {
+        if let Some(typescript_config) = &typescript_config {
             // Update `references` within this project's `tsconfig.json`.
             // Only add if the dependent project has a `tsconfig.json`,
             // and this `tsconfig.json` has not already declared the dep.
@@ -257,7 +249,7 @@ pub async fn sync_project(
         })?;
     }
 
-    if let Some(typescript_config) = &workspace.toolchain.config.typescript {
+    if let Some(typescript_config) = &typescript_config {
         // Auto-create a `tsconfig.json` if configured and applicable
         if is_project_typescript_enabled
             && typescript_config.sync_project_references
@@ -267,7 +259,7 @@ pub async fn sync_project(
                 .join(&typescript_config.project_config_file_name)
                 .exists()
         {
-            create_missing_tsconfig(project, typescript_config, &workspace.root)?;
+            create_missing_tsconfig(project, typescript_config, workspace_root)?;
         }
 
         // Sync to the project's `tsconfig.json`
@@ -290,7 +282,11 @@ pub async fn sync_project(
 
                     // Out dir
                     if typescript_config.route_out_dir_to_cache {
-                        let cache_route = workspace.cache.dir.join("types").join(&project.source);
+                        let cache_route = get_workspace_root()
+                            .join(CONFIG_DIRNAME)
+                            .join("cache")
+                            .join("types")
+                            .join(&project.source);
 
                         tsconfig_json.update_compiler_options().out_dir =
                             Some(path::to_virtual_string(
@@ -316,7 +312,7 @@ pub async fn sync_project(
         // Sync to the root `tsconfig.json`
         if is_project_typescript_enabled && typescript_config.sync_project_references {
             TsConfigJson::sync_with_name(
-                &workspace.root,
+                workspace_root,
                 &typescript_config.root_config_file_name,
                 |tsconfig_json| {
                     if sync_root_tsconfig(tsconfig_json, typescript_config, project) {
@@ -329,15 +325,5 @@ pub async fn sync_project(
         }
     }
 
-    if mutated_files {
-        // If files have been modified in CI, we should update the status to warning,
-        // as these modifications should be committed to the repo.
-        if is_ci() {
-            return Ok(ActionStatus::Invalid);
-        } else {
-            return Ok(ActionStatus::Passed);
-        }
-    }
-
-    Ok(ActionStatus::Skipped)
+    Ok(mutated_files)
 }

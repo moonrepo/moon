@@ -4,8 +4,8 @@ use crate::commands::bin::BinTool;
 use crate::commands::init::InitTool;
 use crate::enums::{CacheMode, LogLevel, TouchedStatus};
 use clap::{Parser, Subcommand};
+use moon_action_context::ProfileType;
 use moon_config::{FileGlob, ProjectID};
-use moon_runner_context::ProfileType;
 use moon_task::TargetID;
 use std::path::PathBuf;
 

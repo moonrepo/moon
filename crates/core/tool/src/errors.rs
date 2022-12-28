@@ -1,4 +1,5 @@
 use moon_error::MoonError;
+use moon_platform_runtime::Runtime;
 use proto_error::ProtoError;
 use thiserror::Error;
 
@@ -9,6 +10,9 @@ pub enum ToolError {
 
     #[error("{0} has not been configured or installed, unable to proceed.")]
     UnknownTool(String),
+
+    #[error("Unsupported toolchain runtime {0}.")]
+    UnsupportedRuntime(Runtime),
 
     #[error("This functionality requires a plugin. Install it with <shell>{0}</shell>.")]
     RequiresPlugin(String),

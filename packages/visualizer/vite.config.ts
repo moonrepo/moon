@@ -1,4 +1,3 @@
-/* eslint-disable node/no-unpublished-import */
 /* eslint-disable import/no-extraneous-dependencies */
 
 import { defineConfig } from 'vite';

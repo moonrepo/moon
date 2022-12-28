@@ -2,6 +2,7 @@ use moon_cache::get_cache_mode;
 use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_error::MoonError;
 use moon_logger::warn;
+use moon_utils::async_trait;
 use moon_workspace::Workspace;
 use moonbase::{upload_artifact, MoonbaseError};
 use rustc_hash::FxHashMap;
@@ -29,7 +30,7 @@ impl MoonbaseCacheSubscriber {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait]
 impl Subscriber for MoonbaseCacheSubscriber {
     async fn on_emit<'a>(
         &mut self,

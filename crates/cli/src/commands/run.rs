@@ -2,10 +2,10 @@ use crate::enums::{CacheMode, TouchedStatus};
 use crate::helpers::AnyError;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use moon::{build_dep_graph, generate_project_graph, load_workspace};
+use moon_action_context::{ActionContext, ProfileType};
+use moon_action_pipeline::Pipeline;
 use moon_logger::{color, map_list};
 use moon_project_graph::ProjectGraph;
-use moon_runner::Runner;
-use moon_runner_context::{ProfileType, RunnerContext};
 use moon_utils::is_ci;
 use moon_workspace::Workspace;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -100,7 +100,7 @@ pub async fn run_target(
     }
 
     // Process all tasks in the graph
-    let context = RunnerContext {
+    let context = ActionContext {
         affected_only: options.affected,
         initial_targets: FxHashSet::from_iter(target_ids.to_owned()),
         passthrough_args: options.passthrough,
@@ -111,18 +111,15 @@ pub async fn run_target(
     };
 
     let dep_graph = dep_builder.build();
-    let mut runner = Runner::new(workspace);
+    let mut pipeline = Pipeline::new(workspace, project_graph);
 
-    if options.report {
-        runner.generate_report("runReport.json");
-    }
-
-    let results = runner
+    let results = pipeline
         .bail_on_error()
-        .run(dep_graph, project_graph, Some(context))
+        .generate_report("runReport.json")
+        .run(dep_graph, Some(context))
         .await?;
 
-    runner.render_stats(&results, true)?;
+    pipeline.render_stats(&results, true)?;
 
     Ok(())
 }

@@ -32,4 +32,8 @@ impl Hasher for SystemTargetHasher {
         sha.update(self.arch.as_bytes());
         sha.update(self.os.as_bytes());
     }
+
+    fn serialize(&self) -> serde_json::Value {
+        serde_json::to_value(self).unwrap()
+    }
 }

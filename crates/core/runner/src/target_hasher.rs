@@ -123,4 +123,8 @@ impl Hasher for TargetHasher {
         hash_vec(&self.outputs, sha);
         hash_vec(&self.project_deps, sha);
     }
+
+    fn serialize(&self) -> serde_json::Value {
+        serde_json::to_value(self).unwrap()
+    }
 }

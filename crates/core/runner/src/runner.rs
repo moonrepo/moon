@@ -7,7 +7,7 @@ use moon_cache::RunTargetState;
 use moon_config::{PlatformType, TaskOutputStyle};
 use moon_emitter::{Emitter, Event, EventFlow};
 use moon_error::MoonError;
-use moon_hasher::{convert_paths_to_strings, to_hash, Hasher};
+use moon_hasher::{convert_paths_to_strings, HashSet};
 use moon_logger::{color, debug, warn};
 use moon_node_platform::actions as node_actions;
 use moon_project::Project;
@@ -23,7 +23,6 @@ use moon_utils::{
 };
 use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
-use serde::Serialize;
 
 const LOG_TARGET: &str = "moon:runner";
 
@@ -115,6 +114,34 @@ impl<'a> Runner<'a> {
         Ok(())
     }
 
+    pub async fn hydrate(&self, from: HydrateFrom) -> Result<ActionStatus, RunnerError> {
+        // Only hydrate when the hash is different from the previous build,
+        // as we can assume the outputs from the previous build still exist?
+        if matches!(from, HydrateFrom::LocalCache) || matches!(from, HydrateFrom::RemoteCache) {
+            self.hydrate_outputs().await?;
+        }
+
+        let mut comments = vec![match from {
+            HydrateFrom::LocalCache => "cached",
+            HydrateFrom::RemoteCache => "cached from remote",
+            HydrateFrom::PreviousOutput => "cached from previous run",
+        }];
+
+        if self.should_print_short_hash() {
+            comments.push(self.get_short_hash());
+        }
+
+        self.print_checkpoint(Checkpoint::RunPassed, &comments)?;
+        self.print_cache_item()?;
+        self.flush_output()?;
+
+        Ok(if matches!(from, HydrateFrom::RemoteCache) {
+            ActionStatus::CachedFromRemote
+        } else {
+            ActionStatus::Cached
+        })
+    }
+
     /// If we are cached (hash match), hydrate the project with the
     /// cached task outputs found in the hashed archive.
     pub async fn hydrate_outputs(&self) -> Result<(), RunnerError> {
@@ -155,10 +182,11 @@ impl<'a> Runner<'a> {
 
     /// Create a hasher that is shared amongst all platforms.
     /// Primarily includes task information.
-    pub async fn create_common_hasher(
+    pub async fn hash_common_target(
         &self,
         context: &ActionContext,
-    ) -> Result<TargetHasher, RunnerError> {
+        hashset: &mut HashSet,
+    ) -> Result<(), RunnerError> {
         let vcs = &self.workspace.vcs;
         let task = &self.task;
         let project = &self.project;
@@ -218,7 +246,9 @@ impl<'a> Runner<'a> {
             }
         }
 
-        Ok(hasher)
+        hashset.hash(hasher);
+
+        Ok(())
     }
 
     pub async fn create_command(&self, context: &ActionContext) -> Result<Command, RunnerError> {
@@ -402,10 +432,18 @@ impl<'a> Runner<'a> {
     pub async fn is_cached(
         &mut self,
         context: &mut ActionContext,
-        common_hasher: impl Hasher + Serialize,
-        platform_hasher: impl Hasher + Serialize,
-    ) -> Result<Option<HydrateFrom>, MoonError> {
-        let hash = to_hash(&common_hasher, &platform_hasher);
+    ) -> Result<Option<HydrateFrom>, RunnerError> {
+        let mut hashset = HashSet::default();
+
+        self.hash_common_target(context, &mut hashset).await?;
+
+        self.workspace
+            .platforms
+            .get(self.task.platform)?
+            .hash_run_target(self.project, &mut hashset, &self.workspace.config.hasher)
+            .await?;
+
+        let hash = hashset.generate();
 
         debug!(
             target: LOG_TARGET,
@@ -433,9 +471,7 @@ impl<'a> Runner<'a> {
         self.cache.hash = hash.clone();
 
         // Refresh the hash manifest
-        self.workspace
-            .cache
-            .create_hash_manifest(&hash, &(common_hasher, platform_hasher))?;
+        self.workspace.cache.create_hash_manifest(&hash, &hashset)?;
 
         // Check if that hash exists in the cache
         if let EventFlow::Return(value) = self
@@ -819,7 +855,7 @@ impl<'a> Runner<'a> {
         Ok(())
     }
 
-    pub fn should_print_short_hash(&self) -> bool {
+    fn should_print_short_hash(&self) -> bool {
         // Do not include the hash while testing, as the hash
         // constantly changes and breaks our local snapshots
         !is_test_env() && self.task.options.cache && !self.cache.hash.is_empty()

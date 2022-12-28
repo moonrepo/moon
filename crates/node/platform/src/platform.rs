@@ -1,11 +1,12 @@
 use crate::actions;
 use crate::infer_tasks_from_scripts;
-use moon_config::TypeScriptConfig;
 use moon_config::{
-    DependencyConfig, DependencyScope, NodeConfig, NodeProjectAliasFormat, PlatformType,
-    ProjectConfig, ProjectID, ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap,
+    DependencyConfig, DependencyScope, HasherConfig, NodeConfig, NodeProjectAliasFormat,
+    PlatformType, ProjectConfig, ProjectID, ProjectsAliasesMap, ProjectsSourcesMap,
+    TasksConfigsMap, TypeScriptConfig,
 };
 use moon_error::MoonError;
+use moon_hasher::HashSet;
 use moon_logger::{color, debug, warn};
 use moon_node_lang::node::{get_package_manager_workspaces, parse_package_name};
 use moon_node_lang::{PackageJson, NPM};
@@ -303,9 +304,12 @@ impl Platform for NodePlatform {
     }
 
     async fn install_deps(&self, version: Version, working_dir: &Path) -> Result<(), ToolError> {
-        let tool = self.toolchain.get_for_version(&version)?;
-
-        actions::install_deps(tool, working_dir, &self.workspace_root).await?;
+        actions::install_deps(
+            self.toolchain.get_for_version(&version)?,
+            working_dir,
+            &self.workspace_root,
+        )
+        .await?;
 
         Ok(())
     }
@@ -315,7 +319,7 @@ impl Platform for NodePlatform {
         project: &Project,
         dependencies: &FxHashMap<String, &Project>,
     ) -> Result<bool, ProjectError> {
-        let mutated = actions::sync_project(
+        let modified = actions::sync_project(
             project,
             dependencies,
             &self.workspace_root,
@@ -324,6 +328,26 @@ impl Platform for NodePlatform {
         )
         .await?;
 
-        Ok(mutated)
+        Ok(modified)
+    }
+
+    async fn hash_run_target(
+        &self,
+        project: &Project,
+        hashset: &mut HashSet,
+        hasher_config: &HasherConfig,
+    ) -> Result<(), ToolError> {
+        let hasher = actions::hash_run_target(
+            self.toolchain.get()?,
+            project,
+            &self.workspace_root,
+            hasher_config,
+            &self.typescript_config,
+        )
+        .await?;
+
+        hashset.hash(hasher);
+
+        Ok(())
     }
 }

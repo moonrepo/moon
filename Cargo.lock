@@ -841,15 +841,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "erased-serde"
-version = "0.3.24"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e4ca605381c017ec7a5fef5e548f1cfaa419ed0f6df6367339300db74c92aa7d"
-dependencies = [
- "serde",
-]
-
-[[package]]
 name = "errno"
 version = "0.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1711,15 +1702,14 @@ dependencies = [
  "moon_dep_graph",
  "moon_emitter",
  "moon_error",
+ "moon_hasher",
  "moon_logger",
- "moon_node_platform",
  "moon_node_tool",
  "moon_notifier",
  "moon_platform",
  "moon_project",
  "moon_project_graph",
  "moon_runner",
- "moon_system_platform",
  "moon_task",
  "moon_terminal",
  "moon_test_utils",
@@ -1933,11 +1923,11 @@ dependencies = [
 name = "moon_hasher"
 version = "0.1.0"
 dependencies = [
- "erased-serde",
  "moon_error",
  "moon_utils",
  "rustc-hash",
  "serde",
+ "serde_json",
  "sha2",
 ]
 
@@ -2006,6 +1996,7 @@ dependencies = [
  "proto_core",
  "rustc-hash",
  "serde",
+ "serde_json",
  "tokio",
 ]
 
@@ -2063,6 +2054,7 @@ dependencies = [
  "async-trait",
  "moon_config",
  "moon_error",
+ "moon_hasher",
  "moon_platform_runtime",
  "moon_project",
  "moon_tool",
@@ -2165,10 +2157,12 @@ dependencies = [
  "moon_system_platform",
  "moon_task",
  "moon_terminal",
+ "moon_tool",
  "moon_utils",
  "moon_workspace",
  "rustc-hash",
  "serde",
+ "serde_json",
  "thiserror",
  "tokio",
 ]
@@ -2193,6 +2187,7 @@ dependencies = [
  "moon_utils",
  "moon_workspace",
  "serde",
+ "serde_json",
 ]
 
 [[package]]

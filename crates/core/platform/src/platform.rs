@@ -1,9 +1,10 @@
 use async_trait::async_trait;
 use moon_config::{
-    DependencyConfig, PlatformType, ProjectConfig, ProjectLanguage, ProjectsAliasesMap,
-    ProjectsSourcesMap, TasksConfigsMap,
+    DependencyConfig, HasherConfig, PlatformType, ProjectConfig, ProjectLanguage,
+    ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap,
 };
 use moon_error::MoonError;
+use moon_hasher::HashSet;
 use moon_platform_runtime::{Runtime, Version};
 use moon_project::{Project, ProjectError};
 use moon_tool::{Tool, ToolError};
@@ -113,5 +114,10 @@ pub trait Platform: Debug + Send + Sync {
         Ok(false)
     }
 
-    async fn hash_run_target(&self) {}
+    async fn hash_run_target(
+        &self,
+        project: &Project,
+        hashset: &mut HashSet,
+        hasher_config: &HasherConfig,
+    ) -> Result<(), ToolError>;
 }

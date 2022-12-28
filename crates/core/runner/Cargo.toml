@@ -3,13 +3,6 @@ name = "moon_runner"
 version = "0.1.0"
 edition = "2021"
 
-# [lib]
-# bench = false
-
-# [[bench]]
-# name = "runner_benchmark"
-# harness = false
-
 [dependencies]
 moon_action = { path = "../action" }
 moon_action_context = { path = "../action-context" }
@@ -31,8 +24,3 @@ rustc-hash = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
-
-[dev-dependencies]
-moon = { path = "../moon" }
-moon_test_utils = { path = "../test-utils" }
-criterion = { workspace = true }

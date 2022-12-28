@@ -1,3 +1,4 @@
+use moon_config::PlatformType;
 use serde::Serialize;
 use std::fmt::{self, Debug};
 
@@ -51,6 +52,15 @@ impl fmt::Display for Runtime {
         match self {
             Runtime::Node(_) => write!(f, "Node"),
             Runtime::System => write!(f, "System"),
+        }
+    }
+}
+
+impl From<&Runtime> for PlatformType {
+    fn from(value: &Runtime) -> Self {
+        match value {
+            Runtime::Node(_) => PlatformType::Node,
+            Runtime::System => PlatformType::System,
         }
     }
 }

@@ -1,9 +1,8 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use moon::{build_dep_graph, generate_project_graph, load_workspace_from};
+use moon_action_pipeline::Pipeline;
 use moon_dep_graph::DepGraph;
 use moon_project_graph::ProjectGraph;
-use moon_runner::Runner;
-use moon_runner_context::RunnerContext;
 use moon_task::Target;
 use moon_test_utils::{create_sandbox_with_config, get_cases_fixture_configs};
 use moon_workspace::Workspace;
@@ -34,7 +33,7 @@ fn generate_dep_graph(workspace: &Workspace, project_graph: &ProjectGraph) -> De
     dep_graph.build()
 }
 
-pub fn runner_benchmark(c: &mut Criterion) {
+pub fn pipeline_benchmark(c: &mut Criterion) {
     let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
 
     let sandbox = create_sandbox_with_config(
@@ -44,15 +43,15 @@ pub fn runner_benchmark(c: &mut Criterion) {
         Some(&projects_config),
     );
 
-    c.bench_function("runner", |b| {
+    c.bench_function("pipeline", |b| {
         b.iter(|| async {
             let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
             let project_graph = generate_project_graph(&mut workspace).unwrap();
             let dep_graph = generate_dep_graph(&workspace, &project_graph);
 
             black_box(
-                Runner::new(workspace)
-                    .run(dep_graph, project_graph, Some(RunnerContext::default()))
+                Pipeline::new(workspace, project_graph)
+                    .run(dep_graph, None)
                     .await
                     .unwrap(),
             );
@@ -60,5 +59,5 @@ pub fn runner_benchmark(c: &mut Criterion) {
     });
 }
 
-criterion_group!(runner, runner_benchmark);
-criterion_main!(runner);
+criterion_group!(pipeline, pipeline_benchmark);
+criterion_main!(pipeline);

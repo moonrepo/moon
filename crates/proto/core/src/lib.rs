@@ -27,7 +27,16 @@ pub struct Proto {
 }
 
 impl Proto {
-    pub fn new(root: &Path) -> Self {
+    pub fn new() -> Result<Self, ProtoError> {
+        let root = get_dir()?;
+
+        Ok(Proto {
+            temp_dir: root.join("temp"),
+            tools_dir: root.join("tools"),
+        })
+    }
+
+    pub fn from(root: &Path) -> Self {
         Proto {
             temp_dir: root.join("temp"),
             tools_dir: root.join("tools"),

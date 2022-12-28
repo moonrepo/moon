@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 moon_error = { path = "../error" }
 moon_lang = { path = "../lang" }
+moon_platform_runtime = { path = "../platform-runtime" }
 moon_utils = { path = "../utils" }
 proto_error = { path = "../../proto/error" }
 async-trait = "0.1.59"

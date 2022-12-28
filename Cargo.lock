@@ -1986,6 +1986,7 @@ dependencies = [
  "moon_node_tool",
  "moon_platform",
  "moon_project",
+ "moon_project_graph",
  "moon_task",
  "moon_terminal",
  "moon_test_utils",

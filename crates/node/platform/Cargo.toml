@@ -27,4 +27,5 @@ tokio = { workspace = true }
 
 [dev-dependencies]
 moon = { path = "../../core/moon" }
+moon_project_graph = { path = "../../core/project-graph" }
 moon_test_utils = { path = "../../core/test-utils" }

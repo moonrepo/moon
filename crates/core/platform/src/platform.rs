@@ -112,4 +112,6 @@ pub trait Platform: Debug + Send + Sync {
     ) -> Result<bool, ProjectError> {
         Ok(false)
     }
+
+    async fn hash_run_target(&self) {}
 }

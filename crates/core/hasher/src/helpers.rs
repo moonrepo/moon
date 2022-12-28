@@ -1,13 +1,10 @@
+use crate::hasher::Hasher;
 use moon_error::MoonError;
 use moon_utils::path;
 use rustc_hash::FxHashSet;
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-
-pub trait Hasher {
-    fn hash(&self, sha: &mut Sha256);
-}
 
 pub fn to_hash(a: &impl Hasher, b: &impl Hasher) -> String {
     let mut sha = Sha256::new();

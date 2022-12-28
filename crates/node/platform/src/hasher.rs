@@ -11,8 +11,8 @@ pub struct NodeTargetHasher {
     // Node.js version
     node_version: String,
 
-    // all the dependencies of the project (including dev and peer) and the hashes
-    // corresponding with their versions
+    // All the dependencies of the project (including dev and peer),
+    // and the hashes corresponding with their versions
     dependencies: BTreeMap<String, Vec<String>>,
 
     // `tsconfig.json` `compilerOptions`
@@ -90,11 +90,13 @@ impl Hasher for NodeTargetHasher {
     fn hash(&self, sha: &mut Sha256) {
         sha.update(self.version.as_bytes());
         sha.update(self.node_version.as_bytes());
+
         for versions in self.dependencies.values() {
             for version in versions {
                 sha.update(version.as_bytes());
             }
         }
+
         hash_btree(&self.tsconfig_compiler_options, sha);
     }
 }

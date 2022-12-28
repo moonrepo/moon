@@ -29,5 +29,7 @@ impl SystemTargetHasher {
 impl Hasher for SystemTargetHasher {
     fn hash(&self, sha: &mut Sha256) {
         sha.update(self.version.as_bytes());
+        sha.update(self.arch.as_bytes());
+        sha.update(self.os.as_bytes());
     }
 }

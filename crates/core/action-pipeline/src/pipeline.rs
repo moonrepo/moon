@@ -3,6 +3,7 @@ use crate::processor::process_action;
 use crate::run_report::RunReport;
 use crate::subscribers::local_cache::LocalCacheSubscriber;
 use crate::subscribers::moonbase_cache::MoonbaseCacheSubscriber;
+use crate::worker_pool::WorkerPool;
 use console::Term;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
@@ -15,11 +16,9 @@ use moon_project_graph::ProjectGraph;
 use moon_terminal::{label_to_the_moon, replace_style_tokens, ExtendedTerm};
 use moon_utils::{is_ci, is_test_env, time};
 use moon_workspace::Workspace;
-use std::num::NonZeroUsize;
 use std::sync::Arc;
-use std::thread;
 use std::time::{Duration, Instant};
-use tokio::sync::{mpsc, OwnedSemaphorePermit, RwLock, Semaphore};
+use tokio::sync::RwLock;
 
 const LOG_TARGET: &str = "moon:action-pipeline";
 
@@ -28,7 +27,7 @@ pub type ActionResults = Vec<Action>;
 pub struct Pipeline {
     bail: bool,
 
-    concurrency: usize,
+    concurrency: Option<usize>,
 
     duration: Option<Duration>,
 
@@ -41,13 +40,9 @@ pub struct Pipeline {
 
 impl Pipeline {
     pub fn new(workspace: Workspace, project_graph: ProjectGraph) -> Self {
-        let concurrency = thread::available_parallelism()
-            .unwrap_or(NonZeroUsize::new(8).unwrap())
-            .get();
-
         Pipeline {
             bail: false,
-            concurrency,
+            concurrency: None,
             duration: None,
             project_graph: Arc::new(RwLock::new(project_graph)),
             report_name: None,
@@ -61,7 +56,7 @@ impl Pipeline {
     }
 
     pub fn concurrency(&mut self, value: usize) -> &Self {
-        self.concurrency = value;
+        self.concurrency = Some(value);
         self
     }
 
@@ -80,47 +75,14 @@ impl Pipeline {
         let emitter = Arc::new(RwLock::new(
             create_emitter(Arc::clone(&self.workspace)).await,
         ));
+        let workspace = Arc::clone(&self.workspace);
+        let project_graph = Arc::clone(&self.project_graph);
 
-        // We use an mpsc channel to aggregate results from the worker pool
-        let (result_sender, mut aggregator) = mpsc::channel(100);
+        let pool = WorkerPool::new(self.concurrency);
         let mut results: ActionResults = vec![];
         let mut passed_count = 0;
         let mut cached_count = 0;
         let mut failed_count = 0;
-
-        // We use an async channel to coordinate actions (tasks) to process
-        // across a bounded worker pool, as defined by the provided concurrency
-        let (worker_pool, worker) = async_channel::unbounded::<(Action, OwnedSemaphorePermit)>();
-
-        for _ in 0..self.concurrency {
-            let result_sender = result_sender.clone();
-            let worker = worker.clone();
-            let context_clone = Arc::clone(&context);
-            let emitter_clone = Arc::clone(&emitter);
-            let workspace_clone = Arc::clone(&self.workspace);
-            let project_graph_clone = Arc::clone(&self.project_graph);
-
-            tokio::spawn(async move {
-                while let Ok((action, permit)) = worker.recv().await {
-                    // Ignore failures, as it typically means the pipeline
-                    // has been aborted and we're trying to send another result
-                    let _ = result_sender
-                        .send(
-                            process_action(
-                                action,
-                                Arc::clone(&context_clone),
-                                Arc::clone(&emitter_clone),
-                                Arc::clone(&workspace_clone),
-                                Arc::clone(&project_graph_clone),
-                            )
-                            .await,
-                        )
-                        .await;
-
-                    drop(permit);
-                }
-            });
-        }
 
         // Queue actions in topological order that need to be processed,
         // grouped into batches based on dependency requirements
@@ -144,6 +106,7 @@ impl Pipeline {
             let batch_index = b + 1;
             let batch_target_name = format!("{}:batch:{}", LOG_TARGET, batch_index);
             let actions_count = batch.len();
+            let mut action_handles = vec![];
 
             trace!(
                 target: &batch_target_name,
@@ -152,60 +115,71 @@ impl Pipeline {
                 batch_index
             );
 
-            // We use a semaphore for ensuring that all actions within this batch
-            // have completed processing before continuing to the next batch
-            let semaphore = Arc::new(Semaphore::new(actions_count));
-
             for (i, node_index) in batch.into_iter().enumerate() {
                 let action_index = i + 1;
 
                 if let Some(node) = dep_graph.get_node_from_index(&node_index) {
-                    let permit = semaphore.clone().acquire_owned().await.unwrap();
-                    let mut action = Action::new(node.to_owned());
+                    let context_clone = Arc::clone(&context);
+                    let emitter_clone = Arc::clone(&emitter);
+                    let workspace_clone = Arc::clone(&workspace);
+                    let project_graph_clone = Arc::clone(&project_graph);
 
+                    let mut action = Action::new(node.to_owned());
                     action.log_target = format!("{}:{}", batch_target_name, action_index);
 
-                    let _ = worker_pool.send((action, permit)).await;
+                    action_handles.push(pool.run(async move {
+                        process_action(
+                            action,
+                            Arc::clone(&context_clone),
+                            Arc::clone(&emitter_clone),
+                            Arc::clone(&workspace_clone),
+                            Arc::clone(&project_graph_clone),
+                        )
+                        .await
+                    }));
                 } else {
                     return Err(PipelineError::UnknownActionNode);
                 }
             }
 
             // Wait for all actions in this batch to complete
-            while semaphore.available_permits() != actions_count {
-                if let Some(result) = aggregator.recv().await {
-                    let result = result?;
+            for handle in action_handles {
+                match handle.await {
+                    Ok(result) => {
+                        if result.has_failed() {
+                            failed_count += 1;
+                        } else if result.was_cached() {
+                            cached_count += 1;
+                        } else {
+                            passed_count += 1;
+                        }
 
-                    if result.has_failed() {
-                        failed_count += 1;
-                    } else if result.was_cached() {
-                        cached_count += 1;
-                    } else {
-                        passed_count += 1;
+                        if self.bail && result.has_failed() || result.should_abort() {
+                            error!(
+                                target: &batch_target_name,
+                                "Encountered a critical error, aborting the action pipeline"
+                            );
+
+                            let abort_error =
+                                result.error.unwrap_or_else(|| "Unknown error!".into());
+
+                            local_emitter
+                                .emit(Event::RunnerAborted {
+                                    error: abort_error.clone(),
+                                })
+                                .await?;
+
+                            return Err(PipelineError::Aborted(abort_error));
+                        }
+
+                        results.push(result);
                     }
-
-                    if self.bail && result.has_failed() || result.should_abort() {
-                        error!(
-                            target: &batch_target_name,
-                            "Encountered a critical error, aborting the action pipeline"
-                        );
-
-                        let abort_error = result.error.unwrap_or_else(|| "Unknown error!".into());
-
-                        local_emitter
-                            .emit(Event::RunnerAborted {
-                                error: abort_error.clone(),
-                            })
-                            .await?;
-
-                        return Err(PipelineError::Aborted(abort_error));
+                    Err(error) => {
+                        dbg!(error);
+                        break;
                     }
-
-                    results.push(result);
-                }
+                };
             }
-
-            semaphore.close();
         }
 
         let duration = start.elapsed();

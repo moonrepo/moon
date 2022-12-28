@@ -290,7 +290,7 @@ impl Platform for NodePlatform {
     async fn setup_tool(
         &mut self,
         version: Version,
-        _last_versions: &mut FxHashMap<String, String>,
+        last_versions: &mut FxHashMap<String, String>,
     ) -> Result<u8, ToolError> {
         if !self.toolchain.has(&version) {
             self.toolchain.register(
@@ -299,9 +299,7 @@ impl Platform for NodePlatform {
             );
         }
 
-        // TODO enable after toolchain removal
-        // Ok(self.toolchain.setup(&version, last_versions).await?)
-        Ok(0)
+        Ok(self.toolchain.setup(&version, last_versions).await?)
     }
 
     async fn install_deps(&self, version: Version, working_dir: &Path) -> Result<(), ToolError> {

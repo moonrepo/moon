@@ -1976,7 +1976,6 @@ name = "moon_node_platform"
 version = "0.1.0"
 dependencies = [
  "moon",
- "moon_action",
  "moon_action_context",
  "moon_config",
  "moon_error",
@@ -1987,7 +1986,6 @@ dependencies = [
  "moon_node_tool",
  "moon_platform",
  "moon_project",
- "moon_project_graph",
  "moon_task",
  "moon_terminal",
  "moon_test_utils",
@@ -2067,12 +2065,10 @@ name = "moon_platform_detector"
 version = "0.1.0"
 dependencies = [
  "moon_config",
- "moon_deno_lang",
  "moon_go_lang",
  "moon_lang",
  "moon_node_lang",
  "moon_php_lang",
- "moon_platform",
  "moon_python_lang",
  "moon_ruby_lang",
  "moon_rust_lang",

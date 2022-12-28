@@ -1,6 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use moon::{build_dep_graph, generate_project_graph, load_workspace_from};
-use moon_action_context::ActionContext;
 use moon_action_pipeline::Pipeline;
 use moon_dep_graph::DepGraph;
 use moon_project_graph::ProjectGraph;
@@ -52,7 +51,7 @@ pub fn pipeline_benchmark(c: &mut Criterion) {
 
             black_box(
                 Pipeline::new(workspace, project_graph)
-                    .run(dep_graph, Some(ActionContext::default()))
+                    .run(dep_graph, None)
                     .await
                     .unwrap(),
             );

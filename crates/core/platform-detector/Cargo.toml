@@ -7,8 +7,7 @@ edition = "2021"
 moon_config = { path = "../config" }
 moon_lang = { path = "../lang" }
 moon_utils = { path = "../utils" }
-moon_platform = { path = "../platform" }
-moon_deno_lang = { path = "../../deno/lang" }
+# moon_deno_lang = { path = "../../deno/lang" }
 moon_go_lang = { path = "../../go/lang" }
 moon_node_lang = { path = "../../node/lang" }
 moon_php_lang = { path = "../../php/lang" }

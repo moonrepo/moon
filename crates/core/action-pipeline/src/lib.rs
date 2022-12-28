@@ -1,6 +1,7 @@
 mod actions;
 mod errors;
 mod pipeline;
+mod pipeline_pool;
 mod processor;
 mod run_report;
 mod subscribers;

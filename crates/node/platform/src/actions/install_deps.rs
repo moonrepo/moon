@@ -64,7 +64,11 @@ fn add_engines_constraint(node: &NodeTool, package_json: &mut PackageJson) -> bo
     false
 }
 
-pub async fn install_deps(node: &NodeTool, working_dir: &Path) -> Result<(), ToolError> {
+pub async fn install_deps(
+    node: &NodeTool,
+    working_dir: &Path,
+    workspace_root: &Path,
+) -> Result<(), ToolError> {
     // When in CI, we can avoid installing dependencies because
     // we can assume they've already been installed before moon runs!
     if is_ci() && has_vendor_installed_dependencies(working_dir, &NODE) {
@@ -77,12 +81,14 @@ pub async fn install_deps(node: &NodeTool, working_dir: &Path) -> Result<(), Too
     }
 
     // Sync values to `package.json`
-    PackageJson::sync(working_dir, |package_json| {
-        add_package_manager(node, package_json);
-        add_engines_constraint(node, package_json);
+    if working_dir == workspace_root {
+        PackageJson::sync(working_dir, |package_json| {
+            add_package_manager(node, package_json);
+            add_engines_constraint(node, package_json);
 
-        Ok(())
-    })?;
+            Ok(())
+        })?;
+    }
 
     // Create nvm/nodenv version file
     if let Some(version_manager) = &node.config.sync_version_manager_config {

@@ -1,6 +1,5 @@
 use crate::errors::ToolchainError;
 use crate::manager::ToolManager;
-use moon_config::ToolchainConfig;
 use moon_constants::CONFIG_DIRNAME;
 use moon_logger::{color, debug};
 use moon_platform_runtime::{Runtime, Version};
@@ -13,8 +12,7 @@ use std::{
 
 #[derive(Debug)]
 pub struct Toolchain {
-    pub config: ToolchainConfig,
-
+    // pub config: ToolchainConfig,
     /// The directory where toolchain artifacts are stored.
     /// This is typically ~/.moon.
     pub dir: PathBuf,
@@ -24,16 +22,16 @@ pub struct Toolchain {
 }
 
 impl Toolchain {
-    pub fn load(config: &ToolchainConfig) -> Result<Toolchain, ToolchainError> {
+    pub fn load() -> Result<Toolchain, ToolchainError> {
         Toolchain::load_from(
             path::get_home_dir().ok_or(ToolchainError::MissingHomeDir)?,
-            config,
+            // config,
         )
     }
 
     pub fn load_from<P: AsRef<Path>>(
         base_dir: P,
-        config: &ToolchainConfig,
+        // config: &ToolchainConfig,
     ) -> Result<Toolchain, ToolchainError> {
         let dir = base_dir.as_ref().join(CONFIG_DIRNAME);
 
@@ -47,7 +45,7 @@ impl Toolchain {
         env::set_var("PROTO_DIR", path::to_string(&dir)?);
 
         Ok(Toolchain {
-            config: config.to_owned(),
+            // config: config.to_owned(),
             dir,
             // Tools
             node: ToolManager::new(Runtime::Node(Version::default())),

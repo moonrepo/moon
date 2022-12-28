@@ -31,7 +31,7 @@ fn create_node_options(
         &task.target.id,
     ];
 
-    if let Some(node_config) = &workspace.toolchain.config.node {
+    if let Some(node_config) = &workspace.toolchain_config.node {
         if !node_config.bin_exec_args.is_empty() {
             options.extend(node_config.bin_exec_args.to_owned());
         }

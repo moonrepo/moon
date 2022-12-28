@@ -13,10 +13,10 @@ use strum::IntoEnumIterator;
 pub fn register_platforms(workspace: &mut Workspace) -> Result<(), WorkspaceError> {
     let paths = { workspace.toolchain.get_paths() };
 
-    if let Some(node_config) = workspace.toolchain.config.node.clone() {
+    if let Some(node_config) = workspace.toolchain_config.node.clone() {
         workspace.register_platform(Box::new(NodePlatform::new(
             &node_config,
-            &workspace.toolchain.config.typescript,
+            &workspace.toolchain_config.typescript,
             &workspace.root,
         )));
 
@@ -71,7 +71,7 @@ pub async fn load_workspace_with_toolchain() -> Result<Workspace, WorkspaceError
     for platform in PlatformType::iter() {
         match platform {
             PlatformType::Node => {
-                if let Some(node_config) = &workspace.toolchain.config.node {
+                if let Some(node_config) = &workspace.toolchain_config.node {
                     if let Some(node_version) = &node_config.version {
                         workspace
                             .toolchain

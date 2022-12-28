@@ -11,7 +11,7 @@ pub async fn setup() -> Result<(), AnyError> {
     let project_graph = generate_project_graph(&mut workspace)?;
     let mut dep_builder = build_dep_graph(&workspace, &project_graph);
 
-    if let Some(node_config) = &workspace.toolchain.config.node {
+    if let Some(node_config) = &workspace.toolchain_config.node {
         if let Some(node_version) = &node_config.version {
             let runtime = Runtime::Node(Version(node_version.to_owned(), false));
 

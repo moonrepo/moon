@@ -158,6 +158,8 @@ pub struct Workspace {
     /// The toolchain instance that houses all runtime tools/languages.
     pub toolchain: Toolchain,
 
+    pub toolchain_config: ToolchainConfig,
+
     /// Configured version control system.
     pub vcs: Box<dyn Vcs + Send + Sync>,
 
@@ -192,7 +194,7 @@ impl Workspace {
 
         // Setup components
         let cache = CacheEngine::load(&root_dir)?;
-        let toolchain = Toolchain::load(&toolchain_config)?;
+        let toolchain = Toolchain::load()?;
         let vcs = VcsLoader::load(&root_dir, &config)?;
 
         Ok(Workspace {
@@ -203,6 +205,7 @@ impl Workspace {
             root: root_dir,
             session: None,
             toolchain,
+            toolchain_config,
             vcs,
             working_dir: working_dir.to_owned(),
         })

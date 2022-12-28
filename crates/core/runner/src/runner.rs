@@ -1,4 +1,5 @@
-use crate::RunnerError;
+use crate::errors::RunnerError;
+use crate::target_hasher::TargetHasher;
 use console::Term;
 use moon_action::{ActionStatus, Attempt};
 use moon_action_context::ActionContext;
@@ -6,7 +7,7 @@ use moon_cache::RunTargetState;
 use moon_config::{PlatformType, TaskOutputStyle};
 use moon_emitter::{Emitter, Event, EventFlow};
 use moon_error::MoonError;
-use moon_hasher::{convert_paths_to_strings, to_hash, Hasher, TargetHasher};
+use moon_hasher::{convert_paths_to_strings, to_hash, Hasher};
 use moon_logger::{color, debug, warn};
 use moon_node_platform::actions as node_actions;
 use moon_project::Project;

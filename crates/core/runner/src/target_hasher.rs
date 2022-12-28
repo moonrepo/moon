@@ -1,4 +1,4 @@
-use crate::{hash_btree, hash_vec, Digest, Hasher, Sha256};
+use moon_hasher::{hash_btree, hash_vec, Digest, Hasher, Sha256};
 use moon_task::Task;
 use moon_utils::path;
 use rustc_hash::FxHashMap;

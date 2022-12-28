@@ -1935,7 +1935,6 @@ version = "0.1.0"
 dependencies = [
  "erased-serde",
  "moon_error",
- "moon_task",
  "moon_utils",
  "rustc-hash",
  "serde",

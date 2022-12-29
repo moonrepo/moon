@@ -1,7 +1,7 @@
 use crate::commands::docker::scaffold::DockerManifest;
 use crate::helpers::AnyError;
 use moon::{generate_project_graph, load_workspace_with_toolchain};
-use moon_config::ProjectLanguage;
+use moon_config::{PlatformType, ProjectLanguage};
 use moon_node_lang::{PackageJson, NODE};
 use moon_node_tool::NodeTool;
 use moon_project_graph::ProjectGraph;
@@ -14,7 +14,6 @@ pub async fn prune_node(
     project_graph: &ProjectGraph,
     manifest: &DockerManifest,
 ) -> Result<(), AnyError> {
-    let toolchain = &workspace.toolchain;
     let mut package_names = vec![];
 
     for project_id in &manifest.focused_projects {
@@ -37,7 +36,13 @@ pub async fn prune_node(
     }
 
     // Install production only dependencies for focused projects
-    let node = toolchain.node.get::<NodeTool>()?;
+    let node = workspace
+        .platforms
+        .get(PlatformType::Node)?
+        .get_language_tool(None)?
+        .as_any()
+        .downcast_ref::<NodeTool>()
+        .unwrap();
 
     node.get_package_manager()
         .install_focused_dependencies(node, &package_names, true)

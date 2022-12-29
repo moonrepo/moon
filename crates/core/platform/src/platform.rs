@@ -76,7 +76,7 @@ pub trait Platform: Debug + Send + Sync {
 
     /// Return a tool instance from the internal toolchain for the provided version.
     /// If the version does not exist in the toolchain, return an error.
-    fn get_language_tool(&self, version: Version) -> Result<Box<&dyn Tool>, ToolError>;
+    fn get_language_tool(&self, version: Option<Version>) -> Result<Box<&dyn Tool>, ToolError>;
 
     /// Return the filename of the lockfile and manifest (in this order)
     /// for the language's dependency manager, if applicable.

@@ -11,22 +11,12 @@ use std::path::Path;
 use strum::IntoEnumIterator;
 
 pub fn register_platforms(workspace: &mut Workspace) -> Result<(), WorkspaceError> {
-    let paths = { workspace.toolchain.get_paths() };
-
-    if let Some(node_config) = workspace.toolchain_config.node.clone() {
+    if let Some(node_config) = &workspace.toolchain_config.node {
         workspace.register_platform(Box::new(NodePlatform::new(
-            &node_config,
+            node_config,
             &workspace.toolchain_config.typescript,
             &workspace.root,
         )));
-
-        // TODO remove in follow-up
-        if let Some(node_version) = &node_config.version {
-            workspace.toolchain.node.register(
-                Box::new(NodeTool::new(&paths, &node_config, node_version)?),
-                true,
-            );
-        }
     }
 
     // Should be last since it's the most common
@@ -62,24 +52,25 @@ pub async fn load_workspace_from(path: &Path) -> Result<Workspace, WorkspaceErro
 }
 
 // Some commands require the toolchain to exist, but don't use
-// the action runner. This is a simple flow to wire up the tools.
+// the action pipeline. This is a simple flow to wire up the tools.
 pub async fn load_workspace_with_toolchain() -> Result<Workspace, WorkspaceError> {
     let mut workspace = load_workspace().await?;
-    let mut last_versions = FxHashMap::default();
+    // let mut last_versions = FxHashMap::default();
 
     // Use exhaustive checks so we don't miss a platform
     for platform in PlatformType::iter() {
         match platform {
             PlatformType::Node => {
-                if let Some(node_config) = &workspace.toolchain_config.node {
-                    if let Some(node_version) = &node_config.version {
-                        workspace
-                            .toolchain
-                            .node
-                            .setup(node_version, &mut last_versions)
-                            .await?;
-                    }
-                }
+                // if let Some(node_config) = &workspace.toolchain_config.node {
+                //     if let Some(node_version) = &node_config.version {
+                //         workspace
+                //             .platforms
+                //             .get(platform)?
+                //             .get_language_tool(version)?
+                //             .setup(&mut last_versions)
+                //             .await?;
+                //     }
+                // }
             }
             PlatformType::System | PlatformType::Unknown => {}
         }

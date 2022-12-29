@@ -30,36 +30,9 @@ pub async fn setup_tool(
     let mut workspace = workspace.write().await;
     let context = context.read().await;
     let mut cache = workspace.cache.cache_tool_state(runtime)?;
-    let toolchain_paths = workspace.toolchain.get_paths();
 
     // Install and setup the specific tool + version in the toolchain!
-    // TODO remove when toolchain is gone
-    let installed_count = match runtime {
-        Runtime::Node(version) => {
-            let node = &mut workspace.toolchain.node;
-
-            // The workspace version is pre-registered when the toolchain
-            // is created, so any missing version must be an override at
-            // the project-level. If so clone, and update defaults.
-            if !node.has(&version.0) {
-                node.register(
-                    Box::new(NodeTool::new(
-                        &toolchain_paths,
-                        &node.get::<NodeTool>().unwrap().config,
-                        &version.0,
-                    )?),
-                    false,
-                );
-            }
-
-            node.setup(&version.0, &mut cache.last_versions)
-                .await
-                .unwrap()
-        }
-        _ => 0,
-    };
-
-    workspace
+    let installed_count = workspace
         .platforms
         .get_mut(runtime)?
         .setup_tool(&context, runtime.version(), &mut cache.last_versions)

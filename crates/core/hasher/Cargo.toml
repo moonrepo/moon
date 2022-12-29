@@ -5,8 +5,8 @@ edition = "2021"
 
 [dependencies]
 moon_error = { path = "../error" }
-moon_task = { path = "../task" }
 moon_utils = { path = "../utils" }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
+serde_json = { workspace = true }
 sha2 = "0.10.6"

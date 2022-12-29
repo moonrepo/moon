@@ -1,18 +1,18 @@
 use crate::actions;
 use crate::infer_tasks_from_scripts;
-use moon_config::TypeScriptConfig;
 use moon_config::{
-    DependencyConfig, DependencyScope, NodeConfig, NodeProjectAliasFormat, PlatformType,
-    ProjectConfig, ProjectID, ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap,
+    DependencyConfig, DependencyScope, HasherConfig, NodeConfig, NodeProjectAliasFormat,
+    PlatformType, ProjectConfig, ProjectID, ProjectsAliasesMap, ProjectsSourcesMap,
+    TasksConfigsMap, TypeScriptConfig,
 };
 use moon_error::MoonError;
+use moon_hasher::{DepsHasher, HashSet};
 use moon_logger::{color, debug, warn};
 use moon_node_lang::node::{get_package_manager_workspaces, parse_package_name};
 use moon_node_lang::{PackageJson, NPM};
 use moon_node_tool::NodeTool;
 use moon_platform::{Platform, Runtime, Version};
-use moon_project::Project;
-use moon_project::ProjectError;
+use moon_project::{Project, ProjectError};
 use moon_tool::{Tool, ToolError, ToolManager};
 use moon_utils::{async_trait, glob::GlobSet};
 use proto_core::Proto;
@@ -303,9 +303,12 @@ impl Platform for NodePlatform {
     }
 
     async fn install_deps(&self, version: Version, working_dir: &Path) -> Result<(), ToolError> {
-        let tool = self.toolchain.get_for_version(&version)?;
-
-        actions::install_deps(tool, working_dir, &self.workspace_root).await?;
+        actions::install_deps(
+            self.toolchain.get_for_version(&version)?,
+            working_dir,
+            &self.workspace_root,
+        )
+        .await?;
 
         Ok(())
     }
@@ -315,7 +318,7 @@ impl Platform for NodePlatform {
         project: &Project,
         dependencies: &FxHashMap<String, &Project>,
     ) -> Result<bool, ProjectError> {
-        let mutated = actions::sync_project(
+        let modified = actions::sync_project(
             project,
             dependencies,
             &self.workspace_root,
@@ -324,6 +327,54 @@ impl Platform for NodePlatform {
         )
         .await?;
 
-        Ok(mutated)
+        Ok(modified)
+    }
+
+    async fn hash_manifest_deps(
+        &self,
+        manifest_path: &Path,
+        hashset: &mut HashSet,
+        _hasher_config: &HasherConfig,
+    ) -> Result<(), ToolError> {
+        if let Ok(Some(package)) = PackageJson::read(manifest_path) {
+            let mut hasher = DepsHasher::new();
+            let name = package.name.unwrap_or_else(|| "unknown".into());
+
+            if let Some(peer_deps) = &package.peer_dependencies {
+                hasher.hash_deps(&name, peer_deps);
+            }
+
+            if let Some(dev_deps) = &package.dev_dependencies {
+                hasher.hash_deps(&name, dev_deps);
+            }
+
+            if let Some(deps) = &package.dependencies {
+                hasher.hash_deps(&name, deps);
+            }
+
+            hashset.hash(hasher);
+        }
+
+        Ok(())
+    }
+
+    async fn hash_run_target(
+        &self,
+        project: &Project,
+        hashset: &mut HashSet,
+        hasher_config: &HasherConfig,
+    ) -> Result<(), ToolError> {
+        let hasher = actions::create_target_hasher(
+            self.toolchain.get()?,
+            project,
+            &self.workspace_root,
+            hasher_config,
+            &self.typescript_config,
+        )
+        .await?;
+
+        hashset.hash(hasher);
+
+        Ok(())
     }
 }

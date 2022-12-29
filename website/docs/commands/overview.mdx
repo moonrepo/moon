@@ -11,12 +11,6 @@ The following options are available for _all_ moon commands.
 - `--logFile <file>` - Write logs to the defined file.
 - `--version` - Display the version of the CLI.
 
-Global options _must_ be passed after the `moon` binary and before the command.
-
-```shell
-$ moon --log error <command>
-```
-
 ## Caching
 
 We provide a powerful [caching layer](../concepts/cache), but sometimes you need to debug failing or
@@ -29,7 +23,7 @@ option, or the `MOON_CACHE` environment variable, both of which accept one of th
 - `write` - Do not read existing cache items, but write new items to the cache.
 
 ```shell
-$ moon --cache off run app:build
+$ moon run app:build --cache off
 # Or
 $ MOON_CACHE=off moon run app:build
 ```
@@ -45,7 +39,7 @@ and operating systems. moon aims to normalize this as much as possible, by doing
   `FORCE_COLOR` environment variables.
 
 ```shell
-$ moon --color run app:build
+$ moon app:build --color run
 # Or
 $ MOON_COLOR=2 moon run app:build
 ```
@@ -91,7 +85,7 @@ levels are supported, in priority order.
 - `trace` - Show all logs, including network requests and child processes.
 
 ```shell
-$ moon --log trace run app:build
+$ moon run app:build --log trace
 # Or
 $ MOON_LOG=trace moon run app:build
 ```
@@ -103,7 +97,7 @@ environment variable. The dumped logs will respect the `--log` option and filter
 the output file.
 
 ```shell
-$ moon --logFile=output.log run app:build
+$ moon run app:build --logFile=output.log
 # Or
 $ MOON_LOG_FILE=output.log moon run app:build
 ```

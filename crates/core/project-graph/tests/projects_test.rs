@@ -322,6 +322,7 @@ mod task_inheritance {
                         "a".to_owned(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::String("a".into())),
+                            platform: PlatformType::Unknown,
                             ..TaskConfig::default()
                         },
                     ),
@@ -329,6 +330,7 @@ mod task_inheritance {
                         "b".to_owned(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::String("b".into())),
+                            platform: PlatformType::Node,
                             ..TaskConfig::default()
                         },
                     ),
@@ -336,6 +338,7 @@ mod task_inheritance {
                         "c".to_owned(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::String("c".into())),
+                            platform: PlatformType::System,
                             ..TaskConfig::default()
                         },
                     ),
@@ -482,6 +485,43 @@ mod task_inheritance {
 
             assert_eq!(task.id, "only");
             assert_eq!(task.target.id, "include-exclude-rename:only");
+        }
+
+        #[tokio::test]
+        async fn handles_platforms() {
+            let (_sandbox, project_graph) = tasks_inheritance_sandbox().await;
+
+            let project = project_graph.get("platform-detect").unwrap();
+
+            assert_eq!(
+                project.get_task("a").unwrap().platform,
+                PlatformType::System
+            );
+            assert_eq!(
+                project.get_task("b").unwrap().platform,
+                PlatformType::System
+            );
+            assert_eq!(
+                project.get_task("c").unwrap().platform,
+                PlatformType::System
+            );
+        }
+
+        #[tokio::test]
+        async fn handles_platforms_with_language() {
+            let (_sandbox, project_graph) = tasks_inheritance_sandbox().await;
+
+            let project = project_graph.get("platform-detect-lang").unwrap();
+
+            assert_eq!(project.get_task("a").unwrap().platform, PlatformType::Node);
+            assert_eq!(
+                project.get_task("b").unwrap().platform,
+                PlatformType::System
+            );
+            assert_eq!(
+                project.get_task("c").unwrap().platform,
+                PlatformType::System
+            );
         }
     }
 }

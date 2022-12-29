@@ -2,6 +2,7 @@ use crate::errors::PipelineError;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_error::map_io_to_fs_error;
+use moon_hasher::HashSet;
 use moon_logger::{color, debug, warn};
 use moon_platform::Runtime;
 use moon_project::Project;
@@ -37,7 +38,7 @@ pub async fn install_deps(
 
     // When cache is write only, avoid install as user is typically force updating cache
     if workspace.cache.get_mode().is_write_only() {
-        debug!(target: LOG_TARGET, "Force updating cache, skipping install",);
+        debug!(target: LOG_TARGET, "Force updating cache, skipping install");
 
         return Ok(ActionStatus::Skipped);
     }
@@ -64,27 +65,17 @@ pub async fn install_deps(
     };
 
     // Determine the working directory and whether lockfiles and manifests have been modified
-    let working_dir;
-    let has_modified_files;
-
-    if let Some(project) = project {
-        working_dir = &project.root;
-        has_modified_files = context.touched_files.contains(&working_dir.join(&lockfile))
-            || context.touched_files.contains(&working_dir.join(&manifest));
-    } else {
-        working_dir = &workspace.root;
-        has_modified_files = context
-            .touched_files
-            .iter()
-            .any(|f| f.ends_with(&lockfile) || f.ends_with(&manifest));
-    }
-
-    // Install dependencies in the current project or workspace
+    let working_dir = project.map(|p| &p.root).unwrap_or_else(|| &workspace.root);
+    let manifest_path = working_dir.join(&manifest);
     let lockfile_path = working_dir.join(&lockfile);
+    let mut hashset = HashSet::default();
     let mut last_modified = 0;
-    let mut cache = workspace
-        .cache
-        .cache_deps_state(runtime, project.map(|p| p.id.as_ref()))?;
+
+    if manifest_path.exists() {
+        platform
+            .hash_manifest_deps(&manifest_path, &mut hashset, &workspace.config.hasher)
+            .await?;
+    }
 
     if lockfile_path.exists() {
         last_modified = time::to_millis(
@@ -94,8 +85,24 @@ pub async fn install_deps(
         );
     }
 
-    // Install deps if the lockfile has been modified since the last time they were installed!
-    if has_modified_files || last_modified == 0 || last_modified > cache.last_install_time {
+    // When running in the workspace root, account for nested manifests
+    if project.is_none() {
+        for touched_file in &context.touched_files {
+            if touched_file.ends_with(&manifest) && touched_file != &manifest_path {
+                platform
+                    .hash_manifest_deps(touched_file, &mut hashset, &workspace.config.hasher)
+                    .await?;
+            }
+        }
+    }
+
+    // Install dependencies in the working directory
+    let hash = hashset.generate();
+    let mut cache = workspace
+        .cache
+        .cache_deps_state(runtime, project.map(|p| p.id.as_ref()))?;
+
+    if hash != cache.last_hash || last_modified == 0 || last_modified > cache.last_install_time {
         debug!(
             target: LOG_TARGET,
             "Installing {} dependencies in {}",
@@ -103,11 +110,13 @@ pub async fn install_deps(
             color::path(working_dir)
         );
 
+        workspace.cache.create_hash_manifest(&hash, &hashset)?;
+
         platform
             .install_deps(runtime.version(), working_dir)
             .await?;
 
-        // Update the cache with the timestamp
+        cache.last_hash = hash;
         cache.last_install_time = time::now_millis();
         cache.save()?;
 

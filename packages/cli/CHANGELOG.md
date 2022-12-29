@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Updated all global CLI arguments (`--log`, etc) to be able to passed anywhere in the command line.
+  They no longer have to be passed _before_ the command.
+
 #### 🐞 Fixes
 
 - Fixed an issue where a task's `platform` was being incorrectly merged when inheriting global

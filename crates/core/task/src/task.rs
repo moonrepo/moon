@@ -284,7 +284,10 @@ impl Task {
 
         // Merge options first incase the merge strategy has changed
         self.options.merge(&config.options);
-        self.platform = config.platform;
+
+        if !matches!(config.platform, PlatformType::Unknown) {
+            self.platform = config.platform;
+        }
 
         // Then merge the actual task fields
         if let Some(cmd) = command {

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where a task's `platform` was being incorrectly merged when inheriting global
+  tasks.
+
 ## 0.21.2
 
 #### 🚀 Updates

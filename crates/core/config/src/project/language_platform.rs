@@ -79,9 +79,10 @@ pub enum PlatformType {
 impl From<ProjectLanguage> for PlatformType {
     fn from(language: ProjectLanguage) -> Self {
         match language {
-            ProjectLanguage::Bash | ProjectLanguage::Batch => PlatformType::System,
+            ProjectLanguage::Bash | ProjectLanguage::Batch | ProjectLanguage::Unknown => {
+                PlatformType::System
+            }
             ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => PlatformType::Node,
-            ProjectLanguage::Unknown => PlatformType::Unknown,
             // TODO: Move to these to their own platform once it's been implemented!
             ProjectLanguage::Go
             | ProjectLanguage::Php

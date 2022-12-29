@@ -1,0 +1,8 @@
+tasks:
+  # Upstream is unknown, detect something new
+  a: {}
+  # Upstream is node, override it
+  b:
+    platform: 'system'
+  # Upstream is system, inherit it
+  c: {}

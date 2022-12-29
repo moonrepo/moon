@@ -114,10 +114,21 @@ pub trait Platform: Debug + Send + Sync {
         Ok(false)
     }
 
+    async fn hash_manifest_deps(
+        &self,
+        manifest_path: &Path,
+        hashset: &mut HashSet,
+        hasher_config: &HasherConfig,
+    ) -> Result<(), ToolError> {
+        Ok(())
+    }
+
     async fn hash_run_target(
         &self,
         project: &Project,
         hashset: &mut HashSet,
         hasher_config: &HasherConfig,
-    ) -> Result<(), ToolError>;
+    ) -> Result<(), ToolError> {
+        Ok(())
+    }
 }

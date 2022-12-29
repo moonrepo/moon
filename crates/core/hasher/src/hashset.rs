@@ -2,21 +2,37 @@ use crate::hasher::Hasher;
 use serde::ser::{Serialize, SerializeSeq, Serializer};
 use sha2::{Digest, Sha256};
 
-#[derive(Default)]
 pub struct HashSet {
     items: Vec<Box<dyn Hasher>>,
     sha: Option<Sha256>,
 }
 
+impl Default for HashSet {
+    fn default() -> Self {
+        HashSet {
+            items: vec![],
+            sha: Some(Sha256::default()),
+        }
+    }
+}
+
 impl HashSet {
-    pub fn hash(&mut self, item: impl Hasher + 'static) -> &mut Self {
+    pub fn hash(&mut self, item: impl Hasher + 'static) {
         item.hash(self.sha.as_mut().unwrap());
+
         self.items.push(Box::new(item));
-        self
     }
 
     pub fn generate(&mut self) -> String {
-        format!("{:x}", self.sha.take().unwrap().finalize())
+        if self.items.is_empty() {
+            return String::new();
+        }
+
+        let hash = format!("{:x}", self.sha.take().unwrap().finalize());
+
+        // self.sha = Some(Sha256::default());
+
+        hash
     }
 }
 

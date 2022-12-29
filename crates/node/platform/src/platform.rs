@@ -6,6 +6,7 @@ use moon_config::{
     TasksConfigsMap, TypeScriptConfig,
 };
 use moon_error::MoonError;
+use moon_hasher::DepsHasher;
 use moon_hasher::HashSet;
 use moon_logger::{color, debug, warn};
 use moon_node_lang::node::{get_package_manager_workspaces, parse_package_name};
@@ -329,6 +330,34 @@ impl Platform for NodePlatform {
         .await?;
 
         Ok(modified)
+    }
+
+    async fn hash_manifest_deps(
+        &self,
+        manifest_path: &Path,
+        hashset: &mut HashSet,
+        _hasher_config: &HasherConfig,
+    ) -> Result<(), ToolError> {
+        if let Ok(Some(package)) = PackageJson::read(manifest_path) {
+            let mut hasher = DepsHasher::new();
+            let name = package.name.unwrap_or_else(|| "unknown".into());
+
+            if let Some(peer_deps) = &package.peer_dependencies {
+                hasher.hash_deps(&name, peer_deps);
+            }
+
+            if let Some(dev_deps) = &package.dev_dependencies {
+                hasher.hash_deps(&name, dev_deps);
+            }
+
+            if let Some(deps) = &package.dependencies {
+                hasher.hash_deps(&name, deps);
+            }
+
+            hashset.hash(hasher);
+        }
+
+        Ok(())
     }
 
     async fn hash_run_target(

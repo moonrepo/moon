@@ -2,7 +2,7 @@ use moon_hasher::{Digest, Hasher, Sha256};
 use serde::{Deserialize, Serialize};
 use std::env::consts;
 
-#[derive(Default, Deserialize, Serialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SystemTargetHasher {
     // Architecture

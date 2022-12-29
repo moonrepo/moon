@@ -55,9 +55,11 @@ impl NodeTargetHasher {
         if let Some(deps) = &package.dependencies {
             copy_deps(deps, &mut self.dependencies);
         }
+
         if let Some(dev_deps) = &package.dev_dependencies {
             copy_deps(dev_deps, &mut self.dependencies);
         }
+
         if let Some(peer_deps) = &package.peer_dependencies {
             copy_deps(peer_deps, &mut self.dependencies);
         }

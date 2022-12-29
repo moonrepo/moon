@@ -41,7 +41,7 @@ pub struct TargetHasher {
 impl TargetHasher {
     pub fn new() -> Self {
         TargetHasher {
-            version: String::from("1"),
+            version: "1".into(),
             ..TargetHasher::default()
         }
     }

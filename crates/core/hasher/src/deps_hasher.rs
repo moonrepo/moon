@@ -5,7 +5,7 @@ use std::collections::BTreeMap;
 #[derive(Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DepsHasher {
-    // Library dependencies
+    // Dependencies indexed by manifest name
     deps: BTreeMap<String, BTreeMap<String, String>>,
 
     // Version of our hasher

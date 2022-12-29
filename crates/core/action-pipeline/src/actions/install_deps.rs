@@ -65,11 +65,7 @@ pub async fn install_deps(
     };
 
     // Determine the working directory and whether lockfiles and manifests have been modified
-    let working_dir = if let Some(project) = project {
-        &project.root
-    } else {
-        &workspace.root
-    };
+    let working_dir = project.map(|p| &p.root).unwrap_or_else(|| &workspace.root);
     let manifest_path = working_dir.join(&manifest);
     let lockfile_path = working_dir.join(&lockfile);
     let mut hashset = HashSet::default();

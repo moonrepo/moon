@@ -114,6 +114,8 @@ pub trait Platform: Debug + Send + Sync {
         Ok(false)
     }
 
+    /// Hash all dependencies and their versions from the provided manifest file.
+    /// These will be used to determine whether to install dependencies or not.
     async fn hash_manifest_deps(
         &self,
         manifest_path: &Path,
@@ -123,6 +125,8 @@ pub trait Platform: Debug + Send + Sync {
         Ok(())
     }
 
+    /// Hash information related to running a target (project task), that isn't
+    /// part of the default target hashing strategy.
     async fn hash_run_target(
         &self,
         project: &Project,

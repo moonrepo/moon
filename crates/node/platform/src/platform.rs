@@ -6,15 +6,13 @@ use moon_config::{
     TasksConfigsMap, TypeScriptConfig,
 };
 use moon_error::MoonError;
-use moon_hasher::DepsHasher;
-use moon_hasher::HashSet;
+use moon_hasher::{DepsHasher, HashSet};
 use moon_logger::{color, debug, warn};
 use moon_node_lang::node::{get_package_manager_workspaces, parse_package_name};
 use moon_node_lang::{PackageJson, NPM};
 use moon_node_tool::NodeTool;
 use moon_platform::{Platform, Runtime, Version};
-use moon_project::Project;
-use moon_project::ProjectError;
+use moon_project::{Project, ProjectError};
 use moon_tool::{Tool, ToolError, ToolManager};
 use moon_utils::{async_trait, glob::GlobSet};
 use proto_core::Proto;
@@ -366,7 +364,7 @@ impl Platform for NodePlatform {
         hashset: &mut HashSet,
         hasher_config: &HasherConfig,
     ) -> Result<(), ToolError> {
-        let hasher = actions::hash_run_target(
+        let hasher = actions::create_target_hasher(
             self.toolchain.get()?,
             project,
             &self.workspace_root,

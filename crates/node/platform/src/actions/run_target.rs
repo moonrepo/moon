@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use crate::hasher::NodeTargetHasher;
 use moon_action_context::{ActionContext, ProfileType};
 use moon_config::{HasherConfig, HasherOptimization, NodePackageManager, TypeScriptConfig};
@@ -18,6 +16,7 @@ use moon_utils::process::Command;
 use moon_utils::{path, string_vec};
 use moon_workspace::{Workspace, WorkspaceError};
 use rustc_hash::FxHashMap;
+use std::path::Path;
 
 const LOG_TARGET: &str = "moon:node-platform:run-target";
 
@@ -162,7 +161,7 @@ pub fn create_target_command(
     Ok(command)
 }
 
-pub async fn hash_run_target(
+pub async fn create_target_hasher(
     node: &NodeTool,
     project: &Project,
     workspace_root: &Path,

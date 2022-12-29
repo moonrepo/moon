@@ -24,15 +24,11 @@ impl HashSet {
     }
 
     pub fn generate(&mut self) -> String {
-        if self.items.is_empty() {
+        if self.items.is_empty() || self.sha.is_none() {
             return String::new();
         }
 
-        let hash = format!("{:x}", self.sha.take().unwrap().finalize());
-
-        // self.sha = Some(Sha256::default());
-
-        hash
+        format!("{:x}", self.sha.take().unwrap().finalize())
     }
 }
 

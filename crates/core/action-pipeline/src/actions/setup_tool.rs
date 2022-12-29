@@ -13,7 +13,7 @@ const LOG_TARGET: &str = "moon:action:setup-tool";
 
 pub async fn setup_tool(
     _action: &mut Action,
-    _context: Arc<RwLock<ActionContext>>,
+    context: Arc<RwLock<ActionContext>>,
     workspace: Arc<RwLock<Workspace>>,
     runtime: &Runtime,
 ) -> Result<ActionStatus, PipelineError> {
@@ -28,6 +28,7 @@ pub async fn setup_tool(
     );
 
     let mut workspace = workspace.write().await;
+    let context = context.read().await;
     let mut cache = workspace.cache.cache_tool_state(runtime)?;
     let toolchain_paths = workspace.toolchain.get_paths();
 
@@ -61,7 +62,7 @@ pub async fn setup_tool(
     workspace
         .platforms
         .get_mut(runtime)?
-        .setup_tool(runtime.version(), &mut cache.last_versions)
+        .setup_tool(&context, runtime.version(), &mut cache.last_versions)
         .await?;
 
     // Update the cache with the timestamp

@@ -1,11 +1,14 @@
-use crate::hasher::SystemTargetHasher;
+use crate::target_hasher::SystemTargetHasher;
 use crate::tool::SystemToolStub;
+use moon_action_context::ActionContext;
 use moon_config::{HasherConfig, PlatformType, ProjectConfig};
 use moon_hasher::HashSet;
 use moon_platform::{Platform, Runtime, Version};
 use moon_project::Project;
+use moon_task::Task;
 use moon_tool::{Tool, ToolError};
-use moon_utils::async_trait;
+use moon_utils::{async_trait, process::Command};
+use std::path::Path;
 
 #[derive(Debug, Default)]
 pub struct SystemPlatform {
@@ -51,5 +54,32 @@ impl Platform for SystemPlatform {
         hashset.hash(SystemTargetHasher::new());
 
         Ok(())
+    }
+
+    async fn create_run_target_command(
+        &self,
+        _context: &ActionContext,
+        _project: &Project,
+        task: &Task,
+        working_dir: &Path,
+    ) -> Result<Command, ToolError> {
+        let mut command = Command::new(&task.command);
+
+        // cmd/pwsh requires an absolute path to batch files
+        if cfg!(windows) {
+            use moon_utils::process::is_windows_script;
+
+            for arg in &task.args {
+                if is_windows_script(arg) {
+                    command.arg(working_dir.join(arg));
+                } else {
+                    command.arg(arg);
+                }
+            }
+        } else {
+            command.args(&task.args).envs(&task.env);
+        }
+
+        Ok(command)
     }
 }

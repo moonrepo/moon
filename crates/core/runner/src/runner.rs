@@ -4,14 +4,12 @@ use console::Term;
 use moon_action::{ActionStatus, Attempt};
 use moon_action_context::ActionContext;
 use moon_cache::RunTargetState;
-use moon_config::{PlatformType, TaskOutputStyle};
+use moon_config::TaskOutputStyle;
 use moon_emitter::{Emitter, Event, EventFlow};
 use moon_error::MoonError;
 use moon_hasher::{convert_paths_to_strings, HashSet};
 use moon_logger::{color, debug, warn};
-use moon_node_platform::actions as node_actions;
 use moon_project::Project;
-use moon_system_platform::actions as system_actions;
 use moon_task::{
     Target, TargetError, TargetProjectScope, Task, TaskError, TaskOptionAffectedFiles,
 };
@@ -268,12 +266,12 @@ impl<'a> Runner<'a> {
             color::path(working_dir)
         );
 
-        let mut command = match task.platform {
-            PlatformType::Node => {
-                node_actions::create_target_command(context, workspace, project, task)?
-            }
-            _ => system_actions::create_target_command(task, working_dir),
-        };
+        let mut command = self
+            .workspace
+            .platforms
+            .get(task.platform)?
+            .create_run_target_command(context, project, task, working_dir)
+            .await?;
 
         command
             .cwd(working_dir)

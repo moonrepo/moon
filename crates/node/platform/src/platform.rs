@@ -1,5 +1,6 @@
 use crate::actions;
 use crate::infer_tasks_from_scripts;
+use moon_action_context::ActionContext;
 use moon_config::{
     DependencyConfig, DependencyScope, HasherConfig, NodeConfig, NodeProjectAliasFormat,
     PlatformType, ProjectConfig, ProjectID, ProjectsAliasesMap, ProjectsSourcesMap,
@@ -13,8 +14,9 @@ use moon_node_lang::{PackageJson, NPM};
 use moon_node_tool::NodeTool;
 use moon_platform::{Platform, Runtime, Version};
 use moon_project::{Project, ProjectError};
+use moon_task::Task;
 use moon_tool::{Tool, ToolError, ToolManager};
-use moon_utils::{async_trait, glob::GlobSet};
+use moon_utils::{async_trait, glob::GlobSet, process::Command};
 use proto_core::Proto;
 use rustc_hash::FxHashMap;
 use std::path::PathBuf;
@@ -289,6 +291,7 @@ impl Platform for NodePlatform {
 
     async fn setup_tool(
         &mut self,
+        _context: &ActionContext,
         version: Version,
         last_versions: &mut FxHashMap<String, String>,
     ) -> Result<u8, ToolError> {
@@ -302,7 +305,12 @@ impl Platform for NodePlatform {
         Ok(self.toolchain.setup(&version, last_versions).await?)
     }
 
-    async fn install_deps(&self, version: Version, working_dir: &Path) -> Result<(), ToolError> {
+    async fn install_deps(
+        &self,
+        _context: &ActionContext,
+        version: Version,
+        working_dir: &Path,
+    ) -> Result<(), ToolError> {
         actions::install_deps(
             self.toolchain.get_for_version(&version)?,
             working_dir,
@@ -315,6 +323,7 @@ impl Platform for NodePlatform {
 
     async fn sync_project(
         &self,
+        _context: &ActionContext,
         project: &Project,
         dependencies: &FxHashMap<String, &Project>,
     ) -> Result<bool, ProjectError> {
@@ -376,5 +385,28 @@ impl Platform for NodePlatform {
         hashset.hash(hasher);
 
         Ok(())
+    }
+
+    async fn create_run_target_command(
+        &self,
+        context: &ActionContext,
+        project: &Project,
+        task: &Task,
+        _working_dir: &Path,
+    ) -> Result<Command, ToolError> {
+        let mut tool = self.toolchain.get()?;
+
+        // If a version override exists, use it for the cmmand
+        if let Some(node_config) = &project.config.toolchain.node {
+            if let Some(version_override) = &node_config.version {
+                tool = self
+                    .toolchain
+                    .get_for_version(&Version(version_override.to_owned(), true))?;
+            }
+        }
+
+        let command = actions::create_target_command(tool, context, project, task)?;
+
+        Ok(command)
     }
 }

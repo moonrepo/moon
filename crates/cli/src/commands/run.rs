@@ -108,6 +108,7 @@ pub async fn run_target(
         profile: options.profile,
         target_hashes: FxHashMap::default(),
         touched_files,
+        workspace_root: workspace.root.clone(),
     };
 
     let dep_graph = dep_builder.build();

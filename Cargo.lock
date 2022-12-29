@@ -2052,12 +2052,15 @@ name = "moon_platform"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "moon_action_context",
  "moon_config",
  "moon_error",
  "moon_hasher",
  "moon_platform_runtime",
  "moon_project",
+ "moon_task",
  "moon_tool",
+ "moon_utils",
  "rustc-hash",
  "serde",
 ]
@@ -2152,9 +2155,7 @@ dependencies = [
  "moon_error",
  "moon_hasher",
  "moon_logger",
- "moon_node_platform",
  "moon_project",
- "moon_system_platform",
  "moon_task",
  "moon_terminal",
  "moon_tool",
@@ -2178,6 +2179,7 @@ dependencies = [
 name = "moon_system_platform"
 version = "0.1.0"
 dependencies = [
+ "moon_action_context",
  "moon_config",
  "moon_hasher",
  "moon_platform",

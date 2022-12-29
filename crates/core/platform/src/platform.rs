@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use moon_action_context::ActionContext;
 use moon_config::{
     DependencyConfig, HasherConfig, PlatformType, ProjectConfig, ProjectLanguage,
     ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap,
@@ -7,7 +8,9 @@ use moon_error::MoonError;
 use moon_hasher::HashSet;
 use moon_platform_runtime::{Runtime, Version};
 use moon_project::{Project, ProjectError};
+use moon_task::Task;
 use moon_tool::{Tool, ToolError};
+use moon_utils::process::Command;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::fmt::Debug;
@@ -88,6 +91,7 @@ pub trait Platform: Debug + Send + Sync {
     /// Return a count of how many tools were installed.
     async fn setup_tool(
         &mut self,
+        context: &ActionContext,
         tool_version: Version,
         last_versions: &mut FxHashMap<String, String>,
     ) -> Result<u8, ToolError> {
@@ -98,6 +102,7 @@ pub trait Platform: Debug + Send + Sync {
     /// dependency manager using the provided version.
     async fn install_deps(
         &self,
+        context: &ActionContext,
         tool_version: Version,
         working_dir: &Path,
     ) -> Result<(), ToolError> {
@@ -108,6 +113,7 @@ pub trait Platform: Debug + Send + Sync {
     /// Return true if any files were modified as a result of syncing.
     async fn sync_project(
         &self,
+        context: &ActionContext,
         project: &Project,
         dependencies: &FxHashMap<String, &Project>,
     ) -> Result<bool, ProjectError> {
@@ -135,4 +141,12 @@ pub trait Platform: Debug + Send + Sync {
     ) -> Result<(), ToolError> {
         Ok(())
     }
+
+    async fn create_run_target_command(
+        &self,
+        context: &ActionContext,
+        project: &Project,
+        task: &Task,
+        working_dir: &Path,
+    ) -> Result<Command, ToolError>;
 }

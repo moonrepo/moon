@@ -1,13 +1,18 @@
+use crate::hasher::SystemTargetHasher;
 use crate::tool::SystemToolStub;
-use moon_config::{PlatformType, ProjectConfig};
+use moon_config::{HasherConfig, PlatformType, ProjectConfig};
+use moon_hasher::HashSet;
 use moon_platform::{Platform, Runtime, Version};
+use moon_project::Project;
 use moon_tool::{Tool, ToolError};
+use moon_utils::async_trait;
 
 #[derive(Debug, Default)]
 pub struct SystemPlatform {
     tool: SystemToolStub,
 }
 
+#[async_trait]
 impl Platform for SystemPlatform {
     fn get_type(&self) -> PlatformType {
         PlatformType::System
@@ -33,5 +38,18 @@ impl Platform for SystemPlatform {
 
     fn get_language_tool(&self, _version: Version) -> Result<Box<&dyn Tool>, ToolError> {
         Ok(Box::new(&self.tool))
+    }
+
+    // ACTIONS
+
+    async fn hash_run_target(
+        &self,
+        _project: &Project,
+        hashset: &mut HashSet,
+        _hasher_config: &HasherConfig,
+    ) -> Result<(), ToolError> {
+        hashset.hash(SystemTargetHasher::new());
+
+        Ok(())
     }
 }

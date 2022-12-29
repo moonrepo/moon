@@ -16,11 +16,13 @@ moon_node_platform = { path = "../../node/platform" }
 moon_project = { path = "../project" }
 moon_system_platform = { path = "../../system/platform" }
 moon_task = { path = "../task" }
+moon_tool = { path = "../tool" }
 moon_terminal = { path = "../terminal" }
 moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
 console = "0.15.2"
 rustc-hash = { workspace = true }
 serde = { workspace = true }
+serde_json = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }

@@ -1702,15 +1702,14 @@ dependencies = [
  "moon_dep_graph",
  "moon_emitter",
  "moon_error",
+ "moon_hasher",
  "moon_logger",
- "moon_node_platform",
  "moon_node_tool",
  "moon_notifier",
  "moon_platform",
  "moon_project",
  "moon_project_graph",
  "moon_runner",
- "moon_system_platform",
  "moon_task",
  "moon_terminal",
  "moon_test_utils",
@@ -1925,10 +1924,10 @@ name = "moon_hasher"
 version = "0.1.0"
 dependencies = [
  "moon_error",
- "moon_task",
  "moon_utils",
  "rustc-hash",
  "serde",
+ "serde_json",
  "sha2",
 ]
 
@@ -1997,6 +1996,7 @@ dependencies = [
  "proto_core",
  "rustc-hash",
  "serde",
+ "serde_json",
  "tokio",
 ]
 
@@ -2054,6 +2054,7 @@ dependencies = [
  "async-trait",
  "moon_config",
  "moon_error",
+ "moon_hasher",
  "moon_platform_runtime",
  "moon_project",
  "moon_tool",
@@ -2156,10 +2157,12 @@ dependencies = [
  "moon_system_platform",
  "moon_task",
  "moon_terminal",
+ "moon_tool",
  "moon_utils",
  "moon_workspace",
  "rustc-hash",
  "serde",
+ "serde_json",
  "thiserror",
  "tokio",
 ]
@@ -2184,6 +2187,7 @@ dependencies = [
  "moon_utils",
  "moon_workspace",
  "serde",
+ "serde_json",
 ]
 
 [[package]]

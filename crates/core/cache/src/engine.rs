@@ -139,7 +139,7 @@ impl CacheEngine {
         Ok((deleted, bytes))
     }
 
-    pub fn create_hash_manifest<T>(&self, hash: &str, hasher: &T) -> Result<(), MoonError>
+    pub fn create_hash_manifest<T>(&self, hash: &str, contents: &T) -> Result<(), MoonError>
     where
         T: ?Sized + Serialize,
     {
@@ -151,7 +151,7 @@ impl CacheEngine {
             color::path(&path)
         );
 
-        json::write(&path, &hasher, true)?;
+        json::write(&path, &contents, true)?;
 
         Ok(())
     }

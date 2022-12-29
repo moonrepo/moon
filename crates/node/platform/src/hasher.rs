@@ -11,8 +11,8 @@ pub struct NodeTargetHasher {
     // Node.js version
     node_version: String,
 
-    // all the dependencies of the project (including dev and peer) and the hashes
-    // corresponding with their versions
+    // All the dependencies of the project (including dev and peer),
+    // and the hashes corresponding with their versions
     dependencies: BTreeMap<String, Vec<String>>,
 
     // `tsconfig.json` `compilerOptions`
@@ -55,9 +55,11 @@ impl NodeTargetHasher {
         if let Some(deps) = &package.dependencies {
             copy_deps(deps, &mut self.dependencies);
         }
+
         if let Some(dev_deps) = &package.dev_dependencies {
             copy_deps(dev_deps, &mut self.dependencies);
         }
+
         if let Some(peer_deps) = &package.peer_dependencies {
             copy_deps(peer_deps, &mut self.dependencies);
         }
@@ -90,19 +92,25 @@ impl Hasher for NodeTargetHasher {
     fn hash(&self, sha: &mut Sha256) {
         sha.update(self.version.as_bytes());
         sha.update(self.node_version.as_bytes());
+
         for versions in self.dependencies.values() {
             for version in versions {
                 sha.update(version.as_bytes());
             }
         }
+
         hash_btree(&self.tsconfig_compiler_options, sha);
+    }
+
+    fn serialize(&self) -> serde_json::Value {
+        serde_json::to_value(self).unwrap()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use moon_hasher::to_hash_only;
+    use moon_hasher::to_hash;
     use rustc_hash::FxHashMap;
 
     #[test]
@@ -110,7 +118,7 @@ mod tests {
         let hasher = NodeTargetHasher::new(Some("0.0.0".into()));
 
         assert_eq!(
-            to_hash_only(&hasher),
+            to_hash(&hasher),
             String::from("ae2cf745a63ca5f47a7218ae5b4a8267295305591457a33a79c46754c1dcce0b")
         );
     }
@@ -119,7 +127,7 @@ mod tests {
     fn returns_same_hash_if_called_again() {
         let hasher = NodeTargetHasher::new(Some("0.0.0".into()));
 
-        assert_eq!(to_hash_only(&hasher), to_hash_only(&hasher));
+        assert_eq!(to_hash(&hasher), to_hash(&hasher));
     }
 
     #[test]
@@ -127,7 +135,7 @@ mod tests {
         let hasher1 = NodeTargetHasher::new(Some("0.0.0".into()));
         let hasher2 = NodeTargetHasher::new(Some("1.0.0".into()));
 
-        assert_ne!(to_hash_only(&hasher1), to_hash_only(&hasher2));
+        assert_ne!(to_hash(&hasher1), to_hash(&hasher2));
     }
 
     mod btreemap {
@@ -147,7 +155,7 @@ mod tests {
             hasher2.hash_package_json(&package1, &resolved_deps);
             hasher2.hash_package_json(&package1, &resolved_deps);
 
-            assert_eq!(to_hash_only(&hasher1), to_hash_only(&hasher2));
+            assert_eq!(to_hash(&hasher1), to_hash(&hasher2));
         }
 
         #[test]
@@ -168,7 +176,7 @@ mod tests {
             hasher2.hash_package_json(&package1, &resolved_deps);
             hasher2.hash_package_json(&package2, &resolved_deps);
 
-            assert_eq!(to_hash_only(&hasher1), to_hash_only(&hasher2));
+            assert_eq!(to_hash(&hasher1), to_hash(&hasher2));
         }
 
         #[test]
@@ -184,11 +192,11 @@ mod tests {
             let mut hasher1 = NodeTargetHasher::new(Some("0.0.0".into()));
             hasher1.hash_package_json(&package1, &resolved_deps);
 
-            let hash1 = to_hash_only(&hasher1);
+            let hash1 = to_hash(&hasher1);
 
             hasher1.hash_package_json(&package2, &resolved_deps);
 
-            let hash2 = to_hash_only(&hasher1);
+            let hash2 = to_hash(&hasher1);
 
             assert_ne!(hash1, hash2);
         }
@@ -206,21 +214,21 @@ mod tests {
 
             let mut hasher1 = NodeTargetHasher::new(Some("0.0.0".into()));
             hasher1.hash_package_json(&package, &resolved_deps);
-            let hash1 = to_hash_only(&hasher1);
+            let hash1 = to_hash(&hasher1);
 
             package.dev_dependencies =
                 Some(BTreeMap::from([("eslint".to_owned(), "8.0.0".to_owned())]));
 
             let mut hasher2 = NodeTargetHasher::new(Some("0.0.0".into()));
             hasher2.hash_package_json(&package, &resolved_deps);
-            let hash2 = to_hash_only(&hasher2);
+            let hash2 = to_hash(&hasher2);
 
             package.peer_dependencies =
                 Some(BTreeMap::from([("react".to_owned(), "18.0.0".to_owned())]));
 
             let mut hasher3 = NodeTargetHasher::new(Some("0.0.0".into()));
             hasher3.hash_package_json(&package, &resolved_deps);
-            let hash3 = to_hash_only(&hasher3);
+            let hash3 = to_hash(&hasher3);
 
             assert_ne!(hash1, hash2);
             assert_ne!(hash1, hash3);
@@ -289,7 +297,7 @@ mod tests {
 
             let mut hasher1 = NodeTargetHasher::new(Some("0.0.0".into()));
             hasher1.hash_tsconfig_json(&tsconfig);
-            let hash1 = to_hash_only(&hasher1);
+            let hash1 = to_hash(&hasher1);
 
             tsconfig
                 .compiler_options
@@ -299,13 +307,13 @@ mod tests {
 
             let mut hasher2 = NodeTargetHasher::new(Some("0.0.0".into()));
             hasher2.hash_tsconfig_json(&tsconfig);
-            let hash2 = to_hash_only(&hasher2);
+            let hash2 = to_hash(&hasher2);
 
             tsconfig.compiler_options.as_mut().unwrap().target = Some(Target::Es2019);
 
             let mut hasher3 = NodeTargetHasher::new(Some("0.0.0".into()));
             hasher3.hash_tsconfig_json(&tsconfig);
-            let hash3 = to_hash_only(&hasher3);
+            let hash3 = to_hash(&hasher3);
 
             assert_ne!(hash1, hash2);
             assert_ne!(hash1, hash3);

@@ -1,9 +1,10 @@
 use async_trait::async_trait;
 use moon_config::{
-    DependencyConfig, PlatformType, ProjectConfig, ProjectLanguage, ProjectsAliasesMap,
-    ProjectsSourcesMap, TasksConfigsMap,
+    DependencyConfig, HasherConfig, PlatformType, ProjectConfig, ProjectLanguage,
+    ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap,
 };
 use moon_error::MoonError;
+use moon_hasher::HashSet;
 use moon_platform_runtime::{Runtime, Version};
 use moon_project::{Project, ProjectError};
 use moon_tool::{Tool, ToolError};
@@ -111,5 +112,27 @@ pub trait Platform: Debug + Send + Sync {
         dependencies: &FxHashMap<String, &Project>,
     ) -> Result<bool, ProjectError> {
         Ok(false)
+    }
+
+    /// Hash all dependencies and their versions from the provided manifest file.
+    /// These will be used to determine whether to install dependencies or not.
+    async fn hash_manifest_deps(
+        &self,
+        manifest_path: &Path,
+        hashset: &mut HashSet,
+        hasher_config: &HasherConfig,
+    ) -> Result<(), ToolError> {
+        Ok(())
+    }
+
+    /// Hash information related to running a target (project task), that isn't
+    /// part of the default target hashing strategy.
+    async fn hash_run_target(
+        &self,
+        project: &Project,
+        hashset: &mut HashSet,
+        hasher_config: &HasherConfig,
+    ) -> Result<(), ToolError> {
+        Ok(())
     }
 }

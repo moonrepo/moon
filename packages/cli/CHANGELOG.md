@@ -6,6 +6,9 @@
 
 - We've refactored the pipeline to use a new worker pool strategy so that we have more control over
   concurrency. This also paves the way for future output reporters.
+- We've improved our smart hashing for other use cases besides task running. The first improvement
+  is that we now hash dependencies to determine whether to run a dependency install, or to skip!
+  This is much more accurate than before, which only relied on lockfile modified timestamps.
 
 ## 0.21.3
 

@@ -1,6 +1,6 @@
 use crate::hasher::NodeTargetHasher;
 use moon_action_context::{ActionContext, ProfileType};
-use moon_config::{HasherOptimization, NodePackageManager};
+use moon_config::{HasherConfig, HasherOptimization, NodePackageManager, TypeScriptConfig};
 use moon_error::MoonError;
 use moon_logger::{color, trace};
 use moon_node_lang::{
@@ -10,12 +10,13 @@ use moon_node_lang::{
 use moon_node_tool::NodeTool;
 use moon_project::Project;
 use moon_task::Task;
-use moon_tool::{get_path_env_var, Tool};
+use moon_tool::{get_path_env_var, Tool, ToolError};
 use moon_typescript_lang::TsConfigJson;
 use moon_utils::process::Command;
 use moon_utils::{path, string_vec};
 use moon_workspace::{Workspace, WorkspaceError};
 use rustc_hash::FxHashMap;
+use std::path::Path;
 
 const LOG_TARGET: &str = "moon:node-platform:run-target";
 
@@ -161,24 +162,24 @@ pub fn create_target_command(
 }
 
 pub async fn create_target_hasher(
-    workspace: &Workspace,
+    node: &NodeTool,
     project: &Project,
-) -> Result<NodeTargetHasher, WorkspaceError> {
-    let node = workspace.toolchain.node.get::<NodeTool>()?;
+    workspace_root: &Path,
+    hasher_config: &HasherConfig,
+    typescript_config: &Option<TypeScriptConfig>,
+) -> Result<NodeTargetHasher, ToolError> {
     let mut hasher = NodeTargetHasher::new(node.config.version.clone());
 
-    let resolved_dependencies = if matches!(
-        workspace.config.hasher.optimization,
-        HasherOptimization::Accuracy
-    ) {
-        node.get_package_manager()
-            .get_resolved_dependencies(&project.root)
-            .await?
-    } else {
-        FxHashMap::default()
-    };
+    let resolved_dependencies =
+        if matches!(hasher_config.optimization, HasherOptimization::Accuracy) {
+            node.get_package_manager()
+                .get_resolved_dependencies(&project.root)
+                .await?
+        } else {
+            FxHashMap::default()
+        };
 
-    if let Some(root_package) = PackageJson::read(&workspace.root)? {
+    if let Some(root_package) = PackageJson::read(workspace_root)? {
         hasher.hash_package_json(&root_package, &resolved_dependencies);
     }
 
@@ -186,9 +187,9 @@ pub async fn create_target_hasher(
         hasher.hash_package_json(&package, &resolved_dependencies);
     }
 
-    if let Some(typescript_config) = &workspace.toolchain.config.typescript {
+    if let Some(typescript_config) = &typescript_config {
         if let Some(root_tsconfig) =
-            TsConfigJson::read_with_name(&workspace.root, &typescript_config.root_config_file_name)?
+            TsConfigJson::read_with_name(workspace_root, &typescript_config.root_config_file_name)?
         {
             hasher.hash_tsconfig_json(&root_tsconfig);
         }

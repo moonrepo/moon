@@ -23,6 +23,7 @@ moon_workspace = { path = "../../core/workspace" }
 proto_core = { path = "../../proto/core" }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
+serde_json = { workspace = true }
 tokio = { workspace = true }
 
 [dev-dependencies]

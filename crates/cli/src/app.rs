@@ -426,7 +426,11 @@ pub enum Commands {
         #[command(subcommand)]
         command: MigrateCommands,
 
-        #[arg(long, help = "Disable the check for touched/dirty files")]
+        #[arg(
+            long,
+            global = true,
+            help = "Disable the check for touched/dirty files"
+        )]
         skip_touched_files_check: bool,
     },
 
@@ -458,18 +462,25 @@ pub struct App {
     #[arg(
         value_enum,
         long,
+        global = true,
         env = "MOON_CACHE",
         help = "Mode for cache operations",
         default_value_t
     )]
     pub cache: CacheMode,
 
-    #[arg(long, env = "MOON_COLOR", help = "Force colored output for moon")]
+    #[arg(
+        long,
+        global = true,
+        env = "MOON_COLOR",
+        help = "Force colored output for moon"
+    )]
     pub color: bool,
 
     #[arg(
         value_enum,
         long,
+        global = true,
         env = "MOON_LOG",
         help = "Lowest log level to output",
         default_value_t
@@ -478,6 +489,7 @@ pub struct App {
 
     #[arg(
         long,
+        global = true,
         env = "MOON_LOG_FILE",
         help = "Path to a file to dump the moon logs"
     )]

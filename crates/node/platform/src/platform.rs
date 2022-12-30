@@ -426,10 +426,10 @@ impl Platform for NodePlatform {
         context: &ActionContext,
         project: &Project,
         task: &Task,
-        // runtime: &Runtime,
+        runtime: &Runtime,
         _working_dir: &Path,
     ) -> Result<Command, ToolError> {
-        let tool = self.toolchain.get()?; // _for_version(runtime.version())?;
+        let tool = self.toolchain.get_for_version(runtime.version())?;
         let command = actions::create_target_command(tool, context, project, task)?;
 
         Ok(command)

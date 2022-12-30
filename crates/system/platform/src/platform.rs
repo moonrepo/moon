@@ -65,7 +65,7 @@ impl Platform for SystemPlatform {
         _context: &ActionContext,
         _project: &Project,
         task: &Task,
-        // _runtime: &Runtime,
+        _runtime: &Runtime,
         working_dir: &Path,
     ) -> Result<Command, ToolError> {
         let mut command = Command::new(&task.command);

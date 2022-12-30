@@ -241,13 +241,13 @@ impl<'ws> DepGraphBuilder<'ws> {
         touched_files: Option<&TouchedFilePaths>,
     ) -> Result<Option<NodeIndex>, DepGraphError> {
         let target = target.as_ref();
-        let node = ActionNode::RunTarget(target.id.to_owned());
+        let task = project.get_task(&target.task_id)?;
+        let (runtime, _) = self.get_runtimes_from_project(project, Some(task));
+        let node = ActionNode::RunTarget(runtime, target.id.to_owned());
 
         if let Some(index) = self.get_index_from_node(&node) {
             return Ok(Some(*index));
         }
-
-        let task = project.get_task(&target.task_id)?;
 
         // Compare against touched files if provided
         if let Some(touched) = touched_files {
@@ -277,7 +277,6 @@ impl<'ws> DepGraphBuilder<'ws> {
         self.graph.add_edge(index, sync_project_index, ());
 
         // And we also need to wait on all dependent targets
-
         if !task.deps.is_empty() {
             trace!(
                 target: LOG_TARGET,

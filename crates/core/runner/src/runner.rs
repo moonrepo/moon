@@ -9,6 +9,7 @@ use moon_emitter::{Emitter, Event, EventFlow};
 use moon_error::MoonError;
 use moon_hasher::{convert_paths_to_strings, HashSet};
 use moon_logger::{color, debug, warn};
+use moon_platform_runtime::Runtime;
 use moon_project::Project;
 use moon_task::{
     Target, TargetError, TargetProjectScope, Task, TaskError, TaskOptionAffectedFiles,
@@ -250,7 +251,11 @@ impl<'a> Runner<'a> {
         Ok(())
     }
 
-    pub async fn create_command(&self, context: &ActionContext) -> Result<Command, RunnerError> {
+    pub async fn create_command(
+        &self,
+        context: &ActionContext,
+        runtime: &Runtime,
+    ) -> Result<Command, RunnerError> {
         let workspace = &self.workspace;
         let project = &self.project;
         let task = &self.task;
@@ -271,7 +276,7 @@ impl<'a> Runner<'a> {
             .workspace
             .platforms
             .get(task.platform)?
-            .create_run_target_command(context, project, task, working_dir)
+            .create_run_target_command(context, project, task, runtime, working_dir)
             .await?;
 
         command

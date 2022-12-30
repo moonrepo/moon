@@ -3,6 +3,7 @@ use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_emitter::Emitter;
 use moon_logger::{color, debug, warn};
+use moon_platform::Runtime;
 use moon_project::Project;
 use moon_runner::Runner;
 use moon_task::Target;
@@ -20,6 +21,7 @@ pub async fn run_target(
     workspace: Arc<RwLock<Workspace>>,
     project: &Project,
     target: &Target,
+    runtime: &Runtime,
 ) -> Result<ActionStatus, PipelineError> {
     let emitter = emitter.read().await;
     let workspace = workspace.read().await;
@@ -70,7 +72,7 @@ pub async fn run_target(
 
     // Create the command to run based on the task
     let context = context.read().await;
-    let mut command = runner.create_command(&context).await?;
+    let mut command = runner.create_command(&context, runtime).await?;
 
     // Execute the command and return the number of attempts
     let attempts = runner.run_command(&context, &mut command).await?;

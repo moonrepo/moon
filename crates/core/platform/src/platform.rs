@@ -163,7 +163,7 @@ pub trait Platform: Debug + Send + Sync {
         context: &ActionContext,
         project: &Project,
         task: &Task,
-        // runtime: &Runtime,
+        runtime: &Runtime,
         working_dir: &Path,
     ) -> Result<Command, ToolError>;
 }

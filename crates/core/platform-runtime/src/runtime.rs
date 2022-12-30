@@ -1,27 +1,7 @@
+use crate::version::Version;
 use moon_config::PlatformType;
 use serde::Serialize;
 use std::fmt::{self, Debug};
-
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
-pub struct Version(pub String, pub bool);
-
-impl Version {
-    pub fn is_override(&self) -> bool {
-        self.1
-    }
-}
-
-impl Default for Version {
-    fn default() -> Self {
-        Version("latest".into(), false)
-    }
-}
-
-impl fmt::Display for Version {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(tag = "platform", content = "version")]

@@ -295,6 +295,18 @@ impl Platform for NodePlatform {
         )))
     }
 
+    async fn setup_toolchain(&mut self) -> Result<(), ToolError> {
+        if let Some(version) = &self.config.version {}
+
+        Ok(())
+    }
+
+    async fn teardown_toolchain(&mut self) -> Result<(), ToolError> {
+        self.toolchain.teardown_all().await?;
+
+        Ok(())
+    }
+
     // ACTIONS
 
     async fn setup_tool(

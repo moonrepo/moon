@@ -1,33 +1,10 @@
 use crate::helpers::{create_progress_bar, AnyError};
-use moon::{build_dep_graph, generate_project_graph, load_workspace};
-use moon_action_pipeline::Pipeline;
-use moon_platform::{Runtime, Version};
-use moon_utils::is_test_env;
+use moon::load_workspace_with_toolchain;
 
 pub async fn setup() -> Result<(), AnyError> {
     let done = create_progress_bar("Downloading and installing tools...");
 
-    let mut workspace = load_workspace().await?;
-    let project_graph = generate_project_graph(&mut workspace)?;
-    let mut dep_builder = build_dep_graph(&workspace, &project_graph);
-
-    if let Some(node_config) = &workspace.toolchain_config.node {
-        if let Some(node_version) = &node_config.version {
-            let runtime = Runtime::Node(Version(node_version.to_owned(), false));
-
-            if is_test_env() {
-                dep_builder.setup_tool(&runtime);
-            } else {
-                dep_builder.install_workspace_deps(&runtime);
-            }
-        }
-    }
-
-    let dep_graph = dep_builder.build();
-
-    Pipeline::new(workspace, project_graph)
-        .run(dep_graph, None)
-        .await?;
+    load_workspace_with_toolchain().await?;
 
     done("Setup complete", true);
 

@@ -12,5 +12,3 @@ moon_project_graph = { path = "../project-graph" }
 moon_system_platform = { path = "../../system/platform" }
 moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
-rustc-hash = { workspace = true }
-strum = { version = "0.24.1", features = ["derive"] }

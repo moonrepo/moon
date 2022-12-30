@@ -88,6 +88,17 @@ pub trait Platform: Debug + Send + Sync {
         Ok(None)
     }
 
+    /// Setup the top-level tool in the toolchain if applicable.
+    /// This is a one off flow, as most flows will be using the pipeline.
+    async fn setup_toolchain(&mut self) -> Result<(), ToolError> {
+        Ok(())
+    }
+
+    /// Teardown all tools that are currently registered in the toolchain.
+    async fn teardown_toolchain(&mut self) -> Result<(), ToolError> {
+        Ok(())
+    }
+
     // ACTIONS
 
     /// Setup a tool by registering it into the toolchain with the provided version

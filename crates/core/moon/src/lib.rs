@@ -5,7 +5,6 @@ use moon_project_graph::{ProjectGraph, ProjectGraphBuilder, ProjectGraphError};
 use moon_system_platform::SystemPlatform;
 use moon_utils::is_test_env;
 use moon_workspace::{Workspace, WorkspaceError};
-use rustc_hash::FxHashMap;
 use std::path::Path;
 
 pub fn register_platforms(workspace: &mut Workspace) -> Result<(), WorkspaceError> {
@@ -53,15 +52,13 @@ pub async fn load_workspace_from(path: &Path) -> Result<Workspace, WorkspaceErro
 // the action pipeline. This is a simple flow to wire up the tools.
 pub async fn load_workspace_with_toolchain() -> Result<Workspace, WorkspaceError> {
     let mut workspace = load_workspace().await?;
-    // let mut last_versions = FxHashMap::default();
 
-    // for platform in workspace.platforms.list_mut() {
-    //     if let Ok(tool) = platform.get_tool() {
-    //         tool.setup(&mut last_versions)
-    //             .await
-    //             .map_err(|e| WorkspaceError::Moon(MoonError::Generic(e.to_string())))?;
-    //     }
-    // }
+    for platform in workspace.platforms.list_mut() {
+        platform
+            .setup_toolchain()
+            .await
+            .map_err(|e| WorkspaceError::Moon(MoonError::Generic(e.to_string())))?;
+    }
 
     Ok(workspace)
 }

@@ -1664,8 +1664,6 @@ dependencies = [
  "moon_system_platform",
  "moon_utils",
  "moon_workspace",
- "rustc-hash",
- "strum",
 ]
 
 [[package]]

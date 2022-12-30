@@ -10,7 +10,6 @@ pub mod time;
 pub mod yaml;
 
 pub use async_trait::async_trait;
-use constants::CONFIG_DIRNAME;
 pub use lazy_static::lazy_static;
 
 use cached::proc_macro::cached;
@@ -49,7 +48,9 @@ pub fn get_workspace_root() -> PathBuf {
 
 #[inline]
 pub fn get_cache_dir() -> PathBuf {
-    get_workspace_root().join(CONFIG_DIRNAME).join("cache")
+    get_workspace_root()
+        .join(constants::CONFIG_DIRNAME)
+        .join("cache")
 }
 
 #[inline]

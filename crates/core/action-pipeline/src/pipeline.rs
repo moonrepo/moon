@@ -175,7 +175,6 @@ impl Pipeline {
                         results.push(result);
                     }
                     Err(error) => {
-                        dbg!(error);
                         break;
                     }
                 };

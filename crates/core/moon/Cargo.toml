@@ -6,8 +6,8 @@ edition = "2021"
 [dependencies]
 moon_config = { path = "../config" }
 moon_dep_graph = { path = "../dep-graph" }
+moon_error = { path = "../error" }
 moon_node_platform = { path = "../../node/platform" }
-moon_node_tool = { path = "../../node/tool" }
 moon_project_graph = { path = "../project-graph" }
 moon_system_platform = { path = "../../system/platform" }
 moon_utils = { path = "../utils" }

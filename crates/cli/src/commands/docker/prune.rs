@@ -39,7 +39,7 @@ pub async fn prune_node(
     let node = workspace
         .platforms
         .get(PlatformType::Node)?
-        .get_language_tool(None)?
+        .get_tool()?
         .as_any()
         .downcast_ref::<NodeTool>()
         .unwrap();

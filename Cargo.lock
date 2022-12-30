@@ -1658,8 +1658,8 @@ version = "0.1.0"
 dependencies = [
  "moon_config",
  "moon_dep_graph",
+ "moon_error",
  "moon_node_platform",
- "moon_node_tool",
  "moon_project_graph",
  "moon_system_platform",
  "moon_utils",
@@ -1704,7 +1704,6 @@ dependencies = [
  "moon_error",
  "moon_hasher",
  "moon_logger",
- "moon_node_tool",
  "moon_notifier",
  "moon_platform",
  "moon_project",

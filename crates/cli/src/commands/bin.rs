@@ -40,10 +40,7 @@ pub async fn bin(tool_type: &BinTool) -> Result<(), AnyError> {
 
     match tool_type {
         BinTool::Node => {
-            let node = workspace
-                .platforms
-                .get(PlatformType::Node)?
-                .get_language_tool(None)?;
+            let node = workspace.platforms.get(PlatformType::Node)?.get_tool()?;
 
             is_installed(*node);
         }
@@ -51,7 +48,7 @@ pub async fn bin(tool_type: &BinTool) -> Result<(), AnyError> {
             let node = workspace
                 .platforms
                 .get(PlatformType::Node)?
-                .get_language_tool(None)?
+                .get_tool()?
                 .as_any();
             let node = node.downcast_ref::<NodeTool>().unwrap();
 

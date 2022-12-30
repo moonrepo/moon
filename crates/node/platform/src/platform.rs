@@ -273,12 +273,14 @@ impl Platform for NodePlatform {
 
     // TOOLCHAIN
 
-    fn get_language_tool(&self, version: Option<Version>) -> Result<Box<&dyn Tool>, ToolError> {
-        let tool = if let Some(version) = version {
-            self.toolchain.get_for_version(&version)?
-        } else {
-            self.toolchain.get()?
-        };
+    fn get_tool(&self) -> Result<Box<&dyn Tool>, ToolError> {
+        let tool = self.toolchain.get()?;
+
+        Ok(Box::new(tool))
+    }
+
+    fn get_tool_for_version(&self, version: Version) -> Result<Box<&dyn Tool>, ToolError> {
+        let tool = self.toolchain.get_for_version(&version)?;
 
         Ok(Box::new(tool))
     }

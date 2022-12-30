@@ -1,14 +1,12 @@
-use moon_config::PlatformType;
 use moon_dep_graph::DepGraphBuilder;
+use moon_error::MoonError;
 use moon_node_platform::NodePlatform;
-use moon_node_tool::NodeTool;
 use moon_project_graph::{ProjectGraph, ProjectGraphBuilder, ProjectGraphError};
 use moon_system_platform::SystemPlatform;
 use moon_utils::is_test_env;
 use moon_workspace::{Workspace, WorkspaceError};
 use rustc_hash::FxHashMap;
 use std::path::Path;
-use strum::IntoEnumIterator;
 
 pub fn register_platforms(workspace: &mut Workspace) -> Result<(), WorkspaceError> {
     if let Some(node_config) = &workspace.toolchain_config.node {
@@ -57,24 +55,13 @@ pub async fn load_workspace_with_toolchain() -> Result<Workspace, WorkspaceError
     let mut workspace = load_workspace().await?;
     // let mut last_versions = FxHashMap::default();
 
-    // Use exhaustive checks so we don't miss a platform
-    for platform in PlatformType::iter() {
-        match platform {
-            PlatformType::Node => {
-                // if let Some(node_config) = &workspace.toolchain_config.node {
-                //     if let Some(node_version) = &node_config.version {
-                //         workspace
-                //             .platforms
-                //             .get(platform)?
-                //             .get_language_tool(version)?
-                //             .setup(&mut last_versions)
-                //             .await?;
-                //     }
-                // }
-            }
-            PlatformType::System | PlatformType::Unknown => {}
-        }
-    }
+    // for platform in workspace.platforms.list_mut() {
+    //     if let Ok(tool) = platform.get_tool() {
+    //         tool.setup(&mut last_versions)
+    //             .await
+    //             .map_err(|e| WorkspaceError::Moon(MoonError::Generic(e.to_string())))?;
+    //     }
+    // }
 
     Ok(workspace)
 }

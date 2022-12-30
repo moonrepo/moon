@@ -39,7 +39,11 @@ impl Platform for SystemPlatform {
 
     // TOOLCHAIN
 
-    fn get_language_tool(&self, _version: Option<Version>) -> Result<Box<&dyn Tool>, ToolError> {
+    fn get_tool(&self) -> Result<Box<&dyn Tool>, ToolError> {
+        Ok(Box::new(&self.tool))
+    }
+
+    fn get_tool_for_version(&self, _version: Version) -> Result<Box<&dyn Tool>, ToolError> {
         Ok(Box::new(&self.tool))
     }
 

@@ -33,7 +33,9 @@ fn create_node_options(
     options.extend(node.config.bin_exec_args.to_owned());
 
     if let Some(profile) = &context.profile {
-        let prof_dir = get_cache_dir().join(task.target.id.replace(':', "/"));
+        let prof_dir = get_cache_dir()
+            .join("states")
+            .join(task.target.id.replace(':', "/"));
 
         match profile {
             ProfileType::Cpu => {

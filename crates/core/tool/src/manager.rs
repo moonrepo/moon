@@ -24,7 +24,9 @@ impl<T: Tool> ToolManager<T> {
         self.get_for_version(&self.default_version)
     }
 
-    pub fn get_for_version(&self, version: &Version) -> Result<&T, ToolError> {
+    pub fn get_for_version<V: AsRef<Version>>(&self, version: V) -> Result<&T, ToolError> {
+        let version = version.as_ref();
+
         if !self.has(version) {
             return Err(ToolError::UnknownTool(format!(
                 "{} v{}",

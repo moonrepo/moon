@@ -21,7 +21,7 @@ impl Runtime {
     pub fn version(&self) -> Version {
         match self {
             Runtime::Node(version) => version.to_owned(),
-            _ => Version("latest".into(), false),
+            _ => Version::new("latest"),
         }
     }
 }

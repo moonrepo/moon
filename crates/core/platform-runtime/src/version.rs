@@ -1,8 +1,6 @@
+use crate::runtime::Runtime;
 use serde::Serialize;
-use std::{
-    fmt::{self, Debug},
-    str::FromStr,
-};
+use std::fmt::{self, Debug};
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct Version(pub String, pub bool);
@@ -39,10 +37,14 @@ impl From<&str> for Version {
     }
 }
 
-// impl FromStr for Version {
-//     type Err = ();
+impl From<&Runtime> for Version {
+    fn from(value: &Runtime) -> Self {
+        value.version()
+    }
+}
 
-//     fn from_str(value: &str) -> Result<Self, Self::Err> {
-//         Ok(Version::new(value))
-//     }
-// }
+impl AsRef<Version> for Version {
+    fn as_ref(&self) -> &Version {
+        self
+    }
+}

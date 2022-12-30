@@ -107,7 +107,7 @@ pub trait Platform: Debug + Send + Sync {
     async fn setup_tool(
         &mut self,
         context: &ActionContext,
-        tool_version: Version,
+        runtime: &Runtime,
         last_versions: &mut FxHashMap<String, String>,
     ) -> Result<u8, ToolError> {
         Ok(0)
@@ -118,7 +118,7 @@ pub trait Platform: Debug + Send + Sync {
     async fn install_deps(
         &self,
         context: &ActionContext,
-        tool_version: Version,
+        runtime: &Runtime,
         working_dir: &Path,
     ) -> Result<(), ToolError> {
         Ok(())
@@ -157,11 +157,13 @@ pub trait Platform: Debug + Send + Sync {
         Ok(())
     }
 
+    /// Create an async command to run a target's child process.
     async fn create_run_target_command(
         &self,
         context: &ActionContext,
         project: &Project,
         task: &Task,
+        // runtime: &Runtime,
         working_dir: &Path,
     ) -> Result<Command, ToolError>;
 }

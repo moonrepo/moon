@@ -63,13 +63,13 @@ impl Platform for NodePlatform {
         if let Some(config) = &project_config {
             if let Some(node_config) = &config.toolchain.node {
                 if let Some(version) = &node_config.version {
-                    return Some(Runtime::Node(Version(version.to_owned(), true)));
+                    return Some(Runtime::Node(Version::new_override(version)));
                 }
             }
         }
 
         if let Some(node_version) = &self.config.version {
-            return Some(Runtime::Node(Version(node_version.to_owned(), false)));
+            return Some(Runtime::Node(Version::new(node_version)));
         }
 
         None
@@ -296,7 +296,19 @@ impl Platform for NodePlatform {
     }
 
     async fn setup_toolchain(&mut self) -> Result<(), ToolError> {
-        if let Some(version) = &self.config.version {}
+        if let Some(version) = &self.config.version {
+            let version = Version::new(version);
+            let mut last_versions = FxHashMap::default();
+
+            if !self.toolchain.has(&version) {
+                self.toolchain.register(
+                    &version,
+                    NodeTool::new(&Proto::new()?, &self.config, &version.0)?,
+                );
+            }
+
+            self.toolchain.setup(&version, &mut last_versions).await?;
+        }
 
         Ok(())
     }
@@ -312,9 +324,11 @@ impl Platform for NodePlatform {
     async fn setup_tool(
         &mut self,
         _context: &ActionContext,
-        version: Version,
+        runtime: &Runtime,
         last_versions: &mut FxHashMap<String, String>,
     ) -> Result<u8, ToolError> {
+        let version = runtime.version();
+
         if !self.toolchain.has(&version) {
             self.toolchain.register(
                 &version,
@@ -328,11 +342,11 @@ impl Platform for NodePlatform {
     async fn install_deps(
         &self,
         _context: &ActionContext,
-        version: Version,
+        runtime: &Runtime,
         working_dir: &Path,
     ) -> Result<(), ToolError> {
         actions::install_deps(
-            self.toolchain.get_for_version(&version)?,
+            self.toolchain.get_for_version(runtime.version())?,
             working_dir,
             &self.workspace_root,
         )
@@ -412,19 +426,10 @@ impl Platform for NodePlatform {
         context: &ActionContext,
         project: &Project,
         task: &Task,
+        // runtime: &Runtime,
         _working_dir: &Path,
     ) -> Result<Command, ToolError> {
-        let mut tool = self.toolchain.get()?;
-
-        // If a version override exists, use it for the cmmand
-        if let Some(node_config) = &project.config.toolchain.node {
-            if let Some(version_override) = &node_config.version {
-                tool = self
-                    .toolchain
-                    .get_for_version(&Version(version_override.to_owned(), true))?;
-            }
-        }
-
+        let tool = self.toolchain.get()?; // _for_version(runtime.version())?;
         let command = actions::create_target_command(tool, context, project, task)?;
 
         Ok(command)

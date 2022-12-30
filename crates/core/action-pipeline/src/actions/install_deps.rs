@@ -113,7 +113,7 @@ pub async fn install_deps(
         workspace.cache.create_hash_manifest(&hash, &hashset)?;
 
         platform
-            .install_deps(&context, runtime.version(), working_dir)
+            .install_deps(&context, runtime, working_dir)
             .await?;
 
         cache.last_hash = hash;

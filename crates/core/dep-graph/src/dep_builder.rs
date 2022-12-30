@@ -121,7 +121,7 @@ impl<'ws> DepGraphBuilder<'ws> {
 
         trace!(
             target: LOG_TARGET,
-            "Adding node install {} dependencies (in project {}) to graph",
+            "Adding install {} dependencies (in project {}) to graph",
             runtime.label(),
             color::id(project_id)
         );
@@ -144,7 +144,7 @@ impl<'ws> DepGraphBuilder<'ws> {
 
         trace!(
             target: LOG_TARGET,
-            "Adding node install {} dependencies (in workspace) to graph",
+            "Adding install {} dependencies (in workspace) to graph",
             runtime.label()
         );
 
@@ -264,7 +264,7 @@ impl<'ws> DepGraphBuilder<'ws> {
 
         trace!(
             target: LOG_TARGET,
-            "Adding node run target {} to graph",
+            "Adding run target {} to graph",
             color::target(&target.id),
         );
 
@@ -351,7 +351,7 @@ impl<'ws> DepGraphBuilder<'ws> {
 
         trace!(
             target: LOG_TARGET,
-            "Adding node setup {} tool to graph",
+            "Adding setup {} tool to graph",
             runtime.label()
         );
 
@@ -368,7 +368,7 @@ impl<'ws> DepGraphBuilder<'ws> {
 
         trace!(
             target: LOG_TARGET,
-            "Adding node sync project {} to graph",
+            "Adding sync project {} to graph",
             color::id(&project.id),
         );
 

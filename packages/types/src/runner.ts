@@ -69,7 +69,7 @@ export interface ActionNodeInstallProjectDeps {
 
 export interface ActionNodeRunTarget {
 	action: 'RunTarget';
-	params: string;
+	params: [Runtime, string];
 }
 
 export interface ActionNodeSetupTool {

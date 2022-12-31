@@ -21,7 +21,6 @@ moon_hasher = { path = "../hasher" }
 moon_logger = { path = "../logger" }
 moon_notifier = { path = "../notifier" }
 moon_platform = { path = "../platform" }
-moon_node_tool = { path = "../../node/tool" }
 moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
 moon_runner = { path = "../runner" }

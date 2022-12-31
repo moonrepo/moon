@@ -24,7 +24,9 @@ impl<T: Tool> ToolManager<T> {
         self.get_for_version(&self.default_version)
     }
 
-    pub fn get_for_version(&self, version: &Version) -> Result<&T, ToolError> {
+    pub fn get_for_version<V: AsRef<Version>>(&self, version: V) -> Result<&T, ToolError> {
+        let version = version.as_ref();
+
         if !self.has(version) {
             return Err(ToolError::UnknownTool(format!(
                 "{} v{}",
@@ -42,7 +44,7 @@ impl<T: Tool> ToolManager<T> {
     pub fn register(&mut self, version: &Version, tool: T) {
         // Nothing exists in the cache yet, so this tool must be the top-level
         // workspace tool. If so, update the default version within the platform.
-        if self.cache.is_empty() && !version.is_override() {
+        if self.default_version.0 == "latest" && !version.is_override() {
             self.default_version = version.to_owned();
         }
 

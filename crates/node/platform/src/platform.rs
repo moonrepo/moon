@@ -1,5 +1,6 @@
 use crate::actions;
 use crate::infer_tasks_from_scripts;
+use moon_action_context::ActionContext;
 use moon_config::{
     DependencyConfig, DependencyScope, HasherConfig, NodeConfig, NodeProjectAliasFormat,
     PlatformType, ProjectConfig, ProjectID, ProjectsAliasesMap, ProjectsSourcesMap,
@@ -13,8 +14,9 @@ use moon_node_lang::{PackageJson, NPM};
 use moon_node_tool::NodeTool;
 use moon_platform::{Platform, Runtime, Version};
 use moon_project::{Project, ProjectError};
+use moon_task::Task;
 use moon_tool::{Tool, ToolError, ToolManager};
-use moon_utils::{async_trait, glob::GlobSet};
+use moon_utils::{async_trait, glob::GlobSet, process::Command};
 use proto_core::Proto;
 use rustc_hash::FxHashMap;
 use std::path::PathBuf;
@@ -61,13 +63,13 @@ impl Platform for NodePlatform {
         if let Some(config) = &project_config {
             if let Some(node_config) = &config.toolchain.node {
                 if let Some(version) = &node_config.version {
-                    return Some(Runtime::Node(Version(version.to_owned(), true)));
+                    return Some(Runtime::Node(Version::new_override(version)));
                 }
             }
         }
 
         if let Some(node_version) = &self.config.version {
-            return Some(Runtime::Node(Version(node_version.to_owned(), false)));
+            return Some(Runtime::Node(Version::new(node_version)));
         }
 
         None
@@ -271,8 +273,16 @@ impl Platform for NodePlatform {
 
     // TOOLCHAIN
 
-    fn get_language_tool(&self, version: Version) -> Result<Box<&dyn Tool>, ToolError> {
-        Ok(Box::new(self.toolchain.get_for_version(&version)?))
+    fn get_tool(&self) -> Result<Box<&dyn Tool>, ToolError> {
+        let tool = self.toolchain.get()?;
+
+        Ok(Box::new(tool))
+    }
+
+    fn get_tool_for_version(&self, version: Version) -> Result<Box<&dyn Tool>, ToolError> {
+        let tool = self.toolchain.get_for_version(&version)?;
+
+        Ok(Box::new(tool))
     }
 
     fn get_dependency_configs(&self) -> Result<Option<(String, String)>, ToolError> {
@@ -285,13 +295,40 @@ impl Platform for NodePlatform {
         )))
     }
 
+    async fn setup_toolchain(&mut self) -> Result<(), ToolError> {
+        if let Some(version) = &self.config.version {
+            let version = Version::new(version);
+            let mut last_versions = FxHashMap::default();
+
+            if !self.toolchain.has(&version) {
+                self.toolchain.register(
+                    &version,
+                    NodeTool::new(&Proto::new()?, &self.config, &version.0)?,
+                );
+            }
+
+            self.toolchain.setup(&version, &mut last_versions).await?;
+        }
+
+        Ok(())
+    }
+
+    async fn teardown_toolchain(&mut self) -> Result<(), ToolError> {
+        self.toolchain.teardown_all().await?;
+
+        Ok(())
+    }
+
     // ACTIONS
 
     async fn setup_tool(
         &mut self,
-        version: Version,
+        _context: &ActionContext,
+        runtime: &Runtime,
         last_versions: &mut FxHashMap<String, String>,
     ) -> Result<u8, ToolError> {
+        let version = runtime.version();
+
         if !self.toolchain.has(&version) {
             self.toolchain.register(
                 &version,
@@ -302,9 +339,14 @@ impl Platform for NodePlatform {
         Ok(self.toolchain.setup(&version, last_versions).await?)
     }
 
-    async fn install_deps(&self, version: Version, working_dir: &Path) -> Result<(), ToolError> {
+    async fn install_deps(
+        &self,
+        _context: &ActionContext,
+        runtime: &Runtime,
+        working_dir: &Path,
+    ) -> Result<(), ToolError> {
         actions::install_deps(
-            self.toolchain.get_for_version(&version)?,
+            self.toolchain.get_for_version(runtime.version())?,
             working_dir,
             &self.workspace_root,
         )
@@ -315,6 +357,7 @@ impl Platform for NodePlatform {
 
     async fn sync_project(
         &self,
+        _context: &ActionContext,
         project: &Project,
         dependencies: &FxHashMap<String, &Project>,
     ) -> Result<bool, ProjectError> {
@@ -376,5 +419,19 @@ impl Platform for NodePlatform {
         hashset.hash(hasher);
 
         Ok(())
+    }
+
+    async fn create_run_target_command(
+        &self,
+        context: &ActionContext,
+        project: &Project,
+        task: &Task,
+        runtime: &Runtime,
+        working_dir: &Path,
+    ) -> Result<Command, ToolError> {
+        let tool = self.toolchain.get_for_version(runtime.version())?;
+        let command = actions::create_target_command(tool, context, project, task, working_dir)?;
+
+        Ok(command)
     }
 }

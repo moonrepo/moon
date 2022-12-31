@@ -12,7 +12,7 @@ pub enum ActionNode {
     InstallProjectDeps(Runtime, String),
 
     /// Run a target (project task).
-    RunTarget(String),
+    RunTarget(Runtime, String),
 
     /// Setup a tool + version for the provided platform.
     SetupTool(Runtime),
@@ -34,7 +34,7 @@ impl ActionNode {
                 }
                 _ => format!("Install{}DepsInProject({})", platform, id),
             },
-            ActionNode::RunTarget(id) => format!("RunTarget({})", id),
+            ActionNode::RunTarget(_, id) => format!("RunTarget({})", id),
             ActionNode::SetupTool(platform) => match platform {
                 Runtime::Node(version) => format!("Setup{}Tool({})", platform, version),
                 _ => format!("Setup{}Tool", platform),

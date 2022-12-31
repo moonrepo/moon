@@ -145,7 +145,7 @@ pub async fn process_action(
         }
 
         // Run a task within a project
-        ActionNode::RunTarget(target_id) => {
+        ActionNode::RunTarget(runtime, target_id) => {
             let target = Target::parse(target_id)?;
             let project = local_project_graph.get(target.project_id.as_ref().unwrap())?;
 
@@ -153,8 +153,16 @@ pub async fn process_action(
                 .emit(Event::TargetRunning { target: &target })
                 .await?;
 
-            let run_result =
-                run_target(&mut action, context, emitter, workspace, project, &target).await;
+            let run_result = run_target(
+                &mut action,
+                context,
+                emitter,
+                workspace,
+                project,
+                &target,
+                runtime,
+            )
+            .await;
 
             local_emitter
                 .emit(Event::TargetRan {

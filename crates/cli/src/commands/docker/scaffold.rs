@@ -56,7 +56,7 @@ fn scaffold_workspace(
         for lang in ProjectLanguage::iter() {
             match lang {
                 ProjectLanguage::JavaScript => {
-                    if workspace.toolchain.config.node.is_some() {
+                    if workspace.toolchain_config.node.is_some() {
                         files.push(NPM.manifest.to_owned());
 
                         for ext in NODE.file_exts {
@@ -65,7 +65,7 @@ fn scaffold_workspace(
                     }
                 }
                 ProjectLanguage::TypeScript => {
-                    if let Some(typescript_config) = &workspace.toolchain.config.typescript {
+                    if let Some(typescript_config) = &workspace.toolchain_config.typescript {
                         files.push(typescript_config.project_config_file_name.to_owned());
                     }
                 }
@@ -86,7 +86,7 @@ fn scaffold_workspace(
     for lang in ProjectLanguage::iter() {
         match lang {
             ProjectLanguage::JavaScript => {
-                if let Some(node_config) = &workspace.toolchain.config.node {
+                if let Some(node_config) = &workspace.toolchain_config.node {
                     let package_manager = match &node_config.package_manager {
                         NodePackageManager::Npm => NPM,
                         NodePackageManager::Pnpm => PNPM,
@@ -99,7 +99,7 @@ fn scaffold_workspace(
                 }
             }
             ProjectLanguage::TypeScript => {
-                if let Some(typescript_config) = &workspace.toolchain.config.typescript {
+                if let Some(typescript_config) = &workspace.toolchain_config.typescript {
                     files.push(&typescript_config.root_config_file_name);
                     files.push(&typescript_config.root_options_config_file_name);
                 }

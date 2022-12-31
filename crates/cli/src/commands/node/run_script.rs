@@ -1,12 +1,20 @@
 use crate::helpers::AnyError;
 use moon::{build_project_graph, load_workspace_with_toolchain};
+use moon_config::PlatformType;
 use moon_error::MoonError;
 use moon_node_tool::NodeTool;
 use std::env;
 
 pub async fn run_script(name: &str, project: &Option<String>) -> Result<(), AnyError> {
     let mut workspace = load_workspace_with_toolchain().await?;
-    let node = workspace.toolchain.node.get::<NodeTool>()?;
+    let node = workspace
+        .platforms
+        .get(PlatformType::Node)?
+        .get_tool()?
+        .as_any()
+        .downcast_ref::<NodeTool>()
+        .unwrap();
+
     let mut command = node.get_package_manager().create_command(node)?;
 
     command.arg("run").arg(name);

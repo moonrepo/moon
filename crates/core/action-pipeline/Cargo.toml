@@ -34,6 +34,7 @@ async-channel = "1.8.0"
 console = "0.15.2"
 futures = "0.3.25"
 rustc-hash = { workspace = true }
+rusty_pool = "0.7.0"
 serde = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }

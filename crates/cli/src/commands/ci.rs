@@ -194,17 +194,17 @@ pub async fn ci(options: CiOptions) -> Result<(), AnyError> {
     // Process all tasks in the graph
     print_header(&ci_provider, "Running all targets");
 
+    let context = ActionContext {
+        touched_files,
+        workspace_root: workspace.root.clone(),
+        ..ActionContext::default()
+    };
+
     let mut pipeline = Pipeline::new(workspace, project_graph);
 
     let results = pipeline
         .generate_report("ciReport.json")
-        .run(
-            dep_graph,
-            Some(ActionContext {
-                touched_files,
-                ..ActionContext::default()
-            }),
-        )
+        .run(dep_graph, Some(context))
         .await?;
 
     print_footer(&ci_provider);

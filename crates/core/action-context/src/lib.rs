@@ -26,6 +26,8 @@ pub struct ActionContext {
     pub target_hashes: FxHashMap<String, String>,
 
     pub touched_files: FxHashSet<PathBuf>,
+
+    pub workspace_root: PathBuf,
 }
 
 impl ActionContext {

@@ -1,10 +1,10 @@
 pub mod actions;
-mod hasher;
 mod platform;
+mod target_hasher;
 pub mod task;
 
-pub use hasher::NodeTargetHasher;
 pub use platform::NodePlatform;
+pub use target_hasher::NodeTargetHasher;
 
 use moon_config::TasksConfigsMap;
 use moon_node_lang::PackageJson;

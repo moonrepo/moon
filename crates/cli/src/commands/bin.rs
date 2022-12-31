@@ -1,9 +1,10 @@
 use crate::helpers::AnyError;
 use clap::ValueEnum;
 use moon::load_workspace;
+use moon_config::PlatformType;
 use moon_node_tool::NodeTool;
 use moon_terminal::safe_exit;
-use moon_toolchain::Tool;
+use moon_tool::Tool;
 
 #[derive(ValueEnum, Clone, Debug)]
 #[value(rename_all = "lowercase")]
@@ -36,14 +37,20 @@ fn not_configured() -> ! {
 
 pub async fn bin(tool_type: &BinTool) -> Result<(), AnyError> {
     let workspace = load_workspace().await?;
-    let toolchain = &workspace.toolchain;
 
     match tool_type {
         BinTool::Node => {
-            is_installed(toolchain.node.get::<NodeTool>()?);
+            let node = workspace.platforms.get(PlatformType::Node)?.get_tool()?;
+
+            is_installed(*node);
         }
         BinTool::Npm | BinTool::Pnpm | BinTool::Yarn => {
-            let node = toolchain.node.get::<NodeTool>()?;
+            let node = workspace
+                .platforms
+                .get(PlatformType::Node)?
+                .get_tool()?
+                .as_any();
+            let node = node.downcast_ref::<NodeTool>().unwrap();
 
             match tool_type {
                 BinTool::Npm => match node.get_npm() {

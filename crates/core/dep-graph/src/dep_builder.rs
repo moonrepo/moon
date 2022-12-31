@@ -121,7 +121,7 @@ impl<'ws> DepGraphBuilder<'ws> {
 
         trace!(
             target: LOG_TARGET,
-            "Adding node install {} dependencies (in project {}) to graph",
+            "Adding install {} dependencies (in project {}) to graph",
             runtime.label(),
             color::id(project_id)
         );
@@ -144,7 +144,7 @@ impl<'ws> DepGraphBuilder<'ws> {
 
         trace!(
             target: LOG_TARGET,
-            "Adding node install {} dependencies (in workspace) to graph",
+            "Adding install {} dependencies (in workspace) to graph",
             runtime.label()
         );
 
@@ -241,13 +241,13 @@ impl<'ws> DepGraphBuilder<'ws> {
         touched_files: Option<&TouchedFilePaths>,
     ) -> Result<Option<NodeIndex>, DepGraphError> {
         let target = target.as_ref();
-        let node = ActionNode::RunTarget(target.id.to_owned());
+        let task = project.get_task(&target.task_id)?;
+        let (runtime, _) = self.get_runtimes_from_project(project, Some(task));
+        let node = ActionNode::RunTarget(runtime, target.id.to_owned());
 
         if let Some(index) = self.get_index_from_node(&node) {
             return Ok(Some(*index));
         }
-
-        let task = project.get_task(&target.task_id)?;
 
         // Compare against touched files if provided
         if let Some(touched) = touched_files {
@@ -264,7 +264,7 @@ impl<'ws> DepGraphBuilder<'ws> {
 
         trace!(
             target: LOG_TARGET,
-            "Adding node run target {} to graph",
+            "Adding run target {} to graph",
             color::target(&target.id),
         );
 
@@ -277,7 +277,6 @@ impl<'ws> DepGraphBuilder<'ws> {
         self.graph.add_edge(index, sync_project_index, ());
 
         // And we also need to wait on all dependent targets
-
         if !task.deps.is_empty() {
             trace!(
                 target: LOG_TARGET,
@@ -352,7 +351,7 @@ impl<'ws> DepGraphBuilder<'ws> {
 
         trace!(
             target: LOG_TARGET,
-            "Adding node setup {} tool to graph",
+            "Adding setup {} tool to graph",
             runtime.label()
         );
 
@@ -369,7 +368,7 @@ impl<'ws> DepGraphBuilder<'ws> {
 
         trace!(
             target: LOG_TARGET,
-            "Adding node sync project {} to graph",
+            "Adding sync project {} to graph",
             color::id(&project.id),
         );
 

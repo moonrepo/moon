@@ -1,4 +1,4 @@
-use crate::hasher::NodeTargetHasher;
+use crate::target_hasher::NodeTargetHasher;
 use moon_action_context::{ActionContext, ProfileType};
 use moon_config::{HasherConfig, HasherOptimization, NodePackageManager, TypeScriptConfig};
 use moon_error::MoonError;
@@ -12,17 +12,16 @@ use moon_project::Project;
 use moon_task::Task;
 use moon_tool::{get_path_env_var, Tool, ToolError};
 use moon_typescript_lang::TsConfigJson;
-use moon_utils::process::Command;
+use moon_utils::{get_cache_dir, process::Command};
 use moon_utils::{path, string_vec};
-use moon_workspace::{Workspace, WorkspaceError};
 use rustc_hash::FxHashMap;
 use std::path::Path;
 
 const LOG_TARGET: &str = "moon:node-platform:run-target";
 
 fn create_node_options(
+    node: &NodeTool,
     context: &ActionContext,
-    workspace: &Workspace,
     task: &Task,
 ) -> Result<Vec<String>, MoonError> {
     let mut options = string_vec![
@@ -31,14 +30,12 @@ fn create_node_options(
         &task.target.id,
     ];
 
-    if let Some(node_config) = &workspace.toolchain.config.node {
-        if !node_config.bin_exec_args.is_empty() {
-            options.extend(node_config.bin_exec_args.to_owned());
-        }
-    }
+    options.extend(node.config.bin_exec_args.to_owned());
 
     if let Some(profile) = &context.profile {
-        let prof_dir = workspace.cache.get_target_dir(&task.target);
+        let prof_dir = get_cache_dir()
+            .join("states")
+            .join(task.target.id.replace(':', "/"));
 
         match profile {
             ProfileType::Cpu => {
@@ -89,27 +86,18 @@ fn create_node_options(
 ///     --cache --color --fix --ext .ts,.tsx,.js,.jsx
 #[track_caller]
 pub fn create_target_command(
+    node: &NodeTool,
     context: &ActionContext,
-    workspace: &Workspace,
     project: &Project,
     task: &Task,
     working_dir: &Path,
-) -> Result<Command, WorkspaceError> {
-    let mut node = workspace.toolchain.node.get::<NodeTool>()?;
-
-    // If a version override exists, use it for the cmmand
-    if let Some(node_config) = &project.config.toolchain.node {
-        if let Some(version_override) = &node_config.version {
-            node = workspace.toolchain.node.get_for_version(version_override)?;
-        }
-    }
-
+) -> Result<Command, ToolError> {
     let mut cmd = node.get_bin_path()?.to_owned();
     let mut args = vec![];
 
     match task.command.as_str() {
         "node" => {
-            args.extend(create_node_options(context, workspace, task)?);
+            args.extend(create_node_options(node, context, task)?);
         }
         "npm" => {
             args.push(path::to_string(node.get_npm()?.get_bin_path()?)?);
@@ -128,7 +116,7 @@ pub fn create_target_command(
                 }
                 // JavaScript
                 BinFile::Script(bin_path) => {
-                    args.extend(create_node_options(context, workspace, task)?);
+                    args.extend(create_node_options(node, context, task)?);
                     args.push(path::to_string(
                         path::relative_from(bin_path, working_dir).unwrap(),
                     )?);
@@ -150,8 +138,8 @@ pub fn create_target_command(
         command.env(
             "NODE_PATH",
             node::extend_node_path(path::to_string(
-                workspace
-                    .root
+                context
+                    .workspace_root
                     .join("node_modules")
                     .join(".pnpm")
                     .join("node_modules"),

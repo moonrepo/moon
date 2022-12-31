@@ -12,9 +12,8 @@ moon_emitter = { path = "../emitter" }
 moon_error = { path = "../error" }
 moon_hasher = { path = "../hasher" }
 moon_logger = { path = "../logger" }
-moon_node_platform = { path = "../../node/platform" }
+moon_platform_runtime = { path = "../platform-runtime" }
 moon_project = { path = "../project" }
-moon_system_platform = { path = "../../system/platform" }
 moon_task = { path = "../task" }
 moon_tool = { path = "../tool" }
 moon_terminal = { path = "../terminal" }

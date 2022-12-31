@@ -47,6 +47,13 @@ pub fn get_workspace_root() -> PathBuf {
 }
 
 #[inline]
+pub fn get_cache_dir() -> PathBuf {
+    get_workspace_root()
+        .join(constants::CONFIG_DIRNAME)
+        .join("cache")
+}
+
+#[inline]
 pub fn is_ci() -> bool {
     match env::var("CI") {
         Ok(var) => var == "true",

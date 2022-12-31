@@ -174,8 +174,9 @@ impl Pipeline {
 
                         results.push(result);
                     }
-                    Err(error) => {
-                        break;
+                    Err(_) => {
+                        // What to do here?
+                        return Err(PipelineError::Aborted("Unknown error!".to_owned()));
                     }
                 };
             }

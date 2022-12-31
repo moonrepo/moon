@@ -82,8 +82,10 @@ impl Platform for SystemPlatform {
                 }
             }
         } else {
-            command.args(&task.args).envs(&task.env);
+            command.args(&task.args);
         }
+
+        command.envs(&task.env);
 
         Ok(command)
     }

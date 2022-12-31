@@ -1,6 +1,5 @@
 use moon_constants as constants;
 use moon_error::MoonError;
-use moon_toolchain::{ToolError, ToolchainError};
 use moon_vcs::VcsError;
 use moonbase::MoonbaseError;
 use thiserror::Error;
@@ -12,6 +11,9 @@ pub enum WorkspaceError {
         constants::CONFIG_DIRNAME
     )]
     MissingConfigDir,
+
+    #[error("Unable to determine your home directory.")]
+    MissingHomeDir,
 
     #[error(
         "Unable to locate <file>{}/{}</file> configuration file.",
@@ -46,12 +48,6 @@ pub enum WorkspaceError {
 
     #[error(transparent)]
     Moonbase(#[from] MoonbaseError),
-
-    #[error(transparent)]
-    Tool(#[from] ToolError),
-
-    #[error(transparent)]
-    Toolchain(#[from] ToolchainError),
 
     #[error(transparent)]
     Vcs(#[from] VcsError),

@@ -4,12 +4,15 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+moon_action_context = { path = "../action-context" }
 moon_config = { path = "../config" }
 moon_error = { path = "../error" }
 moon_hasher = { path = "../hasher" }
 moon_platform_runtime = { path = "../platform-runtime" }
 moon_project = { path = "../project" }
+moon_task = { path = "../task" }
 moon_tool = { path = "../tool" }
+moon_utils = { path = "../utils" }
 async-trait = "0.1.59"
 rustc-hash = { workspace = true }
 serde = { workspace = true }

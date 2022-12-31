@@ -15,13 +15,14 @@ const LOG_TARGET: &str = "moon:action:sync-project";
 
 pub async fn sync_project(
     _action: &mut Action,
-    _context: Arc<RwLock<ActionContext>>,
+    context: Arc<RwLock<ActionContext>>,
     workspace: Arc<RwLock<Workspace>>,
     project_graph: Arc<RwLock<ProjectGraph>>,
     project: &Project,
     runtime: &Runtime,
 ) -> Result<ActionStatus, PipelineError> {
     let workspace = workspace.read().await;
+    let context = context.read().await;
     let project_graph = project_graph.read().await;
 
     debug!(
@@ -42,7 +43,7 @@ pub async fn sync_project(
     let mutated_files = workspace
         .platforms
         .get(runtime)?
-        .sync_project(project, &dependencies)
+        .sync_project(&context, project, &dependencies)
         .await?;
 
     // If files have been modified in CI, we should update the status to warning,

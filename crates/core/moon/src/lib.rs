@@ -1,32 +1,19 @@
-use moon_config::PlatformType;
 use moon_dep_graph::DepGraphBuilder;
+use moon_error::MoonError;
 use moon_node_platform::NodePlatform;
-use moon_node_tool::NodeTool;
 use moon_project_graph::{ProjectGraph, ProjectGraphBuilder, ProjectGraphError};
 use moon_system_platform::SystemPlatform;
 use moon_utils::is_test_env;
 use moon_workspace::{Workspace, WorkspaceError};
-use rustc_hash::FxHashMap;
 use std::path::Path;
-use strum::IntoEnumIterator;
 
 pub fn register_platforms(workspace: &mut Workspace) -> Result<(), WorkspaceError> {
-    let paths = { workspace.toolchain.get_paths() };
-
-    if let Some(node_config) = workspace.toolchain.config.node.clone() {
+    if let Some(node_config) = &workspace.toolchain_config.node {
         workspace.register_platform(Box::new(NodePlatform::new(
-            &node_config,
-            &workspace.toolchain.config.typescript,
+            node_config,
+            &workspace.toolchain_config.typescript,
             &workspace.root,
         )));
-
-        // TODO remove in follow-up
-        if let Some(node_version) = &node_config.version {
-            workspace.toolchain.node.register(
-                Box::new(NodeTool::new(&paths, &node_config, node_version)?),
-                true,
-            );
-        }
     }
 
     // Should be last since it's the most common
@@ -62,27 +49,15 @@ pub async fn load_workspace_from(path: &Path) -> Result<Workspace, WorkspaceErro
 }
 
 // Some commands require the toolchain to exist, but don't use
-// the action runner. This is a simple flow to wire up the tools.
+// the action pipeline. This is a simple flow to wire up the tools.
 pub async fn load_workspace_with_toolchain() -> Result<Workspace, WorkspaceError> {
     let mut workspace = load_workspace().await?;
-    let mut last_versions = FxHashMap::default();
 
-    // Use exhaustive checks so we don't miss a platform
-    for platform in PlatformType::iter() {
-        match platform {
-            PlatformType::Node => {
-                if let Some(node_config) = &workspace.toolchain.config.node {
-                    if let Some(node_version) = &node_config.version {
-                        workspace
-                            .toolchain
-                            .node
-                            .setup(node_version, &mut last_versions)
-                            .await?;
-                    }
-                }
-            }
-            PlatformType::System | PlatformType::Unknown => {}
-        }
+    for platform in workspace.platforms.list_mut() {
+        platform
+            .setup_toolchain()
+            .await
+            .map_err(|e| WorkspaceError::Moon(MoonError::Generic(e.to_string())))?;
     }
 
     Ok(workspace)

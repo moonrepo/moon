@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+moon_action_context = { path = "../../core/action-context" }
 moon_config = { path = "../../core/config" }
 moon_hasher = { path = "../../core/hasher" }
 moon_platform = { path = "../../core/platform" }

@@ -1,13 +1,11 @@
-use moon_config::{
-    DependencyScope, NodeConfig, NodeVersionFormat, TypeScriptConfig, CONFIG_DIRNAME,
-};
+use moon_config::{DependencyScope, NodeConfig, NodeVersionFormat, TypeScriptConfig};
 use moon_error::MoonError;
 use moon_logger::{color, debug};
 use moon_node_lang::{PackageJson, NPM};
 use moon_project::{Project, ProjectError};
 use moon_typescript_lang::tsconfig::CompilerOptionsPaths;
 use moon_typescript_lang::TsConfigJson;
-use moon_utils::{get_workspace_root, json, path, semver, string_vec};
+use moon_utils::{get_cache_dir, json, path, semver, string_vec};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -282,11 +280,7 @@ pub async fn sync_project(
 
                     // Out dir
                     if typescript_config.route_out_dir_to_cache {
-                        let cache_route = get_workspace_root()
-                            .join(CONFIG_DIRNAME)
-                            .join("cache")
-                            .join("types")
-                            .join(&project.source);
+                        let cache_route = get_cache_dir().join("types").join(&project.source);
 
                         tsconfig_json.update_compiler_options().out_dir =
                             Some(path::to_virtual_string(

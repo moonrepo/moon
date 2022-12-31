@@ -8,6 +8,7 @@ proto_error = { path = "../error" }
 async-trait = "0.1.59"
 dirs = "4.0.0"
 flate2 = "1.0.25"
+hyper = { workspace = true }
 lenient_semver = { version = "0.4.2", features = ["version_lite", "version_serde"] }
 log = "0.4.17"
 reqwest = { workspace = true }

@@ -80,6 +80,9 @@ impl Pipeline {
         let project_graph = Arc::clone(&self.project_graph);
 
         let pool = ThreadPool::default(); // WorkerPool::new(self.concurrency);
+
+        pool.start_core_threads();
+
         let mut results: ActionResults = vec![];
         let mut passed_count = 0;
         let mut cached_count = 0;

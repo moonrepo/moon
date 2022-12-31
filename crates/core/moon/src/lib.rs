@@ -87,6 +87,10 @@ pub fn generate_project_graph(
 ) -> Result<ProjectGraph, ProjectGraphError> {
     let mut builder = build_project_graph(workspace)?;
 
+    if let Ok(graph) = builder.build_if_cached() {
+        return Ok(graph);
+    }
+
     builder.load_all()?;
 
     Ok(builder.build())

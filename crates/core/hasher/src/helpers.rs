@@ -1,7 +1,7 @@
 use crate::hasher::Hasher;
 use moon_error::MoonError;
 use moon_utils::path;
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -15,6 +15,13 @@ pub fn to_hash(hasher: &impl Hasher) -> String {
 }
 
 pub fn hash_btree(tree: &BTreeMap<String, String>, sha: &mut Sha256) {
+    for (k, v) in tree {
+        sha.update(k.as_bytes());
+        sha.update(v.as_bytes());
+    }
+}
+
+pub fn hash_hmap(tree: &FxHashMap<String, String>, sha: &mut Sha256) {
     for (k, v) in tree {
         sha.update(k.as_bytes());
         sha.update(v.as_bytes());

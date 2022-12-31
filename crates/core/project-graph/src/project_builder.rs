@@ -1,4 +1,5 @@
 use crate::errors::ProjectGraphError;
+use crate::graph_hasher::GraphHasher;
 use crate::helpers::detect_projects_with_globs;
 use crate::project_graph::{GraphType, IndicesType, ProjectGraph, LOG_TARGET};
 use crate::token_resolver::{TokenContext, TokenResolver};
@@ -7,13 +8,14 @@ use moon_config::{
     GlobalProjectConfig, PlatformType, ProjectLanguage, ProjectsAliasesMap, ProjectsSourcesMap,
     WorkspaceConfig, WorkspaceProjects,
 };
+use moon_hasher::HashSet;
 use moon_logger::{color, debug, map_list, trace, Logable};
 use moon_platform::PlatformManager;
 use moon_platform_detector::{detect_project_language, detect_task_platform};
 use moon_project::{Project, ProjectDependency, ProjectDependencySource, ProjectError};
 use moon_task::{Target, TargetError, TargetProjectScope, Task, TaskError};
 use moon_utils::regex::ENV_VAR;
-use moon_utils::{glob, is_ci, path};
+use moon_utils::{glob, is_ci, path, time};
 use petgraph::graph::{DiGraph, NodeIndex};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
@@ -68,6 +70,10 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             mem::take(&mut self.sources),
             mem::take(&mut self.aliases),
         )
+    }
+
+    pub fn build_if_cached(&mut self) -> Result<ProjectGraph, ProjectGraphError> {
+        Ok(self.build())
     }
 
     pub fn load(&mut self, alias_or_id: &str) -> Result<&Self, ProjectGraphError> {
@@ -468,6 +474,8 @@ impl<'ws> ProjectGraphBuilder<'ws> {
     fn load_sources(&mut self) -> Result<(), ProjectGraphError> {
         let mut globs = vec![];
         let mut sources = FxHashMap::default();
+        let mut hasher = GraphHasher::default();
+        let mut hashset = HashSet::default();
 
         match &self.workspace_config.projects {
             WorkspaceProjects::Sources(map) => {
@@ -485,20 +493,10 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             }
         };
 
-        // Only check the cache when using globs
+        let mut cache = self.cache.cache_projects_state()?;
+
+        // If using globs, walk the file system if fresh
         if !globs.is_empty() {
-            let mut cache = self.cache.cache_projects_state()?;
-
-            // Return the values from the cache
-            if !cache.projects.is_empty() {
-                debug!(target: LOG_TARGET, "Loading projects from cache");
-
-                self.sources.extend(cache.projects);
-
-                return Ok(());
-            }
-
-            // Generate a new projects map by globbing the filesystem
             debug!(
                 target: LOG_TARGET,
                 "Finding projects with globs: {}",
@@ -507,11 +505,19 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
             detect_projects_with_globs(self.workspace_root, &globs, &mut sources)?;
 
-            // Update the cache
-            cache.globs = globs.clone();
-            cache.projects = sources.clone();
-            cache.save()?;
+            cache.last_glob_time = time::now_millis();
         }
+
+        hasher.hash_sources(&sources);
+        hashset.hash(hasher);
+
+        let hash = hashset.generate();
+
+        // Update the cache
+        cache.last_hash = hash;
+        cache.globs = globs.clone();
+        cache.projects = sources.clone();
+        cache.save()?;
 
         debug!(
             target: LOG_TARGET,

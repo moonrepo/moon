@@ -2111,6 +2111,7 @@ dependencies = [
  "moon_cache",
  "moon_config",
  "moon_error",
+ "moon_hasher",
  "moon_logger",
  "moon_platform",
  "moon_platform_detector",
@@ -2120,6 +2121,8 @@ dependencies = [
  "moon_utils",
  "petgraph",
  "rustc-hash",
+ "serde",
+ "serde_json",
  "thiserror",
  "tokio",
 ]
@@ -2655,6 +2658,7 @@ dependencies = [
  "fixedbitset",
  "indexmap",
  "serde",
+ "serde_derive",
 ]
 
 [[package]]

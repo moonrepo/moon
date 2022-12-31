@@ -14,6 +14,7 @@ harness = false
 moon_cache = { path = "../cache" }
 moon_config = { path = "../config" }
 moon_error = { path = "../error" }
+moon_hasher = { path = "../hasher" }
 moon_logger = { path = "../logger" }
 moon_platform = { path = "../platform" }
 moon_platform_detector = { path = "../platform-detector" }
@@ -23,6 +24,8 @@ moon_utils = { path = "../utils" }
 dotenvy = "0.15.6"
 petgraph = {  workspace = true, features = ["serde"] }
 rustc-hash = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]

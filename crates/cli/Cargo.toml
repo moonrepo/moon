@@ -33,7 +33,7 @@ moon_project_graph = { path = "../core/project-graph" }
 moon_system_platform = { path = "../system/platform" }
 moon_task = { path = "../core/task" }
 moon_terminal = { path = "../core/terminal" }
-moon_toolchain = { path = "../core/toolchain" }
+moon_tool = { path = "../core/tool" }
 moon_typescript_lang = { path = "../typescript/lang" }
 moon_utils = { path = "../core/utils" }
 moon_vcs = { path = "../core/vcs" }

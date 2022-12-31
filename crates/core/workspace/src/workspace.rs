@@ -2,13 +2,12 @@ use crate::errors::WorkspaceError;
 use moon_cache::CacheEngine;
 use moon_config::{
     format_error_line, format_figment_errors, ConfigError, GlobalProjectConfig, ToolchainConfig,
-    WorkspaceConfig,
+    WorkspaceConfig, CONFIG_DIRNAME,
 };
 use moon_constants as constants;
 use moon_logger::{color, debug, trace};
 use moon_platform::{BoxedPlatform, PlatformManager};
-use moon_toolchain::Toolchain;
-use moon_utils::fs;
+use moon_utils::{fs, path};
 use moon_vcs::{Vcs, VcsLoader};
 use moonbase::Moonbase;
 use std::env;
@@ -155,8 +154,8 @@ pub struct Workspace {
     /// When logged in, the auth token and IDs for making API requests.
     pub session: Option<Moonbase>,
 
-    /// The toolchain instance that houses all runtime tools/languages.
-    pub toolchain: Toolchain,
+    /// Toolchain configuration loaded from ".moon/toolchain.yml".
+    pub toolchain_config: ToolchainConfig,
 
     /// Configured version control system.
     pub vcs: Box<dyn Vcs + Send + Sync>,
@@ -174,6 +173,7 @@ impl Workspace {
 
     pub fn load_from<P: AsRef<Path>>(working_dir: P) -> Result<Workspace, WorkspaceError> {
         let working_dir = working_dir.as_ref();
+        let home_dir = path::get_home_dir().ok_or(WorkspaceError::MissingHomeDir)?;
         let Some(root_dir) = find_workspace_root(working_dir) else {
             return Err(WorkspaceError::MissingConfigDir);
         };
@@ -192,8 +192,10 @@ impl Workspace {
 
         // Setup components
         let cache = CacheEngine::load(&root_dir)?;
-        let toolchain = Toolchain::load(&toolchain_config)?;
         let vcs = VcsLoader::load(&root_dir, &config)?;
+
+        // This is temporary until we're fully on proto
+        env::set_var("PROTO_DIR", path::to_string(home_dir.join(CONFIG_DIRNAME))?);
 
         Ok(Workspace {
             cache,
@@ -202,7 +204,7 @@ impl Workspace {
             projects_config,
             root: root_dir,
             session: None,
-            toolchain,
+            toolchain_config,
             vcs,
             working_dir: working_dir.to_owned(),
         })

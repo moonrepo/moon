@@ -4,14 +4,13 @@ use console::Term;
 use moon_action::{ActionStatus, Attempt};
 use moon_action_context::ActionContext;
 use moon_cache::RunTargetState;
-use moon_config::{PlatformType, TaskOutputStyle};
+use moon_config::TaskOutputStyle;
 use moon_emitter::{Emitter, Event, EventFlow};
 use moon_error::MoonError;
 use moon_hasher::{convert_paths_to_strings, HashSet};
 use moon_logger::{color, debug, warn};
-use moon_node_platform::actions as node_actions;
+use moon_platform_runtime::Runtime;
 use moon_project::Project;
-use moon_system_platform::actions as system_actions;
 use moon_task::{
     Target, TargetError, TargetProjectScope, Task, TaskError, TaskOptionAffectedFiles,
 };
@@ -23,6 +22,7 @@ use moon_utils::{
 };
 use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
+use std::env;
 
 const LOG_TARGET: &str = "moon:runner";
 
@@ -251,7 +251,11 @@ impl<'a> Runner<'a> {
         Ok(())
     }
 
-    pub async fn create_command(&self, context: &ActionContext) -> Result<Command, RunnerError> {
+    pub async fn create_command(
+        &self,
+        context: &ActionContext,
+        runtime: &Runtime,
+    ) -> Result<Command, RunnerError> {
         let workspace = &self.workspace;
         let project = &self.project;
         let task = &self.task;
@@ -268,12 +272,12 @@ impl<'a> Runner<'a> {
             color::path(working_dir)
         );
 
-        let mut command = match task.platform {
-            PlatformType::Node => {
-                node_actions::create_target_command(context, workspace, project, task)?
-            }
-            _ => system_actions::create_target_command(task, working_dir),
-        };
+        let mut command = self
+            .workspace
+            .platforms
+            .get(task.platform)?
+            .create_run_target_command(context, project, task, runtime, working_dir)
+            .await?;
 
         command
             .cwd(working_dir)
@@ -354,7 +358,7 @@ impl<'a> Runner<'a> {
         env_vars.insert("MOON_TARGET".to_owned(), self.task.target.id.clone());
         env_vars.insert(
             "MOON_TOOLCHAIN_DIR".to_owned(),
-            path::to_string(&self.workspace.toolchain.dir)?,
+            env::var("PROTO_DIR").unwrap(),
         );
         env_vars.insert(
             "MOON_WORKSPACE_ROOT".to_owned(),

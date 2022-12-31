@@ -60,7 +60,7 @@ jobs:
           command: bench
           # args: --workspace --bench ${{ matrix.bench }} -- --save-baseline base-sha
           args: |
-            --workspace --bench dep_graph_benchmark --bench emitter_benchmark --bench project_graph_benchmark --bench runner_benchmark --bench tar_benchmark -- --save-baseline base-sha
+            --workspace --bench dep_graph_benchmark --bench emitter_benchmark --bench project_graph_benchmark --bench pipeline_benchmark --bench tar_benchmark -- --save-baseline base-sha
 
       # Compare diffs
       - name: Install critcmp

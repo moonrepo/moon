@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use moon_action_context::ActionContext;
 use moon_config::{
     DependencyConfig, HasherConfig, PlatformType, ProjectConfig, ProjectLanguage,
     ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap,
@@ -7,7 +8,9 @@ use moon_error::MoonError;
 use moon_hasher::HashSet;
 use moon_platform_runtime::{Runtime, Version};
 use moon_project::{Project, ProjectError};
+use moon_task::Task;
 use moon_tool::{Tool, ToolError};
+use moon_utils::process::Command;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::fmt::Debug;
@@ -71,14 +74,29 @@ pub trait Platform: Debug + Send + Sync {
 
     // TOOLCHAIN
 
+    /// Return a tool instance from the internal toolchain for the top-level version.
+    /// If the version does not exist in the toolchain, return an error.
+    fn get_tool(&self) -> Result<Box<&dyn Tool>, ToolError>;
+
     /// Return a tool instance from the internal toolchain for the provided version.
     /// If the version does not exist in the toolchain, return an error.
-    fn get_language_tool(&self, version: Version) -> Result<Box<&dyn Tool>, ToolError>;
+    fn get_tool_for_version(&self, version: Version) -> Result<Box<&dyn Tool>, ToolError>;
 
     /// Return the filename of the lockfile and manifest (in this order)
     /// for the language's dependency manager, if applicable.
     fn get_dependency_configs(&self) -> Result<Option<(String, String)>, ToolError> {
         Ok(None)
+    }
+
+    /// Setup the top-level tool in the toolchain if applicable.
+    /// This is a one off flow, as most flows will be using the pipeline.
+    async fn setup_toolchain(&mut self) -> Result<(), ToolError> {
+        Ok(())
+    }
+
+    /// Teardown all tools that are currently registered in the toolchain.
+    async fn teardown_toolchain(&mut self) -> Result<(), ToolError> {
+        Ok(())
     }
 
     // ACTIONS
@@ -88,7 +106,8 @@ pub trait Platform: Debug + Send + Sync {
     /// Return a count of how many tools were installed.
     async fn setup_tool(
         &mut self,
-        tool_version: Version,
+        context: &ActionContext,
+        runtime: &Runtime,
         last_versions: &mut FxHashMap<String, String>,
     ) -> Result<u8, ToolError> {
         Ok(0)
@@ -98,7 +117,8 @@ pub trait Platform: Debug + Send + Sync {
     /// dependency manager using the provided version.
     async fn install_deps(
         &self,
-        tool_version: Version,
+        context: &ActionContext,
+        runtime: &Runtime,
         working_dir: &Path,
     ) -> Result<(), ToolError> {
         Ok(())
@@ -108,6 +128,7 @@ pub trait Platform: Debug + Send + Sync {
     /// Return true if any files were modified as a result of syncing.
     async fn sync_project(
         &self,
+        context: &ActionContext,
         project: &Project,
         dependencies: &FxHashMap<String, &Project>,
     ) -> Result<bool, ProjectError> {
@@ -135,4 +156,14 @@ pub trait Platform: Debug + Send + Sync {
     ) -> Result<(), ToolError> {
         Ok(())
     }
+
+    /// Create an async command to run a target's child process.
+    async fn create_run_target_command(
+        &self,
+        context: &ActionContext,
+        project: &Project,
+        task: &Task,
+        runtime: &Runtime,
+        working_dir: &Path,
+    ) -> Result<Command, ToolError>;
 }

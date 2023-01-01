@@ -6,9 +6,10 @@ use crate::token_resolver::{TokenContext, TokenResolver};
 use moon_config::{
     PlatformType, ProjectLanguage, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceProjects,
     CONFIG_DIRNAME, CONFIG_GLOBAL_PROJECT_FILENAME, CONFIG_PROJECT_FILENAME,
+    CONFIG_TOOLCHAIN_FILENAME,
 };
 use moon_error::MoonError;
-use moon_hasher::to_hash;
+use moon_hasher::{convert_paths_to_strings, to_hash};
 use moon_logger::{color, debug, map_list, trace, Logable};
 use moon_platform_detector::{detect_project_language, detect_task_platform};
 use moon_project::{Project, ProjectDependency, ProjectDependencySource, ProjectError};
@@ -541,20 +542,25 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         // these files would invalidate the entire project graph cache!
         // TODO: handle extended config files?
         if self.workspace.vcs.is_enabled() {
-            let mut configs = vec![path::to_virtual_string(
-                PathBuf::from(CONFIG_DIRNAME).join(CONFIG_GLOBAL_PROJECT_FILENAME),
-            )?];
+            let mut configs = FxHashSet::from_iter(
+                sources
+                    .values()
+                    .map(|source| PathBuf::from(source).join(CONFIG_PROJECT_FILENAME)),
+            );
 
-            for source in sources.values() {
-                configs.push(path::to_virtual_string(
-                    PathBuf::from(source).join(CONFIG_PROJECT_FILENAME),
-                )?);
-            }
+            // Because of inherited tasks
+            configs.insert(PathBuf::from(CONFIG_DIRNAME).join(CONFIG_GLOBAL_PROJECT_FILENAME));
+
+            // Because of settings that interact with tasks
+            configs.insert(PathBuf::from(CONFIG_DIRNAME).join(CONFIG_TOOLCHAIN_FILENAME));
 
             let config_hashes = self
                 .workspace
                 .vcs
-                .get_file_hashes(&configs, false)
+                .get_file_hashes(
+                    &convert_paths_to_strings(&configs, &self.workspace.root)?,
+                    false,
+                )
                 .await
                 .map_err(|e| MoonError::Generic(e.to_string()))?;
 

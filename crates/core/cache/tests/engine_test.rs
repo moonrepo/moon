@@ -494,7 +494,7 @@ mod cache_projects_state {
 
         assert_eq!(
             fs::read_to_string(item.path).unwrap(),
-            r#"{"globs":[],"last_hash":"","last_glob_time":0,"projects":{"foo":"bar"}}"#
+            r#"{"globs":[],"lastHash":"","lastGlobTime":0,"projects":{"foo":"bar"}}"#
         );
 
         dir.close().unwrap();

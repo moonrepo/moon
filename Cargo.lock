@@ -1741,7 +1741,6 @@ dependencies = [
 name = "moon_cache"
 version = "0.1.0"
 dependencies = [
- "filetime",
  "moon_archive",
  "moon_constants",
  "moon_error",

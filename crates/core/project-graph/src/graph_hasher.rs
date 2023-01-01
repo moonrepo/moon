@@ -30,6 +30,7 @@ impl GraphHasher {
 impl Hasher for GraphHasher {
     fn hash(&self, sha: &mut Sha256) {
         hash_btree(&self.aliases, sha);
+        hash_btree(&self.configs, sha);
         hash_btree(&self.sources, sha);
     }
 

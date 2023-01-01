@@ -21,6 +21,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::mem;
 use std::path::PathBuf;
+use std::time::Duration;
 
 pub struct ProjectGraphBuilder<'ws> {
     workspace: &'ws mut Workspace,
@@ -478,9 +479,8 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             }
         };
 
-        // TODO timeframe
-        // If using globs, walk the file system if fresh
-        if !globs.is_empty() {
+        // If using globs, walk the file system if it's been 5 minutes since the last glob
+        if !globs.is_empty() && time::is_stale(cache.last_glob_time, Duration::from_secs(60 * 5)) {
             debug!(
                 target: LOG_TARGET,
                 "Finding projects with globs: {}",
@@ -539,24 +539,27 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         // Hash all project-oriented config files, as a single change in any of
         // these files would invalidate the entire project graph cache!
-        let mut configs = vec![path::to_virtual_string(
-            PathBuf::from(CONFIG_DIRNAME).join(CONFIG_GLOBAL_PROJECT_FILENAME),
-        )?];
+        // TODO: handle extended config files?
+        if self.workspace.vcs.is_enabled() {
+            let mut configs = vec![path::to_virtual_string(
+                PathBuf::from(CONFIG_DIRNAME).join(CONFIG_GLOBAL_PROJECT_FILENAME),
+            )?];
 
-        for source in sources.values() {
-            configs.push(path::to_virtual_string(
-                PathBuf::from(source).join(CONFIG_PROJECT_FILENAME),
-            )?);
+            for source in sources.values() {
+                configs.push(path::to_virtual_string(
+                    PathBuf::from(source).join(CONFIG_PROJECT_FILENAME),
+                )?);
+            }
+
+            let config_hashes = self
+                .workspace
+                .vcs
+                .get_file_hashes(&configs, false)
+                .await
+                .map_err(|e| MoonError::Generic(e.to_string()))?;
+
+            hasher.hash_configs(&config_hashes);
         }
-
-        let config_hashes = self
-            .workspace
-            .vcs
-            .get_file_hashes(&configs, false)
-            .await
-            .map_err(|e| MoonError::Generic(e.to_string()))?;
-
-        hasher.hash_configs(&config_hashes);
 
         // Generate the hash
         let hash = to_hash(&hasher);

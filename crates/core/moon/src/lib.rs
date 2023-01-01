@@ -73,13 +73,7 @@ pub fn build_dep_graph<'g>(
 pub async fn build_project_graph(
     workspace: &mut Workspace,
 ) -> Result<ProjectGraphBuilder, ProjectGraphError> {
-    ProjectGraphBuilder::new(
-        &workspace.cache,
-        &workspace.projects_config,
-        &mut workspace.platforms,
-        &workspace.config,
-        &workspace.root,
-    )
+    ProjectGraphBuilder::new(workspace).await
 }
 
 pub async fn generate_project_graph(

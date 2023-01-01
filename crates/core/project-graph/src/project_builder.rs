@@ -8,7 +8,8 @@ use moon_config::{
     GlobalProjectConfig, PlatformType, ProjectLanguage, ProjectsAliasesMap, ProjectsSourcesMap,
     WorkspaceConfig, WorkspaceProjects,
 };
-use moon_hasher::HashSet;
+use moon_error::MoonError;
+use moon_hasher::to_hash;
 use moon_logger::{color, debug, map_list, trace, Logable};
 use moon_platform::PlatformManager;
 use moon_platform_detector::{detect_project_language, detect_task_platform};
@@ -33,6 +34,8 @@ pub struct ProjectGraphBuilder<'ws> {
     graph: GraphType,
     indices: IndicesType,
     sources: ProjectsSourcesMap,
+
+    pub is_cached: bool,
 }
 
 impl<'ws> ProjectGraphBuilder<'ws> {
@@ -51,14 +54,14 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             config,
             graph: DiGraph::new(),
             indices: FxHashMap::default(),
+            is_cached: false,
             platforms,
             sources: FxHashMap::default(),
             workspace_config,
             workspace_root,
         };
 
-        graph.load_sources()?;
-        graph.load_aliases()?;
+        graph.preload()?;
 
         Ok(graph)
     }
@@ -70,10 +73,6 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             mem::take(&mut self.sources),
             mem::take(&mut self.aliases),
         )
-    }
-
-    pub fn build_if_cached(&mut self) -> Result<ProjectGraph, ProjectGraphError> {
-        Ok(self.build())
     }
 
     pub fn load(&mut self, alias_or_id: &str) -> Result<&Self, ProjectGraphError> {
@@ -463,20 +462,13 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         Ok(index)
     }
 
-    fn load_aliases(&mut self) -> Result<(), ProjectGraphError> {
-        for platform in self.platforms.list_mut() {
-            platform.load_project_graph_aliases(&self.sources, &mut self.aliases)?;
-        }
-
-        Ok(())
-    }
-
-    fn load_sources(&mut self) -> Result<(), ProjectGraphError> {
+    fn preload(&mut self) -> Result<(), ProjectGraphError> {
         let mut globs = vec![];
         let mut sources = FxHashMap::default();
-        let mut hasher = GraphHasher::default();
-        let mut hashset = HashSet::default();
+        let mut aliases = FxHashMap::default();
+        let mut cache = self.cache.cache_projects_state()?;
 
+        // Load project sources
         match &self.workspace_config.projects {
             WorkspaceProjects::Sources(map) => {
                 sources.extend(map.clone());
@@ -493,8 +485,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             }
         };
 
-        let mut cache = self.cache.cache_projects_state()?;
-
+        // TODO timeframe
         // If using globs, walk the file system if fresh
         if !globs.is_empty() {
             debug!(
@@ -508,25 +499,54 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             cache.last_glob_time = time::now_millis();
         }
 
-        hasher.hash_sources(&sources);
-        hashset.hash(hasher);
-
-        let hash = hashset.generate();
+        // Load project aliases
+        for platform in self.platforms.list_mut() {
+            platform.load_project_graph_aliases(&sources, &mut aliases)?;
+        }
 
         // Update the cache
+        let hash = self.generate_hash(&sources, &aliases)?;
+
+        self.is_cached = cache.last_hash == hash;
+        self.aliases.extend(aliases.clone());
+        self.sources.extend(sources.clone());
+
         cache.last_hash = hash;
-        cache.globs = globs.clone();
-        cache.projects = sources.clone();
+        cache.globs = globs;
+        cache.projects = sources;
         cache.save()?;
 
-        debug!(
-            target: LOG_TARGET,
-            "Creating project graph with {} projects",
-            sources.len(),
-        );
-
-        self.sources.extend(sources);
+        if self.is_cached {
+            debug!(
+                target: LOG_TARGET,
+                "Loading project graph with {} projects from cache",
+                self.sources.len(),
+            );
+        } else {
+            debug!(
+                target: LOG_TARGET,
+                "Creating project graph with {} projects",
+                self.sources.len(),
+            );
+        }
 
         Ok(())
+    }
+
+    fn generate_hash(
+        &self,
+        sources: &ProjectsSourcesMap,
+        aliases: &ProjectsAliasesMap,
+    ) -> Result<String, MoonError> {
+        let mut hasher = GraphHasher::default();
+
+        hasher.hash_aliases(&aliases);
+        hasher.hash_sources(&sources);
+
+        let hash = to_hash(&hasher);
+
+        self.cache.create_hash_manifest(&hash, &hasher)?;
+
+        Ok(hash)
     }
 }

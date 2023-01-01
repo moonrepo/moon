@@ -67,7 +67,7 @@ pub async fn prune() -> Result<(), AnyError> {
         safe_exit(1);
     }
 
-    let project_graph = generate_project_graph(&mut workspace)?;
+    let project_graph = generate_project_graph(&mut workspace).await?;
     let manifest: DockerManifest = json::read(manifest_path)?;
     let mut is_using_node = false;
 

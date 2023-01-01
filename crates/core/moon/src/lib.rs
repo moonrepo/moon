@@ -70,7 +70,7 @@ pub fn build_dep_graph<'g>(
     DepGraphBuilder::new(&workspace.platforms, project_graph)
 }
 
-pub fn build_project_graph(
+pub async fn build_project_graph(
     workspace: &mut Workspace,
 ) -> Result<ProjectGraphBuilder, ProjectGraphError> {
     ProjectGraphBuilder::new(
@@ -82,11 +82,11 @@ pub fn build_project_graph(
     )
 }
 
-pub fn generate_project_graph(
+pub async fn generate_project_graph(
     workspace: &mut Workspace,
 ) -> Result<ProjectGraph, ProjectGraphError> {
     let cache_path = workspace.cache.get_state_path("projectGraph.json");
-    let mut builder = build_project_graph(workspace)?;
+    let mut builder = build_project_graph(workspace).await?;
 
     if builder.is_cached && cache_path.exists() {
         let graph: ProjectGraph = json::read(&cache_path)?;

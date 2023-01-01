@@ -46,7 +46,7 @@ pub fn pipeline_benchmark(c: &mut Criterion) {
     c.bench_function("pipeline", |b| {
         b.iter(|| async {
             let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
-            let project_graph = generate_project_graph(&mut workspace).unwrap();
+            let project_graph = generate_project_graph(&mut workspace).await.unwrap();
             let dep_graph = generate_dep_graph(&workspace, &project_graph);
 
             black_box(

@@ -425,6 +425,8 @@ mod cache_projects_state {
             item,
             ProjectsState {
                 globs: string_vec!["**/*"],
+                last_glob_time: 0,
+                last_hash: String::new(),
                 projects: FxHashMap::from_iter([("foo".to_owned(), "bar".to_owned())]),
                 path: dir.path().join(".moon/cache/states/projects.json")
             }
@@ -449,6 +451,8 @@ mod cache_projects_state {
             item,
             ProjectsState {
                 globs: string_vec!["**/*"],
+                last_glob_time: 0,
+                last_hash: String::new(),
                 projects: FxHashMap::from_iter([("foo".to_owned(), "bar".to_owned())]),
                 path: dir.path().join(".moon/cache/states/projects.json")
             }

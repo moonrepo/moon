@@ -20,7 +20,7 @@ async fn get_aliases_graph() -> (ProjectGraph, Sandbox) {
     );
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
-    let graph = generate_project_graph(&mut workspace).unwrap();
+    let graph = generate_project_graph(&mut workspace).await.unwrap();
 
     (graph, sandbox)
 }
@@ -44,7 +44,7 @@ async fn get_dependencies_graph() -> (ProjectGraph, Sandbox) {
     );
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
-    let graph = generate_project_graph(&mut workspace).unwrap();
+    let graph = generate_project_graph(&mut workspace).await.unwrap();
 
     (graph, sandbox)
 }
@@ -68,7 +68,7 @@ async fn get_dependents_graph() -> (ProjectGraph, Sandbox) {
     );
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
-    let graph = generate_project_graph(&mut workspace).unwrap();
+    let graph = generate_project_graph(&mut workspace).await.unwrap();
 
     (graph, sandbox)
 }
@@ -89,7 +89,7 @@ async fn can_use_map_and_globs_setting() {
     let sandbox = create_sandbox_with_config("projects", Some(&workspace_config), None, None);
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
-    let graph = generate_project_graph(&mut workspace).unwrap();
+    let graph = generate_project_graph(&mut workspace).await.unwrap();
 
     assert_eq!(
         graph.sources,
@@ -121,7 +121,7 @@ mod globs {
         sandbox.create_file("node_modules/moon/package.json", "{}");
 
         let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
-        let graph = generate_project_graph(&mut workspace).unwrap();
+        let graph = generate_project_graph(&mut workspace).await.unwrap();
 
         assert!(!graph.sources.contains_key(".foo"));
         assert!(!graph.sources.contains_key(".git"));
@@ -139,7 +139,7 @@ mod globs {
             create_sandbox_with_config("project-graph/ids", Some(&workspace_config), None, None);
 
         let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
-        let graph = generate_project_graph(&mut workspace).unwrap();
+        let graph = generate_project_graph(&mut workspace).await.unwrap();
 
         assert_eq!(
             graph.sources,
@@ -230,7 +230,7 @@ mod to_dot {
         );
 
         let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
-        let mut graph = build_project_graph(&mut workspace).unwrap();
+        let mut graph = build_project_graph(&mut workspace).await.unwrap();
 
         graph.load("b").unwrap();
 

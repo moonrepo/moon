@@ -540,8 +540,12 @@ impl<'ws> ProjectGraphBuilder<'ws> {
     ) -> Result<String, MoonError> {
         let mut hasher = GraphHasher::default();
 
-        hasher.hash_aliases(&aliases);
-        hasher.hash_sources(&sources);
+        // Hash aliases and sources as-is as they're very explicit
+        hasher.hash_aliases(aliases);
+        hasher.hash_sources(sources);
+
+        // Hash all project-oriented config files, as a single change in any of
+        // these files would invalidate the entire project graph cache!
 
         let hash = to_hash(&hasher);
 

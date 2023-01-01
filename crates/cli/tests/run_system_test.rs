@@ -240,7 +240,7 @@ mod unix {
 
             assert!(cache_path.exists());
 
-            let state = RunTargetState::load(cache_path, 0).unwrap();
+            let state = RunTargetState::load(cache_path).unwrap();
 
             assert!(sandbox
                 .path()

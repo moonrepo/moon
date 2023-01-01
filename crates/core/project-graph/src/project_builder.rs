@@ -5,6 +5,7 @@ use crate::project_graph::{GraphType, IndicesType, ProjectGraph, LOG_TARGET};
 use crate::token_resolver::{TokenContext, TokenResolver};
 use moon_config::{
     PlatformType, ProjectLanguage, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceProjects,
+    CONFIG_DIRNAME, CONFIG_GLOBAL_PROJECT_FILENAME, CONFIG_PROJECT_FILENAME,
 };
 use moon_error::MoonError;
 use moon_hasher::to_hash;
@@ -47,7 +48,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             workspace,
         };
 
-        graph.preload()?;
+        graph.preload().await?;
 
         Ok(graph)
     }
@@ -454,7 +455,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         Ok(index)
     }
 
-    fn preload(&mut self) -> Result<(), ProjectGraphError> {
+    async fn preload(&mut self) -> Result<(), ProjectGraphError> {
         let mut globs = vec![];
         let mut sources = FxHashMap::default();
         let mut aliases = FxHashMap::default();
@@ -497,7 +498,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         }
 
         // Update the cache
-        let hash = self.generate_hash(&sources, &aliases)?;
+        let hash = self.generate_hash(&sources, &aliases).await?;
 
         self.is_cached = cache.last_hash == hash;
         self.aliases.extend(aliases.clone());
@@ -525,7 +526,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         Ok(())
     }
 
-    fn generate_hash(
+    async fn generate_hash(
         &self,
         sources: &ProjectsSourcesMap,
         aliases: &ProjectsAliasesMap,
@@ -538,7 +539,26 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         // Hash all project-oriented config files, as a single change in any of
         // these files would invalidate the entire project graph cache!
+        let mut configs = vec![path::to_virtual_string(
+            PathBuf::from(CONFIG_DIRNAME).join(CONFIG_GLOBAL_PROJECT_FILENAME),
+        )?];
 
+        for source in sources.values() {
+            configs.push(path::to_virtual_string(
+                PathBuf::from(source).join(CONFIG_PROJECT_FILENAME),
+            )?);
+        }
+
+        let config_hashes = self
+            .workspace
+            .vcs
+            .get_file_hashes(&configs, false)
+            .await
+            .map_err(|e| MoonError::Generic(e.to_string()))?;
+
+        hasher.hash_configs(&config_hashes);
+
+        // Generate the hash
         let hash = to_hash(&hasher);
 
         self.workspace.cache.create_hash_manifest(&hash, &hasher)?;

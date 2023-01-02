@@ -7,7 +7,7 @@ pub async fn project_graph(
     json: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut workspace = load_workspace().await?;
-    let mut project_build = build_project_graph(&mut workspace)?;
+    let mut project_build = build_project_graph(&mut workspace).await?;
 
     if let Some(id) = project_id {
         project_build.load(id)?;

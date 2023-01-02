@@ -20,7 +20,7 @@ async fn get_aliases_graph() -> (ProjectGraph, Sandbox) {
     );
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
-    let graph = generate_project_graph(&mut workspace).unwrap();
+    let graph = generate_project_graph(&mut workspace).await.unwrap();
 
     (graph, sandbox)
 }
@@ -44,7 +44,7 @@ async fn get_dependencies_graph() -> (ProjectGraph, Sandbox) {
     );
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
-    let graph = generate_project_graph(&mut workspace).unwrap();
+    let graph = generate_project_graph(&mut workspace).await.unwrap();
 
     (graph, sandbox)
 }
@@ -68,7 +68,7 @@ async fn get_dependents_graph() -> (ProjectGraph, Sandbox) {
     );
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
-    let graph = generate_project_graph(&mut workspace).unwrap();
+    let graph = generate_project_graph(&mut workspace).await.unwrap();
 
     (graph, sandbox)
 }
@@ -89,7 +89,7 @@ async fn can_use_map_and_globs_setting() {
     let sandbox = create_sandbox_with_config("projects", Some(&workspace_config), None, None);
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
-    let graph = generate_project_graph(&mut workspace).unwrap();
+    let graph = generate_project_graph(&mut workspace).await.unwrap();
 
     assert_eq!(
         graph.sources,
@@ -101,6 +101,45 @@ async fn can_use_map_and_globs_setting() {
             ("foo".to_owned(), "deps/foo".to_owned()),
         ])
     );
+}
+
+mod caching {
+    use super::*;
+    use moon_cache::ProjectsState;
+
+    #[tokio::test]
+    async fn caches_and_hashes_projects_state() {
+        let (_, sandbox) = get_dependencies_graph().await;
+        let state_path = sandbox.path().join(".moon/cache/states/projects.json");
+        let graph_path = sandbox.path().join(".moon/cache/states/projectGraph.json");
+
+        assert!(state_path.exists());
+        assert!(graph_path.exists());
+
+        let state = ProjectsState::load(state_path).unwrap();
+
+        assert_eq!(state.globs, string_vec![]);
+        assert_eq!(state.last_glob_time, 0);
+        assert_eq!(
+            state.last_hash,
+            "2c5bca2c7e6e42730134edb68fa01461d95216f7742799daa1f1314c8d7e207e"
+        );
+        assert_eq!(
+            state.projects,
+            FxHashMap::from_iter([
+                ("a".to_string(), "a".to_string()),
+                ("b".to_string(), "b".to_string()),
+                ("c".to_string(), "c".to_string()),
+                ("d".to_string(), "d".to_string()),
+            ])
+        );
+
+        assert!(sandbox
+            .path()
+            .join(".moon/cache/hashes")
+            .join(format!("{}.json", state.last_hash))
+            .exists());
+    }
 }
 
 mod globs {
@@ -121,7 +160,7 @@ mod globs {
         sandbox.create_file("node_modules/moon/package.json", "{}");
 
         let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
-        let graph = generate_project_graph(&mut workspace).unwrap();
+        let graph = generate_project_graph(&mut workspace).await.unwrap();
 
         assert!(!graph.sources.contains_key(".foo"));
         assert!(!graph.sources.contains_key(".git"));
@@ -139,7 +178,7 @@ mod globs {
             create_sandbox_with_config("project-graph/ids", Some(&workspace_config), None, None);
 
         let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
-        let graph = generate_project_graph(&mut workspace).unwrap();
+        let graph = generate_project_graph(&mut workspace).await.unwrap();
 
         assert_eq!(
             graph.sources,
@@ -230,7 +269,7 @@ mod to_dot {
         );
 
         let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
-        let mut graph = build_project_graph(&mut workspace).unwrap();
+        let mut graph = build_project_graph(&mut workspace).await.unwrap();
 
         graph.load("b").unwrap();
 

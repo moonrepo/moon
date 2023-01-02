@@ -234,11 +234,7 @@ impl<'a> Runner<'a> {
             let files = local_files
                 .all
                 .into_iter()
-                .filter(|f| {
-                    // Deleted files will crash `git hash-object`
-                    !local_files.deleted.contains(f)
-                        && globset.matches(workspace.root.join(f)).unwrap_or(false)
-                })
+                .filter(|f| globset.matches(workspace.root.join(f)).unwrap_or(false))
                 .collect::<Vec<String>>();
 
             if !files.is_empty() {

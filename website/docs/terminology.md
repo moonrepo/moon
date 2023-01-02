@@ -4,8 +4,8 @@ title: Terminology
 
 | Term                          | Description                                                                                                                                             |
 | :---------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Action                        | A node within the dependency graph that gets executed by the action runner.                                                                             |
-| Action runner                 | Executes actions from our dependency graph in topological order.                                                                                        |
+| Action                        | A node within the dependency graph that gets executed by the action pipeline.                                                                           |
+| Action pipeline               | Executes actions from our dependency graph in topological order using a thread pool.                                                                    |
 | Affected                      | Touched by an explicit set of inputs or sources.                                                                                                        |
 | Cache                         | Files and outputs that are stored on the file system to provide incremental builds and increased performance.                                           |
 | CI                            | Continuous integration. An environment where tests, builds, lints, etc, are continuously ran on every pull/merge request.                               |

@@ -177,7 +177,8 @@ impl Vcs for Git {
         let mut map = BTreeMap::new();
 
         for file in files {
-            if allow_ignored || !self.is_file_ignored(file) {
+            // File must exists or git fails
+            if self.root.join(file).exists() && (allow_ignored || !self.is_file_ignored(file)) {
                 objects.push(file.clone());
             }
         }

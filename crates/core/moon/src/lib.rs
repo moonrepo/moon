@@ -92,7 +92,7 @@ pub async fn generate_project_graph(
 
     let graph = builder.build();
 
-    json::write(&cache_path, &graph, true)?;
+    json::write(&cache_path, &graph, false)?;
 
     Ok(graph)
 }

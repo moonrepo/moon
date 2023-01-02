@@ -1,0 +1,50 @@
+---
+slug: v0.22
+title: moon v0.22 - ???
+authors: [milesj]
+tags: [graph]
+# image: ./img/v0.21.png
+---
+
+import Label from '@site/src/ui/typography/Label';
+import Image from '@site/src/components/Image';
+
+TODO
+
+<!--truncate-->
+
+## Expanded hashing functionality
+
+When we run targets in the pipeline, we hash a collection of inputs to calculate whether to continue
+running or to exit early. This functionality has been extremely beneficial for optimizing the
+pipeline, and so, we've expanded the hasher for other use cases. To start, the following 2 workflows
+now utilize the hasher:
+
+- When determining to auto-install dependencies (`npm install`, etc), we now hash all production,
+  development, and peer dependencies from applicable manifests (`package.json`). This has resulted
+  in more accurate installs, as we're no longer inadvertently installing when a non-dependency field
+  is modified in a manifest. On top of this, will still take into account lockfile modified
+  timestamps.
+- When generating the project graph, we now hash all sources, aliases, and configuration files, to
+  determine whether to load the project graph from the local cache.
+
+## Project graph is now cached
+
+Because of the hashing improvements above, we're now able to cache the entirety of the project graph
+into the local cache. Depending on how many projects are in your workspace, you may see performance
+improvements on subsequent runs as we're no longer re-building the project graph over and over
+everytime the `moon` binary is ran.
+
+## Other changes
+
+View the
+[official release](https://github.com/moonrepo/moon/releases/tag/%40moonrepo%2Fcli%400.22.0) for a
+full list of changes.
+
+- Updated the pipeline to use a worker pool strategy for improved concurrency.
+
+## What's next?
+
+Expect the following in the v0.23 release!
+
+- ???

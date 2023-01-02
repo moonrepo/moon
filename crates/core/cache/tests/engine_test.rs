@@ -1,6 +1,5 @@
 use moon_cache::{CacheEngine, ProjectsState, RunTargetState, ToolState};
 use moon_test_utils::{assert_fs::prelude::*, create_temp_dir};
-use moon_utils::time;
 use serde::Serialize;
 use serial_test::serial;
 use std::env;
@@ -391,10 +390,8 @@ mod cache_tool_state {
 
 mod cache_projects_state {
     use super::*;
-    use filetime::{set_file_mtime, FileTime};
     use moon_utils::string_vec;
     use rustc_hash::FxHashMap;
-    use std::time::SystemTime;
 
     #[test]
     #[serial]
@@ -425,6 +422,8 @@ mod cache_projects_state {
             item,
             ProjectsState {
                 globs: string_vec!["**/*"],
+                last_glob_time: 0,
+                last_hash: String::new(),
                 projects: FxHashMap::from_iter([("foo".to_owned(), "bar".to_owned())]),
                 path: dir.path().join(".moon/cache/states/projects.json")
             }
@@ -449,6 +448,8 @@ mod cache_projects_state {
             item,
             ProjectsState {
                 globs: string_vec!["**/*"],
+                last_glob_time: 0,
+                last_hash: String::new(),
                 projects: FxHashMap::from_iter([("foo".to_owned(), "bar".to_owned())]),
                 path: dir.path().join(".moon/cache/states/projects.json")
             }
@@ -482,37 +483,6 @@ mod cache_projects_state {
 
     #[test]
     #[serial]
-    fn doesnt_load_if_it_exists_but_cache_is_stale() {
-        let dir = create_temp_dir();
-
-        dir.child(".moon/cache/states/projects.json")
-            .write_str(r#"{"globs":[],"projects":{"foo":"bar"}}"#)
-            .unwrap();
-
-        let now = time::to_millis(SystemTime::now()) - 100000;
-
-        set_file_mtime(
-            dir.path().join(".moon/cache/states/projects.json"),
-            FileTime::from_unix_time((now / 1000) as i64, 0),
-        )
-        .unwrap();
-
-        let cache = CacheEngine::load(dir.path()).unwrap();
-        let item = cache.cache_projects_state().unwrap();
-
-        assert_eq!(
-            item,
-            ProjectsState {
-                path: dir.path().join(".moon/cache/states/projects.json"),
-                ..ProjectsState::default()
-            }
-        );
-
-        dir.close().unwrap();
-    }
-
-    #[test]
-    #[serial]
     fn saves_to_cache() {
         let dir = create_temp_dir();
         let cache = CacheEngine::load(dir.path()).unwrap();
@@ -524,7 +494,7 @@ mod cache_projects_state {
 
         assert_eq!(
             fs::read_to_string(item.path).unwrap(),
-            r#"{"globs":[],"projects":{"foo":"bar"}}"#
+            r#"{"globs":[],"lastHash":"","lastGlobTime":0,"projects":{"foo":"bar"}}"#
         );
 
         dir.close().unwrap();

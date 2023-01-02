@@ -67,14 +67,11 @@ impl CacheEngine {
     ) -> Result<DependenciesState, MoonError> {
         let name = format!("deps{}.json", runtime);
 
-        DependenciesState::load(
-            self.states_dir.join(if let Some(id) = project_id {
-                format!("{}/{}", id, name)
-            } else {
-                name
-            }),
-            0,
-        )
+        DependenciesState::load(self.get_state_path(if let Some(id) = project_id {
+            format!("{}/{}", id, name)
+        } else {
+            name
+        }))
     }
 
     pub fn cache_run_target_state<T: AsRef<str>>(
@@ -82,8 +79,7 @@ impl CacheEngine {
         target_id: T,
     ) -> Result<RunTargetState, MoonError> {
         let target_id = target_id.as_ref();
-        let mut item =
-            RunTargetState::load(self.get_target_dir(target_id).join("lastRun.json"), 0)?;
+        let mut item = RunTargetState::load(self.get_target_dir(target_id).join("lastRun.json"))?;
 
         if item.target.is_empty() {
             item.target = target_id.to_owned();
@@ -93,18 +89,11 @@ impl CacheEngine {
     }
 
     pub fn cache_projects_state(&self) -> Result<ProjectsState, MoonError> {
-        ProjectsState::load(
-            self.states_dir.join("projects.json"),
-            90000, // Cache for 3 minutes
-        )
+        ProjectsState::load(self.get_state_path("projects.json"))
     }
 
     pub fn cache_tool_state(&self, runtime: &Runtime) -> Result<ToolState, MoonError> {
-        ToolState::load(
-            self.states_dir
-                .join(format!("tool{}-{}.json", runtime, runtime.version())),
-            0,
-        )
+        ToolState::load(self.get_state_path(format!("tool{}-{}.json", runtime, runtime.version())))
     }
 
     pub fn clean_stale_cache(
@@ -171,7 +160,7 @@ impl CacheEngine {
         project_id: &str,
         data: &T,
     ) -> Result<Runfile, MoonError> {
-        Runfile::load(self.states_dir.join(project_id).join("runfile.json"), data)
+        Runfile::load(self.get_state_path(project_id).join("runfile.json"), data)
     }
 
     pub fn get_hash_archive_path(&self, hash: &str) -> PathBuf {
@@ -186,7 +175,11 @@ impl CacheEngine {
         get_cache_mode()
     }
 
+    pub fn get_state_path<T: AsRef<str>>(&self, file: T) -> PathBuf {
+        self.states_dir.join(file.as_ref())
+    }
+
     pub fn get_target_dir<T: AsRef<str>>(&self, target_id: T) -> PathBuf {
-        self.states_dir.join(target_id.as_ref().replace(':', "/"))
+        self.get_state_path(target_id.as_ref().replace(':', "/"))
     }
 }

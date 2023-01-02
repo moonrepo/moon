@@ -8,7 +8,7 @@ pub async fn dep_graph(
     json: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut workspace = load_workspace().await?;
-    let project_graph = generate_project_graph(&mut workspace)?;
+    let project_graph = generate_project_graph(&mut workspace).await?;
     let mut dep_builder = build_dep_graph(&workspace, &project_graph);
 
     // Focus a target and its dependencies/dependents

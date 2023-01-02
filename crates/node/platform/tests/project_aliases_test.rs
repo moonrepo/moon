@@ -25,7 +25,7 @@ where
     );
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
-    let graph = generate_project_graph(&mut workspace).unwrap();
+    let graph = generate_project_graph(&mut workspace).await.unwrap();
 
     (graph, sandbox)
 }

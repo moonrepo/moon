@@ -90,7 +90,7 @@ const orchestrationFeatures: Feature[] = [
 		description: 'Generates a dependency graph to increase performance and reduce workloads.',
 	},
 	{
-		title: 'Action runner',
+		title: 'Action pipeline',
 		icon: faMerge,
 		description:
 			'Executes actions in parallel and in order using a thread pool and our dependency graph.',

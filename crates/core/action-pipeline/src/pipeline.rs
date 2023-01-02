@@ -129,7 +129,7 @@ impl Pipeline {
                     let mut action = Action::new(node.to_owned());
                     action.log_target = format!("{}:{}", batch_target_name, action_index);
 
-                    action_handles.push(pool.spawn_await(async move {
+                    action_handles.push(pool.complete(async move {
                         runtime
                             .spawn(async move {
                                 process_action(

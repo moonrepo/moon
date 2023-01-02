@@ -6,6 +6,7 @@ use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::EdgeRef;
 use petgraph::Direction;
 use rustc_hash::FxHashMap;
+use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
 pub type GraphType = DiGraph<Project, ()>;
@@ -13,6 +14,7 @@ pub type IndicesType = FxHashMap<ProjectID, NodeIndex>;
 
 pub const LOG_TARGET: &str = "moon:project-graph";
 
+#[derive(Serialize, Deserialize)]
 pub struct ProjectGraph {
     /// Mapping of an alias to a project ID.
     pub aliases: ProjectsAliasesMap,

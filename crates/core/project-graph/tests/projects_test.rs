@@ -52,7 +52,7 @@ where
     box_callback(&sandbox);
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
-    let graph = generate_project_graph(&mut workspace).unwrap();
+    let graph = generate_project_graph(&mut workspace).await.unwrap();
 
     (sandbox, graph)
 }
@@ -354,7 +354,7 @@ mod task_inheritance {
             );
 
             let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
-            let graph = generate_project_graph(&mut workspace).unwrap();
+            let graph = generate_project_graph(&mut workspace).await.unwrap();
 
             (sandbox, graph)
         }
@@ -1114,7 +1114,7 @@ mod detection {
         );
 
         let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
-        let graph = generate_project_graph(&mut workspace).unwrap();
+        let graph = generate_project_graph(&mut workspace).await.unwrap();
 
         (sandbox, graph)
     }

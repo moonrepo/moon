@@ -153,7 +153,7 @@ pub async fn from_package_json(
     };
 
     // Create a mapping of `package.json` names to project IDs
-    let project_graph = generate_project_graph(&mut workspace)?;
+    let project_graph = generate_project_graph(&mut workspace).await?;
     let mut package_map: FxHashMap<String, String> = FxHashMap::default();
 
     for project in project_graph.get_all()? {

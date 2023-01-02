@@ -1,4 +1,5 @@
 mod errors;
+mod graph_hasher;
 mod helpers;
 mod project_builder;
 mod project_graph;

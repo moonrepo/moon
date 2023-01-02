@@ -83,7 +83,7 @@ and provide a first-class developer experience.
 #### Orchestration
 
 - **Dependency graph** - Generates a dependency graph to increase performance and reduce workloads.
-- **Action runner** - Executes actions in parallel and in order using a thread pool and our
+- **Action pipeline** - Executes actions in parallel and in order using a thread pool and our
   dependency graph.
 - **Action distribution** - Distributes actions across multiple machines to increase throughput.
 - **Incremental builds** - With our smart hashing, only rebuild projects that have been touched

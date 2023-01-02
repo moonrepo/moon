@@ -2,7 +2,7 @@
 macro_rules! cache_item {
     ($struct:ident) => {
         impl $struct {
-            pub fn load(path: PathBuf, stale_ms: u128) -> Result<Self, MoonError> {
+            pub fn load(path: PathBuf) -> Result<Self, MoonError> {
                 let mut item = Self::default();
                 let log_target = "moon:cache:item";
 
@@ -12,26 +12,13 @@ macro_rules! cache_item {
 
                 if get_cache_mode().is_readable() {
                     if path.exists() {
-                        // If stale, treat as a cache miss
-                        if stale_ms > 0
-                            && time::now_millis()
-                                - time::to_millis(fs::metadata(&path)?.modified().unwrap())
-                                > stale_ms
-                        {
-                            trace!(
-                                target: log_target,
-                                "Cache skip for {}, marked as stale",
-                                color::path(&path)
-                            );
-                        } else {
-                            trace!(
-                                target: log_target,
-                                "Cache hit for {}, reading",
-                                color::path(&path)
-                            );
+                        trace!(
+                            target: log_target,
+                            "Cache hit for {}, reading",
+                            color::path(&path)
+                        );
 
-                            item = json::read(&path)?;
-                        }
+                        item = json::read(&path)?;
                     } else {
                         trace!(
                             target: log_target,

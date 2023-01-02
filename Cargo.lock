@@ -1741,7 +1741,6 @@ dependencies = [
 name = "moon_cache"
 version = "0.1.0"
 dependencies = [
- "filetime",
  "moon_archive",
  "moon_constants",
  "moon_error",
@@ -2111,15 +2110,18 @@ dependencies = [
  "moon_cache",
  "moon_config",
  "moon_error",
+ "moon_hasher",
  "moon_logger",
- "moon_platform",
  "moon_platform_detector",
  "moon_project",
  "moon_task",
  "moon_test_utils",
  "moon_utils",
+ "moon_workspace",
  "petgraph",
  "rustc-hash",
+ "serde",
+ "serde_json",
  "thiserror",
  "tokio",
 ]
@@ -2655,6 +2657,7 @@ dependencies = [
  "fixedbitset",
  "indexmap",
  "serde",
+ "serde_derive",
 ]
 
 [[package]]

@@ -246,7 +246,7 @@ tasks:
 For interoperability reasons, the following command names have special handling.
 
 - `noop`, `no-op`, `nop` - Marks the task as a "no operation". Will not execute a command in the
-  action runner but can define dependencies.
+  action pipeline but can define dependencies.
 - When `platform` is "node":
   - `node`, `npm`, `pnpm`, `yarn` - Uses the binaries from the toolchain.
 - When `platform` is "system":
@@ -540,7 +540,7 @@ with an inherited task. Defaults to "append".
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#outputStyle" />
 
 Controls how stdout/stderr is displayed when the task is ran as a _transitive target_. By default,
-this setting is not defined and defers to the action runner, but can be overridden with one of the
+this setting is not defined and defers to the action pipeline, but can be overridden with one of the
 following values:
 
 - `buffer` - Buffers output and displays after the task has exited (either success or failure).

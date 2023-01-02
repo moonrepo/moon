@@ -155,14 +155,14 @@ notifier:
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#runner" />
 
-Configures aspects of the action runner.
+Configures aspects of the action pipeline.
 
 ### `cacheLifetime`<VersionLabel version="0.11" />
 
 <HeadingApiLink to="/api/types/interface/RunnerConfig#cacheLifetime" />
 
 The maximum lifetime of cached artifacts before they're marked as stale and automatically removed by
-the action runner. Defaults to "7 days". This field requires an integer and a timeframe unit that
+the action pipeline. Defaults to "7 days". This field requires an integer and a timeframe unit that
 can be [parsed as a duration](https://docs.rs/humantime/2.1.0/humantime/fn.parse_duration.html).
 
 ```yaml title=".moon/workspace.yml" {2}
@@ -232,7 +232,7 @@ runner:
 <HeadingApiLink to="/api/types/interface/RunnerConfig#inheritColorsForPipedTasks" />
 
 Force colors to be inherited from the current terminal for all tasks that are ran as a child process
-and their output is piped to the action runner. Defaults to `true`.
+and their output is piped to the action pipeline. Defaults to `true`.
 [View more about color handling in moon](../commands/overview#colors).
 
 ```yaml title=".moon/workspace.yml" {2}

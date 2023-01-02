@@ -1,62 +1,56 @@
 use crate::errors::ProjectGraphError;
+use crate::graph_hasher::GraphHasher;
 use crate::helpers::detect_projects_with_globs;
 use crate::project_graph::{GraphType, IndicesType, ProjectGraph, LOG_TARGET};
 use crate::token_resolver::{TokenContext, TokenResolver};
-use moon_cache::CacheEngine;
 use moon_config::{
-    GlobalProjectConfig, PlatformType, ProjectLanguage, ProjectsAliasesMap, ProjectsSourcesMap,
-    WorkspaceConfig, WorkspaceProjects,
+    PlatformType, ProjectLanguage, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceProjects,
+    CONFIG_DIRNAME, CONFIG_GLOBAL_PROJECT_FILENAME, CONFIG_PROJECT_FILENAME,
+    CONFIG_TOOLCHAIN_FILENAME,
 };
+use moon_error::MoonError;
+use moon_hasher::{convert_paths_to_strings, to_hash};
 use moon_logger::{color, debug, map_list, trace, Logable};
-use moon_platform::PlatformManager;
 use moon_platform_detector::{detect_project_language, detect_task_platform};
 use moon_project::{Project, ProjectDependency, ProjectDependencySource, ProjectError};
 use moon_task::{Target, TargetError, TargetProjectScope, Task, TaskError};
 use moon_utils::regex::ENV_VAR;
-use moon_utils::{glob, is_ci, path};
+use moon_utils::{glob, is_ci, path, time};
+use moon_workspace::Workspace;
 use petgraph::graph::{DiGraph, NodeIndex};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::mem;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
+use std::time::Duration;
 
 pub struct ProjectGraphBuilder<'ws> {
-    cache: &'ws CacheEngine,
-    config: &'ws GlobalProjectConfig,
-    platforms: &'ws mut PlatformManager,
-    workspace_config: &'ws WorkspaceConfig,
-    workspace_root: &'ws Path,
+    workspace: &'ws mut Workspace,
 
     aliases: ProjectsAliasesMap,
     graph: GraphType,
     indices: IndicesType,
     sources: ProjectsSourcesMap,
+
+    pub is_cached: bool,
 }
 
 impl<'ws> ProjectGraphBuilder<'ws> {
-    pub fn new(
-        cache: &'ws CacheEngine,
-        config: &'ws GlobalProjectConfig,
-        platforms: &'ws mut PlatformManager,
-        workspace_config: &'ws WorkspaceConfig,
-        workspace_root: &'ws Path,
+    pub async fn new(
+        workspace: &'ws mut Workspace,
     ) -> Result<ProjectGraphBuilder<'ws>, ProjectGraphError> {
         debug!(target: LOG_TARGET, "Creating project graph");
 
         let mut graph = ProjectGraphBuilder {
             aliases: FxHashMap::default(),
-            cache,
-            config,
             graph: DiGraph::new(),
             indices: FxHashMap::default(),
-            platforms,
+            is_cached: false,
             sources: FxHashMap::default(),
-            workspace_config,
-            workspace_root,
+            workspace,
         };
 
-        graph.load_sources()?;
-        graph.load_aliases()?;
+        graph.preload().await?;
 
         Ok(graph)
     }
@@ -96,7 +90,12 @@ impl<'ws> ProjectGraphBuilder<'ws> {
     /// configured language, detect and infer implicit dependencies and tasks for the
     /// matching platform. Do *not* expand tasks until after dependents have been created.
     fn create_project(&self, id: &str, source: &str) -> Result<Project, ProjectGraphError> {
-        let mut project = Project::new(id, source, self.workspace_root, self.config)?;
+        let mut project = Project::new(
+            id,
+            source,
+            &self.workspace.root,
+            &self.workspace.projects_config,
+        )?;
 
         // Collect all aliases for the current project ID
         for (alias, project_id) in &self.aliases {
@@ -110,7 +109,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             project.language = detect_project_language(&project.root);
         }
 
-        if let Ok(platform) = self.platforms.get(project.language) {
+        if let Ok(platform) = self.workspace.platforms.get(project.language) {
             // Inherit implicit dependencies
             for dep_config in
                 platform.load_project_implicit_dependencies(&project, &self.aliases)?
@@ -191,7 +190,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         //  - All paths are absolute
         let handle_path = |path: PathBuf, is_glob: bool| -> Result<String, ProjectGraphError> {
             let arg = if !task.options.run_from_workspace_root
-                && path.starts_with(self.workspace_root)
+                && path.starts_with(&self.workspace.root)
             {
                 let rel_path = path::to_string(path::relative_from(&path, &project.root).unwrap())?;
 
@@ -215,7 +214,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         // We cant use `TokenResolver.resolve` as args are a mix of strings,
         // strings with tokens, and file paths when tokens are resolved.
-        let token_resolver = TokenResolver::new(TokenContext::Args, project, self.workspace_root);
+        let token_resolver = TokenResolver::new(TokenContext::Args, project, &self.workspace.root);
 
         for arg in &task.args {
             if token_resolver.has_token_func(arg) {
@@ -246,9 +245,9 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         project: &mut Project,
         task: &mut Task,
     ) -> Result<(), ProjectGraphError> {
-        if !self.workspace_config.runner.implicit_deps.is_empty() {
+        if !self.workspace.config.runner.implicit_deps.is_empty() {
             task.deps.extend(Task::create_dep_targets(
-                &self.workspace_config.runner.implicit_deps,
+                &self.workspace.config.runner.implicit_deps,
             )?);
         }
 
@@ -346,9 +345,9 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         project: &mut Project,
         task: &mut Task,
     ) -> Result<(), ProjectGraphError> {
-        if !self.workspace_config.runner.implicit_inputs.is_empty() {
+        if !self.workspace.config.runner.implicit_inputs.is_empty() {
             task.inputs
-                .extend(self.workspace_config.runner.implicit_inputs.clone());
+                .extend(self.workspace.config.runner.implicit_inputs.clone());
         }
 
         if task.inputs.is_empty() {
@@ -369,7 +368,8 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             .map(|input| input.to_owned())
             .collect::<Vec<_>>();
 
-        let token_resolver = TokenResolver::new(TokenContext::Inputs, project, self.workspace_root);
+        let token_resolver =
+            TokenResolver::new(TokenContext::Inputs, project, &self.workspace.root);
         let (paths, globs) = token_resolver.resolve(&inputs_without_vars, task)?;
 
         task.input_paths.extend(paths);
@@ -389,7 +389,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         }
 
         let token_resolver =
-            TokenResolver::new(TokenContext::Outputs, project, self.workspace_root);
+            TokenResolver::new(TokenContext::Outputs, project, &self.workspace.root);
         let (paths, globs) = token_resolver.resolve(&task.outputs, task)?;
 
         task.output_paths.extend(paths);
@@ -457,19 +457,14 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         Ok(index)
     }
 
-    fn load_aliases(&mut self) -> Result<(), ProjectGraphError> {
-        for platform in self.platforms.list_mut() {
-            platform.load_project_graph_aliases(&self.sources, &mut self.aliases)?;
-        }
-
-        Ok(())
-    }
-
-    fn load_sources(&mut self) -> Result<(), ProjectGraphError> {
+    async fn preload(&mut self) -> Result<(), ProjectGraphError> {
         let mut globs = vec![];
         let mut sources = FxHashMap::default();
+        let mut aliases = FxHashMap::default();
+        let mut cache = self.workspace.cache.cache_projects_state()?;
 
-        match &self.workspace_config.projects {
+        // Load project sources
+        match &self.workspace.config.projects {
             WorkspaceProjects::Sources(map) => {
                 sources.extend(map.clone());
             }
@@ -485,42 +480,101 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             }
         };
 
-        // Only check the cache when using globs
         if !globs.is_empty() {
-            let mut cache = self.cache.cache_projects_state()?;
+            if time::is_stale(cache.last_glob_time, Duration::from_secs(60 * 5)) {
+                debug!(
+                    target: LOG_TARGET,
+                    "Finding projects with globs: {}",
+                    map_list(&globs, |g| color::file(g))
+                );
 
-            // Return the values from the cache
-            if !cache.projects.is_empty() {
-                debug!(target: LOG_TARGET, "Loading projects from cache");
+                detect_projects_with_globs(&self.workspace.root, &globs, &mut sources)?;
 
-                self.sources.extend(cache.projects);
-
-                return Ok(());
+                cache.last_glob_time = time::now_millis();
+            } else {
+                sources.extend(cache.projects);
             }
-
-            // Generate a new projects map by globbing the filesystem
-            debug!(
-                target: LOG_TARGET,
-                "Finding projects with globs: {}",
-                map_list(&globs, |g| color::file(g))
-            );
-
-            detect_projects_with_globs(self.workspace_root, &globs, &mut sources)?;
-
-            // Update the cache
-            cache.globs = globs.clone();
-            cache.projects = sources.clone();
-            cache.save()?;
         }
 
-        debug!(
-            target: LOG_TARGET,
-            "Creating project graph with {} projects",
-            sources.len(),
-        );
+        // Load project aliases
+        for platform in self.workspace.platforms.list_mut() {
+            platform.load_project_graph_aliases(&sources, &mut aliases)?;
+        }
 
-        self.sources.extend(sources);
+        // Update the cache
+        let hash = self.generate_hash(&sources, &aliases).await?;
+
+        self.is_cached = cache.last_hash == hash;
+        self.aliases.extend(aliases.clone());
+        self.sources.extend(sources.clone());
+
+        cache.last_hash = hash;
+        cache.globs = globs;
+        cache.projects = sources;
+        cache.save()?;
+
+        if self.is_cached {
+            debug!(
+                target: LOG_TARGET,
+                "Loading project graph with {} projects from cache",
+                self.sources.len(),
+            );
+        } else {
+            debug!(
+                target: LOG_TARGET,
+                "Creating project graph with {} projects",
+                self.sources.len(),
+            );
+        }
 
         Ok(())
+    }
+
+    async fn generate_hash(
+        &self,
+        sources: &ProjectsSourcesMap,
+        aliases: &ProjectsAliasesMap,
+    ) -> Result<String, MoonError> {
+        let mut hasher = GraphHasher::default();
+
+        // Hash aliases and sources as-is as they're very explicit
+        hasher.hash_aliases(aliases);
+        hasher.hash_sources(sources);
+
+        // Hash all project-oriented config files, as a single change in any of
+        // these files would invalidate the entire project graph cache!
+        // TODO: handle extended config files?
+        if self.workspace.vcs.is_enabled() {
+            let mut configs = FxHashSet::from_iter(
+                sources
+                    .values()
+                    .map(|source| PathBuf::from(source).join(CONFIG_PROJECT_FILENAME)),
+            );
+
+            // Because of inherited tasks
+            configs.insert(PathBuf::from(CONFIG_DIRNAME).join(CONFIG_GLOBAL_PROJECT_FILENAME));
+
+            // Because of settings that interact with tasks
+            configs.insert(PathBuf::from(CONFIG_DIRNAME).join(CONFIG_TOOLCHAIN_FILENAME));
+
+            let config_hashes = self
+                .workspace
+                .vcs
+                .get_file_hashes(
+                    &convert_paths_to_strings(&configs, &self.workspace.root)?,
+                    false,
+                )
+                .await
+                .map_err(|e| MoonError::Generic(e.to_string()))?;
+
+            hasher.hash_configs(&config_hashes);
+        }
+
+        // Generate the hash
+        let hash = to_hash(&hasher);
+
+        self.workspace.cache.create_hash_manifest(&hash, &hasher)?;
+
+        Ok(hash)
     }
 }

@@ -21,6 +21,10 @@ pub fn to_millis(time: SystemTime) -> u128 {
     }
 }
 
+pub fn is_stale(timestamp: u128, duration: Duration) -> bool {
+    timestamp == 0 || now_millis() >= timestamp + duration.as_millis()
+}
+
 pub fn elapsed(duration: Duration) -> String {
     if is_test_env() {
         return String::from("100ms"); // Snapshots

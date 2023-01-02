@@ -16,7 +16,7 @@ pub fn get_benchmark(c: &mut Criterion) {
         b.to_async(tokio::runtime::Runtime::new().unwrap())
             .iter(|| async {
                 let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
-                let graph = generate_project_graph(&mut workspace).unwrap();
+                let graph = generate_project_graph(&mut workspace).await.unwrap();
 
                 for _ in 0..1000 {
                     graph.get("base").unwrap();
@@ -39,7 +39,7 @@ pub fn get_all_benchmark(c: &mut Criterion) {
         b.to_async(tokio::runtime::Runtime::new().unwrap())
             .iter(|| async {
                 let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
-                let graph = generate_project_graph(&mut workspace).unwrap();
+                let graph = generate_project_graph(&mut workspace).await.unwrap();
 
                 for _ in 0..1000 {
                     graph.get_all().unwrap();

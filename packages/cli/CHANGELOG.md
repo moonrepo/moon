@@ -4,7 +4,7 @@
 
 #### 🚀 Updates
 
-- We've refactored the pipeline to use a new worker pool strategy so that we have more control over
+- We've refactored the pipeline to use a new thread pool strategy so that we have more control over
   concurrency. This also paves the way for future output reporters.
 - We've improved our smart hashing for other use cases besides task running. The first improvement
   is that we now hash dependencies to determine whether to run a dependency install, or to skip!

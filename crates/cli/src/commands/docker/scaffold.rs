@@ -211,7 +211,7 @@ pub async fn scaffold(
     fs::create_dir_all(&docker_root)?;
 
     // Create the workspace skeleton
-    let project_graph = generate_project_graph(&mut workspace)?;
+    let project_graph = generate_project_graph(&mut workspace).await?;
 
     scaffold_workspace(&workspace, &project_graph, &docker_root)?;
 

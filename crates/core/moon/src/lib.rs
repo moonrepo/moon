@@ -3,7 +3,7 @@ use moon_error::MoonError;
 use moon_node_platform::NodePlatform;
 use moon_project_graph::{ProjectGraph, ProjectGraphBuilder, ProjectGraphError};
 use moon_system_platform::SystemPlatform;
-use moon_utils::is_test_env;
+use moon_utils::{is_test_env, json};
 use moon_workspace::{Workspace, WorkspaceError};
 use std::path::Path;
 
@@ -70,24 +70,29 @@ pub fn build_dep_graph<'g>(
     DepGraphBuilder::new(&workspace.platforms, project_graph)
 }
 
-pub fn build_project_graph(
+pub async fn build_project_graph(
     workspace: &mut Workspace,
 ) -> Result<ProjectGraphBuilder, ProjectGraphError> {
-    ProjectGraphBuilder::new(
-        &workspace.cache,
-        &workspace.projects_config,
-        &mut workspace.platforms,
-        &workspace.config,
-        &workspace.root,
-    )
+    ProjectGraphBuilder::new(workspace).await
 }
 
-pub fn generate_project_graph(
+pub async fn generate_project_graph(
     workspace: &mut Workspace,
 ) -> Result<ProjectGraph, ProjectGraphError> {
-    let mut builder = build_project_graph(workspace)?;
+    let cache_path = workspace.cache.get_state_path("projectGraph.json");
+    let mut builder = build_project_graph(workspace).await?;
+
+    if builder.is_cached && cache_path.exists() {
+        let graph: ProjectGraph = json::read(&cache_path)?;
+
+        return Ok(graph);
+    }
 
     builder.load_all()?;
 
-    Ok(builder.build())
+    let graph = builder.build();
+
+    json::write(&cache_path, &graph, false)?;
+
+    Ok(graph)
 }

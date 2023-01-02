@@ -80,9 +80,6 @@ impl Pipeline {
         let project_graph = Arc::clone(&self.project_graph);
 
         let pool = ThreadPool::default(); // WorkerPool::new(self.concurrency);
-
-        pool.start_core_threads();
-
         let mut results: ActionResults = vec![];
         let mut passed_count = 0;
         let mut cached_count = 0;
@@ -127,19 +124,24 @@ impl Pipeline {
                     let emitter_clone = Arc::clone(&emitter);
                     let workspace_clone = Arc::clone(&workspace);
                     let project_graph_clone = Arc::clone(&project_graph);
+                    let runtime = tokio::runtime::Handle::current();
 
                     let mut action = Action::new(node.to_owned());
                     action.log_target = format!("{}:{}", batch_target_name, action_index);
 
                     action_handles.push(pool.spawn_await(async move {
-                        process_action(
-                            action,
-                            Arc::clone(&context_clone),
-                            Arc::clone(&emitter_clone),
-                            Arc::clone(&workspace_clone),
-                            Arc::clone(&project_graph_clone),
-                        )
-                        .await
+                        runtime
+                            .spawn(async move {
+                                process_action(
+                                    action,
+                                    Arc::clone(&context_clone),
+                                    Arc::clone(&emitter_clone),
+                                    Arc::clone(&workspace_clone),
+                                    Arc::clone(&project_graph_clone),
+                                )
+                                .await
+                            })
+                            .await
                     }));
                 } else {
                     return Err(PipelineError::UnknownActionNode);
@@ -149,7 +151,7 @@ impl Pipeline {
             // Wait for all actions in this batch to complete
             for handle in action_handles {
                 match handle.try_await_complete() {
-                    Ok(Ok(result)) => {
+                    Ok(Ok(Ok(result))) => {
                         if result.has_failed() {
                             failed_count += 1;
                         } else if result.was_cached() {
@@ -177,6 +179,9 @@ impl Pipeline {
                         }
 
                         results.push(result);
+                    }
+                    Ok(Ok(Err(error))) => {
+                        return Err(PipelineError::Aborted(error.to_string()));
                     }
                     _ => {
                         // What to do here?

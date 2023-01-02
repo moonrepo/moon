@@ -16,6 +16,7 @@ use moon_utils::process::Command;
 use moon_utils::{path, string_vec};
 use moon_workspace::{Workspace, WorkspaceError};
 use rustc_hash::FxHashMap;
+use std::path::Path;
 
 const LOG_TARGET: &str = "moon:node-platform:run-target";
 
@@ -92,6 +93,7 @@ pub fn create_target_command(
     workspace: &Workspace,
     project: &Project,
     task: &Task,
+    working_dir: &Path,
 ) -> Result<Command, WorkspaceError> {
     let mut node = workspace.toolchain.node.get::<NodeTool>()?;
 
@@ -128,7 +130,7 @@ pub fn create_target_command(
                 BinFile::Script(bin_path) => {
                     args.extend(create_node_options(context, workspace, task)?);
                     args.push(path::to_string(
-                        path::relative_from(bin_path, &project.root).unwrap(),
+                        path::relative_from(bin_path, working_dir).unwrap(),
                     )?);
                 }
             };

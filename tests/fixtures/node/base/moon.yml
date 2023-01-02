@@ -56,6 +56,10 @@ tasks:
     args: ./base/cwd.js
     options:
       runFromWorkspaceRoot: true
+  runFromWorkspaceBin:
+    command: prettier --check '*.json'
+    options:
+      runFromWorkspaceRoot: true
   retryCount:
     command: node
     args: ./processExitNonZero.js

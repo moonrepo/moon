@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where `runFromWorkspaceRoot` wasn't working correctly for node module binaries.
+
 ## 0.21.3
 
 #### 🚀 Updates

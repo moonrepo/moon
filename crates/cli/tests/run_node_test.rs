@@ -307,6 +307,17 @@ fn runs_from_workspace_root() {
 }
 
 #[test]
+fn runs_npm_bin_from_workspace_root() {
+    let sandbox = node_sandbox();
+
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("node:runFromWorkspaceBin");
+    });
+
+    assert_snapshot!(assert.output());
+}
+
+#[test]
 fn retries_on_failure_till_count() {
     let sandbox = node_sandbox();
 

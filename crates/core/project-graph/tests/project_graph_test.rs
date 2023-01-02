@@ -103,6 +103,45 @@ async fn can_use_map_and_globs_setting() {
     );
 }
 
+mod caching {
+    use super::*;
+    use moon_cache::ProjectsState;
+
+    #[tokio::test]
+    async fn caches_and_hashes_projects_state() {
+        let (_, sandbox) = get_dependencies_graph().await;
+        let state_path = sandbox.path().join(".moon/cache/states/projects.json");
+        let graph_path = sandbox.path().join(".moon/cache/states/projectGraph.json");
+
+        assert!(state_path.exists());
+        assert!(graph_path.exists());
+
+        let state = ProjectsState::load(state_path).unwrap();
+
+        assert_eq!(state.globs, string_vec![]);
+        assert_eq!(state.last_glob_time, 0);
+        assert_eq!(
+            state.last_hash,
+            "2c5bca2c7e6e42730134edb68fa01461d95216f7742799daa1f1314c8d7e207e"
+        );
+        assert_eq!(
+            state.projects,
+            FxHashMap::from_iter([
+                ("a".to_string(), "a".to_string()),
+                ("b".to_string(), "b".to_string()),
+                ("c".to_string(), "c".to_string()),
+                ("d".to_string(), "d".to_string()),
+            ])
+        );
+
+        assert!(sandbox
+            .path()
+            .join(".moon/cache/hashes")
+            .join(format!("{}.json", state.last_hash))
+            .exists());
+    }
+}
+
 mod globs {
     use super::*;
 

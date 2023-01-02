@@ -2,12 +2,12 @@
   "name": "@moonrepo/runtime",
   "version": "0.0.10",
   "type": "commonjs",
-  "description": "Action runner and runtime utilities.",
+  "description": "Action pipeline and runtime utilities.",
   "keywords": [
     "moon",
     "repo",
     "task",
-    "runner",
+    "pipeline",
     "runtime"
   ],
   "author": "Miles Johnson",

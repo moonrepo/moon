@@ -1,4 +1,7 @@
 {
   "name": "test-node-base",
-  "version": "1.0.0"
+  "version": "1.0.0",
+  "dependencies": {
+    "prettier": "2.7.0"
+  }
 }

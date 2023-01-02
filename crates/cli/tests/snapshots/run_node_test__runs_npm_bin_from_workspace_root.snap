@@ -1,0 +1,16 @@
+---
+source: crates/cli/tests/run_node_test.rs
+assertion_line: 317
+expression: assert.output()
+---
+▪▪▪▪ npm install
+▪▪▪▪ node:runFromWorkspaceBin
+Checking formatting...
+All matched files use Prettier code style!
+▪▪▪▪ node:runFromWorkspaceBin (100ms)
+
+Tasks: 1 completed
+ Time: 100ms
+
+
+

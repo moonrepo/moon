@@ -1689,10 +1689,8 @@ dependencies = [
 name = "moon_action_pipeline"
 version = "0.1.0"
 dependencies = [
- "async-channel",
  "console",
  "criterion",
- "futures",
  "moon",
  "moon_action",
  "moon_action_context",
@@ -2847,7 +2845,6 @@ dependencies = [
  "async-trait",
  "dirs",
  "flate2",
- "hyper",
  "lenient_semver",
  "log",
  "proto_error",

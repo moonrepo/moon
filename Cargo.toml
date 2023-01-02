@@ -20,7 +20,6 @@ default-members = ["crates/cli"]
 cached = "0.40.0"
 clap = "4.0.23"
 criterion = { version = "0.4.0", features = ["async_tokio"] }
-hyper = { version = "0.14.23", features = ["runtime"] }
 lazy_static = "1.4.0"
 petgraph = "0.6.2"
 reqwest = "0.11.12"

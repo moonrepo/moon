@@ -480,17 +480,20 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             }
         };
 
-        // If using globs, walk the file system if it's been 5 minutes since the last glob
-        if !globs.is_empty() && time::is_stale(cache.last_glob_time, Duration::from_secs(60 * 5)) {
-            debug!(
-                target: LOG_TARGET,
-                "Finding projects with globs: {}",
-                map_list(&globs, |g| color::file(g))
-            );
+        if !globs.is_empty() {
+            if time::is_stale(cache.last_glob_time, Duration::from_secs(60 * 5)) {
+                debug!(
+                    target: LOG_TARGET,
+                    "Finding projects with globs: {}",
+                    map_list(&globs, |g| color::file(g))
+                );
 
-            detect_projects_with_globs(&self.workspace.root, &globs, &mut sources)?;
+                detect_projects_with_globs(&self.workspace.root, &globs, &mut sources)?;
 
-            cache.last_glob_time = time::now_millis();
+                cache.last_glob_time = time::now_millis();
+            } else {
+                sources.extend(cache.projects);
+            }
         }
 
         // Load project aliases

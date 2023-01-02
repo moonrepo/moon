@@ -3,7 +3,7 @@ use crate::processor::process_action;
 use crate::run_report::RunReport;
 use crate::subscribers::local_cache::LocalCacheSubscriber;
 use crate::subscribers::moonbase_cache::MoonbaseCacheSubscriber;
-use crate::worker_pool::WorkerPool;
+// use crate::worker_pool::WorkerPool;
 use console::Term;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
@@ -16,6 +16,7 @@ use moon_project_graph::ProjectGraph;
 use moon_terminal::{label_to_the_moon, replace_style_tokens, ExtendedTerm};
 use moon_utils::{is_ci, is_test_env, time};
 use moon_workspace::Workspace;
+use rusty_pool::ThreadPool;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
@@ -78,7 +79,7 @@ impl Pipeline {
         let workspace = Arc::clone(&self.workspace);
         let project_graph = Arc::clone(&self.project_graph);
 
-        let pool = WorkerPool::new(self.concurrency);
+        let pool = ThreadPool::default(); // WorkerPool::new(self.concurrency);
         let mut results: ActionResults = vec![];
         let mut passed_count = 0;
         let mut cached_count = 0;
@@ -123,19 +124,24 @@ impl Pipeline {
                     let emitter_clone = Arc::clone(&emitter);
                     let workspace_clone = Arc::clone(&workspace);
                     let project_graph_clone = Arc::clone(&project_graph);
+                    let runtime = tokio::runtime::Handle::current();
 
                     let mut action = Action::new(node.to_owned());
                     action.log_target = format!("{}:{}", batch_target_name, action_index);
 
-                    action_handles.push(pool.run(async move {
-                        process_action(
-                            action,
-                            Arc::clone(&context_clone),
-                            Arc::clone(&emitter_clone),
-                            Arc::clone(&workspace_clone),
-                            Arc::clone(&project_graph_clone),
-                        )
-                        .await
+                    action_handles.push(pool.complete(async move {
+                        runtime
+                            .spawn(async move {
+                                process_action(
+                                    action,
+                                    Arc::clone(&context_clone),
+                                    Arc::clone(&emitter_clone),
+                                    Arc::clone(&workspace_clone),
+                                    Arc::clone(&project_graph_clone),
+                                )
+                                .await
+                            })
+                            .await
                     }));
                 } else {
                     return Err(PipelineError::UnknownActionNode);
@@ -144,8 +150,8 @@ impl Pipeline {
 
             // Wait for all actions in this batch to complete
             for handle in action_handles {
-                match handle.await {
-                    Ok(result) => {
+                match handle.try_await_complete() {
+                    Ok(Ok(Ok(result))) => {
                         if result.has_failed() {
                             failed_count += 1;
                         } else if result.was_cached() {
@@ -174,7 +180,10 @@ impl Pipeline {
 
                         results.push(result);
                     }
-                    Err(_) => {
+                    Ok(Ok(Err(error))) => {
+                        return Err(PipelineError::Aborted(error.to_string()));
+                    }
+                    _ => {
                         // What to do here?
                         return Err(PipelineError::Aborted("Unknown error!".to_owned()));
                     }

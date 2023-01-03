@@ -78,8 +78,6 @@ impl Pipeline {
         ));
         let workspace = Arc::clone(&self.workspace);
         let project_graph = Arc::clone(&self.project_graph);
-
-        let pool = ThreadPool::default(); // WorkerPool::new(self.concurrency);
         let mut results: ActionResults = vec![];
         let mut passed_count = 0;
         let mut cached_count = 0;
@@ -102,6 +100,12 @@ impl Pipeline {
                 actions_count: total_actions_count,
             })
             .await?;
+
+        let pool = if let Some(concurrency) = &self.concurrency {
+            ThreadPool::new(*concurrency, *concurrency, Duration::from_secs(30))
+        } else {
+            ThreadPool::default()
+        };
 
         for (b, batch) in batches.into_iter().enumerate() {
             let batch_index = b + 1;

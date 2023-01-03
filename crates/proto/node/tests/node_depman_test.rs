@@ -1,18 +1,10 @@
 use proto_core::{Detector, Downloadable, Executable, Installable, Proto, Resolvable, Tool};
 use proto_node::{NodeDependencyManager, NodeDependencyManagerType};
-use std::path::Path;
-
-fn create_proto(dir: &Path) -> Proto {
-    Proto {
-        temp_dir: dir.join("temp"),
-        tools_dir: dir.join("tools"),
-    }
-}
 
 #[tokio::test]
 async fn downloads_verifies_installs_npm() {
     let fixture = assert_fs::TempDir::new().unwrap();
-    let proto = create_proto(fixture.path());
+    let proto = Proto::from(fixture.path());
     let mut tool =
         NodeDependencyManager::new(&proto, NodeDependencyManagerType::Npm, Some("9.0.0"));
 
@@ -29,7 +21,7 @@ async fn downloads_verifies_installs_npm() {
 #[tokio::test]
 async fn downloads_verifies_installs_pnpm() {
     let fixture = assert_fs::TempDir::new().unwrap();
-    let proto = create_proto(fixture.path());
+    let proto = Proto::from(fixture.path());
     let mut tool =
         NodeDependencyManager::new(&proto, NodeDependencyManagerType::Pnpm, Some("7.0.0"));
 
@@ -46,7 +38,7 @@ async fn downloads_verifies_installs_pnpm() {
 #[tokio::test]
 async fn downloads_verifies_installs_yarn_classic() {
     let fixture = assert_fs::TempDir::new().unwrap();
-    let proto = create_proto(fixture.path());
+    let proto = Proto::from(fixture.path());
     let mut tool =
         NodeDependencyManager::new(&proto, NodeDependencyManagerType::Yarn, Some("1.22.0"));
 
@@ -63,7 +55,7 @@ async fn downloads_verifies_installs_yarn_classic() {
 #[tokio::test]
 async fn downloads_verifies_installs_yarn_berry() {
     let fixture = assert_fs::TempDir::new().unwrap();
-    let proto = create_proto(fixture.path());
+    let proto = Proto::from(fixture.path());
     let mut tool =
         NodeDependencyManager::new(&proto, NodeDependencyManagerType::Yarn, Some("3.3.0"));
 
@@ -85,7 +77,7 @@ mod detector {
     #[tokio::test]
     async fn doesnt_match_if_no_json_file() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let proto = create_proto(fixture.path());
+        let proto = Proto::from(fixture.path());
         let tool =
             NodeDependencyManager::new(&proto, NodeDependencyManagerType::Npm, Some("9.0.0"));
 
@@ -101,7 +93,7 @@ mod detector {
 
         fixture.child("package.json").write_str(r#"{}"#).unwrap();
 
-        let proto = create_proto(fixture.path());
+        let proto = Proto::from(fixture.path());
         let tool =
             NodeDependencyManager::new(&proto, NodeDependencyManagerType::Npm, Some("9.0.0"));
 
@@ -120,7 +112,7 @@ mod detector {
             .write_str(r#"{"packageManager":"yarn@1.2.3"}"#)
             .unwrap();
 
-        let proto = create_proto(fixture.path());
+        let proto = Proto::from(fixture.path());
         let tool =
             NodeDependencyManager::new(&proto, NodeDependencyManagerType::Npm, Some("9.0.0"));
 
@@ -139,7 +131,7 @@ mod detector {
             .write_str(r#"{"packageManager":"npm"}"#)
             .unwrap();
 
-        let proto = create_proto(fixture.path());
+        let proto = Proto::from(fixture.path());
         let tool =
             NodeDependencyManager::new(&proto, NodeDependencyManagerType::Npm, Some("9.0.0"));
 
@@ -158,7 +150,7 @@ mod detector {
             .write_str(r#"{"packageManager":"npm@1.2.3"}"#)
             .unwrap();
 
-        let proto = create_proto(fixture.path());
+        let proto = Proto::from(fixture.path());
         let tool =
             NodeDependencyManager::new(&proto, NodeDependencyManagerType::Npm, Some("9.0.0"));
 
@@ -177,7 +169,7 @@ mod detector {
             .write_str(r#"{"packageManager":"pnpm@4.5.6"}"#)
             .unwrap();
 
-        let proto = create_proto(fixture.path());
+        let proto = Proto::from(fixture.path());
         let tool =
             NodeDependencyManager::new(&proto, NodeDependencyManagerType::Pnpm, Some("9.0.0"));
 
@@ -196,7 +188,7 @@ mod detector {
             .write_str(r#"{"packageManager":"yarn@7.8.9"}"#)
             .unwrap();
 
-        let proto = create_proto(fixture.path());
+        let proto = Proto::from(fixture.path());
         let tool =
             NodeDependencyManager::new(&proto, NodeDependencyManagerType::Yarn, Some("9.0.0"));
 
@@ -213,7 +205,7 @@ mod downloader {
     #[tokio::test]
     async fn sets_path_to_temp() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let proto = create_proto(fixture.path());
+        let proto = Proto::from(fixture.path());
         let tool =
             NodeDependencyManager::new(&proto, NodeDependencyManagerType::Npm, Some("9.0.0"));
 
@@ -227,7 +219,7 @@ mod downloader {
     async fn downloads_to_temp() {
         let fixture = assert_fs::TempDir::new().unwrap();
         let tool = NodeDependencyManager::new(
-            &create_proto(fixture.path()),
+            &Proto::from(fixture.path()),
             NodeDependencyManagerType::Npm,
             Some("9.0.0"),
         );
@@ -245,7 +237,7 @@ mod downloader {
     async fn doesnt_download_if_file_exists() {
         let fixture = assert_fs::TempDir::new().unwrap();
         let tool = NodeDependencyManager::new(
-            &create_proto(fixture.path()),
+            &Proto::from(fixture.path()),
             NodeDependencyManagerType::Npm,
             Some("9.0.0"),
         );
@@ -264,7 +256,7 @@ mod resolver {
     async fn resolve_latest() {
         let fixture = assert_fs::TempDir::new().unwrap();
         let mut tool = NodeDependencyManager::new(
-            &create_proto(fixture.path()),
+            &Proto::from(fixture.path()),
             NodeDependencyManagerType::Npm,
             None,
         );
@@ -277,7 +269,7 @@ mod resolver {
     async fn resolve_partial_version() {
         let fixture = assert_fs::TempDir::new().unwrap();
         let mut tool = NodeDependencyManager::new(
-            &create_proto(fixture.path()),
+            &Proto::from(fixture.path()),
             NodeDependencyManagerType::Npm,
             None,
         );
@@ -289,7 +281,7 @@ mod resolver {
     async fn resolve_version_with_prefix() {
         let fixture = assert_fs::TempDir::new().unwrap();
         let mut tool = NodeDependencyManager::new(
-            &create_proto(fixture.path()),
+            &Proto::from(fixture.path()),
             NodeDependencyManagerType::Npm,
             None,
         );
@@ -301,7 +293,7 @@ mod resolver {
     async fn resolve_custom_dist() {
         let fixture = assert_fs::TempDir::new().unwrap();
         let mut tool = NodeDependencyManager::new(
-            &create_proto(fixture.path()),
+            &Proto::from(fixture.path()),
             NodeDependencyManagerType::Yarn,
             None,
         );
@@ -313,7 +305,7 @@ mod resolver {
     async fn handles_npm() {
         let fixture = assert_fs::TempDir::new().unwrap();
         let mut tool = NodeDependencyManager::new(
-            &create_proto(fixture.path()),
+            &Proto::from(fixture.path()),
             NodeDependencyManagerType::Npm,
             None,
         );
@@ -325,7 +317,7 @@ mod resolver {
     async fn handles_pnpm() {
         let fixture = assert_fs::TempDir::new().unwrap();
         let mut tool = NodeDependencyManager::new(
-            &create_proto(fixture.path()),
+            &Proto::from(fixture.path()),
             NodeDependencyManagerType::Pnpm,
             None,
         );
@@ -337,7 +329,7 @@ mod resolver {
     async fn handles_yarn() {
         let fixture = assert_fs::TempDir::new().unwrap();
         let mut tool = NodeDependencyManager::new(
-            &create_proto(fixture.path()),
+            &Proto::from(fixture.path()),
             NodeDependencyManagerType::Yarn,
             None,
         );
@@ -350,7 +342,7 @@ mod resolver {
     async fn errors_invalid_alias() {
         let fixture = assert_fs::TempDir::new().unwrap();
         let mut tool = NodeDependencyManager::new(
-            &create_proto(fixture.path()),
+            &Proto::from(fixture.path()),
             NodeDependencyManagerType::Npm,
             None,
         );
@@ -363,7 +355,7 @@ mod resolver {
     async fn errors_invalid_version() {
         let fixture = assert_fs::TempDir::new().unwrap();
         let mut tool = NodeDependencyManager::new(
-            &create_proto(fixture.path()),
+            &Proto::from(fixture.path()),
             NodeDependencyManagerType::Npm,
             None,
         );

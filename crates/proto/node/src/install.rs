@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 #[async_trait]
 impl Installable<'_> for NodeLanguage {
     fn get_install_dir(&self) -> Result<PathBuf, ProtoError> {
-        Ok(self.install_dir.join(self.get_resolved_version()))
+        Ok(self.base_dir.join(self.get_resolved_version()))
     }
 
     async fn install(&self, install_dir: &Path, download_path: &Path) -> Result<bool, ProtoError> {

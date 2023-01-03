@@ -172,6 +172,7 @@ fn generate_dep_graph(
 
 pub struct CiOptions {
     pub base: Option<String>,
+    pub concurrency: Option<usize>,
     pub head: Option<String>,
     pub job: Option<usize>,
     pub job_total: Option<usize>,
@@ -201,6 +202,10 @@ pub async fn ci(options: CiOptions) -> Result<(), AnyError> {
     };
 
     let mut pipeline = Pipeline::new(workspace, project_graph);
+
+    if let Some(concurrency) = options.concurrency {
+        pipeline.concurrency(concurrency);
+    }
 
     let results = pipeline
         .generate_report("ciReport.json")

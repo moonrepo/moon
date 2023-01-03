@@ -6,7 +6,9 @@ use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
 use moon_utils::process::Command;
 use moon_utils::{fs, is_ci};
-use proto_core::{async_trait, Describable, Executable, Proto, Resolvable, Tool as ProtoTool};
+use proto_core::{
+    async_trait, Describable, Executable, Installable, Proto, Resolvable, Tool as ProtoTool,
+};
 use proto_node::NodeDependencyManager;
 use rustc_hash::FxHashMap;
 use std::env;

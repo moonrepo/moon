@@ -1,7 +1,9 @@
+use crate::helpers::get_root;
 use proto_error::ProtoError;
-use std::path::Path;
-
-use crate::get_root;
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 #[async_trait::async_trait]
 pub trait Shimable<'tool>: Send + Sync {
@@ -9,67 +11,86 @@ pub trait Shimable<'tool>: Send + Sync {
     async fn create_shims(&self) -> Result<(), ProtoError>;
 }
 
-pub struct ShimBuilder<'tool> {
-    name: &'tool str,
-    bin_path: &'tool Path,
-    install_dir: Option<&'tool Path>,
-    version: Option<&'tool str>,
+fn build_shim_file(builder: &ShimBuilder) -> Result<String, ProtoError> {
+    let constant_name = builder.name.to_uppercase();
+
+    let mut template = vec![];
+    template.push("#!/usr/bin/env bash".into());
+    template.push("set -e".into());
+    template.push("[ -n \"$PROTO_DEBUG\" ] && set -x".into());
+    template.push("".into());
+
+    template.push(format!(
+        "export PROTO_ROOT=\"{}\"",
+        get_root()?.to_string_lossy()
+    ));
+
+    if let Some(install_dir) = &builder.install_dir {
+        template.push(format!(
+            "export PROTO_{}_DIR=\"{}\"",
+            constant_name,
+            install_dir.to_string_lossy()
+        ));
+    }
+    if let Some(version) = &builder.version {
+        template.push(format!(
+            "export PROTO_{}_VERSION=\"{}\"",
+            constant_name, version
+        ));
+    }
+
+    template.push("".into());
+    template.push(format!(
+        "exec \"{}\" \"$@\"",
+        builder.bin_path.to_string_lossy()
+    ));
+
+    Ok(template.join("\n"))
 }
 
-impl<'tool> ShimBuilder<'tool> {
-    pub fn new(name: &'tool str, bin_path: &'tool Path) -> Self {
+pub struct ShimBuilder {
+    pub name: String,
+    pub bin_path: PathBuf,
+    pub install_dir: Option<PathBuf>,
+    pub version: Option<String>,
+}
+
+impl ShimBuilder {
+    pub fn new(name: &str, bin_path: &Path) -> Self {
         ShimBuilder {
-            name,
-            bin_path,
+            name: name.to_owned(),
+            bin_path: bin_path.to_path_buf(),
             install_dir: None,
             version: None,
         }
     }
 
-    pub fn install_dir(&mut self, path: &'tool Path) -> &mut Self {
-        self.install_dir = Some(path);
+    pub fn dir<P: AsRef<Path>>(&mut self, path: P) -> &mut Self {
+        self.install_dir = Some(path.as_ref().to_path_buf());
         self
     }
 
-    pub fn version(&mut self, version: &'tool str) -> &mut Self {
-        self.version = Some(version);
+    pub fn version<V: AsRef<str>>(&mut self, version: V) -> &mut Self {
+        self.version = Some(version.as_ref().to_owned());
         self
     }
 
-    pub fn build(&self) -> Result<String, ProtoError> {
-        let constant_name = self.name.to_uppercase();
+    pub fn create(&self) -> Result<(), ProtoError> {
+        let shim_path = self.install_dir.as_ref().unwrap().join(&self.name);
+        let handle_error =
+            |e: std::io::Error| ProtoError::Fs(shim_path.to_path_buf(), e.to_string());
 
-        let mut template = vec![];
-        template.push("#!/usr/bin/env bash".into());
-        template.push("set -e".into());
-        template.push("[ -n \"$PROTO_DEBUG\" ] && set -x".into());
-        template.push("".into());
+        fs::write(&shim_path, build_shim_file(&self)?).map_err(handle_error)?;
 
-        template.push(format!(
-            "export PROTO_ROOT=\"{}\"",
-            get_root()?.to_string_lossy()
-        ));
+        // Make executable
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
 
-        if let Some(install_dir) = &self.install_dir {
-            template.push(format!(
-                "export PROTO_{}_DIR=\"{}\"",
-                constant_name,
-                install_dir.to_string_lossy()
-            ));
-        }
-        if let Some(version) = &self.version {
-            template.push(format!(
-                "export PROTO_{}_VERSION=\"{}\"",
-                constant_name, version
-            ));
+            fs::set_permissions(&shim_path, fs::Permissions::from_mode(0o755))
+                .map_err(handle_error)?;
         }
 
-        template.push("".into());
-        template.push(format!(
-            "exec \"{}\" \"$@\"",
-            self.bin_path.to_string_lossy()
-        ));
-
-        Ok(template.join("\n"))
+        Ok(())
     }
 }

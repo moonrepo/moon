@@ -101,13 +101,16 @@ pub fn create_target_command(
             args.extend(create_node_options(node, context, task)?);
         }
         "npm" => {
-            cmd = node.get_npm()?.get_bin_path()?;
+            cmd = node.get_npm()?.get_bin_path()?.to_path_buf();
+        }
+        "npx" => {
+            cmd = node.get_npx_path()?;
         }
         "pnpm" => {
-            cmd = node.get_pnpm()?.get_bin_path()?;
+            cmd = node.get_pnpm()?.get_bin_path()?.to_path_buf();
         }
         "yarn" | "yarnpkg" => {
-            cmd = node.get_yarn()?.get_bin_path()?;
+            cmd = node.get_yarn()?.get_bin_path()?.to_path_buf();
         }
         bin => {
             match node.find_package_bin(&project.root, bin)? {

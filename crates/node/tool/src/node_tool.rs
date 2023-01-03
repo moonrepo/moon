@@ -12,7 +12,7 @@ use proto_core::{
 };
 use proto_node::NodeLanguage;
 use rustc_hash::FxHashMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
 pub struct NodeTool {
@@ -61,16 +61,12 @@ impl NodeTool {
         working_dir: &Path,
     ) -> Result<(), ToolError> {
         let mut exec_args = vec!["--silent", "--package", package, "--"];
-        let install_dir = self.tool.get_install_dir()?;
-
         exec_args.extend(args);
 
-        let npx_path = node::find_package_manager_bin(&install_dir, "npx");
-
-        Command::new(&npx_path)
+        Command::new(self.get_npx_path()?)
             .args(exec_args)
             .cwd(working_dir)
-            .env("PATH", get_path_env_var(&install_dir))
+            .env("PATH", get_path_env_var(&self.tool.get_install_dir()?))
             .exec_stream_output()
             .await?;
 
@@ -94,6 +90,13 @@ impl NodeTool {
             Some(npm) => Ok(npm),
             None => Err(ToolError::UnknownTool("npm".into())),
         }
+    }
+
+    pub fn get_npx_path(&self) -> Result<PathBuf, ToolError> {
+        Ok(node::find_package_manager_bin(
+            self.tool.get_install_dir()?,
+            "npx",
+        ))
     }
 
     /// Return the `pnpm` package manager.

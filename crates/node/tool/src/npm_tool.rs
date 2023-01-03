@@ -89,9 +89,9 @@ impl DependencyManager<NodeTool> for NpmTool {
     fn create_command(&self, node: &NodeTool) -> Result<Command, ToolError> {
         let bin_path = self.get_bin_path()?;
 
-        let mut cmd = Command::new(node.get_bin_path()?);
+        let mut cmd = Command::new(bin_path);
         cmd.env("PATH", get_path_env_var(bin_path.parent().unwrap()));
-        cmd.arg(bin_path);
+        cmd.env("PROTO_NODE_BIN", node.get_bin_path()?);
 
         Ok(cmd)
     }

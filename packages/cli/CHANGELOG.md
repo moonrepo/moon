@@ -9,6 +9,8 @@
 - We've improved our smart hashing for other use cases besides task running. The first improvement
   is that we now hash dependencies to determine whether to run a dependency install, or to skip!
   This is much more accurate than before, which only relied on lockfile modified timestamps.
+- Added global `--concurrency` option to all `moon` commands, allowing the thread count to be
+  customized.
 
 ## 0.21.3
 

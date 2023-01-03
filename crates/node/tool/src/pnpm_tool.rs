@@ -6,7 +6,10 @@ use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
 use moon_utils::process::Command;
 use moon_utils::{fs, is_ci};
-use proto_core::{async_trait, Describable, Executable, Proto, Resolvable, Tool as ProtoTool};
+use proto_core::{
+    async_trait, Describable, Executable, Installable, Proto, Resolvable, Shimable,
+    Tool as ProtoTool,
+};
 use proto_node::NodeDependencyManager;
 use rustc_hash::FxHashMap;
 use std::env;
@@ -16,7 +19,7 @@ use std::path::Path;
 pub struct PnpmTool {
     pub config: PnpmConfig,
 
-    tool: NodeDependencyManager,
+    pub tool: NodeDependencyManager,
 }
 
 impl PnpmTool {
@@ -43,6 +46,10 @@ impl Tool for PnpmTool {
 
     fn get_bin_path(&self) -> Result<&Path, ToolError> {
         Ok(self.tool.get_bin_path()?)
+    }
+
+    fn get_shim_path(&self) -> Option<&Path> {
+        self.tool.get_shim_path()
     }
 
     fn get_version(&self) -> &str {
@@ -90,10 +97,15 @@ impl Tool for PnpmTool {
 #[async_trait]
 impl DependencyManager<NodeTool> for PnpmTool {
     fn create_command(&self, node: &NodeTool) -> Result<Command, ToolError> {
-        let bin_path = self.get_bin_path()?;
+        let mut cmd = if let Some(shim) = self.get_shim_path() {
+            Command::new(shim)
+        } else {
+            let mut cmd = Command::new(node.get_bin_path()?);
+            cmd.arg(self.get_bin_path()?);
+            cmd
+        };
 
-        let mut cmd = Command::new(bin_path);
-        cmd.env("PATH", get_path_env_var(bin_path.parent().unwrap()));
+        cmd.env("PATH", get_path_env_var(&self.tool.get_install_dir()?));
         cmd.env("PROTO_NODE_BIN", node.get_bin_path()?);
 
         Ok(cmd)

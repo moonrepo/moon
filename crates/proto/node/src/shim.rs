@@ -2,6 +2,7 @@ use crate::NodeLanguage;
 use proto_core::{
     async_trait, Executable, Installable, ProtoError, Resolvable, ShimBuilder, Shimable,
 };
+use std::path::Path;
 
 #[async_trait]
 impl Shimable<'_> for NodeLanguage {
@@ -12,5 +13,12 @@ impl Shimable<'_> for NodeLanguage {
             .create()?;
 
         Ok(())
+    }
+
+    fn get_shim_path(&self) -> Option<&Path> {
+        match self.shim_path.as_ref() {
+            Some(path) => Some(path),
+            None => None,
+        }
     }
 }

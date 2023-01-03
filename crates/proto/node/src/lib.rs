@@ -5,6 +5,7 @@ mod execute;
 mod install;
 mod platform;
 mod resolve;
+mod shim;
 mod verify;
 
 pub use depman::*;

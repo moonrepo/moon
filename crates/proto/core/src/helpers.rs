@@ -2,9 +2,9 @@ use crate::ProtoError;
 use dirs::home_dir;
 use std::{env, path::PathBuf};
 
-pub fn get_dir() -> Result<PathBuf, ProtoError> {
-    if let Ok(dir) = env::var("PROTO_DIR") {
-        return Ok(dir.into());
+pub fn get_root() -> Result<PathBuf, ProtoError> {
+    if let Ok(root) = env::var("PROTO_ROOT") {
+        return Ok(root.into());
     }
 
     if let Some(dir) = home_dir() {
@@ -14,12 +14,16 @@ pub fn get_dir() -> Result<PathBuf, ProtoError> {
     Err(ProtoError::MissingHomeDir)
 }
 
+pub fn get_shims_dir() -> Result<PathBuf, ProtoError> {
+    Ok(get_root()?.join("shims"))
+}
+
 pub fn get_temp_dir() -> Result<PathBuf, ProtoError> {
-    Ok(get_dir()?.join("temp"))
+    Ok(get_root()?.join("temp"))
 }
 
 pub fn get_tools_dir() -> Result<PathBuf, ProtoError> {
-    Ok(get_dir()?.join("tools"))
+    Ok(get_root()?.join("tools"))
 }
 
 // Aliases are words that map to version. For example, "latest" -> "1.2.3".

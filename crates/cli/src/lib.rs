@@ -90,7 +90,7 @@ pub async fn run_cli() {
         } => {
             ci(CiOptions {
                 base: base.clone(),
-                concurrency: args.concurrency.clone(),
+                concurrency: args.concurrency,
                 head: head.clone(),
                 job: *job,
                 job_total: *job_total,
@@ -107,7 +107,7 @@ pub async fn run_cli() {
                 ids,
                 CheckOptions {
                     all: *all,
-                    concurrency: args.concurrency.clone(),
+                    concurrency: args.concurrency,
                     report: *report,
                     update_cache: *update_cache,
                 },
@@ -233,7 +233,7 @@ pub async fn run_cli() {
                 targets,
                 RunOptions {
                     affected: *affected,
-                    concurrency: args.concurrency.clone(),
+                    concurrency: args.concurrency,
                     dependents: *dependents,
                     status: status.clone(),
                     passthrough: passthrough.clone(),

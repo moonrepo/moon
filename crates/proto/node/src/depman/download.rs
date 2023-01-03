@@ -20,7 +20,7 @@ impl Downloadable<'_> for NodeDependencyManager {
             return Ok(false);
         }
 
-        let pkg_name = self.type_of.get_package_name();
+        let pkg_name = &self.package_name;
         let from_url = match from_url {
             Some(url) => url.to_owned(),
             None => {

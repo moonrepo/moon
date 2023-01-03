@@ -86,10 +86,8 @@ pub trait Tool<'tool>:
         let install_dir = self.get_install_dir()?;
         let installed = self.install(&install_dir, &download_path).await?;
 
-        self.find_bin_path().await?;
-
-        // Create shims
         self.create_shims().await?;
+        self.find_bin_path().await?;
 
         Ok(installed)
     }

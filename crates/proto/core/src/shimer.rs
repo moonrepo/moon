@@ -60,7 +60,7 @@ if (Test-Path $Env:PROTO_DEBUG) {
 }
 
 #[cfg(windows)]
-fn get_shim_file_name(name: &str) -> String {
+pub fn get_shim_file_name(name: &str) -> String {
     format!("{}.ps1", name)
 }
 
@@ -118,7 +118,7 @@ fn build_shim_file(builder: &ShimBuilder) -> Result<String, ProtoError> {
 }
 
 #[cfg(not(windows))]
-fn get_shim_file_name(name: &str) -> String {
+pub fn get_shim_file_name(name: &str) -> String {
     name.to_owned()
 }
 
@@ -166,7 +166,7 @@ impl ShimBuilder {
         let handle_error =
             |e: std::io::Error| ProtoError::Fs(shim_path.to_path_buf(), e.to_string());
 
-        fs::write(&shim_path, build_shim_file(&self)?).map_err(handle_error)?;
+        fs::write(&shim_path, build_shim_file(self)?).map_err(handle_error)?;
 
         // Make executable
         #[cfg(unix)]

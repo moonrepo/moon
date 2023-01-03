@@ -106,6 +106,7 @@ pub async fn run_cli() {
                 ids,
                 CheckOptions {
                     all: *all,
+                    concurrency: args.concurrency.clone(),
                     report: *report,
                     update_cache: *update_cache,
                 },
@@ -231,6 +232,7 @@ pub async fn run_cli() {
                 targets,
                 RunOptions {
                     affected: *affected,
+                    concurrency: args.concurrency.clone(),
                     dependents: *dependents,
                     status: status.clone(),
                     passthrough: passthrough.clone(),

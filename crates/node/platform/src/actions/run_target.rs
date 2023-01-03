@@ -92,21 +92,22 @@ pub fn create_target_command(
     task: &Task,
     working_dir: &Path,
 ) -> Result<Command, ToolError> {
-    let mut cmd = node.get_bin_path()?.to_owned();
+    let node_bin = node.get_bin_path()?;
+    let mut cmd = node_bin.to_path_buf();
     let mut args = vec![];
 
     match task.command.as_str() {
-        "node" => {
+        "node" | "nodejs" => {
             args.extend(create_node_options(node, context, task)?);
         }
         "npm" => {
-            args.push(path::to_string(node.get_npm()?.get_bin_path()?)?);
+            cmd = node.get_npm()?.get_bin_path()?;
         }
         "pnpm" => {
-            args.push(path::to_string(node.get_pnpm()?.get_bin_path()?)?);
+            cmd = node.get_pnpm()?.get_bin_path()?;
         }
-        "yarn" => {
-            args.push(path::to_string(node.get_yarn()?.get_bin_path()?)?);
+        "yarn" | "yarnpkg" => {
+            cmd = node.get_yarn()?.get_bin_path()?;
         }
         bin => {
             match node.find_package_bin(&project.root, bin)? {
@@ -128,10 +129,12 @@ pub fn create_target_command(
     // Create the command
     let mut command = Command::new(cmd);
 
-    command.args(&args).args(&task.args).envs(&task.env).env(
-        "PATH",
-        get_path_env_var(node.get_bin_path()?.parent().unwrap()),
-    );
+    command
+        .args(&args)
+        .args(&task.args)
+        .envs(&task.env)
+        .env("PATH", get_path_env_var(node_bin.parent().unwrap()))
+        .env("PROTO_NODE_BIN", path::to_string(&node_bin)?);
 
     // This functionality mimics what pnpm's "node_modules/.bin" binaries do
     if matches!(node.config.package_manager, NodePackageManager::Pnpm) {

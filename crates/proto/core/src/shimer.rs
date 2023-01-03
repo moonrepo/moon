@@ -40,10 +40,24 @@ fn build_shim_file(builder: &ShimBuilder) -> Result<String, ProtoError> {
     }
 
     template.push("".into());
-    template.push(format!(
-        "exec \"{}\" \"$@\"",
-        builder.bin_path.to_string_lossy()
-    ));
+
+    if let Some(parent_name) = &builder.parent_name {
+        template.push(format!(
+            "parent=\"${{PROTO_{}_BIN:-{}}}\"",
+            parent_name.to_uppercase(),
+            parent_name
+        ));
+        template.push("".into());
+        template.push(format!(
+            "exec \"$parent\" \"{}\" \"$@\"",
+            builder.bin_path.to_string_lossy()
+        ));
+    } else {
+        template.push(format!(
+            "exec \"{}\" \"$@\"",
+            builder.bin_path.to_string_lossy()
+        ));
+    }
 
     Ok(template.join("\n"))
 }
@@ -52,6 +66,7 @@ pub struct ShimBuilder {
     pub name: String,
     pub bin_path: PathBuf,
     pub install_dir: Option<PathBuf>,
+    pub parent_name: Option<String>,
     pub version: Option<String>,
 }
 
@@ -61,12 +76,18 @@ impl ShimBuilder {
             name: name.to_owned(),
             bin_path: bin_path.to_path_buf(),
             install_dir: None,
+            parent_name: None,
             version: None,
         }
     }
 
     pub fn dir<P: AsRef<Path>>(&mut self, path: P) -> &mut Self {
         self.install_dir = Some(path.as_ref().to_path_buf());
+        self
+    }
+
+    pub fn parent<V: AsRef<str>>(&mut self, name: V) -> &mut Self {
+        self.parent_name = Some(name.as_ref().to_owned());
         self
     }
 

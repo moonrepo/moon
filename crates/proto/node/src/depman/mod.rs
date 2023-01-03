@@ -3,6 +3,7 @@ mod download;
 mod execute;
 mod install;
 mod resolve;
+mod shim;
 mod verify;
 
 use proto_core::{Describable, Proto, Tool};

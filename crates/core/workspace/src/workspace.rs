@@ -195,7 +195,10 @@ impl Workspace {
         let vcs = VcsLoader::load(&root_dir, &config)?;
 
         // This is temporary until we're fully on proto
-        env::set_var("PROTO_DIR", path::to_string(home_dir.join(CONFIG_DIRNAME))?);
+        env::set_var(
+            "PROTO_ROOT",
+            path::to_string(home_dir.join(CONFIG_DIRNAME))?,
+        );
 
         Ok(Workspace {
             cache,

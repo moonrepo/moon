@@ -5,6 +5,7 @@ mod executor;
 mod helpers;
 mod installer;
 mod resolver;
+mod shimer;
 mod verifier;
 
 pub use async_trait::async_trait;
@@ -17,20 +18,24 @@ pub use installer::*;
 pub use lenient_semver::Version;
 pub use proto_error::ProtoError;
 pub use resolver::*;
-use std::fs;
-use std::path::{Path, PathBuf};
+pub use shimer::*;
 pub use verifier::*;
 
+use std::fs;
+use std::path::{Path, PathBuf};
+
 pub struct Proto {
+    pub shims_dir: PathBuf,
     pub temp_dir: PathBuf,
     pub tools_dir: PathBuf,
 }
 
 impl Proto {
     pub fn new() -> Result<Self, ProtoError> {
-        let root = get_dir()?;
+        let root = get_root()?;
 
         Ok(Proto {
+            shims_dir: root.join("shims"),
             temp_dir: root.join("temp"),
             tools_dir: root.join("tools"),
         })
@@ -38,6 +43,7 @@ impl Proto {
 
     pub fn from(root: &Path) -> Self {
         Proto {
+            shims_dir: root.join("shims"),
             temp_dir: root.join("temp"),
             tools_dir: root.join("tools"),
         }
@@ -55,6 +61,7 @@ pub trait Tool<'tool>:
     + Verifiable<'tool>
     + Installable<'tool>
     + Executable<'tool>
+    + Shimable<'tool>
 {
     async fn before_setup(&mut self) -> Result<(), ProtoError> {
         Ok(())
@@ -80,6 +87,9 @@ pub trait Tool<'tool>:
         let installed = self.install(&install_dir, &download_path).await?;
 
         self.find_bin_path().await?;
+
+        // Create shims
+        self.create_shims().await?;
 
         Ok(installed)
     }

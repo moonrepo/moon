@@ -15,9 +15,9 @@ pub fn get_bin_name<T: AsRef<str>>(name: T) -> String {
 #[async_trait]
 impl Executable<'_> for NodeLanguage {
     async fn find_bin_path(&mut self) -> Result<(), ProtoError> {
-        let dir = self.get_install_dir()?;
-        let bin_path = dir.join(get_bin_name("node"));
-        let shim_path = dir.join("node");
+        let install_dir = self.get_install_dir()?;
+        let bin_path = install_dir.join(get_bin_name("node"));
+        let shim_path = install_dir.join("node");
 
         if shim_path.exists() {
             self.shim_path = Some(shim_path);

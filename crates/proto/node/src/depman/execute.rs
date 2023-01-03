@@ -46,6 +46,11 @@ impl Executable<'_> for NodeDependencyManager {
         let install_dir = self.get_install_dir()?;
         let bin_name = self.type_of.get_package_name();
         let package_json = install_dir.join("package.json");
+        let shim_path = install_dir.join(&bin_name);
+
+        if shim_path.exists() {
+            self.shim_path = Some(shim_path);
+        }
 
         if package_json.exists() {
             if let Some(bin_path) = extract_bin_from_package_json(package_json, &bin_name)? {

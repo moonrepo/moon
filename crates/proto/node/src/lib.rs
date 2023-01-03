@@ -25,8 +25,8 @@ pub struct NodeLanguage {
 impl NodeLanguage {
     pub fn new(proto: &Proto, version: Option<&str>) -> Self {
         NodeLanguage {
-            bin_path: None,
             base_dir: proto.tools_dir.join("node"),
+            bin_path: None,
             log_target: "proto:tool:node".into(),
             shim_path: None,
             temp_dir: proto.temp_dir.join("node"),

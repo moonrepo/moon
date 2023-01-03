@@ -24,7 +24,7 @@ impl Detector<'_> for NodeDependencyManager {
                 let mut parts = manager.split('@');
                 let name = parts.next().unwrap_or_default();
 
-                if name == self.type_of.get_package_name() {
+                if name == self.package_name {
                     return Ok(Some(parts.next().unwrap_or("latest").to_owned()));
                 }
             }

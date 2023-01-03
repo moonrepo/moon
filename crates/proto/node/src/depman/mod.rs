@@ -33,6 +33,7 @@ pub struct NodeDependencyManager {
     pub bin_path: Option<PathBuf>,
     // pub dist: Option<NDMVersionDist>,
     pub log_target: String,
+    pub package_name: String,
     pub shim_path: Option<PathBuf>,
     pub temp_dir: PathBuf,
     pub type_of: NodeDependencyManagerType,
@@ -52,6 +53,7 @@ impl NodeDependencyManager {
             temp_dir: proto.temp_dir.join(&package_name),
             type_of,
             version: version.unwrap_or("latest").into(),
+            package_name,
         }
     }
 

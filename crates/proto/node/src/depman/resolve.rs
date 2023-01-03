@@ -47,11 +47,9 @@ impl Resolvable<'_> for NodeDependencyManager {
 
     async fn load_manifest(&self) -> Result<VersionManifest, ProtoError> {
         let mut versions = BTreeMap::new();
-        let response: NDMManifest = load_versions_manifest(format!(
-            "https://registry.npmjs.org/{}/",
-            self.type_of.get_package_name()
-        ))
-        .await?;
+        let response: NDMManifest =
+            load_versions_manifest(format!("https://registry.npmjs.org/{}/", self.package_name))
+                .await?;
 
         for item in response.versions.values() {
             versions.insert(

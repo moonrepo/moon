@@ -457,7 +457,10 @@ impl Command {
             if value.is_some() {
                 let key_str = key.to_str().unwrap_or_default();
 
-                if key_str.starts_with("MOON_") || key_str.starts_with("NODE_") {
+                if key_str.starts_with("MOON_")
+                    || key_str.starts_with("PROTO_")
+                    || key_str.starts_with("NODE_")
+                {
                     envs_list.push(format!(
                         "\n  {}{}{}",
                         key_str,

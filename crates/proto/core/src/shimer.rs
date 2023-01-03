@@ -9,6 +9,8 @@ use std::{
 pub trait Shimable<'tool>: Send + Sync {
     /// ???
     async fn create_shims(&self) -> Result<(), ProtoError>;
+
+    fn get_shim_path(&self) -> Option<&Path>;
 }
 
 fn build_shim_file(builder: &ShimBuilder) -> Result<String, ProtoError> {

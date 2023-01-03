@@ -2,6 +2,7 @@ use crate::NodeDependencyManager;
 use proto_core::{
     async_trait, Executable, Installable, ProtoError, Resolvable, ShimBuilder, Shimable,
 };
+use std::path::Path;
 
 #[async_trait]
 impl Shimable<'_> for NodeDependencyManager {
@@ -13,5 +14,12 @@ impl Shimable<'_> for NodeDependencyManager {
             .create()?;
 
         Ok(())
+    }
+
+    fn get_shim_path(&self) -> Option<&Path> {
+        match self.shim_path.as_ref() {
+            Some(path) => Some(path),
+            None => None,
+        }
     }
 }

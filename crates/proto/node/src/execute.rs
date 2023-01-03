@@ -33,10 +33,6 @@ impl Executable<'_> for NodeLanguage {
     }
 
     fn get_bin_path(&self) -> Result<&Path, ProtoError> {
-        if let Some(shim) = self.shim_path.as_ref() {
-            return Ok(shim);
-        }
-
         match self.bin_path.as_ref() {
             Some(bin) => Ok(bin),
             None => Err(ProtoError::MissingTool(self.get_name())),

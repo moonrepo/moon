@@ -90,6 +90,7 @@ pub async fn run_cli() {
         } => {
             ci(CiOptions {
                 base: base.clone(),
+                concurrency: args.concurrency.clone(),
                 head: head.clone(),
                 job: *job,
                 job_total: *job_total,

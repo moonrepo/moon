@@ -15,6 +15,7 @@ use std::string::ToString;
 #[derive(Default)]
 pub struct RunOptions {
     pub affected: bool,
+    pub concurrency: Option<usize>,
     pub dependents: bool,
     pub status: Vec<TouchedStatus>,
     pub passthrough: Vec<String>,
@@ -113,6 +114,10 @@ pub async fn run_target(
 
     let dep_graph = dep_builder.build();
     let mut pipeline = Pipeline::new(workspace, project_graph);
+
+    if let Some(concurrency) = options.concurrency {
+        pipeline.concurrency(concurrency);
+    }
 
     let results = pipeline
         .bail_on_error()

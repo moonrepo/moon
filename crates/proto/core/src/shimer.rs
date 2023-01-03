@@ -13,6 +13,58 @@ pub trait Shimable<'tool>: Send + Sync {
     fn get_shim_path(&self) -> Option<&Path>;
 }
 
+#[cfg(windows)]
+fn build_shim_file(builder: &ShimBuilder) -> Result<String, ProtoError> {
+    let constant_name = builder.name.to_uppercase();
+
+    let mut template = vec![];
+    template.push("#!/usr/bin/env pwsh".into());
+    template.push("$ErrorActionPreference = 'Stop'".into());
+    template.push(
+        r#"
+if (Test-Path $Env:PROTO_DEBUG) {
+    $DebugPreference = 'Continue'
+}"#
+        .into(),
+    );
+    template.push("".into());
+
+    template.push(format!(
+        "[Environment]::SetEnvironmentVariable('PROTO_ROOT', '{}', 'Machine')",
+        get_root()?.to_string_lossy()
+    ));
+
+    if let Some(install_dir) = &builder.install_dir {
+        template.push(format!(
+            "[Environment]::SetEnvironmentVariable('PROTO_{}_DIR', '{}', 'Machine')",
+            constant_name,
+            install_dir.to_string_lossy()
+        ));
+    }
+
+    if let Some(version) = &builder.version {
+        template.push(format!(
+            "[Environment]::SetEnvironmentVariable('PROTO_{}_VERSION', '{}', 'Machine')",
+            constant_name, version
+        ));
+    }
+
+    template.push("".into());
+
+    template.push(format!(
+        "Start-Process -FilePath \"{}\" -ArgumentList \"$Args\"",
+        builder.bin_path.to_string_lossy()
+    ));
+
+    Ok(template.join("\n"))
+}
+
+#[cfg(windows)]
+fn get_shim_file_name(name: &str) -> String {
+    format!("{}.ps1", name)
+}
+
+#[cfg(not(windows))]
 fn build_shim_file(builder: &ShimBuilder) -> Result<String, ProtoError> {
     let constant_name = builder.name.to_uppercase();
 
@@ -34,6 +86,7 @@ fn build_shim_file(builder: &ShimBuilder) -> Result<String, ProtoError> {
             install_dir.to_string_lossy()
         ));
     }
+
     if let Some(version) = &builder.version {
         template.push(format!(
             "export PROTO_{}_VERSION=\"{}\"",
@@ -62,6 +115,11 @@ fn build_shim_file(builder: &ShimBuilder) -> Result<String, ProtoError> {
     }
 
     Ok(template.join("\n"))
+}
+
+#[cfg(not(windows))]
+fn get_shim_file_name(name: &str) -> String {
+    name.to_owned()
 }
 
 pub struct ShimBuilder {
@@ -99,7 +157,12 @@ impl ShimBuilder {
     }
 
     pub fn create(&self) -> Result<(), ProtoError> {
-        let shim_path = self.install_dir.as_ref().unwrap().join(&self.name);
+        let shim_path = self
+            .install_dir
+            .as_ref()
+            .unwrap()
+            .join(get_shim_file_name(&self.name));
+
         let handle_error =
             |e: std::io::Error| ProtoError::Fs(shim_path.to_path_buf(), e.to_string());
 

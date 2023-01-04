@@ -141,11 +141,11 @@ fn advanced_config() {
             id: "advanced".into(),
             config: ProjectConfig {
                 project: Some(ProjectMetadataConfig {
-                    name: "Advanced".into(),
+                    name: Some("Advanced".into()),
                     description: "Advanced example.".into(),
-                    owner: "Batman".into(),
-                    maintainers: string_vec!["Bruce Wayne"],
-                    channel: "#batcave".into(),
+                    owner: Some("Batman".into()),
+                    maintainers: Some(string_vec!["Bruce Wayne"]),
+                    channel: Some("#batcave".into()),
                 }),
                 type_of: ProjectType::Application,
                 language: ProjectLanguage::TypeScript,

@@ -79,16 +79,16 @@ pub enum ProjectType {
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct ProjectMetadataConfig {
-    pub name: String,
+    pub name: Option<String>,
 
     pub description: String,
 
-    pub owner: String,
+    pub owner: Option<String>,
 
-    pub maintainers: Vec<String>,
+    pub maintainers: Option<Vec<String>>,
 
     #[validate(custom = "validate_channel")]
-    pub channel: String,
+    pub channel: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]

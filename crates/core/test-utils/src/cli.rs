@@ -42,6 +42,7 @@ pub fn get_assert_stderr_output(assert: &Assert) -> String {
             && !line.starts_with("[trace")
             && !line.starts_with("  MOON_")
             && !line.starts_with("  NODE_")
+            && !line.starts_with("  PROTO_")
         {
             output.push_str(line);
             output.push('\n');

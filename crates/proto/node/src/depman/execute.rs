@@ -1,8 +1,6 @@
 use crate::depman::NodeDependencyManager;
 use clean_path::Clean;
-use proto_core::{
-    async_trait, get_shim_file_name, Describable, Executable, Installable, ProtoError,
-};
+use proto_core::{async_trait, Describable, Executable, Installable, ProtoError};
 use serde_json::Value;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -48,11 +46,6 @@ impl Executable<'_> for NodeDependencyManager {
         let install_dir = self.get_install_dir()?;
         let bin_name = &self.package_name;
         let package_json = install_dir.join("package.json");
-        let shim_path = install_dir.join(get_shim_file_name(bin_name));
-
-        if shim_path.exists() {
-            self.shim_path = Some(shim_path);
-        }
 
         if package_json.exists() {
             if let Some(bin_path) = extract_bin_from_package_json(package_json, bin_name)? {

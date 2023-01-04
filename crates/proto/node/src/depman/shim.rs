@@ -6,12 +6,14 @@ use std::path::Path;
 
 #[async_trait]
 impl Shimable<'_> for NodeDependencyManager {
-    async fn create_shims(&self) -> Result<(), ProtoError> {
-        ShimBuilder::new(&self.package_name, self.get_bin_path()?)
+    async fn create_shims(&mut self) -> Result<(), ProtoError> {
+        let shim_path = ShimBuilder::new(&self.package_name, self.get_bin_path()?)
             .dir(self.get_install_dir()?)
             .version(self.get_resolved_version())
             .parent("node")
             .create()?;
+
+        self.shim_path = Some(shim_path);
 
         Ok(())
     }

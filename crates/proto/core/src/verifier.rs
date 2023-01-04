@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 
 #[async_trait::async_trait]
 pub trait Verifiable<'tool>: Send + Sync + Downloadable<'tool> {
-    /// Returns an absolute file path to the checksum file.
+    /// Return an absolute file path to the checksum file.
     /// This may not exist, as the path is composed ahead of time.
     /// This is typically ~/.prove/temp/<file>.
     fn get_checksum_path(&self) -> Result<PathBuf, ProtoError>;

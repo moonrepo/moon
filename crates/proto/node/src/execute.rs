@@ -1,7 +1,5 @@
 use crate::NodeLanguage;
-use proto_core::{
-    async_trait, get_shim_file_name, Describable, Executable, Installable, ProtoError,
-};
+use proto_core::{async_trait, Describable, Executable, Installable, ProtoError};
 use std::path::Path;
 
 #[cfg(target_os = "windows")]
@@ -19,11 +17,6 @@ impl Executable<'_> for NodeLanguage {
     async fn find_bin_path(&mut self) -> Result<(), ProtoError> {
         let install_dir = self.get_install_dir()?;
         let bin_path = install_dir.join(get_bin_name("node"));
-        let shim_path = install_dir.join(get_shim_file_name("node"));
-
-        if shim_path.exists() {
-            self.shim_path = Some(shim_path);
-        }
 
         if bin_path.exists() {
             self.bin_path = Some(bin_path);

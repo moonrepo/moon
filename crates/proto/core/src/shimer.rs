@@ -7,9 +7,10 @@ use std::{
 
 #[async_trait::async_trait]
 pub trait Shimable<'tool>: Send + Sync {
-    /// ???
-    async fn create_shims(&self) -> Result<(), ProtoError>;
+    /// Create one or many shims in the root of the tool's install directory.
+    async fn create_shims(&mut self) -> Result<(), ProtoError>;
 
+    /// Return an absolute path to the shim file if utilizing shims.
     fn get_shim_path(&self) -> Option<&Path>;
 }
 
@@ -60,7 +61,7 @@ if (Test-Path $Env:PROTO_DEBUG) {
 }
 
 #[cfg(windows)]
-pub fn get_shim_file_name(name: &str) -> String {
+fn get_shim_file_name(name: &str) -> String {
     format!("{}.ps1", name)
 }
 
@@ -118,7 +119,7 @@ fn build_shim_file(builder: &ShimBuilder) -> Result<String, ProtoError> {
 }
 
 #[cfg(not(windows))]
-pub fn get_shim_file_name(name: &str) -> String {
+fn get_shim_file_name(name: &str) -> String {
     name.to_owned()
 }
 
@@ -156,7 +157,7 @@ impl ShimBuilder {
         self
     }
 
-    pub fn create(&self) -> Result<(), ProtoError> {
+    pub fn create(&self) -> Result<PathBuf, ProtoError> {
         let shim_path = self
             .install_dir
             .as_ref()
@@ -177,6 +178,6 @@ impl ShimBuilder {
                 .map_err(handle_error)?;
         }
 
-        Ok(())
+        Ok(shim_path)
     }
 }

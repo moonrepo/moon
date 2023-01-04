@@ -49,7 +49,10 @@ pub async fn project(id: &str, json: bool) -> Result<(), AnyError> {
     term.render_entry("Type", term.format(&project.type_of))?;
 
     if let Some(meta) = &config.project {
-        term.render_entry("Name", &meta.name)?;
+        if let Some(name) = &meta.name {
+            term.render_entry("Name", name)?;
+        }
+
         term.render_entry("Description", &meta.description)?;
 
         if let Some(owner) = &meta.owner {

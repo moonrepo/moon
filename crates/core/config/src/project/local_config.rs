@@ -79,7 +79,7 @@ pub enum ProjectType {
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct ProjectMetadataConfig {
-    pub name: String,
+    pub name: Option<String>,
 
     pub description: String,
 

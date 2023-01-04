@@ -11,6 +11,7 @@
   This is much more accurate than before, which only relied on lockfile modified timestamps.
 - Added global `--concurrency` option to all `moon` commands, allowing the thread count to be
   customized.
+- Updated the `project` fields in `moon.yml` to be optional, excluding `description`.
 
 ## 0.21.4
 

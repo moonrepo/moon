@@ -86,8 +86,7 @@ language: 'javascript'
 
 <HeadingApiLink to="/api/types/interface/ProjectConfig#project" />
 
-The `project` setting defines metadata about the project itself. Although this setting is optional,
-when defined, all fields within it _must_ be defined as well.
+The `project` setting defines metadata about the project itself.
 
 ```yaml title="moon.yml"
 project:
@@ -108,7 +107,7 @@ organize all projects. Feel free to build your own tooling around these settings
 
 The Slack, Discord, Teams, IRC, etc channel name (with leading #) in which to discuss the project.
 
-### `description`
+### `description`<RequiredLabel />
 
 <HeadingApiLink to="/api/types/interface/ProjectMetadataConfig#description" />
 

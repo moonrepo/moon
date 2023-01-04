@@ -1,4 +1,4 @@
-use proto_core::{Detector, Downloadable, Executable, Installable, Proto, Resolvable, Tool};
+use proto_core::{Detector, Downloadable, Executable, Installable, Proto, Resolvable, Tool, Shimable};
 use proto_node::{NodeDependencyManager, NodeDependencyManagerType};
 
 #[tokio::test]
@@ -15,6 +15,10 @@ async fn downloads_verifies_installs_npm() {
     assert_eq!(
         tool.get_bin_path().unwrap(),
         &proto.tools_dir.join("npm/9.0.0/bin/npm-cli.js")
+    );
+    assert_eq!(
+        tool.get_shim_path().unwrap(),
+        &proto.tools_dir.join("npm/9.0.0/npm")
     );
 }
 

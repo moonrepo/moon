@@ -1,6 +1,8 @@
 use crate::NodeDependencyManager;
+use log::debug;
 use proto_core::{
-    async_trait, Executable, Installable, ProtoError, Resolvable, ShimBuilder, Shimable,
+    async_trait, Describable, Executable, Installable, ProtoError, Resolvable, ShimBuilder,
+    Shimable,
 };
 use std::path::Path;
 
@@ -12,6 +14,8 @@ impl Shimable<'_> for NodeDependencyManager {
             .version(self.get_resolved_version())
             .parent("node")
             .create()?;
+
+        debug!(target: self.get_log_target(), "Created shim at {}", shim_path.to_string_lossy());
 
         self.shim_path = Some(shim_path);
 

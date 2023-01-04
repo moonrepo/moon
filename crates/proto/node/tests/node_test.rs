@@ -1,5 +1,5 @@
 use proto_core::{
-    Detector, Downloadable, Executable, Installable, Proto, Resolvable, Tool, Verifiable,
+    Detector, Downloadable, Executable, Installable, Proto, Resolvable, Shimable, Tool, Verifiable,
 };
 use proto_node::NodeLanguage;
 use std::fs;
@@ -14,16 +14,14 @@ async fn downloads_verifies_installs_tool() {
 
     assert!(tool.get_install_dir().unwrap().exists());
 
+    let base_dir = proto.tools_dir.join("node/18.0.0");
+
     if cfg!(windows) {
-        assert_eq!(
-            tool.get_bin_path().unwrap(),
-            &proto.tools_dir.join("node/18.0.0/node.exe")
-        );
+        assert_eq!(tool.get_bin_path().unwrap(), &base_dir.join("node.exe"));
+        assert_eq!(tool.get_shim_path().unwrap(), &base_dir.join("node.ps1"));
     } else {
-        assert_eq!(
-            tool.get_bin_path().unwrap(),
-            &proto.tools_dir.join("node/18.0.0/bin/node")
-        );
+        assert_eq!(tool.get_bin_path().unwrap(), &base_dir.join("bin/node"));
+        assert_eq!(tool.get_shim_path().unwrap(), &base_dir.join("node"));
     }
 }
 

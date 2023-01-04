@@ -51,9 +51,18 @@ pub async fn project(id: &str, json: bool) -> Result<(), AnyError> {
     if let Some(meta) = &config.project {
         term.render_entry("Name", &meta.name)?;
         term.render_entry("Description", &meta.description)?;
-        term.render_entry("Owner", &meta.owner)?;
-        term.render_entry_list("Maintainers", &meta.maintainers)?;
-        term.render_entry("Channel", &meta.channel)?;
+
+        if let Some(owner) = &meta.owner {
+            term.render_entry("Owner", owner)?;
+        }
+
+        if let Some(maintainers) = &meta.maintainers {
+            term.render_entry_list("Maintainers", maintainers)?;
+        }
+
+        if let Some(channel) = &meta.channel {
+            term.render_entry("Channel", channel)?;
+        }
     }
 
     let mut deps = vec![];

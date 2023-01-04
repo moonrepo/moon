@@ -27,7 +27,7 @@ fn build_shim_file(builder: &ShimBuilder) -> Result<String, ProtoError> {
     template.push("$ErrorActionPreference = 'Stop'".into());
     template.push(
         r#"
-if (Test-Path $Env:PROTO_DEBUG) {
+if (Test-Path env:PROTO_DEBUG) {
     $DebugPreference = 'Continue'
 }"#
         .into(),
@@ -35,13 +35,13 @@ if (Test-Path $Env:PROTO_DEBUG) {
     template.push("".into());
 
     template.push(format!(
-        "[Environment]::SetEnvironmentVariable('PROTO_ROOT', '{}', 'Machine')",
+        "[Environment]::SetEnvironmentVariable('PROTO_ROOT', '{}', 'Process')",
         get_root()?.to_string_lossy()
     ));
 
     if let Some(install_dir) = &builder.install_dir {
         template.push(format!(
-            "[Environment]::SetEnvironmentVariable('PROTO_{}_DIR', '{}', 'Machine')",
+            "[Environment]::SetEnvironmentVariable('PROTO_{}_DIR', '{}', 'Process')",
             constant_name,
             install_dir.to_string_lossy()
         ));
@@ -49,17 +49,38 @@ if (Test-Path $Env:PROTO_DEBUG) {
 
     if let Some(version) = &builder.version {
         template.push(format!(
-            "[Environment]::SetEnvironmentVariable('PROTO_{}_VERSION', '{}', 'Machine')",
+            "[Environment]::SetEnvironmentVariable('PROTO_{}_VERSION', '{}', 'Process')",
             constant_name, version
         ));
     }
 
     template.push("".into());
 
-    template.push(format!(
-        "Start-Process -FilePath \"{}\" -ArgumentList \"$Args\"",
-        builder.bin_path.to_string_lossy()
-    ));
+    if let Some(parent_name) = &builder.parent_name {
+        template.push(format!(
+                    r#"
+if (Test-Path env:PROTO_{parent_env}_BIN) {{
+    $parent = $Env:PROTO_{parent_env}_BIN
+}} else {{
+    $parent = "{parent_name}.exe"
+}}"#,
+            parent_env = parent_name.to_uppercase(),
+            parent_name = parent_name
+        ));
+        template.push("".into());
+        template.push(format!(
+            "& \"$parent\" \"{}\" @Args",
+            builder.bin_path.to_string_lossy()
+        ));
+    } else {
+        template.push(format!(
+            "& \"{}\" @Args",
+            builder.bin_path.to_string_lossy()
+        ));
+    }
+
+    template.push("".into());
+    template.push("exit $LASTEXITCODE".into());
 
     Ok(template.join("\n"))
 }

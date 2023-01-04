@@ -57,7 +57,7 @@ impl FileGroup {
         Ok((paths, globs))
     }
 
-    /// Returns the file group as an expanded list of directory paths.
+    /// Return the file group as an expanded list of directory paths.
     /// If a glob is detected, it will aggregate all directories found.
     pub fn dirs(
         &self,
@@ -67,7 +67,7 @@ impl FileGroup {
         self.walk(true, workspace_root, project_root)
     }
 
-    /// Returns the file group as an expanded list of file paths.
+    /// Return the file group as an expanded list of file paths.
     /// If a glob is detected, it will aggregate all files found.
     pub fn files(
         &self,
@@ -77,7 +77,7 @@ impl FileGroup {
         self.walk(false, workspace_root, project_root)
     }
 
-    /// Returns the file group as a list of file globs (as-is),
+    /// Return the file group as a list of file globs (as-is),
     /// relative to the project root.
     pub fn globs(
         &self,
@@ -103,7 +103,7 @@ impl FileGroup {
         Ok(globs)
     }
 
-    /// Returns the file group reduced down to the lowest common directory.
+    /// Return the file group reduced down to the lowest common directory.
     /// If the reduced directories is not =1, the project root "." will be returned.
     pub fn root(&self, project_root: &Path) -> Result<PathBuf, FileGroupError> {
         let dirs = self.dirs(project_root, project_root)?; // Workspace not needed!

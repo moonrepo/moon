@@ -59,7 +59,7 @@ if (Test-Path env:PROTO_DEBUG) {
 
     if let Some(parent_name) = &builder.parent_name {
         template.push(format!(
-                    r#"
+            r#"
 if (Test-Path env:PROTO_{parent_env}_BIN) {{
     $parent = $Env:PROTO_{parent_env}_BIN
 }} else {{

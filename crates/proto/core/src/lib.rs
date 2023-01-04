@@ -102,10 +102,18 @@ pub trait Tool<'tool>:
         if install_dir.exists() {
             self.find_bin_path().await?;
 
-            return Ok(match self.get_bin_path() {
-                Ok(bin) => bin.exists(),
-                Err(_) => false,
-            });
+            let bin_path = {
+                match self.get_bin_path() {
+                    Ok(bin) => bin,
+                    Err(_) => return Ok(false),
+                }
+            };
+
+            if bin_path.exists() {
+                self.create_shims().await?;
+
+                return Ok(true);
+            }
         }
 
         Ok(false)

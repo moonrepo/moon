@@ -1,4 +1,5 @@
 use crate::helpers::get_root;
+use log::debug;
 use proto_error::ProtoError;
 use std::{
     fs,
@@ -202,6 +203,8 @@ impl ShimBuilder {
             fs::set_permissions(&shim_path, fs::Permissions::from_mode(0o755))
                 .map_err(handle_error)?;
         }
+
+        debug!(target: "proto:shimer", "Created shim at {}", shim_path.to_string_lossy());
 
         Ok(shim_path)
     }

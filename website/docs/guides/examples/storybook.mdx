@@ -44,9 +44,9 @@ Storybook 7 uses Vite out of the box, as such no configuration is required but s
 ```ts title=".storybook/main.ts"
 // .storybook/main.js|cjs|ts
 
-const { mergeConfig } = require('vite');
+import { mergeConfig } from 'vite';
 
-module.exports = {
+export default {
   stories: ['../stories/**/*.stories.mdx', '../stories/**/*.stories.@(js|jsx|ts|tsx)'],
   addons: ['@storybook/addon-links', '@storybook/addon-essentials'],
   core: {
@@ -80,7 +80,7 @@ npm install --save-dev @storybook/builder-webpack5
 ```ts title=".storybook/main.ts"
 // .storybook/main.js|cjs|ts
 
-module.exports = {
+export default {
   core: {
     builder: '@storybook/builder-webpack5',
   },
@@ -113,7 +113,7 @@ Then you need to enable plugins and interactions in your Storybook project:
 ```ts title=".storybook/main.ts"
 // .storybook/main.js|ts
 
-module.exports = {
+export default {
   stories: ['../src/**/*.stories.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)'],
   addons: [
     // Other Storybook addons

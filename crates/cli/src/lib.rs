@@ -63,6 +63,8 @@ fn setup_logging(level: &LogLevel, log_file: Option<PathBuf>) {
     } else {
         debug!(target: "moon", "Running moon v{}", version);
     }
+
+    env::set_var("MOON_VERSION", version);
 }
 
 fn setup_caching(mode: &CacheMode) {
@@ -78,8 +80,6 @@ pub async fn run_cli() {
     setup_colors(args.color);
     setup_logging(&args.log, args.log_file);
     setup_caching(&args.cache);
-
-    env::set_var("MOON_VERSION", env!("CARGO_PKG_VERSION"));
 
     // Match and run subcommand
     let result = match &args.command {

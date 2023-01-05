@@ -1,6 +1,6 @@
 use crate::errors::create_validation_error;
 use moon_utils::regex::{matches_id, matches_target};
-use moon_utils::semver::Version;
+use moon_utils::semver::{Version, VersionReq};
 use std::path::Path;
 use validator::{validate_url as validate_base_url, ValidationError};
 
@@ -14,6 +14,21 @@ pub fn validate_semver_version<K: AsRef<str>, V: AsRef<str>>(
             "invalid_semver",
             key.as_ref(),
             "Must be a valid semantic version",
+        ));
+    }
+
+    Ok(())
+}
+
+pub fn validate_semver_requirement<K: AsRef<str>, V: AsRef<str>>(
+    key: K,
+    value: V,
+) -> Result<(), ValidationError> {
+    if VersionReq::parse(value.as_ref()).is_err() {
+        return Err(create_validation_error(
+            "invalid_semver_req",
+            key.as_ref(),
+            "Must be a valid semantic version requirement or range",
         ));
     }
 

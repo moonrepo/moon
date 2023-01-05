@@ -8,7 +8,6 @@ use std::env;
 pub struct CheckOptions {
     pub all: bool,
     pub concurrency: Option<usize>,
-    pub report: bool,
     pub update_cache: bool,
 }
 
@@ -56,7 +55,6 @@ pub async fn check(project_ids: &Vec<String>, options: CheckOptions) -> Result<(
         &targets,
         RunOptions {
             concurrency: options.concurrency,
-            report: options.report,
             update_cache: options.update_cache,
             ..RunOptions::default()
         },

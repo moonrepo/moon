@@ -102,7 +102,6 @@ pub async fn run_cli() {
         Commands::Check {
             ids,
             all,
-            report,
             update_cache,
         } => {
             check(
@@ -110,7 +109,6 @@ pub async fn run_cli() {
                 CheckOptions {
                     all: *all,
                     concurrency: args.concurrency,
-                    report: *report,
                     update_cache: *update_cache,
                 },
             )
@@ -229,7 +227,6 @@ pub async fn run_cli() {
             passthrough,
             profile,
             remote,
-            report,
         } => {
             run(
                 targets,
@@ -241,7 +238,6 @@ pub async fn run_cli() {
                     passthrough: passthrough.clone(),
                     profile: profile.clone(),
                     remote: *remote,
-                    report: *report,
                     update_cache: *update_cache,
                 },
             )

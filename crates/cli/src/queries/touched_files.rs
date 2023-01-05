@@ -57,11 +57,11 @@ pub async fn query_touched_files(
         vcs.get_touched_files_against_previous_revision(default_branch)
             .await?
 
-        // On a branch, so compare branch against upstream base/default branch
+        // On a branch, so compare branch against remote base/default branch
     } else if !options.local {
         trace!(
             target: LOG_TARGET,
-            "Against upstream using base \"{}\" with head \"{}\"",
+            "Against remote using base \"{}\" with head \"{}\"",
             options.base,
             options.head,
         );

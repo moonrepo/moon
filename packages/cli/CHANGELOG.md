@@ -2,6 +2,10 @@
 
 #### Unreleased
 
+#### 💥 Breaking
+
+- Renamed the `--upstream` option to `--remote`.
+
 #### 🚀 Updates
 
 - We've improved our smart hashing for other use cases besides task running. The first improvement

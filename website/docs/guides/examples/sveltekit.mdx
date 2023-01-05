@@ -66,7 +66,7 @@ moon run <project>:dev
 
 SvelteKit also has built-in support for TypeScript, but has
 similar caveats to the [ESLint integration](#eslint-integration). TypeScript itself is a bit
-involved, so we suggest reading the official [SveleKit documentation](https://kit.svelte.dev/docs/introduction) before continuing.
+involved, so we suggest reading the official [SvelteKit documentation](https://kit.svelte.dev/docs/introduction) before continuing.
 
 At this point we'll assume that a `tsconfig.json` has been created in the application, and
 typechecking works. From here we suggest utilizing a [global `typecheck` task](./typescript) for
@@ -92,4 +92,38 @@ In case Svelte doesn't automatically create a `tsconfig.json` for you, use the f
 		"strict": true
 	}
 }
+```
+
+## Configuration
+
+### Root-level
+
+We suggest _against_ root-level configuration, as SvelteKit should be installed per-project, and the
+`vite` command expects the configuration to live relative to the project root.
+
+### Project-level
+
+When creating a new SvelteKit project, a
+[`svelte.config.js`](https://kit.svelte.dev/docs/configuration) is
+created, and _must_ exist in the project root. This allows each project to configure SvelteKit for
+their needs.
+
+```js title="<project>/next.config.js"
+import adapter from '@sveltejs/adapter-auto';
+import {
+    vitePreprocess
+} from '@sveltejs/kit/vite';
+
+/** @type {import('@sveltejs/kit').Config} */
+const config = {
+    // Consult https://kit.svelte.dev/docs/integrations#preprocessors
+    // for more information about preprocessors
+    preprocess: vitePreprocess(),
+
+    kit: {
+        adapter: adapter(),
+    },
+};
+
+export default config;
 ```

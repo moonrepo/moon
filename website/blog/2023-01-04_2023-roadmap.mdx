@@ -1,0 +1,132 @@
+---
+slug: 2023-roadmap
+title: What's in store for 2023
+authors: [milesj]
+tags: [roadmap, moonbase, proto, toolchain]
+---
+
+Happy new year! Let's start 2023 by reflecting on last year and diving into our tentative year long
+roadmap.
+
+<!--truncate-->
+
+## Year 2022 in review
+
+The original concept and
+[first commit of moon](https://github.com/moonrepo/moon/commit/62267e3ccda7a45c2e9355fcbddba577ae54403d)
+(codenamed monolith) landed October 23rd, 2021. Eight months later, we
+[launched an alpha of moon](https://twitter.com/tothemoonrepo/status/1527467865200136192) to the
+public on May 19th, 2022. Since then, we've landed 21 amazing releases based on feedback from the
+community and our long-term vision, with some such features as:
+
+- Linux musl, macOS silicon, and ARM support
+- Full Node.js/JavaScript ecosystem support
+- End-to-end caching and hashing of build artifacts
+- Streamlined configuration
+- Improved developer experience
+- Massive performance improvements
+- Automatic cache cleaning
+- Code generation / scaffolding
+- Dockerfile integration
+- Remote caching
+- New langauage agnostic toolchain
+- Onboarding of 5 new languages: Rust, Go, PHP, Python, Ruby
+- Rewritten project and dependency graphs
+- Project-level toolchain overrides
+- Project specific caching
+- VSCode extension
+- 2 GitHub actions
+- ...and so much more!
+
+We're very proud with the quality and amount of features we've released in a 7 month timeframe. On
+top of this, our [GitHub stars](https://github.com/moonrepo/moon/stargazers) have steadily passed
+the 1k mark, [npm](https://www.npmjs.com/package/@moonrepo/cli) downloads are 500 a week and
+growing, and our [Twitter](https://twitter.com/tothemoonrepo) isn't doing too bad. This is only the
+start, and we're not planning to go anywhere!
+
+## Launching moonbase
+
+We haven't mentioned this name publicly yet, but now seems like the perfect time! For the past 6
+months we've been working a new web application and service called moonbase, which pairs nicely with
+moon, as it provides additional functionality that can only be achieved by persisting information
+across runs.
+
+To start, this service provides [remote caching](/docs/guides/remote-cache), which we're already
+using in production. At this point in time, objects are stored in our moonrepo S3 buckets, but one
+of our major goals is to support storing objects in your private buckets, supporting additional
+cloud providers like Google Cloud and Azure, and in the long-term, a self-hosted / on-premises
+solution.
+
+But that's not all! moonbase will integrate deeply with [continuous integration](/docs/guides/ci)
+pipelines to generate insights, capture metrics, and provide near real-time dashboards. Our goal is
+to provide a holistic overview of your entire repository.
+
+moonbase with publicly available remote caching is slated for end of Q1. CI integration is
+tentatively slated for Q2. We have even more features that we'll reveal in the future, so stay
+tuned!
+
+## Launching proto
+
+Another tool we haven't mentioned yet is proto (name still in flux). proto is a standardized version
+manager for programming languages and dependency managers. We've basically extracted our
+[toolchain](/docs/concepts/toolchain) into a standalone library, as it's super beneficial for
+projects and developers not using moon. It provides all the functionality you'd expect from a
+version manager:
+
+- Downloading and installing specific versions
+- Automatic version detection
+- Updating PATH with the applicable version
+- Generating shims
+- Pinning shell, local, and global versions
+
+So how's this different from existing version managers like nvm or volta? To start, it's written in
+Rust so it's _fast_ and doesn't suffer from being Bash only. Because of this, it's also
+multi-platform and will work on Windows. But the biggest different is that proto is language
+agnostic and will support multiple languages. To start, it supports Node.js and Deno, but will be
+expanded to support our other toolchain languages like Bun, PHP, Ruby, and Python. Another cool
+feature is that it also manages versions of dependency managers like npm, yarn, and pnpm!
+
+We're planning to launch proto at the start of Q2.
+
+## Expanding language support
+
+Our initial goal for moon was to provide a first-class build system for the frontend ecosystem that
+focused heavily on automation and the developer experience. We believe we've accomplished this goal,
+but of course, nothing is ever actually complete, and so JavaScript, TypeScript, and Node.js support
+will continually be improved.
+
+However, that's not the entirety of the frontend ecosystem, as [Deno](https://deno.land/) and
+[Bun](https://bun.sh/) have been gaining traction this past year, and of course, moon will support
+both of them as first-class platforms by end of year.
+
+Futhermore, we recently landed Tier 1 support for 5 new languages: Rust, Ruby, PHP, Python, and Go.
+Our end of year goal for these languages is to provide full Tier 2 support. Tier 3 support is still
+an unknown, as we need to investigate the best possible way to integrate these languages into the
+toolchain (this work is ongoing).
+
+With all that being said, this is our tenative timeline around
+[language support](/docs#supported-languages) (which may shift at any time):
+
+- **Q1**
+  - Tier 1 support for Bun.
+  - Tier 2 support for Deno.
+- **Q2**
+  - Tier 2 support for Bun, PHP.
+  - Tier 3 support for Deno.
+- **Q3**
+  - Tier 2 support for Ruby, Python.
+  - Tier 3 support for Bun.
+- **Q4**
+  - Tier 2 support for Rust, Go.
+
+## Initial release workflow support
+
+moon currently excels at organizing projects, running tasks, and building artifacts, but it has no
+support for release workflows. This is everything from capturing changes, bumping versions,
+generating changelogs, and publishing to upstream registries. If you use
+[Lerna](https://github.com/lerna/lerna) or [changesets](https://github.com/changesets/changesets),
+you should be very familiar with this workflow.
+
+Since moon supports monorepos and has in-depth knowledge of the project graph, we can support
+release workflows with ease. Our goal is to support this workflow (for all languages) from start to
+finish by end of year, ideally much sooner than that!

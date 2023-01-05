@@ -297,3 +297,15 @@ vcs:
     - 'origin'
     - 'upstream'
 ```
+
+## `versionConstraint`<VersionLabel version="0.22" />
+
+<HeadingApiLink to="/api/types/interface/WorkspaceConfig#versionConstraint" />
+
+Defines a semantic version requirement for the currently running moon binary. This provides a
+mechanism for enforcing that the globally installed moon on every developers machine is using an
+applicable version.
+
+```yaml title=".moon/workspace.yml" {1}
+versionConstraint: '>=0.20.0'
+```

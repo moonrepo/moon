@@ -20,14 +20,14 @@ pub struct RunOptions {
     pub status: Vec<TouchedStatus>,
     pub passthrough: Vec<String>,
     pub profile: Option<ProfileType>,
+    pub remote: bool,
     pub report: bool,
     pub update_cache: bool,
-    pub upstream: bool,
 }
 
 pub fn is_local(options: &RunOptions) -> bool {
     if options.affected {
-        !options.upstream
+        !options.remote
     } else {
         !is_ci()
     }

@@ -37,7 +37,7 @@ $ moon run :lint
 #### Affected
 
 - `--affected` - Only run target if affected by changed files, _otherwise_ will always run.
+- `--remote` - Determine affected against remote by comparing `HEAD` against a base revision
+  (default branch), _otherwise_ uses local changes.
 - `--status <type>` - Filter affected based on a change status. Can be passed multiple times.
   - Types: `all` (default), `added`, `deleted`, `modified`, `staged`, `unstaged`, `untracked`
-- `--upstream` - Determine affected against upstream by comparing `HEAD` against a base revision
-  (default branch), _otherwise_ uses local changes.

@@ -23,7 +23,12 @@ community and our long-term vision, with some such features as:</p><ul><li>Linux
 top of this, our <a href="https://github.com/moonrepo/moon/stargazers" target="_blank" rel="noopener noreferrer">GitHub stars</a> have steadily passed
 the 1k mark, <a href="https://www.npmjs.com/package/@moonrepo/cli" target="_blank" rel="noopener noreferrer">npm</a> downloads are 500 a week and
 growing, and our <a href="https://twitter.com/tothemoonrepo" target="_blank" rel="noopener noreferrer">Twitter</a> isn't doing too bad. This is only the
-start, and we're not planning to go anywhere!</p><h2 class="anchor anchorWithStickyNavbar_JmGV" id="launching-moonbase">Launching moonbase<a class="hash-link" href="#launching-moonbase" title="Direct link to heading">​</a></h2><p>We haven't mentioned this name publicly yet, but now seems like the perfect time! For the past 6
+start, and we're not planning to go anywhere!</p><h2 class="anchor anchorWithStickyNavbar_JmGV" id="path-to-an-official-v1-release">Path to an official v1 release<a class="hash-link" href="#path-to-an-official-v1-release" title="Direct link to heading">​</a></h2><p>A common question we receive is "When is v1 going to be released?", as some consumers are weary of
+using a "beta" tool. We definitely understand, and as such, have posted a
+<a href="https://github.com/moonrepo/moon/issues/491" target="_blank" rel="noopener noreferrer">high-level overview</a> of what we're hoping to land
+before we tag an official v1 release. It basically boils down to landing breaking changes (mainly
+around configuration) before v1, so that we avoid bumping to a v2 or v3 unnecessarily. We also want
+to land our <a href="#proto">toolchain changes</a> and <a href="#moonbase">remote caching</a> improvements before then.</p><p>Our current timeframe is by end of Q1, if not, early Q2.</p><h2 class="anchor anchorWithStickyNavbar_JmGV" id="launching-moonbase">Launching moonbase<a class="hash-link" href="#launching-moonbase" title="Direct link to heading">​</a></h2><p>We haven't mentioned this name publicly yet, but now seems like the perfect time! For the past 6
 months we've been working a new web application and service called moonbase, which pairs nicely with
 moon, as it provides additional functionality that can only be achieved by persisting information
 across runs.</p><p>To start, this service provides <a href="/docs/guides/remote-cache">remote caching</a>, which we're already
@@ -51,14 +56,18 @@ will continually be improved.</p><p>However, that's not the entirety of the fron
 both of them as first-class platforms by end of year.</p><p>Futhermore, we recently landed Tier 1 support for 5 new languages: Rust, Ruby, PHP, Python, and Go.
 Our end of year goal for these languages is to provide full Tier 2 support. Tier 3 support is still
 an unknown, as we need to investigate the best possible way to integrate these languages into the
-toolchain (this work is ongoing).</p><p>With all that being said, this is our tenative timeline around
-<a href="/docs#supported-languages">language support</a> (which may shift at any time):</p><ul><li><strong>Q1</strong><ul><li>Tier 1 support for Bun.</li><li>Tier 2 support for Deno.</li></ul></li><li><strong>Q2</strong><ul><li>Tier 2 support for Bun, PHP.</li><li>Tier 3 support for Deno.</li></ul></li><li><strong>Q3</strong><ul><li>Tier 2 support for Ruby, Python.</li><li>Tier 3 support for Bun.</li></ul></li><li><strong>Q4</strong><ul><li>Tier 2 support for Rust, Go.</li></ul></li></ul><h2 class="anchor anchorWithStickyNavbar_JmGV" id="initial-release-workflow-support">Initial release workflow support<a class="hash-link" href="#initial-release-workflow-support" title="Direct link to heading">​</a></h2><p>moon currently excels at organizing projects, running tasks, and building artifacts, but it has no
+toolchain (this work is ongoing). We'll also add new languages based on demand.</p><p>With all that being said, this is our tenative timeline around
+<a href="/docs#supported-languages">language support</a> (which may shift at any time):</p><ul><li><strong>Q1</strong><ul><li>Tier 1 support for Bun.</li><li>Tier 2 support for Deno.</li></ul></li><li><strong>Q2</strong><ul><li>Tier 2 support for Bun, PHP.</li><li>Tier 3 support for Deno.</li></ul></li><li><strong>Q3</strong><ul><li>Tier 2 support for Ruby, Python.</li><li>Tier 3 support for Bun.</li></ul></li><li><strong>Q4</strong><ul><li>Tier 2 support for Rust, Go.</li></ul></li></ul><h2 class="anchor anchorWithStickyNavbar_JmGV" id="supporting-release-workflows">Supporting release workflows<a class="hash-link" href="#supporting-release-workflows" title="Direct link to heading">​</a></h2><p>moon currently excels at organizing projects, running tasks, and building artifacts, but it has no
 support for release workflows. This is everything from capturing changes, bumping versions,
 generating changelogs, and publishing to upstream registries. If you use
 <a href="https://github.com/lerna/lerna" target="_blank" rel="noopener noreferrer">Lerna</a> or <a href="https://github.com/changesets/changesets" target="_blank" rel="noopener noreferrer">changesets</a>,
 you should be very familiar with this workflow.</p><p>Since moon supports monorepos and has in-depth knowledge of the project graph, we can support
 release workflows with ease. Our goal is to support this workflow (for all languages) from start to
-finish by end of year, ideally much sooner than that!</p>]]></content>
+finish by end of year, ideally much sooner than that!</p><h2 class="anchor anchorWithStickyNavbar_JmGV" id="more-repository-management-tooling">More repository management tooling<a class="hash-link" href="#more-repository-management-tooling" title="Direct link to heading">​</a></h2><p>The other aspect of moon is that it's a repository management tool as well as a build system. We
+want to embrace this even further by providing explicit functionality or automation when applicable.
+Some examples of this are in-repository secrets management, git hooks management, code ownership and
+quality tooling, code review helpers, repository/configuration linting, a moon DSL, and much much
+more.</p>]]></content>
         <author>
             <name>Miles Johnson</name>
             <uri>https://github.com/milesj</uri>

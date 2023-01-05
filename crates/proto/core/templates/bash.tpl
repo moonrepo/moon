@@ -13,9 +13,10 @@ export PROTO_{constant_name}_VERSION="{version}"
 {{ endif }}
 
 {{ if parent_bin }}
-parent="$\{PROTO_{constant_name}_BIN:-{parent_bin}\}"
+parent="$\{PROTO_{constant_name}_BIN:-{parent_bin}}"
 
 exec "$parent" "{bin_path}" "$@"
+
 {{ else }}
 exec "{bin_path}" "$@"
 {{ endif }}

@@ -43,6 +43,9 @@ pub enum WorkspaceError {
     )]
     InvalidGlobalProjectConfigFile(String),
 
+    #[error("Invalid moon version, unable to proceed. Found {0}, expected {1}.")]
+    InvalidMoonVersion(String, String),
+
     #[error(transparent)]
     Moon(#[from] MoonError),
 

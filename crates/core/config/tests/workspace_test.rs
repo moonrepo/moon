@@ -34,6 +34,7 @@ fn loads_defaults() {
                 notifier: NotifierConfig::default(),
                 projects: WorkspaceProjects::default(),
                 vcs: VcsConfig::default(),
+                version_constraint: None,
                 schema: String::new(),
             }
         );
@@ -471,6 +472,39 @@ mod generator {
             jail.create_file(
                 super::CONFIG_WORKSPACE_FILENAME,
                 "generator:\n  templates: ['../templates']",
+            )?;
+
+            super::load_jailed_config(jail.directory())?;
+
+            Ok(())
+        });
+    }
+}
+
+mod version_constraint {
+    #[test]
+    #[should_panic(
+        expected = "invalid type: found unsigned int `123`, expected a string for key \"workspace.versionConstraint\""
+    )]
+    fn invalid_type() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(super::CONFIG_WORKSPACE_FILENAME, "versionConstraint: 123")?;
+
+            super::load_jailed_config(jail.directory())?;
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "Must be a valid semantic version requirement or range for key \"workspace.versionConstraint\""
+    )]
+    fn invalid_req() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                super::CONFIG_WORKSPACE_FILENAME,
+                "versionConstraint: '@1.0.0'",
             )?;
 
             super::load_jailed_config(jail.directory())?;

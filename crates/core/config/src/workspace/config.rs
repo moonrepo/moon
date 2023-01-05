@@ -3,7 +3,9 @@
 use crate::errors::map_validation_errors_to_figment_errors;
 use crate::helpers::gather_extended_sources;
 use crate::types::{FileGlob, FilePath};
-use crate::validators::{validate_child_relative_path, validate_extends, validate_id};
+use crate::validators::{
+    validate_child_relative_path, validate_extends, validate_id, validate_semver_requirement,
+};
 use crate::workspace::generator::GeneratorConfig;
 use crate::workspace::hasher::HasherConfig;
 use crate::workspace::notifier::NotifierConfig;
@@ -42,6 +44,12 @@ fn validate_projects(projects: &WorkspaceProjects) -> Result<(), ValidationError
             }
         }
     }
+
+    Ok(())
+}
+
+fn validate_version_constraint(value: &str) -> Result<(), ValidationError> {
+    validate_semver_requirement("versionConstraint", value)?;
 
     Ok(())
 }
@@ -92,6 +100,10 @@ pub struct WorkspaceConfig {
 
     #[validate]
     pub vcs: VcsConfig,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[validate(custom = "validate_version_constraint")]
+    pub version_constraint: Option<String>,
 
     /// JSON schema URI.
     #[serde(skip, rename = "$schema")]

@@ -63,6 +63,8 @@ fn setup_logging(level: &LogLevel, log_file: Option<PathBuf>) {
     } else {
         debug!(target: "moon", "Running moon v{}", version);
     }
+
+    env::set_var("MOON_VERSION", version);
 }
 
 fn setup_caching(mode: &CacheMode) {

@@ -2,19 +2,21 @@ use crate::helpers::get_root;
 use log::debug;
 use proto_error::ProtoError;
 use serde::Serialize;
+use serde_json::Value;
+use std::fmt::Write;
 use std::{
     fs,
     path::{Path, PathBuf},
 };
+use tinytemplate::error::Error as TemplateError;
 use tinytemplate::TinyTemplate;
 
 #[derive(Serialize)]
 pub struct Context {
     bin_path: PathBuf,
-    constant_name: String,
     install_dir: Option<PathBuf>,
     name: String,
-    parent_bin: Option<String>,
+    parent_name: Option<String>,
     root: PathBuf,
     version: Option<String>,
 }
@@ -32,9 +34,19 @@ pub trait Shimable<'tool>: Send + Sync {
     }
 }
 
+fn format_uppercase(value: &Value, output: &mut String) -> Result<(), TemplateError> {
+    if let Value::String(string) = value {
+        write!(output, "{}", string.to_uppercase())?;
+    }
+
+    Ok(())
+}
+
 fn build_shim_file(builder: &ShimBuilder) -> Result<String, ProtoError> {
-    let handle_error = |e: tinytemplate::error::Error| ProtoError::Shim(e.to_string());
+    let handle_error = |e: TemplateError| ProtoError::Shim(e.to_string());
     let mut template = TinyTemplate::new();
+
+    template.add_formatter("uppercase", format_uppercase);
 
     template
         .add_template(
@@ -117,7 +129,7 @@ impl ShimBuilder {
                 .map_err(handle_error)?;
         }
 
-        debug!(target: "proto:shimer", "Created shim at {}", shim_path.to_string_lossy());
+        debug!(target: "proto:shimmer", "Created shim at {}", shim_path.to_string_lossy());
 
         Ok(shim_path)
     }
@@ -125,10 +137,9 @@ impl ShimBuilder {
     pub fn create_context(&self) -> Result<Context, ProtoError> {
         Ok(Context {
             bin_path: self.bin_path.clone(),
-            constant_name: self.name.to_uppercase(),
             install_dir: self.install_dir.clone(),
             name: self.name.clone(),
-            parent_bin: self.parent_name.clone(),
+            parent_name: self.parent_name.clone(),
             root: get_root()?,
             version: self.version.clone(),
         })

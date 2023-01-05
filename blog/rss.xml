@@ -4,10 +4,67 @@
         <title>moon Blog</title>
         <link>https://moonrepo.dev/blog</link>
         <description>moon Blog</description>
-        <lastBuildDate>Mon, 19 Dec 2022 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Wed, 04 Jan 2023 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>en</language>
+        <item>
+            <title><![CDATA[What's in store for 2023]]></title>
+            <link>https://moonrepo.dev/blog/2023-roadmap</link>
+            <guid>2023-roadmap</guid>
+            <pubDate>Wed, 04 Jan 2023 00:00:00 GMT</pubDate>
+            <description><![CDATA[Happy new year! Let's start 2023 by reflecting on last year and diving into our tentative year long]]></description>
+            <content:encoded><![CDATA[<p>Happy new year! Let's start 2023 by reflecting on last year and diving into our tentative year long
+roadmap.</p><h2 class="anchor anchorWithStickyNavbar_JmGV" id="year-2022-in-review">Year 2022 in review<a class="hash-link" href="#year-2022-in-review" title="Direct link to heading">​</a></h2><p>The original concept and
+<a href="https://github.com/moonrepo/moon/commit/62267e3ccda7a45c2e9355fcbddba577ae54403d" target="_blank" rel="noopener noreferrer">first commit of moon</a>
+(codenamed monolith) landed October 23rd, 2021. Eight months later, we
+<a href="https://twitter.com/tothemoonrepo/status/1527467865200136192" target="_blank" rel="noopener noreferrer">launched an alpha of moon</a> to the
+public on May 19th, 2022. Since then, we've landed 21 amazing releases based on feedback from the
+community and our long-term vision, with some such features as:</p><ul><li>Linux musl, macOS silicon, and ARM support</li><li>Full Node.js/JavaScript ecosystem support</li><li>End-to-end caching and hashing of build artifacts</li><li>Streamlined configuration</li><li>Improved developer experience</li><li>Massive performance improvements</li><li>Automatic cache cleaning</li><li>Code generation / scaffolding</li><li>Dockerfile integration</li><li>Remote caching</li><li>New langauage agnostic toolchain</li><li>Onboarding of 5 new languages: Rust, Go, PHP, Python, Ruby</li><li>Rewritten project and dependency graphs</li><li>Project-level toolchain overrides</li><li>Project specific caching</li><li>VSCode extension</li><li>2 GitHub actions</li><li>...and so much more!</li></ul><p>We're very proud with the quality and amount of features we've released in a 7 month timeframe. On
+top of this, our <a href="https://github.com/moonrepo/moon/stargazers" target="_blank" rel="noopener noreferrer">GitHub stars</a> have steadily passed
+the 1k mark, <a href="https://www.npmjs.com/package/@moonrepo/cli" target="_blank" rel="noopener noreferrer">npm</a> downloads are 500 a week and
+growing, and our <a href="https://twitter.com/tothemoonrepo" target="_blank" rel="noopener noreferrer">Twitter</a> isn't doing too bad. This is only the
+start, and we're not planning to go anywhere!</p><h2 class="anchor anchorWithStickyNavbar_JmGV" id="launching-moonbase">Launching moonbase<a class="hash-link" href="#launching-moonbase" title="Direct link to heading">​</a></h2><p>We haven't mentioned this name publicly yet, but now seems like the perfect time! For the past 6
+months we've been working a new web application and service called moonbase, which pairs nicely with
+moon, as it provides additional functionality that can only be achieved by persisting information
+across runs.</p><p>To start, this service provides <a href="/docs/guides/remote-cache">remote caching</a>, which we're already
+using in production. At this point in time, objects are stored in our moonrepo S3 buckets, but one
+of our major goals is to support storing objects in your private buckets, supporting additional
+cloud providers like Google Cloud and Azure, and in the long-term, a self-hosted / on-premises
+solution.</p><p>But that's not all! moonbase will integrate deeply with <a href="/docs/guides/ci">continuous integration</a>
+pipelines to generate insights, capture metrics, and provide near real-time dashboards. Our goal is
+to provide a holistic overview of your entire repository.</p><p>moonbase with publicly available remote caching is slated for end of Q1. CI integration is
+tentatively slated for Q2. We have even more features that we'll reveal in the future, so stay
+tuned!</p><h2 class="anchor anchorWithStickyNavbar_JmGV" id="launching-proto">Launching proto<a class="hash-link" href="#launching-proto" title="Direct link to heading">​</a></h2><p>Another tool we haven't mentioned yet is proto (name still in flux). proto is a standardized version
+manager for programming languages and dependency managers. We've basically extracted our
+<a href="/docs/concepts/toolchain">toolchain</a> into a standalone library, as it's super beneficial for
+projects and developers not using moon. It provides all the functionality you'd expect from a
+version manager:</p><ul><li>Downloading and installing specific versions</li><li>Automatic version detection</li><li>Updating PATH with the applicable version</li><li>Generating shims</li><li>Pinning shell, local, and global versions</li></ul><p>So how's this different from existing version managers like nvm or volta? To start, it's written in
+Rust so it's <em>fast</em> and doesn't suffer from being Bash only. Because of this, it's also
+multi-platform and will work on Windows. But the biggest different is that proto is language
+agnostic and will support multiple languages. To start, it supports Node.js and Deno, but will be
+expanded to support our other toolchain languages like Bun, PHP, Ruby, and Python. Another cool
+feature is that it also manages versions of dependency managers like npm, yarn, and pnpm!</p><p>We're planning to launch proto at the start of Q2.</p><h2 class="anchor anchorWithStickyNavbar_JmGV" id="expanding-language-support">Expanding language support<a class="hash-link" href="#expanding-language-support" title="Direct link to heading">​</a></h2><p>Our initial goal for moon was to provide a first-class build system for the frontend ecosystem that
+focused heavily on automation and the developer experience. We believe we've accomplished this goal,
+but of course, nothing is ever actually complete, and so JavaScript, TypeScript, and Node.js support
+will continually be improved.</p><p>However, that's not the entirety of the frontend ecosystem, as <a href="https://deno.land/" target="_blank" rel="noopener noreferrer">Deno</a> and
+<a href="https://bun.sh/" target="_blank" rel="noopener noreferrer">Bun</a> have been gaining traction this past year, and of course, moon will support
+both of them as first-class platforms by end of year.</p><p>Futhermore, we recently landed Tier 1 support for 5 new languages: Rust, Ruby, PHP, Python, and Go.
+Our end of year goal for these languages is to provide full Tier 2 support. Tier 3 support is still
+an unknown, as we need to investigate the best possible way to integrate these languages into the
+toolchain (this work is ongoing).</p><p>With all that being said, this is our tenative timeline around
+<a href="/docs#supported-languages">language support</a> (which may shift at any time):</p><ul><li><strong>Q1</strong><ul><li>Tier 1 support for Bun.</li><li>Tier 2 support for Deno.</li></ul></li><li><strong>Q2</strong><ul><li>Tier 2 support for Bun, PHP.</li><li>Tier 3 support for Deno.</li></ul></li><li><strong>Q3</strong><ul><li>Tier 2 support for Ruby, Python.</li><li>Tier 3 support for Bun.</li></ul></li><li><strong>Q4</strong><ul><li>Tier 2 support for Rust, Go.</li></ul></li></ul><h2 class="anchor anchorWithStickyNavbar_JmGV" id="initial-release-workflow-support">Initial release workflow support<a class="hash-link" href="#initial-release-workflow-support" title="Direct link to heading">​</a></h2><p>moon currently excels at organizing projects, running tasks, and building artifacts, but it has no
+support for release workflows. This is everything from capturing changes, bumping versions,
+generating changelogs, and publishing to upstream registries. If you use
+<a href="https://github.com/lerna/lerna" target="_blank" rel="noopener noreferrer">Lerna</a> or <a href="https://github.com/changesets/changesets" target="_blank" rel="noopener noreferrer">changesets</a>,
+you should be very familiar with this workflow.</p><p>Since moon supports monorepos and has in-depth knowledge of the project graph, we can support
+release workflows with ease. Our goal is to support this workflow (for all languages) from start to
+finish by end of year, ideally much sooner than that!</p>]]></content:encoded>
+            <category>roadmap</category>
+            <category>moonbase</category>
+            <category>proto</category>
+            <category>toolchain</category>
+        </item>
         <item>
             <title><![CDATA[moon v0.21 - Tiered language support with initial Go, PHP, Python, Ruby, and Rust]]></title>
             <link>https://moonrepo.dev/blog/v0.21</link>

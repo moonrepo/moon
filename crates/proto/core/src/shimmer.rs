@@ -1,10 +1,23 @@
 use crate::helpers::get_root;
 use log::debug;
 use proto_error::ProtoError;
+use serde::Serialize;
 use std::{
     fs,
     path::{Path, PathBuf},
 };
+use tinytemplate::TinyTemplate;
+
+#[derive(Serialize)]
+pub struct Context {
+    bin_path: PathBuf,
+    constant_name: String,
+    install_dir: Option<PathBuf>,
+    name: String,
+    parent_bin: Option<String>,
+    root: PathBuf,
+    version: Option<String>,
+}
 
 #[async_trait::async_trait]
 pub trait Shimable<'tool>: Send + Sync {
@@ -86,62 +99,23 @@ if (Test-Path env:PROTO_{parent_env}_BIN) {{
     Ok(template.join("\n"))
 }
 
+#[cfg(not(windows))]
+fn build_shim_file(builder: &ShimBuilder) -> Result<String, ProtoError> {
+    let handle_error = |e: tinytemplate::error::Error| ProtoError::Shim(e.to_string());
+    let mut template = TinyTemplate::new();
+
+    template
+        .add_template("shim", include_str!("../templates/bash.tpl"))
+        .map_err(handle_error)?;
+
+    Ok(template
+        .render("shim", &builder.create_context()?)
+        .map_err(handle_error)?)
+}
+
 #[cfg(windows)]
 fn get_shim_file_name(name: &str) -> String {
     format!("{}.ps1", name)
-}
-
-#[cfg(not(windows))]
-fn build_shim_file(builder: &ShimBuilder) -> Result<String, ProtoError> {
-    let constant_name = builder.name.to_uppercase();
-
-    let mut template = vec![];
-    template.push("#!/usr/bin/env bash".into());
-    template.push("set -e".into());
-    template.push("[ -n \"$PROTO_DEBUG\" ] && set -x".into());
-    template.push("".into());
-
-    template.push(format!(
-        "export PROTO_ROOT=\"{}\"",
-        get_root()?.to_string_lossy()
-    ));
-
-    if let Some(install_dir) = &builder.install_dir {
-        template.push(format!(
-            "export PROTO_{}_DIR=\"{}\"",
-            constant_name,
-            install_dir.to_string_lossy()
-        ));
-    }
-
-    if let Some(version) = &builder.version {
-        template.push(format!(
-            "export PROTO_{}_VERSION=\"{}\"",
-            constant_name, version
-        ));
-    }
-
-    template.push("".into());
-
-    if let Some(parent_name) = &builder.parent_name {
-        template.push(format!(
-            "parent=\"${{PROTO_{}_BIN:-{}}}\"",
-            parent_name.to_uppercase(),
-            parent_name
-        ));
-        template.push("".into());
-        template.push(format!(
-            "exec \"$parent\" \"{}\" \"$@\"",
-            builder.bin_path.to_string_lossy()
-        ));
-    } else {
-        template.push(format!(
-            "exec \"{}\" \"$@\"",
-            builder.bin_path.to_string_lossy()
-        ));
-    }
-
-    Ok(template.join("\n"))
 }
 
 #[cfg(not(windows))]
@@ -207,5 +181,17 @@ impl ShimBuilder {
         debug!(target: "proto:shimer", "Created shim at {}", shim_path.to_string_lossy());
 
         Ok(shim_path)
+    }
+
+    pub fn create_context(&self) -> Result<Context, ProtoError> {
+        Ok(Context {
+            bin_path: self.bin_path.clone(),
+            constant_name: self.name.to_uppercase(),
+            install_dir: self.install_dir.clone(),
+            name: self.name.clone(),
+            parent_bin: self.parent_name.clone(),
+            root: get_root()?,
+            version: self.version.clone(),
+        })
     }
 }

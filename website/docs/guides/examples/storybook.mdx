@@ -20,29 +20,28 @@ npx storybook init
 
 This section assumes Storybook is being used with Vite.
 
-After setting up your Storybook, ensure your `.moon/project.yaml` has the following scripts:
+After setting up your Storybook, ensure your `<project>/moon.yml` has the following scripts:
 ```yaml
 tasks:
     storybook:
         local: true
         command: "storybook dev"
-        options:
-            outputStyle: stream
         inputs:
             - "@globs(sources)"
+            - "@globs(tests)"
             - ".storybook/**/*"
 ```
 
-Alternatively if you only have one Storybook project, you can add the task to your `project/moon.yaml`, to run Storybook you run:
-```
+To run your Storybook dev server:
+```shell
 moon run <project>:storybook
 ```
 
 ### Vite integration
 
-Storybook 7 uses Vite out of the box, as such no configuration is required but should you choose to extend the Vite config can you do so by passing in `viteFinal`: 
+Storybook 7 uses Vite out of the box, as such no configuration is required but should you choose to extend the Vite config, you can do so by passing in `viteFinal`: 
 
-```ts
+```ts title=".storybook/main.ts"
 // .storybook/main.js|cjs|ts
 
 const { mergeConfig } = require('vite');
@@ -71,15 +70,15 @@ For more information on how to integrate Vite with Storybook see the [relevant d
 
 ### Webpack integration
 
-If you opt to use Webpack with your Storybook instance, you can do so by passing it in the config:
+If you opt to use Webpack with your Storybook project, you can do so by passing it in the config:
 
 Be sure to install the relevant packages:
-```
+```shell
 npm install --save-dev @storybook/builder-webpack5
 ```
 
-```ts
-// .storybook/main.js
+```ts title=".storybook/main.ts"
+// .storybook/main.js|cjs|ts
 
 module.exports = {
   core: {
@@ -92,22 +91,26 @@ For more information on how to integrate Webpack with Storybook see the [relevan
 
 ### Jest integration
 
-You can use Jest to test your stories, Storybook ships with first party plugins for improved DX
+You can use Jest to test your stories, but isn't a requirement. Storybook ships with first party plugins for improved DX
 
 Install the test runner and any relevant packages
-```
+```shell
 npm install --save-dev @storybook/addon-interactions @storybook/addon-coverage @storybook/jest@next @storybook/testing-library@next @storybook/test-runner@next
 ```
 
-Add the following script to your Moon project:
-```
-"scripts": {
-    "test-storybook": "test-storybook"
-}
+Add the test task to your Moon project
+```yaml title="<project>/moon.yml"
+tasks:
+    test:
+        command: "test-storybook"
+        inputs:
+            - "@globs(sources)"
+            - "@globs(tests)"
+            - ".storybook/**/*"
 ```
 
-Enable the plugins in your `.storybook/main.ts`
-```ts
+Then you need to enable plugins and interactions in your Storybook project:
+```ts title=".storybook/main.ts"
 // .storybook/main.js|ts
 
 module.exports = {
@@ -121,6 +124,11 @@ module.exports = {
     interactionsDebugger: true, // Enable playback controls
   },
 };
+```
+
+To test your Storybook project
+```shell
+moon run <project>:test
 ```
 
 And start writing your tests, for an extended guide on how to write tests within your Stories see [writing an interaction test](https://storybook.js.org/docs/react/writing-tests/interaction-testing#write-an-interaction-test) on the Storybook docs.

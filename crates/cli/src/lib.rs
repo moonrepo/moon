@@ -79,6 +79,8 @@ pub async fn run_cli() {
     setup_logging(&args.log, args.log_file);
     setup_caching(&args.cache);
 
+    env::set_var("MOON_VERSION", env!("CARGO_PKG_VERSION"));
+
     // Match and run subcommand
     let result = match &args.command {
         Commands::Bin { tool } => bin(tool).await,

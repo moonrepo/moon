@@ -32,80 +32,19 @@ pub trait Shimable<'tool>: Send + Sync {
     }
 }
 
-#[cfg(windows)]
-fn build_shim_file(builder: &ShimBuilder) -> Result<String, ProtoError> {
-    let constant_name = builder.name.to_uppercase();
-
-    let mut template = vec![];
-    template.push("#!/usr/bin/env pwsh".into());
-    template.push("$ErrorActionPreference = 'Stop'".into());
-    template.push(
-        r#"
-if (Test-Path env:PROTO_DEBUG) {
-    $DebugPreference = 'Continue'
-}"#
-        .into(),
-    );
-    template.push("".into());
-
-    template.push(format!(
-        "[Environment]::SetEnvironmentVariable('PROTO_ROOT', '{}', 'Process')",
-        get_root()?.to_string_lossy()
-    ));
-
-    if let Some(install_dir) = &builder.install_dir {
-        template.push(format!(
-            "[Environment]::SetEnvironmentVariable('PROTO_{}_DIR', '{}', 'Process')",
-            constant_name,
-            install_dir.to_string_lossy()
-        ));
-    }
-
-    if let Some(version) = &builder.version {
-        template.push(format!(
-            "[Environment]::SetEnvironmentVariable('PROTO_{}_VERSION', '{}', 'Process')",
-            constant_name, version
-        ));
-    }
-
-    template.push("".into());
-
-    if let Some(parent_name) = &builder.parent_name {
-        template.push(format!(
-            r#"
-if (Test-Path env:PROTO_{parent_env}_BIN) {{
-    $parent = $Env:PROTO_{parent_env}_BIN
-}} else {{
-    $parent = "{parent_name}.exe"
-}}"#,
-            parent_env = parent_name.to_uppercase(),
-            parent_name = parent_name
-        ));
-        template.push("".into());
-        template.push(format!(
-            "& \"$parent\" \"{}\" @Args",
-            builder.bin_path.to_string_lossy()
-        ));
-    } else {
-        template.push(format!(
-            "& \"{}\" @Args",
-            builder.bin_path.to_string_lossy()
-        ));
-    }
-
-    template.push("".into());
-    template.push("exit $LASTEXITCODE".into());
-
-    Ok(template.join("\n"))
-}
-
-#[cfg(not(windows))]
 fn build_shim_file(builder: &ShimBuilder) -> Result<String, ProtoError> {
     let handle_error = |e: tinytemplate::error::Error| ProtoError::Shim(e.to_string());
     let mut template = TinyTemplate::new();
 
     template
-        .add_template("shim", include_str!("../templates/bash.tpl"))
+        .add_template(
+            "shim",
+            if cfg!(windows) {
+                include_str!("../templates/pwsh.tpl")
+            } else {
+                include_str!("../templates/bash.tpl")
+            },
+        )
         .map_err(handle_error)?;
 
     Ok(template

@@ -44,6 +44,17 @@ the 1k mark, [npm](https://www.npmjs.com/package/@moonrepo/cli) downloads are 50
 growing, and our [Twitter](https://twitter.com/tothemoonrepo) isn't doing too bad. This is only the
 start, and we're not planning to go anywhere!
 
+## Path to an official v1 release
+
+A common question we receive is "When is v1 going to be released?", as some consumers are weary of
+using a "beta" tool. We definitely understand, and as such, have posted a
+[high-level overview](https://github.com/moonrepo/moon/issues/491) of what we're hoping to land
+before we tag an official v1 release. It basically boils down to landing breaking changes (mainly
+around configuration) before v1, so that we avoid bumping to a v2 or v3 unnecessarily. We also want
+to land our [toolchain changes](#proto) and [remote caching](#moonbase) improvements before then.
+
+Our current timeframe is by end of Q1, if not, early Q2.
+
 ## Launching moonbase
 
 We haven't mentioned this name publicly yet, but now seems like the perfect time! For the past 6
@@ -102,7 +113,7 @@ both of them as first-class platforms by end of year.
 Futhermore, we recently landed Tier 1 support for 5 new languages: Rust, Ruby, PHP, Python, and Go.
 Our end of year goal for these languages is to provide full Tier 2 support. Tier 3 support is still
 an unknown, as we need to investigate the best possible way to integrate these languages into the
-toolchain (this work is ongoing).
+toolchain (this work is ongoing). We'll also add new languages based on demand.
 
 With all that being said, this is our tenative timeline around
 [language support](/docs#supported-languages) (which may shift at any time):
@@ -119,7 +130,7 @@ With all that being said, this is our tenative timeline around
 - **Q4**
   - Tier 2 support for Rust, Go.
 
-## Initial release workflow support
+## Supporting release workflows
 
 moon currently excels at organizing projects, running tasks, and building artifacts, but it has no
 support for release workflows. This is everything from capturing changes, bumping versions,
@@ -130,3 +141,11 @@ you should be very familiar with this workflow.
 Since moon supports monorepos and has in-depth knowledge of the project graph, we can support
 release workflows with ease. Our goal is to support this workflow (for all languages) from start to
 finish by end of year, ideally much sooner than that!
+
+## More repository management tooling
+
+The other aspect of moon is that it's a repository management tool as well as a build system. We
+want to embrace this even further by providing explicit functionality or automation when applicable.
+Some examples of this are in-repository secrets management, git hooks management, code ownership and
+quality tooling, code review helpers, repository/configuration linting, a moon DSL, and much much
+more.

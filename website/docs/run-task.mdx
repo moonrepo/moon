@@ -57,14 +57,14 @@ Under the hood, we extract locally touched (created, modified, staged, etc) file
 configured [VCS](./config/workspace#vcs), and exit early if no files intersect with the task's
 [inputs](./config/project#inputs).
 
-### Using upstream changes
+### Using remote changes
 
-If you'd like to determine affected files based on upstream changes instead of local changes, pass
-the `--upstream` flag. This will extract touched files by comparing the current `HEAD` against the
+If you'd like to determine affected files based on remote changes instead of local changes, pass the
+`--remote` flag. This will extract touched files by comparing the current `HEAD` against the
 [`vcs.defaultBranch`](./config/workspace#defaultbranch).
 
 ```shell
-$ moon run app:build --affected --upstream
+$ moon run app:build --affected --remote
 ```
 
 ### Filtering based on change status

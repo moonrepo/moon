@@ -40,7 +40,7 @@ yarn version:apply
 ```
 
 This will apply all the deferred Yarn versions (found in `.yarn/versions`), add and commit changes,
-and create a git tag for every affected package. This must then be pushed to upstream master.
+and create a git tag for every affected package. This must then be pushed to remote master.
 
 ```shell
 git push origin master --tags

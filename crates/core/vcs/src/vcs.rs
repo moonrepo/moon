@@ -31,7 +31,7 @@ pub trait Vcs {
     /// Get the revision hash/number of the local branch's HEAD.
     async fn get_local_branch_revision(&self) -> VcsResult<String>;
 
-    /// Get the upstream checkout default name. Typically master/main on git, and trunk on svn.
+    /// Get the remote checkout default name. Typically master/main on git, and trunk on svn.
     fn get_default_branch(&self) -> &str;
 
     /// Get the revision hash/number of the default branch's HEAD.

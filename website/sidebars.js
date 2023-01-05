@@ -183,6 +183,7 @@ const sidebars = {
 						'guides/examples/typescript',
 						'guides/examples/vite',
 						'guides/examples/vue',
+						'guides/examples/storybook',
 					],
 					link: {
 						type: 'generated-index',

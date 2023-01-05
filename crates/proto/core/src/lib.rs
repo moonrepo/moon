@@ -5,7 +5,7 @@ mod executor;
 mod helpers;
 mod installer;
 mod resolver;
-mod shimer;
+mod shimmer;
 mod verifier;
 
 pub use async_trait::async_trait;
@@ -18,7 +18,7 @@ pub use installer::*;
 pub use lenient_semver::Version;
 pub use proto_error::ProtoError;
 pub use resolver::*;
-pub use shimer::*;
+pub use shimmer::*;
 pub use verifier::*;
 
 use std::fs;

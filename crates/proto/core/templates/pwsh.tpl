@@ -8,18 +8,18 @@ if (Test-Path env:PROTO_DEBUG) \{
 [Environment]::SetEnvironmentVariable('PROTO_ROOT', '{root}', 'Process')
 
 {{ if install_dir }}
-[Environment]::SetEnvironmentVariable('PROTO_{constant_name}_DIR', '{install_dir}', 'Process')
+[Environment]::SetEnvironmentVariable('PROTO_{name | uppercase}_DIR', '{install_dir}', 'Process')
 {{ endif }}
 
 {{ if version }}
-[Environment]::SetEnvironmentVariable('PROTO_{constant_name}_VERSION', '{version}', 'Process')
+[Environment]::SetEnvironmentVariable('PROTO_{name | uppercase}_VERSION', '{version}', 'Process')
 {{ endif }}
 
-{{ if parent_bin }}
-if (Test-Path env:PROTO_{parent_bin}_BIN) \{
-    $parent = $Env:PROTO_{parent_bin}_BIN
+{{ if parent_name }}
+if (Test-Path env:PROTO_{parent_name | uppercase}_BIN) \{
+    $parent = $Env:PROTO_{parent_name | uppercase}_BIN
 } else \{
-    $parent = "{parent_bin}.exe"
+    $parent = "{parent_name}.exe"
 }
 
 & "$parent" "{bin_path}" @Args

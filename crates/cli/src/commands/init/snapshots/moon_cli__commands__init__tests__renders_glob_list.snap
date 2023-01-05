@@ -1,10 +1,13 @@
 ---
 source: crates/cli/src/commands/init/mod.rs
-assertion_line: 166
-expression: render_template(context).unwrap()
+assertion_line: 246
+expression: render_workspace_template(&context).unwrap()
 ---
 # https://moonrepo.dev/docs/config/workspace
 $schema: 'https://moonrepo.dev/schemas/workspace.json'
+
+# Require a specific version of moon while running commands, otherwise fail.
+# versionConstraint: '>=0.0.0'
 
 # Extend and inherit an external configuration file. Must be a valid HTTPS URL or file system path.
 # extends: './shared/workspace.yml'

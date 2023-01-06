@@ -293,9 +293,6 @@ pub enum Commands {
         #[clap(group = "projects")]
         all: bool,
 
-        #[arg(long, help = "Generate a run report for the current actions")]
-        report: bool,
-
         #[arg(
             long,
             short = 'u',
@@ -356,9 +353,6 @@ pub enum Commands {
             help_heading = HEADING_DEBUGGING,
         )]
         profile: Option<ProfileType>,
-
-        #[arg(long, help = "Generate a run report for the current actions")]
-        report: bool,
 
         // Affected
         #[arg(

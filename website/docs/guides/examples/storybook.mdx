@@ -1,0 +1,134 @@
+---
+title: Storybook example
+sidebar_label: Storybook
+---
+
+import AddDepsTabs from '@site/src/components/AddDepsTabs';
+
+Storybook is a frontend workshop for building UI components and pages in isolation. Thousands of teams use it for UI development, testing, and documentation. It’s open source and free.
+
+Storybook v7 is typically coupled with [Vite](https://vitejs.dev/). To scaffold a new Storybook project with Vite, run the following command in a project root. This guide assumes you are using React, however it is possible to use almost any (meta) framework with Storybook.
+
+```shell
+npx storybook init
+```
+
+> We highly suggest reading our documentation on [using Vite (and Vitest) with moon](./vite) 
+> and [using Jest with moon](./jest) for a more holistic view.
+
+## Setup
+
+This section assumes Storybook is being used with Vite.
+
+After setting up your Storybook, ensure your `<project>/moon.yml` has the following scripts:
+```yaml title="<project>/moon.yml"
+tasks:
+    storybook:
+        local: true
+        command: "storybook dev"
+        inputs:
+            - "@globs(sources)"
+            - "@globs(tests)"
+            - ".storybook/**/*"
+```
+
+To run your Storybook dev server:
+```shell
+moon run <project>:storybook
+```
+
+### Vite integration
+
+Storybook 7 uses Vite out of the box, as such no configuration is required but should you choose to extend the Vite config, you can do so by passing in `viteFinal`: 
+
+```ts title=".storybook/main.ts"
+// .storybook/main.js|cjs|ts
+
+import { mergeConfig } from 'vite';
+
+export default {
+  stories: ['../stories/**/*.stories.mdx', '../stories/**/*.stories.@(js|jsx|ts|tsx)'],
+  addons: ['@storybook/addon-links', '@storybook/addon-essentials'],
+  core: {
+    builder: '@storybook/builder-vite',
+  },
+  async viteFinal(config) {
+    // Merge custom configuration into the default config
+    return mergeConfig(config, {
+      // Use the same "resolve" configuration as your app
+      resolve: (await import('../vite.config.js')).default.resolve,
+      // Add dependencies to pre-optimization
+      optimizeDeps: {
+        include: ['storybook-dark-mode'],
+      },
+    });
+  },
+};
+```
+
+For more information on how to integrate Vite with Storybook see the [relevant docs](https://storybook.js.org/docs/7.0/react/builders/vite#configuration).
+
+### Webpack integration
+
+If you opt to use Webpack with your Storybook project, you can do so by passing it in the config:
+
+Be sure to install the relevant packages:
+```shell
+npm install --save-dev @storybook/builder-webpack5
+```
+
+```ts title=".storybook/main.ts"
+// .storybook/main.js|cjs|ts
+
+export default {
+  core: {
+    builder: '@storybook/builder-webpack5',
+  },
+};
+```
+
+For more information on how to integrate Webpack with Storybook see the [relevant docs](https://storybook.js.org/docs/7.0/react/builders/webpack).
+
+### Jest integration
+
+You can use Jest to test your stories, but isn't a requirement. Storybook ships with first party plugins for improved DX
+
+Install the test runner and any relevant packages
+```shell
+npm install --save-dev @storybook/addon-interactions @storybook/addon-coverage @storybook/jest@next @storybook/testing-library@next @storybook/test-runner@next
+```
+
+Add the test task to your Moon project
+```yaml title="<project>/moon.yml"
+tasks:
+    test:
+        command: "test-storybook"
+        inputs:
+            - "@globs(sources)"
+            - "@globs(tests)"
+            - ".storybook/**/*"
+```
+
+Then you need to enable plugins and interactions in your Storybook project:
+```ts title=".storybook/main.ts"
+// .storybook/main.js|ts
+
+export default {
+  stories: ['../src/**/*.stories.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)'],
+  addons: [
+    // Other Storybook addons
+    '@storybook/addon-interactions', // Addon is registered here
+    '@storybook/addon-coverage',
+  ],
+  features: {
+    interactionsDebugger: true, // Enable playback controls
+  },
+};
+```
+
+To test your Storybook project
+```shell
+moon run <project>:test
+```
+
+And start writing your tests, for an extended guide on how to write tests within your Stories see [writing an interaction test](https://storybook.js.org/docs/react/writing-tests/interaction-testing#write-an-interaction-test) on the Storybook docs.

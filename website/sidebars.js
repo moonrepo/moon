@@ -180,6 +180,7 @@ const sidebars = {
 						'guides/examples/react',
 						'guides/examples/remix',
 						'guides/examples/solid',
+						'guides/examples/storybook',
 						'guides/examples/typescript',
 						'guides/examples/vite',
 						'guides/examples/vue',

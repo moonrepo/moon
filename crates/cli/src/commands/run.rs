@@ -21,7 +21,6 @@ pub struct RunOptions {
     pub passthrough: Vec<String>,
     pub profile: Option<ProfileType>,
     pub remote: bool,
-    pub report: bool,
     pub update_cache: bool,
 }
 

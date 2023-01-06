@@ -4,6 +4,9 @@ sidebar_label: Sveltekit
 ---
 
 import AddDepsTabs from '@site/src/components/AddDepsTabs';
+import CreateDepTabs from '@site/src/components/CreateDepTabs';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
 SvelteKit is built on Svelte, a UI framework that uses a compiler to let you write breathtakingly concise components that do minimal work in the browser, using languages you already know — HTML, CSS and JavaScript. It's a love letter to web development.
 
@@ -34,9 +37,14 @@ tasks:
         command: "vite dev"
         local: true
 
+    lint:
+        command: "eslint ."
+
     # Production build (SSR)
     build:
         command: "vite build"
+        deps:
+            - "~:lint"
         inputs:
             - "@group(svelte)"
         outputs:
@@ -57,10 +65,20 @@ tasks:
             - "@globs(tests)"
 ```
 
-To run the SvelteKit Dev server:
+To run the SvelteKit dev server:
 ```shell
 moon run <project>:dev
 ```
+
+### ESLint integration
+
+SvelteKit provides an option to setup ESLint along with your project, you can use a [global `lint` task](./eslint).
+
+We encourage using the global `lint` task for consistency across all projects within the repository.
+With this approach, the `eslint` command itself will be ran and the `svelte3` rules will still be used.
+
+Additionally, we suggest disabling the linter during the build process, but is not a requirement. As
+a potential alternative, add the `lint` task as a dependency for the `build` task.
 
 ### TypeScript integration
 
@@ -108,7 +126,7 @@ When creating a new SvelteKit project, a
 created, and _must_ exist in the project root. This allows each project to configure SvelteKit for
 their needs.
 
-```js title="<project>/next.config.js"
+```js title="<project>/svelte.config.js"
 import adapter from '@sveltejs/adapter-auto';
 import {
     vitePreprocess

@@ -59,9 +59,9 @@ fn build_shim_file(builder: &ShimBuilder) -> Result<String, ProtoError> {
         )
         .map_err(handle_error)?;
 
-    Ok(template
+    template
         .render("shim", &builder.create_context()?)
-        .map_err(handle_error)?)
+        .map_err(handle_error)
 }
 
 #[cfg(windows)]

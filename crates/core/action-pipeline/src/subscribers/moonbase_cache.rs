@@ -1,10 +1,11 @@
 use moon_cache::get_cache_mode;
 use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_error::MoonError;
-use moon_logger::warn;
+use moon_logger::{color, trace, warn};
 use moon_utils::async_trait;
+use moon_utils::fs;
 use moon_workspace::Workspace;
-use moonbase::{upload_artifact, MoonbaseError};
+use moonbase::{upload_artifact, ArtifactInput, MoonbaseError};
 use rustc_hash::FxHashMap;
 use tokio::task::JoinHandle;
 
@@ -17,14 +18,14 @@ fn handle_error(error: MoonbaseError) {
 }
 
 pub struct MoonbaseCacheSubscriber {
-    hash_urls: FxHashMap<String, Option<String>>,
+    download_urls: FxHashMap<String, Option<String>>,
     requests: Vec<JoinHandle<()>>,
 }
 
 impl MoonbaseCacheSubscriber {
     pub fn new() -> Self {
         MoonbaseCacheSubscriber {
-            hash_urls: FxHashMap::default(),
+            download_urls: FxHashMap::default(),
             requests: vec![],
         }
     }
@@ -45,9 +46,9 @@ impl Subscriber for MoonbaseCacheSubscriber {
             // Check if archive exists in moonbase (the remote) by querying the artifacts endpoint.
             Event::TargetOutputCacheCheck { hash, .. } => {
                 if get_cache_mode().is_readable() {
-                    match moonbase.get_artifact(hash).await {
+                    match moonbase.read_artifact(hash).await {
                         Ok(Some((artifact, presigned_url))) => {
-                            self.hash_urls.insert(artifact.hash, presigned_url);
+                            self.download_urls.insert(artifact.hash, presigned_url);
 
                             return Ok(EventFlow::Return("remote-cache".into()));
                         }
@@ -72,20 +73,54 @@ impl Subscriber for MoonbaseCacheSubscriber {
                 ..
             } => {
                 if get_cache_mode().is_writable() && archive_path.exists() {
-                    let auth_token = moonbase.auth_token.to_owned();
-                    let hash = (*hash).to_owned();
-                    let target = target.id.to_owned();
-                    let archive_path = archive_path.to_owned();
+                    let size = match fs::metadata(archive_path) {
+                        Ok(meta) => meta.len(),
+                        Err(_) => 0,
+                    };
 
-                    // Run this in the background so we don't slow down the runner
-                    // while waiting for very large archives to upload.
-                    self.requests.push(tokio::spawn(async move {
-                        if let Err(error) =
-                            upload_artifact(auth_token, hash, target, archive_path, None).await
-                        {
+                    // Created the database record
+                    match moonbase
+                        .write_artifact(
+                            hash,
+                            ArtifactInput {
+                                target: target.id.to_owned(),
+                                size: size as usize,
+                            },
+                        )
+                        .await
+                    {
+                        // Upload to cloud storage
+                        Ok((_, presigned_url)) => {
+                            trace!(
+                                target: LOG_TARGET,
+                                "Uploading artifact {} ({} bytes) to remote cache",
+                                color::file(&hash),
+                                if size == 0 {
+                                    "unknown".to_owned()
+                                } else {
+                                    size.to_string()
+                                }
+                            );
+
+                            let auth_token = moonbase.auth_token.to_owned();
+                            let hash = (*hash).to_owned();
+                            let archive_path = archive_path.to_owned();
+
+                            // Run this in the background so we don't slow down the pipeline
+                            // while waiting for very large archives to upload
+                            self.requests.push(tokio::spawn(async move {
+                                if let Err(error) =
+                                    upload_artifact(auth_token, hash, archive_path, presigned_url)
+                                        .await
+                                {
+                                    handle_error(error);
+                                }
+                            }));
+                        }
+                        Err(error) => {
                             handle_error(error);
                         }
-                    }));
+                    }
                 }
             }
 
@@ -93,18 +128,25 @@ impl Subscriber for MoonbaseCacheSubscriber {
             // This runs *before* the local cache. So if the download is successful, abort
             // the event flow, otherwise continue and let local cache attempt to hydrate.
             Event::TargetOutputHydrating { hash, .. } => {
-                if get_cache_mode().is_readable() && self.hash_urls.contains_key(*hash) {
-                    let archive_file = workspace.cache.get_hash_archive_path(hash);
-                    let download_url = self.hash_urls.get(*hash).unwrap();
+                if get_cache_mode().is_readable() {
+                    if let Some(download_url) = self.download_urls.get(*hash) {
+                        let archive_file = workspace.cache.get_hash_archive_path(hash);
 
-                    if let Err(error) = moonbase
-                        .download_artifact(hash, &archive_file, download_url)
-                        .await
-                    {
-                        handle_error(error);
+                        trace!(
+                            target: LOG_TARGET,
+                            "Downloading artifact {} from remote cache",
+                            color::file(&hash),
+                        );
+
+                        if let Err(error) = moonbase
+                            .download_artifact(hash, &archive_file, download_url)
+                            .await
+                        {
+                            handle_error(error);
+                        }
+
+                        // Fallthrough to local cache to handle the actual hydration
                     }
-
-                    // Fallthrough to local cache to handle the actual hydration
                 }
             }
 

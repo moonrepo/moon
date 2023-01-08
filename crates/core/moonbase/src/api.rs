@@ -34,7 +34,18 @@ pub struct Artifact {
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct ArtifactInput {
+    pub target: String,
+    pub size: usize,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ArtifactResponse {
     pub artifact: Artifact,
     pub presigned_url: Option<String>,
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EmptyData {}

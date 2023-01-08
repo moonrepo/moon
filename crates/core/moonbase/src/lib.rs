@@ -4,8 +4,7 @@ mod errors;
 
 use common::{get_host, get_request, parse_response, post_request, Response};
 use moon_error::map_io_to_fs_error;
-use moon_logger::{color, debug, trace, warn};
-use reqwest::multipart::{Form, Part};
+use moon_logger::{color, debug, warn};
 use reqwest::Body;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -76,7 +75,7 @@ impl Moonbase {
         }
     }
 
-    pub async fn get_artifact(
+    pub async fn read_artifact(
         &self,
         hash: &str,
     ) -> Result<Option<(Artifact, Option<String>)>, MoonbaseError> {
@@ -97,6 +96,26 @@ impl Moonbase {
                     ))
                 }
             }
+        }
+    }
+
+    pub async fn write_artifact(
+        &self,
+        hash: &str,
+        input: ArtifactInput,
+    ) -> Result<(Artifact, Option<String>), MoonbaseError> {
+        let response =
+            post_request(format!("artifacts/{}", hash), input, Some(&self.auth_token)).await?;
+
+        match response {
+            Response::Success(ArtifactResponse {
+                artifact,
+                presigned_url,
+            }) => Ok((artifact, presigned_url)),
+            Response::Failure { message, .. } => Err(MoonbaseError::ArtifactUploadFailure(
+                hash.to_string(),
+                message,
+            )),
         }
     }
 
@@ -146,59 +165,49 @@ impl Moonbase {
 pub async fn upload_artifact(
     auth_token: String,
     hash: String,
-    target_id: String,
     path: PathBuf,
     upload_url: Option<String>,
-) -> Result<Artifact, MoonbaseError> {
+) -> Result<(), MoonbaseError> {
     let file = fs::File::open(&path)
         .await
         .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
-    let file_name = match path.file_name() {
-        Some(name) => name.to_string_lossy().to_string(),
-        None => format!("{}.tar.gz", hash),
-    };
-    let file_size = match file.metadata().await {
-        Ok(meta) => meta.len(),
-        Err(_) => 0,
-    };
     let file_stream = FramedRead::new(file, BytesCodec::new());
 
-    let form = Form::new().text("target", target_id.to_owned()).part(
-        "file",
-        Part::stream(Body::wrap_stream(file_stream))
-            .file_name(file_name.clone())
-            .mime_str("application/gzip")?,
-    );
-
+    // Upload to cloud storage
     let request = if let Some(url) = upload_url {
-        reqwest::Client::new().post(url).multipart(form)
+        reqwest::Client::new()
+            .post(url)
+            .body(Body::wrap_stream(file_stream))
     } else {
         reqwest::Client::new()
             .post(format!("{}/artifacts/{}/upload", get_host(), hash))
-            .multipart(form)
-            .bearer_auth(auth_token)
+            .body(Body::wrap_stream(file_stream))
+            .bearer_auth(&auth_token)
             .header("Accept", "application/json")
     };
 
-    trace!(
-        target: LOG_TARGET,
-        "Uploading artifact {} ({} bytes) to remote cache",
-        color::file(&file_name),
-        if file_size == 0 {
-            "unknown".to_owned()
-        } else {
-            file_size.to_string()
-        }
-    );
+    request.send().await?;
 
-    let response = request.send().await?;
-    let data: Response<ArtifactResponse> = parse_response(response.text().await?)?;
+    // Does an upload return a response???
+    // let response = request.send().await?;
+    // let data: Response<ArtifactResponse> = parse_response(response.text().await?)?;
 
-    match data {
-        Response::Success(ArtifactResponse { artifact, .. }) => Ok(artifact),
-        Response::Failure { message, .. } => Err(MoonbaseError::ArtifactUploadFailure(
-            hash.to_string(),
-            message,
-        )),
-    }
+    // match data {
+    //     Response::Success(_) => Ok(artifact),
+    //     Response::Failure { message, .. } => Err(MoonbaseError::ArtifactUploadFailure(
+    //         hash.to_string(),
+    //         message,
+    //     )),
+    // }
+
+    // Once the upload to cloud storage is complete, we need to mark the upload
+    // as completed on our end!
+    let _: Response<EmptyData> = post_request(
+        format!("artifacts/{}/complete", hash),
+        EmptyData {},
+        Some(&auth_token),
+    )
+    .await?;
+
+    Ok(())
 }

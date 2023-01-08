@@ -3,9 +3,7 @@
   "private": true,
   "workspaces": [
     "base",
-    "esbuild",
     "lifecycles",
-    "swc",
     "version-override"
   ]
 }

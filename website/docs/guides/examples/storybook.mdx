@@ -5,45 +5,62 @@ sidebar_label: Storybook
 
 import AddDepsTabs from '@site/src/components/AddDepsTabs';
 
-Storybook is a frontend workshop for building UI components and pages in isolation. Thousands of teams use it for UI development, testing, and documentation. It’s open source and free.
+Storybook is a frontend workshop for building UI components and pages in isolation. Thousands of
+teams use it for UI development, testing, and documentation. It’s open source and free.
 
-Storybook v7 is typically coupled with [Vite](https://vitejs.dev/). To scaffold a new Storybook project with Vite, run the following command in a project root. This guide assumes you are using React, however it is possible to use almost any (meta) framework with Storybook.
+[Storybook v7](https://storybook.js.org/docs/7.0) is typically coupled with
+[Vite](https://vitejs.dev/). To scaffold a new Storybook project with Vite, run the following
+command in a project root. This guide assumes you are using React, however it is possible to use
+almost any (meta) framework with Storybook.
 
 ```shell
-npx storybook init
+cd <project> && npx storybook init
 ```
 
-> We highly suggest reading our documentation on [using Vite (and Vitest) with moon](./vite) 
-> and [using Jest with moon](./jest) for a more holistic view.
+> We highly suggest reading our documentation on [using Vite (and Vitest) with moon](./vite) and
+> [using Jest with moon](./jest) for a more holistic view.
 
 ## Setup
 
-This section assumes Storybook is being used with Vite.
+This section assumes Storybook is being used with Vite, and is integrated on a per-project basis.
 
-After setting up your Storybook, ensure your `<project>/moon.yml` has the following scripts:
+After setting up Storybook, ensure [`moon.yml`](../../config/project) has the following tasks:
+
 ```yaml title="<project>/moon.yml"
+fileGroups:
+  storybook:
+    - 'src/**/*'
+    - 'stories/**/*'
+    - 'tests/**/*'
+    - '.storybook/**/*'
+
 tasks:
-    storybook:
-        local: true
-        command: "storybook dev"
-        inputs:
-            - "@globs(sources)"
-            - "@globs(tests)"
-            - ".storybook/**/*"
+  buildStorybook:
+    command: 'build-storybook --output-dir @out(0)'
+    inputs:
+      - '@group(storybook)'
+    outputs:
+      - 'build'
+
+  storybook:
+    local: true
+    command: 'start-storybook'
+    inputs:
+      - '@group(storybook)'
 ```
 
-To run your Storybook dev server:
+To run the Storybook development server:
+
 ```shell
 moon run <project>:storybook
 ```
 
 ### Vite integration
 
-Storybook 7 uses Vite out of the box, as such no configuration is required but should you choose to extend the Vite config, you can do so by passing in `viteFinal`: 
+Storybook 7 uses Vite out of the box, and as such, no configuration is required, but should you
+choose to extend the Vite config, you can do so by passing in `viteFinal`:
 
 ```ts title=".storybook/main.ts"
-// .storybook/main.js|cjs|ts
-
 import { mergeConfig } from 'vite';
 
 export default {
@@ -66,20 +83,17 @@ export default {
 };
 ```
 
-For more information on how to integrate Vite with Storybook see the [relevant docs](https://storybook.js.org/docs/7.0/react/builders/vite#configuration).
+For more information on how to integrate Vite with Storybook see the
+[relevant documentation](https://storybook.js.org/docs/7.0/react/builders/vite#configuration).
 
 ### Webpack integration
 
-If you opt to use Webpack with your Storybook project, you can do so by passing it in the config:
+If you want to use Webpack with your Storybook project, you can do so by installing the relevant
+package and updating configuration.
 
-Be sure to install the relevant packages:
-```shell
-npm install --save-dev @storybook/builder-webpack5
-```
+<AddDepsTabs dev dep="@storybook/builder-webpack5" package="<project>" />
 
 ```ts title=".storybook/main.ts"
-// .storybook/main.js|cjs|ts
-
 export default {
   core: {
     builder: '@storybook/builder-webpack5',
@@ -87,32 +101,35 @@ export default {
 };
 ```
 
-For more information on how to integrate Webpack with Storybook see the [relevant docs](https://storybook.js.org/docs/7.0/react/builders/webpack).
+For more information on how to integrate Webpack with Storybook, see the
+[relevant documentation](https://storybook.js.org/docs/7.0/react/builders/webpack).
 
 ### Jest integration
 
-You can use Jest to test your stories, but isn't a requirement. Storybook ships with first party plugins for improved DX
+You can use Jest to test your stories, but isn't a requirement. Storybook ships with first-party
+plugins for improved developer experience.
 
-Install the test runner and any relevant packages
-```shell
-npm install --save-dev @storybook/addon-interactions @storybook/addon-coverage @storybook/jest@next @storybook/testing-library@next @storybook/test-runner@next
-```
+Install the test runner and any relevant packages:
 
-Add the test task to your Moon project
+<AddDepsTabs
+  dev
+  dep="@storybook/addon-interactions @storybook/addon-coverage @storybook/jest@next @storybook/testing-library@next @storybook/test-runner@next"
+  package="<project>"
+/>
+
+Add the test task to your project:
+
 ```yaml title="<project>/moon.yml"
 tasks:
-    test:
-        command: "test-storybook"
-        inputs:
-            - "@globs(sources)"
-            - "@globs(tests)"
-            - ".storybook/**/*"
+  testStorybook:
+    command: 'test-storybook'
+    inputs:
+      - '@group(storybook)'
 ```
 
-Then you need to enable plugins and interactions in your Storybook project:
-```ts title=".storybook/main.ts"
-// .storybook/main.js|ts
+Then enable plugins and interactions in your Storybook project:
 
+```ts title=".storybook/main.ts"
 export default {
   stories: ['../src/**/*.stories.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)'],
   addons: [
@@ -126,9 +143,13 @@ export default {
 };
 ```
 
-To test your Storybook project
-```shell
-moon run <project>:test
-```
+You can now start writing your tests. For an extended guide on how to write tests within your
+stories, see
+[writing an interaction test](https://storybook.js.org/docs/react/writing-tests/interaction-testing#write-an-interaction-test)
+on the Storybook docs.
 
-And start writing your tests, for an extended guide on how to write tests within your Stories see [writing an interaction test](https://storybook.js.org/docs/react/writing-tests/interaction-testing#write-an-interaction-test) on the Storybook docs.
+## Configuration
+
+Storybook requires a `.storybook` folder relative to the project root. Because of this, Storybook
+should be scaffolded in each project individually. Configuration may be shared through package
+imports.

@@ -5,7 +5,7 @@ use moon_logger::{color, trace, warn};
 use moon_utils::async_trait;
 use moon_utils::fs;
 use moon_workspace::Workspace;
-use moonbase::{upload_artifact, ArtifactInput, MoonbaseError};
+use moonbase::{upload_artifact, ArtifactWriteInput, MoonbaseError};
 use rustc_hash::FxHashMap;
 use tokio::task::JoinHandle;
 
@@ -78,11 +78,11 @@ impl Subscriber for MoonbaseCacheSubscriber {
                         Err(_) => 0,
                     };
 
-                    // Created the database record
+                    // Create the database record
                     match moonbase
                         .write_artifact(
                             hash,
-                            ArtifactInput {
+                            ArtifactWriteInput {
                                 target: target.id.to_owned(),
                                 size: size as usize,
                             },
@@ -94,7 +94,7 @@ impl Subscriber for MoonbaseCacheSubscriber {
                             trace!(
                                 target: LOG_TARGET,
                                 "Uploading artifact {} ({} bytes) to remote cache",
-                                color::file(&hash),
+                                color::file(hash),
                                 if size == 0 {
                                     "unknown".to_owned()
                                 } else {
@@ -102,8 +102,8 @@ impl Subscriber for MoonbaseCacheSubscriber {
                                 }
                             );
 
-                            let auth_token = moonbase.auth_token.to_owned();
                             let hash = (*hash).to_owned();
+                            let auth_token = moonbase.auth_token.to_owned();
                             let archive_path = archive_path.to_owned();
 
                             // Run this in the background so we don't slow down the pipeline
@@ -135,7 +135,7 @@ impl Subscriber for MoonbaseCacheSubscriber {
                         trace!(
                             target: LOG_TARGET,
                             "Downloading artifact {} from remote cache",
-                            color::file(&hash),
+                            color::file(hash),
                         );
 
                         if let Err(error) = moonbase

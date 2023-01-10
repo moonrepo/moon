@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SigninBody {
+pub struct SigninInput {
     pub organization_key: String,
     pub repository: String,
     pub repository_key: String,
@@ -34,9 +34,15 @@ pub struct Artifact {
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ArtifactInput {
+pub struct ArtifactWriteInput {
     pub target: String,
     pub size: usize,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ArtifactCompleteInput {
+    pub success: bool,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

@@ -2,7 +2,7 @@ mod api;
 mod common;
 mod errors;
 
-use common::{get_host, get_request, parse_response, post_request, Response};
+use common::{endpoint, get_request, post_request, Response};
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, debug, warn};
 use reqwest::Body;
@@ -37,7 +37,7 @@ impl Moonbase {
 
         let data = post_request(
             "auth/repository/signin",
-            SigninBody {
+            SigninInput {
                 organization_key: secret_key,
                 repository: slug,
                 repository_key: api_key,
@@ -102,7 +102,7 @@ impl Moonbase {
     pub async fn write_artifact(
         &self,
         hash: &str,
-        input: ArtifactInput,
+        input: ArtifactWriteInput,
     ) -> Result<(Artifact, Option<String>), MoonbaseError> {
         let response =
             post_request(format!("artifacts/{}", hash), input, Some(&self.auth_token)).await?;
@@ -129,7 +129,7 @@ impl Moonbase {
             reqwest::Client::new().get(url)
         } else {
             reqwest::Client::new()
-                .get(format!("{}/artifacts/{}/download", get_host(), hash))
+                .get(endpoint(format!("artifacts/{}/download", hash)))
                 .bearer_auth(&self.auth_token)
                 .header("Accept", "application/json")
         };
@@ -147,20 +147,17 @@ impl Moonbase {
             return Ok(());
         }
 
-        let data: Response<ArtifactResponse> = parse_response(response.text().await?)?;
-        let error_message = match data {
-            Response::Failure { message, .. } => message,
-            _ => "Unknown failure!".into(),
-        };
-
         Err(MoonbaseError::ArtifactDownloadFailure(
             hash.to_string(),
-            error_message,
+            status
+                .canonical_reason()
+                .unwrap_or("Internal server error")
+                .to_owned(),
         ))
     }
 }
 
-// This is a stand-alone function so that we may run it in the background in a tokio thread,
+// This is a stand-alone function so that we may run it in a background Tokio thread,
 // and not have to worry about lifetime and borrow issues.
 pub async fn upload_artifact(
     auth_token: String,
@@ -173,39 +170,60 @@ pub async fn upload_artifact(
         .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
     let file_stream = FramedRead::new(file, BytesCodec::new());
 
-    // Upload to cloud storage
     let request = if let Some(url) = upload_url {
         reqwest::Client::new()
             .post(url)
             .body(Body::wrap_stream(file_stream))
     } else {
         reqwest::Client::new()
-            .post(format!("{}/artifacts/{}/upload", get_host(), hash))
+            .post(endpoint(format!("artifacts/{}/upload", hash)))
             .body(Body::wrap_stream(file_stream))
             .bearer_auth(&auth_token)
             .header("Accept", "application/json")
     };
 
-    request.send().await?;
+    match request.send().await {
+        Ok(response) => {
+            let status = response.status();
 
-    // Does an upload return a response???
-    // let response = request.send().await?;
-    // let data: Response<ArtifactResponse> = parse_response(response.text().await?)?;
+            if status.is_success() {
+                mark_upload_complete(&auth_token, &hash, true).await?;
 
-    // match data {
-    //     Response::Success(_) => Ok(artifact),
-    //     Response::Failure { message, .. } => Err(MoonbaseError::ArtifactUploadFailure(
-    //         hash.to_string(),
-    //         message,
-    //     )),
-    // }
+                Ok(())
+            } else {
+                mark_upload_complete(&auth_token, &hash, false).await?;
 
-    // Once the upload to cloud storage is complete, we need to mark the upload
-    // as completed on our end!
+                Err(MoonbaseError::ArtifactUploadFailure(
+                    hash.to_string(),
+                    status
+                        .canonical_reason()
+                        .unwrap_or("Internal server error")
+                        .to_owned(),
+                ))
+            }
+        }
+        Err(error) => {
+            mark_upload_complete(&auth_token, &hash, false).await?;
+
+            Err(MoonbaseError::ArtifactUploadFailure(
+                hash.to_string(),
+                error.to_string(),
+            ))
+        }
+    }
+}
+
+// Once the upload to cloud storage is complete, we need to mark the upload
+// as completed on our end, whether a success or failure!
+async fn mark_upload_complete(
+    auth_token: &str,
+    hash: &str,
+    success: bool,
+) -> Result<(), MoonbaseError> {
     let _: Response<EmptyData> = post_request(
         format!("artifacts/{}/complete", hash),
-        EmptyData {},
-        Some(&auth_token),
+        ArtifactCompleteInput { success },
+        Some(auth_token),
     )
     .await?;
 

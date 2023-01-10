@@ -1,3 +1,4 @@
+use moon_bun_lang::BUN_INSTALL;
 use moon_config::{PlatformType, ProjectLanguage};
 use moon_go_lang::{G, GOENV, GOMOD, GVM};
 use moon_lang::{is_using_dependency_manager, is_using_version_manager};
@@ -68,6 +69,8 @@ pub fn detect_project_language(root: &Path) -> ProjectLanguage {
         || is_using_dependency_manager(root, &YARN, true)
         || is_using_version_manager(root, &NVM)
         || is_using_version_manager(root, &NODENV)
+        // Bun
+        || is_using_dependency_manager(root, &BUN_INSTALL, true)
     {
         return ProjectLanguage::JavaScript;
     }

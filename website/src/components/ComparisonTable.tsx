@@ -96,7 +96,7 @@ const toolchainRows: Comparison[] = [
 	{
 		feature: 'Supported languages',
 		support: {
-			moon: 'Bash, Batch, Deno, Go, Node, JavaScript, TypeScript, PHP, Ruby, Rust, Python',
+			moon: 'Bash, Batch, Bun, Deno, Go, Node, JavaScript, TypeScript, PHP, Ruby, Rust, Python',
 			nx: 'JavaScript, TypeScript',
 			turborepo: 'JavaScript, TypeScript',
 		},

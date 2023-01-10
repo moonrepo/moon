@@ -1,8 +1,9 @@
 use crate::{get_workspace_root, is_ci, is_test_env, path, shell};
 use moon_error::{map_io_to_process_error, MoonError};
 use moon_logger::{color, logging_enabled, pad_str, trace, Alignment};
+use rustc_hash::FxHashMap;
 use std::ffi::{OsStr, OsString};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::{Child, Command as TokioCommand};
@@ -58,25 +59,33 @@ pub fn format_running_command(
     color::muted_light(message)
 }
 
+#[derive(Debug)]
 pub struct Command {
+    args: Vec<OsString>,
+
     bin: String,
 
-    cmd: TokioCommand,
+    cwd: Option<PathBuf>,
 
-    /// Convert non-zero exits to errors.
+    env: FxHashMap<OsString, OsString>,
+
+    /// Convert non-zero exits to errors
     error_on_nonzero: bool,
 
-    /// Values to pass to stdin.
+    /// Values to pass to stdin
     input: Vec<OsString>,
 
-    /// Log the command to the terminal before running.
+    /// Log the command to the terminal before running
     log_command: bool,
 
-    /// Arguments will be passed via stdin to the command.
+    /// Arguments will be passed via stdin to the command
     pass_args_stdin: bool,
 
-    /// Prefix to prepend to all log lines.
+    /// Prefix to prepend to all log lines
     prefix: Option<String>,
+
+    /// Shell to wrap executing commands in
+    shell: Option<shell::Shell>,
 }
 
 // This is rather annoying that we have to re-implement all these methods,
@@ -86,45 +95,35 @@ impl Command {
         let bin = bin.as_ref();
 
         let mut command = Command {
-            bin: String::from(bin.to_string_lossy()),
-            cmd: TokioCommand::new(bin),
+            bin: bin.to_string_lossy().to_string(),
+            args: vec![],
+            cwd: None,
+            env: FxHashMap::default(),
             error_on_nonzero: true,
             input: vec![],
             log_command: false,
             pass_args_stdin: false,
             prefix: None,
+            shell: None,
         };
 
         // Referencing a batch script needs to be ran with a shell
         if is_windows_script(&command.bin) {
-            let (bin_name, cmd) = shell::create_windows_shell();
-
-            command.bin = bin_name;
-            command.cmd = cmd;
             command.pass_args_stdin = true;
-            command.arg(bin);
+            command.shell = Some(shell::create_windows_shell());
         }
 
         command
     }
 
     pub fn arg<S: AsRef<OsStr>>(&mut self, arg: S) -> &mut Command {
-        if self.pass_args_stdin {
-            self.input.push(arg.as_ref().to_owned());
-        } else {
-            self.cmd.arg(arg);
-        }
-
+        self.args.push(arg.as_ref().to_os_string());
         self
     }
 
     pub fn arg_if_missing<S: AsRef<OsStr>>(&mut self, arg: S) -> &mut Command {
         let arg = arg.as_ref();
-        let present = if self.pass_args_stdin {
-            self.input.iter().any(|a| a == arg)
-        } else {
-            self.cmd.as_std().get_args().any(|a| a == arg)
-        };
+        let present = self.args.iter().any(|a| a == arg);
 
         if !present {
             self.arg(arg);
@@ -138,19 +137,15 @@ impl Command {
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
     {
-        if self.pass_args_stdin {
-            for arg in args {
-                self.arg(arg);
-            }
-        } else {
-            self.cmd.args(args);
+        for arg in args {
+            self.arg(arg);
         }
 
         self
     }
 
     pub fn cwd<P: AsRef<Path>>(&mut self, dir: P) -> &mut Command {
-        self.cmd.current_dir(dir);
+        self.cwd = Some(dir.as_ref().to_path_buf());
         self
     }
 
@@ -159,7 +154,8 @@ impl Command {
         K: AsRef<OsStr>,
         V: AsRef<OsStr>,
     {
-        self.cmd.env(key, val);
+        self.env
+            .insert(key.as_ref().to_os_string(), val.as_ref().to_os_string());
         self
     }
 
@@ -169,27 +165,36 @@ impl Command {
         K: AsRef<OsStr>,
         V: AsRef<OsStr>,
     {
-        self.cmd.envs(vars);
+        for (k, v) in vars {
+            self.env(k, v);
+        }
+
         self
     }
 
-    pub fn input(&mut self, input: &[String]) -> &mut Command {
-        self.input
-            .extend(input.iter().map(|i| i.into()).collect::<Vec<_>>());
+    pub fn input<I, V>(&mut self, input: I) -> &mut Command
+    where
+        I: IntoIterator<Item = V>,
+        V: AsRef<OsStr>,
+    {
+        for i in input {
+            self.input.push(i.as_ref().to_os_string());
+        }
+
         self
     }
 
     pub async fn exec_capture_output(&mut self) -> Result<Output, MoonError> {
         self.log_command_info();
 
+        let mut command = self.get_command();
         let error_handler = |e| map_io_to_process_error(e, &self.bin);
         let output: Output;
 
-        if self.input.is_empty() {
-            output = self.cmd.output().await.map_err(error_handler)?;
+        if !self.has_input() {
+            output = command.output().await.map_err(error_handler)?;
         } else {
-            let mut child = self
-                .cmd
+            let mut child = command
                 .stdin(Stdio::piped())
                 .stdout(Stdio::piped())
                 .stderr(Stdio::piped())
@@ -209,14 +214,14 @@ impl Command {
     pub async fn exec_stream_output(&mut self) -> Result<ExitStatus, MoonError> {
         self.log_command_info();
 
+        let mut command = self.get_command();
         let error_handler = |e| map_io_to_process_error(e, &self.bin);
         let mut child: Child;
 
-        if self.input.is_empty() {
-            child = self.cmd.spawn().map_err(error_handler)?;
+        if !self.has_input() {
+            child = command.spawn().map_err(error_handler)?;
         } else {
-            child = self
-                .cmd
+            child = command
                 .stdin(Stdio::piped())
                 .spawn()
                 .map_err(error_handler)?;
@@ -240,17 +245,17 @@ impl Command {
     pub async fn exec_stream_and_capture_output(&mut self) -> Result<Output, MoonError> {
         self.log_command_info();
 
+        let mut command = self.get_command();
         let error_handler = |e| map_io_to_process_error(e, &self.bin);
 
-        let mut child = self
-            .cmd
+        let mut child = command
             .stdin(Stdio::piped())
             .stderr(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()
             .map_err(error_handler)?;
 
-        if !self.input.is_empty() {
+        if self.has_input() {
             self.write_input_to_child(&mut child).await?;
         }
 
@@ -333,30 +338,70 @@ impl Command {
         Ok(output)
     }
 
-    pub fn get_command_line(&self) -> (String, Option<&Path>) {
-        let cmd = &self.cmd.as_std();
+    pub fn get_command(&mut self) -> TokioCommand {
+        let mut command = if let Some(shell) = &self.shell {
+            let mut cmd = TokioCommand::new(&shell.command);
+            cmd.args(&shell.args);
 
-        let args = cmd
-            .get_args()
-            .into_iter()
-            .map(|a| a.to_str().unwrap_or("<unknown>"))
-            .collect::<Vec<_>>();
+            if !self.pass_args_stdin {
+                cmd.arg(&self.bin);
+                cmd.args(&self.args);
+            }
 
-        let line = if args.is_empty() {
-            self.bin.to_owned()
+            cmd
         } else {
-            format!("{} {}", &self.bin, join_args(args))
+            let mut cmd = TokioCommand::new(&self.bin);
+            cmd.args(&self.args);
+            cmd
         };
 
-        (path::replace_home_dir(line), cmd.get_current_dir())
+        if let Some(cwd) = &self.cwd {
+            command.current_dir(cwd);
+        }
+
+        command.envs(&self.env);
+        command
+    }
+
+    pub fn get_command_line(&self) -> (String, Option<&Path>) {
+        let line = if self.args.is_empty() {
+            self.bin.to_owned()
+        } else {
+            format!(
+                "{} {}",
+                &self.bin,
+                join_args(
+                    self.args
+                        .iter()
+                        .map(|a| a.to_str().unwrap_or("<unknown>"))
+                        .collect::<Vec<_>>()
+                )
+            )
+        };
+
+        (path::replace_home_dir(line), self.cwd.as_deref())
     }
 
     pub fn get_input_line(&self) -> String {
-        self.input
+        let mut input: Vec<&OsString> = vec![];
+        let bin = OsString::from(&self.bin);
+
+        // When no input, inherit the arguments and the binary to execute
+        if self.input.is_empty() {
+            input.push(&bin);
+            input.extend(&self.args);
+        } else {
+            input.extend(&self.input);
+        }
+
+        input
+            .iter()
+            .map(|i| i.as_os_str())
+            .collect::<Vec<_>>()
             .join(OsStr::new(" "))
             .to_str()
             .unwrap_or_default()
-            .replace('\n', " ")
+            .to_string()
     }
 
     pub fn inherit_colors(&mut self) -> &mut Command {
@@ -426,9 +471,12 @@ impl Command {
         Ok(())
     }
 
+    fn has_input(&self) -> bool {
+        !self.input.is_empty() || self.pass_args_stdin
+    }
+
     #[track_caller]
     fn log_command_info(&self) {
-        let cmd = &self.cmd.as_std();
         let (mut command_line, working_dir) = self.get_command_line();
 
         if self.log_command {
@@ -443,31 +491,31 @@ impl Command {
             return;
         }
 
-        if !self.input.is_empty() {
-            if command_line.ends_with('-') {
-                command_line = format!("{} {}", command_line, self.get_input_line());
-            } else {
-                command_line = format!("{} - {}", command_line, self.get_input_line());
-            }
+        if self.has_input() {
+            command_line = format!(
+                "{}{}{}",
+                command_line,
+                if command_line.ends_with('-') {
+                    " "
+                } else {
+                    " - "
+                },
+                self.get_input_line().replace('\n', " ")
+            );
         }
 
         let mut envs_list = vec![];
 
-        for (key, value) in cmd.get_envs() {
-            if value.is_some() {
-                let key_str = key.to_str().unwrap_or_default();
+        for (key, value) in &self.env {
+            let key = key.to_str().unwrap_or_default();
 
-                if key_str.starts_with("MOON_")
-                    || key_str.starts_with("PROTO_")
-                    || key_str.starts_with("NODE_")
-                {
-                    envs_list.push(format!(
-                        "\n  {}{}{}",
-                        key_str,
-                        color::muted("="),
-                        color::muted_light(value.unwrap().to_str().unwrap())
-                    ));
-                }
+            if key.starts_with("MOON_") || key.starts_with("PROTO_") || key.starts_with("NODE_") {
+                envs_list.push(format!(
+                    "\n  {}{}{}",
+                    key,
+                    color::muted("="),
+                    color::muted_light(value.to_str().unwrap())
+                ));
             }
         }
 
@@ -485,27 +533,13 @@ impl Command {
     }
 
     async fn write_input_to_child(&self, child: &mut Child) -> Result<(), MoonError> {
+        let input = self.get_input_line();
+
         let mut stdin = child.stdin.take().unwrap_or_else(|| {
-            panic!("Unable to write stdin: {}", self.get_input_line());
+            panic!("Unable to write stdin: {}", input);
         });
 
-        let args = self.input.iter().map(|i| {
-            let arg = i.to_str().unwrap_or_default();
-
-            // if cfg!(windows) && arg.contains("(") {
-            //     return arg.replace("(", "\\(");
-            // }
-
-            arg.to_string()
-        }).collect::<Vec<String>>().join(" ");
-
-
-        stdin
-            .write_all(
-                args
-                    .as_bytes(),
-            )
-            .await?;
+        stdin.write_all(input.as_bytes()).await?;
 
         drop(stdin);
 

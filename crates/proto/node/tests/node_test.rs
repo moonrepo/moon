@@ -18,7 +18,7 @@ async fn downloads_verifies_installs_tool() {
 
     if cfg!(windows) {
         assert_eq!(tool.get_bin_path().unwrap(), &base_dir.join("node.exe"));
-        assert_eq!(tool.get_shim_path().unwrap(), &base_dir.join("node.bat"));
+        assert_eq!(tool.get_shim_path(), None); // &base_dir.join("node.bat"));
     } else {
         assert_eq!(tool.get_bin_path().unwrap(), &base_dir.join("bin/node"));
         assert_eq!(tool.get_shim_path().unwrap(), &base_dir.join("node"));

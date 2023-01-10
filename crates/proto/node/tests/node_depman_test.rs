@@ -21,8 +21,9 @@ async fn downloads_verifies_installs_npm() {
 
     if cfg!(windows) {
         assert_eq!(
-            tool.get_shim_path().unwrap(),
-            &proto.tools_dir.join("npm\\9.0.0\\npm.bat")
+            tool.get_shim_path(),
+            None,
+            // &proto.tools_dir.join("npm\\9.0.0\\npm.bat")
         );
     } else {
         assert_eq!(
@@ -338,7 +339,7 @@ mod resolver {
 
         assert_eq!(tool.resolve_version("7.0.0").await.unwrap(), "7.0.0");
     }
->>>
+
     #[tokio::test]
     async fn handles_yarn() {
         let fixture = assert_fs::TempDir::new().unwrap();

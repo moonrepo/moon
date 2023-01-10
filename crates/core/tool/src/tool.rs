@@ -14,6 +14,11 @@ pub trait Tool: Any + Debug + Send + Sync {
     /// Return an absolute path to the tool's binary.
     fn get_bin_path(&self) -> Result<&Path, ToolError>;
 
+    /// Return an absolute path to an applicable tool shim.
+    fn get_shim_path(&self) -> Option<&Path> {
+        None
+    }
+
     /// Return the resolved version of the current tool.
     fn get_version(&self) -> &str;
 

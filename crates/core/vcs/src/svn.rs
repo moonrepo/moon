@@ -48,7 +48,7 @@ impl Svn {
 
     async fn get_revision_number(&self, revision: &str) -> VcsResult<String> {
         let output = self
-            .run_command(&mut self.create_command(vec!["info", "-r", revision]), true)
+            .run_command(self.create_command(vec!["info", "-r", revision]), true)
             .await?;
 
         Ok(self.extract_line_from_info("Revision:", &output))
@@ -115,7 +115,7 @@ impl Svn {
         }
     }
 
-    async fn run_command(&self, command: &mut Command, trim: bool) -> VcsResult<String> {
+    async fn run_command(&self, mut command: Command, trim: bool) -> VcsResult<String> {
         let mut cache = self.cache.write().await;
         let (mut cache_key, _) = command.get_command_line();
 
@@ -150,7 +150,7 @@ impl Vcs for Svn {
 
     async fn get_local_branch(&self) -> VcsResult<String> {
         let output = self
-            .run_command(&mut self.create_command(vec!["info"]), false)
+            .run_command(self.create_command(vec!["info"]), false)
             .await?;
         let url = self.extract_line_from_info("URL:", &output);
         let pattern = Regex::new("branches/([^/]+)").unwrap();
@@ -211,7 +211,7 @@ impl Vcs for Svn {
 
         let output = self
             .run_command(
-                &mut self.create_command(vec!["ls", "--recursive", "--depth", "infinity", dir]),
+                self.create_command(vec!["ls", "--recursive", "--depth", "infinity", dir]),
                 false,
             )
             .await?;
@@ -232,7 +232,7 @@ impl Vcs for Svn {
     // https://svnbook.red-bean.com/en/1.8/svn.ref.svn.c.status.html
     async fn get_touched_files(&self) -> VcsResult<TouchedFiles> {
         let output = self
-            .run_command(&mut self.create_command(vec!["status", "wc"]), false)
+            .run_command(self.create_command(vec!["status", "wc"]), false)
             .await?;
 
         Ok(Svn::process_touched_files(output))
@@ -259,7 +259,7 @@ impl Vcs for Svn {
     ) -> VcsResult<TouchedFiles> {
         let output = self
             .run_command(
-                &mut self.create_command(vec![
+                self.create_command(vec![
                     "diff",
                     "-r",
                     &format!("{}:{}", base_revision, revision),

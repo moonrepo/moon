@@ -1,7 +1,7 @@
 ---
 source: crates/cli/tests/run_node_test.rs
-assertion_line: 162
-expression: get_assert_output(&assert)
+assertion_line: 158
+expression: assert.output()
 ---
 ▪▪▪▪ npm install
 ▪▪▪▪ node:processExitNonZero
@@ -9,7 +9,7 @@ stdout
 ▪▪▪▪ node:processExitNonZero (100ms)
 stderr
 
- ERROR  Process ~/.moon/tools/node/18.0.0/bin/node failed with a 1 exit code.
+ ERROR  Process ~/.moon/tools/node/18.0.0/node failed with a 1 exit code.
 
 
 

@@ -10,10 +10,11 @@ use moon_node_lang::{
 use moon_node_tool::NodeTool;
 use moon_project::Project;
 use moon_task::Task;
-use moon_tool::{get_path_env_var, Tool, ToolError};
+use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
 use moon_typescript_lang::TsConfigJson;
 use moon_utils::{get_cache_dir, process::Command};
 use moon_utils::{path, string_vec};
+use proto_core::Installable;
 use rustc_hash::FxHashMap;
 use std::path::Path;
 
@@ -92,27 +93,31 @@ pub fn create_target_command(
     task: &Task,
     working_dir: &Path,
 ) -> Result<Command, ToolError> {
-    let mut cmd = node.get_bin_path()?.to_owned();
+    let node_bin = node.get_bin_path()?;
+    let mut command = Command::new(node.get_shim_path().unwrap_or(node_bin));
     let mut args = vec![];
 
     match task.command.as_str() {
-        "node" => {
+        "node" | "nodejs" => {
             args.extend(create_node_options(node, context, task)?);
         }
+        "npx" => {
+            command = Command::new(node.get_npx_path()?);
+        }
         "npm" => {
-            args.push(path::to_string(node.get_npm()?.get_bin_path()?)?);
+            command = node.get_npm()?.create_command(node)?;
         }
         "pnpm" => {
-            args.push(path::to_string(node.get_pnpm()?.get_bin_path()?)?);
+            command = node.get_pnpm()?.create_command(node)?;
         }
-        "yarn" => {
-            args.push(path::to_string(node.get_yarn()?.get_bin_path()?)?);
+        "yarn" | "yarnpkg" => {
+            command = node.get_yarn()?.create_command(node)?;
         }
         bin => {
             match node.find_package_bin(&project.root, bin)? {
                 // Rust, Go
                 BinFile::Binary(bin_path) => {
-                    cmd = bin_path;
+                    command = Command::new(bin_path);
                 }
                 // JavaScript
                 BinFile::Script(bin_path) => {
@@ -125,13 +130,11 @@ pub fn create_target_command(
         }
     };
 
-    // Create the command
-    let mut command = Command::new(cmd);
-
-    command.args(&args).args(&task.args).envs(&task.env).env(
-        "PATH",
-        get_path_env_var(node.get_bin_path()?.parent().unwrap()),
-    );
+    command
+        .args(&args)
+        .args(&task.args)
+        .envs(&task.env)
+        .env("PATH", get_path_env_var(&node.tool.get_install_dir()?));
 
     // This functionality mimics what pnpm's "node_modules/.bin" binaries do
     if matches!(node.config.package_manager, NodePackageManager::Pnpm) {

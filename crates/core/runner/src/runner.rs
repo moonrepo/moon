@@ -354,7 +354,7 @@ impl<'a> Runner<'a> {
         env_vars.insert("MOON_TARGET".to_owned(), self.task.target.id.clone());
         env_vars.insert(
             "MOON_TOOLCHAIN_DIR".to_owned(),
-            env::var("PROTO_DIR").unwrap(),
+            env::var("PROTO_ROOT").unwrap(),
         );
         env_vars.insert(
             "MOON_WORKSPACE_ROOT".to_owned(),

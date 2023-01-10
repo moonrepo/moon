@@ -9,6 +9,6 @@ pub trait Executable<'tool>: Send + Sync {
         Ok(())
     }
 
-    /// Returns an absolute file path to the executable binary for the tool.
+    /// Return an absolute file path to the executable binary for the tool.
     fn get_bin_path(&self) -> Result<&Path, ProtoError>;
 }

@@ -30,6 +30,11 @@
 
 - Updated the `project` fields in `moon.yml` to be optional, excluding `description`.
 
+#### ⚙️ Internal
+
+- Our toolchain now creates shims for all installed tools, and also utilizes these shims when
+  executing commands in the pipeline. (Unix only)
+
 ## 0.21.4
 
 #### 🐞 Fixes

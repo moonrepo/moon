@@ -5,7 +5,7 @@ mod errors;
 use common::{endpoint, get_request, post_request, Response};
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, debug, warn};
-use reqwest::{multipart, Body, StatusCode};
+use reqwest::{Body};
 use std::io;
 use std::path::{Path, PathBuf};
 use tokio::fs;
@@ -174,12 +174,7 @@ pub async fn upload_artifact(
     let request = if let Some(url) = upload_url {
         let client = reqwest::Client::new();
         let file_body = Body::wrap_stream(file_stream);
-        let some_file = multipart::Part::stream_with_length(file_body, file_length)
-            .file_name(hash.clone())
-            .mime_str("text/plain")?;
-
-        let form = multipart::Form::new().part("file", some_file);
-        client.put(url).multipart(form)
+        client.put(url).header("Content-Length", file_length).body(file_body)
     } else {
         reqwest::Client::new()
             .post(endpoint(format!("artifacts/{}/upload", hash)))

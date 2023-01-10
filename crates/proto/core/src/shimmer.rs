@@ -52,7 +52,7 @@ fn build_shim_file(builder: &ShimBuilder) -> Result<String, ProtoError> {
         .add_template(
             "shim",
             if cfg!(windows) {
-                include_str!("../templates/pwsh.tpl")
+                include_str!("../templates/batch.tpl")
             } else {
                 include_str!("../templates/bash.tpl")
             },
@@ -66,7 +66,7 @@ fn build_shim_file(builder: &ShimBuilder) -> Result<String, ProtoError> {
 
 #[cfg(windows)]
 fn get_shim_file_name(name: &str) -> String {
-    format!("{}.ps1", name)
+    format!("{}.bat", name)
 }
 
 #[cfg(not(windows))]

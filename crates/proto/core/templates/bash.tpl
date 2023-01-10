@@ -16,7 +16,7 @@ export PROTO_{name | uppercase}_VERSION="{version}"
 parent="$\{PROTO_{parent_name | uppercase}_BIN:-{parent_name}}"
 
 exec "$parent" "{bin_path}" "$@"
-
 {{ else }}
+
 exec "{bin_path}" "$@"
 {{ endif }}

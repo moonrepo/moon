@@ -15,6 +15,16 @@ if (Test-Path env:PROTO_DEBUG) \{
 [Environment]::SetEnvironmentVariable('PROTO_{name | uppercase}_VERSION', '{version}', 'Process')
 {{ endif }}
 
+$quotedArgs = @()
+
+ForEach ($arg in $args) \{
+    if ($arg -match "\s") \{
+        $quotedArgs += "'$\{arg}'"
+    } else \{
+        $quotedArgs += $arg
+    }
+} 
+
 {{ if parent_name }}
 if (Test-Path env:PROTO_{parent_name | uppercase}_BIN) \{
     $parent = $Env:PROTO_{parent_name | uppercase}_BIN
@@ -22,10 +32,10 @@ if (Test-Path env:PROTO_{parent_name | uppercase}_BIN) \{
     $parent = "{parent_name}.exe"
 }
 
-& "$parent" "{bin_path}" @Args
+& "$parent" "{bin_path}" $quotedArgs
 {{ else }}
 
-& "{bin_path}" @Args
+& "{bin_path}" $quotedArgs
 {{ endif }}
 
 exit $LASTEXITCODE

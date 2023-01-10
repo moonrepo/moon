@@ -22,7 +22,7 @@ async fn downloads_verifies_installs_npm() {
     if cfg!(windows) {
         assert_eq!(
             tool.get_shim_path().unwrap(),
-            &proto.tools_dir.join("npm\\9.0.0\\npm.ps1")
+            &proto.tools_dir.join("npm\\9.0.0\\npm.bat")
         );
     } else {
         assert_eq!(

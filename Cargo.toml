@@ -3,6 +3,9 @@ resolver = "2"
 members = [
 	"crates/cli",
 	"crates/core/*",
+
+	# Languages
+	"crates/bun/*",
 	"crates/deno/*",
 	"crates/go/*",
 	"crates/node/*",
@@ -12,6 +15,8 @@ members = [
 	"crates/rust/*",
 	"crates/system/*",
 	"crates/typescript/*",
+
+	# Proto
 	"crates/proto/*",
 ]
 default-members = ["crates/cli"]

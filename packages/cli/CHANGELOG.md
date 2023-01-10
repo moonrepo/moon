@@ -30,8 +30,9 @@
 
 - Updated the `project` fields in `moon.yml` to be optional, excluding `description`.
 
-#### ⚙️ Internal
+##### Toolchain
 
+- Added Bun as a Tier 1 language (doesn't do much at the moment).
 - Our toolchain now creates shims for all installed tools, and also utilizes these shims when
   executing commands in the pipeline. (Unix only)
 

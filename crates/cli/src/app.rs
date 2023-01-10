@@ -114,7 +114,7 @@ pub enum QueryCommands {
         #[arg(long, help = "Current branch, commit, or revision to compare with")]
         head: Option<String>,
 
-        #[arg(long, help = "Gather files from you local state instead of upstream")]
+        #[arg(long, help = "Gather files from you local state instead of the remote")]
         local: bool,
 
         #[arg(value_enum, long, help = "Filter files based on a touched status")]
@@ -293,9 +293,6 @@ pub enum Commands {
         #[clap(group = "projects")]
         all: bool,
 
-        #[arg(long, help = "Generate a run report for the current actions")]
-        report: bool,
-
         #[arg(
             long,
             short = 'u',
@@ -357,9 +354,6 @@ pub enum Commands {
         )]
         profile: Option<ProfileType>,
 
-        #[arg(long, help = "Generate a run report for the current actions")]
-        report: bool,
-
         // Affected
         #[arg(
             long,
@@ -370,6 +364,14 @@ pub enum Commands {
         affected: bool,
 
         #[arg(
+            long,
+            help = "Determine affected against remote by comparing against a base revision",
+            help_heading = HEADING_AFFECTED,
+            requires = "affected-args",
+        )]
+        remote: bool,
+
+        #[arg(
             value_enum,
             long,
             help = "Filter affected files based on a touched status",
@@ -377,14 +379,6 @@ pub enum Commands {
             requires = "affected-args",
         )]
         status: Vec<TouchedStatus>,
-
-        #[arg(
-            long,
-            help = "Determine affected against upstream by comparing against a base revision",
-            help_heading = HEADING_AFFECTED,
-            requires = "affected-args",
-        )]
-        upstream: bool,
 
         // Passthrough args (after --)
         #[arg(

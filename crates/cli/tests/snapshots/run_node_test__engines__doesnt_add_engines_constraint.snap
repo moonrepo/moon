@@ -1,6 +1,5 @@
 ---
 source: crates/cli/tests/run_node_test.rs
-assertion_line: 452
 expression: "read_to_string(sandbox.path().join(\"package.json\")).unwrap()"
 ---
 {
@@ -8,9 +7,7 @@ expression: "read_to_string(sandbox.path().join(\"package.json\")).unwrap()"
   "private": true,
   "workspaces": [
     "base",
-    "esbuild",
     "lifecycles",
-    "swc",
     "version-override"
   ],
   "packageManager": "npm@8.19.2"

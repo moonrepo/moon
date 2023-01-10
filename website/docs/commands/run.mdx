@@ -30,14 +30,12 @@ $ moon run :lint
 - `--dependents` - Run downstream dependent targets (of the same task name) as well.
 - `--profile <type>` - Record and [generate a profile](../guides/profile) for ran tasks.
   - Types: `cpu`, `heap`
-- `--report` - Generate a report of the ran actions. Report is written to
-  `.moon/cache/runReport.json`.
 - `-u`, `--updateCache` - Bypass cache and force update any existing items.
 
 #### Affected
 
 - `--affected` - Only run target if affected by changed files, _otherwise_ will always run.
+- `--remote` - Determine affected against remote by comparing `HEAD` against a base revision
+  (default branch), _otherwise_ uses local changes.
 - `--status <type>` - Filter affected based on a change status. Can be passed multiple times.
   - Types: `all` (default), `added`, `deleted`, `modified`, `staged`, `unstaged`, `untracked`
-- `--upstream` - Determine affected against upstream by comparing `HEAD` against a base revision
-  (default branch), _otherwise_ uses local changes.

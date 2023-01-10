@@ -7,7 +7,7 @@ use moon_config::{
 use moon_constants as constants;
 use moon_logger::{color, debug, trace};
 use moon_platform::{BoxedPlatform, PlatformManager};
-use moon_utils::{fs, path};
+use moon_utils::{fs, path, semver};
 use moon_vcs::{Vcs, VcsLoader};
 use moonbase::Moonbase;
 use std::env;
@@ -189,6 +189,17 @@ impl Workspace {
         let config = load_workspace_config(&root_dir)?;
         let toolchain_config = load_toolchain_config(&root_dir)?;
         let projects_config = load_global_project_config(&root_dir)?;
+
+        if let Some(constraint) = &config.version_constraint {
+            if let Ok(current_version) = env::var("MOON_VERSION") {
+                if !semver::satisfies_range(&current_version, constraint) {
+                    return Err(WorkspaceError::InvalidMoonVersion(
+                        current_version,
+                        constraint.to_owned(),
+                    ));
+                }
+            }
+        }
 
         // Setup components
         let cache = CacheEngine::load(&root_dir)?;

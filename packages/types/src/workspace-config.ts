@@ -36,4 +36,5 @@ export interface WorkspaceConfig {
 		| { globs: string[]; sources: Record<string, string> };
 	runner: RunnerConfig;
 	vcs: VcsConfig;
+	versionConstraint: string | null;
 }

@@ -489,12 +489,20 @@ impl Command {
             panic!("Unable to write stdin: {}", self.get_input_line());
         });
 
+        let args = self.input.iter().map(|i| {
+            let arg = i.to_str().unwrap_or_default();
+
+            // if cfg!(windows) && arg.contains("(") {
+            //     return arg.replace("(", "\\(");
+            // }
+
+            arg.to_string()
+        }).collect::<Vec<String>>().join(" ");
+
+
         stdin
             .write_all(
-                self.input
-                    .join(OsStr::new(" "))
-                    .to_str()
-                    .unwrap_or_default()
+                args
                     .as_bytes(),
             )
             .await?;

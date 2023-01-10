@@ -63,6 +63,8 @@ fn setup_logging(level: &LogLevel, log_file: Option<PathBuf>) {
     } else {
         debug!(target: "moon", "Running moon v{}", version);
     }
+
+    env::set_var("MOON_VERSION", version);
 }
 
 fn setup_caching(mode: &CacheMode) {
@@ -100,7 +102,6 @@ pub async fn run_cli() {
         Commands::Check {
             ids,
             all,
-            report,
             update_cache,
         } => {
             check(
@@ -108,7 +109,6 @@ pub async fn run_cli() {
                 CheckOptions {
                     all: *all,
                     concurrency: args.concurrency,
-                    report: *report,
                     update_cache: *update_cache,
                 },
             )
@@ -226,8 +226,7 @@ pub async fn run_cli() {
             status,
             passthrough,
             profile,
-            report,
-            upstream,
+            remote,
         } => {
             run(
                 targets,
@@ -238,9 +237,8 @@ pub async fn run_cli() {
                     status: status.clone(),
                     passthrough: passthrough.clone(),
                     profile: profile.clone(),
-                    report: *report,
+                    remote: *remote,
                     update_cache: *update_cache,
-                    upstream: *upstream,
                 },
             )
             .await

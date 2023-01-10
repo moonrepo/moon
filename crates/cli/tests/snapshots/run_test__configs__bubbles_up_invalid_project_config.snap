@@ -1,14 +1,14 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 174
-expression: "standardize_separators(get_path_safe_output(&assert,\n        &PathBuf::from(\"./fake/path\")))"
+assertion_line: 173
+expression: assert.output_standardized()
 ---
 
  ERROR 
 
 Failed to validate base/moon.yml configuration file.
 
-  ▪ missing field `name` for key "project.project" in base/moon.yml YAML Extended file
+  ▪ missing field `description` for key "project.project" in base/moon.yml YAML Extended file
 
 
 

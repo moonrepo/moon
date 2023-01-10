@@ -2,15 +2,33 @@
 
 #### Unreleased
 
+#### 💥 Breaking
+
+- Renamed the `--upstream` option to `--remote`.
+- Removed the `--report` option from `moon check` and `moon run` commands. Reports are now always
+  created.
+
 #### 🚀 Updates
 
 - We've improved our smart hashing for other use cases besides task running. The first improvement
   is that we now hash dependencies to determine whether to run a dependency install, or to skip!
   This is much more accurate than before, which only relied on lockfile modified timestamps.
+
+##### Config
+
+- Added a `versionConstraint` setting to `.moon/workspace.yml` that enforces a requirement on the
+  running moon binary.
+
+##### Pipeline
+
 - We've refactored the pipeline to use a new thread pool strategy so that we have more control over
   concurrency. This also paves the way for future output reporters.
-- Added a global `--concurrency` option to all `moon` commands, allowing the thread count to be
+- Added global `--concurrency` option to all `moon` commands, allowing the thread count to be
   customized.
+
+##### Projects
+
+- Updated the `project` fields in `moon.yml` to be optional, excluding `description`.
 
 #### ⚙️ Internal
 

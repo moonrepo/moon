@@ -338,7 +338,7 @@ mod resolver {
 
         assert_eq!(tool.resolve_version("7.0.0").await.unwrap(), "7.0.0");
     }
-
+>>>
     #[tokio::test]
     async fn handles_yarn() {
         let fixture = assert_fs::TempDir::new().unwrap();

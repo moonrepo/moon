@@ -5,6 +5,7 @@ mod executor;
 mod helpers;
 mod installer;
 mod resolver;
+mod shimmer;
 mod verifier;
 
 pub use async_trait::async_trait;
@@ -17,20 +18,24 @@ pub use installer::*;
 pub use lenient_semver::Version;
 pub use proto_error::ProtoError;
 pub use resolver::*;
-use std::fs;
-use std::path::{Path, PathBuf};
+pub use shimmer::*;
 pub use verifier::*;
 
+use std::fs;
+use std::path::{Path, PathBuf};
+
 pub struct Proto {
+    pub shims_dir: PathBuf,
     pub temp_dir: PathBuf,
     pub tools_dir: PathBuf,
 }
 
 impl Proto {
     pub fn new() -> Result<Self, ProtoError> {
-        let root = get_dir()?;
+        let root = get_root()?;
 
         Ok(Proto {
+            shims_dir: root.join("shims"),
             temp_dir: root.join("temp"),
             tools_dir: root.join("tools"),
         })
@@ -38,6 +43,7 @@ impl Proto {
 
     pub fn from(root: &Path) -> Self {
         Proto {
+            shims_dir: root.join("shims"),
             temp_dir: root.join("temp"),
             tools_dir: root.join("tools"),
         }
@@ -55,6 +61,7 @@ pub trait Tool<'tool>:
     + Verifiable<'tool>
     + Installable<'tool>
     + Executable<'tool>
+    + Shimable<'tool>
 {
     async fn before_setup(&mut self) -> Result<(), ProtoError> {
         Ok(())
@@ -81,6 +88,9 @@ pub trait Tool<'tool>:
 
         self.find_bin_path().await?;
 
+        // Create shims after paths are found
+        self.create_shims().await?;
+
         Ok(installed)
     }
 
@@ -92,10 +102,18 @@ pub trait Tool<'tool>:
         if install_dir.exists() {
             self.find_bin_path().await?;
 
-            return Ok(match self.get_bin_path() {
-                Ok(bin) => bin.exists(),
-                Err(_) => false,
-            });
+            let bin_path = {
+                match self.get_bin_path() {
+                    Ok(bin) => bin,
+                    Err(_) => return Ok(false),
+                }
+            };
+
+            if bin_path.exists() {
+                self.create_shims().await?;
+
+                return Ok(true);
+            }
         }
 
         Ok(false)

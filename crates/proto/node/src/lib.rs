@@ -5,6 +5,7 @@ mod execute;
 mod install;
 mod platform;
 mod resolve;
+mod shim;
 mod verify;
 
 pub use depman::*;
@@ -13,9 +14,10 @@ use std::path::PathBuf;
 
 #[derive(Debug)]
 pub struct NodeLanguage {
+    pub base_dir: PathBuf,
     pub bin_path: Option<PathBuf>,
-    pub install_dir: PathBuf,
     pub log_target: String,
+    pub shim_path: Option<PathBuf>,
     pub temp_dir: PathBuf,
     pub version: String,
 }
@@ -23,9 +25,10 @@ pub struct NodeLanguage {
 impl NodeLanguage {
     pub fn new(proto: &Proto, version: Option<&str>) -> Self {
         NodeLanguage {
+            base_dir: proto.tools_dir.join("node"),
             bin_path: None,
-            install_dir: proto.tools_dir.join("node"),
             log_target: "proto:tool:node".into(),
+            shim_path: None,
             temp_dir: proto.temp_dir.join("node"),
             version: version.unwrap_or("latest").into(),
         }

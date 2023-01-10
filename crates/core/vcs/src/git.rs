@@ -61,7 +61,7 @@ impl Git {
         for candidate in candidates {
             if self
                 .run_command(
-                    &mut self.create_command(vec!["merge-base", &candidate, head]),
+                    self.create_command(vec!["merge-base", &candidate, head]),
                     true,
                 )
                 .await
@@ -75,7 +75,7 @@ impl Git {
         // This is necessary to support comparisons between forks!
         if let Ok(hash) = self
             .run_command(
-                &mut self.create_command(args.iter().map(|a| a.as_str()).collect()),
+                self.create_command(args.iter().map(|a| a.as_str()).collect()),
                 true,
             )
             .await
@@ -98,7 +98,7 @@ impl Git {
         }
     }
 
-    async fn run_command(&self, command: &mut Command, trim: bool) -> VcsResult<String> {
+    async fn run_command(&self, mut command: Command, trim: bool) -> VcsResult<String> {
         let mut cache = self.cache.write().await;
         let (mut cache_key, _) = command.get_command_line();
 
@@ -135,24 +135,21 @@ impl Vcs for Git {
     async fn get_local_branch(&self) -> VcsResult<String> {
         // --show-current was added in 2.22.0
         if let Ok(branch) = self
-            .run_command(
-                &mut self.create_command(vec!["branch", "--show-current"]),
-                true,
-            )
+            .run_command(self.create_command(vec!["branch", "--show-current"]), true)
             .await
         {
             return Ok(branch);
         }
 
         self.run_command(
-            &mut self.create_command(vec!["rev-parse --abbrev-ref HEAD"]),
+            self.create_command(vec!["rev-parse --abbrev-ref HEAD"]),
             true,
         )
         .await
     }
 
     async fn get_local_branch_revision(&self) -> VcsResult<String> {
-        self.run_command(&mut self.create_command(vec!["rev-parse", "HEAD"]), true)
+        self.run_command(self.create_command(vec!["rev-parse", "HEAD"]), true)
             .await
     }
 
@@ -162,7 +159,7 @@ impl Vcs for Git {
 
     async fn get_default_branch_revision(&self) -> VcsResult<String> {
         self.run_command(
-            &mut self.create_command(vec!["rev-parse", &self.config.default_branch]),
+            self.create_command(vec!["rev-parse", &self.config.default_branch]),
             true,
         )
         .await
@@ -190,13 +187,10 @@ impl Vcs for Git {
         // Sort for deterministic caching within the vcs layer
         objects.sort();
 
-        let output = self
-            .run_command(
-                self.create_command(vec!["hash-object", "--stdin-paths"])
-                    .input(&[objects.join("\n")]),
-                true,
-            )
-            .await?;
+        let mut command = self.create_command(vec!["hash-object", "--stdin-paths"]);
+        command.input(&[objects.join("\n")]);
+
+        let output = self.run_command(command, true).await?;
 
         for (index, hash) in output.split('\n').enumerate() {
             if !hash.is_empty() {
@@ -210,7 +204,7 @@ impl Vcs for Git {
     async fn get_file_tree_hashes(&self, dir: &str) -> VcsResult<BTreeMap<String, String>> {
         let output = self
             .run_command(
-                &mut self.create_command(vec!["ls-tree", "HEAD", "-r", dir]),
+                self.create_command(vec!["ls-tree", "HEAD", "-r", dir]),
                 true,
             )
             .await?;
@@ -240,7 +234,7 @@ impl Vcs for Git {
     async fn get_repository_slug(&self) -> VcsResult<String> {
         let output = self
             .run_command(
-                &mut self.create_command(vec!["remote", "get-url", "origin"]),
+                self.create_command(vec!["remote", "get-url", "origin"]),
                 true,
             )
             .await?;
@@ -272,7 +266,7 @@ impl Vcs for Git {
     async fn get_touched_files(&self) -> VcsResult<TouchedFiles> {
         let output = self
             .run_command(
-                &mut self.create_command(vec![
+                self.create_command(vec![
                     "status",
                     "--porcelain",
                     "--untracked-files",
@@ -389,7 +383,7 @@ impl Vcs for Git {
 
         let output = self
             .run_command(
-                &mut self.create_command(vec![
+                self.create_command(vec![
                     "--no-pager",
                     "diff",
                     "--name-status",

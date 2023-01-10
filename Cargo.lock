@@ -2283,6 +2283,7 @@ dependencies = [
  "moon_test_utils",
  "pathdiff",
  "regex",
+ "rustc-hash",
  "semver",
  "serde",
  "serde_json",
@@ -2857,6 +2858,7 @@ dependencies = [
  "sha2",
  "tar",
  "thiserror",
+ "tinytemplate",
  "tokio",
  "zip",
 ]

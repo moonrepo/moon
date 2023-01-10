@@ -8,17 +8,18 @@ use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
 use moon_utils::process::Command;
 use proto_core::{
-    async_trait, Describable, Executable, Installable, Proto, Resolvable, Tool as ProtoTool,
+    async_trait, Describable, Executable, Installable, Proto, Resolvable, Shimable,
+    Tool as ProtoTool,
 };
 use proto_node::NodeLanguage;
 use rustc_hash::FxHashMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
 pub struct NodeTool {
     pub config: NodeConfig,
 
-    tool: NodeLanguage,
+    pub tool: NodeLanguage,
 
     npm: Option<NpmTool>,
 
@@ -61,16 +62,12 @@ impl NodeTool {
         working_dir: &Path,
     ) -> Result<(), ToolError> {
         let mut exec_args = vec!["--silent", "--package", package, "--"];
-        let install_dir = self.tool.get_install_dir()?;
-
         exec_args.extend(args);
 
-        let npx_path = node::find_package_manager_bin(&install_dir, "npx");
-
-        Command::new(&npx_path)
+        Command::new(self.get_npx_path()?)
             .args(exec_args)
             .cwd(working_dir)
-            .env("PATH", get_path_env_var(&install_dir))
+            .env("PATH", get_path_env_var(&self.tool.get_install_dir()?))
             .exec_stream_output()
             .await?;
 
@@ -94,6 +91,13 @@ impl NodeTool {
             Some(npm) => Ok(npm),
             None => Err(ToolError::UnknownTool("npm".into())),
         }
+    }
+
+    pub fn get_npx_path(&self) -> Result<PathBuf, ToolError> {
+        Ok(node::find_package_manager_bin(
+            self.tool.get_install_dir()?,
+            "npx",
+        ))
     }
 
     /// Return the `pnpm` package manager.
@@ -137,6 +141,10 @@ impl Tool for NodeTool {
 
     fn get_bin_path(&self) -> Result<&Path, ToolError> {
         Ok(self.tool.get_bin_path()?)
+    }
+
+    fn get_shim_path(&self) -> Option<&Path> {
+        self.tool.get_shim_path()
     }
 
     fn get_version(&self) -> &str {

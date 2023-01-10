@@ -3,6 +3,7 @@ mod download;
 mod execute;
 mod install;
 mod resolve;
+mod shim;
 mod verify;
 
 use proto_core::{Describable, Proto, Tool};
@@ -28,10 +29,12 @@ impl NodeDependencyManagerType {
 
 #[derive(Debug)]
 pub struct NodeDependencyManager {
+    pub base_dir: PathBuf,
     pub bin_path: Option<PathBuf>,
     // pub dist: Option<NDMVersionDist>,
-    pub install_dir: PathBuf,
     pub log_target: String,
+    pub package_name: String,
+    pub shim_path: Option<PathBuf>,
     pub temp_dir: PathBuf,
     pub type_of: NodeDependencyManagerType,
     pub version: String,
@@ -42,13 +45,15 @@ impl NodeDependencyManager {
         let package_name = type_of.get_package_name();
 
         NodeDependencyManager {
+            base_dir: proto.tools_dir.join(&package_name),
             bin_path: None,
             // dist: None,
-            install_dir: proto.tools_dir.join(&package_name),
             log_target: format!("proto:tool:{}", &package_name),
+            shim_path: None,
             temp_dir: proto.temp_dir.join(&package_name),
             type_of,
             version: version.unwrap_or("latest").into(),
+            package_name,
         }
     }
 

@@ -8,7 +8,7 @@ use tokio::fs;
 
 #[async_trait::async_trait]
 pub trait Downloadable<'tool>: Send + Sync + Resolvable<'tool> {
-    /// Returns an absolute file path to the downloaded file.
+    /// Return an absolute file path to the downloaded file.
     /// This may not exist, as the path is composed ahead of time.
     /// This is typically ~/.proto/temp/<file>.
     fn get_download_path(&self) -> Result<PathBuf, ProtoError>;

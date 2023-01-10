@@ -30,6 +30,9 @@ pub enum ProtoError {
     #[error("{0} has not been configured or installed, unable to proceed.")]
     MissingTool(String),
 
+    #[error("Failed shim. {0}")]
+    Shim(String),
+
     #[error("Unable to install {0}, unsupported architecture {1}.")]
     UnsupportedArchitecture(String, String),
 

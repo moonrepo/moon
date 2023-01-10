@@ -10,7 +10,7 @@ use zip::ZipArchive;
 
 #[async_trait::async_trait]
 pub trait Installable<'tool>: Send + Sync {
-    /// Returns an absolute file path to the directory containing the installed tool.
+    /// Return an absolute file path to the directory containing the installed tool.
     /// This is typically ~/.proto/tools/<tool>/<version>.
     fn get_install_dir(&self) -> Result<PathBuf, ProtoError>;
 

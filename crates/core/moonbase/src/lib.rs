@@ -172,9 +172,10 @@ pub async fn upload_artifact(
     let file_stream = FramedRead::new(file, BytesCodec::new());
 
     let request = if let Some(url) = upload_url {
-        let client = reqwest::Client::new();
-        let file_body = Body::wrap_stream(file_stream);
-        client.put(url).header("Content-Length", file_length).body(file_body)
+        reqwest::Client::new()
+            .put(url)
+            .header("Content-Length", file_length)
+            .body(Body::wrap_stream(file_stream))
     } else {
         reqwest::Client::new()
             .post(endpoint(format!("artifacts/{}/upload", hash)))

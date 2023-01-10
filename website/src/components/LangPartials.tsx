@@ -3,6 +3,7 @@ import Admonition from '@theme/Admonition';
 import { useSelectedLanguage } from './LangSelector';
 
 const LABELS: Record<string, string> = {
+	bun: 'Buno',
 	deno: 'Deno',
 	go: 'Go',
 	node: 'Node.js',

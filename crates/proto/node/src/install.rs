@@ -28,8 +28,8 @@ impl Installable<'_> for NodeLanguage {
         debug!(
             target: self.get_log_target(),
             "Attempting to install {} to {}",
-            color::path(&download_path),
-            color::path(&install_dir),
+            color::path(download_path),
+            color::path(install_dir),
         );
 
         if download_path.extension().unwrap_or_default() == "zip" {

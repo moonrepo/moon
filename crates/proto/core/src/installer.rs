@@ -34,8 +34,8 @@ pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(
     trace!(
         target: "proto:installer",
         "Unpacking tar archive {} to {}",
-        color::path(&input_file),
-        color::path(&output_dir),
+        color::path(input_file),
+        color::path(output_dir),
     );
 
     if !output_dir.exists() {
@@ -93,8 +93,8 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
     trace!(
         target: "proto:installer",
         "Unzipping zip archive {} to {}",
-        color::path(&input_file),
-        color::path(&output_dir),
+        color::path(input_file),
+        color::path(output_dir),
     );
 
     if !output_dir.exists() {

@@ -37,7 +37,7 @@ pub fn get_sha256_hash_of_file<P: AsRef<Path>>(path: P) -> Result<String, ProtoE
     trace!(
         target: "proto:verifier",
         "Calculating SHA256 checksum for file {}",
-        color::path(&path)
+        color::path(path)
     );
 
     let mut file = File::open(path).map_err(handle_error)?;

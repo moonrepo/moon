@@ -34,8 +34,8 @@ where
     trace!(
         target: "proto:downloader",
         "Downloading {} from {}",
-        color::path(&dest_file),
-        color::url(&url)
+        color::path(dest_file),
+        color::url(url)
     );
 
     // Ensure parent directories exist

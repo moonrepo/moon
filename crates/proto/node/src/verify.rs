@@ -50,8 +50,8 @@ impl Verifiable<'_> for NodeLanguage {
         debug!(
             target: self.get_log_target(),
             "Verifiying checksum of downloaded file {} using {}",
-            color::path(&download_file),
-            color::path(&checksum_file),
+            color::path(download_file),
+            color::path(checksum_file),
         );
 
         let checksum = get_sha256_hash_of_file(download_file)?;

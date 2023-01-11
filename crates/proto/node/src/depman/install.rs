@@ -26,8 +26,8 @@ impl Installable<'_> for NodeDependencyManager {
         debug!(
             target: self.get_log_target(),
             "Attempting to install {} to {}",
-            color::path(&download_path),
-            color::path(&install_dir),
+            color::path(download_path),
+            color::path(install_dir),
         );
 
         untar(download_path, install_dir, Some(&prefix))?;

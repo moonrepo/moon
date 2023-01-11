@@ -120,7 +120,7 @@ where
     trace!(
         target: "proto:resolver",
         "Loading versions manifest from {}",
-        color::url(&url),
+        color::url(url),
     );
 
     let response = reqwest::get(url).await.map_err(handle_http_error)?;

@@ -1,4 +1,5 @@
 mod commands;
+mod config;
 
 use clap::{Parser, Subcommand};
 use proto::{color, ToolType};
@@ -20,15 +21,32 @@ struct App {
     command: Commands,
 }
 
+// TODO: list (--remote), alias, unalias, shell completions, local, global
 #[derive(Debug, Subcommand)]
 enum Commands {
-    #[command(name = "install", about = "Install a tool")]
+    #[command(name = "install", about = "Download and install a tool")]
     Install {
         #[arg(required = true, value_enum, help = "Name of tool to install")]
         tool: ToolType,
 
         #[arg(default_value = "latest", help = "Version of tool to install")]
         semver: Option<String>,
+    },
+
+    #[command(
+        name = "run",
+        about = "Run a tool after detecting a version from the environment"
+    )]
+    Run {
+        #[arg(required = true, value_enum, help = "Name of tool to run")]
+        tool: ToolType,
+
+        // Passthrough args (after --)
+        #[arg(
+            last = true,
+            help = "Arguments to pass through to the underlying command"
+        )]
+        passthrough: Vec<String>,
     },
 
     #[command(name = "uninstall", about = "Uninstall a tool")]
@@ -53,6 +71,7 @@ async fn main() {
 
     let result = match app.command {
         Commands::Install { tool, semver } => commands::install(tool, semver).await,
+        Commands::Run { tool, passthrough } => commands::run(tool, passthrough).await,
         Commands::Uninstall { tool, semver } => commands::uninstall(tool, semver).await,
     };
 

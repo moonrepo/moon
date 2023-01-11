@@ -65,6 +65,10 @@ impl NodeDependencyManager {
 }
 
 impl Describable<'_> for NodeDependencyManager {
+    fn get_id(&self) -> &str {
+        &self.package_name
+    }
+
     fn get_log_target(&self) -> &str {
         &self.log_target
     }

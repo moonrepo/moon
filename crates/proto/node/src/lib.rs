@@ -36,6 +36,10 @@ impl NodeLanguage {
 }
 
 impl Describable<'_> for NodeLanguage {
+    fn get_id(&self) -> &str {
+        "node"
+    }
+
     fn get_log_target(&self) -> &str {
         &self.log_target
     }

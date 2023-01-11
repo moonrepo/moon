@@ -1,9 +1,8 @@
-use std::path::Path;
-
 use proto_core::{
     Detector, Downloadable, Executable, Installable, Proto, Resolvable, Shimable, Tool,
 };
 use proto_node::{NodeDependencyManager, NodeDependencyManagerType};
+use std::path::Path;
 
 #[tokio::test]
 async fn downloads_verifies_installs_npm() {

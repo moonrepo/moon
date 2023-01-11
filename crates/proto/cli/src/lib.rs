@@ -1,11 +1,12 @@
 use clap::ValueEnum;
 use proto_core::Tool;
+use std::str::FromStr;
 
 pub use proto_core::*;
 pub use proto_error::*;
 pub use proto_node as node;
 
-#[derive(Clone, Debug, ValueEnum)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, ValueEnum)]
 #[value(rename_all = "lowercase")]
 pub enum ToolType {
     // Node.js
@@ -13,6 +14,20 @@ pub enum ToolType {
     Npm,
     Pnpm,
     Yarn,
+}
+
+impl FromStr for ToolType {
+    type Err = ProtoError;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        match value.to_lowercase().as_ref() {
+            "node" => Ok(Self::Node),
+            "npm" => Ok(Self::Npm),
+            "pnpm" => Ok(Self::Pnpm),
+            "yarn" => Ok(Self::Yarn),
+            _ => Err(ProtoError::UnsupportedTool(value.to_owned())),
+        }
+    }
 }
 
 pub fn create_tool(tool: &ToolType) -> Result<Box<dyn Tool<'static>>, ProtoError> {

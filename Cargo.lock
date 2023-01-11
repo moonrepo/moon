@@ -2907,6 +2907,7 @@ version = "0.1.0"
 dependencies = [
  "clap 4.0.23",
  "env_logger",
+ "log",
  "proto_core",
  "proto_error",
  "proto_node",

@@ -115,6 +115,7 @@ impl ShimBuilder {
             .as_ref()
             .unwrap()
             .join(get_shim_file_name(&self.name));
+        let shim_exists = shim_path.exists();
 
         let handle_error =
             |e: std::io::Error| ProtoError::Fs(shim_path.to_path_buf(), e.to_string());
@@ -130,7 +131,10 @@ impl ShimBuilder {
                 .map_err(handle_error)?;
         }
 
-        debug!(target: "proto:shimmer", "Created shim at {}", color::path(&shim_path));
+        // Only log the first time it happens
+        if !shim_exists {
+            debug!(target: "proto:shimmer", "Created shim at {}", color::path(&shim_path));
+        }
 
         Ok(shim_path)
     }

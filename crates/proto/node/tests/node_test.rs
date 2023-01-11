@@ -2,7 +2,7 @@ use proto_core::{
     Detector, Downloadable, Executable, Installable, Proto, Resolvable, Shimable, Tool, Verifiable,
 };
 use proto_node::NodeLanguage;
-use std::fs;
+use std::{fs, path::Path};
 
 #[tokio::test]
 async fn downloads_verifies_installs_tool() {
@@ -25,6 +25,12 @@ async fn downloads_verifies_installs_tool() {
     }
 }
 
+fn create_node(dir: &Path) -> NodeLanguage {
+    let mut tool = NodeLanguage::new(&Proto::from(dir));
+    tool.version = Some("18.0.0".into());
+    tool
+}
+
 mod detector {
     use super::*;
     use assert_fs::prelude::{FileWriteStr, PathChild};
@@ -32,8 +38,7 @@ mod detector {
     #[tokio::test]
     async fn doesnt_match_if_no_files() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let proto = Proto::from(fixture.path());
-        let tool = NodeLanguage::new(&proto);
+        let tool = create_node(fixture.path());
 
         assert_eq!(
             tool.detect_version_from(fixture.path()).await.unwrap(),
@@ -44,8 +49,7 @@ mod detector {
     #[tokio::test]
     async fn detects_nvm() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let proto = Proto::from(fixture.path());
-        let tool = NodeLanguage::new(&proto);
+        let tool = create_node(fixture.path());
 
         fixture.child(".nvmrc").write_str("1.2.3").unwrap();
 
@@ -58,8 +62,7 @@ mod detector {
     #[tokio::test]
     async fn detects_nodenv() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let proto = Proto::from(fixture.path());
-        let tool = NodeLanguage::new(&proto);
+        let tool = create_node(fixture.path());
 
         fixture.child(".node-version").write_str("4.5.6\n").unwrap();
 
@@ -77,12 +80,11 @@ mod downloader {
     #[tokio::test]
     async fn sets_path_to_temp() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let proto = Proto::from(fixture.path());
-        let tool = NodeLanguage::new(&proto);
+        let tool = create_node(fixture.path());
 
         assert_eq!(
             tool.get_download_path().unwrap(),
-            proto
+            Proto::from(fixture.path())
                 .temp_dir
                 .join("node")
                 .join(get_archive_file("18.0.0").unwrap())
@@ -92,7 +94,7 @@ mod downloader {
     #[tokio::test]
     async fn downloads_to_temp() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let tool = NodeLanguage::new(&Proto::from(fixture.path()));
+        let tool = create_node(fixture.path());
 
         let to_file = tool.get_download_path().unwrap();
 
@@ -106,7 +108,7 @@ mod downloader {
     #[tokio::test]
     async fn doesnt_download_if_file_exists() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let tool = NodeLanguage::new(&Proto::from(fixture.path()));
+        let tool = create_node(fixture.path());
 
         let to_file = tool.get_download_path().unwrap();
 
@@ -121,12 +123,14 @@ mod installer {
     #[tokio::test]
     async fn sets_dir_to_tools() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let proto = Proto::from(fixture.path());
-        let tool = NodeLanguage::new(&proto);
+        let tool = create_node(fixture.path());
 
         assert_eq!(
             tool.get_install_dir().unwrap(),
-            proto.tools_dir.join("node").join("18.0.0")
+            Proto::from(fixture.path())
+                .tools_dir
+                .join("node")
+                .join("18.0.0")
         );
     }
 
@@ -134,7 +138,7 @@ mod installer {
     #[should_panic(expected = "InstallMissingDownload(\"Node.js\")")]
     async fn errors_for_missing_download() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let tool = NodeLanguage::new(&Proto::from(fixture.path()));
+        let tool = create_node(fixture.path());
 
         let dir = tool.get_install_dir().unwrap();
 
@@ -146,7 +150,7 @@ mod installer {
     #[tokio::test]
     async fn doesnt_install_if_dir_exists() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let tool = NodeLanguage::new(&Proto::from(fixture.path()));
+        let tool = create_node(fixture.path());
 
         let dir = tool.get_install_dir().unwrap();
 
@@ -283,19 +287,22 @@ mod verifier {
     #[tokio::test]
     async fn sets_path_to_temp() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let proto = Proto::from(fixture.path());
-        let tool = NodeLanguage::new(&proto);
+        let tool = create_node(fixture.path());
 
         assert_eq!(
             tool.get_checksum_path().unwrap(),
-            proto.temp_dir.join("node").join("18.0.0-SHASUMS256.txt")
+            Proto::from(fixture.path())
+                .temp_dir
+                .join("node")
+                .join("18.0.0-SHASUMS256.txt")
         );
     }
 
     #[tokio::test]
     async fn downloads_to_temp() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let tool = NodeLanguage::new(&Proto::from(fixture.path()));
+        let tool = create_node(fixture.path());
+
         let to_file = tool.get_checksum_path().unwrap();
 
         assert!(!to_file.exists());
@@ -308,7 +315,7 @@ mod verifier {
     #[tokio::test]
     async fn doesnt_download_if_file_exists() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let tool = NodeLanguage::new(&Proto::from(fixture.path()));
+        let tool = create_node(fixture.path());
 
         let to_file = tool.get_checksum_path().unwrap();
 
@@ -320,7 +327,7 @@ mod verifier {
     #[should_panic(expected = "VerifyInvalidChecksum")]
     async fn errors_for_checksum_mismatch() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let tool = NodeLanguage::new(&Proto::from(fixture.path()));
+        let tool = create_node(fixture.path());
         let dl_path = tool.get_download_path().unwrap();
         let cs_path = tool.get_checksum_path().unwrap();
 

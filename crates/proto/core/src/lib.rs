@@ -126,6 +126,11 @@ pub trait Tool<'tool>:
 
                 return Ok(true);
             }
+        } else {
+            debug!(
+                target: self.get_log_target(),
+                "Tool has not been installed"
+            );
         }
 
         Ok(false)
@@ -136,6 +141,11 @@ pub trait Tool<'tool>:
     }
 
     async fn cleanup(&mut self) -> Result<(), ProtoError> {
+        debug!(
+            target: self.get_log_target(),
+            "Cleaning up temporary files and downloads"
+        );
+
         let download_path = self.get_download_path()?;
         let checksum_path = self.get_checksum_path()?;
 
@@ -162,6 +172,12 @@ pub trait Tool<'tool>:
         let install_dir = self.get_install_dir()?;
 
         if install_dir.exists() {
+            debug!(
+                target: self.get_log_target(),
+                "Deleting install directory {}",
+                color::path(&install_dir)
+            );
+
             fs::remove_dir_all(&install_dir)
                 .map_err(|e| ProtoError::Fs(install_dir, e.to_string()))?;
         }

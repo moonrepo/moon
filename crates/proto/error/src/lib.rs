@@ -42,7 +42,7 @@ pub enum ProtoError {
     #[error("Checksum has failed for {0}, which was verified using {1}.")]
     VerifyInvalidChecksum(PathBuf, PathBuf),
 
-    #[error("Version alias {0} could not be found in the manifest.")]
+    #[error("Version alias \"{0}\" could not be found in the manifest.")]
     VersionUnknownAlias(String),
 
     #[error("Failed to parse version {0}. {1}")]

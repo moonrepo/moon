@@ -1,7 +1,7 @@
 mod commands;
 
 use clap::{Parser, Subcommand};
-use proto::ToolType;
+use proto::{color, ToolType};
 use std::{env, process::exit};
 
 #[derive(Debug, Parser)]
@@ -30,6 +30,15 @@ enum Commands {
         #[arg(default_value = "latest", help = "Version of tool to install")]
         semver: Option<String>,
     },
+
+    #[command(name = "uninstall", about = "Uninstall a tool")]
+    Uninstall {
+        #[arg(required = true, value_enum, help = "Name of tool to uninstall")]
+        tool: ToolType,
+
+        #[arg(required = true, help = "Version of tool to uninstall")]
+        semver: String,
+    },
 }
 
 #[tokio::main]
@@ -43,11 +52,12 @@ async fn main() {
     let app = App::parse();
 
     let result = match app.command {
-        Commands::Install { tool, semver } => commands::install::install(tool, semver).await,
+        Commands::Install { tool, semver } => commands::install(tool, semver).await,
+        Commands::Uninstall { tool, semver } => commands::uninstall(tool, semver).await,
     };
 
     if let Err(error) = result {
-        eprintln!("{}", error);
+        eprintln!("{}", color::failure(error.to_string()));
         exit(1);
     }
 }

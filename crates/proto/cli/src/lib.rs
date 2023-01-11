@@ -15,7 +15,7 @@ pub enum ToolType {
     Yarn,
 }
 
-pub fn create_tool(tool: ToolType) -> Result<Box<dyn Tool<'static>>, ProtoError> {
+pub fn create_tool(tool: &ToolType) -> Result<Box<dyn Tool<'static>>, ProtoError> {
     let proto = Proto::new()?;
 
     Ok(match tool {

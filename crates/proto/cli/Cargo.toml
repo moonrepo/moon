@@ -17,5 +17,6 @@ proto_error = { path = "../error" }
 proto_node = { path = "../node" }
 clap = { workspace = true, features = ["derive"] }
 env_logger = "0.10.0"
+log = "0.4.17"
 tokio = { workspace = true }
 

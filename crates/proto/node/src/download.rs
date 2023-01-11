@@ -2,7 +2,7 @@ use crate::platform::NodeArch;
 use crate::NodeLanguage;
 use log::debug;
 use proto_core::{
-    async_trait, download_from_url, Describable, Downloadable, ProtoError, Resolvable,
+    async_trait, color, download_from_url, Describable, Downloadable, ProtoError, Resolvable,
 };
 use std::env::consts;
 use std::path::{Path, PathBuf};
@@ -89,7 +89,7 @@ impl Downloadable<'_> for NodeLanguage {
             }
         };
 
-        debug!(target: self.get_log_target(), "Attempting to download tool from {}", from_url);
+        debug!(target: self.get_log_target(), "Attempting to download tool from {}", color::url(&from_url));
 
         download_from_url(&from_url, &to_file).await?;
 

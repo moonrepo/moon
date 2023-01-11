@@ -1,3 +1,4 @@
+use crate::color;
 use crate::helpers::get_root;
 use log::debug;
 use proto_error::ProtoError;
@@ -129,7 +130,7 @@ impl ShimBuilder {
                 .map_err(handle_error)?;
         }
 
-        debug!(target: "proto:shimmer", "Created shim at {}", shim_path.to_string_lossy());
+        debug!(target: "proto:shimmer", "Created shim at {}", color::path(&shim_path));
 
         Ok(shim_path)
     }

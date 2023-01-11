@@ -24,6 +24,7 @@ default-members = ["crates/cli"]
 [workspace.dependencies]
 cached = "0.40.0"
 clap = "4.0.23"
+console = "0.15.2"
 criterion = { version = "0.4.0", features = ["async_tokio"] }
 lazy_static = "1.4.0"
 petgraph = { version = "0.6.2", features = ["serde-1"] }

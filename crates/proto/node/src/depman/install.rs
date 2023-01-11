@@ -1,6 +1,6 @@
 use crate::{depman::NodeDependencyManager, NodeDependencyManagerType};
 use log::debug;
-use proto_core::{async_trait, untar, Describable, Installable, ProtoError, Resolvable};
+use proto_core::{async_trait, color, untar, Describable, Installable, ProtoError, Resolvable};
 use std::path::{Path, PathBuf};
 
 #[async_trait]
@@ -26,8 +26,8 @@ impl Installable<'_> for NodeDependencyManager {
         debug!(
             target: self.get_log_target(),
             "Attempting to install {} to {}",
-            download_path.to_string_lossy(),
-            install_dir.to_string_lossy(),
+            color::path(&download_path),
+            color::path(&install_dir),
         );
 
         untar(download_path, install_dir, Some(&prefix))?;

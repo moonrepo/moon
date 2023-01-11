@@ -89,7 +89,7 @@ impl Resolvable<'_> for NodeDependencyManager {
 
         debug!(
             target: self.get_log_target(),
-            "Resolving a semantic version for {}",
+            "Resolving a semantic version for \"{}\"",
             initial_version,
         );
 

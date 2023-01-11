@@ -1,5 +1,8 @@
+mod commands;
+
 use clap::{Parser, Subcommand};
 use proto::ToolType;
+use std::{env, process::exit};
 
 #[derive(Debug, Parser)]
 #[command(
@@ -14,7 +17,7 @@ use proto::ToolType;
     rename_all = "camelCase")]
 struct App {
     #[command(subcommand)]
-    command: Option<Commands>,
+    command: Commands,
 }
 
 #[derive(Debug, Subcommand)]
@@ -31,7 +34,20 @@ enum Commands {
 
 #[tokio::main]
 async fn main() {
+    if env::var("RUST_LOG").is_err() {
+        env::set_var("RUST_LOG", "proto=debug");
+    }
+
+    env_logger::builder().format_timestamp(None).init();
+
     let app = App::parse();
 
-    dbg!(&app);
+    let result = match app.command {
+        Commands::Install { tool, semver } => commands::install::install(tool, semver).await,
+    };
+
+    if let Err(error) = result {
+        eprintln!("{}", error);
+        exit(1);
+    }
 }

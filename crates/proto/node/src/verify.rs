@@ -1,8 +1,8 @@
 use crate::NodeLanguage;
 use log::debug;
 use proto_core::{
-    async_trait, download_from_url, get_sha256_hash_of_file, Describable, ProtoError, Resolvable,
-    Verifiable,
+    async_trait, color, download_from_url, get_sha256_hash_of_file, Describable, ProtoError,
+    Resolvable, Verifiable,
 };
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -33,7 +33,7 @@ impl Verifiable<'_> for NodeLanguage {
             None => format!("https://nodejs.org/dist/v{}/SHASUMS256.txt", version),
         };
 
-        debug!(target: self.get_log_target(), "Attempting to download checksum from {}", from_url);
+        debug!(target: self.get_log_target(), "Attempting to download checksum from {}", color::url(&from_url));
 
         download_from_url(&from_url, &to_file).await?;
 
@@ -50,8 +50,8 @@ impl Verifiable<'_> for NodeLanguage {
         debug!(
             target: self.get_log_target(),
             "Verifiying checksum of downloaded file {} using {}",
-            download_file.to_string_lossy(),
-            checksum_file.to_string_lossy(),
+            color::path(&download_file),
+            color::path(&checksum_file),
         );
 
         let checksum = get_sha256_hash_of_file(download_file)?;

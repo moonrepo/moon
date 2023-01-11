@@ -70,7 +70,7 @@ impl Resolvable<'_> for NodeLanguage {
 
         debug!(
             target: self.get_log_target(),
-            "Resolving a semantic version for {}",
+            "Resolving a semantic version for \"{}\"",
             initial_version,
         );
 

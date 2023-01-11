@@ -1,3 +1,4 @@
+use crate::color;
 use crate::resolver::Resolvable;
 use log::trace;
 use proto_error::ProtoError;
@@ -33,8 +34,8 @@ where
     trace!(
         target: "proto:downloader",
         "Downloading {} from {}",
-        dest_file.to_string_lossy(),
-        url
+        color::path(&dest_file),
+        color::url(&url)
     );
 
     // Ensure parent directories exist

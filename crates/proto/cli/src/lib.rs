@@ -1,5 +1,6 @@
 use clap::ValueEnum;
 use proto_core::Tool;
+use std::env;
 use std::str::FromStr;
 
 pub use proto_core::*;
@@ -49,4 +50,10 @@ pub fn create_tool(tool: &ToolType) -> Result<Box<dyn Tool<'static>>, ProtoError
             node::NodeDependencyManagerType::Yarn,
         )),
     })
+}
+
+pub fn enable_logging() {
+    if env::var("RUST_LOG").is_err() {
+        env::set_var("RUST_LOG", "proto=debug");
+    }
 }

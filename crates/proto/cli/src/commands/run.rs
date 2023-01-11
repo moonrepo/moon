@@ -127,6 +127,10 @@ pub async fn run(tool_type: ToolType, args: Vec<String>) -> Result<(), ProtoErro
     let status = Command::new(tool.get_bin_path()?)
         .args(&args)
         .env(env_var, tool.get_resolved_version())
+        .env(
+            format!("PROTO_{}_BIN", tool.get_id().to_uppercase()),
+            tool.get_bin_path()?.to_string_lossy().to_string(),
+        )
         .spawn()
         .map_err(|e| ProtoError::Message(e.to_string()))?
         .wait()

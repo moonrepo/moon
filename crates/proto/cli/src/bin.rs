@@ -3,7 +3,7 @@ mod config;
 
 use clap::{Parser, Subcommand};
 use proto::{color, ToolType};
-use std::{env, process::exit};
+use std::process::exit;
 
 #[derive(Debug, Parser)]
 #[command(
@@ -61,10 +61,6 @@ enum Commands {
 
 #[tokio::main]
 async fn main() {
-    if env::var("RUST_LOG").is_err() {
-        env::set_var("RUST_LOG", "proto=debug");
-    }
-
     env_logger::builder().format_timestamp(None).init();
 
     let app = App::parse();

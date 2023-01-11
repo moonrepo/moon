@@ -1,7 +1,9 @@
 use log::info;
-use proto::{create_tool, ProtoError, ToolType};
+use proto::{create_tool, enable_logging, ProtoError, ToolType};
 
 pub async fn install(tool_type: ToolType, version: Option<String>) -> Result<(), ProtoError> {
+    enable_logging();
+
     let version = version.unwrap_or_else(|| "latest".into());
     let mut tool = create_tool(&tool_type)?;
 

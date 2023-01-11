@@ -26,11 +26,7 @@ impl NpmTool {
     pub fn new(proto: &Proto, config: &NpmConfig) -> Result<NpmTool, ToolError> {
         Ok(NpmTool {
             config: config.to_owned(),
-            tool: NodeDependencyManager::new(
-                proto,
-                proto_node::NodeDependencyManagerType::Npm,
-                Some(&config.version),
-            ),
+            tool: NodeDependencyManager::new(proto, proto_node::NodeDependencyManagerType::Npm),
         })
     }
 }

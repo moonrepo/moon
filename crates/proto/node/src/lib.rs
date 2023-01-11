@@ -19,18 +19,18 @@ pub struct NodeLanguage {
     pub log_target: String,
     pub shim_path: Option<PathBuf>,
     pub temp_dir: PathBuf,
-    pub version: String,
+    pub version: Option<String>,
 }
 
 impl NodeLanguage {
-    pub fn new(proto: &Proto, version: Option<&str>) -> Self {
+    pub fn new(proto: &Proto) -> Self {
         NodeLanguage {
             base_dir: proto.tools_dir.join("node"),
             bin_path: None,
             log_target: "proto:tool:node".into(),
             shim_path: None,
             temp_dir: proto.temp_dir.join("node"),
-            version: version.unwrap_or("latest").into(),
+            version: None,
         }
     }
 }

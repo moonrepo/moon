@@ -23,7 +23,10 @@ struct NodeDistVersion {
 #[async_trait]
 impl Resolvable<'_> for NodeLanguage {
     fn get_resolved_version(&self) -> &str {
-        &self.version
+        match self.version.as_ref() {
+            Some(version) => version,
+            None => "latest",
+        }
     }
 
     async fn load_manifest(&self) -> Result<VersionManifest, ProtoError> {
@@ -66,6 +69,10 @@ impl Resolvable<'_> for NodeLanguage {
     }
 
     async fn resolve_version(&mut self, initial_version: &str) -> Result<String, ProtoError> {
+        if let Some(version) = &self.version {
+            return Ok(version.to_owned());
+        }
+
         let initial_version = initial_version.to_lowercase();
 
         debug!(
@@ -101,7 +108,7 @@ impl Resolvable<'_> for NodeLanguage {
 
         debug!(target: self.get_log_target(), "Resolved to {}", version);
 
-        self.version = version.clone();
+        self.version = Some(version.clone());
 
         Ok(version)
     }

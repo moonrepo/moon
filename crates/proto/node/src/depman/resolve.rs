@@ -42,7 +42,10 @@ struct NDMManifest {
 #[async_trait]
 impl Resolvable<'_> for NodeDependencyManager {
     fn get_resolved_version(&self) -> &str {
-        &self.version
+        match self.version.as_ref() {
+            Some(version) => version,
+            None => "latest",
+        }
     }
 
     async fn load_manifest(&self) -> Result<VersionManifest, ProtoError> {
@@ -69,6 +72,10 @@ impl Resolvable<'_> for NodeDependencyManager {
     }
 
     async fn resolve_version(&mut self, initial_version: &str) -> Result<String, ProtoError> {
+        if let Some(version) = &self.version {
+            return Ok(version.to_owned());
+        }
+
         let mut initial_version = remove_v_prefix(initial_version);
 
         // Yarn is installed through npm, but only v1 exists in the npm registry,
@@ -98,7 +105,7 @@ impl Resolvable<'_> for NodeDependencyManager {
 
         debug!(target: self.get_log_target(), "Resolved to {}", version);
 
-        self.version = version.clone();
+        self.version = Some(version.clone());
 
         // Extract dist information for use in downloading and verifying
         // self.dist = Some(

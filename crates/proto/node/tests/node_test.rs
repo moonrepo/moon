@@ -8,7 +8,7 @@ use std::fs;
 async fn downloads_verifies_installs_tool() {
     let fixture = assert_fs::TempDir::new().unwrap();
     let proto = Proto::from(fixture.path());
-    let mut tool = NodeLanguage::new(&proto, Some("18.0.0"));
+    let mut tool = NodeLanguage::new(&proto);
 
     tool.setup("18.0.0").await.unwrap();
 
@@ -33,7 +33,7 @@ mod detector {
     async fn doesnt_match_if_no_files() {
         let fixture = assert_fs::TempDir::new().unwrap();
         let proto = Proto::from(fixture.path());
-        let tool = NodeLanguage::new(&proto, Some("18.0.0"));
+        let tool = NodeLanguage::new(&proto);
 
         assert_eq!(
             tool.detect_version_from(fixture.path()).await.unwrap(),
@@ -45,7 +45,7 @@ mod detector {
     async fn detects_nvm() {
         let fixture = assert_fs::TempDir::new().unwrap();
         let proto = Proto::from(fixture.path());
-        let tool = NodeLanguage::new(&proto, Some("18.0.0"));
+        let tool = NodeLanguage::new(&proto);
 
         fixture.child(".nvmrc").write_str("1.2.3").unwrap();
 
@@ -59,7 +59,7 @@ mod detector {
     async fn detects_nodenv() {
         let fixture = assert_fs::TempDir::new().unwrap();
         let proto = Proto::from(fixture.path());
-        let tool = NodeLanguage::new(&proto, Some("18.0.0"));
+        let tool = NodeLanguage::new(&proto);
 
         fixture.child(".node-version").write_str("4.5.6\n").unwrap();
 
@@ -78,7 +78,7 @@ mod downloader {
     async fn sets_path_to_temp() {
         let fixture = assert_fs::TempDir::new().unwrap();
         let proto = Proto::from(fixture.path());
-        let tool = NodeLanguage::new(&proto, Some("18.0.0"));
+        let tool = NodeLanguage::new(&proto);
 
         assert_eq!(
             tool.get_download_path().unwrap(),
@@ -92,7 +92,7 @@ mod downloader {
     #[tokio::test]
     async fn downloads_to_temp() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let tool = NodeLanguage::new(&Proto::from(fixture.path()), Some("18.0.0"));
+        let tool = NodeLanguage::new(&Proto::from(fixture.path()));
 
         let to_file = tool.get_download_path().unwrap();
 
@@ -106,7 +106,7 @@ mod downloader {
     #[tokio::test]
     async fn doesnt_download_if_file_exists() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let tool = NodeLanguage::new(&Proto::from(fixture.path()), Some("18.0.0"));
+        let tool = NodeLanguage::new(&Proto::from(fixture.path()));
 
         let to_file = tool.get_download_path().unwrap();
 
@@ -122,7 +122,7 @@ mod installer {
     async fn sets_dir_to_tools() {
         let fixture = assert_fs::TempDir::new().unwrap();
         let proto = Proto::from(fixture.path());
-        let tool = NodeLanguage::new(&proto, Some("18.0.0"));
+        let tool = NodeLanguage::new(&proto);
 
         assert_eq!(
             tool.get_install_dir().unwrap(),
@@ -134,7 +134,7 @@ mod installer {
     #[should_panic(expected = "InstallMissingDownload(\"Node.js\")")]
     async fn errors_for_missing_download() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let tool = NodeLanguage::new(&Proto::from(fixture.path()), Some("18.0.0"));
+        let tool = NodeLanguage::new(&Proto::from(fixture.path()));
 
         let dir = tool.get_install_dir().unwrap();
 
@@ -146,7 +146,7 @@ mod installer {
     #[tokio::test]
     async fn doesnt_install_if_dir_exists() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let tool = NodeLanguage::new(&Proto::from(fixture.path()), Some("18.0.0"));
+        let tool = NodeLanguage::new(&Proto::from(fixture.path()));
 
         let dir = tool.get_install_dir().unwrap();
 
@@ -165,7 +165,7 @@ mod resolver {
     #[tokio::test]
     async fn updates_struct_version() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let mut tool = NodeLanguage::new(&Proto::from(fixture.path()), None);
+        let mut tool = NodeLanguage::new(&Proto::from(fixture.path()));
 
         assert_ne!(tool.resolve_version("node").await.unwrap(), "node");
         assert_ne!(tool.get_resolved_version(), "node");
@@ -174,7 +174,7 @@ mod resolver {
     #[tokio::test]
     async fn resolve_latest() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let mut tool = NodeLanguage::new(&Proto::from(fixture.path()), None);
+        let mut tool = NodeLanguage::new(&Proto::from(fixture.path()));
 
         assert_ne!(tool.resolve_version("latest").await.unwrap(), "latest");
     }
@@ -182,7 +182,7 @@ mod resolver {
     #[tokio::test]
     async fn resolve_stable() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let mut tool = NodeLanguage::new(&Proto::from(fixture.path()), None);
+        let mut tool = NodeLanguage::new(&Proto::from(fixture.path()));
 
         assert_ne!(tool.resolve_version("stable").await.unwrap(), "stable");
     }
@@ -190,7 +190,7 @@ mod resolver {
     #[tokio::test]
     async fn resolve_lts_wild() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let mut tool = NodeLanguage::new(&Proto::from(fixture.path()), None);
+        let mut tool = NodeLanguage::new(&Proto::from(fixture.path()));
 
         assert_ne!(tool.resolve_version("lts-*").await.unwrap(), "lts-*");
     }
@@ -198,7 +198,7 @@ mod resolver {
     #[tokio::test]
     async fn resolve_lts_dash() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let mut tool = NodeLanguage::new(&Proto::from(fixture.path()), None);
+        let mut tool = NodeLanguage::new(&Proto::from(fixture.path()));
 
         assert_ne!(
             tool.resolve_version("lts-gallium").await.unwrap(),
@@ -209,7 +209,7 @@ mod resolver {
     #[tokio::test]
     async fn resolve_lts_slash() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let mut tool = NodeLanguage::new(&Proto::from(fixture.path()), None);
+        let mut tool = NodeLanguage::new(&Proto::from(fixture.path()));
 
         assert_ne!(
             tool.resolve_version("lts/gallium").await.unwrap(),
@@ -220,7 +220,7 @@ mod resolver {
     #[tokio::test]
     async fn resolve_alias() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let mut tool = NodeLanguage::new(&Proto::from(fixture.path()), None);
+        let mut tool = NodeLanguage::new(&Proto::from(fixture.path()));
 
         assert_ne!(tool.resolve_version("Gallium").await.unwrap(), "Gallium");
     }
@@ -228,7 +228,7 @@ mod resolver {
     #[tokio::test]
     async fn resolve_version() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let mut tool = NodeLanguage::new(&Proto::from(fixture.path()), None);
+        let mut tool = NodeLanguage::new(&Proto::from(fixture.path()));
 
         assert_eq!(tool.resolve_version("18.0.0").await.unwrap(), "18.0.0");
     }
@@ -236,7 +236,7 @@ mod resolver {
     #[tokio::test]
     async fn resolve_partial_version() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let mut tool = NodeLanguage::new(&Proto::from(fixture.path()), None);
+        let mut tool = NodeLanguage::new(&Proto::from(fixture.path()));
 
         assert_eq!(tool.resolve_version("10.1").await.unwrap(), "10.1.0");
     }
@@ -244,7 +244,7 @@ mod resolver {
     #[tokio::test]
     async fn resolve_version_with_prefix() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let mut tool = NodeLanguage::new(&Proto::from(fixture.path()), None);
+        let mut tool = NodeLanguage::new(&Proto::from(fixture.path()));
 
         assert_eq!(tool.resolve_version("v18.0.0").await.unwrap(), "18.0.0");
     }
@@ -253,7 +253,7 @@ mod resolver {
     #[should_panic(expected = "VersionUnknownAlias(\"unknown\")")]
     async fn errors_invalid_lts() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let mut tool = NodeLanguage::new(&Proto::from(fixture.path()), None);
+        let mut tool = NodeLanguage::new(&Proto::from(fixture.path()));
 
         tool.resolve_version("lts-unknown").await.unwrap();
     }
@@ -262,7 +262,7 @@ mod resolver {
     #[should_panic(expected = "VersionUnknownAlias(\"unknown\")")]
     async fn errors_invalid_alias() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let mut tool = NodeLanguage::new(&Proto::from(fixture.path()), None);
+        let mut tool = NodeLanguage::new(&Proto::from(fixture.path()));
 
         tool.resolve_version("unknown").await.unwrap();
     }
@@ -271,7 +271,7 @@ mod resolver {
     #[should_panic(expected = "VersionResolveFailed(\"99.99.99\")")]
     async fn errors_invalid_version() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let mut tool = NodeLanguage::new(&Proto::from(fixture.path()), None);
+        let mut tool = NodeLanguage::new(&Proto::from(fixture.path()));
 
         tool.resolve_version("99.99.99").await.unwrap();
     }
@@ -284,7 +284,7 @@ mod verifier {
     async fn sets_path_to_temp() {
         let fixture = assert_fs::TempDir::new().unwrap();
         let proto = Proto::from(fixture.path());
-        let tool = NodeLanguage::new(&proto, Some("18.0.0"));
+        let tool = NodeLanguage::new(&proto);
 
         assert_eq!(
             tool.get_checksum_path().unwrap(),
@@ -295,7 +295,7 @@ mod verifier {
     #[tokio::test]
     async fn downloads_to_temp() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let tool = NodeLanguage::new(&Proto::from(fixture.path()), Some("18.0.0"));
+        let tool = NodeLanguage::new(&Proto::from(fixture.path()));
         let to_file = tool.get_checksum_path().unwrap();
 
         assert!(!to_file.exists());
@@ -308,7 +308,7 @@ mod verifier {
     #[tokio::test]
     async fn doesnt_download_if_file_exists() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let tool = NodeLanguage::new(&Proto::from(fixture.path()), Some("18.0.0"));
+        let tool = NodeLanguage::new(&Proto::from(fixture.path()));
 
         let to_file = tool.get_checksum_path().unwrap();
 
@@ -320,7 +320,7 @@ mod verifier {
     #[should_panic(expected = "VerifyInvalidChecksum")]
     async fn errors_for_checksum_mismatch() {
         let fixture = assert_fs::TempDir::new().unwrap();
-        let tool = NodeLanguage::new(&Proto::from(fixture.path()), Some("18.0.0"));
+        let tool = NodeLanguage::new(&Proto::from(fixture.path()));
         let dl_path = tool.get_download_path().unwrap();
         let cs_path = tool.get_checksum_path().unwrap();
 

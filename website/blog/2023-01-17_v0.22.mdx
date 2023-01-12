@@ -50,6 +50,18 @@ into the local cache. Depending on how many projects are in your workspace, you 
 improvements on subsequent runs as we're no longer re-building the project graph over and over
 everytime the `moon` binary is ran.
 
+## Breaking changes
+
+### Renamed events
+
+Because of the runner -> pipeline changes above, the `runner.*` [webhook](/docs/guides/webhooks)
+events were renamed to `pipeline.*`.
+
+### Updated CLI options
+
+Renamed the `--upstream` option to `--remote`, to better align with git terminology, and removed the
+`--report` option from `moon check` and `moon run` commands. Reports are now always created.
+
 ## Other changes
 
 View the
@@ -59,14 +71,11 @@ full list of changes.
 - Added Bun as a Tier 1 language (doesn't do much at the moment).
 - Added a [`versionConstraint` setting](/docs/config/workspace#versionconstraint) in
   `.moon/workspace.yml` that enforces a requirement on the running moon binary.
-- Renamed the `--upstream` option to `--remote`.
 - Updated the [`project` fields](/docs/config/project#project) in `moon.yml` to be optional,
   excluding `description`.
-- Removed the `--report` option from `moon check` and `moon run` commands. Reports are now always
-  created.
 
 ## What's next?
 
 Expect the following in the v0.23 release!
 
-- ???
+- Scope tasks defined in `.moon/project.yml` to a project language or type.

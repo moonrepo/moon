@@ -4,6 +4,7 @@
 
 #### 💥 Breaking
 
+- Renamed the `runner.*` webhook events to `pipeline.*`.
 - Renamed the `--upstream` option to `--remote`.
 - Removed the `--report` option from `moon check` and `moon run` commands. Reports are now always
   created.

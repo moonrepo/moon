@@ -92,7 +92,7 @@ impl Subscriber for WebhooksSubscriber {
         // For the first event, we want to ensure that the webhook URL is valid
         // by sending the request and checking for a failure. If failed,
         // we will disable subsequent requests from being called.
-        if matches!(event, Event::RunnerStarted { .. }) {
+        if matches!(event, Event::PipelineStarted { .. }) {
             let response = notify_webhook(self.url.to_owned(), body).await;
 
             if response.is_err() || !response.unwrap().status().is_success() {

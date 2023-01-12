@@ -2,7 +2,8 @@ use moon_action::{Action, ActionNode};
 use moon_cache::RunTargetState;
 use moon_platform_runtime::Runtime;
 use moon_project::Project;
-use moon_task::{Target, Task};
+use moon_target::Target;
+use moon_task::Task;
 use serde::Serialize;
 use std::{path::PathBuf, time::Duration};
 

@@ -6,7 +6,8 @@ use moon_config::{
 };
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_logger::{color, debug, trace, Logable};
-use moon_task::{FileGroup, Target, Task, TouchedFilePaths};
+use moon_target::Target;
+use moon_task::{FileGroup, Task, TouchedFilePaths};
 use moon_utils::path;
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};

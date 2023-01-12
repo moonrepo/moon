@@ -6,7 +6,7 @@ use moon_logger::{color, debug, warn};
 use moon_platform::Runtime;
 use moon_project::Project;
 use moon_runner::Runner;
-use moon_task::Target;
+use moon_target::Target;
 use moon_terminal::Checkpoint;
 use moon_workspace::Workspace;
 use std::sync::Arc;

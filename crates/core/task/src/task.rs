@@ -1,11 +1,11 @@
-use crate::errors::{TargetError, TaskError};
-use crate::target::Target;
+use crate::errors::TaskError;
 use crate::task_options::TaskOptions;
 use crate::types::TouchedFilePaths;
 use moon_config::{
     FileGlob, FilePath, InputValue, PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy,
 };
 use moon_logger::{color, debug, trace, Logable};
+use moon_target::{Target, TargetError};
 use moon_utils::{glob, string_vec};
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};

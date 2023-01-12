@@ -8,7 +8,7 @@ use moon_config::{
 };
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
-use moon_task::Target;
+use moon_target::Target;
 use moon_test_utils::{create_sandbox_with_config, get_tasks_fixture_configs, Sandbox};
 use moon_utils::{glob, string_vec};
 use rustc_hash::{FxHashMap, FxHashSet};

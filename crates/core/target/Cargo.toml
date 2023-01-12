@@ -1,0 +1,9 @@
+[package]
+name = "moon_target"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_utils = { path = "../utils" }
+serde = { workspace = true }
+thiserror = { workspace = true }

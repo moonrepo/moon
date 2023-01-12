@@ -1,6 +1,6 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use moon::{build_dep_graph, generate_project_graph, load_workspace_from};
-use moon_task::Target;
+use moon_target::Target;
 use moon_test_utils::{create_sandbox_with_config, get_cases_fixture_configs};
 
 pub fn build_benchmark(c: &mut Criterion) {

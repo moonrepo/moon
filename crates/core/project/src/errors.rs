@@ -1,6 +1,7 @@
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_error::MoonError;
-use moon_task::{TargetError, TaskError};
+use moon_target::TargetError;
+use moon_task::TaskError;
 use std::path::PathBuf;
 use thiserror::Error;
 

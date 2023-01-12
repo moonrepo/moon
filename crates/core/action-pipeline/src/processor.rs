@@ -8,7 +8,7 @@ use moon_action_context::ActionContext;
 use moon_emitter::{Emitter, Event};
 use moon_logger::{color, trace};
 use moon_project_graph::ProjectGraph;
-use moon_task::Target;
+use moon_target::Target;
 use moon_workspace::Workspace;
 use std::sync::Arc;
 use tokio::sync::RwLock;

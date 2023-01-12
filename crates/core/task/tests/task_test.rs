@@ -1,5 +1,6 @@
 use moon_config::{TaskCommandArgs, TaskConfig, TaskOptionEnvFileConfig, TaskOptionsConfig};
-use moon_task::{Target, Task, TaskOptions};
+use moon_target::Target;
+use moon_task::{Task, TaskOptions};
 use moon_test_utils::{create_sandbox, get_fixtures_path};
 use moon_utils::{glob, string_vec};
 use rustc_hash::FxHashSet;

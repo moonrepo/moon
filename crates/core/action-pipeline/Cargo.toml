@@ -24,7 +24,7 @@ moon_platform = { path = "../platform" }
 moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
 moon_runner = { path = "../runner" }
-moon_task = { path = "../task" }
+moon_target = { path = "../target" }
 moon_terminal = { path = "../terminal" }
 moon_tool = { path = "../tool" }
 moon_utils = { path = "../utils" }

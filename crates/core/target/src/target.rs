@@ -1,5 +1,4 @@
 use crate::errors::TargetError;
-use moon_config::{ProjectID, TargetID, TaskID};
 use moon_utils::regex::TARGET_PATTERN;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
@@ -7,10 +6,10 @@ use std::cmp::Ordering;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, PartialOrd)]
 pub enum TargetProjectScope {
-    All,           // :task
-    Deps,          // ^:task
-    Id(ProjectID), // project:task
-    OwnSelf,       // ~:task
+    All,        // :task
+    Deps,       // ^:task
+    Id(String), // project:task
+    OwnSelf,    // ~:task
 }
 
 // impl fmt::Display for TargetProjectScope {
@@ -70,7 +69,7 @@ impl Target {
         })
     }
 
-    pub fn format(project_id: &str, task_id: &str) -> Result<TargetID, TargetError> {
+    pub fn format(project_id: &str, task_id: &str) -> Result<String, TargetError> {
         Ok(format!("{}:{}", project_id, task_id))
     }
 
@@ -120,7 +119,7 @@ impl Target {
         Err(error)
     }
 
-    pub fn ids(&self) -> Result<(ProjectID, TaskID), TargetError> {
+    pub fn ids(&self) -> Result<(String, String), TargetError> {
         let project_id = match &self.project_id {
             Some(id) => id,
             None => match &self.project {

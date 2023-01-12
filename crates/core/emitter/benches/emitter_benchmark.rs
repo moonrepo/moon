@@ -29,17 +29,17 @@ pub fn emit_benchmark(c: &mut Criterion) {
             let emitter = Emitter::new(Arc::new(RwLock::new(workspace)));
 
             emitter
-                .emit(Event::RunnerStarted { actions_count: 1 })
+                .emit(Event::PipelineStarted { actions_count: 1 })
                 .await
                 .unwrap();
 
             emitter
-                .emit(Event::RunnerStarted { actions_count: 1 })
+                .emit(Event::PipelineStarted { actions_count: 1 })
                 .await
                 .unwrap();
 
             emitter
-                .emit(Event::RunnerStarted { actions_count: 1 })
+                .emit(Event::PipelineStarted { actions_count: 1 })
                 .await
                 .unwrap();
 

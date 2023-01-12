@@ -1,6 +1,6 @@
 import type { Duration, Runtime } from './common';
+import type { Action, ActionNode } from './pipeline';
 import type { Project, Task } from './project';
-import type { Action, ActionNode } from './runner';
 
 export interface ProviderEnvironment {
 	baseBranch: string | null;
@@ -26,11 +26,11 @@ export type EventType =
 	| 'action.started'
 	| 'dependencies.installed'
 	| 'dependencies.installing'
+	| 'pipeline.aborted'
+	| 'pipeline.finished'
+	| 'pipeline.started'
 	| 'project.synced'
 	| 'project.syncing'
-	| 'runner.aborted'
-	| 'runner.finished'
-	| 'runner.started'
 	| 'target-output.archived'
 	| 'target-output.archiving'
 	| 'target-output.cache-check'
@@ -92,26 +92,26 @@ export interface EventProjectSynced {
 
 export type PayloadProjectSynced = WebhookPayload<'project.synced', EventProjectSynced>;
 
-export interface EventRunnerAborted {
+export interface EventPipelineAborted {
 	error: string;
 }
 
-export type PayloadRunnerAborted = WebhookPayload<'runner.aborted', EventRunnerAborted>;
+export type PayloadPipelineAborted = WebhookPayload<'pipeline.aborted', EventPipelineAborted>;
 
-export interface EventRunnerStarted {
+export interface EventPipelineStarted {
 	actionsCount: number;
 }
 
-export type PayloadRunnerStarted = WebhookPayload<'runner.started', EventRunnerStarted>;
+export type PayloadPipelineStarted = WebhookPayload<'pipeline.started', EventPipelineStarted>;
 
-export interface EventRunnerFinished {
+export interface EventPipelineFinished {
 	duration: Duration;
 	cachedCount: number;
 	failedCount: number;
 	passedCount: number;
 }
 
-export type PayloadRunnerFinished = WebhookPayload<'runner.finished', EventRunnerFinished>;
+export type PayloadPipelineFinished = WebhookPayload<'pipeline.finished', EventPipelineFinished>;
 
 export interface EventTargetRunning {
 	target: string;

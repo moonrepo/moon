@@ -62,23 +62,23 @@ otherwise it contains these fields.
 
 ## Events
 
-### Runner
+### Pipeline
 
 Runs actions within moon using a robust dependency graph. Is triggered when using
 [`moon run`](../commands/run).
 
-### `runner.started`
+### `pipeline.started`
 
-<HeadingApiLink to="/api/types#PayloadRunnerStarted" />
+<HeadingApiLink to="/api/types#PayloadPipelineStarted" />
 
-Triggered when the runner has been created but before actions have started to run.
+Triggered when the pipeline has been created but before actions have started to run.
 
-This event includes the number of actions registered within the runner, but does not provide
+This event includes the number of actions registered within the pipeline, but does not provide
 detailed information about the actions. Use the [`action.*`](#actionstarted) events for this.
 
 ```json
 {
-  "type": "runner.started",
+  "type": "pipeline.started",
   "createdAt": "...",
   "environment": "...",
   "event": {
@@ -88,20 +88,20 @@ detailed information about the actions. Use the [`action.*`](#actionstarted) eve
 }
 ```
 
-### `runner.finished`
+### `pipeline.finished`
 
-<HeadingApiLink to="/api/types#PayloadRunnerFinished" />
+<HeadingApiLink to="/api/types#PayloadPipelineFinished" />
 
-Triggered when the runner has finished running all actions, with aggregated counts based on final
+Triggered when the pipeline has finished running all actions, with aggregated counts based on final
 status.
 
-This event is _not_ triggered if the runner crashes (this does not include actions that have failed,
-as those are legitimate runs). Use the [`runner.aborted`](#runneraborted) event if you want to also
-catch crashes.
+This event is _not_ triggered if the pipeline crashes (this does not include actions that have
+failed, as those are legitimate runs). Use the [`pipeline.aborted`](#pipelineaborted) event if you
+want to also catch crashes.
 
 ```json
 {
-  "type": "runner.finished",
+  "type": "pipeline.finished",
   "createdAt": "...",
   "environment": "...",
   "event": {
@@ -117,16 +117,16 @@ catch crashes.
 }
 ```
 
-### `runner.aborted`
+### `pipeline.aborted`
 
-<HeadingApiLink to="/api/types#PayloadRunnerAborted" />
+<HeadingApiLink to="/api/types#PayloadPipelineAborted" />
 
-Triggered when the runner has crashed for unknown reasons, or had to abort as a result of a critical
-action failing.
+Triggered when the pipeline has crashed for unknown reasons, or had to abort as a result of a
+critical action failing.
 
 ```json
 {
-  "type": "runner.aborted",
+  "type": "pipeline.aborted",
   "createdAt": "...",
   "environment": "...",
   "event": {
@@ -138,13 +138,13 @@ action failing.
 
 ### Actions
 
-Actions are "jobs" within the runner that are executed topologically.
+Actions are "jobs" within the pipeline that are executed topologically.
 
 ### `action.started`
 
 <HeadingApiLink to="/api/types#PayloadActionStarted" />
 
-Triggered when an action within the runner has started to run.
+Triggered when an action within the pipeline has started to run.
 
 ```json
 {
@@ -182,7 +182,7 @@ Triggered when an action within the runner has started to run.
 
 <HeadingApiLink to="/api/types#PayloadActionFinished" />
 
-Triggered when an action within the runner has finished running, either with a success or failure.
+Triggered when an action within the pipeline has finished running, either with a success or failure.
 If the action failed, the `error` field will be set with the error message.
 
 ```json
@@ -428,7 +428,7 @@ target's hashed contents.
 
 <HeadingApiLink to="/api/types#PayloadTargetOutputCacheCheck" />
 
-Triggered when the runner is checking for a cached archive of the currently running target.
+Triggered when the pipeline is checking for a cached archive of the currently running target.
 
 ```json
 {

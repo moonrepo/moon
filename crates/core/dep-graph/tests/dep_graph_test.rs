@@ -4,7 +4,7 @@ use moon_config::{
 };
 use moon_dep_graph::BatchedTopoSort;
 use moon_project_graph::ProjectGraph;
-use moon_task::Target;
+use moon_target::Target;
 use moon_test_utils::{assert_snapshot, create_sandbox_with_config, Sandbox};
 use moon_utils::string_vec;
 use moon_workspace::Workspace;

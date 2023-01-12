@@ -9,7 +9,8 @@ use moon_logger::{color, debug};
 use moon_pipeline_provider::{get_pipeline_output, PipelineOutput};
 use moon_project::ProjectError;
 use moon_project_graph::ProjectGraph;
-use moon_task::{Target, TouchedFilePaths};
+use moon_target::Target;
+use moon_task::TouchedFilePaths;
 use moon_terminal::safe_exit;
 use moon_workspace::{Workspace, WorkspaceError};
 

@@ -11,9 +11,8 @@ use moon_hasher::{convert_paths_to_strings, HashSet};
 use moon_logger::{color, debug, warn};
 use moon_platform_runtime::Runtime;
 use moon_project::Project;
-use moon_task::{
-    Target, TargetError, TargetProjectScope, Task, TaskError, TaskOptionAffectedFiles,
-};
+use moon_target::{Target, TargetError, TargetProjectScope};
+use moon_task::{Task, TaskError, TaskOptionAffectedFiles};
 use moon_terminal::{label_checkpoint, Checkpoint};
 use moon_utils::{
     is_ci, is_test_env, path,

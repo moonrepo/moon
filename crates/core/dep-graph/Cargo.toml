@@ -17,6 +17,7 @@ moon_logger = { path = "../logger" }
 moon_platform = { path = "../platform" }
 moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
+moon_target = { path = "../target" }
 moon_task = { path = "../task" }
 petgraph = { version = "0.6.2", features = ["serde"] }
 rustc-hash = { workspace = true }

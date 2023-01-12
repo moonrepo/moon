@@ -14,6 +14,7 @@ moon_node_lang = { path = "../lang" }
 moon_node_tool = { path = "../tool" }
 moon_platform = { path = "../../core/platform" }
 moon_project = { path = "../../core/project" }
+moon_target = { path = "../../core/target" }
 moon_task = { path = "../../core/task" }
 moon_terminal = { path = "../../core/terminal" }
 moon_tool = { path = "../../core/tool" }

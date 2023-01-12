@@ -7,6 +7,7 @@ edition = "2021"
 moon_config = { path = "../config" }
 moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
+moon_target = { path = "../target" }
 moon_utils = { path = "../utils" }
 common-path = "1.0.0"
 rustc-hash = { workspace = true }

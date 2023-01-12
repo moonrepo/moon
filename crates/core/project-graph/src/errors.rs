@@ -1,6 +1,7 @@
 use moon_error::MoonError;
 use moon_project::ProjectError;
-use moon_task::{FileGroupError, TargetError, TaskError};
+use moon_target::TargetError;
+use moon_task::{FileGroupError, TaskError};
 use moon_utils::glob::GlobError;
 use thiserror::Error;
 

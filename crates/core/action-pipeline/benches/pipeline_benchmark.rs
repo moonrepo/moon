@@ -3,7 +3,7 @@ use moon::{build_dep_graph, generate_project_graph, load_workspace_from};
 use moon_action_pipeline::Pipeline;
 use moon_dep_graph::DepGraph;
 use moon_project_graph::ProjectGraph;
-use moon_task::Target;
+use moon_target::Target;
 use moon_test_utils::{create_sandbox_with_config, get_cases_fixture_configs};
 use moon_workspace::Workspace;
 

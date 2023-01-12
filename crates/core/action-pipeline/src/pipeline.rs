@@ -96,7 +96,7 @@ impl Pipeline {
         );
 
         local_emitter
-            .emit(Event::RunnerStarted {
+            .emit(Event::PipelineStarted {
                 actions_count: total_actions_count,
             })
             .await?;
@@ -174,7 +174,7 @@ impl Pipeline {
                                 result.error.unwrap_or_else(|| "Unknown error!".into());
 
                             local_emitter
-                                .emit(Event::RunnerAborted {
+                                .emit(Event::PipelineAborted {
                                     error: abort_error.clone(),
                                 })
                                 .await?;
@@ -203,7 +203,7 @@ impl Pipeline {
         );
 
         local_emitter
-            .emit(Event::RunnerFinished {
+            .emit(Event::PipelineFinished {
                 duration: &duration,
                 cached_count,
                 failed_count,

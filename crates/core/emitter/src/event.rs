@@ -44,15 +44,15 @@ pub enum Event<'e> {
     },
 
     // Runner
-    RunnerAborted {
+    PipelineAborted {
         error: String,
     },
     #[serde(rename_all = "camelCase")]
-    RunnerStarted {
+    PipelineStarted {
         actions_count: usize,
     },
     #[serde(rename_all = "camelCase")]
-    RunnerFinished {
+    PipelineFinished {
         duration: &'e Duration,
         cached_count: usize,
         failed_count: usize,
@@ -123,9 +123,9 @@ impl<'e> Event<'e> {
             Event::DependenciesInstalled { .. } => "dependencies.installed",
             Event::ProjectSyncing { .. } => "project.syncing",
             Event::ProjectSynced { .. } => "project.synced",
-            Event::RunnerAborted { .. } => "runner.aborted",
-            Event::RunnerStarted { .. } => "runner.started",
-            Event::RunnerFinished { .. } => "runner.finished",
+            Event::PipelineAborted { .. } => "pipeline.aborted",
+            Event::PipelineStarted { .. } => "pipeline.started",
+            Event::PipelineFinished { .. } => "pipeline.finished",
             Event::TargetRunning { .. } => "target.running",
             Event::TargetRan { .. } => "target.ran",
             Event::TargetOutputArchiving { .. } => "target-output.archiving",
@@ -141,7 +141,8 @@ impl<'e> Event<'e> {
     }
 
     pub fn is_end(&self) -> bool {
-        matches!(self, Event::RunnerAborted { .. }) || matches!(self, Event::RunnerFinished { .. })
+        matches!(self, Event::PipelineAborted { .. })
+            || matches!(self, Event::PipelineFinished { .. })
     }
 }
 

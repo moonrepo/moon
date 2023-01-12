@@ -30,7 +30,7 @@ export interface Action {
 	status: ActionStatus;
 }
 
-export interface RunnerContext {
+export interface ActionContext {
 	affectedOnly: boolean;
 	initialTargets: string[];
 	passthroughArgs: string[];
@@ -38,11 +38,12 @@ export interface RunnerContext {
 	profile: 'cpu' | 'heap' | null;
 	targetHashes: Record<string, string>;
 	touchedFiles: string[];
+	workspaceRoot: string;
 }
 
 export interface RunReport {
 	actions: Action[];
-	context: RunnerContext;
+	context: ActionContext;
 	duration: Duration;
 	estimatedSavings: Duration | null;
 	projectedDuration: Duration;

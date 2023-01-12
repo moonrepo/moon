@@ -37,11 +37,11 @@ pub struct NodeDependencyManager {
     pub shim_path: Option<PathBuf>,
     pub temp_dir: PathBuf,
     pub type_of: NodeDependencyManagerType,
-    pub version: String,
+    pub version: Option<String>,
 }
 
 impl NodeDependencyManager {
-    pub fn new(proto: &Proto, type_of: NodeDependencyManagerType, version: Option<&str>) -> Self {
+    pub fn new(proto: &Proto, type_of: NodeDependencyManagerType) -> Self {
         let package_name = type_of.get_package_name();
 
         NodeDependencyManager {
@@ -52,7 +52,7 @@ impl NodeDependencyManager {
             shim_path: None,
             temp_dir: proto.temp_dir.join(&package_name),
             type_of,
-            version: version.unwrap_or("latest").into(),
+            version: None,
             package_name,
         }
     }
@@ -65,6 +65,10 @@ impl NodeDependencyManager {
 }
 
 impl Describable<'_> for NodeDependencyManager {
+    fn get_id(&self) -> &str {
+        &self.package_name
+    }
+
     fn get_log_target(&self) -> &str {
         &self.log_target
     }

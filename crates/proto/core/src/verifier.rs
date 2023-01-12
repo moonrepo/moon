@@ -1,3 +1,4 @@
+use crate::color;
 use crate::downloader::Downloadable;
 use log::trace;
 use proto_error::ProtoError;
@@ -36,7 +37,7 @@ pub fn get_sha256_hash_of_file<P: AsRef<Path>>(path: P) -> Result<String, ProtoE
     trace!(
         target: "proto:verifier",
         "Calculating SHA256 checksum for file {}",
-        path.to_string_lossy()
+        color::path(path)
     );
 
     let mut file = File::open(path).map_err(handle_error)?;
@@ -49,7 +50,7 @@ pub fn get_sha256_hash_of_file<P: AsRef<Path>>(path: P) -> Result<String, ProtoE
     trace!(
         target: "proto:verifier",
         "Calculated hash {}",
-        hash
+        color::symbol(&hash)
     );
 
     Ok(hash)

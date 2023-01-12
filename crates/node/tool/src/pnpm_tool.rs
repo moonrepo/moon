@@ -26,14 +26,7 @@ impl PnpmTool {
     pub fn new(proto: &Proto, config: &Option<PnpmConfig>) -> Result<PnpmTool, ToolError> {
         Ok(PnpmTool {
             config: config.to_owned().unwrap_or_default(),
-            tool: NodeDependencyManager::new(
-                proto,
-                proto_node::NodeDependencyManagerType::Pnpm,
-                match &config {
-                    Some(cfg) => Some(&cfg.version),
-                    None => None,
-                },
-            ),
+            tool: NodeDependencyManager::new(proto, proto_node::NodeDependencyManagerType::Pnpm),
         })
     }
 }

@@ -26,14 +26,7 @@ impl YarnTool {
     pub fn new(proto: &Proto, config: &Option<YarnConfig>) -> Result<YarnTool, ToolError> {
         Ok(YarnTool {
             config: config.to_owned().unwrap_or_default(),
-            tool: NodeDependencyManager::new(
-                proto,
-                proto_node::NodeDependencyManagerType::Yarn,
-                match &config {
-                    Some(cfg) => Some(&cfg.version),
-                    None => None,
-                },
-            ),
+            tool: NodeDependencyManager::new(proto, proto_node::NodeDependencyManagerType::Yarn),
         })
     }
 

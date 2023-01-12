@@ -2251,6 +2251,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_target"
+version = "0.1.0"
+dependencies = [
+ "moon_utils",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "moon_task"
 version = "0.1.0"
 dependencies = [

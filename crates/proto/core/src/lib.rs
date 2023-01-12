@@ -1,3 +1,4 @@
+pub mod color;
 mod describer;
 mod detector;
 mod downloader;
@@ -21,6 +22,7 @@ pub use resolver::*;
 pub use shimmer::*;
 pub use verifier::*;
 
+use log::debug;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -68,6 +70,8 @@ pub trait Tool<'tool>:
     }
 
     async fn setup(&mut self, initial_version: &str) -> Result<bool, ProtoError> {
+        self.before_setup().await?;
+
         // Resolve a semantic version
         self.resolve_version(initial_version).await?;
 
@@ -91,6 +95,8 @@ pub trait Tool<'tool>:
         // Create shims after paths are found
         self.create_shims().await?;
 
+        self.after_setup().await?;
+
         Ok(installed)
     }
 
@@ -110,10 +116,21 @@ pub trait Tool<'tool>:
             };
 
             if bin_path.exists() {
+                debug!(
+                    target: self.get_log_target(),
+                    "Tool has already been installed at {}",
+                    color::path(&install_dir)
+                );
+
                 self.create_shims().await?;
 
                 return Ok(true);
             }
+        } else {
+            debug!(
+                target: self.get_log_target(),
+                "Tool has not been installed"
+            );
         }
 
         Ok(false)
@@ -124,6 +141,11 @@ pub trait Tool<'tool>:
     }
 
     async fn cleanup(&mut self) -> Result<(), ProtoError> {
+        debug!(
+            target: self.get_log_target(),
+            "Cleaning up temporary files and downloads"
+        );
+
         let download_path = self.get_download_path()?;
         let checksum_path = self.get_checksum_path()?;
 
@@ -143,14 +165,24 @@ pub trait Tool<'tool>:
     }
 
     async fn teardown(&mut self) -> Result<(), ProtoError> {
+        self.before_teardown().await?;
+
         self.cleanup().await?;
 
         let install_dir = self.get_install_dir()?;
 
         if install_dir.exists() {
+            debug!(
+                target: self.get_log_target(),
+                "Deleting install directory {}",
+                color::path(&install_dir)
+            );
+
             fs::remove_dir_all(&install_dir)
                 .map_err(|e| ProtoError::Fs(install_dir, e.to_string()))?;
         }
+
+        self.after_teardown().await?;
 
         Ok(())
     }

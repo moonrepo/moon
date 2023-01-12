@@ -1,3 +1,4 @@
+use crate::color;
 use flate2::read::GzDecoder;
 use log::trace;
 use proto_error::ProtoError;
@@ -33,8 +34,8 @@ pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(
     trace!(
         target: "proto:installer",
         "Unpacking tar archive {} to {}",
-        input_file.to_string_lossy(),
-        output_dir.to_string_lossy(),
+        color::path(input_file),
+        color::path(output_dir),
     );
 
     if !output_dir.exists() {
@@ -92,8 +93,8 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
     trace!(
         target: "proto:installer",
         "Unzipping zip archive {} to {}",
-        input_file.to_string_lossy(),
-        output_dir.to_string_lossy(),
+        color::path(input_file),
+        color::path(output_dir),
     );
 
     if !output_dir.exists() {

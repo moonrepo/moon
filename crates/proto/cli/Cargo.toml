@@ -1,0 +1,23 @@
+[package]
+name = "proto"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "proto"
+path = "src/lib.rs"
+
+[[bin]]
+name = "proto"
+path = "src/bin.rs"
+
+[dependencies]
+proto_core = { path = "../core" }
+proto_error = { path = "../error" }
+proto_node = { path = "../node" }
+clap = { workspace = true, features = ["derive"] }
+env_logger = "0.10.0"
+log = "0.4.17"
+rustc-hash = { workspace = true }
+tokio = { workspace = true }
+toml = "0.5.10"

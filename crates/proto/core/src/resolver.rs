@@ -1,3 +1,4 @@
+use crate::color;
 use crate::{get_temp_dir, is_version_alias, remove_v_prefix};
 use lenient_semver::Version;
 use log::trace;
@@ -104,7 +105,7 @@ where
                 trace!(
                     target: "proto:resolver",
                     "Loading versions manifest from locally cached {}",
-                    temp_file.to_string_lossy()
+                    color::path(&temp_file),
                 );
 
                 let contents = fs::read_to_string(&temp_file).map_err(handle_io_error)?;
@@ -119,7 +120,7 @@ where
     trace!(
         target: "proto:resolver",
         "Loading versions manifest from {}",
-        url
+        color::url(url),
     );
 
     let response = reqwest::get(url).await.map_err(handle_http_error)?;

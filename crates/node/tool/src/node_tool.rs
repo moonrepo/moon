@@ -170,7 +170,7 @@ impl Tool for NodeTool {
                 None => true,
             };
 
-            if setup {
+            if setup || !self.tool.get_install_dir()?.exists() {
                 print_checkpoint(format!("installing node v{}", version), Checkpoint::Setup);
 
                 if self.tool.setup(&version).await? {

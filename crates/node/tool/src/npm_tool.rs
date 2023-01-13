@@ -62,7 +62,7 @@ impl Tool for NpmTool {
         }
 
         if let Some(last) = last_versions.get("npm") {
-            if last == &self.config.version {
+            if last == &self.config.version && self.tool.get_install_dir()?.exists() {
                 return Ok(count);
             }
         }

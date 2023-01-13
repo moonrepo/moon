@@ -172,6 +172,9 @@ pub async fn run_cli() {
             MigrateCommands::FromPackageJson { id } => {
                 migrate::from_package_json(id, skip_touched_files_check).await
             }
+            MigrateCommands::FromTurborepo => {
+                migrate::from_turborepo(skip_touched_files_check).await
+            }
         },
         Commands::Node { command } => match command {
             NodeCommands::RunScript { name, project } => node::run_script(name, project).await,

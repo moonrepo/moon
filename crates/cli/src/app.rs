@@ -46,6 +46,12 @@ pub enum MigrateCommands {
         #[arg(help = "ID of project to migrate")]
         id: ProjectID,
     },
+
+    #[command(
+        name = "from-turborepo",
+        about = "Migrate `turbo.json` to moon configuration files."
+    )]
+    FromTurborepo,
 }
 
 #[derive(Debug, Subcommand)]

@@ -7,7 +7,7 @@ use moon_config::{ProjectConfig, RunnerConfig, TaskCommandArgs, TaskConfig};
 use moon_constants as constants;
 use moon_logger::{info, warn};
 use moon_terminal::safe_exit;
-use moon_utils::{json, yaml};
+use moon_utils::{fs, json, yaml};
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 
@@ -212,6 +212,8 @@ pub async fn from_turborepo(skip_touched_files_check: &bool) -> Result<(), AnyEr
             &project_config,
         )?;
     }
+
+    fs::remove_file(&turbo_file)?;
 
     Ok(())
 }

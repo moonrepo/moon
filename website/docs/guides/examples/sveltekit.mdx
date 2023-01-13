@@ -1,18 +1,18 @@
 ---
 title: SvelteKit example
-sidebar_label: Sveltekit
+sidebar_label: SvelteKit
 ---
 
 import AddDepsTabs from '@site/src/components/AddDepsTabs';
 import CreateDepTabs from '@site/src/components/CreateDepTabs';
 
-SvelteKit is built on Svelte, a UI framework that uses a compiler to let you write breathtakingly concise components that do minimal work in the browser, using languages you already know — HTML, CSS and JavaScript. It's a love letter to web development.
+[SvelteKit](https://kit.svelte.dev) is built on [Svelte](https://svelte.dev), a UI framework that uses a compiler to let you write breathtakingly concise components that do minimal work in the browser, using languages you already know — HTML, CSS and JavaScript. It's a love letter to web development.
 
 ```shell
 npm create svelte@latest my-app
 ```
 
-You will be prompted to choose between select templates, TypeScript, ESLint, Prettier, Playwright and Vitest among other options. Moon supports and has guides for many of these tools
+You will be prompted to choose between select templates, TypeScript, ESLint, Prettier, Playwright and Vitest among other options. moon supports and has guides for many of these tools
 
 > We highly suggest reading our documentation on [using Vite (and Vitest) with moon](./vite), [using ESLint with moon](./eslint) and [using Prettier with moon](./prettier) for a more holistic view.
 
@@ -21,14 +21,15 @@ You will be prompted to choose between select templates, TypeScript, ESLint, Pre
 Since SvelteKit is per-project, the associated moon tasks should be defined in each project's moon.yml file.
 
 ```yaml title="<project>/moon.yml"
-type: application
-language: typescript
+type: "application"
+language: "typescript"
 
 fileGroups:
     svelte:
         - "src/**/*"
         - "static/**/*"
         - "svelte.config.*"
+        - "vite.config.*"
 
 tasks:
     dev:
@@ -51,11 +52,11 @@ tasks:
     preview:
         command: "vite preview"
         local: true
+        deps:
+            - "build"
 
     test:
         command: "vitest"
-        inputs:
-            - "@globs(tests)"
 
     playwright:
         command: "playwright test"
@@ -70,7 +71,7 @@ moon run <project>:dev
 
 ### ESLint integration
 
-SvelteKit provides an option to setup ESLint along with your project, with Moon you can use a [global `lint` task](./eslint).
+SvelteKit provides an option to setup ESLint along with your project, with moon you can use a [global `lint` task](./eslint).
 
 We encourage using the global `lint` task for consistency across all projects within the repository. With this approach, the `eslint` command itself will be ran and the `svelte3` rules will still be used. Additionally, we suggest disabling the linter during the build process, but is not a requirement. As a potential alternative, add the `lint` task as a dependency for the `build` task.
 

@@ -1,8 +1,8 @@
 use moon::{generate_project_graph, load_workspace};
-use moon_config::{NodePackageManager, ProjectID, ProjectLanguage};
+use moon_config::{ProjectID, ProjectLanguage};
 use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
-use moon_node_lang::{NODE, NPM, PNPM, YARN};
+use moon_platform_detector::detect_language_files;
 use moon_project_graph::{ProjectGraph, ProjectGraphError};
 use moon_utils::{fs, glob, json, path};
 use moon_workspace::Workspace;
@@ -44,34 +44,28 @@ fn scaffold_workspace(
 
     fs::create_dir_all(&docker_workspace_root)?;
 
+    // Copy manifest and config files for every type of language,
+    // not just the one the project is configured as!
+    let mut files: Vec<String> = vec![];
+
+    for lang in ProjectLanguage::iter() {
+        files.extend(detect_language_files(lang));
+
+        // This is a special case as TS file names are configured
+        if matches!(lang, ProjectLanguage::TypeScript) {
+            if let Some(typescript_config) = &workspace.toolchain_config.typescript {
+                files.push(typescript_config.project_config_file_name.to_owned());
+                files.push(typescript_config.root_config_file_name.to_owned());
+                files.push(typescript_config.root_options_config_file_name.to_owned());
+            }
+        }
+    }
+
     // Copy each project and mimic the folder structure
     for project_source in project_graph.sources.values() {
         let docker_project_root = docker_workspace_root.join(project_source);
 
         fs::create_dir_all(&docker_project_root)?;
-
-        // Copy manifest and config files
-        let mut files: Vec<String> = vec![];
-
-        for lang in ProjectLanguage::iter() {
-            match lang {
-                ProjectLanguage::JavaScript => {
-                    if workspace.toolchain_config.node.is_some() {
-                        files.push(NPM.manifest.to_owned());
-
-                        for ext in NODE.file_exts {
-                            files.push(format!("postinstall.{ext}"));
-                        }
-                    }
-                }
-                ProjectLanguage::TypeScript => {
-                    if let Some(typescript_config) = &workspace.toolchain_config.typescript {
-                        files.push(typescript_config.project_config_file_name.to_owned());
-                    }
-                }
-                _ => {}
-            }
-        }
 
         copy_files(
             &files,
@@ -81,33 +75,6 @@ fn scaffold_workspace(
     }
 
     // Copy root lockfiles and configurations
-    let mut files = vec![];
-
-    for lang in ProjectLanguage::iter() {
-        match lang {
-            ProjectLanguage::JavaScript => {
-                if let Some(node_config) = &workspace.toolchain_config.node {
-                    let package_manager = match &node_config.package_manager {
-                        NodePackageManager::Npm => NPM,
-                        NodePackageManager::Pnpm => PNPM,
-                        NodePackageManager::Yarn => YARN,
-                    };
-
-                    files.push(package_manager.manifest);
-                    files.push(package_manager.lockfile);
-                    files.extend_from_slice(package_manager.config_files);
-                }
-            }
-            ProjectLanguage::TypeScript => {
-                if let Some(typescript_config) = &workspace.toolchain_config.typescript {
-                    files.push(&typescript_config.root_config_file_name);
-                    files.push(&typescript_config.root_options_config_file_name);
-                }
-            }
-            _ => {}
-        }
-    }
-
     copy_files(&files, &workspace.root, &docker_workspace_root)?;
 
     // Copy moon configuration

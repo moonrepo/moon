@@ -1845,6 +1845,7 @@ dependencies = [
  "moon_notifier",
  "moon_pipeline_provider",
  "moon_platform",
+ "moon_platform_detector",
  "moon_project",
  "moon_project_graph",
  "moon_system_platform",

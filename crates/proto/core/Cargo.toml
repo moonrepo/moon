@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 proto_error = { path = "../error" }
-async-trait = "0.1.59"
+async-trait = "0.1.61"
 console = { workspace = true }
 dirs = "4.0.0"
 flate2 = "1.0.25"

@@ -20,7 +20,6 @@ moon_terminal = { path = "../../core/terminal" }
 moon_tool = { path = "../../core/tool" }
 moon_typescript_lang = { path = "../../typescript/lang" }
 moon_utils = { path = "../../core/utils" }
-moon_workspace = { path = "../../core/workspace" }
 proto_core = { path = "../../proto/core" }
 rustc-hash = { workspace = true }
 serde = { workspace = true }

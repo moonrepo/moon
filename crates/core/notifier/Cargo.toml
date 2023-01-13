@@ -10,7 +10,7 @@ moon_logger = { path = "../logger" }
 moon_pipeline_provider = { path = "../pipeline-provider" }
 moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
-async-trait = "0.1.59"
+async-trait = "0.1.61"
 reqwest = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

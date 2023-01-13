@@ -5,7 +5,7 @@ mod errors;
 use common::{endpoint, get_request, post_request, Response};
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, debug, warn};
-use reqwest::{Body};
+use reqwest::Body;
 use std::io;
 use std::path::{Path, PathBuf};
 use tokio::fs;
@@ -81,6 +81,8 @@ impl Moonbase {
     ) -> Result<Option<(Artifact, Option<String>)>, MoonbaseError> {
         let response = get_request(format!("artifacts/{}", hash), Some(&self.auth_token)).await?;
 
+        // dbg!("read_artifact", hash, &response);
+
         match response {
             Response::Success(ArtifactResponse {
                 artifact,
@@ -104,8 +106,12 @@ impl Moonbase {
         hash: &str,
         input: ArtifactWriteInput,
     ) -> Result<(Artifact, Option<String>), MoonbaseError> {
+        // dbg!("write_artifact", hash, &input);
+
         let response =
             post_request(format!("artifacts/{}", hash), input, Some(&self.auth_token)).await?;
+
+        // dbg!(&response);
 
         match response {
             Response::Success(ArtifactResponse {
@@ -125,6 +131,8 @@ impl Moonbase {
         dest_path: &Path,
         download_url: &Option<String>,
     ) -> Result<(), MoonbaseError> {
+        // dbg!("download_artifact", download_url);
+
         let request = if let Some(url) = download_url {
             reqwest::Client::new().get(url)
         } else {
@@ -136,6 +144,8 @@ impl Moonbase {
 
         let response = request.send().await?;
         let status = response.status();
+
+        // dbg!(&status);
 
         if status.is_success() {
             let error_handler = |e: io::Error| map_io_to_fs_error(e, dest_path.to_path_buf());
@@ -168,8 +178,13 @@ pub async fn upload_artifact(
     let file = fs::File::open(&path)
         .await
         .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
-    let file_length = file.metadata().await.unwrap().len();
+    let file_length = match file.metadata().await {
+        Ok(meta) => meta.len(),
+        Err(_) => 0,
+    };
     let file_stream = FramedRead::new(file, BytesCodec::new());
+
+    // dbg!("upload_artifact", &upload_url, &file_length);
 
     let request = if let Some(url) = upload_url {
         reqwest::Client::new()

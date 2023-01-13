@@ -13,6 +13,6 @@ moon_project = { path = "../project" }
 moon_task = { path = "../task" }
 moon_tool = { path = "../tool" }
 moon_utils = { path = "../utils" }
-async-trait = "0.1.59"
+async-trait = "0.1.61"
 rustc-hash = { workspace = true }
 serde = { workspace = true }

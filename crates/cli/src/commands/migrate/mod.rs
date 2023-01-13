@@ -1,6 +1,9 @@
 mod from_package_json;
+mod from_turborepo;
 
 pub use from_package_json::from_package_json;
+pub use from_turborepo::from_turborepo;
+
 use moon_workspace::Workspace;
 
 pub async fn check_dirty_repo(workspace: &Workspace) -> Result<(), Box<dyn std::error::Error>> {

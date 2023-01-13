@@ -9,10 +9,10 @@ import CreateDepTabs from '@site/src/components/CreateDepTabs';
 [SvelteKit](https://kit.svelte.dev) is built on [Svelte](https://svelte.dev), a UI framework that uses a compiler to let you write breathtakingly concise components that do minimal work in the browser, using languages you already know — HTML, CSS and JavaScript. It's a love letter to web development.
 
 ```shell
-npm create svelte@latest my-app
+cd apps && npm create svelte@latest <project>
 ```
 
-You will be prompted to choose between select templates, TypeScript, ESLint, Prettier, Playwright and Vitest among other options. moon supports and has guides for many of these tools
+You will be prompted to choose between select templates, TypeScript, ESLint, Prettier, Playwright and Vitest among other options. moon supports and has guides for many of these tools.
 
 > We highly suggest reading our documentation on [using Vite (and Vitest) with moon](./vite), [using ESLint with moon](./eslint) and [using Prettier with moon](./prettier) for a more holistic view.
 
@@ -89,7 +89,7 @@ Additionally, we suggest disabling the typechecker during the build process, but
 requirement. As a potential alternative, add the `typecheck` task as a dependency for the `build`
 task.
 
-In case Svelte doesn't automatically create a `tsconfig.json` for you, use the following:
+In case Svelte doesn't automatically create a `tsconfig.json`, you can use the following:
 
 ```json title="<project>/tsconfig.json"
 {

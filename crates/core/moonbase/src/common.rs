@@ -10,8 +10,12 @@ pub enum Response<T> {
     Success(T),
 }
 
-pub fn get_host() -> String {
-    env::var("MOONBASE_HOST").unwrap_or_else(|_| "https://api.moonrepo.app".to_owned())
+pub fn endpoint<P: AsRef<str>>(path: P) -> String {
+    format!(
+        "{}/{}",
+        env::var("MOONBASE_HOST").unwrap_or_else(|_| "https://api.moonrepo.app".to_owned()),
+        path.as_ref()
+    )
 }
 
 pub fn parse_response<O>(data: String) -> Result<Response<O>, MoonbaseError>
@@ -49,11 +53,7 @@ where
     P: AsRef<str>,
     O: DeserializeOwned,
 {
-    fetch(
-        reqwest::Client::new().get(format!("{}/{}", get_host(), path.as_ref())),
-        token,
-    )
-    .await
+    fetch(reqwest::Client::new().get(endpoint(path)), token).await
 }
 
 pub async fn post_request<P, I, O>(
@@ -69,9 +69,7 @@ where
     let body = serde_json::to_string(&body)
         .map_err(|e| MoonbaseError::JsonSerializeFailure(e.to_string()))?;
 
-    let request = reqwest::Client::new()
-        .post(format!("{}/{}", get_host(), path.as_ref()))
-        .body(body);
+    let request = reqwest::Client::new().post(endpoint(path)).body(body);
 
     fetch(request, token).await
 }

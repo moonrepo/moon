@@ -1,16 +1,18 @@
 use crate::commands::docker::scaffold::DockerManifest;
 use crate::helpers::AnyError;
 use moon::{generate_project_graph, load_workspace_with_toolchain};
-use moon_config::{PlatformType, ProjectLanguage};
+use moon_config::PlatformType;
 use moon_node_lang::{PackageJson, NODE};
 use moon_node_tool::NodeTool;
 use moon_project_graph::ProjectGraph;
 use moon_terminal::safe_exit;
 use moon_utils::{fs, json};
-use moon_workspace::Workspace;
+use rustc_hash::FxHashSet;
+use std::path::Path;
 
 pub async fn prune_node(
-    workspace: &Workspace,
+    node: &NodeTool,
+    workspace_root: &Path,
     project_graph: &ProjectGraph,
     manifest: &DockerManifest,
 ) -> Result<(), AnyError> {
@@ -18,7 +20,7 @@ pub async fn prune_node(
 
     for project_id in &manifest.focused_projects {
         if let Some(project_source) = project_graph.sources.get(project_id) {
-            if let Some(package_json) = PackageJson::read(workspace.root.join(project_source))? {
+            if let Some(package_json) = PackageJson::read(workspace_root.join(project_source))? {
                 if let Some(package_name) = package_json.name {
                     package_names.push(package_name);
                 }
@@ -28,32 +30,17 @@ pub async fn prune_node(
 
     // Some package managers do not delete stale node modules
     if let Some(vendor_dir) = NODE.vendor_dir {
-        fs::remove_dir_all(workspace.root.join(vendor_dir))?;
+        fs::remove_dir_all(workspace_root.join(vendor_dir))?;
 
         for project_source in project_graph.sources.values() {
-            fs::remove_dir_all(workspace.root.join(project_source).join(vendor_dir))?;
+            fs::remove_dir_all(workspace_root.join(project_source).join(vendor_dir))?;
         }
     }
 
     // Install production only dependencies for focused projects
-    let node = workspace
-        .platforms
-        .get(PlatformType::Node)?
-        .get_tool()?
-        .as_any()
-        .downcast_ref::<NodeTool>()
-        .unwrap();
-
     node.get_package_manager()
         .install_focused_dependencies(node, &package_names, true)
         .await?;
-
-    // Remove extraneous node module folders for unfocused projects
-    // for project_id in &manifest.unfocused_projects {
-    //     if let Some(project_source) = project_graph.sources.get(project_id) {
-    //         fs::remove_dir_all(workspace.root.join(project_source).join(NODE.vendor_dir))?;
-    //     }
-    // }
 
     Ok(())
 }
@@ -69,23 +56,32 @@ pub async fn prune() -> Result<(), AnyError> {
 
     let project_graph = generate_project_graph(&mut workspace).await?;
     let manifest: DockerManifest = json::read(manifest_path)?;
-    let mut is_using_node = false;
+    let mut platforms = FxHashSet::<PlatformType>::default();
 
     for project_id in &manifest.focused_projects {
-        let project = project_graph.get(project_id)?;
-
-        // We use a match here to exhaustively check all languages
-        match project.language {
-            ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => {
-                is_using_node = true;
-            }
-            _ => {}
-        }
+        platforms.insert(project_graph.get(project_id)?.language.into());
     }
 
-    // Only prune Node.js when one of the focused projects is Node.js based
-    if is_using_node {
-        prune_node(&workspace, &project_graph, &manifest).await?;
+    // Do this later so we only run once for each platform instead of per project
+    for platform_type in platforms {
+        let platform = workspace.platforms.get(platform_type)?;
+
+        match platform.get_type() {
+            PlatformType::Node => {
+                prune_node(
+                    platform
+                        .get_tool()?
+                        .as_any()
+                        .downcast_ref::<NodeTool>()
+                        .unwrap(),
+                    &workspace.root,
+                    &project_graph,
+                    &manifest,
+                )
+                .await?;
+            }
+            PlatformType::System | PlatformType::Unknown => {}
+        }
     }
 
     Ok(())

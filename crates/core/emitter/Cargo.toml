@@ -20,7 +20,7 @@ moon_target = { path = "../target" }
 moon_task = { path = "../task" }
 moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
-async-trait = "0.1.59"
+async-trait = "0.1.61"
 serde = { workspace = true }
 tokio = { workspace = true }
 

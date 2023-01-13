@@ -9,6 +9,6 @@ moon_lang = { path = "../lang" }
 moon_platform_runtime = { path = "../platform-runtime" }
 moon_utils = { path = "../utils" }
 proto_error = { path = "../../proto/error" }
-async-trait = "0.1.59"
+async-trait = "0.1.61"
 rustc-hash = { workspace = true }
 thiserror = { workspace = true }

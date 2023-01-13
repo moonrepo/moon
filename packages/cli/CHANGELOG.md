@@ -39,6 +39,11 @@
 - Our toolchain now creates shims for all installed tools, and also utilizes these shims when
   executing commands in the pipeline. (Unix only)
 
+#### 🐞 Fixes
+
+- Fixed an issue where `~/.moon` is deleted, but local caching isn't aware of it missing and fails
+  to run a target.
+
 ## 0.21.4
 
 #### 🐞 Fixes

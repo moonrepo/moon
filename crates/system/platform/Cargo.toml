@@ -12,6 +12,5 @@ moon_project = { path = "../../core/project" }
 moon_task = { path = "../../core/task" }
 moon_tool = { path = "../../core/tool" }
 moon_utils = { path = "../../core/utils" }
-moon_workspace = { path = "../../core/workspace" }
 serde = { workspace = true }
 serde_json = { workspace = true }

@@ -10,7 +10,7 @@ use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TurboTask {
     cache: Option<bool>,
@@ -21,7 +21,7 @@ pub struct TurboTask {
     persistent: Option<bool>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TurboJson {
     global_dependencies: Option<Vec<String>>,
@@ -220,4 +220,175 @@ pub async fn from_turborepo(skip_touched_files_check: &bool) -> Result<(), AnyEr
     fs::remove_file(&turbo_file)?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use moon_utils::string_vec;
+
+    mod globals_conversion {
+        use super::*;
+
+        #[test]
+        fn converst_deps() {
+            let mut config = RunnerConfig {
+                implicit_inputs: string_vec!["existing.txt"],
+                ..RunnerConfig::default()
+            };
+
+            convert_globals(
+                &TurboJson {
+                    global_dependencies: Some(string_vec!["file.ts", "glob/**/*.js"]),
+                    ..TurboJson::default()
+                },
+                &mut config,
+            );
+
+            assert_eq!(
+                config.implicit_inputs,
+                string_vec!["existing.txt", "file.ts", "glob/**/*.js"]
+            );
+        }
+
+        #[test]
+        fn converst_env() {
+            let mut config = RunnerConfig {
+                implicit_inputs: string_vec!["$FOO"],
+                ..RunnerConfig::default()
+            };
+
+            convert_globals(
+                &TurboJson {
+                    global_env: Some(string_vec!["BAR", "BAZ"]),
+                    ..TurboJson::default()
+                },
+                &mut config,
+            );
+
+            assert_eq!(config.implicit_inputs, string_vec!["$FOO", "$BAR", "$BAZ"]);
+        }
+    }
+
+    mod task_conversion {
+        use super::*;
+
+        #[test]
+        fn sets_command() {
+            let config = convert_task("foo".into(), TurboTask::default());
+
+            assert_eq!(
+                config.command.unwrap(),
+                TaskCommandArgs::String("moon node run-script foo".into())
+            );
+        }
+
+        #[test]
+        fn converts_deps() {
+            let config = convert_task(
+                "foo".into(),
+                TurboTask {
+                    depends_on: Some(string_vec!["normal", "^parent", "project#normal", "$VAR"]),
+                    ..TurboTask::default()
+                },
+            );
+
+            assert_eq!(
+                config.deps.unwrap(),
+                string_vec!["normal", "^:parent", "project:normal"]
+            );
+            assert_eq!(config.inputs.unwrap(), string_vec!["$VAR"]);
+        }
+
+        #[test]
+        fn doesnt_set_deps_if_empty() {
+            let config = convert_task("foo".into(), TurboTask::default());
+
+            assert_eq!(config.deps, None);
+        }
+
+        #[test]
+        fn converts_env_to_inputs() {
+            let config = convert_task(
+                "foo".into(),
+                TurboTask {
+                    env: Some(string_vec!["FOO", "BAR"]),
+                    ..TurboTask::default()
+                },
+            );
+
+            assert_eq!(config.inputs.unwrap(), string_vec!["$FOO", "$BAR"]);
+        }
+
+        #[test]
+        fn inherits_inputs() {
+            let config = convert_task(
+                "foo".into(),
+                TurboTask {
+                    inputs: Some(string_vec!["file.ts", "some/folder", "some/glob/**/*"]),
+                    ..TurboTask::default()
+                },
+            );
+
+            assert_eq!(
+                config.inputs.unwrap(),
+                string_vec!["file.ts", "some/folder", "some/glob/**/*"]
+            );
+        }
+
+        #[test]
+        fn converts_outputs() {
+            let config = convert_task(
+                "foo".into(),
+                TurboTask {
+                    outputs: Some(string_vec![
+                        "dir",
+                        "dir/**/*",
+                        "dir/**",
+                        "dir/*",
+                        "dir/*/sub"
+                    ]),
+                    ..TurboTask::default()
+                },
+            );
+
+            assert_eq!(
+                config.outputs.unwrap(),
+                string_vec!["dir", "dir", "dir", "dir", "dir/sub"]
+            );
+        }
+
+        #[test]
+        fn doesnt_set_outputs_if_empty() {
+            let config = convert_task("foo".into(), TurboTask::default());
+
+            assert_eq!(config.outputs, None);
+        }
+
+        #[test]
+        fn sets_local() {
+            let config = convert_task(
+                "foo".into(),
+                TurboTask {
+                    persistent: Some(true),
+                    ..TurboTask::default()
+                },
+            );
+
+            assert_eq!(config.local, true);
+        }
+
+        #[test]
+        fn sets_cache() {
+            let config = convert_task(
+                "foo".into(),
+                TurboTask {
+                    cache: Some(false),
+                    ..TurboTask::default()
+                },
+            );
+
+            assert_eq!(config.options.cache, Some(false));
+        }
+    }
 }

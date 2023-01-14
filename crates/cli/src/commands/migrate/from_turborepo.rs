@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use super::check_dirty_repo;
 use crate::helpers::AnyError;
 use moon::{generate_project_graph, load_workspace};
@@ -10,6 +8,7 @@ use moon_terminal::safe_exit;
 use moon_utils::{fs, json, yaml};
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -76,7 +75,7 @@ pub fn convert_task(name: String, task: TurboTask) -> TaskConfig {
 
         for dep in turbo_deps {
             if dep.starts_with('^') {
-                deps.push(format!("^:{}", dep.strip_prefix('^').unwrap()));
+                deps.push(dep.replace('^', "^:").to_owned());
             } else if dep.contains('#') {
                 deps.push(dep.replace('#', ":").to_owned());
             } else if dep.starts_with('$') {
@@ -107,7 +106,12 @@ pub fn convert_task(name: String, task: TurboTask) -> TaskConfig {
         for output in turbo_outputs {
             // We don't support globs at the moment
             if output.contains('*') {
-                outputs.push(output.replace("/**/*", "").replace("/**", ""));
+                outputs.push(
+                    output
+                        .replace("/**/*", "")
+                        .replace("/**", "")
+                        .replace("/*", ""),
+                );
             } else {
                 outputs.push(output);
             }

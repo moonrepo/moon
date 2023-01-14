@@ -375,7 +375,7 @@ mod tests {
                 },
             );
 
-            assert_eq!(config.local, true);
+            assert!(config.local);
         }
 
         #[test]

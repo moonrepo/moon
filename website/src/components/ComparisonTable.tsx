@@ -351,7 +351,7 @@ const taskRunnerRows: Comparison[] = [
 	{
 		feature: 'Known as',
 		support: {
-			moon: 'action or task runner',
+			moon: 'action pipeline',
 			nx: 'task runner',
 			turborepo: 'pipeline',
 		},
@@ -466,7 +466,7 @@ const generatorRows: Comparison[] = [
 	{
 		feature: 'Updates/merges with existing files',
 		support: {
-			moon: [PARTIALLY_SUPPORTED, 'JSON/YAML only'],
+			moon: [SUPPORTED, 'JSON/YAML only'],
 			nx: [SUPPORTED, 'using JavaScript'],
 		},
 	},

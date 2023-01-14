@@ -360,7 +360,7 @@ impl Command {
         }
 
         // Avoid zombie processes, especially for long-running
-        // or never ending tasks!
+        // or never-ending tasks!
         command.kill_on_drop(true);
 
         command.envs(&self.env);

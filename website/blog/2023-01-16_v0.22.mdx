@@ -1,28 +1,30 @@
 ---
 slug: v0.22
-title: moon v0.22 - ???
+title: moon v0.22 - New pipeline with hashing and caching additions
 authors: [milesj]
-tags: [graph]
-# image: ./img/v0.21.png
+tags: [graph, pipeline, hasher, migrate]
+image: ./img/v0.22.png
 ---
 
 import Label from '@site/src/ui/typography/Label';
 import Image from '@site/src/components/Image';
 
-TODO
+It's the first release of the year, and with this release, we're landing some quality of life
+infrastructure and workflow improvements!
 
 <!--truncate-->
 
 ## New action pipeline
 
 When running targets, we generate a graph of actions to execute in order within the action runner.
-An action is one of "setup toolchain", "install dependencies", "sync project", so on and so forth.
-Our action runner would then spawn threads for every action using the [Tokio](https://tokio.rs/)
+An action is one of "setup toolchain", "install dependencies", "run target", so on and so forth. Our
+action runner would then spawn threads for every action using the [Tokio](https://tokio.rs/)
 runtime. While this worked great, concurrency was entirely abstracted away from us.
 
 To mitigate this problem, we've implemented a new system for executing actions known as the action
 pipeline (or simply pipeline), which implements a dynamically scaling thread pool on top of Tokio.
-This provides us with more control over concurrency, starting with the new `--concurrency` option.
+This provides us with more control over concurrency, starting with the new `--concurrency` option,
+which restricts the number of threads (or CPU cores).
 
 ```shell
 $ moon run :build --concurrency 2
@@ -46,7 +48,7 @@ now utilize the hasher:
 ## Project graph is now cached
 
 Because of the hashing improvements above, we're now able to cache the entirety of the project graph
-into the local cache. Depending on how many projects are in your workspace, you may see performance
+into local cache. Depending on how many projects are in your workspace, you may see performance
 improvements on subsequent runs as we're no longer re-building the project graph over and over
 everytime the `moon` binary is ran.
 
@@ -73,9 +75,12 @@ full list of changes.
   `.moon/workspace.yml` that enforces a requirement on the running moon binary.
 - Updated the [`project` fields](/docs/config/project#project) in `moon.yml` to be optional,
   excluding `description`.
+- Internal improvements to remote caching and artifact uploading.
 
 ## What's next?
 
 Expect the following in the v0.23 release!
 
-- Scope tasks defined in `.moon/project.yml` to a project language or type.
+- Improved task inheritance workflow.
+- Glob support in task `outputs`.
+- Project-level environment variables.

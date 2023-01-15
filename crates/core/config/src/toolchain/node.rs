@@ -139,7 +139,6 @@ impl Default for YarnConfig {
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
-// `default` is required since the parent field is `Option`
 #[serde(default, rename_all = "camelCase")]
 pub struct NodeConfig {
     #[serde(skip_serializing_if = "is_default")]

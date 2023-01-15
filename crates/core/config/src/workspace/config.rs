@@ -78,7 +78,7 @@ impl Default for WorkspaceProjects {
 /// Docs: https://moonrepo.dev/docs/config/workspace
 #[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
-#[serde(rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase")]
 pub struct WorkspaceConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_extends")]

@@ -1,144 +1,14 @@
 use super::check_dirty_repo;
 use crate::helpers::AnyError;
 use moon::{generate_project_graph, load_workspace};
-use moon_config::{
-    DependencyConfig, DependencyScope, PlatformType, ProjectDependsOn, TaskCommandArgs,
-};
+use moon_config::{DependencyConfig, DependencyScope, ProjectDependsOn};
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_error::MoonError;
 use moon_logger::info;
 use moon_node_lang::package::{DepsSet, PackageJson};
 use moon_node_platform::create_tasks_from_scripts;
-use moon_project::Project;
-use moon_utils::yaml::{self, Mapping, YamlValue};
+use moon_utils::yaml;
 use rustc_hash::FxHashMap;
-use serde_yaml::to_string;
-
-// Don't use serde since it writes *everything*, which is a ton of nulled fields!
-pub fn convert_to_yaml(project: &Project) -> Result<YamlValue, AnyError> {
-    let mut root = Mapping::new();
-    let config = &project.config;
-
-    root.insert(
-        YamlValue::String("language".to_owned()),
-        YamlValue::String(to_string(&project.language)?.trim().to_owned()),
-    );
-
-    if !config.depends_on.is_empty() {
-        let mut depends_on = vec![];
-
-        for dep in &config.depends_on {
-            match dep {
-                ProjectDependsOn::String(value) => {
-                    depends_on.push(YamlValue::String(value.to_owned()));
-                }
-                ProjectDependsOn::Object(value) => {
-                    let mut dep_value = Mapping::new();
-
-                    dep_value.insert(
-                        YamlValue::String("id".to_owned()),
-                        YamlValue::String(value.id.to_owned()),
-                    );
-
-                    dep_value.insert(
-                        YamlValue::String("scope".to_owned()),
-                        YamlValue::String(to_string(&value.scope)?),
-                    );
-
-                    if let Some(via) = &value.via {
-                        dep_value.insert(
-                            YamlValue::String("via".to_owned()),
-                            YamlValue::String(via.to_owned()),
-                        );
-                    }
-                }
-            }
-        }
-
-        root.insert(
-            YamlValue::String("dependsOn".to_owned()),
-            YamlValue::Sequence(depends_on),
-        );
-    }
-
-    // We're only declaring fields used in `create_tasks_from_scripts`, not everything
-    if !config.tasks.is_empty() {
-        let mut tasks = Mapping::new();
-
-        let convert_string_list = |list: &Vec<String>| {
-            YamlValue::Sequence(
-                list.iter()
-                    .map(|v| YamlValue::String(v.to_owned()))
-                    .collect(),
-            )
-        };
-
-        let convert_command_args = |value: &TaskCommandArgs| match value {
-            TaskCommandArgs::String(v) => YamlValue::String(v.to_owned()),
-            TaskCommandArgs::Sequence(vs) => convert_string_list(vs),
-        };
-
-        for (id, task_config) in &config.tasks {
-            let mut task = Mapping::new();
-
-            if let Some(command) = &task_config.command {
-                task.insert(
-                    YamlValue::String("command".to_owned()),
-                    convert_command_args(command),
-                );
-            }
-
-            if let Some(args) = &task_config.args {
-                task.insert(
-                    YamlValue::String("args".to_owned()),
-                    convert_command_args(args),
-                );
-            }
-
-            if let Some(outputs) = &task_config.outputs {
-                task.insert(
-                    YamlValue::String("outputs".to_owned()),
-                    convert_string_list(outputs),
-                );
-            }
-            if let Some(env) = &task_config.env {
-                let mut env_vars = Mapping::new();
-
-                for (key, value) in env {
-                    env_vars.insert(
-                        YamlValue::String(key.to_owned()),
-                        YamlValue::String(value.to_owned()),
-                    );
-                }
-
-                task.insert(
-                    YamlValue::String("env".to_owned()),
-                    YamlValue::Mapping(env_vars),
-                );
-            }
-
-            if !matches!(task_config.platform, PlatformType::Node) {
-                task.insert(
-                    YamlValue::String("platform".to_owned()),
-                    YamlValue::String(to_string(&task_config.platform)?.trim().to_owned()),
-                );
-            }
-
-            if task_config.local {
-                task.insert(YamlValue::String("local".to_owned()), YamlValue::Bool(true));
-            }
-
-            tasks.insert(YamlValue::String(id.to_owned()), YamlValue::Mapping(task));
-        }
-
-        root.insert(
-            YamlValue::String("tasks".to_owned()),
-            YamlValue::Mapping(tasks),
-        );
-    }
-
-    Ok(YamlValue::Mapping(root))
-}
 
 pub async fn from_package_json(
     project_id: &str,
@@ -210,10 +80,7 @@ pub async fn from_package_json(
         Ok(())
     })?;
 
-    yaml::write_with_config(
-        project.root.join(CONFIG_PROJECT_FILENAME),
-        convert_to_yaml(&project)?,
-    )?;
+    yaml::write_with_config(project.root.join(CONFIG_PROJECT_FILENAME), &project.config)?;
 
     Ok(())
 }

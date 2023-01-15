@@ -153,7 +153,7 @@ pub async fn from_turborepo(skip_touched_files_check: &bool) -> Result<(), AnyEr
 
     // Convert globals first
     if convert_globals(&turbo_json, &mut workspace.config.runner) {
-        yaml::write(
+        yaml::write_with_config(
             workspace
                 .root
                 .join(constants::CONFIG_DIRNAME)
@@ -202,7 +202,7 @@ pub async fn from_turborepo(skip_touched_files_check: &bool) -> Result<(), AnyEr
     }
 
     if has_modified_global_project {
-        yaml::write(
+        yaml::write_with_config(
             workspace
                 .root
                 .join(constants::CONFIG_DIRNAME)
@@ -212,7 +212,7 @@ pub async fn from_turborepo(skip_touched_files_check: &bool) -> Result<(), AnyEr
     }
 
     for (project_root, project_config) in modified_projects {
-        yaml::write(
+        yaml::write_with_config(
             project_root.join(constants::CONFIG_PROJECT_FILENAME),
             &project_config,
         )?;

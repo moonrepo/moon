@@ -6,6 +6,8 @@ use std::io::prelude::*;
 use std::path::Path;
 
 mod editor_config {
+    use serde_yaml::Value;
+
     use super::*;
 
     pub fn append_editor_config(root: &Path, data: &str) {
@@ -22,8 +24,9 @@ mod editor_config {
     fn uses_defaults_when_no_config() {
         let sandbox = create_sandbox("editor-config");
         let path = sandbox.path().join("file.yaml");
+        let data: Value = yaml::read(&path).unwrap();
 
-        yaml::write_with_config(&path, yaml::read(&path).unwrap()).unwrap();
+        yaml::write_with_config(&path, &data).unwrap();
 
         assert_snapshot!(fs::read_to_string(&path).unwrap());
     }
@@ -35,7 +38,9 @@ mod editor_config {
 
         append_editor_config(sandbox.path(), "[*.yaml]\nindent_size = 8");
 
-        yaml::write_with_config(&path, yaml::read(&path).unwrap()).unwrap();
+        let data: Value = yaml::read(&path).unwrap();
+
+        yaml::write_with_config(&path, &data).unwrap();
 
         assert_snapshot!(fs::read_to_string(&path).unwrap());
     }
@@ -47,7 +52,9 @@ mod editor_config {
 
         append_editor_config(sandbox.path(), "[*.yaml]\nindent_style = tab");
 
-        yaml::write_with_config(&path, yaml::read(&path).unwrap()).unwrap();
+        let data: Value = yaml::read(&path).unwrap();
+
+        yaml::write_with_config(&path, &data).unwrap();
 
         assert_snapshot!(fs::read_to_string(&path).unwrap());
     }
@@ -59,7 +66,9 @@ mod editor_config {
 
         append_editor_config(sandbox.path(), "[*.yaml]\ninsert_final_newline = true");
 
-        yaml::write_with_config(&path, yaml::read(&path).unwrap()).unwrap();
+        let data: Value = yaml::read(&path).unwrap();
+
+        yaml::write_with_config(&path, &data).unwrap();
 
         assert!(fs::read_to_string(&path).unwrap().ends_with('\n'));
     }
@@ -71,7 +80,9 @@ mod editor_config {
 
         append_editor_config(sandbox.path(), "[*.yaml]\ninsert_final_newline = false");
 
-        yaml::write_with_config(&path, yaml::read(&path).unwrap()).unwrap();
+        let data: Value = yaml::read(&path).unwrap();
+
+        yaml::write_with_config(&path, &data).unwrap();
 
         assert!(!fs::read_to_string(&path).unwrap().ends_with('\n'));
     }

@@ -18,7 +18,7 @@ pub enum VcsManager {
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
-#[serde(rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase")]
 pub struct VcsConfig {
     #[serde(skip_serializing_if = "is_default")]
     pub default_branch: String,

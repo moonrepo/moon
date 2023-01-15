@@ -25,7 +25,7 @@ fn validate_templates(files: &[FilePath]) -> Result<(), ValidationError> {
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
-#[serde(rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase")]
 pub struct GeneratorConfig {
     #[serde(skip_serializing_if = "is_default")]
     #[validate(custom = "validate_templates")]

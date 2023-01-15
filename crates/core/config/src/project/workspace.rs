@@ -10,10 +10,13 @@ use validator::Validate;
 #[schemars(default)]
 #[serde(default)]
 pub struct ProjectWorkspaceInheritedTasksConfig {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub exclude: Option<Vec<TaskID>>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub include: Option<Vec<TaskID>>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub rename: Option<FxHashMap<TaskID, TaskID>>,
 }
 

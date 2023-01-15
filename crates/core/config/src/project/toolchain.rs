@@ -14,6 +14,7 @@ fn validate_node_version(value: &str) -> Result<(), ValidationError> {
 #[serde(default)]
 pub struct ProjectToolchainNodeConfig {
     #[validate(custom = "validate_node_version")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
 
@@ -22,6 +23,7 @@ pub struct ProjectToolchainNodeConfig {
 #[serde(default, rename_all = "camelCase")]
 pub struct ProjectToolchainConfig {
     #[validate]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub node: Option<ProjectToolchainNodeConfig>,
 
     pub typescript: bool,

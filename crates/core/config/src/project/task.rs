@@ -59,21 +59,27 @@ pub enum TaskCommandArgs {
 #[schemars(default)]
 #[serde(default)]
 pub struct TaskConfig {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub command: Option<TaskCommandArgs>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub args: Option<TaskCommandArgs>,
 
     #[validate(custom = "validate_deps")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub deps: Option<Vec<TargetID>>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub env: Option<FxHashMap<String, String>>,
 
     #[validate(custom = "validate_inputs")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub inputs: Option<Vec<InputValue>>,
 
     pub local: bool,
 
     #[validate(custom = "validate_outputs")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub outputs: Option<Vec<FilePath>>,
 
     #[validate]

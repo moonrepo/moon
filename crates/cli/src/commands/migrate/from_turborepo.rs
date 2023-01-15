@@ -1,7 +1,7 @@
 use super::check_dirty_repo;
 use crate::helpers::AnyError;
 use moon::{generate_project_graph, load_workspace};
-use moon_config::{ProjectConfig, RunnerConfig, TaskCommandArgs, TaskConfig};
+use moon_config::{PlatformType, ProjectConfig, RunnerConfig, TaskCommandArgs, TaskConfig};
 use moon_constants as constants;
 use moon_logger::{info, warn};
 use moon_terminal::safe_exit;
@@ -13,20 +13,20 @@ use std::path::PathBuf;
 #[derive(Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TurboTask {
-    cache: Option<bool>,
-    depends_on: Option<Vec<String>>,
-    env: Option<Vec<String>>,
-    inputs: Option<Vec<String>>,
-    outputs: Option<Vec<String>>,
-    persistent: Option<bool>,
+    pub cache: Option<bool>,
+    pub depends_on: Option<Vec<String>>,
+    pub env: Option<Vec<String>>,
+    pub inputs: Option<Vec<String>>,
+    pub outputs: Option<Vec<String>>,
+    pub persistent: Option<bool>,
 }
 
 #[derive(Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TurboJson {
-    global_dependencies: Option<Vec<String>>,
-    global_env: Option<Vec<String>>,
-    pipeline: FxHashMap<String, TurboTask>,
+    pub global_dependencies: Option<Vec<String>>,
+    pub global_env: Option<Vec<String>>,
+    pub pipeline: FxHashMap<String, TurboTask>,
 }
 
 pub fn extract_project_task_ids(key: &str) -> (Option<String>, String) {
@@ -126,6 +126,7 @@ pub fn convert_task(name: String, task: TurboTask) -> TaskConfig {
         config.inputs = Some(inputs);
     }
 
+    config.platform = PlatformType::Node;
     config.local = task.persistent.unwrap_or_default();
     config.options.cache = task.cache;
 
@@ -137,7 +138,7 @@ pub async fn from_turborepo(skip_touched_files_check: &bool) -> Result<(), AnyEr
     let turbo_file = workspace.root.join("turbo.json");
 
     if !turbo_file.exists() {
-        eprintln!("No turbo.json was found in the current directory.");
+        eprintln!("No turbo.json was found in the workspace root.");
         safe_exit(1);
     }
 
@@ -218,6 +219,8 @@ pub async fn from_turborepo(skip_touched_files_check: &bool) -> Result<(), AnyEr
     }
 
     fs::remove_file(&turbo_file)?;
+
+    info!("Successfully migrated from Turborepo to moon!");
 
     Ok(())
 }

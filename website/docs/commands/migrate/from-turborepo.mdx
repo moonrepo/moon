@@ -17,9 +17,12 @@ $ moon migrate from-turborepo
 
 :::caution
 
-moon must be [initialized](../init) before this command is ran! Furthermore, this process does not
-change existing `package.json` scripts, so if you're looking to migrate them as well, use the
-[`moon migrate from-package-json`](./from-package-json) command.
+moon must be [initialized](../init) before this command is ran! We also suggest enabling the
+[`node.aliasPackageNames`](../../config/toolchain#aliaspackagenames) setting to ensure projects are
+resolved correctly.
+
+Furthermore, this process does not change existing `package.json` scripts, so if you're looking to
+migrate them as well, use the [`moon migrate from-package-json`](./from-package-json) command.
 
 :::
 

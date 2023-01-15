@@ -1,0 +1,23 @@
+---
+source: crates/cli/tests/migrate_test.rs
+expression: "fs::read_to_string(sandbox.path().join(\"turborepo/library/moon.yml\")).unwrap()"
+---
+dependsOn: []
+fileGroups: {}
+language: unknown
+tasks:
+  lint:
+    command: moon node run-script lint
+    inputs:
+    - $NODE_ENV
+    - src/**/*
+    local: false
+    options:
+      cache: false
+    platform: node
+toolchain:
+  typescript: true
+type: unknown
+workspace:
+  inheritedTasks: {}
+

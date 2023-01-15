@@ -76,31 +76,43 @@ pub enum TaskOutputStyle {
 #[serde(default, rename_all = "camelCase")]
 pub struct TaskOptionsConfig {
     #[validate(custom = "validate_affected_files")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub affected_files: Option<TaskOptionAffectedFilesConfig>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub cache: Option<bool>,
 
     #[validate(custom = "validate_env_file")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub env_file: Option<TaskOptionEnvFileConfig>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub merge_args: Option<TaskMergeStrategy>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub merge_deps: Option<TaskMergeStrategy>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub merge_env: Option<TaskMergeStrategy>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub merge_inputs: Option<TaskMergeStrategy>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub merge_outputs: Option<TaskMergeStrategy>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub output_style: Option<TaskOutputStyle>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub retry_count: Option<u8>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub run_deps_in_parallel: Option<bool>,
 
-    #[serde(rename = "runInCI")]
+    #[serde(rename = "runInCI", skip_serializing_if = "Option::is_none")]
     pub run_in_ci: Option<bool>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub run_from_workspace_root: Option<bool>,
 }

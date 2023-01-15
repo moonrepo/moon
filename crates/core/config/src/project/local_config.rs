@@ -79,15 +79,19 @@ pub enum ProjectType {
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct ProjectMetadataConfig {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 
     pub description: String,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub owner: Option<String>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub maintainers: Option<Vec<String>>,
 
     #[validate(custom = "validate_channel")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub channel: Option<String>,
 }
 
@@ -114,6 +118,7 @@ pub struct ProjectConfig {
     pub language: ProjectLanguage,
 
     #[validate]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub project: Option<ProjectMetadataConfig>,
 
     #[validate(custom = "validate_tasks")]

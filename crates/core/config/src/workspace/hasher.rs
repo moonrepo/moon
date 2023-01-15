@@ -1,3 +1,4 @@
+use crate::validators::is_default;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
@@ -14,5 +15,6 @@ pub enum HasherOptimization {
 #[schemars(default)]
 #[serde(rename_all = "camelCase")]
 pub struct HasherConfig {
+    #[serde(skip_serializing_if = "is_default")]
     pub optimization: HasherOptimization,
 }

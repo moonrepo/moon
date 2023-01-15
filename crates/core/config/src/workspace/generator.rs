@@ -1,3 +1,4 @@
+use crate::validators::is_default;
 use crate::{
     errors::create_validation_error, types::FilePath, validators::validate_child_relative_path,
 };
@@ -26,6 +27,7 @@ fn validate_templates(files: &[FilePath]) -> Result<(), ValidationError> {
 #[schemars(default)]
 #[serde(rename_all = "camelCase")]
 pub struct GeneratorConfig {
+    #[serde(skip_serializing_if = "is_default")]
     #[validate(custom = "validate_templates")]
     pub templates: Vec<FilePath>,
 }

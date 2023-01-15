@@ -1,4 +1,4 @@
-use crate::validators::validate_semver_version;
+use crate::validators::{is_default, validate_semver_version};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -121,6 +121,7 @@ impl Default for PnpmConfig {
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct YarnConfig {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub plugins: Option<Vec<String>>,
 
     #[validate(custom = "validate_yarn_version")]
@@ -141,33 +142,46 @@ impl Default for YarnConfig {
 // `default` is required since the parent field is `Option`
 #[serde(default, rename_all = "camelCase")]
 pub struct NodeConfig {
+    #[serde(skip_serializing_if = "is_default")]
     pub add_engines_constraint: bool,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub alias_package_names: Option<NodeProjectAliasFormat>,
 
+    #[serde(skip_serializing_if = "is_default")]
     pub bin_exec_args: Vec<String>,
 
+    #[serde(skip_serializing_if = "is_default")]
     pub dedupe_on_lockfile_change: bool,
 
+    #[serde(skip_serializing_if = "is_default")]
     pub dependency_version_format: NodeVersionFormat,
 
+    #[serde(skip_serializing_if = "is_default")]
     pub infer_tasks_from_scripts: bool,
 
+    #[serde(skip_serializing_if = "is_default")]
     #[validate]
     pub npm: NpmConfig,
 
+    #[serde(skip_serializing_if = "is_default")]
     pub package_manager: NodePackageManager,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[validate]
     pub pnpm: Option<PnpmConfig>,
 
+    #[serde(skip_serializing_if = "is_default")]
     pub sync_project_workspace_dependencies: bool,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub sync_version_manager_config: Option<NodeVersionManager>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_node_version")]
     pub version: Option<String>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[validate]
     pub yarn: Option<YarnConfig>,
 }

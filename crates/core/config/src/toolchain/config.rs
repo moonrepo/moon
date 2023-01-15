@@ -25,9 +25,11 @@ pub struct ToolchainConfig {
     #[validate(custom = "validate_extends")]
     pub extends: Option<String>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[validate]
     pub node: Option<NodeConfig>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[validate]
     pub typescript: Option<TypeScriptConfig>,
 

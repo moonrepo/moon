@@ -1,6 +1,7 @@
 // These configs are project-level settings that override those from the workspace!
 
 use crate::types::TaskID;
+use crate::validators::is_default;
 use rustc_hash::FxHashMap;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -24,6 +25,7 @@ pub struct ProjectWorkspaceInheritedTasksConfig {
 #[schemars(default)]
 #[serde(default, rename_all = "camelCase")]
 pub struct ProjectWorkspaceConfig {
+    #[serde(skip_serializing_if = "is_default")]
     #[validate]
     pub inherited_tasks: ProjectWorkspaceInheritedTasksConfig,
 }

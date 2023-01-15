@@ -6,7 +6,7 @@ use crate::errors::{
 use crate::helpers::gather_extended_sources;
 use crate::project::task::TaskConfig;
 use crate::types::FileGroups;
-use crate::validators::{validate_extends, validate_id};
+use crate::validators::{is_default, validate_extends, validate_id};
 use figment::{
     providers::{Format, YamlExtended},
     Figment,
@@ -52,9 +52,11 @@ pub struct GlobalProjectConfig {
     #[validate(custom = "validate_extends")]
     pub extends: Option<String>,
 
+    #[serde(skip_serializing_if = "is_default")]
     #[validate(custom = "validate_file_groups")]
     pub file_groups: FileGroups,
 
+    #[serde(skip_serializing_if = "is_default")]
     #[validate(custom = "validate_tasks")]
     #[validate]
     pub tasks: BTreeMap<String, TaskConfig>,

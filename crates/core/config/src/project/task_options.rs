@@ -75,15 +75,15 @@ pub enum TaskOutputStyle {
 #[schemars(default)]
 #[serde(default, rename_all = "camelCase")]
 pub struct TaskOptionsConfig {
-    #[validate(custom = "validate_affected_files")]
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[validate(custom = "validate_affected_files")]
     pub affected_files: Option<TaskOptionAffectedFilesConfig>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cache: Option<bool>,
 
-    #[validate(custom = "validate_env_file")]
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[validate(custom = "validate_env_file")]
     pub env_file: Option<TaskOptionEnvFileConfig>,
 
     #[serde(skip_serializing_if = "Option::is_none")]

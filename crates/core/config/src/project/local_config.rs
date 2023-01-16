@@ -8,7 +8,7 @@ use crate::project::language_platform::ProjectLanguage;
 use crate::project::task::TaskConfig;
 use crate::project::workspace::ProjectWorkspaceConfig;
 use crate::types::{FileGroups, ProjectID};
-use crate::validators::validate_id;
+use crate::validators::{is_default, validate_id};
 use crate::ProjectToolchainConfig;
 use figment::{
     providers::{Format, Serialized, YamlExtended},
@@ -79,14 +79,18 @@ pub enum ProjectType {
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct ProjectMetadataConfig {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 
     pub description: String,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub owner: Option<String>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub maintainers: Option<Vec<String>>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_channel")]
     pub channel: Option<String>,
 }
@@ -106,26 +110,34 @@ pub enum ProjectDependsOn {
 #[schemars(default)]
 #[serde(default, rename_all = "camelCase")]
 pub struct ProjectConfig {
+    #[serde(skip_serializing_if = "is_default")]
     pub depends_on: Vec<ProjectDependsOn>,
 
+    #[serde(skip_serializing_if = "is_default")]
     #[validate(custom = "validate_file_groups")]
     pub file_groups: FileGroups,
 
+    #[serde(skip_serializing_if = "is_default")]
     pub language: ProjectLanguage,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[validate]
     pub project: Option<ProjectMetadataConfig>,
 
+    #[serde(skip_serializing_if = "is_default")]
     #[validate(custom = "validate_tasks")]
     #[validate]
     pub tasks: BTreeMap<String, TaskConfig>,
 
+    #[serde(skip_serializing_if = "is_default")]
     #[validate]
     pub toolchain: ProjectToolchainConfig,
 
+    #[serde(skip_serializing_if = "is_default")]
     #[serde(rename = "type")]
     pub type_of: ProjectType,
 
+    #[serde(skip_serializing_if = "is_default")]
     #[validate]
     pub workspace: ProjectWorkspaceConfig,
 

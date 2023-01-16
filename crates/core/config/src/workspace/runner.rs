@@ -1,6 +1,6 @@
 use crate::{
     errors::create_validation_error,
-    validators::{validate_id, validate_target},
+    validators::{is_default, is_default_true, validate_id, validate_target},
 };
 use moon_utils::{string_vec, time};
 use schemars::JsonSchema;
@@ -44,21 +44,27 @@ fn validate_archivable_targets(list: &[String]) -> Result<(), ValidationError> {
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
-#[serde(rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase")]
 pub struct RunnerConfig {
+    #[serde(skip_serializing_if = "is_default")]
     #[validate(custom = "validate_archivable_targets")]
     pub archivable_targets: Vec<String>,
 
+    #[serde(skip_serializing_if = "is_default")]
     #[validate(custom = "validate_cache_lifetime")]
     pub cache_lifetime: String,
 
+    #[serde(skip_serializing_if = "is_default")]
     #[validate(custom = "validate_deps")]
     pub implicit_deps: Vec<String>,
 
+    #[serde(skip_serializing_if = "is_default")]
     pub implicit_inputs: Vec<String>,
 
+    #[serde(skip_serializing_if = "is_default_true")]
     pub inherit_colors_for_piped_tasks: bool,
 
+    #[serde(skip_serializing_if = "is_default")]
     pub log_running_command: bool,
 }
 

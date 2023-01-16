@@ -1,0 +1,13 @@
+---
+source: crates/cli/tests/migrate_test.rs
+expression: "fs::read_to_string(sandbox.path().join(\"turborepo/app/moon.yml\")).unwrap()"
+---
+tasks:
+  build:
+    command: moon node run-script build
+    deps:
+    - ^:build
+    outputs:
+    - build
+    platform: node
+

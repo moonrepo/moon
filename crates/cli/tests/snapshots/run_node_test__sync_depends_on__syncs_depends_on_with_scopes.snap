@@ -1,15 +1,14 @@
 ---
 source: crates/cli/tests/run_node_test.rs
-assertion_line: 555
-expression: "read_to_string(fixture.path().join(\"depends-on-scopes/package.json\")).unwrap()"
+expression: "read_to_string(sandbox.path().join(\"depends-on-scopes/package.json\")).unwrap()"
 ---
 {
   "name": "test-node-depends-on-scopes",
   "dependencies": {
-    "test-node-deps-d": "workspace:^"
+    "test-node-deps-d": "workspace:*"
   },
   "devDependencies": {
-    "test-node-deps-a": "workspace:^"
+    "test-node-deps-a": "workspace:*"
   },
   "peerDependencies": {
     "test-node-deps-b": "^4.0.0"

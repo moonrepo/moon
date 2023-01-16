@@ -1,0 +1,21 @@
+---
+source: crates/cli/tests/migrate_test.rs
+expression: "fs::read_to_string(sandbox.path().join(\".moon/project.yml\")).unwrap()"
+---
+tasks:
+  build:
+    command: moon node run-script build
+    deps:
+    - ^:build
+    outputs:
+    - build
+    platform: node
+  lint:
+    command: moon node run-script lint
+    inputs:
+    - $NODE_ENV
+    - src/**/*
+    options:
+      cache: false
+    platform: node
+

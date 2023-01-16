@@ -43,6 +43,7 @@
 
 - Fixed an issue where `~/.moon` is deleted, but local caching isn't aware of it missing and fails
   to run a target.
+- Fixed an issue where long-running processes would not exit even after moon has exited.
 
 ## 0.21.4
 

@@ -19,15 +19,17 @@ use validator::Validate;
 /// Docs: https://moonrepo.dev/docs/config/toolchain
 #[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
-#[serde(rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase")]
 pub struct ToolchainConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_extends")]
     pub extends: Option<String>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[validate]
     pub node: Option<NodeConfig>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[validate]
     pub typescript: Option<TypeScriptConfig>,
 

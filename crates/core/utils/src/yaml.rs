@@ -63,7 +63,11 @@ where
 
 // This function is used for consumer facing files, like configs.
 #[inline]
-pub fn write_with_config<P: AsRef<Path>>(path: P, yaml: YamlValue) -> Result<(), MoonError> {
+pub fn write_with_config<P, D>(path: P, yaml: &D) -> Result<(), MoonError>
+where
+    P: AsRef<Path>,
+    D: ?Sized + Serialize,
+{
     let path = path.as_ref();
     let editor_config = crate::fs::get_editor_config_props(path);
 

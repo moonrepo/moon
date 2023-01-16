@@ -1,0 +1,6 @@
+{
+  "name": "turborepo-library",
+  "scripts": {
+    "lint": "eslint ."
+  }
+}

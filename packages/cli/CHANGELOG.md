@@ -14,6 +14,7 @@
 - We've improved our smart hashing for other use cases besides task running. The first improvement
   is that we now hash dependencies to determine whether to run a dependency install, or to skip!
   This is much more accurate than before, which only relied on lockfile modified timestamps.
+- Added a `moon migrate from-turborepo` command to migrate from Turborepo to moon.
 - Updated `moon docker` commands to take into account other programming languages when scaffolding
   files.
 

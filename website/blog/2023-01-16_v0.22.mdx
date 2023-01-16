@@ -1,6 +1,6 @@
 ---
 slug: v0.22
-title: moon v0.22 - New pipeline with hashing and caching additions
+title: moon v0.22 - New pipeline, hashing, and caching, with Turborepo migration
 authors: [milesj]
 tags: [graph, pipeline, hasher, migrate]
 image: ./img/v0.22.png
@@ -51,6 +51,19 @@ Because of the hashing improvements above, we're now able to cache the entirety 
 into local cache. Depending on how many projects are in your workspace, you may see performance
 improvements on subsequent runs as we're no longer re-building the project graph over and over
 everytime the `moon` binary is ran.
+
+## Migrate from Turborepo
+
+Turborepo is a popular task runner for Node.js based monorepos, but doesn't support all the
+functionality that moon does. If you're looking to prototype moon, or migrate from Turborepo to moon
+holistically, we now support a new command
+[`moon migrate from-turborepo`](/docs/commands/migrate/from-turborepo).
+
+This command will migrate the `turbo.json` file to moon applicable configuration files!
+
+```shell
+$ moon migrate from-turborepo
+```
 
 ## Breaking changes
 

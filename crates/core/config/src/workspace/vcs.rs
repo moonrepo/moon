@@ -1,3 +1,4 @@
+use crate::validators::is_default;
 use moon_utils::string_vec;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -17,12 +18,15 @@ pub enum VcsManager {
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
-#[serde(rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase")]
 pub struct VcsConfig {
+    #[serde(skip_serializing_if = "is_default")]
     pub default_branch: String,
 
+    #[serde(skip_serializing_if = "is_default")]
     pub manager: VcsManager,
 
+    #[serde(skip_serializing_if = "is_default")]
     pub remote_candidates: Vec<String>,
 }
 

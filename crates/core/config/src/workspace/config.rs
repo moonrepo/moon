@@ -4,7 +4,8 @@ use crate::errors::map_validation_errors_to_figment_errors;
 use crate::helpers::gather_extended_sources;
 use crate::types::{FileGlob, FilePath};
 use crate::validators::{
-    validate_child_relative_path, validate_extends, validate_id, validate_semver_requirement,
+    is_default, validate_child_relative_path, validate_extends, validate_id,
+    validate_semver_requirement,
 };
 use crate::workspace::generator::GeneratorConfig;
 use crate::workspace::hasher::HasherConfig;
@@ -77,27 +78,33 @@ impl Default for WorkspaceProjects {
 /// Docs: https://moonrepo.dev/docs/config/workspace
 #[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
-#[serde(rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase")]
 pub struct WorkspaceConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_extends")]
     pub extends: Option<String>,
 
+    #[serde(skip_serializing_if = "is_default")]
     #[validate]
     pub generator: GeneratorConfig,
 
+    #[serde(skip_serializing_if = "is_default")]
     #[validate]
     pub hasher: HasherConfig,
 
+    #[serde(skip_serializing_if = "is_default")]
     #[validate]
     pub notifier: NotifierConfig,
 
+    #[serde(skip_serializing_if = "is_default")]
     #[validate(custom = "validate_projects")]
     pub projects: WorkspaceProjects,
 
+    #[serde(skip_serializing_if = "is_default")]
     #[validate]
     pub runner: RunnerConfig,
 
+    #[serde(skip_serializing_if = "is_default")]
     #[validate]
     pub vcs: VcsConfig,
 

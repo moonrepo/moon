@@ -96,7 +96,7 @@ const sidebars = {
 				{
 					type: 'category',
 					label: 'migrate',
-					items: ['commands/migrate/from-package-json'],
+					items: ['commands/migrate/from-package-json', 'commands/migrate/from-turborepo'],
 					link: {
 						type: 'generated-index',
 						title: 'migrate',

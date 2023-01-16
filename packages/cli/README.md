@@ -5,14 +5,18 @@ web ecosystem, written in Rust! Supports JavaScript, TypeScript, Bash, and Batch
 
 - [Documentation](https://moonrepo.dev/docs)
 - [Getting started](https://moonrepo.dev/docs/install)
-
-## Requirements
-
-- Node.js >= 14.15
+- [Feature comparison](https://moonrepo.dev/docs/comparison)
+- [FAQ](https://moonrepo.dev/docs/faq)
 
 ## Installation
 
-moon can be installed with npm, pnpm, or yarn.
+moon can be installed with bash:
+
+```bash
+curl -fsSL https://moonrepo.dev/install.sh | bash
+```
+
+Or with npm, pnpm, or yarn.
 
 ```bash
 # Install the dependency
@@ -25,7 +29,7 @@ npx @moonrepo/cli init
 ## Usage
 
 Once [projects](https://moonrepo.dev/docs/create-project) and
-[tasks](https://moonrepo.dev/docs/create-task) have been configured, you can run tasks with:
+[tasks](https://moonrepo.dev/docs/create-task) have been configured, tasks can be ran with:
 
 ```bash
 # Run `lint` in project `app`

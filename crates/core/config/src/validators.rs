@@ -4,6 +4,14 @@ use moon_utils::semver::{Version, VersionReq};
 use std::path::Path;
 use validator::{validate_url as validate_base_url, ValidationError};
 
+pub fn is_default<T: Default + PartialEq>(value: &T) -> bool {
+    value == &T::default()
+}
+
+pub fn is_default_true(value: &bool) -> bool {
+    *value == true
+}
+
 // Validate the value is a valid semver version/range.
 pub fn validate_semver_version<K: AsRef<str>, V: AsRef<str>>(
     key: K,

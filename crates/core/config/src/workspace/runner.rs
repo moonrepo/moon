@@ -1,6 +1,6 @@
 use crate::{
     errors::create_validation_error,
-    validators::{is_default, validate_id, validate_target},
+    validators::{is_default, is_default_true, validate_id, validate_target},
 };
 use moon_utils::{string_vec, time};
 use schemars::JsonSchema;
@@ -61,7 +61,7 @@ pub struct RunnerConfig {
     #[serde(skip_serializing_if = "is_default")]
     pub implicit_inputs: Vec<String>,
 
-    #[serde(skip_serializing_if = "is_default")]
+    #[serde(skip_serializing_if = "is_default_true")]
     pub inherit_colors_for_piped_tasks: bool,
 
     #[serde(skip_serializing_if = "is_default")]

@@ -1,4 +1,4 @@
-use crate::validators::is_default;
+use crate::validators::{is_default, is_default_true};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
@@ -7,22 +7,19 @@ use validator::Validate;
 #[schemars(default)]
 #[serde(default, rename_all = "camelCase")]
 pub struct TypeScriptConfig {
-    #[serde(skip_serializing_if = "is_default")]
+    #[serde(skip_serializing_if = "is_default_true")]
     pub create_missing_config: bool,
 
-    #[serde(skip_serializing_if = "is_default")]
     pub project_config_file_name: String,
 
-    #[serde(skip_serializing_if = "is_default")]
     pub root_config_file_name: String,
 
-    #[serde(skip_serializing_if = "is_default")]
     pub root_options_config_file_name: String,
 
     #[serde(skip_serializing_if = "is_default")]
     pub route_out_dir_to_cache: bool,
 
-    #[serde(skip_serializing_if = "is_default")]
+    #[serde(skip_serializing_if = "is_default_true")]
     pub sync_project_references: bool,
 
     #[serde(skip_serializing_if = "is_default")]

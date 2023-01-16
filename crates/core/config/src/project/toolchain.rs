@@ -1,6 +1,6 @@
 // These configs are project-level settings that override those from the root!
 
-use crate::validators::{is_default, validate_semver_version};
+use crate::validators::{is_default_true, validate_semver_version};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use validator::{Validate, ValidationError};
@@ -26,7 +26,7 @@ pub struct ProjectToolchainConfig {
     #[validate]
     pub node: Option<ProjectToolchainNodeConfig>,
 
-    #[serde(skip_serializing_if = "is_default")]
+    #[serde(skip_serializing_if = "is_default_true")]
     pub typescript: bool,
 }
 

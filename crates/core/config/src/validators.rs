@@ -5,8 +5,11 @@ use std::path::Path;
 use validator::{validate_url as validate_base_url, ValidationError};
 
 pub fn is_default<T: Default + PartialEq>(value: &T) -> bool {
-    let def: T = Default::default();
-    value == &def
+    value == &T::default()
+}
+
+pub fn is_default_true(value: &bool) -> bool {
+    *value == true
 }
 
 // Validate the value is a valid semver version/range.

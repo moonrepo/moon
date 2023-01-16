@@ -1,4 +1,4 @@
-use crate::validators::{is_default, validate_semver_version};
+use crate::validators::{is_default, is_default_true, validate_semver_version};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -141,7 +141,7 @@ impl Default for YarnConfig {
 #[schemars(default)]
 #[serde(default, rename_all = "camelCase")]
 pub struct NodeConfig {
-    #[serde(skip_serializing_if = "is_default")]
+    #[serde(skip_serializing_if = "is_default_true")]
     pub add_engines_constraint: bool,
 
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -150,7 +150,7 @@ pub struct NodeConfig {
     #[serde(skip_serializing_if = "is_default")]
     pub bin_exec_args: Vec<String>,
 
-    #[serde(skip_serializing_if = "is_default")]
+    #[serde(skip_serializing_if = "is_default_true")]
     pub dedupe_on_lockfile_change: bool,
 
     #[serde(skip_serializing_if = "is_default")]
@@ -170,7 +170,7 @@ pub struct NodeConfig {
     #[validate]
     pub pnpm: Option<PnpmConfig>,
 
-    #[serde(skip_serializing_if = "is_default")]
+    #[serde(skip_serializing_if = "is_default_true")]
     pub sync_project_workspace_dependencies: bool,
 
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -192,7 +192,7 @@ impl Default for NodeConfig {
             alias_package_names: None,
             bin_exec_args: vec![],
             dedupe_on_lockfile_change: true,
-            dependency_version_format: NodeVersionFormat::WorkspaceCaret,
+            dependency_version_format: NodeVersionFormat::Workspace,
             infer_tasks_from_scripts: false,
             npm: NpmConfig::default(),
             package_manager: NodePackageManager::default(),

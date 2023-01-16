@@ -2,11 +2,54 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moon Blog</title>
-    <updated>2023-01-04T00:00:00.000Z</updated>
+    <updated>2023-01-16T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moon Blog</subtitle>
     <icon>https://moonrepo.dev/img/favicon.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[moon v0.22 - New pipeline, hashing, and caching, with Turborepo migration]]></title>
+        <id>v0.22</id>
+        <link href="https://moonrepo.dev/blog/v0.22"/>
+        <updated>2023-01-16T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[It's the first release of the year, and with this release, we're landing some quality of life]]></summary>
+        <content type="html"><![CDATA[<p>It's the first release of the year, and with this release, we're landing some quality of life
+infrastructure and workflow improvements!</p><h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-action-pipeline">New action pipeline<a class="hash-link" href="#new-action-pipeline" title="Direct link to heading">​</a></h2><p>When running targets, we generate a graph of actions to execute in order within the action runner.
+An action is one of "setup toolchain", "install dependencies", "run target", so on and so forth. Our
+action runner would then spawn threads for every action using the <a href="https://tokio.rs/" target="_blank" rel="noopener noreferrer">Tokio</a>
+runtime. While this worked great, concurrency was entirely abstracted away from us.</p><p>To mitigate this problem, we've implemented a new system for executing actions known as the action
+pipeline (or simply pipeline), which implements a dynamically scaling thread pool on top of Tokio.
+This provides us with more control over concurrency, starting with the new <code>--concurrency</code> option,
+which restricts the number of threads (or CPU cores).</p><div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon run :build --concurrency </span><span class="token number" style="color:#94dded">2</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg class="copyButtonIcon_FoOz" viewBox="0 0 24 24"><path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg class="copyButtonSuccessIcon_L0B6" viewBox="0 0 24 24"><path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div><h2 class="anchor anchorWithStickyNavbar_JmGV" id="expanded-hashing-functionality">Expanded hashing functionality<a class="hash-link" href="#expanded-hashing-functionality" title="Direct link to heading">​</a></h2><p>When we run targets in the pipeline, we hash a collection of inputs to calculate whether to continue
+running or to exit early. This functionality has been extremely beneficial for optimizing the
+pipeline, and so, we've expanded the hasher for other use cases. To start, the following 2 workflows
+now utilize the hasher:</p><ul><li>When determining to auto-install dependencies (<code>npm install</code>, etc), we now hash all production,
+development, and peer dependencies from applicable manifests (<code>package.json</code>). This has resulted
+in more accurate installs, as we're no longer inadvertently installing when a non-dependency field
+is modified in a manifest. On top of this, will still take into account lockfile modified
+timestamps.</li><li>When generating the project graph, we now hash all sources, aliases, and configuration files, to
+determine whether to load the project graph from the local cache.</li></ul><h2 class="anchor anchorWithStickyNavbar_JmGV" id="project-graph-is-now-cached">Project graph is now cached<a class="hash-link" href="#project-graph-is-now-cached" title="Direct link to heading">​</a></h2><p>Because of the hashing improvements above, we're now able to cache the entirety of the project graph
+into local cache. Depending on how many projects are in your workspace, you may see performance
+improvements on subsequent runs as we're no longer re-building the project graph over and over
+everytime the <code>moon</code> binary is ran.</p><h2 class="anchor anchorWithStickyNavbar_JmGV" id="migrate-from-turborepo">Migrate from Turborepo<a class="hash-link" href="#migrate-from-turborepo" title="Direct link to heading">​</a></h2><p>Turborepo is a popular task runner for Node.js based monorepos, but doesn't support all the
+functionality that moon does. If you're looking to prototype moon, or migrate from Turborepo to moon
+holistically, we now support a new command
+<a href="/docs/commands/migrate/from-turborepo"><code>moon migrate from-turborepo</code></a>.</p><p>This command will migrate the <code>turbo.json</code> file to moon applicable configuration files!</p><div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon migrate from-turborepo</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg class="copyButtonIcon_FoOz" viewBox="0 0 24 24"><path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg class="copyButtonSuccessIcon_L0B6" viewBox="0 0 24 24"><path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div><h2 class="anchor anchorWithStickyNavbar_JmGV" id="breaking-changes">Breaking changes<a class="hash-link" href="#breaking-changes" title="Direct link to heading">​</a></h2><h3 class="anchor anchorWithStickyNavbar_JmGV" id="renamed-events">Renamed events<a class="hash-link" href="#renamed-events" title="Direct link to heading">​</a></h3><p>Because of the runner -&gt; pipeline changes above, the <code>runner.*</code> <a href="/docs/guides/webhooks">webhook</a>
+events were renamed to <code>pipeline.*</code>.</p><h3 class="anchor anchorWithStickyNavbar_JmGV" id="updated-cli-options">Updated CLI options<a class="hash-link" href="#updated-cli-options" title="Direct link to heading">​</a></h3><p>Renamed the <code>--upstream</code> option to <code>--remote</code>, to better align with git terminology, and removed the
+<code>--report</code> option from <code>moon check</code> and <code>moon run</code> commands. Reports are now always created.</p><h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" href="#other-changes" title="Direct link to heading">​</a></h2><p>View the
+<a href="https://github.com/moonrepo/moon/releases/tag/%40moonrepo%2Fcli%400.22.0" target="_blank" rel="noopener noreferrer">official release</a> for a
+full list of changes.</p><ul><li>Added Bun as a Tier 1 language (doesn't do much at the moment).</li><li>Added a <a href="/docs/config/workspace#versionconstraint"><code>versionConstraint</code> setting</a> in
+<code>.moon/workspace.yml</code> that enforces a requirement on the running moon binary.</li><li>Updated the <a href="/docs/config/project#project"><code>project</code> fields</a> in <code>moon.yml</code> to be optional,
+excluding <code>description</code>.</li><li>Internal improvements to remote caching and artifact uploading.</li></ul><h2 class="anchor anchorWithStickyNavbar_JmGV" id="whats-next">What's next?<a class="hash-link" href="#whats-next" title="Direct link to heading">​</a></h2><p>Expect the following in the v0.23 release!</p><ul><li>Improved task inheritance workflow.</li><li>Glob support in task <code>outputs</code>.</li><li>Project-level environment variables.</li></ul>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="graph" term="graph"/>
+        <category label="pipeline" term="pipeline"/>
+        <category label="hasher" term="hasher"/>
+        <category label="migrate" term="migrate"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[What's in store for 2023]]></title>
         <id>2023-roadmap</id>
@@ -126,7 +169,7 @@ tasks being ran, and for applying code quality tooling like git hooks. However, 
 to apply a single status filter, like "deleted" or "modified", which was non-ideal... but no more!</p><p>You can now apply multiple statuses by passing the <code>--status</code> option multiple times.</p><div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon run :lint --affected --status modified --status added</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg class="copyButtonIcon_FoOz" viewBox="0 0 24 24"><path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg class="copyButtonSuccessIcon_L0B6" viewBox="0 0 24 24"><path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div><p>This pairs nicely with the recent
 <a href="/docs/config/project#affectedfiles"><code>affectedFiles</code> task option</a> changes!</p><h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a class="hash-link" href="#other-changes" title="Direct link to heading">​</a></h2><p>View the
 <a href="https://github.com/moonrepo/moon/releases/tag/%40moonrepo%2Fcli%400.21.0" target="_blank" rel="noopener noreferrer">official release</a> for a
-full list of changes.</p><ul><li>Refactored project and dependency graphs for improved performance.</li><li>Added args and env var variants to the <code>affectedFiles</code> task option.</li><li>Added <code>--minimal</code> to <code>moon init</code> for quick scaffolding and prototyping.</li></ul><h2 class="anchor anchorWithStickyNavbar_JmGV" id="whats-next">What's next?<a class="hash-link" href="#whats-next" title="Direct link to heading">​</a></h2><p>Expect the following in the v0.21 release!</p><ul><li>Scope tasks defined in <code>.moon/project.yml</code> to a project language or type.</li><li>Generalized hashing for use in any context (improved deps installation).</li><li>More work on language integrations.</li></ul>]]></content>
+full list of changes.</p><ul><li>Refactored project and dependency graphs for improved performance.</li><li>Added args and env var variants to the <code>affectedFiles</code> task option.</li><li>Added <code>--minimal</code> to <code>moon init</code> for quick scaffolding and prototyping.</li></ul><h2 class="anchor anchorWithStickyNavbar_JmGV" id="whats-next">What's next?<a class="hash-link" href="#whats-next" title="Direct link to heading">​</a></h2><p>Expect the following in the v0.22 release!</p><ul><li>Generalized hashing for use in any context (improved deps installation).</li><li>More work on language integrations.</li></ul>]]></content>
         <author>
             <name>Miles Johnson</name>
             <uri>https://github.com/milesj</uri>

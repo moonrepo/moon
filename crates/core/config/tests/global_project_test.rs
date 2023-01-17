@@ -1,5 +1,5 @@
 use moon_config::{ConfigError, GlobalProjectConfig, TaskCommandArgs};
-use moon_constants::CONFIG_GLOBAL_PROJECT_FILENAME;
+use moon_constants::CONFIG_TASKS_FILENAME;
 use moon_test_utils::get_fixtures_path;
 use moon_utils::string_vec;
 use rustc_hash::FxHashMap;
@@ -7,7 +7,7 @@ use std::collections::BTreeMap;
 use std::path::Path;
 
 fn load_jailed_config(root: &Path) -> Result<GlobalProjectConfig, figment::Error> {
-    match GlobalProjectConfig::load(root.join(CONFIG_GLOBAL_PROJECT_FILENAME)) {
+    match GlobalProjectConfig::load(root.join(CONFIG_TASKS_FILENAME)) {
         Ok(cfg) => Ok(cfg),
         Err(error) => Err(match error {
             ConfigError::FailedValidation(errors) => errors.first().unwrap().to_owned(),
@@ -21,7 +21,7 @@ fn load_jailed_config(root: &Path) -> Result<GlobalProjectConfig, figment::Error
 fn loads_defaults() {
     figment::Jail::expect_with(|jail| {
         jail.create_file(
-            CONFIG_GLOBAL_PROJECT_FILENAME,
+            CONFIG_TASKS_FILENAME,
             r#"
 fileGroups:
     sources:
@@ -100,7 +100,7 @@ mod extends {
     #[should_panic(expected = "Invalid <id>extends</id> field, must be a string.")]
     fn invalid_type() {
         figment::Jail::expect_with(|jail| {
-            jail.create_file(super::CONFIG_GLOBAL_PROJECT_FILENAME, "extends: 123")?;
+            jail.create_file(super::CONFIG_TASKS_FILENAME, "extends: 123")?;
 
             super::load_jailed_config(jail.directory())?;
 
@@ -115,10 +115,7 @@ mod extends {
     #[should_panic(expected = "only YAML documents are supported")]
     fn not_a_url_or_file() {
         figment::Jail::expect_with(|jail| {
-            jail.create_file(
-                super::CONFIG_GLOBAL_PROJECT_FILENAME,
-                "extends: random value",
-            )?;
+            jail.create_file(super::CONFIG_TASKS_FILENAME, "extends: random value")?;
 
             super::load_jailed_config(jail.directory())?;
 
@@ -131,7 +128,7 @@ mod extends {
     fn not_a_https_url() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_GLOBAL_PROJECT_FILENAME,
+                super::CONFIG_TASKS_FILENAME,
                 "extends: http://domain.com/config.yml",
             )?;
 
@@ -147,7 +144,7 @@ mod extends {
     fn not_a_yaml_url() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_GLOBAL_PROJECT_FILENAME,
+                super::CONFIG_TASKS_FILENAME,
                 "extends: https://domain.com/file.txt",
             )?;
 
@@ -166,10 +163,7 @@ mod extends {
 
             jail.create_file("shared/file.txt", "")?;
 
-            jail.create_file(
-                super::CONFIG_GLOBAL_PROJECT_FILENAME,
-                "extends: ./shared/file.txt",
-            )?;
+            jail.create_file(super::CONFIG_TASKS_FILENAME, "extends: ./shared/file.txt")?;
 
             super::load_jailed_config(jail.directory())?;
 
@@ -232,14 +226,14 @@ mod extends {
             fs::create_dir_all(jail.directory().join("shared")).unwrap();
 
             jail.create_file(
-                format!("shared/{}", super::CONFIG_GLOBAL_PROJECT_FILENAME),
-                include_str!("../../../../tests/fixtures/config-extends/.moon/project.yml"),
+                format!("shared/{}", super::CONFIG_TASKS_FILENAME),
+                include_str!("../../../../tests/fixtures/config-extends/.moon/tasks.yml"),
             )?;
 
             jail.create_file(
-                super::CONFIG_GLOBAL_PROJECT_FILENAME,
+                super::CONFIG_TASKS_FILENAME,
                 r#"
-extends: ./shared/project.yml
+extends: ./shared/tasks.yml
 
 fileGroups:
     sources:
@@ -278,9 +272,9 @@ fileGroups:
             );
 
             jail.create_file(
-                    super::CONFIG_GLOBAL_PROJECT_FILENAME,
+                    super::CONFIG_TASKS_FILENAME,
 r#"
-extends: https://raw.githubusercontent.com/moonrepo/moon/master/tests/fixtures/config-extends/.moon/project.yml
+extends: https://raw.githubusercontent.com/moonrepo/moon/master/tests/fixtures/config-extends/.moon/tasks.yml
 
 fileGroups:
     sources:
@@ -335,7 +329,7 @@ mod file_groups {
     )]
     fn invalid_type() {
         figment::Jail::expect_with(|jail| {
-            jail.create_file(super::CONFIG_GLOBAL_PROJECT_FILENAME, "fileGroups: 123")?;
+            jail.create_file(super::CONFIG_TASKS_FILENAME, "fileGroups: 123")?;
 
             super::load_jailed_config(jail.directory())?;
 
@@ -350,7 +344,7 @@ mod file_groups {
     fn invalid_value_type() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_GLOBAL_PROJECT_FILENAME,
+                super::CONFIG_TASKS_FILENAME,
                 r#"
 fileGroups:
     sources: 123"#,
@@ -374,7 +368,7 @@ mod tasks {
     fn invalid_type() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_GLOBAL_PROJECT_FILENAME,
+                super::CONFIG_TASKS_FILENAME,
                 r#"
 fileGroups: {}
 tasks: 123
@@ -394,7 +388,7 @@ tasks: 123
     fn invalid_value_type() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_GLOBAL_PROJECT_FILENAME,
+                super::CONFIG_TASKS_FILENAME,
                 r#"
 fileGroups: {}
 tasks:
@@ -415,7 +409,7 @@ tasks:
     fn invalid_value_field() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_GLOBAL_PROJECT_FILENAME,
+                super::CONFIG_TASKS_FILENAME,
                 r#"
 fileGroups: {}
 tasks:
@@ -435,7 +429,7 @@ tasks:
     fn invalid_value_empty_field() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_GLOBAL_PROJECT_FILENAME,
+                super::CONFIG_TASKS_FILENAME,
                 r#"
 fileGroups:
     sources: []
@@ -454,7 +448,7 @@ tasks:
     fn can_use_references() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_GLOBAL_PROJECT_FILENAME,
+                super::CONFIG_TASKS_FILENAME,
                 r#"
 tasks:
     build: &webpack
@@ -496,7 +490,7 @@ tasks:
     fn can_use_references_from_root() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_GLOBAL_PROJECT_FILENAME,
+                super::CONFIG_TASKS_FILENAME,
                 r#"
 _webpack: &webpack
     command: 'webpack'

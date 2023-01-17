@@ -206,7 +206,7 @@ pub async fn from_turborepo(skip_touched_files_check: &bool) -> Result<(), AnyEr
             workspace
                 .root
                 .join(constants::CONFIG_DIRNAME)
-                .join(constants::CONFIG_GLOBAL_PROJECT_FILENAME),
+                .join(constants::CONFIG_TASKS_FILENAME),
             &workspace.projects_config,
         )?;
     }

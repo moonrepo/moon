@@ -196,7 +196,7 @@ mod task_inheritance {
                 string_vec![
                     "b.*",
                     "package.json",
-                    "/.moon/project.yml",
+                    "/.moon/tasks.yml",
                     "/.moon/toolchain.yml",
                     "/.moon/workspace.yml",
                 ]
@@ -231,7 +231,7 @@ mod task_inheritance {
                     "a.*",
                     "b.*",
                     "package.json",
-                    "/.moon/project.yml",
+                    "/.moon/tasks.yml",
                     "/.moon/toolchain.yml",
                     "/.moon/workspace.yml",
                 ]
@@ -266,7 +266,7 @@ mod task_inheritance {
                     "b.*",
                     "a.*",
                     "package.json",
-                    "/.moon/project.yml",
+                    "/.moon/tasks.yml",
                     "/.moon/toolchain.yml",
                     "/.moon/workspace.yml",
                 ]
@@ -297,7 +297,7 @@ mod task_inheritance {
                 string_vec![
                     "b.*",
                     "package.json",
-                    "/.moon/project.yml",
+                    "/.moon/tasks.yml",
                     "/.moon/toolchain.yml",
                     "/.moon/workspace.yml",
                 ]
@@ -995,7 +995,7 @@ mod task_expansion {
                 vec![
                     sandbox.path().join(".moon/workspace.yml"),
                     sandbox.path().join(".moon/toolchain.yml"),
-                    sandbox.path().join(".moon/project.yml"),
+                    sandbox.path().join(".moon/tasks.yml"),
                     sandbox.path().join("package.json"),
                     project.root.join("package.json"),
                     project.root.join("file.ts"),

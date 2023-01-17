@@ -151,7 +151,7 @@ mod configs {
     fn bubbles_up_invalid_global_project_config() {
         let sandbox = cases_sandbox();
 
-        sandbox.create_file(".moon/project.yml", "tasks: 123");
+        sandbox.create_file(".moon/tasks.yml", "tasks: 123");
 
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("base:noop");

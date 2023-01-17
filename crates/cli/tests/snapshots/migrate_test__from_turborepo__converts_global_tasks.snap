@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/migrate_test.rs
-expression: "fs::read_to_string(sandbox.path().join(\".moon/project.yml\")).unwrap()"
+expression: "fs::read_to_string(sandbox.path().join(\".moon/tasks.yml\")).unwrap()"
 ---
 tasks:
   build:

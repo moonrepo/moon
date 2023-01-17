@@ -29,8 +29,8 @@ impl Sandbox {
     pub fn debug_configs(&self) -> &Self {
         for cfg in [
             ".moon/workspace.yml",
+            ".moon/tasks.yml",
             ".moon/toolchain.yml",
-            ".moon/project.yml",
         ] {
             let path = self.path().join(cfg);
 
@@ -157,7 +157,7 @@ pub fn create_sandbox_with_config<T: AsRef<str>>(
     );
 
     if let Some(config) = projects_config {
-        sandbox.create_file(".moon/project.yml", serde_yaml::to_string(&config).unwrap());
+        sandbox.create_file(".moon/tasks.yml", serde_yaml::to_string(&config).unwrap());
     }
 
     sandbox

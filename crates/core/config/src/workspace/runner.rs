@@ -78,7 +78,7 @@ impl Default for RunnerConfig {
                 // When a project changes
                 "package.json",
                 // When root config changes
-                "/.moon/project.yml",
+                "/.moon/tasks.yml",
                 "/.moon/toolchain.yml",
                 "/.moon/workspace.yml",
             ],

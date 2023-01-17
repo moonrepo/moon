@@ -61,7 +61,7 @@ mod scaffold_workspace {
 
         let docker = sandbox.path().join(".moon/docker/workspace");
 
-        assert!(docker.join(".moon/project.yml").exists());
+        assert!(docker.join(".moon/tasks.yml").exists());
         assert!(docker.join(".moon/toolchain.yml").exists());
         assert!(docker.join(".moon/workspace.yml").exists());
     }

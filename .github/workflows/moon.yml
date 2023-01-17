@@ -7,8 +7,8 @@ on:
     paths:
       - .github/workflows/moon.yml
       - .moon/workspace.yml
+      - .moon/tasks.yml
       - .moon/toolchain.yml
-      - .moon/project.yml
       - crates/**
       - packages/**
       - website/**

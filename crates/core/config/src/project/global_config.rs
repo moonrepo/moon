@@ -1,4 +1,4 @@
-// .moon/project.yml
+// .moon/tasks.yml
 
 use crate::errors::{
     create_validation_error, map_validation_errors_to_figment_errors, ConfigError,

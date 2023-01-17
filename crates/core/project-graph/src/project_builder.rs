@@ -5,8 +5,7 @@ use crate::project_graph::{GraphType, IndicesType, ProjectGraph, LOG_TARGET};
 use crate::token_resolver::{TokenContext, TokenResolver};
 use moon_config::{
     PlatformType, ProjectLanguage, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceProjects,
-    CONFIG_DIRNAME, CONFIG_GLOBAL_PROJECT_FILENAME, CONFIG_PROJECT_FILENAME,
-    CONFIG_TOOLCHAIN_FILENAME,
+    CONFIG_DIRNAME, CONFIG_PROJECT_FILENAME, CONFIG_TASKS_FILENAME, CONFIG_TOOLCHAIN_FILENAME,
 };
 use moon_error::MoonError;
 use moon_hasher::{convert_paths_to_strings, to_hash};
@@ -553,7 +552,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             );
 
             // Because of inherited tasks
-            configs.insert(PathBuf::from(CONFIG_DIRNAME).join(CONFIG_GLOBAL_PROJECT_FILENAME));
+            configs.insert(PathBuf::from(CONFIG_DIRNAME).join(CONFIG_TASKS_FILENAME));
 
             // Because of settings that interact with tasks
             configs.insert(PathBuf::from(CONFIG_DIRNAME).join(CONFIG_TOOLCHAIN_FILENAME));

@@ -10,12 +10,12 @@ mod missing_tsconfig {
 
     #[test]
     fn creates_tsconfig() {
-        let (workspace_config, toolchain_config, projects_config) = get_node_fixture_configs();
+        let (workspace_config, toolchain_config, tasks_config) = get_node_fixture_configs();
         let sandbox = create_sandbox_with_config(
             "node",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         let project = Project::new(
@@ -45,12 +45,12 @@ mod missing_tsconfig {
 
     #[test]
     fn creates_tsconfig_with_custom_settings() {
-        let (workspace_config, toolchain_config, projects_config) = get_node_fixture_configs();
+        let (workspace_config, toolchain_config, tasks_config) = get_node_fixture_configs();
         let sandbox = create_sandbox_with_config(
             "node",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         let project = Project::new(
@@ -88,12 +88,12 @@ mod missing_tsconfig {
 
     #[test]
     fn doesnt_create_if_a_config_exists() {
-        let (workspace_config, toolchain_config, projects_config) = get_node_fixture_configs();
+        let (workspace_config, toolchain_config, tasks_config) = get_node_fixture_configs();
         let sandbox = create_sandbox_with_config(
             "node",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         let project = Project::new(

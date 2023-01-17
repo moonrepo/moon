@@ -9,13 +9,13 @@ use std::fs;
 use std::path::Path;
 
 fn cases_sandbox() -> Sandbox {
-    let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
+    let (workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
 
     create_sandbox_with_config(
         "cases",
         Some(&workspace_config),
         Some(&toolchain_config),
-        Some(&projects_config),
+        Some(&tasks_config),
     )
 }
 
@@ -23,7 +23,7 @@ fn cases_sandbox_with_config<C>(callback: C) -> Sandbox
 where
     C: FnOnce(&mut WorkspaceConfig),
 {
-    let (mut workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
+    let (mut workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
 
     callback(&mut workspace_config);
 
@@ -31,7 +31,7 @@ where
         "cases",
         Some(&workspace_config),
         Some(&toolchain_config),
-        Some(&projects_config),
+        Some(&tasks_config),
     )
 }
 

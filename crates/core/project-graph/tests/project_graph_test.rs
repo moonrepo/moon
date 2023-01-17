@@ -9,14 +9,14 @@ use moon_utils::string_vec;
 use rustc_hash::FxHashMap;
 
 async fn get_aliases_graph() -> (ProjectGraph, Sandbox) {
-    let (workspace_config, toolchain_config, projects_config) =
+    let (workspace_config, toolchain_config, tasks_config) =
         get_project_graph_aliases_fixture_configs();
 
     let sandbox = create_sandbox_with_config(
         "project-graph/aliases",
         Some(&workspace_config),
         Some(&toolchain_config),
-        Some(&projects_config),
+        Some(&tasks_config),
     );
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();

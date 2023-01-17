@@ -23,13 +23,13 @@ mod scaffold_workspace {
 
     #[test]
     fn copies_all_manifests() {
-        let (workspace_config, toolchain_config, projects_config) = get_node_fixture_configs();
+        let (workspace_config, toolchain_config, tasks_config) = get_node_fixture_configs();
 
         let sandbox = create_sandbox_with_config(
             "node",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         sandbox.run_moon(|cmd| {
@@ -46,13 +46,13 @@ mod scaffold_workspace {
 
     #[test]
     fn copies_moon_configs() {
-        let (workspace_config, toolchain_config, projects_config) = get_node_fixture_configs();
+        let (workspace_config, toolchain_config, tasks_config) = get_node_fixture_configs();
 
         let sandbox = create_sandbox_with_config(
             "node",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         sandbox.run_moon(|cmd| {
@@ -68,13 +68,13 @@ mod scaffold_workspace {
 
     #[test]
     fn copies_node_postinstalls() {
-        let (workspace_config, toolchain_config, projects_config) = get_node_fixture_configs();
+        let (workspace_config, toolchain_config, tasks_config) = get_node_fixture_configs();
 
         let sandbox = create_sandbox_with_config(
             "node",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         sandbox.run_moon(|cmd| {
@@ -89,14 +89,14 @@ mod scaffold_workspace {
 
     #[test]
     fn copies_npm_files() {
-        let (workspace_config, toolchain_config, projects_config) =
+        let (workspace_config, toolchain_config, tasks_config) =
             get_node_depman_fixture_configs("npm");
 
         let sandbox = create_sandbox_with_config(
             "node-npm",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         sandbox.run_moon(|cmd| {
@@ -110,14 +110,14 @@ mod scaffold_workspace {
 
     #[test]
     fn copies_pnpm_files() {
-        let (workspace_config, toolchain_config, projects_config) =
+        let (workspace_config, toolchain_config, tasks_config) =
             get_node_depman_fixture_configs("pnpm");
 
         let sandbox = create_sandbox_with_config(
             "node-pnpm",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         sandbox.run_moon(|cmd| {
@@ -132,14 +132,14 @@ mod scaffold_workspace {
 
     #[test]
     fn copies_yarn_files() {
-        let (workspace_config, toolchain_config, projects_config) =
+        let (workspace_config, toolchain_config, tasks_config) =
             get_node_depman_fixture_configs("yarn");
 
         let sandbox = create_sandbox_with_config(
             "node-yarn",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         sandbox.run_moon(|cmd| {
@@ -154,14 +154,14 @@ mod scaffold_workspace {
 
     #[test]
     fn copies_yarn1_files() {
-        let (workspace_config, toolchain_config, projects_config) =
+        let (workspace_config, toolchain_config, tasks_config) =
             get_node_depman_fixture_configs("yarn1");
 
         let sandbox = create_sandbox_with_config(
             "node-yarn1",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         sandbox.run_moon(|cmd| {
@@ -179,13 +179,13 @@ mod scaffold_sources {
 
     #[test]
     fn copies_project_and_deps() {
-        let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
+        let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
 
         let sandbox = create_sandbox_with_config(
             "projects",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         sandbox.run_moon(|cmd| {
@@ -205,13 +205,13 @@ mod scaffold_sources {
 
     #[test]
     fn copies_multiple_projects() {
-        let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
+        let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
 
         let sandbox = create_sandbox_with_config(
             "projects",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         sandbox.run_moon(|cmd| {
@@ -230,13 +230,13 @@ mod scaffold_sources {
 
     #[test]
     fn can_include_more_files() {
-        let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
+        let (workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
 
         let sandbox = create_sandbox_with_config(
             "cases",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         sandbox.run_moon(|cmd| {
@@ -266,13 +266,13 @@ mod prune {
 
     #[test]
     fn errors_missing_manifest() {
-        let (workspace_config, toolchain_config, projects_config) = get_node_fixture_configs();
+        let (workspace_config, toolchain_config, tasks_config) = get_node_fixture_configs();
 
         let sandbox = create_sandbox_with_config(
             "node",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -291,14 +291,14 @@ mod prune_node {
 
     #[test]
     fn focuses_for_npm() {
-        let (workspace_config, toolchain_config, projects_config) =
+        let (workspace_config, toolchain_config, tasks_config) =
             get_node_depman_fixture_configs("npm");
 
         let sandbox = create_sandbox_with_config(
             "node-npm",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         write_manifest(sandbox.path(), "other");
@@ -323,14 +323,14 @@ mod prune_node {
 
     #[test]
     fn focuses_for_pnpm() {
-        let (workspace_config, toolchain_config, projects_config) =
+        let (workspace_config, toolchain_config, tasks_config) =
             get_node_depman_fixture_configs("pnpm");
 
         let sandbox = create_sandbox_with_config(
             "node-pnpm",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         write_manifest(sandbox.path(), "other");
@@ -353,14 +353,14 @@ mod prune_node {
 
     #[test]
     fn focuses_for_yarn() {
-        let (workspace_config, toolchain_config, projects_config) =
+        let (workspace_config, toolchain_config, tasks_config) =
             get_node_depman_fixture_configs("yarn");
 
         let sandbox = create_sandbox_with_config(
             "node-yarn",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         write_manifest(sandbox.path(), "other");
@@ -383,14 +383,14 @@ mod prune_node {
 
     #[test]
     fn focuses_for_yarn1() {
-        let (workspace_config, toolchain_config, projects_config) =
+        let (workspace_config, toolchain_config, tasks_config) =
             get_node_depman_fixture_configs("yarn1");
 
         let sandbox = create_sandbox_with_config(
             "node-yarn1",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         write_manifest(sandbox.path(), "other");

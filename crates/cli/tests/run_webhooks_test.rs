@@ -5,7 +5,7 @@ use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 fn sandbox(uri: String) -> Sandbox {
-    let (mut workspace_config, toolchain_config, projects_config) = get_node_fixture_configs();
+    let (mut workspace_config, toolchain_config, tasks_config) = get_node_fixture_configs();
 
     workspace_config.notifier = NotifierConfig {
         webhook_url: Some(format!("{}/webhook", uri)),
@@ -15,7 +15,7 @@ fn sandbox(uri: String) -> Sandbox {
         "node",
         Some(&workspace_config),
         Some(&toolchain_config),
-        Some(&projects_config),
+        Some(&tasks_config),
     );
 
     sandbox.enable_git();

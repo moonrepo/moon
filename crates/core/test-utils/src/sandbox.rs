@@ -132,7 +132,7 @@ pub fn create_sandbox_with_config<T: AsRef<str>>(
     fixture: T,
     workspace_config: Option<&WorkspaceConfig>,
     toolchain_config: Option<&ToolchainConfig>,
-    projects_config: Option<&InheritedTasksConfig>,
+    tasks_config: Option<&InheritedTasksConfig>,
 ) -> Sandbox {
     let sandbox = create_sandbox(fixture);
 
@@ -156,7 +156,7 @@ pub fn create_sandbox_with_config<T: AsRef<str>>(
         .unwrap(),
     );
 
-    if let Some(config) = projects_config {
+    if let Some(config) = tasks_config {
         sandbox.create_file(".moon/tasks.yml", serde_yaml::to_string(&config).unwrap());
     }
 

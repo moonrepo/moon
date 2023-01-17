@@ -148,7 +148,7 @@ mod configs {
     }
 
     #[test]
-    fn bubbles_up_invalid_global_project_config() {
+    fn bubbles_up_invalid_tasks_config() {
         let sandbox = cases_sandbox();
 
         sandbox.create_file(".moon/tasks.yml", "tasks: 123");

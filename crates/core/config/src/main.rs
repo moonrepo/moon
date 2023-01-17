@@ -8,7 +8,7 @@ use std::fs;
 fn main() {
     // Generate JSON schemas derived from our structs
     let project_schema = schema_for!(ProjectConfig);
-    let global_project_schema = schema_for!(GlobalProjectConfig);
+    let tasks_schema = schema_for!(GlobalProjectConfig);
     let template_schema = schema_for!(TemplateConfig);
     let template_frontmatter_schema = schema_for!(TemplateFrontmatterConfig);
     let toolchain_schema = schema_for!(ToolchainConfig);
@@ -21,8 +21,8 @@ fn main() {
     .unwrap();
 
     fs::write(
-        "website/static/schemas/global-project.json",
-        serde_json::to_string_pretty(&global_project_schema).unwrap(),
+        "website/static/schemas/tasks.json",
+        serde_json::to_string_pretty(&tasks_schema).unwrap(),
     )
     .unwrap();
 

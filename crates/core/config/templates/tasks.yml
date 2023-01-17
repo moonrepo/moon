@@ -1,5 +1,5 @@
-# https://moonrepo.dev/docs/config/global-project
-$schema: 'https://moonrepo.dev/schemas/global-project.json'
+# https://moonrepo.dev/docs/config/tasks
+$schema: 'https://moonrepo.dev/schemas/tasks.json'
 
 # Extend and inherit an external configuration file. Must be a valid HTTPS URL or file system path.
 # extends: './shared/tasks.yml'

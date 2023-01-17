@@ -11,7 +11,6 @@
       ]
     },
     "node": {
-      "default": null,
       "anyOf": [
         {
           "$ref": "#/definitions/NodeConfig"
@@ -22,7 +21,6 @@
       ]
     },
     "typescript": {
-      "default": null,
       "anyOf": [
         {
           "$ref": "#/definitions/TypeScriptConfig"
@@ -38,11 +36,9 @@
       "type": "object",
       "properties": {
         "addEnginesConstraint": {
-          "default": true,
           "type": "boolean"
         },
         "aliasPackageNames": {
-          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/NodeProjectAliasFormat"
@@ -53,48 +49,27 @@
           ]
         },
         "binExecArgs": {
-          "default": [],
           "type": "array",
           "items": {
             "type": "string"
           }
         },
         "dedupeOnLockfileChange": {
-          "default": true,
           "type": "boolean"
         },
         "dependencyVersionFormat": {
-          "default": "workspace-caret",
-          "allOf": [
-            {
-              "$ref": "#/definitions/NodeVersionFormat"
-            }
-          ]
+          "$ref": "#/definitions/NodeVersionFormat"
         },
         "inferTasksFromScripts": {
-          "default": false,
           "type": "boolean"
         },
         "npm": {
-          "default": {
-            "version": "8.19.2"
-          },
-          "allOf": [
-            {
-              "$ref": "#/definitions/NpmConfig"
-            }
-          ]
+          "$ref": "#/definitions/NpmConfig"
         },
         "packageManager": {
-          "default": "npm",
-          "allOf": [
-            {
-              "$ref": "#/definitions/NodePackageManager"
-            }
-          ]
+          "$ref": "#/definitions/NodePackageManager"
         },
         "pnpm": {
-          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/PnpmConfig"
@@ -105,11 +80,9 @@
           ]
         },
         "syncProjectWorkspaceDependencies": {
-          "default": true,
           "type": "boolean"
         },
         "syncVersionManagerConfig": {
-          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/NodeVersionManager"
@@ -127,7 +100,6 @@
           ]
         },
         "yarn": {
-          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/YarnConfig"
@@ -199,7 +171,6 @@
       "type": "object",
       "properties": {
         "createMissingConfig": {
-          "default": true,
           "type": "boolean"
         },
         "projectConfigFileName": {
@@ -215,15 +186,12 @@
           "type": "string"
         },
         "routeOutDirToCache": {
-          "default": false,
           "type": "boolean"
         },
         "syncProjectReferences": {
-          "default": true,
           "type": "boolean"
         },
         "syncProjectReferencesToPaths": {
-          "default": false,
           "type": "boolean"
         }
       }

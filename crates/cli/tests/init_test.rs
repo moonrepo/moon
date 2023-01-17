@@ -71,7 +71,7 @@ fn creates_project_config_from_template() {
     });
 
     assert!(
-        predicate::str::contains("https://moonrepo.dev/schemas/global-project.json")
+        predicate::str::contains("https://moonrepo.dev/schemas/tasks.json")
             .eval(&fs::read_to_string(project_config).unwrap())
     );
 }

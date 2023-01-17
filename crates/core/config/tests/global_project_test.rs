@@ -307,7 +307,7 @@ fileGroups:
     //         fn handles_invalid_url() {
     //             figment::Jail::expect_with(|jail| {
     //                 jail.create_file(
-    //                     super::CONFIG_GLOBAL_PROJECT_FILENAME,
+    //                     super::CONFIG_TASKS_FILENAME,
     //                     r#"
     // extends: https://raw.githubusercontent.com/this/is/an/invalid/file.yml
 

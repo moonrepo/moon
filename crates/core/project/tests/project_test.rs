@@ -16,7 +16,7 @@ fn mock_file_groups() -> FxHashMap<String, FileGroup> {
     )])
 }
 
-fn mock_global_project_config() -> GlobalProjectConfig {
+fn mock_tasks_config() -> GlobalProjectConfig {
     GlobalProjectConfig {
         extends: None,
         file_groups: FxHashMap::from_iter([("sources".into(), string_vec!["src/**/*"])]),
@@ -32,7 +32,7 @@ fn doesnt_exist() {
         "missing",
         "projects/missing",
         &get_fixtures_root(),
-        &mock_global_project_config(),
+        &mock_tasks_config(),
     )
     .unwrap();
 }
@@ -44,7 +44,7 @@ fn no_config() {
         "no-config",
         "projects/no-config",
         &workspace_root,
-        &mock_global_project_config(),
+        &mock_tasks_config(),
     )
     .unwrap();
 
@@ -68,7 +68,7 @@ fn empty_config() {
         "empty-config",
         "projects/empty-config",
         &workspace_root,
-        &mock_global_project_config(),
+        &mock_tasks_config(),
     )
     .unwrap();
 
@@ -93,7 +93,7 @@ fn basic_config() {
         "basic",
         "projects/basic",
         &workspace_root,
-        &mock_global_project_config(),
+        &mock_tasks_config(),
     )
     .unwrap();
     let project_root = workspace_root.join("projects/basic");
@@ -131,7 +131,7 @@ fn advanced_config() {
         "advanced",
         "projects/advanced",
         &workspace_root,
-        &mock_global_project_config(),
+        &mock_tasks_config(),
     )
     .unwrap();
 

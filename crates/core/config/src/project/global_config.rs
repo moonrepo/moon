@@ -42,7 +42,7 @@ fn validate_tasks(map: &BTreeMap<String, TaskConfig>) -> Result<(), ValidationEr
     Ok(())
 }
 
-/// Docs: https://moonrepo.dev/docs/config/global-project
+/// Docs: https://moonrepo.dev/docs/config/tasks
 #[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
 // We use serde(default) because extended configs may not have defined these fields

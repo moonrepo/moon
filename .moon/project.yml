@@ -1,4 +1,4 @@
-$schema: '../website/static/schemas/global-project.json'
+$schema: '../website/static/schemas/tasks.json'
 
 fileGroups:
   configs:

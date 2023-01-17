@@ -3,7 +3,7 @@ use crate::get_fixtures_path;
 use assert_cmd::Command;
 use assert_fs::prelude::*;
 pub use assert_fs::TempDir;
-use moon_config::{GlobalProjectConfig, ToolchainConfig, WorkspaceConfig};
+use moon_config::{InheritedTasksConfig, ToolchainConfig, WorkspaceConfig};
 use std::fs;
 use std::path::Path;
 use std::process::Command as StdCommand;
@@ -132,7 +132,7 @@ pub fn create_sandbox_with_config<T: AsRef<str>>(
     fixture: T,
     workspace_config: Option<&WorkspaceConfig>,
     toolchain_config: Option<&ToolchainConfig>,
-    projects_config: Option<&GlobalProjectConfig>,
+    projects_config: Option<&InheritedTasksConfig>,
 ) -> Sandbox {
     let sandbox = create_sandbox(fixture);
 

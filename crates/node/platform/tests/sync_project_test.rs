@@ -1,4 +1,4 @@
-use moon_config::{GlobalProjectConfig, TypeScriptConfig};
+use moon_config::{InheritedTasksConfig, TypeScriptConfig};
 use moon_node_platform::actions::create_missing_tsconfig;
 use moon_project::Project;
 use moon_test_utils::{create_sandbox_with_config, get_node_fixture_configs};
@@ -22,7 +22,7 @@ mod missing_tsconfig {
             "deps-a",
             "deps-a",
             sandbox.path(),
-            &GlobalProjectConfig::default(),
+            &InheritedTasksConfig::default(),
         )
         .unwrap();
 
@@ -57,7 +57,7 @@ mod missing_tsconfig {
             "deps-a",
             "deps-a",
             sandbox.path(),
-            &GlobalProjectConfig::default(),
+            &InheritedTasksConfig::default(),
         )
         .unwrap();
 
@@ -100,7 +100,7 @@ mod missing_tsconfig {
             "deps-b",
             "deps-b",
             sandbox.path(),
-            &GlobalProjectConfig::default(),
+            &InheritedTasksConfig::default(),
         )
         .unwrap();
 

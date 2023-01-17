@@ -1,4 +1,4 @@
-use moon_config::{ConfigError, GlobalProjectConfig, TaskCommandArgs};
+use moon_config::{ConfigError, InheritedTasksConfig, TaskCommandArgs};
 use moon_constants::CONFIG_TASKS_FILENAME;
 use moon_test_utils::get_fixtures_path;
 use moon_utils::string_vec;
@@ -6,8 +6,8 @@ use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::path::Path;
 
-fn load_jailed_config(root: &Path) -> Result<GlobalProjectConfig, figment::Error> {
-    match GlobalProjectConfig::load(root.join(CONFIG_TASKS_FILENAME)) {
+fn load_jailed_config(root: &Path) -> Result<InheritedTasksConfig, figment::Error> {
+    match InheritedTasksConfig::load(root.join(CONFIG_TASKS_FILENAME)) {
         Ok(cfg) => Ok(cfg),
         Err(error) => Err(match error {
             ConfigError::FailedValidation(errors) => errors.first().unwrap().to_owned(),
@@ -32,7 +32,7 @@ fileGroups:
 
         assert_eq!(
             config,
-            GlobalProjectConfig {
+            InheritedTasksConfig {
                 extends: None,
                 file_groups: FxHashMap::from_iter([(
                     String::from("sources"),
@@ -56,11 +56,11 @@ mod extends {
     #[test]
     fn recursive_merges() {
         let fixture = get_fixtures_path("config-extends/project");
-        let config = GlobalProjectConfig::load(fixture.join("global-2.yml")).unwrap();
+        let config = InheritedTasksConfig::load(fixture.join("global-2.yml")).unwrap();
 
         assert_eq!(
             config,
-            GlobalProjectConfig {
+            InheritedTasksConfig {
                 file_groups: FxHashMap::from_iter([
                     ("sources".to_owned(), string_vec!["sources/**/*"]), // NOT src/**/*
                     ("tests".to_owned(), string_vec!["tests/**/*"]),
@@ -88,7 +88,7 @@ mod extends {
                         },
                     )
                 ]),
-                ..GlobalProjectConfig::default()
+                ..InheritedTasksConfig::default()
             }
         )
     }
@@ -243,7 +243,7 @@ fileGroups:
 "#,
             )?;
 
-            let config: GlobalProjectConfig = super::load_jailed_config(jail.directory())?;
+            let config: InheritedTasksConfig = super::load_jailed_config(jail.directory())?;
 
             // Ensure values are deep merged
             assert_eq!(
@@ -284,7 +284,7 @@ fileGroups:
 "#,
                 )?;
 
-            let config: GlobalProjectConfig = super::load_jailed_config(jail.directory())?;
+            let config: InheritedTasksConfig = super::load_jailed_config(jail.directory())?;
 
             // Ensure values are deep merged
             assert_eq!(
@@ -461,7 +461,7 @@ tasks:
 "#,
             )?;
 
-            let config: GlobalProjectConfig = super::load_jailed_config(jail.directory())?;
+            let config: InheritedTasksConfig = super::load_jailed_config(jail.directory())?;
 
             assert_eq!(
                 config.tasks.get("build").unwrap(),
@@ -505,7 +505,7 @@ tasks:
 "#,
             )?;
 
-            let config: GlobalProjectConfig = super::load_jailed_config(jail.directory())?;
+            let config: InheritedTasksConfig = super::load_jailed_config(jail.directory())?;
 
             assert_eq!(
                 config.tasks.get("build").unwrap(),

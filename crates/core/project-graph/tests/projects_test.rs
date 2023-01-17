@@ -3,7 +3,7 @@
 
 use moon::{generate_project_graph, load_workspace_from};
 use moon_config::{
-    GlobalProjectConfig, PlatformType, TaskCommandArgs, TaskConfig, TaskOptionsConfig,
+    InheritedTasksConfig, PlatformType, TaskCommandArgs, TaskConfig, TaskOptionsConfig,
     WorkspaceConfig, WorkspaceProjects,
 };
 use moon_project::Project;
@@ -21,7 +21,7 @@ async fn tasks_sandbox() -> (Sandbox, ProjectGraph) {
 
 async fn tasks_sandbox_with_config<C>(callback: C) -> (Sandbox, ProjectGraph)
 where
-    C: FnOnce(&mut WorkspaceConfig, &mut GlobalProjectConfig),
+    C: FnOnce(&mut WorkspaceConfig, &mut InheritedTasksConfig),
 {
     tasks_sandbox_internal(callback, |_| {}).await
 }
@@ -35,7 +35,7 @@ where
 
 async fn tasks_sandbox_internal<C, S>(cfg_callback: C, box_callback: S) -> (Sandbox, ProjectGraph)
 where
-    C: FnOnce(&mut WorkspaceConfig, &mut GlobalProjectConfig),
+    C: FnOnce(&mut WorkspaceConfig, &mut InheritedTasksConfig),
     S: FnOnce(&Sandbox),
 {
     let (mut workspace_config, toolchain_config, mut projects_config) = get_tasks_fixture_configs();
@@ -316,7 +316,7 @@ mod task_inheritance {
                 ..WorkspaceConfig::default()
             };
 
-            let projects_config = GlobalProjectConfig {
+            let projects_config = InheritedTasksConfig {
                 tasks: BTreeMap::from_iter([
                     (
                         "a".to_owned(),
@@ -343,7 +343,7 @@ mod task_inheritance {
                         },
                     ),
                 ]),
-                ..GlobalProjectConfig::default()
+                ..InheritedTasksConfig::default()
             };
 
             let sandbox = create_sandbox_with_config(
@@ -1095,7 +1095,7 @@ mod detection {
             ..WorkspaceConfig::default()
         };
 
-        let projects_config = GlobalProjectConfig {
+        let projects_config = InheritedTasksConfig {
             tasks: BTreeMap::from_iter([(
                 "command".to_owned(),
                 TaskConfig {
@@ -1103,7 +1103,7 @@ mod detection {
                     ..TaskConfig::default()
                 },
             )]),
-            ..GlobalProjectConfig::default()
+            ..InheritedTasksConfig::default()
         };
 
         let sandbox = create_sandbox_with_config(

@@ -1,7 +1,7 @@
 use crate::errors::WorkspaceError;
 use moon_cache::CacheEngine;
 use moon_config::{
-    format_error_line, format_figment_errors, ConfigError, GlobalProjectConfig, ToolchainConfig,
+    format_error_line, format_figment_errors, ConfigError, InheritedTasksConfig, ToolchainConfig,
     WorkspaceConfig, CONFIG_DIRNAME,
 };
 use moon_constants as constants;
@@ -37,7 +37,7 @@ fn find_workspace_root<P: AsRef<Path>>(current_dir: P) -> Option<PathBuf> {
 }
 
 // .moon/tasks.yml
-fn load_tasks_config(root_dir: &Path) -> Result<GlobalProjectConfig, WorkspaceError> {
+fn load_tasks_config(root_dir: &Path) -> Result<InheritedTasksConfig, WorkspaceError> {
     let old_config_path = root_dir.join(constants::CONFIG_DIRNAME).join("project.yml");
     let config_path = root_dir
         .join(constants::CONFIG_DIRNAME)
@@ -59,10 +59,10 @@ fn load_tasks_config(root_dir: &Path) -> Result<GlobalProjectConfig, WorkspaceEr
     );
 
     if !config_path.exists() {
-        return Ok(GlobalProjectConfig::default());
+        return Ok(InheritedTasksConfig::default());
     }
 
-    match GlobalProjectConfig::load(config_path) {
+    match InheritedTasksConfig::load(config_path) {
         Ok(cfg) => Ok(cfg),
         Err(errors) => Err(WorkspaceError::InvalidGlobalProjectConfigFile(
             if let ConfigError::FailedValidation(valids) = errors {
@@ -157,7 +157,7 @@ pub struct Workspace {
     pub session: Option<Moonbase>,
 
     /// Global tasks configuration loaded from ".moon/tasks.yml".
-    pub tasks_config: GlobalProjectConfig,
+    pub tasks_config: InheritedTasksConfig,
 
     /// Toolchain configuration loaded from ".moon/toolchain.yml".
     pub toolchain_config: ToolchainConfig,

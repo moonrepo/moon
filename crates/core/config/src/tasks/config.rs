@@ -4,7 +4,7 @@ use crate::errors::{
     create_validation_error, map_validation_errors_to_figment_errors, ConfigError,
 };
 use crate::helpers::gather_extended_sources;
-use crate::project::task::TaskConfig;
+use crate::project::TaskConfig;
 use crate::types::FileGroups;
 use crate::validators::{is_default, validate_extends, validate_id};
 use figment::{
@@ -45,9 +45,8 @@ fn validate_tasks(map: &BTreeMap<String, TaskConfig>) -> Result<(), ValidationEr
 /// Docs: https://moonrepo.dev/docs/config/tasks
 #[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
-// We use serde(default) because extended configs may not have defined these fields
 #[serde(default, rename_all = "camelCase")]
-pub struct GlobalProjectConfig {
+pub struct InheritedTasksConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_extends")]
     pub extends: Option<String>,
@@ -66,14 +65,14 @@ pub struct GlobalProjectConfig {
     pub schema: String,
 }
 
-impl GlobalProjectConfig {
-    pub fn load(path: PathBuf) -> Result<GlobalProjectConfig, ConfigError> {
+impl InheritedTasksConfig {
+    pub fn load(path: PathBuf) -> Result<InheritedTasksConfig, ConfigError> {
         let profile_name = "globalProject";
-        let mut config = GlobalProjectConfig::default();
+        let mut config = InheritedTasksConfig::default();
 
         for source in gather_extended_sources(path)? {
             let figment = Figment::from(YamlExtended::file(source).profile(profile_name));
-            let extended_config = GlobalProjectConfig::load_config(figment.select(profile_name))?;
+            let extended_config = InheritedTasksConfig::load_config(figment.select(profile_name))?;
 
             // Figment does not merge hash maps but replaces entirely,
             // so we need to manually handle this here!
@@ -89,8 +88,8 @@ impl GlobalProjectConfig {
         Ok(config)
     }
 
-    fn load_config(figment: Figment) -> Result<GlobalProjectConfig, ConfigError> {
-        let config: GlobalProjectConfig = figment.extract()?;
+    fn load_config(figment: Figment) -> Result<InheritedTasksConfig, ConfigError> {
+        let config: InheritedTasksConfig = figment.extract()?;
 
         if let Err(errors) = config.validate() {
             return Err(ConfigError::FailedValidation(

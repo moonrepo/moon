@@ -1,6 +1,7 @@
 mod errors;
 mod helpers;
 mod project;
+mod tasks;
 mod template;
 mod toolchain;
 mod types;
@@ -12,6 +13,7 @@ pub use errors::{
 };
 pub use moon_constants::*;
 pub use project::*;
+pub use tasks::*;
 pub use template::*;
 pub use toolchain::*;
 pub use types::*;

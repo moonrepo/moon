@@ -1,6 +1,6 @@
 use moon::{build_dep_graph, generate_project_graph, load_workspace_from};
 use moon_config::{
-    GlobalProjectConfig, NodeConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
+    InheritedTasksConfig, NodeConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
 };
 use moon_dep_graph::BatchedTopoSort;
 use moon_project_graph::ProjectGraph;
@@ -36,12 +36,12 @@ async fn create_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
         }),
         ..ToolchainConfig::default()
     };
-    let projects_config = GlobalProjectConfig {
+    let projects_config = InheritedTasksConfig {
         file_groups: FxHashMap::from_iter([
             ("sources".to_owned(), string_vec!["src/**/*", "types/**/*"]),
             ("tests".to_owned(), string_vec!["tests/**/*"]),
         ]),
-        ..GlobalProjectConfig::default()
+        ..InheritedTasksConfig::default()
     };
 
     let sandbox = create_sandbox_with_config(
@@ -87,9 +87,9 @@ async fn create_tasks_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
         }),
         ..ToolchainConfig::default()
     };
-    let projects_config = GlobalProjectConfig {
+    let projects_config = InheritedTasksConfig {
         file_groups: FxHashMap::from_iter([("sources".to_owned(), vec!["src/**/*".to_owned()])]),
-        ..GlobalProjectConfig::default()
+        ..InheritedTasksConfig::default()
     };
 
     let sandbox = create_sandbox_with_config(

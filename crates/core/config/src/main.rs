@@ -1,6 +1,6 @@
 use moon_config::{
-    GlobalProjectConfig, ProjectConfig, TemplateConfig, TemplateFrontmatterConfig, ToolchainConfig,
-    WorkspaceConfig,
+    InheritedTasksConfig, ProjectConfig, TemplateConfig, TemplateFrontmatterConfig,
+    ToolchainConfig, WorkspaceConfig,
 };
 use schemars::schema_for;
 use std::fs;
@@ -8,7 +8,7 @@ use std::fs;
 fn main() {
     // Generate JSON schemas derived from our structs
     let project_schema = schema_for!(ProjectConfig);
-    let tasks_schema = schema_for!(GlobalProjectConfig);
+    let tasks_schema = schema_for!(InheritedTasksConfig);
     let template_schema = schema_for!(TemplateConfig);
     let template_frontmatter_schema = schema_for!(TemplateFrontmatterConfig);
     let toolchain_schema = schema_for!(ToolchainConfig);

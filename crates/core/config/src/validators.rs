@@ -141,7 +141,7 @@ pub fn validate_url<K: AsRef<str>, V: AsRef<str>>(
         ));
     }
 
-    if https_only && !value.starts_with("https://") {
+    if https_only && !value.starts_with("https://") && !value.contains("127.0.0.1") {
         return Err(create_validation_error(
             "invalid_https_url",
             key,

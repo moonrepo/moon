@@ -1,3 +1,4 @@
+use httpmock::prelude::*;
 use moon_config::{ConfigError, InheritedTasksConfig, TaskCommandArgs};
 use moon_constants::CONFIG_TASKS_FILENAME;
 use moon_test_utils::get_fixtures_path;
@@ -265,6 +266,17 @@ fileGroups:
     fn loads_from_url() {
         use moon_test_utils::pretty_assertions::assert_eq;
 
+        let server = MockServer::start();
+
+        server.mock(|when, then| {
+            when.method(GET).path("/config.yml");
+            then.status(200).body(include_str!(
+                "../../../../tests/fixtures/config-extends/.moon/tasks.yml"
+            ));
+        });
+
+        let url = server.url("/config.yml");
+
         figment::Jail::expect_with(|jail| {
             jail.set_env(
                 "MOON_WORKSPACE_ROOT",
@@ -272,9 +284,10 @@ fileGroups:
             );
 
             jail.create_file(
-                    super::CONFIG_TASKS_FILENAME,
-r#"
-extends: https://raw.githubusercontent.com/moonrepo/moon/master/tests/fixtures/config-extends/.moon/project.yml
+                super::CONFIG_TASKS_FILENAME,
+                format!(
+                    r#"
+extends: '{}'
 
 fileGroups:
     sources:
@@ -282,7 +295,10 @@ fileGroups:
     configs:
         - '*.js'
 "#,
-                )?;
+                    url
+                )
+                .as_ref(),
+            )?;
 
             let config: InheritedTasksConfig = super::load_jailed_config(jail.directory())?;
 

@@ -28,7 +28,7 @@ Tasks are categorized into 1 of the following types based on their configured pa
 ## Configuration
 
 Tasks can be configured per project through [`moon.yml`](../config/project), or for all projects
-through [`.moon/project.yml`](../config/global-project).
+through [`.moon/tasks.yml`](../config/tasks).
 
 ## Inheritance
 
@@ -36,15 +36,15 @@ Unlike other build systems that require the same tasks to be repeatedly defined 
 moon uses an inheritance model where tasks are defined once at the top-level, and are then inherited
 by _all_ projects.
 
-Top-level tasks (also known as global tasks) are defined in
-[`.moon/project.yml`](../config/global-project), and are inherited by default. However, projects are
-able to include, exclude, or rename inherited tasks using the
-[`workspace.inheritedTasks`](../config/project#inheritedtasks) in [`moon.yml`](../config/project).
+Top-level tasks (also known as global tasks) are defined in [`.moon/tasks.yml`](../config/tasks),
+and are inherited by default. However, projects are able to include, exclude, or rename inherited
+tasks using the [`workspace.inheritedTasks`](../config/project#inheritedtasks) in
+[`moon.yml`](../config/project).
 
 ### Merge strategies
 
-When a [global task](../config/global-project#tasks) and [local task](../config/project#tasks) of
-the same name exist, they are merged into a single task. To accomplish this, one of many
+When a [global task](../config/tasks#tasks) and [local task](../config/project#tasks) of the same
+name exist, they are merged into a single task. To accomplish this, one of many
 [merge strategies](../config/project#options) can be used.
 
 Merging is applied to the parameters [`args`](../config/project#args),

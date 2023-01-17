@@ -213,6 +213,21 @@ const config = {
 
 	plugins: [
 		[
+			'@docusaurus/plugin-client-redirects',
+			{
+				redirects: [
+					{
+						from: '/docs/config/global-project',
+						to: '/docs/config/tasks',
+					},
+					{
+						from: '/docs/config/inherited-tasks',
+						to: '/docs/config/tasks',
+					},
+				],
+			},
+		],
+		[
 			'docusaurus-plugin-typedoc-api',
 			{
 				projectRoot: path.join(__dirname, '..'),

@@ -43,7 +43,7 @@ fn load_tasks_config(root_dir: &Path) -> Result<InheritedTasksConfig, WorkspaceE
         .join(constants::CONFIG_DIRNAME)
         .join(constants::CONFIG_TASKS_FILENAME);
 
-    if old_config_path.exists() {
+    if old_config_path.exists() && !config_path.exists() {
         fs::rename(&old_config_path, &config_path)?;
     }
 

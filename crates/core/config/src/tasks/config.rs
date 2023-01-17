@@ -67,7 +67,7 @@ pub struct InheritedTasksConfig {
 
 impl InheritedTasksConfig {
     pub fn load(path: PathBuf) -> Result<InheritedTasksConfig, ConfigError> {
-        let profile_name = "globalProject";
+        let profile_name = "inheritedTasks";
         let mut config = InheritedTasksConfig::default();
 
         for source in gather_extended_sources(path)? {

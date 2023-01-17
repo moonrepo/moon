@@ -193,13 +193,7 @@ mod task_inheritance {
             assert_eq!(task.env, FxHashMap::from_iter([("KEY".into(), "b".into())]));
             assert_eq!(
                 task.inputs,
-                string_vec![
-                    "b.*",
-                    "package.json",
-                    "/.moon/tasks.yml",
-                    "/.moon/toolchain.yml",
-                    "/.moon/workspace.yml",
-                ]
+                string_vec!["b.*", "package.json", "/.moon/*.yml",]
             );
             assert_eq!(task.outputs, string_vec!["b.ts"]);
         }
@@ -227,14 +221,7 @@ mod task_inheritance {
             );
             assert_eq!(
                 task.inputs,
-                string_vec![
-                    "a.*",
-                    "b.*",
-                    "package.json",
-                    "/.moon/tasks.yml",
-                    "/.moon/toolchain.yml",
-                    "/.moon/workspace.yml",
-                ]
+                string_vec!["a.*", "b.*", "package.json", "/.moon/*.yml",]
             );
             assert_eq!(task.outputs, string_vec!["a.ts", "b.ts"]);
         }
@@ -262,14 +249,7 @@ mod task_inheritance {
             );
             assert_eq!(
                 task.inputs,
-                string_vec![
-                    "b.*",
-                    "a.*",
-                    "package.json",
-                    "/.moon/tasks.yml",
-                    "/.moon/toolchain.yml",
-                    "/.moon/workspace.yml",
-                ]
+                string_vec!["b.*", "a.*", "package.json", "/.moon/*.yml",]
             );
             assert_eq!(task.outputs, string_vec!["b.ts", "a.ts"]);
         }
@@ -294,13 +274,7 @@ mod task_inheritance {
             );
             assert_eq!(
                 task.inputs,
-                string_vec![
-                    "b.*",
-                    "package.json",
-                    "/.moon/tasks.yml",
-                    "/.moon/toolchain.yml",
-                    "/.moon/workspace.yml",
-                ]
+                string_vec!["b.*", "package.json", "/.moon/*.yml",]
             );
             assert_eq!(task.outputs, string_vec!["a.ts", "b.ts"]);
         }
@@ -984,6 +958,7 @@ mod task_expansion {
             assert_eq!(
                 task.input_globs,
                 FxHashSet::from_iter([
+                    glob::normalize(sandbox.path().join(".moon/*.yml")).unwrap(),
                     glob::normalize(project.root.join("**/*.{ts,tsx}")).unwrap(),
                     glob::normalize(project.root.join("*.js")).unwrap()
                 ]),
@@ -993,9 +968,6 @@ mod task_expansion {
                 FxHashSet::from_iter(task.input_paths.iter().map(PathBuf::from));
             let b: FxHashSet<PathBuf> = FxHashSet::from_iter(
                 vec![
-                    sandbox.path().join(".moon/workspace.yml"),
-                    sandbox.path().join(".moon/toolchain.yml"),
-                    sandbox.path().join(".moon/tasks.yml"),
                     sandbox.path().join("package.json"),
                     project.root.join("package.json"),
                     project.root.join("file.ts"),

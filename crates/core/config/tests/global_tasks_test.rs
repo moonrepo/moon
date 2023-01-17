@@ -95,7 +95,7 @@ mod extends {
 
     #[test]
     // #[should_panic(
-    //     expected = "invalid type: found unsigned int `123`, expected a string for key \"globalProject.extends\""
+    //     expected = "invalid type: found unsigned int `123`, expected a string for key \"inheritedTasks.extends\""
     // )]
     #[should_panic(expected = "Invalid <id>extends</id> field, must be a string.")]
     fn invalid_type() {
@@ -110,7 +110,7 @@ mod extends {
 
     #[test]
     // #[should_panic(
-    //     expected = "Must be a valid URL or relative file path (starts with ./) for key \"globalProject.extends\""
+    //     expected = "Must be a valid URL or relative file path (starts with ./) for key \"inheritedTasks.extends\""
     // )]
     #[should_panic(expected = "only YAML documents are supported")]
     fn not_a_url_or_file() {
@@ -139,7 +139,7 @@ mod extends {
     }
 
     #[test]
-    // #[should_panic(expected = "Must be a YAML document for key \"globalProject.extends\"")]
+    // #[should_panic(expected = "Must be a YAML document for key \"inheritedTasks.extends\"")]
     #[should_panic(expected = "only YAML documents are supported")]
     fn not_a_yaml_url() {
         figment::Jail::expect_with(|jail| {
@@ -155,7 +155,7 @@ mod extends {
     }
 
     #[test]
-    // #[should_panic(expected = "Must be a YAML document for key \"globalProject.extends\"")]
+    // #[should_panic(expected = "Must be a YAML document for key \"inheritedTasks.extends\"")]
     #[should_panic(expected = "only YAML documents are supported")]
     fn not_a_yaml_file() {
         figment::Jail::expect_with(|jail| {
@@ -274,7 +274,7 @@ fileGroups:
             jail.create_file(
                     super::CONFIG_TASKS_FILENAME,
 r#"
-extends: https://raw.githubusercontent.com/moonrepo/moon/master/tests/fixtures/config-extends/.moon/tasks.yml
+extends: https://raw.githubusercontent.com/moonrepo/moon/master/tests/fixtures/config-extends/.moon/project.yml
 
 fileGroups:
     sources:
@@ -325,7 +325,7 @@ fileGroups:
 mod file_groups {
     #[test]
     #[should_panic(
-        expected = "invalid type: found unsigned int `123`, expected a map for key \"globalProject.fileGroups\""
+        expected = "invalid type: found unsigned int `123`, expected a map for key \"inheritedTasks.fileGroups\""
     )]
     fn invalid_type() {
         figment::Jail::expect_with(|jail| {
@@ -339,7 +339,7 @@ mod file_groups {
 
     #[test]
     #[should_panic(
-        expected = "invalid type: found unsigned int `123`, expected a sequence for key \"globalProject.fileGroups.sources\""
+        expected = "invalid type: found unsigned int `123`, expected a sequence for key \"inheritedTasks.fileGroups.sources\""
     )]
     fn invalid_value_type() {
         figment::Jail::expect_with(|jail| {
@@ -363,7 +363,7 @@ mod tasks {
 
     #[test]
     #[should_panic(
-        expected = "invalid type: found unsigned int `123`, expected a map for key \"globalProject.tasks\""
+        expected = "invalid type: found unsigned int `123`, expected a map for key \"inheritedTasks.tasks\""
     )]
     fn invalid_type() {
         figment::Jail::expect_with(|jail| {
@@ -383,7 +383,7 @@ tasks: 123
 
     #[test]
     #[should_panic(
-        expected = "invalid type: found unsigned int `123`, expected struct TaskConfig for key \"globalProject.tasks.test\""
+        expected = "invalid type: found unsigned int `123`, expected struct TaskConfig for key \"inheritedTasks.tasks.test\""
     )]
     fn invalid_value_type() {
         figment::Jail::expect_with(|jail| {
@@ -404,7 +404,7 @@ tasks:
 
     #[test]
     #[should_panic(
-        expected = "expected a string or a sequence of strings for key \"globalProject.tasks.test.command\""
+        expected = "expected a string or a sequence of strings for key \"inheritedTasks.tasks.test.command\""
     )]
     fn invalid_value_field() {
         figment::Jail::expect_with(|jail| {

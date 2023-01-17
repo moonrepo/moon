@@ -41,7 +41,7 @@ pub enum WorkspaceError {
         constants::CONFIG_DIRNAME,
         constants::CONFIG_TASKS_FILENAME
     )]
-    InvalidGlobalProjectConfigFile(String),
+    InvalidTasksConfigFile(String),
 
     #[error("Invalid moon version, unable to proceed. Found {0}, expected {1}.")]
     InvalidMoonVersion(String, String),

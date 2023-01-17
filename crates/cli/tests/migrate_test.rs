@@ -145,9 +145,7 @@ mod from_turborepo {
             config.runner.implicit_inputs,
             string_vec![
                 "package.json",
-                "/.moon/tasks.yml",
-                "/.moon/toolchain.yml",
-                "/.moon/workspace.yml",
+                "/.moon/*.yml",
                 "package.json",
                 "*.json",
                 "$FOO",

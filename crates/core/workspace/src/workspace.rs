@@ -64,7 +64,7 @@ fn load_tasks_config(root_dir: &Path) -> Result<InheritedTasksConfig, WorkspaceE
 
     match InheritedTasksConfig::load(config_path) {
         Ok(cfg) => Ok(cfg),
-        Err(errors) => Err(WorkspaceError::InvalidGlobalProjectConfigFile(
+        Err(errors) => Err(WorkspaceError::InvalidTasksConfigFile(
             if let ConfigError::FailedValidation(valids) = errors {
                 format_figment_errors(valids)
             } else {

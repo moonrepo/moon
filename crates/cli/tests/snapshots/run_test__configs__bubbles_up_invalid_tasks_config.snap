@@ -1,0 +1,13 @@
+---
+source: crates/cli/tests/run_test.rs
+expression: assert.output_standardized()
+---
+
+ ERROR 
+
+Failed to validate .moon/tasks.yml configuration file.
+
+  ▪ invalid type: found unsigned int `123`, expected a map for key "inheritedTasks.tasks" in .moon/tasks.yml YAML Extended file
+
+
+

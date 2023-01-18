@@ -164,7 +164,7 @@ pub async fn from_turborepo(skip_touched_files_check: &bool) -> Result<(), AnyEr
 
     // Convert tasks second
     let mut has_warned_root_tasks = false;
-    let mut has_modified_global_project = false;
+    let mut has_modified_global_tasks = false;
     let mut modified_projects: FxHashMap<&PathBuf, ProjectConfig> = FxHashMap::default();
 
     for (id, task) in turbo_json.pipeline {
@@ -193,21 +193,21 @@ pub async fn from_turborepo(skip_touched_files_check: &bool) -> Result<(), AnyEr
             }
             (None, task_id) => {
                 workspace
-                    .projects_config
+                    .tasks_config
                     .tasks
                     .insert(task_id.clone(), convert_task(task_id, task));
-                has_modified_global_project = true;
+                has_modified_global_tasks = true;
             }
         }
     }
 
-    if has_modified_global_project {
+    if has_modified_global_tasks {
         yaml::write_with_config(
             workspace
                 .root
                 .join(constants::CONFIG_DIRNAME)
-                .join(constants::CONFIG_GLOBAL_PROJECT_FILENAME),
-            &workspace.projects_config,
+                .join(constants::CONFIG_TASKS_FILENAME),
+            &workspace.tasks_config,
         )?;
     }
 

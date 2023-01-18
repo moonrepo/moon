@@ -49,7 +49,7 @@ pub fn gather_extended_sources<T: AsRef<Path>>(
             }
 
             // For https, download the config and store it in the temp cache
-            if config.starts_with("https") {
+            if config.starts_with("https") || config.contains("127.0.0.1") {
                 config_path = download_and_cache_config(&config)?;
             } else if config.starts_with("http") {
                 return Err(ConfigError::UnsupportedHttps(config));

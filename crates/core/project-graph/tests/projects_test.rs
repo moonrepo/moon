@@ -3,7 +3,7 @@
 
 use moon::{generate_project_graph, load_workspace_from};
 use moon_config::{
-    GlobalProjectConfig, PlatformType, TaskCommandArgs, TaskConfig, TaskOptionsConfig,
+    InheritedTasksConfig, PlatformType, TaskCommandArgs, TaskConfig, TaskOptionsConfig,
     WorkspaceConfig, WorkspaceProjects,
 };
 use moon_project::Project;
@@ -21,7 +21,7 @@ async fn tasks_sandbox() -> (Sandbox, ProjectGraph) {
 
 async fn tasks_sandbox_with_config<C>(callback: C) -> (Sandbox, ProjectGraph)
 where
-    C: FnOnce(&mut WorkspaceConfig, &mut GlobalProjectConfig),
+    C: FnOnce(&mut WorkspaceConfig, &mut InheritedTasksConfig),
 {
     tasks_sandbox_internal(callback, |_| {}).await
 }
@@ -35,18 +35,18 @@ where
 
 async fn tasks_sandbox_internal<C, S>(cfg_callback: C, box_callback: S) -> (Sandbox, ProjectGraph)
 where
-    C: FnOnce(&mut WorkspaceConfig, &mut GlobalProjectConfig),
+    C: FnOnce(&mut WorkspaceConfig, &mut InheritedTasksConfig),
     S: FnOnce(&Sandbox),
 {
-    let (mut workspace_config, toolchain_config, mut projects_config) = get_tasks_fixture_configs();
+    let (mut workspace_config, toolchain_config, mut tasks_config) = get_tasks_fixture_configs();
 
-    cfg_callback(&mut workspace_config, &mut projects_config);
+    cfg_callback(&mut workspace_config, &mut tasks_config);
 
     let sandbox = create_sandbox_with_config(
         "tasks",
         Some(&workspace_config),
         Some(&toolchain_config),
-        Some(&projects_config),
+        Some(&tasks_config),
     );
 
     box_callback(&sandbox);
@@ -178,8 +178,8 @@ mod task_inheritance {
 
         #[tokio::test]
         async fn replace() {
-            let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, projects_config| {
-                projects_config
+            let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
+                tasks_config
                     .tasks
                     .insert("standard".into(), stub_global_task_config());
             })
@@ -193,21 +193,15 @@ mod task_inheritance {
             assert_eq!(task.env, FxHashMap::from_iter([("KEY".into(), "b".into())]));
             assert_eq!(
                 task.inputs,
-                string_vec![
-                    "b.*",
-                    "package.json",
-                    "/.moon/project.yml",
-                    "/.moon/toolchain.yml",
-                    "/.moon/workspace.yml",
-                ]
+                string_vec!["b.*", "package.json", "/.moon/*.yml",]
             );
             assert_eq!(task.outputs, string_vec!["b.ts"]);
         }
 
         #[tokio::test]
         async fn append() {
-            let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, projects_config| {
-                projects_config
+            let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
+                tasks_config
                     .tasks
                     .insert("standard".into(), stub_global_task_config());
             })
@@ -227,22 +221,15 @@ mod task_inheritance {
             );
             assert_eq!(
                 task.inputs,
-                string_vec![
-                    "a.*",
-                    "b.*",
-                    "package.json",
-                    "/.moon/project.yml",
-                    "/.moon/toolchain.yml",
-                    "/.moon/workspace.yml",
-                ]
+                string_vec!["a.*", "b.*", "package.json", "/.moon/*.yml",]
             );
             assert_eq!(task.outputs, string_vec!["a.ts", "b.ts"]);
         }
 
         #[tokio::test]
         async fn prepend() {
-            let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, projects_config| {
-                projects_config
+            let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
+                tasks_config
                     .tasks
                     .insert("standard".into(), stub_global_task_config());
             })
@@ -262,22 +249,15 @@ mod task_inheritance {
             );
             assert_eq!(
                 task.inputs,
-                string_vec![
-                    "b.*",
-                    "a.*",
-                    "package.json",
-                    "/.moon/project.yml",
-                    "/.moon/toolchain.yml",
-                    "/.moon/workspace.yml",
-                ]
+                string_vec!["b.*", "a.*", "package.json", "/.moon/*.yml",]
             );
             assert_eq!(task.outputs, string_vec!["b.ts", "a.ts"]);
         }
 
         #[tokio::test]
         async fn all() {
-            let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, projects_config| {
-                projects_config
+            let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
+                tasks_config
                     .tasks
                     .insert("standard".into(), stub_global_task_config());
             })
@@ -294,13 +274,7 @@ mod task_inheritance {
             );
             assert_eq!(
                 task.inputs,
-                string_vec![
-                    "b.*",
-                    "package.json",
-                    "/.moon/project.yml",
-                    "/.moon/toolchain.yml",
-                    "/.moon/workspace.yml",
-                ]
+                string_vec!["b.*", "package.json", "/.moon/*.yml",]
             );
             assert_eq!(task.outputs, string_vec!["a.ts", "b.ts"]);
         }
@@ -316,7 +290,7 @@ mod task_inheritance {
                 ..WorkspaceConfig::default()
             };
 
-            let projects_config = GlobalProjectConfig {
+            let tasks_config = InheritedTasksConfig {
                 tasks: BTreeMap::from_iter([
                     (
                         "a".to_owned(),
@@ -343,14 +317,14 @@ mod task_inheritance {
                         },
                     ),
                 ]),
-                ..GlobalProjectConfig::default()
+                ..InheritedTasksConfig::default()
             };
 
             let sandbox = create_sandbox_with_config(
                 "task-inheritance",
                 Some(&workspace_config),
                 None,
-                Some(&projects_config),
+                Some(&tasks_config),
             );
 
             let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
@@ -984,6 +958,7 @@ mod task_expansion {
             assert_eq!(
                 task.input_globs,
                 FxHashSet::from_iter([
+                    glob::normalize(sandbox.path().join(".moon/*.yml")).unwrap(),
                     glob::normalize(project.root.join("**/*.{ts,tsx}")).unwrap(),
                     glob::normalize(project.root.join("*.js")).unwrap()
                 ]),
@@ -993,9 +968,6 @@ mod task_expansion {
                 FxHashSet::from_iter(task.input_paths.iter().map(PathBuf::from));
             let b: FxHashSet<PathBuf> = FxHashSet::from_iter(
                 vec![
-                    sandbox.path().join(".moon/workspace.yml"),
-                    sandbox.path().join(".moon/toolchain.yml"),
-                    sandbox.path().join(".moon/project.yml"),
                     sandbox.path().join("package.json"),
                     project.root.join("package.json"),
                     project.root.join("file.ts"),
@@ -1095,7 +1067,7 @@ mod detection {
             ..WorkspaceConfig::default()
         };
 
-        let projects_config = GlobalProjectConfig {
+        let tasks_config = InheritedTasksConfig {
             tasks: BTreeMap::from_iter([(
                 "command".to_owned(),
                 TaskConfig {
@@ -1103,14 +1075,14 @@ mod detection {
                     ..TaskConfig::default()
                 },
             )]),
-            ..GlobalProjectConfig::default()
+            ..InheritedTasksConfig::default()
         };
 
         let sandbox = create_sandbox_with_config(
             "project-graph/langs",
             Some(&workspace_config),
             None,
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();

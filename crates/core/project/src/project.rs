@@ -1,7 +1,7 @@
 use crate::errors::ProjectError;
 use moon_config::{
     format_error_line, format_figment_errors, ConfigError, DependencyConfig, DependencyScope,
-    FilePath, GlobalProjectConfig, ProjectConfig, ProjectDependsOn, ProjectID, ProjectLanguage,
+    FilePath, InheritedTasksConfig, ProjectConfig, ProjectDependsOn, ProjectID, ProjectLanguage,
     ProjectType, TaskID,
 };
 use moon_constants::CONFIG_PROJECT_FILENAME;
@@ -55,7 +55,7 @@ fn load_project_config(
 fn create_file_groups_from_config(
     log_target: &str,
     config: &ProjectConfig,
-    global_config: &GlobalProjectConfig,
+    global_config: &InheritedTasksConfig,
 ) -> FileGroupsMap {
     let mut file_groups = FxHashMap::<String, FileGroup>::default();
 
@@ -124,7 +124,7 @@ fn create_tasks_from_config(
     log_target: &str,
     project_id: &str,
     project_config: &ProjectConfig,
-    global_config: &GlobalProjectConfig,
+    global_config: &InheritedTasksConfig,
 ) -> Result<TasksMap, ProjectError> {
     let mut tasks = BTreeMap::<String, Task>::new();
 
@@ -327,7 +327,7 @@ impl Project {
         id: &str,
         source: &str,
         workspace_root: &Path,
-        global_config: &GlobalProjectConfig,
+        global_config: &InheritedTasksConfig,
     ) -> Result<Project, ProjectError> {
         let log_target = format!("moon:project:{}", id);
 

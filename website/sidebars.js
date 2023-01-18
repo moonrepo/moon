@@ -47,7 +47,7 @@ const sidebars = {
 			items: [
 				'config/workspace',
 				'config/toolchain',
-				'config/global-project',
+				'config/tasks',
 				'config/project',
 				'config/template',
 			],

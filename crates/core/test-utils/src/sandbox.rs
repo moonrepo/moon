@@ -3,7 +3,7 @@ use crate::get_fixtures_path;
 use assert_cmd::Command;
 use assert_fs::prelude::*;
 pub use assert_fs::TempDir;
-use moon_config::{GlobalProjectConfig, ToolchainConfig, WorkspaceConfig};
+use moon_config::{InheritedTasksConfig, ToolchainConfig, WorkspaceConfig};
 use std::fs;
 use std::path::Path;
 use std::process::Command as StdCommand;
@@ -29,8 +29,8 @@ impl Sandbox {
     pub fn debug_configs(&self) -> &Self {
         for cfg in [
             ".moon/workspace.yml",
+            ".moon/tasks.yml",
             ".moon/toolchain.yml",
-            ".moon/project.yml",
         ] {
             let path = self.path().join(cfg);
 
@@ -132,7 +132,7 @@ pub fn create_sandbox_with_config<T: AsRef<str>>(
     fixture: T,
     workspace_config: Option<&WorkspaceConfig>,
     toolchain_config: Option<&ToolchainConfig>,
-    projects_config: Option<&GlobalProjectConfig>,
+    tasks_config: Option<&InheritedTasksConfig>,
 ) -> Sandbox {
     let sandbox = create_sandbox(fixture);
 
@@ -156,8 +156,8 @@ pub fn create_sandbox_with_config<T: AsRef<str>>(
         .unwrap(),
     );
 
-    if let Some(config) = projects_config {
-        sandbox.create_file(".moon/project.yml", serde_yaml::to_string(&config).unwrap());
+    if let Some(config) = tasks_config {
+        sandbox.create_file(".moon/tasks.yml", serde_yaml::to_string(&config).unwrap());
     }
 
     sandbox

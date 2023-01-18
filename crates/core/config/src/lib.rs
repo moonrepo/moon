@@ -1,6 +1,7 @@
 mod errors;
 mod helpers;
 mod project;
+mod tasks;
 mod template;
 mod toolchain;
 mod types;
@@ -12,6 +13,7 @@ pub use errors::{
 };
 pub use moon_constants::*;
 pub use project::*;
+pub use tasks::*;
 pub use template::*;
 pub use toolchain::*;
 pub use types::*;
@@ -34,13 +36,9 @@ pub fn load_toolchain_typescript_config_template() -> &'static str {
     include_str!("../templates/toolchain_typescript.yml")
 }
 
-pub fn load_global_project_config_template() -> &'static str {
-    include_str!("../templates/global_project.yml")
+pub fn load_tasks_config_template() -> &'static str {
+    include_str!("../templates/tasks.yml")
 }
-
-// pub fn load_project_config_template() -> &'static str {
-//     include_str!("../templates/project.yml")
-// }
 
 pub fn load_template_config_template() -> &'static str {
     include_str!("../templates/template.yml")

@@ -160,12 +160,12 @@ Defines [file groups](../concepts/file-group) to be used by local tasks. By defa
 _is not required_ for the following reasons:
 
 - File groups are an optional feature, and are designed for advanced use cases.
-- File groups defined in [`.moon/project.yml`](./global-project) will be inherited by all projects.
+- File groups defined in [`.moon/tasks.yml`](./tasks) will be inherited by all projects.
 
 When defined this setting requires a map, where the key is the file group name, and the value is a
 list of [globs or paths](../concepts/file-pattern). Globs and paths are
 [relative to a project](../concepts/file-pattern#project-relative) (even when defined
-[globally](./global-project)).
+[globally](./tasks)).
 
 ```yaml title="moon.yml"
 fileGroups:
@@ -259,7 +259,7 @@ For interoperability reasons, the following command names have special handling.
 
 The `args` field is a collection of _additional_ arguments to pass to the command line when
 executing the task. This field exists purely to provide arguments for
-[inherited tasks](./global-project#tasks).
+[inherited tasks](./tasks#tasks).
 
 This setting can be defined using a string, or an array of strings. We suggest using arrays when
 dealing with many args, or the args string cannot be parsed easily.
@@ -690,7 +690,7 @@ toolchain:
 
 <HeadingApiLink to="/api/types/interface/ProjectWorkspaceConfig#inheritedTasks" />
 
-Provides a layer of control when inheriting tasks from [`.moon/project.yml`](./global-project).
+Provides a layer of control when inheriting tasks from [`.moon/tasks.yml`](./tasks).
 
 #### `exclude`
 

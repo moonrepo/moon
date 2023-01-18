@@ -96,7 +96,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             id,
             source,
             &self.workspace.root,
-            &self.workspace.projects_config,
+            &self.workspace.tasks_config,
         )?;
 
         // Collect all aliases for the current project ID

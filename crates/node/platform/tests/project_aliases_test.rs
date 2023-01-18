@@ -10,7 +10,7 @@ async fn get_aliases_graph<C>(callback: C) -> (ProjectGraph, Sandbox)
 where
     C: FnOnce(&mut NodeConfig),
 {
-    let (workspace_config, mut toolchain_config, projects_config) =
+    let (workspace_config, mut toolchain_config, tasks_config) =
         get_project_graph_aliases_fixture_configs();
 
     if let Some(node_config) = &mut toolchain_config.node {
@@ -21,7 +21,7 @@ where
         "project-graph/aliases",
         Some(&workspace_config),
         Some(&toolchain_config),
-        Some(&projects_config),
+        Some(&tasks_config),
     );
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();

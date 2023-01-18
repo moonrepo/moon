@@ -37,9 +37,9 @@ project:
 dependsOn: []
 
 # File groups are a mechanism for grouping similar types of files within
-# a project using file glob patterns. View `.moon/project.yml` for more info.
+# a project using file glob patterns. View `.moon/tasks.yml` for more info.
 fileGroups: {}
 
 # A task is an action that is ran within the context of a project, and
-# wraps around an npm or system command. View `.moon/project.yml` for more info.
+# wraps around an npm or system command. View `.moon/tasks.yml` for more info.
 tasks: {}

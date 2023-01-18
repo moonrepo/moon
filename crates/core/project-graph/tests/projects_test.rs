@@ -191,10 +191,7 @@ mod task_inheritance {
             assert_eq!(task.command, "newcmd".to_string());
             assert_eq!(task.args, string_vec!["--b"]);
             assert_eq!(task.env, FxHashMap::from_iter([("KEY".into(), "b".into())]));
-            assert_eq!(
-                task.inputs,
-                string_vec!["b.*", "package.json", "/.moon/*.yml",]
-            );
+            assert_eq!(task.inputs, string_vec!["b.*", "/.moon/*.yml",]);
             assert_eq!(task.outputs, string_vec!["b.ts"]);
         }
 
@@ -219,10 +216,7 @@ mod task_inheritance {
                     ("KEY".to_owned(), "b".to_owned()),
                 ])
             );
-            assert_eq!(
-                task.inputs,
-                string_vec!["a.*", "b.*", "package.json", "/.moon/*.yml",]
-            );
+            assert_eq!(task.inputs, string_vec!["a.*", "b.*", "/.moon/*.yml",]);
             assert_eq!(task.outputs, string_vec!["a.ts", "b.ts"]);
         }
 
@@ -247,10 +241,7 @@ mod task_inheritance {
                     ("KEY".to_owned(), "a".to_owned()),
                 ])
             );
-            assert_eq!(
-                task.inputs,
-                string_vec!["b.*", "a.*", "package.json", "/.moon/*.yml",]
-            );
+            assert_eq!(task.inputs, string_vec!["b.*", "a.*", "/.moon/*.yml",]);
             assert_eq!(task.outputs, string_vec!["b.ts", "a.ts"]);
         }
 
@@ -272,10 +263,7 @@ mod task_inheritance {
                 task.env,
                 FxHashMap::from_iter([("KEY".to_owned(), "b".to_owned()),])
             );
-            assert_eq!(
-                task.inputs,
-                string_vec!["b.*", "package.json", "/.moon/*.yml",]
-            );
+            assert_eq!(task.inputs, string_vec!["b.*", "/.moon/*.yml",]);
             assert_eq!(task.outputs, string_vec!["a.ts", "b.ts"]);
         }
     }
@@ -889,11 +877,12 @@ mod task_expansion {
 
     mod expand_inputs {
         use super::*;
+        use moon_test_utils::pretty_assertions::assert_eq;
 
         #[tokio::test]
         async fn inherits_implicit_inputs() {
             let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
-                tasks_config.implicit_inputs = string_vec!["package.json", "/.moon/workspace.yml"]
+                tasks_config.implicit_inputs = string_vec!["package.json"];
             })
             .await;
 
@@ -904,7 +893,7 @@ mod task_expansion {
                     .get_task("a")
                     .unwrap()
                     .inputs,
-                string_vec!["a.ts", "package.json", "/.moon/workspace.yml"]
+                string_vec!["a.ts", "package.json", "/.moon/*.yml"]
             );
 
             assert_eq!(
@@ -914,7 +903,7 @@ mod task_expansion {
                     .get_task("c")
                     .unwrap()
                     .inputs,
-                string_vec!["**/*", "package.json", "/.moon/workspace.yml"]
+                string_vec!["**/*", "package.json", "/.moon/*.yml"]
             );
         }
 
@@ -967,7 +956,6 @@ mod task_expansion {
             let b: FxHashSet<PathBuf> = FxHashSet::from_iter(
                 vec![
                     sandbox.path().join("package.json"),
-                    project.root.join("package.json"),
                     project.root.join("file.ts"),
                     project.root.join("dir"),
                     project.root.join("dir/subdir"),

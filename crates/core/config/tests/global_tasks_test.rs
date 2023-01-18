@@ -34,13 +34,11 @@ fileGroups:
         assert_eq!(
             config,
             InheritedTasksConfig {
-                extends: None,
                 file_groups: FxHashMap::from_iter([(
                     String::from("sources"),
                     string_vec!["src/**/*"]
                 )]),
-                tasks: BTreeMap::new(),
-                schema: String::new(),
+                ..InheritedTasksConfig::default()
             }
         );
 

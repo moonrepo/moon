@@ -16,13 +16,13 @@ fn no_projects() {
 
 #[test]
 fn many_projects() {
-    let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
+    let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
 
     let sandbox = create_sandbox_with_config(
         "projects",
         Some(&workspace_config),
         Some(&toolchain_config),
-        Some(&projects_config),
+        Some(&tasks_config),
     );
 
     let assert = sandbox.run_moon(|cmd| {
@@ -34,13 +34,13 @@ fn many_projects() {
 
 #[test]
 fn single_project_with_dependencies() {
-    let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
+    let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
 
     let sandbox = create_sandbox_with_config(
         "projects",
         Some(&workspace_config),
         Some(&toolchain_config),
-        Some(&projects_config),
+        Some(&tasks_config),
     );
 
     let assert = sandbox.run_moon(|cmd| {
@@ -52,13 +52,13 @@ fn single_project_with_dependencies() {
 
 #[test]
 fn single_project_no_dependencies() {
-    let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
+    let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
 
     let sandbox = create_sandbox_with_config(
         "projects",
         Some(&workspace_config),
         Some(&toolchain_config),
-        Some(&projects_config),
+        Some(&tasks_config),
     );
 
     let assert = sandbox.run_moon(|cmd| {
@@ -70,13 +70,13 @@ fn single_project_no_dependencies() {
 
 #[test]
 fn outputs_json() {
-    let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
+    let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
 
     let sandbox = create_sandbox_with_config(
         "projects",
         Some(&workspace_config),
         Some(&toolchain_config),
-        Some(&projects_config),
+        Some(&tasks_config),
     );
 
     let assert = sandbox.run_moon(|cmd| {
@@ -91,14 +91,14 @@ mod aliases {
 
     #[test]
     fn uses_ids_in_graph() {
-        let (workspace_config, toolchain_config, projects_config) =
+        let (workspace_config, toolchain_config, tasks_config) =
             get_project_graph_aliases_fixture_configs();
 
         let sandbox = create_sandbox_with_config(
             "project-graph/aliases",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -110,14 +110,14 @@ mod aliases {
 
     #[test]
     fn can_focus_using_an_alias() {
-        let (workspace_config, toolchain_config, projects_config) =
+        let (workspace_config, toolchain_config, tasks_config) =
             get_project_graph_aliases_fixture_configs();
 
         let sandbox = create_sandbox_with_config(
             "project-graph/aliases",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -129,14 +129,14 @@ mod aliases {
 
     #[test]
     fn resolves_aliases_in_depends_on() {
-        let (workspace_config, toolchain_config, projects_config) =
+        let (workspace_config, toolchain_config, tasks_config) =
             get_project_graph_aliases_fixture_configs();
 
         let sandbox = create_sandbox_with_config(
             "project-graph/aliases",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {

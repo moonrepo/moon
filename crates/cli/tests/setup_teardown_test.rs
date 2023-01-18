@@ -17,13 +17,13 @@ fn sets_up_and_tears_down() {
 
     assert!(!node_dir.exists());
 
-    let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
+    let (workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
 
     let sandbox = create_sandbox_with_config(
         "cases",
         Some(&workspace_config),
         Some(&toolchain_config),
-        Some(&projects_config),
+        Some(&tasks_config),
     );
 
     let setup = sandbox.run_moon(|cmd| {

@@ -35,13 +35,13 @@ mod projects {
 
     #[test]
     fn returns_all_by_default() {
-        let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
+        let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
 
         let sandbox = create_sandbox_with_config(
             "projects",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -71,13 +71,13 @@ mod projects {
 
     #[test]
     fn can_filter_by_affected() {
-        let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
+        let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
 
         let sandbox = create_sandbox_with_config(
             "projects",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
         sandbox.enable_git();
 
@@ -96,13 +96,13 @@ mod projects {
 
     #[test]
     fn can_filter_by_affected_via_stdin() {
-        let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
+        let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
 
         let sandbox = create_sandbox_with_config(
             "projects",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
         sandbox.enable_git();
 
@@ -132,13 +132,13 @@ mod projects {
 
     #[test]
     fn can_filter_by_id() {
-        let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
+        let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
 
         let sandbox = create_sandbox_with_config(
             "projects",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -154,13 +154,13 @@ mod projects {
 
     #[test]
     fn can_filter_by_source() {
-        let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
+        let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
 
         let sandbox = create_sandbox_with_config(
             "projects",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -178,13 +178,13 @@ mod projects {
 
     #[test]
     fn can_filter_by_tasks() {
-        let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
+        let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
 
         let sandbox = create_sandbox_with_config(
             "projects",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -200,13 +200,13 @@ mod projects {
 
     #[test]
     fn can_filter_by_language() {
-        let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
+        let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
 
         let sandbox = create_sandbox_with_config(
             "projects",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -224,13 +224,13 @@ mod projects {
 
     #[test]
     fn can_filter_by_type() {
-        let (workspace_config, toolchain_config, projects_config) = get_projects_fixture_configs();
+        let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
 
         let sandbox = create_sandbox_with_config(
             "projects",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -250,13 +250,13 @@ mod touched_files {
 
     #[test]
     fn can_change_options() {
-        let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
+        let (workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
 
         let sandbox = create_sandbox_with_config(
             "cases",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
         sandbox.enable_git();
 
@@ -278,13 +278,13 @@ mod touched_files {
 
     #[test]
     fn can_supply_multi_status() {
-        let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
+        let (workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
 
         let sandbox = create_sandbox_with_config(
             "cases",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
         sandbox.enable_git();
 

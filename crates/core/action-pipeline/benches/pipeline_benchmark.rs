@@ -34,13 +34,13 @@ fn generate_dep_graph(workspace: &Workspace, project_graph: &ProjectGraph) -> De
 }
 
 pub fn pipeline_benchmark(c: &mut Criterion) {
-    let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
+    let (workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
 
     let sandbox = create_sandbox_with_config(
         "cases",
         Some(&workspace_config),
         Some(&toolchain_config),
-        Some(&projects_config),
+        Some(&tasks_config),
     );
 
     c.bench_function("pipeline", |b| {

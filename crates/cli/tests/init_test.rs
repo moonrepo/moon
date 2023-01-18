@@ -1,4 +1,4 @@
-use moon_constants::{CONFIG_GLOBAL_PROJECT_FILENAME, CONFIG_WORKSPACE_FILENAME};
+use moon_constants::{CONFIG_TASKS_FILENAME, CONFIG_WORKSPACE_FILENAME};
 use moon_test_utils::{create_sandbox, predicates::prelude::*};
 use std::fs;
 
@@ -7,7 +7,7 @@ fn creates_files_in_dest() {
     let sandbox = create_sandbox("init-sandbox");
     let root = sandbox.path().to_path_buf();
     let workspace_config = root.join(".moon").join(CONFIG_WORKSPACE_FILENAME);
-    let project_config = root.join(".moon").join(CONFIG_GLOBAL_PROJECT_FILENAME);
+    let project_config = root.join(".moon").join(CONFIG_TASKS_FILENAME);
     let gitignore = root.join(".gitignore");
 
     assert!(!workspace_config.exists());
@@ -31,7 +31,7 @@ fn creates_files_in_dest() {
 fn doesnt_create_project_config_when_minimal() {
     let sandbox = create_sandbox("init-sandbox");
     let root = sandbox.path().to_path_buf();
-    let project_config = root.join(".moon").join(CONFIG_GLOBAL_PROJECT_FILENAME);
+    let project_config = root.join(".moon").join(CONFIG_TASKS_FILENAME);
 
     assert!(!project_config.exists());
 
@@ -64,14 +64,14 @@ fn creates_project_config_from_template() {
     let root = sandbox.path().to_path_buf();
     let project_config = root
         .join(".moon")
-        .join(moon_constants::CONFIG_GLOBAL_PROJECT_FILENAME);
+        .join(moon_constants::CONFIG_TASKS_FILENAME);
 
     sandbox.run_moon(|cmd| {
         cmd.arg("init").arg("--yes").arg(root);
     });
 
     assert!(
-        predicate::str::contains("https://moonrepo.dev/schemas/global-project.json")
+        predicate::str::contains("https://moonrepo.dev/schemas/tasks.json")
             .eval(&fs::read_to_string(project_config).unwrap())
     );
 }

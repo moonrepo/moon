@@ -4,13 +4,13 @@ use moon_target::Target;
 use moon_test_utils::{create_sandbox_with_config, get_cases_fixture_configs};
 
 pub fn build_benchmark(c: &mut Criterion) {
-    let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
+    let (workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
 
     let sandbox = create_sandbox_with_config(
         "cases",
         Some(&workspace_config),
         Some(&toolchain_config),
-        Some(&projects_config),
+        Some(&tasks_config),
     );
 
     c.bench_function("dep_graph_build", |b| {

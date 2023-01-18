@@ -89,7 +89,7 @@ export interface ProjectConfig {
 	workspace: ProjectWorkspaceConfig;
 }
 
-export interface GlobalProjectConfig {
+export interface InheritedTasksConfig {
 	extends: string | null;
 	fileGroups: Record<string, string[]>;
 	tasks: Record<string, TaskConfig>;

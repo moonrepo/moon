@@ -10,14 +10,14 @@ mod run_script {
     #[test]
     #[serial]
     fn errors_if_no_project() {
-        let (workspace_config, toolchain_config, projects_config) =
+        let (workspace_config, toolchain_config, tasks_config) =
             get_node_depman_fixture_configs("npm");
 
         let sandbox = create_sandbox_with_config(
             "node-npm",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -32,14 +32,14 @@ mod run_script {
     #[test]
     #[serial]
     fn errors_for_unknown_script() {
-        let (workspace_config, toolchain_config, projects_config) =
+        let (workspace_config, toolchain_config, tasks_config) =
             get_node_depman_fixture_configs("npm");
 
         let sandbox = create_sandbox_with_config(
             "node-npm",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -54,14 +54,14 @@ mod run_script {
     #[test]
     #[serial]
     fn runs_with_project_option() {
-        let (workspace_config, toolchain_config, projects_config) =
+        let (workspace_config, toolchain_config, tasks_config) =
             get_node_depman_fixture_configs("npm");
 
         let sandbox = create_sandbox_with_config(
             "node-npm",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -74,14 +74,14 @@ mod run_script {
     #[test]
     #[serial]
     fn runs_with_env_var() {
-        let (workspace_config, toolchain_config, projects_config) =
+        let (workspace_config, toolchain_config, tasks_config) =
             get_node_depman_fixture_configs("npm");
 
         let sandbox = create_sandbox_with_config(
             "node-npm",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -95,14 +95,14 @@ mod run_script {
     #[test]
     #[serial]
     fn works_with_pnpm() {
-        let (workspace_config, toolchain_config, projects_config) =
+        let (workspace_config, toolchain_config, tasks_config) =
             get_node_depman_fixture_configs("pnpm");
 
         let sandbox = create_sandbox_with_config(
             "node-pnpm",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -115,14 +115,14 @@ mod run_script {
     #[test]
     #[serial]
     fn works_with_yarn() {
-        let (workspace_config, toolchain_config, projects_config) =
+        let (workspace_config, toolchain_config, tasks_config) =
             get_node_depman_fixture_configs("yarn");
 
         let sandbox = create_sandbox_with_config(
             "node-yarn",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -135,14 +135,14 @@ mod run_script {
     #[test]
     #[serial]
     fn works_with_yarn1() {
-        let (workspace_config, toolchain_config, projects_config) =
+        let (workspace_config, toolchain_config, tasks_config) =
             get_node_depman_fixture_configs("yarn1");
 
         let sandbox = create_sandbox_with_config(
             "node-yarn1",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {

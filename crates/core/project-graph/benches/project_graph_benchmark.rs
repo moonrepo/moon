@@ -3,13 +3,13 @@ use moon::{generate_project_graph, load_workspace_from};
 use moon_test_utils::{create_sandbox_with_config, get_cases_fixture_configs};
 
 pub fn get_benchmark(c: &mut Criterion) {
-    let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
+    let (workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
 
     let sandbox = create_sandbox_with_config(
         "cases",
         Some(&workspace_config),
         Some(&toolchain_config),
-        Some(&projects_config),
+        Some(&tasks_config),
     );
 
     c.bench_function("project_graph_get", |b| {
@@ -26,13 +26,13 @@ pub fn get_benchmark(c: &mut Criterion) {
 }
 
 pub fn get_all_benchmark(c: &mut Criterion) {
-    let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
+    let (workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
 
     let sandbox = create_sandbox_with_config(
         "cases",
         Some(&workspace_config),
         Some(&toolchain_config),
-        Some(&projects_config),
+        Some(&tasks_config),
     );
 
     c.bench_function("project_graph_get_all", |b| {

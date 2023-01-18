@@ -145,9 +145,7 @@ mod from_turborepo {
             config.runner.implicit_inputs,
             string_vec![
                 "package.json",
-                "/.moon/project.yml",
-                "/.moon/toolchain.yml",
-                "/.moon/workspace.yml",
+                "/.moon/*.yml",
                 "package.json",
                 "*.json",
                 "$FOO",
@@ -194,7 +192,7 @@ mod from_turborepo {
 
         assert.success();
 
-        assert_snapshot!(fs::read_to_string(sandbox.path().join(".moon/project.yml")).unwrap());
+        assert_snapshot!(fs::read_to_string(sandbox.path().join(".moon/tasks.yml")).unwrap());
     }
 
     #[test]

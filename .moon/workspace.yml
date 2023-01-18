@@ -18,8 +18,6 @@ runner:
     - ':lint'
     - ':test'
     - ':typecheck'
-  implicitDeps:
-    - '^:build'
   logRunningCommand: true
 
 vcs:

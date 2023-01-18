@@ -98,41 +98,4 @@ cacheLifetime: 'bad unit'
         });
     }
 
-    #[test]
-    #[should_panic(expected = "Must be a valid target format")]
-    fn invalid_dep_target() {
-        figment::Jail::expect_with(|jail| {
-            jail.create_file(
-                CONFIG_FILENAME,
-                r#"
-implicitDeps:
-  - '%:task'
-"#,
-            )?;
-
-            load_jailed_config()?;
-
-            Ok(())
-        });
-    }
-
-    #[test]
-    #[should_panic(
-        expected = "Must be a valid ID (accepts A-Z, a-z, 0-9, - (dashes), _ (underscores), /, and must start with a letter)"
-    )]
-    fn invalid_dep_target_no_scope() {
-        figment::Jail::expect_with(|jail| {
-            jail.create_file(
-                CONFIG_FILENAME,
-                r#"
-implicitDeps:
-  - 'foo bar'
-"#,
-            )?;
-
-            load_jailed_config()?;
-
-            Ok(())
-        });
-    }
 }

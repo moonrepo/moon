@@ -619,9 +619,8 @@ mod task_expansion {
 
         #[tokio::test]
         async fn inherits_implicit_deps() {
-            let (_sandbox, project_graph) = tasks_sandbox_with_config(|workspace_config, _| {
-                workspace_config.runner.implicit_deps =
-                    string_vec!["build", "~:build", "project:task",]
+            let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
+                tasks_config.implicit_deps = string_vec!["build", "~:build", "project:task",]
             })
             .await;
 
@@ -665,8 +664,8 @@ mod task_expansion {
 
         #[tokio::test]
         async fn resolves_implicit_deps_parent_depends_on() {
-            let (_sandbox, project_graph) = tasks_sandbox_with_config(|workspace_config, _| {
-                workspace_config.runner.implicit_deps = string_vec!["^:build"]
+            let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
+                tasks_config.implicit_deps = string_vec!["^:build"]
             })
             .await;
 
@@ -686,8 +685,8 @@ mod task_expansion {
 
         #[tokio::test]
         async fn avoids_implicit_deps_matching_target() {
-            let (_sandbox, project_graph) = tasks_sandbox_with_config(|workspace_config, _| {
-                workspace_config.runner.implicit_deps = string_vec!["basic:build"]
+            let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
+                tasks_config.implicit_deps = string_vec!["basic:build"]
             })
             .await;
 
@@ -893,9 +892,8 @@ mod task_expansion {
 
         #[tokio::test]
         async fn inherits_implicit_inputs() {
-            let (_sandbox, project_graph) = tasks_sandbox_with_config(|workspace_config, _| {
-                workspace_config.runner.implicit_inputs =
-                    string_vec!["package.json", "/.moon/workspace.yml"]
+            let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
+                tasks_config.implicit_inputs = string_vec!["package.json", "/.moon/workspace.yml"]
             })
             .await;
 
@@ -922,8 +920,8 @@ mod task_expansion {
 
         #[tokio::test]
         async fn inherits_implicit_inputs_env_vars() {
-            let (_sandbox, project_graph) = tasks_sandbox_with_config(|workspace_config, _| {
-                workspace_config.runner.implicit_inputs = string_vec!["$FOO", "$BAR"]
+            let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
+                tasks_config.implicit_inputs = string_vec!["$FOO", "$BAR"]
             })
             .await;
 

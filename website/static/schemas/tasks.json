@@ -19,6 +19,18 @@
         }
       }
     },
+    "implicitDeps": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "implicitInputs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "tasks": {
       "type": "object",
       "additionalProperties": {

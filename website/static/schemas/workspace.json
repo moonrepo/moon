@@ -89,24 +89,6 @@
           "default": "7 days",
           "type": "string"
         },
-        "implicitDeps": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "implicitInputs": {
-          "default": [
-            "package.json",
-            "/.moon/tasks.yml",
-            "/.moon/toolchain.yml",
-            "/.moon/workspace.yml"
-          ],
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
         "inheritColorsForPipedTasks": {
           "type": "boolean"
         },

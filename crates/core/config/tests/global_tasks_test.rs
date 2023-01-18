@@ -46,6 +46,44 @@ fileGroups:
     });
 }
 
+#[test]
+#[should_panic(expected = "Must be a valid target format")]
+fn invalid_dep_target() {
+    figment::Jail::expect_with(|jail| {
+        jail.create_file(
+            CONFIG_TASKS_FILENAME,
+            r#"
+implicitDeps:
+  - '%:task'
+"#,
+        )?;
+
+        load_jailed_config(jail.directory())?;
+
+        Ok(())
+    });
+}
+
+#[test]
+#[should_panic(
+    expected = "Must be a valid ID (accepts A-Z, a-z, 0-9, - (dashes), _ (underscores), /, and must start with a letter)"
+)]
+fn invalid_dep_target_no_scope() {
+    figment::Jail::expect_with(|jail| {
+        jail.create_file(
+            CONFIG_TASKS_FILENAME,
+            r#"
+implicitDeps:
+  - 'foo bar'
+"#,
+        )?;
+
+        load_jailed_config(jail.directory())?;
+
+        Ok(())
+    });
+}
+
 mod extends {
     use super::*;
     use moon_config::{TaskConfig, TaskOptionsConfig};
@@ -61,8 +99,8 @@ mod extends {
             config,
             InheritedTasksConfig {
                 file_groups: FxHashMap::from_iter([
-                    ("sources".to_owned(), string_vec!["sources/**/*"]), // NOT src/**/*
                     ("tests".to_owned(), string_vec!["tests/**/*"]),
+                    ("sources".to_owned(), string_vec!["sources/**/*"]), // NOT src/**/*
                 ]),
                 tasks: BTreeMap::from([
                     (

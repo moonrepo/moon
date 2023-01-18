@@ -9,13 +9,13 @@ use std::fs;
 use std::path::Path;
 
 fn cases_sandbox() -> Sandbox {
-    let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
+    let (workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
 
     create_sandbox_with_config(
         "cases",
         Some(&workspace_config),
         Some(&toolchain_config),
-        Some(&projects_config),
+        Some(&tasks_config),
     )
 }
 
@@ -23,7 +23,7 @@ fn cases_sandbox_with_config<C>(callback: C) -> Sandbox
 where
     C: FnOnce(&mut WorkspaceConfig),
 {
-    let (mut workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
+    let (mut workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
 
     callback(&mut workspace_config);
 
@@ -31,7 +31,7 @@ where
         "cases",
         Some(&workspace_config),
         Some(&toolchain_config),
-        Some(&projects_config),
+        Some(&tasks_config),
     )
 }
 
@@ -148,10 +148,10 @@ mod configs {
     }
 
     #[test]
-    fn bubbles_up_invalid_global_project_config() {
+    fn bubbles_up_invalid_tasks_config() {
         let sandbox = cases_sandbox();
 
-        sandbox.create_file(".moon/project.yml", "tasks: 123");
+        sandbox.create_file(".moon/tasks.yml", "tasks: 123");
 
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("base:noop");

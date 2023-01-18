@@ -1,7 +1,7 @@
 use crate::errors::WorkspaceError;
 use moon_cache::CacheEngine;
 use moon_config::{
-    format_error_line, format_figment_errors, ConfigError, GlobalProjectConfig, ToolchainConfig,
+    format_error_line, format_figment_errors, ConfigError, InheritedTasksConfig, ToolchainConfig,
     WorkspaceConfig, CONFIG_DIRNAME,
 };
 use moon_constants as constants;
@@ -36,11 +36,16 @@ fn find_workspace_root<P: AsRef<Path>>(current_dir: P) -> Option<PathBuf> {
         .map(|dir| dir.parent().unwrap().to_path_buf())
 }
 
-// .moon/project.yml
-fn load_global_project_config(root_dir: &Path) -> Result<GlobalProjectConfig, WorkspaceError> {
+// .moon/tasks.yml
+fn load_tasks_config(root_dir: &Path) -> Result<InheritedTasksConfig, WorkspaceError> {
+    let old_config_path = root_dir.join(constants::CONFIG_DIRNAME).join("project.yml");
     let config_path = root_dir
         .join(constants::CONFIG_DIRNAME)
-        .join(constants::CONFIG_GLOBAL_PROJECT_FILENAME);
+        .join(constants::CONFIG_TASKS_FILENAME);
+
+    if old_config_path.exists() && !config_path.exists() {
+        fs::rename(&old_config_path, &config_path)?;
+    }
 
     trace!(
         target: LOG_TARGET,
@@ -48,18 +53,18 @@ fn load_global_project_config(root_dir: &Path) -> Result<GlobalProjectConfig, Wo
         color::file(format!(
             "{}/{}",
             constants::CONFIG_DIRNAME,
-            constants::CONFIG_GLOBAL_PROJECT_FILENAME,
+            constants::CONFIG_TASKS_FILENAME,
         )),
         color::path(root_dir)
     );
 
     if !config_path.exists() {
-        return Ok(GlobalProjectConfig::default());
+        return Ok(InheritedTasksConfig::default());
     }
 
-    match GlobalProjectConfig::load(config_path) {
+    match InheritedTasksConfig::load(config_path) {
         Ok(cfg) => Ok(cfg),
-        Err(errors) => Err(WorkspaceError::InvalidGlobalProjectConfigFile(
+        Err(errors) => Err(WorkspaceError::InvalidTasksConfigFile(
             if let ConfigError::FailedValidation(valids) = errors {
                 format_figment_errors(valids)
             } else {
@@ -145,14 +150,14 @@ pub struct Workspace {
     /// Registered platforms derived from toolchain configuration.
     pub platforms: PlatformManager,
 
-    /// Global project configuration loaded from ".moon/project.yml".
-    pub projects_config: GlobalProjectConfig,
-
     /// The root of the workspace that contains the ".moon" config folder.
     pub root: PathBuf,
 
     /// When logged in, the auth token and IDs for making API requests.
     pub session: Option<Moonbase>,
+
+    /// Global tasks configuration loaded from ".moon/tasks.yml".
+    pub tasks_config: InheritedTasksConfig,
 
     /// Toolchain configuration loaded from ".moon/toolchain.yml".
     pub toolchain_config: ToolchainConfig,
@@ -188,7 +193,7 @@ impl Workspace {
         // Load configs
         let config = load_workspace_config(&root_dir)?;
         let toolchain_config = load_toolchain_config(&root_dir)?;
-        let projects_config = load_global_project_config(&root_dir)?;
+        let tasks_config = load_tasks_config(&root_dir)?;
 
         if let Some(constraint) = &config.version_constraint {
             if let Ok(current_version) = env::var("MOON_VERSION") {
@@ -215,9 +220,9 @@ impl Workspace {
             cache,
             config,
             platforms: PlatformManager::default(),
-            projects_config,
             root: root_dir,
             session: None,
+            tasks_config,
             toolchain_config,
             vcs,
             working_dir: working_dir.to_owned(),

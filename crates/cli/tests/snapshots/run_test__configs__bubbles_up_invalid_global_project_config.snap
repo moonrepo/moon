@@ -4,11 +4,11 @@ assertion_line: 131
 expression: "standardize_separators(get_path_safe_output(&assert,\n        &PathBuf::from(\"./fake/path\")))"
 ---
 
- ERROR 
+ ERROR
 
-Failed to validate .moon/project.yml configuration file.
+Failed to validate .moon/tasks.yml configuration file.
 
-  ▪ invalid type: found unsigned int `123`, expected a map for key "globalProject.tasks" in .moon/project.yml YAML Extended file
+  ▪ invalid type: found unsigned int `123`, expected a map for key "tasks.tasks" in .moon/tasks.yml YAML Extended file
 
 
 

@@ -2125,6 +2125,26 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@docusaurus/plugin-client-redirects@npm:^2.2.0":
+  version: 2.2.0
+  resolution: "@docusaurus/plugin-client-redirects@npm:2.2.0"
+  dependencies:
+    "@docusaurus/core": 2.2.0
+    "@docusaurus/logger": 2.2.0
+    "@docusaurus/utils": 2.2.0
+    "@docusaurus/utils-common": 2.2.0
+    "@docusaurus/utils-validation": 2.2.0
+    eta: ^1.12.3
+    fs-extra: ^10.1.0
+    lodash: ^4.17.21
+    tslib: ^2.4.0
+  peerDependencies:
+    react: ^16.8.4 || ^17.0.0
+    react-dom: ^16.8.4 || ^17.0.0
+  checksum: dfe7804af8f621a04840223b7726d3cc7d4a6a68930ecedebeff718fbe0dedfcfc0d8e69fb49bcfb5ec797acb84d5119a9385c39d37676328f1b6a3b99ca6232
+  languageName: node
+  linkType: hard
+
 "@docusaurus/plugin-content-blog@npm:2.2.0":
   version: 2.2.0
   resolution: "@docusaurus/plugin-content-blog@npm:2.2.0"
@@ -16082,6 +16102,7 @@ __metadata:
   dependencies:
     "@docusaurus/core": ^2.2.0
     "@docusaurus/module-type-aliases": ^2.2.0
+    "@docusaurus/plugin-client-redirects": ^2.2.0
     "@docusaurus/preset-classic": ^2.2.0
     "@docusaurus/theme-common": ^2.2.0
     "@fortawesome/fontawesome-svg-core": ^6.2.1

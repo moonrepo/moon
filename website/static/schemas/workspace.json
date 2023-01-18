@@ -11,78 +11,27 @@
       ]
     },
     "generator": {
-      "default": {
-        "templates": [
-          "./templates"
-        ]
-      },
-      "allOf": [
-        {
-          "$ref": "#/definitions/GeneratorConfig"
-        }
-      ]
+      "$ref": "#/definitions/GeneratorConfig"
     },
     "hasher": {
-      "default": {
-        "optimization": "accuracy"
-      },
-      "allOf": [
-        {
-          "$ref": "#/definitions/HasherConfig"
-        }
-      ]
+      "$ref": "#/definitions/HasherConfig"
     },
     "notifier": {
-      "default": {
-        "webhookUrl": null
-      },
-      "allOf": [
-        {
-          "$ref": "#/definitions/NotifierConfig"
-        }
-      ]
+      "$ref": "#/definitions/NotifierConfig"
     },
     "projects": {
-      "default": {},
-      "allOf": [
-        {
-          "$ref": "#/definitions/WorkspaceProjects"
-        }
-      ]
+      "$ref": "#/definitions/WorkspaceProjects"
     },
     "runner": {
-      "default": {
-        "archivableTargets": [],
-        "cacheLifetime": "7 days",
-        "implicitDeps": [],
-        "implicitInputs": [
-          "package.json",
-          "/.moon/project.yml",
-          "/.moon/toolchain.yml",
-          "/.moon/workspace.yml"
-        ],
-        "inheritColorsForPipedTasks": true,
-        "logRunningCommand": false
-      },
-      "allOf": [
-        {
-          "$ref": "#/definitions/RunnerConfig"
-        }
-      ]
+      "$ref": "#/definitions/RunnerConfig"
     },
     "vcs": {
-      "default": {
-        "defaultBranch": "master",
-        "manager": "git",
-        "remoteCandidates": [
-          "origin",
-          "upstream"
-        ]
-      },
-      "allOf": [
-        {
-          "$ref": "#/definitions/VcsConfig"
-        }
+      "$ref": "#/definitions/VcsConfig"
+    },
+    "versionConstraint": {
+      "type": [
+        "string",
+        "null"
       ]
     }
   },
@@ -105,12 +54,7 @@
       "type": "object",
       "properties": {
         "optimization": {
-          "default": "accuracy",
-          "allOf": [
-            {
-              "$ref": "#/definitions/HasherOptimization"
-            }
-          ]
+          "$ref": "#/definitions/HasherOptimization"
         }
       }
     },
@@ -125,7 +69,6 @@
       "type": "object",
       "properties": {
         "webhookUrl": {
-          "default": null,
           "type": [
             "string",
             "null"
@@ -137,7 +80,6 @@
       "type": "object",
       "properties": {
         "archivableTargets": {
-          "default": [],
           "type": "array",
           "items": {
             "type": "string"
@@ -148,7 +90,6 @@
           "type": "string"
         },
         "implicitDeps": {
-          "default": [],
           "type": "array",
           "items": {
             "type": "string"
@@ -157,7 +98,7 @@
         "implicitInputs": {
           "default": [
             "package.json",
-            "/.moon/project.yml",
+            "/.moon/tasks.yml",
             "/.moon/toolchain.yml",
             "/.moon/workspace.yml"
           ],
@@ -167,11 +108,9 @@
           }
         },
         "inheritColorsForPipedTasks": {
-          "default": true,
           "type": "boolean"
         },
         "logRunningCommand": {
-          "default": false,
           "type": "boolean"
         }
       }
@@ -184,12 +123,7 @@
           "type": "string"
         },
         "manager": {
-          "default": "git",
-          "allOf": [
-            {
-              "$ref": "#/definitions/VcsManager"
-            }
-          ]
+          "$ref": "#/definitions/VcsManager"
         },
         "remoteCandidates": {
           "default": [

@@ -39,9 +39,9 @@ pub enum WorkspaceError {
     #[error(
         "Failed to validate <file>{}/{}</file> configuration file.\n\n{0}",
         constants::CONFIG_DIRNAME,
-        constants::CONFIG_GLOBAL_PROJECT_FILENAME
+        constants::CONFIG_TASKS_FILENAME
     )]
-    InvalidGlobalProjectConfigFile(String),
+    InvalidTasksConfigFile(String),
 
     #[error("Invalid moon version, unable to proceed. Found {0}, expected {1}.")]
     InvalidMoonVersion(String, String),

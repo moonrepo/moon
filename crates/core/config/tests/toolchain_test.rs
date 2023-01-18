@@ -1,3 +1,4 @@
+use httpmock::prelude::*;
 use moon_config::{ConfigError, NodeConfig, ToolchainConfig};
 use moon_constants::CONFIG_TOOLCHAIN_FILENAME;
 use moon_test_utils::get_fixtures_path;
@@ -206,6 +207,17 @@ node:
 
     #[test]
     fn loads_from_url() {
+        let server = MockServer::start();
+
+        server.mock(|when, then| {
+            when.method(GET).path("/config.yml");
+            then.status(200).body(include_str!(
+                "../../../../tests/fixtures/config-extends/.moon/toolchain.yml"
+            ));
+        });
+
+        let url = server.url("/config.yml");
+
         figment::Jail::expect_with(|jail| {
             jail.set_env(
                 "MOON_WORKSPACE_ROOT",
@@ -213,16 +225,20 @@ node:
             );
 
             jail.create_file(
-                    super::CONFIG_TOOLCHAIN_FILENAME,
-r#"
-extends: https://raw.githubusercontent.com/moonrepo/moon/master/tests/fixtures/config-extends/.moon/toolchain.yml
+                super::CONFIG_TOOLCHAIN_FILENAME,
+                format!(
+                    r#"
+extends: '{}'
 
 node:
     version: '18.0.0'
     npm:
         version: '8.0.0'
 "#,
-                )?;
+                    url
+                )
+                .as_ref(),
+            )?;
 
             let config: ToolchainConfig = super::load_jailed_config(jail.directory())?;
 

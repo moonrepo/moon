@@ -78,9 +78,7 @@ impl Default for RunnerConfig {
                 // When a project changes
                 "package.json",
                 // When root config changes
-                "/.moon/project.yml",
-                "/.moon/toolchain.yml",
-                "/.moon/workspace.yml",
+                "/.moon/*.yml",
             ],
             inherit_colors_for_piped_tasks: true,
             log_running_command: false,

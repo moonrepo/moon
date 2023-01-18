@@ -7,13 +7,13 @@ use moon_utils::string_vec;
 use std::fs::read_to_string;
 
 fn node_sandbox() -> Sandbox {
-    let (workspace_config, toolchain_config, projects_config) = get_node_fixture_configs();
+    let (workspace_config, toolchain_config, tasks_config) = get_node_fixture_configs();
 
     let sandbox = create_sandbox_with_config(
         "node",
         Some(&workspace_config),
         Some(&toolchain_config),
-        Some(&projects_config),
+        Some(&tasks_config),
     );
 
     sandbox.enable_git();
@@ -24,7 +24,7 @@ fn node_sandbox_with_config<C>(callback: C) -> Sandbox
 where
     C: FnOnce(&mut NodeConfig),
 {
-    let (workspace_config, mut toolchain_config, projects_config) = get_node_fixture_configs();
+    let (workspace_config, mut toolchain_config, tasks_config) = get_node_fixture_configs();
 
     if let Some(node_config) = &mut toolchain_config.node {
         callback(node_config);
@@ -34,7 +34,7 @@ where
         "node",
         Some(&workspace_config),
         Some(&toolchain_config),
-        Some(&projects_config),
+        Some(&tasks_config),
     );
 
     sandbox.enable_git();
@@ -42,14 +42,14 @@ where
 }
 
 fn depman_sandbox(depman: &str) -> Sandbox {
-    let (workspace_config, toolchain_config, projects_config) =
+    let (workspace_config, toolchain_config, tasks_config) =
         get_node_depman_fixture_configs(depman);
 
     let sandbox = create_sandbox_with_config(
         format!("node-{}", depman),
         Some(&workspace_config),
         Some(&toolchain_config),
-        Some(&projects_config),
+        Some(&tasks_config),
     );
 
     sandbox.enable_git();
@@ -60,8 +60,7 @@ fn typescript_sandbox<C>(callback: C) -> Sandbox
 where
     C: FnOnce(&mut TypeScriptConfig),
 {
-    let (workspace_config, mut toolchain_config, projects_config) =
-        get_typescript_fixture_configs();
+    let (workspace_config, mut toolchain_config, tasks_config) = get_typescript_fixture_configs();
 
     if let Some(ts_config) = &mut toolchain_config.typescript {
         callback(ts_config);
@@ -71,7 +70,7 @@ where
         "typescript",
         Some(&workspace_config),
         Some(&toolchain_config),
-        Some(&projects_config),
+        Some(&tasks_config),
     );
 
     sandbox.enable_git();
@@ -412,14 +411,13 @@ mod install_deps {
 
     #[test]
     fn installs_deps_into_each_project_when_not_using_workspaces() {
-        let (workspace_config, toolchain_config, projects_config) =
-            get_typescript_fixture_configs();
+        let (workspace_config, toolchain_config, tasks_config) = get_typescript_fixture_configs();
 
         let sandbox = create_sandbox_with_config(
             "node-non-workspaces",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         sandbox.enable_git();
@@ -997,14 +995,14 @@ mod aliases {
 
     #[test]
     fn runs_via_package_name() {
-        let (workspace_config, toolchain_config, projects_config) =
+        let (workspace_config, toolchain_config, tasks_config) =
             get_project_graph_aliases_fixture_configs();
 
         let sandbox = create_sandbox_with_config(
             "project-graph/aliases",
             Some(&workspace_config),
             Some(&toolchain_config),
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {

@@ -1,4 +1,4 @@
-use moon_config::{RunnerConfig, WorkspaceConfig, WorkspaceProjects};
+use moon_config::{InheritedTasksConfig, WorkspaceConfig, WorkspaceProjects};
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, predicates::prelude::*, Sandbox,
 };
@@ -11,15 +11,17 @@ fn system_sandbox() -> Sandbox {
             ("unix".to_owned(), "unix".to_owned()),
             ("windows".to_owned(), "windows".to_owned()),
         ])),
-        runner: RunnerConfig {
-            // Avoid these in hashes or snapshots
-            implicit_inputs: string_vec![],
-            ..RunnerConfig::default()
-        },
         ..WorkspaceConfig::default()
     };
 
-    let sandbox = create_sandbox_with_config("system", Some(&workspace_config), None, None);
+    let tasks_config = InheritedTasksConfig {
+        // Avoid defaults in hashes or snapshots
+        implicit_inputs: string_vec![],
+        ..InheritedTasksConfig::default()
+    };
+
+    let sandbox =
+        create_sandbox_with_config("system", Some(&workspace_config), None, Some(&tasks_config));
 
     sandbox.enable_git();
     sandbox

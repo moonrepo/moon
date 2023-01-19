@@ -65,6 +65,36 @@ fileGroups:
 > File paths and globs used within a file group are relative from the inherited project's root, and
 > not the workspace.
 
+### `implicitDeps`<VersionLabel version="0.23" />
+
+<HeadingApiLink to="/api/types/interface/InheritedTasksConfig#implicitDeps" />
+
+Defines task [`deps`](./project#deps) that are implicitly inherited by _all_ tasks within the
+workspace. This is extremely useful for pre-building projects that are used extensively throughout
+the repo, or always building project dependencies. Defaults to an empty list.
+
+```yaml title=".moon/tasks.yml" {1-2}
+implicitDeps:
+  - '^:build'
+```
+
+### `implicitInputs`<VersionLabel version="0.23" />
+
+<HeadingApiLink to="/api/types/interface/InheritedTasksConfig#implicitInputs" />
+
+Defines task [`inputs`](./project#inputs) that are implicitly inherited by _all_ tasks within the
+workspace. This is extremely useful for the "changes to these files should always trigger a task"
+scenario.
+
+Like `inputs`, file paths/globs defined here are relative from the inheriting project.
+[Project and workspace relative file patterns](../concepts/file-pattern#project-relative) are
+supported and encouraged.
+
+```yaml title=".moon/workspace.yml" {1-2}
+implicitInputs:
+  - 'package.json'
+```
+
 ## `tasks`
 
 <HeadingApiLink to="/api/types/interface/InheritedTasksConfig#tasks" />

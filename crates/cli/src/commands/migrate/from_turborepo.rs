@@ -1,7 +1,7 @@
 use super::check_dirty_repo;
 use crate::helpers::AnyError;
 use moon::{generate_project_graph, load_workspace};
-use moon_config::{PlatformType, ProjectConfig, RunnerConfig, TaskCommandArgs, TaskConfig};
+use moon_config::{InheritedTasksConfig, PlatformType, ProjectConfig, TaskCommandArgs, TaskConfig};
 use moon_constants as constants;
 use moon_logger::{info, warn};
 use moon_terminal::safe_exit;
@@ -42,17 +42,17 @@ pub fn extract_project_task_ids(key: &str) -> (Option<String>, String) {
     (None, key.to_owned())
 }
 
-pub fn convert_globals(turbo: &TurboJson, runner_config: &mut RunnerConfig) -> bool {
+pub fn convert_globals(turbo: &TurboJson, tasks_config: &mut InheritedTasksConfig) -> bool {
     let mut modified = false;
 
     if let Some(global_deps) = &turbo.global_dependencies {
-        runner_config.implicit_inputs.extend(global_deps.to_owned());
+        tasks_config.implicit_inputs.extend(global_deps.to_owned());
         modified = true;
     }
 
     if let Some(global_env) = &turbo.global_env {
         for env in global_env {
-            runner_config.implicit_inputs.push(format!("${}", env));
+            tasks_config.implicit_inputs.push(format!("${}", env));
         }
 
         modified = true;
@@ -152,13 +152,13 @@ pub async fn from_turborepo(skip_touched_files_check: &bool) -> Result<(), AnyEr
     let turbo_json: TurboJson = json::read(&turbo_file)?;
 
     // Convert globals first
-    if convert_globals(&turbo_json, &mut workspace.config.runner) {
+    if convert_globals(&turbo_json, &mut workspace.tasks_config) {
         yaml::write_with_config(
             workspace
                 .root
                 .join(constants::CONFIG_DIRNAME)
-                .join(constants::CONFIG_WORKSPACE_FILENAME),
-            &workspace.config,
+                .join(constants::CONFIG_TASKS_FILENAME),
+            &workspace.tasks_config,
         )?;
     }
 
@@ -235,9 +235,9 @@ mod tests {
 
         #[test]
         fn converst_deps() {
-            let mut config = RunnerConfig {
+            let mut config = InheritedTasksConfig {
                 implicit_inputs: string_vec!["existing.txt"],
-                ..RunnerConfig::default()
+                ..InheritedTasksConfig::default()
             };
 
             convert_globals(
@@ -256,9 +256,9 @@ mod tests {
 
         #[test]
         fn converst_env() {
-            let mut config = RunnerConfig {
+            let mut config = InheritedTasksConfig {
                 implicit_inputs: string_vec!["$FOO"],
-                ..RunnerConfig::default()
+                ..InheritedTasksConfig::default()
             };
 
             convert_globals(

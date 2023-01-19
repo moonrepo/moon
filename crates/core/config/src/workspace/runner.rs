@@ -1,26 +1,11 @@
 use crate::{
     errors::create_validation_error,
-    validators::{is_default, is_default_true, validate_id, validate_target},
+    validators::{is_default, is_default_true, validate_target},
 };
-use moon_utils::{string_vec, time};
+use moon_utils::time;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use validator::{Validate, ValidationError};
-
-fn validate_deps(list: &[String]) -> Result<(), ValidationError> {
-    for (index, item) in list.iter().enumerate() {
-        let key = format!("implicitDeps[{}]", index);
-
-        // When no target scope, it's assumed to be a self scope
-        if item.contains(':') {
-            validate_target(key, item)?;
-        } else {
-            validate_id(key, item)?;
-        }
-    }
-
-    Ok(())
-}
 
 fn validate_cache_lifetime(value: &str) -> Result<(), ValidationError> {
     if let Err(e) = time::parse_duration(value) {
@@ -54,13 +39,6 @@ pub struct RunnerConfig {
     #[validate(custom = "validate_cache_lifetime")]
     pub cache_lifetime: String,
 
-    #[serde(skip_serializing_if = "is_default")]
-    #[validate(custom = "validate_deps")]
-    pub implicit_deps: Vec<String>,
-
-    #[serde(skip_serializing_if = "is_default")]
-    pub implicit_inputs: Vec<String>,
-
     #[serde(skip_serializing_if = "is_default_true")]
     pub inherit_colors_for_piped_tasks: bool,
 
@@ -73,13 +51,6 @@ impl Default for RunnerConfig {
         RunnerConfig {
             cache_lifetime: "7 days".to_owned(),
             archivable_targets: vec![],
-            implicit_deps: vec![],
-            implicit_inputs: string_vec![
-                // When a project changes
-                "package.json",
-                // When root config changes
-                "/.moon/*.yml",
-            ],
             inherit_colors_for_piped_tasks: true,
             log_running_command: false,
         }
@@ -118,44 +89,6 @@ mod tests {
                 CONFIG_FILENAME,
                 r#"
 cacheLifetime: 'bad unit'
-"#,
-            )?;
-
-            load_jailed_config()?;
-
-            Ok(())
-        });
-    }
-
-    #[test]
-    #[should_panic(expected = "Must be a valid target format")]
-    fn invalid_dep_target() {
-        figment::Jail::expect_with(|jail| {
-            jail.create_file(
-                CONFIG_FILENAME,
-                r#"
-implicitDeps:
-  - '%:task'
-"#,
-            )?;
-
-            load_jailed_config()?;
-
-            Ok(())
-        });
-    }
-
-    #[test]
-    #[should_panic(
-        expected = "Must be a valid ID (accepts A-Z, a-z, 0-9, - (dashes), _ (underscores), /, and must start with a letter)"
-    )]
-    fn invalid_dep_target_no_scope() {
-        figment::Jail::expect_with(|jail| {
-            jail.create_file(
-                CONFIG_FILENAME,
-                r#"
-implicitDeps:
-  - 'foo bar'
 "#,
             )?;
 

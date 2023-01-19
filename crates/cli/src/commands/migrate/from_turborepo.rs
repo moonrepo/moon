@@ -150,17 +150,10 @@ pub async fn from_turborepo(skip_touched_files_check: &bool) -> Result<(), AnyEr
 
     let project_graph = generate_project_graph(&mut workspace).await?;
     let turbo_json: TurboJson = json::read(&turbo_file)?;
+    let mut node_tasks_config = InheritedTasksConfig::default();
 
     // Convert globals first
-    if convert_globals(&turbo_json, &mut workspace.tasks_config) {
-        yaml::write_with_config(
-            workspace
-                .root
-                .join(constants::CONFIG_DIRNAME)
-                .join(constants::CONFIG_TASKS_FILENAME),
-            &workspace.tasks_config,
-        )?;
-    }
+    convert_globals(&turbo_json, &mut node_tasks_config);
 
     // Convert tasks second
     let mut has_warned_root_tasks = false;
@@ -192,8 +185,7 @@ pub async fn from_turborepo(skip_touched_files_check: &bool) -> Result<(), AnyEr
                 }
             }
             (None, task_id) => {
-                workspace
-                    .tasks_config
+                node_tasks_config
                     .tasks
                     .insert(task_id.clone(), convert_task(task_id, task));
                 has_modified_global_tasks = true;
@@ -206,8 +198,8 @@ pub async fn from_turborepo(skip_touched_files_check: &bool) -> Result<(), AnyEr
             workspace
                 .root
                 .join(constants::CONFIG_DIRNAME)
-                .join(constants::CONFIG_TASKS_FILENAME),
-            &workspace.tasks_config,
+                .join("tasks/node.yml"),
+            &node_tasks_config,
         )?;
     }
 

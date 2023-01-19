@@ -4,7 +4,7 @@ use std::path::Path;
 
 #[derive(Default)]
 pub struct InheritedTasksManager {
-    configs: FxHashMap<String, InheritedTasksConfig>,
+    pub configs: FxHashMap<String, InheritedTasksConfig>,
 }
 
 impl InheritedTasksManager {
@@ -34,10 +34,10 @@ impl InheritedTasksManager {
         let mut config = InheritedTasksConfig::default();
         let lookups = FxHashSet::from_iter([
             "*".into(),
-            format!("{}", platform.to_string()),
-            format!("{}", language.to_string()),
-            format!("{}-{}", platform.to_string(), type_of.to_string()),
-            format!("{}-{}", language.to_string(), type_of.to_string()),
+            format!("{}", platform),
+            format!("{}", language),
+            format!("{}-{}", platform, type_of),
+            format!("{}-{}", language, type_of),
         ]);
 
         for lookup in lookups {

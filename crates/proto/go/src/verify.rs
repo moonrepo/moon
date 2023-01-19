@@ -1,4 +1,5 @@
 use crate::GoLanguage;
+use crate::download::get_archive_file;
 use log::debug;
 use proto_core::{
     async_trait, color, download_from_url, get_sha256_hash_of_file, Describable, ProtoError,
@@ -28,9 +29,10 @@ impl Verifiable<'_> for GoLanguage {
         }
 
         let version = self.get_resolved_version();
+        let download_url = get_archive_file(version)?;
         let from_url = match from_url {
             Some(url) => url.to_owned(),
-            None => format!("https://nodejs.org/dist/v{}/SHASUMS256.txt", version),
+            None => format!("https://dl.google.com/go/{}.sha256", download_url),
         };
 
         debug!(target: self.get_log_target(), "Attempting to download checksum from {}", color::url(&from_url));
@@ -58,15 +60,9 @@ impl Verifiable<'_> for GoLanguage {
 
         let file = File::open(checksum_file)
             .map_err(|e| ProtoError::Fs(checksum_file.to_path_buf(), e.to_string()))?;
-        let file_name = download_file
-            .file_name()
-            .unwrap_or_default()
-            .to_str()
-            .unwrap_or_default();
 
         for line in BufReader::new(file).lines().flatten() {
-            // <checksum>  node-v<version>-<os>-<arch>.tar.gz
-            if line.starts_with(&checksum) && line.ends_with(file_name) {
+            if line.starts_with(&checksum) {
                 debug!(target: self.get_log_target(), "Successfully verified, checksum matches");
 
                 return Ok(true);

@@ -115,6 +115,7 @@ impl ShimBuilder {
             .as_ref()
             .unwrap()
             .join(get_shim_file_name(&self.name));
+
         let shim_exists = shim_path.exists();
 
         let handle_error =

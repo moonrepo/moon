@@ -36,10 +36,7 @@ impl<'a> GoBaseVersion for Version<'a> {
 #[async_trait]
 impl Resolvable<'_> for GoLanguage {
     fn get_resolved_version(&self) -> &str {
-        match self.version.as_ref() {
-            Some(version) => version,
-            None => "latest",
-        }
+        self.version.as_ref().unwrap()
     }
 
     async fn load_manifest(&self) -> Result<VersionManifest, ProtoError> {
@@ -73,7 +70,6 @@ impl Resolvable<'_> for GoLanguage {
                             alias: None,
                             version: String::from(ver_str),
                         };
-                        dbg!(ver.go_base_version());
                         aliases.insert(ver.go_base_version(), entry.version.clone());
                         versions.insert(entry.version.clone(), entry);
                     }
@@ -101,18 +97,19 @@ impl Resolvable<'_> for GoLanguage {
         let manifest = self.load_manifest().await?;
         let candidate;
 
-        if initial_version.matches(".").count() < 3 {
-            candidate = manifest.find_version_from_alias(&initial_version)?;
+        if initial_version.contains("rc") || initial_version.contains("beta") {
+            candidate = manifest.get_version(&initial_version)?;
         } else {
-            candidate = manifest.find_version(&initial_version)?;
+            candidate = match manifest.find_version_from_alias(&initial_version) {
+                Ok(found) => found,
+                _ => manifest.find_version(&initial_version)?
+            }
         }
 
-        let version = parse_version(candidate)?.to_string();
+        debug!(target: self.get_log_target(), "Resolved to {}", candidate);
 
-        debug!(target: self.get_log_target(), "Resolved to {}", version);
+        self.version = Some(candidate.clone());
 
-        self.version = Some(version.clone());
-
-        Ok(version)
+        Ok(candidate.to_owned())
     }
 }

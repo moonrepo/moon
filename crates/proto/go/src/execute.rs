@@ -9,7 +9,7 @@ pub fn get_bin_name<T: AsRef<str>>(name: T) -> String {
 
 #[cfg(not(target_os = "windows"))]
 pub fn get_bin_name<T: AsRef<str>>(name: T) -> String {
-    format!("bin/{}", name.as_ref())
+    format!("go/bin/{}", name.as_ref())
 }
 
 #[async_trait]

@@ -36,7 +36,7 @@ pub fn get_archive_file_path(version: &str) -> Result<String, ProtoError> {
     }
 
     // TODO update
-    Ok(format!("go{version}.darwin-{arch}"))
+    Ok(format!("go{version}.linux-{arch}"))
 }
 
 #[cfg(target_os = "windows")]
@@ -50,8 +50,7 @@ pub fn get_archive_file_path(version: &str) -> Result<String, ProtoError> {
         ));
     }
 
-    // TODO update
-    Ok(format!("go{version}.darwin-{arch}"))
+    Ok(format!("go{version}.windows-{arch}"))
 }
 
 pub fn get_archive_file(version: &str) -> Result<String, ProtoError> {

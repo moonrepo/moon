@@ -20,6 +20,14 @@ mod resolver {
         let fixture = assert_fs::TempDir::new().unwrap();
         let mut tool = GoLanguage::new(&Proto::from(fixture.path()));
 
+        assert_eq!(tool.resolve_version("1.9.2").await.unwrap(), "1.9.2");
+    }
+
+    #[tokio::test]
+    async fn resolve_rc_version() {
+        let fixture = assert_fs::TempDir::new().unwrap();
+        let mut tool = GoLanguage::new(&Proto::from(fixture.path()));
+
         assert_eq!(tool.resolve_version("1.9rc2").await.unwrap(), "1.9rc2");
     }
 }

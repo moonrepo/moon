@@ -15,6 +15,7 @@ fn system_sandbox() -> Sandbox {
     };
 
     let tasks_config = InheritedTasksConfig {
+        // Avoid defaults in hashes or snapshots
         implicit_inputs: string_vec![],
         ..InheritedTasksConfig::default()
     };

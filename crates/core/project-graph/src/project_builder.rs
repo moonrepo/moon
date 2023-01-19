@@ -245,9 +245,9 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         project: &mut Project,
         task: &mut Task,
     ) -> Result<(), ProjectGraphError> {
-        if !self.workspace.tasks_config.implicit_deps.is_empty() {
+        if !project.inherited_config.implicit_deps.is_empty() {
             task.deps.extend(Task::create_dep_targets(
-                &self.workspace.tasks_config.implicit_deps,
+                &project.inherited_config.implicit_deps,
             )?);
         }
 
@@ -345,9 +345,9 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         project: &mut Project,
         task: &mut Task,
     ) -> Result<(), ProjectGraphError> {
-        if !self.workspace.tasks_config.implicit_inputs.is_empty() {
+        if !project.inherited_config.implicit_inputs.is_empty() {
             task.inputs
-                .extend(self.workspace.tasks_config.implicit_inputs.clone());
+                .extend(project.inherited_config.implicit_inputs.clone());
         }
 
         if task.inputs.is_empty() {

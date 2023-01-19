@@ -1,13 +1,13 @@
 use crate::errors::WorkspaceError;
 use moon_cache::CacheEngine;
 use moon_config::{
-    format_error_line, format_figment_errors, ConfigError, InheritedTasksConfig, ToolchainConfig,
-    WorkspaceConfig, CONFIG_DIRNAME,
+    format_error_line, format_figment_errors, ConfigError, InheritedTasksConfig,
+    InheritedTasksManager, ToolchainConfig, WorkspaceConfig, CONFIG_DIRNAME,
 };
 use moon_constants as constants;
 use moon_logger::{color, debug, trace};
 use moon_platform::{BoxedPlatform, PlatformManager};
-use moon_utils::{fs, path, semver};
+use moon_utils::{fs, glob, path, semver};
 use moon_vcs::{Vcs, VcsLoader};
 use moonbase::Moonbase;
 use std::env;
@@ -36,16 +36,30 @@ fn find_workspace_root<P: AsRef<Path>>(current_dir: P) -> Option<PathBuf> {
         .map(|dir| dir.parent().unwrap().to_path_buf())
 }
 
-// .moon/tasks.yml
-fn load_tasks_config(root_dir: &Path) -> Result<InheritedTasksConfig, WorkspaceError> {
+// .moon/tasks.yml, .moon/tasks/*.yml
+fn load_tasks_config(root_dir: &Path) -> Result<InheritedTasksManager, WorkspaceError> {
+    let mut manager = InheritedTasksManager::default();
     let old_config_path = root_dir.join(constants::CONFIG_DIRNAME).join("project.yml");
     let config_path = root_dir
         .join(constants::CONFIG_DIRNAME)
         .join(constants::CONFIG_TASKS_FILENAME);
 
+    // TODO: Remove in v1
     if old_config_path.exists() && !config_path.exists() {
         fs::rename(&old_config_path, &config_path)?;
     }
+
+    let do_load = |cfg_path: &Path| match InheritedTasksConfig::load(cfg_path.to_path_buf()) {
+        Ok(cfg) => Ok(cfg),
+        Err(errors) => Err(WorkspaceError::InvalidTasksConfigFile(
+            cfg_path.strip_prefix(root_dir).unwrap().to_path_buf(),
+            if let ConfigError::FailedValidation(valids) = errors {
+                format_figment_errors(valids)
+            } else {
+                format_error_line(errors.to_string())
+            },
+        )),
+    };
 
     trace!(
         target: LOG_TARGET,
@@ -58,20 +72,27 @@ fn load_tasks_config(root_dir: &Path) -> Result<InheritedTasksConfig, WorkspaceE
         color::path(root_dir)
     );
 
-    if !config_path.exists() {
-        return Ok(InheritedTasksConfig::default());
+    if config_path.exists() {
+        manager.add_config(&config_path, do_load(&config_path)?);
     }
 
-    match InheritedTasksConfig::load(config_path) {
-        Ok(cfg) => Ok(cfg),
-        Err(errors) => Err(WorkspaceError::InvalidTasksConfigFile(
-            if let ConfigError::FailedValidation(valids) = errors {
-                format_figment_errors(valids)
-            } else {
-                format_error_line(errors.to_string())
-            },
-        )),
+    trace!(
+        target: LOG_TARGET,
+        "Attempting to find {} in {}",
+        color::file(format!("{}/{}", constants::CONFIG_DIRNAME, "tasks/*.yml")),
+        color::path(root_dir)
+    );
+
+    for config_path in glob::walk(
+        root_dir.join(constants::CONFIG_DIRNAME).join("tasks"),
+        &["*.yml"],
+    )? {
+        trace!(target: LOG_TARGET, "Found {}", color::path(&config_path));
+
+        manager.add_config(&config_path, do_load(&config_path)?);
     }
+
+    Ok(manager)
 }
 
 // .moon/toolchain.yml
@@ -157,7 +178,7 @@ pub struct Workspace {
     pub session: Option<Moonbase>,
 
     /// Global tasks configuration loaded from ".moon/tasks.yml".
-    pub tasks_config: InheritedTasksConfig,
+    pub tasks_config: InheritedTasksManager,
 
     /// Toolchain configuration loaded from ".moon/toolchain.yml".
     pub toolchain_config: ToolchainConfig,

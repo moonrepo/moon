@@ -1,5 +1,6 @@
 use crate::{InheritedTasksConfig, PlatformType, ProjectLanguage, ProjectType};
 use rustc_hash::{FxHashMap, FxHashSet};
+use std::path::Path;
 
 #[derive(Default)]
 pub struct InheritedTasksManager {
@@ -7,13 +8,18 @@ pub struct InheritedTasksManager {
 }
 
 impl InheritedTasksManager {
-    pub fn add_config(&mut self, name: &str, config: InheritedTasksConfig) {
+    pub fn add_config(&mut self, path: &Path, config: InheritedTasksConfig) {
+        let name = path
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .to_string();
         let name = if name == "tasks.yml" {
             "*"
         } else if name.ends_with(".yml") {
             name.strip_suffix(".yml").unwrap()
         } else {
-            name
+            name.as_ref()
         };
 
         self.configs.insert(name.to_owned(), config);

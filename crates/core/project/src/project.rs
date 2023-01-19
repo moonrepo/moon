@@ -266,7 +266,7 @@ impl ProjectDependency {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase")]
 pub struct Project {
     /// Unique aliases of the project, alongside its official ID.
     /// This is typically reserved for language specific semantics, like `name` from `package.json`.

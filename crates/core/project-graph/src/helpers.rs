@@ -1,7 +1,7 @@
 use crate::errors::ProjectGraphError;
 use moon_config::ProjectsSourcesMap;
 use moon_logger::{color, warn};
-use moon_utils::{glob, path, regex};
+use moon_utils::{fs, glob, path, regex};
 use std::path::Path;
 
 /// Infer a project name from a source path, by using the name of
@@ -28,17 +28,16 @@ pub fn detect_projects_with_globs(
 
     // Root-level project has special handling
     if globs.contains(&root_source) {
-        let mut root_id = workspace_root
-            .file_name()
-            .unwrap_or_default()
-            .to_str()
-            .unwrap_or_default();
+        let root_id = fs::file_name(workspace_root);
 
-        if root_id.is_empty() {
-            root_id = "root";
-        }
-
-        projects.insert(regex::clean_id(root_id), root_source);
+        projects.insert(
+            regex::clean_id(if root_id.is_empty() {
+                "root"
+            } else {
+                root_id.as_ref()
+            }),
+            root_source,
+        );
     }
 
     // Glob for all other projects

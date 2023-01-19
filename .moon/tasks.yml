@@ -1,5 +1,8 @@
 $schema: '../website/static/schemas/tasks.json'
 
+implicitDeps:
+  - '^:build'
+
 fileGroups:
   configs:
     - '*.{js,json}'

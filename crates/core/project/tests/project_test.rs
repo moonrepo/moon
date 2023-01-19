@@ -7,7 +7,6 @@ use moon_task::FileGroup;
 use moon_test_utils::get_fixtures_root;
 use moon_utils::string_vec;
 use rustc_hash::FxHashMap;
-use std::collections::BTreeMap;
 
 fn mock_file_groups() -> FxHashMap<String, FileGroup> {
     FxHashMap::from_iter([(
@@ -18,10 +17,8 @@ fn mock_file_groups() -> FxHashMap<String, FileGroup> {
 
 fn mock_tasks_config() -> InheritedTasksConfig {
     InheritedTasksConfig {
-        extends: None,
         file_groups: FxHashMap::from_iter([("sources".into(), string_vec!["src/**/*"])]),
-        tasks: BTreeMap::new(),
-        schema: String::new(),
+        ..InheritedTasksConfig::default()
     }
 }
 

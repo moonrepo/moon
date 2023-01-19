@@ -188,45 +188,6 @@ runner:
 > This setting primarily exists for [remote caching](../guides/remote-cache) as it will create and
 > persist tar archives located in `.moon/cache/outputs`.
 
-### `implicitDeps`<VersionLabel version="0.16" />
-
-<HeadingApiLink to="/api/types/interface/RunnerConfig#implicitDeps" />
-
-Defines task [`deps`](./project#deps) that are implicitly inherited by _all_ tasks within the
-workspace. This is extremely useful for pre-building projects that are used extensively throughout
-the repo, or always building project dependencies. Defaults to an empty list.
-
-```yaml title=".moon/workspace.yml" {2-5}
-runner:
-  implicitDeps:
-    - '^:build'
-```
-
-### `implicitInputs`<VersionLabel version="0.9" />
-
-<HeadingApiLink to="/api/types/interface/RunnerConfig#implicitInputs" />
-
-Defines task [`inputs`](./project#inputs) that are implicitly inherited by _all_ tasks within the
-workspace. This is extremely useful for the "changes to these files should always trigger a task"
-scenario.
-
-Like `inputs`, file paths/globs defined here are relative from the inheriting project.
-[Project and workspace relative file patterns](../concepts/file-pattern#project-relative) are
-supported and encouraged.
-
-```yaml title=".moon/workspace.yml" {2-5}
-runner:
-  implicitInputs:
-    - 'package.json'
-    - '/.moon/tasks.yml'
-    - '/.moon/toolchain.yml'
-    - '/.moon/workspace.yml'
-```
-
-> When not defined, this setting defaults to the list in the example above. When this setting _is
-> defined_, that list will be overwritten, so be sure to explicitly define them if you would like to
-> retain that functionality.
-
 ### `inheritColorsForPipedTasks`<VersionLabel version="0.3" />
 
 <HeadingApiLink to="/api/types/interface/RunnerConfig#inheritColorsForPipedTasks" />

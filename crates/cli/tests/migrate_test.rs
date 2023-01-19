@@ -100,6 +100,7 @@ mod from_package_json {
 mod from_turborepo {
     use super::*;
     use moon_cli::commands::migrate::{TurboJson, TurboTask};
+    use moon_config::InheritedTasksConfig;
     use rustc_hash::FxHashMap;
 
     #[test]
@@ -139,18 +140,11 @@ mod from_turborepo {
 
         assert.success();
 
-        let config = WorkspaceConfig::load(sandbox.path().join(".moon/workspace.yml")).unwrap();
+        let config = InheritedTasksConfig::load(sandbox.path().join(".moon/tasks.yml")).unwrap();
 
         assert_eq!(
-            config.runner.implicit_inputs,
-            string_vec![
-                "package.json",
-                "/.moon/*.yml",
-                "package.json",
-                "*.json",
-                "$FOO",
-                "$BAR"
-            ]
+            config.implicit_inputs,
+            string_vec!["package.json", "*.json", "$FOO", "$BAR", "/.moon/*.yml"]
         );
     }
 

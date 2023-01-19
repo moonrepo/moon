@@ -92,5 +92,7 @@ export interface ProjectConfig {
 export interface InheritedTasksConfig {
 	extends: string | null;
 	fileGroups: Record<string, string[]>;
+	implicitDeps: string[];
+	implicitInputs: string[];
 	tasks: Record<string, TaskConfig>;
 }

@@ -9,7 +9,7 @@ This process will convert the root `turbo.json` file to moon applicable configur
 - Migrates `pipeline` global tasks to [`.moon/tasks.yml`](../../config/tasks#tasks) and project
   scoped tasks to [`moon.yml`](../../config/project#tasks).
 - Migrates `globalDependencies` and `globalEnv` to
-  [`.moon/workspace.yml`](../../config/workspace#implicitinputs) (via `runner.implicitInputs`).
+  [`.moon/tasks.yml`](../../config/tasks#implicitinputs) (via `implicitInputs`).
 
 ```shell
 $ moon migrate from-turborepo

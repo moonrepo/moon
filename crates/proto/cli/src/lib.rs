@@ -6,6 +6,7 @@ use std::str::FromStr;
 pub use proto_core::*;
 pub use proto_error::*;
 pub use proto_node as node;
+pub use proto_go as go;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, ValueEnum)]
 #[value(rename_all = "lowercase")]
@@ -15,6 +16,8 @@ pub enum ToolType {
     Npm,
     Pnpm,
     Yarn,
+    // Go
+    Go,
 }
 
 impl FromStr for ToolType {
@@ -26,6 +29,7 @@ impl FromStr for ToolType {
             "npm" => Ok(Self::Npm),
             "pnpm" => Ok(Self::Pnpm),
             "yarn" => Ok(Self::Yarn),
+            "go" => Ok(Self::Go),
             _ => Err(ProtoError::UnsupportedTool(value.to_owned())),
         }
     }
@@ -49,6 +53,8 @@ pub fn create_tool(tool: &ToolType) -> Result<Box<dyn Tool<'static>>, ProtoError
             &proto,
             node::NodeDependencyManagerType::Yarn,
         )),
+        // Go
+        ToolType::Go => Box::new(go::GoLanguage::new(&proto)),
     })
 }
 

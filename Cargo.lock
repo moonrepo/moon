@@ -1981,6 +1981,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_go_tool"
+version = "0.1.0"
+
+[[package]]
 name = "moon_hasher"
 version = "0.1.0"
 dependencies = [
@@ -2930,6 +2934,7 @@ dependencies = [
  "log",
  "proto_core",
  "proto_error",
+ "proto_go",
  "proto_node",
  "rustc-hash",
  "tokio",
@@ -2963,6 +2968,20 @@ name = "proto_error"
 version = "0.1.0"
 dependencies = [
  "thiserror",
+]
+
+[[package]]
+name = "proto_go"
+version = "0.1.0"
+dependencies = [
+ "assert_fs",
+ "clean-path",
+ "log",
+ "proto_core",
+ "rustc-hash",
+ "serde",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]

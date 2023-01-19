@@ -17,12 +17,6 @@ enum GoLTS {
     State(bool),
 }
 
-#[derive(Deserialize)]
-struct GoDistVersion {
-    lts: GoLTS,
-    version: String, // Starts with v
-}
-
 trait GoBaseVersion {
     fn go_base_version(&self) -> String;
 }

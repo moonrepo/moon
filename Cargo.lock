@@ -2976,6 +2976,7 @@ version = "0.1.0"
 dependencies = [
  "assert_fs",
  "clean-path",
+ "lenient_semver",
  "log",
  "proto_core",
  "rustc-hash",

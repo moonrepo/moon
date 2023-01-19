@@ -18,7 +18,7 @@ pub fn get_archive_file_path(version: &str) -> Result<String, ProtoError> {
         ));
     }
 
-    Ok(format!("go{version}-darwin-{arch}"))
+    Ok(format!("go{version}.darwin-{arch}"))
 }
 
 #[cfg(target_os = "linux")]
@@ -35,7 +35,8 @@ pub fn get_archive_file_path(version: &str) -> Result<String, ProtoError> {
         ));
     }
 
-    Ok(format!("go{version}-darwin-{arch}"))
+    // TODO update
+    Ok(format!("go{version}.darwin-{arch}"))
 }
 
 #[cfg(target_os = "windows")]
@@ -49,8 +50,8 @@ pub fn get_archive_file_path(version: &str) -> Result<String, ProtoError> {
         ));
     }
 
-
-    Ok(format!("go{version}-darwin-{arch}"))
+    // TODO update
+    Ok(format!("go{version}.darwin-{arch}"))
 }
 
 pub fn get_archive_file(version: &str) -> Result<String, ProtoError> {
@@ -83,8 +84,7 @@ impl Downloadable<'_> for GoLanguage {
             Some(url) => url.to_owned(),
             None => {
                 format!(
-                    "https://dl.google.com/go/{}/{}",
-                    version,
+                    "https://dl.google.com/go/{}",
                     get_archive_file(version)?
                 )
             }

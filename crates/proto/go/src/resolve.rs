@@ -1,5 +1,6 @@
 use crate::GoLanguage;
 use log::debug;
+use lenient_semver::Version;
 use proto_core::{
     async_trait, load_versions_manifest, parse_version, remove_v_prefix, Describable, ProtoError,
     Resolvable, VersionManifest, VersionManifestEntry,
@@ -22,6 +23,16 @@ struct GoDistVersion {
     version: String, // Starts with v
 }
 
+trait GoBaseVersion {
+    fn go_base_version(&self) -> String;
+}
+
+impl<'a> GoBaseVersion for Version<'a> {
+    fn go_base_version(&self) -> String {
+        format!("{}.{}", self.major, self.minor)
+    }
+}
+
 #[async_trait]
 impl Resolvable<'_> for GoLanguage {
     fn get_resolved_version(&self) -> &str {
@@ -41,6 +52,7 @@ impl Resolvable<'_> for GoLanguage {
                 .expect("failed to execute process");
 
         let raw = str::from_utf8(&output.stdout).expect("could not parse output from github");
+
         for line in raw.split("\n") {
             let parts: Vec<&str> = line.split("\t").collect();
             if parts.len() < 2 {
@@ -53,15 +65,20 @@ impl Resolvable<'_> for GoLanguage {
             }
 
             if tag[2].starts_with("go") {
-                let ver = tag[2].strip_prefix("go").unwrap();
-                println!("{}", ver);
+                let ver_str = tag[2].strip_prefix("go").unwrap();
 
-                let mut entry = VersionManifestEntry {
-                    alias: None,
-                    version: String::from(ver),
-                };
-
-                versions.insert(entry.version.clone(), entry);
+                match Version::parse(ver_str) {
+                    Ok(ver) => {
+                        let entry = VersionManifestEntry {
+                            alias: None,
+                            version: String::from(ver_str),
+                        };
+                        dbg!(ver.go_base_version());
+                        aliases.insert(ver.go_base_version(), entry.version.clone());
+                        versions.insert(entry.version.clone(), entry);
+                    }
+                    Err(_) => {}
+                }
             }
         };
 
@@ -82,7 +99,13 @@ impl Resolvable<'_> for GoLanguage {
         );
 
         let manifest = self.load_manifest().await?;
-        let candidate = manifest.find_version(&initial_version)?;
+        let candidate;
+
+        if initial_version.matches(".").count() < 3 {
+            candidate = manifest.find_version_from_alias(&initial_version)?;
+        } else {
+            candidate = manifest.find_version(&initial_version)?;
+        }
 
         let version = parse_version(candidate)?.to_string();
 

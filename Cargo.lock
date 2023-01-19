@@ -1981,10 +1981,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_go_tool"
-version = "0.1.0"
-
-[[package]]
 name = "moon_hasher"
 version = "0.1.0"
 dependencies = [

@@ -2,27 +2,19 @@ use crate::GoLanguage;
 use log::debug;
 use lenient_semver::Version;
 use proto_core::{
-    async_trait, load_versions_manifest, parse_version, remove_v_prefix, Describable, ProtoError,
+    async_trait, Describable, ProtoError,
     Resolvable, VersionManifest, VersionManifestEntry,
 };
 use core::str;
-use serde::Deserialize;
 use std::collections::BTreeMap;
 use std::process::Command;
 
-#[derive(Deserialize)]
-#[serde(untagged)]
-enum GoLTS {
-    Name(String),
-    State(bool),
+trait BaseVersion {
+    fn base_version(&self) -> String;
 }
 
-trait GoBaseVersion {
-    fn go_base_version(&self) -> String;
-}
-
-impl<'a> GoBaseVersion for Version<'a> {
-    fn go_base_version(&self) -> String {
+impl<'a> BaseVersion for Version<'a> {
+    fn base_version(&self) -> String {
         format!("{}.{}", self.major, self.minor)
     }
 }
@@ -64,7 +56,7 @@ impl Resolvable<'_> for GoLanguage {
                             alias: None,
                             version: String::from(ver_str),
                         };
-                        aliases.insert(ver.go_base_version(), entry.version.clone());
+                        aliases.insert(ver.base_version(), entry.version.clone());
                         versions.insert(entry.version.clone(), entry);
                     }
                     Err(_) => {}

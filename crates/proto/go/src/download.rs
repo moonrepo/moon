@@ -35,7 +35,6 @@ pub fn get_archive_file_path(version: &str) -> Result<String, ProtoError> {
         ));
     }
 
-    // TODO update
     Ok(format!("go{version}.linux-{arch}"))
 }
 

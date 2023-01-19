@@ -34,7 +34,6 @@ impl fmt::Display for GoArch {
         write!(
             f,
             "{}",
-            // to node arch file names
             match self {
                 GoArch::Arm => "armv7l",
                 GoArch::Arm64 => "arm64",

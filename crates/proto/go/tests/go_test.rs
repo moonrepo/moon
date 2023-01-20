@@ -34,13 +34,25 @@ mod detector {
             Some("1.19".into())
         );
     }
-    //
+
     #[tokio::test]
-    async fn detects_nodenv() {
+    async fn detects_gowork() {
         let (tool, fixture) = create_tool();
 
         fixture.child("go.work").write_str("go 1.19").unwrap();
         fixture.child("go.mod").write_str("go 1.18").unwrap();
+
+        assert_eq!(
+            tool.detect_version_from(fixture.path()).await.unwrap(),
+            Some("1.19".into())
+        );
+    }
+
+    #[tokio::test]
+    async fn detects_multiline() {
+        let (tool, fixture) = create_tool();
+
+        fixture.child("go.mod").write_str("module github.com/moonbase/go_example/server\n\ngo 1.19\n").unwrap();
 
         assert_eq!(
             tool.detect_version_from(fixture.path()).await.unwrap(),

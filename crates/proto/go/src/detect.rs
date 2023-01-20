@@ -1,7 +1,8 @@
 use crate::GoLanguage;
 use proto_core::{async_trait, load_version_file, Detector, ProtoError};
+use std::fs::File;
+use std::io::{self, BufRead, BufReader};
 use std::path::Path;
-use std::fs;
 
 #[async_trait]
 impl Detector<'_> for GoLanguage {
@@ -23,16 +24,28 @@ impl Detector<'_> for GoLanguage {
 }
 
 fn scan_for_go_version(path: &Path) -> Result<String, ProtoError> {
-    for line in fs::read_to_string(path).iter() {
-        dbg!(&line);
-        if line.starts_with("go ") {
-            match line.strip_prefix("go ") {
-                Some(version) => { return Ok(String::from(version)) },
-                None => ()
+    match File::open(path) {
+        Ok(file) => {
+            let buffered = BufReader::new(file);
+            for line in buffered.lines() {
+                match line {
+                    Ok(l) => {
+                        if l.starts_with("go ") {
+                            match l.strip_prefix("go ") {
+                                Some(version) => { return Ok(String::from(version)) },
+                                None => ()
+                            }
+                        }
+                    }
+                    _ => {},
+                }
             }
+        }
+        Err(e) => {
+            return Err(ProtoError::Fs(path.to_path_buf(), e.to_string()))
         }
     }
 
-    // TODO
     Err(ProtoError::Fs(path.to_path_buf(), String::from("no go version found")))
 }
+

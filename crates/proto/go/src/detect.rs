@@ -4,6 +4,8 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 
+static GOPREFIX: &str = "go ";
+
 #[async_trait]
 impl Detector<'_> for GoLanguage {
     async fn detect_version_from(&self, working_dir: &Path) -> Result<Option<String>, ProtoError> {
@@ -30,8 +32,8 @@ fn scan_for_go_version(path: &Path) -> Result<String, ProtoError> {
             for line in buffered.lines() {
                 match line {
                     Ok(l) => {
-                        if l.starts_with("go ") {
-                            match l.strip_prefix("go ") {
+                        if l.starts_with(GOPREFIX) {
+                            match l.strip_prefix(GOPREFIX) {
                                 Some(version) => return Ok(String::from(version)),
                                 None => (),
                             }

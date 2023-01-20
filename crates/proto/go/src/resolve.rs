@@ -26,6 +26,7 @@ impl Resolvable<'_> for GoLanguage {
     }
 
     async fn load_manifest(&self) -> Result<VersionManifest, ProtoError> {
+        let mut alias_max = BTreeMap::new();
         let mut aliases = BTreeMap::new();
         let mut versions = BTreeMap::new();
 
@@ -56,7 +57,21 @@ impl Resolvable<'_> for GoLanguage {
                             alias: None,
                             version: String::from(ver_str),
                         };
-                        aliases.insert(ver.base_version(), entry.version.clone());
+                        let base_version = ver.base_version();
+
+                        let current: Option<&Version> = alias_max.get(&base_version);
+                        match current {
+                            Some(current_version) => {
+                                if current_version < &ver {
+                                    aliases.insert(base_version.clone(), entry.version.clone());
+                                    alias_max.insert(base_version, ver);
+                                }
+                            }
+                            None => {
+                                aliases.insert(base_version.clone(), entry.version.clone());
+                                alias_max.insert(base_version, ver);
+                            }
+                        }
                         versions.insert(entry.version.clone(), entry);
                     }
                     Err(_) => {}

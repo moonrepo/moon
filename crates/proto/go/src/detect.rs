@@ -1,6 +1,7 @@
 use crate::GoLanguage;
 use proto_core::{async_trait, load_version_file, Detector, ProtoError};
 use std::path::Path;
+use std::fs;
 
 #[async_trait]
 impl Detector<'_> for GoLanguage {
@@ -14,7 +15,7 @@ impl Detector<'_> for GoLanguage {
         let gomod = working_dir.join("go.mod");
 
         if gomod.exists() {
-            return Ok(Some(load_version_file(&gomod)?));
+            return Ok(Some(scan_for_go_version(&gomod)?));
         }
 
         Ok(None)
@@ -22,6 +23,16 @@ impl Detector<'_> for GoLanguage {
 }
 
 fn scan_for_go_version(path: &Path) -> Result<String, ProtoError> {
+    for line in fs::read_to_string(path).iter() {
+        dbg!(&line);
+        if line.starts_with("go ") {
+            match line.strip_prefix("go ") {
+                Some(version) => { return Ok(String::from(version)) },
+                None => ()
+            }
+        }
+    }
+
     // TODO
-    Ok(String::from("1.19"))
+    Err(ProtoError::Fs(path.to_path_buf(), String::from("no go version found")))
 }

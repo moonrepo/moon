@@ -1,11 +1,10 @@
 use crate::GoLanguage;
-use log::debug;
-use lenient_semver::Version;
-use proto_core::{
-    async_trait, Describable, ProtoError,
-    Resolvable, VersionManifest, VersionManifestEntry,
-};
 use core::str;
+use lenient_semver::Version;
+use log::debug;
+use proto_core::{
+    async_trait, Describable, ProtoError, Resolvable, VersionManifest, VersionManifestEntry,
+};
 use std::collections::BTreeMap;
 use std::process::Command;
 
@@ -31,21 +30,21 @@ impl Resolvable<'_> for GoLanguage {
         let mut versions = BTreeMap::new();
 
         let output = Command::new("git")
-                .args(["ls-remote", "--tags", "https://github.com/golang/go/"])
-                .output()
-                .expect("failed to execute process");
+            .args(["ls-remote", "--tags", "https://github.com/golang/go/"])
+            .output()
+            .expect("failed to execute process");
 
         let raw = str::from_utf8(&output.stdout).expect("could not parse output from github");
 
         for line in raw.split("\n") {
             let parts: Vec<&str> = line.split("\t").collect();
             if parts.len() < 2 {
-                continue
+                continue;
             }
 
             let tag: Vec<&str> = parts[1].split("/").collect();
             if tag.len() < 3 {
-                continue
+                continue;
             }
 
             if tag[2].starts_with("go") {
@@ -77,7 +76,7 @@ impl Resolvable<'_> for GoLanguage {
                     Err(_) => {}
                 }
             }
-        };
+        }
 
         Ok(VersionManifest { aliases, versions })
     }
@@ -103,7 +102,7 @@ impl Resolvable<'_> for GoLanguage {
         } else {
             candidate = match manifest.find_version_from_alias(&initial_version) {
                 Ok(found) => found,
-                _ => manifest.find_version(&initial_version)?
+                _ => manifest.find_version(&initial_version)?,
             }
         }
 

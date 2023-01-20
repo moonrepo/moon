@@ -81,10 +81,7 @@ impl Downloadable<'_> for GoLanguage {
         let from_url = match from_url {
             Some(url) => url.to_owned(),
             None => {
-                format!(
-                    "https://dl.google.com/go/{}",
-                    get_archive_file(version)?
-                )
+                format!("https://dl.google.com/go/{}", get_archive_file(version)?)
             }
         };
 

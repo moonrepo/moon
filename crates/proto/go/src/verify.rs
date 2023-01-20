@@ -1,5 +1,5 @@
-use crate::GoLanguage;
 use crate::download::get_archive_file;
+use crate::GoLanguage;
 use log::debug;
 use proto_core::{
     async_trait, color, download_from_url, get_sha256_hash_of_file, Describable, ProtoError,

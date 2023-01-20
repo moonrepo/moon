@@ -5,8 +5,8 @@ use std::str::FromStr;
 
 pub use proto_core::*;
 pub use proto_error::*;
-pub use proto_node as node;
 pub use proto_go as go;
+pub use proto_node as node;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, ValueEnum)]
 #[value(rename_all = "lowercase")]

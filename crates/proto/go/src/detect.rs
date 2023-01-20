@@ -32,20 +32,20 @@ fn scan_for_go_version(path: &Path) -> Result<String, ProtoError> {
                     Ok(l) => {
                         if l.starts_with("go ") {
                             match l.strip_prefix("go ") {
-                                Some(version) => { return Ok(String::from(version)) },
-                                None => ()
+                                Some(version) => return Ok(String::from(version)),
+                                None => (),
                             }
                         }
                     }
-                    _ => {},
+                    _ => {}
                 }
             }
         }
-        Err(e) => {
-            return Err(ProtoError::Fs(path.to_path_buf(), e.to_string()))
-        }
+        Err(e) => return Err(ProtoError::Fs(path.to_path_buf(), e.to_string())),
     }
 
-    Err(ProtoError::Fs(path.to_path_buf(), String::from("no go version found")))
+    Err(ProtoError::Fs(
+        path.to_path_buf(),
+        String::from("no go version found"),
+    ))
 }
-

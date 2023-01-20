@@ -52,7 +52,10 @@ mod detector {
     async fn detects_multiline() {
         let (tool, fixture) = create_tool();
 
-        fixture.child("go.mod").write_str("module github.com/moonbase/go_example/server\n\ngo 1.19\n").unwrap();
+        fixture
+            .child("go.mod")
+            .write_str("module github.com/moonbase/go_example/server\n\ngo 1.19\n")
+            .unwrap();
 
         assert_eq!(
             tool.detect_version_from(fixture.path()).await.unwrap(),

@@ -1,7 +1,7 @@
 use crate::GoLanguage;
-use proto_core::{async_trait, load_version_file, Detector, ProtoError};
+use proto_core::{async_trait, Detector, ProtoError};
 use std::fs::File;
-use std::io::{self, BufRead, BufReader};
+use std::io::{BufRead, BufReader};
 use std::path::Path;
 
 #[async_trait]

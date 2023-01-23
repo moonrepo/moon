@@ -2625,6 +2625,7 @@ dependencies = [
  "dirs",
  "insta",
  "moon_config",
+ "moon_utils",
  "predicates",
  "pretty_assertions",
  "rustc-hash",

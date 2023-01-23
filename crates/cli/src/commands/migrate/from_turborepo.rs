@@ -151,13 +151,15 @@ pub async fn from_turborepo(skip_touched_files_check: &bool) -> Result<(), AnyEr
     let project_graph = generate_project_graph(&mut workspace).await?;
     let turbo_json: TurboJson = json::read(&turbo_file)?;
     let mut node_tasks_config = InheritedTasksConfig::default();
+    let mut has_modified_global_tasks = false;
 
     // Convert globals first
-    convert_globals(&turbo_json, &mut node_tasks_config);
+    if convert_globals(&turbo_json, &mut node_tasks_config) {
+        has_modified_global_tasks = true;
+    }
 
     // Convert tasks second
     let mut has_warned_root_tasks = false;
-    let mut has_modified_global_tasks = false;
     let mut modified_projects: FxHashMap<&PathBuf, ProjectConfig> = FxHashMap::default();
 
     for (id, task) in turbo_json.pipeline {
@@ -194,13 +196,13 @@ pub async fn from_turborepo(skip_touched_files_check: &bool) -> Result<(), AnyEr
     }
 
     if has_modified_global_tasks {
-        yaml::write_with_config(
-            workspace
-                .root
-                .join(constants::CONFIG_DIRNAME)
-                .join("tasks/node.yml"),
-            &node_tasks_config,
-        )?;
+        let tasks_dir = workspace.root.join(constants::CONFIG_DIRNAME).join("tasks");
+
+        if !tasks_dir.exists() {
+            fs::create_dir_all(&tasks_dir)?;
+        }
+
+        yaml::write_with_config(tasks_dir.join("node.yml"), &node_tasks_config)?;
     }
 
     for (project_root, project_config) in modified_projects {

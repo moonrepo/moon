@@ -118,8 +118,9 @@ mod lookup_order {
 }
 
 mod config_merging {
-    use super::*;
     use moon_test_utils::pretty_assertions::assert_eq;
+
+    use super::*;
     use std::collections::BTreeMap;
 
     #[tokio::test]
@@ -195,6 +196,32 @@ mod config_merging {
                     ("global".into(), mock_task("global")),
                     ("rust".into(), mock_task("rust")),
                 ]),
+                ..InheritedTasksConfig::default()
+            }
+        );
+    }
+
+    #[tokio::test]
+    async fn entirely_overrides_task_of_same_name() {
+        let sandbox = create_sandbox("config-inheritance/override");
+        let workspace = load_workspace_from(sandbox.path()).await.unwrap();
+
+        let mut task = mock_task("node-library");
+        task.inputs = Some(string_vec!["c"]);
+
+        assert_eq!(
+            workspace.tasks_config.get_inherited_config(
+                PlatformType::Node,
+                ProjectLanguage::JavaScript,
+                ProjectType::Library
+            ),
+            InheritedTasksConfig {
+                implicit_inputs: string_vec![
+                    "/.moon/tasks/node.yml",
+                    "/.moon/tasks/node-library.yml",
+                    "/.moon/*.yml",
+                ],
+                tasks: BTreeMap::from_iter([("command".into(), task)]),
                 ..InheritedTasksConfig::default()
             }
         );

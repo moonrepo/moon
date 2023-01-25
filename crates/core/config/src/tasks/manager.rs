@@ -60,6 +60,7 @@ impl InheritedTasksManager {
             if let Some(managed_config) = &self.configs.get(&lookup) {
                 config.merge(managed_config);
 
+                // Automatically set this lookup as an input
                 if lookup != "*" {
                     config
                         .implicit_inputs
@@ -68,7 +69,14 @@ impl InheritedTasksManager {
             }
         }
 
+        // Automatically set the platform for all tasks
+        for task in config.tasks.values_mut() {
+            task.platform = platform;
+        }
+
+        // Always break cache if a core configuration changes
         config.implicit_inputs.push("/.moon/*.yml".into());
+
         config
     }
 }

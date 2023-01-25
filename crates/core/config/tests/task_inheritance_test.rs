@@ -7,16 +7,20 @@ use moon_test_utils::create_sandbox;
 use moon_utils::string_vec;
 use rustc_hash::FxHashMap;
 
-fn mock_task(command: &str) -> TaskConfig {
+fn mock_task(command: &str, platform: PlatformType) -> TaskConfig {
     TaskConfig {
         command: Some(TaskCommandArgs::String(command.to_owned())),
+        platform,
         ..TaskConfig::default()
     }
 }
 
 fn mock_tasks_config(command: &str) -> InheritedTasksConfig {
     let mut config = InheritedTasksConfig::default();
-    config.tasks.insert(command.to_owned(), mock_task(command));
+    config.tasks.insert(
+        command.to_owned(),
+        mock_task(command, PlatformType::Unknown),
+    );
     config
 }
 
@@ -118,9 +122,8 @@ mod lookup_order {
 }
 
 mod config_merging {
-    use moon_test_utils::pretty_assertions::assert_eq;
-
     use super::*;
+    use moon_test_utils::pretty_assertions::assert_eq;
     use std::collections::BTreeMap;
 
     #[tokio::test]
@@ -142,10 +145,16 @@ mod config_merging {
                     "/.moon/*.yml",
                 ],
                 tasks: BTreeMap::from_iter([
-                    ("global".into(), mock_task("global")),
-                    ("node".into(), mock_task("node")),
-                    ("node-application".into(), mock_task("node-application")),
-                    ("javascript".into(), mock_task("javascript")),
+                    ("global".into(), mock_task("global", PlatformType::Node)),
+                    ("node".into(), mock_task("node", PlatformType::Node)),
+                    (
+                        "node-application".into(),
+                        mock_task("node-application", PlatformType::Node)
+                    ),
+                    (
+                        "javascript".into(),
+                        mock_task("javascript", PlatformType::Node)
+                    ),
                 ]),
                 ..InheritedTasksConfig::default()
             }
@@ -170,9 +179,12 @@ mod config_merging {
                     "/.moon/*.yml",
                 ],
                 tasks: BTreeMap::from_iter([
-                    ("global".into(), mock_task("global")),
-                    ("node".into(), mock_task("node")),
-                    ("typescript".into(), mock_task("typescript")),
+                    ("global".into(), mock_task("global", PlatformType::Node)),
+                    ("node".into(), mock_task("node", PlatformType::Node)),
+                    (
+                        "typescript".into(),
+                        mock_task("typescript", PlatformType::Node)
+                    ),
                 ]),
                 ..InheritedTasksConfig::default()
             }
@@ -186,15 +198,15 @@ mod config_merging {
 
         assert_eq!(
             workspace.tasks_config.get_inherited_config(
-                PlatformType::Unknown,
+                PlatformType::System,
                 ProjectLanguage::Rust,
                 ProjectType::Library
             ),
             InheritedTasksConfig {
                 implicit_inputs: string_vec!["/.moon/tasks/rust.yml", "/.moon/*.yml",],
                 tasks: BTreeMap::from_iter([
-                    ("global".into(), mock_task("global")),
-                    ("rust".into(), mock_task("rust")),
+                    ("global".into(), mock_task("global", PlatformType::System)),
+                    ("rust".into(), mock_task("rust", PlatformType::System)),
                 ]),
                 ..InheritedTasksConfig::default()
             }
@@ -206,7 +218,7 @@ mod config_merging {
         let sandbox = create_sandbox("config-inheritance/override");
         let workspace = load_workspace_from(sandbox.path()).await.unwrap();
 
-        let mut task = mock_task("node-library");
+        let mut task = mock_task("node-library", PlatformType::Node);
         task.inputs = Some(string_vec!["c"]);
 
         assert_eq!(

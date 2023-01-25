@@ -1,0 +1,209 @@
+---
+slug: v0.23
+title: moon v0.23 - Scoped task inheritance
+authors: [milesj]
+tags: [tasks]
+# image: ./img/v0.22.png
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+TODO
+
+<!--truncate-->
+
+## Improved task inheritance model
+
+One of the guiding principles behind moon is to simplify repository maintenance, with task
+management being top of list. We weren't happy with the current state of things, as every build
+system and task runner that exists always opted for per-project task management, which is a massive
+amount of overhead and tech debt in the long run. To combat this, moon was designed from the
+ground-up using a task inheritance model, where "global" tasks were defined in
+[`.moon/project.yml`](/docs/config/tasks), with per-project tasks still being an option with
+[`moon.yml`](/docs/config/project).
+
+While inheritance worked great, it did have some shortcomings, such as:
+
+- With the addition of [new programming languages](/blog/v0.21), there's no way to easily define
+  tasks for specific languages, that should only be inherited by specific projects.
+- There's no way to differentiate tasks between applications or libraries, as they typically have
+  different build/compilation systems.
+- All of the problems above can be "solved" with
+  [`workspace.inheritedTasks`](/docs/config/project#inheritedtasks) in all projects, but it's a
+  maintenance headache.
+
+We've been documenting a solution to these problems for many months now, and we're very excited to
+finally release our new and improved task inheritance model that solves all of the problems above,
+and opens the doors for future enhancements! Keep reading for more information.
+
+### New `.moon/tasks.yml` (breaking)
+
+To start, we renamed `.moon/project.yml` to `.moon/tasks.yml` as we want to emphasize that this
+configuration file is for task inheritance functionality only. However, the semantics of this file
+has _not_ changed, and is still "tasks to be inherited by _all_ projects".
+
+> We'll automatically rename this file for you when running a `moon` command!
+
+```yaml title=".moon/tasks.yml"
+$schema: 'https://moonrepo.dev/schemas/tasks.json'
+
+tasks:
+  # ...
+```
+
+### New scoped tasks with `.moon/tasks/*.yml`
+
+The biggest change to task inheritance is that tasks can now be scoped by a project's
+[`language`](/docs/config/project#language) or [`type`](/docs/config/project#type) using the new
+`.moon/tasks/<language>.yml` or `.moon/tasks/<language>-<type>.yml` configuration files! Jump to the
+[official documentation on task inheritance](/docs/concepts/task#inheritance) for more information
+on how scoping works, the lookup order of files, and much more.
+
+For example, scope tasks to Node.js projects with `.moon/tasks/node.yml`, Rust applications with
+`.moon/tasks/rust-application.yml`, Go libraries with `.moon/tasks/go-library.yml`, Ruby scripts
+with `.moon/tasks/ruby-tool.yml`, so on and so forth!
+
+We're very excited for this feature, as it's something we personally needed, and we're sure you all
+do as well. It also future proofs moon for new programming languages, additional implicit scenarios
+to handle, and yet to be discovered functionality.
+
+<Tabs
+  groupId="scoped-task"
+  defaultValue="node"
+  values={[
+    { label: 'Node', value: 'node' },
+    { label: 'Go', value: 'go' },
+    { label: 'PHP', value: 'php' },
+    { label: 'Python', value: 'python' },
+    { label: 'Ruby', value: 'ruby' },
+    { label: 'Rust', value: 'rust' },
+  ]}
+>
+<TabItem value="node">
+
+```yaml title=".moon/tasks/node.yml"
+tasks:
+	format:
+		command: 'prettier --write .'
+```
+
+</TabItem>
+<TabItem value="go">
+
+```yaml title=".moon/tasks/go.yml"
+tasks:
+	format:
+		command: 'go fmt'
+```
+
+</TabItem>
+<TabItem value="php">
+
+```yaml title=".moon/tasks/php.yml"
+tasks:
+	format:
+		command: 'phpcbf .'
+```
+
+</TabItem>
+<TabItem value="python">
+
+```yaml title=".moon/tasks/python.yml"
+tasks:
+	format:
+		command: 'pylint .'
+```
+
+</TabItem>
+<TabItem value="ruby">
+
+```yaml title=".moon/tasks/ruby.yml"
+tasks:
+	format:
+		command: 'rubocop -l'
+```
+
+</TabItem>
+<TabItem value="rust">
+
+```yaml title=".moon/tasks/rust.yml"
+tasks:
+	format:
+		command: 'cargo fmt --all --check'
+```
+
+</TabItem>
+</Tabs>
+
+### Moved `implicitDeps` and `implicitInputs` (breaking)
+
+To standardize inheritance and expansion related functionality, we've moved the
+`runner.implicitDeps` and `runner.implicitInputs` settings from `.moon/workspace.yml` to
+[`.moon/tasks.yml`](/docs/config/tasks#implicitdeps) and
+[`.moon/tasks/*.yml`](/docs/config/tasks#implicitinputs) and removed the `runner` prefix.
+
+This allows for implicits to also be scoped accordingly and granularly. For example, projects can
+now inherit dependency manager related files as implicit inputs on a per-language basis:
+
+<Tabs
+  groupId="scoped-task"
+  defaultValue="node"
+  values={[
+    { label: 'Node', value: 'node' },
+    { label: 'Go', value: 'go' },
+    { label: 'PHP', value: 'php' },
+    { label: 'Python', value: 'python' },
+    { label: 'Ruby', value: 'ruby' },
+    { label: 'Rust', value: 'rust' },
+  ]}
+>
+<TabItem value="node">
+
+```yaml title=".moon/tasks/node.yml"
+implicitInputs:
+	- 'package.json'
+```
+
+</TabItem>
+<TabItem value="go">
+
+```yaml title=".moon/tasks/go.yml"
+implicitInputs:
+	- 'go.mod'
+```
+
+</TabItem>
+<TabItem value="php">
+
+```yaml title=".moon/tasks/php.yml"
+implicitInputs:
+	- 'composer.json'
+```
+
+</TabItem>
+<TabItem value="python">
+
+```yaml title=".moon/tasks/python.yml"
+implicitInputs:
+	- 'pyproject.toml'
+```
+
+</TabItem>
+<TabItem value="ruby">
+
+```yaml title=".moon/tasks/ruby.yml"
+implicitInputs:
+	- 'Gemfile'
+```
+
+</TabItem>
+<TabItem value="rust">
+
+```yaml title=".moon/tasks/rust.yml"
+implicitInputs:
+	- 'Cargo.toml'
+```
+
+</TabItem>
+</Tabs>

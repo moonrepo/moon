@@ -96,7 +96,7 @@ impl InheritedTasksConfig {
             let figment = Figment::from(YamlExtended::file(source).profile(profile_name));
             let extended_config = InheritedTasksConfig::load_config(figment.select(profile_name))?;
 
-            config.merge(&extended_config);
+            config.merge(extended_config);
         }
 
         Ok(config)
@@ -116,21 +116,21 @@ impl InheritedTasksConfig {
 
     // Figment does not merge maps/vec but replaces entirely,
     // so we need to manually handle this here!
-    pub fn merge(&mut self, config: &InheritedTasksConfig) {
+    pub fn merge(&mut self, config: InheritedTasksConfig) {
         if !config.file_groups.is_empty() {
-            self.file_groups.extend(config.file_groups.clone());
+            self.file_groups.extend(config.file_groups);
         }
 
         if !config.implicit_deps.is_empty() {
-            self.implicit_deps.extend(config.implicit_deps.clone());
+            self.implicit_deps.extend(config.implicit_deps);
         }
 
         if !config.implicit_inputs.is_empty() {
-            self.implicit_inputs.extend(config.implicit_inputs.clone());
+            self.implicit_inputs.extend(config.implicit_inputs);
         }
 
         if !config.tasks.is_empty() {
-            self.tasks.extend(config.tasks.clone());
+            self.tasks.extend(config.tasks);
         }
     }
 }

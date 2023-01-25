@@ -10,6 +10,11 @@ use rustc_hash::FxHashMap;
 fn mock_task(command: &str, platform: PlatformType) -> TaskConfig {
     TaskConfig {
         command: Some(TaskCommandArgs::String(command.to_owned())),
+        inputs: if command == "global" {
+            None
+        } else {
+            Some(string_vec![format!("/.moon/tasks/{}.yml", command)])
+        },
         platform,
         ..TaskConfig::default()
     }
@@ -19,7 +24,10 @@ fn mock_tasks_config(command: &str) -> InheritedTasksConfig {
     let mut config = InheritedTasksConfig::default();
     config.tasks.insert(
         command.to_owned(),
-        mock_task(command, PlatformType::Unknown),
+        TaskConfig {
+            command: Some(TaskCommandArgs::String(command.to_owned())),
+            ..TaskConfig::default()
+        },
     );
     config
 }
@@ -138,14 +146,9 @@ mod config_merging {
                 ProjectType::Application
             ),
             InheritedTasksConfig {
-                implicit_inputs: string_vec![
-                    "/.moon/tasks/node.yml",
-                    "/.moon/tasks/javascript.yml",
-                    "/.moon/tasks/node-application.yml",
-                    "/.moon/*.yml",
-                ],
+                implicit_inputs: string_vec!["/.moon/*.yml"],
                 tasks: BTreeMap::from_iter([
-                    ("global".into(), mock_task("global", PlatformType::Node)),
+                    ("global".into(), mock_task("global", PlatformType::Unknown)),
                     ("node".into(), mock_task("node", PlatformType::Node)),
                     (
                         "node-application".into(),
@@ -173,13 +176,9 @@ mod config_merging {
                 ProjectType::Tool
             ),
             InheritedTasksConfig {
-                implicit_inputs: string_vec![
-                    "/.moon/tasks/node.yml",
-                    "/.moon/tasks/typescript.yml",
-                    "/.moon/*.yml",
-                ],
+                implicit_inputs: string_vec!["/.moon/*.yml"],
                 tasks: BTreeMap::from_iter([
-                    ("global".into(), mock_task("global", PlatformType::Node)),
+                    ("global".into(), mock_task("global", PlatformType::Unknown)),
                     ("node".into(), mock_task("node", PlatformType::Node)),
                     (
                         "typescript".into(),
@@ -203,9 +202,9 @@ mod config_merging {
                 ProjectType::Library
             ),
             InheritedTasksConfig {
-                implicit_inputs: string_vec!["/.moon/tasks/rust.yml", "/.moon/*.yml",],
+                implicit_inputs: string_vec!["/.moon/*.yml"],
                 tasks: BTreeMap::from_iter([
-                    ("global".into(), mock_task("global", PlatformType::System)),
+                    ("global".into(), mock_task("global", PlatformType::Unknown)),
                     ("rust".into(), mock_task("rust", PlatformType::System)),
                 ]),
                 ..InheritedTasksConfig::default()
@@ -219,7 +218,7 @@ mod config_merging {
         let workspace = load_workspace_from(sandbox.path()).await.unwrap();
 
         let mut task = mock_task("node-library", PlatformType::Node);
-        task.inputs = Some(string_vec!["c"]);
+        task.inputs = Some(string_vec!["c", "/.moon/tasks/node-library.yml"]);
 
         assert_eq!(
             workspace.tasks_config.get_inherited_config(
@@ -228,11 +227,7 @@ mod config_merging {
                 ProjectType::Library
             ),
             InheritedTasksConfig {
-                implicit_inputs: string_vec![
-                    "/.moon/tasks/node.yml",
-                    "/.moon/tasks/node-library.yml",
-                    "/.moon/*.yml",
-                ],
+                implicit_inputs: string_vec!["/.moon/*.yml"],
                 tasks: BTreeMap::from_iter([("command".into(), task)]),
                 ..InheritedTasksConfig::default()
             }

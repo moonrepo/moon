@@ -57,21 +57,29 @@ impl InheritedTasksManager {
         let mut config = InheritedTasksConfig::default();
 
         for lookup in self.get_lookup_order(platform, language, type_of) {
-            if let Some(managed_config) = &self.configs.get(&lookup) {
-                config.merge(managed_config);
+            if let Some(managed_config) = self.configs.get(&lookup) {
+                let mut managed_config = managed_config.clone();
 
-                // Automatically set this lookup as an input
                 if lookup != "*" {
-                    config
-                        .implicit_inputs
-                        .push(format!("/.moon/tasks/{}.yml", lookup));
-                }
-            }
-        }
+                    for task in managed_config.tasks.values_mut() {
+                        // Automatically set the platform
+                        if task.platform.is_unknown() {
+                            task.platform = platform;
+                        }
 
-        // Automatically set the platform for all tasks
-        for task in config.tasks.values_mut() {
-            task.platform = platform;
+                        // Automatically set this lookup as an input
+                        let input = format!("/.moon/tasks/{}.yml", lookup);
+
+                        if let Some(inputs) = &mut task.inputs {
+                            inputs.push(input);
+                        } else {
+                            task.inputs = Some(vec![input]);
+                        }
+                    }
+                }
+
+                config.merge(managed_config);
+            }
         }
 
         // Always break cache if a core configuration changes

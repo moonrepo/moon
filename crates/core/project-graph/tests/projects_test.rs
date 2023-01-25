@@ -9,7 +9,9 @@ use moon_config::{
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
 use moon_target::Target;
-use moon_test_utils::{create_sandbox_with_config, get_tasks_fixture_configs, Sandbox};
+use moon_test_utils::{
+    create_sandbox, create_sandbox_with_config, get_tasks_fixture_configs, Sandbox,
+};
 use moon_utils::{glob, string_vec};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
@@ -147,7 +149,6 @@ mod task_inheritance {
 
     mod merge_strategies {
         use super::*;
-        use moon_test_utils::pretty_assertions::assert_eq;
 
         fn stub_global_env_vars() -> FxHashMap<String, String> {
             FxHashMap::from_iter([
@@ -382,6 +383,18 @@ mod task_inheritance {
         }
 
         #[tokio::test]
+        async fn exclude_scoped_inheritance() {
+            let sandbox = create_sandbox("config-inheritance/override");
+            let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+            let project_graph = generate_project_graph(&mut workspace).await.unwrap();
+
+            assert_eq!(
+                get_project_task_ids(project_graph.get("excluded").unwrap()),
+                string_vec![]
+            );
+        }
+
+        #[tokio::test]
         async fn rename() {
             let (_sandbox, project_graph) = tasks_inheritance_sandbox().await;
 
@@ -398,6 +411,27 @@ mod task_inheritance {
                 assert_eq!(task.id, id.to_owned());
                 assert_eq!(task.target.id, format!("rename:{}", id));
             }
+        }
+
+        #[tokio::test]
+        async fn rename_scoped_inheritance() {
+            let sandbox = create_sandbox("config-inheritance/override");
+            let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+            let project_graph = generate_project_graph(&mut workspace).await.unwrap();
+
+            assert_eq!(
+                get_project_task_ids(project_graph.get("renamed").unwrap()),
+                string_vec!["cmd"]
+            );
+
+            let task = project_graph
+                .get("renamed")
+                .unwrap()
+                .get_task("cmd")
+                .unwrap();
+
+            assert_eq!(task.id, "cmd");
+            assert_eq!(task.target.id, "renamed:cmd");
         }
 
         #[tokio::test]

@@ -1,6 +1,6 @@
 use moon_config::{
-    InheritedTasksConfig, ProjectConfig, ProjectDependsOn, ProjectLanguage, ProjectMetadataConfig,
-    ProjectType,
+    InheritedTasksConfig, InheritedTasksManager, ProjectConfig, ProjectDependsOn, ProjectLanguage,
+    ProjectMetadataConfig, ProjectType,
 };
 use moon_project::Project;
 use moon_task::FileGroup;
@@ -15,11 +15,16 @@ fn mock_file_groups() -> FxHashMap<String, FileGroup> {
     )])
 }
 
-fn mock_tasks_config() -> InheritedTasksConfig {
-    InheritedTasksConfig {
+fn mock_tasks_config() -> InheritedTasksManager {
+    let config = InheritedTasksConfig {
         file_groups: FxHashMap::from_iter([("sources".into(), string_vec!["src/**/*"])]),
         ..InheritedTasksConfig::default()
-    }
+    };
+
+    let mut manager = InheritedTasksManager::default();
+    manager.configs.insert("*".into(), config);
+
+    manager
 }
 
 #[test]

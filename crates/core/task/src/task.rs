@@ -141,7 +141,7 @@ impl Task {
             config.outputs = Some(self.outputs.clone());
         }
 
-        if !matches!(self.platform, PlatformType::Unknown) {
+        if !self.platform.is_unknown() {
             config.platform = self.platform;
         }
 
@@ -285,7 +285,7 @@ impl Task {
         // Merge options first incase the merge strategy has changed
         self.options.merge(&config.options);
 
-        if !matches!(config.platform, PlatformType::Unknown) {
+        if !config.platform.is_unknown() {
             self.platform = config.platform;
         }
 

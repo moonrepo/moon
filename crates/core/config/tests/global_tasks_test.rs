@@ -38,7 +38,6 @@ fileGroups:
                     String::from("sources"),
                     string_vec!["src/**/*"]
                 )]),
-                implicit_inputs: string_vec!["/.moon/*.yml"],
                 ..InheritedTasksConfig::default()
             }
         );
@@ -103,7 +102,6 @@ mod extends {
                     ("tests".to_owned(), string_vec!["tests/**/*"]),
                     ("sources".to_owned(), string_vec!["sources/**/*"]), // NOT src/**/*
                 ]),
-                implicit_inputs: string_vec!["/.moon/*.yml"],
                 tasks: BTreeMap::from([
                     (
                         "lint".to_owned(),

@@ -2193,6 +2193,7 @@ version = "0.1.0"
 dependencies = [
  "figment",
  "httpmock",
+ "moon",
  "moon_constants",
  "moon_error",
  "moon_test_utils",
@@ -2205,6 +2206,7 @@ dependencies = [
  "serde_yaml",
  "strum",
  "thiserror",
+ "tokio",
  "validator",
 ]
 
@@ -2623,6 +2625,7 @@ dependencies = [
  "dirs",
  "insta",
  "moon_config",
+ "moon_utils",
  "predicates",
  "pretty_assertions",
  "rustc-hash",

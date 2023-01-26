@@ -1,13 +1,16 @@
 ---
-title: .moon/tasks.yml
+title: .moon/tasks.yml, .moon/tasks/*.yml
+sidebar_label: .moon/tasks...
 ---
 
 import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
-The `.moon/tasks.yml` file (formerly `.moon/project.yml`) configures file groups and tasks that are
-inherited by _every_ project in the workspace. Projects can override or merge with these settings
-within their respective [`moon.yml`](./project). This file is _optional_.
+The `.moon/tasks.yml` file configures file groups and tasks that are inherited by _every_ project in
+the workspace, while `.moon/tasks/*.yml` configures for projects based on their language or type.
+[Learn more about task inheritance!](../concepts/task#inheritance)
+
+Projects can override or merge with these settings within their respective [`moon.yml`](./project).
 
 ```yaml title=".moon/tasks.yml"
 $schema: 'https://moonrepo.dev/schemas/tasks.json'
@@ -40,9 +43,9 @@ values _are not_ deep merged!
 > For more information on file group configuration, refer to the
 > [`fileGroups`](./project#filegroups) section in the [`moon.yml`](./project) doc.
 
-Defines [file groups](../concepts/file-group) that will be inherited by all projects, and also
-enables enforcement of organizational patterns and file locations. For example, encourage all
-projects to place source files in a `src` folder, and all test files in `tests`.
+Defines [file groups](../concepts/file-group) that will be inherited by projects, and also enables
+enforcement of organizational patterns and file locations. For example, encourage projects to place
+source files in a `src` folder, and all test files in `tests`.
 
 ```yaml title=".moon/tasks.yml"
 fileGroups:
@@ -65,12 +68,12 @@ fileGroups:
 > File paths and globs used within a file group are relative from the inherited project's root, and
 > not the workspace.
 
-### `implicitDeps`<VersionLabel version="0.23" />
+## `implicitDeps`<VersionLabel version="0.23" />
 
 <HeadingApiLink to="/api/types/interface/InheritedTasksConfig#implicitDeps" />
 
-Defines task [`deps`](./project#deps) that are implicitly inherited by _all_ tasks within the
-workspace. This is extremely useful for pre-building projects that are used extensively throughout
+Defines task [`deps`](./project#deps) that are implicitly inserted into _all_ inherited tasks within
+a project. This is extremely useful for pre-building projects that are used extensively throughout
 the repo, or always building project dependencies. Defaults to an empty list.
 
 ```yaml title=".moon/tasks.yml" {1-2}
@@ -78,19 +81,19 @@ implicitDeps:
   - '^:build'
 ```
 
-### `implicitInputs`<VersionLabel version="0.23" />
+## `implicitInputs`<VersionLabel version="0.23" />
 
 <HeadingApiLink to="/api/types/interface/InheritedTasksConfig#implicitInputs" />
 
-Defines task [`inputs`](./project#inputs) that are implicitly inherited by _all_ tasks within the
-workspace. This is extremely useful for the "changes to these files should always trigger a task"
-scenario.
+Defines task [`inputs`](./project#inputs) that are implicitly inserted into _all_ inherited tasks
+within a project. This is extremely useful for the "changes to these files should always trigger a
+task" scenario.
 
 Like `inputs`, file paths/globs defined here are relative from the inheriting project.
 [Project and workspace relative file patterns](../concepts/file-pattern#project-relative) are
 supported and encouraged.
 
-```yaml title=".moon/workspace.yml" {1-2}
+```yaml title=".moon/tasks/node.yml" {1-2}
 implicitInputs:
   - 'package.json'
 ```
@@ -103,10 +106,10 @@ implicitInputs:
 > [`moon.yml`](./project) doc.
 
 As mentioned in the link above, [tasks](../concepts/task) are actions that are ran within the
-context of a project, and commonly wrap an npm binary or system command. For most workspaces, every
-project _should_ have linting, typechecking, testing, code formatting, so on and so forth. To reduce
-the amount of boilerplate that _every_ project would require, this setting offers the ability to
-define tasks that are inherited by all projects within the workspace, but can also be overridden per
+context of a project, and commonly wrap a system command. For most workspaces, every project
+_should_ have linting, typechecking, testing, code formatting, so on and so forth. To reduce the
+amount of boilerplate that _every_ project would require, this setting offers the ability to define
+tasks that are inherited by many projects within the workspace, but can also be overridden per
 project.
 
 ```yaml title=".moon/tasks.yml"

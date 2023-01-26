@@ -6,6 +6,7 @@ use flate2::write::GzEncoder;
 use flate2::Compression;
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, debug, trace};
+use moon_utils::fs;
 use rustc_hash::FxHashMap;
 use std::fs::File;
 use std::path::{Path, PathBuf};
@@ -37,15 +38,11 @@ impl<'l> TarArchiver<'l> {
     pub fn add_source<P: AsRef<Path>>(&mut self, source: P, name: Option<&str>) -> &mut Self {
         let source = source.as_ref();
         let name = match name {
-            Some(n) => n,
-            None => source
-                .file_name()
-                .unwrap_or_default()
-                .to_str()
-                .unwrap_or_default(),
+            Some(n) => n.to_owned(),
+            None => fs::file_name(source),
         };
 
-        self.sources.insert(name.to_owned(), source.to_path_buf());
+        self.sources.insert(name, source.to_path_buf());
         self
     }
 

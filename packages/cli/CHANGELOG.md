@@ -2,8 +2,18 @@
 
 #### Unreleased
 
+#### 💥 Breaking
+
+- Renamed `.moon/project.yml` to `.moon/tasks.yml`.
+- Moved `runner.implicitDeps` from `.moon/workspace.yml` to `.moon/tasks.yml` as `implicitDeps`.
+- Moved `runner.implicitInputs` from `.moon/workspace.yml` to `.moon/tasks.yml` as `implicitInputs`.
+
 #### 🚀 Updates
 
+- We've improved our task inheritance model to support scoped inheritance based on a project's
+  `language` and `type`.
+  - Now supports `.moon/tasks/<language>.yml` and `.moon/tasks/<language>-<type>.yml` configuration
+    files.
 - Updated to no longer cache the project graph when there's no VCS root.
 
 #### 🐞 Fixes

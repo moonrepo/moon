@@ -1,5 +1,4 @@
-use moon_config::PlatformType;
-use moon_config::{InheritedTasksConfig, ProjectLanguage, ProjectType, TaskConfig};
+use moon_config::{InheritedTasksManager, PlatformType, ProjectLanguage, ProjectType, TaskConfig};
 use moon_project::Project;
 use moon_project_graph::{TokenContext, TokenResolver};
 use moon_target::Target;
@@ -58,7 +57,7 @@ fn create_project(workspace_root: &Path) -> Project {
         "project",
         "files-and-dirs",
         workspace_root,
-        &InheritedTasksConfig::default(),
+        &InheritedTasksManager::default(),
     )
     .unwrap();
     project.file_groups = create_file_groups();

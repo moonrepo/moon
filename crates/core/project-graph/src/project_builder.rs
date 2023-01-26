@@ -4,8 +4,8 @@ use crate::helpers::detect_projects_with_globs;
 use crate::project_graph::{GraphType, IndicesType, ProjectGraph, LOG_TARGET};
 use crate::token_resolver::{TokenContext, TokenResolver};
 use moon_config::{
-    PlatformType, ProjectLanguage, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceProjects,
-    CONFIG_DIRNAME, CONFIG_PROJECT_FILENAME,
+    ProjectLanguage, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceProjects, CONFIG_DIRNAME,
+    CONFIG_PROJECT_FILENAME,
 };
 use moon_error::MoonError;
 use moon_hasher::{convert_paths_to_strings, to_hash};
@@ -151,7 +151,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         // Use `mem::take` so that we can mutably borrow the project and tasks in parallel
         for (task_id, mut task) in mem::take(&mut project.tasks) {
             // Detect the platform if its unknown
-            if matches!(task.platform, PlatformType::Unknown) {
+            if task.platform.is_unknown() {
                 task.platform = detect_task_platform(&task.command, project.language);
             }
 
@@ -247,9 +247,9 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         project: &mut Project,
         task: &mut Task,
     ) -> Result<(), ProjectGraphError> {
-        if !self.workspace.tasks_config.implicit_deps.is_empty() {
+        if !project.inherited_config.implicit_deps.is_empty() {
             task.deps.extend(Task::create_dep_targets(
-                &self.workspace.tasks_config.implicit_deps,
+                &project.inherited_config.implicit_deps,
             )?);
         }
 
@@ -347,9 +347,9 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         project: &mut Project,
         task: &mut Task,
     ) -> Result<(), ProjectGraphError> {
-        if !self.workspace.tasks_config.implicit_inputs.is_empty() {
+        if !project.inherited_config.implicit_inputs.is_empty() {
             task.inputs
-                .extend(self.workspace.tasks_config.implicit_inputs.clone());
+                .extend(project.inherited_config.implicit_inputs.clone());
         }
 
         if task.inputs.is_empty() {

@@ -56,6 +56,16 @@ pub fn create_dir_all<T: AsRef<Path>>(path: T) -> Result<(), MoonError> {
 }
 
 #[inline]
+pub fn file_name<T: AsRef<Path>>(path: T) -> String {
+    path.as_ref()
+        .file_name()
+        .unwrap_or_default()
+        .to_str()
+        .unwrap_or("unknown")
+        .to_string()
+}
+
+#[inline]
 pub fn find_upwards<F, P>(name: F, dir: P) -> Option<PathBuf>
 where
     F: AsRef<str>,

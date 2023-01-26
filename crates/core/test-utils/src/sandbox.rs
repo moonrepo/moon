@@ -4,6 +4,7 @@ use assert_cmd::Command;
 use assert_fs::prelude::*;
 pub use assert_fs::TempDir;
 use moon_config::{InheritedTasksConfig, ToolchainConfig, WorkspaceConfig};
+use moon_utils::glob;
 use std::fs;
 use std::path::Path;
 use std::process::Command as StdCommand;
@@ -27,15 +28,9 @@ impl Sandbox {
     }
 
     pub fn debug_configs(&self) -> &Self {
-        for cfg in [
-            ".moon/workspace.yml",
-            ".moon/tasks.yml",
-            ".moon/toolchain.yml",
-        ] {
-            let path = self.path().join(cfg);
-
-            if path.exists() {
-                println!("{} = {}", cfg, fs::read_to_string(path).unwrap());
+        for cfg in glob::walk(self.path(), &[".moon/**/*.yml"]).unwrap() {
+            if cfg.exists() {
+                println!("{:?} = {}", &cfg, fs::read_to_string(&cfg).unwrap());
             }
         }
 

@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 moon_config = { path = "../config" }
+moon_utils = { path = "../utils" }
 assert_cmd = "2.0.7"
 assert_fs = "1.0.10"
 clean-path = "0.2.1"

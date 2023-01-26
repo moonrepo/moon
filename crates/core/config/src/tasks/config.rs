@@ -96,28 +96,8 @@ impl InheritedTasksConfig {
             let figment = Figment::from(YamlExtended::file(source).profile(profile_name));
             let extended_config = InheritedTasksConfig::load_config(figment.select(profile_name))?;
 
-            // Figment does not merge maps/vec but replaces entirely,
-            // so we need to manually handle this here!
-            if !extended_config.file_groups.is_empty() {
-                config.file_groups.extend(extended_config.file_groups);
-            }
-
-            if !extended_config.implicit_deps.is_empty() {
-                config.implicit_deps.extend(extended_config.implicit_deps);
-            }
-
-            if !extended_config.implicit_inputs.is_empty() {
-                config
-                    .implicit_inputs
-                    .extend(extended_config.implicit_inputs);
-            }
-
-            if !extended_config.tasks.is_empty() {
-                config.tasks.extend(extended_config.tasks);
-            }
+            config.merge(extended_config);
         }
-
-        config.implicit_inputs.push("/.moon/*.yml".into());
 
         Ok(config)
     }
@@ -132,5 +112,25 @@ impl InheritedTasksConfig {
         }
 
         Ok(config)
+    }
+
+    // Figment does not merge maps/vec but replaces entirely,
+    // so we need to manually handle this here!
+    pub fn merge(&mut self, config: InheritedTasksConfig) {
+        if !config.file_groups.is_empty() {
+            self.file_groups.extend(config.file_groups);
+        }
+
+        if !config.implicit_deps.is_empty() {
+            self.implicit_deps.extend(config.implicit_deps);
+        }
+
+        if !config.implicit_inputs.is_empty() {
+            self.implicit_inputs.extend(config.implicit_inputs);
+        }
+
+        if !config.tasks.is_empty() {
+            self.tasks.extend(config.tasks);
+        }
     }
 }

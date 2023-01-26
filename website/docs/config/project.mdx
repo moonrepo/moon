@@ -631,9 +631,9 @@ The `platform` field defines the platform the command runs on, where to locate i
 which tool to execute it with. By default moon will set to a value based on the project's
 [`language`](#language).
 
-- `node` - Command is a binary within node modules and will be executed with Node.js.
+- `node` - Command is a binary within `node_modules` and will be executed with Node.js.
 - `system` - Command is expected to exist within the system's environment / user's shell.
-- `unknown` - When not inferred.
+- `unknown` - When not configured or inferred.
 
 ```yaml title="moon.yml" {4}
 tasks:

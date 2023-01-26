@@ -140,11 +140,12 @@ mod from_turborepo {
 
         assert.success();
 
-        let config = InheritedTasksConfig::load(sandbox.path().join(".moon/tasks.yml")).unwrap();
+        let config =
+            InheritedTasksConfig::load(sandbox.path().join(".moon/tasks/node.yml")).unwrap();
 
         assert_eq!(
             config.implicit_inputs,
-            string_vec!["package.json", "*.json", "$FOO", "$BAR", "/.moon/*.yml"]
+            string_vec!["package.json", "*.json", "$FOO", "$BAR"]
         );
     }
 
@@ -186,7 +187,7 @@ mod from_turborepo {
 
         assert.success();
 
-        assert_snapshot!(fs::read_to_string(sandbox.path().join(".moon/tasks.yml")).unwrap());
+        assert_snapshot!(fs::read_to_string(sandbox.path().join(".moon/tasks/node.yml")).unwrap());
     }
 
     #[test]

@@ -28,5 +28,7 @@ thiserror = { workspace = true }
 validator = { version = "0.16.0", features = ["derive"] }
 
 [dev-dependencies]
+moon = { path = "../moon" }
 moon_test_utils = { path = "../test-utils" }
 httpmock = "0.6.7"
+tokio = { workspace = true }

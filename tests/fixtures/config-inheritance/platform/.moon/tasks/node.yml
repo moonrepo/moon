@@ -1,0 +1,6 @@
+tasks:
+  node-detected:
+    command: 'node-detected'
+  system-via-node:
+    command: 'system-via-node'
+    platform: 'system'

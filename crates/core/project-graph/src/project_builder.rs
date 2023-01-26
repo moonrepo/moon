@@ -33,6 +33,7 @@ pub struct ProjectGraphBuilder<'ws> {
     sources: ProjectsSourcesMap,
 
     pub is_cached: bool,
+    pub hash: String,
 }
 
 impl<'ws> ProjectGraphBuilder<'ws> {
@@ -44,6 +45,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         let mut graph = ProjectGraphBuilder {
             aliases: FxHashMap::default(),
             graph: DiGraph::new(),
+            hash: String::new(),
             indices: FxHashMap::default(),
             is_cached: false,
             sources: FxHashMap::default(),
@@ -502,16 +504,11 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         }
 
         // Update the cache
-        let hash = if self.workspace.vcs.is_enabled() {
-            self.generate_hash(&sources, &aliases).await?
-        } else {
-            "".into()
-        };
+        let hash = self.generate_hash(&sources, &aliases).await?;
 
-        if hash.is_empty() {
-            self.is_cached = false;
-        } else {
+        if !hash.is_empty() {
             self.is_cached = cache.last_hash == hash;
+            self.hash = hash.clone();
 
             debug!(
                 target: LOG_TARGET,
@@ -550,6 +547,10 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         sources: &ProjectsSourcesMap,
         aliases: &ProjectsAliasesMap,
     ) -> Result<String, MoonError> {
+        if !self.workspace.vcs.is_enabled() {
+            return Ok(String::new());
+        }
+
         let mut hasher = GraphHasher::default();
 
         // Hash aliases and sources as-is as they're very explicit

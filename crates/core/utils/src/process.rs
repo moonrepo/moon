@@ -241,7 +241,6 @@ impl Command {
         Ok(status)
     }
 
-    #[track_caller]
     pub async fn exec_stream_and_capture_output(&mut self) -> Result<Output, MoonError> {
         self.log_command_info();
 

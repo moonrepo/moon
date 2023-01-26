@@ -65,10 +65,10 @@ impl CacheEngine {
         runtime: &Runtime,
         project_id: Option<&str>,
     ) -> Result<DependenciesState, MoonError> {
-        let name = format!("deps{}.json", runtime);
+        let name = format!("deps{runtime}.json");
 
         DependenciesState::load(self.get_state_path(if let Some(id) = project_id {
-            format!("{}/{}", id, name)
+            format!("{id}/{name}")
         } else {
             name
         }))
@@ -101,7 +101,7 @@ impl CacheEngine {
         lifetime: &str,
     ) -> Result<fs::RemoveDirContentsResult, MoonError> {
         let duration = time::parse_duration(lifetime)
-            .map_err(|e| MoonError::Generic(format!("Invalid lifetime: {}", e)))?;
+            .map_err(|e| MoonError::Generic(format!("Invalid lifetime: {e}")))?;
 
         trace!(
             target: LOG_TARGET,
@@ -164,11 +164,11 @@ impl CacheEngine {
     }
 
     pub fn get_hash_archive_path(&self, hash: &str) -> PathBuf {
-        self.outputs_dir.join(format!("{}.tar.gz", hash))
+        self.outputs_dir.join(format!("{hash}.tar.gz"))
     }
 
     pub fn get_hash_manifest_path(&self, hash: &str) -> PathBuf {
-        self.hashes_dir.join(format!("{}.json", hash))
+        self.hashes_dir.join(format!("{hash}.json"))
     }
 
     pub fn get_mode(&self) -> CacheMode {

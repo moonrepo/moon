@@ -117,7 +117,7 @@ pub async fn sync_project(
                         NodeVersionFormat::Version
                         | NodeVersionFormat::VersionCaret
                         | NodeVersionFormat::VersionTilde => {
-                            format!("{}{}", version_prefix, dep_package_version)
+                            format!("{version_prefix}{dep_package_version}")
                         }
                         _ => version_prefix,
                     };
@@ -192,7 +192,7 @@ pub async fn sync_project(
                                 );
 
                                 tsconfig_paths.insert(
-                                    format!("{}/*", dep_package_name),
+                                    format!("{dep_package_name}/*"),
                                     vec![path::to_virtual_string(dep_relative_path.join(
                                         if index.starts_with("src") {
                                             "src/*"

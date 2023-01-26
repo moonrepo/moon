@@ -332,7 +332,7 @@ impl Project {
         workspace_root: &Path,
         inherited_tasks: &InheritedTasksManager,
     ) -> Result<Project, ProjectError> {
-        let log_target = format!("moon:project:{}", id);
+        let log_target = format!("moon:project:{id}");
 
         // For the root-level project, the "." dot actually causes
         // a ton of unwanted issues, so just use workspace root directly.

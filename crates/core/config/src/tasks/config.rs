@@ -19,7 +19,7 @@ use validator::{Validate, ValidationError};
 
 fn validate_deps(list: &[String]) -> Result<(), ValidationError> {
     for (index, item) in list.iter().enumerate() {
-        let key = format!("implicitDeps[{}]", index);
+        let key = format!("implicitDeps[{index}]");
 
         // When no target scope, it's assumed to be a self scope
         if item.contains(':') {
@@ -34,7 +34,7 @@ fn validate_deps(list: &[String]) -> Result<(), ValidationError> {
 
 fn validate_file_groups(map: &FileGroups) -> Result<(), ValidationError> {
     for key in map.keys() {
-        validate_id(format!("fileGroups.{}", key), key)?;
+        validate_id(format!("fileGroups.{key}"), key)?;
     }
 
     Ok(())
@@ -42,13 +42,13 @@ fn validate_file_groups(map: &FileGroups) -> Result<(), ValidationError> {
 
 fn validate_tasks(map: &BTreeMap<String, TaskConfig>) -> Result<(), ValidationError> {
     for (name, task) in map {
-        validate_id(format!("tasks.{}", name), name)?;
+        validate_id(format!("tasks.{name}"), name)?;
 
         // Fail for both `None` and empty strings
         if task.get_command().is_empty() {
             return Err(create_validation_error(
                 "required_command",
-                format!("tasks.{}.command", name),
+                format!("tasks.{name}.command"),
                 "An npm/system command is required",
             ));
         }

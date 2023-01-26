@@ -84,7 +84,7 @@ impl TokenType {
                 if name.is_empty() {
                     "$var".into()
                 } else {
-                    format!("${}", name)
+                    format!("${name}")
                 }
             }
         }

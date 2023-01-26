@@ -13,7 +13,7 @@ pub enum Runtime {
 impl Runtime {
     pub fn label(&self) -> String {
         match self {
-            Runtime::Node(version) => format!("Node.js v{}", version),
+            Runtime::Node(version) => format!("Node.js v{version}"),
             Runtime::System => "system".into(),
         }
     }

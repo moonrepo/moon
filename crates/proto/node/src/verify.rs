@@ -30,7 +30,7 @@ impl Verifiable<'_> for NodeLanguage {
         let version = self.get_resolved_version();
         let from_url = match from_url {
             Some(url) => url.to_owned(),
-            None => format!("https://nodejs.org/dist/v{}/SHASUMS256.txt", version),
+            None => format!("https://nodejs.org/dist/v{version}/SHASUMS256.txt"),
         };
 
         debug!(target: self.get_log_target(), "Attempting to download checksum from {}", color::url(&from_url));

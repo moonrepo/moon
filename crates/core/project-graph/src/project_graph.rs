@@ -174,13 +174,12 @@ impl ProjectGraph {
                 // //     String::from("style=filled, shape=circle, fillcolor=palegreen, fontcolor=black")
                 // } else {
                 format!(
-                    "label=\"{}\" style=filled, shape=oval, fillcolor=gray, fontcolor=black",
-                    id
+                    "label=\"{id}\" style=filled, shape=oval, fillcolor=gray, fontcolor=black"
                 )
                 // }
             },
         );
 
-        format!("{:?}", dot)
+        format!("{dot:?}")
     }
 }

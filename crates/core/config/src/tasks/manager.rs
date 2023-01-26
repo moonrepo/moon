@@ -34,16 +34,16 @@ impl InheritedTasksManager {
         let is_js_platform = matches!(platform, PlatformType::Node);
 
         if is_js_platform {
-            lookup.push(format!("{}", platform));
+            lookup.push(format!("{platform}"));
         }
 
-        lookup.push(format!("{}", language));
+        lookup.push(format!("{language}"));
 
         if is_js_platform {
-            lookup.push(format!("{}-{}", platform, type_of));
+            lookup.push(format!("{platform}-{type_of}"));
         }
 
-        lookup.push(format!("{}-{}", language, type_of));
+        lookup.push(format!("{language}-{type_of}"));
 
         lookup
     }
@@ -68,7 +68,7 @@ impl InheritedTasksManager {
                         }
 
                         // Automatically set this lookup as an input
-                        let input = format!("/.moon/tasks/{}.yml", lookup);
+                        let input = format!("/.moon/tasks/{lookup}.yml");
 
                         if let Some(inputs) = &mut task.inputs {
                             inputs.push(input);

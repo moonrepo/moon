@@ -495,7 +495,7 @@ impl<'a> ScriptParser<'a> {
             )? {
                 if !previous_task_id.is_empty() {
                     if let Some(task) = self.tasks.get_mut(&task_id) {
-                        add_task_dep(task, format!("~:{}", previous_task_id));
+                        add_task_dep(task, format!("~:{previous_task_id}"));
                     }
                 }
 
@@ -539,9 +539,9 @@ impl<'a> ScriptParser<'a> {
         if self.pre.contains_key(script_name) {
             let pre = self.pre.remove(script_name).unwrap();
 
-            if let Some(pre_task_id) = self.parse_script(format!("pre{}", script_name), pre)? {
+            if let Some(pre_task_id) = self.parse_script(format!("pre{script_name}"), pre)? {
                 if let Some(task) = self.tasks.get_mut(task_id) {
-                    add_task_dep(task, format!("~:{}", pre_task_id));
+                    add_task_dep(task, format!("~:{pre_task_id}"));
                 }
             }
         }
@@ -550,9 +550,9 @@ impl<'a> ScriptParser<'a> {
         if self.post.contains_key(script_name) {
             let post = self.post.remove(script_name).unwrap();
 
-            if let Some(post_task_id) = self.parse_script(format!("post{}", script_name), post)? {
+            if let Some(post_task_id) = self.parse_script(format!("post{script_name}"), post)? {
                 if let Some(task) = self.tasks.get_mut(&post_task_id) {
-                    add_task_dep(task, format!("~:{}", task_id));
+                    add_task_dep(task, format!("~:{task_id}"));
                 }
             }
         }

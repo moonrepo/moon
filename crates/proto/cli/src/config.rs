@@ -30,7 +30,7 @@ impl Config {
                 } else {
                     return Err(ProtoError::InvalidConfig(
                         path.to_path_buf(),
-                        format!("Expected a version string for \"{}\".", key),
+                        format!("Expected a version string for \"{key}\"."),
                     ));
                 }
             }

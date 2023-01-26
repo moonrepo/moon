@@ -13,7 +13,7 @@ fn mock_task(command: &str, platform: PlatformType) -> TaskConfig {
         inputs: if command == "global" {
             None
         } else {
-            Some(string_vec![format!("/.moon/tasks/{}.yml", command)])
+            Some(string_vec![format!("/.moon/tasks/{command}.yml")])
         },
         platform,
         ..TaskConfig::default()

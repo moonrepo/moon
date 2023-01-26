@@ -15,6 +15,10 @@
   - Now supports `.moon/tasks/<language>.yml` and `.moon/tasks/<language>-<type>.yml` configuration
     files.
 
+#### ⚙️ Internal
+
+- Updated Rust to v1.67.
+
 #### 0.22.0
 
 #### 💥 Breaking

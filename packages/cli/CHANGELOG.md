@@ -1,5 +1,15 @@
 # Changelog
 
+#### Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where the project graph cache was not always resetting based on changes.
+
+#### ⚙️ Internal
+
+- Updated our internal hasher to also take into account untracked files when hashing a directory.
+
 #### 0.22.0
 
 #### 💥 Breaking

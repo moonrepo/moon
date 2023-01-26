@@ -1,0 +1,3 @@
+tasks:
+  node-application:
+    command: node-application

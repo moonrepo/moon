@@ -2,6 +2,10 @@
 
 #### Unreleased
 
+#### 🚀 Updates
+
+- Updated to no longer cache the project graph when there's no VCS root.
+
 #### 🐞 Fixes
 
 - Fixed an issue where the project graph cache was not always resetting based on changes.

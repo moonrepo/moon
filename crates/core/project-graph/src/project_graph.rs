@@ -173,9 +173,7 @@ impl ProjectGraph {
                 // if id == &highlight_id {
                 // //     String::from("style=filled, shape=circle, fillcolor=palegreen, fontcolor=black")
                 // } else {
-                format!(
-                    "label=\"{id}\" style=filled, shape=oval, fillcolor=gray, fontcolor=black"
-                )
+                format!("label=\"{id}\" style=filled, shape=oval, fillcolor=gray, fontcolor=black")
                 // }
             },
         );

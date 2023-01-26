@@ -17,9 +17,7 @@ pub async fn clean(options: CleanOptions) -> Result<(), AnyError> {
         workspace.cache.clean_stale_cache(&options.cache_lifetime)?;
 
     done(
-        format!(
-            "Deleted {files_deleted} files and saved {bytes_saved} bytes"
-        ),
+        format!("Deleted {files_deleted} files and saved {bytes_saved} bytes"),
         true,
     );
 

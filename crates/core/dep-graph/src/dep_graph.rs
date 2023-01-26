@@ -129,9 +129,7 @@ impl DepGraph {
             &|_, n| {
                 let id = n.1;
 
-                format!(
-                    "label=\"{id}\" style=filled, shape=oval, fillcolor=gray, fontcolor=black"
-                )
+                format!("label=\"{id}\" style=filled, shape=oval, fillcolor=gray, fontcolor=black")
             },
         );
 

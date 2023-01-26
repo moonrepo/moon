@@ -1,0 +1,11 @@
+[package]
+name = "moon_launchpad"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_logger = { path = "../logger" }
+moon_utils = { path = "../utils" }
+reqwest = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }

@@ -9,7 +9,7 @@ pub fn is_default<T: Default + PartialEq>(value: &T) -> bool {
 }
 
 pub fn is_default_true(value: &bool) -> bool {
-    *value == true
+    *value
 }
 
 // Validate the value is a valid semver version/range.

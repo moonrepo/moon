@@ -233,4 +233,33 @@ mod config_merging {
             }
         );
     }
+
+    #[tokio::test]
+    async fn inherits_detects_correct_platforms() {
+        let sandbox = create_sandbox("config-inheritance/platform");
+        let workspace = load_workspace_from(sandbox.path()).await.unwrap();
+
+        let config = workspace.tasks_config.get_inherited_config(
+            PlatformType::Node,
+            ProjectLanguage::JavaScript,
+            ProjectType::Library,
+        );
+
+        assert_eq!(
+            config.tasks.get("global").unwrap().platform,
+            PlatformType::System
+        );
+        assert_eq!(
+            config.tasks.get("node").unwrap().platform,
+            PlatformType::Node
+        );
+        assert_eq!(
+            config.tasks.get("node-detected").unwrap().platform,
+            PlatformType::Node
+        );
+        assert_eq!(
+            config.tasks.get("system-via-node").unwrap().platform,
+            PlatformType::System
+        );
+    }
 }

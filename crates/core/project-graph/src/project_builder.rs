@@ -5,8 +5,7 @@ use crate::project_graph::{GraphType, IndicesType, ProjectGraph, LOG_TARGET};
 use crate::token_resolver::{TokenContext, TokenResolver};
 use moon_config::{
     PlatformType, ProjectLanguage, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceProjects,
-    CONFIG_DIRNAME, CONFIG_GLOBAL_PROJECT_FILENAME, CONFIG_PROJECT_FILENAME,
-    CONFIG_TOOLCHAIN_FILENAME,
+    CONFIG_DIRNAME, CONFIG_PROJECT_FILENAME,
 };
 use moon_error::MoonError;
 use moon_hasher::{convert_paths_to_strings, to_hash};
@@ -505,6 +504,12 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         // Update the cache
         let hash = self.generate_hash(&sources, &aliases).await?;
 
+        debug!(
+            target: LOG_TARGET,
+            "Generated hash {} for project graph",
+            color::symbol(&hash),
+        );
+
         self.is_cached = cache.last_hash == hash;
         self.aliases.extend(aliases.clone());
         self.sources.extend(sources.clone());
@@ -546,25 +551,28 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         // these files would invalidate the entire project graph cache!
         // TODO: handle extended config files?
         if self.workspace.vcs.is_enabled() {
-            let mut configs = FxHashSet::from_iter(
-                sources
-                    .values()
-                    .map(|source| PathBuf::from(source).join(CONFIG_PROJECT_FILENAME)),
-            );
-
-            // Because of inherited tasks
-            configs.insert(PathBuf::from(CONFIG_DIRNAME).join(CONFIG_GLOBAL_PROJECT_FILENAME));
-
-            // Because of settings that interact with tasks
-            configs.insert(PathBuf::from(CONFIG_DIRNAME).join(CONFIG_TOOLCHAIN_FILENAME));
+            let configs = convert_paths_to_strings(
+                &FxHashSet::from_iter(
+                    sources
+                        .values()
+                        .map(|source| PathBuf::from(source).join(CONFIG_PROJECT_FILENAME)),
+                ),
+                &self.workspace.root,
+            )?;
 
             let config_hashes = self
                 .workspace
                 .vcs
-                .get_file_hashes(
-                    &convert_paths_to_strings(&configs, &self.workspace.root)?,
-                    false,
-                )
+                .get_file_hashes(&configs, false)
+                .await
+                .map_err(|e| MoonError::Generic(e.to_string()))?;
+
+            hasher.hash_configs(&config_hashes);
+
+            let config_hashes = self
+                .workspace
+                .vcs
+                .get_file_tree_hashes(CONFIG_DIRNAME)
                 .await
                 .map_err(|e| MoonError::Generic(e.to_string()))?;
 

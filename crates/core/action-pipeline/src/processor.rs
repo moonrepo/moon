@@ -27,6 +27,8 @@ pub async fn process_action(
     workspace: Arc<RwLock<Workspace>>,
     project_graph: Arc<RwLock<ProjectGraph>>,
 ) -> Result<Action, PipelineError> {
+    action.start();
+
     let node = action.node.take().unwrap();
     let log_action_label = color::muted_light(&action.label);
 
@@ -185,7 +187,7 @@ pub async fn process_action(
 
     match result {
         Ok(status) => {
-            action.done(status);
+            action.finish(status);
         }
         Err(error) => {
             action.fail(error.to_string());

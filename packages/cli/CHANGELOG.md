@@ -15,6 +15,7 @@
   - Now supports `.moon/tasks/<language>.yml` and `.moon/tasks/<language>-<type>.yml` configuration
     files.
 - Updated to no longer cache the project graph when there's no VCS root.
+- Updated pnpm to use the new `pnpm dedupe` command when the version is >= 7.26.0.
 
 #### 🐞 Fixes
 

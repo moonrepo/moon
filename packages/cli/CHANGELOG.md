@@ -9,6 +9,7 @@
 #### 🐞 Fixes
 
 - Fixed an issue where the project graph cache was not always resetting based on changes.
+- Fixed an issue where run report action durations were innacurate.
 
 #### ⚙️ Internal
 

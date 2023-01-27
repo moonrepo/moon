@@ -100,7 +100,7 @@ impl Action {
             label: node.label(),
             log_target: String::new(),
             node: Some(node),
-            start_time: Some(Instant::now()),
+            start_time: None,
             status: ActionStatus::Running,
         }
     }
@@ -109,7 +109,11 @@ impl Action {
         self.status = ActionStatus::FailedAndAbort;
     }
 
-    pub fn done(&mut self, status: ActionStatus) {
+    pub fn start(&mut self) {
+        self.start_time = Some(Instant::now());
+    }
+
+    pub fn finish(&mut self, status: ActionStatus) {
         self.finished_at = Some(now_timestamp());
         self.status = status;
 
@@ -120,7 +124,7 @@ impl Action {
 
     pub fn fail(&mut self, error: String) {
         self.error = Some(error);
-        self.done(ActionStatus::Failed);
+        self.finish(ActionStatus::Failed);
     }
 
     pub fn has_failed(&self) -> bool {

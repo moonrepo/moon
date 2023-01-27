@@ -1,4 +1,6 @@
-use moon_test_utils::{assert_snapshot, create_sandbox_with_config, get_cases_fixture_configs};
+use moon_test_utils::{
+    create_sandbox_with_config, get_cases_fixture_configs, predicates::prelude::*,
+};
 
 #[test]
 fn fails_on_version_constraint() {
@@ -12,7 +14,7 @@ fn fails_on_version_constraint() {
         cmd.arg("sync");
     });
 
-    assert_snapshot!(assert.output());
-
-    assert.failure();
+    assert
+        .failure()
+        .stderr(predicate::str::contains("expected >=1000.0.0"));
 }

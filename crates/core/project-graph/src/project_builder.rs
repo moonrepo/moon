@@ -5,8 +5,7 @@ use crate::project_graph::{GraphType, IndicesType, ProjectGraph, LOG_TARGET};
 use crate::token_resolver::{TokenContext, TokenResolver};
 use moon_config::{
     PlatformType, ProjectLanguage, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceProjects,
-    CONFIG_DIRNAME, CONFIG_GLOBAL_PROJECT_FILENAME, CONFIG_PROJECT_FILENAME,
-    CONFIG_TOOLCHAIN_FILENAME,
+    CONFIG_DIRNAME, CONFIG_PROJECT_FILENAME,
 };
 use moon_error::MoonError;
 use moon_hasher::{convert_paths_to_strings, to_hash};
@@ -34,6 +33,7 @@ pub struct ProjectGraphBuilder<'ws> {
     sources: ProjectsSourcesMap,
 
     pub is_cached: bool,
+    pub hash: String,
 }
 
 impl<'ws> ProjectGraphBuilder<'ws> {
@@ -45,6 +45,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         let mut graph = ProjectGraphBuilder {
             aliases: FxHashMap::default(),
             graph: DiGraph::new(),
+            hash: String::new(),
             indices: FxHashMap::default(),
             is_cached: false,
             sources: FxHashMap::default(),
@@ -505,7 +506,17 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         // Update the cache
         let hash = self.generate_hash(&sources, &aliases).await?;
 
-        self.is_cached = cache.last_hash == hash;
+        if !hash.is_empty() {
+            self.is_cached = cache.last_hash == hash;
+            self.hash = hash.clone();
+
+            debug!(
+                target: LOG_TARGET,
+                "Generated hash {} for project graph",
+                color::symbol(&hash),
+            );
+        }
+
         self.aliases.extend(aliases.clone());
         self.sources.extend(sources.clone());
 
@@ -536,6 +547,10 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         sources: &ProjectsSourcesMap,
         aliases: &ProjectsAliasesMap,
     ) -> Result<String, MoonError> {
+        if !self.workspace.vcs.is_enabled() {
+            return Ok(String::new());
+        }
+
         let mut hasher = GraphHasher::default();
 
         // Hash aliases and sources as-is as they're very explicit
@@ -545,31 +560,32 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         // Hash all project-oriented config files, as a single change in any of
         // these files would invalidate the entire project graph cache!
         // TODO: handle extended config files?
-        if self.workspace.vcs.is_enabled() {
-            let mut configs = FxHashSet::from_iter(
+        let configs = convert_paths_to_strings(
+            &FxHashSet::from_iter(
                 sources
                     .values()
                     .map(|source| PathBuf::from(source).join(CONFIG_PROJECT_FILENAME)),
-            );
+            ),
+            &self.workspace.root,
+        )?;
 
-            // Because of inherited tasks
-            configs.insert(PathBuf::from(CONFIG_DIRNAME).join(CONFIG_GLOBAL_PROJECT_FILENAME));
+        let config_hashes = self
+            .workspace
+            .vcs
+            .get_file_hashes(&configs, false)
+            .await
+            .map_err(|e| MoonError::Generic(e.to_string()))?;
 
-            // Because of settings that interact with tasks
-            configs.insert(PathBuf::from(CONFIG_DIRNAME).join(CONFIG_TOOLCHAIN_FILENAME));
+        hasher.hash_configs(&config_hashes);
 
-            let config_hashes = self
-                .workspace
-                .vcs
-                .get_file_hashes(
-                    &convert_paths_to_strings(&configs, &self.workspace.root)?,
-                    false,
-                )
-                .await
-                .map_err(|e| MoonError::Generic(e.to_string()))?;
+        let config_hashes = self
+            .workspace
+            .vcs
+            .get_file_tree_hashes(CONFIG_DIRNAME)
+            .await
+            .map_err(|e| MoonError::Generic(e.to_string()))?;
 
-            hasher.hash_configs(&config_hashes);
-        }
+        hasher.hash_configs(&config_hashes);
 
         // Generate the hash
         let hash = to_hash(&hasher);

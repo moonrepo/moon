@@ -5,7 +5,7 @@ use moon_node_lang::{pnpm, LockfileDependencyVersions, PNPM};
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
 use moon_utils::process::Command;
-use moon_utils::{fs, is_ci};
+use moon_utils::{fs, is_ci, semver};
 use proto_core::{
     async_trait, Describable, Executable, Installable, Proto, Resolvable, Shimable,
     Tool as ProtoTool,
@@ -108,11 +108,21 @@ impl DependencyManager<NodeTool> for PnpmTool {
         &self,
         node: &NodeTool,
         working_dir: &Path,
-        _log: bool,
+        log: bool,
     ) -> Result<(), ToolError> {
         if working_dir.join(self.get_lock_filename()).exists() {
-            node.exec_package("pnpm-deduplicate", &["pnpm-deduplicate"], working_dir)
-                .await?;
+            // https://github.com/pnpm/pnpm/releases/tag/v7.26.0
+            if semver::satisfies_range(&self.config.version, ">=7.26.0") {
+                self.create_command(node)?
+                    .arg("dedupe")
+                    .cwd(working_dir)
+                    .log_running_command(log)
+                    .exec_capture_output()
+                    .await?;
+            } else {
+                node.exec_package("pnpm-deduplicate", &["pnpm-deduplicate"], working_dir)
+                    .await?;
+            }
         }
 
         Ok(())

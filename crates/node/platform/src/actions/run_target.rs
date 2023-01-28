@@ -14,7 +14,7 @@ use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
 use moon_typescript_lang::TsConfigJson;
 use moon_utils::{get_cache_dir, process::Command};
 use moon_utils::{path, string_vec};
-use proto_core::Installable;
+use proto::Installable;
 use rustc_hash::FxHashMap;
 use std::path::Path;
 

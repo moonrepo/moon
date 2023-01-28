@@ -2390,7 +2390,7 @@ dependencies = [
  "moon_tool",
  "moon_typescript_lang",
  "moon_utils",
- "proto_core",
+ "proto",
  "rustc-hash",
  "serde",
  "serde_json",
@@ -2407,8 +2407,7 @@ dependencies = [
  "moon_terminal",
  "moon_tool",
  "moon_utils",
- "proto_core",
- "proto_node",
+ "proto",
  "rustc-hash",
 ]
 
@@ -2659,7 +2658,7 @@ dependencies = [
  "moon_lang",
  "moon_platform_runtime",
  "moon_utils",
- "proto_error",
+ "proto",
  "rustc-hash",
  "thiserror",
 ]

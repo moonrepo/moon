@@ -6,11 +6,10 @@ use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
 use moon_utils::process::Command;
 use moon_utils::{fs, is_ci};
-use proto_core::{
-    async_trait, Describable, Executable, Installable, Proto, Resolvable, Shimable,
-    Tool as ProtoTool,
+use proto::{
+    async_trait, node::NodeDependencyManager, Describable, Executable, Installable, Proto,
+    Resolvable, Shimable, Tool as ProtoTool,
 };
-use proto_node::NodeDependencyManager;
 use rustc_hash::FxHashMap;
 use std::env;
 use std::path::Path;
@@ -26,7 +25,7 @@ impl NpmTool {
     pub fn new(proto: &Proto, config: &NpmConfig) -> Result<NpmTool, ToolError> {
         Ok(NpmTool {
             config: config.to_owned(),
-            tool: NodeDependencyManager::new(proto, proto_node::NodeDependencyManagerType::Npm),
+            tool: NodeDependencyManager::new(proto, proto::node::NodeDependencyManagerType::Npm),
         })
     }
 }

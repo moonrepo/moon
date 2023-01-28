@@ -208,6 +208,55 @@ implicitInputs:
 </TabItem>
 </Tabs>
 
+## Project-level environment variables
+
+Since moon's inception, tasks can be configured with pre-defined environment variables using the
+[`env`](/docs/config/project#env-1) setting. These variables would then be passed to the command
+during execution. This works perfectly for encapsulation, but becomes tedious when the same
+variables are repeated for multiple tasks.
+
+To remedy this, environment variables can now be defined at the top of
+[`moon.yml`](/docs/config/project) using the top-level [`env`](/docs/config/project#env) setting.
+Variables defined at the top-level will be inherited by all tasks in the current project, but will
+not override task-level variables of the same name.
+
+To demonstrate this, the following config:
+
+```yaml title="<project>/moon.yml"
+tasks:
+  dev:
+    # ...
+    env:
+      TARGET_ENV: 'development'
+
+  build:
+    # ...
+    env:
+      TARGET_ENV: 'development'
+
+  serve:
+    # ...
+    env:
+      TARGET_ENV: 'development'
+```
+
+Can be rewritten as:
+
+```yaml title="<project>/moon.yml"
+env:
+  TARGET_ENV: 'development'
+
+tasks:
+  dev:
+    # ...
+
+  build:
+    # ...
+
+  serve:
+    # ...
+```
+
 ## Other changes
 
 View the
@@ -221,4 +270,6 @@ full list of changes.
 
 Expect the following in the v0.24 release!
 
-- ???
+- New `moon query tasks` command.
+- New per-project `platform` setting.
+- TypeScript v5 support.

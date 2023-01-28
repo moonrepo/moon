@@ -152,7 +152,7 @@ type: 'application'
 
 ## Tasks
 
-### `env`
+## `env`
 
 <HeadingApiLink to="/api/types/interface/ProjectConfig#env" />
 
@@ -497,8 +497,8 @@ tasks:
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#envFile" />
 
 A boolean or path to a project relative file (also know as dotenv file) that defines a collection of
-[environment variables](#env) for the current task. Variables will be loaded on project creation,
-but will _not_ override those defined in [`env`](#env).
+[environment variables](#env-1) for the current task. Variables will be loaded on project creation,
+but will _not_ override those defined in [`env`](#env-1).
 
 ```yaml title="moon.yml" {6}
 tasks:
@@ -529,8 +529,8 @@ an inherited task. Defaults to "append".
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#mergeEnv" />
 
-The [strategy](../concepts/task#merge-strategies) to use when merging the [`env`](#env) map with an
-inherited task. Defaults to "append".
+The [strategy](../concepts/task#merge-strategies) to use when merging the [`env`](#env-1) map with
+an inherited task. Defaults to "append".
 
 #### `mergeInputs`
 

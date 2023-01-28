@@ -1505,6 +1505,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "human-sort"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "140a09c9305e6d5e557e2ed7cbc68e05765a7d4213975b87cb04920689cc6219"
+
+[[package]]
 name = "humansize"
 version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3310,6 +3316,7 @@ version = "0.1.0"
 dependencies = [
  "clap 4.0.32",
  "env_logger",
+ "human-sort",
  "log",
  "proto_core",
  "proto_error",

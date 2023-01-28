@@ -10,9 +10,13 @@ async fn downloads_verifies_installs_npm() {
     let proto = Proto::from(fixture.path());
     let mut tool = NodeDependencyManager::new(&proto, NodeDependencyManagerType::Npm);
 
+    std::env::set_var("PROTO_ROOT", fixture.path().to_string_lossy().to_string());
+
     tool.setup("9.0.0").await.unwrap();
 
     assert!(tool.get_install_dir().unwrap().exists());
+
+    let global_shim = proto.shims_dir.join("npm");
 
     assert_eq!(
         tool.get_bin_path().unwrap(),
@@ -25,11 +29,13 @@ async fn downloads_verifies_installs_npm() {
             None,
             // &proto.tools_dir.join("npm\\9.0.0\\npm.bat")
         );
+        assert!(!global_shim.exists());
     } else {
         assert_eq!(
             tool.get_shim_path().unwrap(),
             &proto.tools_dir.join("npm/9.0.0/npm")
         );
+        assert!(global_shim.exists());
     }
 }
 

@@ -907,6 +907,69 @@ mod task_expansion {
                 ])
             );
         }
+
+        mod project_level {
+            use super::*;
+
+            #[tokio::test]
+            async fn inherits_by_default() {
+                let (_sandbox, project_graph) = tasks_sandbox().await;
+
+                let project = project_graph.get("expandEnvProject").unwrap();
+                let task = project.get_task("inherit").unwrap();
+
+                assert_eq!(
+                    task.env,
+                    FxHashMap::from_iter([("FOO".to_owned(), "project-level".to_owned())])
+                );
+            }
+
+            #[tokio::test]
+            async fn doesnt_override_task_level() {
+                let (_sandbox, project_graph) = tasks_sandbox().await;
+
+                let project = project_graph.get("expandEnvProject").unwrap();
+                let task = project.get_task("env").unwrap();
+
+                assert_eq!(
+                    task.env,
+                    FxHashMap::from_iter([("FOO".to_owned(), "task-level".to_owned())])
+                );
+            }
+
+            #[tokio::test]
+            async fn doesnt_override_env_file() {
+                let (_sandbox, project_graph) = tasks_sandbox().await;
+
+                let project = project_graph.get("expandEnvProject").unwrap();
+                let task = project.get_task("envFile").unwrap();
+
+                assert_eq!(
+                    task.env,
+                    FxHashMap::from_iter([
+                        ("FOO".to_owned(), "env-file".to_owned()),
+                        ("BAR".to_owned(), "123".to_owned())
+                    ])
+                );
+            }
+
+            #[tokio::test]
+            async fn supports_all_patterns_in_parallel() {
+                let (_sandbox, project_graph) = tasks_sandbox().await;
+
+                let project = project_graph.get("expandEnvProject").unwrap();
+                let task = project.get_task("all").unwrap();
+
+                assert_eq!(
+                    task.env,
+                    FxHashMap::from_iter([
+                        ("FOO".to_owned(), "task-level".to_owned()),
+                        ("BAR".to_owned(), "123".to_owned()),
+                        ("BAZ".to_owned(), "true".to_owned()),
+                    ])
+                );
+            }
+        }
     }
 
     mod expand_inputs {

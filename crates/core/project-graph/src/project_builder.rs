@@ -129,7 +129,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
             // Inherit platform specific tasks
             for (task_id, task_config) in platform.load_project_tasks(&project)? {
-                // Inferred mut not override explicit
+                // Inferred must not override explicit
                 #[allow(clippy::map_entry)]
                 if !project.tasks.contains_key(&task_id) {
                     let task = Task::from_config(Target::new(id, &task_id)?, &task_config)?;
@@ -310,32 +310,37 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         project: &mut Project,
         task: &mut Task,
     ) -> Result<(), ProjectGraphError> {
-        let Some(env_file) = &task.options.env_file else {
-            return Ok(());
-        };
+        // Load from env file
+        if let Some(env_file) = &task.options.env_file {
+            let env_path = project.root.join(env_file);
+            let error_handler =
+                |e: dotenvy::Error| TaskError::InvalidEnvFile(env_path.clone(), e.to_string());
 
-        let env_path = project.root.join(env_file);
-        let error_handler =
-            |e: dotenvy::Error| TaskError::InvalidEnvFile(env_path.clone(), e.to_string());
+            // Add as an input
+            task.inputs.push(env_file.to_owned());
 
-        // Add as an input
-        task.inputs.push(env_file.to_owned());
+            // The `.env` file may not have been committed, so avoid crashing in CI
+            if is_ci() && !env_path.exists() {
+                debug!(
+                    target: task.get_log_target(),
+                    "The `envFile` option is enabled but no `.env` file exists in CI, skipping as this may be intentional",
+                );
+            } else {
+                for entry in dotenvy::from_path_iter(&env_path).map_err(error_handler)? {
+                    let (key, value) = entry.map_err(error_handler)?;
 
-        // The `.env` file may not have been committed, so avoid crashing in CI
-        if is_ci() && !env_path.exists() {
-            debug!(
-                target: task.get_log_target(),
-                "The `envFile` option is enabled but no `.env` file exists in CI, skipping as this may be intentional",
-            );
-
-            return Ok(());
+                    // Vars defined in task `env` take precedence over those in the env file
+                    task.env.entry(key).or_insert(value);
+                }
+            }
         }
 
-        for entry in dotenvy::from_path_iter(&env_path).map_err(error_handler)? {
-            let (key, value) = entry.map_err(error_handler)?;
-
-            // Vars defined in `env` take precedence over those in the env file
-            task.env.entry(key).or_insert(value);
+        // Inherit project-level
+        if let Some(project_env) = &project.config.env {
+            for (key, value) in project_env {
+                // Vars defined in task `env` take precedence
+                task.env.entry(key.to_owned()).or_insert(value.to_owned());
+            }
         }
 
         Ok(())

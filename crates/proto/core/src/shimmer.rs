@@ -149,6 +149,12 @@ impl ShimBuilder {
         let handle_error =
             |e: std::io::Error| ProtoError::Fs(shim_path.to_path_buf(), e.to_string());
 
+        if let Some(parent) = shim_path.parent() {
+            if !parent.exists() {
+                fs::create_dir_all(parent).map_err(handle_error)?;
+            }
+        }
+
         fs::write(&shim_path, build_shim_file(self, global)?).map_err(handle_error)?;
 
         // Make executable

@@ -54,13 +54,15 @@ fn build_shim_file(builder: &ShimBuilder, global: bool) -> Result<String, ProtoE
             "shim",
             if cfg!(windows) {
                 // TODO
-                include_str!("../templates/batch.tpl")
-            } else {
                 if global {
-                    include_str!("../templates/bash_global.tpl")
+                    include_str!("../templates/batch_global.tpl")
                 } else {
-                    include_str!("../templates/bash.tpl")
+                    include_str!("../templates/batch.tpl")
                 }
+            } else if global {
+                include_str!("../templates/bash_global.tpl")
+            } else {
+                include_str!("../templates/bash.tpl")
             },
         )
         .map_err(handle_error)?;

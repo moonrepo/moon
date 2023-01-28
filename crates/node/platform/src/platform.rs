@@ -17,7 +17,7 @@ use moon_project::{Project, ProjectError};
 use moon_task::Task;
 use moon_tool::{Tool, ToolError, ToolManager};
 use moon_utils::{async_trait, glob::GlobSet, process::Command};
-use proto_core::Proto;
+use proto::Proto;
 use rustc_hash::FxHashMap;
 use std::path::PathBuf;
 use std::{collections::BTreeMap, path::Path};

@@ -33,6 +33,18 @@ enum Commands {
         semver: Option<String>,
     },
 
+    #[command(name = "list", alias = "ls", about = "List installed versions")]
+    List {
+        #[arg(required = true, value_enum, help = "Name of tool to list")]
+        tool: ToolType,
+    },
+
+    #[command(name = "list-remote", alias = "lsr", about = "List available versions")]
+    ListRemote {
+        #[arg(required = true, value_enum, help = "Name of tool to list")]
+        tool: ToolType,
+    },
+
     #[command(
         name = "run",
         about = "Run a tool after detecting a version from the environment"
@@ -67,6 +79,8 @@ async fn main() {
 
     let result = match app.command {
         Commands::Install { tool, semver } => commands::install(tool, semver).await,
+        Commands::List { tool } => commands::list(tool).await,
+        Commands::ListRemote { tool } => commands::list_remote(tool).await,
         Commands::Run { tool, passthrough } => commands::run(tool, passthrough).await,
         Commands::Uninstall { tool, semver } => commands::uninstall(tool, semver).await,
     };

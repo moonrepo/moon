@@ -14,6 +14,7 @@ use figment::{
     providers::{Format, Serialized, YamlExtended},
     Figment,
 };
+use rustc_hash::FxHashMap;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -112,6 +113,9 @@ pub enum ProjectDependsOn {
 pub struct ProjectConfig {
     #[serde(skip_serializing_if = "is_default")]
     pub depends_on: Vec<ProjectDependsOn>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub env: Option<FxHashMap<String, String>>,
 
     #[serde(skip_serializing_if = "is_default")]
     #[validate(custom = "validate_file_groups")]

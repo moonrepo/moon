@@ -80,6 +80,7 @@ export interface ProjectWorkspaceConfig {
 
 export interface ProjectConfig {
 	dependsOn: (DependencyConfig | string)[];
+	env: Record<string, string> | null;
 	fileGroups: Record<string, string[]>;
 	language: ProjectLanguage;
 	project: ProjectMetadataConfig | null;

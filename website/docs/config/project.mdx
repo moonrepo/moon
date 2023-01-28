@@ -152,6 +152,18 @@ type: 'application'
 
 ## Tasks
 
+### `env`
+
+<HeadingApiLink to="/api/types/interface/ProjectConfig#env" />
+
+The `env` field is map of strings that are passed as environment variables to _all tasks_ within the
+current project. Project-level variables will not override task-level variables of the same name.
+
+```yaml title="moon.yml" {1,2}
+env:
+  NODE_ENV: 'production'
+```
+
 ## `fileGroups`
 
 <HeadingApiLink to="/api/types/interface/ProjectConfig#fileGroups" />

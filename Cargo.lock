@@ -2154,6 +2154,7 @@ dependencies = [
  "moon_error",
  "moon_generator",
  "moon_lang",
+ "moon_launchpad",
  "moon_logger",
  "moon_node_lang",
  "moon_node_platform",
@@ -2315,6 +2316,17 @@ name = "moon_lang"
 version = "0.1.0"
 dependencies = [
  "rustc-hash",
+]
+
+[[package]]
+name = "moon_launchpad"
+version = "0.1.0"
+dependencies = [
+ "moon_logger",
+ "moon_utils",
+ "reqwest",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

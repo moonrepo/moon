@@ -10,18 +10,23 @@ async fn downloads_verifies_installs_tool() {
     let proto = Proto::from(fixture.path());
     let mut tool = NodeLanguage::new(&proto);
 
+    std::env::set_var("PROTO_ROOT", fixture.path().to_string_lossy().to_string());
+
     tool.setup("18.0.0").await.unwrap();
 
     assert!(tool.get_install_dir().unwrap().exists());
 
     let base_dir = proto.tools_dir.join("node/18.0.0");
+    let global_shim = proto.shims_dir.join("node");
 
     if cfg!(windows) {
         assert_eq!(tool.get_bin_path().unwrap(), &base_dir.join("node.exe"));
         assert_eq!(tool.get_shim_path(), None); // &base_dir.join("node.bat"));
+        assert!(!global_shim.exists());
     } else {
         assert_eq!(tool.get_bin_path().unwrap(), &base_dir.join("bin/node"));
         assert_eq!(tool.get_shim_path().unwrap(), &base_dir.join("node"));
+        assert!(global_shim.exists());
     }
 }
 

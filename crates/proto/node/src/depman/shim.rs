@@ -13,7 +13,7 @@ impl Shimable<'_> for NodeDependencyManager {
                 .dir(self.get_install_dir()?)
                 .version(self.get_resolved_version())
                 .parent("node")
-                .create()?;
+                .create_tool_shim()?;
 
             self.shim_path = Some(shim_path);
         }

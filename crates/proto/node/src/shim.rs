@@ -12,7 +12,7 @@ impl Shimable<'_> for NodeLanguage {
             let shim_path = ShimBuilder::new("node", self.get_bin_path()?)
                 .dir(self.get_install_dir()?)
                 .version(self.get_resolved_version())
-                .create()?;
+                .create_tool_shim()?;
 
             self.shim_path = Some(shim_path);
         }

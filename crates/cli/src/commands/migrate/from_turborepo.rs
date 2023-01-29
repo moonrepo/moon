@@ -101,24 +101,8 @@ pub fn convert_task(name: String, task: TurboTask) -> TaskConfig {
     }
 
     if let Some(turbo_outputs) = task.outputs {
-        let mut outputs = vec![];
-
-        for output in turbo_outputs {
-            // We don't support globs at the moment
-            if output.contains('*') {
-                outputs.push(
-                    output
-                        .replace("/**/*", "")
-                        .replace("/**", "")
-                        .replace("/*", ""),
-                );
-            } else {
-                outputs.push(output);
-            }
-        }
-
-        if !outputs.is_empty() {
-            config.outputs = Some(outputs);
+        if !turbo_outputs.is_empty() {
+            config.outputs = Some(turbo_outputs);
         }
     }
 
@@ -351,7 +335,7 @@ mod tests {
 
             assert_eq!(
                 config.outputs.unwrap(),
-                string_vec!["dir", "dir", "dir", "dir", "dir/sub"]
+                string_vec!["dir", "dir/**/*", "dir/**", "dir/*", "dir/*/sub"]
             );
         }
 

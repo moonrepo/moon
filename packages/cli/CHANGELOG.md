@@ -16,6 +16,7 @@
     files.
 - Added a top-level `env` setting to `moon.yml`.
 - Updated task `outputs` to support globs.
+- Updated `moon migrate from-turborepo` to preserve globs in outputs.
 - Updated to no longer cache the project graph when there's no VCS root.
 - Updated pnpm to use the new `pnpm dedupe` command when the version is >= 7.26.0.
 

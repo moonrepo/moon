@@ -148,7 +148,7 @@ fn scaffold_sources(
 
     // Include via globs
     if !include.is_empty() {
-        let files = glob::walk(&workspace.root, include)?;
+        let files = glob::walk_files(&workspace.root, include)?;
         let files = files
             .iter()
             .map(|f| path::to_string(f.strip_prefix(&workspace.root).unwrap()))

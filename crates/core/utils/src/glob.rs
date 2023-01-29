@@ -158,6 +158,19 @@ pub fn walk<T: AsRef<Path>, P: AsRef<str>>(
     Ok(paths)
 }
 
+#[inline]
+pub fn walk_files<T: AsRef<Path>, P: AsRef<str>>(
+    base_dir: T,
+    patterns: &[P],
+) -> Result<Vec<PathBuf>, GlobError> {
+    let paths = walk(base_dir, patterns)?;
+
+    Ok(paths
+        .into_iter()
+        .filter(|p| p.is_file())
+        .collect::<Vec<_>>())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

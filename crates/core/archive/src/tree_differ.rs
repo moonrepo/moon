@@ -18,7 +18,7 @@ impl TreeDiffer {
     /// using the defined lists of paths, either files or folders. If a folder,
     /// recursively scan all files and create an internal manifest to track diffing.
     pub fn load(dest_root: &Path, paths: &[String]) -> Result<Self, MoonError> {
-        let mut tracked = FxHashMap::default();
+        let mut files = FxHashMap::default();
 
         let mut track = |file: PathBuf| {
             if file.exists() {
@@ -27,14 +27,14 @@ impl TreeDiffer {
                     Err(_) => 0,
                 };
 
-                tracked.insert(file, size);
+                files.insert(file, size);
             }
         };
 
         for path in paths {
             if glob::is_glob(path) {
-                for file in
-                    glob::walk(dest_root, &[path]).map_err(|e| MoonError::Generic(e.to_string()))?
+                for file in glob::walk_files(dest_root, &[path])
+                    .map_err(|e| MoonError::Generic(e.to_string()))?
                 {
                     track(file);
                 }
@@ -51,7 +51,7 @@ impl TreeDiffer {
             }
         }
 
-        Ok(TreeDiffer { files: tracked })
+        Ok(TreeDiffer { files })
     }
 
     /// Compare 2 files byte by byte and return true if both files are equal.

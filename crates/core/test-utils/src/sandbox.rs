@@ -28,7 +28,7 @@ impl Sandbox {
     }
 
     pub fn debug_configs(&self) -> &Self {
-        for cfg in glob::walk(self.path(), &[".moon/**/*.yml"]).unwrap() {
+        for cfg in glob::walk_files(self.path(), &[".moon/**/*.yml"]).unwrap() {
             if cfg.exists() {
                 println!("{:?} = {}", &cfg, fs::read_to_string(&cfg).unwrap());
             }

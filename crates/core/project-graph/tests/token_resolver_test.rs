@@ -592,6 +592,22 @@ mod resolve_inputs {
             (vec![project.root.join("dir")], vec![]),
         );
     }
+
+    #[test]
+    fn converts_naked_dir_to_glob() {
+        let workspace_root = get_workspace_root();
+        let project = create_project(&workspace_root);
+        let resolver = TokenResolver::new(TokenContext::Inputs, &project, &workspace_root);
+        let task = create_task(None);
+
+        assert_eq!(
+            resolver.resolve(&string_vec!["dir"], &task).unwrap(),
+            (
+                vec![],
+                vec![project.root.join("dir/**/*").to_string_lossy().to_string()]
+            ),
+        );
+    }
 }
 
 mod resolve_outputs {

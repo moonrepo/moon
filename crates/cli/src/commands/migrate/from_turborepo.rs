@@ -101,8 +101,18 @@ pub fn convert_task(name: String, task: TurboTask) -> TaskConfig {
     }
 
     if let Some(turbo_outputs) = task.outputs {
-        if !turbo_outputs.is_empty() {
-            config.outputs = Some(turbo_outputs);
+        let mut outputs = vec![];
+
+        for output in turbo_outputs {
+            if output.ends_with("/**") {
+                outputs.push(format!("{}/*", output));
+            } else {
+                outputs.push(output);
+            }
+        }
+
+        if !outputs.is_empty() {
+            config.outputs = Some(outputs);
         }
     }
 
@@ -335,7 +345,7 @@ mod tests {
 
             assert_eq!(
                 config.outputs.unwrap(),
-                string_vec!["dir", "dir/**/*", "dir/**", "dir/*", "dir/*/sub"]
+                string_vec!["dir", "dir/**/*", "dir/**/*", "dir/*", "dir/*/sub"]
             );
         }
 

@@ -153,7 +153,8 @@ impl<'task> TokenResolver<'task> {
                     TokenType::Var(String::new()).check_context(&self.context)?;
                 }
 
-                let resolved = path::expand_root_path(
+                let mut is_glob = glob::is_glob(value);
+                let mut resolved = path::expand_root_path(
                     if has_var {
                         self.resolve_vars(value, task)?
                     } else {
@@ -163,7 +164,14 @@ impl<'task> TokenResolver<'task> {
                     &self.project.root,
                 );
 
-                if glob::is_glob(value) {
+                // This is a special case for inputs that converts "foo" to "foo/**/*",
+                // when the input is a directory. This is necessary for VCS hashing.
+                if matches!(self.context, TokenContext::Inputs) && resolved.is_dir() {
+                    is_glob = true;
+                    resolved = resolved.join("**/*");
+                }
+
+                if is_glob {
                     globs.push(glob::normalize(resolved)?);
                 } else {
                     paths.push(resolved);

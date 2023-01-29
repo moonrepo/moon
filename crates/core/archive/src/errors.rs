@@ -1,4 +1,5 @@
 use moon_error::MoonError;
+use moon_utils::glob::GlobError;
 use thiserror::Error;
 use zip::result::ZipError;
 
@@ -6,6 +7,9 @@ use zip::result::ZipError;
 pub enum ArchiveError {
     #[error(transparent)]
     Io(#[from] std::io::Error),
+
+    #[error(transparent)]
+    Glob(#[from] GlobError),
 
     #[error(transparent)]
     Moon(#[from] MoonError),

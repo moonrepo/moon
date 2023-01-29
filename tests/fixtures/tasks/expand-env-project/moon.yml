@@ -1,0 +1,17 @@
+env:
+  FOO: project-level
+
+tasks:
+  inherit: {}
+  env:
+    env:
+      FOO: task-level
+  envFile:
+    options:
+      envFile: true
+  all:
+    env:
+      FOO: task-level
+      BAZ: 'true'
+    options:
+      envFile: true

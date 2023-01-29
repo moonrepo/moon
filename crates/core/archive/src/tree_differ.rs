@@ -1,5 +1,5 @@
 use moon_error::MoonError;
-use moon_utils::fs;
+use moon_utils::{fs, glob};
 use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
 use std::{
@@ -18,33 +18,37 @@ impl TreeDiffer {
     /// using the defined lists of paths, either files or folders. If a folder,
     /// recursively scan all files and create an internal manifest to track diffing.
     pub fn load(dest_root: &Path, paths: &[String]) -> Result<Self, MoonError> {
-        let mut files = vec![];
-
-        for path in paths {
-            let path = dest_root.join(path);
-
-            if path.is_file() {
-                files.push(path);
-            } else if path.is_dir() {
-                for file in fs::read_dir_all(path)? {
-                    files.push(file.path());
-                }
-            }
-        }
-
         let mut tracked = FxHashMap::default();
 
-        for file in files {
-            if !file.exists() {
-                continue;
+        let mut track = |file: PathBuf| {
+            if file.exists() {
+                let size = match std::fs::metadata(&file) {
+                    Ok(meta) => meta.len(),
+                    Err(_) => 0,
+                };
+
+                tracked.insert(file, size);
             }
+        };
 
-            let size = match std::fs::metadata(&file) {
-                Ok(meta) => meta.len(),
-                Err(_) => 0,
-            };
+        for path in paths {
+            if glob::is_glob(path) {
+                for file in
+                    glob::walk(dest_root, &[path]).map_err(|e| MoonError::Generic(e.to_string()))?
+                {
+                    track(file);
+                }
+            } else {
+                let path = dest_root.join(path);
 
-            tracked.insert(file, size);
+                if path.is_file() {
+                    track(path);
+                } else if path.is_dir() {
+                    for file in fs::read_dir_all(path)? {
+                        track(file.path());
+                    }
+                }
+            }
         }
 
         Ok(TreeDiffer { files: tracked })

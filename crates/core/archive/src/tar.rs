@@ -115,10 +115,10 @@ impl<'l> TarArchiver<'l> {
                 color::path(self.input_root.join(glob))
             );
 
-            for file in glob::walk(&self.input_root, &[glob])? {
+            for file in glob::walk(self.input_root, &[glob])? {
                 let mut fh =
                     File::open(&file).map_err(|e| map_io_to_fs_error(e, file.to_path_buf()))?;
-                let file_name = path::to_string(file.strip_prefix(&self.input_root).unwrap())?;
+                let file_name = path::to_string(file.strip_prefix(self.input_root).unwrap())?;
 
                 archive.append_file(
                     prepend_name(&prepend_name(file_prefix, &file_name), self.prefix),

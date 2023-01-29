@@ -339,7 +339,9 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         if let Some(project_env) = &project.config.env {
             for (key, value) in project_env {
                 // Vars defined in task `env` take precedence
-                task.env.entry(key.to_owned()).or_insert(value.to_owned());
+                task.env
+                    .entry(key.to_owned())
+                    .or_insert_with(|| value.to_owned());
             }
         }
 

@@ -162,6 +162,10 @@ pub fn get_tasks_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Inherit
             ("scopeSelf".to_owned(), "scope-self".to_owned()),
             ("tokens".to_owned(), "tokens".to_owned()),
             ("expandEnv".to_owned(), "expand-env".to_owned()),
+            (
+                "expandEnvProject".to_owned(),
+                "expand-env-project".to_owned(),
+            ),
             ("expandOutputs".to_owned(), "expand-outputs".to_owned()),
             ("fileGroups".to_owned(), "file-groups".to_owned()),
         ])),

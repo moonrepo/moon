@@ -1121,21 +1121,16 @@ mod task_expansion {
             let task = project.get_task("outputs").unwrap();
 
             assert!(task.output_paths.contains(&project.root.join("dir")));
-        }
 
-        #[tokio::test]
-        #[should_panic(expected = "NoOutputGlob")]
-        async fn errors_for_globs() {
-            tasks_sandbox_with_setup(|sandbox| {
-                sandbox.create_file(
-                    "expand-outputs/moon.yml",
-                    r#"tasks:
-                        command:
-                            outputs:
-                                - 'glob/*'"#,
-                );
-            })
-            .await;
+            let task = project.get_task("outputsGlobs").unwrap();
+
+            assert!(task.output_globs.contains(
+                &project
+                    .root
+                    .join("dir/**/*.js")
+                    .to_string_lossy()
+                    .to_string()
+            ));
         }
     }
 }

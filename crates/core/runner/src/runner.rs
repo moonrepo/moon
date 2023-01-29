@@ -76,6 +76,7 @@ impl<'a> Runner<'a> {
         }
 
         // Check that outputs actually exist
+        // We don't check globs here as it would required walking the file system
         if !self.task.outputs.is_empty() {
             for (i, output) in self.task.output_paths.iter().enumerate() {
                 if !output.exists() {

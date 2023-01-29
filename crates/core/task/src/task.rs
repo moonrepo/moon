@@ -57,6 +57,8 @@ pub struct Task {
 
     pub outputs: Vec<FilePath>,
 
+    pub output_globs: FxHashSet<FileGlob>,
+
     pub output_paths: FxHashSet<PathBuf>,
 
     pub platform: PlatformType,
@@ -104,6 +106,7 @@ impl Task {
             log_target,
             options: TaskOptions::from_config(cloned_options, is_local),
             outputs: cloned_config.outputs.unwrap_or_default(),
+            output_globs: FxHashSet::default(),
             output_paths: FxHashSet::default(),
             platform: cloned_config.platform,
             target,

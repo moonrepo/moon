@@ -400,13 +400,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         let (paths, globs) = token_resolver.resolve(&task.outputs, task)?;
 
         task.output_paths.extend(paths);
-
-        if !globs.is_empty() {
-            return Err(ProjectGraphError::Task(TaskError::NoOutputGlob(
-                globs.get(0).unwrap().to_owned(),
-                task.target.id.clone(),
-            )));
-        }
+        task.output_globs.extend(globs);
 
         Ok(())
     }

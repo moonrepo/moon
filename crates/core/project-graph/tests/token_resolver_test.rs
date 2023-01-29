@@ -83,7 +83,12 @@ pub fn expand_task(project: &Project, task: &mut Task) {
     }
 
     for output in &task.outputs {
-        task.output_paths.insert(project.root.join(output));
+        if glob::is_glob(output) {
+            task.output_globs
+                .insert(glob::normalize(project.root.join(output)).unwrap());
+        } else {
+            task.output_paths.insert(project.root.join(output));
+        }
     }
 }
 

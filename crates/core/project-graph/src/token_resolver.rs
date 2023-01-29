@@ -370,7 +370,14 @@ impl<'task> TokenResolver<'task> {
             };
 
             if glob::is_glob(output) {
-                globs.push(output.to_owned());
+                match task.output_globs.iter().find(|g| g.ends_with(output)) {
+                    Some(g) => {
+                        globs.push(g.clone());
+                    }
+                    None => {
+                        return Err(error);
+                    }
+                };
             } else {
                 match task.output_paths.get(&path::expand_root_path(
                     output,

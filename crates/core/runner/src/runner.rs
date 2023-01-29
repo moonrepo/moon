@@ -78,11 +78,11 @@ impl<'a> Runner<'a> {
         // Check that outputs actually exist
         // We don't check globs here as it would required walking the file system
         if !self.task.outputs.is_empty() {
-            for (i, output) in self.task.output_paths.iter().enumerate() {
+            for output in &self.task.output_paths {
                 if !output.exists() {
                     return Err(RunnerError::Task(TaskError::MissingOutput(
                         self.task.target.id.clone(),
-                        self.task.outputs.get(i).unwrap().to_owned(),
+                        path::to_string(output.strip_prefix(&self.project.root).unwrap())?,
                     )));
                 }
             }

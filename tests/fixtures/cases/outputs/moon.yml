@@ -46,6 +46,13 @@ tasks:
       - '*.js'
     outputs:
       - 'test.mjs'
+  generateFileTypes:
+    command: node
+    args: generate.js multiple-types
+    inputs:
+      - '*.js'
+    outputs:
+      - 'build/*.js'
 
   # Dependency hashing
   asDep:

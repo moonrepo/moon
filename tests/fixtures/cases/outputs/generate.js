@@ -24,6 +24,12 @@ switch (type) {
 		createFile('lib/one.js');
 		createFile('esm/two.js');
 		break;
+	case 'multiple-types':
+		createFile('build/one.js');
+		createFile('build/two.js');
+		createFile('build/styles.css');
+		createFile('build/image.png');
+		break;
 	case 'custom':
 		createFile(process.argv[3], 'fixed content');
 		break;

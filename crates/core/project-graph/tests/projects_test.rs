@@ -1124,13 +1124,19 @@ mod task_expansion {
 
             let task = project.get_task("outputsGlobs").unwrap();
 
-            assert!(task.output_globs.contains(
-                &project
-                    .root
-                    .join("dir/**/*.js")
-                    .to_string_lossy()
-                    .to_string()
-            ));
+            if cfg!(windows) {
+                assert!(task
+                    .output_globs
+                    .contains(&glob::normalize(project.root.join("dir/**/*.js")).unwrap()));
+            } else {
+                assert!(task.output_globs.contains(
+                    &project
+                        .root
+                        .join("dir/**/*.js")
+                        .to_string_lossy()
+                        .to_string()
+                ));
+            }
         }
     }
 }

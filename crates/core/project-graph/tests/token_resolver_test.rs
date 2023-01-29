@@ -604,7 +604,11 @@ mod resolve_inputs {
             resolver.resolve(&string_vec!["dir"], &task).unwrap(),
             (
                 vec![],
-                vec![project.root.join("dir/**/*").to_string_lossy().to_string()]
+                vec![if cfg!(windows) {
+                    glob::normalize(project.root.join("dir/**/*")).unwrap()
+                } else {
+                    project.root.join("dir/**/*").to_string_lossy().to_string()
+                }]
             ),
         );
     }

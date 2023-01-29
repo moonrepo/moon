@@ -14,6 +14,8 @@
   `language` and `type`.
   - Now supports `.moon/tasks/<language>.yml` and `.moon/tasks/<language>-<type>.yml` configuration
     files.
+- Added a top-level `env` setting to `moon.yml`.
+- Updated task `outputs` to support globs.
 - Updated to no longer cache the project graph when there's no VCS root.
 - Updated pnpm to use the new `pnpm dedupe` command when the version is >= 7.26.0.
 

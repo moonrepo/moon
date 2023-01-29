@@ -257,6 +257,29 @@ tasks:
     # ...
 ```
 
+## Globs in task outputs
+
+Another feature that's been around since moon's inception is task
+[`outputs`](/docs/config/project#outputs), which only supported relative files and folders. For
+historical reasons, it was the easiest solution at the time, but in practice, supporting more
+granular control is better.
+
+As such, task `outputs` now support glob patterns as well! This is perfect for restricting and
+filtering down which files are cached in the artifact. However, be aware that during hydration (a
+cache hit), all files _not matching the glob_ will be deleted, so ensure that critical files _do_
+match.
+
+To demonstrate this, if building a JavaScript project, you may want to include `.js` and `.css`
+files, but exclude everything else (`.map`, etc).
+
+```yaml title="moon.yml" {4,5}
+tasks:
+  build:
+    command: 'webpack'
+    outputs:
+      - 'build/**/*.{js,css}'
+```
+
 ## Other changes
 
 View the

@@ -58,6 +58,7 @@ fn create_project(workspace_root: &Path) -> Project {
         "files-and-dirs",
         workspace_root,
         &InheritedTasksManager::default(),
+        |_| ProjectLanguage::Unknown,
     )
     .unwrap();
     project.file_groups = create_file_groups();

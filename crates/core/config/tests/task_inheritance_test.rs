@@ -131,7 +131,6 @@ mod lookup_order {
 
 mod config_merging {
     use super::*;
-    use moon_test_utils::pretty_assertions::assert_eq;
     use std::collections::BTreeMap;
 
     #[tokio::test]
@@ -233,32 +232,64 @@ mod config_merging {
             }
         );
     }
+}
+
+mod config_loading {
+    use super::*;
+    use moon::generate_project_graph;
 
     #[tokio::test]
-    async fn inherits_detects_correct_platforms() {
-        let sandbox = create_sandbox("config-inheritance/platform");
-        let workspace = load_workspace_from(sandbox.path()).await.unwrap();
+    async fn inherits_when_lang_is_detected() {
+        let sandbox = create_sandbox("config-inheritance/detection");
+        let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+        let graph = generate_project_graph(&mut workspace).await.unwrap();
 
-        let config = workspace.tasks_config.get_inherited_config(
-            PlatformType::Node,
-            ProjectLanguage::JavaScript,
-            ProjectType::Library,
+        graph.get("explicit").unwrap().get_task("command").unwrap();
+
+        let task = graph.get("explicit").unwrap().get_task("command").unwrap();
+
+        assert_eq!(task.command, "node");
+        assert_eq!(
+            task.inputs,
+            string_vec!["/.moon/tasks/node.yml", "**/*", "/.moon/*.yml"]
         );
 
+        let task = graph.get("detected").unwrap().get_task("command").unwrap();
+
+        assert_eq!(task.command, "node");
         assert_eq!(
-            config.tasks.get("global").unwrap().platform,
+            task.inputs,
+            string_vec!["/.moon/tasks/node.yml", "**/*", "/.moon/*.yml"]
+        );
+
+        let task = graph.get("other").unwrap().get_task("command").unwrap();
+
+        assert_eq!(task.command, "global");
+        assert_eq!(task.inputs, string_vec!["**/*", "/.moon/*.yml"]);
+    }
+
+    #[tokio::test]
+    async fn inherits_correct_task_platform() {
+        let sandbox = create_sandbox("config-inheritance/platform");
+        let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+        let graph = generate_project_graph(&mut workspace).await.unwrap();
+
+        let project = graph.get("project").unwrap();
+
+        assert_eq!(
+            project.tasks.get("global").unwrap().platform,
             PlatformType::System
         );
         assert_eq!(
-            config.tasks.get("node").unwrap().platform,
+            project.tasks.get("node").unwrap().platform,
             PlatformType::Node
         );
         assert_eq!(
-            config.tasks.get("node-detected").unwrap().platform,
+            project.tasks.get("node-detected").unwrap().platform,
             PlatformType::Node
         );
         assert_eq!(
-            config.tasks.get("system-via-node").unwrap().platform,
+            project.tasks.get("system-via-node").unwrap().platform,
             PlatformType::System
         );
     }

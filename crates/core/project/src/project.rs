@@ -326,12 +326,16 @@ impl Logable for Project {
 }
 
 impl Project {
-    pub fn new(
+    pub fn new<F>(
         id: &str,
         source: &str,
         workspace_root: &Path,
         inherited_tasks: &InheritedTasksManager,
-    ) -> Result<Project, ProjectError> {
+        detect_language: F,
+    ) -> Result<Project, ProjectError>
+    where
+        F: FnOnce(&Path) -> ProjectLanguage,
+    {
         let log_target = format!("moon:project:{}", id);
 
         // For the root-level project, the "." dot actually causes
@@ -355,9 +359,15 @@ impl Project {
         }
 
         let config = load_project_config(&log_target, &root, source)?;
+        let language = if matches!(config.language, ProjectLanguage::Unknown) {
+            detect_language(&root)
+        } else {
+            config.language
+        };
+
         let global_tasks = inherited_tasks.get_inherited_config(
-            config.language.into(), // TODO
-            config.language,
+            language.into(), // TODO
+            language,
             config.type_of,
         );
         let file_groups = create_file_groups_from_config(&log_target, &config, &global_tasks);
@@ -369,7 +379,7 @@ impl Project {
             dependencies,
             file_groups,
             id: id.to_owned(),
-            language: config.language,
+            language,
             log_target,
             root,
             source: source.to_owned(),

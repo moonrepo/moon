@@ -4,7 +4,7 @@ use crate::helpers::detect_projects_with_globs;
 use crate::project_graph::{GraphType, IndicesType, ProjectGraph, LOG_TARGET};
 use crate::token_resolver::{TokenContext, TokenResolver};
 use moon_config::{
-    ProjectLanguage, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceProjects, CONFIG_DIRNAME,
+    ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceProjects, CONFIG_DIRNAME,
     CONFIG_PROJECT_FILENAME,
 };
 use moon_error::MoonError;
@@ -97,6 +97,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             source,
             &self.workspace.root,
             &self.workspace.tasks_config,
+            detect_project_language,
         )?;
 
         // Collect all aliases for the current project ID
@@ -104,11 +105,6 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             if project_id == id {
                 project.aliases.push(alias.to_owned());
             }
-        }
-
-        // Detect the language if its unknown
-        if matches!(project.language, ProjectLanguage::Unknown) {
-            project.language = detect_project_language(&project.root);
         }
 
         if let Ok(platform) = self.workspace.platforms.get(project.language) {

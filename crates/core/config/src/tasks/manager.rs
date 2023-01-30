@@ -3,7 +3,7 @@ use moon_utils::{fs, string_vec};
 use rustc_hash::FxHashMap;
 use std::path::Path;
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct InheritedTasksManager {
     pub configs: FxHashMap<String, InheritedTasksConfig>,
 }

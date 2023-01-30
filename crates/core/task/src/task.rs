@@ -6,7 +6,7 @@ use moon_config::{
 };
 use moon_logger::{color, debug, trace, Logable};
 use moon_target::{Target, TargetError};
-use moon_utils::{glob, string_vec};
+use moon_utils::glob;
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -93,13 +93,13 @@ impl Task {
             color::shell(&command)
         );
 
-        let task = Task {
+        let mut task = Task {
             args,
             command,
             deps: Task::create_dep_targets(&cloned_config.deps.unwrap_or_default())?,
             env: cloned_config.env.unwrap_or_default(),
             id: target.task_id.clone(),
-            inputs: cloned_config.inputs.unwrap_or_else(|| string_vec!["**/*"]),
+            inputs: cloned_config.inputs.unwrap_or_default(),
             input_vars: FxHashSet::default(),
             input_globs: FxHashSet::default(),
             input_paths: FxHashSet::default(),
@@ -112,6 +112,12 @@ impl Task {
             target,
             type_of: TaskType::Test,
         };
+
+        // When no inputs are defined, excluding the top-level .moon configuration,
+        // we should default inputs to glob the entire project directory!
+        if task.inputs.iter().all(|i| i.starts_with("/.moon")) {
+            task.inputs.push("**/*".into());
+        }
 
         Ok(task)
     }

@@ -35,6 +35,7 @@ fn doesnt_exist() {
         "projects/missing",
         &get_fixtures_root(),
         &mock_tasks_config(),
+        |_| ProjectLanguage::Unknown,
     )
     .unwrap();
 }
@@ -47,6 +48,7 @@ fn no_config() {
         "projects/no-config",
         &workspace_root,
         &mock_tasks_config(),
+        |_| ProjectLanguage::Unknown,
     )
     .unwrap();
 
@@ -71,6 +73,7 @@ fn empty_config() {
         "projects/empty-config",
         &workspace_root,
         &mock_tasks_config(),
+        |_| ProjectLanguage::Unknown,
     )
     .unwrap();
 
@@ -96,6 +99,7 @@ fn basic_config() {
         "projects/basic",
         &workspace_root,
         &mock_tasks_config(),
+        |_| ProjectLanguage::Unknown,
     )
     .unwrap();
     let project_root = workspace_root.join("projects/basic");
@@ -134,6 +138,7 @@ fn advanced_config() {
         "projects/advanced",
         &workspace_root,
         &mock_tasks_config(),
+        |_| ProjectLanguage::Unknown,
     )
     .unwrap();
 

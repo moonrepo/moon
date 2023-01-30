@@ -15,4 +15,4 @@ serde = { workspace = true }
 
 [dev-dependencies]
 moon_test_utils = { path = "../test-utils" }
-serial_test = "0.10.0"
+serial_test = "1.0.0"

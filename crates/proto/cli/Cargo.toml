@@ -21,4 +21,4 @@ human-sort = "0.2.2"
 log = "0.4.17"
 rustc-hash = { workspace = true }
 tokio = { workspace = true }
-toml = "0.5.10"
+toml = "0.7.0"

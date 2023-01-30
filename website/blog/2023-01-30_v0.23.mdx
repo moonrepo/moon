@@ -1,17 +1,36 @@
 ---
 slug: v0.23
-title: moon v0.23 - Scoped task inheritance
+title: moon v0.23 - Scoped task inheritance, and project config updates
 authors: [milesj]
-tags: [tasks]
-# image: ./img/v0.22.png
+tags: [survey, tasks, projects]
+image: ./img/v0.23.png
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import Button from '@site/src/ui/Button';
 
-TODO
+With this release, we're launching the next iteration of our task inheritance model, as well as
+quality of life improvements for project configuration.
 
 <!--truncate-->
+
+## Developer survey
+
+Before we dive into this new release, we have a quick survey for everyone. We know how everyone
+feels about surveys, but this one is real quick, only a few minutes, and is mostly multiple choice
+questions.
+
+We're looking for feedback on moon itself, what features you're looking for, what you currently do
+not like, how you're currently using monorepos, your development workflows, so on and so forth. We'd
+very much appreciate it if you could engage with this survey!
+
+<div class="flex justify-center">
+  <Button
+    label="Take survey!"
+    href="https://a.sprig.com/UE1SOG1zV3o5SzdRfnNpZDpmOTQ5MjU1Yy1jYTZlLTRmYjQtOTRjZi0wMzZlZjExN2JjZDg="
+  />
+</div>
 
 ## Improved task inheritance model
 
@@ -43,14 +62,14 @@ To start, we renamed `.moon/project.yml` to `.moon/tasks.yml` as we want to emph
 configuration file is for task inheritance functionality only. However, the semantics of this file
 has _not_ changed, and is still "tasks to be inherited by _all_ projects".
 
-> We'll automatically rename this file for you when running a `moon` command!
-
 ```yaml title=".moon/tasks.yml"
 $schema: 'https://moonrepo.dev/schemas/tasks.json'
 
 tasks:
   # ...
 ```
+
+> We'll automatically rename this file for you when running a `moon` command!
 
 ### New scoped tasks with `.moon/tasks/*.yml`
 
@@ -286,6 +305,7 @@ View the
 [official release](https://github.com/moonrepo/moon/releases/tag/%40moonrepo%2Fcli%400.23.0) for a
 full list of changes.
 
+- Updated `moon migrate from-turborepo` to preserve globs in outputs.
 - Updated project graph to no longer cache when there's no VCS root.
 - Updated pnpm to use the new `pnpm dedupe` command when the version is >= 7.26.0.
 

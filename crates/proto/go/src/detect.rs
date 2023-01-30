@@ -1,5 +1,6 @@
 use crate::GoLanguage;
 use proto_core::{async_trait, Detector, ProtoError};
+use log::error;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
@@ -12,36 +13,42 @@ impl Detector<'_> for GoLanguage {
         let gowork = working_dir.join("go.work");
 
         if gowork.exists() {
-            return Ok(Some(scan_for_go_version(&gowork)?));
+            if let Some(version) = scan_for_go_version(&gowork) {
+                return Ok(Some(version));
+            }
         }
 
         let gomod = working_dir.join("go.mod");
 
         if gomod.exists() {
-            return Ok(Some(scan_for_go_version(&gomod)?));
+            if let Some(version) = scan_for_go_version(&gomod) {
+                return Ok(Some(version));
+            }
         }
 
         Ok(None)
     }
 }
 
-fn scan_for_go_version(path: &Path) -> Result<String, ProtoError> {
+fn scan_for_go_version(path: &Path) -> Option<String> {
     match File::open(path) {
         Ok(file) => {
             let buffered = BufReader::new(file);
             for line in buffered.lines() {
                 if let Ok(l) = line {
                     if let Some(version) = l.strip_prefix(GOPREFIX) {
-                        return Ok(version.into())
+                        return Some(version.into())
                     }
                 }
             }
         }
-        Err(e) => return Err(ProtoError::Fs(path.to_path_buf(), e.to_string())),
+        Err(e) => {
+            error!("{} failed to load {}", path.to_str().unwrap(), e);
+            return None;
+        }
     }
 
-    Err(ProtoError::Fs(
-        path.to_path_buf(),
-        String::from("no go version found"),
-    ))
+    error!("no go version found in {}", path.to_str().unwrap());
+
+    None
 }

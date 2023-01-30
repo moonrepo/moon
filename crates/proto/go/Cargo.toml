@@ -5,9 +5,7 @@ edition = "2021"
 
 [dependencies]
 proto_core = { path = "../core" }
-clean-path = "0.2.1"
 log = "0.4.17"
-rustc-hash = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 lenient_semver = "0.4.2"

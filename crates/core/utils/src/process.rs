@@ -272,6 +272,7 @@ impl Command {
         // https://stackoverflow.com/a/49063262
         let stderr = BufReader::new(child.stderr.take().unwrap());
         let stdout = BufReader::new(child.stdout.take().unwrap());
+        let mut stdin = child.stdin.take().unwrap();
         let mut handles = vec![];
 
         let captured_stderr = Arc::new(RwLock::new(vec![]));
@@ -287,7 +288,7 @@ impl Command {
             let mut lines = stderr.lines();
             let mut captured_lines = vec![];
 
-            while let Some(line) = lines.next_line().await.unwrap_or_default() {
+            while let Ok(Some(line)) = lines.next_line().await {
                 if stderr_prefix.is_empty() {
                     eprintln!("{}", line);
                 } else {
@@ -307,7 +308,7 @@ impl Command {
             let mut lines = stdout.lines();
             let mut captured_lines = vec![];
 
-            while let Some(line) = lines.next_line().await.unwrap_or_default() {
+            while let Ok(Some(line)) = lines.next_line().await {
                 if stdout_prefix.is_empty() {
                     println!("{}", line);
                 } else {
@@ -323,20 +324,22 @@ impl Command {
                 .extend(captured_lines);
         }));
 
+        handles.push(task::spawn(async move {
+            stdin.flush();
+        }));
+
         for handle in handles {
             let _ = handle.await;
         }
 
-        // Attempt to capture the child output
-        let mut output = child.wait_with_output().await.map_err(error_handler)?;
+        // Attempt to create the child output
+        let status = child.wait().await.map_err(error_handler)?;
 
-        if output.stderr.is_empty() {
-            output.stderr = captured_stderr.read().unwrap().join("\n").into_bytes();
-        }
-
-        if output.stdout.is_empty() {
-            output.stdout = captured_stdout.read().unwrap().join("\n").into_bytes();
-        }
+        let output = Output {
+            status,
+            stdout: captured_stdout.read().unwrap().join("\n").into_bytes(),
+            stderr: captured_stderr.read().unwrap().join("\n").into_bytes(),
+        };
 
         self.handle_nonzero_status(&output)?;
 

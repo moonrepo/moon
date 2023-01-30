@@ -28,6 +28,9 @@ tasks:
       - '*.js'
       - 'tsconfig.json'
 
+  stdin:
+    command: 'node test.js'
+
 workspace:
   inheritedTasks:
     exclude:

@@ -246,16 +246,21 @@ impl Command {
         self.log_command_info();
 
         let mut command = self.get_command();
+        let has_input = self.has_input();
         let error_handler = |e| map_io_to_process_error(e, &self.bin);
 
         let mut child = command
-            .stdin(Stdio::piped())
+            .stdin(if has_input {
+                Stdio::piped()
+            } else {
+                Stdio::inherit()
+            })
             .stderr(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()
             .map_err(error_handler)?;
 
-        if self.has_input() {
+        if has_input {
             self.write_input_to_child(&mut child).await?;
         }
 

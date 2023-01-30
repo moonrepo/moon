@@ -339,7 +339,9 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         if let Some(project_env) = &project.config.env {
             for (key, value) in project_env {
                 // Vars defined in task `env` take precedence
-                task.env.entry(key.to_owned()).or_insert(value.to_owned());
+                task.env
+                    .entry(key.to_owned())
+                    .or_insert_with(|| value.to_owned());
             }
         }
 
@@ -400,13 +402,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         let (paths, globs) = token_resolver.resolve(&task.outputs, task)?;
 
         task.output_paths.extend(paths);
-
-        if !globs.is_empty() {
-            return Err(ProjectGraphError::Task(TaskError::NoOutputGlob(
-                globs.get(0).unwrap().to_owned(),
-                task.target.id.clone(),
-            )));
-        }
+        task.output_globs.extend(globs);
 
         Ok(())
     }

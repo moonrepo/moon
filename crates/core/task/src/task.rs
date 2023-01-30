@@ -30,7 +30,7 @@ pub enum TaskType {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase")]
 pub struct Task {
     pub args: Vec<String>,
 
@@ -56,6 +56,8 @@ pub struct Task {
     pub options: TaskOptions,
 
     pub outputs: Vec<FilePath>,
+
+    pub output_globs: FxHashSet<FileGlob>,
 
     pub output_paths: FxHashSet<PathBuf>,
 
@@ -104,6 +106,7 @@ impl Task {
             log_target,
             options: TaskOptions::from_config(cloned_options, is_local),
             outputs: cloned_config.outputs.unwrap_or_default(),
+            output_globs: FxHashSet::default(),
             output_paths: FxHashSet::default(),
             platform: cloned_config.platform,
             target,

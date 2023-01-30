@@ -589,6 +589,30 @@ mod outputs {
     }
 
     #[test]
+    fn caches_using_output_glob() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputs:generateFileTypes");
+        });
+
+        let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFileTypes");
+        let tarball = sandbox
+            .path()
+            .join(".moon/cache/outputs")
+            .join(format!("{}.tar.gz", hash));
+        let dir = sandbox.path().join(".moon/cache/outputs").join(hash);
+
+        moon_archive::untar(tarball, &dir, None).unwrap();
+
+        assert!(dir.join("build/one.js").exists());
+        assert!(dir.join("build/two.js").exists());
+        assert!(!dir.join("build/styles.css").exists());
+        assert!(!dir.join("build/image.png").exists());
+    }
+
+    #[test]
     fn caches_output_logs_in_tarball() {
         let sandbox = cases_sandbox();
         sandbox.enable_git();

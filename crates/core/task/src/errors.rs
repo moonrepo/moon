@@ -11,11 +11,6 @@ pub enum TaskError {
     InvalidEnvFile(PathBuf, String),
 
     #[error(
-        "Task outputs do not support file globs. Found <file>{0}</file> in <target>{1}</target>."
-    )]
-    NoOutputGlob(String, String),
-
-    #[error(
         "Task outputs must be project relative and cannot be absolute. Found <file>{0}</file> in <target>{1}</target>."
     )]
     NoAbsoluteOutput(String, String),

@@ -104,14 +104,8 @@ pub fn convert_task(name: String, task: TurboTask) -> TaskConfig {
         let mut outputs = vec![];
 
         for output in turbo_outputs {
-            // We don't support globs at the moment
-            if output.contains('*') {
-                outputs.push(
-                    output
-                        .replace("/**/*", "")
-                        .replace("/**", "")
-                        .replace("/*", ""),
-                );
+            if output.ends_with("/**") {
+                outputs.push(format!("{}/*", output));
             } else {
                 outputs.push(output);
             }
@@ -351,7 +345,7 @@ mod tests {
 
             assert_eq!(
                 config.outputs.unwrap(),
-                string_vec!["dir", "dir", "dir", "dir", "dir/sub"]
+                string_vec!["dir", "dir/**/*", "dir/**/*", "dir/*", "dir/*/sub"]
             );
         }
 

@@ -44,6 +44,7 @@ export interface Task {
 	inputVars: string[];
 	options: TaskOptions;
 	outputs: string[];
+	outputGlobs: string[];
 	outputPaths: string[];
 	platform: Platform;
 	target: string;

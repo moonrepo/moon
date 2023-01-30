@@ -12,6 +12,14 @@ fn loads_all_files() {
 }
 
 #[test]
+fn loads_using_globs() {
+    let sandbox = create_sandbox("generator");
+    let differ = TreeDiffer::load(sandbox.path(), &string_vec!["templates/**/*"]).unwrap();
+
+    assert_eq!(differ.files.len(), 21);
+}
+
+#[test]
 fn removes_stale_files() {
     let sandbox = create_sandbox("generator");
     let mut differ = TreeDiffer::load(sandbox.path(), &string_vec!["templates"]).unwrap();
@@ -46,7 +54,7 @@ mod equal_check {
     #[test]
     fn returns_false_if_diff_sizes() {
         let sandbox = create_sandbox("generator");
-        let differ = TreeDiffer::load(sandbox.path(), &string_vec!["templates"]).unwrap();
+        let differ = TreeDiffer::load(sandbox.path(), &string_vec!["templates/**/*"]).unwrap();
 
         let source_path = sandbox.path().join("templates/standard/file-source.txt");
         fs::write(&source_path, "data").unwrap();

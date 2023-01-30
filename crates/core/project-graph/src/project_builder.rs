@@ -4,7 +4,7 @@ use crate::helpers::detect_projects_with_globs;
 use crate::project_graph::{GraphType, IndicesType, ProjectGraph, LOG_TARGET};
 use crate::token_resolver::{TokenContext, TokenResolver};
 use moon_config::{
-    ProjectLanguage, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceProjects, CONFIG_DIRNAME,
+    ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceProjects, CONFIG_DIRNAME,
     CONFIG_PROJECT_FILENAME,
 };
 use moon_error::MoonError;

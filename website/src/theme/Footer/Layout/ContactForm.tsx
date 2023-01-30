@@ -7,7 +7,7 @@ import Icon from '../../../ui/iconography/Icon';
 import Link from '../../../ui/typography/Link';
 import Text from '../../../ui/typography/Text';
 
-function NextButton(props: ButtonProps) {
+function NextButton(props: Partial<ButtonProps>) {
 	return <Button {...props} label="Next" id="contact-next" />;
 }
 

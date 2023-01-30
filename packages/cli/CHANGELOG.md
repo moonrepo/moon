@@ -1,5 +1,12 @@
 # Changelog
 
+#### Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where scoped tasks were not being inherited for projects that relied on language
+  detection.
+
 #### 0.23.0
 
 #### 💥 Breaking

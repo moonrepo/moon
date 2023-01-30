@@ -1,35 +1,14 @@
 /* eslint-disable promise/prefer-await-to-then */
 
 import React, { ChangeEvent, useCallback, useState } from 'react';
-import cx from 'clsx';
 import { faXmark } from '@fortawesome/pro-regular-svg-icons';
+import Button, { ButtonProps } from '../../../ui/Button';
 import Icon from '../../../ui/iconography/Icon';
 import Link from '../../../ui/typography/Link';
 import Text from '../../../ui/typography/Text';
 
-interface NextButtonProps {
-	disabled?: boolean;
-	label?: string;
-	onClick: () => void;
-}
-
-function NextButton({ disabled, label = 'Next', onClick }: NextButtonProps) {
-	return (
-		<button
-			type="button"
-			id="contact-next"
-			className={cx(
-				'w-1/4 border border-transparent rounded-md px-2 py-1 flex items-center justify-center text-base font-bold text-white bg-blurple-400 dark:bg-purple-600',
-				disabled
-					? 'opacity-60'
-					: 'hover:text-white hover:bg-blurple-500 dark:hover:bg-purple-500 cursor-pointer',
-			)}
-			disabled={disabled}
-			onClick={onClick}
-		>
-			{label}
-		</button>
-	);
+function NextButton(props: Partial<ButtonProps>) {
+	return <Button {...props} label="Next" id="contact-next" />;
 }
 
 export default function ContactForm() {

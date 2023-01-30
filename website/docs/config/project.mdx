@@ -350,8 +350,9 @@ defined, then all files within a project are considered an input (`**/*`).
 
 Inputs support the following source types:
 
-- Environment variables (must start with a `$`). <VersionLabel version="0.9" />
-- [Project and workspace relative file patterns](../concepts/file-pattern#project-relative)
+- Environment variables (must start with a `$`) <VersionLabel version="0.9" />
+- Files, folders, globs
+  ([project and workspace relative file patterns](../concepts/file-pattern#project-relative))
 
 ```yaml title="moon.yml" {4-10}
 tasks:
@@ -408,12 +409,11 @@ tasks:
 
 <HeadingApiLink to="/api/types/interface/TaskConfig#outputs" />
 
-The `outputs` field is a list of files and folders that are _created_ as a result of executing this
-task, excluding internal cache files that are created from the underlying command (for example,
-`.eslintcache`).
-
-Outputs are necessary for [incremental caching and hydration](../concepts/cache). If you'd prefer to
-avoid that functionality, omit this field.
+The `outputs` field is a list of files and folders (using
+[project relative file patterns](../concepts/file-pattern#project-relative)) that are _created_ as a
+result of executing this task, typically from a build or compilation related task. Outputs are
+necessary for [incremental caching and hydration](../concepts/cache). If you'd prefer to avoid that
+functionality, omit this field.
 
 ```yaml title="moon.yml" {4-6}
 tasks:
@@ -424,7 +424,23 @@ tasks:
       - 'build/'
 ```
 
-> Outputs require [project relative file patterns](../concepts/file-pattern#project-relative).
+Globs can also be used if you'd like to restrict which files are cached. For example, when building
+a JavaScript project, you may want to include `.js` files, but exclude `.map` and other files.
+
+```yaml title="moon.yml" {4,5}
+tasks:
+  build:
+    command: 'webpack'
+    outputs:
+      - 'build/**/*.js'
+```
+
+:::caution
+
+When using globs and moon hydrates an output (a cache hit), all files not matching the glob will be
+**deleted**. Ensure that all files critical for the build to function correctly are included.
+
+:::
 
 ### `options`
 

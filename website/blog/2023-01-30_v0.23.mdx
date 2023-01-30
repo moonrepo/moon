@@ -257,13 +257,36 @@ tasks:
     # ...
 ```
 
+## Globs in task outputs
+
+Another feature that's been around since moon's inception is task
+[`outputs`](/docs/config/project#outputs), which only supported relative files and folders. For
+historical reasons, it was the easiest solution at the time, but in practice, supporting more
+granular control is better.
+
+As such, task `outputs` now support glob patterns as well! This is perfect for restricting and
+filtering down which files are cached in the artifact. However, be aware that during hydration (a
+cache hit), all files _not matching the glob_ will be deleted, so ensure that critical files _do_
+match.
+
+To demonstrate this, if building a JavaScript project, you may want to include `.js` and `.css`
+files, but exclude everything else (`.map`, etc).
+
+```yaml title="moon.yml" {4,5}
+tasks:
+  build:
+    command: 'webpack'
+    outputs:
+      - 'build/**/*.{js,css}'
+```
+
 ## Other changes
 
 View the
 [official release](https://github.com/moonrepo/moon/releases/tag/%40moonrepo%2Fcli%400.23.0) for a
 full list of changes.
 
-- Updated to no longer cache the project graph when there's no VCS root.
+- Updated project graph to no longer cache when there's no VCS root.
 - Updated pnpm to use the new `pnpm dedupe` command when the version is >= 7.26.0.
 
 ## What's next?
@@ -272,4 +295,5 @@ Expect the following in the v0.24 release!
 
 - New `moon query tasks` command.
 - New per-project `platform` setting.
+- Token support in task `outputs`.
 - TypeScript v5 support.

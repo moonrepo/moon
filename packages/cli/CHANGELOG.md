@@ -14,11 +14,15 @@
   `language` and `type`.
   - Now supports `.moon/tasks/<language>.yml` and `.moon/tasks/<language>-<type>.yml` configuration
     files.
-- Updated to no longer cache the project graph when there's no VCS root.
+- Added a top-level `env` setting to `moon.yml`.
+- Updated task `outputs` to support globs.
+- Updated `moon migrate from-turborepo` to preserve globs in outputs.
+- Updated project graph to no longer cache when there's no VCS root.
 - Updated pnpm to use the new `pnpm dedupe` command when the version is >= 7.26.0.
 
 #### 🐞 Fixes
 
+- Fixed an issue where directories in task `inputs` not using `**/*` would crash git.
 - Fixed an issue where the project graph cache was not always resetting based on changes.
 - Fixed an issue where run report action durations were innacurate.
 

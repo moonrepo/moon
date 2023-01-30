@@ -76,12 +76,13 @@ impl<'a> Runner<'a> {
         }
 
         // Check that outputs actually exist
+        // We don't check globs here as it would required walking the file system
         if !self.task.outputs.is_empty() {
-            for (i, output) in self.task.output_paths.iter().enumerate() {
+            for output in &self.task.output_paths {
                 if !output.exists() {
                     return Err(RunnerError::Task(TaskError::MissingOutput(
                         self.task.target.id.clone(),
-                        self.task.outputs.get(i).unwrap().to_owned(),
+                        path::to_string(output.strip_prefix(&self.project.root).unwrap())?,
                     )));
                 }
             }
@@ -201,7 +202,7 @@ impl<'a> Runner<'a> {
             hasher.hash_args(&context.passthrough_args);
         }
 
-        // For input files, hash them with the vcs layer first
+        // For inputs, hash them with the vcs layer first
         if !task.input_paths.is_empty() {
             let files = convert_paths_to_strings(&task.input_paths, &workspace.root)?;
 
@@ -210,10 +211,6 @@ impl<'a> Runner<'a> {
             }
         }
 
-        // For input globs, it's much more performant to:
-        //  `git ls-tree` -> match against glob patterns
-        // Then it is to:
-        //  glob + walk the file system -> `git hash-object`
         if !task.input_globs.is_empty() {
             let mut hashed_file_tree = vcs.get_file_tree_hashes(&project.source).await?;
 

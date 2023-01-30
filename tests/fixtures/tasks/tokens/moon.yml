@@ -63,3 +63,6 @@ tasks:
   outputs:
     outputs:
       - 'dir'
+  outputsGlobs:
+    outputs:
+      - 'dir/**/*.js'

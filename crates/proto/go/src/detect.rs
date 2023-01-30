@@ -30,16 +30,10 @@ fn scan_for_go_version(path: &Path) -> Result<String, ProtoError> {
         Ok(file) => {
             let buffered = BufReader::new(file);
             for line in buffered.lines() {
-                match line {
-                    Ok(l) => {
-                        if l.starts_with(GOPREFIX) {
-                            match l.strip_prefix(GOPREFIX) {
-                                Some(version) => return Ok(String::from(version)),
-                                None => (),
-                            }
-                        }
+                if let Ok(l) = line {
+                    if let Some(version) = l.strip_prefix(GOPREFIX) {
+                        return Ok(version.into())
                     }
-                    _ => {}
                 }
             }
         }

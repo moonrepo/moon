@@ -23,15 +23,15 @@ default-members = ["crates/cli"]
 
 [workspace.dependencies]
 cached = "0.42.0"
-clap = "4.0.32"
-console = "0.15.4"
+clap = "4.1.4"
+console = "0.15.5"
 criterion = { version = "0.4.0", features = ["async_tokio"] }
 lazy_static = "1.4.0"
 petgraph = { version = "0.6.2", features = ["serde-1"] }
-reqwest = "0.11.13"
+reqwest = "0.11.14"
 rustc-hash = "1.1.0"
 serde = { version = "1.0.152", features = ["derive"] }
 serde_json = "1.0.91"
-serde_yaml = "0.9.16"
+serde_yaml = "0.9.17"
 thiserror = "1.0.38"
-tokio = { version = "1.24.1", features = ["full", "tracing"] }
+tokio = { version = "1.25.0", features = ["full", "tracing"] }

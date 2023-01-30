@@ -1,7 +1,8 @@
 use moon_logger::debug;
-use moon_utils::get_cache_dir;
 use moon_utils::semver::Version;
+use moon_utils::{get_cache_dir, is_ci, is_test_env};
 use serde::{Deserialize, Serialize};
+use std::env;
 use std::error::Error;
 use std::fs::{self, OpenOptions};
 use std::time::{Duration, SystemTime};
@@ -22,11 +23,20 @@ pub struct CheckState {
 pub async fn check_version(
     local_version_str: &str,
 ) -> Result<Option<String>, Box<dyn Error + Send + Sync>> {
+    if is_test_env() {
+        return Ok(None);
+    }
+
     debug!("Checking for new version of moon");
 
     let response = reqwest::Client::new()
         .get(CURRENT_VERSION_URL)
         .header("X-Moon-Version", local_version_str)
+        .header("X-Moon-CI", is_ci().to_string())
+        .header(
+            "X-Moon-ID",
+            env::var("MOONBASE_API_KEY").unwrap_or_default(),
+        )
         .send()
         .await?
         .text()
@@ -55,6 +65,7 @@ pub async fn check_version(
             .create(true)
             .open(&check_state_path)
             .unwrap();
+
         serde_json::to_writer(check_state, &CheckState { last_alert: now })?;
 
         return Ok(Some(data.current_version));

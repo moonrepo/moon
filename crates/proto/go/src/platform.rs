@@ -4,8 +4,8 @@ use std::fmt;
 
 // Not everything is supported at the moment...
 pub enum GoArch {
-    Amd64, // x86_64
-    Arm64, // Arm64
+    Amd64,  // x86_64
+    Arm64,  // Arm64
     Armv6l, // Arm V6
     I386,
     S390x,

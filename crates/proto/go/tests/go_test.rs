@@ -1,8 +1,6 @@
-use proto_core::{
-    Detector, Downloadable, Installable, Proto, Resolvable, Verifiable,
-};
-use proto_go::GoLanguage;
 use assert_fs::prelude::{FileWriteStr, PathChild};
+use proto_core::{Detector, Downloadable, Installable, Proto, Resolvable, Verifiable};
+use proto_go::GoLanguage;
 use std::fs;
 
 fn create_tool() -> (GoLanguage, assert_fs::TempDir) {

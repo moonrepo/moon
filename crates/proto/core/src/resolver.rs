@@ -65,6 +65,14 @@ impl VersionManifest {
             .get(alias)
             .ok_or_else(|| ProtoError::VersionUnknownAlias(alias.to_owned()))
     }
+
+    pub fn get_version(&self, version: &str) -> Result<&String, ProtoError> {
+        if let Some(entry) = self.versions.get(version) {
+            return Ok(&entry.version);
+        }
+
+        Err(ProtoError::VersionResolveFailed(version.to_owned()))
+    }
 }
 
 #[async_trait::async_trait]

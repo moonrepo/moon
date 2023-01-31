@@ -128,7 +128,7 @@ impl ShimBuilder {
             .as_ref()
             .unwrap()
             .join(get_shim_file_name(&self.name));
-            
+
         self.do_create(shim_path, false)
     }
 

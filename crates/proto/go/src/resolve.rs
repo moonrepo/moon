@@ -42,7 +42,15 @@ impl Resolvable<'_> for GoLanguage {
             }
         };
 
-        let raw = str::from_utf8(&output.stdout).expect("could not parse output from github");
+        let raw = match str::from_utf8(&output.stdout) {
+            Ok(o) => o,
+            Err(e) => {
+                return Err(ProtoError::DownloadFailed(
+                    "failed to read output from github".into(),
+                    e.to_string(),
+                ));
+            }
+        };
 
         for line in raw.split("\n") {
             let parts: Vec<&str> = line.split("\t").collect();

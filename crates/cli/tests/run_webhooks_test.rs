@@ -1,11 +1,9 @@
+use httpmock::prelude::*;
 use moon_config::NotifierConfig;
-use moon_notifier::WebhookPayload;
 use moon_test_utils::{create_sandbox_with_config, get_node_fixture_configs, Sandbox};
-use wiremock::matchers::{method, path};
-use wiremock::{Mock, MockServer, ResponseTemplate};
 
 fn sandbox(uri: String) -> Sandbox {
-    let (mut workspace_config, toolchain_config, projects_config) = get_node_fixture_configs();
+    let (mut workspace_config, toolchain_config, tasks_config) = get_node_fixture_configs();
 
     workspace_config.notifier = NotifierConfig {
         webhook_url: Some(format!("{}/webhook", uri)),
@@ -15,7 +13,7 @@ fn sandbox(uri: String) -> Sandbox {
         "node",
         Some(&workspace_config),
         Some(&toolchain_config),
-        Some(&projects_config),
+        Some(&tasks_config),
     );
 
     sandbox.enable_git();
@@ -24,36 +22,34 @@ fn sandbox(uri: String) -> Sandbox {
 
 #[tokio::test]
 async fn sends_webhooks() {
-    let server = MockServer::start().await;
+    let server = MockServer::start();
 
-    Mock::given(method("POST"))
-        .and(path("/webhook"))
-        .respond_with(ResponseTemplate::new(200))
-        .expect(19)
-        .mount(&server)
-        .await;
+    let mock = server.mock(|when, then| {
+        when.method(POST).path("/webhook");
+        then.status(200);
+    });
 
-    let sandbox = sandbox(server.uri());
+    let sandbox = sandbox(server.url(""));
 
     let assert = sandbox.run_moon(|cmd| {
         cmd.arg("run").arg("node:cjs");
     });
+
+    mock.assert_hits(19);
 
     assert.success();
 }
 
 #[tokio::test]
 async fn sends_webhooks_for_cache_events() {
-    let server = MockServer::start().await;
+    let server = MockServer::start();
 
-    Mock::given(method("POST"))
-        .and(path("/webhook"))
-        .respond_with(ResponseTemplate::new(200))
-        .expect(37)
-        .mount(&server)
-        .await;
+    let mock = server.mock(|when, then| {
+        when.method(POST).path("/webhook");
+        then.status(200);
+    });
 
-    let sandbox = sandbox(server.uri());
+    let sandbox = sandbox(server.url(""));
 
     sandbox.run_moon(|cmd| {
         cmd.arg("run").arg("node:cjs");
@@ -64,54 +60,46 @@ async fn sends_webhooks_for_cache_events() {
         cmd.arg("run").arg("node:cjs");
     });
 
+    mock.assert_hits(37);
+
     assert.success();
 }
 
 #[tokio::test]
 async fn doesnt_send_webhooks_if_first_fails() {
-    let server = MockServer::start().await;
+    let server = MockServer::start();
 
-    Mock::given(method("POST"))
-        .and(path("/webhook"))
-        .respond_with(ResponseTemplate::new(500))
-        .expect(1)
-        .mount(&server)
-        .await;
+    let mock = server.mock(|when, then| {
+        when.method(POST).path("/webhook");
+        then.status(500);
+    });
 
-    let sandbox = sandbox(server.uri());
+    let sandbox = sandbox(server.url(""));
 
     sandbox.run_moon(|cmd| {
         cmd.arg("run").arg("node:cjs");
     });
+
+    mock.assert_hits(1);
 }
 
 #[tokio::test]
 async fn all_webhooks_have_same_uuid() {
-    let server = MockServer::start().await;
+    let server = MockServer::start();
 
-    Mock::given(method("POST"))
-        .and(path("/webhook"))
-        .respond_with(ResponseTemplate::new(200))
-        .mount(&server)
-        .await;
+    let mock = server.mock(|when, then| {
+        when.method(POST)
+            .path("/webhook")
+            .json_body_partial(r#"{"uuid":"XXXX-XXXX-XXXX-XXXX"}"#);
 
-    let sandbox = sandbox(server.uri());
+        then.status(200);
+    });
+
+    let sandbox = sandbox(server.url(""));
 
     sandbox.run_moon(|cmd| {
         cmd.arg("run").arg("node:cjs");
     });
 
-    let received_requests = server.received_requests().await.unwrap();
-    let mut uuid = None;
-
-    for request in received_requests {
-        let payload: WebhookPayload<String> =
-            serde_json::from_str(&String::from_utf8(request.body).unwrap()).unwrap();
-
-        if uuid.is_none() {
-            uuid = Some(payload.uuid);
-        } else {
-            assert_eq!(&payload.uuid, uuid.as_ref().unwrap());
-        }
-    }
+    mock.assert_hits(19);
 }

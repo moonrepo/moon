@@ -1,7 +1,9 @@
 use moon_constants as constants;
 use moon_error::MoonError;
+use moon_utils::glob::GlobError;
 use moon_vcs::VcsError;
 use moonbase::MoonbaseError;
+use std::path::PathBuf;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -36,15 +38,14 @@ pub enum WorkspaceError {
     )]
     InvalidWorkspaceConfigFile(String),
 
-    #[error(
-        "Failed to validate <file>{}/{}</file> configuration file.\n\n{0}",
-        constants::CONFIG_DIRNAME,
-        constants::CONFIG_GLOBAL_PROJECT_FILENAME
-    )]
-    InvalidGlobalProjectConfigFile(String),
+    #[error("Failed to validate <file>{0}</file> configuration file.\n\n{1}")]
+    InvalidTasksConfigFile(PathBuf, String),
 
     #[error("Invalid moon version, unable to proceed. Found {0}, expected {1}.")]
     InvalidMoonVersion(String, String),
+
+    #[error(transparent)]
+    Glob(#[from] GlobError),
 
     #[error(transparent)]
     Moon(#[from] MoonError),

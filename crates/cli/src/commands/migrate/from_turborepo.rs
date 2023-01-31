@@ -1,7 +1,7 @@
 use super::check_dirty_repo;
 use crate::helpers::AnyError;
 use moon::{generate_project_graph, load_workspace};
-use moon_config::{PlatformType, ProjectConfig, RunnerConfig, TaskCommandArgs, TaskConfig};
+use moon_config::{InheritedTasksConfig, PlatformType, ProjectConfig, TaskCommandArgs, TaskConfig};
 use moon_constants as constants;
 use moon_logger::{info, warn};
 use moon_terminal::safe_exit;
@@ -42,17 +42,17 @@ pub fn extract_project_task_ids(key: &str) -> (Option<String>, String) {
     (None, key.to_owned())
 }
 
-pub fn convert_globals(turbo: &TurboJson, runner_config: &mut RunnerConfig) -> bool {
+pub fn convert_globals(turbo: &TurboJson, tasks_config: &mut InheritedTasksConfig) -> bool {
     let mut modified = false;
 
     if let Some(global_deps) = &turbo.global_dependencies {
-        runner_config.implicit_inputs.extend(global_deps.to_owned());
+        tasks_config.implicit_inputs.extend(global_deps.to_owned());
         modified = true;
     }
 
     if let Some(global_env) = &turbo.global_env {
         for env in global_env {
-            runner_config.implicit_inputs.push(format!("${}", env));
+            tasks_config.implicit_inputs.push(format!("${}", env));
         }
 
         modified = true;
@@ -104,14 +104,8 @@ pub fn convert_task(name: String, task: TurboTask) -> TaskConfig {
         let mut outputs = vec![];
 
         for output in turbo_outputs {
-            // We don't support globs at the moment
-            if output.contains('*') {
-                outputs.push(
-                    output
-                        .replace("/**/*", "")
-                        .replace("/**", "")
-                        .replace("/*", ""),
-                );
+            if output.ends_with("/**") {
+                outputs.push(format!("{}/*", output));
             } else {
                 outputs.push(output);
             }
@@ -150,21 +144,16 @@ pub async fn from_turborepo(skip_touched_files_check: &bool) -> Result<(), AnyEr
 
     let project_graph = generate_project_graph(&mut workspace).await?;
     let turbo_json: TurboJson = json::read(&turbo_file)?;
+    let mut node_tasks_config = InheritedTasksConfig::default();
+    let mut has_modified_global_tasks = false;
 
     // Convert globals first
-    if convert_globals(&turbo_json, &mut workspace.config.runner) {
-        yaml::write_with_config(
-            workspace
-                .root
-                .join(constants::CONFIG_DIRNAME)
-                .join(constants::CONFIG_WORKSPACE_FILENAME),
-            &workspace.config,
-        )?;
+    if convert_globals(&turbo_json, &mut node_tasks_config) {
+        has_modified_global_tasks = true;
     }
 
     // Convert tasks second
     let mut has_warned_root_tasks = false;
-    let mut has_modified_global_project = false;
     let mut modified_projects: FxHashMap<&PathBuf, ProjectConfig> = FxHashMap::default();
 
     for (id, task) in turbo_json.pipeline {
@@ -192,23 +181,22 @@ pub async fn from_turborepo(skip_touched_files_check: &bool) -> Result<(), AnyEr
                 }
             }
             (None, task_id) => {
-                workspace
-                    .projects_config
+                node_tasks_config
                     .tasks
                     .insert(task_id.clone(), convert_task(task_id, task));
-                has_modified_global_project = true;
+                has_modified_global_tasks = true;
             }
         }
     }
 
-    if has_modified_global_project {
-        yaml::write_with_config(
-            workspace
-                .root
-                .join(constants::CONFIG_DIRNAME)
-                .join(constants::CONFIG_GLOBAL_PROJECT_FILENAME),
-            &workspace.projects_config,
-        )?;
+    if has_modified_global_tasks {
+        let tasks_dir = workspace.root.join(constants::CONFIG_DIRNAME).join("tasks");
+
+        if !tasks_dir.exists() {
+            fs::create_dir_all(&tasks_dir)?;
+        }
+
+        yaml::write_with_config(tasks_dir.join("node.yml"), &node_tasks_config)?;
     }
 
     for (project_root, project_config) in modified_projects {
@@ -235,9 +223,9 @@ mod tests {
 
         #[test]
         fn converst_deps() {
-            let mut config = RunnerConfig {
+            let mut config = InheritedTasksConfig {
                 implicit_inputs: string_vec!["existing.txt"],
-                ..RunnerConfig::default()
+                ..InheritedTasksConfig::default()
             };
 
             convert_globals(
@@ -256,9 +244,9 @@ mod tests {
 
         #[test]
         fn converst_env() {
-            let mut config = RunnerConfig {
+            let mut config = InheritedTasksConfig {
                 implicit_inputs: string_vec!["$FOO"],
-                ..RunnerConfig::default()
+                ..InheritedTasksConfig::default()
             };
 
             convert_globals(
@@ -357,7 +345,7 @@ mod tests {
 
             assert_eq!(
                 config.outputs.unwrap(),
-                string_vec!["dir", "dir", "dir", "dir", "dir/sub"]
+                string_vec!["dir", "dir/**/*", "dir/**/*", "dir/*", "dir/*/sub"]
             );
         }
 

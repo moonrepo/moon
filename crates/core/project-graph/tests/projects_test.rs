@@ -3,13 +3,15 @@
 
 use moon::{generate_project_graph, load_workspace_from};
 use moon_config::{
-    GlobalProjectConfig, PlatformType, TaskCommandArgs, TaskConfig, TaskOptionsConfig,
+    InheritedTasksConfig, PlatformType, TaskCommandArgs, TaskConfig, TaskOptionsConfig,
     WorkspaceConfig, WorkspaceProjects,
 };
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
 use moon_target::Target;
-use moon_test_utils::{create_sandbox_with_config, get_tasks_fixture_configs, Sandbox};
+use moon_test_utils::{
+    create_sandbox, create_sandbox_with_config, get_tasks_fixture_configs, Sandbox,
+};
 use moon_utils::{glob, string_vec};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
@@ -21,7 +23,7 @@ async fn tasks_sandbox() -> (Sandbox, ProjectGraph) {
 
 async fn tasks_sandbox_with_config<C>(callback: C) -> (Sandbox, ProjectGraph)
 where
-    C: FnOnce(&mut WorkspaceConfig, &mut GlobalProjectConfig),
+    C: FnOnce(&mut WorkspaceConfig, &mut InheritedTasksConfig),
 {
     tasks_sandbox_internal(callback, |_| {}).await
 }
@@ -35,18 +37,18 @@ where
 
 async fn tasks_sandbox_internal<C, S>(cfg_callback: C, box_callback: S) -> (Sandbox, ProjectGraph)
 where
-    C: FnOnce(&mut WorkspaceConfig, &mut GlobalProjectConfig),
+    C: FnOnce(&mut WorkspaceConfig, &mut InheritedTasksConfig),
     S: FnOnce(&Sandbox),
 {
-    let (mut workspace_config, toolchain_config, mut projects_config) = get_tasks_fixture_configs();
+    let (mut workspace_config, toolchain_config, mut tasks_config) = get_tasks_fixture_configs();
 
-    cfg_callback(&mut workspace_config, &mut projects_config);
+    cfg_callback(&mut workspace_config, &mut tasks_config);
 
     let sandbox = create_sandbox_with_config(
         "tasks",
         Some(&workspace_config),
         Some(&toolchain_config),
-        Some(&projects_config),
+        Some(&tasks_config),
     );
 
     box_callback(&sandbox);
@@ -147,7 +149,6 @@ mod task_inheritance {
 
     mod merge_strategies {
         use super::*;
-        use moon_test_utils::pretty_assertions::assert_eq;
 
         fn stub_global_env_vars() -> FxHashMap<String, String> {
             FxHashMap::from_iter([
@@ -178,8 +179,8 @@ mod task_inheritance {
 
         #[tokio::test]
         async fn replace() {
-            let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, projects_config| {
-                projects_config
+            let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
+                tasks_config
                     .tasks
                     .insert("standard".into(), stub_global_task_config());
             })
@@ -191,23 +192,14 @@ mod task_inheritance {
             assert_eq!(task.command, "newcmd".to_string());
             assert_eq!(task.args, string_vec!["--b"]);
             assert_eq!(task.env, FxHashMap::from_iter([("KEY".into(), "b".into())]));
-            assert_eq!(
-                task.inputs,
-                string_vec![
-                    "b.*",
-                    "package.json",
-                    "/.moon/project.yml",
-                    "/.moon/toolchain.yml",
-                    "/.moon/workspace.yml",
-                ]
-            );
+            assert_eq!(task.inputs, string_vec!["b.*", "/.moon/*.yml",]);
             assert_eq!(task.outputs, string_vec!["b.ts"]);
         }
 
         #[tokio::test]
         async fn append() {
-            let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, projects_config| {
-                projects_config
+            let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
+                tasks_config
                     .tasks
                     .insert("standard".into(), stub_global_task_config());
             })
@@ -225,24 +217,14 @@ mod task_inheritance {
                     ("KEY".to_owned(), "b".to_owned()),
                 ])
             );
-            assert_eq!(
-                task.inputs,
-                string_vec![
-                    "a.*",
-                    "b.*",
-                    "package.json",
-                    "/.moon/project.yml",
-                    "/.moon/toolchain.yml",
-                    "/.moon/workspace.yml",
-                ]
-            );
+            assert_eq!(task.inputs, string_vec!["a.*", "b.*", "/.moon/*.yml",]);
             assert_eq!(task.outputs, string_vec!["a.ts", "b.ts"]);
         }
 
         #[tokio::test]
         async fn prepend() {
-            let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, projects_config| {
-                projects_config
+            let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
+                tasks_config
                     .tasks
                     .insert("standard".into(), stub_global_task_config());
             })
@@ -260,24 +242,14 @@ mod task_inheritance {
                     ("KEY".to_owned(), "a".to_owned()),
                 ])
             );
-            assert_eq!(
-                task.inputs,
-                string_vec![
-                    "b.*",
-                    "a.*",
-                    "package.json",
-                    "/.moon/project.yml",
-                    "/.moon/toolchain.yml",
-                    "/.moon/workspace.yml",
-                ]
-            );
+            assert_eq!(task.inputs, string_vec!["b.*", "a.*", "/.moon/*.yml",]);
             assert_eq!(task.outputs, string_vec!["b.ts", "a.ts"]);
         }
 
         #[tokio::test]
         async fn all() {
-            let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, projects_config| {
-                projects_config
+            let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
+                tasks_config
                     .tasks
                     .insert("standard".into(), stub_global_task_config());
             })
@@ -292,16 +264,7 @@ mod task_inheritance {
                 task.env,
                 FxHashMap::from_iter([("KEY".to_owned(), "b".to_owned()),])
             );
-            assert_eq!(
-                task.inputs,
-                string_vec![
-                    "b.*",
-                    "package.json",
-                    "/.moon/project.yml",
-                    "/.moon/toolchain.yml",
-                    "/.moon/workspace.yml",
-                ]
-            );
+            assert_eq!(task.inputs, string_vec!["b.*", "/.moon/*.yml",]);
             assert_eq!(task.outputs, string_vec!["a.ts", "b.ts"]);
         }
     }
@@ -316,7 +279,7 @@ mod task_inheritance {
                 ..WorkspaceConfig::default()
             };
 
-            let projects_config = GlobalProjectConfig {
+            let tasks_config = InheritedTasksConfig {
                 tasks: BTreeMap::from_iter([
                     (
                         "a".to_owned(),
@@ -343,14 +306,14 @@ mod task_inheritance {
                         },
                     ),
                 ]),
-                ..GlobalProjectConfig::default()
+                ..InheritedTasksConfig::default()
             };
 
             let sandbox = create_sandbox_with_config(
                 "task-inheritance",
                 Some(&workspace_config),
                 None,
-                Some(&projects_config),
+                Some(&tasks_config),
             );
 
             let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
@@ -420,6 +383,18 @@ mod task_inheritance {
         }
 
         #[tokio::test]
+        async fn exclude_scoped_inheritance() {
+            let sandbox = create_sandbox("config-inheritance/override");
+            let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+            let project_graph = generate_project_graph(&mut workspace).await.unwrap();
+
+            assert_eq!(
+                get_project_task_ids(project_graph.get("excluded").unwrap()),
+                string_vec![]
+            );
+        }
+
+        #[tokio::test]
         async fn rename() {
             let (_sandbox, project_graph) = tasks_inheritance_sandbox().await;
 
@@ -436,6 +411,27 @@ mod task_inheritance {
                 assert_eq!(task.id, id.to_owned());
                 assert_eq!(task.target.id, format!("rename:{}", id));
             }
+        }
+
+        #[tokio::test]
+        async fn rename_scoped_inheritance() {
+            let sandbox = create_sandbox("config-inheritance/override");
+            let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+            let project_graph = generate_project_graph(&mut workspace).await.unwrap();
+
+            assert_eq!(
+                get_project_task_ids(project_graph.get("renamed").unwrap()),
+                string_vec!["cmd"]
+            );
+
+            let task = project_graph
+                .get("renamed")
+                .unwrap()
+                .get_task("cmd")
+                .unwrap();
+
+            assert_eq!(task.id, "cmd");
+            assert_eq!(task.target.id, "renamed:cmd");
         }
 
         #[tokio::test]
@@ -645,9 +641,8 @@ mod task_expansion {
 
         #[tokio::test]
         async fn inherits_implicit_deps() {
-            let (_sandbox, project_graph) = tasks_sandbox_with_config(|workspace_config, _| {
-                workspace_config.runner.implicit_deps =
-                    string_vec!["build", "~:build", "project:task",]
+            let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
+                tasks_config.implicit_deps = string_vec!["build", "~:build", "project:task",]
             })
             .await;
 
@@ -691,8 +686,8 @@ mod task_expansion {
 
         #[tokio::test]
         async fn resolves_implicit_deps_parent_depends_on() {
-            let (_sandbox, project_graph) = tasks_sandbox_with_config(|workspace_config, _| {
-                workspace_config.runner.implicit_deps = string_vec!["^:build"]
+            let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
+                tasks_config.implicit_deps = string_vec!["^:build"]
             })
             .await;
 
@@ -712,8 +707,8 @@ mod task_expansion {
 
         #[tokio::test]
         async fn avoids_implicit_deps_matching_target() {
-            let (_sandbox, project_graph) = tasks_sandbox_with_config(|workspace_config, _| {
-                workspace_config.runner.implicit_deps = string_vec!["basic:build"]
+            let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
+                tasks_config.implicit_deps = string_vec!["basic:build"]
             })
             .await;
 
@@ -912,16 +907,79 @@ mod task_expansion {
                 ])
             );
         }
+
+        mod project_level {
+            use super::*;
+
+            #[tokio::test]
+            async fn inherits_by_default() {
+                let (_sandbox, project_graph) = tasks_sandbox().await;
+
+                let project = project_graph.get("expandEnvProject").unwrap();
+                let task = project.get_task("inherit").unwrap();
+
+                assert_eq!(
+                    task.env,
+                    FxHashMap::from_iter([("FOO".to_owned(), "project-level".to_owned())])
+                );
+            }
+
+            #[tokio::test]
+            async fn doesnt_override_task_level() {
+                let (_sandbox, project_graph) = tasks_sandbox().await;
+
+                let project = project_graph.get("expandEnvProject").unwrap();
+                let task = project.get_task("env").unwrap();
+
+                assert_eq!(
+                    task.env,
+                    FxHashMap::from_iter([("FOO".to_owned(), "task-level".to_owned())])
+                );
+            }
+
+            #[tokio::test]
+            async fn doesnt_override_env_file() {
+                let (_sandbox, project_graph) = tasks_sandbox().await;
+
+                let project = project_graph.get("expandEnvProject").unwrap();
+                let task = project.get_task("envFile").unwrap();
+
+                assert_eq!(
+                    task.env,
+                    FxHashMap::from_iter([
+                        ("FOO".to_owned(), "env-file".to_owned()),
+                        ("BAR".to_owned(), "123".to_owned())
+                    ])
+                );
+            }
+
+            #[tokio::test]
+            async fn supports_all_patterns_in_parallel() {
+                let (_sandbox, project_graph) = tasks_sandbox().await;
+
+                let project = project_graph.get("expandEnvProject").unwrap();
+                let task = project.get_task("all").unwrap();
+
+                assert_eq!(
+                    task.env,
+                    FxHashMap::from_iter([
+                        ("FOO".to_owned(), "task-level".to_owned()),
+                        ("BAR".to_owned(), "123".to_owned()),
+                        ("BAZ".to_owned(), "true".to_owned()),
+                    ])
+                );
+            }
+        }
     }
 
     mod expand_inputs {
         use super::*;
+        use moon_test_utils::pretty_assertions::assert_eq;
 
         #[tokio::test]
         async fn inherits_implicit_inputs() {
-            let (_sandbox, project_graph) = tasks_sandbox_with_config(|workspace_config, _| {
-                workspace_config.runner.implicit_inputs =
-                    string_vec!["package.json", "/.moon/workspace.yml"]
+            let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
+                tasks_config.implicit_inputs = string_vec!["package.json"];
             })
             .await;
 
@@ -932,7 +990,7 @@ mod task_expansion {
                     .get_task("a")
                     .unwrap()
                     .inputs,
-                string_vec!["a.ts", "package.json", "/.moon/workspace.yml"]
+                string_vec!["a.ts", "package.json", "/.moon/*.yml"]
             );
 
             assert_eq!(
@@ -942,14 +1000,14 @@ mod task_expansion {
                     .get_task("c")
                     .unwrap()
                     .inputs,
-                string_vec!["**/*", "package.json", "/.moon/workspace.yml"]
+                string_vec!["**/*", "package.json", "/.moon/*.yml"]
             );
         }
 
         #[tokio::test]
         async fn inherits_implicit_inputs_env_vars() {
-            let (_sandbox, project_graph) = tasks_sandbox_with_config(|workspace_config, _| {
-                workspace_config.runner.implicit_inputs = string_vec!["$FOO", "$BAR"]
+            let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
+                tasks_config.implicit_inputs = string_vec!["$FOO", "$BAR"]
             })
             .await;
 
@@ -984,6 +1042,7 @@ mod task_expansion {
             assert_eq!(
                 task.input_globs,
                 FxHashSet::from_iter([
+                    glob::normalize(sandbox.path().join(".moon/*.yml")).unwrap(),
                     glob::normalize(project.root.join("**/*.{ts,tsx}")).unwrap(),
                     glob::normalize(project.root.join("*.js")).unwrap()
                 ]),
@@ -993,11 +1052,7 @@ mod task_expansion {
                 FxHashSet::from_iter(task.input_paths.iter().map(PathBuf::from));
             let b: FxHashSet<PathBuf> = FxHashSet::from_iter(
                 vec![
-                    sandbox.path().join(".moon/workspace.yml"),
-                    sandbox.path().join(".moon/toolchain.yml"),
-                    sandbox.path().join(".moon/project.yml"),
                     sandbox.path().join("package.json"),
-                    project.root.join("package.json"),
                     project.root.join("file.ts"),
                     project.root.join("dir"),
                     project.root.join("dir/subdir"),
@@ -1066,21 +1121,22 @@ mod task_expansion {
             let task = project.get_task("outputs").unwrap();
 
             assert!(task.output_paths.contains(&project.root.join("dir")));
-        }
 
-        #[tokio::test]
-        #[should_panic(expected = "NoOutputGlob")]
-        async fn errors_for_globs() {
-            tasks_sandbox_with_setup(|sandbox| {
-                sandbox.create_file(
-                    "expand-outputs/moon.yml",
-                    r#"tasks:
-                        command:
-                            outputs:
-                                - 'glob/*'"#,
-                );
-            })
-            .await;
+            let task = project.get_task("outputsGlobs").unwrap();
+
+            if cfg!(windows) {
+                assert!(task
+                    .output_globs
+                    .contains(&glob::normalize(project.root.join("dir/**/*.js")).unwrap()));
+            } else {
+                assert!(task.output_globs.contains(
+                    &project
+                        .root
+                        .join("dir/**/*.js")
+                        .to_string_lossy()
+                        .to_string()
+                ));
+            }
         }
     }
 }
@@ -1095,7 +1151,7 @@ mod detection {
             ..WorkspaceConfig::default()
         };
 
-        let projects_config = GlobalProjectConfig {
+        let tasks_config = InheritedTasksConfig {
             tasks: BTreeMap::from_iter([(
                 "command".to_owned(),
                 TaskConfig {
@@ -1103,14 +1159,14 @@ mod detection {
                     ..TaskConfig::default()
                 },
             )]),
-            ..GlobalProjectConfig::default()
+            ..InheritedTasksConfig::default()
         };
 
         let sandbox = create_sandbox_with_config(
             "project-graph/langs",
             Some(&workspace_config),
             None,
-            Some(&projects_config),
+            Some(&tasks_config),
         );
 
         let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();

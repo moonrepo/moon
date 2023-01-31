@@ -27,28 +27,68 @@ Tasks are categorized into 1 of the following types based on their configured pa
 
 ## Configuration
 
-Tasks can be configured per project through [`moon.yml`](../config/project), or for all projects
-through [`.moon/project.yml`](../config/global-project).
+Tasks can be configured per project through [`moon.yml`](../config/project), or for many projects
+through [`.moon/tasks.yml`][tasks].
 
 ## Inheritance
 
 Unlike other build systems that require the same tasks to be repeatedly defined for _every_ project,
-moon uses an inheritance model where tasks are defined once at the top-level, and are then inherited
-by _all_ projects.
+moon uses an inheritance model where tasks can be defined once at the workspace-level, and are then
+inherited by _many or all_ projects.
 
-Top-level tasks (also known as global tasks) are defined in
-[`.moon/project.yml`](../config/global-project), and are inherited by default. However, projects are
-able to include, exclude, or rename inherited tasks using the
+Workspace-level tasks (also known as global tasks) are defined in [`.moon/tasks.yml`][tasks] or
+[`.moon/tasks/*.yml`][tasks], and are inherited by default. However, projects are able to include,
+exclude, or rename inherited tasks using the
 [`workspace.inheritedTasks`](../config/project#inheritedtasks) in [`moon.yml`](../config/project).
+
+### Scope by project language and type
+
+By default tasks defined in [`.moon/tasks.yml`][tasks] will be inherited by _all_ projects. This
+approach works well when a monorepo is comprised of a single programming language, but breaks down
+quickly in multi-language setups.
+
+To support these complex repositories, we support scoped tasks with [`.moon/tasks/*.yml`][tasks],
+where `*.yml` maps to a project based on a combination of its [language][language] and [type][type].
+This enables you to easily declare tasks for "JavaScript projects", "Go applications", "Ruby
+libraries", so on and so forth.
+
+When resolving configuration files, moon will locate and _shallow_ merge files in the following
+order, from widest scope to narrowest scope:
+
+- `.moon/tasks.yml` - All projects.
+- `.moon/tasks/<language>.yml` - Projects with a matching [`language`][language] setting.
+- `.moon/tasks/<language>-<type>.yml` - Projects with matching [`language`][language] and
+  [`type`][type] settings.
+
+As mentioned above, all of these files are shallow merged into a single "global tasks" configuration
+that is unique per-project. Merging **does not** utilize the [merge strategies](#merge-strategies)
+below, as those strategies are only utilized when merging global and local tasks.
+
+#### JavaScript platforms
+
+Unlike most languages that have 1 runtime, JavaScript has 3 (Node.js, Deno, Bun), and we must
+support repositories that are comprised of any combination of these 3. As such, JavaScript (and
+TypeScript) based projects have a special lookup order using
+[`platform`](../config/project#platform) to account for this:
+
+- `.moon/tasks.yml`
+- `.moon/tasks/<platform>.yml`
+- `.moon/tasks/<language>.yml`
+- `.moon/tasks/<platform>-<type>.yml`
+- `.moon/tasks/<language>-<type>.yml`
+
+For example, `node.yml` would be inherited for Node.js projects, `bun-library.yml` for Bun
+libraries, and `deno-application.yml` for Deno applications. While `javascript.yml`,
+`typescript-library.yml`, etc, will be inherited for all platforms.
 
 ### Merge strategies
 
-When a [global task](../config/global-project#tasks) and [local task](../config/project#tasks) of
-the same name exist, they are merged into a single task. To accomplish this, one of many
+When a [global task](../config/tasks#tasks) and [local task](../config/project#tasks) of the same
+name exist, they are merged into a single task. To accomplish this, one of many
 [merge strategies](../config/project#options) can be used.
 
 Merging is applied to the parameters [`args`](../config/project#args),
-[`deps`](../config/project#deps), [`env`](../config/project#env),
+[`deps`](../config/project#deps), [`env`](../config/project#env-1),
 [`inputs`](../config/project#inputs), and [`outputs`](../config/project#outputs), using the
 [`mergeArgs`](../config/project#mergeargs), [`mergeDeps`](../config/project#mergedeps),
 [`mergeEnv`](../config/project#mergeenv), [`mergeInputs`](../config/project#mergeinputs) and
@@ -117,3 +157,7 @@ tasks:
       mergeDeps: 'prepend'
       mergeInputs: 'replace'
 ```
+
+[tasks]: ../config/tasks
+[language]: ../config/project#language
+[type]: ../config/project#type

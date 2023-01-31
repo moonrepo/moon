@@ -25,10 +25,12 @@ use app::{App, Commands, DockerCommands, MigrateCommands, NodeCommands, QueryCom
 use clap::Parser;
 use console::Term;
 use enums::{CacheMode, LogLevel};
+use moon_launchpad::check_version;
 use moon_logger::{color, debug, LevelFilter, Logger};
 use moon_terminal::ExtendedTerm;
 use std::env;
 use std::path::PathBuf;
+use tokio::task;
 
 pub use app::BIN_NAME;
 
@@ -80,6 +82,9 @@ pub async fn run_cli() {
     setup_colors(args.color);
     setup_logging(&args.log, args.log_file);
     setup_caching(&args.cache);
+
+    let version = env!("CARGO_PKG_VERSION");
+    let version_check = task::spawn(check_version(version));
 
     // Match and run subcommand
     let result = match &args.command {
@@ -249,6 +254,24 @@ pub async fn run_cli() {
         Commands::Setup => setup().await,
         Commands::Teardown => teardown().await,
     };
+
+    match version_check.await {
+        Ok(Ok(Some(newer_version))) => {
+            println!(
+                "There's a new version of moon! {newer_version}. Go to https://moonrepo.dev/docs/install to install",
+            );
+        }
+        Ok(Err(error)) => {
+            debug!(
+                "Failed to get current version of the cli from remote: {}",
+                error
+            );
+        }
+        Err(error) => {
+            debug!("Failed to spawn check for current version: {}", error);
+        }
+        Ok(Ok(None)) => {}
+    }
 
     if let Err(error) = result {
         let error_message = error.to_string();

@@ -6,6 +6,7 @@ use flate2::write::GzEncoder;
 use flate2::Compression;
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, debug, trace};
+use moon_utils::{fs, glob, path};
 use rustc_hash::FxHashMap;
 use std::fs::File;
 use std::path::{Path, PathBuf};
@@ -22,6 +23,8 @@ pub struct TarArchiver<'l> {
 
     // relative file in tarball -> absolute file path to source
     sources: FxHashMap<String, PathBuf>,
+
+    source_globs: FxHashMap<String, String>,
 }
 
 impl<'l> TarArchiver<'l> {
@@ -31,21 +34,25 @@ impl<'l> TarArchiver<'l> {
             output_file,
             prefix: "",
             sources: FxHashMap::default(),
+            source_globs: FxHashMap::default(),
         }
     }
 
     pub fn add_source<P: AsRef<Path>>(&mut self, source: P, name: Option<&str>) -> &mut Self {
         let source = source.as_ref();
         let name = match name {
-            Some(n) => n,
-            None => source
-                .file_name()
-                .unwrap_or_default()
-                .to_str()
-                .unwrap_or_default(),
+            Some(n) => n.to_owned(),
+            None => fs::file_name(source),
         };
 
-        self.sources.insert(name.to_owned(), source.to_path_buf());
+        self.sources.insert(name, source.to_path_buf());
+        self
+    }
+
+    pub fn add_source_glob(&mut self, glob: &str, name: Option<&str>) -> &mut Self {
+        let name = name.unwrap_or_default().to_owned();
+
+        self.source_globs.insert(name, glob.to_owned());
         self
     }
 
@@ -101,6 +108,25 @@ impl<'l> TarArchiver<'l> {
             }
         }
 
+        for (file_prefix, glob) in &self.source_globs {
+            trace!(
+                target: LOG_TARGET,
+                "Packing glob {}",
+                color::path(self.input_root.join(glob))
+            );
+
+            for file in glob::walk_files(self.input_root, &[glob])? {
+                let mut fh =
+                    File::open(&file).map_err(|e| map_io_to_fs_error(e, file.to_path_buf()))?;
+                let file_name = path::to_string(file.strip_prefix(self.input_root).unwrap())?;
+
+                archive.append_file(
+                    prepend_name(&prepend_name(&file_name, file_prefix), self.prefix),
+                    &mut fh,
+                )?;
+            }
+        }
+
         archive.finish()?;
 
         Ok(())
@@ -122,7 +148,11 @@ pub fn tar<I: AsRef<Path>, O: AsRef<Path>>(
     }
 
     for file in files {
-        tar.add_source(input_root.join(file), Some(file));
+        if glob::is_glob(file) {
+            tar.add_source_glob(file, None);
+        } else {
+            tar.add_source(input_root.join(file), Some(file));
+        }
     }
 
     tar.pack()?;

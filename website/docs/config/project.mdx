@@ -152,6 +152,18 @@ type: 'application'
 
 ## Tasks
 
+## `env`
+
+<HeadingApiLink to="/api/types/interface/ProjectConfig#env" />
+
+The `env` field is map of strings that are passed as environment variables to _all tasks_ within the
+current project. Project-level variables will not override task-level variables of the same name.
+
+```yaml title="moon.yml" {1,2}
+env:
+  NODE_ENV: 'production'
+```
+
 ## `fileGroups`
 
 <HeadingApiLink to="/api/types/interface/ProjectConfig#fileGroups" />
@@ -160,12 +172,12 @@ Defines [file groups](../concepts/file-group) to be used by local tasks. By defa
 _is not required_ for the following reasons:
 
 - File groups are an optional feature, and are designed for advanced use cases.
-- File groups defined in [`.moon/project.yml`](./global-project) will be inherited by all projects.
+- File groups defined in [`.moon/tasks.yml`](./tasks) will be inherited by all projects.
 
 When defined this setting requires a map, where the key is the file group name, and the value is a
 list of [globs or paths](../concepts/file-pattern). Globs and paths are
 [relative to a project](../concepts/file-pattern#project-relative) (even when defined
-[globally](./global-project)).
+[globally](./tasks)).
 
 ```yaml title="moon.yml"
 fileGroups:
@@ -259,7 +271,7 @@ For interoperability reasons, the following command names have special handling.
 
 The `args` field is a collection of _additional_ arguments to pass to the command line when
 executing the task. This field exists purely to provide arguments for
-[inherited tasks](./global-project#tasks).
+[inherited tasks](./tasks#tasks).
 
 This setting can be defined using a string, or an array of strings. We suggest using arrays when
 dealing with many args, or the args string cannot be parsed easily.
@@ -338,8 +350,9 @@ defined, then all files within a project are considered an input (`**/*`).
 
 Inputs support the following source types:
 
-- Environment variables (must start with a `$`). <VersionLabel version="0.9" />
-- [Project and workspace relative file patterns](../concepts/file-pattern#project-relative)
+- Environment variables (must start with a `$`) <VersionLabel version="0.9" />
+- Files, folders, globs
+  ([project and workspace relative file patterns](../concepts/file-pattern#project-relative))
 
 ```yaml title="moon.yml" {4-10}
 tasks:
@@ -396,12 +409,11 @@ tasks:
 
 <HeadingApiLink to="/api/types/interface/TaskConfig#outputs" />
 
-The `outputs` field is a list of files and folders that are _created_ as a result of executing this
-task, excluding internal cache files that are created from the underlying command (for example,
-`.eslintcache`).
-
-Outputs are necessary for [incremental caching and hydration](../concepts/cache). If you'd prefer to
-avoid that functionality, omit this field.
+The `outputs` field is a list of files and folders (using
+[project relative file patterns](../concepts/file-pattern#project-relative)) that are _created_ as a
+result of executing this task, typically from a build or compilation related task. Outputs are
+necessary for [incremental caching and hydration](../concepts/cache). If you'd prefer to avoid that
+functionality, omit this field.
 
 ```yaml title="moon.yml" {4-6}
 tasks:
@@ -412,7 +424,23 @@ tasks:
       - 'build/'
 ```
 
-> Outputs require [project relative file patterns](../concepts/file-pattern#project-relative).
+Globs can also be used if you'd like to restrict which files are cached. For example, when building
+a JavaScript project, you may want to include `.js` files, but exclude `.map` and other files.
+
+```yaml title="moon.yml" {4,5}
+tasks:
+  build:
+    command: 'webpack'
+    outputs:
+      - 'build/**/*.js'
+```
+
+:::caution
+
+When using globs and moon hydrates an output (a cache hit), all files not matching the glob will be
+**deleted**. Ensure that all files critical for the build to function correctly are included.
+
+:::
 
 ### `options`
 
@@ -485,8 +513,8 @@ tasks:
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#envFile" />
 
 A boolean or path to a project relative file (also know as dotenv file) that defines a collection of
-[environment variables](#env) for the current task. Variables will be loaded on project creation,
-but will _not_ override those defined in [`env`](#env).
+[environment variables](#env-1) for the current task. Variables will be loaded on project creation,
+but will _not_ override those defined in [`env`](#env-1).
 
 ```yaml title="moon.yml" {6}
 tasks:
@@ -517,8 +545,8 @@ an inherited task. Defaults to "append".
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#mergeEnv" />
 
-The [strategy](../concepts/task#merge-strategies) to use when merging the [`env`](#env) map with an
-inherited task. Defaults to "append".
+The [strategy](../concepts/task#merge-strategies) to use when merging the [`env`](#env-1) map with
+an inherited task. Defaults to "append".
 
 #### `mergeInputs`
 
@@ -631,9 +659,9 @@ The `platform` field defines the platform the command runs on, where to locate i
 which tool to execute it with. By default moon will set to a value based on the project's
 [`language`](#language).
 
-- `node` - Command is a binary within node modules and will be executed with Node.js.
+- `node` - Command is a binary within `node_modules` and will be executed with Node.js.
 - `system` - Command is expected to exist within the system's environment / user's shell.
-- `unknown` - When not inferred.
+- `unknown` - When not configured or inferred.
 
 ```yaml title="moon.yml" {4}
 tasks:
@@ -690,7 +718,7 @@ toolchain:
 
 <HeadingApiLink to="/api/types/interface/ProjectWorkspaceConfig#inheritedTasks" />
 
-Provides a layer of control when inheriting tasks from [`.moon/project.yml`](./global-project).
+Provides a layer of control when inheriting tasks from [`.moon/tasks.yml`](./tasks).
 
 #### `exclude`
 

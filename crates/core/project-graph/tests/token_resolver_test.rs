@@ -1,5 +1,4 @@
-use moon_config::PlatformType;
-use moon_config::{GlobalProjectConfig, ProjectLanguage, ProjectType, TaskConfig};
+use moon_config::{InheritedTasksManager, PlatformType, ProjectLanguage, ProjectType, TaskConfig};
 use moon_project::Project;
 use moon_project_graph::{TokenContext, TokenResolver};
 use moon_target::Target;
@@ -58,7 +57,8 @@ fn create_project(workspace_root: &Path) -> Project {
         "project",
         "files-and-dirs",
         workspace_root,
-        &GlobalProjectConfig::default(),
+        &InheritedTasksManager::default(),
+        |_| ProjectLanguage::Unknown,
     )
     .unwrap();
     project.file_groups = create_file_groups();
@@ -84,7 +84,12 @@ pub fn expand_task(project: &Project, task: &mut Task) {
     }
 
     for output in &task.outputs {
-        task.output_paths.insert(project.root.join(output));
+        if glob::is_glob(output) {
+            task.output_globs
+                .insert(glob::normalize(project.root.join(output)).unwrap());
+        } else {
+            task.output_paths.insert(project.root.join(output));
+        }
     }
 }
 
@@ -586,6 +591,26 @@ mod resolve_inputs {
                 .resolve(&string_vec!["@root(static)"], &task)
                 .unwrap(),
             (vec![project.root.join("dir")], vec![]),
+        );
+    }
+
+    #[test]
+    fn converts_naked_dir_to_glob() {
+        let workspace_root = get_workspace_root();
+        let project = create_project(&workspace_root);
+        let resolver = TokenResolver::new(TokenContext::Inputs, &project, &workspace_root);
+        let task = create_task(None);
+
+        assert_eq!(
+            resolver.resolve(&string_vec!["dir"], &task).unwrap(),
+            (
+                vec![],
+                vec![if cfg!(windows) {
+                    glob::normalize(project.root.join("dir/**/*")).unwrap()
+                } else {
+                    project.root.join("dir/**/*").to_string_lossy().to_string()
+                }]
+            ),
         );
     }
 }

@@ -496,6 +496,8 @@ impl Command {
         }
 
         if self.has_input() {
+            let input_line = self.get_input_line();
+
             command_line = format!(
                 "{}{}{}",
                 command_line,
@@ -504,7 +506,11 @@ impl Command {
                 } else {
                     " - "
                 },
-                self.get_input_line().replace('\n', " ")
+                if input_line.len() > 200 {
+                    "(truncated files list)".into()
+                } else {
+                    input_line.replace('\n', " ")
+                }
             );
         }
 

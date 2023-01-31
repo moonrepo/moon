@@ -1,6 +1,7 @@
 import type { Platform } from './common';
 import type {
 	DependencyConfig,
+	InheritedTasksConfig,
 	ProjectConfig,
 	ProjectLanguage,
 	ProjectType,
@@ -43,6 +44,7 @@ export interface Task {
 	inputVars: string[];
 	options: TaskOptions;
 	outputs: string[];
+	outputGlobs: string[];
 	outputPaths: string[];
 	platform: Platform;
 	target: string;
@@ -59,6 +61,7 @@ export interface Project {
 	dependencies: Record<string, ProjectDependency>;
 	fileGroups: Record<string, FileGroup>;
 	id: string;
+	inheritedConfig: InheritedTasksConfig;
 	language: ProjectLanguage;
 	root: string;
 	source: string;

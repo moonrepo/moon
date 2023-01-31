@@ -1,0 +1,3 @@
+tasks:
+  rust:
+    command: rust

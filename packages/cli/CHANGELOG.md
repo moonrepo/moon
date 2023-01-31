@@ -1,5 +1,42 @@
 # Changelog
 
+#### 0.23.1
+
+#### 🐞 Fixes
+
+- Fixed an issue where scoped tasks were not being inherited for projects that relied on language
+  detection.
+
+#### 0.23.0
+
+#### 💥 Breaking
+
+- Renamed `.moon/project.yml` to `.moon/tasks.yml`.
+- Moved `runner.implicitDeps` from `.moon/workspace.yml` to `.moon/tasks.yml` as `implicitDeps`.
+- Moved `runner.implicitInputs` from `.moon/workspace.yml` to `.moon/tasks.yml` as `implicitInputs`.
+
+#### 🚀 Updates
+
+- We've improved our task inheritance model to support scoped inheritance based on a project's
+  `language` and `type`.
+  - Now supports `.moon/tasks/<language>.yml` and `.moon/tasks/<language>-<type>.yml` configuration
+    files.
+- Added a top-level `env` setting to `moon.yml`.
+- Updated task `outputs` to support globs.
+- Updated `moon migrate from-turborepo` to preserve globs in outputs.
+- Updated project graph to no longer cache when there's no VCS root.
+- Updated pnpm to use the new `pnpm dedupe` command when the version is >= 7.26.0.
+
+#### 🐞 Fixes
+
+- Fixed an issue where directories in task `inputs` not using `**/*` would crash git.
+- Fixed an issue where the project graph cache was not always resetting based on changes.
+- Fixed an issue where run report action durations were innacurate.
+
+#### ⚙️ Internal
+
+- Updated our internal hasher to also take into account untracked files when hashing a directory.
+
 #### 0.22.0
 
 #### 💥 Breaking

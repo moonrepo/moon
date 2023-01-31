@@ -1,6 +1,6 @@
 use moon_error::MoonError;
 use moon_platform_runtime::Runtime;
-use proto_error::ProtoError;
+use proto::ProtoError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]

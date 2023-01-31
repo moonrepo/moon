@@ -8,6 +8,6 @@ tasks:
     deps:
     - ^:build
     outputs:
-    - build
+    - build/**/*
     platform: node
 

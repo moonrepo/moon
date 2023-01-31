@@ -6,7 +6,7 @@ sidebar_label: TypeScript
 import AddDepsTabs from '@site/src/components/AddDepsTabs';
 import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 
-<HeadingApiLink to="https://github.com/moonrepo/examples/blob/master/.moon/project.yml#L95" />
+<HeadingApiLink to="https://github.com/moonrepo/examples/blob/master/.moon/tasks/node.yml#L95" />
 
 In this guide, you'll learn how to integrate [TypeScript](https://eslint.org/) into moon. We'll be
 using [project references](../javascript/typescript-project-refs), as it ensures that only affected
@@ -20,9 +20,9 @@ using the same version across the entire repository.
 ## Setup
 
 Since typechecking is a universal workflow, add a `typecheck` task to
-[`.moon/project.yml`](../../config/global-project) with the following parameters.
+[`.moon/tasks/node.yml`](../../config/tasks) with the following parameters.
 
-```yaml title=".moon/project.yml"
+```yaml title=".moon/tasks/node.yml"
 tasks:
 	typecheck:
 		command:

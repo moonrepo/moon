@@ -16,12 +16,12 @@ use moon_test_utils::{
 
 #[test]
 fn invalid_tool() {
-    let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
+    let (workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
     let sandbox = create_sandbox_with_config(
         "cases",
         Some(&workspace_config),
         Some(&toolchain_config),
-        Some(&projects_config),
+        Some(&tasks_config),
     );
 
     let assert = sandbox.run_moon(|cmd| {
@@ -32,19 +32,21 @@ fn invalid_tool() {
         .failure()
         .code(2)
         .stdout("")
-        .stderr(predicate::str::contains("'unknown' isn't a valid value"));
+        .stderr(predicate::str::contains(
+            "invalid value 'unknown' for '<TOOL>'",
+        ));
 }
 
 // We use a different Node.js version as to not conflict with other tests!
 
 #[test]
 fn not_configured() {
-    let (workspace_config, toolchain_config, projects_config) = get_cases_fixture_configs();
+    let (workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
     let sandbox = create_sandbox_with_config(
         "cases",
         Some(&workspace_config),
         Some(&toolchain_config),
-        Some(&projects_config),
+        Some(&tasks_config),
     );
 
     let assert = sandbox.run_moon(|cmd| {

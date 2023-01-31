@@ -9,7 +9,7 @@ pub fn is_default<T: Default + PartialEq>(value: &T) -> bool {
 }
 
 pub fn is_default_true(value: &bool) -> bool {
-    *value == true
+    *value
 }
 
 // Validate the value is a valid semver version/range.
@@ -141,7 +141,7 @@ pub fn validate_url<K: AsRef<str>, V: AsRef<str>>(
         ));
     }
 
-    if https_only && !value.starts_with("https://") {
+    if https_only && !value.starts_with("https://") && !value.contains("127.0.0.1") {
         return Err(create_validation_error(
             "invalid_https_url",
             key,

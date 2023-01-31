@@ -9,14 +9,14 @@ use moon_utils::string_vec;
 use rustc_hash::FxHashMap;
 
 async fn get_aliases_graph() -> (ProjectGraph, Sandbox) {
-    let (workspace_config, toolchain_config, projects_config) =
+    let (workspace_config, toolchain_config, tasks_config) =
         get_project_graph_aliases_fixture_configs();
 
     let sandbox = create_sandbox_with_config(
         "project-graph/aliases",
         Some(&workspace_config),
         Some(&toolchain_config),
-        Some(&projects_config),
+        Some(&tasks_config),
     );
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
@@ -25,7 +25,7 @@ async fn get_aliases_graph() -> (ProjectGraph, Sandbox) {
     (graph, sandbox)
 }
 
-async fn get_dependencies_graph() -> (ProjectGraph, Sandbox) {
+async fn get_dependencies_graph(enable_git: bool) -> (ProjectGraph, Sandbox) {
     let workspace_config = WorkspaceConfig {
         projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
             ("a".to_owned(), "a".to_owned()),
@@ -42,6 +42,10 @@ async fn get_dependencies_graph() -> (ProjectGraph, Sandbox) {
         None,
         None,
     );
+
+    if enable_git {
+        sandbox.enable_git();
+    }
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
     let graph = generate_project_graph(&mut workspace).await.unwrap();
@@ -109,7 +113,7 @@ mod caching {
 
     #[tokio::test]
     async fn caches_and_hashes_projects_state() {
-        let (_, sandbox) = get_dependencies_graph().await;
+        let (_, sandbox) = get_dependencies_graph(true).await;
         let state_path = sandbox.path().join(".moon/cache/states/projects.json");
         let graph_path = sandbox.path().join(".moon/cache/states/projectGraph.json");
 
@@ -122,7 +126,7 @@ mod caching {
         assert_eq!(state.last_glob_time, 0);
         assert_eq!(
             state.last_hash,
-            "2c5bca2c7e6e42730134edb68fa01461d95216f7742799daa1f1314c8d7e207e"
+            "f142a8f9dc18b06a35a5c01a78b8e62ca36d23fd306530631ebab648e481fe35"
         );
         assert_eq!(
             state.projects,
@@ -139,6 +143,21 @@ mod caching {
             .join(".moon/cache/hashes")
             .join(format!("{}.json", state.last_hash))
             .exists());
+    }
+
+    #[tokio::test]
+    async fn doesnt_cache_if_no_vcs() {
+        let (_, sandbox) = get_dependencies_graph(false).await;
+        sandbox.debug_files();
+        let state_path = sandbox.path().join(".moon/cache/states/projects.json");
+        let graph_path = sandbox.path().join(".moon/cache/states/projectGraph.json");
+
+        assert!(state_path.exists());
+        assert!(!graph_path.exists());
+
+        let state = ProjectsState::load(state_path).unwrap();
+
+        assert_eq!(state.last_hash, "");
     }
 }
 
@@ -199,7 +218,7 @@ mod get_dependencies_of {
 
     #[tokio::test]
     async fn returns_dep_list() {
-        let (graph, _sandbox) = get_dependencies_graph().await;
+        let (graph, _sandbox) = get_dependencies_graph(false).await;
 
         let a = graph.get("a").unwrap();
         let b = graph.get("b").unwrap();
@@ -244,7 +263,7 @@ mod to_dot {
 
     #[tokio::test]
     async fn renders_tree() {
-        let (graph, _sandbox) = get_dependencies_graph().await;
+        let (graph, _sandbox) = get_dependencies_graph(false).await;
 
         assert_snapshot!(graph.to_dot());
     }

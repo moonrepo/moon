@@ -6,7 +6,7 @@ use moon_config::{
 };
 use moon_logger::{color, debug, trace, Logable};
 use moon_target::{Target, TargetError};
-use moon_utils::{glob, string_vec};
+use moon_utils::glob;
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -30,7 +30,7 @@ pub enum TaskType {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase")]
 pub struct Task {
     pub args: Vec<String>,
 
@@ -56,6 +56,8 @@ pub struct Task {
     pub options: TaskOptions,
 
     pub outputs: Vec<FilePath>,
+
+    pub output_globs: FxHashSet<FileGlob>,
 
     pub output_paths: FxHashSet<PathBuf>,
 
@@ -91,24 +93,31 @@ impl Task {
             color::shell(&command)
         );
 
-        let task = Task {
+        let mut task = Task {
             args,
             command,
             deps: Task::create_dep_targets(&cloned_config.deps.unwrap_or_default())?,
             env: cloned_config.env.unwrap_or_default(),
             id: target.task_id.clone(),
-            inputs: cloned_config.inputs.unwrap_or_else(|| string_vec!["**/*"]),
+            inputs: cloned_config.inputs.unwrap_or_default(),
             input_vars: FxHashSet::default(),
             input_globs: FxHashSet::default(),
             input_paths: FxHashSet::default(),
             log_target,
             options: TaskOptions::from_config(cloned_options, is_local),
             outputs: cloned_config.outputs.unwrap_or_default(),
+            output_globs: FxHashSet::default(),
             output_paths: FxHashSet::default(),
             platform: cloned_config.platform,
             target,
             type_of: TaskType::Test,
         };
+
+        // When no inputs are defined, excluding the top-level .moon configuration,
+        // we should default inputs to glob the entire project directory!
+        if task.inputs.iter().all(|i| i.starts_with("/.moon")) {
+            task.inputs.push("**/*".into());
+        }
 
         Ok(task)
     }
@@ -141,7 +150,7 @@ impl Task {
             config.outputs = Some(self.outputs.clone());
         }
 
-        if !matches!(self.platform, PlatformType::Unknown) {
+        if !self.platform.is_unknown() {
             config.platform = self.platform;
         }
 
@@ -285,7 +294,7 @@ impl Task {
         // Merge options first incase the merge strategy has changed
         self.options.merge(&config.options);
 
-        if !matches!(config.platform, PlatformType::Unknown) {
+        if !config.platform.is_unknown() {
             self.platform = config.platform;
         }
 

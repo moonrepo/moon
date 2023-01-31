@@ -1,12 +1,11 @@
 ---
 source: crates/cli/tests/misc_test.rs
-assertion_line: 16
 expression: assert.output()
 ---
 
  ERROR 
 
-Invalid moon version, unable to proceed. Found 0.21.4, expected >=1000.0.0.
+Invalid moon version, unable to proceed. Found 0.22.0, expected >=1000.0.0.
 
 
 

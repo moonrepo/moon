@@ -202,33 +202,31 @@ impl Vcs for Git {
     }
 
     async fn get_file_tree_hashes(&self, dir: &str) -> VcsResult<BTreeMap<String, String>> {
+        // Extract all tracked and untracked files in the directory
         let output = self
             .run_command(
-                self.create_command(vec!["ls-tree", "HEAD", "-r", dir]),
+                self.create_command(vec![
+                    "ls-files",
+                    "--cached",
+                    "--modified",
+                    "--others",
+                    "--full-name",
+                    "--deduplicate",
+                    "--exclude-standard",
+                    dir,
+                ]),
                 true,
             )
             .await?;
 
-        let mut map = BTreeMap::new();
+        let files = output
+            .split('\n')
+            .map(|f| f.to_owned())
+            .collect::<Vec<String>>();
 
-        if output.is_empty() {
-            return Ok(map);
-        }
-
-        for line in output.split('\n') {
-            // <mode> <type> <hash>\t<file>
-            let parts = line.split(' ');
-            // <hash>\t<file>
-            let mut last_parts = parts.last().unwrap_or_default().split('\t');
-            let hash = last_parts.next().unwrap_or_default();
-            let file = last_parts.next().unwrap_or_default();
-
-            if !hash.is_empty() && !file.is_empty() && !self.is_file_ignored(file) {
-                map.insert(file.to_owned(), hash.to_owned());
-            }
-        }
-
-        Ok(map)
+        // Convert these file paths to hashes. We can't use `git ls-tree` as it
+        // doesn't take untracked/modified files in the working tree into account.
+        self.get_file_hashes(&files, false).await
     }
 
     async fn get_repository_slug(&self) -> VcsResult<String> {

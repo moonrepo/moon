@@ -6,12 +6,10 @@ use clap::ValueEnum;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
 use moon_config::{
-    load_global_project_config_template, load_toolchain_config_template,
-    load_workspace_config_template,
+    load_tasks_config_template, load_toolchain_config_template, load_workspace_config_template,
 };
 use moon_constants::{
-    CONFIG_DIRNAME, CONFIG_GLOBAL_PROJECT_FILENAME, CONFIG_TOOLCHAIN_FILENAME,
-    CONFIG_WORKSPACE_FILENAME,
+    CONFIG_DIRNAME, CONFIG_TASKS_FILENAME, CONFIG_TOOLCHAIN_FILENAME, CONFIG_WORKSPACE_FILENAME,
 };
 use moon_logger::color;
 use moon_node_lang::NPM;
@@ -199,8 +197,8 @@ pub async fn init(
 
     if !options.minimal {
         fs::write(
-            moon_dir.join(CONFIG_GLOBAL_PROJECT_FILENAME),
-            Tera::one_off(load_global_project_config_template(), &context, false)?,
+            moon_dir.join(CONFIG_TASKS_FILENAME),
+            Tera::one_off(load_tasks_config_template(), &context, false)?,
         )?;
     }
 

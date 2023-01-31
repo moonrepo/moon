@@ -1,5 +1,5 @@
 use moon_config::{
-    GlobalProjectConfig, NodeConfig, NodePackageManager, NodeProjectAliasFormat, NpmConfig,
+    InheritedTasksConfig, NodeConfig, NodePackageManager, NodeProjectAliasFormat, NpmConfig,
     PnpmConfig, TaskCommandArgs, TaskConfig, ToolchainConfig, TypeScriptConfig, WorkspaceConfig,
     WorkspaceProjects, YarnConfig,
 };
@@ -28,7 +28,7 @@ pub fn get_default_toolchain() -> ToolchainConfig {
     }
 }
 
-pub fn get_cases_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, GlobalProjectConfig) {
+pub fn get_cases_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, InheritedTasksConfig) {
     let workspace_config = WorkspaceConfig {
         projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
             ("root".to_owned(), ".".to_owned()),
@@ -55,7 +55,7 @@ pub fn get_cases_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, GlobalP
 
     let toolchain_config = get_default_toolchain();
 
-    let projects_config = GlobalProjectConfig {
+    let tasks_config = InheritedTasksConfig {
         tasks: BTreeMap::from_iter([(
             "noop".to_owned(),
             TaskConfig {
@@ -63,13 +63,13 @@ pub fn get_cases_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, GlobalP
                 ..TaskConfig::default()
             },
         )]),
-        ..GlobalProjectConfig::default()
+        ..InheritedTasksConfig::default()
     };
 
-    (workspace_config, toolchain_config, projects_config)
+    (workspace_config, toolchain_config, tasks_config)
 }
 
-pub fn get_projects_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, GlobalProjectConfig) {
+pub fn get_projects_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, InheritedTasksConfig) {
     let workspace_config = WorkspaceConfig {
         projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
             ("advanced".to_owned(), "advanced".to_owned()),
@@ -88,7 +88,7 @@ pub fn get_projects_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Glob
 
     let toolchain_config = get_default_toolchain();
 
-    let projects_config = GlobalProjectConfig {
+    let tasks_config = InheritedTasksConfig {
         file_groups: FxHashMap::from_iter([
             (
                 "sources".into(),
@@ -96,14 +96,14 @@ pub fn get_projects_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Glob
             ),
             ("tests".into(), vec!["tests/**/*".into()]),
         ]),
-        ..GlobalProjectConfig::default()
+        ..InheritedTasksConfig::default()
     };
 
-    (workspace_config, toolchain_config, projects_config)
+    (workspace_config, toolchain_config, tasks_config)
 }
 
 pub fn get_project_graph_aliases_fixture_configs(
-) -> (WorkspaceConfig, ToolchainConfig, GlobalProjectConfig) {
+) -> (WorkspaceConfig, ToolchainConfig, InheritedTasksConfig) {
     let workspace_config = WorkspaceConfig {
         projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
             ("explicit".to_owned(), "explicit".to_owned()),
@@ -132,12 +132,12 @@ pub fn get_project_graph_aliases_fixture_configs(
         ..ToolchainConfig::default()
     };
 
-    let projects_config = GlobalProjectConfig::default();
+    let tasks_config = InheritedTasksConfig::default();
 
-    (workspace_config, toolchain_config, projects_config)
+    (workspace_config, toolchain_config, tasks_config)
 }
 
-pub fn get_tasks_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, GlobalProjectConfig) {
+pub fn get_tasks_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, InheritedTasksConfig) {
     let workspace_config = WorkspaceConfig {
         projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
             ("basic".to_owned(), "basic".to_owned()),
@@ -162,6 +162,10 @@ pub fn get_tasks_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, GlobalP
             ("scopeSelf".to_owned(), "scope-self".to_owned()),
             ("tokens".to_owned(), "tokens".to_owned()),
             ("expandEnv".to_owned(), "expand-env".to_owned()),
+            (
+                "expandEnvProject".to_owned(),
+                "expand-env-project".to_owned(),
+            ),
             ("expandOutputs".to_owned(), "expand-outputs".to_owned()),
             ("fileGroups".to_owned(), "file-groups".to_owned()),
         ])),
@@ -170,7 +174,7 @@ pub fn get_tasks_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, GlobalP
 
     let toolchain_config = get_default_toolchain();
 
-    let projects_config = GlobalProjectConfig {
+    let tasks_config = InheritedTasksConfig {
         file_groups: FxHashMap::from_iter([
             (
                 "static".into(),
@@ -224,15 +228,15 @@ pub fn get_tasks_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, GlobalP
                 },
             ),
         ]),
-        ..GlobalProjectConfig::default()
+        ..InheritedTasksConfig::default()
     };
 
-    (workspace_config, toolchain_config, projects_config)
+    (workspace_config, toolchain_config, tasks_config)
 }
 
 // NODE.JS
 
-pub fn get_node_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, GlobalProjectConfig) {
+pub fn get_node_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, InheritedTasksConfig) {
     let workspace_config = WorkspaceConfig {
         projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
             ("node".to_owned(), "base".to_owned()),
@@ -254,7 +258,7 @@ pub fn get_node_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, GlobalPr
 
     let toolchain_config = get_default_toolchain();
 
-    let projects_config = GlobalProjectConfig {
+    let tasks_config = InheritedTasksConfig {
         tasks: BTreeMap::from_iter([
             (
                 "version".to_owned(),
@@ -272,16 +276,16 @@ pub fn get_node_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, GlobalPr
                 },
             ),
         ]),
-        ..GlobalProjectConfig::default()
+        ..InheritedTasksConfig::default()
     };
 
-    (workspace_config, toolchain_config, projects_config)
+    (workspace_config, toolchain_config, tasks_config)
 }
 
 pub fn get_node_depman_fixture_configs(
     depman: &str,
-) -> (WorkspaceConfig, ToolchainConfig, GlobalProjectConfig) {
-    let (mut workspace_config, mut toolchain_config, projects_config) = get_node_fixture_configs();
+) -> (WorkspaceConfig, ToolchainConfig, InheritedTasksConfig) {
+    let (mut workspace_config, mut toolchain_config, tasks_config) = get_node_fixture_configs();
 
     workspace_config.projects = WorkspaceProjects::Sources(FxHashMap::from_iter([
         (depman.to_owned(), "base".to_owned()),
@@ -321,11 +325,12 @@ pub fn get_node_depman_fixture_configs(
         }
     }
 
-    (workspace_config, toolchain_config, projects_config)
+    (workspace_config, toolchain_config, tasks_config)
 }
 
-pub fn get_typescript_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, GlobalProjectConfig) {
-    let (mut workspace_config, mut toolchain_config, projects_config) = get_node_fixture_configs();
+pub fn get_typescript_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, InheritedTasksConfig)
+{
+    let (mut workspace_config, mut toolchain_config, tasks_config) = get_node_fixture_configs();
 
     workspace_config.projects = WorkspaceProjects::Globs(vec!["*".into()]);
 
@@ -334,5 +339,5 @@ pub fn get_typescript_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Gl
         ts_config.sync_project_references = true;
     }
 
-    (workspace_config, toolchain_config, projects_config)
+    (workspace_config, toolchain_config, tasks_config)
 }

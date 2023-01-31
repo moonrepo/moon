@@ -1,5 +1,5 @@
-use crate::color;
 use crate::helpers::get_root;
+use crate::{color, get_shims_dir};
 use log::debug;
 use proto_error::ProtoError;
 use serde::Serialize;
@@ -43,7 +43,7 @@ fn format_uppercase(value: &Value, output: &mut String) -> Result<(), TemplateEr
     Ok(())
 }
 
-fn build_shim_file(builder: &ShimBuilder) -> Result<String, ProtoError> {
+fn build_shim_file(builder: &ShimBuilder, global: bool) -> Result<String, ProtoError> {
     let handle_error = |e: TemplateError| ProtoError::Shim(e.to_string());
     let mut template = TinyTemplate::new();
 
@@ -53,7 +53,14 @@ fn build_shim_file(builder: &ShimBuilder) -> Result<String, ProtoError> {
         .add_template(
             "shim",
             if cfg!(windows) {
-                include_str!("../templates/batch.tpl")
+                // TODO
+                if global {
+                    include_str!("../templates/batch_global.tpl")
+                } else {
+                    include_str!("../templates/batch.tpl")
+                }
+            } else if global {
+                include_str!("../templates/bash_global.tpl")
             } else {
                 include_str!("../templates/bash.tpl")
             },
@@ -109,19 +116,46 @@ impl ShimBuilder {
         self
     }
 
-    pub fn create(&self) -> Result<PathBuf, ProtoError> {
+    pub fn create_global_shim(&self) -> Result<PathBuf, ProtoError> {
+        let shim_path = get_shims_dir()?.join(get_shim_file_name(&self.name));
+
+        self.do_create(shim_path, true)
+    }
+
+    pub fn create_tool_shim(&self) -> Result<PathBuf, ProtoError> {
         let shim_path = self
             .install_dir
             .as_ref()
             .unwrap()
             .join(get_shim_file_name(&self.name));
+            
+        self.do_create(shim_path, false)
+    }
 
+    pub fn create_context(&self) -> Result<Context, ProtoError> {
+        Ok(Context {
+            bin_path: self.bin_path.clone(),
+            install_dir: self.install_dir.clone(),
+            name: self.name.clone(),
+            parent_name: self.parent_name.clone(),
+            root: get_root()?,
+            version: self.version.clone(),
+        })
+    }
+
+    fn do_create(&self, shim_path: PathBuf, global: bool) -> Result<PathBuf, ProtoError> {
         let shim_exists = shim_path.exists();
 
         let handle_error =
             |e: std::io::Error| ProtoError::Fs(shim_path.to_path_buf(), e.to_string());
 
-        fs::write(&shim_path, build_shim_file(self)?).map_err(handle_error)?;
+        if let Some(parent) = shim_path.parent() {
+            if !parent.exists() {
+                fs::create_dir_all(parent).map_err(handle_error)?;
+            }
+        }
+
+        fs::write(&shim_path, build_shim_file(self, global)?).map_err(handle_error)?;
 
         // Make executable
         #[cfg(unix)]
@@ -138,16 +172,5 @@ impl ShimBuilder {
         }
 
         Ok(shim_path)
-    }
-
-    pub fn create_context(&self) -> Result<Context, ProtoError> {
-        Ok(Context {
-            bin_path: self.bin_path.clone(),
-            install_dir: self.install_dir.clone(),
-            name: self.name.clone(),
-            parent_name: self.parent_name.clone(),
-            root: get_root()?,
-            version: self.version.clone(),
-        })
     }
 }

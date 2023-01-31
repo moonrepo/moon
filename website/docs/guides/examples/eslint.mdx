@@ -6,7 +6,7 @@ sidebar_label: ESLint
 import AddDepsTabs from '@site/src/components/AddDepsTabs';
 import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 
-<HeadingApiLink to="https://github.com/moonrepo/examples/blob/master/.moon/project.yml#L59" />
+<HeadingApiLink to="https://github.com/moonrepo/examples/blob/master/.moon/tasks/node.yml#L59" />
 
 In this guide, you'll learn how to integrate [ESLint](https://eslint.org/) into moon.
 
@@ -18,9 +18,9 @@ the entire repository.
 ## Setup
 
 Since linting is a universal workflow, add a `lint` task to
-[`.moon/project.yml`](../../config/global-project) with the following parameters.
+[`.moon/tasks/node.yml`](../../config/tasks) with the following parameters.
 
-```yaml title=".moon/project.yml"
+```yaml title=".moon/tasks/node.yml"
 tasks:
 	lint:
 		command:
@@ -85,7 +85,7 @@ Create a `tsconfig.eslint.json` in your repository root, extend your shared comp
 
 Append the following inputs to your `lint` task.
 
-```yaml title=".moon/project.yml"
+```yaml title=".moon/tasks/node.yml"
 tasks:
 	lint:
 		# ...

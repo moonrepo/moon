@@ -80,6 +80,7 @@ export interface ProjectWorkspaceConfig {
 
 export interface ProjectConfig {
 	dependsOn: (DependencyConfig | string)[];
+	env: Record<string, string> | null;
 	fileGroups: Record<string, string[]>;
 	language: ProjectLanguage;
 	project: ProjectMetadataConfig | null;
@@ -89,8 +90,10 @@ export interface ProjectConfig {
 	workspace: ProjectWorkspaceConfig;
 }
 
-export interface GlobalProjectConfig {
+export interface InheritedTasksConfig {
 	extends: string | null;
 	fileGroups: Record<string, string[]>;
+	implicitDeps: string[];
+	implicitInputs: string[];
 	tasks: Record<string, TaskConfig>;
 }

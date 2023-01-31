@@ -1,5 +1,4 @@
 use clap::ValueEnum;
-use proto_core::Tool;
 use std::env;
 use std::str::FromStr;
 

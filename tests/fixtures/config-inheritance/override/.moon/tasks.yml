@@ -1,0 +1,4 @@
+tasks:
+  command:
+    command: 'global'
+    inputs: ['a']

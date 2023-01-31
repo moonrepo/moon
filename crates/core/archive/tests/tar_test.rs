@@ -37,6 +37,34 @@ fn tars_file() {
 }
 
 #[test]
+fn tars_file_via_glob() {
+    let sandbox = create_sandbox("archives");
+
+    // Pack
+    let input = sandbox.path();
+    let archive = sandbox.path().join("out.tar.gz");
+
+    tar(input, &string_vec!["file.*"], &archive, None).unwrap();
+
+    assert!(archive.exists());
+    assert_ne!(archive.metadata().unwrap().len(), 0);
+
+    // Unpack
+    let output = sandbox.path().join("out");
+
+    untar(&archive, &output, None).unwrap();
+
+    assert!(output.exists());
+    assert!(output.join("file.txt").exists());
+
+    // Compare
+    assert!(file_contents_match(
+        &input.join("file.txt"),
+        &output.join("file.txt")
+    ));
+}
+
+#[test]
 fn tars_file_with_prefix() {
     let sandbox = create_sandbox("archives");
 
@@ -51,6 +79,34 @@ fn tars_file_with_prefix() {
         Some("some/prefix"),
     )
     .unwrap();
+
+    assert!(archive.exists());
+    assert_ne!(archive.metadata().unwrap().len(), 0);
+
+    // Unpack
+    let output = sandbox.path().join("out");
+
+    untar(&archive, &output, None).unwrap();
+
+    assert!(output.exists());
+    assert!(output.join("some/prefix/file.txt").exists());
+
+    // Compare
+    assert!(file_contents_match(
+        &input.join("file.txt"),
+        &output.join("some/prefix/file.txt")
+    ));
+}
+
+#[test]
+fn tars_file_via_glob_with_prefix() {
+    let sandbox = create_sandbox("archives");
+
+    // Pack
+    let input = sandbox.path();
+    let archive = sandbox.path().join("out.tar.gz");
+
+    tar(input, &string_vec!["file.*"], &archive, Some("some/prefix")).unwrap();
 
     assert!(archive.exists());
     assert_ne!(archive.metadata().unwrap().len(), 0);
@@ -212,6 +268,39 @@ fn tars_dir() {
 }
 
 #[test]
+fn tars_dir_via_glob() {
+    let sandbox = create_sandbox("archives");
+
+    // Pack
+    let input = sandbox.path();
+    let archive = sandbox.path().join("out.tar.gz");
+
+    tar(input, &string_vec!["folder/**/*.js"], &archive, None).unwrap();
+
+    assert!(archive.exists());
+    assert_ne!(archive.metadata().unwrap().len(), 0);
+
+    // Unpack
+    let output = sandbox.path().join("out");
+
+    untar(&archive, &output, None).unwrap();
+
+    assert!(output.exists());
+    assert!(output.join("folder/file.js").exists());
+    assert!(output.join("folder/nested/other.js").exists());
+
+    // Compare
+    assert!(file_contents_match(
+        &input.join("folder/file.js"),
+        &output.join("folder/file.js")
+    ));
+    assert!(file_contents_match(
+        &input.join("folder/nested/other.js"),
+        &output.join("folder/nested/other.js")
+    ));
+}
+
+#[test]
 fn tars_dir_with_prefix() {
     let sandbox = create_sandbox("archives");
 
@@ -220,6 +309,45 @@ fn tars_dir_with_prefix() {
     let archive = sandbox.path().join("out.tar.gz");
 
     tar(input, &string_vec!["folder"], &archive, Some("some/prefix")).unwrap();
+
+    assert!(archive.exists());
+    assert_ne!(archive.metadata().unwrap().len(), 0);
+
+    // Unpack
+    let output = sandbox.path().join("out");
+
+    untar(&archive, &output, None).unwrap();
+
+    assert!(output.exists());
+    assert!(output.join("some/prefix/folder/file.js").exists());
+    assert!(output.join("some/prefix/folder/nested/other.js").exists());
+
+    // Compare
+    assert!(file_contents_match(
+        &input.join("folder/file.js"),
+        &output.join("some/prefix/folder/file.js")
+    ));
+    assert!(file_contents_match(
+        &input.join("folder/nested/other.js"),
+        &output.join("some/prefix/folder/nested/other.js")
+    ));
+}
+
+#[test]
+fn tars_dir_via_glob_with_prefix() {
+    let sandbox = create_sandbox("archives");
+
+    // Pack
+    let input = sandbox.path();
+    let archive = sandbox.path().join("out.tar.gz");
+
+    tar(
+        input,
+        &string_vec!["folder/**/*.js"],
+        &archive,
+        Some("some/prefix"),
+    )
+    .unwrap();
 
     assert!(archive.exists());
     assert_ne!(archive.metadata().unwrap().len(), 0);

@@ -20,5 +20,9 @@ pub fn detect_task_platform(command: &str, language: ProjectLanguage) -> Platfor
     // Default to the platform of the project's language
     let platform: PlatformType = language.into();
 
+    if platform.is_unknown() {
+        return PlatformType::System;
+    }
+
     platform
 }

@@ -1,8 +1,8 @@
 use crate::errors::ProjectError;
 use moon_config::{
     format_error_line, format_figment_errors, ConfigError, DependencyConfig, DependencyScope,
-    FilePath, GlobalProjectConfig, ProjectConfig, ProjectDependsOn, ProjectID, ProjectLanguage,
-    ProjectType, TaskID,
+    FilePath, InheritedTasksConfig, InheritedTasksManager, ProjectConfig, ProjectDependsOn,
+    ProjectID, ProjectLanguage, ProjectType, TaskID,
 };
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_logger::{color, debug, trace, Logable};
@@ -55,14 +55,14 @@ fn load_project_config(
 fn create_file_groups_from_config(
     log_target: &str,
     config: &ProjectConfig,
-    global_config: &GlobalProjectConfig,
+    global_tasks_config: &InheritedTasksConfig,
 ) -> FileGroupsMap {
     let mut file_groups = FxHashMap::<String, FileGroup>::default();
 
     debug!(target: log_target, "Creating file groups");
 
     // Add global file groups first
-    for (group_id, files) in &global_config.file_groups {
+    for (group_id, files) in &global_tasks_config.file_groups {
         file_groups.insert(
             group_id.to_owned(),
             FileGroup::new(group_id, files.to_owned()),
@@ -124,7 +124,7 @@ fn create_tasks_from_config(
     log_target: &str,
     project_id: &str,
     project_config: &ProjectConfig,
-    global_config: &GlobalProjectConfig,
+    global_tasks_config: &InheritedTasksConfig,
 ) -> Result<TasksMap, ProjectError> {
     let mut tasks = BTreeMap::<String, Task>::new();
 
@@ -150,7 +150,7 @@ fn create_tasks_from_config(
     }
 
     // Add global tasks first while taking inheritance config into account
-    for (task_id, task_config) in &global_config.tasks {
+    for (task_id, task_config) in &global_tasks_config.tasks {
         // None = Include all
         // [] = Include none
         // ["a"] = Include "a"
@@ -266,7 +266,7 @@ impl ProjectDependency {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase")]
 pub struct Project {
     /// Unique aliases of the project, alongside its official ID.
     /// This is typically reserved for language specific semantics, like `name` from `package.json`.
@@ -283,6 +283,9 @@ pub struct Project {
 
     /// Unique ID for the project. Is the LHS of the `projects` setting.
     pub id: ProjectID,
+
+    /// Task configuration that was inherited from the global scope.
+    pub inherited_config: InheritedTasksConfig,
 
     /// Primary programming language of the project.
     pub language: ProjectLanguage,
@@ -323,12 +326,16 @@ impl Logable for Project {
 }
 
 impl Project {
-    pub fn new(
+    pub fn new<F>(
         id: &str,
         source: &str,
         workspace_root: &Path,
-        global_config: &GlobalProjectConfig,
-    ) -> Result<Project, ProjectError> {
+        inherited_tasks: &InheritedTasksManager,
+        detect_language: F,
+    ) -> Result<Project, ProjectError>
+    where
+        F: FnOnce(&Path) -> ProjectLanguage,
+    {
         let log_target = format!("moon:project:{}", id);
 
         // For the root-level project, the "." dot actually causes
@@ -352,21 +359,33 @@ impl Project {
         }
 
         let config = load_project_config(&log_target, &root, source)?;
-        let file_groups = create_file_groups_from_config(&log_target, &config, global_config);
+        let language = if matches!(config.language, ProjectLanguage::Unknown) {
+            detect_language(&root)
+        } else {
+            config.language
+        };
+
+        let global_tasks = inherited_tasks.get_inherited_config(
+            language.into(), // TODO
+            language,
+            config.type_of,
+        );
+        let file_groups = create_file_groups_from_config(&log_target, &config, &global_tasks);
         let dependencies = create_dependencies_from_config(&log_target, &config);
-        let tasks = create_tasks_from_config(&log_target, id, &config, global_config)?;
+        let tasks = create_tasks_from_config(&log_target, id, &config, &global_tasks)?;
 
         Ok(Project {
             aliases: vec![],
             dependencies,
             file_groups,
             id: id.to_owned(),
-            language: config.language,
+            language,
             log_target,
             root,
             source: source.to_owned(),
             tasks,
             type_of: config.type_of,
+            inherited_config: global_tasks,
             config,
         })
     }

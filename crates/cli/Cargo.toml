@@ -1,6 +1,6 @@
 [package]
 name = "moon_cli"
-version = "0.22.0"
+version = "0.23.1"
 edition = "2021"
 
 [[bin]]
@@ -22,6 +22,7 @@ moon_dep_graph = { path = "../core/dep-graph" }
 moon_error = { path = "../core/error" }
 moon_generator = { path = "../core/generator" }
 moon_lang = { path = "../core/lang" }
+moon_launchpad = { path = "../core/launchpad" }
 moon_logger = { path = "../core/logger" }
 moon_node_lang = { path = "../node/lang" }
 moon_node_platform = { path = "../node/platform" }
@@ -65,5 +66,5 @@ moon_archive = { path = "../core/archive" }
 moon_cache = { path = "../core/cache" }
 moon_notifier = { path = "../core/notifier" }
 moon_test_utils = { path = "../core/test-utils" }
-serial_test = "0.10.0"
-wiremock = "0.5.17"
+httpmock = "0.6.7"
+serial_test = "1.0.0"

@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "GlobalProjectConfig",
-  "description": "Docs: https://moonrepo.dev/docs/config/global-project",
+  "title": "InheritedTasksConfig",
+  "description": "Docs: https://moonrepo.dev/docs/config/tasks",
   "type": "object",
   "properties": {
     "extends": {
@@ -11,7 +11,6 @@
       ]
     },
     "fileGroups": {
-      "default": {},
       "type": "object",
       "additionalProperties": {
         "type": "array",
@@ -20,8 +19,19 @@
         }
       }
     },
+    "implicitDeps": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "implicitInputs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "tasks": {
-      "default": {},
       "type": "object",
       "additionalProperties": {
         "$ref": "#/definitions/TaskConfig"
@@ -54,7 +64,6 @@
       "type": "object",
       "properties": {
         "args": {
-          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskCommandArgs"
@@ -65,7 +74,6 @@
           ]
         },
         "command": {
-          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskCommandArgs"
@@ -76,7 +84,6 @@
           ]
         },
         "deps": {
-          "default": null,
           "type": [
             "array",
             "null"
@@ -86,7 +93,6 @@
           }
         },
         "env": {
-          "default": null,
           "type": [
             "object",
             "null"
@@ -96,7 +102,6 @@
           }
         },
         "inputs": {
-          "default": null,
           "type": [
             "array",
             "null"
@@ -106,33 +111,12 @@
           }
         },
         "local": {
-          "default": false,
           "type": "boolean"
         },
         "options": {
-          "default": {
-            "affectedFiles": null,
-            "cache": null,
-            "envFile": null,
-            "mergeArgs": null,
-            "mergeDeps": null,
-            "mergeEnv": null,
-            "mergeInputs": null,
-            "mergeOutputs": null,
-            "outputStyle": null,
-            "retryCount": null,
-            "runDepsInParallel": null,
-            "runInCI": null,
-            "runFromWorkspaceRoot": null
-          },
-          "allOf": [
-            {
-              "$ref": "#/definitions/TaskOptionsConfig"
-            }
-          ]
+          "$ref": "#/definitions/TaskOptionsConfig"
         },
         "outputs": {
-          "default": null,
           "type": [
             "array",
             "null"
@@ -142,12 +126,7 @@
           }
         },
         "platform": {
-          "default": "unknown",
-          "allOf": [
-            {
-              "$ref": "#/definitions/PlatformType"
-            }
-          ]
+          "$ref": "#/definitions/PlatformType"
         }
       }
     },
@@ -183,7 +162,6 @@
       "type": "object",
       "properties": {
         "affectedFiles": {
-          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskOptionAffectedFilesConfig"
@@ -194,14 +172,12 @@
           ]
         },
         "cache": {
-          "default": null,
           "type": [
             "boolean",
             "null"
           ]
         },
         "envFile": {
-          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskOptionEnvFileConfig"
@@ -212,7 +188,6 @@
           ]
         },
         "mergeArgs": {
-          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
@@ -223,7 +198,6 @@
           ]
         },
         "mergeDeps": {
-          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
@@ -234,7 +208,6 @@
           ]
         },
         "mergeEnv": {
-          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
@@ -245,7 +218,6 @@
           ]
         },
         "mergeInputs": {
-          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
@@ -256,7 +228,6 @@
           ]
         },
         "mergeOutputs": {
-          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
@@ -267,7 +238,6 @@
           ]
         },
         "outputStyle": {
-          "default": null,
           "anyOf": [
             {
               "$ref": "#/definitions/TaskOutputStyle"
@@ -278,7 +248,6 @@
           ]
         },
         "retryCount": {
-          "default": null,
           "type": [
             "integer",
             "null"
@@ -287,21 +256,18 @@
           "minimum": 0.0
         },
         "runDepsInParallel": {
-          "default": null,
           "type": [
             "boolean",
             "null"
           ]
         },
         "runFromWorkspaceRoot": {
-          "default": null,
           "type": [
             "boolean",
             "null"
           ]
         },
         "runInCI": {
-          "default": null,
           "type": [
             "boolean",
             "null"

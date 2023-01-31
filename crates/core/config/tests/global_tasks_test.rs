@@ -1,13 +1,14 @@
-use moon_config::{ConfigError, GlobalProjectConfig, TaskCommandArgs};
-use moon_constants::CONFIG_GLOBAL_PROJECT_FILENAME;
+use httpmock::prelude::*;
+use moon_config::{ConfigError, InheritedTasksConfig, TaskCommandArgs};
+use moon_constants::CONFIG_TASKS_FILENAME;
 use moon_test_utils::get_fixtures_path;
 use moon_utils::string_vec;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::path::Path;
 
-fn load_jailed_config(root: &Path) -> Result<GlobalProjectConfig, figment::Error> {
-    match GlobalProjectConfig::load(root.join(CONFIG_GLOBAL_PROJECT_FILENAME)) {
+fn load_jailed_config(root: &Path) -> Result<InheritedTasksConfig, figment::Error> {
+    match InheritedTasksConfig::load(root.join(CONFIG_TASKS_FILENAME)) {
         Ok(cfg) => Ok(cfg),
         Err(error) => Err(match error {
             ConfigError::FailedValidation(errors) => errors.first().unwrap().to_owned(),
@@ -21,7 +22,7 @@ fn load_jailed_config(root: &Path) -> Result<GlobalProjectConfig, figment::Error
 fn loads_defaults() {
     figment::Jail::expect_with(|jail| {
         jail.create_file(
-            CONFIG_GLOBAL_PROJECT_FILENAME,
+            CONFIG_TASKS_FILENAME,
             r#"
 fileGroups:
     sources:
@@ -32,16 +33,52 @@ fileGroups:
 
         assert_eq!(
             config,
-            GlobalProjectConfig {
-                extends: None,
+            InheritedTasksConfig {
                 file_groups: FxHashMap::from_iter([(
                     String::from("sources"),
                     string_vec!["src/**/*"]
                 )]),
-                tasks: BTreeMap::new(),
-                schema: String::new(),
+                ..InheritedTasksConfig::default()
             }
         );
+
+        Ok(())
+    });
+}
+
+#[test]
+#[should_panic(expected = "Must be a valid target format")]
+fn invalid_dep_target() {
+    figment::Jail::expect_with(|jail| {
+        jail.create_file(
+            CONFIG_TASKS_FILENAME,
+            r#"
+implicitDeps:
+  - '%:task'
+"#,
+        )?;
+
+        load_jailed_config(jail.directory())?;
+
+        Ok(())
+    });
+}
+
+#[test]
+#[should_panic(
+    expected = "Must be a valid ID (accepts A-Z, a-z, 0-9, - (dashes), _ (underscores), /, and must start with a letter)"
+)]
+fn invalid_dep_target_no_scope() {
+    figment::Jail::expect_with(|jail| {
+        jail.create_file(
+            CONFIG_TASKS_FILENAME,
+            r#"
+implicitDeps:
+  - 'foo bar'
+"#,
+        )?;
+
+        load_jailed_config(jail.directory())?;
 
         Ok(())
     });
@@ -56,14 +93,14 @@ mod extends {
     #[test]
     fn recursive_merges() {
         let fixture = get_fixtures_path("config-extends/project");
-        let config = GlobalProjectConfig::load(fixture.join("global-2.yml")).unwrap();
+        let config = InheritedTasksConfig::load(fixture.join("global-2.yml")).unwrap();
 
         assert_eq!(
             config,
-            GlobalProjectConfig {
+            InheritedTasksConfig {
                 file_groups: FxHashMap::from_iter([
-                    ("sources".to_owned(), string_vec!["sources/**/*"]), // NOT src/**/*
                     ("tests".to_owned(), string_vec!["tests/**/*"]),
+                    ("sources".to_owned(), string_vec!["sources/**/*"]), // NOT src/**/*
                 ]),
                 tasks: BTreeMap::from([
                     (
@@ -88,19 +125,19 @@ mod extends {
                         },
                     )
                 ]),
-                ..GlobalProjectConfig::default()
+                ..InheritedTasksConfig::default()
             }
         )
     }
 
     #[test]
     // #[should_panic(
-    //     expected = "invalid type: found unsigned int `123`, expected a string for key \"globalProject.extends\""
+    //     expected = "invalid type: found unsigned int `123`, expected a string for key \"inheritedTasks.extends\""
     // )]
     #[should_panic(expected = "Invalid <id>extends</id> field, must be a string.")]
     fn invalid_type() {
         figment::Jail::expect_with(|jail| {
-            jail.create_file(super::CONFIG_GLOBAL_PROJECT_FILENAME, "extends: 123")?;
+            jail.create_file(super::CONFIG_TASKS_FILENAME, "extends: 123")?;
 
             super::load_jailed_config(jail.directory())?;
 
@@ -110,15 +147,12 @@ mod extends {
 
     #[test]
     // #[should_panic(
-    //     expected = "Must be a valid URL or relative file path (starts with ./) for key \"globalProject.extends\""
+    //     expected = "Must be a valid URL or relative file path (starts with ./) for key \"inheritedTasks.extends\""
     // )]
     #[should_panic(expected = "only YAML documents are supported")]
     fn not_a_url_or_file() {
         figment::Jail::expect_with(|jail| {
-            jail.create_file(
-                super::CONFIG_GLOBAL_PROJECT_FILENAME,
-                "extends: random value",
-            )?;
+            jail.create_file(super::CONFIG_TASKS_FILENAME, "extends: random value")?;
 
             super::load_jailed_config(jail.directory())?;
 
@@ -131,7 +165,7 @@ mod extends {
     fn not_a_https_url() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_GLOBAL_PROJECT_FILENAME,
+                super::CONFIG_TASKS_FILENAME,
                 "extends: http://domain.com/config.yml",
             )?;
 
@@ -142,12 +176,12 @@ mod extends {
     }
 
     #[test]
-    // #[should_panic(expected = "Must be a YAML document for key \"globalProject.extends\"")]
+    // #[should_panic(expected = "Must be a YAML document for key \"inheritedTasks.extends\"")]
     #[should_panic(expected = "only YAML documents are supported")]
     fn not_a_yaml_url() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_GLOBAL_PROJECT_FILENAME,
+                super::CONFIG_TASKS_FILENAME,
                 "extends: https://domain.com/file.txt",
             )?;
 
@@ -158,7 +192,7 @@ mod extends {
     }
 
     #[test]
-    // #[should_panic(expected = "Must be a YAML document for key \"globalProject.extends\"")]
+    // #[should_panic(expected = "Must be a YAML document for key \"inheritedTasks.extends\"")]
     #[should_panic(expected = "only YAML documents are supported")]
     fn not_a_yaml_file() {
         figment::Jail::expect_with(|jail| {
@@ -166,10 +200,7 @@ mod extends {
 
             jail.create_file("shared/file.txt", "")?;
 
-            jail.create_file(
-                super::CONFIG_GLOBAL_PROJECT_FILENAME,
-                "extends: ./shared/file.txt",
-            )?;
+            jail.create_file(super::CONFIG_TASKS_FILENAME, "extends: ./shared/file.txt")?;
 
             super::load_jailed_config(jail.directory())?;
 
@@ -232,14 +263,14 @@ mod extends {
             fs::create_dir_all(jail.directory().join("shared")).unwrap();
 
             jail.create_file(
-                format!("shared/{}", super::CONFIG_GLOBAL_PROJECT_FILENAME),
-                include_str!("../../../../tests/fixtures/config-extends/.moon/project.yml"),
+                format!("shared/{}", super::CONFIG_TASKS_FILENAME),
+                include_str!("../../../../tests/fixtures/config-extends/.moon/tasks.yml"),
             )?;
 
             jail.create_file(
-                super::CONFIG_GLOBAL_PROJECT_FILENAME,
+                super::CONFIG_TASKS_FILENAME,
                 r#"
-extends: ./shared/project.yml
+extends: ./shared/tasks.yml
 
 fileGroups:
     sources:
@@ -249,7 +280,7 @@ fileGroups:
 "#,
             )?;
 
-            let config: GlobalProjectConfig = super::load_jailed_config(jail.directory())?;
+            let config: InheritedTasksConfig = super::load_jailed_config(jail.directory())?;
 
             // Ensure values are deep merged
             assert_eq!(
@@ -271,6 +302,17 @@ fileGroups:
     fn loads_from_url() {
         use moon_test_utils::pretty_assertions::assert_eq;
 
+        let server = MockServer::start();
+
+        server.mock(|when, then| {
+            when.method(GET).path("/config.yml");
+            then.status(200).body(include_str!(
+                "../../../../tests/fixtures/config-extends/.moon/tasks.yml"
+            ));
+        });
+
+        let url = server.url("/config.yml");
+
         figment::Jail::expect_with(|jail| {
             jail.set_env(
                 "MOON_WORKSPACE_ROOT",
@@ -278,9 +320,10 @@ fileGroups:
             );
 
             jail.create_file(
-                    super::CONFIG_GLOBAL_PROJECT_FILENAME,
-r#"
-extends: https://raw.githubusercontent.com/moonrepo/moon/master/tests/fixtures/config-extends/.moon/project.yml
+                super::CONFIG_TASKS_FILENAME,
+                format!(
+                    r#"
+extends: '{}'
 
 fileGroups:
     sources:
@@ -288,9 +331,12 @@ fileGroups:
     configs:
         - '*.js'
 "#,
-                )?;
+                    url
+                )
+                .as_ref(),
+            )?;
 
-            let config: GlobalProjectConfig = super::load_jailed_config(jail.directory())?;
+            let config: InheritedTasksConfig = super::load_jailed_config(jail.directory())?;
 
             // Ensure values are deep merged
             assert_eq!(
@@ -313,7 +359,7 @@ fileGroups:
     //         fn handles_invalid_url() {
     //             figment::Jail::expect_with(|jail| {
     //                 jail.create_file(
-    //                     super::CONFIG_GLOBAL_PROJECT_FILENAME,
+    //                     super::CONFIG_TASKS_FILENAME,
     //                     r#"
     // extends: https://raw.githubusercontent.com/this/is/an/invalid/file.yml
 
@@ -331,11 +377,11 @@ fileGroups:
 mod file_groups {
     #[test]
     #[should_panic(
-        expected = "invalid type: found unsigned int `123`, expected a map for key \"globalProject.fileGroups\""
+        expected = "invalid type: found unsigned int `123`, expected a map for key \"inheritedTasks.fileGroups\""
     )]
     fn invalid_type() {
         figment::Jail::expect_with(|jail| {
-            jail.create_file(super::CONFIG_GLOBAL_PROJECT_FILENAME, "fileGroups: 123")?;
+            jail.create_file(super::CONFIG_TASKS_FILENAME, "fileGroups: 123")?;
 
             super::load_jailed_config(jail.directory())?;
 
@@ -345,12 +391,12 @@ mod file_groups {
 
     #[test]
     #[should_panic(
-        expected = "invalid type: found unsigned int `123`, expected a sequence for key \"globalProject.fileGroups.sources\""
+        expected = "invalid type: found unsigned int `123`, expected a sequence for key \"inheritedTasks.fileGroups.sources\""
     )]
     fn invalid_value_type() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_GLOBAL_PROJECT_FILENAME,
+                super::CONFIG_TASKS_FILENAME,
                 r#"
 fileGroups:
     sources: 123"#,
@@ -369,12 +415,12 @@ mod tasks {
 
     #[test]
     #[should_panic(
-        expected = "invalid type: found unsigned int `123`, expected a map for key \"globalProject.tasks\""
+        expected = "invalid type: found unsigned int `123`, expected a map for key \"inheritedTasks.tasks\""
     )]
     fn invalid_type() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_GLOBAL_PROJECT_FILENAME,
+                super::CONFIG_TASKS_FILENAME,
                 r#"
 fileGroups: {}
 tasks: 123
@@ -389,12 +435,12 @@ tasks: 123
 
     #[test]
     #[should_panic(
-        expected = "invalid type: found unsigned int `123`, expected struct TaskConfig for key \"globalProject.tasks.test\""
+        expected = "invalid type: found unsigned int `123`, expected struct TaskConfig for key \"inheritedTasks.tasks.test\""
     )]
     fn invalid_value_type() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_GLOBAL_PROJECT_FILENAME,
+                super::CONFIG_TASKS_FILENAME,
                 r#"
 fileGroups: {}
 tasks:
@@ -410,12 +456,12 @@ tasks:
 
     #[test]
     #[should_panic(
-        expected = "expected a string or a sequence of strings for key \"globalProject.tasks.test.command\""
+        expected = "expected a string or a sequence of strings for key \"inheritedTasks.tasks.test.command\""
     )]
     fn invalid_value_field() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_GLOBAL_PROJECT_FILENAME,
+                super::CONFIG_TASKS_FILENAME,
                 r#"
 fileGroups: {}
 tasks:
@@ -435,7 +481,7 @@ tasks:
     fn invalid_value_empty_field() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_GLOBAL_PROJECT_FILENAME,
+                super::CONFIG_TASKS_FILENAME,
                 r#"
 fileGroups:
     sources: []
@@ -454,7 +500,7 @@ tasks:
     fn can_use_references() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_GLOBAL_PROJECT_FILENAME,
+                super::CONFIG_TASKS_FILENAME,
                 r#"
 tasks:
     build: &webpack
@@ -467,7 +513,7 @@ tasks:
 "#,
             )?;
 
-            let config: GlobalProjectConfig = super::load_jailed_config(jail.directory())?;
+            let config: InheritedTasksConfig = super::load_jailed_config(jail.directory())?;
 
             assert_eq!(
                 config.tasks.get("build").unwrap(),
@@ -496,7 +542,7 @@ tasks:
     fn can_use_references_from_root() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
-                super::CONFIG_GLOBAL_PROJECT_FILENAME,
+                super::CONFIG_TASKS_FILENAME,
                 r#"
 _webpack: &webpack
     command: 'webpack'
@@ -511,7 +557,7 @@ tasks:
 "#,
             )?;
 
-            let config: GlobalProjectConfig = super::load_jailed_config(jail.directory())?;
+            let config: InheritedTasksConfig = super::load_jailed_config(jail.directory())?;
 
             assert_eq!(
                 config.tasks.get("build").unwrap(),

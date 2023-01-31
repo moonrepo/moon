@@ -3,7 +3,7 @@ use crate::helpers::get_cache_mode;
 use moon_archive::{untar_with_diff, TarArchiver, TreeDiffer};
 use moon_error::MoonError;
 use moon_logger::{color, trace};
-use moon_utils::{fs, json};
+use moon_utils::{fs, glob, json};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
@@ -37,7 +37,11 @@ impl RunTargetState {
             // Outputs are relative from project root (the input)
             if !outputs.is_empty() {
                 for output in outputs {
-                    tar.add_source(input_root.join(output), Some(output));
+                    if glob::is_glob(output) {
+                        tar.add_source_glob(output, None);
+                    } else {
+                        tar.add_source(input_root.join(output), Some(output));
+                    }
                 }
             }
 

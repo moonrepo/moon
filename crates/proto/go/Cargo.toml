@@ -1,0 +1,15 @@
+[package]
+name = "proto_go"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+proto_core = { path = "../core" }
+log = "0.4.17"
+serde = { workspace = true }
+serde_json = { workspace = true }
+lenient_semver = "0.4.2"
+
+[dev-dependencies]
+assert_fs = "1.0.10"
+tokio = { workspace = true }

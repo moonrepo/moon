@@ -29,10 +29,18 @@ impl Resolvable<'_> for GoLanguage {
         let mut aliases = BTreeMap::new();
         let mut versions = BTreeMap::new();
 
-        let output = Command::new("git")
+        let output = match Command::new("git")
             .args(["ls-remote", "--tags", "https://github.com/golang/go/"])
             .output()
-            .expect("failed to execute process");
+        {
+            Ok(o) => o,
+            Err(e) => {
+                return Err(ProtoError::DownloadFailed(
+                    "could not list versions from https://github.com/golang/go/".into(),
+                    e.to_string(),
+                ));
+            }
+        };
 
         let raw = str::from_utf8(&output.stdout).expect("could not parse output from github");
 

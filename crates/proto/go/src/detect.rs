@@ -1,6 +1,6 @@
 use crate::GoLanguage;
-use proto_core::{async_trait, Detector, ProtoError};
 use log::error;
+use proto_core::{async_trait, Detector, ProtoError};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
@@ -37,7 +37,7 @@ fn scan_for_go_version(path: &Path) -> Option<String> {
             for line in buffered.lines() {
                 if let Ok(l) = line {
                     if let Some(version) = l.strip_prefix(GOPREFIX) {
-                        return Some(version.into())
+                        return Some(version.into());
                     }
                 }
             }

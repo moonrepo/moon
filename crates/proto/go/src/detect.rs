@@ -34,11 +34,9 @@ fn scan_for_go_version(path: &Path) -> Option<String> {
     match File::open(path) {
         Ok(file) => {
             let buffered = BufReader::new(file);
-            for line in buffered.lines() {
-                if let Ok(l) = line {
-                    if let Some(version) = l.strip_prefix(GOPREFIX) {
-                        return Some(version.into());
-                    }
+            for line in buffered.lines().flatten() {
+                if let Some(version) = line.strip_prefix(GOPREFIX) {
+                    return Some(version.into());
                 }
             }
         }

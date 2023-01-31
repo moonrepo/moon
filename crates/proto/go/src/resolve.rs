@@ -52,13 +52,13 @@ impl Resolvable<'_> for GoLanguage {
             }
         };
 
-        for line in raw.split("\n") {
-            let parts: Vec<&str> = line.split("\t").collect();
+        for line in raw.split('\n') {
+            let parts: Vec<&str> = line.split('\t').collect();
             if parts.len() < 2 {
                 continue;
             }
 
-            let tag: Vec<&str> = parts[1].split("/").collect();
+            let tag: Vec<&str> = parts[1].split('/').collect();
             if tag.len() < 3 {
                 continue;
             }
@@ -66,30 +66,27 @@ impl Resolvable<'_> for GoLanguage {
             if tag[2].starts_with("go") {
                 let ver_str = tag[2].strip_prefix("go").unwrap();
 
-                match Version::parse(ver_str) {
-                    Ok(ver) => {
-                        let entry = VersionManifestEntry {
-                            alias: None,
-                            version: String::from(ver_str),
-                        };
-                        let base_version = ver.base_version();
+                if let Ok(ver) = Version::parse(ver_str) {
+                    let entry = VersionManifestEntry {
+                        alias: None,
+                        version: String::from(ver_str),
+                    };
+                    let base_version = ver.base_version();
 
-                        let current: Option<&Version> = alias_max.get(&base_version);
-                        match current {
-                            Some(current_version) => {
-                                if current_version < &ver {
-                                    aliases.insert(base_version.clone(), entry.version.clone());
-                                    alias_max.insert(base_version, ver);
-                                }
-                            }
-                            None => {
+                    let current: Option<&Version> = alias_max.get(&base_version);
+                    match current {
+                        Some(current_version) => {
+                            if current_version < &ver {
                                 aliases.insert(base_version.clone(), entry.version.clone());
                                 alias_max.insert(base_version, ver);
                             }
                         }
-                        versions.insert(entry.version.clone(), entry);
+                        None => {
+                            aliases.insert(base_version.clone(), entry.version.clone());
+                            alias_max.insert(base_version, ver);
+                        }
                     }
-                    Err(_) => {}
+                    versions.insert(entry.version.clone(), entry);
                 }
             }
         }
@@ -111,16 +108,14 @@ impl Resolvable<'_> for GoLanguage {
         );
 
         let manifest = self.load_manifest().await?;
-        let candidate;
-
-        if initial_version.contains("rc") || initial_version.contains("beta") {
-            candidate = manifest.get_version(&initial_version)?;
+        let candidate = if initial_version.contains("rc") || initial_version.contains("beta") {
+            manifest.get_version(&initial_version)?
         } else {
-            candidate = match manifest.find_version_from_alias(&initial_version) {
+            match manifest.find_version_from_alias(&initial_version) {
                 Ok(found) => found,
                 _ => manifest.find_version(&initial_version)?,
             }
-        }
+        };
 
         debug!(target: self.get_log_target(), "Resolved to {}", candidate);
 

@@ -8,6 +8,7 @@ use moon_platform::Runtime;
 use moon_project::Project;
 use moon_utils::{fs, is_offline, time};
 use moon_workspace::Workspace;
+use std::env;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -20,6 +21,8 @@ pub async fn install_deps(
     runtime: &Runtime,
     project: Option<&Project>,
 ) -> Result<ActionStatus, PipelineError> {
+    env::set_var("MOON_RUNNING_ACTION", "install-deps");
+
     if matches!(runtime, Runtime::System) {
         return Ok(ActionStatus::Skipped);
     }
@@ -31,6 +34,16 @@ pub async fn install_deps(
         warn!(
             target: LOG_TARGET,
             "No internet connection, assuming offline and skipping install"
+        );
+
+        return Ok(ActionStatus::Skipped);
+    }
+
+    // When the install is happening as a child process of another install, avoid recursion
+    if env::var("MOON_INSTALLING_DEPS").unwrap_or_default() == runtime.to_string() {
+        debug!(
+            target: LOG_TARGET,
+            "Detected another install running, skipping install"
         );
 
         return Ok(ActionStatus::Skipped);
@@ -103,6 +116,8 @@ pub async fn install_deps(
         .cache_deps_state(runtime, project.map(|p| p.id.as_ref()))?;
 
     if hash != cache.last_hash || last_modified == 0 || last_modified > cache.last_install_time {
+        env::set_var("MOON_INSTALLING_DEPS", runtime.to_string());
+
         debug!(
             target: LOG_TARGET,
             "Installing {} dependencies in {}",

@@ -9,6 +9,7 @@ use moon_runner::Runner;
 use moon_target::Target;
 use moon_terminal::Checkpoint;
 use moon_workspace::Workspace;
+use std::env;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -23,6 +24,8 @@ pub async fn run_target(
     target: &Target,
     runtime: &Runtime,
 ) -> Result<ActionStatus, PipelineError> {
+    env::set_var("MOON_RUNNING_ACTION", "run-target");
+
     let emitter = emitter.read().await;
     let workspace = workspace.read().await;
     let task = project.get_task(&target.task_id)?;

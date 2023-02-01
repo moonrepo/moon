@@ -6,6 +6,8 @@
 
 - Fixed a recursion issue when attempting to install dependencies and a post-install script would
   trigger the process again.
+- Fixed an issue where a task may be hashed with the incorrect Node.js version.
+- Fixed an issue when running Node.js tasks and the toolchain has not been configured.
 
 #### 0.23.1
 

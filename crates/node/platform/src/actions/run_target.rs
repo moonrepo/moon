@@ -79,11 +79,33 @@ fn create_node_options(
     Ok(options)
 }
 
-fn find_package_bin(starting_dir: &Path, bin_name: &str) -> Result<node::BinFile, ToolError> {
-    match node::find_package_bin(starting_dir, bin_name)? {
+fn find_package_bin(
+    command: &mut Command,
+    node_options: &[String],
+    starting_dir: &Path,
+    working_dir: &Path,
+    bin_name: &str,
+) -> Result<Option<Command>, ToolError> {
+    let possible_bin_path = match node::find_package_bin(starting_dir, bin_name)? {
         Some(bin) => Ok(bin),
         None => Err(ToolError::MissingBinary(bin_name.to_owned())),
-    }
+    };
+
+    match possible_bin_path? {
+        // Rust, Go
+        BinFile::Binary(bin_path) => {
+            return Ok(Some(Command::new(bin_path)));
+        }
+        // JavaScript
+        BinFile::Script(bin_path) => {
+            command.args(node_options);
+            command.arg(path::to_string(
+                path::relative_from(bin_path, working_dir).unwrap(),
+            )?);
+        }
+    };
+
+    Ok(None)
 }
 
 fn prepare_target_command(
@@ -128,12 +150,12 @@ pub fn create_target_command(
     working_dir: &Path,
 ) -> Result<Command, ToolError> {
     let node_bin = node.get_bin_path()?;
+    let node_options = create_node_options(&node.config, context, task)?;
     let mut command = Command::new(node.get_shim_path().unwrap_or(node_bin));
-    let mut args = vec![];
 
     match task.command.as_str() {
         "node" | "nodejs" => {
-            args.extend(create_node_options(&node.config, context, task)?);
+            command.args(&node_options);
         }
         "npx" => {
             command = Command::new(node.get_npx_path()?);
@@ -148,25 +170,15 @@ pub fn create_target_command(
             command = node.get_yarn()?.create_command(node)?;
         }
         bin => {
-            match find_package_bin(&project.root, bin)? {
-                // Rust, Go
-                BinFile::Binary(bin_path) => {
-                    command = Command::new(bin_path);
-                }
-                // JavaScript
-                BinFile::Script(bin_path) => {
-                    args.extend(create_node_options(&node.config, context, task)?);
-                    args.push(path::to_string(
-                        path::relative_from(bin_path, working_dir).unwrap(),
-                    )?);
-                }
-            };
+            if let Some(new_command) =
+                find_package_bin(&mut command, &node_options, &project.root, working_dir, bin)?
+            {
+                command = new_command;
+            }
         }
     };
 
-    command
-        .args(&args)
-        .env("PATH", get_path_env_var(&node.tool.get_install_dir()?));
+    command.env("PATH", get_path_env_var(&node.tool.get_install_dir()?));
 
     prepare_target_command(&mut command, context, task, &node.config)?;
 
@@ -183,34 +195,24 @@ pub fn create_target_command_without_tool(
     task: &Task,
     working_dir: &Path,
 ) -> Result<Command, ToolError> {
+    let node_options = create_node_options(node_config, context, task)?;
     let mut command = Command::new("node");
-    let mut args = vec![];
 
     match task.command.as_str() {
         "node" | "nodejs" => {
-            args.extend(create_node_options(node_config, context, task)?);
+            command.args(&node_options);
         }
         "npx" | "npm" | "pnpm" | "yarn" | "yarnpkg" => {
             command = Command::new(&task.command);
         }
         bin => {
-            match find_package_bin(&project.root, bin)? {
-                // Rust, Go
-                BinFile::Binary(bin_path) => {
-                    command = Command::new(bin_path);
-                }
-                // JavaScript
-                BinFile::Script(bin_path) => {
-                    args.extend(create_node_options(node_config, context, task)?);
-                    args.push(path::to_string(
-                        path::relative_from(bin_path, working_dir).unwrap(),
-                    )?);
-                }
-            };
+            if let Some(new_command) =
+                find_package_bin(&mut command, &node_options, &project.root, working_dir, bin)?
+            {
+                command = new_command;
+            }
         }
     };
-
-    command.args(&args);
 
     prepare_target_command(&mut command, context, task, node_config)?;
 

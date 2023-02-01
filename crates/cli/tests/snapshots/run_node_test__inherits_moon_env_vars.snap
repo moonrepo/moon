@@ -1,6 +1,5 @@
 ---
 source: crates/cli/tests/run_node_test.rs
-assertion_line: 273
 expression: assert.output()
 ---
 ▪▪▪▪ npm install
@@ -12,6 +11,7 @@ MOON_PROJECT_ID=node
 MOON_PROJECT_ROOT=<WORKSPACE>/base
 MOON_PROJECT_RUNFILE=<WORKSPACE>/.moon/cache/states/node/runfile.json
 MOON_PROJECT_SOURCE=base
+MOON_RUNNING_ACTION=run-target
 MOON_TARGET=node:envVarsMoon
 MOON_TOOLCHAIN_DIR=~/.moon
 MOON_WORKING_DIR=<WORKSPACE>

@@ -5,6 +5,7 @@ use moon_logger::debug;
 use moon_platform::Runtime;
 use moon_utils::time;
 use moon_workspace::Workspace;
+use std::env;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -16,6 +17,8 @@ pub async fn setup_tool(
     workspace: Arc<RwLock<Workspace>>,
     runtime: &Runtime,
 ) -> Result<ActionStatus, PipelineError> {
+    env::set_var("MOON_RUNNING_ACTION", "setup-tool");
+
     if matches!(runtime, Runtime::System) {
         return Ok(ActionStatus::Skipped);
     }

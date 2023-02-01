@@ -8,6 +8,7 @@ use moon_project_graph::ProjectGraph;
 use moon_utils::is_ci;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
+use std::env;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -21,6 +22,8 @@ pub async fn sync_project(
     project: &Project,
     runtime: &Runtime,
 ) -> Result<ActionStatus, PipelineError> {
+    env::set_var("MOON_RUNNING_ACTION", "sync-project");
+
     let workspace = workspace.read().await;
     let context = context.read().await;
     let project_graph = project_graph.read().await;

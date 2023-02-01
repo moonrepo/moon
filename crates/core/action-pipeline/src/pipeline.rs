@@ -164,12 +164,14 @@ impl Pipeline {
                             passed_count += 1;
                         }
 
-                        if self.bail && result.has_failed() || result.should_abort() {
+                        if result.should_abort() {
                             error!(
                                 target: &batch_target_name,
                                 "Encountered a critical error, aborting the action pipeline"
                             );
+                        }
 
+                        if self.bail && result.has_failed() || result.should_abort() {
                             let abort_error =
                                 result.error.unwrap_or_else(|| "Unknown error!".into());
 

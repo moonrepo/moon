@@ -41,6 +41,7 @@ fn get_global_lookups(home_dir: &Path) -> Vec<PathBuf> {
 }
 
 fn set_executed_with(path: &Path) {
+    // Would show up in many snapshots otherwise!
     if !is_test_env() {
         env::set_var("MOON_EXECUTED_WITH", path.to_string_lossy().to_string());
     }

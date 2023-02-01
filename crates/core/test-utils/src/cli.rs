@@ -63,15 +63,15 @@ pub struct SandboxAssert<'s> {
 
 impl<'s> SandboxAssert<'s> {
     pub fn debug(&self) -> &Self {
-        println!("sandbox:");
+        println!("SANDBOX:");
         debug_sandbox_files(self.sandbox.path());
         println!("\n");
 
         let output = self.inner.get_output();
 
-        println!("stdout:\n{}\n", output_to_string(&output.stdout));
-        println!("stderr:\n{}\n", output_to_string(&output.stderr));
-        println!("status: {:#?}", output.status);
+        println!("STDOUT:\n{}\n", output_to_string(&output.stdout));
+        println!("STDERR:\n{}\n", output_to_string(&output.stderr));
+        println!("STATUS:\n{:#?}", output.status);
 
         self
     }

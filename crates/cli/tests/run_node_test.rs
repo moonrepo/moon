@@ -345,6 +345,25 @@ fn can_run_many_targets() {
     assert!(predicate::str::contains("node:mjs | stderr").eval(&output));
 }
 
+#[test]
+fn avoids_postinstall_recursion() {
+    let sandbox = node_sandbox();
+
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run")
+            .arg("postinstallRecursion:noop")
+            .env_remove("MOON_TEST");
+    });
+
+    let output = assert.output();
+
+    assert!(predicate::str::contains("postinstallRecursion:noop")
+        .count(1)
+        .eval(&output));
+
+    assert.success();
+}
+
 mod install_deps {
     use super::*;
 

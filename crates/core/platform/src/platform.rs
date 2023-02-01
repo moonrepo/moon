@@ -151,6 +151,7 @@ pub trait Platform: Debug + Send + Sync {
     async fn hash_run_target(
         &self,
         project: &Project,
+        runtime: &Runtime,
         hashset: &mut HashSet,
         hasher_config: &HasherConfig,
     ) -> Result<(), ToolError> {

@@ -73,17 +73,6 @@ impl NodeTool {
         Ok(())
     }
 
-    pub fn find_package_bin(
-        &self,
-        starting_dir: &Path,
-        bin_name: &str,
-    ) -> Result<node::BinFile, ToolError> {
-        match node::find_package_bin(starting_dir, bin_name)? {
-            Some(bin) => Ok(bin),
-            None => Err(ToolError::MissingBinary(bin_name.to_owned())),
-        }
-    }
-
     /// Return the `npm` package manager.
     pub fn get_npm(&self) -> Result<&NpmTool, ToolError> {
         match &self.npm {

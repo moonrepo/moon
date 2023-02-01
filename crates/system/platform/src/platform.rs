@@ -52,6 +52,7 @@ impl Platform for SystemPlatform {
     async fn hash_run_target(
         &self,
         _project: &Project,
+        _runtime: &Runtime,
         hashset: &mut HashSet,
         _hasher_config: &HasherConfig,
     ) -> Result<(), ToolError> {

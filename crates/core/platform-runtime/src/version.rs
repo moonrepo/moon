@@ -14,6 +14,10 @@ impl Version {
         Version(version.to_owned(), true)
     }
 
+    pub fn is_latest(&self) -> bool {
+        self.0 == "latest"
+    }
+
     pub fn is_override(&self) -> bool {
         self.1
     }

@@ -404,11 +404,12 @@ impl Platform for NodePlatform {
     async fn hash_run_target(
         &self,
         project: &Project,
+        runtime: &Runtime,
         hashset: &mut HashSet,
         hasher_config: &HasherConfig,
     ) -> Result<(), ToolError> {
         let hasher = actions::create_target_hasher(
-            self.toolchain.get()?,
+            self.toolchain.get_for_version(runtime.version()).ok(),
             project,
             &self.workspace_root,
             hasher_config,
@@ -429,8 +430,26 @@ impl Platform for NodePlatform {
         runtime: &Runtime,
         working_dir: &Path,
     ) -> Result<Command, ToolError> {
-        let tool = self.toolchain.get_for_version(runtime.version())?;
-        let command = actions::create_target_command(tool, context, project, task, working_dir)?;
+        let version = runtime.version();
+
+        let command = if version.is_latest() {
+            debug!(
+                target: LOG_TARGET,
+                "Tool has not been configured, attempting to create a command using the global `node`"
+            );
+
+            actions::create_target_command_without_tool(
+                &self.config,
+                context,
+                project,
+                task,
+                working_dir,
+            )?
+        } else {
+            let tool = self.toolchain.get_for_version(runtime.version())?;
+
+            actions::create_target_command(tool, context, project, task, working_dir)?
+        };
 
         Ok(command)
     }

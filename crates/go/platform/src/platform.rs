@@ -78,8 +78,6 @@ impl Platform for GoPlatform {
     ) -> Result<u8, ToolError> {
         let version = runtime.version();
 
-        dbg!(&version);
-
         if !self.toolchain.has(&version) {
             self.toolchain.register(
                 &version,

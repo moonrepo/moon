@@ -48,9 +48,6 @@ impl Tool for GoTool {
         let mut installed = 0;
         let version_clone = self.config.version.clone();
 
-        dbg!(&last_versions);
-        dbg!(&version_clone);
-
         let Some(version) = version_clone else {
             return Ok(installed);
         };

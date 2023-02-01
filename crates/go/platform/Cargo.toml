@@ -6,7 +6,6 @@ edition = "2021"
 [dependencies]
 moon_action_context = { path = "../../core/action-context" }
 moon_config = { path = "../../core/config" }
-moon_go_lang = { path = "../lang" }
 moon_go_tool = { path = "../tool" }
 moon_hasher = { path = "../../core/hasher" }
 moon_platform = { path = "../../core/platform" }

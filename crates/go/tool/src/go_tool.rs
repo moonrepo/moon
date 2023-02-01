@@ -5,8 +5,8 @@ use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_config::GoConfig;
 use rustc_hash::FxHashMap;
 use proto::{
-    async_trait, go::GoLanguage, Describable, Executable, Installable, Proto, Resolvable,
-    Shimable, Tool as ProtoTool,
+    async_trait, go::GoLanguage, Describable, Executable, Installable, Proto,
+    Tool as ProtoTool,
 };
 
 #[derive(Debug)]

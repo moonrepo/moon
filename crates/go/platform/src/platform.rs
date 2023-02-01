@@ -103,18 +103,20 @@ impl Platform for GoPlatform {
 
     async fn create_run_target_command(
         &self,
-        context: &ActionContext,
-        project: &Project,
+        _context: &ActionContext,
+        _project: &Project,
         task: &Task,
         runtime: &Runtime,
-        working_dir: &Path,
+        _working_dir: &Path,
     ) -> Result<Command, ToolError> {
-        dbg!(runtime);
         let tool = self.toolchain.get_for_version(runtime.version())?;
-        // let command = actions::create_target_command(tool, context, project, task, working_dir)?;
         let go_bin = tool.get_bin_path()?;
 
-        let command = Command::new(go_bin);
+        let mut command = Command::new(go_bin);
+
+        command
+            .args(&task.args)
+            .envs(&task.env);
 
         Ok(command)
     }

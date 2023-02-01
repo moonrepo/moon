@@ -3,6 +3,8 @@ use moon_action_context::ActionContext;
 use moon_config::{HasherConfig, PlatformType, ProjectConfig, GoConfig};
 use moon_hasher::HashSet;
 use moon_platform::{Platform, Runtime, Version};
+use proto::Proto;
+use rustc_hash::FxHashMap;
 use moon_project::Project;
 use moon_task::Task;
 use moon_tool::{Tool, ToolError, ToolManager};
@@ -68,6 +70,26 @@ impl Platform for GoPlatform {
 
     // ACTIONS
 
+    async fn setup_tool(
+        &mut self,
+        _context: &ActionContext,
+        runtime: &Runtime,
+        last_versions: &mut FxHashMap<String, String>,
+    ) -> Result<u8, ToolError> {
+        let version = runtime.version();
+
+        dbg!(&version);
+
+        if !self.toolchain.has(&version) {
+            self.toolchain.register(
+                &version,
+                GoTool::new(&Proto::new()?, &self.config, &version.0)?,
+            );
+        }
+
+        Ok(self.toolchain.setup(&version, last_versions).await?)
+    }
+
     async fn hash_run_target(
         &self,
         _project: &Project,
@@ -81,30 +103,18 @@ impl Platform for GoPlatform {
 
     async fn create_run_target_command(
         &self,
-        _context: &ActionContext,
-        _project: &Project,
+        context: &ActionContext,
+        project: &Project,
         task: &Task,
-        _runtime: &Runtime,
+        runtime: &Runtime,
         working_dir: &Path,
     ) -> Result<Command, ToolError> {
-        let mut command = Command::new(&task.command);
+        dbg!(runtime);
+        let tool = self.toolchain.get_for_version(runtime.version())?;
+        // let command = actions::create_target_command(tool, context, project, task, working_dir)?;
+        let go_bin = tool.get_bin_path()?;
 
-        // cmd/pwsh requires an absolute path to batch files
-        if cfg!(windows) {
-            use moon_utils::process::is_windows_script;
-
-            for arg in &task.args {
-                if is_windows_script(arg) {
-                    command.arg(working_dir.join(arg));
-                } else {
-                    command.arg(arg);
-                }
-            }
-        } else {
-            command.args(&task.args);
-        }
-
-        command.envs(&task.env);
+        let command = Command::new(go_bin);
 
         Ok(command)
     }

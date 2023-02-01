@@ -23,6 +23,7 @@ impl Runtime {
     pub fn version(&self) -> Version {
         match self {
             Runtime::Node(version) => version.to_owned(),
+            Runtime::Go(version) => version.to_owned(),
             _ => Version::new("latest"),
         }
     }

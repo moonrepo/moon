@@ -67,7 +67,7 @@ impl Tool for NpmTool {
         }
 
         print_checkpoint(
-            format!("installing node v{}", self.config.version),
+            format!("installing npm v{}", self.config.version),
             Checkpoint::Setup,
         );
 

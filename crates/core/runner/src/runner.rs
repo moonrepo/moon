@@ -428,6 +428,7 @@ impl<'a> Runner<'a> {
     pub async fn is_cached(
         &mut self,
         context: &mut ActionContext,
+        runtime: &Runtime,
     ) -> Result<Option<HydrateFrom>, RunnerError> {
         let mut hashset = HashSet::default();
 
@@ -436,7 +437,12 @@ impl<'a> Runner<'a> {
         self.workspace
             .platforms
             .get(self.task.platform)?
-            .hash_run_target(self.project, &mut hashset, &self.workspace.config.hasher)
+            .hash_run_target(
+                self.project,
+                runtime,
+                &mut hashset,
+                &self.workspace.config.hasher,
+            )
             .await?;
 
         let hash = hashset.generate();

@@ -4,6 +4,7 @@
   "workspaces": [
     "base",
     "lifecycles",
+    "postinstall-recursion",
     "version-override"
   ]
 }

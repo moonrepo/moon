@@ -8,6 +8,7 @@ expression: "read_to_string(sandbox.path().join(\"package.json\")).unwrap()"
   "workspaces": [
     "base",
     "lifecycles",
+    "postinstall-recursion",
     "version-override"
   ],
   "packageManager": "npm@8.19.2"

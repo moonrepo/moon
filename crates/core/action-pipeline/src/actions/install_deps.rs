@@ -14,6 +14,20 @@ use tokio::sync::RwLock;
 
 const LOG_TARGET: &str = "moon:action:install-deps";
 
+// We need to include the runtime and project in the key,
+// since moon can install deps in multiple projects across multiple tools
+// all in parallel!
+fn get_installation_key(runtime: &Runtime, project: Option<&Project>) -> String {
+    format!(
+        "{}:{}",
+        runtime,
+        match project {
+            Some(p) => p.id.as_ref(),
+            None => "*",
+        }
+    )
+}
+
 pub async fn install_deps(
     _action: &mut Action,
     context: Arc<RwLock<ActionContext>>,
@@ -29,6 +43,7 @@ pub async fn install_deps(
 
     let workspace = workspace.read().await;
     let context = context.read().await;
+    let install_key = get_installation_key(runtime, project);
 
     if is_offline() {
         warn!(
@@ -40,7 +55,7 @@ pub async fn install_deps(
     }
 
     // When the install is happening as a child process of another install, avoid recursion
-    if env::var("MOON_INSTALLING_DEPS").unwrap_or_default() == runtime.to_string() {
+    if env::var("MOON_INSTALLING_DEPS").unwrap_or_default() == install_key {
         debug!(
             target: LOG_TARGET,
             "Detected another install running, skipping install"
@@ -116,7 +131,7 @@ pub async fn install_deps(
         .cache_deps_state(runtime, project.map(|p| p.id.as_ref()))?;
 
     if hash != cache.last_hash || last_modified == 0 || last_modified > cache.last_install_time {
-        env::set_var("MOON_INSTALLING_DEPS", runtime.to_string());
+        env::set_var("MOON_INSTALLING_DEPS", install_key);
 
         debug!(
             target: LOG_TARGET,
@@ -134,6 +149,8 @@ pub async fn install_deps(
         cache.last_hash = hash;
         cache.last_install_time = time::now_millis();
         cache.save()?;
+
+        env::remove_var("MOON_INSTALLING_DEPS");
 
         return Ok(ActionStatus::Passed);
     }

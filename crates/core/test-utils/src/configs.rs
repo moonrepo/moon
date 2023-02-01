@@ -241,6 +241,10 @@ pub fn get_node_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Inherite
         projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
             ("node".to_owned(), "base".to_owned()),
             ("lifecycles".to_owned(), "lifecycles".to_owned()),
+            (
+                "postinstallRecursion".to_owned(),
+                "postinstall-recursion".to_owned(),
+            ),
             ("versionOverride".to_owned(), "version-override".to_owned()),
             // Binaries
             ("esbuild".to_owned(), "esbuild".to_owned()),

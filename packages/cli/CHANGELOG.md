@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed a recursion issue when attempting to install dependencies and a post-install script would
+  trigger the process again.
+
 #### 0.23.1
 
 #### 🐞 Fixes

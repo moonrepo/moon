@@ -1,0 +1,14 @@
+[package]
+name = "moon_go_tool"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_config = { path = "../../core/config" }
+moon_logger = { path = "../../core/logger" }
+moon_go_lang = { path = "../lang" }
+moon_terminal = { path = "../../core/terminal" }
+moon_tool = { path = "../../core/tool" }
+moon_utils = { path = "../../core/utils" }
+proto = { path = "../../proto/cli" }
+rustc-hash = { workspace = true }

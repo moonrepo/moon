@@ -1,0 +1,111 @@
+use crate::target_hasher::GoTargetHasher;
+use moon_action_context::ActionContext;
+use moon_config::{HasherConfig, PlatformType, ProjectConfig, GoConfig};
+use moon_hasher::HashSet;
+use moon_platform::{Platform, Runtime, Version};
+use moon_project::Project;
+use moon_task::Task;
+use moon_tool::{Tool, ToolError, ToolManager};
+use moon_go_tool::GoTool;
+use moon_utils::{async_trait, process::Command};
+use std::path::Path;
+
+#[derive(Debug)]
+pub struct GoPlatform {
+    config: GoConfig,
+    toolchain: ToolManager<GoTool>,
+}
+
+impl GoPlatform {
+    pub fn new(config: &GoConfig) -> Self {
+        GoPlatform{
+            toolchain: ToolManager::new(Runtime::Go(Version::default())),
+            config: config.to_owned(),
+        }
+    }
+}
+
+
+#[async_trait]
+impl Platform for GoPlatform {
+    fn get_type(&self) -> PlatformType {
+        PlatformType::Go
+    }
+
+    fn get_runtime_from_config(&self, _project_config: Option<&ProjectConfig>) -> Option<Runtime> {
+        if let Some(go_version) = &self.config.version {
+            return Some(Runtime::Node(Version::new(go_version)));
+        }
+
+        None
+    }
+
+    fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool {
+        if matches!(platform, PlatformType::Go) {
+            return true;
+        }
+
+        if let Some(runtime) = &runtime {
+            return matches!(runtime, Runtime::Go(_));
+        }
+
+        false
+    }
+
+    // TOOLCHAIN
+
+    fn get_tool(&self) -> Result<Box<&dyn Tool>, ToolError> {
+        let tool = self.toolchain.get()?;
+
+        Ok(Box::new(tool))
+    }
+
+    fn get_tool_for_version(&self, version: Version) -> Result<Box<&dyn Tool>, ToolError> {
+        let tool = self.toolchain.get_for_version(&version)?;
+
+        Ok(Box::new(tool))
+    }
+
+    // ACTIONS
+
+    async fn hash_run_target(
+        &self,
+        _project: &Project,
+        hashset: &mut HashSet,
+        _hasher_config: &HasherConfig,
+    ) -> Result<(), ToolError> {
+        hashset.hash(GoTargetHasher::new());
+
+        Ok(())
+    }
+
+    async fn create_run_target_command(
+        &self,
+        _context: &ActionContext,
+        _project: &Project,
+        task: &Task,
+        _runtime: &Runtime,
+        working_dir: &Path,
+    ) -> Result<Command, ToolError> {
+        let mut command = Command::new(&task.command);
+
+        // cmd/pwsh requires an absolute path to batch files
+        if cfg!(windows) {
+            use moon_utils::process::is_windows_script;
+
+            for arg in &task.args {
+                if is_windows_script(arg) {
+                    command.arg(working_dir.join(arg));
+                } else {
+                    command.arg(arg);
+                }
+            }
+        } else {
+            command.args(&task.args);
+        }
+
+        command.envs(&task.env);
+
+        Ok(command)
+    }
+}

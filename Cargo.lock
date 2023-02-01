@@ -2127,6 +2127,7 @@ dependencies = [
  "moon_config",
  "moon_dep_graph",
  "moon_error",
+ "moon_go_platform",
  "moon_node_platform",
  "moon_project_graph",
  "moon_system_platform",
@@ -2397,6 +2398,39 @@ name = "moon_go_lang"
 version = "0.1.0"
 dependencies = [
  "moon_lang",
+]
+
+[[package]]
+name = "moon_go_platform"
+version = "0.1.0"
+dependencies = [
+ "moon_action_context",
+ "moon_config",
+ "moon_go_lang",
+ "moon_go_tool",
+ "moon_hasher",
+ "moon_platform",
+ "moon_project",
+ "moon_task",
+ "moon_tool",
+ "moon_utils",
+ "proto",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "moon_go_tool"
+version = "0.1.0"
+dependencies = [
+ "moon_config",
+ "moon_go_lang",
+ "moon_logger",
+ "moon_terminal",
+ "moon_tool",
+ "moon_utils",
+ "proto",
+ "rustc-hash",
 ]
 
 [[package]]

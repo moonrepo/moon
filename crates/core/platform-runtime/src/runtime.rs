@@ -7,6 +7,7 @@ use std::fmt::{self, Debug};
 #[serde(tag = "platform", content = "version")]
 pub enum Runtime {
     Node(Version),
+    Go(Version),
     System,
 }
 
@@ -14,6 +15,7 @@ impl Runtime {
     pub fn label(&self) -> String {
         match self {
             Runtime::Node(version) => format!("Node.js v{}", version),
+            Runtime::Go(version) => format!("go {}", version),
             Runtime::System => "system".into(),
         }
     }
@@ -31,6 +33,7 @@ impl fmt::Display for Runtime {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Runtime::Node(_) => write!(f, "Node"),
+            Runtime::Go(_) => write!(f, "Go"),
             Runtime::System => write!(f, "System"),
         }
     }
@@ -40,6 +43,7 @@ impl From<&Runtime> for PlatformType {
     fn from(value: &Runtime) -> Self {
         match value {
             Runtime::Node(_) => PlatformType::Node,
+            Runtime::Go(_) => PlatformType::Go,
             Runtime::System => PlatformType::System,
         }
     }

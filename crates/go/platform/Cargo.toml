@@ -1,0 +1,19 @@
+[package]
+name = "moon_go_platform"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_action_context = { path = "../../core/action-context" }
+moon_config = { path = "../../core/config" }
+moon_go_lang = { path = "../lang" }
+moon_go_tool = { path = "../tool" }
+moon_hasher = { path = "../../core/hasher" }
+moon_platform = { path = "../../core/platform" }
+moon_project = { path = "../../core/project" }
+moon_task = { path = "../../core/task" }
+moon_tool = { path = "../../core/tool" }
+moon_utils = { path = "../../core/utils" }
+proto = { path = "../../proto/cli" }
+serde = { workspace = true }
+serde_json = { workspace = true }

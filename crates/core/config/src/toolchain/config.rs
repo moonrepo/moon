@@ -3,6 +3,7 @@
 use crate::errors::map_validation_errors_to_figment_errors;
 use crate::helpers::gather_extended_sources;
 use crate::toolchain::node::NodeConfig;
+use crate::toolchain::go::GoConfig;
 use crate::toolchain::typescript::TypeScriptConfig;
 use crate::validators::validate_extends;
 use crate::ConfigError;
@@ -28,6 +29,10 @@ pub struct ToolchainConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate]
     pub node: Option<NodeConfig>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[validate]
+    pub go: Option<GoConfig>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate]

@@ -1,6 +1,7 @@
 use moon_dep_graph::DepGraphBuilder;
 use moon_error::MoonError;
 use moon_node_platform::NodePlatform;
+use moon_go_platform::GoPlatform;
 use moon_project_graph::{ProjectGraph, ProjectGraphBuilder, ProjectGraphError};
 use moon_system_platform::SystemPlatform;
 use moon_utils::{is_test_env, json};
@@ -14,6 +15,10 @@ pub fn register_platforms(workspace: &mut Workspace) -> Result<(), WorkspaceErro
             &workspace.toolchain_config.typescript,
             &workspace.root,
         )));
+    }
+
+    if let Some(go_config) = &workspace.toolchain_config.go {
+        workspace.register_platform(Box::new(GoPlatform::new(go_config)));
     }
 
     // Should be last since it's the most common

@@ -68,6 +68,9 @@ pub enum PlatformType {
     #[strum(serialize = "node")]
     Node,
 
+    #[strum(serialize = "go")]
+    Go,
+
     #[strum(serialize = "system")]
     System,
 
@@ -88,8 +91,8 @@ impl From<ProjectLanguage> for PlatformType {
             ProjectLanguage::Unknown => PlatformType::Unknown,
             ProjectLanguage::Bash | ProjectLanguage::Batch => PlatformType::System,
             ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => PlatformType::Node,
+            ProjectLanguage::Go => PlatformType::Go,
             // TODO: Move to these to their own platform once it's been implemented!
-            ProjectLanguage::Go
             | ProjectLanguage::Php
             | ProjectLanguage::Python
             | ProjectLanguage::Ruby

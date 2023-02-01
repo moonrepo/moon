@@ -8,6 +8,7 @@ moon_config = { path = "../config" }
 moon_dep_graph = { path = "../dep-graph" }
 moon_error = { path = "../error" }
 moon_node_platform = { path = "../../node/platform" }
+moon_go_platform = { path = "../../go/platform" }
 moon_project_graph = { path = "../project-graph" }
 moon_system_platform = { path = "../../system/platform" }
 moon_utils = { path = "../utils" }

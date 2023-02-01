@@ -80,7 +80,7 @@ pub async fn prune() -> Result<(), AnyError> {
                 )
                 .await?;
             }
-            PlatformType::System | PlatformType::Unknown => {}
+            PlatformType::System | PlatformType::Go | PlatformType::Unknown => {}
         }
     }
 

@@ -34,7 +34,7 @@ impl Platform for GoPlatform {
 
     fn get_runtime_from_config(&self, _project_config: Option<&ProjectConfig>) -> Option<Runtime> {
         if let Some(go_version) = &self.config.version {
-            return Some(Runtime::Node(Version::new(go_version)));
+            return Some(Runtime::Go(Version::new(go_version)));
         }
 
         None

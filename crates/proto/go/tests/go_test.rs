@@ -238,7 +238,7 @@ mod resolver {
         let latest_version = Version::parse(latest.as_str()).unwrap();
         let current_latest_version = Version::parse("1.19.5").unwrap();
 
-        assert_eq!(latest_version > current_latest_version, true);
+        assert!(latest_version > current_latest_version);
     }
 }
 

@@ -34,7 +34,7 @@ impl GoLanguage {
 }
 
 impl Describable<'_> for GoLanguage {
-    fn get_id(&self) -> &str {
+    fn get_bin_name(&self) -> &str {
         "go"
     }
 

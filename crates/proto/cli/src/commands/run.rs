@@ -9,7 +9,7 @@ pub async fn run(tool_type: ToolType, args: Vec<String>) -> Result<(), ProtoErro
     let mut version = None;
 
     // Env var takes highest priority
-    let env_var = format!("PROTO_{}_VERSION", tool.get_id().to_uppercase());
+    let env_var = format!("PROTO_{}_VERSION", tool.get_bin_name().to_uppercase());
 
     if let Ok(session_version) = env::var(&env_var) {
         debug!(
@@ -95,7 +95,7 @@ pub async fn run(tool_type: ToolType, args: Vec<String>) -> Result<(), ProtoErro
             "Attempting to find global version"
         );
 
-        let global_file = get_tools_dir()?.join(tool.get_id()).join("version");
+        let global_file = get_tools_dir()?.join(tool.get_bin_name()).join("version");
 
         if global_file.exists() {
             let global_version = load_version_file(&global_file)?;
@@ -128,7 +128,7 @@ pub async fn run(tool_type: ToolType, args: Vec<String>) -> Result<(), ProtoErro
         .args(&args)
         .env(env_var, tool.get_resolved_version())
         .env(
-            format!("PROTO_{}_BIN", tool.get_id().to_uppercase()),
+            format!("PROTO_{}_BIN", tool.get_bin_name().to_uppercase()),
             tool.get_bin_path()?.to_string_lossy().to_string(),
         )
         .spawn()

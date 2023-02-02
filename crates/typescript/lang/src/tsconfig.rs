@@ -212,6 +212,12 @@ pub struct CompilerOptions {
     pub allow_js: Option<bool>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub allow_arbitrary_extensions: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub allow_importing_ts_extensions: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub allow_synthetic_default_imports: Option<bool>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -237,6 +243,9 @@ pub struct CompilerOptions {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub composite: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub custom_conditions: Option<Vec<String>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub declaration_dir: Option<String>,
@@ -298,9 +307,6 @@ pub struct CompilerOptions {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub import_helpers: Option<bool>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub imports_not_used_as_values: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub incremental: Option<bool>,
@@ -420,9 +426,6 @@ pub struct CompilerOptions {
     pub preserve_symlinks: Option<bool>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub preserve_value_imports: Option<bool>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub preserve_watch_output: Option<bool>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -436,6 +439,12 @@ pub struct CompilerOptions {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub resolve_json_module: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resolve_package_json_exports: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resolve_package_json_imports: Option<bool>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub root_dir: Option<String>,
@@ -495,12 +504,18 @@ pub struct CompilerOptions {
     pub use_unknown_in_catch_variables: Option<bool>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub verbatim_module_syntax: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub watch_options: Option<WatchOptions>,
 
     // Deprecated
     #[serde(skip_serializing_if = "Option::is_none")]
     #[deprecated]
     pub charset: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub imports_not_used_as_values: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[deprecated]
@@ -517,6 +532,9 @@ pub struct CompilerOptions {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[deprecated]
     pub out: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub preserve_value_imports: Option<bool>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[deprecated]
@@ -640,6 +658,7 @@ impl<'de> Deserialize<'de> for ModuleDetection {
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ModuleResolution {
+    Bundler,
     Classic,
     Node,
     Node12,
@@ -656,6 +675,7 @@ impl<'de> Deserialize<'de> for ModuleResolution {
         let s = s.to_uppercase();
 
         let r = match s.as_str() {
+            "BUNDLER" => ModuleResolution::Bundler,
             "CLASSIC" => ModuleResolution::Classic,
             "NODE12" => ModuleResolution::Node12,
             "NODE16" => ModuleResolution::Node16,

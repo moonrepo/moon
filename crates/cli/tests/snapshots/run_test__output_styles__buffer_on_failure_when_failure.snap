@@ -1,6 +1,5 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 1006
 expression: assert.output()
 ---
 ▪▪▪▪ npm install
@@ -11,7 +10,9 @@ stdout
 stderr
 
 
- ERROR  Process ~/.moon/tools/node/18.0.0/node failed with a 1 exit code.
+ ERROR 
+
+Process ~/.moon/tools/node/18.0.0/shims/node failed with a 1 exit code.
 
 
 

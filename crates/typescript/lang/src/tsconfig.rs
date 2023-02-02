@@ -4,7 +4,7 @@ use cached::proc_macro::cached;
 use moon_error::{map_json_to_error, MoonError};
 use moon_lang::config_cache;
 use moon_utils::{
-    json::{self, read as read_json, JsonValue},
+    json::{self, read as read_json, JsonMap, JsonValue},
     path::standardize_separators,
 };
 use serde::{Deserialize, Deserializer, Serialize};
@@ -30,6 +30,13 @@ config_cache!(
 
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(untagged)]
+pub enum StringOrArray<T> {
+    String(String),
+    Array(Vec<T>),
+}
+
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TsConfigJson {
@@ -43,7 +50,7 @@ pub struct TsConfigJson {
     pub exclude: Option<Vec<String>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub extends: Option<String>,
+    pub extends: Option<StringOrArray<String>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub files: Option<Vec<String>>,
@@ -138,35 +145,38 @@ impl TsConfigJson {
     }
 }
 
-fn merge(a: &mut JsonValue, b: JsonValue) {
-    match (a, b) {
-        (&mut JsonValue::Object(ref mut a), JsonValue::Object(b)) => {
-            for (k, v) in b {
-                merge(a.entry(k).or_insert(JsonValue::Null), v);
-            }
-        }
-        (a, b) => {
-            if let JsonValue::Null = a {
-                *a = b;
-            }
-        }
-    }
-}
-
 pub fn load_to_value<T: AsRef<Path>>(path: T, extend: bool) -> Result<JsonValue, MoonError> {
     let path = path.as_ref();
-    let mut json: JsonValue = json::read(path)?;
+    let mut merged_file = JsonValue::Object(JsonMap::new());
+    let last_file: JsonValue = json::read(path)?;
 
     if extend {
-        if let JsonValue::String(s) = &json["extends"] {
-            let extends_path = path.parent().unwrap_or_else(|| Path::new("")).join(s);
-            let extends_value = load_to_value(extends_path, extend)?;
+        let extends_root = path.parent().unwrap_or_else(|| Path::new(""));
 
-            merge(&mut json, extends_value);
+        match &last_file["extends"] {
+            JsonValue::Array(list) => {
+                for item in list {
+                    if let JsonValue::String(value) = item {
+                        merged_file = json::merge(
+                            &merged_file,
+                            &load_to_value(extends_root.join(value), extend)?,
+                        );
+                    }
+                }
+            }
+            JsonValue::String(value) => {
+                merged_file = json::merge(
+                    &merged_file,
+                    &load_to_value(extends_root.join(value), extend)?,
+                );
+            }
+            _ => {}
         }
     }
 
-    Ok(json)
+    merged_file = json::merge(&merged_file, &last_file);
+
+    Ok(merged_file)
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
@@ -898,12 +908,11 @@ mod test {
         let json_1 = r#"{"compilerOptions": {"jsx": "react", "noEmit": true}}"#;
         let json_2 = r#"{"compilerOptions": {"jsx": "preserve", "removeComments": true}}"#;
 
-        let mut value1: JsonValue = serde_json::from_str(json_1).unwrap();
+        let value1: JsonValue = serde_json::from_str(json_1).unwrap();
         let value2: JsonValue = serde_json::from_str(json_2).unwrap();
 
-        merge(&mut value1, value2);
-
-        let value: TsConfigJson = serde_json::from_value(value1).unwrap();
+        let new_value = json::merge(&value1, &value2);
+        let value: TsConfigJson = serde_json::from_value(new_value).unwrap();
 
         assert_eq!(
             value.clone().compiler_options.unwrap().jsx,

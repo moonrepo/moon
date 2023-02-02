@@ -9,7 +9,7 @@ use std::fs;
 use std::io::Read;
 use std::path::Path;
 
-pub use serde_json::{json, Value as JsonValue};
+pub use serde_json::{json, Map as JsonMap, Value as JsonValue};
 
 #[inline]
 pub fn clean<D: AsRef<str>>(json: D) -> Result<String, MoonError> {

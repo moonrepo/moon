@@ -32,9 +32,9 @@ config_cache!(
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(untagged)]
-pub enum TsConfigExtends<T> {
+pub enum TsConfigExtends {
     String(String),
-    Array(Vec<T>),
+    Array(Vec<String>),
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
@@ -50,7 +50,7 @@ pub struct TsConfigJson {
     pub exclude: Option<Vec<String>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub extends: Option<TsConfigExtends<String>>,
+    pub extends: Option<TsConfigExtends>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub files: Option<Vec<String>>,

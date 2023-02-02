@@ -4,9 +4,10 @@ mod execute;
 mod install;
 mod platform;
 mod resolve;
+mod shim;
 mod verify;
 
-use proto_core::{Describable, Proto, Shimable, Tool};
+use proto_core::{Describable, Proto, Tool};
 use std::path::PathBuf;
 
 #[derive(Debug)]
@@ -44,10 +45,6 @@ impl Describable<'_> for GoLanguage {
     fn get_name(&self) -> String {
         "Go".into()
     }
-}
-
-impl Shimable<'_> for GoLanguage {
-    // No shims
 }
 
 impl Tool<'_> for GoLanguage {}

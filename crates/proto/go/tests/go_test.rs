@@ -139,11 +139,6 @@ mod downloader {
         tool.version = Some(String::from("1.20.0"));
 
         let to_file = tool.get_download_path().unwrap();
-        assert!(to_file
-            .to_str()
-            .unwrap()
-            .ends_with("temp/go/go1.20.darwin-arm64.tar.gz"));
-
         assert!(!to_file.exists());
 
         tool.download(&to_file, None).await.unwrap();

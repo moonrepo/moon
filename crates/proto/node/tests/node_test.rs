@@ -25,7 +25,7 @@ async fn downloads_verifies_installs_tool() {
         assert!(!global_shim.exists());
     } else {
         assert_eq!(tool.get_bin_path().unwrap(), &base_dir.join("bin/node"));
-        assert_eq!(tool.get_shim_path().unwrap(), &base_dir.join("node"));
+        assert_eq!(tool.get_shim_path().unwrap(), &base_dir.join("shims/node"));
         assert!(global_shim.exists());
     }
 }

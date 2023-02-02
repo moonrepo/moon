@@ -1,5 +1,6 @@
-use crate::platform::GoArch;
 use crate::GoLanguage;
+use crate::platform::GoArch;
+use moon_utils::semver::Version;
 use proto_core::{async_trait, Downloadable, ProtoError, Resolvable};
 use std::env::consts;
 use std::path::PathBuf;
@@ -56,6 +57,18 @@ pub fn get_archive_file(version: &str) -> Result<String, ProtoError> {
         "tar.gz"
     };
 
+    let v = match Version::parse(version) {
+        Ok(a) => a,
+        Err(e) => {
+            return Err(ProtoError::DownloadFailed(version.into(), e.to_string()))
+        }
+    };
+
+    if v.patch == 0 {
+        let short_version = format!("{}.{}", v.major, v.minor);
+        return Ok(format!("{}.{}", get_archive_file_path(short_version.as_str())?, ext));
+    }
+
     Ok(format!("{}.{}", get_archive_file_path(version)?, ext))
 }
 
@@ -69,7 +82,7 @@ impl Downloadable<'_> for GoLanguage {
 
     fn get_download_url(&self) -> Result<String, ProtoError> {
         Ok(format!(
-            "https://dl.google.com/go/{}",
+            "https://go.dev/dl/{}",
             get_archive_file(self.get_resolved_version())?
         ))
     }

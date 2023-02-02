@@ -82,7 +82,7 @@ impl Downloadable<'_> for GoLanguage {
 
     fn get_download_url(&self) -> Result<String, ProtoError> {
         Ok(format!(
-            "https://go.dev/dl/{}",
+            "https://dl.google.com/go/{}",
             get_archive_file(self.get_resolved_version())?
         ))
     }

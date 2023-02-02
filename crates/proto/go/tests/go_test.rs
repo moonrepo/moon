@@ -27,7 +27,7 @@ async fn downloads_verifies_installs_tool() {
     let global_shim = proto.shims_dir.join("go");
 
     if cfg!(windows) {
-        assert_eq!(tool.get_bin_path().unwrap(), &base_dir.join("go.exe"));
+        assert_eq!(tool.get_bin_path().unwrap(), &base_dir.join("bin/go.exe"));
         assert!(!global_shim.exists());
     } else {
         assert_eq!(tool.get_bin_path().unwrap(), &base_dir.join("bin/go"));

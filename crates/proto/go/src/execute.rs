@@ -4,7 +4,7 @@ use std::path::Path;
 
 #[cfg(target_os = "windows")]
 pub fn get_bin_name<T: AsRef<str>>(name: T) -> String {
-    format!("{}.{}", name.as_ref(), "exe")
+    format!("bin/{}.exe", name.as_ref())
 }
 
 #[cfg(not(target_os = "windows"))]

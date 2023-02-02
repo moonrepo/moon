@@ -1,5 +1,5 @@
 use assert_fs::prelude::{FileWriteStr, PathChild};
-use moon_utils::semver::Version;
+use lenient_semver::Version;
 use proto_core::{
     Detector, Downloadable, Executable, Installable, Proto, Resolvable, Tool, Verifiable,
 };

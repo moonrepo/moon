@@ -3377,7 +3377,6 @@ dependencies = [
  "assert_fs",
  "lenient_semver",
  "log",
- "moon_utils",
  "proto_core",
  "serde",
  "serde_json",

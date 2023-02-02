@@ -1,6 +1,6 @@
-use crate::color;
+use crate::{color, Describable};
 use flate2::read::GzDecoder;
-use log::trace;
+use log::{debug, trace};
 use proto_error::ProtoError;
 use std::fs::{self, File};
 use std::io;
@@ -10,20 +10,55 @@ use zip::result::ZipError;
 use zip::ZipArchive;
 
 #[async_trait::async_trait]
-pub trait Installable<'tool>: Send + Sync {
+pub trait Installable<'tool>: Send + Sync + Describable<'tool> {
+    /// Return a prefix that will be removed from all paths when
+    /// unpacking an archive and copying the files.
+    fn get_archive_prefix(&self) -> Result<Option<String>, ProtoError> {
+        Ok(None)
+    }
+
     /// Return an absolute file path to the directory containing the installed tool.
     /// This is typically ~/.proto/tools/<tool>/<version>.
     fn get_install_dir(&self) -> Result<PathBuf, ProtoError>;
 
     /// Run any installation steps after downloading and verifying the tool.
     /// This is typically unzipping an archive, and running any installers/binaries.
-    async fn install(&self, install_dir: &Path, download_path: &Path) -> Result<bool, ProtoError>;
+    async fn install(&self, install_dir: &Path, download_path: &Path) -> Result<bool, ProtoError> {
+        if install_dir.exists() {
+            debug!(target: self.get_log_target(), "Tool already installed, continuing");
+
+            return Ok(false);
+        }
+
+        if !download_path.exists() {
+            return Err(ProtoError::InstallMissingDownload(self.get_name()));
+        }
+
+        let prefix = self.get_archive_prefix()?;
+
+        debug!(
+            target: self.get_log_target(),
+            "Attempting to install {} to {}",
+            color::path(download_path),
+            color::path(install_dir),
+        );
+
+        if download_path.extension().unwrap_or_default() == "zip" {
+            unzip(download_path, install_dir, prefix)?;
+        } else {
+            untar(download_path, install_dir, prefix)?;
+        }
+
+        debug!(target: self.get_log_target(), "Successfully installed tool");
+
+        Ok(true)
+    }
 }
 
 pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(
     input_file: I,
     output_dir: O,
-    remove_prefix: Option<&str>,
+    remove_prefix: Option<String>,
 ) -> Result<(), ProtoError> {
     let input_file = input_file.as_ref();
     let output_dir = output_dir.as_ref();
@@ -56,9 +91,9 @@ pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(
         let mut path: PathBuf = entry.path().map_err(handle_input_error)?.into_owned();
 
         // Remove the prefix
-        if let Some(prefix) = remove_prefix {
-            if path.starts_with(prefix) {
-                path = path.strip_prefix(prefix).unwrap().to_owned();
+        if let Some(prefix) = &remove_prefix {
+            if path.starts_with(&prefix) {
+                path = path.strip_prefix(&prefix).unwrap().to_owned();
             }
         }
 
@@ -81,7 +116,7 @@ pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(
 pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
     input_file: I,
     output_dir: O,
-    remove_prefix: Option<&str>,
+    remove_prefix: Option<String>,
 ) -> Result<(), ProtoError> {
     let input_file = input_file.as_ref();
     let output_dir = output_dir.as_ref();
@@ -116,9 +151,9 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
         };
 
         // Remove the prefix
-        if let Some(prefix) = remove_prefix {
-            if path.starts_with(prefix) {
-                path = path.strip_prefix(prefix).unwrap().to_owned();
+        if let Some(prefix) = &remove_prefix {
+            if path.starts_with(&prefix) {
+                path = path.strip_prefix(&prefix).unwrap().to_owned();
             }
         }
 

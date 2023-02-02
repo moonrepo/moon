@@ -1,6 +1,6 @@
 use crate::color;
-use crate::downloader::Downloadable;
-use log::trace;
+use crate::downloader::{download_from_url, Downloadable};
+use log::{debug, trace};
 use proto_error::ProtoError;
 use sha2::{Digest, Sha256};
 use std::fs::File;
@@ -14,12 +14,38 @@ pub trait Verifiable<'tool>: Send + Sync + Downloadable<'tool> {
     /// This is typically ~/.prove/temp/<file>.
     fn get_checksum_path(&self) -> Result<PathBuf, ProtoError>;
 
+    /// Return a URL to download the tool's checksum manifest from a registry.
+    fn get_checksum_url(&self) -> Result<String, ProtoError>;
+
     /// If applicable, download all files necessary for verifying checksums.
     async fn download_checksum(
         &self,
         to_file: &Path,
         from_url: Option<&str>,
-    ) -> Result<bool, ProtoError>;
+    ) -> Result<bool, ProtoError> {
+        if to_file.exists() {
+            debug!(target: self.get_log_target(), "Checksum already downloaded, continuing");
+
+            return Ok(false);
+        }
+
+        let from_url = match from_url {
+            Some(url) => url.to_owned(),
+            None => self.get_checksum_url()?,
+        };
+
+        debug!(
+            target: self.get_log_target(),
+            "Attempting to download checksum from {}",
+            color::url(&from_url),
+        );
+
+        download_from_url(&from_url, &to_file).await?;
+
+        debug!(target: self.get_log_target(), "Successfully downloaded checksum");
+
+        Ok(true)
+    }
 
     /// Verify the downloaded file using the checksum strategy for the tool.
     /// Common strategies are SHA256 and MD5.

@@ -12,6 +12,10 @@ impl Verifiable<'_> for NodeDependencyManager {
             .join(format!("{}.pub", self.get_resolved_version())))
     }
 
+    fn get_checksum_url(&self) -> Result<String, ProtoError> {
+        Ok(String::new())
+    }
+
     async fn download_checksum(
         &self,
         _to_file: &Path,

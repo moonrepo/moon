@@ -4,18 +4,20 @@ use std::path::Path;
 
 #[cfg(target_os = "windows")]
 pub fn get_bin_name<T: AsRef<str>>(name: T) -> String {
-    format!("{}.{}", name.as_ref(), "exe")
+    format!("bin/{}.exe", name.as_ref())
 }
 
 #[cfg(not(target_os = "windows"))]
 pub fn get_bin_name<T: AsRef<str>>(name: T) -> String {
-    format!("go/bin/{}", name.as_ref())
+    format!("bin/{}", name.as_ref())
 }
 
 #[async_trait]
 impl Executable<'_> for GoLanguage {
     async fn find_bin_path(&mut self) -> Result<(), ProtoError> {
-        let bin_path = self.get_install_dir()?.join(get_bin_name("go"));
+        let bin_path = self
+            .get_install_dir()?
+            .join(get_bin_name(self.get_bin_name()));
 
         if bin_path.exists() {
             self.bin_path = Some(bin_path);

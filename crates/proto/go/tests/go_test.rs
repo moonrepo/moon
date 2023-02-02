@@ -1,5 +1,7 @@
 use assert_fs::prelude::{FileWriteStr, PathChild};
-use proto_core::{Detector, Downloadable, Installable, Proto, Resolvable, Verifiable};
+use proto_core::{
+    Detector, Downloadable, Executable, Installable, Proto, Resolvable, Tool, Verifiable,
+};
 use proto_go::GoLanguage;
 use std::fs;
 
@@ -7,6 +9,30 @@ fn create_tool() -> (GoLanguage, assert_fs::TempDir) {
     let fixture = assert_fs::TempDir::new().unwrap();
     let tool = GoLanguage::new(&Proto::from(fixture.path()));
     (tool, fixture)
+}
+
+#[tokio::test]
+async fn downloads_verifies_installs_tool() {
+    let fixture = assert_fs::TempDir::new().unwrap();
+    let proto = Proto::from(fixture.path());
+    let mut tool = GoLanguage::new(&proto);
+
+    std::env::set_var("PROTO_ROOT", fixture.path().to_string_lossy().to_string());
+
+    tool.setup("1.17.3").await.unwrap();
+
+    assert!(tool.get_install_dir().unwrap().exists());
+
+    let base_dir = proto.tools_dir.join("go/1.17.3");
+    let global_shim = proto.shims_dir.join("go");
+
+    if cfg!(windows) {
+        assert_eq!(tool.get_bin_path().unwrap(), &base_dir.join("bin/go.exe"));
+        assert!(!global_shim.exists());
+    } else {
+        assert_eq!(tool.get_bin_path().unwrap(), &base_dir.join("bin/go"));
+        assert!(global_shim.exists());
+    }
 }
 
 mod detector {

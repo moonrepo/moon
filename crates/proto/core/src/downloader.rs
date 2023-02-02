@@ -1,6 +1,6 @@
-use crate::color;
 use crate::resolver::Resolvable;
-use log::trace;
+use crate::{color, Describable};
+use log::{debug, trace};
 use proto_error::ProtoError;
 use std::fs::File;
 use std::io;
@@ -8,17 +8,43 @@ use std::path::{Path, PathBuf};
 use tokio::fs;
 
 #[async_trait::async_trait]
-pub trait Downloadable<'tool>: Send + Sync + Resolvable<'tool> {
+pub trait Downloadable<'tool>: Send + Sync + Describable<'tool> + Resolvable<'tool> {
     /// Return an absolute file path to the downloaded file.
     /// This may not exist, as the path is composed ahead of time.
     /// This is typically ~/.proto/temp/<file>.
     fn get_download_path(&self) -> Result<PathBuf, ProtoError>;
 
+    /// Return a URL to download the tool's archive from a registry.
+    fn get_download_url(&self) -> Result<String, ProtoError>;
+
     /// Download the tool (as an archive) from its distribution registry
     /// into the ~/.proto/temp folder and return an absolute file path.
     /// A custom URL that points to the downloadable archive can be
     /// provided as the 2nd argument.
-    async fn download(&self, to_file: &Path, from_url: Option<&str>) -> Result<bool, ProtoError>;
+    async fn download(&self, to_file: &Path, from_url: Option<&str>) -> Result<bool, ProtoError> {
+        if to_file.exists() {
+            debug!(target: self.get_log_target(), "Tool already downloaded, continuing");
+
+            return Ok(false);
+        }
+
+        let from_url = match from_url {
+            Some(url) => url.to_owned(),
+            None => self.get_download_url()?,
+        };
+
+        debug!(
+            target: self.get_log_target(),
+            "Attempting to download tool from {}",
+            color::url(&from_url),
+        );
+
+        download_from_url(&from_url, &to_file).await?;
+
+        debug!(target: self.get_log_target(), "Successfully downloaded tool");
+
+        Ok(true)
+    }
 }
 
 pub async fn download_from_url<U, F>(url: U, dest_file: F) -> Result<(), ProtoError>

@@ -1,6 +1,7 @@
 use crate::NodeLanguage;
 use proto_core::{
-    async_trait, Executable, Installable, ProtoError, Resolvable, ShimBuilder, Shimable,
+    async_trait, Describable, Executable, Installable, ProtoError, Resolvable, ShimBuilder,
+    Shimable,
 };
 use std::path::Path;
 
@@ -9,7 +10,7 @@ impl Shimable<'_> for NodeLanguage {
     async fn create_shims(&mut self) -> Result<(), ProtoError> {
         // Windows shims are poor at handling arguments, revisit
         if cfg!(not(windows)) {
-            let mut shimmer = ShimBuilder::new("node", self.get_bin_path()?);
+            let mut shimmer = ShimBuilder::new(self.get_bin_name(), self.get_bin_path()?);
 
             shimmer
                 .dir(self.get_install_dir()?)

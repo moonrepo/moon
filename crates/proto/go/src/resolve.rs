@@ -21,7 +21,11 @@ impl<'a> BaseVersion for Version<'a> {
 #[async_trait]
 impl Resolvable<'_> for GoLanguage {
     fn get_resolved_version(&self) -> &str {
-        self.version.as_ref().unwrap()
+        let v = self.version.as_ref().unwrap();
+        match v.strip_suffix(".0") {
+            Some(s) => s,
+            None => v,
+        }
     }
 
     async fn load_manifest(&self) -> Result<VersionManifest, ProtoError> {

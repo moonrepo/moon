@@ -1,9 +1,9 @@
 use assert_fs::prelude::{FileWriteStr, PathChild};
+use moon_utils::semver::Version;
 use proto_core::{
     Detector, Downloadable, Executable, Installable, Proto, Resolvable, Tool, Verifiable,
 };
 use proto_go::GoLanguage;
-use moon_utils::semver::Version;
 use std::fs;
 
 fn create_tool() -> (GoLanguage, assert_fs::TempDir) {
@@ -139,7 +139,10 @@ mod downloader {
         tool.version = Some(String::from("1.20.0"));
 
         let to_file = tool.get_download_path().unwrap();
-        assert!(to_file.to_str().unwrap().ends_with("temp/go/go1.20.darwin-arm64.tar.gz"));
+        assert!(to_file
+            .to_str()
+            .unwrap()
+            .ends_with("temp/go/go1.20.darwin-arm64.tar.gz"));
 
         assert!(!to_file.exists());
 

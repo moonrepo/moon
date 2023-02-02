@@ -2,6 +2,7 @@ use moon_config::{InheritedTasksManager, ProjectLanguage, TypeScriptConfig};
 use moon_node_platform::actions::create_missing_tsconfig;
 use moon_project::Project;
 use moon_test_utils::{create_sandbox_with_config, get_node_fixture_configs};
+use moon_typescript_lang::tsconfig::TsConfigExtends;
 use moon_typescript_lang::TsConfigJson;
 use moon_utils::string_vec;
 
@@ -39,7 +40,9 @@ mod missing_tsconfig {
 
         assert_eq!(
             tsconfig.extends,
-            Some("../tsconfig.options.json".to_owned())
+            Some(TsConfigExtends::String(
+                "../tsconfig.options.json".to_owned()
+            ))
         );
         assert_eq!(tsconfig.include, Some(string_vec!["**/*"]));
     }
@@ -84,7 +87,10 @@ mod missing_tsconfig {
             .unwrap()
             .unwrap();
 
-        assert_eq!(tsconfig.extends, Some("../tsconfig.base.json".to_owned()));
+        assert_eq!(
+            tsconfig.extends,
+            Some(TsConfigExtends::String("../tsconfig.base.json".to_owned()))
+        );
         assert_eq!(tsconfig.include, Some(string_vec!["**/*"]));
     }
 

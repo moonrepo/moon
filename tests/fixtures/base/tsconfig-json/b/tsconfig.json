@@ -3,5 +3,6 @@
     "useDefineForClassFields": false,
     "traceResolution": true,
     "jsx": "preserve",
+    "module": "esnext"
   }
 }

@@ -32,7 +32,7 @@ config_cache!(
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(untagged)]
-pub enum StringOrArray<T> {
+pub enum TsConfigExtends<T> {
     String(String),
     Array(Vec<T>),
 }
@@ -50,7 +50,7 @@ pub struct TsConfigJson {
     pub exclude: Option<Vec<String>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub extends: Option<StringOrArray<String>>,
+    pub extends: Option<TsConfigExtends<String>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub files: Option<Vec<String>>,
@@ -932,14 +932,14 @@ mod test {
         let value2: JsonValue = serde_json::from_str(json_2).unwrap();
 
         let new_value = json::merge(&value1, &value2);
-        let value: TsConfigJson = serde_json::from_value(new_value).unwrap();
+        let config: TsConfigJson = serde_json::from_value(new_value).unwrap();
 
         assert_eq!(
-            value.clone().compiler_options.unwrap().jsx,
-            Some(Jsx::React)
+            config.clone().compiler_options.unwrap().jsx,
+            Some(Jsx::Preserve)
         );
-        assert_eq!(value.clone().compiler_options.unwrap().no_emit, Some(true));
-        assert_eq!(value.compiler_options.unwrap().remove_comments, Some(true));
+        assert_eq!(config.clone().compiler_options.unwrap().no_emit, Some(true));
+        assert_eq!(config.compiler_options.unwrap().remove_comments, Some(true));
     }
 
     #[test]
@@ -1010,6 +1010,20 @@ mod test {
         );
 
         assert_eq!(config.compiler_options.unwrap().jsx, Some(Jsx::ReactNative));
+    }
+
+    #[test]
+    fn parse_multi_inheritance_chain() {
+        let path = get_fixtures_path("base/tsconfig-json/tsconfig.multi-inherits.json");
+        let config = TsConfigJson::load_with_extends(path).unwrap();
+
+        let options = config.compiler_options.as_ref().unwrap();
+
+        assert_eq!(options.declaration, Some(true));
+        assert_eq!(options.module_resolution, Some(ModuleResolution::Bundler));
+        assert_eq!(options.module, Some(Module::EsNext));
+        assert_eq!(options.jsx, Some(Jsx::Preserve));
+        assert_eq!(options.trace_resolution, Some(false));
     }
 
     mod add_project_ref {

@@ -25,9 +25,7 @@ pub struct Context {
 #[async_trait::async_trait]
 pub trait Shimable<'tool>: Send + Sync {
     /// Create one or many shims in the root of the tool's install directory.
-    async fn create_shims(&mut self) -> Result<(), ProtoError> {
-        Ok(())
-    }
+    async fn create_shims(&mut self) -> Result<(), ProtoError>;
 
     /// Return an absolute path to the shim file if utilizing shims.
     fn get_shim_path(&self) -> Option<&Path> {
@@ -127,6 +125,7 @@ impl ShimBuilder {
             .install_dir
             .as_ref()
             .unwrap()
+            .join("shims")
             .join(get_shim_file_name(&self.name));
 
         self.do_create(shim_path, false)

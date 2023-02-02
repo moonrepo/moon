@@ -33,7 +33,7 @@ async fn downloads_verifies_installs_npm() {
     } else {
         assert_eq!(
             tool.get_shim_path().unwrap(),
-            &proto.tools_dir.join("npm/9.0.0/npm")
+            &proto.tools_dir.join("npm/9.0.0/shims/npm")
         );
         assert!(global_shim.exists());
     }

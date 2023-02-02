@@ -92,8 +92,8 @@ pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(
 
         // Remove the prefix
         if let Some(prefix) = &remove_prefix {
-            if path.starts_with(&prefix) {
-                path = path.strip_prefix(&prefix).unwrap().to_owned();
+            if path.starts_with(prefix) {
+                path = path.strip_prefix(prefix).unwrap().to_owned();
             }
         }
 
@@ -152,8 +152,8 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
 
         // Remove the prefix
         if let Some(prefix) = &remove_prefix {
-            if path.starts_with(&prefix) {
-                path = path.strip_prefix(&prefix).unwrap().to_owned();
+            if path.starts_with(prefix) {
+                path = path.strip_prefix(prefix).unwrap().to_owned();
             }
         }
 

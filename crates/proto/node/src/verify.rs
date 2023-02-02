@@ -1,8 +1,7 @@
 use crate::NodeLanguage;
 use log::debug;
 use proto_core::{
-    async_trait, color, download_from_url, get_sha256_hash_of_file, Describable, ProtoError,
-    Resolvable, Verifiable,
+    async_trait, color, get_sha256_hash_of_file, Describable, ProtoError, Resolvable, Verifiable,
 };
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -16,30 +15,11 @@ impl Verifiable<'_> for NodeLanguage {
             .join(format!("{}-SHASUMS256.txt", self.get_resolved_version())))
     }
 
-    async fn download_checksum(
-        &self,
-        to_file: &Path,
-        from_url: Option<&str>,
-    ) -> Result<bool, ProtoError> {
-        if to_file.exists() {
-            debug!(target: self.get_log_target(), "Checksum already downloaded, continuing");
-
-            return Ok(false);
-        }
-
-        let version = self.get_resolved_version();
-        let from_url = match from_url {
-            Some(url) => url.to_owned(),
-            None => format!("https://nodejs.org/dist/v{}/SHASUMS256.txt", version),
-        };
-
-        debug!(target: self.get_log_target(), "Attempting to download checksum from {}", color::url(&from_url));
-
-        download_from_url(&from_url, &to_file).await?;
-
-        debug!(target: self.get_log_target(), "Successfully downloaded checksum");
-
-        Ok(true)
+    fn get_checksum_url(&self) -> Result<String, ProtoError> {
+        Ok(format!(
+            "https://nodejs.org/dist/v{}/SHASUMS256.txt",
+            self.get_resolved_version()
+        ))
     }
 
     async fn verify_checksum(

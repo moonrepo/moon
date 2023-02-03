@@ -109,7 +109,17 @@ impl Platform for GoPlatform {
         let tool = self.toolchain.get_for_version(runtime.version())?;
         let go_bin = tool.get_bin_path()?;
 
-        let mut command = Command::new(go_bin);
+        let command = match task.command.as_str() {
+            "go" => {
+                Command::new(go_bin);
+            }
+            "gofmt" => {
+                Command::new(go_bin);
+            }
+            cmd => {
+                return Err(ToolError::UnknownTool(cmd.into()));
+            }
+        };
 
         command.args(&task.args).envs(&task.env);
 

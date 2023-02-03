@@ -13,6 +13,7 @@ pub struct SigninInput {
 #[serde(rename_all = "camelCase")]
 pub struct SigninResponse {
     pub organization_id: i32,
+    pub remote_caching: bool,
     pub repository_id: i32,
     pub token: String,
 }

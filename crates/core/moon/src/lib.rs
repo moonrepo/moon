@@ -1,7 +1,7 @@
 use moon_dep_graph::DepGraphBuilder;
 use moon_error::MoonError;
-use moon_node_platform::NodePlatform;
 use moon_go_platform::GoPlatform;
+use moon_node_platform::NodePlatform;
 use moon_project_graph::{ProjectGraph, ProjectGraphBuilder, ProjectGraphError};
 use moon_system_platform::SystemPlatform;
 use moon_utils::{is_test_env, json};

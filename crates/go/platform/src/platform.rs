@@ -1,15 +1,15 @@
 use crate::target_hasher::GoTargetHasher;
 use moon_action_context::ActionContext;
-use moon_config::{HasherConfig, PlatformType, ProjectConfig, GoConfig};
+use moon_config::{GoConfig, HasherConfig, PlatformType, ProjectConfig};
+use moon_go_tool::GoTool;
 use moon_hasher::HashSet;
 use moon_platform::{Platform, Runtime, Version};
-use proto::Proto;
-use rustc_hash::FxHashMap;
 use moon_project::Project;
 use moon_task::Task;
 use moon_tool::{Tool, ToolError, ToolManager};
-use moon_go_tool::GoTool;
 use moon_utils::{async_trait, process::Command};
+use proto::Proto;
+use rustc_hash::FxHashMap;
 use std::path::Path;
 
 #[derive(Debug)]
@@ -20,13 +20,12 @@ pub struct GoPlatform {
 
 impl GoPlatform {
     pub fn new(config: &GoConfig) -> Self {
-        GoPlatform{
+        GoPlatform {
             toolchain: ToolManager::new(Runtime::Go(Version::default())),
             config: config.to_owned(),
         }
     }
 }
-
 
 #[async_trait]
 impl Platform for GoPlatform {
@@ -112,9 +111,7 @@ impl Platform for GoPlatform {
 
         let mut command = Command::new(go_bin);
 
-        command
-            .args(&task.args)
-            .envs(&task.env);
+        command.args(&task.args).envs(&task.env);
 
         Ok(command)
     }

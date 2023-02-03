@@ -1,6 +1,6 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use validator::{Validate};
+use validator::Validate;
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
@@ -12,8 +12,6 @@ pub struct GoConfig {
 
 impl Default for GoConfig {
     fn default() -> Self {
-        GoConfig {
-            version: None,
-        }
+        GoConfig { version: None }
     }
 }

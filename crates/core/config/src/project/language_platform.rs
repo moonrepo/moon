@@ -93,7 +93,7 @@ impl From<ProjectLanguage> for PlatformType {
             ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => PlatformType::Node,
             ProjectLanguage::Go => PlatformType::Go,
             // TODO: Move to these to their own platform once it's been implemented!
-            | ProjectLanguage::Php
+            ProjectLanguage::Php
             | ProjectLanguage::Python
             | ProjectLanguage::Ruby
             | ProjectLanguage::Rust => PlatformType::System,

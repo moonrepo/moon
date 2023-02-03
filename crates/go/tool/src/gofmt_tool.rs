@@ -1,18 +1,18 @@
-use moon_tool::{Tool, ToolError};
-use std::path::Path;
+use moon_config::GoConfig;
 use moon_logger::debug;
 use moon_terminal::{print_checkpoint, Checkpoint};
-use moon_config::GoConfig;
-use rustc_hash::FxHashMap;
+use moon_tool::{Tool, ToolError};
 use proto::{
     async_trait, go::GoLanguage, Describable, Executable, Installable, Proto, Resolvable,
     Tool as ProtoTool,
 };
+use rustc_hash::FxHashMap;
+use std::path::Path;
 
 #[derive(Debug)]
 pub struct GofmtTool {
-   pub config: GoConfig,
-   pub tool: GoLanguage,
+    pub config: GoConfig,
+    pub tool: GoLanguage,
 }
 
 impl GofmtTool {

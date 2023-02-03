@@ -927,6 +927,17 @@ mod yarn1 {
 
         assert.success();
     }
+
+    #[test]
+    fn works_in_non_workspaces_project() {
+        let sandbox = depman_non_workspaces_sandbox("yarn1");
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("root:version");
+        });
+
+        assert!(predicate::str::contains("1.22.0").eval(&assert.output()));
+    }
 }
 
 mod yarn {
@@ -1006,6 +1017,17 @@ mod yarn {
             .exists());
 
         assert.success();
+    }
+
+    #[test]
+    fn works_in_non_workspaces_project() {
+        let sandbox = depman_non_workspaces_sandbox("yarn");
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("root:version");
+        });
+
+        assert!(predicate::str::contains("3.3.0").eval(&assert.output()));
     }
 }
 

@@ -132,7 +132,6 @@ mod downloader {
         assert!(!tool.download(&to_file, None).await.unwrap());
     }
 
-
     #[tokio::test]
     async fn downloads_no_patch_versions() {
         let (mut tool, _fixture) = create_tool();

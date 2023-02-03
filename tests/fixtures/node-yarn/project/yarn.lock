@@ -13,3 +13,11 @@ __metadata:
   checksum: 5b55bb1dced9d16635b83229df8e670d150890fdb343f19e8a66e610094a108e960c0f57352b3e5cdbc4eff4ef00a834406047ffcd9f20bd22a6497ba143c81f
   languageName: node
   linkType: hard
+
+"test-node-yarn-project@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "test-node-yarn-project@workspace:."
+  dependencies:
+    prettier: 2.7.0
+  languageName: unknown
+  linkType: soft

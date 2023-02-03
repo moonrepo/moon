@@ -46,7 +46,7 @@ fn depman_sandbox(depman: &str) -> Sandbox {
         get_node_depman_fixture_configs(depman);
 
     let sandbox = create_sandbox_with_config(
-        format!("node-{}", depman),
+        format!("node-{}/workspaces", depman),
         Some(&workspace_config),
         Some(&toolchain_config),
         Some(&tasks_config),

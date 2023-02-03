@@ -93,7 +93,7 @@ mod scaffold_workspace {
             get_node_depman_fixture_configs("npm");
 
         let sandbox = create_sandbox_with_config(
-            "node-npm",
+            "node-npm/workspaces",
             Some(&workspace_config),
             Some(&toolchain_config),
             Some(&tasks_config),
@@ -114,7 +114,7 @@ mod scaffold_workspace {
             get_node_depman_fixture_configs("pnpm");
 
         let sandbox = create_sandbox_with_config(
-            "node-pnpm",
+            "node-pnpm/workspaces",
             Some(&workspace_config),
             Some(&toolchain_config),
             Some(&tasks_config),
@@ -136,7 +136,7 @@ mod scaffold_workspace {
             get_node_depman_fixture_configs("yarn");
 
         let sandbox = create_sandbox_with_config(
-            "node-yarn",
+            "node-yarn/workspaces",
             Some(&workspace_config),
             Some(&toolchain_config),
             Some(&tasks_config),
@@ -158,7 +158,7 @@ mod scaffold_workspace {
             get_node_depman_fixture_configs("yarn1");
 
         let sandbox = create_sandbox_with_config(
-            "node-yarn1",
+            "node-yarn1/workspaces",
             Some(&workspace_config),
             Some(&toolchain_config),
             Some(&tasks_config),
@@ -295,7 +295,7 @@ mod prune_node {
             get_node_depman_fixture_configs("npm");
 
         let sandbox = create_sandbox_with_config(
-            "node-npm",
+            "node-npm/workspaces",
             Some(&workspace_config),
             Some(&toolchain_config),
             Some(&tasks_config),
@@ -327,7 +327,7 @@ mod prune_node {
             get_node_depman_fixture_configs("pnpm");
 
         let sandbox = create_sandbox_with_config(
-            "node-pnpm",
+            "node-pnpm/workspaces",
             Some(&workspace_config),
             Some(&toolchain_config),
             Some(&tasks_config),
@@ -357,7 +357,7 @@ mod prune_node {
             get_node_depman_fixture_configs("yarn");
 
         let sandbox = create_sandbox_with_config(
-            "node-yarn",
+            "node-yarn/workspaces",
             Some(&workspace_config),
             Some(&toolchain_config),
             Some(&tasks_config),
@@ -387,7 +387,7 @@ mod prune_node {
             get_node_depman_fixture_configs("yarn1");
 
         let sandbox = create_sandbox_with_config(
-            "node-yarn1",
+            "node-yarn1/workspaces",
             Some(&workspace_config),
             Some(&toolchain_config),
             Some(&tasks_config),

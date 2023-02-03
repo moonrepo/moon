@@ -7,22 +7,29 @@ use proto::{
     Tool as ProtoTool,
 };
 use rustc_hash::FxHashMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
 pub struct GofmtTool {
     pub config: GoConfig,
     pub tool: GoLanguage,
+    bin_path: PathBuf,
 }
 
 impl GofmtTool {
-    pub fn new(proto: &Proto, config: &GoConfig, version: &str) -> Result<GofmtTool, ToolError> {
-        let mut cfg = config.to_owned();
-        cfg.version = Some(version.to_owned());
+    pub fn new(proto: &Proto, cfg: &GoConfig, version: &str) -> Result<GofmtTool, ToolError> {
+        let mut config = cfg.to_owned();
+        config.version = Some(version.to_owned());
+        let tool =  GoLanguage::new(proto);
+
+        let mut bin_path = tool.get_bin_path()?.to_owned();
+        bin_path.pop();
+        bin_path.push("gofmt");
 
         Ok(GofmtTool {
-            config: cfg,
-            tool: GoLanguage::new(proto),
+            config,
+            tool,
+            bin_path,
         })
     }
 }
@@ -34,11 +41,7 @@ impl Tool for GofmtTool {
     }
 
     fn get_bin_path(&self) -> Result<&Path, ToolError> {
-        let mut gobin = self.tool.get_bin_path()?.to_owned();
-        gobin.pop();
-        gobin.push("gofmt");
-
-        Ok(&gobin)
+        Ok(&self.bin_path)
     }
 
     fn get_version(&self) -> &str {

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where pnpm lockfile parsing would fail when not workspaces enabled.
+
 ## 0.23.3
 
 #### 🐞 Fixes

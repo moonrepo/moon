@@ -1,8 +1,6 @@
 # Changelog
 
-## Unreleased
-
-## 0.23.2
+## 0.23.3
 
 #### 🐞 Fixes
 
@@ -11,6 +9,8 @@
 #### ⚙️ Internal
 
 - Minor internal changes for upcoming remote caching changes.
+
+## 0.23.2
 
 #### 🐞 Fixes
 

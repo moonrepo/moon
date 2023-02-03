@@ -31,6 +31,7 @@ impl Resolvable<'_> for GoLanguage {
     async fn load_manifest(&self) -> Result<VersionManifest, ProtoError> {
         let mut alias_max = BTreeMap::new();
         let mut latest = Version::new(0, 0, 0);
+
         let mut aliases = BTreeMap::new();
         let mut versions = BTreeMap::new();
 

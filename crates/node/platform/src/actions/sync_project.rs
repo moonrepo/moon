@@ -3,7 +3,7 @@ use moon_error::MoonError;
 use moon_logger::{color, debug};
 use moon_node_lang::{PackageJson, NPM};
 use moon_project::{Project, ProjectError};
-use moon_typescript_lang::tsconfig::CompilerOptionsPaths;
+use moon_typescript_lang::tsconfig::{CompilerOptionsPaths, TsConfigExtends};
 use moon_typescript_lang::TsConfigJson;
 use moon_utils::{get_cache_dir, json, path, semver, string_vec};
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -31,9 +31,9 @@ pub fn create_missing_tsconfig(
         workspace_root.join(&typescript_config.root_options_config_file_name);
 
     let json = TsConfigJson {
-        extends: Some(path::to_virtual_string(
+        extends: Some(TsConfigExtends::String(path::to_virtual_string(
             path::relative_from(tsconfig_options_path, &project.root).unwrap(),
-        )?),
+        )?)),
         include: Some(string_vec!["**/*"]),
         references: Some(vec![]),
         path: tsconfig_path.clone(),

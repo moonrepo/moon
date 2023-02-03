@@ -98,7 +98,6 @@ mod downloader {
     async fn sets_path_to_temp() {
         let (mut tool, fixture) = create_tool();
         tool.version = Some(String::from("1.17.1"));
-
         assert_eq!(
             tool.get_download_path().unwrap(),
             Proto::from(fixture.path())
@@ -132,6 +131,7 @@ mod downloader {
         assert!(tool.download(&to_file, None).await.unwrap());
         assert!(!tool.download(&to_file, None).await.unwrap());
     }
+
 
     #[tokio::test]
     async fn downloads_no_patch_versions() {
@@ -244,6 +244,7 @@ mod verifier {
     async fn sets_path_to_temp() {
         let (mut tool, fixture) = create_tool();
         tool.version = Some(String::from("1.17.1"));
+        tool.version = Some(String::from("1.17"));
 
         assert_eq!(
             tool.get_checksum_path().unwrap(),
@@ -284,6 +285,7 @@ mod verifier {
     async fn errors_for_checksum_mismatch() {
         let (mut tool, _fixture) = create_tool();
         tool.version = Some(String::from("1.17.1"));
+
         let dl_path = tool.get_download_path().unwrap();
         let cs_path = tool.get_checksum_path().unwrap();
 

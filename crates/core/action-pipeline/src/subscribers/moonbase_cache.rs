@@ -29,6 +29,10 @@ impl MoonbaseCacheSubscriber {
             requests: vec![],
         }
     }
+
+    pub fn not_enabled() {
+        warn!(target: LOG_TARGET, "A moonbase session exists, but no subscription exists for remote caching. Will not enable remote caching!");
+    }
 }
 
 #[async_trait]

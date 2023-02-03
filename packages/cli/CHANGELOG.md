@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added [TypeScript v5](https://devblogs.microsoft.com/typescript/announcing-typescript-5-0-beta/)
+  support.
+
+#### ⚙️ Internal
+
+- Added initial Go lang support to our toolchain.
+
+## 0.23.3
+
+#### 🐞 Fixes
+
+- Fixed an issue where `git ls-files --deduplicate` wasn't available on older git versions.
+
+#### ⚙️ Internal
+
+- Minor internal changes for upcoming remote caching changes.
+
 ## 0.23.2
 
 #### 🐞 Fixes

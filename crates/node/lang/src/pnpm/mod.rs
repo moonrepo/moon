@@ -76,6 +76,10 @@ pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVer
             if let Some(ver) = details.resolution.tarball {
                 entry.push(ver.clone());
             }
+
+            if let Some(ver) = details.resolution.commit {
+                entry.push(ver.clone());
+            }
         }
     }
 

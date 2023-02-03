@@ -8,7 +8,7 @@ use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq, Eq)]
 pub enum DependencyPathError {
-    #[error("<symbol>{0}</symbol> is an invalid relative dependency path")]
+    #[error("<symbol>{0}</symbol> is an invalid pnpm relative dependency path.")]
     IsNotAbsolute(String),
 }
 

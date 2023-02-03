@@ -30,6 +30,13 @@ pub struct Moonbase {
 }
 
 impl Moonbase {
+    pub fn no_vcs_root() {
+        warn!(
+            target: LOG_TARGET,
+            "Unable to login to moonbase as no version control system was detected. We require VCS to infer the repository to sign in for!"
+        );
+    }
+
     pub async fn signin(secret_key: String, access_key: String, slug: String) -> Option<Moonbase> {
         debug!(
             target: LOG_TARGET,

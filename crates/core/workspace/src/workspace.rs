@@ -267,6 +267,8 @@ impl Workspace {
         let repo_slug = if self.vcs.is_enabled() {
             self.vcs.get_repository_slug().await?
         } else {
+            Moonbase::no_vcs_root();
+
             return Ok(());
         };
 

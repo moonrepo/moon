@@ -383,10 +383,14 @@ async fn create_emitter(workspace: Arc<RwLock<Workspace>>) -> Emitter {
             }
         }
 
-        if local_workspace.session.is_some() {
-            emitter
-                .subscribers
-                .push(Arc::new(RwLock::new(MoonbaseCacheSubscriber::new())));
+        if let Some(session) = &local_workspace.session {
+            if session.remote_caching_enabled {
+                emitter
+                    .subscribers
+                    .push(Arc::new(RwLock::new(MoonbaseCacheSubscriber::new())));
+            } else {
+                MoonbaseCacheSubscriber::not_enabled();
+            }
         }
     }
 

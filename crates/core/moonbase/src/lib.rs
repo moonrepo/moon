@@ -23,12 +23,14 @@ pub struct Moonbase {
     #[allow(dead_code)]
     pub organization_id: i32,
 
+    pub remote_caching_enabled: bool,
+
     #[allow(dead_code)]
     pub repository_id: i32,
 }
 
 impl Moonbase {
-    pub async fn signin(secret_key: String, api_key: String, slug: String) -> Option<Moonbase> {
+    pub async fn signin(secret_key: String, access_key: String, slug: String) -> Option<Moonbase> {
         debug!(
             target: LOG_TARGET,
             "API keys detected, attempting to sign in to moonbase for repository {}",
@@ -40,7 +42,7 @@ impl Moonbase {
             SigninInput {
                 organization_key: secret_key,
                 repository: slug,
-                repository_key: api_key,
+                repository_key: access_key,
             },
             None,
         )
@@ -49,11 +51,13 @@ impl Moonbase {
         match data {
             Ok(Response::Success(SigninResponse {
                 organization_id,
+                remote_caching,
                 repository_id,
                 token,
             })) => Some(Moonbase {
                 auth_token: token,
                 organization_id,
+                remote_caching_enabled: remote_caching,
                 repository_id,
             }),
             Ok(Response::Failure { message, status }) => {

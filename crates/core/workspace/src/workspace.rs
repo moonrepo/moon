@@ -259,7 +259,8 @@ impl Workspace {
             return Ok(());
         };
 
-        let Ok(api_key) = env::var("MOONBASE_API_KEY") else {
+        let Ok(access_key) = env::var("MOONBASE_ACCESS_KEY")
+            .or_else(|_| env::var("MOONBASE_API_KEY")) else {
             return Ok(());
         };
 
@@ -269,7 +270,7 @@ impl Workspace {
             return Ok(());
         };
 
-        self.session = Moonbase::signin(secret_key, api_key, repo_slug).await;
+        self.session = Moonbase::signin(secret_key, access_key, repo_slug).await;
 
         Ok(())
     }

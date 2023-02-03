@@ -36,7 +36,7 @@ In that repositories CI environment, set the following environment variables.
 
 ```
 MOONBASE_SECRET_KEY=<secret key>
-MOONBASE_API_KEY=<api key>
+MOONBASE_ACCESS_KEY=<access key>
 ```
 
 moon will automatically authenticate the remote caching service when all credentials in the
@@ -71,6 +71,6 @@ No, moon does not collect any PII as part of the remote caching process.
 However, to use remote caching, you must create a moonrepo account in which we require an email
 address, and information about your organization and repository.
 
-#### What is an artifacts lifetime / retention policy?
+#### Are artifacts encrypted?
 
-Public artifacts are stored for 1 month. Private artifacts are stored for 3 months.
+Yes! We use AWS built-in SSE-S3 encryption for all S3 buckets.

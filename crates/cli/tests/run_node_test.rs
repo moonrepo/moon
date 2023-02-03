@@ -1,9 +1,10 @@
-use moon_config::{NodeConfig, TypeScriptConfig};
+use moon_config::{NodeConfig, TypeScriptConfig, WorkspaceProjects};
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, get_node_depman_fixture_configs,
     get_node_fixture_configs, get_typescript_fixture_configs, predicates::prelude::*, Sandbox,
 };
 use moon_utils::string_vec;
+use rustc_hash::FxHashMap;
 use std::fs::read_to_string;
 
 fn node_sandbox() -> Sandbox {
@@ -47,6 +48,24 @@ fn depman_sandbox(depman: &str) -> Sandbox {
 
     let sandbox = create_sandbox_with_config(
         format!("node-{}/workspaces", depman),
+        Some(&workspace_config),
+        Some(&toolchain_config),
+        Some(&tasks_config),
+    );
+
+    sandbox.enable_git();
+    sandbox
+}
+
+fn depman_non_workspaces_sandbox(depman: &str) -> Sandbox {
+    let (mut workspace_config, toolchain_config, tasks_config) =
+        get_node_depman_fixture_configs(depman);
+
+    workspace_config.projects =
+        WorkspaceProjects::Sources(FxHashMap::from_iter([("root".to_owned(), ".".to_owned())]));
+
+    let sandbox = create_sandbox_with_config(
+        format!("node-{}/project", depman),
         Some(&workspace_config),
         Some(&toolchain_config),
         Some(&tasks_config),
@@ -806,6 +825,17 @@ mod pnpm {
 
     //     assert.success();
     // }
+
+    #[test]
+    fn works_in_non_workspaces_project() {
+        let sandbox = depman_non_workspaces_sandbox("pnpm");
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("root:version");
+        });
+
+        assert!(predicate::str::contains("7.5.0").eval(&assert.output()));
+    }
 }
 
 mod yarn1 {

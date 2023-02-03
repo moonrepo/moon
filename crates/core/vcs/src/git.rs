@@ -14,6 +14,8 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
+// Minimum version for APIs is v2.22!
+
 pub struct Git {
     cache: Arc<RwLock<TimedCache<String, String>>>,
     config: VcsConfig,
@@ -211,7 +213,8 @@ impl Vcs for Git {
                     "--modified",
                     "--others",
                     "--full-name",
-                    "--deduplicate",
+                    // Added in v2.31
+                    // "--deduplicate",
                     "--exclude-standard",
                     dir,
                 ]),

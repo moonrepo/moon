@@ -4,6 +4,10 @@
 
 ## 0.23.2
 
+#### 🐞 Fixes
+
+- Fixed an issue where `git ls-files --deduplicate` wasn't available on older git versions.
+
 #### ⚙️ Internal
 
 - Minor internal changes for upcoming remote caching changes.

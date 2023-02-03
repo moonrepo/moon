@@ -3,6 +3,7 @@
   "compilerOptions": {
     "traceResolution": false,
     "declaration": true,
-    "jsx": "react-native"
+    "jsx": "react-native",
+    "moduleResolution": "node"
   }
 }

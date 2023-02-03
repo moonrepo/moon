@@ -243,7 +243,6 @@ mod verifier {
     async fn sets_path_to_temp() {
         let (mut tool, fixture) = create_tool();
         tool.version = Some(String::from("1.17.1"));
-        tool.version = Some(String::from("1.17"));
 
         assert_eq!(
             tool.get_checksum_path().unwrap(),

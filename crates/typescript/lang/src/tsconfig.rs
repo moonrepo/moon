@@ -4,7 +4,7 @@ use cached::proc_macro::cached;
 use moon_error::{map_json_to_error, MoonError};
 use moon_lang::config_cache;
 use moon_utils::{
-    json::{self, read as read_json, JsonValue},
+    json::{self, read as read_json, JsonMap, JsonValue},
     path::standardize_separators,
 };
 use serde::{Deserialize, Deserializer, Serialize};
@@ -30,6 +30,13 @@ config_cache!(
 
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(untagged)]
+pub enum TsConfigExtends {
+    String(String),
+    Array(Vec<String>),
+}
+
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TsConfigJson {
@@ -43,7 +50,7 @@ pub struct TsConfigJson {
     pub exclude: Option<Vec<String>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub extends: Option<String>,
+    pub extends: Option<TsConfigExtends>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub files: Option<Vec<String>>,
@@ -138,35 +145,38 @@ impl TsConfigJson {
     }
 }
 
-fn merge(a: &mut JsonValue, b: JsonValue) {
-    match (a, b) {
-        (&mut JsonValue::Object(ref mut a), JsonValue::Object(b)) => {
-            for (k, v) in b {
-                merge(a.entry(k).or_insert(JsonValue::Null), v);
-            }
-        }
-        (a, b) => {
-            if let JsonValue::Null = a {
-                *a = b;
-            }
-        }
-    }
-}
-
 pub fn load_to_value<T: AsRef<Path>>(path: T, extend: bool) -> Result<JsonValue, MoonError> {
     let path = path.as_ref();
-    let mut json: JsonValue = json::read(path)?;
+    let mut merged_file = JsonValue::Object(JsonMap::new());
+    let last_file: JsonValue = json::read(path)?;
 
     if extend {
-        if let JsonValue::String(s) = &json["extends"] {
-            let extends_path = path.parent().unwrap_or_else(|| Path::new("")).join(s);
-            let extends_value = load_to_value(extends_path, extend)?;
+        let extends_root = path.parent().unwrap_or_else(|| Path::new(""));
 
-            merge(&mut json, extends_value);
+        match &last_file["extends"] {
+            JsonValue::Array(list) => {
+                for item in list {
+                    if let JsonValue::String(value) = item {
+                        merged_file = json::merge(
+                            &merged_file,
+                            &load_to_value(extends_root.join(value), extend)?,
+                        );
+                    }
+                }
+            }
+            JsonValue::String(value) => {
+                merged_file = json::merge(
+                    &merged_file,
+                    &load_to_value(extends_root.join(value), extend)?,
+                );
+            }
+            _ => {}
         }
     }
 
-    Ok(json)
+    merged_file = json::merge(&merged_file, &last_file);
+
+    Ok(merged_file)
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
@@ -202,6 +212,12 @@ pub struct CompilerOptions {
     pub allow_js: Option<bool>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub allow_arbitrary_extensions: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub allow_importing_ts_extensions: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub allow_synthetic_default_imports: Option<bool>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -227,6 +243,9 @@ pub struct CompilerOptions {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub composite: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub custom_conditions: Option<Vec<String>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub declaration_dir: Option<String>,
@@ -288,9 +307,6 @@ pub struct CompilerOptions {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub import_helpers: Option<bool>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub imports_not_used_as_values: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub incremental: Option<bool>,
@@ -410,9 +426,6 @@ pub struct CompilerOptions {
     pub preserve_symlinks: Option<bool>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub preserve_value_imports: Option<bool>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub preserve_watch_output: Option<bool>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -426,6 +439,12 @@ pub struct CompilerOptions {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub resolve_json_module: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resolve_package_json_exports: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resolve_package_json_imports: Option<bool>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub root_dir: Option<String>,
@@ -485,12 +504,18 @@ pub struct CompilerOptions {
     pub use_unknown_in_catch_variables: Option<bool>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub verbatim_module_syntax: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub watch_options: Option<WatchOptions>,
 
     // Deprecated
     #[serde(skip_serializing_if = "Option::is_none")]
     #[deprecated]
     pub charset: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub imports_not_used_as_values: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[deprecated]
@@ -507,6 +532,9 @@ pub struct CompilerOptions {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[deprecated]
     pub out: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub preserve_value_imports: Option<bool>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[deprecated]
@@ -630,6 +658,7 @@ impl<'de> Deserialize<'de> for ModuleDetection {
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ModuleResolution {
+    Bundler,
     Classic,
     Node,
     Node12,
@@ -646,6 +675,7 @@ impl<'de> Deserialize<'de> for ModuleResolution {
         let s = s.to_uppercase();
 
         let r = match s.as_str() {
+            "BUNDLER" => ModuleResolution::Bundler,
             "CLASSIC" => ModuleResolution::Classic,
             "NODE12" => ModuleResolution::Node12,
             "NODE16" => ModuleResolution::Node16,
@@ -898,19 +928,18 @@ mod test {
         let json_1 = r#"{"compilerOptions": {"jsx": "react", "noEmit": true}}"#;
         let json_2 = r#"{"compilerOptions": {"jsx": "preserve", "removeComments": true}}"#;
 
-        let mut value1: JsonValue = serde_json::from_str(json_1).unwrap();
+        let value1: JsonValue = serde_json::from_str(json_1).unwrap();
         let value2: JsonValue = serde_json::from_str(json_2).unwrap();
 
-        merge(&mut value1, value2);
-
-        let value: TsConfigJson = serde_json::from_value(value1).unwrap();
+        let new_value = json::merge(&value1, &value2);
+        let config: TsConfigJson = serde_json::from_value(new_value).unwrap();
 
         assert_eq!(
-            value.clone().compiler_options.unwrap().jsx,
-            Some(Jsx::React)
+            config.clone().compiler_options.unwrap().jsx,
+            Some(Jsx::Preserve)
         );
-        assert_eq!(value.clone().compiler_options.unwrap().no_emit, Some(true));
-        assert_eq!(value.compiler_options.unwrap().remove_comments, Some(true));
+        assert_eq!(config.clone().compiler_options.unwrap().no_emit, Some(true));
+        assert_eq!(config.compiler_options.unwrap().remove_comments, Some(true));
     }
 
     #[test]
@@ -981,6 +1010,20 @@ mod test {
         );
 
         assert_eq!(config.compiler_options.unwrap().jsx, Some(Jsx::ReactNative));
+    }
+
+    #[test]
+    fn parse_multi_inheritance_chain() {
+        let path = get_fixtures_path("base/tsconfig-json/tsconfig.multi-inherits.json");
+        let config = TsConfigJson::load_with_extends(path).unwrap();
+
+        let options = config.compiler_options.as_ref().unwrap();
+
+        assert_eq!(options.declaration, Some(true));
+        assert_eq!(options.module_resolution, Some(ModuleResolution::Bundler));
+        assert_eq!(options.module, Some(Module::EsNext));
+        assert_eq!(options.jsx, Some(Jsx::Preserve));
+        assert_eq!(options.trace_resolution, Some(false));
     }
 
     mod add_project_ref {

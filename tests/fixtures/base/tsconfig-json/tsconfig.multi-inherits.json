@@ -1,0 +1,8 @@
+{
+  "extends": ["./a/tsconfig.json", "./b/tsconfig.json"],
+  "compilerOptions": {
+    "traceResolution": false,
+    "declaration": true,
+    "moduleResolution": "bundler"
+  }
+}

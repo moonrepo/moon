@@ -723,6 +723,17 @@ mod npm {
 
         assert.success();
     }
+
+    #[test]
+    fn works_in_non_workspaces_project() {
+        let sandbox = depman_non_workspaces_sandbox("npm");
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("root:version");
+        });
+
+        assert!(predicate::str::contains("8.0.0").eval(&assert.output()));
+    }
 }
 
 mod pnpm {

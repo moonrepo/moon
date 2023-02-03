@@ -255,6 +255,12 @@ impl Workspace {
     }
 
     pub async fn signin_to_moonbase(&mut self) -> Result<(), WorkspaceError> {
+        dbg!(
+            env::var("MOONBASE_SECRET_KEY"),
+            env::var("MOONBASE_ACCESS_KEY"),
+            env::var("MOONBASE_API_KEY")
+        );
+
         let Ok(secret_key) = env::var("MOONBASE_SECRET_KEY") else {
             return Ok(());
         };
@@ -271,6 +277,8 @@ impl Workspace {
 
             return Ok(());
         };
+
+        dbg!(&secret_key, &access_key, &repo_slug);
 
         self.session = Moonbase::signin(secret_key, access_key, repo_slug).await;
 

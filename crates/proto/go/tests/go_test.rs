@@ -1,4 +1,5 @@
 use assert_fs::prelude::{FileWriteStr, PathChild};
+use lenient_semver::Version;
 use proto_core::{
     Detector, Downloadable, Executable, Installable, Proto, Resolvable, Tool, Verifiable,
 };
@@ -96,21 +97,20 @@ mod downloader {
     #[tokio::test]
     async fn sets_path_to_temp() {
         let (mut tool, fixture) = create_tool();
-        tool.version = Some(String::from("1.17"));
-
+        tool.version = Some(String::from("1.17.1"));
         assert_eq!(
             tool.get_download_path().unwrap(),
             Proto::from(fixture.path())
                 .temp_dir
                 .join("go")
-                .join(get_archive_file("1.17").unwrap())
+                .join(get_archive_file("1.17.1").unwrap())
         );
     }
 
     #[tokio::test]
     async fn downloads_to_temp() {
         let (mut tool, _fixture) = create_tool();
-        tool.version = Some(String::from("1.17"));
+        tool.version = Some(String::from("1.17.1"));
 
         let to_file = tool.get_download_path().unwrap();
 
@@ -124,12 +124,25 @@ mod downloader {
     #[tokio::test]
     async fn doesnt_download_if_file_exists() {
         let (mut tool, _fixture) = create_tool();
-        tool.version = Some(String::from("1.17"));
+        tool.version = Some(String::from("1.17.1"));
 
         let to_file = tool.get_download_path().unwrap();
 
         assert!(tool.download(&to_file, None).await.unwrap());
         assert!(!tool.download(&to_file, None).await.unwrap());
+    }
+
+    #[tokio::test]
+    async fn downloads_no_patch_versions() {
+        let (mut tool, _fixture) = create_tool();
+        tool.version = Some(String::from("1.20.0"));
+
+        let to_file = tool.get_download_path().unwrap();
+        assert!(!to_file.exists());
+
+        tool.download(&to_file, None).await.unwrap();
+
+        assert!(to_file.exists());
     }
 }
 
@@ -139,14 +152,14 @@ mod installer {
     #[tokio::test]
     async fn sets_dir_to_tools() {
         let (mut tool, fixture) = create_tool();
-        tool.version = Some(String::from("1.17"));
+        tool.version = Some(String::from("1.17.1"));
 
         assert_eq!(
             tool.get_install_dir().unwrap(),
             Proto::from(fixture.path())
                 .tools_dir
                 .join("go")
-                .join("1.17")
+                .join("1.17.1")
         );
     }
 
@@ -154,7 +167,7 @@ mod installer {
     #[should_panic(expected = "InstallMissingDownload(\"Go\")")]
     async fn errors_for_missing_download() {
         let (mut tool, _fixture) = create_tool();
-        tool.version = Some(String::from("1.17"));
+        tool.version = Some(String::from("1.17.1"));
 
         let dir = tool.get_install_dir().unwrap();
 
@@ -166,7 +179,7 @@ mod installer {
     #[tokio::test]
     async fn doesnt_install_if_dir_exists() {
         let (mut tool, _fixture) = create_tool();
-        tool.version = Some(String::from("1.17"));
+        tool.version = Some(String::from("1.17.1"));
 
         let dir = tool.get_install_dir().unwrap();
 
@@ -210,6 +223,17 @@ mod resolver {
 
         assert_eq!(tool.resolve_version("1.9rc2").await.unwrap(), "1.9rc2");
     }
+
+    #[tokio::test]
+    async fn resolve_latest_version() {
+        let (mut tool, _fixture) = create_tool();
+
+        let latest = tool.resolve_version("latest").await.unwrap();
+        let latest_version = Version::parse(latest.as_str()).unwrap();
+        let current_latest_version = Version::parse("1.19.5").unwrap();
+
+        assert!(latest_version > current_latest_version);
+    }
 }
 
 mod verifier {
@@ -218,21 +242,21 @@ mod verifier {
     #[tokio::test]
     async fn sets_path_to_temp() {
         let (mut tool, fixture) = create_tool();
-        tool.version = Some(String::from("1.17"));
+        tool.version = Some(String::from("1.17.1"));
 
         assert_eq!(
             tool.get_checksum_path().unwrap(),
             Proto::from(fixture.path())
                 .temp_dir
                 .join("go")
-                .join("1.17-SHASUMS256.txt")
+                .join("1.17.1-SHASUMS256.txt")
         );
     }
 
     #[tokio::test]
     async fn downloads_to_temp() {
         let (mut tool, _fixture) = create_tool();
-        tool.version = Some(String::from("1.17"));
+        tool.version = Some(String::from("1.17.1"));
 
         let to_file = tool.get_checksum_path().unwrap();
 
@@ -246,7 +270,7 @@ mod verifier {
     #[tokio::test]
     async fn doesnt_download_if_file_exists() {
         let (mut tool, _fixture) = create_tool();
-        tool.version = Some(String::from("1.17"));
+        tool.version = Some(String::from("1.17.1"));
 
         let to_file = tool.get_checksum_path().unwrap();
 
@@ -258,7 +282,8 @@ mod verifier {
     #[should_panic(expected = "VerifyInvalidChecksum")]
     async fn errors_for_checksum_mismatch() {
         let (mut tool, _fixture) = create_tool();
-        tool.version = Some(String::from("1.17"));
+        tool.version = Some(String::from("1.17.1"));
+
         let dl_path = tool.get_download_path().unwrap();
         let cs_path = tool.get_checksum_path().unwrap();
 

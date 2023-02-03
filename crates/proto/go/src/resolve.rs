@@ -21,11 +21,17 @@ impl<'a> BaseVersion for Version<'a> {
 #[async_trait]
 impl Resolvable<'_> for GoLanguage {
     fn get_resolved_version(&self) -> &str {
-        self.version.as_ref().unwrap()
+        let v = self.version.as_ref().unwrap();
+        match v.strip_suffix(".0") {
+            Some(s) => s,
+            None => v,
+        }
     }
 
     async fn load_manifest(&self) -> Result<VersionManifest, ProtoError> {
         let mut alias_max = BTreeMap::new();
+        let mut latest = Version::new(0, 0, 0);
+
         let mut aliases = BTreeMap::new();
         let mut versions = BTreeMap::new();
 
@@ -73,6 +79,10 @@ impl Resolvable<'_> for GoLanguage {
                     };
                     let base_version = ver.base_version();
 
+                    if &latest < &ver {
+                        latest = ver.clone();
+                    }
+
                     let current: Option<&Version> = alias_max.get(&base_version);
                     match current {
                         Some(current_version) => {
@@ -90,6 +100,8 @@ impl Resolvable<'_> for GoLanguage {
                 }
             }
         }
+
+        aliases.insert("latest".into(), latest.to_string());
 
         Ok(VersionManifest { aliases, versions })
     }

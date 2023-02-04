@@ -15,3 +15,4 @@ pub mod run;
 pub mod setup;
 pub mod sync;
 pub mod teardown;
+pub mod upgrade;

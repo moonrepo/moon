@@ -21,6 +21,7 @@ use crate::commands::run::{run, RunOptions};
 use crate::commands::setup::setup;
 use crate::commands::sync::sync;
 use crate::commands::teardown::teardown;
+use crate::commands::upgrade::upgrade;
 use crate::helpers::setup_colors;
 use app::{App, Commands, DockerCommands, MigrateCommands, NodeCommands, QueryCommands};
 use clap::Parser;
@@ -281,6 +282,7 @@ pub async fn run_cli() {
             )
             .await
         }
+        Commands::Upgrade => upgrade().await,
         Commands::Setup => setup().await,
         Commands::Teardown => teardown().await,
     };
@@ -288,7 +290,8 @@ pub async fn run_cli() {
     match version_check.await {
         Ok(Ok((newer_version, true))) => {
             println!(
-                "There's a new version of moon! {newer_version}. Go to https://moonrepo.dev/docs/install to install",
+                "There's a new version of moon! {newer_version}. \n\
+                Run `moon upgrade` or go to https://moonrepo.dev/docs/install to install",
             );
         }
         Ok(Err(error)) => {

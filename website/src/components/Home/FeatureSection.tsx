@@ -4,6 +4,7 @@ import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import Icon from '@site/src/ui/iconography/Icon';
 import Heading from '@site/src/ui/typography/Heading';
 import Text from '@site/src/ui/typography/Text';
+import CTA, { CTAProps } from './CTA';
 
 export interface FeatureItem {
 	title: string;
@@ -12,35 +13,39 @@ export interface FeatureItem {
 }
 
 export interface FeatureSectionProps {
-	children: React.ReactNode;
+	children?: React.ReactNode;
 	color: string;
+	cta?: CTAProps;
 	description: React.ReactNode;
-	items: FeatureItem[];
+	items?: FeatureItem[];
 	reversed?: boolean;
-	title: string;
+	stretched?: boolean;
 	suptitle: string;
+	title: string;
 }
 
 export default function FeatureSection({
 	children,
 	color,
+	cta,
 	description,
 	items,
 	reversed,
-	title,
+	stretched,
 	suptitle,
+	title,
 }: FeatureSectionProps) {
 	return (
 		<div className="relative py-4 sm:py-5 lg:py-6">
 			<div className="mx-auto max-w-md px-2 sm:max-w-3xl sm:px-3 lg:max-w-7xl lg:px-4">
-				<div className="bg-white rounded-lg p-6">
+				<div className="bg-white rounded-lg p-6 drop-shadow">
 					<div
 						className={cx(
-							'grid grid-cols-1 md:grid-cols-2 gap-8 items-center',
-							reversed && 'flex-row-reverse',
+							'grid grid-cols-1 md:grid-cols-2 gap-8',
+							stretched ? 'items-stretch' : 'items-center',
 						)}
 					>
-						<div>
+						<div className={reversed ? 'order-2' : 'order-1'}>
 							<Heading level={5} className={color}>
 								{suptitle}
 							</Heading>
@@ -53,29 +58,33 @@ export default function FeatureSection({
 								<Text size="lg">{description}</Text>
 							</p>
 
-							{children}
+							{cta && <CTA {...cta} />}
 						</div>
 
-						<aside>
-							<ul className="flex flex-col gap-4 m-0 p-0">
-								{items.map((item) => (
-									<li className="relative list-none pl-5">
-										<Heading level={5} className="mb-1">
-											{item.title}
-										</Heading>
+						<aside className={reversed ? 'order-1' : 'order-2'}>
+							{items && (
+								<ul className="flex flex-col gap-4 m-0 p-0">
+									{items.map((item) => (
+										<li className="relative list-none pl-5">
+											<Heading level={5} className="mb-1">
+												{item.title}
+											</Heading>
 
-										<p className="m-0">{item.description}</p>
+											<p className="m-0">{item.description}</p>
 
-										<div className="absolute top-1 left-0">
-											<Icon
-												icon={item.icon}
-												className={cx('text-2xl justify-center flex', color)}
-												style={{ maxWidth: 54 }}
-											/>
-										</div>
-									</li>
-								))}
-							</ul>
+											<div className="absolute top-1 left-0">
+												<Icon
+													icon={item.icon}
+													className={cx('text-2xl justify-center flex', color)}
+													style={{ maxWidth: 54 }}
+												/>
+											</div>
+										</li>
+									))}
+								</ul>
+							)}
+
+							{children}
 						</aside>
 					</div>
 				</div>

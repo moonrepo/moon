@@ -151,7 +151,7 @@ const config = {
 						],
 					}, */
 					{
-						to: 'https://moonbase.app',
+						to: 'https://moonrepo.app',
 						label: 'Sign in',
 						position: 'right',
 					},

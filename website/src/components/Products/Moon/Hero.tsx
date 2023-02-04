@@ -1,6 +1,5 @@
 import React from 'react';
 import Link from '@docusaurus/Link';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import { faRocketLaunch } from '@fortawesome/pro-duotone-svg-icons';
 import Icon from '../../../ui/iconography/Icon';
 import DocLink from '../../../ui/typography/Link';
@@ -11,23 +10,16 @@ import HeroTerminal from './HeroTerminal';
 const { version } = require('@moonrepo/cli/package.json') as { version: string };
 
 export default function Hero() {
-	const { siteConfig } = useDocusaurusContext();
-
 	return (
 		<div className="bg-gradient-to-b from-slate-900 to-slate-600 star-pattern">
 			<div className="max-w-7xl mx-auto py-10 px-4 pb-6 sm:py-12 sm:px-6 md:py-14 lg:py-16 lg:px-8 xl:py-20 flex flex-col md:flex-row">
 				<div className="text-center lg:text-left md:w-6/12">
 					<h1 className="text-6xl tracking-tight font-extrabold text-purple-600">
-						<img
-							src="/img/logo-hero.svg"
-							alt={siteConfig.title}
-							title={siteConfig.title}
-							width={300}
-						/>
+						<img src="/img/logo-hero.svg" alt="moon" title="moon" width={300} />
 					</h1>
 
 					<p className="mt-1 mb-0 text-base text-white sm:text-lg sm:max-w-xl sm:mx-auto md:text-xl lg:mx-0">
-						{siteConfig.tagline}
+						A build system and repo management tool for the web ecosystem, written in Rust.
 					</p>
 
 					<p className="mt-1 text-white opacity-50 text-sm md:text-base">

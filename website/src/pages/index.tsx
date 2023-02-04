@@ -1,7 +1,7 @@
 import React from 'react';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import { faDiagramProject, faDiagramSankey, faToolbox } from '@fortawesome/pro-duotone-svg-icons';
-import FeatureSection from '@site/src/components/Home/FeatureSection';
+import ProductSection from '@site/src/components/Home/ProductSection';
 import UsedBy from '@site/src/components/Home/UsedBy';
 import Link from '@site/src/ui/typography/Link';
 import Layout from '@theme/Layout';
@@ -37,7 +37,7 @@ export default function Home() {
 			</div>
 
 			<main className="bg-gradient-to-b from-slate-600 via-purple-600 to-white">
-				<FeatureSection
+				<ProductSection
 					color="text-purple-600"
 					suptitle="Build a solid foundation"
 					title="Supercharge your codebase"
@@ -82,7 +82,7 @@ export default function Home() {
 					]}
 				/>
 
-				<FeatureSection
+				<ProductSection
 					reversed
 					stretched
 					color="text-blurple-400"
@@ -113,7 +113,7 @@ export default function Home() {
 							<img src="/img/home/repo.png" alt="moonbase - repository view" className="block" />
 						</div>
 					</div>
-				</FeatureSection>
+				</ProductSection>
 			</main>
 
 			<UsedBy />

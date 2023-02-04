@@ -6,25 +6,25 @@ import Heading from '@site/src/ui/typography/Heading';
 import Text from '@site/src/ui/typography/Text';
 import CTA, { CTAProps } from './CTA';
 
-export interface FeatureItem {
+export interface ProductItem {
 	title: string;
 	description: string;
 	icon: IconDefinition;
 }
 
-export interface FeatureSectionProps {
+export interface ProductSectionProps {
 	children?: React.ReactNode;
 	color: string;
 	cta?: CTAProps;
 	description: React.ReactNode;
-	items?: FeatureItem[];
+	items?: ProductItem[];
 	reversed?: boolean;
 	stretched?: boolean;
 	suptitle: string;
 	title: string;
 }
 
-export default function FeatureSection({
+export default function ProductSection({
 	children,
 	color,
 	cta,
@@ -34,7 +34,7 @@ export default function FeatureSection({
 	stretched,
 	suptitle,
 	title,
-}: FeatureSectionProps) {
+}: ProductSectionProps) {
 	return (
 		<div className="relative py-4 sm:py-5 lg:py-6">
 			<div className="mx-auto max-w-md px-2 sm:max-w-3xl sm:px-3 lg:max-w-7xl lg:px-4">

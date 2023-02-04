@@ -99,6 +99,10 @@ const config = {
 						label: 'Blog',
 						position: 'left',
 					},
+					{
+						...social[0],
+						position: 'left',
+					},
 					/* {
 						to: '/api',
 						label: 'API',
@@ -147,7 +151,8 @@ const config = {
 						],
 					}, */
 					{
-						...social[0],
+						to: 'https://moonbase.app',
+						label: 'Sign in',
 						position: 'right',
 					},
 				],
@@ -159,16 +164,16 @@ const config = {
 						title: 'Learn',
 						items: [
 							{
-								label: 'Blog',
-								to: '/blog',
-							},
-							{
 								label: 'Docs',
 								to: '/docs',
 							},
 							{
 								label: 'Guides',
 								to: '/docs/guides/ci',
+							},
+							{
+								label: 'Blog',
+								to: '/blog',
 							},
 							{
 								label: 'API',
@@ -202,7 +207,7 @@ const config = {
 						items: social,
 					},
 				],
-				copyright: `Copyright © ${new Date().getFullYear()} moon. moonrepo LLC.`,
+				copyright: `Copyright © ${new Date().getFullYear()}, moonrepo LLC`,
 			},
 			prism: {
 				theme: prismTheme,

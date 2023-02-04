@@ -79,7 +79,7 @@ export default function ContactForm() {
 					Contacting about <b>{subject}</b>
 				</Text>
 			) : (
-				<Text variant="muted">Want to learn more about moon? Have questions?</Text>
+				<Text variant="muted">Want to learn more about moonrepo? Have questions?</Text>
 			)}
 
 			<div className="mt-2">

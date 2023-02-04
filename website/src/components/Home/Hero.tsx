@@ -4,6 +4,7 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import { faRocketLaunch } from '@fortawesome/pro-duotone-svg-icons';
 import Icon from '../../ui/iconography/Icon';
 import DocLink from '../../ui/typography/Link';
+import CTA from './CTA';
 import HeroTerminal from './HeroTerminal';
 
 // eslint-disable-next-line import/no-extraneous-dependencies
@@ -39,17 +40,14 @@ export default function Hero() {
 
 					<div className="mt-3 flex justify-center lg:justify-start">
 						<div>
-							<Link
-								href="/docs/install"
-								className="w-full flex items-center justify-center px-2 py-1 sm:px-3 sm:py-2 text-base font-bold rounded-md text-white hover:text-white bg-purple-600 hover:scale-110 md:text-lg transition-transform"
-							>
+							<CTA href="/docs/install">
 								Get started
 								<Icon
 									icon={faRocketLaunch}
 									className="ml-1 md:ml-2 inline-block"
 									style={{ maxWidth: 18 }}
 								/>
-							</Link>
+							</CTA>
 						</div>
 
 						<div className="ml-1 sm:ml-2 lg:ml-3">

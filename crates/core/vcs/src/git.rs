@@ -51,6 +51,30 @@ impl Git {
         })
     }
 
+    pub fn extract_slug_from_remote(output: String) -> Result<String, VcsError> {
+        // git@github.com:moonrepo/moon.git
+        let remote = if output.starts_with("git@") {
+            format!("https://{}", output.replace(':', "/"))
+            // https://github.com/moonrepo/moon
+        } else {
+            output
+        };
+
+        let url = url::Url::parse(&remote)
+            .map_err(|e| VcsError::FailedToParseGitRemote(e.to_string()))?;
+        let mut slug = url.path();
+
+        if slug.starts_with('/') {
+            slug = &slug[1..];
+        }
+
+        if slug.ends_with(".git") {
+            slug = &slug[0..(slug.len() - 4)];
+        }
+
+        Ok(slug.to_owned())
+    }
+
     async fn get_merge_base(&self, base: &str, head: &str) -> VcsResult<String> {
         let mut args = string_vec!["merge-base", head];
         let mut candidates = string_vec![base.to_owned()];
@@ -240,27 +264,7 @@ impl Vcs for Git {
             )
             .await?;
 
-        // git@github.com:moonrepo/moon.git
-        let remote = if output.starts_with("git@") {
-            format!("https://{}", output.replace(':', "/"))
-            // https://github.com/moonrepo/moon
-        } else {
-            output
-        };
-
-        let url = url::Url::parse(&remote)
-            .map_err(|e| VcsError::FailedToParseGitRemote(e.to_string()))?;
-        let mut slug = url.path();
-
-        if slug.starts_with('/') {
-            slug = &slug[1..];
-        }
-
-        if slug.ends_with(".git") {
-            slug = &slug[0..(slug.len() - 4)];
-        }
-
-        Ok(slug.to_owned())
+        Self::extract_slug_from_remote(output)
     }
 
     // https://git-scm.com/docs/git-status#_short_format

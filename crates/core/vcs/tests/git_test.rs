@@ -463,3 +463,39 @@ mod touched_files_via_diff {
         );
     }
 }
+
+mod slug_parsing {
+    use super::*;
+
+    #[test]
+    fn supports_http() {
+        assert_eq!(
+            Git::extract_slug_from_remote("http://github.com/moonrepo/moon".into()).unwrap(),
+            "moonrepo/moon"
+        );
+        assert_eq!(
+            Git::extract_slug_from_remote("http://github.com/moonrepo/moon.git".into()).unwrap(),
+            "moonrepo/moon"
+        );
+        assert_eq!(
+            Git::extract_slug_from_remote("https://github.com/moonrepo/moon".into()).unwrap(),
+            "moonrepo/moon"
+        );
+        assert_eq!(
+            Git::extract_slug_from_remote("https://github.com/moonrepo/moon.git".into()).unwrap(),
+            "moonrepo/moon"
+        );
+    }
+
+    #[test]
+    fn supports_git() {
+        assert_eq!(
+            Git::extract_slug_from_remote("git@github.com:moonrepo/moon".into()).unwrap(),
+            "moonrepo/moon"
+        );
+        assert_eq!(
+            Git::extract_slug_from_remote("git@github.com:moonrepo/moon.git".into()).unwrap(),
+            "moonrepo/moon"
+        );
+    }
+}

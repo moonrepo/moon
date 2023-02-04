@@ -2144,7 +2144,7 @@ dependencies = [
 
 [[package]]
 name = "moon_cli"
-version = "0.23.3"
+version = "0.23.4"
 dependencies = [
  "clap 4.1.4",
  "clap_lex 0.3.0",

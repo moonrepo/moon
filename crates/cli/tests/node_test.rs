@@ -14,7 +14,7 @@ mod run_script {
             get_node_depman_fixture_configs("npm");
 
         let sandbox = create_sandbox_with_config(
-            "node-npm",
+            "node-npm/workspaces",
             Some(&workspace_config),
             Some(&toolchain_config),
             Some(&tasks_config),
@@ -36,7 +36,7 @@ mod run_script {
             get_node_depman_fixture_configs("npm");
 
         let sandbox = create_sandbox_with_config(
-            "node-npm",
+            "node-npm/workspaces",
             Some(&workspace_config),
             Some(&toolchain_config),
             Some(&tasks_config),
@@ -58,7 +58,7 @@ mod run_script {
             get_node_depman_fixture_configs("npm");
 
         let sandbox = create_sandbox_with_config(
-            "node-npm",
+            "node-npm/workspaces",
             Some(&workspace_config),
             Some(&toolchain_config),
             Some(&tasks_config),
@@ -78,15 +78,17 @@ mod run_script {
             get_node_depman_fixture_configs("npm");
 
         let sandbox = create_sandbox_with_config(
-            "node-npm",
+            "node-npm/workspaces",
             Some(&workspace_config),
             Some(&toolchain_config),
             Some(&tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
-            cmd.args(["node", "run-script", "test"])
-                .env("MOON_PROJECT_ROOT", get_fixtures_path("node-npm/base"));
+            cmd.args(["node", "run-script", "test"]).env(
+                "MOON_PROJECT_ROOT",
+                get_fixtures_path("node-npm/workspaces/base"),
+            );
         });
 
         assert.success().stdout(predicate::str::contains("> test"));
@@ -99,7 +101,7 @@ mod run_script {
             get_node_depman_fixture_configs("pnpm");
 
         let sandbox = create_sandbox_with_config(
-            "node-pnpm",
+            "node-pnpm/workspaces",
             Some(&workspace_config),
             Some(&toolchain_config),
             Some(&tasks_config),
@@ -119,7 +121,7 @@ mod run_script {
             get_node_depman_fixture_configs("yarn");
 
         let sandbox = create_sandbox_with_config(
-            "node-yarn",
+            "node-yarn/workspaces",
             Some(&workspace_config),
             Some(&toolchain_config),
             Some(&tasks_config),
@@ -139,7 +141,7 @@ mod run_script {
             get_node_depman_fixture_configs("yarn1");
 
         let sandbox = create_sandbox_with_config(
-            "node-yarn1",
+            "node-yarn1/workspaces",
             Some(&workspace_config),
             Some(&toolchain_config),
             Some(&tasks_config),

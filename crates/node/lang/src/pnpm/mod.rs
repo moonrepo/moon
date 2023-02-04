@@ -1,3 +1,5 @@
+// https://github.com/pnpm/pnpm/blob/main/lockfile/lockfile-types/src/index.ts
+
 pub mod dependency_path;
 pub mod workspace;
 
@@ -21,13 +23,17 @@ type DependencyMap = FxHashMap<String, Value>;
 pub struct PnpmLockPackage {
     pub cpu: Option<Vec<String>>,
     pub dependencies: Option<DependencyMap>,
+    pub deprecated: Option<String>,
     pub dev: Option<bool>,
     pub engines: Option<FxHashMap<String, String>>,
     pub has_bin: Option<bool>,
+    pub libc: Option<Vec<String>>,
     pub optional: Option<bool>,
     pub optional_dependencies: Option<DependencyMap>,
     pub os: Option<Vec<String>>,
+    pub patched: Option<bool>,
     pub peer_dependencies: Option<DependencyMap>,
+    pub prepare: Option<bool>,
     pub requires_build: Option<bool>,
     pub transitive_peer_dependencies: Option<Vec<String>>,
     pub resolution: PnpmLockResolution,
@@ -36,6 +42,7 @@ pub struct PnpmLockPackage {
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PnpmLockResolution {
+    pub commit: Option<String>, // git
     pub integrity: Option<String>,
     pub tarball: Option<String>,
 }
@@ -44,7 +51,7 @@ pub struct PnpmLockResolution {
 #[serde(rename_all = "camelCase")]
 pub struct PnpmLock {
     pub lockfile_version: Value,
-    pub importers: FxHashMap<String, Value>,
+    pub importers: Option<FxHashMap<String, Value>>,
     pub packages: FxHashMap<String, PnpmLockPackage>,
 
     #[serde(skip)]
@@ -67,6 +74,10 @@ pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVer
             }
 
             if let Some(ver) = details.resolution.tarball {
+                entry.push(ver.clone());
+            }
+
+            if let Some(ver) = details.resolution.commit {
                 entry.push(ver.clone());
             }
         }
@@ -141,7 +152,7 @@ packages:
             lockfile,
             PnpmLock {
                 lockfile_version: Value::Number(Number::from(5.4)),
-                importers: FxHashMap::from_iter([(".".into(), Value::Mapping(Mapping::new()))]),
+                importers: Some(FxHashMap::from_iter([(".".into(), Value::Mapping(Mapping::new()))])),
                 packages: FxHashMap::from_iter([(
                     "/@ampproject/remapping/2.2.0".into(),
                     PnpmLockPackage {
@@ -154,7 +165,7 @@ packages:
                             ("node".to_owned(), ">=6.0.0".to_owned())
                         ])),
                         resolution:
-                        PnpmLockResolution { integrity: Some("sha512-qRmjj8nj9qmLTQXXmaR1cck3UXSRMPrbsLJAasZpF+t3riI71BXed5ebIOYwQntykeZuhjsdweEc9BxH5Jc26w==".to_owned()), tarball: None },
+                        PnpmLockResolution { commit: None, integrity: Some("sha512-qRmjj8nj9qmLTQXXmaR1cck3UXSRMPrbsLJAasZpF+t3riI71BXed5ebIOYwQntykeZuhjsdweEc9BxH5Jc26w==".to_owned()), tarball: None },
                         ..PnpmLockPackage::default()
                     }
                 ), (
@@ -170,7 +181,7 @@ packages:
                             Value::String("^7.0.0-0".to_owned())
                         )])),
                         resolution:
-                        PnpmLockResolution { integrity: Some( "sha512-tycmZxkGfZaxhMRbXlPXuVFpdWlXpir2W4AMhSJgRKzk/eDlIXOhb2LHWoLpDF7TEHylV5zNhykX6KAgHJmTNw==".to_owned()), tarball: None },
+                        PnpmLockResolution { commit: None,integrity: Some( "sha512-tycmZxkGfZaxhMRbXlPXuVFpdWlXpir2W4AMhSJgRKzk/eDlIXOhb2LHWoLpDF7TEHylV5zNhykX6KAgHJmTNw==".to_owned()), tarball: None },
                         ..PnpmLockPackage::default()
                     }
                 ), (
@@ -181,7 +192,7 @@ packages:
                             ("node".to_owned(), ">=8".to_owned())
                         ])),
                         resolution:
-                        PnpmLockResolution { integrity: Some( "sha512-HGyxoOTYUyCM6stUe6EJgnd4EoewAI7zMdfqO+kGjnlZmBDz/cR5pf8r/cR4Wq60sL/p0IkcjUEEPwS3GFrIyw==".to_owned()), tarball: None },
+                        PnpmLockResolution { commit: None,integrity: Some( "sha512-HGyxoOTYUyCM6stUe6EJgnd4EoewAI7zMdfqO+kGjnlZmBDz/cR5pf8r/cR4Wq60sL/p0IkcjUEEPwS3GFrIyw==".to_owned()), tarball: None },
                         ..PnpmLockPackage::default()
                     }
                 ), (
@@ -199,7 +210,7 @@ packages:
                         )])),
                         transitive_peer_dependencies: Some(string_vec!["@babel/core", "supports-color"]),
                         resolution:
-                        PnpmLockResolution { integrity: Some( "sha512-1ILtAj+z6bh1vTvaDlcT8501vmkzkVZMk2aiexJy+XWTZ+sb9B7IWedvWadIhOwwL97fiW4eMmN6SrbaHjn12A==".to_owned()), tarball: None },
+                        PnpmLockResolution { commit: None,integrity: Some( "sha512-1ILtAj+z6bh1vTvaDlcT8501vmkzkVZMk2aiexJy+XWTZ+sb9B7IWedvWadIhOwwL97fiW4eMmN6SrbaHjn12A==".to_owned()), tarball: None },
                         ..PnpmLockPackage::default()
                     }
                 )]),

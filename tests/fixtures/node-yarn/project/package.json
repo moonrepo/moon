@@ -1,0 +1,7 @@
+{
+  "name": "test-node-yarn-project",
+  "private": true,
+  "devDependencies": {
+    "prettier": "2.7.0"
+  }
+}

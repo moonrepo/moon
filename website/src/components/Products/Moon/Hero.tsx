@@ -2,9 +2,9 @@ import React from 'react';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import { faRocketLaunch } from '@fortawesome/pro-duotone-svg-icons';
-import Icon from '../../ui/iconography/Icon';
-import DocLink from '../../ui/typography/Link';
-import CTA from './CTA';
+import Icon from '../../../ui/iconography/Icon';
+import DocLink from '../../../ui/typography/Link';
+import CTA from '../../Home/CTA';
 import HeroTerminal from './HeroTerminal';
 
 // eslint-disable-next-line import/no-extraneous-dependencies

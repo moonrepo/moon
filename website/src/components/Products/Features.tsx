@@ -4,9 +4,9 @@ import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import Icon from '../../ui/iconography/Icon';
 import Heading from '../../ui/typography/Heading';
 import Text from '../../ui/typography/Text';
-import FeatureStatus, { StatusType } from './FeatureStatus';
+import FeatureStatus, { StatusType } from '../FeatureStatus';
 
-export type FeatureTier = 1 | 2 | 3 | 4 | 5;
+export type FeatureTier = 1 | 2 | 3 | 4;
 
 export interface Feature {
 	title: string;
@@ -28,23 +28,20 @@ export const backgroundGradients: Record<FeatureTier, string> = {
 	2: 'from-purple-700 to-purple-200',
 	3: 'from-purple-200 to-white',
 	4: 'bg-white',
-	5: 'bg-white',
 };
 
 const cardGradients: Record<FeatureTier, string> = {
-	1: '',
-	2: 'from-purple-600 to-blurple-600',
-	3: 'from-pink-400 to-red-400',
-	4: 'from-teal-400 to-slate-100',
-	5: 'from-yellow-300 to-green-600',
+	1: 'from-purple-600 to-blurple-600',
+	2: 'from-pink-400 to-red-400',
+	3: 'from-teal-400 to-slate-100',
+	4: 'from-yellow-300 to-green-600',
 };
 
 const iconColors: Record<FeatureTier, string> = {
-	1: '',
-	2: 'text-blurple-300',
-	3: 'text-pink-500',
-	4: 'text-teal-600',
-	5: 'text-green-600',
+	1: 'text-blurple-300',
+	2: 'text-pink-500',
+	3: 'text-teal-600',
+	4: 'text-green-600',
 };
 
 export default function Features({ header, description, features, reversed, tier }: FeaturesProps) {

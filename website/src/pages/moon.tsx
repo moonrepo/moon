@@ -1,9 +1,7 @@
 /* eslint-disable sort-keys */
 
 import React from 'react';
-import clsx from 'clsx';
 import Link from '@docusaurus/Link';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import {
 	faAperture,
 	faArrowUpRightDots,
@@ -27,13 +25,10 @@ import {
 	faToolbox,
 	faUserSecret,
 } from '@fortawesome/pro-duotone-svg-icons';
-import AdditionalFeatures from '@site/src/components/Home/AdditionalFeatures';
-import Features, { backgroundGradients, Feature } from '@site/src/components/Home/Features';
-import Hero from '@site/src/components/Home/Hero';
-import UsedBy from '@site/src/components/Home/UsedBy';
+import AdditionalFeatures from '@site/src/components/Products/AdditionalFeatures';
+import Features, { Feature } from '@site/src/components/Products/Features';
+import Hero from '@site/src/components/Products/Moon/Hero';
 import Layout from '@theme/Layout';
-import Heading from '../ui/typography/Heading';
-import Text from '../ui/typography/Text';
 
 const managementFeatures: Feature[] = [
 	{
@@ -185,77 +180,27 @@ const additionalFeatures: Feature[] = [
 	},
 ];
 
-const description =
-	'Reduces build times and repository maintenance costs through high-quality developer tooling.';
-
-export default function Home() {
-	const { siteConfig } = useDocusaurusContext();
-
+export default function ProductMoon() {
 	return (
-		<Layout title={siteConfig.tagline} description={description}>
+		<Layout
+			title="moon - A build system and repo management tool for the web ecosystem, written in Rust"
+			description="Reduces build times and repository maintenance costs through high-quality developer tooling."
+		>
 			<Hero />
 
 			<main>
-				<div className={clsx('bg-gradient-to-b py-4 sm:py-5 lg:py-6', backgroundGradients[1])}>
-					<div className="px-6 text-center">
-						<Heading level={2} className="text-white">
-							Supercharge your codebase
-						</Heading>
-					</div>
-
-					<div className="mt-4">
-						<div className="relative mx-auto max-w-7xl px-6 lg:px-8">
-							<div className="mx-auto max-w-4xl">
-								<dl className="rounded-lg bg-white shadow-lg sm:grid sm:grid-cols-3">
-									<div className="flex flex-col p-4 text-center">
-										<dd className="m-0">
-											<Heading level={1}>
-												<sup className="text-base inline-block relative" style={{ bottom: -4 }}>
-													up to
-												</sup>{' '}
-												90%
-											</Heading>
-										</dd>
-										<dt className="mt-2">
-											<Text variant="muted">Reduced CI times</Text>
-										</dt>
-									</div>
-
-									<div className="flex flex-col p-4 text-center">
-										<dd className="m-0">
-											<Heading level={1}>2-3x</Heading>
-										</dd>
-										<dt className="mt-2">
-											<Text variant="muted">Reduced build times</Text>
-										</dt>
-									</div>
-
-									<div className="flex flex-col p-4 text-center">
-										<dd className="m-0">
-											<Heading level={1}>24/7</Heading>
-										</dd>
-										<dt className="mt-2">
-											<Text variant="muted">Developer productivity</Text>
-										</dt>
-									</div>
-								</dl>
-							</div>
-						</div>
-					</div>
-				</div>
-
 				<Features
 					header="Management"
 					description="Develop more, manage less"
 					features={managementFeatures}
-					tier={2}
+					tier={1}
 				/>
 
 				<Features
 					header="Organization"
 					description="Architect a repository to scale"
 					features={organizationFeatures}
-					tier={3}
+					tier={2}
 					reversed
 				/>
 
@@ -263,7 +208,7 @@ export default function Home() {
 					header="Orchestration"
 					description="Offload heavy tasks"
 					features={orchestrationFeatures}
-					tier={4}
+					tier={3}
 				/>
 
 				<Features
@@ -271,13 +216,11 @@ export default function Home() {
 					description="Monitor pipeline health"
 					features={notificationFeatures}
 					// columns={3}
-					tier={5}
+					tier={4}
 					reversed
 				/>
 
 				<AdditionalFeatures header="And many more features" features={additionalFeatures} />
-
-				<UsedBy />
 			</main>
 		</Layout>
 	);

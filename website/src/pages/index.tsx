@@ -48,7 +48,7 @@ export default function Home() {
 							<Link href="/moon" size="lg">
 								moon
 							</Link>{' '}
-							will help scale your codebase.
+							will help maintain your codebase.
 							{/* <>
 							Whether your repository is one project or many projects, or composed of multiple
 							languages, our build system{' '}
@@ -87,7 +87,7 @@ export default function Home() {
 					stretched
 					color="text-blurple-400"
 					suptitle="Expand to the cloud"
-					title="Understand your pipelines"
+					title="Scale your pipelines"
 					description={
 						<>
 							With our hosted service{' '}

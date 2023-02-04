@@ -83,6 +83,25 @@ const config = {
 				},
 				items: [
 					{
+						type: 'dropdown',
+						position: 'left',
+						label: 'Products',
+						items: [
+							{
+								to: '/moon',
+								html: '<strong>moon</strong><div class="opacity-60">Build system for managing codebases</div>',
+							},
+							{
+								to: '/moonbase',
+								html: '<strong>moonbase</strong><div class="opacity-60">Service for scaling CI pipelines</div>',
+							},
+							// {
+							// 	to: '/proto',
+							// 	html: '<strong>proto</strong><div class="opacity-60">Language agnostic version manager</div>',
+							// },
+						],
+					},
+					{
 						type: 'doc',
 						docId: 'intro',
 						position: 'left',

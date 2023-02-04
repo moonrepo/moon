@@ -83,11 +83,6 @@ const config = {
 				},
 				items: [
 					{
-						to: '/blog',
-						label: 'Blog',
-						position: 'left',
-					},
-					{
 						type: 'doc',
 						docId: 'intro',
 						position: 'left',
@@ -100,6 +95,11 @@ const config = {
 						label: 'Guides',
 					},
 					{
+						to: '/blog',
+						label: 'Blog',
+						position: 'left',
+					},
+					/* {
 						to: '/api',
 						label: 'API',
 						position: 'left',
@@ -145,7 +145,7 @@ const config = {
 								href: 'https://www.npmjs.com/package/tsconfig-moon',
 							},
 						],
-					},
+					}, */
 					{
 						...social[0],
 						position: 'right',

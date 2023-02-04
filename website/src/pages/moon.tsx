@@ -155,9 +155,9 @@ const additionalFeatures: Feature[] = [
 		status: 'in-development',
 	},
 	{
-		title: 'Node.js inspection',
+		title: 'Process inspection',
 		icon: faUserSecret,
-		description: 'Inspect and debug failing Node.js processes.',
+		description: 'Inspect and debug failing task processes.',
 		status: 'coming-soon',
 	},
 	{
@@ -179,7 +179,6 @@ const additionalFeatures: Feature[] = [
 				<Link href="/docs/editors/vscode">Visual Studio Code</Link>.
 			</>
 		),
-		status: 'new',
 	},
 ];
 

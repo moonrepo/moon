@@ -8,7 +8,7 @@ import Link from '../../../ui/typography/Link';
 import Text from '../../../ui/typography/Text';
 
 function NextButton(props: Partial<ButtonProps>) {
-	return <Button {...props} label="Next" id="contact-next" />;
+	return <Button {...props} label="Next" id="contact-next" className="w-1/4" />;
 }
 
 export default function ContactForm() {

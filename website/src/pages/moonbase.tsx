@@ -11,6 +11,7 @@ import {
 } from '@fortawesome/pro-duotone-svg-icons';
 import Features, { Feature } from '@site/src/components/Products/Features';
 import Hero from '@site/src/components/Products/Moonbase/Hero';
+import Pricing from '@site/src/components/Products/Moonbase/Pricing';
 import Layout from '@theme/Layout';
 
 const ciFeatures: Feature[] = [
@@ -81,6 +82,8 @@ export default function ProductMoonbase() {
 						reversed
 					/>
 				</div>
+
+				<Pricing />
 			</main>
 		</Layout>
 	);

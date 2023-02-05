@@ -3,6 +3,7 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import { faDiagramProject, faDiagramSankey, faToolbox } from '@fortawesome/pro-duotone-svg-icons';
 import ProductSection from '@site/src/components/Home/ProductSection';
 import UsedBy from '@site/src/components/Home/UsedBy';
+import MoonbaseScreenshots from '@site/src/components/Products/Moonbase/Screenshots';
 import Link from '@site/src/ui/typography/Link';
 import Layout from '@theme/Layout';
 
@@ -31,7 +32,7 @@ export default function Home() {
 
 					<p className="mm-0 text-white text-md text-center opacity-60 px-2 sm:text-lg md:text-xl md:max-w-2xl">
 						From build to deploy, moonrepo is a better way to manage codebases, save costs, and
-						scale your business.
+						boost your business.
 					</p>
 				</div>
 			</div>
@@ -83,7 +84,7 @@ export default function Home() {
 					stretched
 					color="text-purple-600"
 					suptitle="Expand to the cloud"
-					title="Scale your pipelines"
+					title="Accelerate your pipelines"
 					description={
 						<>
 							With our hosted service{' '}
@@ -100,14 +101,8 @@ export default function Home() {
 						href: '/moonbase',
 					}}
 				>
-					<div className="relative pb-8 h-full">
-						<div className="overflow-hidden rounded-lg w-[85%] md:w-[100%] lg:w-[65%] bg-[#000e19] p-1">
-							<img src="/img/home/org.png" alt="moonbase - organization view" className="block" />
-						</div>
-
-						<div className="overflow-hidden rounded-lg w-[85%] md:w-[100%] lg:w-[65%] bg-[#000e19] p-1 absolute bottom-0 right-0 z-10">
-							<img src="/img/home/repo.png" alt="moonbase - repository view" className="block" />
-						</div>
+					<div className="relative sm:pb-8 h-full">
+						<MoonbaseScreenshots />
 					</div>
 				</ProductSection>
 			</main>

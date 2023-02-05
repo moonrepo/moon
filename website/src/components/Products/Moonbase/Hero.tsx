@@ -3,6 +3,7 @@ import { faSpaceStationMoon } from '@fortawesome/pro-duotone-svg-icons';
 import Icon from '../../../ui/iconography/Icon';
 import DocLink from '../../../ui/typography/Link';
 import CTA from '../../Home/CTA';
+import Screenshots from './Screenshots';
 
 export default function Hero() {
 	return (
@@ -13,8 +14,8 @@ export default function Hero() {
 						<img src="/img/logo-hero.svg" alt="moonbase" title="moonbase" width={300} />
 					</h1>
 
-					<p className="mt-1 mb-0 text-base text-white sm:text-lg sm:max-w-xl sm:mx-auto md:text-xl lg:mx-0 md:pr-4">
-						A service for monitoring and scaling your CI pipelines.
+					<p className="mt-1 mb-0 text-base text-white sm:text-lg sm:max-w-xl sm:mx-auto md:text-xl lg:mx-0 md:w-[80%]">
+						A service for monitoring your codebases and scaling their CI pipelines.
 					</p>
 
 					<p className="mt-1 text-white opacity-50 text-sm md:text-base md:pr-4">
@@ -28,7 +29,7 @@ export default function Hero() {
 					<div className="mt-3 flex justify-center lg:justify-start">
 						<div>
 							<CTA href="https://moonrepo.app">
-								Join now
+								Try it today
 								<Icon
 									icon={faSpaceStationMoon}
 									className="ml-1 md:ml-2 inline-block"
@@ -39,7 +40,9 @@ export default function Hero() {
 					</div>
 				</div>
 
-				<div className="mt-4 md:mt-0 md:w-6/12 flex flex-grow-0">sdsds</div>
+				<div className="mt-4 md:mt-0 md:w-6/12 relative">
+					<Screenshots />
+				</div>
 			</div>
 		</div>
 	);

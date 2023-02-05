@@ -89,11 +89,11 @@ const config = {
 						items: [
 							{
 								to: '/moon',
-								html: '<strong>moon</strong><div class="opacity-60">Build system for managing codebases</div>',
+								html: '<strong class="block">moon</strong><div class="opacity-60">Build system for managing codebases</div>',
 							},
 							{
 								to: '/moonbase',
-								html: '<strong>moonbase</strong><div class="opacity-60">Service for scaling CI pipelines</div>',
+								html: '<strong class="block">moonbase</strong><div class="opacity-60">Service for scaling CI pipelines</div>',
 							},
 							// {
 							// 	to: '/proto',

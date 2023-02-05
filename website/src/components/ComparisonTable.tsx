@@ -421,7 +421,7 @@ const taskRunnerRows: Comparison[] = [
 	{
 		feature: 'Remote / cloud caching and syncing',
 		support: {
-			moon: [PARTIALLY_SUPPORTED, 'in beta (paid)'],
+			moon: [SUPPORTED, 'with moonbase (paid)'],
 			nx: [SUPPORTED, 'with Nx cloud (paid)'],
 			turborepo: [SUPPORTED, 'requires a Vercel account (free)'],
 		},

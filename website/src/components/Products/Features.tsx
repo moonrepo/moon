@@ -23,7 +23,7 @@ export interface FeaturesProps {
 	tier: FeatureTier;
 }
 
-export const backgroundGradients: Record<FeatureTier, string> = {
+const backgroundGradients: Record<FeatureTier, string> = {
 	1: 'from-slate-600 to-purple-700',
 	2: 'from-purple-700 to-purple-200',
 	3: 'from-purple-200 to-white',

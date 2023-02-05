@@ -29,8 +29,8 @@ export default function Home() {
 						New era of productivity tooling
 					</h2>
 
-					<p className="mm-0 text-white text-md text-center opacity-60 sm:text-lg md:text-xl md:max-w-2xl">
-						From develop to deploy, moonrepo is a better way to manage codebases, save costs, and
+					<p className="mm-0 text-white text-md text-center opacity-60 px-2 sm:text-lg md:text-xl md:max-w-2xl">
+						From build to deploy, moonrepo is a better way to manage codebases, save costs, and
 						scale your business.
 					</p>
 				</div>
@@ -38,28 +38,24 @@ export default function Home() {
 
 			<main className="bg-gradient-to-b from-slate-600 via-purple-600 to-white">
 				<ProductSection
-					color="text-purple-600"
+					color="text-blurple-400"
 					suptitle="Build a solid foundation"
 					title="Supercharge your codebase"
 					description={
 						<>
-							Regardless of how many projects or languages are in your repository, or how many team
-							members are pushing changes, our build system{' '}
+							For repositories with multiple projects, any number of languages, and team members
+							constantly pushing changes, our build system{' '}
 							<Link href="/moon" size="lg">
 								moon
 							</Link>{' '}
-							will help maintain your codebase.
-							{/* <>
-							Whether your repository is one project or many projects, or composed of multiple
-							languages, our build system{' '}
-							<Link href="/moon" size="lg">
-								moon
-							</Link>{' '}
-							will help your codebase grow.
-					</> */}
+							will help simplify the experience of working in and maintaining your codebase.
 						</>
 					}
-					cta={{ children: 'Learn more about moon', color: 'bg-purple-600', href: '/moon' }}
+					cta={{
+						children: 'Learn more about moon',
+						color: 'bg-blurple-400',
+						href: '/moon',
+					}}
 					items={[
 						{
 							description:
@@ -75,7 +71,7 @@ export default function Home() {
 						},
 						{
 							description:
-								'With our integrated toolchain, the exact version of languages will be used, ensuring a deterministic environment across machines.',
+								'With our integrated toolchain, the exact tooling version will be used, ensuring a deterministic environment across machines.',
 							icon: faToolbox,
 							title: 'Integrated development environment',
 						},
@@ -85,7 +81,7 @@ export default function Home() {
 				<ProductSection
 					reversed
 					stretched
-					color="text-blurple-400"
+					color="text-purple-600"
 					suptitle="Expand to the cloud"
 					title="Scale your pipelines"
 					description={
@@ -94,22 +90,22 @@ export default function Home() {
 							<Link href="/moon" size="lg">
 								moonbase
 							</Link>
-							, easily cache artifacts to reduce CI times, gain insight into your CI pipelines,
-							track the health of your repositories, and overall cut costs.
+							, easily cache build artifacts to reduce CI times, gain insight into your CI
+							pipelines, track the health of your repositories, and overall cut costs.
 						</>
 					}
 					cta={{
 						children: 'Learn more about moonbase',
-						color: 'bg-blurple-400',
+						color: 'bg-purple-600',
 						href: '/moonbase',
 					}}
 				>
 					<div className="relative pb-8 h-full">
-						<div className="overflow-hidden rounded-lg w-[65%]  bg-[#000e19] p-1">
+						<div className="overflow-hidden rounded-lg w-[85%] md:w-[100%] lg:w-[65%] bg-[#000e19] p-1">
 							<img src="/img/home/org.png" alt="moonbase - organization view" className="block" />
 						</div>
 
-						<div className="overflow-hidden rounded-lg w-[65%] bg-[#000e19] p-1 absolute bottom-0 right-0 z-10">
+						<div className="overflow-hidden rounded-lg w-[85%] md:w-[100%] lg:w-[65%] bg-[#000e19] p-1 absolute bottom-0 right-0 z-10">
 							<img src="/img/home/repo.png" alt="moonbase - repository view" className="block" />
 						</div>
 					</div>

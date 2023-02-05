@@ -18,11 +18,11 @@ export default function Hero() {
 						<img src="/img/logo-hero.svg" alt="moon" title="moon" width={300} />
 					</h1>
 
-					<p className="mt-1 mb-0 text-base text-white sm:text-lg sm:max-w-xl sm:mx-auto md:text-xl lg:mx-0">
-						A build system and repo management tool for the web ecosystem, written in Rust.
+					<p className="mt-1 mb-0 text-base text-white sm:text-lg sm:max-w-xl sm:mx-auto md:text-xl lg:mx-0 md:pr-4">
+						A build system and repository management tool for the web ecosystem, written in Rust.
 					</p>
 
-					<p className="mt-1 text-white opacity-50 text-sm md:text-base">
+					<p className="mt-1 text-white opacity-50 text-sm md:text-base md:pr-4">
 						Supports JavaScript, TypeScript, Rust, Go, Ruby,{' '}
 						<DocLink href="/docs#supported-languages" variant="muted">
 							and more

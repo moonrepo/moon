@@ -189,36 +189,38 @@ export default function ProductMoon() {
 			<Hero />
 
 			<main>
-				<Features
-					header="Management"
-					description="Develop more, manage less"
-					features={managementFeatures}
-					tier={1}
-				/>
+				<div className="bg-gradient-to-b from-slate-600 via-purple-600 to-white">
+					<Features
+						header="Management"
+						description="Develop more, manage less"
+						features={managementFeatures}
+						tier={1}
+					/>
 
-				<Features
-					header="Organization"
-					description="Architect a repository to scale"
-					features={organizationFeatures}
-					tier={2}
-					reversed
-				/>
+					<Features
+						header="Organization"
+						description="Architect a repository to scale"
+						features={organizationFeatures}
+						tier={2}
+						reversed
+					/>
 
-				<Features
-					header="Orchestration"
-					description="Offload heavy tasks"
-					features={orchestrationFeatures}
-					tier={3}
-				/>
+					<Features
+						header="Orchestration"
+						description="Offload heavy tasks"
+						features={orchestrationFeatures}
+						tier={3}
+					/>
 
-				<Features
-					header="Notification"
-					description="Monitor pipeline health"
-					features={notificationFeatures}
-					// columns={3}
-					tier={4}
-					reversed
-				/>
+					<Features
+						header="Notification"
+						description="Monitor pipeline health"
+						features={notificationFeatures}
+						// columns={3}
+						tier={4}
+						reversed
+					/>
+				</div>
 
 				<AdditionalFeatures header="And many more features" features={additionalFeatures} />
 			</main>

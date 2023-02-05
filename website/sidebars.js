@@ -181,6 +181,7 @@ const sidebars = {
 						'guides/examples/remix',
 						'guides/examples/solid',
 						'guides/examples/storybook',
+						'guides/examples/sveltekit',
 						'guides/examples/typescript',
 						'guides/examples/vite',
 						'guides/examples/vue',

@@ -26,6 +26,7 @@ enum ProjectLanguage {
 - [ ] Updated enum
 - [ ] Updated TypeScript types at `packages/types/src/project-config.ts`
 - [ ] Verified all `match` callsites handle the new variant
+- [ ] Ran `cargo make json-schemas` and updated the JSON schemas
 
 ### Add case to `PlatformType::from` in `moon_config`
 
@@ -77,7 +78,9 @@ language.
 
 Of course this should all be tested.
 
+- [ ] Added fixture to `tests/fixtures/config-inheritance`
 - [ ] Added fixture to `tests/fixtures/project-graph/langs`
+- [ ] Updated `crates/core/config/tests/task_inheritance_test.rs`
 - [ ] Updated `crates/core/project-graph/tests/projects_test.rs`
 
 ### Create a pull request
@@ -86,6 +89,44 @@ Once everything is good, create a pull request and include it in the next releas
 released separately!
 
 ## Tier 2
+
+### Add toolchain configuration to `moon_config`
+
+In moon, platforms _are not_ enabled unless the configuration field in `toolchain.yml` is defined,
+even if it's an empty object. For example, this would enable the Kotlin platform:
+
+```yaml
+# .moon/toolchain.yml
+kotlin: {}
+```
+
+At minimum, create a new language struct at `crates/core/config/src/toolchain/<lang>.rs`. It's ok if
+this struct is empty to start. Over time we will add toolchain support, settings to control
+automation, and more.
+
+```rust
+#[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
+#[schemars(default)]
+#[serde(default, rename_all = "camelCase")]
+pub struct KotlinConfig {
+}
+```
+
+When ready, add a new field to the `ToolchainConfig` struct.
+
+```rust
+pub struct ToolchainConfig {
+	// ...
+
+	#[serde(skip_serializing_if = "Option::is_none")]
+	#[validate]
+	pub kotlin: Option<KotlinConfig>,
+}
+```
+
+- [ ] Created language struct
+- [ ] Updated `ToolchainConfig` struct
+- [ ] Ran `cargo make json-schemas` and updated the JSON schemas
 
 ### Add variant to `PlatformType` enum in `moon_config`
 
@@ -103,6 +144,16 @@ enum PlatformType {
 - [ ] Updated enum
 - [ ] Updated TypeScript types at `packages/types/src/common.ts`
 - [ ] Verified all `match` callsites handle the new variant
+
+### Update `PlatformType::from` case in `moon_config`
+
+Now that the language has a platform, we should explicitly map it.
+
+```rust
+ProjectLanguage::Kotlin => PlatformType::Kotlin,
+```
+
+- [ ] Updated enum
 
 ### Add variant to `Runtime` enum in `moon_platform_runtime`
 

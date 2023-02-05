@@ -5,10 +5,12 @@ so. Ideally these are done sequentially, as separate PRs, that correlate to our 
 support paradigm.
 
 - INIT SCRIPT
+- BIN COMMAND
+- DOCKER PRUNE
 
 ## Tier 1
 
-### Add variant to `ProjectLanguage` enum
+### Add variant to `ProjectLanguage` enum in `moon_config`
 
 This allows projects to configure their primary language, and is utilized by editor extensions.
 
@@ -25,7 +27,7 @@ enum ProjectLanguage {
 - [ ] Updated TypeScript types at `packages/types/src/project-config.ts`
 - [ ] Verified all `match` callsites handle the new variant
 
-### Add case to `PlatformType::from`
+### Add case to `PlatformType::from` in `moon_config`
 
 At this stage, new languages will default to the system platform. Once they reach tier 2, they'll
 have their own platform.
@@ -85,8 +87,40 @@ released separately!
 
 ## Tier 2
 
-### Update `moon_platform_runtime` crate
+### Add variant to `PlatformType` enum in `moon_config`
+
+This enum is the backbone of supporting language specific platforms.
+
+```rust
+enum PlatformType {
+	// ...
+
+	#[strum(serialize = "kotlin")]
+	Kotlin,
+}
+```
+
+- [ ] Updated enum
+- [ ] Updated TypeScript types at `packages/types/src/common.ts`
+- [ ] Verified all `match` callsites handle the new variant
+
+### Add variant to `Runtime` enum in `moon_platform_runtime`
+
+This determines the language + version of a tool to run within the platform.
+
+```rust
+pub enum Runtime {
+	// ...
+	Kotlin(Version),
+}
+```
+
+- [ ] Updated enum
+- [ ] Updated TypeScript types at `packages/types/src/common.ts`
+- [ ] Verified all `match` callsites handle the new variant
 
 ### Update `moon_platform_detector` crate
+
+Tasks run against the platform, so we can now attempt to detect this.
 
 - [ ] Updated `detect_task_platform`

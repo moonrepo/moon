@@ -2160,6 +2160,7 @@ dependencies = [
  "moon_hasher",
  "moon_logger",
  "moon_notifier",
+ "moon_pipeline_provider",
  "moon_platform",
  "moon_project",
  "moon_project_graph",

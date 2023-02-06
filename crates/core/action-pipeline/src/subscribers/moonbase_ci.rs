@@ -2,6 +2,7 @@ use moon_action::ActionStatus;
 use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_error::MoonError;
 use moon_logger::{color, debug, error, map_list, warn};
+use moon_pipeline_provider::get_pipeline_environment;
 use moon_utils::async_trait;
 use moon_workspace::Workspace;
 use moonbase::graphql::{
@@ -118,12 +119,22 @@ impl Subscriber for MoonbaseCiSubscriber {
                     .await
                     .map_err(|e| MoonError::Generic(e.to_string()))?;
 
+                let revision = workspace
+                    .vcs
+                    .get_local_branch_revision()
+                    .await
+                    .map_err(|e| MoonError::Generic(e.to_string()))?;
+
                 let response = match graphql::post_mutation::<create_run::ResponseData>(
                     CreateRun::build_query(create_run::Variables {
                         input: create_run::CreateRunInput {
                             branch,
                             job_count: *actions_count as i64,
                             repository_id: moonbase.repository_id as i64,
+                            request_number: get_pipeline_environment()
+                                .map(|p| p.request_id)
+                                .unwrap_or_default(),
+                            revision: Some(revision),
                         },
                     }),
                     Some(&moonbase.auth_token),

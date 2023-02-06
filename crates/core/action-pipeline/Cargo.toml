@@ -20,6 +20,7 @@ moon_error = { path = "../error" }
 moon_hasher = { path = "../hasher" }
 moon_logger = { path = "../logger" }
 moon_notifier = { path = "../notifier" }
+moon_pipeline_provider = { path = "../pipeline-provider" }
 moon_platform = { path = "../platform" }
 moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }

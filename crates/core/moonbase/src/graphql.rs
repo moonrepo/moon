@@ -23,22 +23,13 @@ where
 }
 
 #[derive(GraphQLQuery)]
-#[graphql(
-    schema_path = "schema.json",
-    query_path = "mutations/create_run.graphql"
-)]
+#[graphql(schema_path = "schema.json", query_path = "mutations.graphql")]
 pub struct CreateRun;
 
 #[derive(GraphQLQuery)]
-#[graphql(
-    schema_path = "schema.json",
-    query_path = "mutations/add_job_to_run.graphql"
-)]
+#[graphql(schema_path = "schema.json", query_path = "mutations.graphql")]
 pub struct AddJobToRun;
 
 #[derive(GraphQLQuery)]
-#[graphql(
-    schema_path = "schema.json",
-    query_path = "mutations/update_job.graphql"
-)]
+#[graphql(schema_path = "schema.json", query_path = "mutations.graphql")]
 pub struct UpdateJob;

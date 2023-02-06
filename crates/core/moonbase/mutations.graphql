@@ -1,0 +1,32 @@
+mutation CreateRun($input: CreateRunInput!) {
+	createRun(input: $input) {
+		run {
+			id
+		}
+		userErrors {
+			message
+		}
+	}
+}
+
+mutation AddJobToRun($input: CreateJobInput!) {
+	addJobToRun(input: $input) {
+		job {
+			id
+		}
+		userErrors {
+			message
+		}
+	}
+}
+
+mutation UpdateJob($id: Int!, $input: UpdateJobInput!) {
+	updateJob(id: $id, input: $input) {
+		job {
+			id
+		}
+		userErrors {
+			message
+		}
+	}
+}

@@ -2,6 +2,7 @@
 name = "moonbase"
 version = "0.1.0"
 edition = "2021"
+include = ["mutations.graphql", "schema.json"]
 
 [dependencies]
 moon_error = { path = "../error" }

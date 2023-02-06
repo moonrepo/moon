@@ -1,0 +1,10 @@
+mutation UpdateRun($id: Int!, $input: UpdateRunInput!) {
+	updateRun(id: $id, input: $input) {
+		run {
+			id
+		}
+		userErrors {
+			message
+		}
+	}
+}

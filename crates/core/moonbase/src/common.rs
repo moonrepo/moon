@@ -22,8 +22,6 @@ pub fn parse_response<O>(data: String) -> Result<O, MoonbaseError>
 where
     O: DeserializeOwned,
 {
-    dbg!("RES", &data);
-
     serde_json::from_str(&data).map_err(|e| MoonbaseError::JsonDeserializeFailure(e.to_string()))
 }
 

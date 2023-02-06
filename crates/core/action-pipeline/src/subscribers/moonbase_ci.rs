@@ -5,7 +5,8 @@ use moon_logger::{color, debug, error, map_list, warn};
 use moon_utils::async_trait;
 use moon_workspace::Workspace;
 use moonbase::graphql::{
-    self, add_job_to_run, create_run, update_job, AddJobToRun, CreateRun, GraphQLQuery, UpdateJob,
+    self, add_job_to_run, create_run, update_job, update_run, AddJobToRun, CreateRun, GraphQLQuery,
+    UpdateJob, UpdateRun,
 };
 use rustc_hash::FxHashMap;
 use tokio::task::JoinHandle;
@@ -37,6 +38,49 @@ impl MoonbaseCiSubscriber {
             target: LOG_TARGET,
             "A moonbase session exists but CI insights is not enabled. Will not track CI runs!"
         );
+    }
+
+    async fn update_run(
+        &self,
+        run_id: &i64,
+        auth_token: &str,
+        input: update_run::UpdateRunInput,
+    ) -> Result<(), MoonError> {
+        fn log_failure(id: &i64, message: String) {
+            warn!(
+                target: LOG_TARGET,
+                "Failed to update CI run {}. Failure: {}",
+                id,
+                color::muted_light(message)
+            );
+        }
+
+        let Ok(response) = graphql::post_mutation::<update_run::ResponseData>(
+            UpdateRun::build_query(update_run::Variables {
+                id: *run_id,
+                input,
+            }),
+            Some(auth_token),
+        ).await else {
+            return Ok(());
+        };
+
+        match (response.data, response.errors) {
+            (_, Some(errors)) => {
+                log_failure(run_id, map_list(&errors, |e| e.message.to_owned()));
+            }
+            (Some(data), _) => {
+                if !data.update_run.user_errors.is_empty() {
+                    log_failure(
+                        run_id,
+                        map_list(&data.update_run.user_errors, |e| e.message.to_owned()),
+                    );
+                }
+            }
+            _ => {}
+        };
+
+        Ok(())
     }
 }
 
@@ -120,11 +164,43 @@ impl Subscriber for MoonbaseCiSubscriber {
                 };
             }
 
-            // TODO
-            Event::PipelineFinished { .. } => {}
+            // Update the status and duration when the pipeline finishes!
+            Event::PipelineFinished {
+                duration,
+                failed_count,
+                ..
+            } => {
+                if let Some(run_id) = &self.run_id {
+                    self.update_run(
+                        run_id,
+                        &moonbase.auth_token,
+                        update_run::UpdateRunInput {
+                            duration: Some(duration.as_millis() as i64),
+                            status: Some(if *failed_count > 0 {
+                                update_run::RunStatus::FAILED
+                            } else {
+                                update_run::RunStatus::PASSED
+                            }),
+                        },
+                    )
+                    .await?
+                }
+            }
 
-            // TODO
-            Event::PipelineAborted { .. } => {}
+            // Update the status when the pipeline aborts!
+            Event::PipelineAborted { .. } => {
+                if let Some(run_id) = &self.run_id {
+                    self.update_run(
+                        run_id,
+                        &moonbase.auth_token,
+                        update_run::UpdateRunInput {
+                            duration: None,
+                            status: Some(update_run::RunStatus::ABORTED),
+                        },
+                    )
+                    .await?
+                }
+            }
 
             // Actions map to jobs in moonbase, so create a job record for each action.
             // We also need to wait for these requests so that we can extract the job ID.

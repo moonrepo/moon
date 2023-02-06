@@ -3,7 +3,7 @@ mod common;
 mod errors;
 pub mod graphql;
 
-use common::{endpoint, get_request, post_request};
+use common::{endpoint, get_request, post_request, Response};
 use moon_error::map_io_to_fs_error;
 use moon_logger::{color, debug, warn};
 use reqwest::Body;
@@ -13,7 +13,6 @@ use tokio::fs;
 use tokio_util::codec::{BytesCodec, FramedRead};
 
 pub use api::*;
-pub use common::Response;
 pub use errors::MoonbaseError;
 
 const LOG_TARGET: &str = "moonbase";

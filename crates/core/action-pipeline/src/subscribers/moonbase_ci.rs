@@ -1,16 +1,23 @@
 use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_error::MoonError;
-use moon_logger::{color, debug, error};
+use moon_logger::{color, debug, error, warn};
 use moon_utils::async_trait;
 use moon_workspace::Workspace;
-use moonbase::graphql::{self, CreateRunInput, CreateRunResponse, GraphqlError, GraphqlResponse};
+use moonbase::graphql::{
+    self, CreateJobInput, CreateJobResponse, CreateRunInput, CreateRunResponse, GraphqlError,
+    GraphqlResponse,
+};
+use rustc_hash::FxHashMap;
 use tokio::task::JoinHandle;
 
 const LOG_TARGET: &str = "moonbase:ci-insights";
 
 pub struct MoonbaseCiSubscriber {
-    // Upstream database record
-    run_id: Option<i32>,
+    // Mapping of actions to job IDs
+    job_ids: FxHashMap<String, i64>,
+
+    // Upstream database record ID
+    run_id: Option<i64>,
 
     // In-flight requests
     requests: Vec<JoinHandle<()>>,
@@ -19,6 +26,7 @@ pub struct MoonbaseCiSubscriber {
 impl MoonbaseCiSubscriber {
     pub fn new() -> Self {
         MoonbaseCiSubscriber {
+            job_ids: FxHashMap::default(),
             run_id: None,
             requests: vec![],
         }
@@ -112,6 +120,75 @@ impl Subscriber for MoonbaseCiSubscriber {
                     self.run_id = Some(id);
                 }
             }
+
+            // TODO
+            Event::PipelineFinished {
+                duration,
+                cached_count,
+                failed_count,
+                passed_count,
+            } => {}
+
+            // TODO
+            Event::PipelineAborted { error } => {}
+
+            // Actions map to jobs in moonbase, so create a job record for each action.
+            // We also need to wait for these requests so that we can extract the job ID.
+            Event::ActionStarted { action, .. } => {
+                if let Some(run_id) = &self.run_id {
+                    let response: GraphqlResponse<CreateJobResponse> = graphql::post_mutation(
+                        r#"mutation AddJobToRun($input: CreateJobInput!) {
+  addJobToRun(input: $input) {
+    job {
+      id
+    }
+    userErrors {
+      message
+    }
+  }
+}"#,
+                        CreateJobInput {
+                            run_id: *run_id,
+                            action: action.label.clone(),
+                            started_at: action.started_at.expect("Missing start time for action!"),
+                        },
+                        Some(&moonbase.auth_token),
+                    )
+                    .await
+                    .map_err(|e| MoonError::Generic(e.to_string()))?;
+
+                    let log_failure = |errors: Vec<GraphqlError>| {
+                        warn!(
+                            target: LOG_TARGET,
+                            "Failed to create job for CI run. Failure: {}",
+                            color::muted_light(
+                                errors
+                                    .into_iter()
+                                    .map(|e| e.message)
+                                    .collect::<Vec<_>>()
+                                    .join("; ")
+                            )
+                        );
+                    };
+
+                    // Server errors
+                    if let Some(server_errors) = response.errors {
+                        log_failure(server_errors);
+
+                    // Client errors
+                    } else if !response.data.add_job_to_run.user_errors.is_empty() {
+                        log_failure(response.data.add_job_to_run.user_errors);
+
+                    // Success!
+                    } else {
+                        self.job_ids.insert(
+                            action.label.clone(),
+                            response.data.add_job_to_run.job.unwrap().id,
+                        );
+                    }
+                }
+            }
+
             _ => {}
         }
 

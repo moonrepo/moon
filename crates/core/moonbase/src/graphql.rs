@@ -1,5 +1,6 @@
 use crate::common::{endpoint, fetch};
 use crate::errors::MoonbaseError;
+use moon_utils::time::chrono::NaiveDateTime;
 use rustc_hash::FxHashMap;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
@@ -52,6 +53,13 @@ pub struct GenericRecord {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+pub struct BigGenericRecord {
+    pub id: i64,
+}
+
+// RUNS
+
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateRunInput {
     pub branch: String,
@@ -62,7 +70,7 @@ pub struct CreateRunInput {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateRunPayload {
-    pub run: Option<GenericRecord>,
+    pub run: Option<BigGenericRecord>,
     pub user_errors: Vec<GraphqlError>,
 }
 
@@ -70,4 +78,27 @@ pub struct CreateRunPayload {
 #[serde(rename_all = "camelCase")]
 pub struct CreateRunResponse {
     pub create_run: CreateRunPayload,
+}
+
+// JOBS
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateJobInput {
+    pub run_id: i64,
+    pub action: String,
+    pub started_at: NaiveDateTime,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateJobPayload {
+    pub job: Option<BigGenericRecord>,
+    pub user_errors: Vec<GraphqlError>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateJobResponse {
+    pub add_job_to_run: CreateJobPayload,
 }

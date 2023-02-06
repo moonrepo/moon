@@ -12,6 +12,7 @@ pub struct SigninInput {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SigninResponse {
+    pub ci_insights: bool,
     pub organization_id: i32,
     pub remote_caching: bool,
     pub repository_id: i32,

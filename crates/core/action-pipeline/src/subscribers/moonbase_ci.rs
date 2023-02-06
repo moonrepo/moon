@@ -1,10 +1,9 @@
 use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_error::MoonError;
-use moon_logger::{color, debug, error, trace};
+use moon_logger::{color, debug, error};
 use moon_utils::async_trait;
 use moon_workspace::Workspace;
-use moonbase::graphql::{self, CreateRunInput, CreateRunPayload};
-use moonbase::Response;
+use moonbase::graphql::{self, CreateRunInput, CreateRunResponse, GraphqlError, GraphqlResponse};
 use tokio::task::JoinHandle;
 
 const LOG_TARGET: &str = "moonbase:ci-insights";
@@ -28,7 +27,7 @@ impl MoonbaseCiSubscriber {
     pub fn not_enabled() {
         debug!(
             target: LOG_TARGET,
-            "A moonbase session exists, but CI insights has been disaled. Will not track CI runs!"
+            "A moonbase session exists but CI insights is not enabled. Will not track CI runs!"
         );
     }
 }
@@ -48,13 +47,18 @@ impl Subscriber for MoonbaseCiSubscriber {
             // We must wait for this request to finish before firing off other requests,
             // as we require the run ID from the record saved upstream!
             Event::PipelineStarted { actions_count } => {
+                debug!(
+                    target: LOG_TARGET,
+                    "Pipeline started, attempting to create CI run in moonbase"
+                );
+
                 let branch = workspace
                     .vcs
                     .get_local_branch()
                     .await
                     .map_err(|e| MoonError::Generic(e.to_string()))?;
 
-                let response: Response<CreateRunPayload> = graphql::post_mutation(
+                let response: GraphqlResponse<CreateRunResponse> = graphql::post_mutation(
                     r#"mutation CreateRun($input: CreateRunInput!) {
   createRun(input: $input) {
     run {
@@ -75,18 +79,37 @@ impl Subscriber for MoonbaseCiSubscriber {
                 .await
                 .map_err(|e| MoonError::Generic(e.to_string()))?;
 
-                // Handle all the possible failure states!
-                match response {
-                    Response::Failure { message, .. } => {
-                        error!(
-                            target: LOG_TARGET,
-                            "Failed to create run in moonbase, will not track running jobs. {}",
-                            message
-                        );
-                    }
-                    Response::Success(res) => {
-                        dbg!(res);
-                    }
+                let log_failure = |errors: Vec<GraphqlError>| {
+                    error!(
+                        target: LOG_TARGET,
+                        "Failed to create CI run in moonbase, will not track running jobs. Failure: {}",
+                        color::muted_light(errors
+                            .into_iter()
+                            .map(|e| e.message)
+                            .collect::<Vec<_>>()
+                            .join("; "))
+                    );
+                };
+
+                // Server errors
+                if let Some(server_errors) = response.errors {
+                    log_failure(server_errors);
+
+                // Client errors
+                } else if !response.data.create_run.user_errors.is_empty() {
+                    log_failure(response.data.create_run.user_errors);
+
+                // Success!
+                } else {
+                    let id = response.data.create_run.run.unwrap().id;
+
+                    debug!(
+                        target: LOG_TARGET,
+                        "CI run created with moonbase ID {}",
+                        color::id(id.to_string())
+                    );
+
+                    self.run_id = Some(id);
                 }
             }
             _ => {}

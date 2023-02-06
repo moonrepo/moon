@@ -7,7 +7,7 @@ fn has_failed(status: &ActionStatus) -> bool {
     matches!(status, ActionStatus::Failed) || matches!(status, ActionStatus::FailedAndAbort)
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Copy, Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum ActionStatus {
     Cached,

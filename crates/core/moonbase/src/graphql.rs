@@ -35,3 +35,10 @@ pub struct CreateRun;
     query_path = "mutations/add_job_to_run.graphql"
 )]
 pub struct AddJobToRun;
+
+#[derive(GraphQLQuery)]
+#[graphql(
+    schema_path = "schema.json",
+    query_path = "mutations/update_job.graphql"
+)]
+pub struct UpdateJob;

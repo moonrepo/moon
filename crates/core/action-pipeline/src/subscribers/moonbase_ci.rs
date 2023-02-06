@@ -1,9 +1,12 @@
+use moon_action::ActionStatus;
 use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_error::MoonError;
 use moon_logger::{color, debug, error, map_list, warn};
 use moon_utils::async_trait;
 use moon_workspace::Workspace;
-use moonbase::graphql::{self, add_job_to_run, create_run, AddJobToRun, CreateRun, GraphQLQuery};
+use moonbase::graphql::{
+    self, add_job_to_run, create_run, update_job, AddJobToRun, CreateRun, GraphQLQuery, UpdateJob,
+};
 use rustc_hash::FxHashMap;
 use tokio::task::JoinHandle;
 
@@ -57,13 +60,13 @@ impl Subscriber for MoonbaseCiSubscriber {
                     "Pipeline started, attempting to create CI run in moonbase"
                 );
 
-                let log_failure = |message: String| {
+                fn log_failure(message: String) {
                     error!(
                         target: LOG_TARGET,
                         "Failed to create CI run in moonbase, will not track running jobs. Failure: {}",
                         color::muted_light(message)
                     );
-                };
+                }
 
                 let branch = workspace
                     .vcs
@@ -118,26 +121,21 @@ impl Subscriber for MoonbaseCiSubscriber {
             }
 
             // TODO
-            Event::PipelineFinished {
-                duration,
-                cached_count,
-                failed_count,
-                passed_count,
-            } => {}
+            Event::PipelineFinished { .. } => {}
 
             // TODO
-            Event::PipelineAborted { error } => {}
+            Event::PipelineAborted { .. } => {}
 
             // Actions map to jobs in moonbase, so create a job record for each action.
             // We also need to wait for these requests so that we can extract the job ID.
             Event::ActionStarted { action, .. } => {
-                let log_failure = |message: String| {
+                fn log_failure(message: String) {
                     warn!(
                         target: LOG_TARGET,
                         "Failed to create job for CI run. Failure: {}",
                         color::muted_light(message)
                     );
-                };
+                }
 
                 if let Some(run_id) = &self.run_id {
                     let Ok(response) = graphql::post_mutation::<add_job_to_run::ResponseData>(
@@ -167,6 +165,87 @@ impl Subscriber for MoonbaseCiSubscriber {
                                 );
                             } else {
                                 log_failure(map_list(&data.add_job_to_run.user_errors, |e| {
+                                    e.message.to_owned()
+                                }));
+                            }
+                        }
+                        _ => {}
+                    };
+                }
+            }
+
+            // When an action finishes, update the upstream job with the final state!
+            Event::ActionFinished { action, .. } => {
+                fn log_failure(message: String) {
+                    warn!(
+                        target: LOG_TARGET,
+                        "Failed to update job for CI run. Failure: {}",
+                        color::muted_light(message)
+                    );
+                }
+
+                fn map_status(status: &ActionStatus) -> update_job::JobStatus {
+                    match status {
+                        ActionStatus::Cached | ActionStatus::CachedFromRemote => {
+                            update_job::JobStatus::CACHED
+                        }
+                        ActionStatus::Failed | ActionStatus::FailedAndAbort => {
+                            update_job::JobStatus::FAILED
+                        }
+                        ActionStatus::Invalid | ActionStatus::Passed => {
+                            update_job::JobStatus::PASSED
+                        }
+                        ActionStatus::Running => update_job::JobStatus::RUNNING,
+                        ActionStatus::Skipped => update_job::JobStatus::SKIPPED,
+                    }
+                }
+
+                if let Some(job_id) = self.job_ids.get(&action.label) {
+                    let mut input = update_job::UpdateJobInput {
+                        attempts: None,
+                        duration: action.duration.map(|d| d.as_millis() as i64),
+                        finished_at: Some(
+                            action.finished_at.expect("Missing finish time for action!"),
+                        ),
+                        status: Some(map_status(&action.status)),
+                    };
+
+                    if let Some(attempts) = &action.attempts {
+                        input.attempts = Some(
+                            attempts
+                                .iter()
+                                .map(|at| update_job::JobAttemptInput {
+                                    duration: at
+                                        .duration
+                                        .map(|d| d.as_millis() as i64)
+                                        .unwrap_or_default(),
+                                    finished_at: at
+                                        .finished_at
+                                        .expect("Missing finish time for attempt!"),
+                                    started_at: at.started_at,
+                                    status: map_status(&at.status),
+                                })
+                                .collect::<Vec<_>>(),
+                        );
+                    }
+
+                    let Ok(response) = graphql::post_mutation::<update_job::ResponseData>(
+                        UpdateJob::build_query(update_job::Variables {
+                            id: *job_id,
+                            input,
+                        }),
+                        Some(&moonbase.auth_token),
+                    ).await else {
+                        return Ok(EventFlow::Continue);
+                    };
+
+                    match (response.data, response.errors) {
+                        (_, Some(errors)) => {
+                            log_failure(map_list(&errors, |e| e.message.to_owned()));
+                        }
+                        (Some(data), _) => {
+                            if !data.update_job.user_errors.is_empty() {
+                                log_failure(map_list(&data.update_job.user_errors, |e| {
                                     e.message.to_owned()
                                 }));
                             }

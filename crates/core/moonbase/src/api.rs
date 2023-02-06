@@ -9,8 +9,8 @@ pub struct SigninInput {
     pub repository_key: String,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(default, rename_all = "camelCase")]
 pub struct SigninResponse {
     pub ci_insights: bool,
     pub organization_id: i32,

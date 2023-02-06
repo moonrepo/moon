@@ -174,7 +174,7 @@ impl Subscriber for MoonbaseCiSubscriber {
                 }
             }
 
-            // When an action finishes, update the upstream job with the final state!
+            // When an action finishes, update the job with the final state!
             Event::ActionFinished { action, .. } => {
                 fn log_failure(message: String) {
                     warn!(
@@ -182,22 +182,6 @@ impl Subscriber for MoonbaseCiSubscriber {
                         "Failed to update job for CI run. Failure: {}",
                         color::muted_light(message)
                     );
-                }
-
-                fn map_status(status: &ActionStatus) -> update_job::JobStatus {
-                    match status {
-                        ActionStatus::Cached | ActionStatus::CachedFromRemote => {
-                            update_job::JobStatus::CACHED
-                        }
-                        ActionStatus::Failed | ActionStatus::FailedAndAbort => {
-                            update_job::JobStatus::FAILED
-                        }
-                        ActionStatus::Invalid | ActionStatus::Passed => {
-                            update_job::JobStatus::PASSED
-                        }
-                        ActionStatus::Running => update_job::JobStatus::RUNNING,
-                        ActionStatus::Skipped => update_job::JobStatus::SKIPPED,
-                    }
                 }
 
                 if let Some(job_id) = self.job_ids.get(&action.label) {
@@ -229,29 +213,32 @@ impl Subscriber for MoonbaseCiSubscriber {
                         );
                     }
 
-                    let Ok(response) = graphql::post_mutation::<update_job::ResponseData>(
-                        UpdateJob::build_query(update_job::Variables {
-                            id: *job_id,
-                            input,
-                        }),
-                        Some(&moonbase.auth_token),
-                    ).await else {
-                        return Ok(EventFlow::Continue);
-                    };
+                    let variables = update_job::Variables { id: *job_id, input };
+                    let auth_token = moonbase.auth_token.clone();
 
-                    match (response.data, response.errors) {
-                        (_, Some(errors)) => {
-                            log_failure(map_list(&errors, |e| e.message.to_owned()));
+                    // Run the update in a background thread!
+                    self.requests.push(tokio::spawn(async move {
+                        if let Ok(response) = graphql::post_mutation::<update_job::ResponseData>(
+                            UpdateJob::build_query(variables),
+                            Some(&auth_token),
+                        )
+                        .await
+                        {
+                            match (response.data, response.errors) {
+                                (_, Some(errors)) => {
+                                    log_failure(map_list(&errors, |e| e.message.to_owned()));
+                                }
+                                (Some(data), _) => {
+                                    if !data.update_job.user_errors.is_empty() {
+                                        log_failure(map_list(&data.update_job.user_errors, |e| {
+                                            e.message.to_owned()
+                                        }));
+                                    }
+                                }
+                                _ => {}
+                            };
                         }
-                        (Some(data), _) => {
-                            if !data.update_job.user_errors.is_empty() {
-                                log_failure(map_list(&data.update_job.user_errors, |e| {
-                                    e.message.to_owned()
-                                }));
-                            }
-                        }
-                        _ => {}
-                    };
+                    }));
                 }
             }
 
@@ -266,5 +253,15 @@ impl Subscriber for MoonbaseCiSubscriber {
         }
 
         Ok(EventFlow::Continue)
+    }
+}
+
+fn map_status(status: &ActionStatus) -> update_job::JobStatus {
+    match status {
+        ActionStatus::Cached | ActionStatus::CachedFromRemote => update_job::JobStatus::CACHED,
+        ActionStatus::Failed | ActionStatus::FailedAndAbort => update_job::JobStatus::FAILED,
+        ActionStatus::Invalid | ActionStatus::Passed => update_job::JobStatus::PASSED,
+        ActionStatus::Running => update_job::JobStatus::RUNNING,
+        ActionStatus::Skipped => update_job::JobStatus::SKIPPED,
     }
 }

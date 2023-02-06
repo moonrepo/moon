@@ -3,6 +3,7 @@ use crate::processor::process_action;
 use crate::run_report::RunReport;
 use crate::subscribers::local_cache::LocalCacheSubscriber;
 use crate::subscribers::moonbase_cache::MoonbaseCacheSubscriber;
+use crate::subscribers::moonbase_ci::MoonbaseCiSubscriber;
 // use crate::worker_pool::WorkerPool;
 use console::Term;
 use moon_action::{Action, ActionStatus};
@@ -391,6 +392,14 @@ async fn create_emitter(workspace: Arc<RwLock<Workspace>>) -> Emitter {
             } else {
                 MoonbaseCacheSubscriber::not_enabled();
             }
+
+            // if session.remote_caching_enabled {
+            emitter
+                .subscribers
+                .push(Arc::new(RwLock::new(MoonbaseCiSubscriber::new())));
+            // } else {
+            //     MoonbaseCacheSubscriber::not_enabled();
+            // }
         }
     }
 

@@ -13,7 +13,7 @@ pub enum Response<T> {
 pub fn endpoint<P: AsRef<str>>(path: P) -> String {
     format!(
         "{}/{}",
-        env::var("MOONBASE_HOST").unwrap_or_else(|_| "https://api.moonrepo.app".to_owned()),
+        env::var("MOONBASE_API_HOST").unwrap_or_else(|_| "https://api.moonrepo.app".to_owned()),
         path.as_ref()
     )
 }

@@ -2835,7 +2835,6 @@ dependencies = [
  "moon_logger",
  "moon_utils",
  "reqwest",
- "rustc-hash",
  "serde",
  "serde_json",
  "thiserror",

@@ -1,12 +1,9 @@
 use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_error::MoonError;
-use moon_logger::{color, debug, error, warn};
+use moon_logger::{color, debug, error, map_list, warn};
 use moon_utils::async_trait;
 use moon_workspace::Workspace;
-use moonbase::graphql::{
-    self, CreateJobInput, CreateJobResponse, CreateRunInput, CreateRunResponse, GraphqlError,
-    GraphqlResponse,
-};
+use moonbase::graphql::{self, add_job_to_run, create_run, AddJobToRun, CreateRun, GraphQLQuery};
 use rustc_hash::FxHashMap;
 use tokio::task::JoinHandle;
 
@@ -60,65 +57,64 @@ impl Subscriber for MoonbaseCiSubscriber {
                     "Pipeline started, attempting to create CI run in moonbase"
                 );
 
+                let log_failure = |message: String| {
+                    error!(
+                        target: LOG_TARGET,
+                        "Failed to create CI run in moonbase, will not track running jobs. Failure: {}",
+                        color::muted_light(message)
+                    );
+                };
+
                 let branch = workspace
                     .vcs
                     .get_local_branch()
                     .await
                     .map_err(|e| MoonError::Generic(e.to_string()))?;
 
-                let response: GraphqlResponse<CreateRunResponse> = graphql::post_mutation(
-                    r#"mutation CreateRun($input: CreateRunInput!) {
-  createRun(input: $input) {
-    run {
-      id
-    }
-    userErrors {
-      message
-    }
-  }
-}"#,
-                    CreateRunInput {
-                        branch,
-                        job_count: *actions_count,
-                        repository_id: moonbase.repository_id,
-                    },
+                let response = match graphql::post_mutation::<create_run::ResponseData>(
+                    CreateRun::build_query(create_run::Variables {
+                        input: create_run::CreateRunInput {
+                            branch,
+                            job_count: *actions_count as i64,
+                            repository_id: moonbase.repository_id as i64,
+                        },
+                    }),
                     Some(&moonbase.auth_token),
                 )
                 .await
-                .map_err(|e| MoonError::Generic(e.to_string()))?;
+                {
+                    Ok(res) => res,
 
-                let log_failure = |errors: Vec<GraphqlError>| {
-                    error!(
-                        target: LOG_TARGET,
-                        "Failed to create CI run in moonbase, will not track running jobs. Failure: {}",
-                        color::muted_light(errors
-                            .into_iter()
-                            .map(|e| e.message)
-                            .collect::<Vec<_>>()
-                            .join("; "))
-                    );
+                    // If the request fails, dont crash the entire pipeline!
+                    Err(error) => {
+                        log_failure(error.to_string());
+
+                        return Ok(EventFlow::Continue);
+                    }
                 };
 
-                // Server errors
-                if let Some(server_errors) = response.errors {
-                    log_failure(server_errors);
+                match (response.data, response.errors) {
+                    (_, Some(errors)) => {
+                        log_failure(map_list(&errors, |e| e.message.to_owned()));
+                    }
+                    (Some(data), _) => {
+                        if data.create_run.user_errors.is_empty() {
+                            let id = data.create_run.run.unwrap().id;
 
-                // Client errors
-                } else if !response.data.create_run.user_errors.is_empty() {
-                    log_failure(response.data.create_run.user_errors);
+                            debug!(
+                                target: LOG_TARGET,
+                                "CI run created in moonbase (id = {})", id,
+                            );
 
-                // Success!
-                } else {
-                    let id = response.data.create_run.run.unwrap().id;
-
-                    debug!(
-                        target: LOG_TARGET,
-                        "CI run created with moonbase ID {}",
-                        color::id(id.to_string())
-                    );
-
-                    self.run_id = Some(id);
-                }
+                            self.run_id = Some(id);
+                        } else {
+                            log_failure(map_list(&data.create_run.user_errors, |e| {
+                                e.message.to_owned()
+                            }));
+                        }
+                    }
+                    _ => {}
+                };
             }
 
             // TODO
@@ -135,57 +131,48 @@ impl Subscriber for MoonbaseCiSubscriber {
             // Actions map to jobs in moonbase, so create a job record for each action.
             // We also need to wait for these requests so that we can extract the job ID.
             Event::ActionStarted { action, .. } => {
-                if let Some(run_id) = &self.run_id {
-                    let response: GraphqlResponse<CreateJobResponse> = graphql::post_mutation(
-                        r#"mutation AddJobToRun($input: CreateJobInput!) {
-  addJobToRun(input: $input) {
-    job {
-      id
-    }
-    userErrors {
-      message
-    }
-  }
-}"#,
-                        CreateJobInput {
-                            run_id: *run_id,
-                            action: action.label.clone(),
-                            started_at: action.started_at.expect("Missing start time for action!"),
-                        },
-                        Some(&moonbase.auth_token),
-                    )
-                    .await
-                    .map_err(|e| MoonError::Generic(e.to_string()))?;
+                let log_failure = |message: String| {
+                    warn!(
+                        target: LOG_TARGET,
+                        "Failed to create job for CI run. Failure: {}",
+                        color::muted_light(message)
+                    );
+                };
 
-                    let log_failure = |errors: Vec<GraphqlError>| {
-                        warn!(
-                            target: LOG_TARGET,
-                            "Failed to create job for CI run. Failure: {}",
-                            color::muted_light(
-                                errors
-                                    .into_iter()
-                                    .map(|e| e.message)
-                                    .collect::<Vec<_>>()
-                                    .join("; ")
-                            )
-                        );
+                if let Some(run_id) = &self.run_id {
+                    let Ok(response) = graphql::post_mutation::<add_job_to_run::ResponseData>(
+                        AddJobToRun::build_query(add_job_to_run::Variables {
+                            input: add_job_to_run::CreateJobInput {
+                                run_id: *run_id,
+                                action: action.label.clone(),
+                                started_at: action
+                                    .started_at
+                                    .expect("Missing start time for action!"),
+                            },
+                        }),
+                        Some(&moonbase.auth_token),
+                    ).await else {
+                        return Ok(EventFlow::Continue);
                     };
 
-                    // Server errors
-                    if let Some(server_errors) = response.errors {
-                        log_failure(server_errors);
-
-                    // Client errors
-                    } else if !response.data.add_job_to_run.user_errors.is_empty() {
-                        log_failure(response.data.add_job_to_run.user_errors);
-
-                    // Success!
-                    } else {
-                        self.job_ids.insert(
-                            action.label.clone(),
-                            response.data.add_job_to_run.job.unwrap().id,
-                        );
-                    }
+                    match (response.data, response.errors) {
+                        (_, Some(errors)) => {
+                            log_failure(map_list(&errors, |e| e.message.to_owned()));
+                        }
+                        (Some(data), _) => {
+                            if data.add_job_to_run.user_errors.is_empty() {
+                                self.job_ids.insert(
+                                    action.label.clone(),
+                                    data.add_job_to_run.job.unwrap().id,
+                                );
+                            } else {
+                                log_failure(map_list(&data.add_job_to_run.user_errors, |e| {
+                                    e.message.to_owned()
+                                }));
+                            }
+                        }
+                        _ => {}
+                    };
                 }
             }
 

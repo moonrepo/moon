@@ -159,7 +159,7 @@ mod tests {
     #[test]
     fn parses_complex_lockfile() {
         let content = reqwest::blocking::get(
-            "https://raw.githubusercontent.com/moonrepo/examples/master/package-lock.json",
+            "https://raw.githubusercontent.com/npm/cli/latest/package-lock.json",
         )
         .unwrap()
         .text()

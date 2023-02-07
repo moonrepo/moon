@@ -237,8 +237,7 @@ packages:
     #[test]
     fn parses_complex_lockfile() {
         let content = reqwest::blocking::get(
-            // TODO: this may change upstream
-            "https://raw.githubusercontent.com/solidjs/solid/main/pnpm-lock.yaml",
+            "https://raw.githubusercontent.com/pnpm/pnpm/main/pnpm-lock.yaml",
         )
         .unwrap()
         .text()

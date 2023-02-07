@@ -13,22 +13,19 @@ pub enum Response<T> {
 pub fn endpoint<P: AsRef<str>>(path: P) -> String {
     format!(
         "{}/{}",
-        env::var("MOONBASE_HOST").unwrap_or_else(|_| "https://api.moonrepo.app".to_owned()),
+        env::var("MOONBASE_API_HOST").unwrap_or_else(|_| "https://api.moonrepo.app".to_owned()),
         path.as_ref()
     )
 }
 
-pub fn parse_response<O>(data: String) -> Result<Response<O>, MoonbaseError>
+pub fn parse_response<O>(data: String) -> Result<O, MoonbaseError>
 where
     O: DeserializeOwned,
 {
     serde_json::from_str(&data).map_err(|e| MoonbaseError::JsonDeserializeFailure(e.to_string()))
 }
 
-pub async fn fetch<O>(
-    request: RequestBuilder,
-    token: Option<&str>,
-) -> Result<Response<O>, MoonbaseError>
+pub async fn fetch<O>(request: RequestBuilder, token: Option<&str>) -> Result<O, MoonbaseError>
 where
     O: DeserializeOwned,
 {
@@ -43,7 +40,7 @@ where
     }
 
     let response = request.send().await?;
-    let data: Response<O> = parse_response(response.text().await?)?;
+    let data: O = parse_response(response.text().await?)?;
 
     Ok(data)
 }

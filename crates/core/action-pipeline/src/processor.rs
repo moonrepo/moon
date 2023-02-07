@@ -177,17 +177,9 @@ pub async fn process_action(
         }
     };
 
-    local_emitter
-        .emit(Event::ActionFinished {
-            action: &action,
-            error: extract_error(&result),
-            node: &node,
-        })
-        .await?;
-
-    match result {
+    match &result {
         Ok(status) => {
-            action.finish(status);
+            action.finish(*status);
         }
         Err(error) => {
             action.fail(error.to_string());
@@ -200,6 +192,14 @@ pub async fn process_action(
             }
         }
     }
+
+    local_emitter
+        .emit(Event::ActionFinished {
+            action: &action,
+            error: extract_error(&result),
+            node: &node,
+        })
+        .await?;
 
     if action.has_failed() {
         trace!(

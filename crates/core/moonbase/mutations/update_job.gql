@@ -1,0 +1,10 @@
+mutation UpdateJob($id: Int!, $input: UpdateJobInput!) {
+	updateJob(id: $id, input: $input) {
+		job {
+			id
+		}
+		userErrors {
+			message
+		}
+	}
+}

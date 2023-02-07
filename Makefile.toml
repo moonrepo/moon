@@ -73,6 +73,11 @@ args = ["llvm-cov", "report", "--html", "--ignore-filename-regex", "error", "--o
 command = "cargo"
 args = ["run", "-p", "moon_config"]
 
+
+[tasks.gql-schema]
+command = "graphql-client"
+args = ["introspect-schema", "http://localhost:8080/graphql", "--output", "crates/core/moonbase/schema.json", "--header", "X-Moonbase-TestingId: 1"]
+
 [tasks.check]
 dependencies = [
     "format",

@@ -7,7 +7,7 @@ fn has_failed(status: &ActionStatus) -> bool {
     matches!(status, ActionStatus::Failed) || matches!(status, ActionStatus::FailedAndAbort)
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Copy, Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum ActionStatus {
     Cached,
@@ -82,6 +82,8 @@ pub struct Action {
     #[serde(skip)]
     pub node: Option<ActionNode>,
 
+    pub started_at: Option<NaiveDateTime>,
+
     #[serde(skip)]
     pub start_time: Option<Instant>,
 
@@ -100,6 +102,7 @@ impl Action {
             label: node.label(),
             log_target: String::new(),
             node: Some(node),
+            started_at: None,
             start_time: None,
             status: ActionStatus::Running,
         }
@@ -110,6 +113,7 @@ impl Action {
     }
 
     pub fn start(&mut self) {
+        self.started_at = Some(now_timestamp());
         self.start_time = Some(Instant::now());
     }
 

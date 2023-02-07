@@ -1,6 +1,7 @@
 mod api;
 mod common;
 mod errors;
+pub mod graphql;
 
 use common::{endpoint, get_request, post_request, Response};
 use moon_error::map_io_to_fs_error;
@@ -20,12 +21,13 @@ const LOG_TARGET: &str = "moonbase";
 pub struct Moonbase {
     pub auth_token: String,
 
+    pub ci_insights_enabled: bool,
+
     #[allow(dead_code)]
     pub organization_id: i32,
 
     pub remote_caching_enabled: bool,
 
-    #[allow(dead_code)]
     pub repository_id: i32,
 }
 
@@ -57,12 +59,14 @@ impl Moonbase {
 
         match data {
             Ok(Response::Success(SigninResponse {
+                ci_insights,
                 organization_id,
                 remote_caching,
                 repository_id,
                 token,
             })) => Some(Moonbase {
                 auth_token: token,
+                ci_insights_enabled: ci_insights,
                 organization_id,
                 remote_caching_enabled: remote_caching,
                 repository_id,
@@ -70,7 +74,7 @@ impl Moonbase {
             Ok(Response::Failure { message, status }) => {
                 warn!(
                     target: LOG_TARGET,
-                    "Failed to sign in to moonbase, please verify your API keys. Pipeline will still continue... Failure: {} ({})", color::muted_light(message), status
+                    "Failed to sign in to moonbase, please verify your API keys. Pipeline will still continue. Failure: {} ({})", color::muted_light(message), status
                 );
 
                 None
@@ -78,7 +82,7 @@ impl Moonbase {
             Err(error) => {
                 warn!(
                     target: LOG_TARGET,
-                    "Failed to sign in to moonbase, request has failed. Pipeline will still continue... Failure: {} ", color::muted_light(error.to_string()),
+                    "Failed to sign in to moonbase, request has failed. Pipeline will still continue. Failure: {} ", color::muted_light(error.to_string()),
                 );
 
                 None

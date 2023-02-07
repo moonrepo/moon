@@ -15,7 +15,7 @@ impl Default for PipelineOutput {
     }
 }
 
-#[derive(Clone, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub enum PipelineProvider {
     AppVeyor,
     AwsCodebuild,
@@ -34,7 +34,7 @@ pub enum PipelineProvider {
     Unknown,
 }
 
-#[derive(Clone, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct PipelineEnvironment {
     /// Base branch of the pull/merge request.
     pub base_branch: Option<String>,

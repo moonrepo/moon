@@ -113,17 +113,33 @@ impl Subscriber for MoonbaseCiSubscriber {
                     );
                 }
 
-                let branch = workspace
-                    .vcs
-                    .get_local_branch()
-                    .await
-                    .map_err(|e| MoonError::Generic(e.to_string()))?;
+                let mut branch = String::new();
+                let mut revision = String::new();
+                let mut request_number = None;
 
-                let revision = workspace
-                    .vcs
-                    .get_local_branch_revision()
-                    .await
-                    .map_err(|e| MoonError::Generic(e.to_string()))?;
+                if let Some(pipeline_env) = get_pipeline_environment() {
+                    dbg!(&pipeline_env);
+
+                    branch = pipeline_env.branch;
+                    revision = pipeline_env.revision;
+                    request_number = pipeline_env.request_id;
+                }
+
+                if branch.is_empty() {
+                    branch = workspace
+                        .vcs
+                        .get_local_branch()
+                        .await
+                        .map_err(|e| MoonError::Generic(e.to_string()))?;
+                }
+
+                if revision.is_empty() {
+                    revision = workspace
+                        .vcs
+                        .get_local_branch_revision()
+                        .await
+                        .map_err(|e| MoonError::Generic(e.to_string()))?;
+                }
 
                 let response = match graphql::post_mutation::<create_run::ResponseData>(
                     CreateRun::build_query(create_run::Variables {
@@ -131,9 +147,7 @@ impl Subscriber for MoonbaseCiSubscriber {
                             branch,
                             job_count: *actions_count as i64,
                             repository_id: moonbase.repository_id as i64,
-                            request_number: get_pipeline_environment()
-                                .map(|p| p.request_id)
-                                .unwrap_or_default(),
+                            request_number,
                             revision: Some(revision),
                         },
                     }),

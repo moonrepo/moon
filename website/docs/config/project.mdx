@@ -152,7 +152,7 @@ type: 'application'
 
 ## Tasks
 
-## `env`
+## `env`<VersionLabel version="0.23" />
 
 <HeadingApiLink to="/api/types/interface/ProjectConfig#env" />
 
@@ -200,6 +200,18 @@ fileGroups:
 > The code snippet above is merely an example of file groups. Feel free to use those groups as-is,
 > modify the glob lists, add and remove groups, or implement completely new groups. The choice is
 > yours!
+
+## `platform`<VersionLabel version="0.24" />
+
+<HeadingApiLink to="/api/types/interface/ProjectConfig#platform" />
+
+The default [`platform`](#platform-1) for all task's within the current project. When a task's
+`platform` has _not been_ explicitly configured, the platform will fallback to this configured
+value, otherwise the platform will be detected from the project's environment.
+
+```yaml title="moon.yml"
+platform: 'node'
+```
 
 ## `tasks`
 
@@ -442,6 +454,28 @@ When using globs and moon hydrates an output (a cache hit), all files not matchi
 
 :::
 
+### `platform`
+
+<HeadingApiLink to="/api/types/interface/TaskConfig#platform" />
+
+The `platform` field defines the platform (language runtime) the command runs on, where to locate
+its executable, and which tool to execute it with. By default moon will set to a value based on the
+project's [`language`](#language) or default [`platform`](#platform).
+
+- `node` - Command is a binary within `node_modules` and will be executed with Node.js.
+- `system` - Command is expected to exist within the system's environment / user's shell.
+- `unknown` - When not configured or inferred.
+
+```yaml title="moon.yml" {4}
+tasks:
+  env:
+    command: 'printenv'
+    platform: 'system'
+```
+
+> This field exists because of our [toolchain](../concepts/toolchain), and moon ensuring the correct
+> command is ran.
+
 ### `options`
 
 <HeadingApiLink to="/api/types/interface/TaskConfig#options" />
@@ -650,28 +684,6 @@ tasks:
     options:
       runFromWorkspaceRoot: true
 ```
-
-### `platform`
-
-<HeadingApiLink to="/api/types/interface/TaskConfig#platform" />
-
-The `platform` field defines the platform the command runs on, where to locate its executable, and
-which tool to execute it with. By default moon will set to a value based on the project's
-[`language`](#language).
-
-- `node` - Command is a binary within `node_modules` and will be executed with Node.js.
-- `system` - Command is expected to exist within the system's environment / user's shell.
-- `unknown` - When not configured or inferred.
-
-```yaml title="moon.yml" {4}
-tasks:
-  env:
-    command: 'printenv'
-    platform: 'system'
-```
-
-> This field exists because of our [toolchain](../concepts/toolchain), and moon ensuring the correct
-> command is ran.
 
 ## Overrides
 

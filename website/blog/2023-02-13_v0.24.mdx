@@ -1,0 +1,62 @@
+---
+slug: v0.24
+title: moon v0.24 - ???
+authors: [milesj]
+tags: [project, platform]
+# image: ./img/v0.23.png
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import Button from '@site/src/ui/Button';
+
+??
+
+<!--truncate-->
+
+## Project-level task platform
+
+In our previous release, [v0.23](./v0.23#project-level-environment-variables), we added support for
+project-level environment variables. This is great as it helps to reduce duplication for projects
+with many tasks. On that note, we wondered which configuration field we could apply similar
+treatment, and as such, we've added a project-level [`platform`](/docs/config/project#platform)
+setting.
+
+When this setting is defined, all task's within the current project that have _not explicitly_
+configured their `platform`, will inherit the project-level platform. If neither settings are
+defined, we'll attempt to detect the correct platform based on the state of the project.
+
+```yaml title="<project>/moon.yml"
+# Will set non-explicit task's platform to node
+platform: 'node'
+
+tasks:
+	# Will be node
+  dev: # ...
+
+	# Will be node
+  build: # ...
+
+	# Will be system
+  serve:
+    # ...
+    platform: 'system'
+```
+
+> This setting is _extremely useful_ for projects that contain multiple languages. Even more so once
+> we land Bun and Deno support, as we'll need a way to differentiate JavaScript/TypeScript projects!
+
+## Other changes
+
+View the
+[official release](https://github.com/moonrepo/moon/releases/tag/%40moonrepo%2Fcli%400.24.0) for a
+full list of changes.
+
+- Added [TypeScript v5](https://devblogs.microsoft.com/typescript/announcing-typescript-5-0-beta/)
+  support.
+
+## What's next?
+
+Expect the following in the v0.25 release!
+
+-

@@ -6,6 +6,7 @@ pub const GITHUB: PipelineOutput = PipelineOutput {
     open_log_group: "::group::",
 };
 
+// GITHUB_HEAD_SHA and GITHUB_PULL_REQUEST are non-standard
 pub fn create_environment() -> PipelineEnvironment {
     let ref_path = var("GITHUB_REF");
 
@@ -24,7 +25,9 @@ pub fn create_environment() -> PipelineEnvironment {
             }
         }),
         request_url: None,
-        revision: var("GITHUB_SHA"),
+        revision: opt_var("GITHUB_HEAD_SHA")
+            .or_else(|| opt_var("GITHUB_SHA"))
+            .unwrap_or_default(),
         url: None,
     }
 }

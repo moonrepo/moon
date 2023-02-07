@@ -118,8 +118,6 @@ impl Subscriber for MoonbaseCiSubscriber {
                 let mut request_number = None;
 
                 if let Some(pipeline_env) = get_pipeline_environment() {
-                    dbg!(&pipeline_env);
-
                     branch = pipeline_env.branch;
                     revision = pipeline_env.revision;
                     request_number = pipeline_env.request_id;

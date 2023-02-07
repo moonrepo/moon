@@ -83,6 +83,7 @@ export interface ProjectConfig {
 	env: Record<string, string> | null;
 	fileGroups: Record<string, string[]>;
 	language: ProjectLanguage;
+	platform: Platform | null;
 	project: ProjectMetadataConfig | null;
 	tasks: Record<string, TaskConfig>;
 	toolchain: ProjectToolchainConfig;

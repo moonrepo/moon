@@ -4,12 +4,12 @@ use crate::errors::{
     create_validation_error, map_validation_errors_to_figment_errors, ConfigError,
 };
 use crate::project::dep::DependencyConfig;
-use crate::project::language_platform::ProjectLanguage;
+use crate::project::language_platform::{PlatformType, ProjectLanguage};
 use crate::project::task::TaskConfig;
+use crate::project::toolchain::ProjectToolchainConfig;
 use crate::project::workspace::ProjectWorkspaceConfig;
 use crate::types::{FileGroups, ProjectID};
 use crate::validators::{is_default, validate_id};
-use crate::ProjectToolchainConfig;
 use figment::{
     providers::{Format, Serialized, YamlExtended},
     Figment,
@@ -123,6 +123,9 @@ pub struct ProjectConfig {
 
     #[serde(skip_serializing_if = "is_default")]
     pub language: ProjectLanguage,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub platform: Option<PlatformType>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate]

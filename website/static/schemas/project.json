@@ -10,6 +10,15 @@
         "$ref": "#/definitions/ProjectDependsOn"
       }
     },
+    "env": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
     "fileGroups": {
       "type": "object",
       "additionalProperties": {
@@ -21,6 +30,16 @@
     },
     "language": {
       "$ref": "#/definitions/ProjectLanguage"
+    },
+    "platform": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PlatformType"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "project": {
       "anyOf": [

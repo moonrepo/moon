@@ -143,12 +143,17 @@ impl<'ws> ProjectGraphBuilder<'ws> {
     /// to resolve "parent" relations.
     fn expand_project(&mut self, project: &mut Project) -> Result<(), ProjectGraphError> {
         let mut tasks = BTreeMap::new();
+        let project_platform = project.config.platform.unwrap_or_default();
 
         // Use `mem::take` so that we can mutably borrow the project and tasks in parallel
         for (task_id, mut task) in mem::take(&mut project.tasks) {
             // Detect the platform if its unknown
             if task.platform.is_unknown() {
-                task.platform = detect_task_platform(&task.command, project.language);
+                task.platform = if project_platform.is_unknown() {
+                    detect_task_platform(&task.command, project.language)
+                } else {
+                    project_platform
+                };
             }
 
             // Resolve in this order!

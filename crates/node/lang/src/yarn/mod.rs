@@ -116,4 +116,28 @@ __metadata:
 
         temp.close().unwrap();
     }
+
+    #[test]
+    fn parses_complex_classic_lockfile() {
+        let content = reqwest::blocking::get(
+            "https://raw.githubusercontent.com/yarnpkg/yarn/master/yarn.lock",
+        )
+        .unwrap()
+        .text()
+        .unwrap();
+
+        let _: Vec<Entry> = parse_str(&content).unwrap();
+    }
+
+    #[test]
+    fn parses_complex_berry_lockfile() {
+        let content = reqwest::blocking::get(
+            "https://raw.githubusercontent.com/yarnpkg/berry/master/yarn.lock",
+        )
+        .unwrap()
+        .text()
+        .unwrap();
+
+        let _: Vec<Entry> = parse_str(&content).unwrap();
+    }
 }

@@ -1,0 +1,12 @@
+mutation CreateRun($input: CreateRunInput!) {
+	createRun(input: $input) {
+		run {
+			id
+		}
+		userErrors {
+			message
+		}
+	}
+}
+
+# bump

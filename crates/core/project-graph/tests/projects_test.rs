@@ -1493,5 +1493,40 @@ mod detection {
                 PlatformType::Node
             );
         }
+
+        #[tokio::test]
+        async fn fallsback_to_project_platform() {
+            let (_sandbox, project_graph) = langs_sandbox().await;
+
+            assert_eq!(
+                project_graph
+                    .get("project-platform")
+                    .unwrap()
+                    .get_task("node-a")
+                    .unwrap()
+                    .platform,
+                PlatformType::Node
+            );
+
+            assert_eq!(
+                project_graph
+                    .get("project-platform")
+                    .unwrap()
+                    .get_task("node-b")
+                    .unwrap()
+                    .platform,
+                PlatformType::Node
+            );
+
+            assert_eq!(
+                project_graph
+                    .get("project-platform")
+                    .unwrap()
+                    .get_task("system")
+                    .unwrap()
+                    .platform,
+                PlatformType::System
+            );
+        }
     }
 }

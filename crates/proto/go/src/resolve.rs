@@ -79,7 +79,7 @@ impl Resolvable<'_> for GoLanguage {
                     };
                     let base_version = ver.base_version();
 
-                    if &latest < &ver {
+                    if latest < ver {
                         latest = ver.clone();
                     }
 

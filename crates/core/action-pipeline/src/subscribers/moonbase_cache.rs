@@ -31,7 +31,7 @@ impl MoonbaseCacheSubscriber {
     }
 
     pub fn not_enabled() {
-        warn!(target: LOG_TARGET, "A moonbase session exists, but no subscription exists for remote caching. Will not enable remote caching!");
+        warn!(target: LOG_TARGET, "A moonbase session exists but remote caching is not enabled. Will not cache artifacts!");
     }
 }
 

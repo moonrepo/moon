@@ -27,6 +27,7 @@ export interface Action {
 	flaky: boolean;
 	label: string | null;
 	nodeIndex: number;
+	startedAt: string | null;
 	status: ActionStatus;
 }
 

@@ -1,9 +1,15 @@
 releases:
-  "@moonrepo/cli": major
-  "@moonrepo/core-linux-arm64-gnu": major
-  "@moonrepo/core-linux-arm64-musl": major
-  "@moonrepo/core-linux-x64-gnu": major
-  "@moonrepo/core-linux-x64-musl": major
-  "@moonrepo/core-macos-arm64": major
-  "@moonrepo/core-macos-x64": major
-  "@moonrepo/core-windows-x64-msvc": major
+  '@moonrepo/cli': major
+  '@moonrepo/core-linux-arm64-gnu': major
+  '@moonrepo/core-linux-arm64-musl': major
+  '@moonrepo/core-linux-x64-gnu': major
+  '@moonrepo/core-linux-x64-musl': major
+  '@moonrepo/core-macos-arm64': major
+  '@moonrepo/core-macos-x64': major
+  '@moonrepo/core-windows-x64-msvc': major
+  '@moonrepo/types': patch
+
+declined:
+  - '@moonrepo/report'
+  - '@moonrepo/runtime'
+  - website

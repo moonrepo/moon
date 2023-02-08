@@ -6,7 +6,7 @@ import UsedBy from '@site/src/components/Home/UsedBy';
 import MoonbaseScreenshots from '@site/src/components/Products/Moonbase/Screenshots';
 import Link from '@site/src/ui/typography/Link';
 import Layout from '@theme/Layout';
-import TextVector from '../../static/brand/moon/text-vector.svg';
+import TextVector from '../../static/brand/moonrepo/text-vector.svg';
 
 export default function Home() {
 	const { siteConfig } = useDocusaurusContext();
@@ -19,16 +19,16 @@ export default function Home() {
 			<div className="bg-gradient-to-b from-slate-900 to-slate-600">
 				<div className="max-w-7xl mx-auto py-10 px-4 pb-6 sm:py-12 sm:px-6 md:py-14 lg:py-16 lg:px-8 xl:py-20 flex flex-col justify-center items-center">
 					<h1 className="text-white">
-						<TextVector height={60} />
+						<TextVector height={65} />
 					</h1>
 
-					<h2 className="mt-1 mb-3 text-white font-medium text-center text-3xl sm:text-4xl md:text-5xl">
+					<h2 className="mb-3 text-white font-medium text-center text-3xl sm:text-4xl md:text-5xl">
 						New era of productivity tooling
 					</h2>
 
-					<p className="mm-0 text-white text-md text-center opacity-60 px-2 sm:text-lg md:text-xl md:max-w-2xl">
-						From build to deploy, moonrepo is a better way to manage codebases, save costs, and
-						boost your business.
+					<p className="mm-0 text-white text-md text-center opacity-60 px-4 sm:text-lg md:text-xl md:max-w-3xl">
+						From build to deploy, moonrepo is a better way to manage codebases, save developer time,
+						and boost your business.
 					</p>
 				</div>
 			</div>

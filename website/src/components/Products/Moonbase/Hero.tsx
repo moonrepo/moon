@@ -11,14 +11,14 @@ export default function Hero() {
 	return (
 		<div className="bg-gradient-to-b from-slate-900 to-slate-600 star-pattern">
 			<div className="max-w-7xl mx-auto py-10 px-4 pb-6 sm:py-12 sm:px-6 md:py-14 lg:py-16 lg:px-8 xl:py-20 flex flex-col md:flex-row">
-				<div className="text-center md:text-left md:w-6/12">
-					<h1 className="text-white flex justify-center md:justify-start items-center gap-2">
+				<div className="text-center md:text-left md:w-7/12">
+					<h1 className="text-white flex justify-center md:justify-start items-end gap-2">
 						<LogoIcon height={75} />
-						<TextVector height={50} />
+						<TextVector height={70} />
 					</h1>
 
 					<p className="mt-1 mb-0 text-base text-white sm:text-lg sm:max-w-xl sm:mx-auto md:text-xl md:mx-0 md:w-[80%]">
-						A service for monitoring your codebases and scaling their CI pipelines.
+						A service for monitoring codebases, tracking ownership, and scaling CI pipelines.
 					</p>
 
 					<p className="mt-1 text-white opacity-50 text-sm md:text-base md:pr-4">
@@ -31,7 +31,7 @@ export default function Hero() {
 
 					<div className="mt-3 flex justify-center md:justify-start">
 						<div>
-							<CTA href="https://moonrepo.app" color="bg-teal-700">
+							<CTA href="https://moonrepo.app" color="bg-teal-600">
 								Try it today
 								<Icon
 									icon={faSpaceStationMoon}
@@ -43,7 +43,7 @@ export default function Hero() {
 					</div>
 				</div>
 
-				<div className="mt-4 md:mt-0 md:w-6/12 relative">
+				<div className="mt-4 md:mt-0 md:w-5/12 relative">
 					<Screenshots />
 				</div>
 			</div>

@@ -17,22 +17,38 @@ computation time, and alleviate resources. It achieves this by uploading hashed 
 storage provider, like AWS S3 or Google Cloud, and downloading them on demand when a build matches a
 derived hash.
 
-## Beta sign up
+## Sign up for an account
 
-Remote caching _is not yet_ available for general use and is currently in beta while we iron out the
-systems. However, you may sign up for the beta and we'll notify you once you've been accepted!
+Remote caching requires a [moonrepo.app](https://moonrepo.app) account, powered by our
+[moonbase](/moonbase) service. Creating an account requires a GitHub account. In the future we'll
+support additional OAuth providers.
 
-<RemoteCacheBeta />
+### Create an organization
 
-> We are only accepting beta sign ups for open source or public facing projects at this time!
+A moonbase organization can represent a company, team, group, or personal workspace, and is required
+for housing repositories, projects, artifacts, and more. Begin by creating an organization from the
+dashboard.
+
+> The "Region" field is very important for remote caching, as it configures which S3 region to store
+> artifacts in. This _cannot_ be changed after creation, so choose wisely!
+
+### Create a repository
+
+A moonbase repository is a direct relationship to a codebase repository, and is necessary for
+linking artifacts to the appropriate tasks. From an organization's page, you can create a
+repository.
+
+> The "Slug" field must match your repository's "remote/repo" naming exactly, as we compare these
+> values for authentication purposes.
 
 ## Enabling remote caching
 
-Once your beta signup has been accepted, you'll be granted 2 API keys. The first is the secret key
-for your entire organization, and the second is an access key specific to the repository you signed
-up for.
+Once you have a [moonrepo.app](https://moonrepo.app) account, an organization, and repository, you
+can enable remote caching in your CI pipeline. From a moonbase repository page, you can view your
+API keys in the actions menu. The first is the secret key for your entire organization, and the
+second is an access key specific to that repository.
 
-In that repositories CI environment, set the following environment variables.
+In that repository's CI environment, set the following environment variables.
 
 ```
 MOONBASE_SECRET_KEY=<secret key>
@@ -41,6 +57,8 @@ MOONBASE_ACCESS_KEY=<access key>
 
 moon will automatically authenticate the remote caching service when all credentials in the
 environment exist.
+
+> Access keys are unique _per repository_. You'll need different keys for each pipeline!
 
 ## FAQ
 
@@ -73,4 +91,4 @@ address, and information about your organization and repository.
 
 #### Are artifacts encrypted?
 
-Yes! We use AWS built-in SSE-S3 encryption for all S3 buckets.
+Yes! We use AWS's built-in SSE-S3 encryption for all S3 buckets.

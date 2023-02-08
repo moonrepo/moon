@@ -15,7 +15,11 @@ export default function Hero() {
 			<div className="max-w-7xl mx-auto py-10 px-4 pb-6 sm:py-12 sm:px-6 md:py-14 lg:py-16 lg:px-8 xl:py-20 flex flex-col md:flex-row">
 				<div className="text-center md:text-left md:w-7/12">
 					<h1 className="text-white flex justify-center md:justify-start items-end gap-2">
-						<LogoIcon height={75} />
+						<div style={{ height: 75, width: 75.35 }} className="relative">
+							<div className="absolute" style={{ left: 0, top: -2 }}>
+								<LogoIcon height={77} />
+							</div>
+						</div>
 						<TextVector height={70} />
 					</h1>
 

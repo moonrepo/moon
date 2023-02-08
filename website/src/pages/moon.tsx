@@ -216,7 +216,6 @@ export default function ProductMoon() {
 						header="Notification"
 						description="Monitor pipeline health"
 						features={notificationFeatures}
-						// columns={3}
 						tier={4}
 						reversed
 					/>

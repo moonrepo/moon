@@ -7,15 +7,15 @@ import MoonbaseScreenshots from '@site/src/components/Products/Moonbase/Screensh
 import Link from '@site/src/ui/typography/Link';
 import Layout from '@theme/Layout';
 
-const description =
-	'Reduces build times and repository maintenance costs through high-quality developer tooling.';
-
 export default function Home() {
 	const { siteConfig } = useDocusaurusContext();
 
 	return (
-		<Layout title={siteConfig.tagline} description={description}>
-			<div className="bg-gradient-to-b from-slate-900 to-slate-600 star-pattern">
+		<Layout
+			title={siteConfig.tagline}
+			description="From build to deploy, moonrepo is a better way to manage codebases, save costs, and boost your business."
+		>
+			<div className="bg-gradient-to-b from-slate-900 to-slate-600">
 				<div className="max-w-7xl mx-auto py-10 px-4 pb-6 sm:py-12 sm:px-6 md:py-14 lg:py-16 lg:px-8 xl:py-20 flex flex-col justify-center items-center">
 					<h1 className="text-2xl tracking-tight font-extrabold text-purple-600">
 						<img
@@ -37,7 +37,7 @@ export default function Home() {
 				</div>
 			</div>
 
-			<main className="bg-gradient-to-b from-slate-600 via-purple-600 to-white">
+			<main className="bg-gradient-to-b from-slate-600 via-blurple-600 to-white">
 				<ProductSection
 					color="text-blurple-400"
 					suptitle="Build a solid foundation"

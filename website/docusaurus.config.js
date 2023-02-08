@@ -52,6 +52,9 @@ const config = {
 						require.resolve('./src/css/custom.css'),
 					],
 				},
+				gtag: {
+					trackingID: 'G-LB233GTZD3',
+				},
 			}),
 		],
 	],

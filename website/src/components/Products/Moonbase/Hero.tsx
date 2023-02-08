@@ -28,7 +28,7 @@ export default function Hero() {
 
 					<div className="mt-3 flex justify-center lg:justify-start">
 						<div>
-							<CTA href="https://moonrepo.app">
+							<CTA href="https://moonrepo.app" color="bg-teal-700">
 								Try it today
 								<Icon
 									icon={faSpaceStationMoon}

@@ -20,7 +20,7 @@ function Tier({ children, cta, items, title }: TierProps) {
 					{title}
 				</Heading>
 
-				{children}
+				{/* children */}
 			</div>
 
 			<div className="bg-gray-50 rounded p-4 lg:h-[260px]">
@@ -76,7 +76,7 @@ export default function Pricing() {
 										'Maximum number of projects aggregated into the registry, across all repositories.',
 								},
 								{ label: '100 CI runs', monthly: true, tooltip: 'Across all repositories.' },
-								{ label: '1GB cloud storage', monthly: true, tooltip: 'Across all repositories.' },
+								{ label: '1GB cloud storage', tooltip: 'Across all repositories.' },
 							]}
 							cta={{ href: 'https://moonrepo.app', label: 'Get started' }}
 						>
@@ -96,7 +96,6 @@ export default function Pricing() {
 								{ label: '1,000 CI runs', monthly: true, tooltip: 'Across all repositories.' },
 								{
 									label: '10GB cloud storage',
-									monthly: true,
 									tooltip: 'Across all repositories.',
 								},
 							]}
@@ -133,7 +132,6 @@ export default function Pricing() {
 								{ label: 'Unlimited CI runs', monthly: true, tooltip: 'Across all repositories.' },
 								{
 									label: 'Unlimited cloud storage',
-									monthly: true,
 									tooltip: 'Across all repositories.',
 								},
 							]}

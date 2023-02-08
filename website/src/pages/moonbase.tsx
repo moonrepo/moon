@@ -66,19 +66,19 @@ export default function ProductMoonbase() {
 			<Hero />
 
 			<main>
-				<div className="bg-gradient-to-b from-slate-600 via-purple-600 to-white">
+				<div className="bg-gradient-to-b from-slate-600 via-teal-800 to-white">
 					<Features
 						header="Continuous integration"
 						description="Highly efficient pipelines"
 						features={ciFeatures}
-						tier={1}
+						tier={3}
 					/>
 
 					<Features
 						header="Ownership"
 						description="Everything in one place"
 						features={ownershipFeatures}
-						tier={2}
+						tier={1}
 						reversed
 					/>
 				</div>

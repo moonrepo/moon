@@ -2,8 +2,10 @@ import React from 'react';
 import { faSpaceStationMoon } from '@fortawesome/pro-duotone-svg-icons';
 import LogoIcon from '../../../../static/brand/moonbase/icon.svg';
 import TextVector from '../../../../static/brand/moonbase/text-vector.svg';
+import YC from '../../../../static/img/logo-yc.svg';
 import Icon from '../../../ui/iconography/Icon';
 import DocLink from '../../../ui/typography/Link';
+import Text from '../../../ui/typography/Text';
 import CTA from '../../Home/CTA';
 import Screenshots from './Screenshots';
 
@@ -43,8 +45,21 @@ export default function Hero() {
 					</div>
 				</div>
 
-				<div className="mt-4 md:mt-0 md:w-5/12 relative">
-					<Screenshots />
+				<div className="mt-4 md:mt-0 md:w-5/12">
+					<div className="relative sm:pb-8">
+						<Screenshots />
+					</div>
+
+					<div className="mt-2 flex justify-center items-start gap-1">
+						<div>
+							<Text className="text-white opacity-50" size="sm">
+								Backed by
+							</Text>
+						</div>
+						<div>
+							<YC height={22} />
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>

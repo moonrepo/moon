@@ -2,6 +2,7 @@
 
 import React, { ChangeEvent, useCallback, useState } from 'react';
 import { faXmark } from '@fortawesome/pro-regular-svg-icons';
+import YC from '../../../../static/img/logo-yc.svg';
 import Button, { ButtonProps } from '../../../ui/Button';
 import Icon from '../../../ui/iconography/Icon';
 import Link from '../../../ui/typography/Link';
@@ -163,6 +164,17 @@ export default function ContactForm() {
 						</Text>
 					</div>
 				)}
+			</div>
+
+			<div className="mt-4 flex justify-end items-start gap-1">
+				<div>
+					<Text variant="muted" size="sm">
+						Backed by
+					</Text>
+				</div>
+				<div>
+					<YC height={22} />
+				</div>
 			</div>
 		</>
 	);

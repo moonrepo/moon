@@ -2,8 +2,8 @@ import React from 'react';
 import Icon from '../../ui/iconography/Icon';
 import Heading from '../../ui/typography/Heading';
 import Text from '../../ui/typography/Text';
+import FeatureStatus from '../FeatureStatus';
 import { FeaturesProps } from './Features';
-import FeatureStatus from './FeatureStatus';
 
 export type AdditionalFeaturesProps = Omit<FeaturesProps, 'columns' | 'description' | 'tier'>;
 

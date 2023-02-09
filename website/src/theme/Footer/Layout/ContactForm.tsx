@@ -2,13 +2,14 @@
 
 import React, { ChangeEvent, useCallback, useState } from 'react';
 import { faXmark } from '@fortawesome/pro-regular-svg-icons';
+import YC from '../../../../static/img/logo-yc.svg';
 import Button, { ButtonProps } from '../../../ui/Button';
 import Icon from '../../../ui/iconography/Icon';
 import Link from '../../../ui/typography/Link';
 import Text from '../../../ui/typography/Text';
 
 function NextButton(props: Partial<ButtonProps>) {
-	return <Button {...props} label="Next" id="contact-next" />;
+	return <Button {...props} label="Next" id="contact-next" className="w-1/4" />;
 }
 
 export default function ContactForm() {
@@ -79,7 +80,7 @@ export default function ContactForm() {
 					Contacting about <b>{subject}</b>
 				</Text>
 			) : (
-				<Text variant="muted">Want to learn more about moon? Have questions?</Text>
+				<Text variant="muted">Want to learn more about moonrepo? Have questions?</Text>
 			)}
 
 			<div className="mt-2">
@@ -163,6 +164,17 @@ export default function ContactForm() {
 						</Text>
 					</div>
 				)}
+			</div>
+
+			<div className="mt-4 flex justify-end items-start gap-1">
+				<div>
+					<Text variant="muted" size="sm">
+						Backed by
+					</Text>
+				</div>
+				<div>
+					<YC height={22} />
+				</div>
 			</div>
 		</>
 	);

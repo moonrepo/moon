@@ -15,7 +15,7 @@ export interface HeadingProps extends Omit<TypographyProps, 'weight'> {
 
 const levels: Record<HeadingLevel, string> = {
 	1: 'text-4xl font-extrabold sm:text-5xl',
-	2: 'text-3xl font-extrabold sm:text-4xl',
+	2: 'text-3xl font-bold sm:text-4xl',
 	3: 'text-2xl font-bold',
 	4: 'text-xl font-bold',
 	5: 'text-lg font-semibold',

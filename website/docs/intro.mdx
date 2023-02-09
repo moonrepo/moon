@@ -3,14 +3,23 @@ slug: /
 title: Introduction
 ---
 
-import FeatureStatus from '@site/src/components/Home/FeatureStatus';
+import FeatureStatus from '@site/src/components/FeatureStatus';
 import Label from '@site/src/ui/typography/Label';
 
-moon is a repository *m*anagement, *o*rganization, *o*rchestration, and *n*otification tool for the
-web ecosystem, written in Rust. Many of the concepts within moon are heavily inspired from Bazel and
-other popular build systems, but tailored for our [supported languages](#supported-languages).
+moonrepo is a productivity platform that aims to eliminate pain points for both developers and
+companies, by automating tiresome and complex workflows, and improving the overall developer
+experience.
 
-## Why use moon?
+We currently achieve this through the following tools and services:
+
+## moon
+
+[moon](/moon) is a repository *m*anagement, *o*rganization, *o*rchestration, and *n*otification tool
+for the web ecosystem, written in Rust. Many of the concepts within moon are heavily inspired from
+Bazel and other popular build systems, but tailored for our
+[supported languages](#supported-languages).
+
+### Why use moon?
 
 Working in a language's ecosystem can be very involved, especially when it comes to managing a
 repository effectively. Which language version to use? Which dependency manager to use? How to use
@@ -36,7 +45,7 @@ and provide a first-class developer experience.
   [sync TypeScript project references](/docs/config/toolchain#syncprojectreferences).
 - And of course, the amazing list of [features](#features) below!
 
-## Supported languages
+### Supported languages
 
 moon's long-term vision is to robustly support multiple programming languages (and dependency
 managers) so that a repository composed of projects with differing languages and tools can all work
@@ -78,7 +87,7 @@ incremental integrate and improve them over time. The 4 tiers are as follows:
 | └─ Cargo                      |   🟢   |  ⚪️   |        |        |
 | Other ...                     |   🟢   |        |        |        |
 
-## Supported targets
+### Supported targets
 
 Because moon is written in Rust, we only support targets that are explicitly compiled for, which are
 currently:
@@ -93,14 +102,14 @@ currently:
 | Linux 64-bit     | ARM musl     | `aarch64-unknown-linux-musl` |
 | Windows 64-bit   | Intel        | `x86_64-pc-windows-msvc`     |
 
-## Features
+### Features
 
 #### Management
 
 - **Smart hashing** - Collects inputs from multiple sources to ensure builds are deterministic and
   reproducible.
-- **Remote caching** <FeatureStatus status="experimental" /> - Persists builds, hashes, and caches
-  between teammates and CI/CD environments.
+- **Remote caching** <FeatureStatus status="new" /> - Persists builds, hashes, and caches between
+  teammates and CI/CD environments.
 - **Integrated toolchain** - Automatically downloads and installs explicit versions of Node.js and
   other tools for consistency across the entire workspace or per project.
 - **Multi-platform** - Runs on common development platforms: Linux, macOS, and Windows.
@@ -132,3 +141,12 @@ currently:
   the pipeline. Useful for metrics gathering and insights.
 - **Terminal notifications** <FeatureStatus status="coming-soon" /> - Receives notifications in your
   chosen terminal when builds are successful... or are not.
+
+## moonbase
+
+[moonbase](/moonbase) is a service for gathering insights into your CI pipelines for [moon](#moon)
+powered repositories. It offers remote caching of build artifacts to greatly reduce CI times,
+tracking of CI jobs to detect flakiness and regressions, project and code ownership registries,
+repository health, and much more!
+
+This service is currently in heavy development.

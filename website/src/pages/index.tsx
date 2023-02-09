@@ -1,234 +1,111 @@
-/* eslint-disable sort-keys */
-
 import React from 'react';
-import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import {
-	faAperture,
-	faArrowUpRightDots,
-	faBellOn,
-	faBoxAlt,
-	faChartTreeMap,
-	faCircleBolt,
-	faCloudArrowUp,
-	faDiagramProject,
-	faDiagramSankey,
-	faFingerprint,
-	faGridDividers,
-	faLayerGroup,
-	faMerge,
-	faMessageCode,
-	faMicrochip,
-	faRectangleBarcode,
-	faShieldHalved,
-	faSitemap,
-	faSlidersUp,
-	faToolbox,
-	faUserSecret,
-} from '@fortawesome/pro-duotone-svg-icons';
-import AdditionalFeatures from '@site/src/components/Home/AdditionalFeatures';
-import Features, { Feature } from '@site/src/components/Home/Features';
-import Hero from '@site/src/components/Home/Hero';
+import { faDiagramProject, faDiagramSankey, faToolbox } from '@fortawesome/pro-duotone-svg-icons';
+import ProductSection from '@site/src/components/Home/ProductSection';
 import UsedBy from '@site/src/components/Home/UsedBy';
+import MoonbaseScreenshots from '@site/src/components/Products/Moonbase/Screenshots';
+import Link from '@site/src/ui/typography/Link';
 import Layout from '@theme/Layout';
-
-const managementFeatures: Feature[] = [
-	{
-		title: 'Smart hashing',
-		icon: faFingerprint,
-		description:
-			'Collects inputs from multiple sources to ensure builds are deterministic and reproducible.',
-	},
-	{
-		title: 'Remote caching',
-		icon: faCloudArrowUp,
-		description: 'Persists builds, hashes, and caches between teammates and CI/CD environments.',
-		status: 'experimental',
-	},
-	{
-		title: 'Integrated toolchain',
-		icon: faToolbox,
-		description:
-			'Automatically downloads and installs explicit versions of Node.js and other tools for consistency across the entire workspace or per project.',
-	},
-	{
-		title: 'Multi-platform',
-		icon: faMicrochip,
-		description: 'Runs on common development platforms: Linux, macOS, and Windows.',
-	},
-];
-
-const organizationFeatures: Feature[] = [
-	{
-		title: 'Project graph',
-		icon: faDiagramProject,
-		description: 'Generates a project graph for dependency and dependent relationships.',
-	},
-	{
-		title: 'Code generation',
-		icon: faLayerGroup,
-		description: 'Easily scaffold new applications, libraries, tooling, and more!',
-	},
-	{
-		title: 'Dependency workspaces',
-		icon: faGridDividers,
-		description:
-			'Works alongside package manager workspaces so that projects have distinct dependency trees.',
-	},
-	{
-		title: 'Ownership metadata',
-		icon: faRectangleBarcode,
-		description:
-			'Declare an owner, maintainers, support channels, and more, for LDAP or another integration.',
-	},
-];
-
-const orchestrationFeatures: Feature[] = [
-	{
-		title: 'Dependency graph',
-		icon: faSitemap,
-		description: 'Generates a dependency graph to increase performance and reduce workloads.',
-	},
-	{
-		title: 'Action pipeline',
-		icon: faMerge,
-		description:
-			'Executes actions in parallel and in order using a thread pool and our dependency graph.',
-	},
-	{
-		title: 'Action distribution',
-		icon: faDiagramSankey,
-		description: 'Distributes actions across multiple machines to increase throughput.',
-		status: 'coming-soon',
-	},
-	{
-		title: 'Incremental builds',
-		icon: faArrowUpRightDots,
-		description:
-			'With our smart hashing, only rebuild projects that have been touched since the last build.',
-	},
-];
-
-const notificationFeatures: Feature[] = [
-	{
-		title: 'Flakiness detection',
-		icon: faShieldHalved,
-		description: 'Reduce flaky builds with automatic retries and passthrough settings.',
-		status: 'experimental',
-	},
-	{
-		title: 'Webhook events',
-		icon: faMessageCode,
-		description:
-			'Receive a webhook for every event in the pipeline. Useful for metrics gathering and insights.',
-		status: 'experimental',
-	},
-	{
-		title: 'Terminal notifications',
-		icon: faBellOn,
-		description:
-			'Receives notifications in your chosen terminal when builds are successful... or are not.',
-		status: 'coming-soon',
-	},
-];
-
-const additionalFeatures: Feature[] = [
-	{
-		title: 'Configuration & convention',
-		icon: faSlidersUp,
-		description: 'Use moon the way you want, but with some guard rails.',
-	},
-	{
-		title: 'Scalability aware',
-		icon: faCircleBolt,
-		description: 'Engineered to scale and grow for codebases of any size.',
-	},
-	{
-		title: 'Integrated packages',
-		icon: faBoxAlt,
-		description: (
-			<>
-				Enhance your pipeline with our{' '}
-				<Link href="https://www.npmjs.com/org/moonrepo">@moonrepo</Link> npm packages.
-			</>
-		),
-		status: 'in-development',
-	},
-	{
-		title: 'Node.js inspection',
-		icon: faUserSecret,
-		description: 'Inspect and debug failing Node.js processes.',
-		status: 'coming-soon',
-	},
-	{
-		title: 'Build profiles',
-		icon: faAperture,
-		description: (
-			<>
-				Record <Link href="/docs/guides/profile">CPU and heap profiles</Link> that can be analyzed
-				in Chrome.
-			</>
-		),
-	},
-	{
-		title: 'Editor extensions',
-		icon: faChartTreeMap,
-		description: (
-			<>
-				Utilize moon extensions in your favorite editor, like{' '}
-				<Link href="/docs/editors/vscode">Visual Studio Code</Link>.
-			</>
-		),
-		status: 'new',
-	},
-];
-
-const description =
-	'Reduces build times and repository maintenance costs through high-quality developer tooling.';
+import TextVector from '../../static/brand/moonrepo/text-vector.svg';
 
 export default function Home() {
 	const { siteConfig } = useDocusaurusContext();
 
 	return (
-		<Layout title={siteConfig.tagline} description={description}>
-			<Hero />
+		<Layout
+			title={siteConfig.tagline}
+			description="From build to deploy, moonrepo is a better way to manage codebases, save costs, and boost your business."
+		>
+			<div className="bg-gradient-to-b from-slate-900 to-slate-600">
+				<div className="max-w-7xl mx-auto py-10 px-4 pb-6 sm:py-12 sm:px-6 md:py-14 lg:py-16 lg:px-8 xl:py-20 flex flex-col justify-center items-center">
+					<h1 className="text-white">
+						<TextVector height={65} />
+					</h1>
 
-			<main>
-				<Features
-					header="Management"
-					description="Develop more, manage less"
-					features={managementFeatures}
-					tier={1}
+					<h2 className="mb-3 text-white font-medium text-center text-3xl sm:text-4xl md:text-5xl">
+						New era of productivity tooling
+					</h2>
+
+					<p className="mm-0 text-white text-md text-center opacity-60 px-4 sm:text-lg md:text-xl md:max-w-3xl">
+						From build to deploy, moonrepo is a better way to manage codebases, save developer time,
+						and boost your business.
+					</p>
+				</div>
+			</div>
+
+			<main className="bg-gradient-to-b from-slate-600 via-blurple-600 to-white">
+				<ProductSection
+					color="text-blurple-400"
+					suptitle="Build a solid foundation"
+					title="Supercharge your codebase"
+					logo={<img src="/brand/moon/icon.svg" height={75} className="block" />}
+					description={
+						<>
+							For repositories with multiple projects, any number of languages, and team members
+							constantly pushing changes, our build system{' '}
+							<Link href="/moon" size="lg">
+								moon
+							</Link>{' '}
+							will help simplify the experience of working in and maintaining your codebase.
+						</>
+					}
+					cta={{
+						children: 'Learn more about moon',
+						color: 'bg-blurple-400',
+						href: '/moon',
+					}}
+					items={[
+						{
+							description:
+								'Never run the same task twice. With our smart hashing, robust caching, and efficient task execution, moon will avoid unnecessary work.',
+							icon: faDiagramSankey,
+							title: 'Efficient task orchestation',
+						},
+						{
+							description:
+								'Neatly organize your codebase, declare ownership information, and simplify project discovery.',
+							icon: faDiagramProject,
+							title: 'Better project organization',
+						},
+						{
+							description:
+								'With our integrated toolchain, the exact tooling version will be used, ensuring a deterministic environment across machines.',
+							icon: faToolbox,
+							title: 'Integrated development environment',
+						},
+					]}
 				/>
 
-				<Features
-					header="Organization"
-					description="Architect a repository to scale"
-					features={organizationFeatures}
-					tier={2}
+				<ProductSection
 					reversed
-				/>
-
-				<Features
-					header="Orchestration"
-					description="Offload heavy tasks"
-					features={orchestrationFeatures}
-					tier={3}
-				/>
-
-				<Features
-					header="Notification"
-					description="Monitor pipeline health"
-					features={notificationFeatures}
-					// columns={3}
-					tier={4}
-					reversed
-				/>
-
-				<AdditionalFeatures header="And many more features" features={additionalFeatures} />
-
-				<UsedBy />
+					stretched
+					color="text-purple-600"
+					suptitle="Expand to the cloud"
+					title="Accelerate your pipelines"
+					logo={<img src="/brand/moonbase/icon.svg" height={75} className="block" />}
+					description={
+						<>
+							With our hosted service{' '}
+							<Link href="/moon" size="lg">
+								moonbase
+							</Link>
+							, easily cache build artifacts to reduce CI times, gain insight into your CI
+							pipelines, track the health of your repositories, and overall cut costs.
+						</>
+					}
+					cta={{
+						children: 'Learn more about moonbase',
+						color: 'bg-purple-600',
+						href: '/moonbase',
+					}}
+				>
+					<div className="relative sm:pb-8 h-full">
+						<MoonbaseScreenshots />
+					</div>
+				</ProductSection>
 			</main>
+
+			<UsedBy />
 		</Layout>
 	);
 }

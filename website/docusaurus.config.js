@@ -21,8 +21,8 @@ const social = [
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-	title: 'moon',
-	tagline: 'A build system and repo management tool for the web ecosystem, written in Rust.',
+	title: 'moonrepo',
+	tagline: 'A developer productivity platform for scaling codebases.',
 	url: 'https://moonrepo.dev',
 	baseUrl: '/',
 	onBrokenLinks: 'throw',
@@ -51,6 +51,9 @@ const config = {
 						require.resolve('./src/css/theme.css'),
 						require.resolve('./src/css/custom.css'),
 					],
+				},
+				gtag: {
+					trackingID: 'G-LB233GTZD3',
 				},
 			}),
 		],
@@ -83,9 +86,23 @@ const config = {
 				},
 				items: [
 					{
-						to: '/blog',
-						label: 'Blog',
+						type: 'dropdown',
 						position: 'left',
+						label: 'Products',
+						items: [
+							{
+								to: '/moon',
+								html: '<strong class="block mr-2">moon</strong><div class="opacity-60">Build system for managing codebases</div>',
+							},
+							{
+								to: '/moonbase',
+								html: '<strong class="block mr-2">moonbase</strong><div class="opacity-60">Service for scaling CI pipelines</div>',
+							},
+							// {
+							// 	to: '/proto',
+							// 	html: '<strong>proto</strong><div class="opacity-60">Language agnostic version manager</div>',
+							// },
+						],
 					},
 					{
 						type: 'doc',
@@ -100,6 +117,15 @@ const config = {
 						label: 'Guides',
 					},
 					{
+						to: '/blog',
+						label: 'Blog',
+						position: 'left',
+					},
+					{
+						...social[0],
+						position: 'left',
+					},
+					/* {
 						to: '/api',
 						label: 'API',
 						position: 'left',
@@ -145,9 +171,10 @@ const config = {
 								href: 'https://www.npmjs.com/package/tsconfig-moon',
 							},
 						],
-					},
+					}, */
 					{
-						...social[0],
+						to: 'https://moonrepo.app',
+						label: 'Sign in',
 						position: 'right',
 					},
 				],
@@ -159,16 +186,16 @@ const config = {
 						title: 'Learn',
 						items: [
 							{
-								label: 'Blog',
-								to: '/blog',
-							},
-							{
 								label: 'Docs',
 								to: '/docs',
 							},
 							{
 								label: 'Guides',
 								to: '/docs/guides/ci',
+							},
+							{
+								label: 'Blog',
+								to: '/blog',
 							},
 							{
 								label: 'API',
@@ -202,7 +229,7 @@ const config = {
 						items: social,
 					},
 				],
-				copyright: `Copyright © ${new Date().getFullYear()} moon. moonrepo LLC.`,
+				copyright: `Copyright © ${new Date().getFullYear()}, moonrepo LLC`,
 			},
 			prism: {
 				theme: prismTheme,

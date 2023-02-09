@@ -1,6 +1,7 @@
 import React from 'react';
 import { faCirclePlus } from '@fortawesome/pro-duotone-svg-icons';
 import DepotSvg from '../../../static/brands/depot.svg';
+import GallerySvg from '../../../static/brands/gallery.svg';
 import Icon from '../../ui/iconography/Icon';
 import Heading from '../../ui/typography/Heading';
 import Link from '../../ui/typography/Link';
@@ -33,9 +34,15 @@ export default function UsedBy() {
 					</Heading>
 
 					<div className="mt-4 grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-6">
-						<div className="col-span-1 flex justify-center">
+						<div className="col-span-1 flex justify-center items-center">
 							<Link to="https://depot.dev/?ref=moonrepo" variant="muted" title="Depot">
 								<DepotSvg className="w-full max-w-full" />
+							</Link>
+						</div>
+
+						<div className="col-span-1 flex justify-center items-center">
+							<Link to="https://gallery.so/?ref=moonrepo" variant="muted" title="(Gallery)">
+								<GallerySvg className="w-full max-w-full" />
 							</Link>
 						</div>
 

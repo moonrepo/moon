@@ -1,0 +1,52 @@
+---
+slug: moonbase
+title: Remote caching is now publicly available through moonbase
+authors: [milesj, jpoz]
+tags: [moonbase, remote-cache]
+---
+
+import Button from '@site/src/ui/Button';
+import Image from '@site/src/components/Image';
+
+We are proud to announce the launch of [moonbase](/moonbase) remote caching – a new solution that
+helps moon developers streamline their build processes and save time.
+
+<!--truncate-->
+
+Remote caching allows developers to cache artifacts across builds, improving the efficiency of their
+Continuous Integration (CI) pipelines. This is accomplished by automatically caching build artifacts
+when moon is run with moonbase [remote caching enabled](/docs/guides/remote-cache). In the event
+that a CI run is executed with identical code, the cached artifacts are automatically pulled down,
+reducing the time required to complete the build. In our tests, we have seen significant
+improvements in CI times, upwards of 90%.
+
+## What is moonbase?
+
+You may be asking yourself, what is moonbase? [moonbase](/moonbase) is a new cloud service that
+we've been working on to solve an array of problems in regards to repository and continous
+integration health.
+
+<Image src={require('../static/img/home/org.png')} width="80%" />
+
+The first problem on this list is [remote caching](/docs/guides/remote-cache), which has been in a
+beta program for the past few months. We want to thank all the beta participants for testing our
+systems!
+
+We'll also be launching CI insights in the next few weeks. This is a system where we track all your
+CI runs (via `moon ci`), and all moon tasks (actions) that ran within each job. We use this
+information to track the health of your pipelines, catch regressions, alert on flakiness, and more!
+But don't worry, this feature is opt-in.
+
+We're very excited for moonbase! We have a massive roadmap ahead of us, but we're sure y'all will
+enjoy everything that it has to offer.
+
+<div class="flex justify-center">
+  <Button label="Try moonbase for free!" href="https://moonrepo.app" size="lg" />
+</div>
+
+## New homepage and product pages
+
+As part of this release, we've updated our homepage, and added new product pages for both
+[moon](/moon) and [moonbase](/moonbase). This includes new logos and typography, which we're very
+excited for! This is only the beginning, as we're also working on additional behind the scenes
+products. Stay tuned!

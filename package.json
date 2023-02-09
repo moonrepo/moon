@@ -34,6 +34,6 @@
     "typescript": "^4.9.4"
   },
   "resolutions": {
-    "@docusaurus/theme-classic@2.3.0": "patch:@docusaurus/theme-classic@npm%3A2.3.0#./.yarn/patches/@docusaurus-theme-classic-npm-2.3.0-d99c2c58f1.patch"
+    "@docusaurus/theme-classic@2.3.1": "patch:@docusaurus/theme-classic@npm%3A^2.3.1#./.yarn/patches/@docusaurus-theme-classic-npm-2.3.1-d99c2c58f1.patch"
   }
 }

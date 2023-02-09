@@ -125,7 +125,8 @@ blockquote {
 }
 
 .navbar__logo {
-	margin-top: -3px;
+	margin-bottom: -6px;
+	width: 125px;
 }
 
 .navbar__items > div {

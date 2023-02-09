@@ -4,7 +4,7 @@ import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import Icon from '../../ui/iconography/Icon';
 import Heading from '../../ui/typography/Heading';
 import Text from '../../ui/typography/Text';
-import FeatureStatus, { StatusType } from './FeatureStatus';
+import FeatureStatus, { StatusType } from '../FeatureStatus';
 
 export type FeatureTier = 1 | 2 | 3 | 4;
 
@@ -23,13 +23,6 @@ export interface FeaturesProps {
 	tier: FeatureTier;
 }
 
-const backgroundGradients: Record<FeatureTier, string> = {
-	1: 'from-slate-600 to-purple-700',
-	2: 'from-purple-700 to-purple-200',
-	3: 'from-purple-200 to-white',
-	4: 'bg-white',
-};
-
 const cardGradients: Record<FeatureTier, string> = {
 	1: 'from-purple-600 to-blurple-600',
 	2: 'from-pink-400 to-red-400',
@@ -46,7 +39,7 @@ const iconColors: Record<FeatureTier, string> = {
 
 export default function Features({ header, description, features, reversed, tier }: FeaturesProps) {
 	return (
-		<div className={cx('bg-gradient-to-b', backgroundGradients[tier])}>
+		<div>
 			<div className="relative py-4 sm:py-5 lg:py-6">
 				<div className="mx-auto max-w-md px-2 sm:max-w-3xl sm:px-3 lg:max-w-7xl lg:px-4">
 					<div

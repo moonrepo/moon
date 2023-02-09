@@ -5,9 +5,9 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 const COMMAND_TO_RUN = '$ moon run :build';
 
 function random(min: number, max: number) {
-	const minimum = Math.ceil(min);
+	const minimum = Math.ceil(min - 50);
 
-	return Math.floor(Math.random() * (Math.floor(max) - minimum + 1)) + minimum;
+	return Math.floor(Math.random() * (Math.floor(max - 100) - minimum + 1)) + minimum;
 }
 
 function num(value: number) {

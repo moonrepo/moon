@@ -26,7 +26,7 @@ function Tier({ children, cta, items, title }: TierProps) {
 			<div className="bg-gray-50 rounded p-4 lg:h-[260px]">
 				<ul className="flex flex-col gap-2 p-0 m-0">
 					{items.map((item) => (
-						<li className="list-none relative pl-4">
+						<li key={item.label} className="list-none relative pl-4">
 							<abbr title={item.tooltip}>{item.label}</abbr>
 
 							{item.monthly && <span className="text-gray-700 inline-block ml-0.5">/ month</span>}

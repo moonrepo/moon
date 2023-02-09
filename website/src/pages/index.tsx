@@ -38,6 +38,7 @@ export default function Home() {
 					color="text-blurple-400"
 					suptitle="Build a solid foundation"
 					title="Supercharge your codebase"
+					logo={<img src="/brand/moon/icon.svg" height={75} className="block" />}
 					description={
 						<>
 							For repositories with multiple projects, any number of languages, and team members
@@ -81,6 +82,7 @@ export default function Home() {
 					color="text-purple-600"
 					suptitle="Expand to the cloud"
 					title="Accelerate your pipelines"
+					logo={<img src="/brand/moonbase/icon.svg" height={75} className="block" />}
 					description={
 						<>
 							With our hosted service{' '}

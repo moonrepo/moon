@@ -18,6 +18,7 @@ export interface ProductSectionProps {
 	cta?: CTAProps;
 	description: React.ReactNode;
 	items?: ProductItem[];
+	logo: React.ReactNode;
 	reversed?: boolean;
 	stretched?: boolean;
 	suptitle: string;
@@ -30,6 +31,7 @@ export default function ProductSection({
 	cta,
 	description,
 	items,
+	logo,
 	reversed,
 	stretched,
 	suptitle,
@@ -50,12 +52,20 @@ export default function ProductSection({
 								{suptitle}
 							</Heading>
 
-							<Heading level={2} className="mt-1">
-								{title}
-							</Heading>
+							<div className="flex items-center sm:items-end gap-2 mt-1">
+								<div>{logo}</div>
 
-							<p className={children ? 'my-4' : 'mt-4'}>
-								<Text size="lg">{description}</Text>
+								<div className="self-center">
+									<Heading level={2} className="mt-1">
+										{title}
+									</Heading>
+								</div>
+							</div>
+
+							<p className={children ? 'my-4' : 'mt-3'}>
+								<Text as="span" size="lg">
+									{description}
+								</Text>
 							</p>
 
 							{cta && <CTA {...cta} />}

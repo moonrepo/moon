@@ -16,13 +16,13 @@ pub async fn bin(
         tool.create_shims().await?;
 
         if let Some(shim_path) = tool.get_shim_path() {
-            println!("{}", shim_path.to_string_lossy().to_string());
+            println!("{}", shim_path.to_string_lossy());
 
             return Ok(());
         }
     }
 
-    println!("{}", tool.get_bin_path()?.to_string_lossy().to_string());
+    println!("{}", tool.get_bin_path()?.to_string_lossy());
 
     Ok(())
 }

@@ -22,7 +22,7 @@ struct App {
     command: Commands,
 }
 
-// TODO: alias, unalias, shell completions, local
+// TODO: alias, unalias, shell completions
 #[derive(Debug, Subcommand)]
 enum Commands {
     #[command(name = "bin", about = "Display the absolute path to a tools binary")]
@@ -68,6 +68,19 @@ enum Commands {
     },
 
     #[command(
+        name = "local",
+        about = "Set the local version of a tool",
+        long_about = "This will create a .prototools file (if it does not exist) in the current working directory with the appropriate tool and version."
+    )]
+    Local {
+        #[arg(required = true, value_enum, help = "Type of tool")]
+        tool: ToolType,
+
+        #[arg(required = true, help = "Version of tool")]
+        semver: String,
+    },
+
+    #[command(
         name = "run",
         about = "Run a tool after detecting a version from the environment"
     )]
@@ -108,6 +121,7 @@ async fn main() {
         Commands::Global { tool, semver } => commands::global(tool, semver).await,
         Commands::List { tool } => commands::list(tool).await,
         Commands::ListRemote { tool } => commands::list_remote(tool).await,
+        Commands::Local { tool, semver } => commands::local(tool, semver).await,
         Commands::Run {
             tool,
             semver,

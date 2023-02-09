@@ -1,5 +1,6 @@
+use crate::helpers::enable_logging;
 use log::{debug, info};
-use proto::{color, create_tool, enable_logging, ProtoError, ToolType};
+use proto::{color, create_tool, ProtoError, ToolType};
 use std::fs;
 
 pub async fn list(tool_type: ToolType) -> Result<(), ProtoError> {

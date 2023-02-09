@@ -1,3 +1,5 @@
+#![allow(clippy::borrowed_box)]
+
 use crate::config::{Config, CONFIG_NAME};
 use log::{debug, trace};
 use proto::{color, get_tools_dir, load_version_file, ProtoError, Tool, ToolType};
@@ -6,12 +8,18 @@ use std::{
     path::{Path, PathBuf},
 };
 
-pub fn get_global_version_path<'l>(tool: &Box<dyn Tool<'l>>) -> Result<PathBuf, ProtoError> {
+pub fn enable_logging() {
+    if env::var("RUST_LOG").is_err() {
+        env::set_var("RUST_LOG", "proto=debug");
+    }
+}
+
+pub fn get_global_version_path(tool: &Box<dyn Tool<'_>>) -> Result<PathBuf, ProtoError> {
     Ok(get_tools_dir()?.join(tool.get_bin_name()).join("version"))
 }
 
-pub async fn detect_version_from_environment<'l>(
-    tool: &Box<dyn Tool<'l>>,
+pub async fn detect_version_from_environment(
+    tool: &Box<dyn Tool<'_>>,
     tool_type: &ToolType,
     forced_version: Option<String>,
 ) -> Result<String, ProtoError> {
@@ -70,7 +78,7 @@ pub async fn detect_version_from_environment<'l>(
             if config_file.exists() {
                 let config = Config::load(&config_file)?;
 
-                if let Some(config_version) = config.tools.get(&tool_type) {
+                if let Some(config_version) = config.tools.get(tool_type) {
                     debug!(
                         target: "proto:version",
                         "Detected version {} from configuration file {}",
@@ -111,7 +119,7 @@ pub async fn detect_version_from_environment<'l>(
             "Attempting to find global version"
         );
 
-        let global_file = get_global_version_path(&tool)?;
+        let global_file = get_global_version_path(tool)?;
 
         if global_file.exists() {
             let global_version = load_version_file(&global_file)?;

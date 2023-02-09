@@ -1,13 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/">
     <channel>
-        <title>moon Blog</title>
+        <title>moonrepo Blog</title>
         <link>https://moonrepo.dev/blog</link>
-        <description>moon Blog</description>
-        <lastBuildDate>Mon, 30 Jan 2023 00:00:00 GMT</lastBuildDate>
+        <description>moonrepo Blog</description>
+        <lastBuildDate>Wed, 08 Feb 2023 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>en</language>
+        <item>
+            <title><![CDATA[Remote caching is now publicly available through moonbase]]></title>
+            <link>https://moonrepo.dev/blog/moonbase</link>
+            <guid>https://moonrepo.dev/blog/moonbase</guid>
+            <pubDate>Wed, 08 Feb 2023 00:00:00 GMT</pubDate>
+            <description><![CDATA[We are proud to announce the launch of moonbase remote caching – a new solution that]]></description>
+            <content:encoded><![CDATA[<p>We are proud to announce the launch of <a href="/moonbase">moonbase</a> remote caching – a new solution that
+helps moon developers streamline their build processes and save time.</p><p>Remote caching allows developers to cache artifacts across builds, improving the efficiency of their
+Continuous Integration (CI) pipelines. This is accomplished by automatically caching build artifacts
+when moon is run with moonbase <a href="/docs/guides/remote-cache">remote caching enabled</a>. In the event
+that a CI run is executed with identical code, the cached artifacts are automatically pulled down,
+reducing the time required to complete the build. In our tests, we have seen significant
+improvements in CI times, upwards of 90%.</p><h2 class="anchor anchorWithStickyNavbar_JmGV" id="what-is-moonbase">What is moonbase?<a href="#what-is-moonbase" class="hash-link" aria-label="Direct link to What is moonbase?" title="Direct link to What is moonbase?">​</a></h2><p>You may be asking yourself, what is moonbase? <a href="/moonbase">moonbase</a> is a new cloud service that
+we've been working on to solve an array of problems in regards to repository and continous
+integration health.</p><div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="/assets/images/org-bc5ac0d2c9196fe2d565e9e715b7a205.png" width="80%" alt="" class="inline-block"></div><p>The first problem on this list is <a href="/docs/guides/remote-cache">remote caching</a>, which has been in a
+beta program for the past few months. We want to thank all the beta participants for testing our
+systems!</p><p>We'll also be launching CI insights in the next few weeks. This is a system where we track all your
+CI runs (via <code>moon ci</code>), and all moon tasks (actions) that ran within each job. We use this
+information to track the health of your pipelines, catch regressions, alert on flakiness, and more!
+But don't worry, this feature is opt-in.</p><p>We're very excited for moonbase! We have a massive roadmap ahead of us, but we're sure y'all will
+enjoy everything that it has to offer.</p><div class="flex justify-center"><a class="border border-transparent rounded-md px-2 flex items-center justify-center text-base font-bold text-white bg-blurple-400 dark:bg-purple-600 hover:text-white hover:bg-blurple-500 dark:hover:bg-purple-500 cursor-pointer py-2" href="https://moonrepo.app" target="_blank">Try moonbase for free!</a></div><h2 class="anchor anchorWithStickyNavbar_JmGV" id="new-homepage-and-product-pages">New homepage and product pages<a href="#new-homepage-and-product-pages" class="hash-link" aria-label="Direct link to New homepage and product pages" title="Direct link to New homepage and product pages">​</a></h2><p>As part of this release, we've updated our homepage, and added new product pages for both
+<a href="/moon">moon</a> and <a href="/moonbase">moonbase</a>. This includes new logos and typography, which we're very
+excited for! This is only the beginning, as we're also working on additional behind the scenes
+products. Stay tuned!</p>]]></content:encoded>
+            <category>moonbase</category>
+            <category>remote-cache</category>
+        </item>
         <item>
             <title><![CDATA[moon v0.23 - Scoped task inheritance, and project config updates]]></title>
             <link>https://moonrepo.dev/blog/v0.23</link>
@@ -19,7 +46,7 @@ quality of life improvements for project configuration.</p><h2 class="anchor anc
 feels about surveys, but this one is real quick, only a few minutes, and is mostly multiple choice
 questions.</p><p>We're looking for feedback on moon itself, what features you're looking for, what you currently do
 not like, how you're currently using monorepos, your development workflows, so on and so forth. We'd
-very much appreciate it if you could engage with this survey!</p><div class="flex justify-center"><a class="w-1/4 border border-transparent rounded-md px-2 py-1 flex items-center justify-center text-base font-bold text-white bg-blurple-400 dark:bg-purple-600 hover:text-white hover:bg-blurple-500 dark:hover:bg-purple-500 cursor-pointer" href="https://a.sprig.com/UE1SOG1zV3o5SzdRfnNpZDpmOTQ5MjU1Yy1jYTZlLTRmYjQtOTRjZi0wMzZlZjExN2JjZDg=" target="_blank">Take survey!</a></div><h2 class="anchor anchorWithStickyNavbar_JmGV" id="improved-task-inheritance-model">Improved task inheritance model<a href="#improved-task-inheritance-model" class="hash-link" aria-label="Direct link to Improved task inheritance model" title="Direct link to Improved task inheritance model">​</a></h2><p>One of the guiding principles behind moon is to simplify repository maintenance, with task
+very much appreciate it if you could engage with this survey!</p><div class="flex justify-center"><a class="border border-transparent rounded-md px-2 flex items-center justify-center text-base font-bold text-white bg-blurple-400 dark:bg-purple-600 hover:text-white hover:bg-blurple-500 dark:hover:bg-purple-500 cursor-pointer py-2" href="https://a.sprig.com/UE1SOG1zV3o5SzdRfnNpZDpmOTQ5MjU1Yy1jYTZlLTRmYjQtOTRjZi0wMzZlZjExN2JjZDg=" target="_blank">Take survey!</a></div><h2 class="anchor anchorWithStickyNavbar_JmGV" id="improved-task-inheritance-model">Improved task inheritance model<a href="#improved-task-inheritance-model" class="hash-link" aria-label="Direct link to Improved task inheritance model" title="Direct link to Improved task inheritance model">​</a></h2><p>One of the guiding principles behind moon is to simplify repository maintenance, with task
 management being top of list. We weren't happy with the current state of things, as every build
 system and task runner that exists always opted for per-project task management, which is a massive
 amount of overhead and tech debt in the long run. To combat this, moon was designed from the

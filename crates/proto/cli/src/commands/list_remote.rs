@@ -1,6 +1,7 @@
+use crate::helpers::enable_logging;
 use human_sort::compare;
 use log::{debug, info};
-use proto::{create_tool, enable_logging, ProtoError, ToolType};
+use proto::{create_tool, ProtoError, ToolType};
 use std::io::{self, Write};
 
 // TODO: only show LTS, dont show pre-releases?

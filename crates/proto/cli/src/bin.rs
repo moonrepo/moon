@@ -1,5 +1,6 @@
 mod commands;
 mod config;
+mod helpers;
 
 use clap::{Parser, Subcommand};
 use proto::{color, ToolType};
@@ -21,9 +22,21 @@ struct App {
     command: Commands,
 }
 
-// TODO: list (--remote), alias, unalias, shell completions, local, global
+// TODO: alias, unalias, shell completions, local, global
 #[derive(Debug, Subcommand)]
 enum Commands {
+    #[command(name = "bin", about = "Display the absolute path to a tools binary")]
+    Bin {
+        #[arg(required = true, value_enum, help = "Name of tool to display")]
+        tool: ToolType,
+
+        #[arg(help = "Version of tool to display")]
+        semver: Option<String>,
+
+        #[arg(long, help = "Display shim path when available")]
+        shim: bool,
+    },
+
     #[command(name = "install", about = "Download and install a tool")]
     Install {
         #[arg(required = true, value_enum, help = "Name of tool to install")]
@@ -53,6 +66,9 @@ enum Commands {
         #[arg(required = true, value_enum, help = "Name of tool to run")]
         tool: ToolType,
 
+        #[arg(help = "Version of tool to run")]
+        semver: Option<String>,
+
         // Passthrough args (after --)
         #[arg(
             last = true,
@@ -78,10 +94,15 @@ async fn main() {
     let app = App::parse();
 
     let result = match app.command {
+        Commands::Bin { tool, semver, shim } => commands::bin(tool, semver, shim).await,
         Commands::Install { tool, semver } => commands::install(tool, semver).await,
         Commands::List { tool } => commands::list(tool).await,
         Commands::ListRemote { tool } => commands::list_remote(tool).await,
-        Commands::Run { tool, passthrough } => commands::run(tool, passthrough).await,
+        Commands::Run {
+            tool,
+            semver,
+            passthrough,
+        } => commands::run(tool, semver, passthrough).await,
         Commands::Uninstall { tool, semver } => commands::uninstall(tool, semver).await,
     };
 

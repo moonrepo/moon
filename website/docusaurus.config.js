@@ -71,7 +71,7 @@ const config = {
 				{
 					name: 'keywords',
 					content:
-						'moon, repo, build, system, ci, times, devx, developer, experience, tooling, tools, monorepo, polyrepo',
+						'moon, repo, build, system, ci, times, devx, developer, experience, tooling, tools, monorepo, polyrepo, productivity, platform',
 				},
 				{
 					name: 'og:image',

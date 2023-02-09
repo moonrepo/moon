@@ -44,6 +44,7 @@ pub struct ArtifactWriteInput {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ArtifactCompleteInput {
+    pub job_id: Option<i64>,
     pub success: bool,
 }
 

@@ -189,6 +189,7 @@ pub async fn upload_artifact(
     hash: String,
     path: PathBuf,
     upload_url: Option<String>,
+    job_id: Option<i64>,
 ) -> Result<(), MoonbaseError> {
     let file = fs::File::open(&path)
         .await
@@ -219,11 +220,11 @@ pub async fn upload_artifact(
             let status = response.status();
 
             if status.is_success() {
-                mark_upload_complete(&auth_token, &hash, true).await?;
+                mark_upload_complete(&auth_token, &hash, true, job_id).await?;
 
                 Ok(())
             } else {
-                mark_upload_complete(&auth_token, &hash, false).await?;
+                mark_upload_complete(&auth_token, &hash, false, job_id).await?;
 
                 Err(MoonbaseError::ArtifactUploadFailure(
                     hash.to_string(),
@@ -235,7 +236,7 @@ pub async fn upload_artifact(
             }
         }
         Err(error) => {
-            mark_upload_complete(&auth_token, &hash, false).await?;
+            mark_upload_complete(&auth_token, &hash, false, job_id).await?;
 
             Err(MoonbaseError::ArtifactUploadFailure(
                 hash.to_string(),
@@ -251,10 +252,11 @@ async fn mark_upload_complete(
     auth_token: &str,
     hash: &str,
     success: bool,
+    job_id: Option<i64>,
 ) -> Result<(), MoonbaseError> {
     let _: Response<EmptyData> = post_request(
         format!("artifacts/{}/complete", hash),
-        ArtifactCompleteInput { success },
+        ArtifactCompleteInput { job_id, success },
         Some(auth_token),
     )
     .await?;

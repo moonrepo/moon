@@ -25,6 +25,7 @@ const ciFeatures: Feature[] = [
 		icon: faTimeline,
 		description:
 			'Track CI runs to detect flakiness, regressions, and time spent on task execution.',
+		status: 'in-development',
 	},
 	{
 		title: 'Remote distribution',

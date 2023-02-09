@@ -75,7 +75,7 @@ export default function ProductSection({
 							{items && (
 								<ul className="flex flex-col gap-4 m-0 p-0">
 									{items.map((item) => (
-										<li className="relative list-none pl-5">
+										<li key={item.title} className="relative list-none pl-5">
 											<Heading level={5} className="mb-1">
 												{item.title}
 											</Heading>

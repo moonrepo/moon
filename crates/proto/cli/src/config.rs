@@ -1,11 +1,12 @@
+use clap::ValueEnum;
 use proto::{ProtoError, ToolType};
 use rustc_hash::FxHashMap;
 use std::{fs, path::Path};
-use toml::Value;
+use toml::{map::Map, Value};
 
 pub const CONFIG_NAME: &str = ".prototools";
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Config {
     pub tools: FxHashMap<ToolType, String>,
 }
@@ -42,5 +43,23 @@ impl Config {
         }
 
         Ok(Config { tools })
+    }
+
+    pub fn save(&self, path: &Path) -> Result<(), ProtoError> {
+        let mut map = Map::with_capacity(self.tools.len());
+
+        for (tool, version) in &self.tools {
+            map.insert(
+                tool.to_possible_value().unwrap().get_name().to_owned(),
+                Value::String(version.to_owned()),
+            );
+        }
+
+        let data = toml::to_string_pretty(&Value::Table(map))
+            .map_err(|e| ProtoError::Toml(path.to_path_buf(), e.to_string()))?;
+
+        fs::write(path, data).map_err(|e| ProtoError::Fs(path.to_path_buf(), e.to_string()))?;
+
+        Ok(())
     }
 }

@@ -56,14 +56,14 @@ export default function ProductSection({
 								<div>{logo}</div>
 
 								<div className="self-center">
-									<Heading level={2} className="mt-1">
+									<Heading level={2} className="mt-1 text-slate-900">
 										{title}
 									</Heading>
 								</div>
 							</div>
 
 							<p className={children ? 'my-4' : 'mt-3'}>
-								<Text as="span" size="lg">
+								<Text as="span" size="lg" className="text-slate-900">
 									{description}
 								</Text>
 							</p>
@@ -76,11 +76,11 @@ export default function ProductSection({
 								<ul className="flex flex-col gap-4 m-0 p-0">
 									{items.map((item) => (
 										<li key={item.title} className="relative list-none pl-5">
-											<Heading level={5} className="mb-1">
+											<Heading level={5} className="mb-1 text-slate-900">
 												{item.title}
 											</Heading>
 
-											<p className="m-0">{item.description}</p>
+											<p className="m-0 text-slate-900">{item.description}</p>
 
 											<div className="absolute top-1 left-0">
 												<Icon

@@ -48,7 +48,7 @@ function Tier({ children, cta, items, title }: TierProps) {
 
 export default function Pricing() {
 	return (
-		<div id="pricing" className="relative py-4 sm:py-5 lg:py-6">
+		<div id="pricing" className="relative py-4 sm:py-5 lg:py-6 bg-white text-slate-900">
 			<div className="mx-auto max-w-md px-2 sm:max-w-3xl sm:px-3 lg:max-w-7xl lg:px-4">
 				<div className="text-center mb-4">
 					<Heading level={2}>Pricing</Heading>

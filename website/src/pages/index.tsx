@@ -14,7 +14,7 @@ export default function Home() {
 	return (
 		<Layout
 			title={siteConfig.tagline}
-			description="From build to deploy, moonrepo is a better way to manage codebases, save costs, and boost your business."
+			description="From build to deploy, moonrepo is a better way to manage codebases, save developer time, and boost your business."
 		>
 			<div className="bg-gradient-to-b from-slate-900 to-slate-600">
 				<div className="max-w-7xl mx-auto py-10 px-4 pb-6 sm:py-12 sm:px-6 md:py-14 lg:py-16 lg:px-8 xl:py-20 flex flex-col justify-center items-center">

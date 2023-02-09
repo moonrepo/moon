@@ -2336,7 +2336,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@docusaurus/theme-classic@npm:2.3.1":
+"@docusaurus/theme-classic@npm:^2.3.1":
   version: 2.3.1
   resolution: "@docusaurus/theme-classic@npm:2.3.1"
   dependencies:
@@ -2369,6 +2369,42 @@ __metadata:
     react: ^16.8.4 || ^17.0.0
     react-dom: ^16.8.4 || ^17.0.0
   checksum: 273812924fc29b2316aff554ae0302509ebeaca5aa829b58253e74d22a66e69444f1c324a2d5e8e170e6c6f27dd0d6927e6c6a22a7e0c14567ff777d04a5b0c1
+  languageName: node
+  linkType: hard
+
+"@docusaurus/theme-classic@patch:@docusaurus/theme-classic@npm%3A^2.3.1#./.yarn/patches/@docusaurus-theme-classic-npm-2.3.1-d99c2c58f1.patch::locator=moon%40workspace%3A.":
+  version: 2.3.1
+  resolution: "@docusaurus/theme-classic@patch:@docusaurus/theme-classic@npm%3A2.3.1#./.yarn/patches/@docusaurus-theme-classic-npm-2.3.1-d99c2c58f1.patch::version=2.3.1&hash=db4126&locator=moon%40workspace%3A."
+  dependencies:
+    "@docusaurus/core": 2.3.1
+    "@docusaurus/mdx-loader": 2.3.1
+    "@docusaurus/module-type-aliases": 2.3.1
+    "@docusaurus/plugin-content-blog": 2.3.1
+    "@docusaurus/plugin-content-docs": 2.3.1
+    "@docusaurus/plugin-content-pages": 2.3.1
+    "@docusaurus/theme-common": 2.3.1
+    "@docusaurus/theme-translations": 2.3.1
+    "@docusaurus/types": 2.3.1
+    "@docusaurus/utils": 2.3.1
+    "@docusaurus/utils-common": 2.3.1
+    "@docusaurus/utils-validation": 2.3.1
+    "@mdx-js/react": ^1.6.22
+    clsx: ^1.2.1
+    copy-text-to-clipboard: ^3.0.1
+    infima: 0.2.0-alpha.42
+    lodash: ^4.17.21
+    nprogress: ^0.2.0
+    postcss: ^8.4.14
+    prism-react-renderer: ^1.3.5
+    prismjs: ^1.28.0
+    react-router-dom: ^5.3.3
+    rtlcss: ^3.5.0
+    tslib: ^2.4.0
+    utility-types: ^3.10.0
+  peerDependencies:
+    react: ^16.8.4 || ^17.0.0
+    react-dom: ^16.8.4 || ^17.0.0
+  checksum: a0b79a3316eab394e548049b6dcb6787a9400143bd58494ed8025dd5fc571a4e33b9eee7a5705d58c5af0b554b926f57ef6bdcedebc997da9001fcc2ba440a20
   languageName: node
   linkType: hard
 

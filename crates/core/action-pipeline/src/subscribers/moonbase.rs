@@ -1,9 +1,10 @@
-use moon_action::ActionStatus;
+use moon_action::{ActionNode, ActionStatus};
 use moon_cache::get_cache_mode;
 use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_error::MoonError;
 use moon_logger::{color, debug, error, map_list, trace, warn};
 use moon_pipeline_provider::get_pipeline_environment;
+use moon_platform::Runtime;
 use moon_utils::{async_trait, fs};
 use moon_workspace::Workspace;
 use moonbase::{
@@ -355,8 +356,12 @@ impl Subscriber for MoonbaseSubscriber {
         if moonbase.remote_caching_enabled {
             // We don't want errors to bubble up and crash the program,
             // so instead, we log the error (as a warning) to the console!
-            fn handle_error(error: MoonbaseError) {
-                warn!(target: LOG_TARGET, "{}", error.to_string());
+            fn log_failure(error: MoonbaseError) {
+                warn!(
+                    target: LOG_TARGET,
+                    "Remote caching failure: {}",
+                    error.to_string()
+                );
             }
 
             match event {
@@ -373,7 +378,7 @@ impl Subscriber for MoonbaseSubscriber {
                                 // Not remote cached
                             }
                             Err(error) => {
-                                handle_error(error);
+                                log_failure(error);
 
                                 // Fallthrough and check local cache
                             }
@@ -423,6 +428,12 @@ impl Subscriber for MoonbaseSubscriber {
                                 let auth_token = moonbase.auth_token.to_owned();
                                 let archive_path = archive_path.to_owned();
 
+                                // Create a fake action label so that we can check the CI cache
+                                let action_label =
+                                    ActionNode::RunTarget(Runtime::System, target.id.to_owned())
+                                        .label();
+                                let job_id = self.job_ids.get(&action_label).cloned();
+
                                 // Run this in the background so we don't slow down the pipeline
                                 // while waiting for very large archives to upload
                                 self.requests.push(tokio::spawn(async move {
@@ -431,15 +442,16 @@ impl Subscriber for MoonbaseSubscriber {
                                         hash,
                                         archive_path,
                                         presigned_url,
+                                        job_id,
                                     )
                                     .await
                                     {
-                                        handle_error(error);
+                                        log_failure(error);
                                     }
                                 }));
                             }
                             Err(error) => {
-                                handle_error(error);
+                                log_failure(error);
                             }
                         }
                     }
@@ -463,7 +475,7 @@ impl Subscriber for MoonbaseSubscriber {
                                 .download_artifact(hash, &archive_file, download_url)
                                 .await
                             {
-                                handle_error(error);
+                                log_failure(error);
                             }
 
                             // Fallthrough to local cache to handle the actual hydration

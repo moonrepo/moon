@@ -22,15 +22,15 @@ struct App {
     command: Commands,
 }
 
-// TODO: alias, unalias, shell completions, local, global
+// TODO: alias, unalias, shell completions, local
 #[derive(Debug, Subcommand)]
 enum Commands {
     #[command(name = "bin", about = "Display the absolute path to a tools binary")]
     Bin {
-        #[arg(required = true, value_enum, help = "Name of tool to display")]
+        #[arg(required = true, value_enum, help = "Type of tool")]
         tool: ToolType,
 
-        #[arg(help = "Version of tool to display")]
+        #[arg(help = "Version of tool")]
         semver: Option<String>,
 
         #[arg(long, help = "Display shim path when available")]
@@ -39,22 +39,31 @@ enum Commands {
 
     #[command(name = "install", about = "Download and install a tool")]
     Install {
-        #[arg(required = true, value_enum, help = "Name of tool to install")]
+        #[arg(required = true, value_enum, help = "Type of tool")]
         tool: ToolType,
 
-        #[arg(default_value = "latest", help = "Version of tool to install")]
+        #[arg(default_value = "latest", help = "Version of tool")]
         semver: Option<String>,
+    },
+
+    #[command(name = "global", about = "Set the global default version of a tool")]
+    Global {
+        #[arg(required = true, value_enum, help = "Type of tool")]
+        tool: ToolType,
+
+        #[arg(required = true, help = "Version of tool")]
+        semver: String,
     },
 
     #[command(name = "list", alias = "ls", about = "List installed versions")]
     List {
-        #[arg(required = true, value_enum, help = "Name of tool to list")]
+        #[arg(required = true, value_enum, help = "Type of tool")]
         tool: ToolType,
     },
 
     #[command(name = "list-remote", alias = "lsr", about = "List available versions")]
     ListRemote {
-        #[arg(required = true, value_enum, help = "Name of tool to list")]
+        #[arg(required = true, value_enum, help = "Type of tool")]
         tool: ToolType,
     },
 
@@ -63,10 +72,10 @@ enum Commands {
         about = "Run a tool after detecting a version from the environment"
     )]
     Run {
-        #[arg(required = true, value_enum, help = "Name of tool to run")]
+        #[arg(required = true, value_enum, help = "Type of tool")]
         tool: ToolType,
 
-        #[arg(help = "Version of tool to run")]
+        #[arg(help = "Version of tool")]
         semver: Option<String>,
 
         // Passthrough args (after --)
@@ -79,7 +88,7 @@ enum Commands {
 
     #[command(name = "uninstall", about = "Uninstall a tool")]
     Uninstall {
-        #[arg(required = true, value_enum, help = "Name of tool to uninstall")]
+        #[arg(required = true, value_enum, help = "Type of tool to uninstall")]
         tool: ToolType,
 
         #[arg(required = true, help = "Version of tool to uninstall")]
@@ -96,6 +105,7 @@ async fn main() {
     let result = match app.command {
         Commands::Bin { tool, semver, shim } => commands::bin(tool, semver, shim).await,
         Commands::Install { tool, semver } => commands::install(tool, semver).await,
+        Commands::Global { tool, semver } => commands::global(tool, semver).await,
         Commands::List { tool } => commands::list(tool).await,
         Commands::ListRemote { tool } => commands::list_remote(tool).await,
         Commands::Run {

@@ -1,7 +1,14 @@
 use crate::config::{Config, CONFIG_NAME};
 use log::{debug, trace};
 use proto::{color, get_tools_dir, load_version_file, ProtoError, Tool, ToolType};
-use std::{env, path::Path};
+use std::{
+    env,
+    path::{Path, PathBuf},
+};
+
+pub fn get_global_version_path<'l>(tool: &Box<dyn Tool<'l>>) -> Result<PathBuf, ProtoError> {
+    Ok(get_tools_dir()?.join(tool.get_bin_name()).join("version"))
+}
 
 pub async fn detect_version_from_environment<'l>(
     tool: &Box<dyn Tool<'l>>,
@@ -104,7 +111,7 @@ pub async fn detect_version_from_environment<'l>(
             "Attempting to find global version"
         );
 
-        let global_file = get_tools_dir()?.join(tool.get_bin_name()).join("version");
+        let global_file = get_global_version_path(&tool)?;
 
         if global_file.exists() {
             let global_version = load_version_file(&global_file)?;

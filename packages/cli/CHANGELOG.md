@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- Moved `moon query projects` JSON output behind a `--json` flag.
+- Moved `moon query touched-files` JSON output behind a `--json` flag.
+
 #### 🚀 Updates
 
 - Added a `moon completions` command for generating shell completions.
@@ -9,6 +14,8 @@
   tasks.
 - Added [TypeScript v5](https://devblogs.microsoft.com/typescript/announcing-typescript-5-0-beta/)
   support.
+- Updated `moon query projects` and `moon query touched-files` default output to be easily readable
+  and parseable.
 
 #### ⚙️ Internal
 

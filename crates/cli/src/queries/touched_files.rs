@@ -15,6 +15,7 @@ pub struct QueryTouchedFilesOptions {
     pub base: String,
     pub default_branch: bool,
     pub head: String,
+    pub json: bool,
     pub local: bool,
     #[serde(skip)]
     pub log: bool,

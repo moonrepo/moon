@@ -2234,6 +2234,7 @@ name = "moon_cli"
 version = "0.23.4"
 dependencies = [
  "clap 4.1.4",
+ "clap_complete",
  "clap_lex 0.3.0",
  "console",
  "dialoguer",

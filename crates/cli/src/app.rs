@@ -4,6 +4,7 @@ use crate::commands::bin::BinTool;
 use crate::commands::init::InitTool;
 use crate::enums::{CacheMode, LogLevel, TouchedStatus};
 use clap::{Parser, Subcommand};
+use clap_complete::Shell;
 use moon_action_context::ProfileType;
 use moon_config::{FileGlob, ProjectID};
 use moon_task::TargetID;
@@ -130,6 +131,15 @@ pub enum QueryCommands {
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {
+    #[command(
+        name = "completions",
+        about = "Generate command completions for your current shell."
+    )]
+    Completions {
+        #[arg(long, help = "Shell to generate for")]
+        shell: Option<Shell>,
+    },
+
     // ENVIRONMENT
 
     // moon init

@@ -4,9 +4,9 @@ use clap_complete::{generate, Shell};
 use proto::ProtoError;
 
 pub async fn completions(shell: Option<Shell>) -> Result<(), ProtoError> {
-    let Some(shell) = shell.or_else(|| Shell::from_env()) else {
-			return Err(ProtoError::UnsupportedShell);
-		};
+    let Some(shell) = shell.or_else(Shell::from_env) else {
+      return Err(ProtoError::UnsupportedShell);
+    };
 
     let mut app = App::command();
     let mut stdio = std::io::stdout();

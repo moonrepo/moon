@@ -24,7 +24,7 @@ pub struct App {
 pub enum Commands {
     #[command(
         name = "bin",
-        about = "Display the absolute path to a tools binary",
+        about = "Display the absolute path to a tools binary.",
         long_about = "Display the absolute path to a tools binary. If no version is provided,\nit will detected from the current environment."
     )]
     Bin {
@@ -40,7 +40,7 @@ pub enum Commands {
 
     #[command(
         name = "completions",
-        about = "Generate command completions for your current shell"
+        about = "Generate command completions for your current shell."
     )]
     Completions {
         #[arg(long, help = "Shell to generate for")]
@@ -49,7 +49,7 @@ pub enum Commands {
 
     #[command(
         name = "install",
-        about = "Download and install a tool",
+        about = "Download and install a tool.",
         long_about = "Download and install a tool by unpacking the archive to ~/.proto/tools."
     )]
     Install {
@@ -62,7 +62,7 @@ pub enum Commands {
 
     #[command(
         name = "global",
-        about = "Set the global default version of a tool",
+        about = "Set the global default version of a tool.",
         long_about = "Set the global default version of a tool. This will create a version file in the ~/.proto/tools installation directory."
     )]
     Global {
@@ -76,7 +76,7 @@ pub enum Commands {
     #[command(
         name = "list",
         alias = "ls",
-        about = "List installed versions",
+        about = "List installed versions.",
         long_about = "List installed versions by scanning the ~/.proto/tools directory for possible versions."
     )]
     List {
@@ -97,7 +97,7 @@ pub enum Commands {
 
     #[command(
         name = "local",
-        about = "Set the local version of a tool",
+        about = "Set the local version of a tool.",
         long_about = "Set the local version of a tool. This will create a .prototools file (if it does not exist)\nin the current working directory with the appropriate tool and version."
     )]
     Local {
@@ -110,7 +110,7 @@ pub enum Commands {
 
     #[command(
         name = "run",
-        about = "Run a tool after detecting a version from the environment",
+        about = "Run a tool after detecting a version from the environment.",
         long_about = "Run a tool after detecting a version from the environment. In order of priority,\na version will be resolved from a provided CLI argument, a PROTO_VERSION environment variable,\na local version file (.prototools), and lastly a global version file (~/.proto/tools/version).\n\nIf no version can be found, the program will exit with an error."
     )]
     Run {
@@ -130,7 +130,7 @@ pub enum Commands {
 
     #[command(
         name = "uninstall",
-        about = "Uninstall a tool",
+        about = "Uninstall a tool.",
         long_about = "Uninstall a tool and remove the installation from ~/.proto/tools."
     )]
     Uninstall {

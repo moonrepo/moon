@@ -48,6 +48,9 @@ pub enum ProtoError {
     #[error("Unable to install {0}, unsupported platform {1}.")]
     UnsupportedPlatform(String, String),
 
+    #[error("Unable to detect shell.")]
+    UnsupportedShell,
+
     #[error("Tool {0} is unknown or unsupported.")]
     UnsupportedTool(String),
 

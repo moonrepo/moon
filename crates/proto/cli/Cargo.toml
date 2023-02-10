@@ -17,6 +17,7 @@ proto_error = { path = "../error" }
 proto_node = { path = "../node" }
 proto_go = { path = "../go" }
 clap = { workspace = true, features = ["derive"] }
+clap_complete = { workspace = true }
 env_logger = "0.10.0"
 human-sort = "0.2.2"
 log = "0.4.17"

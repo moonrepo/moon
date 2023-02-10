@@ -541,6 +541,10 @@ impl<'a> Runner<'a> {
         let is_real_ci = is_ci() && !is_test_env();
         let output;
 
+        // When a task is configured as local (no caching), or the interactive flag is passed,
+        // we don't "capture" stdout/stderr (which breaks stdin) and let it stream natively.
+        let is_interactive = !self.task.options.cache || context.interactive;
+
         // When the primary target, always stream the output for a better developer experience.
         // However, transitive targets can opt into streaming as well.
         let should_stream_output = if let Some(output_style) = &self.task.options.output_style {
@@ -568,7 +572,7 @@ impl<'a> Runner<'a> {
                     command.set_prefix(prefix, primary_longest_width);
                 }
 
-                if context.interactive {
+                if is_interactive {
                     command.exec_stream_output().await
                 } else {
                     command.exec_stream_and_capture_output().await

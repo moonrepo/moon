@@ -304,7 +304,7 @@ fn gather_variables(
     Ok(context)
 }
 
-pub async fn generate(name: &str, options: GenerateOptions) -> Result<(), AnyError> {
+pub async fn generate(name: String, options: GenerateOptions) -> Result<(), AnyError> {
     let workspace = load_workspace().await?;
     let generator = Generator::load(&workspace.root, &workspace.config.generator)?;
     let theme = create_theme();
@@ -312,7 +312,7 @@ pub async fn generate(name: &str, options: GenerateOptions) -> Result<(), AnyErr
 
     // This is a special case for creating a new template with the generator itself!
     if options.template {
-        let template = generator.create_template(name)?;
+        let template = generator.create_template(&name)?;
 
         println!(
             "Created a new template {} at {}",
@@ -328,7 +328,7 @@ pub async fn generate(name: &str, options: GenerateOptions) -> Result<(), AnyErr
     }
 
     // Create the template instance
-    let mut template = generator.load_template(name)?;
+    let mut template = generator.load_template(&name)?;
     let term = Term::buffered_stdout();
 
     term.write_line("")?;

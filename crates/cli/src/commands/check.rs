@@ -13,7 +13,7 @@ pub struct CheckOptions {
 
 const LOG_TARGET: &str = "moon:check";
 
-pub async fn check(project_ids: &Vec<String>, options: CheckOptions) -> Result<(), AnyError> {
+pub async fn check(project_ids: Vec<String>, options: CheckOptions) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;
     let project_graph = generate_project_graph(&mut workspace).await?;
     let mut projects: Vec<&Project> = vec![];
@@ -34,7 +34,7 @@ pub async fn check(project_ids: &Vec<String>, options: CheckOptions) -> Result<(
             project_ids.join(", ")
         );
 
-        for id in project_ids {
+        for id in &project_ids {
             projects.push(project_graph.get(id)?);
         }
     };

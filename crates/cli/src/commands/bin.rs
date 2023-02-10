@@ -35,7 +35,7 @@ fn not_configured() -> ! {
     safe_exit(BinExitCodes::NotConfigured as i32);
 }
 
-pub async fn bin(tool_type: &BinTool) -> Result<(), AnyError> {
+pub async fn bin(tool_type: BinTool) -> Result<(), AnyError> {
     let workspace = load_workspace().await?;
 
     match tool_type {

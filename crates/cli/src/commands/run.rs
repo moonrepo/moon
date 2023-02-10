@@ -17,6 +17,7 @@ pub struct RunOptions {
     pub affected: bool,
     pub concurrency: Option<usize>,
     pub dependents: bool,
+    pub interactive: bool,
     pub status: Vec<TouchedStatus>,
     pub passthrough: Vec<String>,
     pub profile: Option<ProfileType>,
@@ -92,6 +93,14 @@ pub async fn run_target(
         return Ok(());
     }
 
+    // Interactive can only run against 1 task
+    if options.interactive && primary_targets.len() > 1 {
+        return Err(
+            "Only 1 target can be ran as interactive. Requires a fully qualified project target."
+                .into(),
+        );
+    }
+
     // Run dependents for all primary targets
     if options.dependents {
         for target in &primary_targets {
@@ -103,6 +112,7 @@ pub async fn run_target(
     let context = ActionContext {
         affected_only: options.affected,
         initial_targets: FxHashSet::from_iter(target_ids.to_owned()),
+        interactive: options.interactive,
         passthrough_args: options.passthrough,
         primary_targets: FxHashSet::from_iter(primary_targets),
         profile: options.profile,

@@ -46,6 +46,32 @@ tasks:
 > This setting is _extremely useful_ for projects that contain multiple languages. Even more so once
 > we land Bun and Deno support, as we'll need a way to differentiate JavaScript/TypeScript projects!
 
+## Interactive tasks
+
+When moon executes a task, it streams both stdout and stderr to the terminal _and_ captures the
+output for later use. We do this 2 reasons:
+
+- We store stdout.log and stderr.log files in the tarball archive.
+- We replay this captured output when executing a task that has been cached.
+
+While this works, our approach is non-standard. Streams are either piped or inherited, not both!
+Because of our custom abstraction around streams and output capturing, it disrupts stdin, breaking
+all interactive commands. If you tried to run a task that prompted you with a question and were
+unable to answer it, this is why!
+
+To remedy this shortcoming, we're approaching this from 2 angles. The first is all tasks marked as
+[`local`](/docs/config/project#local) (or have caching disabled) will no longer capture streamed
+output, and will instead stream natively, allowing interactivity out of the box. This will cover the
+majority of use cases.
+
+For the remaining use cases, we're introducing a new `--interactive` flag for
+[`moon run`](/docs/commands/run). When this flag is provided, it will force the target into an
+interactive mode.
+
+```shell
+$ moon run app:new --interactive
+```
+
 ## Improved `moon query` commands (breaking)
 
 The [`moon query projects`](/docs/commands/query/projects) and

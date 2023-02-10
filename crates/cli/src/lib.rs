@@ -111,7 +111,7 @@ pub async fn run_cli() {
             update_cache,
         } => {
             check(
-                ids,
+                &ids,
                 CheckOptions {
                     all,
                     concurrency: args.concurrency,

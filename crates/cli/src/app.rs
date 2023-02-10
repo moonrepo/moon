@@ -90,6 +90,9 @@ pub enum QueryCommands {
         #[arg(long, help = "Filter projects that match this ID")]
         id: Option<String>,
 
+        #[arg(long, help = "Print the projects in JSON format")]
+        json: bool,
+
         #[arg(long, help = "Filter projects of this programming language")]
         language: Option<String>,
 
@@ -120,6 +123,9 @@ pub enum QueryCommands {
 
         #[arg(long, help = "Current branch, commit, or revision to compare with")]
         head: Option<String>,
+
+        #[arg(long, help = "Print the files in JSON format")]
+        json: bool,
 
         #[arg(long, help = "Gather files from you local state instead of the remote")]
         local: bool,

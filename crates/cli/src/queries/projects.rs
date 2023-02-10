@@ -11,8 +11,12 @@ use moon_project::Project;
 use moon_task::TouchedFilePaths;
 use moon_utils::{is_ci, regex};
 use moon_workspace::{Workspace, WorkspaceError};
+use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
-use std::io::{stdin, Read};
+use std::{
+    io::{stdin, Read},
+    path::PathBuf,
+};
 
 const LOG_TARGET: &str = "moon:query:projects";
 
@@ -21,6 +25,7 @@ pub struct QueryProjectsOptions {
     pub alias: Option<String>,
     pub affected: bool,
     pub id: Option<String>,
+    pub json: bool,
     pub language: Option<String>,
     pub source: Option<String>,
     pub tasks: Option<String>,
@@ -57,10 +62,19 @@ async fn load_touched_files(workspace: &Workspace) -> Result<TouchedFilePaths, W
 
     // If piped via stdin, parse and use it
     if !buffer.is_empty() {
-        let result: QueryTouchedFilesResult =
-            serde_json::from_str(&buffer).map_err(|e| MoonError::Generic(e.to_string()))?;
+        // As JSON
+        if buffer.starts_with('{') {
+            let result: QueryTouchedFilesResult =
+                serde_json::from_str(&buffer).map_err(|e| MoonError::Generic(e.to_string()))?;
 
-        return Ok(result.files);
+            return Ok(result.files);
+
+            // As lines
+        } else {
+            let files = FxHashSet::from_iter(buffer.split('\n').map(PathBuf::from));
+
+            return Ok(files);
+        }
     }
 
     query_touched_files(

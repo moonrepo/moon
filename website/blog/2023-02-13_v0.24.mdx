@@ -46,6 +46,38 @@ tasks:
 > This setting is _extremely useful_ for projects that contain multiple languages. Even more so once
 > we land Bun and Deno support, as we'll need a way to differentiate JavaScript/TypeScript projects!
 
+## Improved `moon query` commands (breaking)
+
+The [`moon query projects`](/docs/commands/query/projects) and
+[`moon query touched-files`](/docs/commands/query/touched-files) commands are useful for building
+custom solutions and integrations on top of moon, but they weren't developer friendly as they output
+large JSON blobs. To remedy this, we've updated both commands to output a simple human readable
+format by default, and moved the JSON output behind a `--json` flag.
+
+For example, `moon query touched-files` now outputs a list of absolute file paths separated by new
+lines.
+
+```
+/moon/website/docs/commands/query/projects.mdx
+/moon/crates/cli/tests/query_test.rs
+/moon/crates/cli/src/commands/query.rs
+/moon/website/blog/2023-02-13_v0.24.mdx
+```
+
+While `moon query projects` now outputs a list of project separated by new lines, where each line
+contains the project name, source, type, and language.
+
+```
+report | packages/report | library | typescript
+runtime | packages/runtime | library | typescript
+types | packages/types | library | typescript
+visualizer | packages/visualizer | library | typescript
+website | website | application | typescript
+```
+
+We had 2 goals in mind for this change, the first was to make it easily readable, and the second was
+for the default output to be easily parseable. We believe we've accomplished these goals!
+
 ## Shell completions
 
 Auto-completion in your terminal increases productivity, which we're a massive fan of. To help

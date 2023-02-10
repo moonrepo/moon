@@ -42,6 +42,7 @@ moon_utils = { path = "../core/utils" }
 moon_vcs = { path = "../core/vcs" }
 moon_workspace = { path = "../core/workspace" }
 clap = { workspace = true, features = ["derive", "env", "wrap_help"] }
+clap_complete = { workspace = true }
 clap_lex = "0.3.0"
 console = { workspace = true }
 # console-subscriber = "0.1.8"

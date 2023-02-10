@@ -1,4 +1,5 @@
 mod bin;
+mod completions;
 mod global;
 mod install;
 mod list;
@@ -8,6 +9,7 @@ mod run;
 mod uninstall;
 
 pub use bin::*;
+pub use completions::*;
 pub use global::*;
 pub use install::*;
 pub use list::*;

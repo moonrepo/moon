@@ -8,6 +8,7 @@ use crate::commands::bin::bin;
 use crate::commands::check::{check, CheckOptions};
 use crate::commands::ci::{ci, CiOptions};
 use crate::commands::clean::{clean, CleanOptions};
+use crate::commands::completions;
 use crate::commands::docker;
 use crate::commands::generate::{generate, GenerateOptions};
 use crate::commands::graph::{dep::dep_graph, project::project_graph};
@@ -125,6 +126,7 @@ pub async fn run_cli() {
             })
             .await
         }
+        Commands::Completions { shell } => completions::completions(*shell).await,
         Commands::DepGraph { target, dot, json } => dep_graph(target, *dot, *json).await,
         Commands::Docker { command } => match command {
             DockerCommands::Prune => docker::prune().await,

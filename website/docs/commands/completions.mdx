@@ -1,0 +1,15 @@
+---
+title: completions
+---
+
+The `moon completions` command will generate moon command and argument completions for your current
+shell. This command will write to stdout, which can then be redirected to a file of your choice.
+
+```shell
+$ moon completions > ~/.bash_completion.d/moon.sh
+```
+
+### Options
+
+- `--shell` - Shell to explicitly generate for. Accepts "bash", "elvish", "fish", "powershell", or
+  "zsh".

@@ -4,6 +4,7 @@
 
 #### 🚀 Updates
 
+- Added a `moon completions` command for generating shell completions.
 - Added a `platform` setting to `moon.yml`, allowing the default platform to be defined for all
   tasks.
 - Added [TypeScript v5](https://devblogs.microsoft.com/typescript/announcing-typescript-5-0-beta/)

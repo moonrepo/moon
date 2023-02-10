@@ -78,6 +78,7 @@ const sidebars = {
 				'commands/ci',
 				'commands/check',
 				'commands/clean',
+				'commands/completions',
 				'commands/dep-graph',
 				{
 					type: 'category',

@@ -46,6 +46,19 @@ tasks:
 > This setting is _extremely useful_ for projects that contain multiple languages. Even more so once
 > we land Bun and Deno support, as we'll need a way to differentiate JavaScript/TypeScript projects!
 
+## Shell completions
+
+Auto-completion in your terminal increases productivity, which we're a massive fan of. To help
+support this, we're introducing the [`moon completions`](/docs/commands/completions) command, which
+generates the appropriate command completions for your current shell.
+
+This command writes to stdout, which can then be redirected to a file of your choice. Be sure to
+configure your shell profile to load the completions!
+
+```shell
+$ moon completions > ~/.bash_completion.d/moon.sh
+```
+
 ## Other changes
 
 View the
@@ -59,4 +72,4 @@ full list of changes.
 
 Expect the following in the v0.25 release!
 
--
+- Deno tier 2 support!

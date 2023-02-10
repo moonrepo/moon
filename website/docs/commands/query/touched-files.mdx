@@ -31,7 +31,15 @@ $ moon query touched-files --status deleted
 $ moon query touched-files --base <branch> --head <commit>
 ```
 
-This will return a list of absolute file paths with the following stsructure:
+By default, this will output a list of absolute file paths, separated by new lines.
+
+```
+/absolute/file/one.ts
+/absolute/file/two.ts
+```
+
+The files can also be output in JSON by passing the `--json` option. The output has the following
+structure:
 
 ```ts
 {
@@ -46,6 +54,7 @@ This will return a list of absolute file paths with the following stsructure:
 - `--base <rev>` - Base branch, commit, or revision to compare against. Defaults to
   [`vcs.defaultBranch`](../../config/workspace#defaultbranch).
 - `--head <rev>` - Current branch, commit, or revision to compare with. Defaults to `HEAD`.
+- `--json` - Display the files in JSON format.
 - `--local` - Gather files from you local state instead of remote.
 - `--status <type>` - Filter files based on a touched status. Can be passed multiple times.
   - Types: `all` (default), `added`, `deleted`, `modified`, `staged`, `unstaged`, `untracked`

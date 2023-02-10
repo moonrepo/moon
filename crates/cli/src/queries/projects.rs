@@ -21,6 +21,7 @@ pub struct QueryProjectsOptions {
     pub alias: Option<String>,
     pub affected: bool,
     pub id: Option<String>,
+    pub json: bool,
     pub language: Option<String>,
     pub source: Option<String>,
     pub tasks: Option<String>,

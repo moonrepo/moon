@@ -264,7 +264,7 @@ mod touched_files {
 
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("query").arg("touched-files").args([
-                "--base", "master", "--head", "branch", "--status", "deleted",
+                "--base", "master", "--head", "branch", "--status", "deleted", "--json",
             ]);
         });
 
@@ -290,7 +290,7 @@ mod touched_files {
 
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("query").arg("touched-files").args([
-                "--status", "deleted", "--status", "added", "--status", "modified",
+                "--status", "deleted", "--status", "added", "--status", "modified", "--json",
             ]);
         });
 

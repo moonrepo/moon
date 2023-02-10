@@ -25,16 +25,29 @@ pub async fn projects(options: &QueryProjectsOptions) -> Result<(), AnyError> {
 
 pub async fn touched_files(options: &mut QueryTouchedFilesOptions) -> Result<(), AnyError> {
     let workspace = load_workspace().await?;
-
-    let result = QueryTouchedFilesResult {
-        files: query_touched_files(&workspace, options).await?,
-        options: options.clone(),
-    };
+    let files = query_touched_files(&workspace, options).await?;
 
     // Write to stdout directly to avoid broken pipe panics
     let mut stdout = io::stdout().lock();
 
-    writeln!(stdout, "{}", serde_json::to_string_pretty(&result)?)?;
+    if options.json {
+        let result = QueryTouchedFilesResult {
+            files,
+            options: options.to_owned(),
+        };
+
+        writeln!(stdout, "{}", serde_json::to_string_pretty(&result)?)?;
+    } else {
+        writeln!(
+            stdout,
+            "{}",
+            files
+                .iter()
+                .map(|f| f.to_string_lossy())
+                .collect::<Vec<_>>()
+                .join("\n")
+        )?;
+    }
 
     Ok(())
 }

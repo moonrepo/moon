@@ -619,55 +619,110 @@ mod resolve_outputs {
     use super::*;
 
     #[test]
-    #[should_panic(expected = "InvalidTokenContext(\"@dirs\", \"outputs\")")]
-    fn doesnt_support_dirs() {
+    fn supports_dirs() {
         let workspace_root = get_workspace_root();
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Outputs, &project, &workspace_root);
         let task = create_task(None);
 
-        resolver
-            .resolve(&string_vec!["@dirs(static)"], &task)
-            .unwrap();
+        assert_eq!(
+            resolver
+                .resolve(&string_vec!["@dirs(static)"], &task)
+                .unwrap(),
+            (
+                vec![project.root.join("dir"), project.root.join("dir/subdir")],
+                vec![]
+            )
+        );
     }
 
     #[test]
-    #[should_panic(expected = "InvalidTokenContext(\"@files\", \"outputs\")")]
-    fn doesnt_support_files() {
+    fn supports_dirs_with_globs() {
         let workspace_root = get_workspace_root();
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Outputs, &project, &workspace_root);
         let task = create_task(None);
 
-        resolver
+        assert_eq!(
+            resolver
+                .resolve(&string_vec!["@dirs(dirs_glob)"], &task)
+                .unwrap(),
+            (
+                vec![project.root.join("dir"), project.root.join("dir/subdir")],
+                vec![]
+            )
+        );
+    }
+
+    #[test]
+    fn supports_files() {
+        let workspace_root = get_workspace_root();
+        let project = create_project(&workspace_root);
+        let resolver = TokenResolver::new(TokenContext::Outputs, &project, &workspace_root);
+        let task = create_task(None);
+
+        let mut files = resolver
             .resolve(&string_vec!["@files(static)"], &task)
             .unwrap();
+        files.0.sort();
+
+        assert_eq!(
+            files,
+            (
+                vec![
+                    project.root.join("dir/other.tsx"),
+                    project.root.join("dir/subdir/another.ts"),
+                    project.root.join("file.ts"),
+                ],
+                vec![]
+            )
+        );
     }
 
     #[test]
-    #[should_panic(expected = "InvalidTokenContext(\"@globs\", \"outputs\")")]
-    fn doesnt_support_globs() {
+    fn supports_files_with_globs() {
         let workspace_root = get_workspace_root();
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Outputs, &project, &workspace_root);
         let task = create_task(None);
 
-        resolver
-            .resolve(&string_vec!["@globs(globs)"], &task)
+        let mut files = resolver
+            .resolve(&string_vec!["@files(files_glob)"], &task)
             .unwrap();
+        files.0.sort();
+
+        assert_eq!(
+            files,
+            (
+                vec![
+                    project.root.join("dir/other.tsx"),
+                    project.root.join("dir/subdir/another.ts"),
+                    project.root.join("file.ts"),
+                ],
+                vec![]
+            )
+        );
     }
 
     #[test]
-    #[should_panic(expected = "InvalidTokenContext(\"@group\", \"outputs\")")]
-    fn doesnt_support_group() {
+    fn supports_globs() {
         let workspace_root = get_workspace_root();
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Outputs, &project, &workspace_root);
         let task = create_task(None);
 
-        resolver
-            .resolve(&string_vec!["@group(group)"], &task)
-            .unwrap();
+        assert_eq!(
+            resolver
+                .resolve(&string_vec!["@globs(globs)"], &task)
+                .unwrap(),
+            (
+                vec![],
+                vec![
+                    glob::normalize(project.root.join("**/*.{ts,tsx}")).unwrap(),
+                    glob::normalize(project.root.join("*.js")).unwrap()
+                ]
+            ),
+        );
     }
 
     #[test]
@@ -693,16 +748,18 @@ mod resolve_outputs {
     }
 
     #[test]
-    #[should_panic(expected = "InvalidTokenContext(\"@root\", \"outputs\")")]
-    fn doesnt_support_root() {
+    fn supports_root() {
         let workspace_root = get_workspace_root();
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Outputs, &project, &workspace_root);
         let task = create_task(None);
 
-        resolver
-            .resolve(&string_vec!["@root(static)"], &task)
-            .unwrap();
+        assert_eq!(
+            resolver
+                .resolve(&string_vec!["@root(static)"], &task)
+                .unwrap(),
+            (vec![project.root.join("dir")], vec![]),
+        );
     }
 
     #[test]

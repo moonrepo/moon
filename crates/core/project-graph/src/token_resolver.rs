@@ -52,12 +52,17 @@ impl TokenType {
             | TokenType::Files(_, _)
             | TokenType::Globs(_, _)
             | TokenType::Group(_, _)
-            | TokenType::Root(_, _)
-            | TokenType::Var(_) => {
-                matches!(context, TokenContext::Args) || matches!(context, TokenContext::Inputs)
+            | TokenType::Root(_, _) => {
+                matches!(
+                    context,
+                    TokenContext::Args | TokenContext::Inputs | TokenContext::Outputs
+                )
             }
             TokenType::In(_, _) | TokenType::Out(_, _) => {
                 matches!(context, TokenContext::Args)
+            }
+            TokenType::Var(_) => {
+                matches!(context, TokenContext::Args | TokenContext::Inputs)
             }
         };
 

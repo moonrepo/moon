@@ -292,8 +292,7 @@ pub async fn sync_project(
                         let out_dir = path::to_virtual_string(
                             path::relative_from(cache_route, &project.root).unwrap(),
                         )?;
-
-                        if tsconfig_json.update_compiler_options(|options| {
+                        let updated_options = tsconfig_json.update_compiler_options(|options| {
                             if options.out_dir.is_none()
                                 || options.out_dir.as_ref() != Some(&out_dir)
                             {
@@ -303,7 +302,9 @@ pub async fn sync_project(
                             }
 
                             false
-                        }) {
+                        });
+
+                        if updated_options {
                             mutated_tsconfig = true;
                         }
                     }
@@ -312,9 +313,11 @@ pub async fn sync_project(
                     if typescript_config.sync_project_references_to_paths
                         && !tsconfig_paths.is_empty()
                     {
-                        if tsconfig_json
-                            .update_compiler_options(|options| options.update_paths(tsconfig_paths))
-                        {
+                        let updated_options = tsconfig_json.update_compiler_options(|options| {
+                            options.update_paths(tsconfig_paths)
+                        });
+
+                        if updated_options {
                             mutated_tsconfig = true;
                         }
                     }

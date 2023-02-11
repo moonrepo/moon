@@ -130,8 +130,8 @@ impl TsConfigJson {
     {
         let updated;
 
-        if let Some(mut options) = self.compiler_options.as_mut() {
-            updated = updater(&mut options);
+        if let Some(options) = self.compiler_options.as_mut() {
+            updated = updater(options);
         } else {
             let mut options = CompilerOptions::default();
 

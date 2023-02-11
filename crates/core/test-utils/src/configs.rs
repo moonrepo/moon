@@ -36,6 +36,7 @@ pub fn get_cases_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Inherit
             ("noop".to_owned(), "noop".to_owned()),
             ("files".to_owned(), "files".to_owned()),
             // Runner
+            ("interactive".to_owned(), "interactive".to_owned()),
             ("passthroughArgs".to_owned(), "passthrough-args".to_owned()),
             // Project/task deps
             ("depsA".to_owned(), "deps-a".to_owned()),

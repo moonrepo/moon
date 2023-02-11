@@ -127,7 +127,7 @@ pub fn convert_task(name: String, task: TurboTask) -> TaskConfig {
     config
 }
 
-pub async fn from_turborepo(skip_touched_files_check: &bool) -> Result<(), AnyError> {
+pub async fn from_turborepo(skip_touched_files_check: bool) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;
     let turbo_file = workspace.root.join("turbo.json");
 
@@ -136,7 +136,7 @@ pub async fn from_turborepo(skip_touched_files_check: &bool) -> Result<(), AnyEr
         safe_exit(1);
     }
 
-    if *skip_touched_files_check {
+    if skip_touched_files_check {
         info!("Skipping touched files check.");
     } else {
         check_dirty_repo(&workspace).await?;

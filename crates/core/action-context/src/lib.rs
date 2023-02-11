@@ -17,6 +17,8 @@ pub struct ActionContext {
 
     pub initial_targets: FxHashSet<String>,
 
+    pub interactive: bool,
+
     pub passthrough_args: Vec<String>,
 
     pub primary_targets: FxHashSet<Target>,

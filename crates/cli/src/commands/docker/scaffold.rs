@@ -1,3 +1,4 @@
+use crate::helpers::AnyError;
 use moon::{generate_project_graph, load_workspace};
 use moon_config::{ProjectID, ProjectLanguage};
 use moon_constants::CONFIG_DIRNAME;
@@ -166,10 +167,7 @@ fn scaffold_sources(
     Ok(())
 }
 
-pub async fn scaffold(
-    project_ids: &[String],
-    include: &[String],
-) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn scaffold(project_ids: &[String], include: &[String]) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;
     let docker_root = workspace.root.join(CONFIG_DIRNAME).join("docker");
 

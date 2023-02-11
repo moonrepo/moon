@@ -5,7 +5,7 @@ use moon_error::MoonError;
 use moon_node_tool::NodeTool;
 use std::env;
 
-pub async fn run_script(name: &str, project: &Option<String>) -> Result<(), AnyError> {
+pub async fn run_script(name: String, project: Option<String>) -> Result<(), AnyError> {
     let mut workspace = load_workspace_with_toolchain().await?;
     let node = workspace
         .platforms
@@ -24,7 +24,7 @@ pub async fn run_script(name: &str, project: &Option<String>) -> Result<(), AnyE
         command.cwd(project_root);
 
         // Otherwise try and find the project in the graph
-    } else if let Some(project_id) = project {
+    } else if let Some(project_id) = &project {
         let mut project_graph = build_project_graph(&mut workspace).await?;
         project_graph.load(project_id)?;
 

@@ -11,12 +11,12 @@ use moon_utils::yaml;
 use rustc_hash::FxHashMap;
 
 pub async fn from_package_json(
-    project_id: &str,
-    skip_touched_files_check: &bool,
+    project_id: String,
+    skip_touched_files_check: bool,
 ) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;
 
-    if *skip_touched_files_check {
+    if skip_touched_files_check {
         info!("Skipping touched files check.");
     } else {
         check_dirty_repo(&workspace).await?;
@@ -35,7 +35,7 @@ pub async fn from_package_json(
     }
 
     // Create or update the local `moon.yml`
-    let mut project = project_graph.get(project_id)?.to_owned();
+    let mut project = project_graph.get(&project_id)?.to_owned();
 
     let mut link_deps = |deps: &DepsSet, scope: DependencyScope| {
         for package_name in deps.keys() {

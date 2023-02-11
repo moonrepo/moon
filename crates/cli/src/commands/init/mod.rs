@@ -123,13 +123,13 @@ pub async fn init_tool(
 }
 
 pub async fn init(
-    dest: &str,
-    tool: Option<&InitTool>,
+    dest: String,
+    tool: Option<InitTool>,
     options: InitOptions,
 ) -> Result<(), AnyError> {
     let theme = create_theme();
     let working_dir = env::current_dir().expect("Failed to determine working directory.");
-    let dest_path = PathBuf::from(dest);
+    let dest_path = PathBuf::from(&dest);
     let dest_dir = if dest == "." {
         working_dir
     } else if dest_path.is_absolute() {
@@ -140,7 +140,7 @@ pub async fn init(
     let dest_dir = path::normalize(&dest_dir);
 
     // Initialize a specific tool and exit early
-    if let Some(tool) = tool {
+    if let Some(tool) = &tool {
         init_tool(&dest_dir, tool, &options, &theme).await?;
 
         return Ok(());

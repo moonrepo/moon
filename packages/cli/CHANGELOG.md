@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+Remote caching is now publicly available through our new service
+[moonbase](https://moonrepo.dev/moonbase)! Sign up for a [free account](https://moonrepo.app/) and
+immediately see the benefits in your CI pipelines.
+
 #### 💥 Breaking
 
 - Moved `moon query projects` JSON output behind a `--json` flag.
@@ -21,6 +25,11 @@
 
 - Added an `--interactive` flag to `moon run` to force a target to run in interactive mode.
 - Updated tasks marked as `local` to always run in interactive mode.
+
+#### 🐞 Fixes
+
+- Fixed an issue where moon would write to `package.json` or `tsconfig.json` with no changes,
+  causing modified events to trigger.
 
 #### ⚙️ Internal
 

@@ -286,7 +286,7 @@ pub async fn run_cli() {
     };
 
     match version_check.await {
-        Ok(Ok(Some(newer_version))) => {
+        Ok(Ok((newer_version, true))) => {
             println!(
                 "There's a new version of moon! {newer_version}. Go to https://moonrepo.dev/docs/install to install",
             );
@@ -300,7 +300,7 @@ pub async fn run_cli() {
         Err(error) => {
             debug!("Failed to spawn check for current version: {}", error);
         }
-        Ok(Ok(None)) => {}
+        Ok(Ok((_, false))) => {}
     }
 
     if let Err(error) = result {

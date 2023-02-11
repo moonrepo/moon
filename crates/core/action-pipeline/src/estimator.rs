@@ -5,15 +5,19 @@ use serde::Serialize;
 use std::time::Duration;
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Estimator {
     /// How long the actions would have taken to execute outside of moon.
-    duration: Duration,
+    pub duration: Duration,
 
     /// Longest duration of each task bucketed by name.
-    tasks: FxHashMap<String, Duration>,
+    pub tasks: FxHashMap<String, Duration>,
 
     /// How much time was saved using moon's pipeline.
-    savings: Option<Duration>,
+    pub savings: Option<Duration>,
+
+    // Percentage of savings between the baseline and current duration.
+    pub savings_percent: f32,
 }
 
 impl Estimator {
@@ -55,16 +59,20 @@ impl Estimator {
         // Calculate the potential time savings by comparing
         // the pipeline duration and our estimated duration.
         let mut savings = None;
+        let mut savings_percent = 0.0;
 
         if pipeline_duration < duration {
             // Avoid "overflow when subtracting durations"
             savings = Some(duration - pipeline_duration);
+            savings_percent =
+                (savings.as_ref().unwrap().as_secs_f32() / duration.as_secs_f32()) * 100.0;
         }
 
         Estimator {
             duration,
             tasks,
             savings,
+            savings_percent,
         }
     }
 }

@@ -53,8 +53,10 @@ pub enum Event<'e> {
     },
     #[serde(rename_all = "camelCase")]
     PipelineFinished {
-        duration: &'e Duration,
+        baseline_duration: &'e Duration,
         cached_count: usize,
+        duration: &'e Duration,
+        estimated_savings: Option<&'e Duration>,
         failed_count: usize,
         passed_count: usize,
     },

@@ -105,8 +105,10 @@ export interface EventPipelineStarted {
 export type PayloadPipelineStarted = WebhookPayload<'pipeline.started', EventPipelineStarted>;
 
 export interface EventPipelineFinished {
-	duration: Duration;
+	baselineDuration: Duration;
 	cachedCount: number;
+	duration: Duration;
+	estimatedSavings: Duration | null;
 	failedCount: number;
 	passedCount: number;
 }

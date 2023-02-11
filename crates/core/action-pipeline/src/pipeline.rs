@@ -198,6 +198,7 @@ impl Pipeline {
         }
 
         let duration = start.elapsed();
+        let estimate = Estimator::calculate(&results, duration);
 
         debug!(
             target: LOG_TARGET,
@@ -206,15 +207,17 @@ impl Pipeline {
 
         local_emitter
             .emit(Event::PipelineFinished {
-                duration: &duration,
+                baseline_duration: &estimate.duration,
                 cached_count,
+                duration: &duration,
+                estimated_savings: estimate.savings.as_ref(),
                 failed_count,
                 passed_count,
             })
             .await?;
 
         self.duration = Some(duration);
-        self.create_run_report(&results, context).await?;
+        self.create_run_report(&results, context, estimate).await?;
 
         Ok(results)
     }
@@ -351,12 +354,12 @@ impl Pipeline {
         &self,
         actions: &ActionResults,
         context: Arc<RwLock<ActionContext>>,
+        estimate: Estimator,
     ) -> Result<(), PipelineError> {
         if let Some(name) = &self.report_name {
             let workspace = self.workspace.read().await;
             let duration = self.duration.unwrap();
             let context = context.read().await;
-            let estimate = Estimator::calculate(actions, duration);
 
             workspace
                 .cache

@@ -34,6 +34,8 @@ immediately see the benefits in your CI pipelines.
 #### ⚙️ Internal
 
 - Added initial Go lang support to our toolchain.
+- Added a `comparisonEstimate` block to run reports.
+- Added `baselineDuration` and `estimatedSavings` to `pipeline.finished` events.
 
 ## 0.23.4
 

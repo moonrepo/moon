@@ -14,8 +14,9 @@ pub struct RunReport<'a> {
     /// How long the pipeline took to execute all actions.
     pub duration: Duration,
 
-    /// Estimates around how much time was saved using moon.
-    pub estimate: Estimator,
+    /// Estimates around how much time was saved using moon,
+    /// compared to another product or baseline.
+    pub comparison_estimate: Estimator,
 }
 
 impl<'a> RunReport<'a> {
@@ -29,7 +30,7 @@ impl<'a> RunReport<'a> {
             actions,
             context,
             duration,
-            estimate,
+            comparison_estimate: estimate,
         }
     }
 }

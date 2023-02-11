@@ -16,6 +16,8 @@ function mockReport(): RunReport {
 				label: 'RunTarget(types:build)',
 				nodeIndex: 5,
 				status: 'cached',
+				finishedAt: '2022-09-12T22:50:12.932311Z',
+				startedAt: '2022-09-12T22:50:12.932311Z',
 			},
 			{
 				attempts: null,
@@ -29,6 +31,8 @@ function mockReport(): RunReport {
 				label: 'RunTarget(runtime:typecheck)',
 				nodeIndex: 4,
 				status: 'passed',
+				finishedAt: '2022-09-12T22:50:12.932311Z',
+				startedAt: '2022-09-12T22:50:12.932311Z',
 			},
 			{
 				attempts: null,
@@ -42,6 +46,8 @@ function mockReport(): RunReport {
 				label: 'RunTarget(types:typecheck)',
 				nodeIndex: 6,
 				status: 'passed',
+				finishedAt: '2022-09-12T22:50:12.932311Z',
+				startedAt: '2022-09-12T22:50:12.932311Z',
 			},
 			{
 				attempts: null,
@@ -55,25 +61,36 @@ function mockReport(): RunReport {
 				label: 'RunTarget(website:typecheck)',
 				nodeIndex: 8,
 				status: 'passed',
+				finishedAt: '2022-09-12T22:50:12.932311Z',
+				startedAt: '2022-09-12T22:50:12.932311Z',
 			},
 		],
 		context: {
+			affectedOnly: false,
+			initialTargets: [],
+			interactive: false,
 			passthroughArgs: [],
 			primaryTargets: [],
 			profile: null,
+			targetHashes: {},
 			touchedFiles: [],
+			workspaceRoot: '',
 		},
 		duration: {
 			secs: 0,
 			nanos: 371_006_844,
 		},
-		estimatedSavings: {
-			secs: 0,
-			nanos: 990_820_168,
-		},
-		projectedDuration: {
-			secs: 1,
-			nanos: 361_827_012,
+		comparisonEstimate: {
+			duration: {
+				secs: 1,
+				nanos: 361_827_012,
+			},
+			tasks: {},
+			savings: {
+				secs: 0,
+				nanos: 990_820_168,
+			},
+			savingsPercent: 0,
 		},
 	};
 }

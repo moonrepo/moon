@@ -1,3 +1,4 @@
+use crate::estimator::Estimator;
 use moon_action::Action;
 use moon_action_context::ActionContext;
 use serde::Serialize;
@@ -10,39 +11,26 @@ pub struct RunReport<'a> {
 
     pub context: &'a ActionContext,
 
-    /// How long the runner took to execute all actions.
+    /// How long the pipeline took to execute all actions.
     pub duration: Duration,
 
-    /// How much time was saved using the runner.
-    pub estimated_savings: Option<Duration>,
-
-    /// How long the actions would have taken to execute outside of the runner.
-    pub projected_duration: Duration,
+    /// Estimates around how much time was saved using moon,
+    /// compared to another product or baseline.
+    pub comparison_estimate: Estimator,
 }
 
 impl<'a> RunReport<'a> {
-    pub fn new(actions: &'a Vec<Action>, context: &'a ActionContext, duration: Duration) -> Self {
-        let mut projected_duration = Duration::new(0, 0);
-
-        for action in actions {
-            if let Some(action_duration) = action.duration {
-                projected_duration += action_duration;
-            }
-        }
-
-        let mut estimated_savings = None;
-
-        // Avoid "overflow when subtracting durations"
-        if duration < projected_duration {
-            estimated_savings = Some(projected_duration - duration);
-        }
-
+    pub fn new(
+        actions: &'a Vec<Action>,
+        context: &'a ActionContext,
+        duration: Duration,
+        estimate: Estimator,
+    ) -> Self {
         RunReport {
             actions,
             context,
             duration,
-            estimated_savings,
-            projected_duration,
+            comparison_estimate: estimate,
         }
     }
 }

@@ -195,6 +195,20 @@ mod out_token {
 
         resolver.resolve(&string_vec!["@out(5)"], &task).unwrap();
     }
+
+    #[test]
+    #[should_panic(expected = "InvalidOutNoTokenFunctions(\"@out(0)\")")]
+    fn errors_for_referencing_token_func() {
+        let workspace_root = get_workspace_root();
+        let project = create_project(&workspace_root);
+        let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
+        let task = create_task(Some(TaskConfig {
+            outputs: Some(string_vec!["@group(name)"]),
+            ..TaskConfig::default()
+        }));
+
+        resolver.resolve(&string_vec!["@out(0)"], &task).unwrap();
+    }
 }
 
 mod resolve_args {

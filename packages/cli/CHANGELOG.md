@@ -14,12 +14,16 @@ immediately see the benefits in your CI pipelines.
 #### 🚀 Updates
 
 - Added a `moon completions` command for generating shell completions.
-- Added a `platform` setting to `moon.yml`, allowing the default platform to be defined for all
-  tasks.
 - Added [TypeScript v5](https://devblogs.microsoft.com/typescript/announcing-typescript-5-0-beta/)
   support.
 - Updated `moon query projects` and `moon query touched-files` default output to be easily readable
   and parseable.
+
+##### Projects
+
+- Added a `platform` setting to `moon.yml`, allowing the default platform to be defined for all
+  tasks.
+- Updated task `outputs` to support token functions (`@group`, `@globs`, etc).
 
 ##### Runner
 

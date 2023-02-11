@@ -377,10 +377,14 @@ impl<'task> TokenResolver<'task> {
         let mut globs: Vec<String> = vec![];
 
         if let TokenType::Out(token, index) = token_type {
-            let error = TokenError::InvalidOutIndex(token, index);
+            let error = TokenError::InvalidOutIndex(token.clone(), index);
             let Some(output) = task.outputs.get(index as usize) else {
                 return Err(error);
             };
+
+            if self.has_token_func(output) {
+                return Err(TokenError::InvalidOutNoTokenFunctions(token));
+            }
 
             if glob::is_glob(output) {
                 match task.output_globs.iter().find(|g| g.ends_with(output)) {

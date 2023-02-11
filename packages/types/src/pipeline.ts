@@ -54,8 +54,8 @@ export interface RunReport {
 		savingsPercent: number;
 	};
 	// Deprecated
-	estimatedSavings: Duration | null;
-	projectedDuration: Duration;
+	estimatedSavings?: Duration | null;
+	projectedDuration?: Duration;
 }
 
 // NODES

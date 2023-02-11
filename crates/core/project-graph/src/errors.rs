@@ -39,7 +39,7 @@ pub enum TokenError {
     #[error("Output index {1} doesn't exist for token <symbol>{0}</symbol>.")]
     InvalidOutIndex(String, u8), // token, index
 
-    #[error("Output token <symbol>{0}</symbol> may not reference outputs using token function.")]
+    #[error("Output token <symbol>{0}</symbol> may not reference outputs using token functions.")]
     InvalidOutNoTokenFunctions(String),
 
     #[error("Token <symbol>{0}</symbol> cannot be used within <id>{1}</id>.")]

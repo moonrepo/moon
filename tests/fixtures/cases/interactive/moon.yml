@@ -1,0 +1,8 @@
+tasks:
+  prompt:
+    command: node ./prompt.js
+    platform: node
+  promptWithLocal:
+    command: node ./prompt.js
+    platform: node
+    local: true

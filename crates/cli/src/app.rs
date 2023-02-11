@@ -360,6 +360,9 @@ pub enum Commands {
         )]
         dependents: bool,
 
+        #[arg(long, short = 'i', help = "Run the target interactively")]
+        interactive: bool,
+
         #[arg(
             long,
             short = 'u',

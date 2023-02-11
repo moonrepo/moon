@@ -6,13 +6,13 @@ use moon_logger::{color, map_list};
 use moon_terminal::{ExtendedTerm, Label};
 use moon_utils::is_test_env;
 
-pub async fn project(id: &str, json: bool) -> Result<(), AnyError> {
+pub async fn project(id: String, json: bool) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;
     let mut project_builder = build_project_graph(&mut workspace).await?;
-    project_builder.load(id)?;
+    project_builder.load(&id)?;
 
     let project_graph = project_builder.build();
-    let project = project_graph.get(id)?;
+    let project = project_graph.get(&id)?;
     let config = &project.config;
 
     if json {

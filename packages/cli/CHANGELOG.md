@@ -17,6 +17,11 @@
 - Updated `moon query projects` and `moon query touched-files` default output to be easily readable
   and parseable.
 
+##### Runner
+
+- Added an `--interactive` flag to `moon run` to force a target to run in interactive mode.
+- Updated tasks marked as `local` to always run in interactive mode.
+
 #### ⚙️ Internal
 
 - Added initial Go lang support to our toolchain.

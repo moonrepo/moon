@@ -211,7 +211,7 @@ impl Command {
         Ok(output)
     }
 
-    pub async fn exec_stream_output(&mut self) -> Result<ExitStatus, MoonError> {
+    pub async fn exec_stream_output(&mut self) -> Result<Output, MoonError> {
         self.log_command_info();
 
         let mut command = self.get_command();
@@ -238,7 +238,13 @@ impl Command {
             ));
         }
 
-        Ok(status)
+        let output = Output {
+            status,
+            stderr: vec![],
+            stdout: vec![],
+        };
+
+        Ok(output)
     }
 
     #[track_caller]
@@ -246,16 +252,21 @@ impl Command {
         self.log_command_info();
 
         let mut command = self.get_command();
+        let has_input = self.has_input();
         let error_handler = |e| map_io_to_process_error(e, &self.bin);
 
         let mut child = command
-            .stdin(Stdio::piped())
+            .stdin(if has_input {
+                Stdio::piped()
+            } else {
+                Stdio::inherit()
+            })
             .stderr(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()
             .map_err(error_handler)?;
 
-        if self.has_input() {
+        if has_input {
             self.write_input_to_child(&mut child).await?;
         }
 
@@ -282,7 +293,7 @@ impl Command {
             let mut lines = stderr.lines();
             let mut captured_lines = vec![];
 
-            while let Some(line) = lines.next_line().await.unwrap_or_default() {
+            while let Ok(Some(line)) = lines.next_line().await {
                 if stderr_prefix.is_empty() {
                     eprintln!("{}", line);
                 } else {
@@ -302,7 +313,7 @@ impl Command {
             let mut lines = stdout.lines();
             let mut captured_lines = vec![];
 
-            while let Some(line) = lines.next_line().await.unwrap_or_default() {
+            while let Ok(Some(line)) = lines.next_line().await {
                 if stdout_prefix.is_empty() {
                     println!("{}", line);
                 } else {
@@ -322,16 +333,14 @@ impl Command {
             let _ = handle.await;
         }
 
-        // Attempt to capture the child output
-        let mut output = child.wait_with_output().await.map_err(error_handler)?;
+        // Attempt to create the child output
+        let status = child.wait().await.map_err(error_handler)?;
 
-        if output.stderr.is_empty() {
-            output.stderr = captured_stderr.read().unwrap().join("\n").into_bytes();
-        }
-
-        if output.stdout.is_empty() {
-            output.stdout = captured_stdout.read().unwrap().join("\n").into_bytes();
-        }
+        let output = Output {
+            status,
+            stdout: captured_stdout.read().unwrap().join("\n").into_bytes(),
+            stderr: captured_stderr.read().unwrap().join("\n").into_bytes(),
+        };
 
         self.handle_nonzero_status(&output)?;
 

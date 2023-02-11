@@ -1356,3 +1356,56 @@ mod affected {
         }
     }
 }
+
+mod interactive {
+    use super::*;
+
+    #[test]
+    fn errors_if_more_than_1_target() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg(":noop").arg("--interactive");
+        });
+
+        assert.failure().stderr(predicate::str::contains(
+            "Only 1 target can be ran as interactive. Requires a fully qualified project target.",
+        ));
+    }
+
+    #[test]
+    fn interacts_with_cli_arg() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("interactive:prompt")
+                .arg("--interactive")
+                .write_stdin("with-arg");
+        });
+
+        // Test doesn't output the input (answer) we provide, so check for the question
+        assert
+            .success()
+            .stdout(predicate::str::contains("Question?"));
+    }
+
+    #[test]
+    fn interacts_with_local_option() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("interactive:promptWithLocal")
+                .write_stdin("with-local");
+        });
+
+        // Test doesn't output the input (answer) we provide, so check for the question
+        assert
+            .success()
+            .stdout(predicate::str::contains("Question?"));
+    }
+}

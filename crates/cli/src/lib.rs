@@ -88,7 +88,7 @@ pub async fn run_cli() {
     let version_check = task::spawn(check_version(version));
 
     // Match and run subcommand
-    let result = match &args.command {
+    let result = match args.command {
         Commands::Bin { tool } => bin(tool).await,
         Commands::Ci {
             base,
@@ -97,11 +97,11 @@ pub async fn run_cli() {
             job_total,
         } => {
             ci(CiOptions {
-                base: base.clone(),
+                base,
                 concurrency: args.concurrency,
-                head: head.clone(),
-                job: *job,
-                job_total: *job_total,
+                head,
+                job,
+                job_total,
             })
             .await
         }
@@ -111,11 +111,11 @@ pub async fn run_cli() {
             update_cache,
         } => {
             check(
-                ids,
+                &ids,
                 CheckOptions {
-                    all: *all,
+                    all,
                     concurrency: args.concurrency,
-                    update_cache: *update_cache,
+                    update_cache,
                 },
             )
             .await
@@ -126,11 +126,11 @@ pub async fn run_cli() {
             })
             .await
         }
-        Commands::Completions { shell } => completions::completions(*shell).await,
-        Commands::DepGraph { target, dot, json } => dep_graph(target, *dot, *json).await,
+        Commands::Completions { shell } => completions::completions(shell).await,
+        Commands::DepGraph { target, dot, json } => dep_graph(target, dot, json).await,
         Commands::Docker { command } => match command {
             DockerCommands::Prune => docker::prune().await,
-            DockerCommands::Scaffold { ids, include } => docker::scaffold(ids, include).await,
+            DockerCommands::Scaffold { ids, include } => docker::scaffold(&ids, &include).await,
         },
         Commands::Generate {
             name,
@@ -144,12 +144,12 @@ pub async fn run_cli() {
             generate(
                 name,
                 GenerateOptions {
-                    defaults: *defaults,
-                    dest: dest.clone(),
-                    dry_run: *dry_run,
-                    force: *force,
-                    template: *template,
-                    vars: vars.clone(),
+                    defaults,
+                    dest,
+                    dry_run,
+                    force,
+                    template,
+                    vars,
                 },
             )
             .await
@@ -163,11 +163,11 @@ pub async fn run_cli() {
         } => {
             init(
                 dest,
-                tool.as_ref(),
+                tool,
                 InitOptions {
-                    force: *force,
-                    minimal: *minimal,
-                    yes: *yes,
+                    force,
+                    minimal,
+                    yes,
                 },
             )
             .await
@@ -186,8 +186,8 @@ pub async fn run_cli() {
         Commands::Node { command } => match command {
             NodeCommands::RunScript { name, project } => node::run_script(name, project).await,
         },
-        Commands::Project { id, json } => project(id, *json).await,
-        Commands::ProjectGraph { id, dot, json } => project_graph(id, *dot, *json).await,
+        Commands::Project { id, json } => project(id, json).await,
+        Commands::ProjectGraph { id, dot, json } => project_graph(id, dot, json).await,
         Commands::Sync => sync().await,
         Commands::Query { command } => match command {
             QueryCommands::Projects {
@@ -201,14 +201,14 @@ pub async fn run_cli() {
                 type_of,
             } => {
                 query::projects(&QueryProjectsOptions {
-                    alias: alias.clone(),
-                    affected: *affected,
-                    id: id.clone(),
-                    json: *json,
-                    language: language.clone(),
-                    source: source.clone(),
-                    tasks: tasks.clone(),
-                    type_of: type_of.clone(),
+                    alias,
+                    affected,
+                    id,
+                    json,
+                    language,
+                    source,
+                    tasks,
+                    type_of,
                 })
                 .await
             }
@@ -221,13 +221,13 @@ pub async fn run_cli() {
                 status,
             } => {
                 query::touched_files(&mut QueryTouchedFilesOptions {
-                    base: base.clone().unwrap_or_default(),
-                    default_branch: *default_branch,
-                    head: head.clone().unwrap_or_default(),
-                    json: *json,
-                    local: *local,
+                    base: base.unwrap_or_default(),
+                    default_branch,
+                    head: head.unwrap_or_default(),
+                    json,
+                    local,
                     log: false,
-                    status: status.clone(),
+                    status,
                 })
                 .await
             }
@@ -236,6 +236,7 @@ pub async fn run_cli() {
             targets,
             affected,
             dependents,
+            interactive,
             update_cache,
             status,
             passthrough,
@@ -243,16 +244,17 @@ pub async fn run_cli() {
             remote,
         } => {
             run(
-                targets,
+                &targets,
                 RunOptions {
-                    affected: *affected,
+                    affected,
                     concurrency: args.concurrency,
-                    dependents: *dependents,
-                    status: status.clone(),
-                    passthrough: passthrough.clone(),
-                    profile: profile.clone(),
-                    remote: *remote,
-                    update_cache: *update_cache,
+                    dependents,
+                    interactive,
+                    status,
+                    passthrough,
+                    profile,
+                    remote,
+                    update_cache,
                 },
             )
             .await

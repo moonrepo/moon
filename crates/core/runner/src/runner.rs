@@ -541,6 +541,10 @@ impl<'a> Runner<'a> {
         let is_real_ci = is_ci() && !is_test_env();
         let output;
 
+        // When a task is configured as local (no caching), or the interactive flag is passed,
+        // we don't "capture" stdout/stderr (which breaks stdin) and let it stream natively.
+        let is_interactive = !self.task.options.cache || context.interactive;
+
         // When the primary target, always stream the output for a better developer experience.
         // However, transitive targets can opt into streaming as well.
         let should_stream_output = if let Some(output_style) = &self.task.options.output_style {
@@ -559,22 +563,8 @@ impl<'a> Runner<'a> {
         loop {
             let mut attempt = Attempt::new(attempt_index);
 
-            self.print_target_label(
-                Checkpoint::RunStart,
-                // NOTE: Old streaming output format. Revisit or remove?
-                // Mark primary streamed output as passed, since it may stay open forever,
-                // or it may use ANSI escape codes to alter the terminal!
-                // if is_primary && should_stream_output {
-                //     Checkpoint::Pass
-                // } else {
-                //     Checkpoint::Start
-                // },
-                &attempt,
-                attempt_total,
-            )?;
-
+            self.print_target_label(Checkpoint::RunStart, &attempt, attempt_total)?;
             self.print_target_command(context)?;
-
             self.flush_output()?;
 
             let possible_output = if should_stream_output {
@@ -582,7 +572,11 @@ impl<'a> Runner<'a> {
                     command.set_prefix(prefix, primary_longest_width);
                 }
 
-                command.exec_stream_and_capture_output().await
+                if is_interactive {
+                    command.exec_stream_output().await
+                } else {
+                    command.exec_stream_and_capture_output().await
+                }
             } else {
                 command.exec_capture_output().await
             };
@@ -810,7 +804,6 @@ impl<'a> Runner<'a> {
         let stderr = output_to_string(&output.stderr);
 
         self.print_output_with_style(&stdout, &stderr, !output.status.success())?;
-
         self.flush_output()?;
 
         Ok(())
@@ -833,24 +826,6 @@ impl<'a> Runner<'a> {
             attempt,
             attempt_total,
         )?;
-
-        // NOTE: Old streaming output format. Revisit or remove?
-        // // Transitive target finished streaming, so display the success checkpoint
-        // if let Some(TaskOutputStyle::Stream) = self.task.options.output_style {
-        //     self.print_target_label(
-        //         if output.status.success() {
-        //             Checkpoint::Pass
-        //         } else {
-        //             Checkpoint::Fail
-        //         },
-        //         attempt,
-        //         attempt_total,
-        //     )?;
-
-        //     // Otherwise the primary target failed for some reason
-        // } else if !output.status.success() {
-        //     self.print_target_label(Checkpoint::Fail, attempt, attempt_total)?;
-        // }
 
         self.flush_output()?;
 

@@ -1,15 +1,18 @@
-use crate::commands::graph::utils::{project_graph_repr, respond_to_request, setup_server};
+use crate::{
+    commands::graph::utils::{project_graph_repr, respond_to_request, setup_server},
+    helpers::AnyError,
+};
 use moon::{build_project_graph, load_workspace};
 
 pub async fn project_graph(
-    project_id: &Option<String>,
+    project_id: Option<String>,
     dot: bool,
     json: bool,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;
     let mut project_build = build_project_graph(&mut workspace).await?;
 
-    if let Some(id) = project_id {
+    if let Some(id) = &project_id {
         project_build.load(id)?;
     } else {
         project_build.load_all()?;

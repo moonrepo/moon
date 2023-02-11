@@ -60,11 +60,11 @@ pub async fn check_version(
             }
         }
 
+        moon_utils::fs::create_dir_all(check_state_path.parent().unwrap())?;
         let check_state = OpenOptions::new()
             .write(true)
             .create(true)
-            .open(&check_state_path)
-            .unwrap();
+            .open(&check_state_path)?;
 
         serde_json::to_writer(check_state, &CheckState { last_alert: now })?;
 

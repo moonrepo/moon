@@ -77,7 +77,7 @@ pub async fn sync_project(
     node_config: &NodeConfig,
     typescript_config: &Option<TypeScriptConfig>,
 ) -> Result<bool, ProjectError> {
-    let mut mutated_files = false;
+    let mut mutated_project_files = false;
     let is_project_typescript_enabled = project.config.toolchain.typescript;
 
     // Sync each dependency to `tsconfig.json` and `package.json`
@@ -225,25 +225,31 @@ pub async fn sync_project(
         || !package_peer_deps.is_empty()
     {
         PackageJson::sync(&project.root, |package_json| {
+            let mut mutated_package = false;
+
             for (name, version) in package_prod_deps {
                 if package_json.add_dependency(&name, &version, true) {
-                    mutated_files = true;
+                    mutated_package = true;
                 }
             }
 
             for (name, version) in package_dev_deps {
                 if package_json.add_dev_dependency(&name, &version, true) {
-                    mutated_files = true;
+                    mutated_package = true;
                 }
             }
 
             for (name, version) in package_peer_deps {
                 if package_json.add_peer_dependency(&name, &version, true) {
-                    mutated_files = true;
+                    mutated_package = true;
                 }
             }
 
-            Ok(())
+            if mutated_package {
+                mutated_project_files = true;
+            }
+
+            Ok(mutated_package)
         })?;
     }
 
@@ -266,6 +272,8 @@ pub async fn sync_project(
                 &project.root,
                 &typescript_config.project_config_file_name,
                 |tsconfig_json| {
+                    let mut mutated_tsconfig = false;
+
                     // Project references
                     if !tsconfig_project_refs.is_empty() {
                         for ref_path in tsconfig_project_refs {
@@ -273,7 +281,7 @@ pub async fn sync_project(
                                 &ref_path,
                                 &typescript_config.project_config_file_name,
                             ) {
-                                mutated_files = true;
+                                mutated_tsconfig = true;
                             }
                         }
                     }
@@ -281,24 +289,41 @@ pub async fn sync_project(
                     // Out dir
                     if typescript_config.route_out_dir_to_cache {
                         let cache_route = get_cache_dir().join("types").join(&project.source);
+                        let out_dir = path::to_virtual_string(
+                            path::relative_from(cache_route, &project.root).unwrap(),
+                        )?;
 
-                        tsconfig_json.update_compiler_options().out_dir =
-                            Some(path::to_virtual_string(
-                                path::relative_from(cache_route, &project.root).unwrap(),
-                            )?);
+                        if tsconfig_json.update_compiler_options(|options| {
+                            if options.out_dir.is_none()
+                                || options.out_dir.as_ref() != Some(&out_dir)
+                            {
+                                options.out_dir = Some(out_dir);
+
+                                return true;
+                            }
+
+                            false
+                        }) {
+                            mutated_tsconfig = true;
+                        }
                     }
 
                     // Paths
                     if typescript_config.sync_project_references_to_paths
                         && !tsconfig_paths.is_empty()
                     {
-                        tsconfig_json
-                            .update_compiler_options()
-                            .update_paths()
-                            .extend(tsconfig_paths);
+                        if tsconfig_json
+                            .update_compiler_options(|options| options.update_paths(tsconfig_paths))
+                        {
+                            mutated_tsconfig = true;
+                        }
                     }
 
-                    Ok(())
+                    if mutated_tsconfig {
+                        mutated_project_files = true;
+                    }
+
+                    Ok(mutated_tsconfig)
                 },
             )?;
         }
@@ -310,14 +335,16 @@ pub async fn sync_project(
                 &typescript_config.root_config_file_name,
                 |tsconfig_json| {
                     if sync_root_tsconfig(tsconfig_json, typescript_config, project) {
-                        mutated_files = true;
+                        mutated_project_files = true;
+
+                        return Ok(true);
                     }
 
-                    Ok(())
+                    Ok(false)
                 },
             )?;
         }
     }
 
-    Ok(mutated_files)
+    Ok(mutated_project_files)
 }

@@ -124,13 +124,29 @@ impl TsConfigJson {
         true
     }
 
-    pub fn update_compiler_options(&mut self) -> &mut CompilerOptions {
-        if self.compiler_options.is_none() {
-            self.compiler_options = Some(CompilerOptions::default());
+    pub fn update_compiler_options<F>(&mut self, updater: F) -> bool
+    where
+        F: FnOnce(&mut CompilerOptions) -> bool,
+    {
+        let updated;
+
+        if let Some(mut options) = self.compiler_options.as_mut() {
+            updated = updater(&mut options);
+        } else {
+            let mut options = CompilerOptions::default();
+
+            updated = updater(&mut options);
+
+            if updated {
+                self.compiler_options = Some(options);
+            }
         }
 
-        self.dirty.push("compilerOptions".into());
-        self.compiler_options.as_mut().unwrap()
+        if updated {
+            self.dirty.push("compilerOptions".into());
+        }
+
+        updated
     }
 
     pub fn save(&mut self) -> Result<(), MoonError> {
@@ -546,12 +562,27 @@ pub struct CompilerOptions {
 }
 
 impl CompilerOptions {
-    pub fn update_paths(&mut self) -> &mut CompilerOptionsPaths {
-        if self.paths.is_none() {
-            self.paths = Some(BTreeMap::new());
+    pub fn update_paths(&mut self, paths: CompilerOptionsPaths) -> bool {
+        let mut updated = false;
+
+        if let Some(current_paths) = self.paths.as_mut() {
+            for (path, patterns) in paths {
+                if let Some(current_path) = current_paths.get(&path) {
+                    if &patterns != current_path {
+                        updated = true;
+                        current_paths.insert(path, patterns);
+                    }
+                } else {
+                    updated = true;
+                    current_paths.insert(path, patterns);
+                }
+            }
+        } else {
+            updated = true;
+            self.paths = Some(paths);
         }
 
-        self.paths.as_mut().unwrap()
+        updated
     }
 }
 

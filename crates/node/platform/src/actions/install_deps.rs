@@ -83,10 +83,10 @@ pub async fn install_deps(
     // Sync values to `package.json`
     if working_dir == workspace_root {
         PackageJson::sync(working_dir, |package_json| {
-            add_package_manager(node, package_json);
-            add_engines_constraint(node, package_json);
+            let added_manager = add_package_manager(node, package_json);
+            let added_constraint = add_engines_constraint(node, package_json);
 
-            Ok(())
+            Ok(added_manager || added_constraint)
         })?;
     }
 

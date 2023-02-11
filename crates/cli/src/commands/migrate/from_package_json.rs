@@ -77,7 +77,7 @@ pub async fn from_package_json(
             link_deps(deps, DependencyScope::Peer);
         }
 
-        Ok(())
+        Ok(true)
     })?;
 
     yaml::write_with_config(project.root.join(CONFIG_PROJECT_FILENAME), &project.config)?;

@@ -1,11 +1,18 @@
 use moon_action::{Action, ActionNode};
 use moon_target::Target;
 use rustc_hash::FxHashMap;
+use serde::Serialize;
 use std::time::Duration;
 
-struct Estimator {
+#[derive(Serialize)]
+pub struct Estimator {
+    /// How long the actions would have taken to execute outside of moon.
     duration: Duration,
+
+    /// Longest duration of each task bucketed by name.
     tasks: FxHashMap<String, Duration>,
+
+    /// How much time was saved using moon's pipeline.
     savings: Option<Duration>,
 }
 
@@ -17,24 +24,21 @@ impl Estimator {
         // and aggregate all tasks of the same name.
         for result in results {
             let Some(node) = &result.node else {
-							continue;
-						};
+                continue;
+            };
 
             let Some(task_duration) = &result.duration else {
-							continue;
-						};
+                continue;
+            };
 
-            match node {
-                ActionNode::RunTarget(_, target) => {
-                    let target = Target::parse(target).unwrap();
+            if let ActionNode::RunTarget(_, target) = node {
+                let task_id = Target::parse(target).unwrap().task_id;
 
-                    if let Some(overall_duration) = tasks.get_mut(&target.task_id) {
-                        *overall_duration += *task_duration;
-                    } else {
-                        tasks.insert(target.task_id, task_duration.to_owned());
-                    }
+                if let Some(overall_duration) = tasks.get_mut(&task_id) {
+                    *overall_duration += *task_duration;
+                } else {
+                    tasks.insert(task_id, task_duration.to_owned());
                 }
-                _ => {}
             }
         }
 
@@ -42,10 +46,10 @@ impl Estimator {
         // so use the longest/slowest bucket as the estimated duration.
         let duration = tasks.iter().fold(Duration::new(0, 0), |acc, task| {
             if &acc > task.1 {
-                return acc;
+                acc
+            } else {
+                task.1.to_owned()
             }
-
-            return task.1.to_owned();
         });
 
         // Calculate the potential time savings by comparing

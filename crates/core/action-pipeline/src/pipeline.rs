@@ -1,4 +1,5 @@
 use crate::errors::PipelineError;
+use crate::estimator::Estimator;
 use crate::processor::process_action;
 use crate::run_report::RunReport;
 use crate::subscribers::local_cache::LocalCacheSubscriber;
@@ -355,10 +356,11 @@ impl Pipeline {
             let workspace = self.workspace.read().await;
             let duration = self.duration.unwrap();
             let context = context.read().await;
+            let estimate = Estimator::calculate(actions, duration);
 
             workspace
                 .cache
-                .create_json_report(name, RunReport::new(actions, &context, duration))?;
+                .create_json_report(name, RunReport::new(actions, &context, duration, estimate))?;
         }
 
         Ok(())

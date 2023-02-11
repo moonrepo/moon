@@ -47,6 +47,12 @@ export interface RunReport {
 	actions: Action[];
 	context: ActionContext;
 	duration: Duration;
+	estimate: {
+		duration: Duration;
+		tasks: Record<string, Duration>;
+		savings: Duration;
+	};
+	// Deprecated
 	estimatedSavings: Duration | null;
 	projectedDuration: Duration;
 }

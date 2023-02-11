@@ -217,5 +217,8 @@ pub async fn process_action(
         );
     }
 
+    // Reassign the node for reuse
+    action.node = Some(node);
+
     Ok(action)
 }

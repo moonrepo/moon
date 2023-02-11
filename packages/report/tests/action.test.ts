@@ -13,6 +13,8 @@ const action: Action = {
 	label: 'RunTarget(app:build)',
 	nodeIndex: 8,
 	status: 'passed',
+	finishedAt: '2022-09-12T22:50:12.932311Z',
+	startedAt: '2022-09-12T22:50:12.932311Z',
 };
 
 describe('isFlaky()', () => {

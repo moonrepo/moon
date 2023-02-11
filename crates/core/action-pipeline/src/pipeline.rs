@@ -1,9 +1,9 @@
 use crate::errors::PipelineError;
+use crate::estimator::Estimator;
 use crate::processor::process_action;
 use crate::run_report::RunReport;
 use crate::subscribers::local_cache::LocalCacheSubscriber;
 use crate::subscribers::moonbase::MoonbaseSubscriber;
-// use crate::worker_pool::WorkerPool;
 use console::Term;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
@@ -198,6 +198,7 @@ impl Pipeline {
         }
 
         let duration = start.elapsed();
+        let estimate = Estimator::calculate(&results, duration);
 
         debug!(
             target: LOG_TARGET,
@@ -206,15 +207,17 @@ impl Pipeline {
 
         local_emitter
             .emit(Event::PipelineFinished {
-                duration: &duration,
+                baseline_duration: &estimate.duration,
                 cached_count,
+                duration: &duration,
+                estimated_savings: estimate.savings.as_ref(),
                 failed_count,
                 passed_count,
             })
             .await?;
 
         self.duration = Some(duration);
-        self.create_run_report(&results, context).await?;
+        self.create_run_report(&results, context, estimate).await?;
 
         Ok(results)
     }
@@ -351,6 +354,7 @@ impl Pipeline {
         &self,
         actions: &ActionResults,
         context: Arc<RwLock<ActionContext>>,
+        estimate: Estimator,
     ) -> Result<(), PipelineError> {
         if let Some(name) = &self.report_name {
             let workspace = self.workspace.read().await;
@@ -359,7 +363,7 @@ impl Pipeline {
 
             workspace
                 .cache
-                .create_json_report(name, RunReport::new(actions, &context, duration))?;
+                .create_json_report(name, RunReport::new(actions, &context, duration, estimate))?;
         }
 
         Ok(())

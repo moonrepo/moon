@@ -28,8 +28,8 @@ immediately see the benefits in your CI pipelines.
 
 #### 🐞 Fixes
 
-- Fixed an issue where moon will write to `package.json` or `tsconfig.json` with no changes, causing
-  modified events to trigger.
+- Fixed an issue where moon would write to `package.json` or `tsconfig.json` with no changes,
+  causing modified events to trigger.
 
 #### ⚙️ Internal
 

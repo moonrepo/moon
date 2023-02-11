@@ -566,9 +566,12 @@ impl CompilerOptions {
         let mut updated = false;
 
         if let Some(current_paths) = self.paths.as_mut() {
-            for (path, patterns) in paths {
-                if let Some(current_path) = current_paths.get(&path) {
-                    if &patterns != current_path {
+            for (path, mut patterns) in paths {
+                if let Some(current_patterns) = current_paths.get_mut(&path) {
+                    patterns.sort();
+                    current_patterns.sort();
+
+                    if &patterns != current_patterns {
                         updated = true;
                         current_paths.insert(path, patterns);
                     }
@@ -1157,6 +1160,152 @@ mod test {
                     }
                 ]
             );
+        }
+    }
+
+    mod update_compiler_options {
+        use super::*;
+
+        #[test]
+        fn creates_if_none_and_returns_true() {
+            let mut tsc = TsConfigJson::default();
+
+            let updated = tsc.update_compiler_options(|options| {
+                options.out_dir = Some("./test".into());
+                true
+            });
+
+            assert!(updated);
+            assert_eq!(
+                tsc.compiler_options
+                    .as_ref()
+                    .unwrap()
+                    .out_dir
+                    .as_ref()
+                    .unwrap(),
+                "./test"
+            )
+        }
+
+        #[test]
+        fn doesnt_create_if_none_and_returns_false() {
+            let mut tsc = TsConfigJson::default();
+
+            let updated = tsc.update_compiler_options(|options| {
+                options.out_dir = Some("./test".into());
+                false
+            });
+
+            assert!(!updated);
+            assert_eq!(tsc.compiler_options, None)
+        }
+
+        #[test]
+        fn can_update_existing() {
+            let mut tsc = TsConfigJson {
+                compiler_options: Some(CompilerOptions {
+                    out_dir: Some("./old".into()),
+                    ..CompilerOptions::default()
+                }),
+                ..TsConfigJson::default()
+            };
+
+            let updated = tsc.update_compiler_options(|options| {
+                options.out_dir = Some("./new".into());
+                true
+            });
+
+            assert!(updated);
+            assert_eq!(
+                tsc.compiler_options
+                    .as_ref()
+                    .unwrap()
+                    .out_dir
+                    .as_ref()
+                    .unwrap(),
+                "./new"
+            )
+        }
+
+        mod paths {
+            use super::*;
+
+            #[test]
+            fn sets_if_none() {
+                let mut opts = CompilerOptions::default();
+
+                let updated = opts.update_paths(BTreeMap::from_iter([(
+                    "alias".into(),
+                    string_vec!["index.ts"],
+                )]));
+
+                assert!(updated);
+                assert_eq!(
+                    *opts.paths.as_ref().unwrap().get("alias").unwrap(),
+                    string_vec!["index.ts"]
+                );
+            }
+
+            #[test]
+            fn sets_multiple() {
+                let mut opts = CompilerOptions::default();
+
+                let updated = opts.update_paths(BTreeMap::from_iter([
+                    ("one".into(), string_vec!["one.ts"]),
+                    ("two".into(), string_vec!["two.ts"]),
+                    ("three".into(), string_vec!["three.ts"]),
+                ]));
+
+                assert!(updated);
+                assert_eq!(opts.paths.as_ref().unwrap().len(), 3);
+            }
+
+            #[test]
+            fn overrides_existing_value() {
+                let mut opts = CompilerOptions {
+                    paths: Some(BTreeMap::from_iter([(
+                        "alias".into(),
+                        string_vec!["old.ts"],
+                    )])),
+                    ..CompilerOptions::default()
+                };
+
+                let updated = opts.update_paths(BTreeMap::from_iter([(
+                    "alias".into(),
+                    string_vec!["new.ts"],
+                )]));
+
+                assert!(updated);
+                assert_eq!(
+                    *opts.paths.as_ref().unwrap().get("alias").unwrap(),
+                    string_vec!["new.ts"]
+                );
+            }
+
+            #[test]
+            fn doesnt_overrides_same_value() {
+                let mut opts = CompilerOptions {
+                    paths: Some(BTreeMap::from_iter([(
+                        "alias".into(),
+                        string_vec!["./src", "./other"],
+                    )])),
+                    ..CompilerOptions::default()
+                };
+
+                let updated = opts.update_paths(BTreeMap::from_iter([(
+                    "alias".into(),
+                    string_vec!["./src", "./other"],
+                )]));
+
+                assert!(!updated);
+
+                let updated = opts.update_paths(BTreeMap::from_iter([(
+                    "alias".into(),
+                    string_vec!["./other", "./src"],
+                )]));
+
+                assert!(!updated);
+            }
         }
     }
 }

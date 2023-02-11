@@ -3,7 +3,6 @@ use crate::processor::process_action;
 use crate::run_report::RunReport;
 use crate::subscribers::local_cache::LocalCacheSubscriber;
 use crate::subscribers::moonbase::MoonbaseSubscriber;
-// use crate::worker_pool::WorkerPool;
 use console::Term;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;

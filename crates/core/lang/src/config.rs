@@ -66,7 +66,7 @@ macro_rules! config_cache {
             pub fn sync<P, F>(path: P, func: F) -> Result<bool, MoonError>
             where
                 P: AsRef<Path>,
-                F: FnOnce(&mut $struct) -> Result<(), MoonError>
+                F: FnOnce(&mut $struct) -> Result<bool, MoonError>
             {
                 $struct::sync_with_name(path, $file, func)
             }
@@ -76,7 +76,7 @@ macro_rules! config_cache {
             where
                 P: AsRef<Path>,
                 N: AsRef<str>,
-                F: FnOnce(&mut $struct) -> Result<(), MoonError>
+                F: FnOnce(&mut $struct) -> Result<bool, MoonError>
             {
                 use cached::Cached;
                 use moon_logger::{color, trace};
@@ -104,21 +104,23 @@ macro_rules! config_cache {
                     cfg = load_config_internal(&path)?;
                 }
 
-                func(&mut cfg)?;
+                if func(&mut cfg)? {
+                    trace!(
+                        target: "moon:lang:config",
+                        "Syncing {} with changes",
+                        color::path(&path),
+                    );
 
-                trace!(
-                    target: "moon:lang:config",
-                    "Syncing {} with changes",
-                    color::path(&path),
-                );
+                    // Write to the file system
+                    $writer(&path, &cfg)?;
 
-                // Write to the file system
-                $writer(&path, &cfg)?;
+                    // And store in the cache
+                    cache.cache_set(path, cfg);
 
-                // And store in the cache
-                cache.cache_set(path, cfg);
+                    return Ok(true);
+                }
 
-                Ok(true)
+                Ok(false)
             }
 
             /// Write (or overwrite) the value directly into the cache.

@@ -1,5 +1,6 @@
 mod actions;
 mod errors;
+mod estimator;
 mod pipeline;
 mod processor;
 mod run_report;

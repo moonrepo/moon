@@ -107,6 +107,40 @@ pub enum QueryCommands {
     },
 
     #[command(
+        name = "tasks",
+        about = "List all available projects & tasks.",
+        rename_all = "camelCase"
+    )]
+    Tasks {
+        #[arg(long, help = "Filter projects that match this alias")]
+        alias: Option<String>,
+
+        #[arg(
+            long,
+            help = "Filter projects that are affected based on touched files"
+        )]
+        affected: bool,
+
+        #[arg(long, help = "Filter projects that match this ID")]
+        id: Option<String>,
+
+        #[arg(long, help = "Print the projects in JSON format")]
+        json: bool,
+
+        #[arg(long, help = "Filter projects of this programming language")]
+        language: Option<String>,
+
+        #[arg(long, help = "Filter projects that match this source path")]
+        source: Option<String>,
+
+        #[arg(long, help = "Filter projects that have the following tasks")]
+        tasks: Option<String>,
+
+        #[arg(long = "type", help = "Filter projects of this type")]
+        type_of: Option<String>,
+    },
+
+    #[command(
         name = "touched-files",
         about = "Query for touched files between revisions.",
         rename_all = "camelCase"

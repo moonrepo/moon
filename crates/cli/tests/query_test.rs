@@ -1,5 +1,5 @@
 use moon_cli::enums::TouchedStatus;
-use moon_cli::queries::projects::QueryProjectsResult;
+use moon_cli::queries::projects::{QueryProjectsResult, QueryTasksResult};
 use moon_cli::queries::touched_files::QueryTouchedFilesResult;
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, get_assert_stdout_output,
@@ -314,8 +314,6 @@ mod projects {
 }
 
 mod tasks {
-    use moon_cli::queries::projects::QueryTasksResult;
-
     use super::*;
 
     #[test]

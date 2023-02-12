@@ -218,10 +218,10 @@ impl<'a> Runner<'a> {
                 HasherWalkStrategy::Glob
             ) {
                 let drive = match workspace.root.components().next() {
-                    Some(Component::Prefix(prefix)) => prefix.as_os_str(),
-                    _ => OsStr::new("/"),
+                    Some(Component::Prefix(prefix)) => format!("{:?}\\", prefix.as_os_str()),
+                    _ => "/".into(),
                 };
-                dbg!(&drive);
+                dbg!(&drive, &task.input_globs.iter().collect::<Vec<_>>());
 
                 let globbed_files =
                     glob::walk(&drive, &task.input_globs.iter().collect::<Vec<_>>())?;

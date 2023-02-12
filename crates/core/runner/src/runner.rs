@@ -4,7 +4,7 @@ use console::Term;
 use moon_action::{ActionStatus, Attempt};
 use moon_action_context::ActionContext;
 use moon_cache::RunTargetState;
-use moon_config::TaskOutputStyle;
+use moon_config::{HasherWalkStrategy, TaskOutputStyle};
 use moon_emitter::{Emitter, Event, EventFlow};
 use moon_error::MoonError;
 use moon_hasher::{convert_paths_to_strings, HashSet};
@@ -15,13 +15,14 @@ use moon_target::{Target, TargetError, TargetProjectScope};
 use moon_task::{Task, TaskError, TaskOptionAffectedFiles};
 use moon_terminal::{label_checkpoint, Checkpoint};
 use moon_utils::{
-    is_ci, is_test_env, path,
+    glob, is_ci, is_test_env, path,
     process::{self, format_running_command, output_to_string, Command, Output},
     time,
 };
 use moon_workspace::Workspace;
-use rustc_hash::FxHashMap;
-use std::env;
+use rustc_hash::{FxHashMap, FxHashSet};
+use std::path::Component;
+use std::{env, ffi::OsStr};
 
 const LOG_TARGET: &str = "moon:runner";
 
@@ -193,6 +194,7 @@ impl<'a> Runner<'a> {
         let workspace = &self.workspace;
         let globset = task.create_globset()?;
         let mut hasher = TargetHasher::new();
+        let mut files_to_hash = vec![];
 
         hasher.hash_project_deps(self.project.get_dependency_ids());
         hasher.hash_task(task);
@@ -206,19 +208,43 @@ impl<'a> Runner<'a> {
         if !task.input_paths.is_empty() {
             let files = convert_paths_to_strings(&task.input_paths, &workspace.root)?;
 
-            if !files.is_empty() {
-                hasher.hash_inputs(vcs.get_file_hashes(&files, true).await?);
-            }
+            files_to_hash.extend(files);
         }
 
         if !task.input_globs.is_empty() {
-            let mut hashed_file_tree = vcs.get_file_tree_hashes(&project.source).await?;
+            // Walk the file system using globs
+            if matches!(
+                workspace.config.hasher.walk_strategy,
+                HasherWalkStrategy::Glob
+            ) {
+                let drive = match workspace.root.components().next() {
+                    Some(Component::Prefix(prefix)) => prefix.as_os_str(),
+                    _ => OsStr::new("/"),
+                };
+                dbg!(&drive);
 
-            // Input globs are absolute paths, so we must do the same
-            hashed_file_tree
-                .retain(|k, _| globset.matches(workspace.root.join(k)).unwrap_or(false));
+                let globbed_files =
+                    glob::walk(&drive, &task.input_globs.iter().collect::<Vec<_>>())?;
 
-            hasher.hash_inputs(hashed_file_tree);
+                dbg!(&globbed_files);
+
+                let files = convert_paths_to_strings(
+                    &FxHashSet::from_iter(globbed_files),
+                    &workspace.root,
+                )?;
+
+                files_to_hash.extend(files);
+
+                // Walk the file system using the VCS
+            } else {
+                let mut hashed_file_tree = vcs.get_file_tree_hashes(&project.source).await?;
+
+                // Input globs are absolute paths, so we must do the same
+                hashed_file_tree
+                    .retain(|k, _| globset.matches(workspace.root.join(k)).unwrap_or(false));
+
+                hasher.hash_inputs(hashed_file_tree);
+            }
         }
 
         // Include local file changes so that development builds work.
@@ -233,9 +259,11 @@ impl<'a> Runner<'a> {
                 .filter(|f| globset.matches(workspace.root.join(f)).unwrap_or(false))
                 .collect::<Vec<String>>();
 
-            if !files.is_empty() {
-                hasher.hash_inputs(vcs.get_file_hashes(&files, false).await?);
-            }
+            files_to_hash.extend(files);
+        }
+
+        if !files_to_hash.is_empty() {
+            hasher.hash_inputs(vcs.get_file_hashes(&files_to_hash, true).await?);
         }
 
         hashset.hash(hasher);

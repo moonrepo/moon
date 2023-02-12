@@ -35,7 +35,7 @@ pub fn convert_paths_to_strings(
 
     for path in paths {
         // Inputs may not exist and `git hash-object` will fail if you pass an unknown file
-        if path.exists() {
+        if path.exists() && path.is_file() {
             // We also need to use relative paths from the workspace root,
             // so that it works across machines
             let rel_path = if path.starts_with(workspace_root) {

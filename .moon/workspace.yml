@@ -22,3 +22,6 @@ runner:
 
 vcs:
   defaultBranch: 'master'
+
+hasher:
+  walkStrategy: 'glob'

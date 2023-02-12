@@ -366,7 +366,7 @@ impl Project {
         };
 
         let global_tasks = inherited_tasks.get_inherited_config(
-            language.into(), // TODO
+            config.platform.unwrap_or_else(|| language.into()),
             language,
             config.type_of,
         );

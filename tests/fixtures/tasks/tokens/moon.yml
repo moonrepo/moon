@@ -66,3 +66,11 @@ tasks:
   outputsGlobs:
     outputs:
       - 'dir/**/*.js'
+  outputsFileGroups:
+    outputs:
+      - 'file.ts'
+      - '@dirs(static)'
+      - '@files(static)'
+      - '@globs(globs)'
+      - '@root(static)'
+      - '/package.json'

@@ -1112,6 +1112,7 @@ mod task_expansion {
 
     mod expand_outputs {
         use super::*;
+        use moon_test_utils::pretty_assertions::assert_eq;
 
         #[tokio::test]
         async fn expands_into_correct_containers() {
@@ -1137,6 +1138,40 @@ mod task_expansion {
                         .to_string()
                 ));
             }
+        }
+
+        #[tokio::test]
+        async fn resolves_file_group_tokens() {
+            let (sandbox, project_graph) = tasks_sandbox().await;
+
+            let project = project_graph.get("tokens").unwrap();
+            let task = project.get_task("outputsFileGroups").unwrap();
+
+            assert_eq!(
+                task.output_globs,
+                FxHashSet::from_iter([
+                    glob::normalize(project.root.join("**/*.{ts,tsx}")).unwrap(),
+                    glob::normalize(project.root.join("*.js")).unwrap()
+                ]),
+            );
+
+            let a: FxHashSet<PathBuf> =
+                FxHashSet::from_iter(task.output_paths.iter().map(PathBuf::from));
+            let b: FxHashSet<PathBuf> = FxHashSet::from_iter(
+                vec![
+                    sandbox.path().join("package.json"),
+                    project.root.join("file.ts"),
+                    project.root.join("dir"),
+                    project.root.join("dir/subdir"),
+                    project.root.join("file.ts"),
+                    project.root.join("dir/other.tsx"),
+                    project.root.join("dir/subdir/another.ts"),
+                ]
+                .iter()
+                .map(PathBuf::from),
+            );
+
+            assert_eq!(a, b);
         }
     }
 }

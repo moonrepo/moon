@@ -24,7 +24,7 @@ These functions reference file groups by name, where the name is passed as the a
 
 ### `@group`<VersionLabel version="0.6" />
 
-> Usable in `args` and `inputs`.
+> Usable in `args`, `inputs`, and `outputs`.
 
 The `@group(file_group)` token is a standard token that will be replaced with the file group items
 as-is, for both file paths and globs. This token merely exists for reusability purposes.
@@ -66,7 +66,7 @@ tasks:
 
 ### `@dirs`
 
-> Usable in `args` and `inputs`.
+> Usable in `args`, `inputs`, and `outputs`.
 
 The `@dirs(file_group)` token will be replaced with an expanded list of directory paths, derived
 from the file group of the same name. If a glob pattern is detected within the file group, it will
@@ -107,7 +107,7 @@ tasks:
 
 ### `@files`
 
-> Usable in `args` and `inputs`.
+> Usable in `args`, `inputs`, and `outputs`.
 
 The `@files(file_group)` token will be replaced with an expanded list of file paths, derived from
 the file group of the same name. If a glob pattern is detected within the file group, it will walk
@@ -146,7 +146,7 @@ tasks:
 
 ### `@globs`
 
-> Usable in `args` and `inputs`.
+> Usable in `args`, `inputs`, and `outputs`.
 
 The `@globs(file_group)` token will be replaced with an expanded list of glob patterns (as-is),
 derived from the file group of the same name. If a non-glob pattern is detected within the file
@@ -184,7 +184,7 @@ tasks:
 
 ### `@root`
 
-> Usable in `args` and `inputs`.
+> Usable in `args`, `inputs`, and `outputs`.
 
 The `@root(file_group)` token will be replaced with the lowest common directory, derived from the
 file group of the same name. If a glob pattern is detected within the file group, it will walk the
@@ -264,8 +264,8 @@ tasks:
 > Usable in `args` only.
 
 The `@out(index)` token will be replaced with a single path, derived from
-[`outputs`](../config/project#outputs) by numerical index. If a glob pattern is referenced by index,
-the process will **fail**, as it requires literal folder and file paths.
+[`outputs`](../config/project#outputs) by numerical index. If a token function is referenced by
+index, the process will **fail**, as it requires literal folder and file paths.
 
 ```yaml
 # Configured as

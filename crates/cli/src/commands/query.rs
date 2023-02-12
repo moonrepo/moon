@@ -66,3 +66,19 @@ pub async fn touched_files(options: &mut QueryTouchedFilesOptions) -> Result<(),
 
     Ok(())
 }
+
+pub async fn tasks(options: &QueryProjectsOptions) -> Result<(), AnyError> {
+    let mut workspace = load_workspace().await?;
+    let projects = query_projects(&mut workspace, options).await?;
+    let mut stdout = io::stdout().lock();
+
+    for project in projects {
+        writeln!(stdout, "{}", &project.id,)?;
+
+        for (task_id, task) in project.tasks {
+            writeln!(stdout, "\t:{} {}", &task_id, format!("| {}", task.command),)?;
+        }
+    }
+
+    Ok(())
+}

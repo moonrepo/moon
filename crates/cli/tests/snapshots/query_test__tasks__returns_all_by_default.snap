@@ -1,0 +1,12 @@
+---
+source: crates/cli/tests/query_test.rs
+expression: assert.output()
+---
+tasks
+	:lint | eslint
+	:test | jest
+platforms
+	:node | node
+	:system | noop
+
+

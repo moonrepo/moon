@@ -313,6 +313,74 @@ mod projects {
     }
 }
 
+mod tasks {
+    use moon_cli::queries::projects::QueryTasksResult;
+
+    use super::*;
+
+    #[test]
+    fn returns_all_by_default() {
+        let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
+
+        let sandbox = create_sandbox_with_config(
+            "projects",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&tasks_config),
+        );
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("query").arg("tasks");
+        });
+
+        assert_snapshot!(assert.output());
+    }
+
+    #[test]
+    fn returns_all_by_default_json() {
+        let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
+
+        let sandbox = create_sandbox_with_config(
+            "projects",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&tasks_config),
+        );
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("query").arg("tasks").arg("--json");
+        });
+
+        let json: QueryTasksResult = serde_json::from_str(&assert.output()).unwrap();
+        let tasks = json
+            .tasks
+            .get("tasks")
+            .unwrap()
+            .keys()
+            .map(|k| k.to_owned())
+            .collect::<Vec<_>>();
+        let mut projects = json.tasks.into_keys().collect::<Vec<_>>();
+
+        projects.sort();
+
+        assert_eq!(tasks, string_vec!["lint", "test"]);
+        assert_eq!(
+            projects,
+            string_vec![
+                "advanced",
+                "bar",
+                "basic",
+                "baz",
+                "emptyConfig",
+                "foo",
+                "noConfig",
+                "platforms",
+                "tasks",
+            ]
+        );
+    }
+}
+
 mod touched_files {
     use super::*;
 

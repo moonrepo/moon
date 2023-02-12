@@ -1,18 +1,29 @@
 ---
 slug: v0.24
-title: moon v0.24 - ???
-authors: [milesj]
-tags: [project, platform]
-# image: ./img/v0.23.png
+title: moon v0.24 - Remote caching, interactive tasks, query improvements, and more
+authors: [milesj, jpoz]
+tags: [project, platform, moonbase, remote-cache]
+image: ./img/v0.24.png
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import Button from '@site/src/ui/Button';
 
-??
+With this release, we've polished our CLI experience and improved task interoperability.
 
 <!--truncate-->
+
+## Remote caching now available
+
+If you missed our announcement earlier this week,
+[remote caching is now publicly available through our new service moonbase](/blog/moonbase)! If
+you're looking to speed up your CI pipelines and share build artifacts between runs, moonbase can
+help.
+
+<div class="flex justify-center">
+  <Button label="Try moonbase for free!" href="https://moonrepo.app" size="lg" />
+</div>
 
 ## Project-level task platform
 
@@ -49,9 +60,9 @@ tasks:
 ## Interactive tasks
 
 When moon executes a task, it streams both stdout and stderr to the terminal _and_ captures the
-output for later use. We do this 2 reasons:
+output for later use. We do this for 2 reasons:
 
-- We store stdout.log and stderr.log files in the tarball archive.
+- We store stdout.log and stderr.log files in a tarball archive.
 - We replay this captured output when executing a task that has been cached.
 
 While this works, our approach is non-standard. Streams are either piped or inherited, not both!
@@ -59,10 +70,10 @@ Because of our custom abstraction around streams and output capturing, it disrup
 all interactive commands. If you tried to run a task that prompted you with a question and were
 unable to answer it, this is why!
 
-To remedy this shortcoming, we're approaching this from 2 angles. The first is all tasks marked as
-[`local`](/docs/config/project#local) (or have caching disabled) will no longer capture streamed
-output, and will instead stream natively, allowing interactivity out of the box. This will cover the
-majority of use cases.
+To remedy this shortcoming, we're approaching this from 2 angles. The first is that all tasks marked
+as [`local`](/docs/config/project#local) (or have caching disabled) will no longer capture streamed
+output, and will instead stream natively, allowing interactivity out of the box, but only when
+they're the only task being ran. This will cover the majority of use cases.
 
 For the remaining use cases, we're introducing a new `--interactive` flag for
 [`moon run`](/docs/commands/run). When this flag is provided, it will force the target into an
@@ -84,6 +95,7 @@ For example, `moon query touched-files` now outputs a list of absolute file path
 lines.
 
 ```
+$ moon query touched-files
 /moon/website/docs/commands/query/projects.mdx
 /moon/crates/cli/tests/query_test.rs
 /moon/crates/cli/src/commands/query.rs
@@ -94,6 +106,7 @@ While `moon query projects` now outputs a list of project separated by new lines
 contains the project name, source, type, and language.
 
 ```
+$ moon query projects
 report | packages/report | library | typescript
 runtime | packages/runtime | library | typescript
 types | packages/types | library | typescript
@@ -103,6 +116,29 @@ website | website | application | typescript
 
 We had 2 goals in mind for this change, the first was to make it easily readable, and the second was
 for the default output to be easily parseable. We believe we've accomplished these goals!
+
+## New `moon query tasks` command
+
+To expand on the query improvements above, we wanted to provide a way to also query for tasks,
+answering the question of "What tasks exists and for what projects?". And with this, we're
+introducing a new [`moon query tasks`](/docs/commands/query/tasks) command!
+
+```
+$ moon query tasks
+types
+	:build | packemon
+	:format | prettier
+	:lint | eslint
+	:test | jest
+	:typecheck | tsc
+report
+	:build | packemon
+	:format | prettier
+	:lint | eslint
+	:test | jest
+	:typecheck | tsc
+...
+```
 
 ## Shell completions
 
@@ -132,4 +168,6 @@ full list of changes.
 
 Expect the following in the v0.25 release!
 
-- Deno tier 2 support!
+- Deno tier 2 support.
+- CI insights and metrics within moonbase.
+- Project-level TypeScript settings.

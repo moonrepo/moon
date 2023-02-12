@@ -543,7 +543,8 @@ impl<'a> Runner<'a> {
 
         // When a task is configured as local (no caching), or the interactive flag is passed,
         // we don't "capture" stdout/stderr (which breaks stdin) and let it stream natively.
-        let is_interactive = !self.task.options.cache || context.interactive;
+        let is_interactive =
+            (!self.task.options.cache && context.primary_targets.len() == 1) || context.interactive;
 
         // When the primary target, always stream the output for a better developer experience.
         // However, transitive targets can opt into streaming as well.

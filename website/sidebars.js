@@ -111,7 +111,11 @@ const sidebars = {
 				{
 					type: 'category',
 					label: 'query',
-					items: ['commands/query/projects', 'commands/query/touched-files'],
+					items: [
+						'commands/query/projects',
+						'commands/query/tasks',
+						'commands/query/touched-files',
+					],
 					link: {
 						type: 'generated-index',
 						title: 'query',

@@ -1,0 +1,53 @@
+---
+title: query tasks
+sidebar_label: tasks
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel header version="0.24" />
+
+Use the `moon query tasks` sub-command to query task information for all projects in the project
+graph. The tasks list can be filtered by passing [options](#options).
+
+```shell
+# Find all tasks grouped by project
+$ moon query tasks
+
+# Find all tasks for projects with an id that matches "react"
+$ moon query tasks --id react
+```
+
+By default, this will output a list of projects, and tasks within the project being indented (with a
+tab) on their own line.
+
+```
+web
+	:lint | eslint
+	:test | jest
+app
+	:format | prettier
+```
+
+The tasks can also be output in JSON ([which contains all data](/api/types/interface/Task)) by
+passing the `--json` flag. The output has the following structure:
+
+```ts
+{
+	tasks: Record<string, Record<string, Task>>,
+	options: QueryOptions,
+}
+```
+
+### Options
+
+All values are case-insensitive regex patterns.
+
+- `--alias <regex>` - Filter projects that match this alias.
+- `--affected` - Filter projects that have been affected by touched files.
+- `--id <regex>` - Filter projects that match this ID/name.
+- `--json` - Display the projects in JSON format.
+- `--language <regex>` - Filter projects of this programming language.
+- `--source <regex>` - Filter projects that match this source path.
+- `--tasks <regex>` - Filter projects that have the following tasks.
+- `--type <regex>` - Filter project of this type.

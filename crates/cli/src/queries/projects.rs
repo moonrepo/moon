@@ -8,12 +8,13 @@ use moon::generate_project_graph;
 use moon_error::MoonError;
 use moon_logger::{debug, trace};
 use moon_project::Project;
-use moon_task::TouchedFilePaths;
+use moon_task::{Task, TouchedFilePaths};
 use moon_utils::{is_ci, regex};
 use moon_workspace::{Workspace, WorkspaceError};
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
 use std::{
+    collections::BTreeMap,
     io::{stdin, Read},
     path::PathBuf,
 };
@@ -35,6 +36,12 @@ pub struct QueryProjectsOptions {
 #[derive(Deserialize, Serialize)]
 pub struct QueryProjectsResult {
     pub projects: Vec<Project>,
+    pub options: QueryProjectsOptions,
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct QueryTasksResult {
+    pub tasks: FxHashMap<String, BTreeMap<String, Task>>,
     pub options: QueryProjectsOptions,
 }
 

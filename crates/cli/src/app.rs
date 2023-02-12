@@ -108,7 +108,7 @@ pub enum QueryCommands {
 
     #[command(
         name = "tasks",
-        about = "List all available projects & tasks.",
+        about = "List all available projects & their tasks.",
         rename_all = "camelCase"
     )]
     Tasks {
@@ -124,7 +124,7 @@ pub enum QueryCommands {
         #[arg(long, help = "Filter projects that match this ID")]
         id: Option<String>,
 
-        #[arg(long, help = "Print the projects in JSON format")]
+        #[arg(long, help = "Print the tasks in JSON format")]
         json: bool,
 
         #[arg(long, help = "Filter projects of this programming language")]

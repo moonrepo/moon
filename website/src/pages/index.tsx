@@ -36,7 +36,7 @@ export default function Home() {
 			<main className="bg-gradient-to-b from-slate-600 via-blurple-600 to-white">
 				<ProductSection
 					color="text-blurple-400"
-					suptitle="Build a solid foundation"
+					suptitle="A build system for a solid foundation"
 					title="Supercharge your codebase"
 					logo={<img src="/brand/moon/icon.svg" height={75} className="block" />}
 					description={
@@ -80,7 +80,7 @@ export default function Home() {
 					reversed
 					stretched
 					color="text-purple-600"
-					suptitle="Expand to the cloud"
+					suptitle="A service to expand to the cloud"
 					title="Accelerate your pipelines"
 					logo={<img src="/brand/moonbase/icon.svg" height={75} className="block" />}
 					description={

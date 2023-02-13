@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue around comparison estimate calculation for run reports.
+
 ## 0.24.0
 
 Remote caching is now publicly available through our new service

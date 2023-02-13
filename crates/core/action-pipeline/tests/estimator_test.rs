@@ -4,6 +4,9 @@ use moon_platform::Runtime;
 use rustc_hash::FxHashMap;
 use std::time::Duration;
 
+const NANOS_PER_MILLI: u32 = 1_000_000;
+const HALF_SECOND: u32 = NANOS_PER_MILLI * 500;
+
 mod estimator {
     use super::*;
 
@@ -37,14 +40,14 @@ mod estimator {
         assert_eq!(
             est,
             Estimator {
-                duration: Duration::new(10, 0),
+                duration: Duration::new(8, HALF_SECOND),
                 loss: None,
                 tasks: FxHashMap::from_iter([(
                     "task".into(),
                     TaskEstimate::new(Duration::new(10, 0))
                 )]),
-                gain: Some(Duration::new(5, 0)),
-                percent: 50.0,
+                gain: Some(Duration::new(3, HALF_SECOND)),
+                percent: 41.17647,
             },
         )
     }
@@ -85,7 +88,7 @@ mod estimator {
         assert_eq!(
             est,
             Estimator {
-                duration: Duration::new(25, 0),
+                duration: Duration::new(42, HALF_SECOND),
                 loss: None,
                 tasks: FxHashMap::from_iter([
                     (
@@ -98,8 +101,8 @@ mod estimator {
                     ),
                     ("test".into(), TaskEstimate::new(Duration::new(8, 0)))
                 ]),
-                gain: Some(Duration::new(15, 0)),
-                percent: 60.000004,
+                gain: Some(Duration::new(32, HALF_SECOND)),
+                percent: 76.47059,
             },
         )
     }
@@ -130,7 +133,7 @@ mod estimator {
         assert_eq!(
             est,
             Estimator {
-                duration: Duration::new(45, 0),
+                duration: Duration::new(43, HALF_SECOND),
                 loss: None,
                 tasks: FxHashMap::from_iter([
                     (
@@ -139,8 +142,8 @@ mod estimator {
                     ),
                     ("task".into(), TaskEstimate::new(Duration::new(10, 0)))
                 ]),
-                gain: Some(Duration::new(40, 0)),
-                percent: 88.88889,
+                gain: Some(Duration::new(38, HALF_SECOND)),
+                percent: 88.505745,
             },
         )
     }
@@ -160,14 +163,14 @@ mod estimator {
         assert_eq!(
             est,
             Estimator {
-                duration: Duration::new(30, 0),
+                duration: Duration::new(25, HALF_SECOND),
                 loss: None,
                 tasks: FxHashMap::from_iter([(
                     "task".into(),
                     TaskEstimate::new(Duration::new(30, 0))
                 )]),
-                gain: Some(Duration::new(25, 0)),
-                percent: 83.33333,
+                gain: Some(Duration::new(20, HALF_SECOND)),
+                percent: 80.39216,
             },
         )
     }
@@ -218,7 +221,7 @@ mod estimator {
         assert_eq!(
             est,
             Estimator {
-                duration: Duration::new(60, 0),
+                duration: Duration::new(77, HALF_SECOND),
                 loss: None,
                 tasks: FxHashMap::from_iter([
                     (
@@ -235,8 +238,8 @@ mod estimator {
                     ),
                     ("test".into(), TaskEstimate::new(Duration::new(8, 0)))
                 ]),
-                gain: Some(Duration::new(35, 0)),
-                percent: 58.333332,
+                gain: Some(Duration::new(52, HALF_SECOND)),
+                percent: 67.741936,
             },
         )
     }
@@ -287,8 +290,8 @@ mod estimator {
         assert_eq!(
             est,
             Estimator {
-                duration: Duration::new(60, 0),
-                loss: Some(Duration::new(25, 0)),
+                duration: Duration::new(77, HALF_SECOND),
+                loss: Some(Duration::new(7, HALF_SECOND)),
                 tasks: FxHashMap::from_iter([
                     (
                         "*".into(),
@@ -305,7 +308,7 @@ mod estimator {
                     ("test".into(), TaskEstimate::new(Duration::new(8, 0)))
                 ]),
                 gain: None,
-                percent: -29.411766,
+                percent: -8.823529,
             },
         )
     }

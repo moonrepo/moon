@@ -87,26 +87,28 @@ impl Estimator {
             }
         }
 
-        // let comparison_duration = tasks.iter().fold(Duration::new(0, 0), |acc, (_, task)| {
-        //     let millis = task.total.as_millis() / (task.count / 2) as u128;
-        //     let secs = Duration::from_millis(millis as u64);
+        // Add all buckets together and attempt to emulate some form of parallelism.
+        let comparison_duration = tasks.iter().fold(Duration::new(0, 0), |acc, (_, task)| {
+            if task.count == 0 || task.total.is_zero() {
+                return acc + task.total;
+            }
 
-        //     if acc > secs {
-        //         acc
-        //     } else {
-        //         secs
-        //     }
-        // }) + install_duration;
+            // Parallelism is very difficult to do, so we're shaving off 15% of the total duration
+            let millis = task.total.as_millis() as f64 * 0.85;
+            let secs = Duration::from_millis(millis as u64);
+
+            acc + secs
+        }) + install_duration;
 
         // We assume every bucket is ran in parallel,
         // so use the longest/slowest bucket as the estimated duration.
-        let comparison_duration = tasks.iter().fold(Duration::new(0, 0), |acc, (_, task)| {
-            if acc > task.total {
-                acc
-            } else {
-                task.total.clone()
-            }
-        }) + install_duration;
+        // let comparison_duration = tasks.iter().fold(Duration::new(0, 0), |acc, (_, task)| {
+        //     if acc > task.total {
+        //         acc
+        //     } else {
+        //         task.total.clone()
+        //     }
+        // }) + install_duration;
 
         // Add the install duration for debugging purposes.
         if !install_duration.is_zero() {
@@ -129,7 +131,9 @@ impl Estimator {
             gain = Some(comparison_duration - pipeline_duration);
             percent =
                 (gain.as_ref().unwrap().as_secs_f32() / comparison_duration.as_secs_f32()) * 100.0;
-        } else if pipeline_duration > comparison_duration {
+        }
+
+        if pipeline_duration > comparison_duration {
             loss = Some(pipeline_duration - comparison_duration);
             percent =
                 -((loss.as_ref().unwrap().as_secs_f32() / pipeline_duration.as_secs_f32()) * 100.0);

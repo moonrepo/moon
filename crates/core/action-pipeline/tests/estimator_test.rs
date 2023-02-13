@@ -1,4 +1,4 @@
-use moon_action::{Action, ActionNode};
+use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_pipeline::estimator::Estimator;
 use moon_platform::Runtime;
 use rustc_hash::FxHashMap;
@@ -126,6 +126,30 @@ fn includes_setup_install() {
             ]),
             gain: Some(Duration::new(40, 0)),
             percent: 88.88889,
+        },
+    )
+}
+
+#[test]
+fn multiplies_cached() {
+    let est = Estimator::calculate(
+        &[Action {
+            duration: Some(Duration::new(3, 0)),
+            node: Some(ActionNode::RunTarget(Runtime::System, "proj:task".into())),
+            status: ActionStatus::Cached,
+            ..Action::default()
+        }],
+        Duration::new(5, 0),
+    );
+
+    assert_eq!(
+        est,
+        Estimator {
+            duration: Duration::new(30, 0),
+            loss: None,
+            tasks: FxHashMap::from_iter([("task".into(), Duration::new(30, 0))]),
+            gain: Some(Duration::new(25, 0)),
+            percent: 83.33333,
         },
     )
 }

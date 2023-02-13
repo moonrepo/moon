@@ -1,4 +1,4 @@
-use moon_action::{Action, ActionNode};
+use moon_action::{Action, ActionNode, ActionStatus};
 use moon_target::Target;
 use rustc_hash::FxHashMap;
 use serde::Serialize;
@@ -35,21 +35,32 @@ impl Estimator {
                 continue;
             };
 
-            let Some(task_duration) = &result.duration else {
+            let Some(duration) = &result.duration else {
                 continue;
             };
+
+            let mut task_duration = duration.to_owned();
+
+            // Comparisons don't utilize the same caching mechanisms that moon does,
+            // so we need to emulate a fake duration on cache hit by multiplying it.
+            if matches!(
+                result.status,
+                ActionStatus::Cached | ActionStatus::CachedFromRemote
+            ) {
+                task_duration *= 10;
+            }
 
             match node {
                 ActionNode::SetupTool(_)
                 | ActionNode::InstallDeps(_)
                 | ActionNode::InstallProjectDeps(_, _) => {
-                    install_duration += *task_duration;
+                    install_duration += task_duration;
                 }
                 ActionNode::RunTarget(_, target) => {
                     let task_id = Target::parse(target).unwrap().task_id;
 
                     if let Some(overall_duration) = tasks.get_mut(&task_id) {
-                        *overall_duration += *task_duration;
+                        *overall_duration += task_duration;
                     } else {
                         tasks.insert(task_id, task_duration.to_owned());
                     }

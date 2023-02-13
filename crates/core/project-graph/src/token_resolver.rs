@@ -1,5 +1,4 @@
 use crate::errors::TokenError;
-use moon_config::FileGlob;
 use moon_logger::{color, warn};
 use moon_project::Project;
 use moon_task::Task;
@@ -10,7 +9,7 @@ use moon_utils::regex::{
 use moon_utils::{glob, path};
 use std::path::{Path, PathBuf};
 
-type PathsGlobsNormalized = (Vec<PathBuf>, Vec<FileGlob>);
+type PathsGlobsResolved = (Vec<PathBuf>, Vec<PathBuf>);
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum TokenContext {
@@ -141,9 +140,9 @@ impl<'task> TokenResolver<'task> {
         &self,
         values: &[String],
         task: &Task,
-    ) -> Result<PathsGlobsNormalized, TokenError> {
+    ) -> Result<PathsGlobsResolved, TokenError> {
         let mut paths: Vec<PathBuf> = vec![];
-        let mut globs: Vec<String> = vec![];
+        let mut globs: Vec<PathBuf> = vec![];
 
         for value in values {
             if self.has_token_func(value) {
@@ -177,7 +176,7 @@ impl<'task> TokenResolver<'task> {
                 }
 
                 if is_glob {
-                    globs.push(glob::normalize(resolved)?);
+                    globs.push(resolved);
                 } else {
                     paths.push(resolved);
                 }
@@ -187,11 +186,7 @@ impl<'task> TokenResolver<'task> {
         Ok((paths, globs))
     }
 
-    pub fn resolve_func(
-        &self,
-        value: &str,
-        task: &Task,
-    ) -> Result<PathsGlobsNormalized, TokenError> {
+    pub fn resolve_func(&self, value: &str, task: &Task) -> Result<PathsGlobsResolved, TokenError> {
         let matches = TOKEN_FUNC_PATTERN.captures(value).unwrap();
         let token = matches.get(0).unwrap().as_str(); // @name(arg)
         let func = matches.get(1).unwrap().as_str(); // name
@@ -280,11 +275,11 @@ impl<'task> TokenResolver<'task> {
     fn replace_file_group_tokens(
         &self,
         token_type: TokenType,
-    ) -> Result<PathsGlobsNormalized, TokenError> {
+    ) -> Result<PathsGlobsResolved, TokenError> {
         token_type.check_context(&self.context)?;
 
         let mut paths: Vec<PathBuf> = vec![];
-        let mut globs: Vec<String> = vec![];
+        let mut globs: Vec<PathBuf> = vec![];
         let file_groups = &self.project.file_groups;
 
         let get_file_group = |token: &str, id: &str| {
@@ -326,7 +321,7 @@ impl<'task> TokenResolver<'task> {
         &self,
         token_type: TokenType,
         task: &Task,
-    ) -> Result<PathsGlobsNormalized, TokenError> {
+    ) -> Result<PathsGlobsResolved, TokenError> {
         token_type.check_context(&self.context)?;
 
         let mut paths = vec![];
@@ -341,7 +336,7 @@ impl<'task> TokenResolver<'task> {
             if glob::is_glob(input) {
                 match task.input_globs.iter().find(|g| g.ends_with(input)) {
                     Some(g) => {
-                        globs.push(g.clone());
+                        globs.push(PathBuf::from(g));
                     }
                     None => {
                         return Err(error);
@@ -370,11 +365,11 @@ impl<'task> TokenResolver<'task> {
         &self,
         token_type: TokenType,
         task: &Task,
-    ) -> Result<PathsGlobsNormalized, TokenError> {
+    ) -> Result<PathsGlobsResolved, TokenError> {
         token_type.check_context(&self.context)?;
 
         let mut paths: Vec<PathBuf> = vec![];
-        let mut globs: Vec<String> = vec![];
+        let mut globs: Vec<PathBuf> = vec![];
 
         if let TokenType::Out(token, index) = token_type {
             let error = TokenError::InvalidOutIndex(token.clone(), index);
@@ -389,7 +384,7 @@ impl<'task> TokenResolver<'task> {
             if glob::is_glob(output) {
                 match task.output_globs.iter().find(|g| g.ends_with(output)) {
                     Some(g) => {
-                        globs.push(g.clone());
+                        globs.push(PathBuf::from(g));
                     }
                     None => {
                         return Err(error);

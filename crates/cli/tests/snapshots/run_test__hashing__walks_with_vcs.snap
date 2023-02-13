@@ -1,5 +1,0 @@
----
-source: crates/cli/tests/run_test.rs
-expression: hash
----
-4d0230480ce02d4bd3dd8b70ac8e7b65279e1d12f1bf7e3d43afec753e2b59d8

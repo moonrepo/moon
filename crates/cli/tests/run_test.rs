@@ -425,37 +425,29 @@ mod hashing {
     }
 
     #[test]
-    fn walks_with_vcs() {
+    fn supports_diff_walking_strategies() {
         let sandbox = cases_sandbox();
         sandbox.enable_git();
 
-        let assert = sandbox.run_moon(|cmd| {
+        sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("outputs:noOutput");
         });
 
-        assert.debug();
+        let hash_vcs = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
 
-        let hash = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
-
-        assert_snapshot!(hash);
-    }
-
-    #[test]
-    fn walks_with_glob() {
+        // Run again with a different strategy
         let sandbox = cases_sandbox_with_config(|workspace_config| {
             workspace_config.hasher.walk_strategy = HasherWalkStrategy::Glob;
         });
         sandbox.enable_git();
 
-        let assert = sandbox.run_moon(|cmd| {
+        sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("outputs:noOutput");
         });
 
-        assert.debug();
+        let hash_glob = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
 
-        let hash = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
-
-        assert_snapshot!(hash);
+        assert_eq!(hash_vcs, hash_glob);
     }
 }
 

@@ -2,6 +2,10 @@ import { existsSync } from 'fs';
 import fs from 'fs/promises';
 import chalk from 'chalk';
 import { execa } from 'execa';
+// eslint-disable-next-line import/no-unresolved
+import readline from 'readline/promises';
+
+const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
 async function getPackageVersions() {
 	const files = await fs.readdir('packages');
@@ -96,6 +100,16 @@ async function createTags(versions) {
 	);
 }
 
+async function resetGit() {
+	await execa('git', ['reset', '--hard']);
+}
+
+function versionString(versions) {
+	return Object.entries(versions)
+		.map(([key, value]) => `${key}@${value}`)
+		.join(', ');
+}
+
 async function run() {
 	// Delete local builds so we dont inadvertently release it
 	await removeLocalBuilds();
@@ -108,6 +122,14 @@ async function run() {
 
 	// Now gather the versions again so we can diff
 	const nextVersions = await getPackageVersions();
+
+	const answer = await rl.question(`Release (Y/n)?\n${chalk.gray(versionString(nextVersions))}\n`);
+
+	if (answer.toLocaleLowerCase() === 'n') {
+		rl.close();
+		await resetGit();
+		return;
+	}
 
 	// Diff the versions and find the new ones
 	const diff = [];

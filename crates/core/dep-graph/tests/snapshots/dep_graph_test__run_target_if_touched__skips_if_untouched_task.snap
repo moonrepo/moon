@@ -1,6 +1,5 @@
 ---
 source: crates/core/dep-graph/tests/dep_graph_test.rs
-assertion_line: 411
 expression: graph.to_dot()
 ---
 digraph {

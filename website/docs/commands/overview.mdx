@@ -80,8 +80,12 @@ $ MOON_CONCURRENCY=1 moon run app:build
 
 ## Debugging
 
-At this point in time, moon provides no debugging utilities besides [logging](#logging) with the
-`debug`/`trace` levels.
+At minimum, most debugging can be done by passing [`--log trace`](#logging) on the command line and
+sifting through the logs. We also provide the following environment variables to toggle output.
+
+- `MOON_DEBUG_PROCESS_INPUT` - By default moon truncates the stdin passed to processes to avoid
+  thrashing the console with a large input string. However, knowing what input is passed around is
+  helpful in debugging. Declare this variable to reveal the entire input.
 
 ## Logging
 

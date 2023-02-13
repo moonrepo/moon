@@ -16,6 +16,7 @@ immediately see the benefits in your CI pipelines.
 - Added a `moon completions` command for generating shell completions.
 - Added [TypeScript v5](https://devblogs.microsoft.com/typescript/announcing-typescript-5-0-beta/)
   support.
+- Added a `hasher.walkStrategy` setting to `.moon/workspace.yml`.
 - Updated `moon query projects` and `moon query touched-files` default output to be easily readable
   and parseable.
 

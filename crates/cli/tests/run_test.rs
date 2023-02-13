@@ -1,5 +1,5 @@
 use moon_cache::CacheEngine;
-use moon_config::WorkspaceConfig;
+use moon_config::{HasherWalkStrategy, WorkspaceConfig};
 use moon_test_utils::{
     assert_debug_snapshot, assert_snapshot, create_sandbox_with_config, get_cases_fixture_configs,
     predicates::{self, prelude::*},
@@ -422,6 +422,32 @@ mod hashing {
 
         assert_ne!(hash1, hash3);
         assert_ne!(hash2, hash3);
+    }
+
+    #[test]
+    fn supports_diff_walking_strategies() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputs:noOutput");
+        });
+
+        let hash_vcs = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
+
+        // Run again with a different strategy
+        let sandbox = cases_sandbox_with_config(|workspace_config| {
+            workspace_config.hasher.walk_strategy = HasherWalkStrategy::Glob;
+        });
+        sandbox.enable_git();
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputs:noOutput");
+        });
+
+        let hash_glob = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
+
+        assert_eq!(hash_vcs, hash_glob);
     }
 }
 

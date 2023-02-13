@@ -228,7 +228,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                 }
 
                 for glob in globs {
-                    args.push(handle_path(PathBuf::from(glob), true)?);
+                    args.push(handle_path(glob, true)?);
                 }
             } else if token_resolver.has_token_var(arg) {
                 args.push(token_resolver.resolve_vars(arg, task)?);
@@ -383,7 +383,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         let (paths, globs) = token_resolver.resolve(&inputs_without_vars, task)?;
 
         task.input_paths.extend(paths);
-        task.input_globs.extend(globs);
+        task.input_globs.extend(self.normalize_glob_list(globs)?);
 
         Ok(())
     }
@@ -403,7 +403,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         let (paths, globs) = token_resolver.resolve(&task.outputs, task)?;
 
         task.output_paths.extend(paths);
-        task.output_globs.extend(globs);
+        task.output_globs.extend(self.normalize_glob_list(globs)?);
 
         Ok(())
     }
@@ -595,5 +595,18 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         self.workspace.cache.create_hash_manifest(&hash, &hasher)?;
 
         Ok(hash)
+    }
+
+    fn normalize_glob_list(&self, globs: Vec<PathBuf>) -> Result<Vec<String>, ProjectError> {
+        let mut normalized_globs = vec![];
+
+        for glob in globs {
+            normalized_globs.push(glob::normalize(
+                //  glob.strip_prefix(&self.workspace.root).unwrap(),
+                glob,
+            )?);
+        }
+
+        Ok(normalized_globs)
     }
 }

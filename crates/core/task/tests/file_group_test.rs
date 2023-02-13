@@ -1,6 +1,6 @@
 use moon_task::FileGroup;
 use moon_test_utils::get_fixtures_path;
-use moon_utils::{glob, string_vec};
+use moon_utils::string_vec;
 use std::path::PathBuf;
 
 mod merge {
@@ -36,10 +36,7 @@ mod all {
                     project_root.join("folder/index.ts"),
                     workspace_root.join("root.js")
                 ],
-                vec![
-                    glob::normalize(project_root.join("**/*")).unwrap(),
-                    glob::normalize(workspace_root.join("root/*")).unwrap()
-                ]
+                vec![project_root.join("**/*"), workspace_root.join("root/*")]
             )
         );
     }
@@ -136,9 +133,9 @@ mod globs {
         assert_eq!(
             file_group.globs(&workspace_root, &project_root).unwrap(),
             vec![
-                glob::normalize(project_root.join("**/*")).unwrap(),
-                glob::normalize(project_root.join("*.rs")).unwrap(),
-                glob::normalize(workspace_root.join("*.js")).unwrap()
+                project_root.join("**/*"),
+                project_root.join("*.rs"),
+                workspace_root.join("*.js")
             ]
         );
     }

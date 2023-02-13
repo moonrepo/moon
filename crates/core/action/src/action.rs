@@ -7,7 +7,7 @@ fn has_failed(status: &ActionStatus) -> bool {
     matches!(status, ActionStatus::Failed) || matches!(status, ActionStatus::FailedAndAbort)
 }
 
-#[derive(Copy, Clone, Debug, Deserialize, Serialize)]
+#[derive(Copy, Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum ActionStatus {
     Cached,
@@ -16,6 +16,7 @@ pub enum ActionStatus {
     FailedAndAbort,
     Invalid,
     Passed,
+    #[default]
     Running,
     Skipped, // When nothing happened
 }
@@ -59,7 +60,7 @@ impl Attempt {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Action {
     pub attempts: Option<Vec<Attempt>>,

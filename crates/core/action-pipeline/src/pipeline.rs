@@ -210,7 +210,7 @@ impl Pipeline {
                 baseline_duration: &estimate.duration,
                 cached_count,
                 duration: &duration,
-                estimated_savings: estimate.savings.as_ref(),
+                estimated_savings: estimate.gain.as_ref(),
                 failed_count,
                 passed_count,
             })

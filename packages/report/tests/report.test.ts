@@ -86,11 +86,12 @@ function mockReport(): RunReport {
 				nanos: 361_827_012,
 			},
 			tasks: {},
-			savings: {
+			loss: null,
+			gain: {
 				secs: 0,
 				nanos: 990_820_168,
 			},
-			savingsPercent: 0,
+			percent: 0,
 		},
 	};
 }

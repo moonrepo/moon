@@ -6,6 +6,23 @@ use std::time::Duration;
 
 #[derive(Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct TaskEstimate {
+    pub count: usize,
+    pub total: Duration,
+}
+
+impl TaskEstimate {
+    pub fn new(total: Duration) -> Self {
+        TaskEstimate { count: 1, total }
+    }
+
+    pub fn with_count(total: Duration, count: usize) -> Self {
+        TaskEstimate { count, total }
+    }
+}
+
+#[derive(Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Estimator {
     /// How long the actions would have taken to execute outside of moon.
     pub duration: Duration,
@@ -20,12 +37,12 @@ pub struct Estimator {
     pub percent: f32,
 
     /// Longest duration of each task bucketed by name.
-    pub tasks: FxHashMap<String, Duration>,
+    pub tasks: FxHashMap<String, TaskEstimate>,
 }
 
 impl Estimator {
     pub fn calculate(results: &[Action], pipeline_duration: Duration) -> Self {
-        let mut tasks = FxHashMap::default();
+        let mut tasks: FxHashMap<String, TaskEstimate> = FxHashMap::default();
         let mut install_duration = Duration::new(0, 0);
 
         // Bucket every ran target based on task name,
@@ -59,29 +76,47 @@ impl Estimator {
                 ActionNode::RunTarget(_, target) => {
                     let task_id = Target::parse(target).unwrap().task_id;
 
-                    if let Some(overall_duration) = tasks.get_mut(&task_id) {
-                        *overall_duration += task_duration;
+                    if let Some(task) = tasks.get_mut(&task_id) {
+                        task.count += 1;
+                        task.total += task_duration;
                     } else {
-                        tasks.insert(task_id, task_duration.to_owned());
+                        tasks.insert(task_id, TaskEstimate::new(task_duration.to_owned()));
                     }
                 }
                 _ => {}
             }
         }
 
+        // let comparison_duration = tasks.iter().fold(Duration::new(0, 0), |acc, (_, task)| {
+        //     let millis = task.total.as_millis() / (task.count / 2) as u128;
+        //     let secs = Duration::from_millis(millis as u64);
+
+        //     if acc > secs {
+        //         acc
+        //     } else {
+        //         secs
+        //     }
+        // }) + install_duration;
+
         // We assume every bucket is ran in parallel,
         // so use the longest/slowest bucket as the estimated duration.
-        let comparison_duration = tasks.iter().fold(Duration::new(0, 0), |acc, task| {
-            if &acc > task.1 {
+        let comparison_duration = tasks.iter().fold(Duration::new(0, 0), |acc, (_, task)| {
+            if acc > task.total {
                 acc
             } else {
-                task.1.to_owned()
+                task.total.clone()
             }
         }) + install_duration;
 
         // Add the install duration for debugging purposes.
         if !install_duration.is_zero() {
-            tasks.insert("*".into(), install_duration);
+            tasks.insert(
+                "*".into(),
+                TaskEstimate {
+                    count: 0,
+                    total: install_duration,
+                },
+            );
         }
 
         // Calculate the potential time savings gained/lost by comparing

@@ -52,7 +52,13 @@ export interface RunReport {
 		gain: Duration | null;
 		loss: Duration | null;
 		percent: number;
-		tasks: Record<string, Duration>;
+		tasks: Record<
+			string,
+			{
+				count: number;
+				total: Duration;
+			}
+		>;
 	};
 	// Deprecated
 	estimatedSavings?: Duration | null;

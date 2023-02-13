@@ -2,6 +2,7 @@ use crate::{get_workspace_root, is_ci, is_test_env, path, shell};
 use moon_error::{map_io_to_process_error, MoonError};
 use moon_logger::{color, logging_enabled, pad_str, trace, Alignment};
 use rustc_hash::FxHashMap;
+use std::env;
 use std::ffi::{OsStr, OsString};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
@@ -506,6 +507,7 @@ impl Command {
 
         if self.has_input() {
             let input_line = self.get_input_line();
+            let debug_input = env::var("MOON_DEBUG_PROCESS_INPUT").is_ok();
 
             command_line = format!(
                 "{}{}{}",
@@ -515,7 +517,7 @@ impl Command {
                 } else {
                     " - "
                 },
-                if input_line.len() > 200 {
+                if input_line.len() > 200 && !debug_input {
                     "(truncated files list)".into()
                 } else {
                     input_line.replace('\n', " ")

@@ -40,7 +40,7 @@ impl FileGroup {
         &self,
         workspace_root: &Path,
         project_root: &Path,
-    ) -> Result<(Vec<PathBuf>, Vec<String>), FileGroupError> {
+    ) -> Result<(Vec<PathBuf>, Vec<PathBuf>), FileGroupError> {
         let mut paths = vec![];
         let mut globs = vec![];
 
@@ -48,7 +48,7 @@ impl FileGroup {
             let result = path::expand_root_path(file, workspace_root, project_root);
 
             if glob::is_glob(file) {
-                globs.push(glob::normalize(result)?);
+                globs.push(result);
             } else {
                 paths.push(result);
             }
@@ -83,16 +83,12 @@ impl FileGroup {
         &self,
         workspace_root: &Path,
         project_root: &Path,
-    ) -> Result<Vec<String>, FileGroupError> {
+    ) -> Result<Vec<PathBuf>, FileGroupError> {
         let mut globs = vec![];
 
         for file in &self.files {
             if glob::is_glob(file) {
-                globs.push(glob::normalize(path::expand_root_path(
-                    file,
-                    workspace_root,
-                    project_root,
-                ))?);
+                globs.push(path::expand_root_path(file, workspace_root, project_root));
             }
         }
 

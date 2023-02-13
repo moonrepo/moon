@@ -1,6 +1,5 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 658
 expression: assert2.output()
 ---
 ▪▪▪▪ outputs:generateFileAndFolder (cached from previous run)

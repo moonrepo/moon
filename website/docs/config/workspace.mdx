@@ -133,6 +133,20 @@ hasher:
   optimization: 'performance'
 ```
 
+### `walkStrategy`
+
+<HeadingApiLink to="/api/types/interface/HasherConfig#walkStrategy" />
+
+Defines the file system walking strategy to utilize when discovering inputs to hash.
+
+- `glob` - Walks the file system using glob patterns.
+- `vcs` (default) - Calls out to the [VCS](#vcs) to extract files from its working tree.
+
+```yaml title=".moon/workspace.yml" {2}
+hasher:
+  walkStrategy: 'glob'
+```
+
 ## `notifier`<VersionLabel version="0.17" />
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#notifier" />

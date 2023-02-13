@@ -602,7 +602,8 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         for glob in globs {
             normalized_globs.push(glob::normalize(
-                glob.strip_prefix(&self.workspace.root).unwrap(),
+                //  glob.strip_prefix(&self.workspace.root).unwrap(),
+                glob,
             )?);
         }
 

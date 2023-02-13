@@ -1,7 +1,6 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 571
-expression: get_assert_output(&assert1)
+expression: assert1.output()
 ---
 ▪▪▪▪ npm install
 ▪▪▪▪ outputs:generateFileAndFolder

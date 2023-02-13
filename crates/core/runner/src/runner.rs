@@ -21,8 +21,8 @@ use moon_utils::{
 };
 use moon_workspace::Workspace;
 use rustc_hash::{FxHashMap, FxHashSet};
+use std::env;
 use std::path::Component;
-use std::{env, ffi::OsStr};
 
 const LOG_TARGET: &str = "moon:runner";
 
@@ -212,21 +212,25 @@ impl<'a> Runner<'a> {
         }
 
         if !task.input_globs.is_empty() {
+            let use_globs = self.project.root == self.workspace.root
+                || matches!(
+                    workspace.config.hasher.walk_strategy,
+                    HasherWalkStrategy::Glob
+                );
+
             // Walk the file system using globs
-            if matches!(
-                workspace.config.hasher.walk_strategy,
-                HasherWalkStrategy::Glob
-            ) {
+            if use_globs {
                 let drive = match workspace.root.components().next() {
                     Some(Component::Prefix(prefix)) => format!("{:?}\\", prefix.as_os_str()),
                     _ => "/".into(),
                 };
-                dbg!(&drive, &task.input_globs.iter().collect::<Vec<_>>());
+
+                // dbg!(&drive, &task.input_globs.iter().collect::<Vec<_>>());
 
                 let globbed_files =
                     glob::walk(&drive, &task.input_globs.iter().collect::<Vec<_>>())?;
 
-                dbg!(&globbed_files);
+                // dbg!(&globbed_files);
 
                 let files = convert_paths_to_strings(
                     &FxHashSet::from_iter(globbed_files),

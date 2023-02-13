@@ -314,8 +314,8 @@ mod resolve_args {
             (
                 vec![],
                 vec![
-                    glob::normalize(project.root.join("**/*.{ts,tsx}")).unwrap(),
-                    glob::normalize(project.root.join("*.js")).unwrap()
+                    project.root.join("**/*.{ts,tsx}"),
+                    project.root.join("*.js")
                 ]
             )
         );
@@ -353,10 +353,7 @@ mod resolve_args {
 
         assert_eq!(
             resolver.resolve(&string_vec!["@in(0)"], &task).unwrap(),
-            (
-                vec![],
-                vec![glob::normalize(project.root.join("src/**/*")).unwrap()]
-            )
+            (vec![], vec![project.root.join("src/**/*")])
         );
     }
 
@@ -564,8 +561,8 @@ mod resolve_inputs {
             (
                 vec![],
                 vec![
-                    glob::normalize(project.root.join("**/*.{ts,tsx}")).unwrap(),
-                    glob::normalize(project.root.join("*.js")).unwrap()
+                    project.root.join("**/*.{ts,tsx}"),
+                    project.root.join("*.js")
                 ]
             ),
         );
@@ -617,14 +614,7 @@ mod resolve_inputs {
 
         assert_eq!(
             resolver.resolve(&string_vec!["dir"], &task).unwrap(),
-            (
-                vec![],
-                vec![if cfg!(windows) {
-                    glob::normalize(project.root.join("dir/**/*")).unwrap()
-                } else {
-                    project.root.join("dir/**/*").to_string_lossy().to_string()
-                }]
-            ),
+            (vec![], vec![project.root.join("dir/**/*")]),
         );
     }
 }
@@ -732,8 +722,8 @@ mod resolve_outputs {
             (
                 vec![],
                 vec![
-                    glob::normalize(project.root.join("**/*.{ts,tsx}")).unwrap(),
-                    glob::normalize(project.root.join("*.js")).unwrap()
+                    project.root.join("**/*.{ts,tsx}"),
+                    project.root.join("*.js")
                 ]
             ),
         );

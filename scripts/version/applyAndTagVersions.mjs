@@ -104,12 +104,6 @@ async function resetGit() {
 	await execa('git', ['reset', '--hard']);
 }
 
-function versionString(versions) {
-	return Object.entries(versions)
-		.map(([key, value]) => `${key}@${value}`)
-		.join(', ');
-}
-
 async function run() {
 	// Delete local builds so we dont inadvertently release it
 	await removeLocalBuilds();
@@ -122,14 +116,6 @@ async function run() {
 
 	// Now gather the versions again so we can diff
 	const nextVersions = await getPackageVersions();
-
-	const answer = await rl.question(`Release (Y/n)?\n${chalk.gray(versionString(nextVersions))}\n`);
-
-	if (answer.toLocaleLowerCase() === 'n') {
-		rl.close();
-		await resetGit();
-		return;
-	}
 
 	// Diff the versions and find the new ones
 	const diff = [];
@@ -146,6 +132,14 @@ async function run() {
 	}
 
 	logDiff(diff);
+
+	const answer = await rl.question(`Release (Y/n)? `);
+	rl.close();
+
+	if (answer.toLocaleLowerCase() === 'n') {
+		await resetGit();
+		return;
+	}
 
 	// Sync the cli version to the cli Cargo.toml
 	if (diff.some((file) => file.includes('@moonrepo/cli'))) {

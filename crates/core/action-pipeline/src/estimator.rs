@@ -10,17 +10,17 @@ pub struct Estimator {
     /// How long the actions would have taken to execute outside of moon.
     pub duration: Duration,
 
-    /// How much more time was spent using moon's pipeline, compared to the baseline.
-    pub loss: Option<Duration>,
-
-    /// Longest duration of each task bucketed by name.
-    pub tasks: FxHashMap<String, Duration>,
-
     /// How much less time was spent using moon's pipeline, compared to the baseline.
     pub gain: Option<Duration>,
 
+    /// How much more time was spent using moon's pipeline, compared to the baseline.
+    pub loss: Option<Duration>,
+
     // Percentage of savings between the baseline and current duration.
     pub percent: f32,
+
+    /// Longest duration of each task bucketed by name.
+    pub tasks: FxHashMap<String, Duration>,
 }
 
 impl Estimator {

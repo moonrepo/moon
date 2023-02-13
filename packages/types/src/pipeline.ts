@@ -49,9 +49,10 @@ export interface RunReport {
 	duration: Duration;
 	comparisonEstimate: {
 		duration: Duration;
+		gain: Duration | null;
+		loss: Duration | null;
+		percent: number;
 		tasks: Record<string, Duration>;
-		savings: Duration;
-		savingsPercent: number;
 	};
 	// Deprecated
 	estimatedSavings?: Duration | null;

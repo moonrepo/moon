@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.24.0
 
 Remote caching is now publicly available through our new service
 [moonbase](https://moonrepo.dev/moonbase)! Sign up for a [free account](https://moonrepo.app/) and

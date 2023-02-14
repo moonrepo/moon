@@ -54,7 +54,7 @@ pub fn format_running_command(
         )
     };
 
-    let suffix = format!("(in {})", target_dir);
+    let suffix = format!("(in {target_dir})");
     let message = format!("{} {}", command_line, color::muted(suffix));
 
     color::muted_light(message)
@@ -248,7 +248,6 @@ impl Command {
         Ok(output)
     }
 
-    #[track_caller]
     pub async fn exec_stream_and_capture_output(&mut self) -> Result<Output, MoonError> {
         self.log_command_info();
 
@@ -296,9 +295,9 @@ impl Command {
 
             while let Ok(Some(line)) = lines.next_line().await {
                 if stderr_prefix.is_empty() {
-                    eprintln!("{}", line);
+                    eprintln!("{line}");
                 } else {
-                    eprintln!("{} {}", stderr_prefix, line);
+                    eprintln!("{stderr_prefix} {line}");
                 }
 
                 captured_lines.push(line);
@@ -316,9 +315,9 @@ impl Command {
 
             while let Ok(Some(line)) = lines.next_line().await {
                 if stdout_prefix.is_empty() {
-                    println!("{}", line);
+                    println!("{line}");
                 } else {
-                    println!("{} {}", stdout_prefix, line);
+                    println!("{stdout_prefix} {line}");
                 }
 
                 captured_lines.push(line);
@@ -445,7 +444,7 @@ impl Command {
 
     pub fn set_prefix(&mut self, prefix: &str, width: Option<usize>) -> &mut Command {
         if is_ci() && !is_test_env() {
-            self.prefix = Some(color::muted(format!("[{}]", prefix)));
+            self.prefix = Some(color::muted(format!("[{prefix}]")));
         } else {
             self.prefix = Some(format!(
                 "{} {}",
@@ -557,7 +556,7 @@ impl Command {
         let input = self.get_input_line();
 
         let mut stdin = child.stdin.take().unwrap_or_else(|| {
-            panic!("Unable to write stdin: {}", input);
+            panic!("Unable to write stdin: {input}");
         });
 
         stdin.write_all(input.as_bytes()).await?;

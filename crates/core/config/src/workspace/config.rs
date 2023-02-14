@@ -37,7 +37,7 @@ fn validate_projects(projects: &WorkspaceProjects) -> Result<(), ValidationError
 
     if let Some(map) = map {
         for (key, value) in map {
-            validate_id(format!("projects.{}", key), key)?;
+            validate_id(format!("projects.{key}"), key)?;
 
             match validate_child_relative_path("projects", value) {
                 Ok(_) => {}

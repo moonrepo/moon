@@ -15,7 +15,7 @@ use validator::{Validate, ValidationError};
 
 fn validate_deps(list: &[String]) -> Result<(), ValidationError> {
     for (index, item) in list.iter().enumerate() {
-        let key = format!("deps[{}]", index);
+        let key = format!("deps[{index}]");
 
         // When no target scope, it's assumed to be a self scope
         if item.contains(':') {
@@ -31,7 +31,7 @@ fn validate_deps(list: &[String]) -> Result<(), ValidationError> {
 fn validate_inputs(list: &[String]) -> Result<(), ValidationError> {
     for (index, item) in list.iter().enumerate() {
         if !ENV_VAR.is_match(item) {
-            validate_child_or_root_path(format!("inputs[{}]", index), item)?;
+            validate_child_or_root_path(format!("inputs[{index}]"), item)?;
         }
     }
 
@@ -40,7 +40,7 @@ fn validate_inputs(list: &[String]) -> Result<(), ValidationError> {
 
 fn validate_outputs(list: &[String]) -> Result<(), ValidationError> {
     for (index, item) in list.iter().enumerate() {
-        validate_child_or_root_path(format!("outputs[{}]", index), item)?;
+        validate_child_or_root_path(format!("outputs[{index}]"), item)?;
     }
 
     Ok(())

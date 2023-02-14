@@ -23,7 +23,7 @@ fn create_tree() -> (TempDir, PathBuf, PathBuf, Vec<String>) {
             fs::create_dir_all(&parent).unwrap();
         }
 
-        fs::write(parent.join(format!("{}.txt", i)), Faker.fake::<String>()).unwrap();
+        fs::write(parent.join(format!("{i}.txt")), Faker.fake::<String>()).unwrap();
 
         if i % 100 == 0 {
             dir_index += 1;

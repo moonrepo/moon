@@ -336,7 +336,7 @@ impl Project {
     where
         F: FnOnce(&Path) -> ProjectLanguage,
     {
-        let log_target = format!("moon:project:{}", id);
+        let log_target = format!("moon:project:{id}");
 
         // For the root-level project, the "." dot actually causes
         // a ton of unwanted issues, so just use workspace root directly.

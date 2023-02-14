@@ -123,9 +123,9 @@ fn distribute_targets_across_jobs(
     let batched_targets;
 
     print_header(provider, "Distributing targets across jobs");
-    println!("Job index: {}", job_index);
-    println!("Job total: {}", job_index);
-    println!("Batch size: {}", batch_size);
+    println!("Job index: {job_index}");
+    println!("Job total: {job_index}");
+    println!("Batch size: {batch_size}");
     println!("Batched targets:");
 
     if job_index == 0 {

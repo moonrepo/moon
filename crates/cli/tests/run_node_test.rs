@@ -47,7 +47,7 @@ fn depman_sandbox(depman: &str) -> Sandbox {
         get_node_depman_fixture_configs(depman);
 
     let sandbox = create_sandbox_with_config(
-        format!("node-{}/workspaces", depman),
+        format!("node-{depman}/workspaces"),
         Some(&workspace_config),
         Some(&toolchain_config),
         Some(&tasks_config),
@@ -65,7 +65,7 @@ fn depman_non_workspaces_sandbox(depman: &str) -> Sandbox {
         WorkspaceProjects::Sources(FxHashMap::from_iter([("root".to_owned(), ".".to_owned())]));
 
     let sandbox = create_sandbox_with_config(
-        format!("node-{}/project", depman),
+        format!("node-{depman}/project"),
         Some(&workspace_config),
         Some(&toolchain_config),
         Some(&tasks_config),
@@ -575,7 +575,7 @@ mod sync_depends_on {
 
         // deps-c does not have a `package.json` on purpose
         assert_snapshot!(
-            format!("format_{:?}", format),
+            format!("format_{format:?}"),
             read_to_string(sandbox.path().join("depends-on/package.json")).unwrap()
         );
     }

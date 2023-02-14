@@ -53,7 +53,7 @@ mod test {
             let list = vec!["file_path", "muted", "id", "path", "shell", "symbol"];
 
             for token in list {
-                let value = format!("Before <{}>inner</{}> after", token, token);
+                let value = format!("Before <{token}>inner</{token}> after");
 
                 assert_ne!(replace_style_tokens(&value), value);
             }

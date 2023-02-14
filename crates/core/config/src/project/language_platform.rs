@@ -65,6 +65,9 @@ pub enum ProjectLanguage {
 )]
 #[serde(rename_all = "lowercase")]
 pub enum PlatformType {
+    #[strum(serialize = "deno")]
+    Deno,
+
     #[strum(serialize = "node")]
     Node,
 

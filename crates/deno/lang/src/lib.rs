@@ -1,3 +1,6 @@
+mod config;
+
+pub use config::DenoJson;
 use moon_lang::{Language, VersionManager};
 
 pub const DENO: Language = Language {

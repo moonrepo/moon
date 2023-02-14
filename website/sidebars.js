@@ -168,6 +168,7 @@ const sidebars = {
 			label: 'JavaScript',
 			collapsed: false,
 			items: [
+				'guides/javascript/handbook',
 				'guides/javascript/typescript-project-refs',
 				{
 					type: 'category',

@@ -47,6 +47,10 @@ impl Platform for SystemPlatform {
         Ok(Box::new(&self.tool))
     }
 
+    fn is_toolchain_enabled(&self) -> bool {
+        false
+    }
+
     // ACTIONS
 
     async fn hash_run_target(

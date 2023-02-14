@@ -88,6 +88,9 @@ pub trait Platform: Debug + Send + Sync {
         Ok(None)
     }
 
+    /// Return true of the platform will be utilizing the toolchain (tier 3).
+    fn is_toolchain_enabled(&self) -> bool;
+
     /// Setup the top-level tool in the toolchain if applicable.
     /// This is a one off flow, as most flows will be using the pipeline.
     async fn setup_toolchain(&mut self) -> Result<(), ToolError> {

@@ -23,20 +23,30 @@ pub async fn setup_tool(
         return Ok(ActionStatus::Skipped);
     }
 
+    let mut workspace = workspace.write().await;
+    let mut cache = workspace.cache.cache_tool_state(runtime)?;
+    let platform = workspace.platforms.get_mut(runtime)?;
+
+    // Platform may only have tier 2 support, not 3
+    if !platform.is_toolchain_enabled() {
+        debug!(
+            target: LOG_TARGET,
+            "Platform is not toolchain enabled, skipping setup for {}",
+            runtime.label()
+        );
+
+        return Ok(ActionStatus::Skipped);
+    }
+
     debug!(
         target: LOG_TARGET,
         "Setting up {} toolchain",
         runtime.label()
     );
 
-    let mut workspace = workspace.write().await;
-    let context = context.read().await;
-    let mut cache = workspace.cache.cache_tool_state(runtime)?;
-
     // Install and setup the specific tool + version in the toolchain!
-    let installed_count = workspace
-        .platforms
-        .get_mut(runtime)?
+    let context = context.read().await;
+    let installed_count = platform
         .setup_tool(&context, runtime, &mut cache.last_versions)
         .await?;
 

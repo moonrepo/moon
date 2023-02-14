@@ -1,7 +1,7 @@
 $schema: '../website/static/schemas/toolchain.json'
 
 node:
-  version: '16.18.0'
+  version: null # '16.18.0'
   packageManager: 'yarn'
   yarn:
     version: '3.3.0'

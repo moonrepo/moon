@@ -1,0 +1,59 @@
+---
+title: Handbook
+toc_max_heading_level: 6
+---
+
+Utilizing JavaScript in a monorepo can be a daunting task, as there are many ways to structure your
+code and to configure your tools. With this handbook, we'll help guide you through this process.
+
+## Enabling JavaScript in moon
+
+For this part of the handbook, we'll be focusing on [moon](/moon), our build system. To start,
+languages in moon act like plugins, where their functionality and support _is not_ enabled unless
+explicitly configured. We follow this approach to avoid unnecessary overhead.
+
+### Enabling the language
+
+To enable JavaScript support, define the [`node`](../../config/toolchain#node) setting in
+[`.moon/toolchain.yml`](../../config/toolchain), even if an empty object.
+
+```yaml title=".moon/toolchain.yml"
+# Enable Node.js
+node: {}
+
+# Enable Node.js and override default settings
+node:
+	packageManager: 'pnpm'
+```
+
+This will enable the Node.js platform and provide the following automations around its ecosystem:
+
+- Node modules will automatically be installed if dependencies in `package.json` have changed, or
+  the lockfile has changed, since the last time a task has ran.
+  - We'll also take `package.json` workspaces into account and install in the correct location,
+    either the workspace root or in a project.
+- Relationships between projects will automatically be discovered based on `dependencies`,
+  `devDependencies`, and `peerDependencies` in `package.json`.
+  - The versions of these packages will be automatically synced when changed.
+- Tasks can be [automatically inferred](../../config/toolchain#inferScriptsFromTasks) based on
+  `package.json` scripts.
+- And much more!
+
+### Utilizing the toolchain
+
+When a language is enabled, by default moon will assume that its binary is available within the
+current environment (typically on `PATH`). This has the downside of requiring all developers and
+machines to manually install the correct version of the language, _and to stay in sync_.
+
+Instead, you can utilize [moon's toolchain](../../concepts/toolchain), which will download and
+install the language in the background, and ensure every task is executed using the exact version
+across all machines.
+
+Enabling the toolchain is as simple as defining the [`node.version`](../../config/toolchain#version)
+setting.
+
+```yaml title=".moon/toolchain.yml"
+# Enable Node.js toolchain with an explicit version
+node:
+	version: '18.0.0'
+```

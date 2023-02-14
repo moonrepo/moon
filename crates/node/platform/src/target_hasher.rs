@@ -70,19 +70,19 @@ impl NodeTargetHasher {
         if let Some(compiler_options) = &tsconfig.compiler_options {
             if let Some(module) = &compiler_options.module {
                 self.tsconfig_compiler_options
-                    .insert("module".to_owned(), format!("{:?}", module));
+                    .insert("module".to_owned(), format!("{module:?}"));
             }
 
             if let Some(module_resolution) = &compiler_options.module_resolution {
                 self.tsconfig_compiler_options.insert(
                     "module_resolution".to_owned(),
-                    format!("{:?}", module_resolution),
+                    format!("{module_resolution:?}"),
                 );
             }
 
             if let Some(target) = &compiler_options.target {
                 self.tsconfig_compiler_options
-                    .insert("target".to_owned(), format!("{:?}", target));
+                    .insert("target".to_owned(), format!("{target:?}"));
             }
         }
     }

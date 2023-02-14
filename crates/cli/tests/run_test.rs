@@ -499,14 +499,14 @@ mod outputs {
         assert!(sandbox
             .path()
             .join(".moon/cache/hashes")
-            .join(format!("{}.json", hash))
+            .join(format!("{hash}.json"))
             .exists());
 
         // outputs
         assert!(sandbox
             .path()
             .join(".moon/cache/outputs")
-            .join(format!("{}.tar.gz", hash))
+            .join(format!("{hash}.tar.gz"))
             .exists());
     }
 
@@ -525,14 +525,14 @@ mod outputs {
         assert!(sandbox
             .path()
             .join(".moon/cache/hashes")
-            .join(format!("{}.json", hash))
+            .join(format!("{hash}.json"))
             .exists());
 
         // outputs
         assert!(sandbox
             .path()
             .join(".moon/cache/outputs")
-            .join(format!("{}.tar.gz", hash))
+            .join(format!("{hash}.tar.gz"))
             .exists());
     }
 
@@ -551,14 +551,14 @@ mod outputs {
         assert!(sandbox
             .path()
             .join(".moon/cache/hashes")
-            .join(format!("{}.json", hash))
+            .join(format!("{hash}.json"))
             .exists());
 
         // outputs
         assert!(sandbox
             .path()
             .join(".moon/cache/outputs")
-            .join(format!("{}.tar.gz", hash))
+            .join(format!("{hash}.tar.gz"))
             .exists());
     }
 
@@ -577,14 +577,14 @@ mod outputs {
         assert!(sandbox
             .path()
             .join(".moon/cache/hashes")
-            .join(format!("{}.json", hash))
+            .join(format!("{hash}.json"))
             .exists());
 
         // outputs
         assert!(sandbox
             .path()
             .join(".moon/cache/outputs")
-            .join(format!("{}.tar.gz", hash))
+            .join(format!("{hash}.tar.gz"))
             .exists());
     }
 
@@ -603,14 +603,14 @@ mod outputs {
         assert!(sandbox
             .path()
             .join(".moon/cache/hashes")
-            .join(format!("{}.json", hash))
+            .join(format!("{hash}.json"))
             .exists());
 
         // outputs
         assert!(sandbox
             .path()
             .join(".moon/cache/outputs")
-            .join(format!("{}.tar.gz", hash))
+            .join(format!("{hash}.tar.gz"))
             .exists());
     }
 
@@ -627,7 +627,7 @@ mod outputs {
         let tarball = sandbox
             .path()
             .join(".moon/cache/outputs")
-            .join(format!("{}.tar.gz", hash));
+            .join(format!("{hash}.tar.gz"));
         let dir = sandbox.path().join(".moon/cache/outputs").join(hash);
 
         moon_archive::untar(tarball, &dir, None).unwrap();
@@ -651,7 +651,7 @@ mod outputs {
         let tarball = sandbox
             .path()
             .join(".moon/cache/outputs")
-            .join(format!("{}.tar.gz", hash));
+            .join(format!("{hash}.tar.gz"));
         let dir = sandbox.path().join(".moon/cache/outputs").join(hash);
 
         moon_archive::untar(tarball, &dir, None).unwrap();
@@ -820,7 +820,7 @@ mod outputs {
 
             assert!(!sandbox
                 .path()
-                .join(format!(".moon/cache/outputs/{}.tar.gz", hash))
+                .join(format!(".moon/cache/outputs/{hash}.tar.gz"))
                 .exists());
         }
 
@@ -842,7 +842,7 @@ mod outputs {
 
             assert!(sandbox
                 .path()
-                .join(format!(".moon/cache/outputs/{}.tar.gz", hash))
+                .join(format!(".moon/cache/outputs/{hash}.tar.gz"))
                 .exists());
         }
 
@@ -862,7 +862,7 @@ mod outputs {
 
             assert!(sandbox
                 .path()
-                .join(format!(".moon/cache/outputs/{}.tar.gz", hash))
+                .join(format!(".moon/cache/outputs/{hash}.tar.gz"))
                 .exists());
         }
 
@@ -882,7 +882,7 @@ mod outputs {
 
             assert!(!sandbox
                 .path()
-                .join(format!(".moon/cache/outputs/{}.tar.gz", hash))
+                .join(format!(".moon/cache/outputs/{hash}.tar.gz"))
                 .exists());
         }
 

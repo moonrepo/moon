@@ -257,7 +257,7 @@ impl Template {
                     let var = var.as_str();
 
                     if context.contains_key(var) {
-                        return format!("{{{{ {} | as_str }}}}", var);
+                        return format!("{{{{ {var} | as_str }}}}");
                     }
                 }
 

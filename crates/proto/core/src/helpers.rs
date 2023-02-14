@@ -38,7 +38,7 @@ pub fn add_v_prefix(value: &str) -> String {
         return value.to_lowercase();
     }
 
-    format!("v{}", value)
+    format!("v{value}")
 }
 
 pub fn remove_v_prefix(value: &str) -> String {

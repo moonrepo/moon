@@ -23,7 +23,7 @@ pub fn extend_node_path<T: AsRef<str>>(value: T) -> String {
     let delimiter = if cfg!(windows) { ";" } else { ":" };
 
     match env::var("NODE_PATH") {
-        Ok(old_value) => format!("{}{}{}", value, delimiter, old_value),
+        Ok(old_value) => format!("{value}{delimiter}{old_value}"),
         Err(_) => value.to_owned(),
     }
 }
@@ -120,11 +120,11 @@ pub fn get_bin_name_suffix<T: AsRef<str>>(name: T, windows_ext: &str, flat: bool
     let name = name.as_ref();
 
     if cfg!(windows) {
-        format!("{}.{}", name, windows_ext)
+        format!("{name}.{windows_ext}")
     } else if flat {
         name.to_owned()
     } else {
-        format!("bin/{}", name)
+        format!("bin/{name}")
     }
 }
 
@@ -225,8 +225,7 @@ mod tests {
     SETLOCAL
     SET PATHEXT=%PATHEXT:;.JS;=;%
     node "%~dp0\{path}" %*
-)"#,
-            path = path
+)"#
         )
     }
 

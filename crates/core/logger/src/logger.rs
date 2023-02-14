@@ -86,7 +86,7 @@ impl Logger {
                     let formatted_message = format!("{} {} {}", prefix, record.target(), message);
                     let message_without_colors = strip_ansi_codes(&formatted_message);
 
-                    out.finish(format_args!("{}", message_without_colors))
+                    out.finish(format_args!("{message_without_colors}"))
                 })
                 .chain(log_file(output).expect("Could not create log file."));
 

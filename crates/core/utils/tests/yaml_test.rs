@@ -17,7 +17,7 @@ mod editor_config {
             .open(root.join(".editorconfig"))
             .unwrap();
 
-        writeln!(file, "\n\n{}", data).unwrap();
+        writeln!(file, "\n\n{data}").unwrap();
     }
 
     #[test]

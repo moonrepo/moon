@@ -50,31 +50,31 @@ pub fn elapsed(duration: Duration) -> String {
     let mut parts = vec![];
 
     if years > 0 {
-        parts.push(format!("{}y", years));
+        parts.push(format!("{years}y"));
     }
 
     if months > 0 {
-        parts.push(format!("{}mo", months));
+        parts.push(format!("{months}mo"));
     }
 
     if days > 0 {
-        parts.push(format!("{}d", days));
+        parts.push(format!("{days}d"));
     }
 
     if hours > 0 {
-        parts.push(format!("{}h", hours));
+        parts.push(format!("{hours}h"));
     }
 
     if minutes > 0 {
-        parts.push(format!("{}m", minutes));
+        parts.push(format!("{minutes}m"));
     }
 
     if seconds > 0 {
-        parts.push(format!("{}s", seconds));
+        parts.push(format!("{seconds}s"));
     }
 
     if millis > 0 {
-        parts.push(format!("{}ms", millis));
+        parts.push(format!("{millis}ms"));
     }
 
     if parts.is_empty() {

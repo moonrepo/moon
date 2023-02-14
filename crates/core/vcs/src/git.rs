@@ -80,7 +80,7 @@ impl Git {
         let mut candidates = string_vec![base.to_owned()];
 
         for remote in &self.config.remote_candidates {
-            candidates.push(format!("{}/{}", remote, base));
+            candidates.push(format!("{remote}/{base}"));
         }
 
         // To start, we need to find a working base origin
@@ -375,7 +375,7 @@ impl Vcs for Git {
         };
 
         Ok(self
-            .get_touched_files_between_revisions(&format!("{}~1", rev), rev)
+            .get_touched_files_between_revisions(&format!("{rev}~1"), rev)
             .await?)
     }
 
@@ -477,7 +477,7 @@ impl Vcs for Git {
         }
 
         if default_branch.contains('/') {
-            return default_branch.ends_with(&format!("/{}", branch));
+            return default_branch.ends_with(&format!("/{branch}"));
         }
 
         false

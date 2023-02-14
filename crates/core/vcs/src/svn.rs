@@ -262,7 +262,7 @@ impl Vcs for Svn {
                 self.create_command(vec![
                     "diff",
                     "-r",
-                    &format!("{}:{}", base_revision, revision),
+                    &format!("{base_revision}:{revision}"),
                     "--summarize",
                 ]),
                 false,

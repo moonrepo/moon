@@ -57,7 +57,7 @@ impl Executable<'_> for NodeDependencyManager {
 
         return Err(ProtoError::ExecuteMissingBin(
             self.get_name(),
-            install_dir.join(format!("bin/{}.js", bin_name)),
+            install_dir.join(format!("bin/{bin_name}.js")),
         ));
     }
 

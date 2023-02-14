@@ -83,11 +83,10 @@ pub async fn run_target(
             };
 
             println!(
-                "Target(s) {} not affected by touched files (using status {})",
-                targets_list, status_list
+                "Target(s) {targets_list} not affected by touched files (using status {status_list})"
             );
         } else {
-            println!("No tasks found for target(s) {}", targets_list);
+            println!("No tasks found for target(s) {targets_list}");
         }
 
         return Ok(());

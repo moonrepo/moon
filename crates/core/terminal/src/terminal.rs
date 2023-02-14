@@ -35,7 +35,7 @@ pub trait ExtendedTerm {
 
 impl ExtendedTerm for Term {
     fn format(&self, value: &impl Debug) -> String {
-        format!("{:?}", value)
+        format!("{value:?}")
     }
 
     fn format_label<V: AsRef<str>>(&self, kind: Label, message: V) -> String {

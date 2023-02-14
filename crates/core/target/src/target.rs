@@ -70,7 +70,7 @@ impl Target {
     }
 
     pub fn format(project_id: &str, task_id: &str) -> Result<String, TargetError> {
-        Ok(format!("{}:{}", project_id, task_id))
+        Ok(format!("{project_id}:{task_id}"))
     }
 
     pub fn parse(target_id: &str) -> Result<Target, TargetError> {

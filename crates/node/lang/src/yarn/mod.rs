@@ -12,7 +12,7 @@ pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVer
 
     let yarn_lock_text = fs::read(path)?;
     let entries: Vec<Entry> = parse_str(&yarn_lock_text)
-        .map_err(|e| MoonError::Generic(format!("Failed to parse lockfile: {}", e)))?;
+        .map_err(|e| MoonError::Generic(format!("Failed to parse lockfile: {e}")))?;
 
     for entry in entries {
         // All workspace dependencies have empty integrities, so we will skip them

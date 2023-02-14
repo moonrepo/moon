@@ -109,7 +109,7 @@ impl Pipeline {
 
         for (b, batch) in batches.into_iter().enumerate() {
             let batch_index = b + 1;
-            let batch_target_name = format!("{}:batch:{}", LOG_TARGET, batch_index);
+            let batch_target_name = format!("{LOG_TARGET}:batch:{batch_index}");
             let actions_count = batch.len();
             let mut action_handles = vec![];
 
@@ -131,7 +131,7 @@ impl Pipeline {
                     let runtime = tokio::runtime::Handle::current();
 
                     let mut action = Action::new(node.to_owned());
-                    action.log_target = format!("{}:{}", batch_target_name, action_index);
+                    action.log_target = format!("{batch_target_name}:{action_index}");
 
                     action_handles.push(pool.complete(async move {
                         runtime
@@ -310,20 +310,19 @@ impl Pipeline {
         if pass_count > 0 {
             if cached_count > 0 {
                 counts_message.push(color::success(format!(
-                    "{} completed ({} cached)",
-                    pass_count, cached_count
+                    "{pass_count} completed ({cached_count} cached)"
                 )));
             } else {
-                counts_message.push(color::success(format!("{} completed", pass_count)));
+                counts_message.push(color::success(format!("{pass_count} completed")));
             }
         }
 
         if fail_count > 0 {
-            counts_message.push(color::failure(format!("{} failed", fail_count)));
+            counts_message.push(color::failure(format!("{fail_count} failed")));
         }
 
         if invalid_count > 0 {
-            counts_message.push(color::invalid(format!("{} invalid", invalid_count)));
+            counts_message.push(color::invalid(format!("{invalid_count} invalid")));
         }
 
         let term = Term::buffered_stdout();

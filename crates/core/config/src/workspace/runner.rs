@@ -12,7 +12,7 @@ fn validate_cache_lifetime(value: &str) -> Result<(), ValidationError> {
         return Err(create_validation_error(
             "invalid_duration",
             "cacheLifetime",
-            format!("Invalid lifetime duration: {}", e),
+            format!("Invalid lifetime duration: {e}"),
         ));
     }
 
@@ -21,7 +21,7 @@ fn validate_cache_lifetime(value: &str) -> Result<(), ValidationError> {
 
 fn validate_archivable_targets(list: &[String]) -> Result<(), ValidationError> {
     for (index, item) in list.iter().enumerate() {
-        validate_target(format!("archivableTargets[{}]", index), item)?;
+        validate_target(format!("archivableTargets[{index}]"), item)?;
     }
 
     Ok(())

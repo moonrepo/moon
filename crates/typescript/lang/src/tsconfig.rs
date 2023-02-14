@@ -94,7 +94,7 @@ impl TsConfigJson {
 
         // File name is optional when using standard naming
         if tsconfig_name != "tsconfig.json" {
-            path = format!("{}/{}", path, tsconfig_name)
+            path = format!("{path}/{tsconfig_name}")
         };
 
         let mut references = match &self.references {

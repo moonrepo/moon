@@ -323,15 +323,14 @@ fileGroups:
                 super::CONFIG_TASKS_FILENAME,
                 format!(
                     r#"
-extends: '{}'
+extends: '{url}'
 
 fileGroups:
     sources:
         - sources/**/*
     configs:
         - '*.js'
-"#,
-                    url
+"#
                 )
                 .as_ref(),
             )?;

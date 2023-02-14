@@ -6,7 +6,7 @@ fn sandbox(uri: String) -> Sandbox {
     let (mut workspace_config, toolchain_config, tasks_config) = get_node_fixture_configs();
 
     workspace_config.notifier = NotifierConfig {
-        webhook_url: Some(format!("{}/webhook", uri)),
+        webhook_url: Some(format!("{uri}/webhook")),
     };
 
     let sandbox = create_sandbox_with_config(

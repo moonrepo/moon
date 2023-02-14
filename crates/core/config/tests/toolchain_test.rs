@@ -228,14 +228,13 @@ node:
                 super::CONFIG_TOOLCHAIN_FILENAME,
                 format!(
                     r#"
-extends: '{}'
+extends: '{url}'
 
 node:
     version: '18.0.0'
     npm:
         version: '8.0.0'
-"#,
-                    url
+"#
                 )
                 .as_ref(),
             )?;

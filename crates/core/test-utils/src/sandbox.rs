@@ -80,7 +80,7 @@ impl Sandbox {
         handler(&mut cmd);
 
         let out = cmd.output().unwrap_or_else(|e| {
-            panic!("{:#?}", e);
+            panic!("{e:#?}");
         });
 
         if !out.status.success() {

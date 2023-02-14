@@ -6,6 +6,10 @@
 
 - Fixed an issue where `moon query projects --affected` would hang indefinitely waiting for stdin.
 
+#### ⚙️ Internal
+
+- Updated Rust to v1.67.
+
 ## 0.24.2
 
 #### 🚀 Updates

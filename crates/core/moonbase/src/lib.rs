@@ -95,7 +95,7 @@ impl Moonbase {
         &self,
         hash: &str,
     ) -> Result<Option<(Artifact, Option<String>)>, MoonbaseError> {
-        let response = get_request(format!("artifacts/{}", hash), Some(&self.auth_token)).await?;
+        let response = get_request(format!("artifacts/{hash}"), Some(&self.auth_token)).await?;
 
         // dbg!("read_artifact", hash, &response);
 
@@ -125,7 +125,7 @@ impl Moonbase {
         // dbg!("write_artifact", hash, &input);
 
         let response =
-            post_request(format!("artifacts/{}", hash), input, Some(&self.auth_token)).await?;
+            post_request(format!("artifacts/{hash}"), input, Some(&self.auth_token)).await?;
 
         // dbg!(&response);
 
@@ -153,7 +153,7 @@ impl Moonbase {
             reqwest::Client::new().get(url)
         } else {
             reqwest::Client::new()
-                .get(endpoint(format!("artifacts/{}/download", hash)))
+                .get(endpoint(format!("artifacts/{hash}/download")))
                 .bearer_auth(&self.auth_token)
                 .header("Accept", "application/json")
         };
@@ -210,7 +210,7 @@ pub async fn upload_artifact(
             .body(Body::wrap_stream(file_stream))
     } else {
         reqwest::Client::new()
-            .post(endpoint(format!("artifacts/{}/upload", hash)))
+            .post(endpoint(format!("artifacts/{hash}/upload")))
             .body(Body::wrap_stream(file_stream))
             .bearer_auth(&auth_token)
             .header("Accept", "application/json")
@@ -256,7 +256,7 @@ async fn mark_upload_complete(
     job_id: Option<i64>,
 ) -> Result<(), MoonbaseError> {
     let _: Response<EmptyData> = post_request(
-        format!("artifacts/{}/complete", hash),
+        format!("artifacts/{hash}/complete"),
         ArtifactCompleteInput { job_id, success },
         Some(auth_token),
     )

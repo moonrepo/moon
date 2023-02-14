@@ -21,7 +21,7 @@ pub async fn sync() -> Result<(), AnyError> {
     let results = pipeline.run(dep_graph, None).await?;
 
     done(
-        format!("Successfully synced {} projects", project_count),
+        format!("Successfully synced {project_count} projects"),
         true,
     );
 

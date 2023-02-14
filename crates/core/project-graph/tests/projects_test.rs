@@ -409,7 +409,7 @@ mod task_inheritance {
                 let task = project_graph.get("rename").unwrap().get_task(id).unwrap();
 
                 assert_eq!(task.id, id.to_owned());
-                assert_eq!(task.target.id, format!("rename:{}", id));
+                assert_eq!(task.target.id, format!("rename:{id}"));
             }
         }
 

@@ -52,7 +52,7 @@ pub fn convert_globals(turbo: &TurboJson, tasks_config: &mut InheritedTasksConfi
 
     if let Some(global_env) = &turbo.global_env {
         for env in global_env {
-            tasks_config.implicit_inputs.push(format!("${}", env));
+            tasks_config.implicit_inputs.push(format!("${env}"));
         }
 
         modified = true;
@@ -66,8 +66,7 @@ pub fn convert_task(name: String, task: TurboTask) -> TaskConfig {
     let mut inputs = vec![];
 
     config.command = Some(TaskCommandArgs::String(format!(
-        "moon node run-script {}",
-        name
+        "moon node run-script {name}"
     )));
 
     if let Some(turbo_deps) = task.depends_on {
@@ -92,7 +91,7 @@ pub fn convert_task(name: String, task: TurboTask) -> TaskConfig {
 
     if let Some(turbo_env) = task.env {
         for env in turbo_env {
-            inputs.push(format!("${}", env));
+            inputs.push(format!("${env}"));
         }
     }
 
@@ -105,7 +104,7 @@ pub fn convert_task(name: String, task: TurboTask) -> TaskConfig {
 
         for output in turbo_outputs {
             if output.ends_with("/**") {
-                outputs.push(format!("{}/*", output));
+                outputs.push(format!("{output}/*"));
             } else {
                 outputs.push(output);
             }

@@ -18,8 +18,7 @@ pub async fn clean(options: CleanOptions) -> Result<(), AnyError> {
 
     done(
         format!(
-            "Deleted {} files and saved {} bytes",
-            files_deleted, bytes_saved
+            "Deleted {files_deleted} files and saved {bytes_saved} bytes"
         ),
         true,
     );

@@ -46,7 +46,7 @@ pub async fn dep_graph(target_id: Option<String>, dot: bool, json: bool) -> Resu
     let url = format!("http://{}", server.server_addr());
     let _ = open::that(&url);
 
-    println!("Started server on {}", url);
+    println!("Started server on {url}");
 
     for req in server.incoming_requests() {
         respond_to_request(req, &mut tera, &graph_info, "Dependency graph".to_owned())?;

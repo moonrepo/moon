@@ -2581,6 +2581,7 @@ version = "0.1.0"
 dependencies = [
  "moon_bun_lang",
  "moon_config",
+ "moon_deno_lang",
  "moon_go_lang",
  "moon_lang",
  "moon_node_lang",

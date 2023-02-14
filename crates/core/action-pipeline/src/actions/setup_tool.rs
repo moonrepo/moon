@@ -31,8 +31,7 @@ pub async fn setup_tool(
     if !platform.is_toolchain_enabled() {
         debug!(
             target: LOG_TARGET,
-            "Platform is not toolchain enabled, skipping setup for {}",
-            runtime.label()
+            "Platform is not toolchain enabled, skipping setup",
         );
 
         return Ok(ActionStatus::Skipped);

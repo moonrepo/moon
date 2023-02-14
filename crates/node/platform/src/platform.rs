@@ -59,20 +59,21 @@ impl Platform for NodePlatform {
         PlatformType::Node
     }
 
-    fn get_runtime_from_config(&self, project_config: Option<&ProjectConfig>) -> Option<Runtime> {
+    fn get_runtime_from_config(&self, project_config: Option<&ProjectConfig>) -> Runtime {
         if let Some(config) = &project_config {
             if let Some(node_config) = &config.toolchain.node {
                 if let Some(version) = &node_config.version {
-                    return Some(Runtime::Node(Version::new_override(version)));
+                    return Runtime::Node(Version::new_override(version));
                 }
             }
         }
 
         if let Some(node_version) = &self.config.version {
-            return Some(Runtime::Node(Version::new(node_version)));
+            return Runtime::Node(Version::new(node_version));
         }
 
-        None
+        // Global install
+        Runtime::Node(Version::default())
     }
 
     fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool {
@@ -331,6 +332,10 @@ impl Platform for NodePlatform {
         runtime: &Runtime,
         last_versions: &mut FxHashMap<String, String>,
     ) -> Result<u8, ToolError> {
+        if !self.is_toolchain_enabled() {
+            return Ok(0);
+        }
+
         let version = runtime.version();
 
         if !self.toolchain.has(&version) {
@@ -434,9 +439,11 @@ impl Platform for NodePlatform {
         runtime: &Runtime,
         working_dir: &Path,
     ) -> Result<Command, ToolError> {
-        let version = runtime.version();
+        let command = if self.is_toolchain_enabled() {
+            let tool = self.toolchain.get_for_version(runtime.version())?;
 
-        let command = if version.is_latest() {
+            actions::create_target_command(tool, context, project, task, working_dir)?
+        } else {
             debug!(
                 target: LOG_TARGET,
                 "Tool has not been configured, attempting to create a command using the global `node`"
@@ -449,10 +456,6 @@ impl Platform for NodePlatform {
                 task,
                 working_dir,
             )?
-        } else {
-            let tool = self.toolchain.get_for_version(runtime.version())?;
-
-            actions::create_target_command(tool, context, project, task, working_dir)?
         };
 
         Ok(command)

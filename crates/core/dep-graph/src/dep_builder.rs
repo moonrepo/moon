@@ -65,8 +65,8 @@ impl<'ws> DepGraphBuilder<'ws> {
             return pair.clone();
         }
 
-        let mut project_runtime = None;
-        let mut workspace_runtime = None;
+        let mut project_runtime = Runtime::System;
+        let mut workspace_runtime = Runtime::System;
 
         if let Some(platform) = self.platforms.find(|p| match task {
             Some(task) => p.matches(&task.platform, None),
@@ -76,10 +76,7 @@ impl<'ws> DepGraphBuilder<'ws> {
             workspace_runtime = platform.get_runtime_from_config(None);
         }
 
-        let pair = (
-            project_runtime.unwrap_or(Runtime::System),
-            workspace_runtime.unwrap_or(Runtime::System),
-        );
+        let pair = (project_runtime, workspace_runtime);
 
         self.runtimes.insert(key, pair.clone());
 

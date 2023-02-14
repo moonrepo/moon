@@ -129,14 +129,11 @@ impl DepGraph {
             &|_, n| {
                 let id = n.1;
 
-                format!(
-                    "label=\"{}\" style=filled, shape=oval, fillcolor=gray, fontcolor=black",
-                    id
-                )
+                format!("label=\"{id}\" style=filled, shape=oval, fillcolor=gray, fontcolor=black")
             },
         );
 
-        format!("{:?}", dot)
+        format!("{dot:?}")
     }
 
     #[track_caller]

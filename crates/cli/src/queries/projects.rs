@@ -56,7 +56,7 @@ fn convert_to_regex(field: &str, value: &Option<String>) -> Result<Option<regex:
             );
 
             // case-insensitive by default
-            Ok(Some(regex::create_regex(&format!("(?i){}", pattern))?))
+            Ok(Some(regex::create_regex(&format!("(?i){pattern}"))?))
         }
         None => Ok(None),
     }

@@ -57,7 +57,7 @@ fn parse_var_args(vars: &[String]) -> FxHashMap<String, String> {
         } else {
             name
         };
-        let comment = color::muted_light(format!("(from --{})", name));
+        let comment = color::muted_light(format!("(from --{name})"));
 
         log_var(name, &value, Some(&comment));
 

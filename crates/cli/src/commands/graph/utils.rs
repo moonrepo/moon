@@ -29,7 +29,7 @@ pub async fn setup_server() -> Result<(Server, Tera), AnyError> {
         Ok(h) => h,
         Err(..) => "127.0.0.1".to_string(),
     };
-    let address = format!("{}:{}", host, port);
+    let address = format!("{host}:{port}");
     let server = Server::http(address).unwrap();
     let tera = Tera::default();
 

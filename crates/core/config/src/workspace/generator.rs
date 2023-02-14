@@ -17,7 +17,7 @@ fn validate_templates(files: &[FilePath]) -> Result<(), ValidationError> {
     }
 
     for (index, file) in files.iter().enumerate() {
-        validate_child_relative_path(format!("templates[{}]", index), file)?;
+        validate_child_relative_path(format!("templates[{index}]"), file)?;
     }
 
     Ok(())

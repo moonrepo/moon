@@ -197,7 +197,7 @@ impl DependencyManager<NodeTool> for PnpmTool {
             });
 
             // https://pnpm.io/filtering#--filter-package_name-1
-            cmd.arg(format!("{}...", package));
+            cmd.arg(format!("{package}..."));
         }
 
         cmd.exec_stream_output().await?;

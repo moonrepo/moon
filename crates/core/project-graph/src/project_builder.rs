@@ -515,7 +515,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             debug!(
                 target: LOG_TARGET,
                 "Generated hash {} for project graph",
-                color::symbol(&hash),
+                color::hash(&hash),
             );
         }
 

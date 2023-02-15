@@ -485,7 +485,7 @@ impl<'a> Runner<'a> {
         debug!(
             target: LOG_TARGET,
             "Generated hash {} for target {}",
-            color::symbol(&hash),
+            color::hash(&hash),
             color::id(&self.task.target)
         );
 
@@ -499,7 +499,7 @@ impl<'a> Runner<'a> {
             debug!(
                 target: LOG_TARGET,
                 "Cache hit for hash {}, reusing previous build",
-                color::symbol(&hash),
+                color::hash(&hash),
             );
 
             return Ok(Some(HydrateFrom::PreviousOutput));
@@ -524,7 +524,7 @@ impl<'a> Runner<'a> {
                     debug!(
                         target: LOG_TARGET,
                         "Cache hit for hash {}, hydrating from local cache",
-                        color::symbol(&hash),
+                        color::hash(&hash),
                     );
 
                     return Ok(Some(HydrateFrom::LocalCache));
@@ -533,7 +533,7 @@ impl<'a> Runner<'a> {
                     debug!(
                         target: LOG_TARGET,
                         "Cache hit for hash {}, hydrating from remote cache",
-                        color::symbol(&hash),
+                        color::hash(&hash),
                     );
 
                     return Ok(Some(HydrateFrom::RemoteCache));
@@ -545,7 +545,7 @@ impl<'a> Runner<'a> {
         debug!(
             target: LOG_TARGET,
             "Cache miss for hash {}, continuing run",
-            color::symbol(&hash),
+            color::hash(&hash),
         );
 
         Ok(None)

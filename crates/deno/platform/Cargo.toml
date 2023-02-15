@@ -1,0 +1,16 @@
+[package]
+name = "moon_deno_platform"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+proto = { path = "../../proto/cli" }
+rustc-hash = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+
+[dev-dependencies]
+moon = { path = "../../core/moon" }
+moon_project_graph = { path = "../../core/project-graph" }
+moon_test_utils = { path = "../../core/test-utils" }

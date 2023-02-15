@@ -567,7 +567,7 @@ outputs:
 mod platform {
     #[test]
     #[should_panic(
-        expected = "unknown variant: found `whatisthis`, expected `one of `node`, `system`, `unknown`` for key \"default.platform\""
+        expected = "unknown variant: found `whatisthis`, expected `one of `deno`, `node`, `system`, `unknown`` for key \"default.platform\""
     )]
     fn invalid_type() {
         figment::Jail::expect_with(|jail| {

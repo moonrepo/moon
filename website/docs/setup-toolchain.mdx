@@ -37,69 +37,9 @@ moon was built with monorepos in mind, and as such, has first-class support for 
 workspaces (but is not a requirement). To utilize workspaces, enable them for your chosen package
 manager.
 
-<Tabs
-  groupId="package-manager"
-  defaultValue="yarn"
-  values={[
-    { label: 'Yarn', value: 'yarn' },
-    { label: 'Yarn (classic)', value: 'yarn1' },
-    { label: 'npm', value: 'npm' },
-    { label: 'pnpm', value: 'pnpm' },
-  ]}
->
-<TabItem value="yarn">
+import PackageWorkspaces from './__partials__/node/package-workspaces.mdx';
 
-```json title="package.json"
-{
-  // ...
-  "workspaces": ["apps/*", "packages/*"]
-}
-```
-
-```yaml title=".yarnrc.yml"
-# ...
-nodeLinker: 'node-modules'
-```
-
-- [Documentation](https://yarnpkg.com/features/workspaces)
-
-</TabItem>
-<TabItem value="yarn1">
-
-```json title="package.json"
-{
-  // ...
-  "workspaces": ["apps/*", "packages/*"]
-}
-```
-
-- [Documentation](https://classic.yarnpkg.com/en/docs/workspaces)
-
-</TabItem>
-<TabItem value="npm">
-
-```json title="package.json"
-{
-  // ...
-  "workspaces": ["apps/*", "packages/*"]
-}
-```
-
-- [Documentation](https://docs.npmjs.com/cli/v8/using-npm/workspaces)
-
-</TabItem>
-<TabItem value="pnpm">
-
-```yaml title="pnpm-workspace.yaml"
-packages:
-	- 'apps/*'
-	- 'packages/*'
-```
-
-- [Documentation](https://pnpm.io/workspaces)
-
-</TabItem>
-</Tabs>
+<PackageWorkspaces />
 
 ## Configuring Node.js
 

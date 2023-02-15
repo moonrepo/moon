@@ -3,6 +3,9 @@ title: Monorepo handbook
 toc_max_heading_level: 6
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 Utilizing JavaScript in a monorepo can be a daunting task, as there are many ways to structure your
 code and to configure your tools. With this handbook, we'll help guide you through this process.
 
@@ -86,14 +89,20 @@ node:
 ## Repository structure
 
 JavaScript monorepo's work best when projects are split into applications and packages, with each
-project containing its own `package.json` and dependencies. For small repositories, the following
-structure typically works well:
+project containing its own `package.json` and dependencies. A root `package.json` must also exist
+that pieces all projects together through workspaces.
+
+For small repositories, the following structure typically works well:
 
 ```
 /
+├── .moon/
 ├── package.json
 ├── apps/
-│   └── web/
+│   └── client/
+|       ├── ...
+│       └── package.json
+│   └── server/
 |       ├── ...
 │       └── package.json
 └── packages/
@@ -113,6 +122,7 @@ organization. With this structure, applications and libraries can be nested at a
 
 ```
 /
+├── .moon/
 ├── package.json
 ├── infra/
 │   └── ...
@@ -126,19 +136,254 @@ organization. With this structure, applications and libraries can be nested at a
 
 ### Applications
 
-...
+Applications are runnable or executable, like an HTTP server, and are pieced together with packages
+and its own encapsulated code. They represent the whole, while packages are the pieces. Applications
+can import and depend on packages, but they _must not_ import and depend on other applications.
+
+In moon, you can denote a project as an application using the [`type`](../../config/project#type)
+setting in [`moon.yml`](../../config/project).
+
+```yaml title="moon.yml"
+type: 'application'
+```
 
 ### Packages
 
-Packages (also known as a libraries)...
+Packages (also known as a libraries) are self-contained reusable pieces of code, and are the
+suggested pattern for [code sharing](#code-sharing). Packages can import and depend on other
+packages, but they _must not_ import and depend on applications!
+
+In moon, you can denote a project as a library using the [`type`](../../config/project#type) setting
+in [`moon.yml`](../../config/project).
+
+```yaml title="moon.yml"
+type: 'library'
+```
+
+### Configuration
+
+Every tool that you'll utilize in a repository will have its own configuration file. This will be a
+lot of config files, but regardless of what tool it is, where the config file should go will fall
+into 1 of these categories:
+
+- **Settings are inherited by all projects.** These are known as universal tools, and enforce code
+  consistency and quality across the entire repository. Their config file must exist in the
+  repository root, but may support overrides in each project.
+  - Examples: Babel, [ESLint](../examples/eslint), [Prettier](../examples/prettier),
+    [TypeScript](../examples/typescript)
+- **Settings are unique per project.** These are developers tools that must be configured separately
+  for each project, as they'll have different concerns. Their config file must exist in each
+  project, but a shared configuration may exist as a base (for example, Jest presets).
+  - Examples: [Jest](../examples/jest), [TypeScript](../examples/typescript) (with project
+    references)
+- **Settings are one-offs.** These are typically for applications or tools that require their own
+  config, but aren't prevalent throughout the entire repository.
+  - Examples: [Astro](../examples/astro), [Next](../examples/next), [Nuxt](../examples/nuxt),
+    [Remix](../examples/remix), Tailwind
 
 ## Dependency management
 
-### Workspaces
+Dependencies, also known as node modules, are required by all projects, and are installed through a
+package manager like npm, pnpm, or yarn. It doesn't matter which package manager you choose, but we
+highly suggest choosing one that has proper workspaces support.
 
-### Dev deps in root
+Package workspaces is a concept that resolves all `package.json`s in a repository using glob
+patterns, and installs all dependencies within the tree at once. It also creates symlinks in
+`node_modules` of local packages, enabling code sharing, and deduplicates and hoists packages to the
+root when applicable.
 
-### Prod deps in project
+Workspaces can be enabled with the following:
+
+import PackageWorkspaces from '../../__partials__/node/package-workspaces.mdx';
+
+<PackageWorkspaces />
+
+:::caution
+
+Package workspaces are not a requirement for monorepos, but they do solve an array of problems
+around module resolution, avoiding duplicate packages in bundles, and general interoperability.
+Proceed with caution for non-workspaces setups!
+
+:::
+
+### Workspace commands
+
+The following common commands can be used for adding, removing, or managing dependencies in a
+workspace. View the package manager's official documentation for a thorough list of commands.
+
+<Tabs
+  groupId="package-manager"
+  defaultValue="yarn"
+  values={[
+    { label: 'npm', value: 'npm' },
+    { label: 'pnpm', value: 'pnpm' },
+    { label: 'Yarn', value: 'yarn' },
+    { label: 'Yarn (classic)', value: 'yarn1' },
+  ]}
+>
+<TabItem value="npm">
+
+Install dependencies:
+
+```shell
+npm install
+```
+
+Add a package:
+
+```shell
+# At the root
+npm install <dependency>
+
+# In a project
+npm install <dependency> --workspace <project>
+```
+
+Remove a package:
+
+```shell
+# At the root
+npm install <dependency>
+
+# In a project
+npm install <dependency> --workspace <project>
+```
+
+Update packages:
+
+```shell
+npx npm-check-updates --interactive
+```
+
+</TabItem>
+<TabItem value="pnpm">
+
+Install dependencies:
+
+```shell
+pnpm install
+```
+
+Add a package:
+
+```shell
+# At the root
+pnpm add <dependency>
+
+# In a project
+pnpm add <dependency> --filter <project>
+```
+
+Remove a package:
+
+```shell
+# At the root
+pnpm remove <dependency>
+
+# In a project
+pnpm remove <dependency> --filter <project>
+```
+
+Update packages:
+
+```shell
+pnpm update -i -r --latest
+```
+
+</TabItem>
+<TabItem value="yarn">
+
+Install dependencies:
+
+```shell
+yarn install
+```
+
+Add a package:
+
+```shell
+# At the root
+yarn add <dependency>
+
+# In a project
+yarn workspace <project> add <dependency>
+```
+
+Remove a package:
+
+```shell
+# At the root
+yarn remove <dependency>
+
+# In a project
+yarn workspace <project> remove <dependency>
+```
+
+Update packages:
+
+```shell
+yarn upgrade-interactive
+```
+
+</TabItem>
+<TabItem value="yarn1">
+
+Install dependencies:
+
+```shell
+yarn install
+```
+
+Add a package:
+
+```shell
+# At the root
+yarn add <dependency> -w
+
+# In a project
+yarn workspace <project> add <dependency>
+```
+
+Remove a package:
+
+```shell
+# At the root
+yarn remove <dependency> -w
+
+# In a project
+yarn workspace <project> remove <dependency>
+```
+
+Update packages:
+
+```shell
+yarn upgrade-interactive --latest
+```
+
+</TabItem>
+</Tabs>
+
+### Developer tools at the root
+
+While not a strict guideline to follow, we've found that installing universal developer tool related
+dependencies (Babel, ESLint, Jest, TypeScript, etc) in the root `package.json` as `devDependencies`
+to be a good pattern for consistency, quality, and the health of the repository. It provides the
+following benefits:
+
+- It ensures all projects are utilizing the same version (and sometimes configuration) of a tool.
+- It allows the tool to easily be upgraded. Upgrade once, applied everywhere.
+- It avoids conflicting or outdated versions of the same package.
+
+With that being said, this _does not_ include development dependencies that are unique to a project!
+
+### Product libraries in a project
+
+Product, application, and or framework specific packages should be installed as production
+`dependencies` in a project's `package.json`. We've found this pattern to work well for the
+following reasons:
+
+- Application dependencies are pinned per project, avoiding accidental regressions.
+- Applications can upgrade their dependencies and avoid breaking neighbor applications.
 
 ## Code sharing
 
@@ -146,6 +391,4 @@ Packages (also known as a libraries)...
 
 ### External packages
 
-## Bundler integration
-
-### Hot module reloading (HMR)
+### Bundler integration

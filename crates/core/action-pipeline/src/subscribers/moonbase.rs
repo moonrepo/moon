@@ -163,8 +163,6 @@ impl Subscriber for MoonbaseSubscriber {
                         })
                         .collect::<Vec<_>>();
 
-                    dbg!(&affected_targets, &touched_files);
-
                     let response = match graphql::post_mutation::<create_run::ResponseData>(
                         CreateRun::build_query(create_run::Variables {
                             input: create_run::CreateRunInput {

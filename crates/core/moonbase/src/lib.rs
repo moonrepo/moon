@@ -108,7 +108,7 @@ impl Moonbase {
                     Ok(None)
                 } else {
                     Err(MoonbaseError::ArtifactCheckFailure(
-                        hash.to_string(),
+                        color::hash(hash),
                         message,
                     ))
                 }

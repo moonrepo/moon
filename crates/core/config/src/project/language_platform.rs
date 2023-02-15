@@ -65,6 +65,9 @@ pub enum ProjectLanguage {
 )]
 #[serde(rename_all = "lowercase")]
 pub enum PlatformType {
+    #[strum(serialize = "deno")]
+    Deno,
+
     #[strum(serialize = "node")]
     Node,
 
@@ -87,6 +90,7 @@ impl From<ProjectLanguage> for PlatformType {
         match language {
             ProjectLanguage::Unknown => PlatformType::Unknown,
             ProjectLanguage::Bash | ProjectLanguage::Batch => PlatformType::System,
+            // Deno and Bun are not covered here!
             ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => PlatformType::Node,
             // TODO: Move to these to their own platform once it's been implemented!
             ProjectLanguage::Go

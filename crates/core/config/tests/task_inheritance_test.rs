@@ -41,6 +41,7 @@ async fn loads_all_task_configs_into_manager() {
         workspace.tasks_config.configs,
         FxHashMap::from_iter([
             ("*".into(), mock_tasks_config("global")),
+            ("deno".into(), mock_tasks_config("deno")),
             ("node".into(), mock_tasks_config("node")),
             (
                 "node-application".into(),

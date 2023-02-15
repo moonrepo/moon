@@ -168,13 +168,21 @@ impl Subscriber for MoonbaseSubscriber {
                     let response = match graphql::post_mutation::<create_run::ResponseData>(
                         CreateRun::build_query(create_run::Variables {
                             input: create_run::CreateRunInput {
-                                affected_targets: Some(affected_targets),
+                                affected_targets: if affected_targets.is_empty() {
+                                    None
+                                } else {
+                                    Some(affected_targets)
+                                },
                                 branch,
                                 job_count: *actions_count as i64,
                                 repository_id: moonbase.repository_id as i64,
                                 request_number,
                                 revision: Some(revision),
-                                touched_files: Some(touched_files),
+                                touched_files: if touched_files.is_empty() {
+                                    None
+                                } else {
+                                    Some(touched_files)
+                                },
                             },
                         }),
                         Some(&moonbase.auth_token),

@@ -98,6 +98,7 @@ impl Pipeline {
         local_emitter
             .emit(Event::PipelineStarted {
                 actions_count: total_actions_count,
+                context: &*context.read().await,
             })
             .await?;
 
@@ -199,6 +200,7 @@ impl Pipeline {
 
         let duration = start.elapsed();
         let estimate = Estimator::calculate(&results, duration);
+        let context = Arc::try_unwrap(context).unwrap().into_inner();
 
         debug!(
             target: LOG_TARGET,
@@ -209,6 +211,7 @@ impl Pipeline {
             .emit(Event::PipelineFinished {
                 baseline_duration: &estimate.duration,
                 cached_count,
+                context: &context,
                 duration: &duration,
                 estimated_savings: estimate.gain.as_ref(),
                 failed_count,
@@ -217,7 +220,7 @@ impl Pipeline {
             .await?;
 
         self.duration = Some(duration);
-        self.create_run_report(&results, context, estimate).await?;
+        self.create_run_report(&results, &context, estimate).await?;
 
         Ok(results)
     }
@@ -352,17 +355,16 @@ impl Pipeline {
     async fn create_run_report(
         &self,
         actions: &ActionResults,
-        context: Arc<RwLock<ActionContext>>,
+        context: &ActionContext,
         estimate: Estimator,
     ) -> Result<(), PipelineError> {
         if let Some(name) = &self.report_name {
             let workspace = self.workspace.read().await;
             let duration = self.duration.unwrap();
-            let context = context.read().await;
 
             workspace
                 .cache
-                .create_json_report(name, RunReport::new(actions, &context, duration, estimate))?;
+                .create_json_report(name, RunReport::new(actions, context, duration, estimate))?;
         }
 
         Ok(())

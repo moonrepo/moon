@@ -1,5 +1,5 @@
 import type { Duration, Runtime } from './common';
-import type { Action, ActionNode } from './pipeline';
+import type { Action, ActionContext, ActionNode } from './pipeline';
 import type { Project, Task } from './project';
 
 export interface ProviderEnvironment {
@@ -100,6 +100,7 @@ export type PayloadPipelineAborted = WebhookPayload<'pipeline.aborted', EventPip
 
 export interface EventPipelineStarted {
 	actionsCount: number;
+	context: ActionContext;
 }
 
 export type PayloadPipelineStarted = WebhookPayload<'pipeline.started', EventPipelineStarted>;
@@ -107,6 +108,7 @@ export type PayloadPipelineStarted = WebhookPayload<'pipeline.started', EventPip
 export interface EventPipelineFinished {
 	baselineDuration: Duration;
 	cachedCount: number;
+	context: ActionContext;
 	duration: Duration;
 	estimatedSavings: Duration | null;
 	failedCount: number;

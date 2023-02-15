@@ -10,6 +10,7 @@
 #### ⚙️ Internal
 
 - Updated Rust to v1.67.
+- Added `context` to `pipeline.started` and `pipeline.finished` events.
 
 ## 0.24.2
 

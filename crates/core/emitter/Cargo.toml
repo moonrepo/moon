@@ -12,6 +12,7 @@ harness = false
 
 [dependencies]
 moon_action = { path = "../action" }
+moon_action_context = { path = "../action-context" }
 moon_cache = { path = "../cache" }
 moon_error = { path = "../error" }
 moon_platform_runtime = { path = "../platform-runtime" }

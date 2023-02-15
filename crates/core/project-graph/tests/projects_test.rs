@@ -1231,6 +1231,25 @@ mod detection {
     }
 
     #[tokio::test]
+    async fn detects_deno() {
+        let (_sandbox, project_graph) = langs_sandbox().await;
+
+        assert_eq!(
+            project_graph.get("deno").unwrap().language,
+            ProjectLanguage::JavaScript
+        );
+        assert_eq!(
+            project_graph.get("deno").unwrap().config.platform.unwrap(),
+            PlatformType::Deno
+        );
+
+        assert_eq!(
+            project_graph.get("deno-config").unwrap().language,
+            ProjectLanguage::TypeScript
+        );
+    }
+
+    #[tokio::test]
     async fn detects_go() {
         let (_sandbox, project_graph) = langs_sandbox().await;
 
@@ -1358,6 +1377,30 @@ mod detection {
                     .unwrap()
                     .platform,
                 PlatformType::System
+            );
+        }
+
+        #[tokio::test]
+        async fn detects_deno() {
+            let (_sandbox, project_graph) = langs_sandbox().await;
+
+            assert_eq!(
+                project_graph
+                    .get("deno")
+                    .unwrap()
+                    .get_task("command")
+                    .unwrap()
+                    .platform,
+                PlatformType::Deno
+            );
+            assert_eq!(
+                project_graph
+                    .get("deno-config")
+                    .unwrap()
+                    .get_task("command")
+                    .unwrap()
+                    .platform,
+                PlatformType::Deno
             );
         }
 

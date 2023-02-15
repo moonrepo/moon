@@ -146,14 +146,35 @@ impl Subscriber for MoonbaseSubscriber {
                             .map_err(|e| MoonError::Generic(e.to_string()))?;
                     }
 
+                    let affected_targets = context
+                        .primary_targets
+                        .iter()
+                        .map(|t| t.id.clone())
+                        .collect::<Vec<_>>();
+
+                    let touched_files = context
+                        .touched_files
+                        .iter()
+                        .map(|f| {
+                            f.strip_prefix(&workspace.root)
+                                .unwrap_or(f)
+                                .to_string_lossy()
+                                .to_string()
+                        })
+                        .collect::<Vec<_>>();
+
+                    dbg!(&affected_targets, &touched_files);
+
                     let response = match graphql::post_mutation::<create_run::ResponseData>(
                         CreateRun::build_query(create_run::Variables {
                             input: create_run::CreateRunInput {
+                                affected_targets: Some(affected_targets),
                                 branch,
                                 job_count: *actions_count as i64,
                                 repository_id: moonbase.repository_id as i64,
                                 request_number,
                                 revision: Some(revision),
+                                touched_files: Some(touched_files),
                             },
                         }),
                         Some(&moonbase.auth_token),

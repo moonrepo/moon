@@ -1,5 +1,6 @@
 use moon_bun_lang::BUN_INSTALL;
 use moon_config::ProjectLanguage;
+use moon_deno_lang::{DENO_DEPS, DVM};
 use moon_go_lang::{G, GOENV, GOMOD, GVM};
 use moon_lang::{is_using_dependency_manager, is_using_version_manager};
 use moon_node_lang::{NODENV, NPM, NVM, PNPM, YARN};
@@ -50,8 +51,9 @@ pub fn detect_project_language(root: &Path) -> ProjectLanguage {
 
     // TypeScript (should take precedence over JavaScript)
     if root.join("tsconfig.json").exists()
-        || root.join("deno.json").exists()
-        || root.join("deno.jsonc").exists()
+        // Deno
+        || is_using_dependency_manager(root, &DENO_DEPS, true)
+        || is_using_version_manager(root, &DVM)
     {
         return ProjectLanguage::TypeScript;
     }

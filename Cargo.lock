@@ -2325,7 +2325,27 @@ version = "0.1.0"
 name = "moon_deno_lang"
 version = "0.1.0"
 dependencies = [
+ "cached",
+ "moon_error",
  "moon_lang",
+ "moon_logger",
+ "moon_utils",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "moon_deno_platform"
+version = "0.1.0"
+dependencies = [
+ "moon",
+ "moon_project_graph",
+ "moon_test_utils",
+ "proto",
+ "rustc-hash",
+ "serde",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]
@@ -2567,6 +2587,7 @@ version = "0.1.0"
 dependencies = [
  "moon_bun_lang",
  "moon_config",
+ "moon_deno_lang",
  "moon_go_lang",
  "moon_lang",
  "moon_node_lang",

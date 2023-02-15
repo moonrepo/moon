@@ -13,6 +13,7 @@ use moon_target::Target;
 use moon_task::TouchedFilePaths;
 use moon_terminal::safe_exit;
 use moon_workspace::{Workspace, WorkspaceError};
+use rustc_hash::FxHashSet;
 
 type TargetList = Vec<Target>;
 
@@ -197,6 +198,7 @@ pub async fn ci(options: CiOptions) -> Result<(), AnyError> {
     print_header(&ci_provider, "Running all targets");
 
     let context = ActionContext {
+        primary_targets: FxHashSet::from_iter(targets),
         touched_files,
         workspace_root: workspace.root.clone(),
         ..ActionContext::default()

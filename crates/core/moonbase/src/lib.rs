@@ -59,15 +59,14 @@ impl Moonbase {
 
         match data {
             Ok(Response::Success(SigninResponse {
-                ci_insights: _,
+                ci_insights,
                 organization_id,
                 remote_caching,
                 repository_id,
                 token,
             })) => Some(Moonbase {
                 auth_token: token,
-                // Disable for now!
-                ci_insights_enabled: false, // ci_insights,
+                ci_insights_enabled: ci_insights,
                 organization_id,
                 remote_caching_enabled: remote_caching,
                 repository_id,
@@ -109,7 +108,7 @@ impl Moonbase {
                     Ok(None)
                 } else {
                     Err(MoonbaseError::ArtifactCheckFailure(
-                        hash.to_string(),
+                        color::hash(hash),
                         message,
                     ))
                 }

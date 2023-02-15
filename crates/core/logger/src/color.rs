@@ -44,6 +44,10 @@ pub fn failure<T: AsRef<str>>(value: T) -> String {
     paint(Color::Red as u8, value)
 }
 
+pub fn hash<T: AsRef<str>>(value: T) -> String {
+    paint(Color::Green as u8, value)
+}
+
 pub fn invalid<T: AsRef<str>>(value: T) -> String {
     paint(Color::Yellow as u8, value)
 }

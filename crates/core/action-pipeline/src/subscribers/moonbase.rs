@@ -103,7 +103,10 @@ impl Subscriber for MoonbaseSubscriber {
             match event {
                 // We must wait for this request to finish before firing off other requests,
                 // as we require the run ID from the record saved upstream!
-                Event::PipelineStarted { actions_count } => {
+                Event::PipelineStarted {
+                    actions_count,
+                    context,
+                } => {
                     debug!(
                         target: LOG_TARGET,
                         "Pipeline started, attempting to create CI run in moonbase"
@@ -143,14 +146,41 @@ impl Subscriber for MoonbaseSubscriber {
                             .map_err(|e| MoonError::Generic(e.to_string()))?;
                     }
 
+                    let affected_targets = context
+                        .primary_targets
+                        .iter()
+                        .map(|t| t.id.clone())
+                        .collect::<Vec<_>>();
+
+                    let touched_files = context
+                        .touched_files
+                        .iter()
+                        .map(|f| {
+                            f.strip_prefix(&workspace.root)
+                                .unwrap_or(f)
+                                .to_string_lossy()
+                                .to_string()
+                        })
+                        .collect::<Vec<_>>();
+
                     let response = match graphql::post_mutation::<create_run::ResponseData>(
                         CreateRun::build_query(create_run::Variables {
                             input: create_run::CreateRunInput {
+                                affected_targets: if affected_targets.is_empty() {
+                                    None
+                                } else {
+                                    Some(affected_targets)
+                                },
                                 branch,
                                 job_count: *actions_count as i64,
                                 repository_id: moonbase.repository_id as i64,
                                 request_number,
                                 revision: Some(revision),
+                                touched_files: if touched_files.is_empty() {
+                                    None
+                                } else {
+                                    Some(touched_files)
+                                },
                             },
                         }),
                         Some(&moonbase.auth_token),

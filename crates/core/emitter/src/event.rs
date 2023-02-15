@@ -1,4 +1,5 @@
 use moon_action::{Action, ActionNode};
+use moon_action_context::ActionContext;
 use moon_cache::RunTargetState;
 use moon_platform_runtime::Runtime;
 use moon_project::Project;
@@ -50,11 +51,13 @@ pub enum Event<'e> {
     #[serde(rename_all = "camelCase")]
     PipelineStarted {
         actions_count: usize,
+        context: &'e ActionContext,
     },
     #[serde(rename_all = "camelCase")]
     PipelineFinished {
         baseline_duration: &'e Duration,
         cached_count: usize,
+        context: &'e ActionContext,
         duration: &'e Duration,
         estimated_savings: Option<&'e Duration>,
         failed_count: usize,

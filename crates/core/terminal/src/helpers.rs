@@ -28,6 +28,7 @@ pub fn replace_style_tokens<T: AsRef<str>>(value: T) -> String {
             "accent" => color::muted(inner),
             "file" => color::file(inner),
             "id" => color::id(inner),
+            "hash" => color::hash(inner),
             "muted" => color::muted_light(inner),
             "path" => color::path(Path::new(inner)),
             "shell" => color::shell(inner),

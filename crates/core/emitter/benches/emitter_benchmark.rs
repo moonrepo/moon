@@ -1,4 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use moon_action_context::ActionContext;
 use moon_emitter::{Emitter, Event, EventFlow, Subscriber};
 use moon_error::MoonError;
 use moon_test_utils::get_fixtures_path;
@@ -27,19 +28,29 @@ pub fn emit_benchmark(c: &mut Criterion) {
         b.to_async(&runtime).iter(|| async {
             let workspace = Workspace::load_from(&workspace_root).unwrap();
             let emitter = Emitter::new(Arc::new(RwLock::new(workspace)));
+            let context = ActionContext::default();
 
             emitter
-                .emit(Event::PipelineStarted { actions_count: 1 })
+                .emit(Event::PipelineStarted {
+                    actions_count: 1,
+                    context: &context,
+                })
                 .await
                 .unwrap();
 
             emitter
-                .emit(Event::PipelineStarted { actions_count: 1 })
+                .emit(Event::PipelineStarted {
+                    actions_count: 1,
+                    context: &context,
+                })
                 .await
                 .unwrap();
 
             emitter
-                .emit(Event::PipelineStarted { actions_count: 1 })
+                .emit(Event::PipelineStarted {
+                    actions_count: 1,
+                    context: &context,
+                })
                 .await
                 .unwrap();
 

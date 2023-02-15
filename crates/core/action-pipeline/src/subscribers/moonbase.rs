@@ -103,7 +103,10 @@ impl Subscriber for MoonbaseSubscriber {
             match event {
                 // We must wait for this request to finish before firing off other requests,
                 // as we require the run ID from the record saved upstream!
-                Event::PipelineStarted { actions_count } => {
+                Event::PipelineStarted {
+                    actions_count,
+                    context,
+                } => {
                     debug!(
                         target: LOG_TARGET,
                         "Pipeline started, attempting to create CI run in moonbase"

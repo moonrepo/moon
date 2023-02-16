@@ -1,7 +1,6 @@
-use moon_hasher::{hash_btree, Digest, Hasher, Sha256};
+use moon_hasher::{Digest, Hasher, Sha256};
 use moon_lang::LockfileDependencyVersions;
 use moon_node_lang::PackageJson;
-use moon_typescript_lang::TsConfigJson;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -14,9 +13,6 @@ pub struct NodeTargetHasher {
     // All the dependencies of the project (including dev and peer),
     // and the hashes corresponding with their versions
     dependencies: BTreeMap<String, Vec<String>>,
-
-    // `tsconfig.json` `compilerOptions`
-    tsconfig_compiler_options: BTreeMap<String, String>,
 
     // Version of our hasher
     #[allow(dead_code)]
@@ -64,28 +60,6 @@ impl NodeTargetHasher {
             copy_deps(peer_deps, &mut self.dependencies);
         }
     }
-
-    /// Hash `tsconfig.json` compiler options that may alter compiled/generated output.
-    pub fn hash_tsconfig_json(&mut self, tsconfig: &TsConfigJson) {
-        if let Some(compiler_options) = &tsconfig.compiler_options {
-            if let Some(module) = &compiler_options.module {
-                self.tsconfig_compiler_options
-                    .insert("module".to_owned(), format!("{module:?}"));
-            }
-
-            if let Some(module_resolution) = &compiler_options.module_resolution {
-                self.tsconfig_compiler_options.insert(
-                    "module_resolution".to_owned(),
-                    format!("{module_resolution:?}"),
-                );
-            }
-
-            if let Some(target) = &compiler_options.target {
-                self.tsconfig_compiler_options
-                    .insert("target".to_owned(), format!("{target:?}"));
-            }
-        }
-    }
 }
 
 impl Hasher for NodeTargetHasher {
@@ -98,8 +72,6 @@ impl Hasher for NodeTargetHasher {
                 sha.update(version.as_bytes());
             }
         }
-
-        hash_btree(&self.tsconfig_compiler_options, sha);
     }
 
     fn serialize(&self) -> serde_json::Value {
@@ -276,48 +248,6 @@ mod tests {
                     vec!["123".to_owned(), "abc".to_owned(), "uio".to_owned()]
                 ),])
             )
-        }
-    }
-
-    mod tsconfig_json {
-        use super::*;
-
-        #[test]
-        fn supports_all_dep_types() {
-            use moon_typescript_lang::tsconfig::{
-                CompilerOptions, Module, ModuleResolution, Target,
-            };
-
-            let mut tsconfig = TsConfigJson {
-                compiler_options: Some(CompilerOptions::default()),
-                ..TsConfigJson::default()
-            };
-
-            tsconfig.compiler_options.as_mut().unwrap().module = Some(Module::Es2022);
-
-            let mut hasher1 = NodeTargetHasher::new(Some("0.0.0".into()));
-            hasher1.hash_tsconfig_json(&tsconfig);
-            let hash1 = to_hash(&hasher1);
-
-            tsconfig
-                .compiler_options
-                .as_mut()
-                .unwrap()
-                .module_resolution = Some(ModuleResolution::NodeNext);
-
-            let mut hasher2 = NodeTargetHasher::new(Some("0.0.0".into()));
-            hasher2.hash_tsconfig_json(&tsconfig);
-            let hash2 = to_hash(&hasher2);
-
-            tsconfig.compiler_options.as_mut().unwrap().target = Some(Target::Es2019);
-
-            let mut hasher3 = NodeTargetHasher::new(Some("0.0.0".into()));
-            hasher3.hash_tsconfig_json(&tsconfig);
-            let hash3 = to_hash(&hasher3);
-
-            assert_ne!(hash1, hash2);
-            assert_ne!(hash1, hash3);
-            assert_ne!(hash2, hash3);
         }
     }
 }

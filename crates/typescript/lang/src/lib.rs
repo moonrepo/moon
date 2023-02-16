@@ -1,6 +1,8 @@
+mod target_hasher;
 pub mod tsconfig;
 
 use moon_lang::Language;
+pub use target_hasher::TypeScriptTargetHasher;
 pub use tsconfig::TsConfigJson;
 
 pub const TYPESCRIPT: Language = Language {

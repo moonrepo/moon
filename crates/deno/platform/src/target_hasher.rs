@@ -1,4 +1,4 @@
-use moon_hasher::{hash_btree, Digest, Hasher, Sha256};
+use moon_hasher::{Digest, Hasher, Sha256};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -8,28 +8,25 @@ pub struct DenoTargetHasher {
     // Deno version
     deno_version: String,
 
-    // All the dependencies of the project (including dev and peer),
-    // and the hashes corresponding with their versions
+    // All the dependencies (and their integrity hashes) of the project
     dependencies: BTreeMap<String, Vec<String>>,
-
-    // Version of our hasher
-    #[allow(dead_code)]
-    version: String,
 }
 
 impl DenoTargetHasher {
     pub fn new(deno_version: Option<String>) -> Self {
         DenoTargetHasher {
             deno_version: deno_version.unwrap_or_else(|| "unknown".into()),
-            version: "1".into(),
             ..DenoTargetHasher::default()
         }
+    }
+
+    pub fn hash_deps(&mut self, dependencies: BTreeMap<String, Vec<String>>) {
+        self.dependencies = dependencies;
     }
 }
 
 impl Hasher for DenoTargetHasher {
     fn hash(&self, sha: &mut Sha256) {
-        sha.update(self.version.as_bytes());
         sha.update(self.deno_version.as_bytes());
 
         for versions in self.dependencies.values() {

@@ -1,3 +1,4 @@
+use crate::actions;
 use moon_action_context::ActionContext;
 use moon_config::{
     DenoConfig, DependencyConfig, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap,
@@ -13,6 +14,7 @@ use moon_project::{Project, ProjectError};
 use moon_task::Task;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{Tool, ToolError, ToolManager};
+use moon_typescript_lang::TypeScriptTargetHasher;
 use moon_utils::{async_trait, process::Command};
 use proto::Proto;
 use rustc_hash::FxHashMap;
@@ -181,16 +183,31 @@ impl Platform for DenoPlatform {
         _hashset: &mut HashSet,
         _hasher_config: &HasherConfig,
     ) -> Result<(), ToolError> {
+        // How to hash src/deps.ts here???
         Ok(())
     }
 
     async fn hash_run_target(
         &self,
-        _project: &Project,
+        project: &Project,
         _runtime: &Runtime,
-        _hashset: &mut HashSet,
-        _hasher_config: &HasherConfig,
+        hashset: &mut HashSet,
+        hasher_config: &HasherConfig,
     ) -> Result<(), ToolError> {
+        let deno_hasher = actions::create_target_hasher(None, project, hasher_config).await?;
+
+        hashset.hash(deno_hasher);
+
+        if let Some(typescript_config) = &self.typescript_config {
+            let ts_hasher = TypeScriptTargetHasher::generate(
+                typescript_config,
+                &self.workspace_root,
+                &project.root,
+            )?;
+
+            hashset.hash(ts_hasher);
+        }
+
         Ok(())
     }
 

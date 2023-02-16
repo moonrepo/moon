@@ -16,6 +16,7 @@ use moon_platform::{Platform, Runtime, Version};
 use moon_project::{Project, ProjectError};
 use moon_task::Task;
 use moon_tool::{Tool, ToolError, ToolManager};
+use moon_typescript_lang::TypeScriptTargetHasher;
 use moon_utils::{async_trait, glob::GlobSet, process::Command};
 use proto::Proto;
 use rustc_hash::FxHashMap;
@@ -415,16 +416,25 @@ impl Platform for NodePlatform {
         hashset: &mut HashSet,
         hasher_config: &HasherConfig,
     ) -> Result<(), ToolError> {
-        let hasher = actions::create_target_hasher(
+        let node_hasher = actions::create_target_hasher(
             self.toolchain.get_for_version(runtime.version()).ok(),
             project,
             &self.workspace_root,
             hasher_config,
-            &self.typescript_config,
         )
         .await?;
 
-        hashset.hash(hasher);
+        hashset.hash(node_hasher);
+
+        if let Some(typescript_config) = &self.typescript_config {
+            let ts_hasher = TypeScriptTargetHasher::generate(
+                typescript_config,
+                &self.workspace_root,
+                &project.root,
+            )?;
+
+            hashset.hash(ts_hasher);
+        }
 
         Ok(())
     }

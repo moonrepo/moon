@@ -4,7 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+moon_config = { path = "../../core/config" }
 moon_error = { path = "../../core/error" }
+moon_hasher = { path = "../../core/hasher" }
 moon_lang = { path = "../../core/lang" }
 moon_logger = { path = "../../core/logger" }
 moon_utils = { path = "../../core/utils" }

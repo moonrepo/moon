@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- Updated `node.version` and `node.<packageManager>.version` to no longer default to a hard-coded
+  version. When not defined, will fallback to the binary available on `PATH`.
+
 #### ⚙️ Internal
 
 - Updated Rust to v1.67.

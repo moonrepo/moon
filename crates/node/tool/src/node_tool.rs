@@ -37,8 +37,8 @@ impl NodeTool {
         version: &Version,
     ) -> Result<NodeTool, ToolError> {
         let mut node = NodeTool {
-            config: config.to_owned(),
             global: false,
+            config: config.to_owned(),
             tool: NodeLanguage::new(proto),
             npm: None,
             pnpm: None,
@@ -76,11 +76,14 @@ impl NodeTool {
         let mut exec_args = vec!["--silent", "--package", package, "--"];
         exec_args.extend(args);
 
-        Command::new(self.get_npx_path()?)
-            .args(exec_args)
+        let mut cmd = Command::new(self.get_npx_path()?);
+
+        if !self.global {
+            cmd.env("PATH", get_path_env_var(&self.tool.get_install_dir()?));
+        }
+
+        cmd.args(exec_args)
             .cwd(working_dir)
-            // TODO
-            .env("PATH", get_path_env_var(&self.tool.get_install_dir()?))
             .exec_stream_output()
             .await?;
 

@@ -26,9 +26,11 @@ pub struct YarnTool {
 
 impl YarnTool {
     pub fn new(proto: &Proto, config: &Option<YarnConfig>) -> Result<YarnTool, ToolError> {
+        let config = config.to_owned().unwrap_or_default();
+
         Ok(YarnTool {
-            config: config.to_owned().unwrap_or_default(),
-            global: false,
+            global: config.version.is_none(),
+            config,
             tool: NodeDependencyManager::new(proto, NodeDependencyManagerType::Yarn),
         })
     }
@@ -141,18 +143,20 @@ impl Tool for YarnTool {
 #[async_trait]
 impl DependencyManager<NodeTool> for YarnTool {
     fn create_command(&self, node: &NodeTool) -> Result<Command, ToolError> {
-        let mut cmd = if let Some(shim) = self.get_shim_path() {
-            Command::new(shim)
-        } else if self.global {
+        let mut cmd = if self.global {
             Command::new("yarn")
+        } else if let Some(shim) = self.get_shim_path() {
+            Command::new(shim)
         } else {
             let mut cmd = Command::new(node.get_bin_path()?);
             cmd.arg(self.get_bin_path()?);
             cmd
         };
 
-        // TODO
-        cmd.env("PATH", get_path_env_var(&self.tool.get_install_dir()?));
+        if !self.global {
+            cmd.env("PATH", get_path_env_var(&self.tool.get_install_dir()?));
+        }
+
         cmd.env("PROTO_NODE_BIN", node.get_bin_path()?);
 
         Ok(cmd)

@@ -11,7 +11,7 @@ expression: "read_to_string(sandbox.path().join(\"package.json\")).unwrap()"
     "postinstall-recursion",
     "version-override"
   ],
-  "packageManager": "npm@8.19.2",
+  "packageManager": "npm@8.19.0",
   "engines": {
     "node": "18.0.0"
   }

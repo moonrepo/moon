@@ -6,7 +6,7 @@ use std::fmt::{self, Debug};
 pub struct Version {
     pub number: String,
 
-    // Is version available on PATH
+    // Use version available on PATH
     pub path_executable: bool,
 
     // Is overriding the workspace version in a project
@@ -49,7 +49,11 @@ impl Version {
 
 impl fmt::Display for Version {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.number)
+        if self.is_global() {
+            write!(f, "(global)")
+        } else {
+            write!(f, "{}", self.number)
+        }
     }
 }
 

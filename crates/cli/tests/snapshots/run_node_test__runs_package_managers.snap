@@ -1,11 +1,10 @@
 ---
 source: crates/cli/tests/run_node_test.rs
-assertion_line: 18
-expression: get_assert_output(&assert)
+expression: assert.output()
 ---
 ▪▪▪▪ npm install
 ▪▪▪▪ node:npm
-8.19.2
+8.19.0
 ▪▪▪▪ node:npm (100ms)
 
 Tasks: 1 completed

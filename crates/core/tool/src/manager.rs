@@ -29,7 +29,7 @@ impl<T: Tool> ToolManager<T> {
 
         if !self.has(version) {
             return Err(ToolError::UnknownTool(format!(
-                "{} v{}",
+                "{} {}",
                 self.runtime, version.number
             )));
         }

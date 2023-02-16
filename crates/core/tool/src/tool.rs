@@ -5,22 +5,19 @@ use moon_utils::process::Command;
 use rustc_hash::FxHashMap;
 use std::any::Any;
 use std::fmt::Debug;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[async_trait]
 pub trait Tool: Any + Debug + Send + Sync {
     fn as_any(&self) -> &dyn Any;
 
     /// Return an absolute path to the tool's binary.
-    fn get_bin_path(&self) -> Result<&Path, ToolError>;
+    fn get_bin_path(&self) -> Result<PathBuf, ToolError>;
 
     /// Return an absolute path to an applicable tool shim.
-    fn get_shim_path(&self) -> Option<&Path> {
+    fn get_shim_path(&self) -> Option<PathBuf> {
         None
     }
-
-    /// Return the resolved version of the current tool.
-    fn get_version(&self) -> &str;
 
     /// Setup the tool by downloading and installing it.
     /// Return a count of how many sub-tools were installed.

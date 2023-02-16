@@ -9,11 +9,11 @@ use moon_utils::{fs, is_ci};
 use proto::{
     async_trait,
     node::{NodeDependencyManager, NodeDependencyManagerType},
-    Describable, Executable, Installable, Proto, Resolvable, Shimable, Tool as ProtoTool,
+    Describable, Executable, Installable, Proto, Shimable, Tool as ProtoTool,
 };
 use rustc_hash::FxHashMap;
 use std::env;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
 pub struct NpmTool {
@@ -40,16 +40,16 @@ impl Tool for NpmTool {
         self
     }
 
-    fn get_bin_path(&self) -> Result<&Path, ToolError> {
-        Ok(self.tool.get_bin_path()?)
+    fn get_bin_path(&self) -> Result<PathBuf, ToolError> {
+        Ok(if self.global {
+            "npm".into()
+        } else {
+            self.tool.get_bin_path()?.to_path_buf()
+        })
     }
 
-    fn get_shim_path(&self) -> Option<&Path> {
-        self.tool.get_shim_path()
-    }
-
-    fn get_version(&self) -> &str {
-        self.tool.get_resolved_version()
+    fn get_shim_path(&self) -> Option<PathBuf> {
+        self.tool.get_shim_path().map(|p| p.to_path_buf())
     }
 
     async fn setup(
@@ -95,12 +95,15 @@ impl DependencyManager<NodeTool> for NpmTool {
     fn create_command(&self, node: &NodeTool) -> Result<Command, ToolError> {
         let mut cmd = if let Some(shim) = self.get_shim_path() {
             Command::new(shim)
+        } else if self.global {
+            Command::new("npm")
         } else {
             let mut cmd = Command::new(node.get_bin_path()?);
             cmd.arg(self.get_bin_path()?);
             cmd
         };
 
+        // TODO
         cmd.env("PATH", get_path_env_var(&self.tool.get_install_dir()?));
         cmd.env("PROTO_NODE_BIN", node.get_bin_path()?);
 

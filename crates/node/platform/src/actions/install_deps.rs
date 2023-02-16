@@ -1,4 +1,4 @@
-use moon_config::{NodePackageManager, NodeVersionManager};
+use moon_config::{NodeConfig, NodePackageManager, NodeVersionManager};
 use moon_lang::has_vendor_installed_dependencies;
 use moon_logger::{color, debug, warn};
 use moon_node_lang::{PackageJson, NODE, NODENV, NPM, NVM};
@@ -11,12 +11,12 @@ use std::path::Path;
 const LOG_TARGET: &str = "moon:node-platform:install-deps";
 
 /// Add `packageManager` to `package.json`.
-fn add_package_manager(node: &NodeTool, package_json: &mut PackageJson) -> bool {
-    let manager_version = match node.config.package_manager {
-        NodePackageManager::Npm => format!("npm@{}", node.config.npm.version),
+fn add_package_manager(node_config: &NodeConfig, package_json: &mut PackageJson) -> bool {
+    let manager_version = match node_config.package_manager {
+        NodePackageManager::Npm => format!("npm@{}", node_config.npm.version),
         NodePackageManager::Pnpm => format!(
             "pnpm@{}",
-            match &node.config.pnpm {
+            match &node_config.pnpm {
                 Some(pnpm) => &pnpm.version,
                 None => {
                     return false;
@@ -25,7 +25,7 @@ fn add_package_manager(node: &NodeTool, package_json: &mut PackageJson) -> bool 
         ),
         NodePackageManager::Yarn => format!(
             "yarn@{}",
-            match &node.config.yarn {
+            match &node_config.yarn {
                 Some(yarn) => &yarn.version,
                 None => {
                     return false;
@@ -48,9 +48,9 @@ fn add_package_manager(node: &NodeTool, package_json: &mut PackageJson) -> bool 
 }
 
 /// Add `engines` constraint to `package.json`.
-fn add_engines_constraint(node: &NodeTool, package_json: &mut PackageJson) -> bool {
-    if let Some(node_version) = &node.config.version {
-        if node.config.add_engines_constraint && package_json.add_engine("node", node_version) {
+fn add_engines_constraint(node_config: &NodeConfig, package_json: &mut PackageJson) -> bool {
+    if let Some(node_version) = &node_config.version {
+        if node_config.add_engines_constraint && package_json.add_engine("node", node_version) {
             debug!(
                 target: LOG_TARGET,
                 "Adding engines version constraint to {}",
@@ -83,8 +83,8 @@ pub async fn install_deps(
     // Sync values to `package.json`
     if working_dir == workspace_root {
         PackageJson::sync(working_dir, |package_json| {
-            let added_manager = add_package_manager(node, package_json);
-            let added_constraint = add_engines_constraint(node, package_json);
+            let added_manager = add_package_manager(&node.config, package_json);
+            let added_constraint = add_engines_constraint(&node.config, package_json);
 
             Ok(added_manager || added_constraint)
         })?;
@@ -92,12 +92,11 @@ pub async fn install_deps(
 
     // Create nvm/nodenv version file
     if let Some(version_manager) = &node.config.sync_version_manager_config {
-        let rc_name = match version_manager {
-            NodeVersionManager::Nodenv => NODENV.version_file.to_string(),
-            NodeVersionManager::Nvm => NVM.version_file.to_string(),
-        };
-
         if let Some(node_version) = &node.config.version {
+            let rc_name = match version_manager {
+                NodeVersionManager::Nodenv => NODENV.version_file.to_string(),
+                NodeVersionManager::Nvm => NVM.version_file.to_string(),
+            };
             let rc_path = working_dir.join(rc_name);
 
             fs::write(&rc_path, node_version)?;

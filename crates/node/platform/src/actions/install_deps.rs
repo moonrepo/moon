@@ -13,35 +13,31 @@ const LOG_TARGET: &str = "moon:node-platform:install-deps";
 /// Add `packageManager` to `package.json`.
 fn add_package_manager(node_config: &NodeConfig, package_json: &mut PackageJson) -> bool {
     let manager_version = match node_config.package_manager {
-        NodePackageManager::Npm => format!("npm@{}", node_config.npm.version),
-        NodePackageManager::Pnpm => format!(
-            "pnpm@{}",
-            match &node_config.pnpm {
-                Some(pnpm) => &pnpm.version,
-                None => {
-                    return false;
-                }
-            }
-        ),
-        NodePackageManager::Yarn => format!(
-            "yarn@{}",
-            match &node_config.yarn {
-                Some(yarn) => &yarn.version,
-                None => {
-                    return false;
-                }
-            }
-        ),
+        NodePackageManager::Npm => node_config.npm.version.as_ref().map(|v| format!("npm@{v}")),
+        NodePackageManager::Pnpm => node_config.pnpm.as_ref().map(|cfg| {
+            cfg.version
+                .as_ref()
+                .map(|v| format!("pnpm@{v}"))
+                .unwrap_or_default()
+        }),
+        NodePackageManager::Yarn => node_config.yarn.as_ref().map(|cfg| {
+            cfg.version
+                .as_ref()
+                .map(|v| format!("yarn@{v}"))
+                .unwrap_or_default()
+        }),
     };
 
-    if package_json.set_package_manager(&manager_version) {
-        debug!(
-            target: LOG_TARGET,
-            "Adding package manager version to {}",
-            color::file(NPM.manifest)
-        );
+    if let Some(version) = manager_version {
+        if package_json.set_package_manager(&version) {
+            debug!(
+                target: LOG_TARGET,
+                "Adding package manager version to {}",
+                color::file(NPM.manifest)
+            );
 
-        return true;
+            return true;
+        }
     }
 
     false

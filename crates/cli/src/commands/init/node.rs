@@ -2,10 +2,7 @@ use super::InitOptions;
 use crate::helpers::AnyError;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::{Confirm, Select};
-use moon_config::{
-    default_node_version, default_npm_version, default_pnpm_version, default_yarn_version,
-    load_toolchain_node_config_template,
-};
+use moon_config::load_toolchain_node_config_template;
 use moon_lang::{is_using_dependency_manager, is_using_version_manager};
 use moon_logger::color;
 use moon_node_lang::package::{PackageJson, PackageWorkspaces};
@@ -41,7 +38,7 @@ fn detect_node_version(dest_dir: &Path) -> Result<(String, String), AnyError> {
         ));
     }
 
-    Ok((default_node_version(), String::new()))
+    Ok(("18.0.0".into(), String::new()))
 }
 
 /// Verify the package manager to use. If a `package.json` exists,
@@ -96,17 +93,6 @@ fn detect_package_manager(
         };
 
         pm_type = items[index].to_owned();
-    }
-
-    // If no version, fallback to configuration default
-    if pm_version.is_empty() {
-        if pm_type == NPM.binary {
-            pm_version = default_npm_version();
-        } else if pm_type == PNPM.binary {
-            pm_version = default_pnpm_version();
-        } else if pm_type == YARN.binary {
-            pm_version = default_yarn_version();
-        }
     }
 
     Ok((pm_type, pm_version))

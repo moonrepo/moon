@@ -34,7 +34,11 @@ impl YarnTool {
     }
 
     pub fn is_v1(&self) -> bool {
-        self.config.version.starts_with('1')
+        self.config
+            .version
+            .as_ref()
+            .map(|v| v.starts_with('1'))
+            .unwrap_or(false)
     }
 
     pub async fn set_version(&mut self, node: &NodeTool) -> Result<(), ToolError> {
@@ -42,19 +46,23 @@ impl YarnTool {
             return Ok(());
         }
 
+        let Some(version) = &self.config.version else {
+            return Ok(());
+        };
+
         let yarn_bin = get_workspace_root()
             .join(".yarn/releases")
-            .join(format!("yarn-{}.cjs", self.config.version));
+            .join(format!("yarn-{version}.cjs"));
 
         if !yarn_bin.exists() {
             debug!(
                 target: self.tool.get_log_target(),
                 "Updating yarn version with {}",
-                color::shell(format!("yarn set version {}", self.config.version))
+                color::shell(format!("yarn set version {version}"))
             );
 
             self.create_command(node)?
-                .args(["set", "version", &self.config.version])
+                .args(["set", "version", version])
                 .exec_capture_output()
                 .await?;
 
@@ -95,26 +103,28 @@ impl Tool for YarnTool {
         last_versions: &mut FxHashMap<String, String>,
     ) -> Result<u8, ToolError> {
         let mut count = 0;
+        let version = self.config.version.clone();
 
-        if self.tool.is_setup(&self.config.version).await? {
+        let Some(version) = version else {
+            return Ok(count);
+        };
+
+        if self.tool.is_setup(&version).await? {
             debug!(target: self.tool.get_log_target(), "yarn has already been setup");
 
             return Ok(count);
         }
 
         if let Some(last) = last_versions.get("yarn") {
-            if last == &self.config.version && self.tool.get_install_dir()?.exists() {
+            if last == &version && self.tool.get_install_dir()?.exists() {
                 return Ok(count);
             }
         }
 
-        print_checkpoint(
-            format!("installing yarn v{}", self.config.version),
-            Checkpoint::Setup,
-        );
+        print_checkpoint(format!("installing yarn v{version}"), Checkpoint::Setup);
 
-        if self.tool.setup(&self.config.version).await? {
-            last_versions.insert("yarn".into(), self.config.version.clone());
+        if self.tool.setup(&version).await? {
+            last_versions.insert("yarn".into(), version);
             count += 1;
         }
 

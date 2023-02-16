@@ -9,8 +9,8 @@ use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
 use moon_utils::process::Command;
 use proto::{
-    async_trait, node::NodeLanguage, Describable, Executable, Installable, Proto, Resolvable,
-    Shimable, Tool as ProtoTool,
+    async_trait, node::NodeLanguage, Describable, Executable, Installable, Proto, Shimable,
+    Tool as ProtoTool,
 };
 use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
@@ -79,6 +79,7 @@ impl NodeTool {
         Command::new(self.get_npx_path()?)
             .args(exec_args)
             .cwd(working_dir)
+            // TODO
             .env("PATH", get_path_env_var(&self.tool.get_install_dir()?))
             .exec_stream_output()
             .await?;
@@ -95,6 +96,10 @@ impl NodeTool {
     }
 
     pub fn get_npx_path(&self) -> Result<PathBuf, ToolError> {
+        if self.global {
+            return Ok("npx".into());
+        }
+
         Ok(node::find_package_manager_bin(
             self.tool.get_install_dir()?,
             "npx",
@@ -140,16 +145,16 @@ impl Tool for NodeTool {
         self
     }
 
-    fn get_bin_path(&self) -> Result<&Path, ToolError> {
-        Ok(self.tool.get_bin_path()?)
+    fn get_bin_path(&self) -> Result<PathBuf, ToolError> {
+        Ok(if self.global {
+            "node".into()
+        } else {
+            self.tool.get_bin_path()?.to_path_buf()
+        })
     }
 
-    fn get_shim_path(&self) -> Option<&Path> {
-        self.tool.get_shim_path()
-    }
-
-    fn get_version(&self) -> &str {
-        self.tool.get_resolved_version()
+    fn get_shim_path(&self) -> Option<PathBuf> {
+        self.tool.get_shim_path().map(|p| p.to_path_buf())
     }
 
     async fn setup(
@@ -157,9 +162,9 @@ impl Tool for NodeTool {
         last_versions: &mut FxHashMap<String, String>,
     ) -> Result<u8, ToolError> {
         let mut installed = 0;
-        let version_clone = self.config.version.clone();
+        let version = self.config.version.clone();
 
-        let Some(version) = version_clone else {
+        let Some(version) = version else {
             return Ok(installed);
         };
 

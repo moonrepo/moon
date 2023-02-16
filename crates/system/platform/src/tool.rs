@@ -1,5 +1,5 @@
 use moon_tool::{Tool, ToolError};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 #[derive(Debug, Default)]
 pub struct SystemToolStub {
@@ -11,11 +11,7 @@ impl Tool for SystemToolStub {
         self
     }
 
-    fn get_bin_path(&self) -> Result<&Path, ToolError> {
-        Ok(&self.bin_path)
-    }
-
-    fn get_version(&self) -> &str {
-        "latest"
+    fn get_bin_path(&self) -> Result<PathBuf, ToolError> {
+        Ok(self.bin_path.to_path_buf())
     }
 }

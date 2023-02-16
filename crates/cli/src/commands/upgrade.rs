@@ -3,12 +3,14 @@ use bytes::Buf;
 use itertools::Itertools;
 use moon_launchpad::check_version;
 use moon_logger::error;
-use moon_utils::{
-    fs::{create_dir_all, rename},
-    semver::Version,
-};
+use moon_utils::{fs, semver::Version};
 use proto::ProtoError;
-use std::{env, fs::File, io::copy, path::Component};
+use std::{
+    env::{self, consts},
+    fs::File,
+    io::copy,
+    path::Component,
+};
 
 pub async fn upgrade() -> Result<(), AnyError> {
     let version = env!("CARGO_PKG_VERSION");
@@ -28,7 +30,7 @@ pub async fn upgrade() -> Result<(), AnyError> {
         }
     };
 
-    let target = match (std::env::consts::OS, std::env::consts::ARCH) {
+    let target = match (consts::OS, consts::ARCH) {
         ("linux", arch) => {
             // Run ldd to check if we're running on musl
             let output = std::process::Command::new("ldd")
@@ -59,8 +61,8 @@ pub async fn upgrade() -> Result<(), AnyError> {
 
     if !upgradeable {
         return Err(format!(
-            "Moon can only upgrade itself from the default .moon directory. \n\
-            Moon is currently installed at: {}",
+            "moon can only upgrade itself when installed in the  ~/.moon directory.\n\
+            moon is currently installed at: {}",
             bin_path.to_string_lossy()
         )
         .into());
@@ -75,9 +77,10 @@ pub async fn upgrade() -> Result<(), AnyError> {
         .parent()
         .unwrap()
         .join(version)
-        .join(bin_path.file_name().unwrap());
-    create_dir_all(ver_path.parent().unwrap())?;
-    rename(&bin_path, ver_path)?;
+        .join(fs::file_name(&bin_path));
+
+    fs::create_dir_all(ver_path.parent().unwrap())?;
+    fs::rename(&bin_path, ver_path)?;
 
     let mut file = File::create(bin_path)?;
 

@@ -129,6 +129,7 @@ const sidebars = {
 				'commands/setup',
 				'commands/sync',
 				'commands/teardown',
+				'commands/upgrade',
 			],
 			link: {
 				type: 'generated-index',

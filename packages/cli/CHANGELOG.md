@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added Homebrew as an installation option.
+- Added a `moon upgrade` command to upgrade moon to the latest version.
+
 ## 0.24.1
 
 #### 🐞 Fixes

@@ -2356,6 +2356,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_deno_tool"
+version = "0.1.0"
+dependencies = [
+ "moon_config",
+ "moon_tool",
+ "proto",
+ "rustc-hash",
+]
+
+[[package]]
 name = "moon_dep_graph"
 version = "0.1.0"
 dependencies = [

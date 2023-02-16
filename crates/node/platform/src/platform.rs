@@ -59,20 +59,21 @@ impl Platform for NodePlatform {
         PlatformType::Node
     }
 
-    fn get_runtime_from_config(&self, project_config: Option<&ProjectConfig>) -> Option<Runtime> {
+    fn get_runtime_from_config(&self, project_config: Option<&ProjectConfig>) -> Runtime {
         if let Some(config) = &project_config {
             if let Some(node_config) = &config.toolchain.node {
                 if let Some(version) = &node_config.version {
-                    return Some(Runtime::Node(Version::new_override(version)));
+                    return Runtime::Node(Version::new_override(version));
                 }
             }
         }
 
         if let Some(node_version) = &self.config.version {
-            return Some(Runtime::Node(Version::new(node_version)));
+            return Runtime::Node(Version::new(node_version));
         }
 
-        None
+        // Global
+        Runtime::Node(Version::default())
     }
 
     fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool {

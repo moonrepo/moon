@@ -21,8 +21,8 @@ impl Platform for SystemPlatform {
         PlatformType::System
     }
 
-    fn get_runtime_from_config(&self, _project_config: Option<&ProjectConfig>) -> Option<Runtime> {
-        Some(Runtime::System)
+    fn get_runtime_from_config(&self, _project_config: Option<&ProjectConfig>) -> Runtime {
+        Runtime::System
     }
 
     fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool {

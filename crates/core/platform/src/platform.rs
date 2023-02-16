@@ -22,7 +22,7 @@ pub trait Platform: Debug + Send + Sync {
     fn get_type(&self) -> PlatformType;
 
     /// Return a runtime with an appropriate version based on the provided configs.
-    fn get_runtime_from_config(&self, project_config: Option<&ProjectConfig>) -> Option<Runtime>;
+    fn get_runtime_from_config(&self, project_config: Option<&ProjectConfig>) -> Runtime;
 
     /// Return true if the current platform is for the provided project or runtime.
     fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool;

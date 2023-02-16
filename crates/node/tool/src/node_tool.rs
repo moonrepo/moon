@@ -4,6 +4,7 @@ use crate::yarn_tool::YarnTool;
 use moon_config::{NodeConfig, NodePackageManager};
 use moon_logger::debug;
 use moon_node_lang::node;
+use moon_platform_runtime::Version;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
 use moon_utils::process::Command;
@@ -18,6 +19,8 @@ use std::path::{Path, PathBuf};
 pub struct NodeTool {
     pub config: NodeConfig,
 
+    pub global: bool,
+
     pub tool: NodeLanguage,
 
     npm: Option<NpmTool>,
@@ -28,16 +31,26 @@ pub struct NodeTool {
 }
 
 impl NodeTool {
-    pub fn new(proto: &Proto, config: &NodeConfig, version: &str) -> Result<NodeTool, ToolError> {
+    pub fn new(
+        proto: &Proto,
+        config: &NodeConfig,
+        version: &Version,
+    ) -> Result<NodeTool, ToolError> {
         let mut node = NodeTool {
             config: config.to_owned(),
+            global: false,
             tool: NodeLanguage::new(proto),
             npm: None,
             pnpm: None,
             yarn: None,
         };
 
-        node.config.version = Some(version.to_owned());
+        if version.is_global() {
+            node.global = true;
+            node.config.version = None;
+        } else {
+            node.config.version = Some(version.number.to_owned());
+        };
 
         match config.package_manager {
             NodePackageManager::Npm => {

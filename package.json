@@ -1,7 +1,7 @@
 {
   "name": "moon",
   "private": true,
-  "packageManager": "",
+  "packageManager": "yarn@3.3.0",
   "scripts": {
     "docs": "cargo run -- run website:start",
     "moon": "target/debug/moon --log trace",

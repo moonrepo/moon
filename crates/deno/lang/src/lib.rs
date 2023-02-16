@@ -1,6 +1,8 @@
-mod config;
+mod deno_json;
+mod deno_lock;
 
-pub use config::DenoJson;
+pub use deno_json::DenoJson;
+pub use deno_lock::DenoLock;
 use moon_lang::{DependencyManager, Language, VersionManager};
 
 pub const DENO: Language = Language {

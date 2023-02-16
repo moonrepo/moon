@@ -9,5 +9,6 @@ moon_lang = { path = "../../core/lang" }
 moon_logger = { path = "../../core/logger" }
 moon_utils = { path = "../../core/utils" }
 cached = { workspace = true }
+rustc-hash = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true, features = ["preserve_order"] }

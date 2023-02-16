@@ -7,9 +7,11 @@ use moon_deno_lang::DENO_DEPS;
 use moon_deno_tool::DenoTool;
 use moon_error::MoonError;
 use moon_hasher::HashSet;
+use moon_logger::debug;
 use moon_platform::{Platform, Runtime, Version};
 use moon_project::{Project, ProjectError};
 use moon_task::Task;
+use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{Tool, ToolError, ToolManager};
 use moon_utils::{async_trait, process::Command};
 use proto::Proto;
@@ -141,6 +143,27 @@ impl Platform for DenoPlatform {
         }
 
         Ok(self.toolchain.setup(&version, last_versions).await?)
+    }
+
+    async fn install_deps(
+        &self,
+        _context: &ActionContext,
+        runtime: &Runtime,
+        working_dir: &Path,
+    ) -> Result<(), ToolError> {
+        let tool = self.toolchain.get_for_version(runtime.version())?;
+
+        debug!(target: LOG_TARGET, "Installing dependencies");
+
+        print_checkpoint("deno cache", Checkpoint::Setup);
+
+        Command::new(tool.get_bin_path()?)
+            .args(["cache", "--lock", "--lock-write", "src/deps.ts"])
+            .cwd(working_dir)
+            .exec_stream_output()
+            .await?;
+
+        Ok(())
     }
 
     async fn sync_project(

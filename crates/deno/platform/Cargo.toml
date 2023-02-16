@@ -10,9 +10,11 @@ moon_deno_lang = { path = "../lang" }
 moon_deno_tool = { path = "../tool" }
 moon_error = { path = "../../core/error" }
 moon_hasher = { path = "../../core/hasher" }
+moon_logger = { path = "../../core/logger" }
 moon_platform = { path = "../../core/platform" }
 moon_project = { path = "../../core/project" }
 moon_task = { path = "../../core/task" }
+moon_terminal = { path = "../../core/terminal" }
 moon_tool = { path = "../../core/tool" }
 moon_utils = { path = "../../core/utils" }
 proto_cli = { workspace = true }

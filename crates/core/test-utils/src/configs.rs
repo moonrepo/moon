@@ -131,6 +131,9 @@ pub fn get_project_graph_aliases_fixture_configs(
             add_engines_constraint: false,
             alias_package_names: Some(NodeProjectAliasFormat::NameAndScope),
             dedupe_on_lockfile_change: false,
+            npm: NpmConfig {
+                version: Some("8.19.0".into()),
+            },
             ..NodeConfig::default()
         }),
         ..ToolchainConfig::default()

@@ -165,26 +165,24 @@ impl Tool for NodeTool {
         last_versions: &mut FxHashMap<String, String>,
     ) -> Result<u8, ToolError> {
         let mut installed = 0;
-        let version = self.config.version.clone();
 
-        let Some(version) = version else {
-            return Ok(installed);
-        };
+        // Don't abort early, as we need to setup package managers below
+        if let Some(version) = &self.config.version {
+            if self.tool.is_setup(version).await? {
+                debug!(target: self.tool.get_log_target(), "Node.js has already been setup");
+            } else {
+                let setup = match last_versions.get("node") {
+                    Some(last) => version != last,
+                    None => true,
+                };
 
-        if self.tool.is_setup(&version).await? {
-            debug!(target: self.tool.get_log_target(), "Node.js has already been setup");
-        } else {
-            let setup = match last_versions.get("node") {
-                Some(last) => &version != last,
-                None => true,
-            };
+                if setup || !self.tool.get_install_dir()?.exists() {
+                    print_checkpoint(format!("installing node v{version}"), Checkpoint::Setup);
 
-            if setup || !self.tool.get_install_dir()?.exists() {
-                print_checkpoint(format!("installing node v{version}"), Checkpoint::Setup);
-
-                if self.tool.setup(&version).await? {
-                    last_versions.insert("node".into(), version.to_string());
-                    installed += 1;
+                    if self.tool.setup(version).await? {
+                        last_versions.insert("node".into(), version.to_string());
+                        installed += 1;
+                    }
                 }
             }
         }

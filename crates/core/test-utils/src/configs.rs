@@ -17,7 +17,6 @@ pub fn get_default_toolchain() -> ToolchainConfig {
             sync_project_workspace_dependencies: false,
             npm: NpmConfig {
                 version: Some("8.19.0".into()),
-                ..NpmConfig::default()
             },
             ..NodeConfig::default()
         }),

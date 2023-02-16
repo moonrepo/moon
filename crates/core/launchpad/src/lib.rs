@@ -22,9 +22,9 @@ pub struct CheckState {
 
 pub async fn check_version(
     local_version_str: &str,
-) -> Result<Option<String>, Box<dyn Error + Send + Sync>> {
+) -> Result<(String, bool), Box<dyn Error + Send + Sync>> {
     if is_test_env() {
-        return Ok(None);
+        return Ok((env!("CARGO_PKG_VERSION").to_owned(), false));
     }
 
     debug!("Checking for new version of moon");
@@ -55,21 +55,21 @@ pub async fn check_version(
             let check_state: Result<CheckState, _> = serde_json::from_str(&file);
             if let Ok(state) = check_state {
                 if (state.last_alert + ALERT_PAUSE_DURATION) > now {
-                    return Ok(None);
+                    return Ok((remote_version.to_string(), false));
                 }
             }
         }
 
+        moon_utils::fs::create_dir_all(check_state_path.parent().unwrap())?;
         let check_state = OpenOptions::new()
             .write(true)
             .create(true)
-            .open(&check_state_path)
-            .unwrap();
+            .open(&check_state_path)?;
 
         serde_json::to_writer(check_state, &CheckState { last_alert: now })?;
 
-        return Ok(Some(data.current_version));
+        return Ok((remote_version.to_string(), true));
     }
 
-    Ok(None)
+    Ok((remote_version.to_string(), false))
 }

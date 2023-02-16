@@ -41,18 +41,22 @@ moon_typescript_lang = { path = "../typescript/lang" }
 moon_utils = { path = "../core/utils" }
 moon_vcs = { path = "../core/vcs" }
 moon_workspace = { path = "../core/workspace" }
+bytes = "1.4.0"
 clap = { workspace = true, features = ["derive", "env", "wrap_help"] }
 clap_complete = { workspace = true }
 clap_lex = "0.3.0"
 console = { workspace = true }
 # console-subscriber = "0.1.8"
 dialoguer = "0.10.2"
+futures-util = "0.3.26"
 indicatif = "0.17.2"
 itertools = "0.10.5"
 lazy_static = { workspace = true }
 mimalloc = { version = "0.1.34", default-features = false }
 open = "3.2.0"
 petgraph = { workspace = true }
+proto = { path = "../proto/cli" }
+reqwest = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -61,6 +65,7 @@ strum = { version = "0.24.1", features = ["derive"] }
 tera = { version = "1.17.1", features = ["preserve_order"] }
 tiny_http = "0.12.0"
 tokio = { workspace = true }
+tokio-util = { version = "0.7.4", features = ["compat"] }
 
 [dev-dependencies]
 moon_archive = { path = "../core/archive" }

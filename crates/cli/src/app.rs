@@ -497,6 +497,10 @@ pub enum Commands {
         #[command(subcommand)]
         command: QueryCommands,
     },
+
+    // moon upgrade
+    #[command(name = "upgrade", about = "Upgrade to the latest version of moon.")]
+    Upgrade,
 }
 
 #[derive(Debug, Parser)]

@@ -5,8 +5,9 @@ use std::collections::BTreeMap;
 #[derive(Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DepsHasher {
-    // Dependencies indexed by manifest name
-    deps: BTreeMap<String, BTreeMap<String, String>>,
+    dependencies: BTreeMap<String, String>,
+
+    name: String,
 
     // Version of our hasher
     #[allow(dead_code)]
@@ -14,30 +15,24 @@ pub struct DepsHasher {
 }
 
 impl DepsHasher {
-    pub fn new() -> Self {
+    pub fn new(name: String) -> Self {
         DepsHasher {
+            name,
             version: "1".into(),
             ..DepsHasher::default()
         }
     }
 
-    pub fn hash_deps(&mut self, manifest: &str, deps: &BTreeMap<String, String>) {
-        if let Some(cache) = self.deps.get_mut(manifest) {
-            cache.extend(deps.to_owned());
-        } else {
-            self.deps.insert(manifest.to_owned(), deps.to_owned());
-        }
+    pub fn hash_deps(&mut self, dependencies: &BTreeMap<String, String>) {
+        self.dependencies.extend(dependencies.to_owned());
     }
 }
 
 impl Hasher for DepsHasher {
     fn hash(&self, sha: &mut Sha256) {
+        sha.update(self.name.as_bytes());
         sha.update(self.version.as_bytes());
-
-        for (manifest, deps) in &self.deps {
-            sha.update(manifest.as_bytes());
-            hash_btree(deps, sha);
-        }
+        hash_btree(&self.dependencies, sha);
     }
 
     fn serialize(&self) -> serde_json::Value {

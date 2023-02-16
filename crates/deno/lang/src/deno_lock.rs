@@ -10,14 +10,20 @@ use std::path::{Path, PathBuf};
 config_cache!(DenoLock, DENO_DEPS.lockfile, read_json);
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-pub struct DenoLock(FxHashMap<String, String>);
+pub struct DenoLock {
+    #[serde(flatten)]
+    dependencies: FxHashMap<String, String>,
+
+    #[serde(skip)]
+    pub path: PathBuf,
+}
 
 #[cached(result)]
 pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVersions, MoonError> {
     let mut deps: LockfileDependencyVersions = FxHashMap::default();
 
     if let Some(lockfile) = DenoLock::read(path)? {
-        for (key, value) in lockfile.0 {
+        for (key, value) in lockfile.dependencies {
             deps.insert(key, vec![value]);
         }
     }

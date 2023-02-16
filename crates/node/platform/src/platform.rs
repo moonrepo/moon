@@ -387,19 +387,19 @@ impl Platform for NodePlatform {
         _hasher_config: &HasherConfig,
     ) -> Result<(), ToolError> {
         if let Ok(Some(package)) = PackageJson::read(manifest_path) {
-            let mut hasher = DepsHasher::new();
             let name = package.name.unwrap_or_else(|| "unknown".into());
+            let mut hasher = DepsHasher::new(name);
 
             if let Some(peer_deps) = &package.peer_dependencies {
-                hasher.hash_deps(&name, peer_deps);
+                hasher.hash_deps(peer_deps);
             }
 
             if let Some(dev_deps) = &package.dev_dependencies {
-                hasher.hash_deps(&name, dev_deps);
+                hasher.hash_deps(dev_deps);
             }
 
             if let Some(deps) = &package.dependencies {
-                hasher.hash_deps(&name, deps);
+                hasher.hash_deps(deps);
             }
 
             hashset.hash(hasher);

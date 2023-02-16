@@ -7,8 +7,9 @@ use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
 use moon_utils::process::Command;
 use moon_utils::{fs, is_ci, semver};
 use proto::{
-    async_trait, node::NodeDependencyManager, Describable, Executable, Installable, Proto,
-    Resolvable, Shimable, Tool as ProtoTool,
+    async_trait,
+    node::{NodeDependencyManager, NodeDependencyManagerType},
+    Describable, Executable, Installable, Proto, Resolvable, Shimable, Tool as ProtoTool,
 };
 use rustc_hash::FxHashMap;
 use std::env;
@@ -18,6 +19,8 @@ use std::path::Path;
 pub struct PnpmTool {
     pub config: PnpmConfig,
 
+    pub global: bool,
+
     pub tool: NodeDependencyManager,
 }
 
@@ -25,7 +28,8 @@ impl PnpmTool {
     pub fn new(proto: &Proto, config: &Option<PnpmConfig>) -> Result<PnpmTool, ToolError> {
         Ok(PnpmTool {
             config: config.to_owned().unwrap_or_default(),
-            tool: NodeDependencyManager::new(proto, proto::node::NodeDependencyManagerType::Pnpm),
+            global: false,
+            tool: NodeDependencyManager::new(proto, NodeDependencyManagerType::Pnpm),
         })
     }
 }

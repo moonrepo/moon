@@ -2519,6 +2519,7 @@ dependencies = [
  "moon_config",
  "moon_logger",
  "moon_node_lang",
+ "moon_platform_runtime",
  "moon_terminal",
  "moon_tool",
  "moon_utils",

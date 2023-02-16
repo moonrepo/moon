@@ -57,26 +57,28 @@ impl Tool for NpmTool {
         last_versions: &mut FxHashMap<String, String>,
     ) -> Result<u8, ToolError> {
         let mut count = 0;
+        let version = self.config.version.clone();
 
-        if self.tool.is_setup(&self.config.version).await? {
+        let Some(version) = version else {
+            return Ok(count);
+        };
+
+        if self.tool.is_setup(&version).await? {
             debug!(target: self.tool.get_log_target(), "npm has already been setup");
 
             return Ok(count);
         }
 
         if let Some(last) = last_versions.get("npm") {
-            if last == &self.config.version && self.tool.get_install_dir()?.exists() {
+            if last == &version && self.tool.get_install_dir()?.exists() {
                 return Ok(count);
             }
         }
 
-        print_checkpoint(
-            format!("installing npm v{}", self.config.version),
-            Checkpoint::Setup,
-        );
+        print_checkpoint(format!("installing npm v{version}"), Checkpoint::Setup);
 
-        if self.tool.setup(&self.config.version).await? {
-            last_versions.insert("npm".into(), self.config.version.clone());
+        if self.tool.setup(&version).await? {
+            last_versions.insert("npm".into(), version);
             count += 1;
         }
 

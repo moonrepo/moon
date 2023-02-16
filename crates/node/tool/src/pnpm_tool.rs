@@ -57,26 +57,28 @@ impl Tool for PnpmTool {
         last_versions: &mut FxHashMap<String, String>,
     ) -> Result<u8, ToolError> {
         let mut count = 0;
+        let version = self.config.version.clone();
 
-        if self.tool.is_setup(&self.config.version).await? {
+        let Some(version) = version else {
+            return Ok(count);
+        };
+
+        if self.tool.is_setup(&version).await? {
             debug!(target: self.tool.get_log_target(), "pnpm has already been setup");
 
             return Ok(count);
         }
 
         if let Some(last) = last_versions.get("pnpm") {
-            if last == &self.config.version && self.tool.get_install_dir()?.exists() {
+            if last == &version && self.tool.get_install_dir()?.exists() {
                 return Ok(count);
             }
         }
 
-        print_checkpoint(
-            format!("installing pnpm v{}", self.config.version),
-            Checkpoint::Setup,
-        );
+        print_checkpoint(format!("installing pnpm v{version}"), Checkpoint::Setup);
 
-        if self.tool.setup(&self.config.version).await? {
-            last_versions.insert("pnpm".into(), self.config.version.clone());
+        if self.tool.setup(&version).await? {
+            last_versions.insert("pnpm".into(), version);
             count += 1;
         }
 
@@ -116,8 +118,13 @@ impl DependencyManager<NodeTool> for PnpmTool {
         log: bool,
     ) -> Result<(), ToolError> {
         if working_dir.join(self.get_lock_filename()).exists() {
+            let version = match self.config.version.as_ref() {
+                Some(v) => v,
+                None => "0.0.0",
+            };
+
             // https://github.com/pnpm/pnpm/releases/tag/v7.26.0
-            if semver::satisfies_range(&self.config.version, ">=7.26.0") {
+            if semver::satisfies_range(version, ">=7.26.0") {
                 self.create_command(node)?
                     .arg("dedupe")
                     .cwd(working_dir)

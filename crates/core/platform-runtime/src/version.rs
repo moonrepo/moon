@@ -49,11 +49,7 @@ impl Version {
 
 impl fmt::Display for Version {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if self.is_global() {
-            write!(f, "(global)")
-        } else {
-            write!(f, "{}", self.number)
-        }
+        write!(f, "{}", self.number)
     }
 }
 

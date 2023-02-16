@@ -15,6 +15,10 @@ pub fn get_default_toolchain() -> ToolchainConfig {
             dedupe_on_lockfile_change: false,
             infer_tasks_from_scripts: false,
             sync_project_workspace_dependencies: false,
+            npm: NpmConfig {
+                version: Some("8.19.0".into()),
+                ..NpmConfig::default()
+            },
             ..NodeConfig::default()
         }),
         typescript: Some(TypeScriptConfig {

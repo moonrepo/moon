@@ -27,8 +27,8 @@ pub struct NpmTool {
 impl NpmTool {
     pub fn new(proto: &Proto, config: &NpmConfig) -> Result<NpmTool, ToolError> {
         Ok(NpmTool {
+            global: config.version.is_none(),
             config: config.to_owned(),
-            global: false,
             tool: NodeDependencyManager::new(proto, NodeDependencyManagerType::Npm),
         })
     }
@@ -95,18 +95,20 @@ impl Tool for NpmTool {
 #[async_trait]
 impl DependencyManager<NodeTool> for NpmTool {
     fn create_command(&self, node: &NodeTool) -> Result<Command, ToolError> {
-        let mut cmd = if let Some(shim) = self.get_shim_path() {
-            Command::new(shim)
-        } else if self.global {
+        let mut cmd = if self.global {
             Command::new("npm")
+        } else if let Some(shim) = self.get_shim_path() {
+            Command::new(shim)
         } else {
             let mut cmd = Command::new(node.get_bin_path()?);
             cmd.arg(self.get_bin_path()?);
             cmd
         };
 
-        // TODO
-        cmd.env("PATH", get_path_env_var(&self.tool.get_install_dir()?));
+        if !self.global {
+            cmd.env("PATH", get_path_env_var(&self.tool.get_install_dir()?));
+        }
+
         cmd.env("PROTO_NODE_BIN", node.get_bin_path()?);
 
         Ok(cmd)

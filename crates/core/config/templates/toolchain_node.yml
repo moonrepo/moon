@@ -3,8 +3,10 @@
 node:
   version: '{{ node_version }}'
   packageManager: '{{ package_manager }}'
+{%- if package_manager_version != "" %}
   {{ package_manager }}:
     version: '{{ package_manager_version }}'
+{%- endif %}
 
 {%- else -%}
 
@@ -21,8 +23,12 @@ node:
   packageManager: '{{ package_manager }}'
 
   # The version of the package manager (above) to use.
+{%- if package_manager_version != "" %}
   {{ package_manager }}:
     version: '{{ package_manager_version }}'
+{%- else %}
+  {{ package_manager }}: {}
+{%- endif %}
 
   # Add `node.version` as a constraint in the root `package.json` `engines`.
   addEnginesConstraint: true

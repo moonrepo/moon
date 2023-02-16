@@ -4,6 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+moon_config = { path = "../../core/config" }
+moon_error = { path = "../../core/error" }
+moon_platform = { path = "../../core/platform" }
+moon_project = { path = "../../core/project" }
+moon_tool = { path = "../../core/tool" }
+moon_utils = { path = "../../core/utils" }
 proto_cli = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }

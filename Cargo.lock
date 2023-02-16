@@ -2340,11 +2340,16 @@ name = "moon_deno_platform"
 version = "0.1.0"
 dependencies = [
  "moon",
+ "moon_action_context",
  "moon_config",
+ "moon_deno_lang",
+ "moon_deno_tool",
  "moon_error",
+ "moon_hasher",
  "moon_platform",
  "moon_project",
  "moon_project_graph",
+ "moon_task",
  "moon_test_utils",
  "moon_tool",
  "moon_utils",

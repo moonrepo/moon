@@ -1,11 +1,19 @@
+use moon_action_context::ActionContext;
 use moon_config::{
-    DenoConfig, DependencyConfig, PlatformType, ProjectConfig, ProjectsAliasesMap, TypeScriptConfig,
+    DenoConfig, DependencyConfig, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap,
+    TypeScriptConfig,
 };
+use moon_deno_lang::DENO_DEPS;
+use moon_deno_tool::DenoTool;
 use moon_error::MoonError;
+use moon_hasher::HashSet;
 use moon_platform::{Platform, Runtime, Version};
-use moon_project::Project;
+use moon_project::{Project, ProjectError};
+use moon_task::Task;
 use moon_tool::{Tool, ToolError, ToolManager};
 use moon_utils::{async_trait, process::Command};
+use proto::Proto;
+use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
 
 const LOG_TARGET: &str = "moon:deno-platform";
@@ -14,7 +22,7 @@ const LOG_TARGET: &str = "moon:deno-platform";
 pub struct DenoPlatform {
     config: DenoConfig,
 
-    toolchain: ToolManager<NodeTool>,
+    toolchain: ToolManager<DenoTool>,
 
     typescript_config: Option<TypeScriptConfig>,
 
@@ -42,8 +50,8 @@ impl Platform for DenoPlatform {
         PlatformType::Deno
     }
 
-    fn get_runtime_from_config(&self, project_config: Option<&ProjectConfig>) -> Option<Runtime> {
-        None
+    fn get_runtime_from_config(&self, _project_config: Option<&ProjectConfig>) -> Option<Runtime> {
+        Some(Runtime::Deno(Version::default()))
     }
 
     fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool {
@@ -85,20 +93,33 @@ impl Platform for DenoPlatform {
     }
 
     fn get_dependency_configs(&self) -> Result<Option<(String, String)>, ToolError> {
-        let tool = self.toolchain.get()?;
-        let depman = tool.get_package_manager();
-
         Ok(Some((
-            depman.get_lock_filename(),
-            depman.get_manifest_filename(),
+            DENO_DEPS.lockfile.to_owned(),
+            DENO_DEPS.manifest.to_owned(),
         )))
     }
 
     async fn setup_toolchain(&mut self) -> Result<(), ToolError> {
+        // if let Some(version) = &self.config.version {
+        //     let version = Version::new(version);
+        //     let mut last_versions = FxHashMap::default();
+
+        //     if !self.toolchain.has(&version) {
+        //         self.toolchain.register(
+        //             &version,
+        //             DenoTool::new(&Proto::new()?, &self.config, &version.0)?,
+        //         );
+        //     }
+
+        //     self.toolchain.setup(&version, &mut last_versions).await?;
+        // }
+
         Ok(())
     }
 
     async fn teardown_toolchain(&mut self) -> Result<(), ToolError> {
+        self.toolchain.teardown_all().await?;
+
         Ok(())
     }
 
@@ -110,31 +131,31 @@ impl Platform for DenoPlatform {
         runtime: &Runtime,
         last_versions: &mut FxHashMap<String, String>,
     ) -> Result<u8, ToolError> {
-        Ok(0)
-    }
+        let version = runtime.version();
 
-    async fn install_deps(
-        &self,
-        _context: &ActionContext,
-        runtime: &Runtime,
-        working_dir: &Path,
-    ) -> Result<(), ToolError> {
-        Ok(())
+        if !self.toolchain.has(&version) {
+            self.toolchain.register(
+                &version,
+                DenoTool::new(&Proto::new()?, &self.config, &version.0)?,
+            );
+        }
+
+        Ok(self.toolchain.setup(&version, last_versions).await?)
     }
 
     async fn sync_project(
         &self,
         _context: &ActionContext,
-        project: &Project,
-        dependencies: &FxHashMap<String, &Project>,
+        _project: &Project,
+        _dependencies: &FxHashMap<String, &Project>,
     ) -> Result<bool, ProjectError> {
         Ok(false)
     }
 
     async fn hash_manifest_deps(
         &self,
-        manifest_path: &Path,
-        hashset: &mut HashSet,
+        _manifest_path: &Path,
+        _hashset: &mut HashSet,
         _hasher_config: &HasherConfig,
     ) -> Result<(), ToolError> {
         Ok(())
@@ -142,22 +163,22 @@ impl Platform for DenoPlatform {
 
     async fn hash_run_target(
         &self,
-        project: &Project,
-        runtime: &Runtime,
-        hashset: &mut HashSet,
-        hasher_config: &HasherConfig,
+        _project: &Project,
+        _runtime: &Runtime,
+        _hashset: &mut HashSet,
+        _hasher_config: &HasherConfig,
     ) -> Result<(), ToolError> {
         Ok(())
     }
 
     async fn create_run_target_command(
         &self,
-        context: &ActionContext,
-        project: &Project,
-        task: &Task,
-        runtime: &Runtime,
-        working_dir: &Path,
+        _context: &ActionContext,
+        _project: &Project,
+        _task: &Task,
+        _runtime: &Runtime,
+        _working_dir: &Path,
     ) -> Result<Command, ToolError> {
-        Ok(command)
+        Ok(Command::new("deno"))
     }
 }

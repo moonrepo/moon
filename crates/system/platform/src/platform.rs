@@ -39,6 +39,10 @@ impl Platform for SystemPlatform {
 
     // TOOLCHAIN
 
+    fn is_toolchain_enabled(&self) -> Result<bool, ToolError> {
+        Ok(false)
+    }
+
     fn get_tool(&self) -> Result<Box<&dyn Tool>, ToolError> {
         Ok(Box::new(&self.tool))
     }

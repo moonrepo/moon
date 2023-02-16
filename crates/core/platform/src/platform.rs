@@ -74,6 +74,8 @@ pub trait Platform: Debug + Send + Sync {
 
     // TOOLCHAIN
 
+    fn is_toolchain_enabled(&self) -> Result<bool, ToolError>;
+
     /// Return a tool instance from the internal toolchain for the top-level version.
     /// If the version does not exist in the toolchain, return an error.
     fn get_tool(&self) -> Result<Box<&dyn Tool>, ToolError>;

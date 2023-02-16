@@ -274,6 +274,10 @@ impl Platform for NodePlatform {
 
     // TOOLCHAIN
 
+    fn is_toolchain_enabled(&self) -> Result<bool, ToolError> {
+        Ok(self.config.version.is_some())
+    }
+
     fn get_tool(&self) -> Result<Box<&dyn Tool>, ToolError> {
         let tool = self.toolchain.get()?;
 

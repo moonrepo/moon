@@ -21,12 +21,16 @@ enum BinExitCodes {
 }
 
 fn is_installed(tool: &dyn Tool) {
-    match tool.get_bin_path() {
-        Ok(path) => {
-            println!("{}", path.display());
-        }
-        Err(_) => {
-            safe_exit(BinExitCodes::NotInstalled as i32);
+    if let Some(shim_path) = tool.get_shim_path() {
+        println!("{}", shim_path.display());
+    } else {
+        match tool.get_bin_path() {
+            Ok(path) => {
+                println!("{}", path.display());
+            }
+            Err(_) => {
+                safe_exit(BinExitCodes::NotInstalled as i32);
+            }
         }
     }
 }

@@ -1,6 +1,6 @@
 use crate::helpers::AnyError;
 use clap::ValueEnum;
-use moon::load_workspace;
+use moon::load_workspace_with_toolchain;
 use moon_config::PlatformType;
 use moon_node_tool::NodeTool;
 use moon_terminal::safe_exit;
@@ -36,7 +36,7 @@ fn not_configured() -> ! {
 }
 
 pub async fn bin(tool_type: BinTool) -> Result<(), AnyError> {
-    let workspace = load_workspace().await?;
+    let workspace = load_workspace_with_toolchain().await?;
 
     match tool_type {
         BinTool::Node => {

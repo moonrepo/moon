@@ -7,6 +7,10 @@
 - Added Homebrew as an installation option.
 - Added a `moon upgrade` command to upgrade moon to the latest version.
 
+#### 🐞 Fixes
+
+- Fixed `moon bin` failing, even when a tool has been configured.
+
 ## 0.24.1
 
 #### 🐞 Fixes

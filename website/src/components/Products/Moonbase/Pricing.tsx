@@ -20,7 +20,7 @@ function Tier({ children, cta, items, title }: TierProps) {
 					{title}
 				</Heading>
 
-				{/* children */}
+				{children}
 			</div>
 
 			<div className="bg-gray-50 rounded p-4 lg:h-[260px]">
@@ -70,11 +70,11 @@ export default function Pricing() {
 									tooltip: 'Maximum number of members per organization, including the owner.',
 								},
 								{ label: '5 repositories', tooltip: 'Per organization.' },
-								{
-									label: '25 projects',
-									tooltip:
-										'Maximum number of projects aggregated into the registry, across all repositories.',
-								},
+								// {
+								// 	label: '25 projects',
+								// 	tooltip:
+								// 		'Maximum number of projects aggregated into the registry, across all repositories.',
+								// },
 								{ label: '100 CI runs', monthly: true, tooltip: 'Across all repositories.' },
 								{ label: '1GB cloud storage', tooltip: 'Across all repositories.' },
 							]}
@@ -89,10 +89,14 @@ export default function Pricing() {
 							items={[
 								{ label: 'Priority support', tooltip: 'Get faster replies to support questions.' },
 								{
-									label: 'Unlimited projects',
-									tooltip:
-										'Maximum number of projects aggregated into the registry, across all repositories.',
+									label: '5 free repositories',
+									tooltip: 'Increased cost for additional repositories.',
 								},
+								// {
+								// 	label: 'Unlimited projects',
+								// 	tooltip:
+								// 		'Maximum number of projects aggregated into the registry, across all repositories.',
+								// },
 								{ label: '1,000 CI runs', monthly: true, tooltip: 'Across all repositories.' },
 								{
 									label: '10GB cloud storage',
@@ -121,14 +125,18 @@ export default function Pricing() {
 									tooltip: 'Get instant replies to support questions.',
 								},
 								{
-									label: 'On-premise solution',
-									tooltip: 'Host moonbase within your infrastructure.',
+									label: '15 free repositories',
+									tooltip: 'Increased cost for additional repositories.',
 								},
-								{
-									label: 'Unlimited projects',
-									tooltip:
-										'Maximum number of projects aggregated into the registry, across all repositories.',
-								},
+								// {
+								// 	label: 'On-premise solution',
+								// 	tooltip: 'Host moonbase within your infrastructure.',
+								// },
+								// {
+								// 	label: 'Unlimited projects',
+								// 	tooltip:
+								// 		'Maximum number of projects aggregated into the registry, across all repositories.',
+								// },
 								{ label: 'Unlimited CI runs', monthly: true, tooltip: 'Across all repositories.' },
 								{
 									label: 'Unlimited cloud storage',
@@ -139,7 +147,7 @@ export default function Pricing() {
 						>
 							<div className="flex justify-center gap-2">
 								<div>
-									<Heading level={1}>$9</Heading>
+									<Heading level={1}>$8</Heading>
 								</div>
 								<div className="text-left">
 									per member / repo

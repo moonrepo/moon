@@ -1,6 +1,6 @@
 use crate::helpers::AnyError;
 use clap::ValueEnum;
-use moon::load_workspace;
+use moon::load_workspace_with_toolchain;
 use moon_config::PlatformType;
 use moon_node_tool::NodeTool;
 use moon_terminal::safe_exit;
@@ -21,12 +21,16 @@ enum BinExitCodes {
 }
 
 fn is_installed(tool: &dyn Tool) {
-    match tool.get_bin_path() {
-        Ok(path) => {
-            println!("{}", path.display());
-        }
-        Err(_) => {
-            safe_exit(BinExitCodes::NotInstalled as i32);
+    if let Some(shim_path) = tool.get_shim_path() {
+        println!("{}", shim_path.display());
+    } else {
+        match tool.get_bin_path() {
+            Ok(path) => {
+                println!("{}", path.display());
+            }
+            Err(_) => {
+                safe_exit(BinExitCodes::NotInstalled as i32);
+            }
         }
     }
 }
@@ -36,7 +40,7 @@ fn not_configured() -> ! {
 }
 
 pub async fn bin(tool_type: BinTool) -> Result<(), AnyError> {
-    let workspace = load_workspace().await?;
+    let workspace = load_workspace_with_toolchain().await?;
 
     match tool_type {
         BinTool::Node => {

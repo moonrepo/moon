@@ -69,7 +69,7 @@ export default function Pricing() {
 									label: '1 organization member',
 									tooltip: 'Maximum number of members per organization, including the owner.',
 								},
-								{ label: '5 repositories', tooltip: 'Per organization.' },
+								{ label: '5 repositories', tooltip: 'Maximum number per organization.' },
 								// {
 								// 	label: '25 projects',
 								// 	tooltip:

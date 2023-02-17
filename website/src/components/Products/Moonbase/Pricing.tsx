@@ -23,7 +23,7 @@ function Tier({ children, cta, items, title }: TierProps) {
 				{children}
 			</div>
 
-			<div className="bg-gray-50 rounded p-4 lg:h-[260px]">
+			<div className="bg-gray-50 rounded p-4 lg:h-[220px]">
 				<ul className="flex flex-col gap-2 p-0 m-0">
 					{items.map((item) => (
 						<li key={item.label} className="list-none relative pl-4">
@@ -107,7 +107,7 @@ export default function Pricing() {
 						>
 							<div className="flex justify-center gap-2">
 								<div>
-									<Heading level={1}>$5</Heading>
+									<Heading level={1}>$8</Heading>
 								</div>
 								<div className="text-left">
 									per member / repo
@@ -147,7 +147,7 @@ export default function Pricing() {
 						>
 							<div className="flex justify-center gap-2">
 								<div>
-									<Heading level={1}>$8</Heading>
+									<Heading level={1}>$12</Heading>
 								</div>
 								<div className="text-left">
 									per member / repo

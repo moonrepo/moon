@@ -68,10 +68,10 @@ const organizationFeatures: Feature[] = [
 		description: 'Easily scaffold new applications, libraries, tooling, and more!',
 	},
 	{
-		title: 'Dependency workspaces',
+		title: 'Task inheritance',
 		icon: faGridDividers,
 		description:
-			'Works alongside package manager workspaces so that projects have distinct dependency trees.',
+			'Define a task once to be inherited by all or scoped projects. Avoid defining the same task in every project.',
 	},
 	{
 		title: 'Ownership metadata',

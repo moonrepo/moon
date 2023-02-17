@@ -229,6 +229,19 @@ script: 'moon ci --job $TRAVIS_JOB_INDEX --jobTotal $TRAVIS_JOB_TOTAL'
 
 > Your CI environment may provide environment variables for these 2 values.
 
+## Caching artifacts
+
+When a CI pipeline reaches a certain scale, its run times increase, tasks are unnecessarily ran, and
+build artifacts are not shared. To combat this, we support [remote caching](./remote-cache), a
+mechanism where we store build artifacts in the cloud, and sync these artifacts to machines on
+demand.
+
+:::info
+
+Remote caching is powered by our [moonbase service](/moonbase). Start using today for free!
+
+:::
+
 ## Reporting run results
 
 If you're using GitHub Actions as your CI provider, we suggest using our

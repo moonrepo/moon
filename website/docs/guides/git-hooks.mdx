@@ -18,7 +18,7 @@ changed projects!
 
 ```bash title=".git/hooks/pre-commit"
 #!/bin/sh
-./node_modules/@moonrepo/cli/moon run :lint :format --affected --status=staged
+moon run :lint :format --affected --status=staged
 ```
 
 > By default this will run on the _entire_ project (all files). If you want to filter it to only the

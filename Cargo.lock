@@ -2233,6 +2233,7 @@ dependencies = [
 name = "moon_cli"
 version = "0.24.2"
 dependencies = [
+ "atty",
  "bytes",
  "clap 4.1.4",
  "clap_complete",

@@ -1,0 +1,154 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs
+  groupId="package-manager"
+  defaultValue="yarn"
+  values={[
+    { label: 'npm', value: 'npm' },
+    { label: 'pnpm', value: 'pnpm' },
+    { label: 'Yarn', value: 'yarn' },
+    { label: 'Yarn (classic)', value: 'yarn1' },
+  ]}
+>
+<TabItem value="npm">
+
+Install dependencies:
+
+```shell
+npm install
+```
+
+Add a package:
+
+```shell
+# At the root
+npm install <dependency>
+
+# In a project
+npm install <dependency> --workspace <project>
+```
+
+Remove a package:
+
+```shell
+# At the root
+npm install <dependency>
+
+# In a project
+npm install <dependency> --workspace <project>
+```
+
+Update packages:
+
+```shell
+npx npm-check-updates --interactive
+```
+
+</TabItem>
+<TabItem value="pnpm">
+
+Install dependencies:
+
+```shell
+pnpm install
+```
+
+Add a package:
+
+```shell
+# At the root
+pnpm add <dependency>
+
+# In a project
+pnpm add <dependency> --filter <project>
+```
+
+Remove a package:
+
+```shell
+# At the root
+pnpm remove <dependency>
+
+# In a project
+pnpm remove <dependency> --filter <project>
+```
+
+Update packages:
+
+```shell
+pnpm update -i -r --latest
+```
+
+</TabItem>
+<TabItem value="yarn">
+
+Install dependencies:
+
+```shell
+yarn install
+```
+
+Add a package:
+
+```shell
+# At the root
+yarn add <dependency>
+
+# In a project
+yarn workspace <project> add <dependency>
+```
+
+Remove a package:
+
+```shell
+# At the root
+yarn remove <dependency>
+
+# In a project
+yarn workspace <project> remove <dependency>
+```
+
+Update packages:
+
+```shell
+yarn upgrade-interactive
+```
+
+</TabItem>
+<TabItem value="yarn1">
+
+Install dependencies:
+
+```shell
+yarn install
+```
+
+Add a package:
+
+```shell
+# At the root
+yarn add <dependency> -w
+
+# In a project
+yarn workspace <project> add <dependency>
+```
+
+Remove a package:
+
+```shell
+# At the root
+yarn remove <dependency> -w
+
+# In a project
+yarn workspace <project> remove <dependency>
+```
+
+Update packages:
+
+```shell
+yarn upgrade-interactive --latest
+```
+
+</TabItem>
+</Tabs>

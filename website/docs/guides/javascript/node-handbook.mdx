@@ -10,6 +10,12 @@ Utilizing JavaScript in a monorepo can be a daunting task, especially when using
 are many ways to structure your code and to configure your tools. With this handbook, we'll help
 guide you through this process.
 
+:::info
+
+This guide is a living document and will continue to be updated over time!
+
+:::
+
 ## moon setup
 
 For this part of the handbook, we'll be focusing on [moon](/moon), our build system. To start,
@@ -213,157 +219,9 @@ Proceed with caution for non-workspaces setups!
 The following common commands can be used for adding, removing, or managing dependencies in a
 workspace. View the package manager's official documentation for a thorough list of commands.
 
-<Tabs
-  groupId="package-manager"
-  defaultValue="yarn"
-  values={[
-    { label: 'npm', value: 'npm' },
-    { label: 'pnpm', value: 'pnpm' },
-    { label: 'Yarn', value: 'yarn' },
-    { label: 'Yarn (classic)', value: 'yarn1' },
-  ]}
->
-<TabItem value="npm">
+import WsCommands from './__partials__/workspace-commands.mdx';
 
-Install dependencies:
-
-```shell
-npm install
-```
-
-Add a package:
-
-```shell
-# At the root
-npm install (dependency)
-
-# In a project
-npm install (dependency) --workspace (project)
-```
-
-Remove a package:
-
-```shell
-# At the root
-npm install (dependency)
-
-# In a project
-npm install (dependency) --workspace (project)
-```
-
-Update packages:
-
-```shell
-npx npm-check-updates --interactive
-```
-
-</TabItem>
-<TabItem value="pnpm">
-
-Install dependencies:
-
-```shell
-pnpm install
-```
-
-Add a package:
-
-```shell
-# At the root
-pnpm add (dependency)
-
-# In a project
-pnpm add (dependency) --filter (project)
-```
-
-Remove a package:
-
-```shell
-# At the root
-pnpm remove (dependency)
-
-# In a project
-pnpm remove (dependency) --filter (project)
-```
-
-Update packages:
-
-```shell
-pnpm update -i -r --latest
-```
-
-</TabItem>
-<TabItem value="yarn">
-
-Install dependencies:
-
-```shell
-yarn install
-```
-
-Add a package:
-
-```shell
-# At the root
-yarn add (dependency)
-
-# In a project
-yarn workspace (project) add (dependency)
-```
-
-Remove a package:
-
-```shell
-# At the root
-yarn remove (dependency)
-
-# In a project
-yarn workspace (project) remove (dependency)
-```
-
-Update packages:
-
-```shell
-yarn upgrade-interactive
-```
-
-</TabItem>
-<TabItem value="yarn1">
-
-Install dependencies:
-
-```shell
-yarn install
-```
-
-Add a package:
-
-```shell
-# At the root
-yarn add (dependency) -w
-
-# In a project
-yarn workspace (project) add (dependency)
-```
-
-Remove a package:
-
-```shell
-# At the root
-yarn remove (dependency) -w
-
-# In a project
-yarn workspace (project) remove (dependency)
-```
-
-Update packages:
-
-```shell
-yarn upgrade-interactive --latest
-```
-
-</TabItem>
-</Tabs>
+<WsCommands />
 
 ### Developer tools at the root
 
@@ -408,7 +266,27 @@ import utils from '@company/utils';
 
 ### Depending on packages
 
-TODO
+Because packages are symlinked into `node_modules`, we can depend on them as if they were normal npm
+packages, but with 1 key difference. Since these packages aren't published, they do not have a
+version to reference, and instead, we can use the special `workspace:^` version (yarn and pnpm only,
+use `*` for npm).
+
+```json
+{
+  "name": "@company/consumer",
+  "dependencies": {
+    "@company/provider": "workspace:^"
+  }
+}
+```
+
+The `workspace:` version basically means "use the package found in the current workspace". The `:^`
+determines the version range to _substitute with when publishing_. For example, the `workspace:^`
+above would be replaced with version of `@company/provider` as `^<version>` when the
+`@company/consumer` package is published.
+
+There's also `workspace:~` and `workspace:*` which substitutes to `~<version>` and `<version>`
+respectively. We suggest using `:^` so that version ranges can be deduped.
 
 ### Types of packages
 
@@ -505,3 +383,8 @@ on the consuming side, you're using the package as if it's a normal node module,
 deviating from the ecosystem.
 
 :::
+
+### TypeScript integration
+
+We suggest using TypeScript project references. Luckily, we have an
+[in-depth guide on how to properly and efficiently integrate them](./typescript-project-refs)!

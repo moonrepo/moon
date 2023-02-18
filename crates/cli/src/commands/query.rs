@@ -26,7 +26,7 @@ pub async fn projects(options: &QueryProjectsOptions) -> Result<(), AnyError> {
         };
 
         writeln!(stdout, "{}", serde_json::to_string_pretty(&result)?)?;
-    } else {
+    } else if !projects.is_empty() {
         writeln!(
             stdout,
             "{}",
@@ -55,7 +55,7 @@ pub async fn touched_files(options: &mut QueryTouchedFilesOptions) -> Result<(),
         };
 
         writeln!(stdout, "{}", serde_json::to_string_pretty(&result)?)?;
-    } else {
+    } else if !files.is_empty() {
         writeln!(
             stdout,
             "{}",
@@ -84,7 +84,7 @@ pub async fn tasks(options: &QueryProjectsOptions) -> Result<(), AnyError> {
         };
 
         writeln!(stdout, "{}", serde_json::to_string_pretty(&result)?)?;
-    } else {
+    } else if !projects.is_empty() {
         for project in projects {
             if project.tasks.is_empty() {
                 continue;

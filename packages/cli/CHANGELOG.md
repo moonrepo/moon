@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where `moon query projects --affected` would hang indefinitely waiting for stdin.
+
 ## 0.24.2
 
 #### 🚀 Updates

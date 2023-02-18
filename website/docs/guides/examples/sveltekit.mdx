@@ -5,6 +5,9 @@ sidebar_label: SvelteKit
 
 import AddDepsTabs from '@site/src/components/AddDepsTabs';
 import CreateDepTabs from '@site/src/components/CreateDepTabs';
+import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
+
+<HeadingApiLink to="https://github.com/moonrepo/examples/tree/master/apps/sveltekit" />
 
 [SvelteKit](https://kit.svelte.dev) is built on [Svelte](https://svelte.dev), a UI framework that
 uses a compiler to let you write breathtakingly concise components that do minimal work in the
@@ -43,14 +46,8 @@ tasks:
     command: 'vite dev'
     local: true
 
-  lint:
-    command: 'eslint .'
-
-  # Production build (SSR)
   build:
     command: 'vite build'
-    deps:
-      - '~:lint'
     inputs:
       - '@group(svelte)'
     outputs:
@@ -64,11 +61,8 @@ tasks:
 
   test:
     command: 'vitest'
-
-  playwright:
-    command: 'playwright test'
     inputs:
-      - '@globs(tests)'
+      - '@group(svelte)'
 ```
 
 To run the SvelteKit dev server:
@@ -80,12 +74,31 @@ moon run <project>:dev
 ### ESLint integration
 
 SvelteKit provides an option to setup ESLint along with your project, with moon you can use a
-[global `lint` task](./eslint).
+[global `lint` task](./eslint). We encourage using the global `lint` task for consistency across all
+projects within the repository. With this approach, the `eslint` command itself will be ran and the
+`svelte3` rules will still be used.
 
-We encourage using the global `lint` task for consistency across all projects within the repository.
-With this approach, the `eslint` command itself will be ran and the `svelte3` rules will still be
-used. Additionally, we suggest disabling the linter during the build process, but is not a
-requirement. As a potential alternative, add the `lint` task as a dependency for the `build` task.
+```yaml title="<project>/moon.yml"
+tasks:
+  # Extends the top-level lint
+  lint:
+    args:
+      - '--ext'
+      - '.ts,.svelte'
+```
+
+Be sure to enable the Svelte parser and plugin in a project local ESLint configuration file.
+
+```js title=".eslintrc.cjs"
+module.exports = {
+  plugins: ['svelte3'],
+  ignorePatterns: ['*.cjs'],
+  settings: {
+    'svelte3/typescript': () => require('typescript'),
+  },
+  overrides: [{ files: ['*.svelte'], processor: 'svelte3/svelte3' }],
+};
+```
 
 ### TypeScript integration
 
@@ -96,11 +109,26 @@ continuing.
 
 At this point we'll assume that a `tsconfig.json` has been created in the application, and
 typechecking works. From here we suggest utilizing a [global `typecheck` task](./typescript) for
-consistency across all projects within the repository.
+consistency across all projects within the repository. However, because Svelte isn't standard
+JavaScript, it requires the use of the `svelte-check` command for type-checking.
 
-Additionally, we suggest disabling the typechecker during the build process, but is not a
-requirement. As a potential alternative, add the `typecheck` task as a dependency for the `build`
-task.
+```yaml title="<project>/moon.yml"
+workspace:
+  inheritedTasks:
+    exclude: ['typecheck']
+
+tasks:
+  typecheck-sync:
+    command: 'svelte-kit sync'
+
+  typecheck:
+    command: 'svelte-check --tsconfig ./tsconfig.json'
+    deps:
+      - 'typecheck-sync'
+    inputs:
+      - '@group(svelte)'
+      - 'tsconfig.json'
+```
 
 In case Svelte doesn't automatically create a `tsconfig.json`, you can use the following:
 

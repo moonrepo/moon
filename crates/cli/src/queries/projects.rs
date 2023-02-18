@@ -65,7 +65,11 @@ fn convert_to_regex(field: &str, value: &Option<String>) -> Result<Option<regex:
 async fn load_touched_files(workspace: &Workspace) -> Result<TouchedFilePaths, WorkspaceError> {
     let mut buffer = String::new();
 
-    stdin().read_to_string(&mut buffer).map_err(MoonError::Io)?;
+    // Only read piped data when stdin is not a TTY,
+    // otherwise the process will hang indefinitely waiting for EOF.
+    if atty::isnt(atty::Stream::Stdin) {
+        stdin().read_to_string(&mut buffer).map_err(MoonError::Io)?;
+    }
 
     // If piped via stdin, parse and use it
     if !buffer.is_empty() {

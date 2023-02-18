@@ -1,6 +1,6 @@
 use moon_logger::debug;
 use moon_utils::semver::Version;
-use moon_utils::{get_cache_dir, is_ci, is_test_env};
+use moon_utils::{get_cache_dir, is_ci, is_offline, is_test_env};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::error::Error;
@@ -23,7 +23,7 @@ pub struct CheckState {
 pub async fn check_version(
     local_version_str: &str,
 ) -> Result<(String, bool), Box<dyn Error + Send + Sync>> {
-    if is_test_env() {
+    if is_test_env() || is_offline() {
         return Ok((env!("CARGO_PKG_VERSION").to_owned(), false));
     }
 
@@ -35,7 +35,9 @@ pub async fn check_version(
         .header("X-Moon-CI", is_ci().to_string())
         .header(
             "X-Moon-ID",
-            env::var("MOONBASE_API_KEY").unwrap_or_default(),
+            env::var("MOONBASE_ACCESS_KEY")
+                .or_else(|_| env::var("MOONBASE_API_KEY"))
+                .unwrap_or_default(),
         )
         .send()
         .await?
@@ -53,6 +55,7 @@ pub async fn check_version(
 
         if let Ok(file) = fs::read_to_string(&check_state_path) {
             let check_state: Result<CheckState, _> = serde_json::from_str(&file);
+
             if let Ok(state) = check_state {
                 if (state.last_alert + ALERT_PAUSE_DURATION) > now {
                     return Ok((remote_version.to_string(), false));
@@ -61,6 +64,7 @@ pub async fn check_version(
         }
 
         moon_utils::fs::create_dir_all(check_state_path.parent().unwrap())?;
+
         let check_state = OpenOptions::new()
             .write(true)
             .create(true)

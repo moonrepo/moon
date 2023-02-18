@@ -48,7 +48,7 @@ pub async fn install_deps(
     if is_offline() {
         warn!(
             target: LOG_TARGET,
-            "No internet connection, assuming offline and skipping install"
+            "No internet connection, skipping install"
         );
 
         return Ok(ActionStatus::Skipped);

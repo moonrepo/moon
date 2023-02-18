@@ -1,9 +1,9 @@
 use crate::errors::PipelineError;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
-use moon_logger::debug;
+use moon_logger::{debug, warn};
 use moon_platform::Runtime;
-use moon_utils::time;
+use moon_utils::{is_offline, time};
 use moon_workspace::Workspace;
 use std::env;
 use std::sync::Arc;
@@ -20,6 +20,12 @@ pub async fn setup_tool(
     env::set_var("MOON_RUNNING_ACTION", "setup-tool");
 
     if matches!(runtime, Runtime::System) {
+        return Ok(ActionStatus::Skipped);
+    }
+
+    if is_offline() {
+        warn!(target: LOG_TARGET, "No internet connection, skipping setup");
+
         return Ok(ActionStatus::Skipped);
     }
 

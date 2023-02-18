@@ -66,32 +66,41 @@ pub fn is_docker_container() -> bool {
     PathBuf::from("/.dockerenv").exists()
 }
 
-// TODO: This doesn't work behind VPN or corporate proxies. Disabling for now
-// until we can figure out a better solution.
 #[cached(time = 60)]
 pub fn is_offline() -> bool {
-    false
-    // use std::time::Duration;
-    // use std::net::{Shutdown, SocketAddr, TcpStream};
+    if let Ok(value) = env::var("MOON_OFFLINE") {
+        match value.as_ref() {
+            "1" | "true" => return true,
+            "0" | "false" => return false,
+            _ => {}
+        };
+    }
 
-    // let addresses = [
-    //     // Cloudflare DNS: https://1.1.1.1/dns/
-    //     SocketAddr::from(([1, 1, 1, 1], 53)),
-    //     SocketAddr::from(([1, 0, 0, 1], 53)),
-    //     // Google DNS: https://developers.google.com/speed/public-dns
-    //     SocketAddr::from(([8, 8, 8, 8], 53)),
-    //     SocketAddr::from(([8, 8, 4, 4], 53)),
-    // ];
+    use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
+    use std::time::Duration;
 
-    // for address in addresses {
-    //     if let Ok(stream) = TcpStream::connect_timeout(&address, Duration::new(3, 0)) {
-    //         stream.shutdown(Shutdown::Both).unwrap();
+    // Try google first!
+    let mut addresses = "google.com:80"
+        .to_socket_addrs()
+        .unwrap()
+        .collect::<Vec<_>>();
 
-    //         return false;
-    //     }
-    // }
+    addresses.extend([
+        // Cloudflare DNS: https://1.1.1.1/dns/
+        SocketAddr::from(([1, 1, 1, 1], 53)),
+        SocketAddr::from(([1, 0, 0, 1], 53)),
+        // Google DNS: https://developers.google.com/speed/public-dns
+        SocketAddr::from(([8, 8, 8, 8], 53)),
+        SocketAddr::from(([8, 8, 4, 4], 53)),
+    ]);
 
-    // true
+    for address in addresses {
+        if TcpStream::connect_timeout(&address, Duration::new(3, 0)).is_ok() {
+            return false;
+        }
+    }
+
+    true
 }
 
 #[inline]

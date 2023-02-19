@@ -2181,7 +2181,7 @@ dependencies = [
  "moon_utils",
  "moon_workspace",
  "moonbase",
- "proto",
+ "proto_cli",
  "rustc-hash",
  "rusty_pool",
  "serde",
@@ -2281,7 +2281,7 @@ dependencies = [
  "moon_workspace",
  "open",
  "petgraph",
- "proto",
+ "proto_cli",
  "reqwest",
  "rustc-hash",
  "serde",
@@ -2342,7 +2342,7 @@ dependencies = [
  "moon",
  "moon_project_graph",
  "moon_test_utils",
- "proto",
+ "proto_cli",
  "rustc-hash",
  "serde",
  "serde_json",
@@ -2452,7 +2452,7 @@ version = "0.1.0"
 dependencies = [
  "moon_logger",
  "moon_utils",
- "proto",
+ "proto_cli",
  "reqwest",
  "serde",
  "serde_json",
@@ -2513,7 +2513,7 @@ dependencies = [
  "moon_tool",
  "moon_typescript_lang",
  "moon_utils",
- "proto",
+ "proto_cli",
  "rustc-hash",
  "serde",
  "serde_json",
@@ -2531,7 +2531,7 @@ dependencies = [
  "moon_terminal",
  "moon_tool",
  "moon_utils",
- "proto",
+ "proto_cli",
  "rustc-hash",
 ]
 
@@ -2783,7 +2783,7 @@ dependencies = [
  "moon_lang",
  "moon_platform_runtime",
  "moon_utils",
- "proto",
+ "proto_cli",
  "rustc-hash",
  "thiserror",
 ]
@@ -3445,8 +3445,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "proto"
+name = "proto_cli"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "197195b1407be0c8577fbd7bec94a91233c8401d71791ebdd6bec19fa78bdd29"
 dependencies = [
  "clap 4.1.4",
  "clap_complete",
@@ -3464,6 +3466,8 @@ dependencies = [
 [[package]]
 name = "proto_core"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d4b4176deb08ef896dfcfbda5c71f0674497e10f4af70b99331ce2954322272c"
 dependencies = [
  "async-trait",
  "cached",
@@ -3486,28 +3490,27 @@ dependencies = [
 [[package]]
 name = "proto_go"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b0aff659b75aed2d5f2d9778f0098750f4009fba48dd4cec7c70e60dd435a3d2"
 dependencies = [
- "assert_fs",
- "lenient_semver",
  "log",
  "proto_core",
  "serde",
  "serde_json",
- "tokio",
 ]
 
 [[package]]
 name = "proto_node"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e723fc8c512e150ecfb219966c01ab459bc161d512bf9b0cae3fe56cf68b491e"
 dependencies = [
- "assert_fs",
  "clean-path",
  "log",
  "proto_core",
  "rustc-hash",
  "serde",
  "serde_json",
- "tokio",
 ]
 
 [[package]]

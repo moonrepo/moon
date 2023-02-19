@@ -11,5 +11,5 @@ moon_node_lang = { path = "../lang" }
 moon_terminal = { path = "../../core/terminal" }
 moon_tool = { path = "../../core/tool" }
 moon_utils = { path = "../../core/utils" }
-proto = { path = "../../proto/cli" }
+proto_cli = { workspace = true }
 rustc-hash = { workspace = true }

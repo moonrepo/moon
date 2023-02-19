@@ -86,6 +86,9 @@ pub trait Resolvable<'tool>: Send + Sync {
     /// Given an initial version, resolve it to a fully qualifed and semantic version
     /// according to the tool's ecosystem.
     async fn resolve_version(&mut self, initial_version: &str) -> Result<String, ProtoError>;
+
+    /// Explicitly set the resolved version.
+    fn set_version(&mut self, version: &str);
 }
 
 pub async fn load_versions_manifest<T, U>(url: U) -> Result<T, ProtoError>

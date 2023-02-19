@@ -1,11 +1,11 @@
 use crate::node_tool::NodeTool;
 use moon_config::NpmConfig;
-use moon_logger::debug;
+use moon_logger::{debug, warn};
 use moon_node_lang::{npm, LockfileDependencyVersions, NPM};
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
 use moon_utils::process::Command;
-use moon_utils::{fs, is_ci};
+use moon_utils::{fs, is_ci, is_offline};
 use proto::{
     async_trait,
     node::{NodeDependencyManager, NodeDependencyManagerType},
@@ -65,6 +65,12 @@ impl Tool for NpmTool {
 
         if self.tool.is_setup(&version).await? {
             debug!(target: self.tool.get_log_target(), "npm has already been setup");
+
+            return Ok(count);
+        }
+
+        if is_offline() {
+            warn!(target: self.tool.get_log_target(), "No internet connection, unable to setup npm");
 
             return Ok(count);
         }

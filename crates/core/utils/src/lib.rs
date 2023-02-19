@@ -66,7 +66,7 @@ pub fn is_docker_container() -> bool {
     PathBuf::from("/.dockerenv").exists()
 }
 
-#[cached(time = 60)]
+#[cached(time = 300)]
 pub fn is_offline() -> bool {
     if let Ok(value) = env::var("MOON_OFFLINE") {
         match value.as_ref() {
@@ -79,11 +79,11 @@ pub fn is_offline() -> bool {
     use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
     use std::time::Duration;
 
-    // Try google first!
-    let mut addresses = "google.com:80"
-        .to_socket_addrs()
-        .unwrap()
-        .collect::<Vec<_>>();
+    let mut addresses = vec![];
+
+    if let Ok(addrs) = "google.com:80".to_socket_addrs() {
+        addresses.extend(addrs);
+    }
 
     addresses.extend([
         // Cloudflare DNS: https://1.1.1.1/dns/

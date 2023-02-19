@@ -101,7 +101,12 @@ pub trait Tool<'tool>:
     }
 
     async fn is_setup(&mut self, initial_version: &str) -> Result<bool, ProtoError> {
-        self.resolve_version(initial_version).await?;
+        // If a fully qualified version, avoid loading the manifest
+        if Version::parse(initial_version).is_ok() {
+            self.set_version(initial_version);
+        } else {
+            self.resolve_version(initial_version).await?;
+        }
 
         let install_dir = self.get_install_dir()?;
 

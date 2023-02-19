@@ -131,8 +131,12 @@ impl Resolvable<'_> for GoLanguage {
 
         debug!(target: self.get_log_target(), "Resolved to {}", candidate);
 
-        self.version = Some(candidate.clone());
+        self.set_version(&candidate);
 
         Ok(candidate.to_owned())
+    }
+
+    fn set_version(&mut self, version: &str) {
+        self.version = Some(version.to_owned());
     }
 }

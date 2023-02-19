@@ -2,12 +2,12 @@ use crate::npm_tool::NpmTool;
 use crate::pnpm_tool::PnpmTool;
 use crate::yarn_tool::YarnTool;
 use moon_config::{NodeConfig, NodePackageManager};
-use moon_logger::debug;
+use moon_logger::{debug, warn};
 use moon_node_lang::node;
 use moon_platform_runtime::Version;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
-use moon_utils::process::Command;
+use moon_utils::{is_offline, process::Command};
 use proto::{
     async_trait, node::NodeLanguage, Describable, Executable, Installable, Proto, Shimable,
     Tool as ProtoTool,

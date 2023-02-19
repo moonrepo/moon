@@ -105,7 +105,7 @@ impl Resolvable<'_> for NodeDependencyManager {
 
         debug!(target: self.get_log_target(), "Resolved to {}", version);
 
-        self.version = Some(version.clone());
+        self.set_version(&version);
 
         // Extract dist information for use in downloading and verifying
         // self.dist = Some(
@@ -118,5 +118,9 @@ impl Resolvable<'_> for NodeDependencyManager {
         // );
 
         Ok(version)
+    }
+
+    fn set_version(&mut self, version: &str) {
+        self.version = Some(version.to_owned());
     }
 }

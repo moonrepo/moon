@@ -108,8 +108,12 @@ impl Resolvable<'_> for NodeLanguage {
 
         debug!(target: self.get_log_target(), "Resolved to {}", version);
 
-        self.version = Some(version.clone());
+        self.set_version(&version);
 
         Ok(version)
+    }
+
+    fn set_version(&mut self, version: &str) {
+        self.version = Some(version.to_owned());
     }
 }

@@ -56,7 +56,7 @@ lazy_static = { workspace = true }
 mimalloc = { version = "0.1.34", default-features = false }
 open = "3.2.0"
 petgraph = { workspace = true }
-proto = { path = "../proto/cli" }
+proto_cli = { workspace = true }
 reqwest = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }

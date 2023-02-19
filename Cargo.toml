@@ -14,10 +14,7 @@ members = [
 	"crates/ruby/*",
 	"crates/rust/*",
 	"crates/system/*",
-	"crates/typescript/*",
-
-	# Proto
-	"crates/proto/*",
+	"crates/typescript/*"
 ]
 default-members = ["crates/cli"]
 

@@ -170,6 +170,17 @@ impl Tool for NodeTool {
         if let Some(version) = &self.config.version {
             if self.tool.is_setup(version).await? {
                 debug!(target: self.tool.get_log_target(), "Node.js has already been setup");
+
+                // When offline and the tool doesn't exist, fallback to the global binary
+            } else if proto::is_offline() {
+                debug!(
+                    target: self.tool.get_log_target(),
+                    "No internet connection and Node.js has not been setup, falling back to global binary in PATH"
+                );
+
+                self.global = true;
+
+                // Otherwise try and install the tool
             } else {
                 let setup = match last_versions.get("node") {
                     Some(last) => version != last,

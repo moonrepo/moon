@@ -1,7 +1,7 @@
+use crate::errors::ProtoError;
 use crate::resolver::Resolvable;
 use crate::{color, is_offline, Describable};
 use log::{debug, trace};
-use proto_error::ProtoError;
 use std::fs::File;
 use std::io;
 use std::path::{Path, PathBuf};

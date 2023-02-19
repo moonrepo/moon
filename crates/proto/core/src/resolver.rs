@@ -1,8 +1,8 @@
+use crate::errors::ProtoError;
 use crate::{color, is_offline};
 use crate::{get_temp_dir, is_version_alias, remove_v_prefix};
 use lenient_semver::Version;
 use log::trace;
-use proto_error::ProtoError;
 use serde::de::DeserializeOwned;
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;

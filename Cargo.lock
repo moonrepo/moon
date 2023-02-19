@@ -3452,7 +3452,6 @@ dependencies = [
  "human-sort",
  "log",
  "proto_core",
- "proto_error",
  "proto_go",
  "proto_node",
  "rustc-hash",
@@ -3471,7 +3470,6 @@ dependencies = [
  "flate2",
  "lenient_semver",
  "log",
- "proto_error",
  "reqwest",
  "serde",
  "serde_json",
@@ -3481,13 +3479,6 @@ dependencies = [
  "tinytemplate",
  "tokio",
  "zip",
-]
-
-[[package]]
-name = "proto_error"
-version = "0.1.0"
-dependencies = [
- "thiserror",
 ]
 
 [[package]]

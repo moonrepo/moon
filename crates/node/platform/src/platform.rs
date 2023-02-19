@@ -46,7 +46,7 @@ impl NodePlatform {
         NodePlatform {
             config: config.to_owned(),
             package_names: FxHashMap::default(),
-            toolchain: ToolManager::new(Runtime::Node(Version::default())),
+            toolchain: ToolManager::new(Runtime::Node(Version::new_global())),
             typescript_config: typescript_config.to_owned(),
             workspace_root: workspace_root.to_path_buf(),
         }
@@ -59,20 +59,21 @@ impl Platform for NodePlatform {
         PlatformType::Node
     }
 
-    fn get_runtime_from_config(&self, project_config: Option<&ProjectConfig>) -> Option<Runtime> {
+    fn get_runtime_from_config(&self, project_config: Option<&ProjectConfig>) -> Runtime {
         if let Some(config) = &project_config {
             if let Some(node_config) = &config.toolchain.node {
                 if let Some(version) = &node_config.version {
-                    return Some(Runtime::Node(Version::new_override(version)));
+                    return Runtime::Node(Version::new_override(version));
                 }
             }
         }
 
         if let Some(node_version) = &self.config.version {
-            return Some(Runtime::Node(Version::new(node_version)));
+            return Runtime::Node(Version::new(node_version));
         }
 
-        None
+        // Global
+        Runtime::Node(Version::new_global())
     }
 
     fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool {
@@ -273,6 +274,10 @@ impl Platform for NodePlatform {
 
     // TOOLCHAIN
 
+    fn is_toolchain_enabled(&self) -> Result<bool, ToolError> {
+        Ok(self.config.version.is_some())
+    }
+
     fn get_tool(&self) -> Result<Box<&dyn Tool>, ToolError> {
         let tool = self.toolchain.get()?;
 
@@ -296,19 +301,21 @@ impl Platform for NodePlatform {
     }
 
     async fn setup_toolchain(&mut self) -> Result<(), ToolError> {
-        if let Some(version) = &self.config.version {
-            let version = Version::new(version);
-            let mut last_versions = FxHashMap::default();
+        let version = match &self.config.version {
+            Some(v) => Version::new(v),
+            None => Version::new_global(),
+        };
 
-            if !self.toolchain.has(&version) {
-                self.toolchain.register(
-                    &version,
-                    NodeTool::new(&Proto::new()?, &self.config, &version.0)?,
-                );
-            }
+        let mut last_versions = FxHashMap::default();
 
-            self.toolchain.setup(&version, &mut last_versions).await?;
+        if !self.toolchain.has(&version) {
+            self.toolchain.register(
+                &version,
+                NodeTool::new(&Proto::new()?, &self.config, &version)?,
+            );
         }
+
+        self.toolchain.setup(&version, &mut last_versions).await?;
 
         Ok(())
     }
@@ -332,7 +339,7 @@ impl Platform for NodePlatform {
         if !self.toolchain.has(&version) {
             self.toolchain.register(
                 &version,
-                NodeTool::new(&Proto::new()?, &self.config, &version.0)?,
+                NodeTool::new(&Proto::new()?, &self.config, &version)?,
             );
         }
 
@@ -430,14 +437,15 @@ impl Platform for NodePlatform {
         runtime: &Runtime,
         working_dir: &Path,
     ) -> Result<Command, ToolError> {
-        let version = runtime.version();
-
-        let command = if version.is_latest() {
-            debug!(
-                target: LOG_TARGET,
-                "Tool has not been configured, attempting to create a command using the global `node`"
-            );
-
+        let command = if self.is_toolchain_enabled()? {
+            actions::create_target_command(
+                self.toolchain.get_for_version(runtime.version())?,
+                context,
+                project,
+                task,
+                working_dir,
+            )?
+        } else {
             actions::create_target_command_without_tool(
                 &self.config,
                 context,
@@ -445,10 +453,6 @@ impl Platform for NodePlatform {
                 task,
                 working_dir,
             )?
-        } else {
-            let tool = self.toolchain.get_for_version(runtime.version())?;
-
-            actions::create_target_command(tool, context, project, task, working_dir)?
         };
 
         Ok(command)

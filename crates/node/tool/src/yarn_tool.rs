@@ -7,30 +7,40 @@ use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
 use moon_utils::process::Command;
 use moon_utils::{fs, get_workspace_root, is_ci};
 use proto::{
-    async_trait, node::NodeDependencyManager, Describable, Executable, Installable, Proto,
-    Resolvable, Shimable, Tool as ProtoTool,
+    async_trait,
+    node::{NodeDependencyManager, NodeDependencyManagerType},
+    Describable, Executable, Installable, Proto, Shimable, Tool as ProtoTool,
 };
 use rustc_hash::FxHashMap;
 use std::env;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
 pub struct YarnTool {
     pub config: YarnConfig,
+
+    pub global: bool,
 
     pub tool: NodeDependencyManager,
 }
 
 impl YarnTool {
     pub fn new(proto: &Proto, config: &Option<YarnConfig>) -> Result<YarnTool, ToolError> {
+        let config = config.to_owned().unwrap_or_default();
+
         Ok(YarnTool {
-            config: config.to_owned().unwrap_or_default(),
-            tool: NodeDependencyManager::new(proto, proto::node::NodeDependencyManagerType::Yarn),
+            global: config.version.is_none(),
+            config,
+            tool: NodeDependencyManager::new(proto, NodeDependencyManagerType::Yarn),
         })
     }
 
     pub fn is_v1(&self) -> bool {
-        self.config.version.starts_with('1')
+        self.config
+            .version
+            .as_ref()
+            .map(|v| v.starts_with('1'))
+            .unwrap_or(false)
     }
 
     pub async fn set_version(&mut self, node: &NodeTool) -> Result<(), ToolError> {
@@ -38,19 +48,23 @@ impl YarnTool {
             return Ok(());
         }
 
+        let Some(version) = &self.config.version else {
+            return Ok(());
+        };
+
         let yarn_bin = get_workspace_root()
             .join(".yarn/releases")
-            .join(format!("yarn-{}.cjs", self.config.version));
+            .join(format!("yarn-{version}.cjs"));
 
         if !yarn_bin.exists() {
             debug!(
                 target: self.tool.get_log_target(),
                 "Updating yarn version with {}",
-                color::shell(format!("yarn set version {}", self.config.version))
+                color::shell(format!("yarn set version {version}"))
             );
 
             self.create_command(node)?
-                .args(["set", "version", &self.config.version])
+                .args(["set", "version", version])
                 .exec_capture_output()
                 .await?;
 
@@ -74,16 +88,16 @@ impl Tool for YarnTool {
         self
     }
 
-    fn get_bin_path(&self) -> Result<&Path, ToolError> {
-        Ok(self.tool.get_bin_path()?)
+    fn get_bin_path(&self) -> Result<PathBuf, ToolError> {
+        Ok(if self.global {
+            "yarn".into()
+        } else {
+            self.tool.get_bin_path()?.to_path_buf()
+        })
     }
 
-    fn get_shim_path(&self) -> Option<&Path> {
-        self.tool.get_shim_path()
-    }
-
-    fn get_version(&self) -> &str {
-        self.tool.get_resolved_version()
+    fn get_shim_path(&self) -> Option<PathBuf> {
+        self.tool.get_shim_path().map(|p| p.to_path_buf())
     }
 
     async fn setup(
@@ -91,26 +105,28 @@ impl Tool for YarnTool {
         last_versions: &mut FxHashMap<String, String>,
     ) -> Result<u8, ToolError> {
         let mut count = 0;
+        let version = self.config.version.clone();
 
-        if self.tool.is_setup(&self.config.version).await? {
+        let Some(version) = version else {
+            return Ok(count);
+        };
+
+        if self.tool.is_setup(&version).await? {
             debug!(target: self.tool.get_log_target(), "yarn has already been setup");
 
             return Ok(count);
         }
 
         if let Some(last) = last_versions.get("yarn") {
-            if last == &self.config.version && self.tool.get_install_dir()?.exists() {
+            if last == &version && self.tool.get_install_dir()?.exists() {
                 return Ok(count);
             }
         }
 
-        print_checkpoint(
-            format!("installing yarn v{}", self.config.version),
-            Checkpoint::Setup,
-        );
+        print_checkpoint(format!("installing yarn v{version}"), Checkpoint::Setup);
 
-        if self.tool.setup(&self.config.version).await? {
-            last_versions.insert("yarn".into(), self.config.version.clone());
+        if self.tool.setup(&version).await? {
+            last_versions.insert("yarn".into(), version);
             count += 1;
         }
 
@@ -127,7 +143,9 @@ impl Tool for YarnTool {
 #[async_trait]
 impl DependencyManager<NodeTool> for YarnTool {
     fn create_command(&self, node: &NodeTool) -> Result<Command, ToolError> {
-        let mut cmd = if let Some(shim) = self.get_shim_path() {
+        let mut cmd = if self.global {
+            Command::new("yarn")
+        } else if let Some(shim) = self.get_shim_path() {
             Command::new(shim)
         } else {
             let mut cmd = Command::new(node.get_bin_path()?);
@@ -135,7 +153,10 @@ impl DependencyManager<NodeTool> for YarnTool {
             cmd
         };
 
-        cmd.env("PATH", get_path_env_var(&self.tool.get_install_dir()?));
+        if !self.global {
+            cmd.env("PATH", get_path_env_var(&self.tool.get_install_dir()?));
+        }
+
         cmd.env("PROTO_NODE_BIN", node.get_bin_path()?);
 
         Ok(cmd)

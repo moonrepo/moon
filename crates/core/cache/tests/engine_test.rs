@@ -283,7 +283,7 @@ mod cache_tool_state {
         let dir = create_temp_dir();
         let cache = CacheEngine::load(dir.path()).unwrap();
         let item = cache
-            .cache_tool_state(&Runtime::Node(Version("1.2.3".into(), false)))
+            .cache_tool_state(&Runtime::Node(Version::new("1.2.3")))
             .unwrap();
 
         assert!(!item.path.exists());
@@ -303,7 +303,7 @@ mod cache_tool_state {
 
         let cache = CacheEngine::load(dir.path()).unwrap();
         let item = cache
-            .cache_tool_state(&Runtime::Node(Version("1.2.3".into(), false)))
+            .cache_tool_state(&Runtime::Node(Version::new("1.2.3")))
             .unwrap();
 
         assert_eq!(
@@ -328,7 +328,7 @@ mod cache_tool_state {
             .unwrap();
 
         let cache = CacheEngine::load(dir.path()).unwrap();
-        let runtime = Runtime::Node(Version("4.5.6".into(), false));
+        let runtime = Runtime::Node(Version::new("4.5.6"));
         let item = run_with_env("read", || cache.cache_tool_state(&runtime)).unwrap();
 
         assert_eq!(
@@ -372,7 +372,7 @@ mod cache_tool_state {
         let dir = create_temp_dir();
         let cache = CacheEngine::load(dir.path()).unwrap();
         let mut item = cache
-            .cache_tool_state(&Runtime::Node(Version("7.8.9".into(), false)))
+            .cache_tool_state(&Runtime::Node(Version::new("7.8.9")))
             .unwrap();
 
         item.last_version_check_time = 123;

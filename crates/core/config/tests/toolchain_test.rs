@@ -57,7 +57,7 @@ mod extends {
                     package_manager: NodePackageManager::Yarn,
                     yarn: Some(YarnConfig {
                         plugins: None,
-                        version: "3.3.0".into()
+                        version: Some("3.3.0".into())
                     }),
                     ..NodeConfig::default()
                 }),
@@ -197,8 +197,8 @@ node:
                 "18.0.0"
             );
             assert_eq!(
-                config.node.as_ref().unwrap().npm.version,
-                "8.0.0".to_owned()
+                config.node.as_ref().unwrap().npm.version.as_ref().unwrap(),
+                "8.0.0"
             );
 
             Ok(())
@@ -251,8 +251,8 @@ node:
                 "18.0.0"
             );
             assert_eq!(
-                config.node.as_ref().unwrap().npm.version,
-                "8.0.0".to_owned()
+                config.node.as_ref().unwrap().npm.version.as_ref().unwrap(),
+                "8.0.0"
             );
 
             Ok(())
@@ -496,7 +496,10 @@ node:
 
             let config = super::load_jailed_config(jail.directory())?;
 
-            assert_eq!(config.node.unwrap().npm.version, String::from("4.5.6"));
+            assert_eq!(
+                config.node.unwrap().npm.version.unwrap(),
+                String::from("4.5.6")
+            );
 
             Ok(())
         });
@@ -564,7 +567,7 @@ node:
             let config = super::load_jailed_config(jail.directory())?;
 
             assert_eq!(
-                config.node.unwrap().pnpm.unwrap().version,
+                config.node.unwrap().pnpm.unwrap().version.unwrap(),
                 String::from("4.5.6")
             );
 
@@ -634,7 +637,7 @@ node:
             let config = super::load_jailed_config(jail.directory())?;
 
             assert_eq!(
-                config.node.unwrap().yarn.unwrap().version,
+                config.node.unwrap().yarn.unwrap().version.unwrap(),
                 String::from("4.5.6")
             );
 

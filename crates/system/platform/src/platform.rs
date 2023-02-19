@@ -21,8 +21,8 @@ impl Platform for SystemPlatform {
         PlatformType::System
     }
 
-    fn get_runtime_from_config(&self, _project_config: Option<&ProjectConfig>) -> Option<Runtime> {
-        Some(Runtime::System)
+    fn get_runtime_from_config(&self, _project_config: Option<&ProjectConfig>) -> Runtime {
+        Runtime::System
     }
 
     fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool {
@@ -38,6 +38,10 @@ impl Platform for SystemPlatform {
     }
 
     // TOOLCHAIN
+
+    fn is_toolchain_enabled(&self) -> Result<bool, ToolError> {
+        Ok(false)
+    }
 
     fn get_tool(&self) -> Result<Box<&dyn Tool>, ToolError> {
         Ok(Box::new(&self.tool))

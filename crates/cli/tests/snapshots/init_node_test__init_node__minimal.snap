@@ -1,6 +1,5 @@
 ---
 source: crates/cli/tests/init_node_test.rs
-assertion_line: 17
 expression: "fs::read_to_string(config).unwrap()"
 ---
 # https://moonrepo.dev/docs/config/toolchain
@@ -10,10 +9,8 @@ $schema: 'https://moonrepo.dev/schemas/toolchain.json'
 # extends: './shared/toolchain.yml'
 
 node:
-  version: '18.12.0'
+  version: '18.0.0'
   packageManager: 'npm'
-  npm:
-    version: '8.19.2'
 
 typescript:
   syncProjectReferences: true

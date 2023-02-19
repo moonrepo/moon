@@ -1,0 +1,26 @@
+---
+title: Offline mode
+---
+
+moon assumes that an internet connection is always available, as we download and install tools into
+the toolchain, resolve versions against upstream manifests, and automatically install dependencies.
+While this is useful, having a constant internet connection isn't always viable.
+
+To support workflows where internet isn't available or is spotty, moon will automatically check for
+an active internet connection, and drop into offline mode if necessary.
+
+## What's disabled when offline
+
+When offline, moon will skip or disable the following:
+
+- Automatic dependency installation will be skipped.
+- Toolchain will skip resolving, downloading, and installing tools, and instead use the local cache.
+  - If no local cache available, will fallback to binaries found on `PATH`.
+  - If not available on `PATH`, will fail to run.
+- Upgrade and version checks will be skipped.
+
+## Toggling modes
+
+While we automatically check for an internet connection, both online and offline modes can be forced
+with the `PROTO_OFFLINE` environment variable. Setting the variable to `1` or `true` will force
+offline mode, while `0` and `false` will force online mode.

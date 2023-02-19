@@ -153,6 +153,7 @@ const sidebars = {
 		'guides/codegen',
 		'guides/docker',
 		'guides/git-hooks',
+		'guides/offline-mode',
 		'guides/open-source',
 		'guides/profile',
 		'guides/remote-cache',

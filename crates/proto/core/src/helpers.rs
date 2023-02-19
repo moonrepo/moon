@@ -1,4 +1,5 @@
 use crate::ProtoError;
+use cached::proc_macro::cached;
 use dirs::home_dir;
 use std::{env, path::PathBuf};
 
@@ -47,4 +48,41 @@ pub fn remove_v_prefix(value: &str) -> String {
     }
 
     value.to_owned()
+}
+
+#[cached(time = 300)]
+pub fn is_offline() -> bool {
+    if let Ok(value) = env::var("PROTO_OFFLINE") {
+        match value.as_ref() {
+            "1" | "true" => return true,
+            "0" | "false" => return false,
+            _ => {}
+        };
+    }
+
+    use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
+    use std::time::Duration;
+
+    let mut addresses = vec![];
+
+    if let Ok(addrs) = "google.com:80".to_socket_addrs() {
+        addresses.extend(addrs);
+    }
+
+    addresses.extend([
+        // Cloudflare DNS: https://1.1.1.1/dns/
+        SocketAddr::from(([1, 1, 1, 1], 53)),
+        SocketAddr::from(([1, 0, 0, 1], 53)),
+        // Google DNS: https://developers.google.com/speed/public-dns
+        SocketAddr::from(([8, 8, 8, 8], 53)),
+        SocketAddr::from(([8, 8, 4, 4], 53)),
+    ]);
+
+    for address in addresses {
+        if TcpStream::connect_timeout(&address, Duration::new(3, 0)).is_ok() {
+            return false;
+        }
+    }
+
+    true
 }

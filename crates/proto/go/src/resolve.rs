@@ -3,7 +3,8 @@ use core::str;
 use lenient_semver::Version;
 use log::debug;
 use proto_core::{
-    async_trait, Describable, ProtoError, Resolvable, VersionManifest, VersionManifestEntry,
+    async_trait, is_offline, is_semantic_version, remove_v_prefix, Describable, ProtoError,
+    Resolvable, VersionManifest, VersionManifestEntry,
 };
 use std::collections::BTreeMap;
 use std::process::Command;
@@ -84,6 +85,7 @@ impl Resolvable<'_> for GoLanguage {
                     }
 
                     let current: Option<&Version> = alias_max.get(&base_version);
+
                     match current {
                         Some(current_version) => {
                             if current_version < &ver {
@@ -96,6 +98,7 @@ impl Resolvable<'_> for GoLanguage {
                             alias_max.insert(base_version, ver);
                         }
                     }
+
                     versions.insert(entry.version.clone(), entry);
                 }
             }
@@ -111,7 +114,15 @@ impl Resolvable<'_> for GoLanguage {
             return Ok(version.to_owned());
         }
 
-        let initial_version = initial_version.to_lowercase();
+        let initial_version = remove_v_prefix(initial_version).to_lowercase();
+
+        // If offline but we have a fully qualified semantic version,
+        // exit early and assume the version is legitimate
+        if is_semantic_version(&initial_version) && is_offline() {
+            self.set_version(&initial_version);
+
+            return Ok(initial_version);
+        }
 
         debug!(
             target: self.get_log_target(),
@@ -131,8 +142,12 @@ impl Resolvable<'_> for GoLanguage {
 
         debug!(target: self.get_log_target(), "Resolved to {}", candidate);
 
-        self.version = Some(candidate.clone());
+        self.set_version(candidate);
 
         Ok(candidate.to_owned())
+    }
+
+    fn set_version(&mut self, version: &str) {
+        self.version = Some(version.to_owned());
     }
 }

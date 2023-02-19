@@ -31,6 +31,7 @@ moon_tool = { path = "../tool" }
 moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
 moonbase = { path = "../moonbase" }
+proto = { path = "../../proto/cli" }
 console = { workspace = true }
 rustc-hash = { workspace = true }
 rusty_pool = "0.7.0"

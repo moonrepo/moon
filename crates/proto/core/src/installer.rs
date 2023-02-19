@@ -1,7 +1,7 @@
+use crate::errors::ProtoError;
 use crate::{color, Describable};
 use flate2::read::GzDecoder;
 use log::{debug, trace};
-use proto_error::ProtoError;
 use std::fs::{self, File};
 use std::io;
 use std::path::{Path, PathBuf};

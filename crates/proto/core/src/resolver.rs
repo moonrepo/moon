@@ -157,3 +157,7 @@ pub fn parse_version(version: &str) -> Result<Version, ProtoError> {
     Version::parse(version)
         .map_err(|e| ProtoError::VersionParseFailed(version.to_owned(), e.to_string()))
 }
+
+pub fn is_semantic_version(version: &str) -> bool {
+    Version::parse(version).is_ok()
+}

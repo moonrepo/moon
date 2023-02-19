@@ -1,6 +1,6 @@
 use moon_logger::debug;
 use moon_utils::semver::Version;
-use moon_utils::{get_cache_dir, is_ci, is_offline, is_test_env};
+use moon_utils::{get_cache_dir, is_ci, is_test_env};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::error::Error;
@@ -23,7 +23,7 @@ pub struct CheckState {
 pub async fn check_version(
     local_version_str: &str,
 ) -> Result<(String, bool), Box<dyn Error + Send + Sync>> {
-    if is_test_env() || is_offline() {
+    if is_test_env() || proto::is_offline() {
         return Ok((env!("CARGO_PKG_VERSION").to_owned(), false));
     }
 

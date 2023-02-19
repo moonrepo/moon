@@ -2181,6 +2181,7 @@ dependencies = [
  "moon_utils",
  "moon_workspace",
  "moonbase",
+ "proto",
  "rustc-hash",
  "rusty_pool",
  "serde",
@@ -2451,6 +2452,7 @@ version = "0.1.0"
 dependencies = [
  "moon_logger",
  "moon_utils",
+ "proto",
  "reqwest",
  "serde",
  "serde_json",

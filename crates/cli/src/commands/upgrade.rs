@@ -3,7 +3,7 @@ use bytes::Buf;
 use itertools::Itertools;
 use moon_launchpad::check_version;
 use moon_logger::error;
-use moon_utils::{fs, is_offline, semver::Version};
+use moon_utils::{fs, semver::Version};
 use proto::ProtoError;
 use std::{
     env::{self, consts},
@@ -13,7 +13,7 @@ use std::{
 };
 
 pub async fn upgrade() -> Result<(), AnyError> {
-    if is_offline() {
+    if proto::is_offline() {
         return Err("Upgrading moon requires an internet connection!".into());
     }
 

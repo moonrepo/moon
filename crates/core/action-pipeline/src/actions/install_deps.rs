@@ -6,7 +6,7 @@ use moon_hasher::HashSet;
 use moon_logger::{color, debug, warn};
 use moon_platform::Runtime;
 use moon_project::Project;
-use moon_utils::{fs, is_offline, time};
+use moon_utils::{fs, time};
 use moon_workspace::Workspace;
 use std::env;
 use std::sync::Arc;
@@ -45,7 +45,7 @@ pub async fn install_deps(
     let context = context.read().await;
     let install_key = get_installation_key(runtime, project);
 
-    if is_offline() {
+    if proto::is_offline() {
         warn!(
             target: LOG_TARGET,
             "No internet connection, skipping install"

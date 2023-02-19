@@ -52,6 +52,14 @@ pub fn remove_v_prefix(value: &str) -> String {
 
 #[cached(time = 300)]
 pub fn is_offline() -> bool {
+    if let Ok(value) = env::var("PROTO_OFFLINE") {
+        match value.as_ref() {
+            "1" | "true" => return true,
+            "0" | "false" => return false,
+            _ => {}
+        };
+    }
+
     use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
     use std::time::Duration;
 

@@ -1,4 +1,4 @@
-use crate::color;
+use crate::{color, is_offline};
 use crate::{get_temp_dir, is_version_alias, remove_v_prefix};
 use lenient_semver::Version;
 use log::trace;
@@ -104,27 +104,37 @@ where
     let temp_file = temp_dir.join(format!("{:x}.json", sha.finalize()));
     let handle_http_error = |e: reqwest::Error| ProtoError::Http(url.to_owned(), e.to_string());
     let handle_io_error = |e: io::Error| ProtoError::Fs(temp_file.to_path_buf(), e.to_string());
+    let offline = is_offline();
 
-    // If the resource has been cached within the last 24 hours, use it
     if temp_file.exists() {
         let metadata = fs::metadata(&temp_file).map_err(handle_io_error)?;
 
-        if let Ok(modified_time) = metadata.modified().or_else(|_| metadata.created()) {
-            let threshold = SystemTime::now() - Duration::from_secs(60 * 60 * 24);
+        // When offline, always read the temp file as we can't download the manifest
+        let read_temp = if offline {
+            true
+            // Otherwise, only read the temp file if its been downloaded in the last 24 hours
+        } else if let Ok(modified_time) = metadata.modified().or_else(|_| metadata.created()) {
+            modified_time > SystemTime::now() - Duration::from_secs(60 * 60 * 24)
+        } else {
+            false
+        };
 
-            if modified_time > threshold {
-                trace!(
-                    target: "proto:resolver",
-                    "Loading versions manifest from locally cached {}",
-                    color::path(&temp_file),
-                );
+        if read_temp {
+            trace!(
+                target: "proto:resolver",
+                "Loading versions manifest from locally cached {}",
+                color::path(&temp_file),
+            );
 
-                let contents = fs::read_to_string(&temp_file).map_err(handle_io_error)?;
+            let contents = fs::read_to_string(&temp_file).map_err(handle_io_error)?;
 
-                return serde_json::from_str(&contents)
-                    .map_err(|e| ProtoError::Fs(temp_file.to_path_buf(), e.to_string()));
-            }
+            return serde_json::from_str(&contents)
+                .map_err(|e| ProtoError::Fs(temp_file.to_path_buf(), e.to_string()));
         }
+    }
+
+    if offline {
+        return Err(ProtoError::InternetConnectionRequired);
     }
 
     // Otherwise, request the resource and cache it

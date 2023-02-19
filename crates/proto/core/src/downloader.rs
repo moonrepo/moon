@@ -1,5 +1,5 @@
 use crate::resolver::Resolvable;
-use crate::{color, Describable};
+use crate::{color, is_offline, Describable};
 use log::{debug, trace};
 use proto_error::ProtoError;
 use std::fs::File;
@@ -52,6 +52,10 @@ where
     U: AsRef<str>,
     F: AsRef<Path>,
 {
+    if is_offline() {
+        return Err(ProtoError::InternetConnectionRequired);
+    }
+
     let url = url.as_ref();
     let dest_file = dest_file.as_ref();
     let handle_io_error = |e: io::Error| ProtoError::Fs(dest_file.to_path_buf(), e.to_string());

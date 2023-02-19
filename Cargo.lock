@@ -3465,6 +3465,7 @@ name = "proto_core"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "cached",
  "console",
  "dirs",
  "flate2",

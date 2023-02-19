@@ -169,6 +169,7 @@ const sidebars = {
 			label: 'JavaScript',
 			collapsed: false,
 			items: [
+				'guides/javascript/node-handbook',
 				'guides/javascript/typescript-project-refs',
 				{
 					type: 'category',

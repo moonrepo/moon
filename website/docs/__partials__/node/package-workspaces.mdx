@@ -1,0 +1,66 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs
+  groupId="package-manager"
+  defaultValue="yarn"
+  values={[
+    { label: 'npm', value: 'npm' },
+    { label: 'pnpm', value: 'pnpm' },
+    { label: 'Yarn', value: 'yarn' },
+    { label: 'Yarn (classic)', value: 'yarn1' },
+  ]}
+>
+<TabItem value="yarn">
+
+```json title="package.json"
+{
+  // ...
+  "workspaces": ["apps/*", "packages/*"]
+}
+```
+
+```yaml title=".yarnrc.yml"
+# ...
+nodeLinker: 'node-modules'
+```
+
+- [Documentation](https://yarnpkg.com/features/workspaces)
+
+</TabItem>
+<TabItem value="yarn1">
+
+```json title="package.json"
+{
+  // ...
+  "workspaces": ["apps/*", "packages/*"]
+}
+```
+
+- [Documentation](https://classic.yarnpkg.com/en/docs/workspaces)
+
+</TabItem>
+<TabItem value="npm">
+
+```json title="package.json"
+{
+  // ...
+  "workspaces": ["apps/*", "packages/*"]
+}
+```
+
+- [Documentation](https://docs.npmjs.com/cli/v8/using-npm/workspaces)
+
+</TabItem>
+<TabItem value="pnpm">
+
+```yaml title="pnpm-workspace.yaml"
+packages:
+	- 'apps/*'
+	- 'packages/*'
+```
+
+- [Documentation](https://pnpm.io/workspaces)
+
+</TabItem>
+</Tabs>

@@ -40,10 +40,6 @@
 - Fixed an issue where `moon query projects --affected` would hang indefinitely waiting for stdin.
 - Fixed an issue where changing `projects` globs wouldn't immediately invalidate the cache.
 
-#### ⚙️ Internal
-
-- Updated Rust to v1.67.
-
 ## 0.24.2
 
 #### 🚀 Updates

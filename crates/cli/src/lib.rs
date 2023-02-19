@@ -290,18 +290,19 @@ pub async fn run_cli() {
     match version_check.await {
         Ok(Ok((newer_version, true))) => {
             println!(
-                "There's a new version of moon! {newer_version}. \n\
-                Run `moon upgrade` or go to https://moonrepo.dev/docs/install to install",
+                "There's a new version of moon! {newer_version}\n\
+                Run `moon upgrade` or install from https://moonrepo.dev/docs/install",
             );
         }
         Ok(Err(error)) => {
             debug!(
+                target: "moon:cli",
                 "Failed to get current version of the cli from remote: {}",
                 error
             );
         }
         Err(error) => {
-            debug!("Failed to spawn check for current version: {}", error);
+            debug!(target: "moon:cli", "Failed to spawn check for current version: {}", error);
         }
         Ok(Ok((_, false))) => {}
     }

@@ -2,7 +2,6 @@ use clap::ValueEnum;
 use std::str::FromStr;
 
 pub use proto_core::*;
-pub use proto_error::*;
 pub use proto_go as go;
 pub use proto_node as node;
 

@@ -1,8 +1,8 @@
 use crate::depman::{NodeDependencyManager, NodeDependencyManagerType};
 use log::debug;
 use proto_core::{
-    async_trait, load_versions_manifest, parse_version, remove_v_prefix, Describable, ProtoError,
-    Resolvable, VersionManifest, VersionManifestEntry,
+    async_trait, is_offline, is_semantic_version, load_versions_manifest, parse_version,
+    remove_v_prefix, Describable, ProtoError, Resolvable, VersionManifest, VersionManifestEntry,
 };
 use rustc_hash::FxHashMap;
 use serde::Deserialize;
@@ -91,7 +91,19 @@ impl Resolvable<'_> for NodeDependencyManager {
                 "Found Yarn v2+, installing latest v1 from registry for compatibility"
             );
 
-            initial_version = "latest".to_owned();
+            initial_version = if is_offline() {
+                "1.22.19".to_owned() // This may change upstream!
+            } else {
+                "latest".to_owned()
+            };
+        }
+
+        // If offline but we have a fully qualified semantic version,
+        // exit early and assume the version is legitimate
+        if is_semantic_version(&initial_version) && is_offline() {
+            self.set_version(&initial_version);
+
+            return Ok(initial_version);
         }
 
         debug!(
@@ -105,7 +117,7 @@ impl Resolvable<'_> for NodeDependencyManager {
 
         debug!(target: self.get_log_target(), "Resolved to {}", version);
 
-        self.version = Some(version.clone());
+        self.set_version(&version);
 
         // Extract dist information for use in downloading and verifying
         // self.dist = Some(
@@ -118,5 +130,9 @@ impl Resolvable<'_> for NodeDependencyManager {
         // );
 
         Ok(version)
+    }
+
+    fn set_version(&mut self, version: &str) {
+        self.version = Some(version.to_owned());
     }
 }

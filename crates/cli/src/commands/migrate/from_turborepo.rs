@@ -10,6 +10,8 @@ use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
+const LOG_TARGET: &str = "moon:migrate:from-turborepo";
+
 #[derive(Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TurboTask {
@@ -136,7 +138,7 @@ pub async fn from_turborepo(skip_touched_files_check: bool) -> Result<(), AnyErr
     }
 
     if skip_touched_files_check {
-        info!("Skipping touched files check.");
+        info!(target: LOG_TARGET, "Skipping touched files check.");
     } else {
         check_dirty_repo(&workspace).await?;
     };
@@ -158,7 +160,10 @@ pub async fn from_turborepo(skip_touched_files_check: bool) -> Result<(), AnyErr
     for (id, task) in turbo_json.pipeline {
         if id.starts_with("//#") {
             if !has_warned_root_tasks {
-                warn!("Unable to migrate root-level `//#` tasks. Create a root-level project manually to support similar functionality: https://moonrepo.dev/docs/guides/root-project");
+                warn!(
+                    target: LOG_TARGET,
+                    "Unable to migrate root-level `//#` tasks. Create a root-level project manually to support similar functionality: https://moonrepo.dev/docs/guides/root-project"
+                );
                 has_warned_root_tasks = true;
             }
 
@@ -207,7 +212,7 @@ pub async fn from_turborepo(skip_touched_files_check: bool) -> Result<(), AnyErr
 
     fs::remove_file(&turbo_file)?;
 
-    info!("Successfully migrated from Turborepo to moon!");
+    println!("Successfully migrated from Turborepo to moon!");
 
     Ok(())
 }

@@ -13,6 +13,10 @@ use std::{
 };
 
 pub async fn upgrade() -> Result<(), AnyError> {
+    if proto::is_offline() {
+        return Err("Upgrading moon requires an internet connection!".into());
+    }
+
     let version = env!("CARGO_PKG_VERSION");
     let version_check = check_version(version).await;
 

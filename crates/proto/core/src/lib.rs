@@ -2,6 +2,7 @@ pub mod color;
 mod describer;
 mod detector;
 mod downloader;
+mod errors;
 mod executor;
 mod helpers;
 mod installer;
@@ -13,11 +14,11 @@ pub use async_trait::async_trait;
 pub use describer::*;
 pub use detector::*;
 pub use downloader::*;
+pub use errors::*;
 pub use executor::*;
 pub use helpers::*;
 pub use installer::*;
 pub use lenient_semver::Version;
-pub use proto_error::ProtoError;
 pub use resolver::*;
 pub use shimmer::*;
 pub use verifier::*;
@@ -105,7 +106,11 @@ pub trait Tool<'tool>:
 
         let install_dir = self.get_install_dir()?;
 
-        debug!("Checking for tool in {}", color::path(&install_dir));
+        debug!(
+            target: self.get_log_target(),
+            "Checking for tool in {}",
+            color::path(&install_dir),
+        );
 
         if install_dir.exists() {
             self.find_bin_path().await?;

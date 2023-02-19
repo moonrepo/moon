@@ -58,18 +58,18 @@ impl ToolchainConfig {
             }
 
             if let Ok(npm_version) = env::var("MOON_NPM_VERSION") {
-                node_config.npm.version = npm_version;
+                node_config.npm.version = Some(npm_version);
             }
 
             if let Ok(pnpm_version) = env::var("MOON_PNPM_VERSION") {
                 if let Some(pnpm_config) = &mut node_config.pnpm {
-                    pnpm_config.version = pnpm_version;
+                    pnpm_config.version = Some(pnpm_version);
                 }
             }
 
             if let Ok(yarn_version) = env::var("MOON_YARN_VERSION") {
                 if let Some(yarn_config) = &mut node_config.yarn {
-                    yarn_config.version = yarn_version;
+                    yarn_config.version = Some(yarn_version);
                 }
             }
         }

@@ -96,6 +96,7 @@
     "PlatformType": {
       "type": "string",
       "enum": [
+        "deno",
         "node",
         "system",
         "unknown"

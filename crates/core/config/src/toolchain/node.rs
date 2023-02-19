@@ -1,24 +1,7 @@
 use crate::validators::{is_default, is_default_true, validate_semver_version};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::env;
 use validator::{Validate, ValidationError};
-
-pub fn default_node_version() -> String {
-    env::var("MOON_NODE_VERSION").unwrap_or_else(|_| "18.12.0".to_string())
-}
-
-pub fn default_npm_version() -> String {
-    env::var("MOON_NPM_VERSION").unwrap_or_else(|_| "8.19.2".to_string())
-}
-
-pub fn default_pnpm_version() -> String {
-    env::var("MOON_PNPM_VERSION").unwrap_or_else(|_| "7.18.2".to_string())
-}
-
-pub fn default_yarn_version() -> String {
-    env::var("MOON_YARN_VERSION").unwrap_or_else(|_| "3.3.0".to_string())
-}
 
 fn validate_node_version(value: &str) -> Result<(), ValidationError> {
     validate_semver_version("node.version", value)
@@ -90,51 +73,29 @@ pub enum NodeVersionManager {
     Nvm,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
 pub struct NpmConfig {
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_npm_version")]
-    pub version: String,
+    pub version: Option<String>,
 }
 
-impl Default for NpmConfig {
-    fn default() -> Self {
-        NpmConfig {
-            version: default_npm_version(),
-        }
-    }
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct PnpmConfig {
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_pnpm_version")]
-    pub version: String,
+    pub version: Option<String>,
 }
 
-impl Default for PnpmConfig {
-    fn default() -> Self {
-        PnpmConfig {
-            version: default_pnpm_version(),
-        }
-    }
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 pub struct YarnConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub plugins: Option<Vec<String>>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_yarn_version")]
-    pub version: String,
-}
-
-impl Default for YarnConfig {
-    fn default() -> Self {
-        YarnConfig {
-            plugins: None,
-            version: default_yarn_version(),
-        }
-    }
+    pub version: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
@@ -199,7 +160,7 @@ impl Default for NodeConfig {
             pnpm: None,
             sync_project_workspace_dependencies: true,
             sync_version_manager_config: None,
-            version: Some(default_node_version()),
+            version: None,
             yarn: None,
         }
     }

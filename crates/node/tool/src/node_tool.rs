@@ -4,12 +4,13 @@ use crate::yarn_tool::YarnTool;
 use moon_config::{NodeConfig, NodePackageManager};
 use moon_logger::debug;
 use moon_node_lang::node;
+use moon_platform_runtime::Version;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
 use moon_utils::process::Command;
 use proto::{
-    async_trait, node::NodeLanguage, Describable, Executable, Installable, Proto, Resolvable,
-    Shimable, Tool as ProtoTool,
+    async_trait, node::NodeLanguage, Describable, Executable, Installable, Proto, Shimable,
+    Tool as ProtoTool,
 };
 use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
@@ -17,6 +18,8 @@ use std::path::{Path, PathBuf};
 #[derive(Debug)]
 pub struct NodeTool {
     pub config: NodeConfig,
+
+    pub global: bool,
 
     pub tool: NodeLanguage,
 
@@ -28,8 +31,13 @@ pub struct NodeTool {
 }
 
 impl NodeTool {
-    pub fn new(proto: &Proto, config: &NodeConfig, version: &str) -> Result<NodeTool, ToolError> {
+    pub fn new(
+        proto: &Proto,
+        config: &NodeConfig,
+        version: &Version,
+    ) -> Result<NodeTool, ToolError> {
         let mut node = NodeTool {
+            global: false,
             config: config.to_owned(),
             tool: NodeLanguage::new(proto),
             npm: None,
@@ -37,7 +45,12 @@ impl NodeTool {
             yarn: None,
         };
 
-        node.config.version = Some(version.to_owned());
+        if version.is_global() {
+            node.global = true;
+            node.config.version = None;
+        } else {
+            node.config.version = Some(version.number.to_owned());
+        };
 
         match config.package_manager {
             NodePackageManager::Npm => {
@@ -63,10 +76,14 @@ impl NodeTool {
         let mut exec_args = vec!["--silent", "--package", package, "--"];
         exec_args.extend(args);
 
-        Command::new(self.get_npx_path()?)
-            .args(exec_args)
+        let mut cmd = Command::new(self.get_npx_path()?);
+
+        if !self.global {
+            cmd.env("PATH", get_path_env_var(&self.tool.get_install_dir()?));
+        }
+
+        cmd.args(exec_args)
             .cwd(working_dir)
-            .env("PATH", get_path_env_var(&self.tool.get_install_dir()?))
             .exec_stream_output()
             .await?;
 
@@ -82,6 +99,10 @@ impl NodeTool {
     }
 
     pub fn get_npx_path(&self) -> Result<PathBuf, ToolError> {
+        if self.global {
+            return Ok("npx".into());
+        }
+
         Ok(node::find_package_manager_bin(
             self.tool.get_install_dir()?,
             "npx",
@@ -127,16 +148,16 @@ impl Tool for NodeTool {
         self
     }
 
-    fn get_bin_path(&self) -> Result<&Path, ToolError> {
-        Ok(self.tool.get_bin_path()?)
+    fn get_bin_path(&self) -> Result<PathBuf, ToolError> {
+        Ok(if self.global {
+            "node".into()
+        } else {
+            self.tool.get_bin_path()?.to_path_buf()
+        })
     }
 
-    fn get_shim_path(&self) -> Option<&Path> {
-        self.tool.get_shim_path()
-    }
-
-    fn get_version(&self) -> &str {
-        self.tool.get_resolved_version()
+    fn get_shim_path(&self) -> Option<PathBuf> {
+        self.tool.get_shim_path().map(|p| p.to_path_buf())
     }
 
     async fn setup(
@@ -144,26 +165,24 @@ impl Tool for NodeTool {
         last_versions: &mut FxHashMap<String, String>,
     ) -> Result<u8, ToolError> {
         let mut installed = 0;
-        let version_clone = self.config.version.clone();
 
-        let Some(version) = version_clone else {
-            return Ok(installed);
-        };
+        // Don't abort early, as we need to setup package managers below
+        if let Some(version) = &self.config.version {
+            if self.tool.is_setup(version).await? {
+                debug!(target: self.tool.get_log_target(), "Node.js has already been setup");
+            } else {
+                let setup = match last_versions.get("node") {
+                    Some(last) => version != last,
+                    None => true,
+                };
 
-        if self.tool.is_setup(&version).await? {
-            debug!(target: self.tool.get_log_target(), "Node.js has already been setup");
-        } else {
-            let setup = match last_versions.get("node") {
-                Some(last) => &version != last,
-                None => true,
-            };
+                if setup || !self.tool.get_install_dir()?.exists() {
+                    print_checkpoint(format!("installing node v{version}"), Checkpoint::Setup);
 
-            if setup || !self.tool.get_install_dir()?.exists() {
-                print_checkpoint(format!("installing node v{version}"), Checkpoint::Setup);
-
-                if self.tool.setup(&version).await? {
-                    last_versions.insert("node".into(), version.to_string());
-                    installed += 1;
+                    if self.tool.setup(version).await? {
+                        last_versions.insert("node".into(), version.to_string());
+                        installed += 1;
+                    }
                 }
             }
         }

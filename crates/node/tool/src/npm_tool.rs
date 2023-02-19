@@ -7,16 +7,19 @@ use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
 use moon_utils::process::Command;
 use moon_utils::{fs, is_ci};
 use proto::{
-    async_trait, node::NodeDependencyManager, Describable, Executable, Installable, Proto,
-    Resolvable, Shimable, Tool as ProtoTool,
+    async_trait,
+    node::{NodeDependencyManager, NodeDependencyManagerType},
+    Describable, Executable, Installable, Proto, Shimable, Tool as ProtoTool,
 };
 use rustc_hash::FxHashMap;
 use std::env;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
 pub struct NpmTool {
     pub config: NpmConfig,
+
+    pub global: bool,
 
     pub tool: NodeDependencyManager,
 }
@@ -24,8 +27,9 @@ pub struct NpmTool {
 impl NpmTool {
     pub fn new(proto: &Proto, config: &NpmConfig) -> Result<NpmTool, ToolError> {
         Ok(NpmTool {
+            global: config.version.is_none(),
             config: config.to_owned(),
-            tool: NodeDependencyManager::new(proto, proto::node::NodeDependencyManagerType::Npm),
+            tool: NodeDependencyManager::new(proto, NodeDependencyManagerType::Npm),
         })
     }
 }
@@ -36,16 +40,16 @@ impl Tool for NpmTool {
         self
     }
 
-    fn get_bin_path(&self) -> Result<&Path, ToolError> {
-        Ok(self.tool.get_bin_path()?)
+    fn get_bin_path(&self) -> Result<PathBuf, ToolError> {
+        Ok(if self.global {
+            "npm".into()
+        } else {
+            self.tool.get_bin_path()?.to_path_buf()
+        })
     }
 
-    fn get_shim_path(&self) -> Option<&Path> {
-        self.tool.get_shim_path()
-    }
-
-    fn get_version(&self) -> &str {
-        self.tool.get_resolved_version()
+    fn get_shim_path(&self) -> Option<PathBuf> {
+        self.tool.get_shim_path().map(|p| p.to_path_buf())
     }
 
     async fn setup(
@@ -53,26 +57,28 @@ impl Tool for NpmTool {
         last_versions: &mut FxHashMap<String, String>,
     ) -> Result<u8, ToolError> {
         let mut count = 0;
+        let version = self.config.version.clone();
 
-        if self.tool.is_setup(&self.config.version).await? {
+        let Some(version) = version else {
+            return Ok(count);
+        };
+
+        if self.tool.is_setup(&version).await? {
             debug!(target: self.tool.get_log_target(), "npm has already been setup");
 
             return Ok(count);
         }
 
         if let Some(last) = last_versions.get("npm") {
-            if last == &self.config.version && self.tool.get_install_dir()?.exists() {
+            if last == &version && self.tool.get_install_dir()?.exists() {
                 return Ok(count);
             }
         }
 
-        print_checkpoint(
-            format!("installing npm v{}", self.config.version),
-            Checkpoint::Setup,
-        );
+        print_checkpoint(format!("installing npm v{version}"), Checkpoint::Setup);
 
-        if self.tool.setup(&self.config.version).await? {
-            last_versions.insert("npm".into(), self.config.version.clone());
+        if self.tool.setup(&version).await? {
+            last_versions.insert("npm".into(), version);
             count += 1;
         }
 
@@ -89,7 +95,9 @@ impl Tool for NpmTool {
 #[async_trait]
 impl DependencyManager<NodeTool> for NpmTool {
     fn create_command(&self, node: &NodeTool) -> Result<Command, ToolError> {
-        let mut cmd = if let Some(shim) = self.get_shim_path() {
+        let mut cmd = if self.global {
+            Command::new("npm")
+        } else if let Some(shim) = self.get_shim_path() {
             Command::new(shim)
         } else {
             let mut cmd = Command::new(node.get_bin_path()?);
@@ -97,7 +105,10 @@ impl DependencyManager<NodeTool> for NpmTool {
             cmd
         };
 
-        cmd.env("PATH", get_path_env_var(&self.tool.get_install_dir()?));
+        if !self.global {
+            cmd.env("PATH", get_path_env_var(&self.tool.get_install_dir()?));
+        }
+
         cmd.env("PROTO_NODE_BIN", node.get_bin_path()?);
 
         Ok(cmd)

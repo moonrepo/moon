@@ -93,7 +93,6 @@
           ]
         },
         "version": {
-          "default": "18.12.0",
           "type": [
             "string",
             "null"
@@ -151,19 +150,21 @@
       "type": "object",
       "properties": {
         "version": {
-          "default": "8.19.2",
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         }
       }
     },
     "PnpmConfig": {
       "type": "object",
-      "required": [
-        "version"
-      ],
       "properties": {
         "version": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         }
       }
     },
@@ -198,9 +199,6 @@
     },
     "YarnConfig": {
       "type": "object",
-      "required": [
-        "version"
-      ],
       "properties": {
         "plugins": {
           "type": [
@@ -212,7 +210,10 @@
           }
         },
         "version": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         }
       }
     }

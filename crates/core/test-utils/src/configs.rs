@@ -15,6 +15,9 @@ pub fn get_default_toolchain() -> ToolchainConfig {
             dedupe_on_lockfile_change: false,
             infer_tasks_from_scripts: false,
             sync_project_workspace_dependencies: false,
+            npm: NpmConfig {
+                version: Some("8.19.0".into()),
+            },
             ..NodeConfig::default()
         }),
         typescript: Some(TypeScriptConfig {
@@ -128,6 +131,9 @@ pub fn get_project_graph_aliases_fixture_configs(
             add_engines_constraint: false,
             alias_package_names: Some(NodeProjectAliasFormat::NameAndScope),
             dedupe_on_lockfile_change: false,
+            npm: NpmConfig {
+                version: Some("8.19.0".into()),
+            },
             ..NodeConfig::default()
         }),
         ..ToolchainConfig::default()
@@ -303,26 +309,26 @@ pub fn get_node_depman_fixture_configs(
             "npm" => {
                 node_config.package_manager = NodePackageManager::Npm;
                 node_config.npm = NpmConfig {
-                    version: "8.0.0".into(),
+                    version: Some("8.0.0".into()),
                 };
             }
             "pnpm" => {
                 node_config.package_manager = NodePackageManager::Pnpm;
                 node_config.pnpm = Some(PnpmConfig {
-                    version: "7.5.0".into(),
+                    version: Some("7.5.0".into()),
                 });
             }
             "yarn" => {
                 node_config.package_manager = NodePackageManager::Yarn;
                 node_config.yarn = Some(YarnConfig {
-                    version: "3.3.0".into(),
+                    version: Some("3.3.0".into()),
                     plugins: Some(vec!["workspace-tools".into()]),
                 });
             }
             "yarn1" => {
                 node_config.package_manager = NodePackageManager::Yarn;
                 node_config.yarn = Some(YarnConfig {
-                    version: "1.22.0".into(),
+                    version: Some("1.22.0".into()),
                     plugins: None,
                 });
             }

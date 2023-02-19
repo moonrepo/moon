@@ -55,6 +55,9 @@
       "properties": {
         "optimization": {
           "$ref": "#/definitions/HasherOptimization"
+        },
+        "walkStrategy": {
+          "$ref": "#/definitions/HasherWalkStrategy"
         }
       }
     },
@@ -63,6 +66,13 @@
       "enum": [
         "accuracy",
         "performance"
+      ]
+    },
+    "HasherWalkStrategy": {
+      "type": "string",
+      "enum": [
+        "glob",
+        "vcs"
       ]
     },
     "NotifierConfig": {

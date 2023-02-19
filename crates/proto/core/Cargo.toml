@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-proto_error = { path = "../error" }
 async-trait = "0.1.61"
+cached = { workspace = true }
 console = { workspace = true }
 dirs = "4.0.0"
 flate2 = "1.0.25"

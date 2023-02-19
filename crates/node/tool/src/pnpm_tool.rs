@@ -71,6 +71,18 @@ impl Tool for PnpmTool {
             return Ok(count);
         }
 
+        // When offline and the tool doesn't exist, fallback to the global binary
+        if proto::is_offline() {
+            debug!(
+                target: self.tool.get_log_target(),
+                "No internet connection and pnpm has not been setup, falling back to global binary in PATH"
+            );
+
+            self.global = true;
+
+            return Ok(count);
+        }
+
         if let Some(last) = last_versions.get("pnpm") {
             if last == &version && self.tool.get_install_dir()?.exists() {
                 return Ok(count);

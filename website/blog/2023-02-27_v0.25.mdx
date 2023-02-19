@@ -1,0 +1,25 @@
+---
+slug: v0.25
+title: moon v0.25 - ???
+authors: [milesj]
+tags: [offline]
+# image: ./img/v0.24.png
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import Button from '@site/src/ui/Button';
+
+???
+
+<!--truncate-->
+
+## Offline mode
+
+moon assumes that an internet connection is always available, as we download and install tools into
+the toolchain, resolve versions against upstream manifests, and automatically install dependencies.
+While this is useful, having a constant internet connection isn't always viable.
+
+In this release, we now check for an active internet connection and bypass certain workflows when
+applicable.
+[Jump to the official guide on offline more for more information](/docs/guides/offline-mode)!

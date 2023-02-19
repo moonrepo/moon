@@ -1,4 +1,4 @@
-use proto_error::ProtoError;
+use crate::errors::ProtoError;
 use std::path::Path;
 
 #[async_trait::async_trait]

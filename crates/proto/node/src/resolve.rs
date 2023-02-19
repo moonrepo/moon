@@ -1,8 +1,8 @@
 use crate::NodeLanguage;
 use log::debug;
 use proto_core::{
-    async_trait, load_versions_manifest, parse_version, remove_v_prefix, Describable, ProtoError,
-    Resolvable, VersionManifest, VersionManifestEntry,
+    async_trait, is_offline, is_semantic_version, load_versions_manifest, parse_version,
+    remove_v_prefix, Describable, ProtoError, Resolvable, VersionManifest, VersionManifestEntry,
 };
 use serde::Deserialize;
 use std::collections::BTreeMap;
@@ -73,7 +73,15 @@ impl Resolvable<'_> for NodeLanguage {
             return Ok(version.to_owned());
         }
 
-        let initial_version = initial_version.to_lowercase();
+        let initial_version = remove_v_prefix(initial_version).to_lowercase();
+
+        // If offline but we have a fully qualified semantic version,
+        // exit early and assume the version is legitimate
+        if is_semantic_version(&initial_version) && is_offline() {
+            self.set_version(&initial_version);
+
+            return Ok(initial_version);
+        }
 
         debug!(
             target: self.get_log_target(),
@@ -108,8 +116,12 @@ impl Resolvable<'_> for NodeLanguage {
 
         debug!(target: self.get_log_target(), "Resolved to {}", version);
 
-        self.version = Some(version.clone());
+        self.set_version(&version);
 
         Ok(version)
+    }
+
+    fn set_version(&mut self, version: &str) {
+        self.version = Some(version.to_owned());
     }
 }

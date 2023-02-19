@@ -1,7 +1,7 @@
+use crate::errors::ProtoError;
 use crate::helpers::get_root;
 use crate::{color, get_shims_dir};
 use log::debug;
-use proto_error::ProtoError;
 use serde::Serialize;
 use serde_json::Value;
 use std::fmt::Write;

@@ -2181,6 +2181,7 @@ dependencies = [
  "moon_utils",
  "moon_workspace",
  "moonbase",
+ "proto",
  "rustc-hash",
  "rusty_pool",
  "serde",
@@ -2451,6 +2452,7 @@ version = "0.1.0"
 dependencies = [
  "moon_logger",
  "moon_utils",
+ "proto",
  "reqwest",
  "serde",
  "serde_json",
@@ -3452,7 +3454,6 @@ dependencies = [
  "human-sort",
  "log",
  "proto_core",
- "proto_error",
  "proto_go",
  "proto_node",
  "rustc-hash",
@@ -3465,12 +3466,12 @@ name = "proto_core"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "cached",
  "console",
  "dirs",
  "flate2",
  "lenient_semver",
  "log",
- "proto_error",
  "reqwest",
  "serde",
  "serde_json",
@@ -3480,13 +3481,6 @@ dependencies = [
  "tinytemplate",
  "tokio",
  "zip",
-]
-
-[[package]]
-name = "proto_error"
-version = "0.1.0"
-dependencies = [
- "thiserror",
 ]
 
 [[package]]

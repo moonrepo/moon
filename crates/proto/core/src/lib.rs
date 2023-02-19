@@ -102,16 +102,15 @@ pub trait Tool<'tool>:
     }
 
     async fn is_setup(&mut self, initial_version: &str) -> Result<bool, ProtoError> {
-        // If a fully qualified version, avoid loading the manifest
-        if Version::parse(initial_version).is_ok() {
-            self.set_version(initial_version);
-        } else {
-            self.resolve_version(initial_version).await?;
-        }
+        self.resolve_version(initial_version).await?;
 
         let install_dir = self.get_install_dir()?;
 
-        debug!("Checking for tool in {}", color::path(&install_dir));
+        debug!(
+            target: self.get_log_target(),
+            "Checking for tool in {}",
+            color::path(&install_dir),
+        );
 
         if install_dir.exists() {
             self.find_bin_path().await?;

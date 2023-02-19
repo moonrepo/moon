@@ -142,7 +142,7 @@ impl Resolvable<'_> for GoLanguage {
 
         debug!(target: self.get_log_target(), "Resolved to {}", candidate);
 
-        self.set_version(&candidate);
+        self.set_version(candidate);
 
         Ok(candidate.to_owned())
     }

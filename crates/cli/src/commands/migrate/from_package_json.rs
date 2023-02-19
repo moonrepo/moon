@@ -10,6 +10,8 @@ use moon_node_platform::create_tasks_from_scripts;
 use moon_utils::yaml;
 use rustc_hash::FxHashMap;
 
+const LOG_TARGET: &str = "moon:migrate:from-package-json";
+
 pub async fn from_package_json(
     project_id: String,
     skip_touched_files_check: bool,
@@ -17,7 +19,7 @@ pub async fn from_package_json(
     let mut workspace = load_workspace().await?;
 
     if skip_touched_files_check {
-        info!("Skipping touched files check.");
+        info!(target: LOG_TARGET, "Skipping touched files check.");
     } else {
         check_dirty_repo(&workspace).await?;
     };

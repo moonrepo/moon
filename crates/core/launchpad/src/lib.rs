@@ -27,7 +27,7 @@ pub async fn check_version(
         return Ok((env!("CARGO_PKG_VERSION").to_owned(), false));
     }
 
-    debug!("Checking for new version of moon");
+    debug!(target: "moon:launchpad", "Checking for new version of moon");
 
     let response = reqwest::Client::new()
         .get(CURRENT_VERSION_URL)

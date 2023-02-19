@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 moon_logger = { path = "../logger" }
 moon_utils = { path = "../utils" }
-proto = { path = "../../proto/cli" }
+proto_cli = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

@@ -8,7 +8,7 @@ moon_error = { path = "../error" }
 moon_lang = { path = "../lang" }
 moon_platform_runtime = { path = "../platform-runtime" }
 moon_utils = { path = "../utils" }
-proto = { path = "../../proto/cli" }
 async-trait = "0.1.61"
+proto_cli = { workspace = true }
 rustc-hash = { workspace = true }
 thiserror = { workspace = true }

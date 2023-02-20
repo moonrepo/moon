@@ -13,7 +13,7 @@ on:
       - develop-*
       - release-*
   # Uncomment to test in PRs (its safe)
-  pull_request:
+  # pull_request:
 
 permissions:
   contents: write
@@ -117,7 +117,7 @@ jobs:
         env:
           BINARY: ${{ matrix.binary }}
           TARGET: ${{ matrix.target }}
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         name: Upload artifact
         with:
           name: binary-${{ matrix.target }}
@@ -168,7 +168,7 @@ jobs:
         run: ${{ matrix.setup }}
       - name: Install dependencies
         run: yarn install --immutable
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         name: Download artifacts
         with:
           path: artifacts
@@ -207,7 +207,7 @@ jobs:
           node-version: 16
       - name: Install dependencies
         run: yarn install --immutable
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         name: Download artifacts
         with:
           path: artifacts

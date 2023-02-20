@@ -99,7 +99,7 @@ jobs:
         if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
         run: cargo make generate-report
       - name: Upload coverage report
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
         with:
           name: coverage-${{ matrix.os }}
@@ -113,7 +113,7 @@ jobs:
       - test
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         name: Download coverage reports
         with:
           path: coverage

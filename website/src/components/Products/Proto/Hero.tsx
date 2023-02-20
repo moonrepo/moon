@@ -8,19 +8,20 @@ import Icon from '../../../ui/iconography/Icon';
 import Text from '../../../ui/typography/Text';
 import CTA from '../../Home/CTA';
 import HeroIcon from '../HeroIcon';
+import HeroTerminal from './HeroTerminal';
 
 export default function Hero() {
 	return (
 		<div className="bg-gradient-to-b from-slate-900 to-slate-600 star-pattern">
 			<div className="max-w-7xl mx-auto py-10 px-4 pb-6 sm:py-12 sm:px-6 md:py-14 lg:py-16 lg:px-8 xl:py-20 flex flex-col md:flex-row">
-				<div className="text-center md:text-left md:w-7/12">
+				<div className="text-center md:text-left md:w-6/12">
 					<HeroIcon
 						icon={<LogoIcon height={75} style={{ marginTop: 5 }} />}
 						text={<TextVector height={90} className="absolute top-0 left-0" />}
 					/>
 
 					<p className="mt-1 mb-0 text-base text-white sm:text-lg sm:max-w-xl sm:mx-auto md:text-xl md:mx-0 md:w-[80%]">
-						A lightspeed toolchain manager for programming languages and their dependency managers.
+						A lightspeed toolchain manager for languages and their dependency managers.
 					</p>
 
 					<p className="mt-1 text-white opacity-50 text-sm md:text-base md:pr-4">
@@ -50,8 +51,8 @@ export default function Hero() {
 					</div>
 				</div>
 
-				<div className="mt-4 md:mt-0 md:w-5/12">
-					<div className="relative sm:pb-8">TODO</div>
+				<div className="mt-4 md:mt-0 md:w-6/12 flex flex-col flex-grow-0">
+					<HeroTerminal />
 
 					<div className="mt-2 flex justify-center items-start gap-1">
 						<div>

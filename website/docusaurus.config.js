@@ -98,10 +98,10 @@ const config = {
 								to: '/moonbase',
 								html: '<strong class="block mr-2">moonbase</strong><div class="opacity-60">Service for scaling CI pipelines</div>',
 							},
-							// {
-							// 	to: '/proto',
-							// 	html: '<strong>proto</strong><div class="opacity-60">Language agnostic version manager</div>',
-							// },
+							{
+								to: '/proto',
+								html: '<strong class="block mr-2">proto</strong><div class="opacity-60">Language agnostic toolchain manager</div>',
+							},
 						],
 					},
 					{

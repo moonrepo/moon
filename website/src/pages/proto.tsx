@@ -3,7 +3,7 @@
 import React from 'react';
 import { faCloudArrowUp, faDiagramSankey, faTimeline } from '@fortawesome/pro-duotone-svg-icons';
 import Features, { Feature } from '@site/src/components/Products/Features';
-import Hero from '@site/src/components/Products/Moonbase/Hero';
+import Hero from '@site/src/components/Products/Proto/Hero';
 import Layout from '@theme/Layout';
 
 const ciFeatures: Feature[] = [
@@ -36,7 +36,7 @@ export default function ProductProto() {
 			<Hero />
 
 			<main>
-				<div className="bg-gradient-to-b from-slate-600 via-teal-800 to-white">
+				<div className="bg-gradient-to-b from-slate-600 via-pink-900 to-white">
 					<Features
 						header="Continuous integration"
 						description="Highly efficient pipelines"

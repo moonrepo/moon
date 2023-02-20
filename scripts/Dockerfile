@@ -6,7 +6,8 @@
 # glibc
 
 FROM ubuntu:20.04 AS base-gnu
-RUN apt-get update && apt-get install curl -y
+RUN apt-get update
+RUN apt-get install --no-install-recommends -y ca-certificates curl file build-essential autoconf automake autotools-dev libtool xutils-dev
 
 WORKDIR /app
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain stable -y

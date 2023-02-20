@@ -22,4 +22,36 @@ While this is useful, having a constant internet connection isn't always viable.
 
 In this release, we now check for an active internet connection and bypass certain workflows when
 applicable.
-[Jump to the official guide on offline more for more information](/docs/guides/offline-mode)!
+[Jump to the official guide on offline mode for more information](/docs/guides/offline-mode)!
+
+## Project-level TypeScript settings
+
+Our TypeScript integration supports many automated workflows, like syncing project references, and
+routing `outDir` to our shared cache. This is wonderful for the majority, but for the handful of
+projects where these settings were not viable, there was no simple way to disable or opt out of the
+functionality.
+
+Well no more, projects can now override the workspace-level TypeScript settings
+`routeOutDirToCache`, `syncProjectReferences`, and `syncProjectReferencesToPaths` through the
+[`toolchain.typescript`](/docs/config/project#typescript) setting in
+[`moon.yml`](/docs/config/project).
+
+```yaml title="moon.yml"
+toolchain:
+	typescript:
+		routeOutDirToCache: false
+```
+
+Because this setting was changed from a boolean to an object, the old pattern of disabling
+Typescript must now use the `disabled` setting.
+
+```yaml title="moon.yml"
+# Old
+toolchain:
+	typescript: false
+
+# new
+toolchain:
+	typescript:
+		disabled: true
+```

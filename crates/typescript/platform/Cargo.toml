@@ -1,0 +1,16 @@
+[package]
+name = "moon_typescript_platform"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_config = { path = "../../core/config" }
+moon_error = { path = "../../core/error" }
+moon_logger = { path = "../../core/logger" }
+moon_project = { path = "../../core/project" }
+moon_utils = { path = "../../core/utils" }
+moon_typescript_lang = { path = "../lang" }
+rustc-hash = { workspace = true }
+
+[dev-dependencies]
+moon_test_utils = { path = "../../core/test-utils" }

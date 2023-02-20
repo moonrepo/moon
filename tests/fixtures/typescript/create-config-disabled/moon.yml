@@ -1,2 +1,3 @@
 toolchain:
-  typescript: false
+  typescript:
+    disabled: true

@@ -11,6 +11,10 @@
 
 - Added offline (no internet connection) support.
 
+##### Moonbase
+
+- CI runs can now be tracked in moonbase to gather insights and metrics.
+
 #### 🐞 Fixes
 
 - Fixed an issue where `moon query projects --affected` would hang indefinitely waiting for stdin.

@@ -5,12 +5,17 @@
 
 # glibc
 
-FROM rust:1.67.0 AS base-gnu
-RUN cargo install cargo-chef --version ^0.1
+FROM ubuntu:20.04 AS base-gnu
+RUN apt-get update && apt-get install curl -y
+
 WORKDIR /app
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain stable -y
+ENV PATH=/root/.cargo/bin:$PATH
+
 COPY .cargo .cargo
 COPY rust-toolchain.toml .
 RUN rustup update
+RUN cargo install cargo-chef --version ^0.1
 
 FROM base-gnu AS plan-gnu
 COPY Cargo* .

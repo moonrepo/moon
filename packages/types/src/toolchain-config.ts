@@ -38,7 +38,9 @@ export interface TypeScriptConfig {
 	projectConfigFileName: string;
 	rootConfigFileName: string;
 	rootOptionsConfigFileName: string;
+	routeOutDirToCache: boolean;
 	syncProjectReferences: boolean;
+	syncProjectReferencesToPaths: boolean;
 }
 
 export interface ToolchainConfig {

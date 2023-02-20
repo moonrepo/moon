@@ -1,0 +1,6 @@
+---
+source: crates/cli/tests/run_typescript_test.rs
+expression: "read_to_string(sandbox.path().join(\"syncs-deps-refs-project-disabled/tsconfig.json\")).unwrap()"
+---
+{}
+

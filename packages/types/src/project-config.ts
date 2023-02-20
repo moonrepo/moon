@@ -1,5 +1,5 @@
 import type { Nullable, Platform } from './common';
-import type { NodeConfig } from './toolchain-config';
+import type { NodeConfig, TypeScriptConfig } from './toolchain-config';
 
 export type DependencyScope = 'development' | 'peer' | 'production';
 
@@ -65,9 +65,19 @@ export interface ProjectMetadataConfig {
 
 export type ProjectToolchainNodeConfig = Nullable<Pick<NodeConfig, 'version'>>;
 
+export interface ProjectToolchainTypeScriptConfig
+	extends Nullable<
+		Pick<
+			TypeScriptConfig,
+			'routeOutDirToCache' | 'syncProjectReferences' | 'syncProjectReferencesToPaths'
+		>
+	> {
+	disabled: boolean;
+}
+
 export interface ProjectToolchainConfig {
 	node: ProjectToolchainNodeConfig | null;
-	typescript: boolean;
+	typescript: ProjectToolchainTypeScriptConfig | null;
 }
 
 export interface ProjectWorkspaceConfig {

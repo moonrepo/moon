@@ -223,6 +223,7 @@ impl Subscriber for MoonbaseSubscriber {
 
                 // Update the status and duration when the pipeline finishes!
                 Event::PipelineFinished {
+                    baseline_duration,
                     duration,
                     failed_count,
                     ..
@@ -232,6 +233,7 @@ impl Subscriber for MoonbaseSubscriber {
                             run_id,
                             &moonbase.auth_token,
                             update_run::UpdateRunInput {
+                                comparison_duration: Some(baseline_duration.as_millis() as i64),
                                 duration: Some(duration.as_millis() as i64),
                                 status: Some(if *failed_count > 0 {
                                     update_run::RunStatus::FAILED
@@ -251,6 +253,7 @@ impl Subscriber for MoonbaseSubscriber {
                             run_id,
                             &moonbase.auth_token,
                             update_run::UpdateRunInput {
+                                comparison_duration: None,
                                 duration: None,
                                 status: Some(update_run::RunStatus::ABORTED),
                             },

@@ -1,6 +1,5 @@
 ---
-source: crates/cli/tests/run_node_test.rs
-assertion_line: 1199
+source: crates/cli/tests/run_typescript_test.rs
 expression: synced_root
 ---
 {

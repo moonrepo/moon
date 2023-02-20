@@ -1,7 +1,6 @@
 ---
-source: crates/cli/tests/run_node_test.rs
-assertion_line: 1301
-expression: "read_to_string(fixture.path().join(\"syncs-paths-refs/tsconfig.json\")).unwrap()"
+source: crates/cli/tests/run_typescript_test.rs
+expression: "read_to_string(sandbox.path().join(\"syncs-paths-refs/tsconfig.json\")).unwrap()"
 ---
 {
   "references": [

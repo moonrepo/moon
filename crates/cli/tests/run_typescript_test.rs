@@ -93,37 +93,83 @@ fn doesnt_create_missing_tsconfig_if_project_disabled() {
     assert!(!sandbox.path().join("create-config/tsconfig.json").exists());
 }
 
-#[test]
-fn syncs_ref_to_root_config() {
-    let sandbox = typescript_sandbox(|_| {});
+mod refs {
+    use super::*;
 
-    let initial_root = read_to_string(sandbox.path().join("tsconfig.json")).unwrap();
+    #[test]
+    fn syncs_ref_to_root_config() {
+        let sandbox = typescript_sandbox(|_| {});
 
-    sandbox.run_moon(|cmd| {
-        cmd.arg("run").arg("create-config:noop");
-    });
+        let initial_root = read_to_string(sandbox.path().join("tsconfig.json")).unwrap();
 
-    let synced_root = read_to_string(sandbox.path().join("tsconfig.json")).unwrap();
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("create-config:noop");
+        });
 
-    assert_ne!(initial_root, synced_root);
-    assert_snapshot!(synced_root);
-}
+        let synced_root = read_to_string(sandbox.path().join("tsconfig.json")).unwrap();
 
-#[test]
-fn syncs_depends_on_as_refs() {
-    let sandbox = typescript_sandbox(|_| {});
+        assert_ne!(initial_root, synced_root);
+        assert_snapshot!(synced_root);
+    }
 
-    assert!(!sandbox
-        .path()
-        .join("syncs-deps-refs/tsconfig.json")
-        .exists());
+    #[test]
+    fn syncs_depends_on_as_refs() {
+        let sandbox = typescript_sandbox(|_| {});
 
-    sandbox.run_moon(|cmd| {
-        cmd.arg("run").arg("syncs-deps-refs:noop");
-    });
+        assert!(!sandbox
+            .path()
+            .join("syncs-deps-refs/tsconfig.json")
+            .exists());
 
-    // should not have `deps-no-config-disabled` or `deps-with-config-disabled`
-    assert_snapshot!(read_to_string(sandbox.path().join("syncs-deps-refs/tsconfig.json")).unwrap());
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("syncs-deps-refs:noop");
+        });
+
+        // should not have `deps-no-config-disabled` or `deps-with-config-disabled`
+        assert_snapshot!(
+            read_to_string(sandbox.path().join("syncs-deps-refs/tsconfig.json")).unwrap()
+        );
+    }
+
+    #[test]
+    fn doesnt_sync_depends_on_as_refs_if_disabled() {
+        let sandbox = typescript_sandbox(|cfg| {
+            cfg.sync_project_references = false;
+        });
+
+        assert!(!sandbox
+            .path()
+            .join("syncs-deps-refs/tsconfig.json")
+            .exists());
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("syncs-deps-refs:noop");
+        });
+
+        assert!(!sandbox
+            .path()
+            .join("syncs-deps-refs/tsconfig.json")
+            .exists());
+    }
+
+    #[test]
+    fn doesnt_sync_depends_on_as_refs_if_disabled_in_project() {
+        let sandbox = typescript_sandbox(|cfg| {
+            cfg.sync_project_references = true;
+        });
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("syncs-deps-refs-project-disabled:noop");
+        });
+
+        // should not have anything
+        assert_snapshot!(read_to_string(
+            sandbox
+                .path()
+                .join("syncs-deps-refs-project-disabled/tsconfig.json")
+        )
+        .unwrap());
+    }
 }
 
 mod out_dir {
@@ -176,6 +222,24 @@ mod out_dir {
             read_to_string(sandbox.path().join("out-dir-routing/tsconfig.json")).unwrap()
         );
     }
+
+    #[test]
+    fn doesnt_route_to_cache_if_disabled_in_project() {
+        let sandbox = typescript_sandbox(|cfg| {
+            cfg.route_out_dir_to_cache = true;
+        });
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("out-dir-routing-project-disabled:noop");
+        });
+
+        assert_snapshot!(read_to_string(
+            sandbox
+                .path()
+                .join("out-dir-routing-project-disabled/tsconfig.json")
+        )
+        .unwrap());
+    }
 }
 
 mod paths {
@@ -227,5 +291,23 @@ mod paths {
         assert_snapshot!(
             read_to_string(sandbox.path().join("syncs-paths-refs/tsconfig.json")).unwrap()
         );
+    }
+
+    #[test]
+    fn doesnt_map_paths_if_disabled_in_project() {
+        let sandbox = typescript_sandbox(|cfg| {
+            cfg.sync_project_references_to_paths = true;
+        });
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("syncs-paths-refs-project-disabled:noop");
+        });
+
+        assert_snapshot!(read_to_string(
+            sandbox
+                .path()
+                .join("syncs-paths-refs-project-disabled/tsconfig.json")
+        )
+        .unwrap());
     }
 }

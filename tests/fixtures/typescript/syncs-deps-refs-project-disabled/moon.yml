@@ -1,0 +1,9 @@
+dependsOn:
+  - 'deps-no-config'
+  - 'deps-no-config-disabled'
+  - 'deps-with-config'
+  - 'deps-with-config-disabled'
+
+toolchain:
+  typescript:
+    syncProjectReferences: false

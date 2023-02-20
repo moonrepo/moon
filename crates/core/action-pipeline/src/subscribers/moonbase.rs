@@ -15,6 +15,7 @@ use moonbase::{
     upload_artifact, ArtifactWriteInput, MoonbaseError,
 };
 use rustc_hash::FxHashMap;
+use std::env;
 use tokio::task::JoinHandle;
 
 const LOG_TARGET: &str = "moonbase";
@@ -120,14 +121,22 @@ impl Subscriber for MoonbaseSubscriber {
                         );
                     }
 
-                    let mut branch = String::new();
-                    let mut revision = String::new();
-                    let mut request_number = None;
+                    let mut branch = env::var("MOONBASE_CI_BRANCH").unwrap_or_default();
+                    let mut revision = env::var("MOONBASE_CI_REVISION").unwrap_or_default();
+                    let mut request_number = env::var("MOONBASE_CI_REQUEST_NUMBER").ok();
 
                     if let Some(pipeline_env) = get_pipeline_environment() {
-                        branch = pipeline_env.branch;
-                        revision = pipeline_env.revision;
-                        request_number = pipeline_env.request_id;
+                        if branch.is_empty() {
+                            branch = pipeline_env.branch;
+                        }
+
+                        if revision.is_empty() {
+                            revision = pipeline_env.revision;
+                        }
+
+                        if request_number.is_none() {
+                            request_number = pipeline_env.request_id;
+                        }
                     }
 
                     if branch.is_empty() {

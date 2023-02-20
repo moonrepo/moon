@@ -87,7 +87,11 @@ impl TsConfigJson {
     /// Add a project reference to the `references` field with the defined
     /// path and tsconfig file name, and sort the list based on path.
     /// Return true if the new value is different from the old value.
-    pub fn add_project_ref<T: AsRef<str>>(&mut self, base_path: T, tsconfig_name: T) -> bool {
+    pub fn add_project_ref<T: AsRef<str>, C: AsRef<str>>(
+        &mut self,
+        base_path: T,
+        tsconfig_name: C,
+    ) -> bool {
         let base_path = base_path.as_ref();
         let tsconfig_name = tsconfig_name.as_ref();
         let mut path = standardize_separators(base_path);
@@ -979,7 +983,7 @@ mod test {
     #[test]
     fn parse_basic_file() {
         let path = get_fixtures_path("base/tsconfig-json");
-        let config = TsConfigJson::read_with_name(path, "tsconfig.default.json")
+        let config = TsConfigJson::read_with_name(path, Some("tsconfig.default.json"))
             .unwrap()
             .unwrap();
 

@@ -10,11 +10,11 @@ pub struct TypeScriptConfig {
     #[serde(skip_serializing_if = "is_default_true")]
     pub create_missing_config: bool,
 
-    pub project_config_file_name: String,
+    pub project_config_file_name: Option<String>,
 
-    pub root_config_file_name: String,
+    pub root_config_file_name: Option<String>,
 
-    pub root_options_config_file_name: String,
+    pub root_options_config_file_name: Option<String>,
 
     #[serde(skip_serializing_if = "is_default")]
     pub route_out_dir_to_cache: bool,
@@ -30,9 +30,9 @@ impl Default for TypeScriptConfig {
     fn default() -> Self {
         TypeScriptConfig {
             create_missing_config: true,
-            project_config_file_name: "tsconfig.json".into(),
-            root_config_file_name: "tsconfig.json".into(),
-            root_options_config_file_name: "tsconfig.options.json".into(),
+            project_config_file_name: None,
+            root_config_file_name: None,
+            root_options_config_file_name: None,
             route_out_dir_to_cache: false,
             sync_project_references: true,
             sync_project_references_to_paths: false,

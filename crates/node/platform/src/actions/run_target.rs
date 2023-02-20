@@ -248,15 +248,16 @@ pub async fn create_target_hasher(
     }
 
     if let Some(typescript_config) = &typescript_config {
-        if let Some(root_tsconfig) =
-            TsConfigJson::read_with_name(workspace_root, &typescript_config.root_config_file_name)?
-        {
+        if let Some(root_tsconfig) = TsConfigJson::read_with_name(
+            workspace_root,
+            typescript_config.root_config_file_name.as_ref(),
+        )? {
             hasher.hash_tsconfig_json(&root_tsconfig);
         }
 
         if let Some(tsconfig) = TsConfigJson::read_with_name(
             &project.root,
-            &typescript_config.project_config_file_name,
+            typescript_config.project_config_file_name.as_ref(),
         )? {
             hasher.hash_tsconfig_json(&tsconfig);
         }

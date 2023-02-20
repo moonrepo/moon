@@ -73,8 +73,8 @@ mod missing_tsconfig {
         create_missing_tsconfig(
             &project,
             &TypeScriptConfig {
-                project_config_file_name: "tsconfig.ref.json".to_string(),
-                root_options_config_file_name: "tsconfig.base.json".to_string(),
+                project_config_file_name: Some("tsconfig.ref.json".to_string()),
+                root_options_config_file_name: Some("tsconfig.base.json".to_string()),
                 ..TypeScriptConfig::default()
             },
             sandbox.path(),
@@ -83,7 +83,7 @@ mod missing_tsconfig {
 
         assert!(tsconfig_path.exists());
 
-        let tsconfig = TsConfigJson::read_with_name(&project.root, "tsconfig.ref.json")
+        let tsconfig = TsConfigJson::read_with_name(&project.root, Some("tsconfig.ref.json"))
             .unwrap()
             .unwrap();
 

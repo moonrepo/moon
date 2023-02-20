@@ -35,7 +35,7 @@ pub struct ProjectToolchainTypeScriptConfig {
     pub sync_project_references_to_paths: Option<bool>,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
 #[serde(default, rename_all = "camelCase")]
 pub struct ProjectToolchainConfig {
@@ -45,15 +45,6 @@ pub struct ProjectToolchainConfig {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub typescript: Option<ProjectToolchainTypeScriptConfig>,
-}
-
-impl Default for ProjectToolchainConfig {
-    fn default() -> Self {
-        ProjectToolchainConfig {
-            node: None,
-            typescript: None,
-        }
-    }
 }
 
 impl ProjectToolchainConfig {

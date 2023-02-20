@@ -1,4 +1,4 @@
-use moon_config::{InheritedTasksManager, ProjectLanguage, TypeScriptConfig};
+use moon_config::{InheritedTasksManager, ProjectLanguage};
 use moon_project::Project;
 use moon_test_utils::{create_sandbox_with_config, get_node_fixture_configs};
 use moon_typescript_lang::tsconfig::TsConfigExtends;

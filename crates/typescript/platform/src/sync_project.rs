@@ -26,7 +26,7 @@ pub fn create_missing_tsconfig(
         return Ok(false);
     }
 
-    let tsconfig_options_path = workspace_root.join(&tsconfig_options_name);
+    let tsconfig_options_path = workspace_root.join(tsconfig_options_name);
 
     let json = TsConfigJson {
         extends: Some(TsConfigExtends::String(path::to_virtual_string(
@@ -78,13 +78,13 @@ pub fn sync_project_tsconfig_compiler_options(
     setting_sync_project_refs: bool,
     setting_sync_path_aliases: bool,
 ) -> Result<bool, MoonError> {
-    TsConfigJson::sync_with_name(&project.root, &tsconfig_project_name, |tsconfig_json| {
+    TsConfigJson::sync_with_name(&project.root, tsconfig_project_name, |tsconfig_json| {
         let mut mutated_tsconfig = false;
 
         // Project references
         if setting_sync_project_refs && !tsconfig_project_refs.is_empty() {
             for ref_path in tsconfig_project_refs {
-                if tsconfig_json.add_project_ref(&ref_path, &tsconfig_project_name) {
+                if tsconfig_json.add_project_ref(&ref_path, tsconfig_project_name) {
                     mutated_tsconfig = true;
                 }
             }
@@ -159,20 +159,19 @@ pub fn sync_project(
             .root
             .join(&typescript_config.project_config_file_name)
             .exists()
-    {
-        if create_missing_tsconfig(
+        && create_missing_tsconfig(
             project,
             &typescript_config.project_config_file_name,
             &typescript_config.root_options_config_file_name,
             workspace_root,
-        )? {
-            mutated_tsconfig = true;
-        }
+        )?
+    {
+        mutated_tsconfig = true;
     }
 
     // Sync compiler options to the project's `tsconfig.json`
-    if is_project_typescript_enabled {
-        if sync_project_tsconfig_compiler_options(
+    if is_project_typescript_enabled
+        && sync_project_tsconfig_compiler_options(
             project,
             &typescript_config.project_config_file_name,
             tsconfig_paths,
@@ -180,21 +179,22 @@ pub fn sync_project(
             setting_route_to_cache,
             setting_sync_project_refs,
             setting_sync_path_aliases,
-        )? {
-            mutated_tsconfig = true;
-        }
+        )?
+    {
+        mutated_tsconfig = true;
     }
 
     // Sync project references to the root `tsconfig.json`
-    if is_project_typescript_enabled && setting_sync_project_refs {
-        if sync_root_tsconfig_references(
+    if is_project_typescript_enabled
+        && setting_sync_project_refs
+        && sync_root_tsconfig_references(
             project,
             &typescript_config.project_config_file_name,
             &typescript_config.root_config_file_name,
             workspace_root,
-        )? {
-            mutated_tsconfig = true;
-        }
+        )?
+    {
+        mutated_tsconfig = true;
     }
 
     Ok(mutated_tsconfig)

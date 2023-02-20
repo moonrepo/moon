@@ -11,3 +11,6 @@ moon_project = { path = "../../core/project" }
 moon_utils = { path = "../../core/utils" }
 moon_typescript_lang = { path = "../lang" }
 rustc-hash = { workspace = true }
+
+[dev-dependencies]
+moon_test_utils = { path = "../../core/test-utils" }

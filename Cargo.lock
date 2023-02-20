@@ -2811,6 +2811,7 @@ dependencies = [
  "moon_error",
  "moon_logger",
  "moon_project",
+ "moon_test_utils",
  "moon_typescript_lang",
  "moon_utils",
  "rustc-hash",

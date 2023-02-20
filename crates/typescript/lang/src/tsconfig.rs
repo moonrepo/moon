@@ -983,7 +983,7 @@ mod test {
     #[test]
     fn parse_basic_file() {
         let path = get_fixtures_path("base/tsconfig-json");
-        let config = TsConfigJson::read_with_name(path, Some("tsconfig.default.json"))
+        let config = TsConfigJson::read_with_name(path, "tsconfig.default.json")
             .unwrap()
             .unwrap();
 

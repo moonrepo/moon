@@ -1,9 +1,9 @@
 use moon_config::{InheritedTasksManager, ProjectLanguage, TypeScriptConfig};
-use moon_node_platform::actions::create_missing_tsconfig;
 use moon_project::Project;
 use moon_test_utils::{create_sandbox_with_config, get_node_fixture_configs};
 use moon_typescript_lang::tsconfig::TsConfigExtends;
 use moon_typescript_lang::TsConfigJson;
+use moon_typescript_platform::create_missing_tsconfig;
 use moon_utils::string_vec;
 
 mod missing_tsconfig {
@@ -32,7 +32,13 @@ mod missing_tsconfig {
 
         assert!(!tsconfig_path.exists());
 
-        create_missing_tsconfig(&project, &TypeScriptConfig::default(), sandbox.path()).unwrap();
+        create_missing_tsconfig(
+            &project,
+            "tsconfig.json",
+            "tsconfig.options.json",
+            sandbox.path(),
+        )
+        .unwrap();
 
         assert!(tsconfig_path.exists());
 
@@ -72,18 +78,15 @@ mod missing_tsconfig {
 
         create_missing_tsconfig(
             &project,
-            &TypeScriptConfig {
-                project_config_file_name: Some("tsconfig.ref.json".to_string()),
-                root_options_config_file_name: Some("tsconfig.base.json".to_string()),
-                ..TypeScriptConfig::default()
-            },
+            "tsconfig.ref.json",
+            "tsconfig.base.json",
             sandbox.path(),
         )
         .unwrap();
 
         assert!(tsconfig_path.exists());
 
-        let tsconfig = TsConfigJson::read_with_name(&project.root, Some("tsconfig.ref.json"))
+        let tsconfig = TsConfigJson::read_with_name(&project.root, "tsconfig.ref.json")
             .unwrap()
             .unwrap();
 
@@ -117,9 +120,13 @@ mod missing_tsconfig {
 
         assert!(tsconfig_path.exists());
 
-        let created =
-            create_missing_tsconfig(&project, &TypeScriptConfig::default(), sandbox.path())
-                .unwrap();
+        let created = create_missing_tsconfig(
+            &project,
+            "tsconfig.json",
+            "tsconfig.options.json",
+            sandbox.path(),
+        )
+        .unwrap();
 
         assert!(!created);
     }

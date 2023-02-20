@@ -36,23 +36,20 @@ macro_rules! config_cache {
             /// load it and store in the cache, otherwise return none.
             #[track_caller]
             pub fn read<P: AsRef<Path>>(path: P) -> Result<Option<$struct>, MoonError> {
-                $struct::read_with_name(path, Some($file))
+                $struct::read_with_name(path, $file)
             }
 
             /// Read the config file from the cache using the provided file name.
             #[track_caller]
-            pub fn read_with_name<P, N>(path: P, name: Option<N>) -> Result<Option<$struct>, MoonError>
+            pub fn read_with_name<P, N>(path: P, name: N) -> Result<Option<$struct>, MoonError>
             where
                 P: AsRef<Path>,
                 N: AsRef<str>
             {
                 let mut path = path.as_ref().to_path_buf();
-                let name = match name {
-                    Some(n) => n.as_ref().to_owned(),
-                    None => $file.to_owned(),
-                };
+                let name = name.as_ref();
 
-                if !path.ends_with(&name) {
+                if !path.ends_with(name) {
                     path = path.join(name);
                 }
 
@@ -71,11 +68,11 @@ macro_rules! config_cache {
                 P: AsRef<Path>,
                 F: FnOnce(&mut $struct) -> Result<bool, MoonError>
             {
-                $struct::sync_with_name(path, Some($file), func)
+                $struct::sync_with_name(path, $file, func)
             }
 
             #[track_caller]
-            pub fn sync_with_name<P, N, F>(path: P, name: Option<N>, func: F) -> Result<bool, MoonError>
+            pub fn sync_with_name<P, N, F>(path: P, name: N, func: F) -> Result<bool, MoonError>
             where
                 P: AsRef<Path>,
                 N: AsRef<str>,
@@ -85,12 +82,9 @@ macro_rules! config_cache {
                 use moon_logger::{color, trace};
 
                 let mut path = path.as_ref().to_path_buf();
-                 let name = match name {
-                    Some(n) => n.as_ref().to_owned(),
-                    None => $file.to_owned(),
-                };
+                let name = name.as_ref();
 
-                if !path.ends_with(&name) {
+                if !path.ends_with(name) {
                     path = path.join(name);
                 }
 

@@ -8,7 +8,7 @@ use moon_typescript_lang::{
 };
 use moon_utils::{get_cache_dir, json, path, string_vec};
 use rustc_hash::FxHashSet;
-use std::{collections::BTreeMap, path::Path};
+use std::path::Path;
 
 const LOG_TARGET: &str = "moon:typescript-platform:sync-project";
 
@@ -50,7 +50,7 @@ pub fn sync_root_tsconfig_references(
     tsconfig_root_name: &str,
     workspace_root: &Path,
 ) -> Result<bool, MoonError> {
-    TsConfigJson::sync_with_name(workspace_root, Some(tsconfig_root_name), |tsconfig_json| {
+    TsConfigJson::sync_with_name(workspace_root, tsconfig_root_name, |tsconfig_json| {
         if project.root.join(tsconfig_project_name).exists()
             && tsconfig_json.add_project_ref(&project.source, tsconfig_project_name)
         {
@@ -74,57 +74,52 @@ pub fn sync_project_tsconfig_compiler_options(
     tsconfig_project_name: &str,
     tsconfig_paths: CompilerOptionsPaths,
     tsconfig_project_refs: FxHashSet<String>,
-    route_to_cache: bool,
-    sync_paths: bool,
+    setting_route_to_cache: bool,
+    setting_sync_project_refs: bool,
+    setting_sync_path_aliases: bool,
 ) -> Result<bool, MoonError> {
-    TsConfigJson::sync_with_name(
-        &project.root,
-        Some(&tsconfig_project_name),
-        |tsconfig_json| {
-            let mut mutated_tsconfig = false;
+    TsConfigJson::sync_with_name(&project.root, &tsconfig_project_name, |tsconfig_json| {
+        let mut mutated_tsconfig = false;
 
-            // Project references
-            if !tsconfig_project_refs.is_empty() {
-                for ref_path in tsconfig_project_refs {
-                    if tsconfig_json.add_project_ref(&ref_path, &tsconfig_project_name) {
-                        mutated_tsconfig = true;
-                    }
-                }
-            }
-
-            // Out dir
-            if route_to_cache {
-                let cache_route = get_cache_dir().join("types").join(&project.source);
-                let out_dir = path::to_virtual_string(
-                    path::relative_from(cache_route, &project.root).unwrap(),
-                )?;
-                let updated_options = tsconfig_json.update_compiler_options(|options| {
-                    if options.out_dir.is_none() || options.out_dir.as_ref() != Some(&out_dir) {
-                        options.out_dir = Some(out_dir);
-
-                        return true;
-                    }
-
-                    false
-                });
-
-                if updated_options {
+        // Project references
+        if setting_sync_project_refs && !tsconfig_project_refs.is_empty() {
+            for ref_path in tsconfig_project_refs {
+                if tsconfig_json.add_project_ref(&ref_path, &tsconfig_project_name) {
                     mutated_tsconfig = true;
                 }
             }
+        }
 
-            // Paths
-            if sync_paths
-                && !tsconfig_paths.is_empty()
-                && tsconfig_json
-                    .update_compiler_options(|options| options.update_paths(tsconfig_paths))
-            {
+        // Out dir
+        if setting_route_to_cache {
+            let cache_route = get_cache_dir().join("types").join(&project.source);
+            let out_dir =
+                path::to_virtual_string(path::relative_from(cache_route, &project.root).unwrap())?;
+            let updated_options = tsconfig_json.update_compiler_options(|options| {
+                if options.out_dir.is_none() || options.out_dir.as_ref() != Some(&out_dir) {
+                    options.out_dir = Some(out_dir);
+
+                    return true;
+                }
+
+                false
+            });
+
+            if updated_options {
                 mutated_tsconfig = true;
             }
+        }
 
-            Ok(mutated_tsconfig)
-        },
-    )
+        // Paths
+        if setting_sync_path_aliases
+            && !tsconfig_paths.is_empty()
+            && tsconfig_json.update_compiler_options(|options| options.update_paths(tsconfig_paths))
+        {
+            mutated_tsconfig = true;
+        }
+
+        Ok(mutated_tsconfig)
+    })
 }
 
 pub fn sync_project(
@@ -134,34 +129,41 @@ pub fn sync_project(
     tsconfig_paths: CompilerOptionsPaths,
     tsconfig_project_refs: FxHashSet<String>,
 ) -> Result<bool, ProjectError> {
-    let tsconfig_project_name = typescript_config
-        .project_config_file_name
-        .clone()
-        .unwrap_or_else(|| "tsconfig.json".into());
-
-    let tsconfig_options_name = typescript_config
-        .root_options_config_file_name
-        .clone()
-        .unwrap_or_else(|| "tsconfig.options.json".into());
-
-    let tsconfig_root_name = typescript_config
-        .root_config_file_name
-        .clone()
-        .unwrap_or_else(|| "tsconfig.json".into());
-
-    let is_project_typescript_enabled = project.config.toolchain.typescript;
+    let is_project_typescript_enabled = project.config.toolchain.is_typescript_enabled();
     let mut mutated_tsconfig = false;
+
+    // Determine settings
+    let mut setting_route_to_cache = typescript_config.route_out_dir_to_cache;
+    let mut setting_sync_project_refs = typescript_config.sync_project_references;
+    let mut setting_sync_path_aliases = typescript_config.sync_project_references_to_paths;
+
+    if let Some(project_typescript_config) = &project.config.toolchain.typescript {
+        setting_route_to_cache = project_typescript_config
+            .route_out_dir_to_cache
+            .unwrap_or(setting_route_to_cache);
+
+        setting_sync_project_refs = project_typescript_config
+            .sync_project_references
+            .unwrap_or(setting_sync_project_refs);
+
+        setting_sync_path_aliases = project_typescript_config
+            .sync_project_references_to_paths
+            .unwrap_or(setting_sync_path_aliases);
+    }
 
     // Auto-create a `tsconfig.json` if configured and applicable
     if is_project_typescript_enabled
-        && typescript_config.sync_project_references
+        && setting_sync_project_refs
         && typescript_config.create_missing_config
-        && !project.root.join(&tsconfig_project_name).exists()
+        && !project
+            .root
+            .join(&typescript_config.project_config_file_name)
+            .exists()
     {
         if create_missing_tsconfig(
             project,
-            &tsconfig_project_name,
-            &tsconfig_options_name,
+            &typescript_config.project_config_file_name,
+            &typescript_config.root_options_config_file_name,
             workspace_root,
         )? {
             mutated_tsconfig = true;
@@ -172,22 +174,23 @@ pub fn sync_project(
     if is_project_typescript_enabled {
         if sync_project_tsconfig_compiler_options(
             project,
-            &tsconfig_project_name,
+            &typescript_config.project_config_file_name,
             tsconfig_paths,
             tsconfig_project_refs,
-            typescript_config.route_out_dir_to_cache,
-            typescript_config.sync_project_references_to_paths,
+            setting_route_to_cache,
+            setting_sync_project_refs,
+            setting_sync_path_aliases,
         )? {
             mutated_tsconfig = true;
         }
     }
 
     // Sync project references to the root `tsconfig.json`
-    if is_project_typescript_enabled && typescript_config.sync_project_references {
+    if is_project_typescript_enabled && setting_sync_project_refs {
         if sync_root_tsconfig_references(
             project,
-            &tsconfig_project_name,
-            &tsconfig_root_name,
+            &typescript_config.project_config_file_name,
+            &typescript_config.root_config_file_name,
             workspace_root,
         )? {
             mutated_tsconfig = true;
@@ -195,16 +198,4 @@ pub fn sync_project(
     }
 
     Ok(mutated_tsconfig)
-}
-
-pub fn sync_dependency_project(
-    project: &Project,
-    dep_project: &Project,
-) -> Result<(CompilerOptionsPaths, FxHashSet<String>), ProjectError> {
-    let mut tsconfig_project_refs: FxHashSet<String> = FxHashSet::default();
-    let mut tsconfig_paths: CompilerOptionsPaths = BTreeMap::new();
-    let is_project_typescript_enabled = project.config.toolchain.typescript;
-    let is_dep_typescript_enabled = dep_project.config.toolchain.typescript;
-
-    Ok((tsconfig_paths, tsconfig_project_refs))
 }

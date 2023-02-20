@@ -18,20 +18,7 @@ pub async fn sync_project(
     typescript_config: &Option<TypeScriptConfig>,
 ) -> Result<bool, ProjectError> {
     let mut mutated_project_files = false;
-    let is_project_typescript_enabled = project.config.toolchain.typescript;
-
-    // Determine tsconfig file names
-    let tsconfig_project_name = typescript_config
-        .map(|cfg| cfg.project_config_file_name.unwrap_or_default())
-        .unwrap_or_else(|| "tsconfig.json".into());
-
-    let tsconfig_options_name = typescript_config
-        .map(|cfg| cfg.root_options_config_file_name.unwrap_or_default())
-        .unwrap_or_else(|| "tsconfig.options.json".into());
-
-    let tsconfig_root_name = typescript_config
-        .map(|cfg| cfg.root_config_file_name.unwrap_or_default())
-        .unwrap_or_else(|| "tsconfig.json".into());
+    let is_project_typescript_enabled = project.config.toolchain.is_typescript_enabled();
 
     // Sync each dependency to `tsconfig.json` and `package.json`
     let mut package_prod_deps: BTreeMap<String, String> = BTreeMap::new();
@@ -47,7 +34,7 @@ pub async fn sync_project(
 
         let dep_relative_path =
             path::relative_from(&dep_project.root, &project.root).unwrap_or_default();
-        let is_dep_typescript_enabled = dep_project.config.toolchain.typescript;
+        let is_dep_typescript_enabled = dep_project.config.toolchain.is_typescript_enabled();
 
         // Update dependencies within this project's `package.json`.
         // Only add if the dependent project has a `package.json`,
@@ -113,7 +100,10 @@ pub async fn sync_project(
             if is_project_typescript_enabled
                 && is_dep_typescript_enabled
                 && typescript_config.sync_project_references
-                && dep_project.root.join(&tsconfig_project_name).exists()
+                && dep_project
+                    .root
+                    .join(&typescript_config.project_config_file_name)
+                    .exists()
             {
                 tsconfig_project_refs.insert(path::to_virtual_string(&dep_relative_path)?);
 
@@ -122,7 +112,7 @@ pub async fn sync_project(
                     "Syncing {} as a project reference to {}'s {}",
                     color::id(&dep_project.id),
                     color::id(&project.id),
-                    color::file(&tsconfig_project_name)
+                    color::file(&typescript_config.project_config_file_name)
                 );
             }
 
@@ -157,7 +147,7 @@ pub async fn sync_project(
                                     "Syncing {} as a import path alias to {}'s {}",
                                     color::id(&dep_project.id),
                                     color::id(&project.id),
-                                    color::file(&tsconfig_project_name)
+                                    color::file(&typescript_config.project_config_file_name)
                                 );
 
                                 break;

@@ -1,0 +1,7 @@
+dependsOn:
+  - 'base-no-src'
+  - 'base-src'
+
+toolchain:
+  typescript:
+    syncProjectReferencesToPaths: false

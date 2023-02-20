@@ -19,6 +19,7 @@ moon_task = { path = "../../core/task" }
 moon_terminal = { path = "../../core/terminal" }
 moon_tool = { path = "../../core/tool" }
 moon_typescript_lang = { path = "../../typescript/lang" }
+moon_typescript_platform = { path = "../../typescript/platform" }
 moon_utils = { path = "../../core/utils" }
 proto_cli = { workspace = true }
 rustc-hash = { workspace = true }

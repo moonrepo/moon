@@ -62,9 +62,10 @@ tasks:
 			- '~:build'
 		local: true
 
+# Disable project references
 toolchain:
-	# Disable project references
-	typescript: false
+	typescript:
+    syncProjectReferences: false
 ```
 
 ### ESLint integration

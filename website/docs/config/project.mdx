@@ -710,16 +710,61 @@ toolchain:
     version: '12.12.0'
 ```
 
-### `typescript`<VersionLabel version="0.12" />
+### `typescript`<VersionLabel version="0.25" />
 
 <HeadingApiLink to="/api/types/interface/ProjectToolchainConfig#typescript" />
 
-Enables or disables [TypeScript support](./toolchain#typescript) for this project. Currently
-controls project reference syncing and `tsconfig.json` creation. Defaults to `true`.
+#### `disabled`
+
+<HeadingApiLink to="/api/types/interface/ProjectToolchainTypeScriptConfig#disabled" />
+
+Disables [TypeScript support](./toolchain#typescript) entirely for this project. Defaults to
+`false`.
 
 ```yaml title="moon.yml" {2}
 toolchain:
-  typescript: false
+  typescript:
+    disabled: true
+```
+
+#### `routeOutDirToCache`
+
+<HeadingApiLink to="/api/types/interface/ProjectToolchainTypeScriptConfig#routeOutDirToCache" />
+
+Overrides the workspace-level [`routeOutDirToCache`](./toolchain#routeoutdirtocache) setting.
+Defaults to undefined.
+
+```yaml title="moon.yml" {2}
+toolchain:
+  typescript:
+    routeOutDirToCache: false
+```
+
+#### `syncProjectReferences`
+
+<HeadingApiLink to="/api/types/interface/ProjectToolchainTypeScriptConfig#syncProjectReferences" />
+
+Overrides the workspace-level [`syncProjectReferences`](./toolchain#syncprojectreferences) setting.
+Defaults to undefined.
+
+```yaml title="moon.yml" {2}
+toolchain:
+  typescript:
+    syncProjectReferences: false
+```
+
+#### `syncProjectReferencesToPaths`
+
+<HeadingApiLink to="/api/types/interface/ProjectToolchainTypeScriptConfig#syncProjectReferencesToPaths" />
+
+Overrides the workspace-level
+[`syncProjectReferencesToPaths`](./toolchain#syncprojectreferencestopaths) setting. Defaults to
+undefined.
+
+```yaml title="moon.yml" {2}
+toolchain:
+  typescript:
+    syncProjectReferencesToPaths: false
 ```
 
 ## `workspace`

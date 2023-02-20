@@ -179,7 +179,14 @@
           ]
         },
         "typescript": {
-          "type": "boolean"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ProjectToolchainTypeScriptConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       }
     },
@@ -189,6 +196,32 @@
         "version": {
           "type": [
             "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "ProjectToolchainTypeScriptConfig": {
+      "type": "object",
+      "properties": {
+        "disabled": {
+          "type": "boolean"
+        },
+        "routeOutDirToCache": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "syncProjectReferences": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "syncProjectReferencesToPaths": {
+          "type": [
+            "boolean",
             "null"
           ]
         }

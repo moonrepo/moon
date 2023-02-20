@@ -2512,6 +2512,7 @@ dependencies = [
  "moon_test_utils",
  "moon_tool",
  "moon_typescript_lang",
+ "moon_typescript_platform",
  "moon_utils",
  "proto_cli",
  "rustc-hash",
@@ -2800,6 +2801,20 @@ dependencies = [
  "moon_utils",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "moon_typescript_platform"
+version = "0.1.0"
+dependencies = [
+ "moon_config",
+ "moon_error",
+ "moon_logger",
+ "moon_project",
+ "moon_test_utils",
+ "moon_typescript_lang",
+ "moon_utils",
+ "rustc-hash",
 ]
 
 [[package]]

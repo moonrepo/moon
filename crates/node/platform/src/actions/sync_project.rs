@@ -99,7 +99,6 @@ pub async fn sync_project(
             // and this `tsconfig.json` has not already declared the dep.
             if is_project_typescript_enabled
                 && is_dep_typescript_enabled
-                && typescript_config.sync_project_references
                 && dep_project
                     .root
                     .join(&typescript_config.project_config_file_name)
@@ -118,10 +117,7 @@ pub async fn sync_project(
 
             // Map the depended on reference as a `paths` alias using
             // the dep's `package.json` name.
-            if is_project_typescript_enabled
-                && is_dep_typescript_enabled
-                && typescript_config.sync_project_references_to_paths
-            {
+            if is_project_typescript_enabled && is_dep_typescript_enabled {
                 if let Some(dep_package_json) = PackageJson::read(&dep_project.root)? {
                     if let Some(dep_package_name) = &dep_package_json.name {
                         for index in ["src/index.ts", "src/index.tsx", "index.ts", "index.tsx"] {

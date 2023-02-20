@@ -10,6 +10,7 @@
 #### 🚀 Updates
 
 - Added offline (no internet connection) support.
+- Added project-level TypeScript settings via `toolchain.typescript` in `moon.yml`.
 
 ##### Moonbase
 
@@ -24,6 +25,7 @@
 
 - Updated Rust to v1.67.
 - Added `context` to `pipeline.started` and `pipeline.finished` events.
+- We now build against older operating systems in an attempt to solve GLIBC version errors.
 
 ## 0.24.2
 

@@ -16,25 +16,38 @@ lazy_static! {
 pub type GlobError = WaxGlobError<'static>;
 
 pub struct GlobSet<'t> {
-    any: Any<'t>,
+    expressions: Any<'t>,
+    negations: Any<'t>,
 }
 
 impl<'t> GlobSet<'t> {
     #[track_caller]
-    pub fn new(patterns: Vec<String>) -> Result<Self, GlobError> {
-        let mut globs = vec![];
+    pub fn new(expressions: Vec<String>, negations: Vec<String>) -> Result<Self, GlobError> {
+        let mut e = vec![];
+        let mut n = vec![];
 
-        for pattern in &patterns {
-            globs.push(create_glob(pattern)?.into_owned());
+        for pattern in &expressions {
+            e.push(create_glob(pattern)?.into_owned());
+        }
+
+        for pattern in &negations {
+            n.push(create_glob(pattern)?.into_owned());
         }
 
         Ok(GlobSet {
-            any: wax::any::<Glob, _>(globs).unwrap(),
+            expressions: wax::any::<Glob, _>(e).unwrap(),
+            negations: wax::any::<Glob, _>(n).unwrap(),
         })
     }
 
     pub fn matches<P: AsRef<OsStr>>(&self, path: P) -> Result<bool, MoonError> {
-        Ok(self.any.is_match(path.as_ref()))
+        let path = path.as_ref();
+
+        if self.negations.is_match(path) {
+            return Ok(false);
+        }
+
+        Ok(self.expressions.is_match(path))
     }
 }
 

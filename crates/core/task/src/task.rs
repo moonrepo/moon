@@ -184,6 +184,16 @@ impl Task {
                     }
                 })
                 .collect::<Vec<String>>(),
+            self.output_globs
+                .iter()
+                .map(|g| {
+                    if cfg!(windows) {
+                        glob::remove_drive_prefix(g)
+                    } else {
+                        g.to_owned()
+                    }
+                })
+                .collect::<Vec<String>>(),
         )?)
     }
 

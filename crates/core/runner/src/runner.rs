@@ -1,4 +1,5 @@
 use crate::errors::RunnerError;
+use crate::inputs_scanner::scan_and_hash_inputs;
 use crate::target_hasher::TargetHasher;
 use console::Term;
 use moon_action::{ActionStatus, Attempt};
@@ -7,7 +8,7 @@ use moon_cache::RunTargetState;
 use moon_config::{HasherWalkStrategy, TaskOutputStyle};
 use moon_emitter::{Emitter, Event, EventFlow};
 use moon_error::MoonError;
-use moon_hasher::{convert_paths_to_strings, HashSet};
+use moon_hasher::HashSet;
 use moon_logger::{color, debug, warn};
 use moon_platform_runtime::Runtime;
 use moon_project::Project;
@@ -15,14 +16,13 @@ use moon_target::{Target, TargetError, TargetProjectScope};
 use moon_task::{Task, TaskError, TaskOptionAffectedFiles};
 use moon_terminal::{label_checkpoint, Checkpoint};
 use moon_utils::{
-    glob, is_ci, is_test_env, path,
+    is_ci, is_test_env, path,
     process::{self, format_running_command, output_to_string, Command, Output},
     time,
 };
 use moon_workspace::Workspace;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashMap;
 use std::env;
-use std::path::PathBuf;
 
 const LOG_TARGET: &str = "moon:runner";
 
@@ -192,9 +192,7 @@ impl<'a> Runner<'a> {
         let task = &self.task;
         let project = &self.project;
         let workspace = &self.workspace;
-        let globset = task.create_globset()?;
         let mut hasher = TargetHasher::new();
-        let mut files_to_hash = vec![];
 
         hasher.hash_project_deps(self.project.get_dependency_ids());
         hasher.hash_task(task);
@@ -204,74 +202,16 @@ impl<'a> Runner<'a> {
             hasher.hash_args(&context.passthrough_args);
         }
 
-        // For inputs, hash them with the vcs layer first
-        if !task.input_paths.is_empty() {
-            let files = convert_paths_to_strings(&task.input_paths, &workspace.root)?;
+        let use_globs = self.project.root == self.workspace.root
+            || matches!(
+                workspace.config.hasher.walk_strategy,
+                HasherWalkStrategy::Glob
+            );
 
-            files_to_hash.extend(files);
-        }
+        let hashed_files =
+            scan_and_hash_inputs(vcs, project, task, &workspace.root, use_globs).await?;
 
-        if !task.input_globs.is_empty() {
-            let use_globs = self.project.root == self.workspace.root
-                || matches!(
-                    workspace.config.hasher.walk_strategy,
-                    HasherWalkStrategy::Glob
-                );
-
-            // Walk the file system using globs
-            if use_globs {
-                let globbed_files = glob::walk(
-                    &workspace.root,
-                    &task
-                        .input_globs
-                        .iter()
-                        .map(|g| {
-                            PathBuf::from(g)
-                                .strip_prefix(&workspace.root)
-                                .unwrap()
-                                .to_string_lossy()
-                                .to_string()
-                        })
-                        .collect::<Vec<_>>(),
-                )?;
-
-                let files = convert_paths_to_strings(
-                    &FxHashSet::from_iter(globbed_files),
-                    &workspace.root,
-                )?;
-
-                files_to_hash.extend(files);
-
-                // Walk the file system using the VCS
-            } else {
-                let mut hashed_file_tree = vcs.get_file_tree_hashes(&project.source).await?;
-
-                // Input globs are absolute paths, so we must do the same
-                hashed_file_tree
-                    .retain(|k, _| globset.matches(workspace.root.join(k)).unwrap_or(false));
-
-                hasher.hash_inputs(hashed_file_tree);
-            }
-        }
-
-        // Include local file changes so that development builds work.
-        // Also run this LAST as it should take highest precedence!
-        let local_files = vcs.get_touched_files().await?;
-
-        if !local_files.all.is_empty() {
-            // Only hash files that are within the task's inputs
-            let files = local_files
-                .all
-                .into_iter()
-                .filter(|f| globset.matches(workspace.root.join(f)).unwrap_or(false))
-                .collect::<Vec<String>>();
-
-            files_to_hash.extend(files);
-        }
-
-        if !files_to_hash.is_empty() {
-            hasher.hash_inputs(vcs.get_file_hashes(&files_to_hash, true).await?);
-        }
+        hasher.hash_inputs(hashed_files);
 
         hashset.hash(hasher);
 

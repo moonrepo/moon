@@ -36,13 +36,13 @@ export default function Home() {
 			<main className="bg-gradient-to-b from-slate-600 via-blurple-600 to-white">
 				<ProductSection
 					color="text-blurple-400"
-					suptitle="A build system for a solid foundation"
+					suptitle="A system for a solid foundation"
 					title="Supercharge your codebase"
 					logo={<img src="/brand/moon/icon.svg" height={75} className="block" />}
 					description={
 						<>
 							For repositories with multiple projects, any number of languages, and team members
-							constantly pushing changes, our build system{' '}
+							constantly pushing changes, our task runner{' '}
 							<Link href="/moon" size="lg">
 								moon
 							</Link>{' '}

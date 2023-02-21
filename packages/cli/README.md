@@ -1,6 +1,6 @@
 # @moonrepo/cli
 
-The official CLI for [moon](https://moonrepo.dev), a build system and repo management tool for the
+The official CLI for [moon](https://moonrepo.dev), a task runner and repo management tool for the
 web ecosystem, written in Rust! Supports JavaScript, TypeScript, Bash, and Batch.
 
 - [Documentation](https://moonrepo.dev/docs)

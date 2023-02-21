@@ -28,7 +28,7 @@ and the ecosystem.
 ## Unique features
 
 Although moon is still in its infancy, we provide an array of powerful features that other frontend
-centric build systems do not, such as...
+centric task runners do not, such as...
 
 - **[Integrated toolchain](./concepts/toolchain)** - moon manages its own version of programming
   languages and dependency managers behind the scenes, so that every task is executed with the
@@ -53,9 +53,9 @@ sections for more information, or these wonderful articles provided by the commu
 
 ### Turborepo
 
-At a high-level, Turborepo and moon seem very similar as they both claim to be build systems. They
+At a high-level, Turborepo and moon seem very similar as they both claim to be task runners. They
 both support incremental builds, content/smart hashing, local and remote caching<sup>1</sup>,
-parallel execution, and everything else you'd expect from a build system. But that's where the
+parallel execution, and everything else you'd expect from a task runner. But that's where the
 similarities stop, because in the end, Turborepo is nothing more than a `package.json` scripts
 orchestrator with a caching layer. While moon also supports this, it
 [aims to be far more](#unique-features) with a heavy focus on the developer experience.
@@ -169,7 +169,7 @@ Outside of this, there are no publicly available plans for Turborepo's future.
 right={
   <>
 
-moon plans to be so much more than a build system, with one such facet being a repository management
+moon plans to be so much more than a task runner, with one such facet being a repository management
 tool. This includes code ownership, dependency management and auditing, repository linting, in-repo
 secrets, and anything else we deem viable.
 
@@ -191,7 +191,7 @@ We also plan to support additional languages as first-class citizens within our 
 ### Lerna
 
 Lerna was a fantastic tool that helped the JavaScript ecosystem grow and excelled at package
-versioning and publishing (and still does), but it offered a very rudimentary build system. While
+versioning and publishing (and still does), but it offered a very rudimentary task runner. While
 Lerna was able to run scripts in parallel, it wasn't the most efficient, as it did not support
 caching, hashing, or performant scheduling.
 

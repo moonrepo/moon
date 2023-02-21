@@ -181,22 +181,15 @@ impl Task {
             }
         };
 
-        let mut negations = self
-            .output_globs
-            .iter()
-            .map(convert)
-            .collect::<Vec<String>>();
-
-        for output in &self.output_paths {
-            negations.push(convert(&glob::normalize(output.join("**/*"))?));
-        }
-
         Ok(glob::GlobSet::new(
             self.input_globs
                 .iter()
                 .map(convert)
                 .collect::<Vec<String>>(),
-            negations,
+            self.output_globs
+                .iter()
+                .map(convert)
+                .collect::<Vec<String>>(),
         )?)
     }
 

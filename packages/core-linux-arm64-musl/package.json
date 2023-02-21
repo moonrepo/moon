@@ -1,6 +1,6 @@
 {
   "name": "@moonrepo/core-linux-arm64-musl",
-  "version": "0.24.2",
+  "version": "0.24.3",
   "description": "Linux arm64 musl binary for moon.",
   "keywords": [
     "moon",

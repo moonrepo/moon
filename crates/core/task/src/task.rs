@@ -173,27 +173,30 @@ impl Task {
 
     /// Create a globset of all input globs to match with.
     pub fn create_globset(&self) -> Result<glob::GlobSet, TaskError> {
+        let convert = |g: &String| {
+            if cfg!(windows) {
+                glob::remove_drive_prefix(g)
+            } else {
+                g.to_owned()
+            }
+        };
+
+        let mut negations = self
+            .output_globs
+            .iter()
+            .map(convert)
+            .collect::<Vec<String>>();
+
+        for output in &self.output_paths {
+            negations.push(convert(&glob::normalize(output.join("**/*"))?));
+        }
+
         Ok(glob::GlobSet::new(
             self.input_globs
                 .iter()
-                .map(|g| {
-                    if cfg!(windows) {
-                        glob::remove_drive_prefix(g)
-                    } else {
-                        g.to_owned()
-                    }
-                })
+                .map(convert)
                 .collect::<Vec<String>>(),
-            self.output_globs
-                .iter()
-                .map(|g| {
-                    if cfg!(windows) {
-                        glob::remove_drive_prefix(g)
-                    } else {
-                        g.to_owned()
-                    }
-                })
-                .collect::<Vec<String>>(),
+            negations,
         )?)
     }
 

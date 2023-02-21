@@ -34,6 +34,7 @@ fn scan_with_globs(task: &Task, workspace_root: &Path) -> Result<Vec<PathBuf>, R
 
 // Hash all inputs for a task, but exclude outputs
 // and moon specific configuration files!
+#[allow(clippy::borrowed_box)]
 pub async fn scan_and_hash_inputs(
     vcs: &Box<dyn Vcs + Send + Sync>,
     project: &Project,
@@ -52,16 +53,12 @@ pub async fn scan_and_hash_inputs(
                 files_to_hash.insert(input.to_path_buf());
             }
         }
-
-        dbg!("input_paths", &files_to_hash);
     }
 
     if !task.input_globs.is_empty() {
         // Walk the file system using globs to find inputs
         if use_globs {
             files_to_hash.extend(scan_with_globs(task, workspace_root)?);
-
-            dbg!("glob", &files_to_hash);
 
             // Walk the file system using the VCS
         } else {
@@ -71,11 +68,11 @@ pub async fn scan_and_hash_inputs(
             hashed_file_tree
                 .retain(|f, _| globset.matches(workspace_root.join(f)).unwrap_or(false));
 
-            dbg!("vcs", &hashed_file_tree);
-
             hashed_inputs.extend(hashed_file_tree);
         }
     }
+
+    let mut files_to_hash = convert_paths_to_strings(&files_to_hash, workspace_root)?;
 
     // Include local file changes so that development builds work.
     // Also run this LAST as it should take highest precedence!
@@ -89,24 +86,13 @@ pub async fn scan_and_hash_inputs(
             .filter(|f| globset.matches(workspace_root.join(f)).unwrap_or(false))
             .collect::<Vec<String>>();
 
-        // files_to_hash.extend(files);
-        dbg!("local_files", &files);
+        files_to_hash.extend(files);
     }
 
     // Hash all files that we've collected
     if !files_to_hash.is_empty() {
-        dbg!("files_to_hash", &files_to_hash);
-
-        hashed_inputs.extend(
-            vcs.get_file_hashes(
-                &convert_paths_to_strings(&files_to_hash, workspace_root)?,
-                true,
-            )
-            .await?,
-        );
+        hashed_inputs.extend(vcs.get_file_hashes(&files_to_hash, true).await?);
     }
-
-    dbg!(&hashed_inputs);
 
     Ok(hashed_inputs)
 }

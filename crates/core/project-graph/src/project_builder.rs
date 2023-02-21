@@ -22,7 +22,6 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::mem;
 use std::path::PathBuf;
-use std::time::Duration;
 
 pub struct ProjectGraphBuilder<'ws> {
     workspace: &'ws mut Workspace,
@@ -485,19 +484,15 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         };
 
         if !globs.is_empty() {
-            if time::is_stale(cache.last_glob_time, Duration::from_secs(60 * 5)) {
-                debug!(
-                    target: LOG_TARGET,
-                    "Finding projects with globs: {}",
-                    map_list(&globs, |g| color::file(g))
-                );
+            debug!(
+                target: LOG_TARGET,
+                "Finding projects with globs: {}",
+                map_list(&globs, |g| color::file(g))
+            );
 
-                detect_projects_with_globs(&self.workspace.root, &globs, &mut sources)?;
+            detect_projects_with_globs(&self.workspace.root, &globs, &mut sources)?;
 
-                cache.last_glob_time = time::now_millis();
-            } else {
-                sources.extend(cache.projects);
-            }
+            cache.last_glob_time = time::now_millis();
         }
 
         // Load project aliases

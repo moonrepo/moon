@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.24.3
+## Unreleased
 
 #### 💥 Breaking
 
@@ -14,21 +14,24 @@
 - Updated `language` setting in `moon.yml` to support any custom language.
 - Updated `toolchain.typescript` setting in `moon.yml` to support overriding workspace-level
   settings.
+- Updated project, task, and target identifiers to support periods (`.`).
 
 ##### Moonbase
 
 - CI runs can now be tracked in moonbase to gather insights and metrics.
-
-#### 🐞 Fixes
-
-- Fixed an issue where `moon query projects --affected` would hang indefinitely waiting for stdin.
-- Fixed an issue where changing `projects` globs wouldn't immediately invalidate the cache.
 
 #### ⚙️ Internal
 
 - Updated Rust to v1.67.
 - Added `context` to `pipeline.started` and `pipeline.finished` events.
 - We now build against older operating systems in an attempt to solve GLIBC version errors.
+
+## 0.24.3
+
+#### 🐞 Fixes
+
+- Fixed an issue where `moon query projects --affected` would hang indefinitely waiting for stdin.
+- Fixed an issue where changing `projects` globs wouldn't immediately invalidate the cache.
 
 ## 0.24.2
 

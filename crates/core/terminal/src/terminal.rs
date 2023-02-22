@@ -1,8 +1,8 @@
 use crate::helpers::{replace_style_tokens, safe_exit};
 use console::{measure_text_width, style, Attribute, Style, Term};
-use core::fmt::Debug;
 use moon_logger::color;
 use moon_logger::color::Color;
+use std::fmt::Display;
 use std::io;
 
 pub enum Label {
@@ -17,7 +17,7 @@ pub type TermWriteResult = io::Result<()>;
 // Extend `Term` with our own methods
 
 pub trait ExtendedTerm {
-    fn format(&self, value: &impl Debug) -> String;
+    fn format(&self, value: &impl Display) -> String;
     fn format_label<V: AsRef<str>>(&self, kind: Label, message: V) -> String;
 
     // RENDERERS
@@ -34,8 +34,8 @@ pub trait ExtendedTerm {
 }
 
 impl ExtendedTerm for Term {
-    fn format(&self, value: &impl Debug) -> String {
-        format!("{value:?}")
+    fn format(&self, value: &impl Display) -> String {
+        format!("{value}")
     }
 
     fn format_label<V: AsRef<str>>(&self, kind: Label, message: V) -> String {

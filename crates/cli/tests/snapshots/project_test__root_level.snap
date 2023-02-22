@@ -1,15 +1,14 @@
 ---
 source: crates/cli/tests/project_test.rs
-assertion_line: 104
-expression: get_assert_output(&assert)
+expression: assert.output()
 ---
 
  ROOT 
 
 ID: root
 Source: .
-Language: TypeScript
-Type: Unknown
+Language: typescript
+Type: unknown
 
  TASKS 
 

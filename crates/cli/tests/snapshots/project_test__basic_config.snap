@@ -1,15 +1,14 @@
 ---
 source: crates/cli/tests/project_test.rs
-assertion_line: 54
-expression: get_assert_output(&assert)
+expression: assert.output()
 ---
 
  BASIC 
 
 ID: basic
 Source: basic
-Language: JavaScript
-Type: Unknown
+Language: javascript
+Type: unknown
 
  DEPENDS ON 
 

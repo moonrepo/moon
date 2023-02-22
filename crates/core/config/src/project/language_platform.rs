@@ -3,17 +3,7 @@ use serde::{Deserialize, Serialize};
 use strum::{Display, EnumIter};
 
 #[derive(
-    Clone,
-    Copy,
-    Debug,
-    Default,
-    Deserialize,
-    Display,
-    EnumIter,
-    Eq,
-    JsonSchema,
-    PartialEq,
-    Serialize,
+    Clone, Debug, Default, Deserialize, Display, EnumIter, Eq, JsonSchema, PartialEq, Serialize,
 )]
 #[serde(rename_all = "lowercase")]
 pub enum ProjectLanguage {
@@ -44,9 +34,13 @@ pub enum ProjectLanguage {
     #[strum(serialize = "typescript")]
     TypeScript,
 
+    // Not explicitly set or detected
     #[default]
     #[strum(serialize = "unknown")]
     Unknown,
+
+    // An unsupported language
+    Other(String),
 }
 
 #[derive(
@@ -97,7 +91,8 @@ impl From<ProjectLanguage> for PlatformType {
             | ProjectLanguage::Php
             | ProjectLanguage::Python
             | ProjectLanguage::Ruby
-            | ProjectLanguage::Rust => PlatformType::System,
+            | ProjectLanguage::Rust
+            | ProjectLanguage::Other(_) => PlatformType::System,
         }
     }
 }

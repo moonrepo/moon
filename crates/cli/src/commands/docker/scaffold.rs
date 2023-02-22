@@ -50,7 +50,7 @@ fn scaffold_workspace(
     let mut files: Vec<String> = vec![];
 
     for lang in ProjectLanguage::iter() {
-        files.extend(detect_language_files(lang));
+        files.extend(detect_language_files(&lang));
 
         // This is a special case as TS file names are configured
         if matches!(lang, ProjectLanguage::TypeScript) {

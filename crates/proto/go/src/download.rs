@@ -18,7 +18,7 @@ pub fn get_archive_file_path(version: &str) -> Result<String, ProtoError> {
     Ok(format!("go{version}.darwin-{arch}"))
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(all(unix, not(target_os = "macos")))]
 pub fn get_archive_file_path(version: &str) -> Result<String, ProtoError> {
     let arch = GoArch::from_os_arch()?;
 

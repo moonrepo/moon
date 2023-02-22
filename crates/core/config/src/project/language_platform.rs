@@ -1,6 +1,8 @@
+use moon_error::MoonError;
+use moon_utils::regex::clean_id;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::fmt;
+use std::{fmt, str::FromStr};
 use strum::{Display, EnumIter};
 
 #[derive(Clone, Debug, Default, Deserialize, EnumIter, Eq, JsonSchema, PartialEq, Serialize)]
@@ -22,6 +24,26 @@ pub enum ProjectLanguage {
 
     // An unsupported language
     Other(String),
+}
+
+impl FromStr for ProjectLanguage {
+    type Err = MoonError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s.to_lowercase().as_ref() {
+            "bash" => ProjectLanguage::Bash,
+            "batch" => ProjectLanguage::Batch,
+            "go" => ProjectLanguage::Go,
+            "javascript" => ProjectLanguage::JavaScript,
+            "php" => ProjectLanguage::Php,
+            "python" => ProjectLanguage::Python,
+            "ruby" => ProjectLanguage::Ruby,
+            "rust" => ProjectLanguage::Rust,
+            "typescript" => ProjectLanguage::TypeScript,
+            "unknown" => ProjectLanguage::Unknown,
+            other => ProjectLanguage::Other(clean_id(other)),
+        })
+    }
 }
 
 impl fmt::Display for ProjectLanguage {

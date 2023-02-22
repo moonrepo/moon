@@ -11,6 +11,9 @@
 
 - Added offline (no internet connection) support.
 - Added project-level TypeScript settings via `toolchain.typescript` in `moon.yml`.
+- Updated `language` setting in `moon.yml` to support any custom language.
+- Updated `toolchain.typescript` setting in `moon.yml` to support overriding workspace-level
+  settings.
 
 ##### Moonbase
 

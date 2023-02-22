@@ -74,13 +74,18 @@ The primary programming language the project is written in. Supports the followi
   <VersionLabel version="0.21" />
 - `typescript` - A [TypeScript](https://www.typescriptlang.org/) based project.
 - `unknown` (default) - When not configured or inferred.
+- `*` - A custom language for use in [task inheritance](./tasks). Values will be converted to
+  kebab-case. <VersionLabel version="0.25" />
 
 ```yaml title="moon.yml"
 language: 'javascript'
+
+# Custom
+language: 'kotlin'
 ```
 
 > For convenience, when this setting is not defined, moon will attempt to detect the language based
-> on configuration files found in the project root.
+> on configuration files found in the project root. This only applies to non-custom languages!
 
 ## `project`
 

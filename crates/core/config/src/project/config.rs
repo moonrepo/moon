@@ -16,11 +16,30 @@ use figment::{
 };
 use rustc_hash::FxHashMap;
 use schemars::JsonSchema;
+use serde::de::Deserializer;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::Path;
+use std::str::FromStr;
 use strum::Display;
 use validator::{Validate, ValidationError};
+
+fn deserialize_language<'de, D>(deserializer: D) -> Result<ProjectLanguage, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    match String::deserialize(deserializer) {
+        Ok(buffer) => ProjectLanguage::from_str(&buffer).map_err(serde::de::Error::custom),
+        Err(error) => {
+            // Not aware of another way to handle nulls/undefined
+            if error.to_string().contains("invalid type: null") {
+                return Ok(ProjectLanguage::default());
+            }
+
+            Err(error)
+        }
+    }
+}
 
 fn validate_file_groups(map: &FileGroups) -> Result<(), ValidationError> {
     for key in map.keys() {
@@ -121,7 +140,10 @@ pub struct ProjectConfig {
     #[validate(custom = "validate_file_groups")]
     pub file_groups: FileGroups,
 
-    #[serde(skip_serializing_if = "is_default")]
+    #[serde(
+        deserialize_with = "deserialize_language",
+        skip_serializing_if = "is_default"
+    )]
     pub language: ProjectLanguage,
 
     #[serde(skip_serializing_if = "Option::is_none")]

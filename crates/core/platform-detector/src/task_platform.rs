@@ -9,7 +9,7 @@ lazy_static! {
 }
 
 // TODO: Differentiate JS/TS between Node and Deno and Bun (in the future)
-pub fn detect_task_platform(command: &str, language: ProjectLanguage) -> PlatformType {
+pub fn detect_task_platform(command: &str, language: &ProjectLanguage) -> PlatformType {
     if DENO_COMMANDS.is_match(command) {
         return PlatformType::Deno;
     }
@@ -23,7 +23,7 @@ pub fn detect_task_platform(command: &str, language: ProjectLanguage) -> Platfor
     }
 
     // Default to the platform of the project's language
-    let platform: PlatformType = language.into();
+    let platform: PlatformType = language.clone().into();
 
     if platform.is_unknown() {
         return PlatformType::System;

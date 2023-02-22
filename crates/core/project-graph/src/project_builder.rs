@@ -106,7 +106,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             }
         }
 
-        if let Ok(platform) = self.workspace.platforms.get(project.language) {
+        if let Ok(platform) = self.workspace.platforms.get(project.language.clone()) {
             // Inherit implicit dependencies
             for dep_config in
                 platform.load_project_implicit_dependencies(&project, &self.aliases)?
@@ -149,7 +149,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             // Detect the platform if its unknown
             if task.platform.is_unknown() {
                 task.platform = if project_platform.is_unknown() {
-                    detect_task_platform(&task.command, project.language)
+                    detect_task_platform(&task.command, &project.language)
                 } else {
                     project_platform
                 };

@@ -18,7 +18,7 @@ fn extract_depman_files(depman: &DependencyManager, files: &mut Vec<String>) {
     }
 }
 
-pub fn detect_language_files(language: ProjectLanguage) -> Vec<String> {
+pub fn detect_language_files(language: &ProjectLanguage) -> Vec<String> {
     let mut files = vec![];
 
     match language {
@@ -54,7 +54,10 @@ pub fn detect_language_files(language: ProjectLanguage) -> Vec<String> {
         ProjectLanguage::Rust => {
             extract_depman_files(&CARGO, &mut files);
         }
-        ProjectLanguage::Bash | ProjectLanguage::Batch | ProjectLanguage::Unknown => {}
+        ProjectLanguage::Bash
+        | ProjectLanguage::Batch
+        | ProjectLanguage::Unknown
+        | ProjectLanguage::Other(_) => {}
     }
 
     files

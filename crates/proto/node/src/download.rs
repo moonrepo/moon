@@ -18,7 +18,7 @@ pub fn get_archive_file_path(version: &str) -> Result<String, ProtoError> {
     Ok(format!("node-v{version}-darwin-{arch}"))
 }
 
-#[cfg(all(unix, not(target_os="macos")))]
+#[cfg(all(unix, not(target_os = "macos")))]
 pub fn get_archive_file_path(version: &str) -> Result<String, ProtoError> {
     let arch = NodeArch::from_os_arch()?;
 

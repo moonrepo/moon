@@ -362,14 +362,12 @@ impl Project {
         let language = if matches!(config.language, ProjectLanguage::Unknown) {
             detect_language(&root)
         } else {
-            config.language
+            config.language.clone()
         };
+        let platform = config.platform.unwrap_or_else(|| language.clone().into());
 
-        let global_tasks = inherited_tasks.get_inherited_config(
-            config.platform.unwrap_or_else(|| language.into()),
-            language,
-            config.type_of,
-        );
+        let global_tasks =
+            inherited_tasks.get_inherited_config(&platform, &language, &config.type_of);
         let file_groups = create_file_groups_from_config(&log_target, &config, &global_tasks);
         let dependencies = create_dependencies_from_config(&log_target, &config);
         let tasks = create_tasks_from_config(&log_target, id, &config, &global_tasks)?;

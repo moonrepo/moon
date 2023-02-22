@@ -24,6 +24,24 @@ In this release, we now check for an active internet connection and bypass certa
 applicable.
 [Jump to the official guide on offline mode for more information](/docs/guides/offline-mode)!
 
+## Custom project `language`
+
+Project's have always been able to define a [`language`](/docs/config/project#language) in
+[`moon.yml`](/docs/config/project) that denotes the primary programming language for the project.
+Historically this has been a strict enum of supported values, and could _not_ be customized for
+other languages. With the introduction of
+[language driven task inheritance](./v0.23#new-scoped-tasks-with-moontasksyml), we felt like
+revisiting this setting, and as such, you're now able to define _any_ language in this setting,
+which also feeds into the task inheritance system.
+
+```yaml title="moon.yml"
+language: 'kotlin'
+```
+
+With this change, `.moon/tasks/kotlin-application.yml`, `.moon/tasks/dotnet.yml`, and other
+variations are now possible! However, besides task inheritance, other functionality like platform
+detection, and Dockerfile support are not enabled.
+
 ## Project-level TypeScript settings
 
 Our TypeScript integration supports many automated workflows, like syncing project references, and

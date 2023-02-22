@@ -59,7 +59,7 @@ pub async fn prune() -> Result<(), AnyError> {
     let mut platforms = FxHashSet::<PlatformType>::default();
 
     for project_id in &manifest.focused_projects {
-        platforms.insert(project_graph.get(project_id)?.language.into());
+        platforms.insert(project_graph.get(project_id)?.language.clone().into());
     }
 
     // Do this later so we only run once for each platform instead of per project

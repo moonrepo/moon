@@ -24,9 +24,9 @@ impl InheritedTasksManager {
 
     pub fn get_lookup_order(
         &self,
-        platform: PlatformType,
-        language: ProjectLanguage,
-        type_of: ProjectType,
+        platform: &PlatformType,
+        language: &ProjectLanguage,
+        type_of: &ProjectType,
     ) -> Vec<String> {
         let mut lookup = string_vec!["*"];
 
@@ -50,9 +50,9 @@ impl InheritedTasksManager {
 
     pub fn get_inherited_config(
         &self,
-        platform: PlatformType,
-        language: ProjectLanguage,
-        type_of: ProjectType,
+        platform: &PlatformType,
+        language: &ProjectLanguage,
+        type_of: &ProjectType,
     ) -> InheritedTasksConfig {
         let mut config = InheritedTasksConfig::default();
 
@@ -64,7 +64,7 @@ impl InheritedTasksManager {
                     for task in managed_config.tasks.values_mut() {
                         // Automatically set the platform
                         if task.platform.is_unknown() {
-                            task.platform = platform;
+                            task.platform = platform.to_owned();
                         }
 
                         // Automatically set this lookup as an input

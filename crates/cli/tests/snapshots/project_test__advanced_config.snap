@@ -1,15 +1,14 @@
 ---
 source: crates/cli/tests/project_test.rs
-assertion_line: 67
-expression: get_assert_output(&assert)
+expression: assert.output()
 ---
 
  ADVANCED 
 
 ID: advanced
 Source: advanced
-Language: TypeScript
-Type: Application
+Language: typescript
+Type: application
 Name: Advanced
 Description: Advanced example.
 Owner: Batman

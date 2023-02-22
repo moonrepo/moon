@@ -623,3 +623,60 @@ workspace:
         });
     }
 }
+
+mod language {
+    use moon_config::ProjectLanguage;
+
+    #[test]
+    #[should_panic(
+        expected = "invalid type: found unsigned int `123`, expected a string for key \"project.language\""
+    )]
+    fn invalid_type() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(super::CONFIG_PROJECT_FILENAME, "language: 123")?;
+
+            super::load_jailed_config()?;
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn supported_lang() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(super::CONFIG_PROJECT_FILENAME, "language: javascript")?;
+
+            let config = super::load_jailed_config()?;
+
+            assert_eq!(config.language, ProjectLanguage::JavaScript);
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn other_lang() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(super::CONFIG_PROJECT_FILENAME, "language: dotnet")?;
+
+            let config = super::load_jailed_config()?;
+
+            assert_eq!(config.language, ProjectLanguage::Other("dotnet".into()));
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn formats_other_lang() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(super::CONFIG_PROJECT_FILENAME, "language: 'Dot Net'")?;
+
+            let config = super::load_jailed_config()?;
+
+            assert_eq!(config.language, ProjectLanguage::Other("dot-net".into()));
+
+            Ok(())
+        });
+    }
+}

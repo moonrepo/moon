@@ -1,15 +1,14 @@
 ---
 source: crates/cli/tests/project_test.rs
-assertion_line: 29
-expression: get_assert_output(&assert)
+expression: assert.output()
 ---
 
  EMPTYCONFIG 
 
 ID: emptyConfig
 Source: empty-config
-Language: Unknown
-Type: Unknown
+Language: unknown
+Type: unknown
 
  FILE GROUPS 
 

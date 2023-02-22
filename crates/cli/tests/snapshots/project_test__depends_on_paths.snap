@@ -1,15 +1,14 @@
 ---
 source: crates/cli/tests/project_test.rs
-assertion_line: 80
-expression: get_assert_output(&assert)
+expression: assert.output()
 ---
 
  FOO 
 
 ID: foo
 Source: deps/foo
-Language: JavaScript
-Type: Application
+Language: javascript
+Type: application
 
  DEPENDS ON 
 

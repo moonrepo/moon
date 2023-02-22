@@ -1,0 +1,3 @@
+tasks:
+  kotlin:
+    command: kotlin

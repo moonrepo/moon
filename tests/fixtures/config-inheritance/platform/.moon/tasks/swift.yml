@@ -1,0 +1,6 @@
+tasks:
+  swift-detected:
+    command: 'swift-detected'
+  system-via-swift:
+    command: 'system-via-swift'
+    platform: 'system'

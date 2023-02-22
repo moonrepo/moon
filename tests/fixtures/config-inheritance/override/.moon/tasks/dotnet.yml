@@ -1,4 +1,4 @@
 tasks:
   command:
-    command: 'dotnet'
+    command: 'node'
     inputs: ['b']

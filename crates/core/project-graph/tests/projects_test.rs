@@ -1347,6 +1347,16 @@ mod detection {
         );
     }
 
+    #[tokio::test]
+    async fn detects_other() {
+        let (_sandbox, project_graph) = langs_sandbox().await;
+
+        assert_eq!(
+            project_graph.get("other").unwrap().language,
+            ProjectLanguage::Other("kotlin".into())
+        );
+    }
+
     mod task_platform {
         use super::*;
 
@@ -1601,6 +1611,21 @@ mod detection {
                     .get("project-platform")
                     .unwrap()
                     .get_task("system")
+                    .unwrap()
+                    .platform,
+                PlatformType::System
+            );
+        }
+
+        #[tokio::test]
+        async fn detects_other() {
+            let (_sandbox, project_graph) = langs_sandbox().await;
+
+            assert_eq!(
+                project_graph
+                    .get("other")
+                    .unwrap()
+                    .get_task("command")
                     .unwrap()
                     .platform,
                 PlatformType::System

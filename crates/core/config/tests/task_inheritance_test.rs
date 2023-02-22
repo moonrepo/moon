@@ -72,9 +72,9 @@ mod lookup_order {
 
         assert_eq!(
             manager.get_lookup_order(
-                PlatformType::Node,
-                ProjectLanguage::JavaScript,
-                ProjectType::Application
+                &PlatformType::Node,
+                &ProjectLanguage::JavaScript,
+                &ProjectType::Application
             ),
             string_vec![
                 "*",
@@ -92,9 +92,9 @@ mod lookup_order {
 
         assert_eq!(
             manager.get_lookup_order(
-                PlatformType::Node,
-                ProjectLanguage::TypeScript,
-                ProjectType::Library
+                &PlatformType::Node,
+                &ProjectLanguage::TypeScript,
+                &ProjectType::Library
             ),
             string_vec![
                 "*",
@@ -112,18 +112,18 @@ mod lookup_order {
 
         assert_eq!(
             manager.get_lookup_order(
-                PlatformType::Unknown,
-                ProjectLanguage::Ruby,
-                ProjectType::Tool
+                &PlatformType::Unknown,
+                &ProjectLanguage::Ruby,
+                &ProjectType::Tool
             ),
             string_vec!["*", "ruby", "ruby-tool"]
         );
 
         assert_eq!(
             manager.get_lookup_order(
-                PlatformType::Unknown,
-                ProjectLanguage::Rust,
-                ProjectType::Application
+                &PlatformType::Unknown,
+                &ProjectLanguage::Rust,
+                &ProjectType::Application
             ),
             string_vec!["*", "rust", "rust-application"]
         );
@@ -141,9 +141,9 @@ mod config_merging {
 
         assert_eq!(
             workspace.tasks_config.get_inherited_config(
-                PlatformType::Node,
-                ProjectLanguage::JavaScript,
-                ProjectType::Application
+                &PlatformType::Node,
+                &ProjectLanguage::JavaScript,
+                &ProjectType::Application
             ),
             InheritedTasksConfig {
                 implicit_inputs: string_vec!["/.moon/*.yml"],
@@ -171,9 +171,9 @@ mod config_merging {
 
         assert_eq!(
             workspace.tasks_config.get_inherited_config(
-                PlatformType::Node,
-                ProjectLanguage::TypeScript,
-                ProjectType::Tool
+                &PlatformType::Node,
+                &ProjectLanguage::TypeScript,
+                &ProjectType::Tool
             ),
             InheritedTasksConfig {
                 implicit_inputs: string_vec!["/.moon/*.yml"],
@@ -197,9 +197,9 @@ mod config_merging {
 
         assert_eq!(
             workspace.tasks_config.get_inherited_config(
-                PlatformType::System,
-                ProjectLanguage::Rust,
-                ProjectType::Library
+                &PlatformType::System,
+                &ProjectLanguage::Rust,
+                &ProjectType::Library
             ),
             InheritedTasksConfig {
                 implicit_inputs: string_vec!["/.moon/*.yml"],
@@ -222,9 +222,9 @@ mod config_merging {
 
         assert_eq!(
             workspace.tasks_config.get_inherited_config(
-                PlatformType::Node,
-                ProjectLanguage::JavaScript,
-                ProjectType::Library
+                &PlatformType::Node,
+                &ProjectLanguage::JavaScript,
+                &ProjectType::Library
             ),
             InheritedTasksConfig {
                 implicit_inputs: string_vec!["/.moon/*.yml"],

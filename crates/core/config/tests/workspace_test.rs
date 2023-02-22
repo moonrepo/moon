@@ -258,7 +258,12 @@ projects:
                 r#"
 projects:
   app: apps/app
-  foo: ./packages/foo"#,
+  foo-kebab: ./packages/foo
+  barCamel: ./packages/bar
+  baz_snake: ./packages/baz
+  qux.dot: ./packages/qux
+  wat/slash: ./packages/wat
+"#,
             )?;
 
             let config = super::load_jailed_config(jail.directory())?;
@@ -267,7 +272,11 @@ projects:
                 config.projects,
                 WorkspaceProjects::Sources(FxHashMap::from_iter([
                     (String::from("app"), String::from("apps/app")),
-                    (String::from("foo"), String::from("./packages/foo"))
+                    (String::from("foo-kebab"), String::from("./packages/foo")),
+                    (String::from("barCamel"), String::from("./packages/bar")),
+                    (String::from("baz_snake"), String::from("./packages/baz")),
+                    (String::from("qux.dot"), String::from("./packages/qux")),
+                    (String::from("wat/slash"), String::from("./packages/wat"))
                 ])),
             );
 

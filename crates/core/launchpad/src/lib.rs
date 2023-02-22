@@ -10,7 +10,7 @@ use std::time::{Duration, SystemTime};
 use uuid::Uuid;
 
 const CURRENT_VERSION_URL: &str = "https://launch.moonrepo.app/versions/cli/current";
-const ALERT_PAUSE_DURATION: Duration = Duration::from_secs(43200); // 12 hours
+const ALERT_PAUSE_DURATION: Duration = Duration::from_secs(28800); // 8 hours
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CurrentVersion {
@@ -49,7 +49,7 @@ pub async fn check_version(
     let check_state_path = get_cache_dir().join("states/versionCheck.json");
     let now = SystemTime::now();
 
-    // Only check once every 12 hours
+    // Only check once every 8 hours
     if let Ok(file) = fs::read(&check_state_path) {
         let check_state: Result<CheckState, _> = serde_json::from_str(&file);
 

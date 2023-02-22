@@ -59,6 +59,7 @@ async fn loads_all_task_configs_into_manager() {
             ),
             ("rust".into(), mock_tasks_config("rust")),
             ("typescript".into(), mock_tasks_config("typescript")),
+            ("kotlin".into(), mock_tasks_config("kotlin")),
         ])
     );
 }
@@ -107,7 +108,7 @@ mod lookup_order {
     }
 
     #[test]
-    fn supports_other_langs() {
+    fn supports_langs() {
         let manager = InheritedTasksManager::default();
 
         assert_eq!(
@@ -126,6 +127,29 @@ mod lookup_order {
                 &ProjectType::Application
             ),
             string_vec!["*", "rust", "rust-application"]
+        );
+    }
+
+    #[test]
+    fn supports_other() {
+        let manager = InheritedTasksManager::default();
+
+        assert_eq!(
+            manager.get_lookup_order(
+                &PlatformType::Unknown,
+                &ProjectLanguage::Other("kotlin".into()),
+                &ProjectType::Tool
+            ),
+            string_vec!["*", "kotlin", "kotlin-tool"]
+        );
+
+        assert_eq!(
+            manager.get_lookup_order(
+                &PlatformType::System,
+                &ProjectLanguage::Other("dotnet".into()),
+                &ProjectType::Application
+            ),
+            string_vec!["*", "dotnet", "dotnet-application"]
         );
     }
 }
@@ -213,6 +237,28 @@ mod config_merging {
     }
 
     #[tokio::test]
+    async fn creates_other_config() {
+        let sandbox = create_sandbox("config-inheritance/files");
+        let workspace = load_workspace_from(sandbox.path()).await.unwrap();
+
+        assert_eq!(
+            workspace.tasks_config.get_inherited_config(
+                &PlatformType::System,
+                &ProjectLanguage::Other("kotlin".into()),
+                &ProjectType::Library
+            ),
+            InheritedTasksConfig {
+                implicit_inputs: string_vec!["/.moon/*.yml"],
+                tasks: BTreeMap::from_iter([
+                    ("global".into(), mock_task("global", PlatformType::Unknown)),
+                    ("kotlin".into(), mock_task("kotlin", PlatformType::System)),
+                ]),
+                ..InheritedTasksConfig::default()
+            }
+        );
+    }
+
+    #[tokio::test]
     async fn entirely_overrides_task_of_same_name() {
         let sandbox = create_sandbox("config-inheritance/override");
         let workspace = load_workspace_from(sandbox.path()).await.unwrap();
@@ -225,6 +271,28 @@ mod config_merging {
                 &PlatformType::Node,
                 &ProjectLanguage::JavaScript,
                 &ProjectType::Library
+            ),
+            InheritedTasksConfig {
+                implicit_inputs: string_vec!["/.moon/*.yml"],
+                tasks: BTreeMap::from_iter([("command".into(), task)]),
+                ..InheritedTasksConfig::default()
+            }
+        );
+    }
+
+    #[tokio::test]
+    async fn entirely_overrides_task_of_same_name_for_other_lang() {
+        let sandbox = create_sandbox("config-inheritance/override");
+        let workspace = load_workspace_from(sandbox.path()).await.unwrap();
+
+        let mut task = mock_task("dotnet-application", PlatformType::System);
+        task.inputs = Some(string_vec!["c", "/.moon/tasks/dotnet-application.yml"]);
+
+        assert_eq!(
+            workspace.tasks_config.get_inherited_config(
+                &PlatformType::System,
+                &ProjectLanguage::Other("dotnet".into()),
+                &ProjectType::Application
             ),
             InheritedTasksConfig {
                 implicit_inputs: string_vec!["/.moon/*.yml"],
@@ -291,6 +359,28 @@ mod config_loading {
         );
         assert_eq!(
             project.tasks.get("system-via-node").unwrap().platform,
+            PlatformType::System
+        );
+    }
+
+    #[tokio::test]
+    async fn inherits_correct_task_platform_for_other_lang() {
+        let sandbox = create_sandbox("config-inheritance/platform");
+        let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+        let graph = generate_project_graph(&mut workspace).await.unwrap();
+
+        let project = graph.get("other").unwrap();
+
+        assert_eq!(
+            project.tasks.get("global").unwrap().platform,
+            PlatformType::System
+        );
+        assert_eq!(
+            project.tasks.get("swift-detected").unwrap().platform,
+            PlatformType::System
+        );
+        assert_eq!(
+            project.tasks.get("system-via-swift").unwrap().platform,
             PlatformType::System
         );
     }

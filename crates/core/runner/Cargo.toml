@@ -19,6 +19,7 @@ moon_task = { path = "../task" }
 moon_tool = { path = "../tool" }
 moon_terminal = { path = "../terminal" }
 moon_utils = { path = "../utils" }
+moon_vcs = { path = "../vcs" }
 moon_workspace = { path = "../workspace" }
 console = { workspace = true }
 rustc-hash = { workspace = true }

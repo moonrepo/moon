@@ -401,8 +401,16 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             TokenResolver::new(TokenContext::Outputs, project, &self.workspace.root);
         let (paths, globs) = token_resolver.resolve(&task.outputs, task)?;
 
-        task.output_paths.extend(paths);
         task.output_globs.extend(self.normalize_glob_list(globs)?);
+
+        for path in paths {
+            // Inputs must not consider outputs as a source
+            if task.input_paths.contains(&path) {
+                task.input_paths.remove(&path);
+            }
+
+            task.output_paths.insert(path);
+        }
 
         Ok(())
     }

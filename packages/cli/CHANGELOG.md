@@ -6,6 +6,7 @@
 
 - Updated `node.version` and `node.<packageManager>.version` to no longer default to a hard-coded
   version. When not defined, will fallback to the binary available on `PATH`.
+- Updated touched files (in context and queries) to be workspace relative paths instead of absolute.
 
 #### 🚀 Updates
 
@@ -24,6 +25,8 @@
 
 - Updated Rust to v1.67.
 - Added `context` to `pipeline.started` and `pipeline.finished` events.
+- Refactored glob matching to use workspace relative paths instead of absolute. Please report an
+  issue if hashing or affected is now inaccurate.
 - We now build against older operating systems in an attempt to solve GLIBC version errors.
 
 ## 0.24.3

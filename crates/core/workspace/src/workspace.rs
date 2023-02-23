@@ -85,7 +85,7 @@ fn load_tasks_config(root_dir: &Path) -> Result<InheritedTasksManager, Workspace
 
     for config_path in glob::walk_files(
         root_dir.join(constants::CONFIG_DIRNAME).join("tasks"),
-        &["*.yml"],
+        ["*.yml"],
     )? {
         trace!(target: LOG_TARGET, "Found {}", color::path(&config_path));
 

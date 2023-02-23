@@ -23,10 +23,8 @@ pub struct CheckState {
 }
 
 fn load_or_create_anonymous_uid() -> Result<String, MoonError> {
-    let id_path = path::get_home_dir()
-        .unwrap()
-        .join(CONFIG_DIRNAME)
-        .join("id");
+    let moon_dir = path::get_home_dir().unwrap().join(CONFIG_DIRNAME);
+    let id_path = moon_dir.join("id");
 
     if id_path.exists() {
         return fs::read(id_path);
@@ -34,6 +32,7 @@ fn load_or_create_anonymous_uid() -> Result<String, MoonError> {
 
     let id = Uuid::new_v4().to_string();
 
+    fs::create_dir_all(&moon_dir)?;
     fs::write(id_path, &id)?;
 
     Ok(id)

@@ -79,7 +79,7 @@ fn scaffold_workspace(
     copy_files(&files, &workspace.root, &docker_workspace_root)?;
 
     // Copy moon configuration
-    let moon_configs = glob::walk(&workspace.root.join(CONFIG_DIRNAME), &["*.yml"])?;
+    let moon_configs = glob::walk(&workspace.root.join(CONFIG_DIRNAME), ["*.yml"])?;
     let moon_configs = moon_configs
         .iter()
         .map(|f| path::to_string(f.strip_prefix(&workspace.root).unwrap()))

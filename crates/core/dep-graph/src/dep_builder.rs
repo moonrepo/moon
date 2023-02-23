@@ -11,6 +11,7 @@ use petgraph::graph::NodeIndex;
 use petgraph::Graph;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::mem;
+use std::path::Path;
 
 const LOG_TARGET: &str = "moon:dep-graph";
 
@@ -25,10 +26,15 @@ pub struct DepGraphBuilder<'ws> {
     platforms: &'ws PlatformManager,
     project_graph: &'ws ProjectGraph,
     runtimes: FxHashMap<String, RuntimePair>,
+    workspace_root: &'ws Path,
 }
 
 impl<'ws> DepGraphBuilder<'ws> {
-    pub fn new(platforms: &'ws PlatformManager, project_graph: &'ws ProjectGraph) -> Self {
+    pub fn new(
+        workspace_root: &'ws Path,
+        platforms: &'ws PlatformManager,
+        project_graph: &'ws ProjectGraph,
+    ) -> Self {
         debug!(target: LOG_TARGET, "Creating dependency graph",);
 
         DepGraphBuilder {
@@ -37,6 +43,7 @@ impl<'ws> DepGraphBuilder<'ws> {
             platforms,
             project_graph,
             runtimes: FxHashMap::default(),
+            workspace_root,
         }
     }
 
@@ -249,7 +256,7 @@ impl<'ws> DepGraphBuilder<'ws> {
 
         // Compare against touched files if provided
         if let Some(touched) = touched_files {
-            if !task.is_affected(touched)? {
+            if !task.is_affected(touched, self.workspace_root)? {
                 trace!(
                     target: LOG_TARGET,
                     "Target {} not affected based on touched files, skipping",

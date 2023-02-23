@@ -404,7 +404,7 @@ impl Project {
     /// Since the project is a folder, we check if a file starts with the root.
     pub fn is_affected(&self, touched_files: &TouchedFilePaths) -> bool {
         for file in touched_files {
-            if file.starts_with(&self.root) {
+            if file.starts_with(&self.source) {
                 return true;
             }
         }

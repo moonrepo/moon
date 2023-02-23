@@ -5,6 +5,7 @@ use moon_test_utils::{create_sandbox, get_fixtures_path};
 use moon_utils::{glob, string_vec};
 use rustc_hash::FxHashSet;
 use std::env;
+use std::path::PathBuf;
 
 pub fn create_task(config: TaskConfig) -> Task {
     Task::from_config(Target::new("project", "task").unwrap(), &config).unwrap()
@@ -326,6 +327,7 @@ mod merge {
 }
 
 mod is_affected {
+
     use super::*;
 
     #[test]
@@ -339,7 +341,9 @@ mod is_affected {
 
         env::set_var("FOO", "foo");
 
-        assert!(task.is_affected(&FxHashSet::default()).unwrap());
+        assert!(task
+            .is_affected(&FxHashSet::default(), &PathBuf::new())
+            .unwrap());
 
         env::remove_var("FOO");
     }
@@ -353,7 +357,9 @@ mod is_affected {
 
         task.input_vars.insert("BAR".into());
 
-        assert!(!task.is_affected(&FxHashSet::default()).unwrap());
+        assert!(!task
+            .is_affected(&FxHashSet::default(), &PathBuf::new())
+            .unwrap());
     }
 
     #[test]
@@ -367,7 +373,9 @@ mod is_affected {
 
         env::set_var("BAZ", "");
 
-        assert!(!task.is_affected(&FxHashSet::default()).unwrap());
+        assert!(!task
+            .is_affected(&FxHashSet::default(), &PathBuf::new())
+            .unwrap());
 
         env::remove_var("BAZ");
     }
@@ -386,7 +394,7 @@ mod is_affected {
         let mut set = FxHashSet::default();
         set.insert(project_root.join("file.ts"));
 
-        assert!(task.is_affected(&set).unwrap());
+        assert!(task.is_affected(&set, &workspace_root).unwrap());
     }
 
     #[test]
@@ -404,7 +412,7 @@ mod is_affected {
         let mut set = FxHashSet::default();
         set.insert(project_root.join("file.ts"));
 
-        assert!(task.is_affected(&set).unwrap());
+        assert!(task.is_affected(&set, &workspace_root).unwrap());
     }
 
     #[test]
@@ -420,7 +428,7 @@ mod is_affected {
         let mut set = FxHashSet::default();
         set.insert(workspace_root.join("package.json"));
 
-        assert!(task.is_affected(&set).unwrap());
+        assert!(task.is_affected(&set, &workspace_root).unwrap());
     }
 
     #[test]
@@ -437,7 +445,7 @@ mod is_affected {
         let mut set = FxHashSet::default();
         set.insert(workspace_root.join("base/other/outside.ts"));
 
-        assert!(!task.is_affected(&set).unwrap());
+        assert!(!task.is_affected(&set, &workspace_root).unwrap());
     }
 
     #[test]
@@ -456,7 +464,7 @@ mod is_affected {
         let mut set = FxHashSet::default();
         set.insert(project_root.join("another.rs"));
 
-        assert!(!task.is_affected(&set).unwrap());
+        assert!(!task.is_affected(&set, &workspace_root).unwrap());
     }
 
     #[test]
@@ -478,6 +486,6 @@ mod is_affected {
         let mut set = FxHashSet::default();
         set.insert(project_root.join(".env"));
 
-        assert!(task.is_affected(&set).unwrap());
+        assert!(task.is_affected(&set, sandbox.path()).unwrap());
     }
 }

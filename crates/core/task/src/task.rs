@@ -193,7 +193,8 @@ impl Task {
     pub fn get_affected_files(
         &self,
         touched_files: &TouchedFilePaths,
-        project_root: &Path,
+        workspace_root: &Path,
+        project_source: &str,
     ) -> Result<Vec<PathBuf>, TaskError> {
         let mut files = vec![];
         let has_globs = !self.input_globs.is_empty();
@@ -201,13 +202,15 @@ impl Task {
 
         for file in touched_files {
             // Don't run on files outside of the project
-            if !file.starts_with(project_root) {
+            if !file.starts_with(project_source) {
                 continue;
             }
 
-            if self.input_paths.contains(file) || (has_globs && globset.matches(file)?) {
+            let abs_file = workspace_root.join(file);
+
+            if self.input_paths.contains(&abs_file) || (has_globs && globset.matches(file)?) {
                 // Mimic relative from ("./")
-                files.push(PathBuf::from(".").join(file.strip_prefix(project_root).unwrap()));
+                files.push(PathBuf::from(".").join(file.strip_prefix(project_source).unwrap()));
             }
         }
 
@@ -216,7 +219,11 @@ impl Task {
 
     /// Return true if this task is affected based on touched files.
     /// Will attempt to find any file that matches our list of inputs.
-    pub fn is_affected(&self, touched_files: &TouchedFilePaths) -> Result<bool, TaskError> {
+    pub fn is_affected(
+        &self,
+        touched_files: &TouchedFilePaths,
+        workspace_root: &Path,
+    ) -> Result<bool, TaskError> {
         for var_name in &self.input_vars {
             if let Ok(var) = env::var(var_name) {
                 if !var.is_empty() {
@@ -235,11 +242,13 @@ impl Task {
         let globset = self.create_globset()?;
 
         for file in touched_files {
-            if self.input_paths.contains(file) {
+            let abs_file = workspace_root.join(file);
+
+            if self.input_paths.contains(&abs_file) {
                 trace!(
                     target: self.get_log_target(),
                     "Affected by {} (via input files)",
-                    color::path(file),
+                    color::path(&abs_file),
                 );
 
                 return Ok(true);
@@ -249,7 +258,7 @@ impl Task {
                 trace!(
                     target: self.get_log_target(),
                     "Affected by {} (via input globs)",
-                    color::path(file),
+                    color::path(&abs_file),
                 );
 
                 return Ok(true);

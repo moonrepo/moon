@@ -325,8 +325,11 @@ impl<'a> Runner<'a> {
         // Affected files (must be last args)
         if let Some(check_affected) = &self.task.options.affected_files {
             let mut affected_files = if context.affected_only {
-                self.task
-                    .get_affected_files(&context.touched_files, &self.project.root)?
+                self.task.get_affected_files(
+                    &context.touched_files,
+                    &self.workspace.root,
+                    &self.project.source,
+                )?
             } else {
                 Vec::with_capacity(0)
             };

@@ -4,10 +4,10 @@ use moon_config::{
     DenoConfig, DependencyConfig, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap,
     TypeScriptConfig,
 };
-use moon_deno_lang::DENO_DEPS;
+use moon_deno_lang::{DenoJson, DENO_DEPS};
 use moon_deno_tool::DenoTool;
 use moon_error::MoonError;
-use moon_hasher::HashSet;
+use moon_hasher::{DepsHasher, HashSet};
 use moon_logger::debug;
 use moon_platform::{Platform, Runtime, Version};
 use moon_project::{Project, ProjectError};
@@ -16,7 +16,7 @@ use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{Tool, ToolError, ToolManager};
 use moon_typescript_platform::TypeScriptTargetHasher;
 use moon_utils::{async_trait, process::Command};
-use proto::Proto;
+use proto::{get_sha256_hash_of_file, Proto};
 use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
 
@@ -196,11 +196,38 @@ impl Platform for DenoPlatform {
 
     async fn hash_manifest_deps(
         &self,
-        _manifest_path: &Path,
-        _hashset: &mut HashSet,
+        manifest_path: &Path,
+        hashset: &mut HashSet,
         _hasher_config: &HasherConfig,
     ) -> Result<(), ToolError> {
-        // How to hash src/deps.ts here???
+        let mut hasher = DepsHasher::new("deno".into());
+        let project_root = manifest_path.parent().unwrap();
+
+        if let Ok(Some(deno_json)) = DenoJson::read(manifest_path) {
+            if let Some(imports) = &deno_json.imports {
+                hasher.hash_deps(&imports);
+            }
+
+            if let Some(import_map_path) = &deno_json.import_map {
+                if let Ok(Some(import_map)) = DenoJson::read(project_root.join(import_map_path)) {
+                    if let Some(imports) = &import_map.imports {
+                        hasher.hash_deps(&imports);
+                    }
+                }
+            }
+
+            // TODO scopes?
+        }
+
+        // We can't parse TS files, so hash the file contents
+        let deps_path = project_root.join(&self.config.deps_file);
+
+        if deps_path.exists() {
+            hasher.hash_dep(&self.config.deps_file, get_sha256_hash_of_file(deps_path)?);
+        }
+
+        hashset.hash(hasher);
+
         Ok(())
     }
 

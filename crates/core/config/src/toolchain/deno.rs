@@ -16,7 +16,7 @@ pub struct DenoConfig {
 impl Default for DenoConfig {
     fn default() -> Self {
         DenoConfig {
-            deps_file: "src/deps.ts".into(),
+            deps_file: "deps.ts".into(),
             lockfile: false,
         }
     }

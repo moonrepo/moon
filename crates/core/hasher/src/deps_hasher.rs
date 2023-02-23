@@ -18,6 +18,11 @@ impl DepsHasher {
         }
     }
 
+    pub fn hash_dep<K: AsRef<str>, V: AsRef<str>>(&mut self, name: K, value: V) {
+        self.dependencies
+            .insert(name.as_ref().to_owned(), value.as_ref().to_owned());
+    }
+
     pub fn hash_deps(&mut self, dependencies: &BTreeMap<String, String>) {
         self.dependencies.extend(dependencies.to_owned());
     }

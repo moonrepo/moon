@@ -41,7 +41,7 @@ impl DenoPlatform {
     ) -> Self {
         DenoPlatform {
             config: config.to_owned(),
-            toolchain: ToolManager::new(Runtime::Deno(Version::default())),
+            toolchain: ToolManager::new(Runtime::Deno(Version::new_global())),
             typescript_config: typescript_config.to_owned(),
             workspace_root: workspace_root.to_path_buf(),
         }
@@ -54,8 +54,8 @@ impl Platform for DenoPlatform {
         PlatformType::Deno
     }
 
-    fn get_runtime_from_config(&self, _project_config: Option<&ProjectConfig>) -> Option<Runtime> {
-        Some(Runtime::Deno(Version::default()))
+    fn get_runtime_from_config(&self, _project_config: Option<&ProjectConfig>) -> Runtime {
+        Runtime::Deno(Version::new_global())
     }
 
     fn matches(&self, platform: &PlatformType, runtime: Option<&Runtime>) -> bool {
@@ -84,6 +84,10 @@ impl Platform for DenoPlatform {
 
     // TOOLCHAIN
 
+    fn is_toolchain_enabled(&self) -> Result<bool, ToolError> {
+        Ok(false)
+    }
+
     fn get_tool(&self) -> Result<Box<&dyn Tool>, ToolError> {
         let tool = self.toolchain.get()?;
 
@@ -104,19 +108,21 @@ impl Platform for DenoPlatform {
     }
 
     async fn setup_toolchain(&mut self) -> Result<(), ToolError> {
-        // if let Some(version) = &self.config.version {
-        //     let version = Version::new(version);
-        //     let mut last_versions = FxHashMap::default();
+        // let version = match &self.config.version {
+        //     Some(v) => Version::new(v),
+        //     None => Version::new_global(),
+        // };
+        let version = Version::new_global();
+        let mut last_versions = FxHashMap::default();
 
-        //     if !self.toolchain.has(&version) {
-        //         self.toolchain.register(
-        //             &version,
-        //             DenoTool::new(&Proto::new()?, &self.config, &version.0)?,
-        //         );
-        //     }
+        if !self.toolchain.has(&version) {
+            self.toolchain.register(
+                &version,
+                NodeTool::new(&Proto::new()?, &self.config, &version)?,
+            );
+        }
 
-        //     self.toolchain.setup(&version, &mut last_versions).await?;
-        // }
+        self.toolchain.setup(&version, &mut last_versions).await?;
 
         Ok(())
     }
@@ -140,7 +146,7 @@ impl Platform for DenoPlatform {
         if !self.toolchain.has(&version) {
             self.toolchain.register(
                 &version,
-                DenoTool::new(&Proto::new()?, &self.config, &version.0)?,
+                DenoTool::new(&Proto::new()?, &self.config, &version)?,
             );
         }
 

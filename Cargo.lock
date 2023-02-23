@@ -2369,8 +2369,9 @@ name = "moon_deno_tool"
 version = "0.1.0"
 dependencies = [
  "moon_config",
+ "moon_platform_runtime",
  "moon_tool",
- "proto",
+ "proto_cli",
  "rustc-hash",
 ]
 

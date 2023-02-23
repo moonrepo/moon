@@ -21,13 +21,13 @@ impl TypeScriptTargetHasher {
         let mut hasher = TypeScriptTargetHasher::default();
 
         if let Some(root_tsconfig) =
-            TsConfigJson::read_with_name(&workspace_root, &config.root_config_file_name)?
+            TsConfigJson::read_with_name(workspace_root, &config.root_config_file_name)?
         {
             hasher.hash_tsconfig_json(&root_tsconfig);
         }
 
         if let Some(tsconfig) =
-            TsConfigJson::read_with_name(&project_root, &config.project_config_file_name)?
+            TsConfigJson::read_with_name(project_root, &config.project_config_file_name)?
         {
             hasher.hash_tsconfig_json(&tsconfig);
         }

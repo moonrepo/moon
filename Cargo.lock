@@ -2693,6 +2693,7 @@ dependencies = [
  "moon_terminal",
  "moon_tool",
  "moon_utils",
+ "moon_vcs",
  "moon_workspace",
  "rustc-hash",
  "serde",

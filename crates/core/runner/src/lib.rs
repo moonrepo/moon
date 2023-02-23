@@ -1,4 +1,5 @@
 mod errors;
+mod inputs_collector;
 mod runner;
 mod target_hasher;
 

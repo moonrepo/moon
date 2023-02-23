@@ -14,19 +14,17 @@ fileGroups:
 
 tasks:
   build:
-    command:
-      'packemon build --addFiles --addExports --declaration --declarationConfig tsconfig.build.json'
+    command: 'packemon build --addFiles --addExports --declaration'
     env:
       NODE_ENV: 'production'
     inputs:
       - '@globs(sources)'
       - 'package.json'
       - 'tsconfig.json'
-      - 'tsconfig.build.json'
+      - 'tsconfig.*.json'
       - '/tsconfig.options.json'
     outputs:
       - 'cjs'
-      - 'dts'
 
   format:
     command: 'prettier'

@@ -176,7 +176,7 @@ to the repository (but could be if you so choose). We suggest ignoring the follo
 
 ```shell title=".gitignore"
 # The `outDir` for declarations
-dts/
+lib/
 # Build cache manifests
 *.tsbuildinfo
 ```
@@ -233,7 +233,7 @@ declarations that external projects would reference. This location is typically
 {
   "extends": "../../../../tsconfig.options.json",
   "compilerOptions": {
-    "outDir": "./dts"
+    "outDir": "./lib"
   },
   "include": [],
   "references": []

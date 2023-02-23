@@ -34,7 +34,7 @@
     "@docusaurus/module-type-aliases": "^2.3.0",
     "@moonrepo/runtime": "workspace:^",
     "@moonrepo/types": "workspace:^",
-    "tailwindcss": "^3.2.4"
+    "tailwindcss": "^3.2.7"
   },
   "browserslist": {
     "production": [

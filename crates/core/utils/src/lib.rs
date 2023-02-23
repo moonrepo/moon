@@ -29,6 +29,10 @@ macro_rules! string_vec {
     }};
 }
 
+pub fn hash<T: AsRef<str>>(value: T) -> String {
+    format!("{:x}", md5::compute(value.as_ref()))
+}
+
 #[cached]
 pub fn get_workspace_root() -> PathBuf {
     if let Ok(root) = env::var("MOON_WORKSPACE_ROOT") {

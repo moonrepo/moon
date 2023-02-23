@@ -2450,12 +2450,15 @@ dependencies = [
 name = "moon_launchpad"
 version = "0.1.0"
 dependencies = [
+ "moon_constants",
+ "moon_error",
  "moon_logger",
  "moon_utils",
  "proto_cli",
  "reqwest",
  "serde",
  "serde_json",
+ "uuid",
 ]
 
 [[package]]

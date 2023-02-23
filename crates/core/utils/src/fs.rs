@@ -282,7 +282,7 @@ pub mod temp {
     }
 
     pub fn get_file(source: &str, ext: &str) -> PathBuf {
-        get_dir().join(format!("{:x}.{}", md5::compute(source), ext))
+        get_dir().join(format!("{}.{}", crate::hash(source), ext))
     }
 
     pub fn read<P: AsRef<Path>>(path: P) -> Result<Option<String>, MoonError> {

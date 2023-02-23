@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2022 moonrepo LLC
+# Copyright 2022 moonrepo, Inc.
 
 # Thanks to Deno for the original script:
 # https://github.com/denoland/deno_install/blob/master/install.sh

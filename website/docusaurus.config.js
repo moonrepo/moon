@@ -229,7 +229,7 @@ const config = {
 						items: social,
 					},
 				],
-				copyright: `Copyright © ${new Date().getFullYear()}, moonrepo LLC`,
+				copyright: `Copyright © ${new Date().getFullYear()}, moonrepo, Inc.`,
 			},
 			prism: {
 				theme: prismTheme,

@@ -46,7 +46,7 @@ tasks:
 			- '/tsconfig.options.json'
 		outputs:
 			# Matches `compilerOptions.outDir`
-			- 'dts'
+			- 'lib'
 ```
 
 Projects can extend this task and provide additional parameters if need be, for example.
@@ -110,7 +110,7 @@ Every project will require a `tsconfig.json`, as TypeScript itself requires it. 
   "extends": "../../tsconfig.options.json",
   "compilerOptions": {
     // Declarations are written here
-    "outDir": "dts"
+    "outDir": "lib"
   },
   // Include files in the project
   "include": ["src/**/*", "tests/**/*"],

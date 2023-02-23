@@ -1042,9 +1042,9 @@ mod task_expansion {
             assert_eq!(
                 task.input_globs,
                 FxHashSet::from_iter([
-                    glob::normalize(sandbox.path().join(".moon/*.yml")).unwrap(),
-                    glob::normalize(project.root.join("**/*.{ts,tsx}")).unwrap(),
-                    glob::normalize(project.root.join("*.js")).unwrap()
+                    glob::normalize(".moon/*.yml").unwrap(),
+                    glob::normalize(PathBuf::from(&project.source).join("**/*.{ts,tsx}")).unwrap(),
+                    glob::normalize(PathBuf::from(&project.source).join("*.js")).unwrap()
                 ]),
             );
 
@@ -1074,9 +1074,9 @@ mod task_expansion {
             let project = project_graph.get("tokens").unwrap();
             let task = project.get_task("inputsVars").unwrap();
 
-            assert!(task
-                .input_globs
-                .contains(&glob::normalize(project.root.join("$unknown.*")).unwrap()));
+            assert!(task.input_globs.contains(
+                &glob::normalize(PathBuf::from(&project.source).join("$unknown.*")).unwrap()
+            ));
 
             assert!(task
                 .input_paths
@@ -1094,12 +1094,12 @@ mod task_expansion {
             let project = project_graph.get("tokens").unwrap();
             let task = project.get_task("inputs").unwrap();
 
+            assert!(task.input_globs.contains(
+                &glob::normalize(PathBuf::from(&project.source).join("glob/*")).unwrap()
+            ));
             assert!(task
                 .input_globs
-                .contains(&glob::normalize(project.root.join("glob/*")).unwrap()));
-            assert!(task
-                .input_globs
-                .contains(&glob::normalize(sandbox.path().join("glob.*")).unwrap()));
+                .contains(&glob::normalize("glob.*").unwrap()));
 
             assert!(task.input_paths.contains(&project.root.join("path.ts")));
             assert!(task.input_paths.contains(&sandbox.path().join("path/dir")));
@@ -1125,19 +1125,9 @@ mod task_expansion {
 
             let task = project.get_task("outputsGlobs").unwrap();
 
-            if cfg!(windows) {
-                assert!(task
-                    .output_globs
-                    .contains(&glob::normalize(project.root.join("dir/**/*.js")).unwrap()));
-            } else {
-                assert!(task.output_globs.contains(
-                    &project
-                        .root
-                        .join("dir/**/*.js")
-                        .to_string_lossy()
-                        .to_string()
-                ));
-            }
+            assert!(task.output_globs.contains(
+                &glob::normalize(PathBuf::from(&project.source).join("dir/**/*.js")).unwrap()
+            ));
         }
 
         #[tokio::test]
@@ -1150,8 +1140,8 @@ mod task_expansion {
             assert_eq!(
                 task.output_globs,
                 FxHashSet::from_iter([
-                    glob::normalize(project.root.join("**/*.{ts,tsx}")).unwrap(),
-                    glob::normalize(project.root.join("*.js")).unwrap()
+                    glob::normalize(PathBuf::from(&project.source).join("**/*.{ts,tsx}")).unwrap(),
+                    glob::normalize(PathBuf::from(&project.source).join("*.js")).unwrap()
                 ]),
             );
 

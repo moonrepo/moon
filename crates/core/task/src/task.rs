@@ -44,6 +44,7 @@ pub struct Task {
 
     pub inputs: Vec<InputValue>,
 
+    // Relative from workspace root
     pub input_globs: FxHashSet<FileGlob>,
 
     pub input_paths: FxHashSet<PathBuf>,
@@ -57,6 +58,7 @@ pub struct Task {
 
     pub outputs: Vec<FilePath>,
 
+    // Relative from workspace root
     pub output_globs: FxHashSet<FileGlob>,
 
     pub output_paths: FxHashSet<PathBuf>,
@@ -173,18 +175,7 @@ impl Task {
 
     /// Create a globset of all input globs to match with.
     pub fn create_globset(&self) -> Result<glob::GlobSet, TaskError> {
-        Ok(glob::GlobSet::new(
-            self.input_globs
-                .iter()
-                .map(|g| {
-                    if cfg!(windows) {
-                        glob::remove_drive_prefix(g)
-                    } else {
-                        g.to_owned()
-                    }
-                })
-                .collect::<Vec<String>>(),
-        )?)
+        Ok(glob::GlobSet::new(&self.input_globs)?)
     }
 
     /// Determine the type of task after inheritance and expansion.

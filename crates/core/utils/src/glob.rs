@@ -21,11 +21,15 @@ pub struct GlobSet<'t> {
 
 impl<'t> GlobSet<'t> {
     #[track_caller]
-    pub fn new(patterns: Vec<String>) -> Result<Self, GlobError> {
+    pub fn new<V, I>(patterns: I) -> Result<Self, GlobError>
+    where
+        V: AsRef<str>,
+        I: IntoIterator<Item = V>,
+    {
         let mut globs = vec![];
 
-        for pattern in &patterns {
-            globs.push(create_glob(pattern)?.into_owned());
+        for pattern in patterns.into_iter() {
+            globs.push(create_glob(pattern.as_ref())?.into_owned());
         }
 
         Ok(GlobSet {

@@ -353,7 +353,7 @@ mod resolve_args {
 
         assert_eq!(
             resolver.resolve(&string_vec!["@in(0)"], &task).unwrap(),
-            (vec![], vec![project.root.join("src/**/*")])
+            (vec![], vec![PathBuf::from(project.source).join("src/**/*")])
         );
     }
 

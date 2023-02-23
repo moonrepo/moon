@@ -2,7 +2,7 @@ use moon_config::{TaskCommandArgs, TaskConfig, TaskOptionEnvFileConfig, TaskOpti
 use moon_target::Target;
 use moon_task::{Task, TaskOptions};
 use moon_test_utils::{create_sandbox, get_fixtures_path};
-use moon_utils::{glob, string_vec};
+use moon_utils::string_vec;
 use rustc_hash::FxHashSet;
 use std::env;
 use std::path::PathBuf;
@@ -327,7 +327,6 @@ mod merge {
 }
 
 mod is_affected {
-
     use super::*;
 
     #[test]
@@ -384,6 +383,7 @@ mod is_affected {
     fn returns_true_if_matches_file() {
         let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
+        let project_source = PathBuf::from("files-and-dirs");
         let mut task = create_task(TaskConfig {
             inputs: Some(string_vec!["file.ts"]),
             ..TaskConfig::default()
@@ -392,7 +392,7 @@ mod is_affected {
         task.input_paths.insert(project_root.join("file.ts"));
 
         let mut set = FxHashSet::default();
-        set.insert(project_root.join("file.ts"));
+        set.insert(project_source.join("file.ts"));
 
         assert!(task.is_affected(&set, &workspace_root).unwrap());
     }
@@ -400,17 +400,16 @@ mod is_affected {
     #[test]
     fn returns_true_if_matches_glob() {
         let workspace_root = get_fixtures_path("base");
-        let project_root = workspace_root.join("files-and-dirs");
+        let project_source = PathBuf::from("files-and-dirs");
         let mut task = create_task(TaskConfig {
             inputs: Some(string_vec!["file.*"]),
             ..TaskConfig::default()
         });
 
-        task.input_globs
-            .insert(glob::normalize(project_root.join("file.*")).unwrap());
+        task.input_globs.insert("files-and-dirs/file.*".into());
 
         let mut set = FxHashSet::default();
-        set.insert(project_root.join("file.ts"));
+        set.insert(project_source.join("file.ts"));
 
         assert!(task.is_affected(&set, &workspace_root).unwrap());
     }
@@ -426,7 +425,7 @@ mod is_affected {
         task.input_paths.insert(workspace_root.join("package.json"));
 
         let mut set = FxHashSet::default();
-        set.insert(workspace_root.join("package.json"));
+        set.insert(PathBuf::from("package.json"));
 
         assert!(task.is_affected(&set, &workspace_root).unwrap());
     }
@@ -443,7 +442,7 @@ mod is_affected {
         task.input_paths.insert(project_root.join("file.ts"));
 
         let mut set = FxHashSet::default();
-        set.insert(workspace_root.join("base/other/outside.ts"));
+        set.insert(PathBuf::from("base/other/outside.ts"));
 
         assert!(!task.is_affected(&set, &workspace_root).unwrap());
     }
@@ -452,17 +451,17 @@ mod is_affected {
     fn returns_false_if_no_match() {
         let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
+        let project_source = PathBuf::from("files-and-dirs");
         let mut task = create_task(TaskConfig {
             inputs: Some(string_vec!["file.ts", "src/*"]),
             ..TaskConfig::default()
         });
 
         task.input_paths.insert(project_root.join("file.ts"));
-        task.input_globs
-            .insert(glob::normalize(project_root.join("src/*")).unwrap());
+        task.input_globs.insert("files-and-dirs/src/*".into());
 
         let mut set = FxHashSet::default();
-        set.insert(project_root.join("another.rs"));
+        set.insert(project_source.join("another.rs"));
 
         assert!(!task.is_affected(&set, &workspace_root).unwrap());
     }
@@ -473,6 +472,7 @@ mod is_affected {
         sandbox.create_file("files-and-dirs/.env", "");
 
         let project_root = sandbox.path().join("files-and-dirs");
+        let project_source = PathBuf::from("files-and-dirs");
         let mut task = create_task(TaskConfig {
             options: TaskOptionsConfig {
                 env_file: Some(TaskOptionEnvFileConfig::Enabled(true)),
@@ -484,7 +484,7 @@ mod is_affected {
         task.input_paths.insert(project_root.join(".env"));
 
         let mut set = FxHashSet::default();
-        set.insert(project_root.join(".env"));
+        set.insert(project_source.join(".env"));
 
         assert!(task.is_affected(&set, sandbox.path()).unwrap());
     }

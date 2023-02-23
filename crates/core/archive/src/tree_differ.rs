@@ -33,7 +33,7 @@ impl TreeDiffer {
 
         for path in paths {
             if glob::is_glob(path) {
-                for file in glob::walk_files(dest_root, &[path])
+                for file in glob::walk_files(dest_root, [path])
                     .map_err(|e| MoonError::Generic(e.to_string()))?
                 {
                     track(file);

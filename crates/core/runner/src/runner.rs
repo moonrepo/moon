@@ -22,7 +22,6 @@ use moon_utils::{
 use moon_workspace::Workspace;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::env;
-use std::path::PathBuf;
 
 const LOG_TARGET: &str = "moon:runner";
 
@@ -220,20 +219,7 @@ impl<'a> Runner<'a> {
 
             // Walk the file system using globs
             if use_globs {
-                let globbed_files = glob::walk(
-                    &workspace.root,
-                    &task
-                        .input_globs
-                        .iter()
-                        .map(|g| {
-                            PathBuf::from(g)
-                                .strip_prefix(&workspace.root)
-                                .unwrap()
-                                .to_string_lossy()
-                                .to_string()
-                        })
-                        .collect::<Vec<_>>(),
-                )?;
+                let globbed_files = glob::walk(&workspace.root, &task.input_globs)?;
 
                 let files = convert_paths_to_strings(
                     &FxHashSet::from_iter(globbed_files),
@@ -246,9 +232,7 @@ impl<'a> Runner<'a> {
             } else {
                 let mut hashed_file_tree = vcs.get_file_tree_hashes(&project.source).await?;
 
-                // Input globs are absolute paths, so we must do the same
-                hashed_file_tree
-                    .retain(|k, _| globset.matches(workspace.root.join(k)).unwrap_or(false));
+                hashed_file_tree.retain(|k, _| globset.matches(k).unwrap_or(false));
 
                 hasher.hash_inputs(hashed_file_tree);
             }
@@ -263,7 +247,7 @@ impl<'a> Runner<'a> {
             let files = local_files
                 .all
                 .into_iter()
-                .filter(|f| globset.matches(workspace.root.join(f)).unwrap_or(false))
+                .filter(|f| globset.matches(f).unwrap_or(false))
                 .collect::<Vec<String>>();
 
             files_to_hash.extend(files);

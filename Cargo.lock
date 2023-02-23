@@ -2125,6 +2125,7 @@ name = "moon"
 version = "0.1.0"
 dependencies = [
  "moon_config",
+ "moon_deno_platform",
  "moon_dep_graph",
  "moon_error",
  "moon_node_platform",
@@ -2356,6 +2357,7 @@ dependencies = [
  "moon_test_utils",
  "moon_tool",
  "moon_typescript_lang",
+ "moon_typescript_platform",
  "moon_utils",
  "proto_cli",
  "rustc-hash",
@@ -2828,7 +2830,6 @@ dependencies = [
  "cached",
  "moon_config",
  "moon_error",
- "moon_hasher",
  "moon_lang",
  "moon_logger",
  "moon_test_utils",
@@ -2843,12 +2844,15 @@ version = "0.1.0"
 dependencies = [
  "moon_config",
  "moon_error",
+ "moon_hasher",
  "moon_logger",
  "moon_project",
  "moon_test_utils",
  "moon_typescript_lang",
  "moon_utils",
  "rustc-hash",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

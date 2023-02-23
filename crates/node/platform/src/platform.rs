@@ -16,7 +16,7 @@ use moon_platform::{Platform, Runtime, Version};
 use moon_project::{Project, ProjectError};
 use moon_task::Task;
 use moon_tool::{Tool, ToolError, ToolManager};
-use moon_typescript_lang::TypeScriptTargetHasher;
+use moon_typescript_platform::TypeScriptTargetHasher;
 use moon_utils::{async_trait, glob::GlobSet, process::Command};
 use proto::Proto;
 use rustc_hash::FxHashMap;

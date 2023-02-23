@@ -1,3 +1,4 @@
+use moon_deno_platform::DenoPlatform;
 use moon_dep_graph::DepGraphBuilder;
 use moon_error::MoonError;
 use moon_node_platform::NodePlatform;
@@ -8,6 +9,14 @@ use moon_workspace::{Workspace, WorkspaceError};
 use std::path::Path;
 
 pub fn register_platforms(workspace: &mut Workspace) -> Result<(), WorkspaceError> {
+    if let Some(deno_config) = &workspace.toolchain_config.deno {
+        workspace.register_platform(Box::new(DenoPlatform::new(
+            deno_config,
+            &workspace.toolchain_config.typescript,
+            &workspace.root,
+        )));
+    }
+
     if let Some(node_config) = &workspace.toolchain_config.node {
         workspace.register_platform(Box::new(NodePlatform::new(
             node_config,

@@ -14,7 +14,7 @@ use moon_project::{Project, ProjectError};
 use moon_task::Task;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{Tool, ToolError, ToolManager};
-use moon_typescript_lang::TypeScriptTargetHasher;
+use moon_typescript_platform::TypeScriptTargetHasher;
 use moon_utils::{async_trait, process::Command};
 use proto::Proto;
 use rustc_hash::FxHashMap;
@@ -118,7 +118,7 @@ impl Platform for DenoPlatform {
         if !self.toolchain.has(&version) {
             self.toolchain.register(
                 &version,
-                NodeTool::new(&Proto::new()?, &self.config, &version)?,
+                DenoTool::new(&Proto::new()?, &self.config, &version)?,
             );
         }
 
@@ -166,7 +166,13 @@ impl Platform for DenoPlatform {
         print_checkpoint("deno cache", Checkpoint::Setup);
 
         Command::new(tool.get_bin_path()?)
-            .args(["cache", "--lock", "--lock-write", "src/deps.ts"])
+            .args([
+                "cache",
+                "--lock",
+                &self.config.lock_file,
+                "--lock-write",
+                &self.config.deps_file,
+            ])
             .cwd(working_dir)
             .exec_stream_output()
             .await?;

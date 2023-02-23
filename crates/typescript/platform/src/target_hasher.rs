@@ -1,7 +1,7 @@
-use crate::tsconfig::TsConfigJson;
 use moon_config::TypeScriptConfig;
 use moon_error::MoonError;
 use moon_hasher::{hash_btree, Hasher, Sha256};
+use moon_typescript_lang::tsconfig::TsConfigJson;
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, path::Path};
 

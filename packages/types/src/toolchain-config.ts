@@ -1,3 +1,8 @@
+export interface DenoConfig {
+	depsFile: string;
+	lockfile: string;
+}
+
 export type NodeVersionFormat =
 	| 'file'
 	| 'link'
@@ -45,6 +50,7 @@ export interface TypeScriptConfig {
 
 export interface ToolchainConfig {
 	extends: string | null;
+	deno: DenoConfig | null;
 	node: NodeConfig | null;
 	typescript: TypeScriptConfig | null;
 }

@@ -2828,7 +2828,6 @@ name = "moon_typescript_lang"
 version = "0.1.0"
 dependencies = [
  "cached",
- "moon_config",
  "moon_error",
  "moon_lang",
  "moon_logger",

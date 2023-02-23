@@ -1,3 +1,4 @@
+use crate::validators::is_default;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
@@ -8,14 +9,15 @@ use validator::Validate;
 pub struct DenoConfig {
     pub deps_file: String,
 
-    pub lock_file: String,
+    #[serde(skip_serializing_if = "is_default")]
+    pub lockfile: bool,
 }
 
 impl Default for DenoConfig {
     fn default() -> Self {
         DenoConfig {
             deps_file: "src/deps.ts".into(),
-            lock_file: "deno.lock".into(),
+            lockfile: false,
         }
     }
 }

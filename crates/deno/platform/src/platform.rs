@@ -159,6 +159,10 @@ impl Platform for DenoPlatform {
         runtime: &Runtime,
         working_dir: &Path,
     ) -> Result<(), ToolError> {
+        if !self.config.lockfile {
+            return Ok(());
+        }
+
         let tool = self.toolchain.get_for_version(runtime.version())?;
 
         debug!(target: LOG_TARGET, "Installing dependencies");
@@ -169,7 +173,7 @@ impl Platform for DenoPlatform {
             .args([
                 "cache",
                 "--lock",
-                &self.config.lock_file,
+                "deno.lock",
                 "--lock-write",
                 &self.config.deps_file,
             ])

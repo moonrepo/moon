@@ -72,11 +72,10 @@ impl Hasher for TypeScriptTargetHasher {
 mod tests {
     use super::*;
     use moon_hasher::to_hash;
+    use moon_typescript_lang::tsconfig::{CompilerOptions, Module, ModuleResolution, Target};
 
     #[test]
     fn supports_all_dep_types() {
-        use crate::tsconfig::{CompilerOptions, Module, ModuleResolution, Target};
-
         let mut tsconfig = TsConfigJson {
             compiler_options: Some(CompilerOptions::default()),
             ..TsConfigJson::default()

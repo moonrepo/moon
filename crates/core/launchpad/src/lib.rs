@@ -2,7 +2,7 @@ use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_logger::debug;
 use moon_utils::semver::Version;
-use moon_utils::{fs, get_cache_dir, is_ci, is_test_env, path};
+use moon_utils::{fs, get_cache_dir, get_workspace_root, is_ci, is_test_env, path};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::fs::OpenOptions;
@@ -22,7 +22,7 @@ pub struct CheckState {
     pub last_alert: SystemTime,
 }
 
-fn load_or_create_anonymous_id() -> Result<String, MoonError> {
+fn load_or_create_anonymous_uid() -> Result<String, MoonError> {
     let id_path = path::get_home_dir()
         .unwrap()
         .join(CONFIG_DIRNAME)
@@ -36,7 +36,11 @@ fn load_or_create_anonymous_id() -> Result<String, MoonError> {
 
     fs::write(id_path, &id)?;
 
-    return Ok(id);
+    Ok(id)
+}
+
+fn create_anonymous_rid() -> String {
+    moon_utils::hash(fs::file_name(get_workspace_root()))
 }
 
 pub async fn check_version(
@@ -66,7 +70,8 @@ pub async fn check_version(
         .get(CURRENT_VERSION_URL)
         .header("X-Moon-Version", local_version_str)
         .header("X-Moon-CI", is_ci().to_string())
-        .header("X-Moon-ID", load_or_create_anonymous_id()?)
+        .header("X-Moon-UID", load_or_create_anonymous_uid()?)
+        .header("X-Moon-RID", create_anonymous_rid())
         .send()
         .await?
         .text()

@@ -77,7 +77,7 @@ pub fn expand_task(project: &Project, task: &mut Task) {
     for input in &task.inputs {
         if glob::is_glob(input) {
             task.input_globs
-                .insert(glob::normalize(project.root.join(input)).unwrap());
+                .insert(glob::normalize(PathBuf::from(&project.source).join(input)).unwrap());
         } else {
             task.input_paths.insert(project.root.join(input));
         }
@@ -86,7 +86,7 @@ pub fn expand_task(project: &Project, task: &mut Task) {
     for output in &task.outputs {
         if glob::is_glob(output) {
             task.output_globs
-                .insert(glob::normalize(project.root.join(output)).unwrap());
+                .insert(glob::normalize(PathBuf::from(&project.source).join(output)).unwrap());
         } else {
             task.output_paths.insert(project.root.join(output));
         }
@@ -353,7 +353,7 @@ mod resolve_args {
 
         assert_eq!(
             resolver.resolve(&string_vec!["@in(0)"], &task).unwrap(),
-            (vec![], vec![project.root.join("src/**/*")])
+            (vec![], vec![PathBuf::from(project.source).join("src/**/*")])
         );
     }
 

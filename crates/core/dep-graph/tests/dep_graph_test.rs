@@ -10,6 +10,7 @@ use moon_utils::string_vec;
 use moon_workspace::Workspace;
 use petgraph::graph::NodeIndex;
 use rustc_hash::{FxHashMap, FxHashSet};
+use std::path::PathBuf;
 
 async fn create_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
     let workspace_config = WorkspaceConfig {
@@ -371,11 +372,11 @@ mod run_target_if_touched {
 
     #[tokio::test]
     async fn skips_if_untouched_project() {
-        let (workspace, projects, sandbox) = create_tasks_project_graph().await;
+        let (workspace, projects, _sandbox) = create_tasks_project_graph().await;
 
         let mut touched_files = FxHashSet::default();
-        touched_files.insert(sandbox.path().join("input-a/a.ts"));
-        touched_files.insert(sandbox.path().join("input-c/c.ts"));
+        touched_files.insert(PathBuf::from("input-a/a.ts"));
+        touched_files.insert(PathBuf::from("input-c/c.ts"));
 
         let mut graph = build_dep_graph(&workspace, &projects);
         graph
@@ -391,12 +392,12 @@ mod run_target_if_touched {
 
     #[tokio::test]
     async fn skips_if_untouched_task() {
-        let (workspace, projects, sandbox) = create_tasks_project_graph().await;
+        let (workspace, projects, _sandbox) = create_tasks_project_graph().await;
 
         let mut touched_files = FxHashSet::default();
-        touched_files.insert(sandbox.path().join("input-a/a2.ts"));
-        touched_files.insert(sandbox.path().join("input-b/b2.ts"));
-        touched_files.insert(sandbox.path().join("input-c/any.ts"));
+        touched_files.insert(PathBuf::from("input-a/a2.ts"));
+        touched_files.insert(PathBuf::from("input-b/b2.ts"));
+        touched_files.insert(PathBuf::from("input-c/any.ts"));
 
         let mut graph = build_dep_graph(&workspace, &projects);
         graph

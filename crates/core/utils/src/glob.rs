@@ -21,11 +21,15 @@ pub struct GlobSet<'t> {
 
 impl<'t> GlobSet<'t> {
     #[track_caller]
-    pub fn new(patterns: Vec<String>) -> Result<Self, GlobError> {
+    pub fn new<V, I>(patterns: I) -> Result<Self, GlobError>
+    where
+        V: AsRef<str>,
+        I: IntoIterator<Item = V>,
+    {
         let mut globs = vec![];
 
-        for pattern in &patterns {
-            globs.push(create_glob(pattern)?.into_owned());
+        for pattern in patterns.into_iter() {
+            globs.push(create_glob(pattern.as_ref())?.into_owned());
         }
 
         Ok(GlobSet {
@@ -128,11 +132,14 @@ pub fn split_patterns<P: AsRef<str>>(patterns: &[P]) -> Result<(Vec<Glob>, Vec<G
 
 #[inline]
 #[track_caller]
-pub fn walk<T: AsRef<Path>, P: AsRef<str>>(
-    base_dir: T,
-    patterns: &[P],
-) -> Result<Vec<PathBuf>, GlobError> {
-    let (globs, negations) = split_patterns(patterns)?;
+pub fn walk<P, V, I>(base_dir: P, patterns: I) -> Result<Vec<PathBuf>, GlobError>
+where
+    P: AsRef<Path>,
+    V: AsRef<str>,
+    I: IntoIterator<Item = V>,
+{
+    let patterns = patterns.into_iter().collect::<Vec<_>>();
+    let (globs, negations) = split_patterns(&patterns)?;
     let negation = Negation::try_from_patterns(negations).unwrap();
     let mut paths = vec![];
 
@@ -159,10 +166,12 @@ pub fn walk<T: AsRef<Path>, P: AsRef<str>>(
 }
 
 #[inline]
-pub fn walk_files<T: AsRef<Path>, P: AsRef<str>>(
-    base_dir: T,
-    patterns: &[P],
-) -> Result<Vec<PathBuf>, GlobError> {
+pub fn walk_files<P, V, I>(base_dir: P, patterns: I) -> Result<Vec<PathBuf>, GlobError>
+where
+    P: AsRef<Path>,
+    V: AsRef<str>,
+    I: IntoIterator<Item = V>,
+{
     let paths = walk(base_dir, patterns)?;
 
     Ok(paths

@@ -14,6 +14,7 @@ use moon_task::TouchedFilePaths;
 use moon_terminal::safe_exit;
 use moon_workspace::{Workspace, WorkspaceError};
 use rustc_hash::FxHashSet;
+use std::path::Path;
 
 type TargetList = Vec<Target>;
 
@@ -72,6 +73,7 @@ fn gather_runnable_targets(
     provider: &PipelineOutput,
     project_graph: &ProjectGraph,
     touched_files: &TouchedFilePaths,
+    workspace_root: &Path,
 ) -> Result<TargetList, ProjectError> {
     print_header(provider, "Gathering runnable targets");
 
@@ -81,7 +83,7 @@ fn gather_runnable_targets(
     for project in project_graph.get_all()? {
         for task in project.tasks.values() {
             if task.should_run_in_ci() {
-                if task.is_affected(touched_files)? {
+                if task.is_affected(touched_files, workspace_root)? {
                     targets.push(task.target.clone());
                 }
             } else {
@@ -185,7 +187,12 @@ pub async fn ci(options: CiOptions) -> Result<(), AnyError> {
     let ci_provider = get_pipeline_output();
     let project_graph = generate_project_graph(&mut workspace).await?;
     let touched_files = gather_touched_files(&ci_provider, &workspace, &options).await?;
-    let targets = gather_runnable_targets(&ci_provider, &project_graph, &touched_files)?;
+    let targets = gather_runnable_targets(
+        &ci_provider,
+        &project_graph,
+        &touched_files,
+        &workspace.root,
+    )?;
 
     if targets.is_empty() {
         return Ok(());

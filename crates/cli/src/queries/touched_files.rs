@@ -115,7 +115,7 @@ pub async fn query_touched_files(
                 touched_files_to_log.push(format!("  {}", color::file(f)));
             }
 
-            workspace.root.join(path::normalize_separators(f))
+            PathBuf::from(path::normalize_separators(f))
         })
         .collect();
 

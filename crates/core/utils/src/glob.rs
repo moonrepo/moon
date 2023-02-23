@@ -139,7 +139,6 @@ where
     I: IntoIterator<Item = V>,
 {
     let patterns = patterns.into_iter().collect::<Vec<_>>();
-
     let (globs, negations) = split_patterns(&patterns)?;
     let negation = Negation::try_from_patterns(negations).unwrap();
     let mut paths = vec![];

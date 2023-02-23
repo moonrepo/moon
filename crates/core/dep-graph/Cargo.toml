@@ -19,7 +19,6 @@ moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
 moon_target = { path = "../target" }
 moon_task = { path = "../task" }
-moon_utils = { path = "../utils" }
 petgraph = { version = "0.6.2", features = ["serde"] }
 rustc-hash = { workspace = true }
 thiserror = { workspace = true }
@@ -28,6 +27,7 @@ thiserror = { workspace = true }
 moon = { path = "../moon" }
 moon_config = { path = "../config" }
 moon_test_utils = { path = "../test-utils" }
+moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
 criterion = { workspace = true }
 tokio = { workspace = true }

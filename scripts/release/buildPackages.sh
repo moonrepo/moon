@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-args="--addFiles --addExports --declaration --declarationConfig tsconfig.build.json"
+args="--addFiles --addExports --declaration"
 
 export NODE_ENV=production
 

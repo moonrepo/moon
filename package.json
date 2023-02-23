@@ -27,7 +27,7 @@
     "execa": "^6.1.0",
     "jest": "^29.4.3",
     "jest-preset-moon": "^2.0.0",
-    "packemon": "^2.4.1",
+    "packemon": "^3.0.1",
     "prettier": "^2.8.4",
     "prettier-config-moon": "^1.1.1",
     "tsconfig-moon": "^1.2.1",

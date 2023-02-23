@@ -10,10 +10,6 @@ pub struct SystemTargetHasher {
 
     // Operating system
     os: String,
-
-    // Version of our hasher
-    #[allow(dead_code)]
-    version: String,
 }
 
 impl SystemTargetHasher {
@@ -21,14 +17,12 @@ impl SystemTargetHasher {
         SystemTargetHasher {
             arch: consts::ARCH.to_owned(),
             os: consts::OS.to_owned(),
-            version: "1".into(),
         }
     }
 }
 
 impl Hasher for SystemTargetHasher {
     fn hash(&self, sha: &mut Sha256) {
-        sha.update(self.version.as_bytes());
         sha.update(self.arch.as_bytes());
         sha.update(self.os.as_bytes());
     }

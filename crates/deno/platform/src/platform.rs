@@ -112,6 +112,7 @@ impl Platform for DenoPlatform {
         //     Some(v) => Version::new(v),
         //     None => Version::new_global(),
         // };
+
         let version = Version::new_global();
         let mut last_versions = FxHashMap::default();
 

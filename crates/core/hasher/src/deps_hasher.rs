@@ -8,17 +8,12 @@ pub struct DepsHasher {
     dependencies: BTreeMap<String, String>,
 
     name: String,
-
-    // Version of our hasher
-    #[allow(dead_code)]
-    version: String,
 }
 
 impl DepsHasher {
     pub fn new(name: String) -> Self {
         DepsHasher {
             name,
-            version: "1".into(),
             ..DepsHasher::default()
         }
     }
@@ -31,7 +26,6 @@ impl DepsHasher {
 impl Hasher for DepsHasher {
     fn hash(&self, sha: &mut Sha256) {
         sha.update(self.name.as_bytes());
-        sha.update(self.version.as_bytes());
         hash_btree(&self.dependencies, sha);
     }
 

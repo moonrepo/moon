@@ -13,17 +13,12 @@ pub struct NodeTargetHasher {
     // All the dependencies of the project (including dev and peer),
     // and the hashes corresponding with their versions
     dependencies: BTreeMap<String, Vec<String>>,
-
-    // Version of our hasher
-    #[allow(dead_code)]
-    version: String,
 }
 
 impl NodeTargetHasher {
     pub fn new(node_version: Option<String>) -> Self {
         NodeTargetHasher {
             node_version: node_version.unwrap_or_else(|| "unknown".into()),
-            version: "1".into(),
             ..NodeTargetHasher::default()
         }
     }
@@ -64,7 +59,6 @@ impl NodeTargetHasher {
 
 impl Hasher for NodeTargetHasher {
     fn hash(&self, sha: &mut Sha256) {
-        sha.update(self.version.as_bytes());
         sha.update(self.node_version.as_bytes());
 
         for versions in self.dependencies.values() {

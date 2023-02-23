@@ -101,7 +101,7 @@ pub fn validate_id<K: AsRef<str>, V: AsRef<str>>(key: K, id: V) -> Result<(), Va
         return Err(create_validation_error(
             "invalid_id",
             key.as_ref(),
-            "Must be a valid ID (accepts A-Z, a-z, 0-9, - (dashes), _ (underscores), /, and must start with a letter)",
+            "Must be a valid ID (accepts A-Z, a-z, 0-9, . (periods), - (dashes), _ (underscores), /, and must start with a letter)",
         ));
     }
 
@@ -315,6 +315,11 @@ mod tests {
             assert!(validate_id("key", "-foo").is_err());
             assert!(validate_id("key", "_foo").is_err());
         }
+
+        #[test]
+        fn supports_periods() {
+            assert!(validate_id("key", "a.b").is_ok());
+        }
     }
 
     mod validate_target {
@@ -353,6 +358,24 @@ mod tests {
             assert!(validate_target("key", "a:^").is_err());
             assert!(validate_target("key", "b:~").is_err());
             assert!(validate_target("key", "c:").is_err());
+        }
+
+        #[test]
+        fn supports_periods() {
+            assert!(validate_target("key", ":a.b").is_ok());
+            assert!(validate_target("key", "a.b:c.d").is_ok());
+            assert!(validate_target("key", "^:a.b").is_ok());
+            assert!(validate_target("key", "~:b.c").is_ok());
+            assert!(validate_target("key", ":c.d").is_ok());
+        }
+
+        #[test]
+        fn supports_slashes() {
+            assert!(validate_target("key", ":a/b").is_ok());
+            assert!(validate_target("key", "a/b:c/d").is_ok());
+            assert!(validate_target("key", "^:a/b").is_ok());
+            assert!(validate_target("key", "~:b/c").is_ok());
+            assert!(validate_target("key", ":c/d").is_ok());
         }
     }
 

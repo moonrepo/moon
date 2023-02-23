@@ -59,7 +59,7 @@ pub async fn collect_and_hash_inputs(
             let mut hashed_file_tree = vcs.get_file_tree_hashes(&project.source).await?;
 
             // Filter out non-matching inputs
-            hashed_file_tree.retain(|f, _| globset.matches(f).unwrap_or(false));
+            hashed_file_tree.retain(|f, _| globset.matches(f));
 
             hashed_inputs.extend(hashed_file_tree);
         }
@@ -70,18 +70,10 @@ pub async fn collect_and_hash_inputs(
 
     // Include local file changes so that development builds work.
     // Also run this LAST as it should take highest precedence!
-    let local_files = vcs.get_touched_files().await?;
+    files_to_hash.extend(vcs.get_touched_files().await?.all);
 
-    if !local_files.all.is_empty() {
-        // Only hash files that are within the task's inputs
-        let files = local_files
-            .all
-            .into_iter()
-            .filter(|f| globset.matches(f).unwrap_or(false))
-            .collect::<Vec<String>>();
-
-        files_to_hash.extend(files);
-    }
+    // Filter out inputs that overlap with outputs! This is very important!
+    files_to_hash.retain(|f| globset.matches(f));
 
     // Hash all files that we've collected
     if !files_to_hash.is_empty() {

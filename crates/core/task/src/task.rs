@@ -177,7 +177,7 @@ impl Task {
 
     /// Create a globset of all input globs to match with.
     pub fn create_globset(&self) -> Result<glob::GlobSet, TaskError> {
-        Ok(glob::GlobSet::new(&self.input_globs)?)
+        Ok(glob::GlobSet::new(&self.input_globs, &self.output_globs)?)
     }
 
     /// Determine the type of task after inheritance and expansion.
@@ -210,7 +210,7 @@ impl Task {
 
             let abs_file = workspace_root.join(file);
 
-            if self.input_paths.contains(&abs_file) || (has_globs && globset.matches(file)?) {
+            if self.input_paths.contains(&abs_file) || (has_globs && globset.matches(file)) {
                 // Mimic relative from ("./")
                 files.push(PathBuf::from(".").join(file.strip_prefix(project_source).unwrap()));
             }
@@ -240,7 +240,6 @@ impl Task {
             }
         }
 
-        let has_globs = !self.input_globs.is_empty();
         let globset = self.create_globset()?;
 
         for file in touched_files {
@@ -256,7 +255,7 @@ impl Task {
                 return Ok(true);
             }
 
-            if has_globs && globset.matches(file)? {
+            if globset.matches(file) {
                 trace!(
                     target: self.get_log_target(),
                     "Affected by {} (via input globs)",

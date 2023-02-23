@@ -66,7 +66,7 @@ implicitDeps:
 
 #[test]
 #[should_panic(
-    expected = "Must be a valid ID (accepts A-Z, a-z, 0-9, - (dashes), _ (underscores), /, and must start with a letter)"
+    expected = "Must be a valid ID (accepts A-Z, a-z, 0-9, . (periods), - (dashes), _ (underscores), /, and must start with a letter)"
 )]
 fn invalid_dep_target_no_scope() {
     figment::Jail::expect_with(|jail| {

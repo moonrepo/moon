@@ -5,14 +5,14 @@ pub use regex::{Captures, Regex};
 
 lazy_static! {
     // Capture group for IDs/names/etc
-    static ref ID_GROUP: &'static str = "([A-Za-z]{1}[0-9A-Za-z/_-]*)";
-    static ref ID_CLEAN: Regex = Regex::new("[^0-9A-Za-z/_-]+").unwrap();
+    static ref ID_GROUP: &'static str = "([A-Za-z]{1}[0-9A-Za-z/\\._-]*)";
+    static ref ID_CLEAN: Regex = Regex::new("[^0-9A-Za-z/\\._-]+").unwrap();
 
     pub static ref ID_PATTERN: Regex = Regex::new(&format!("^{}$", *ID_GROUP)).unwrap();
     pub static ref TARGET_PATTERN: Regex = Regex::new(
         // Only target projects support `@` because of Node.js,
         // we don't want to support it in regular IDs!
-        "^(?P<project>(?:[A-Za-z@]{1}[0-9A-Za-z/_-]*|\\^|~))?:(?P<task>[A-Za-z]{1}[0-9A-Za-z/_-]*)$").unwrap();
+        "^(?P<project>(?:[A-Za-z@]{1}[0-9A-Za-z/\\._-]*|\\^|~))?:(?P<task>[A-Za-z]{1}[0-9A-Za-z/\\._-]*)$").unwrap();
 
     // Input values
     pub static ref ENV_VAR: Regex = Regex::new("^\\$[A-Z0-9_]+$").unwrap();
@@ -76,7 +76,7 @@ mod tests {
 
         #[test]
         fn replaces_unsupported_chars() {
-            assert_eq!(clean_id("foo bar.baz$123"), "foo-bar-baz-123");
+            assert_eq!(clean_id("foo bar.baz$123"), "foo-bar.baz-123");
         }
     }
 }

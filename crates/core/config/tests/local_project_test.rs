@@ -414,6 +414,41 @@ tasks:
             Ok(())
         });
     }
+
+    #[test]
+    fn supports_name_patterns() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                super::CONFIG_PROJECT_FILENAME,
+                r#"
+tasks:
+    normal:
+      command: 'a'
+    kebab-case:
+      command: 'b'
+    camelCase:
+      command: 'c'
+    snake_case:
+      command: 'd'
+    dot.case:
+      command: 'e'
+    slash/case:
+      command: 'f'
+"#,
+            )?;
+
+            let config: ProjectConfig = super::load_jailed_config()?;
+
+            assert!(config.tasks.contains_key("normal"));
+            assert!(config.tasks.contains_key("kebab-case"));
+            assert!(config.tasks.contains_key("camelCase"));
+            assert!(config.tasks.contains_key("snake_case"));
+            assert!(config.tasks.contains_key("dot.case"));
+            assert!(config.tasks.contains_key("slash/case"));
+
+            Ok(())
+        });
+    }
 }
 
 mod project {

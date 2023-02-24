@@ -5,7 +5,7 @@ use moon_config::{
 use moon_project::Project;
 use moon_task::FileGroup;
 use moon_test_utils::get_fixtures_root;
-use moon_utils::string_vec;
+use moon_utils::{path, string_vec};
 use rustc_hash::FxHashMap;
 
 fn mock_file_groups() -> FxHashMap<String, FileGroup> {
@@ -28,7 +28,7 @@ fn mock_tasks_config() -> InheritedTasksManager {
 }
 
 #[test]
-#[should_panic(expected = "MissingProjectAtSource(\"projects/missing\")")]
+#[should_panic(expected = "MissingProjectAtSource")]
 fn doesnt_exist() {
     Project::new(
         "missing",
@@ -57,9 +57,9 @@ fn no_config() {
         Project {
             id: "no-config".into(),
             log_target: "moon:project:no-config".into(),
-            root: workspace_root.join("projects/no-config"),
+            root: workspace_root.join(path::normalize_separators("projects/no-config")),
             file_groups: mock_file_groups(),
-            source: "projects/no-config".into(),
+            source: path::normalize_separators("projects/no-config"),
             ..Project::default()
         }
     );
@@ -83,9 +83,9 @@ fn empty_config() {
             id: "empty-config".into(),
             config: ProjectConfig::default(),
             log_target: "moon:project:empty-config".into(),
-            root: workspace_root.join("projects/empty-config"),
+            root: workspace_root.join(path::normalize_separators("projects/empty-config")),
             file_groups: mock_file_groups(),
-            source: "projects/empty-config".into(),
+            source: path::normalize_separators("projects/empty-config"),
             ..Project::default()
         }
     );
@@ -102,7 +102,7 @@ fn basic_config() {
         |_| ProjectLanguage::Unknown,
     )
     .unwrap();
-    let project_root = workspace_root.join("projects/basic");
+    let project_root = workspace_root.join(path::normalize_separators("projects/basic"));
 
     // Merges with global
     let mut file_groups = mock_file_groups();
@@ -124,7 +124,7 @@ fn basic_config() {
             log_target: "moon:project:basic".into(),
             root: project_root,
             file_groups,
-            source: "projects/basic".into(),
+            source: path::normalize_separators("projects/basic"),
             ..Project::default()
         }
     );
@@ -159,9 +159,9 @@ fn advanced_config() {
                 ..ProjectConfig::default()
             },
             log_target: "moon:project:advanced".into(),
-            root: workspace_root.join("projects/advanced"),
+            root: workspace_root.join(path::normalize_separators("projects/advanced")),
             file_groups: mock_file_groups(),
-            source: "projects/advanced".into(),
+            source: path::normalize_separators("projects/advanced"),
             ..Project::default()
         }
     );

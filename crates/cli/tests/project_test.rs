@@ -113,7 +113,7 @@ fn depends_on_paths() {
         cmd.arg("project").arg("foo");
     });
 
-    assert_snapshot!(assert.output());
+    assert_snapshot!(assert.output_standardized());
 }
 
 #[test]

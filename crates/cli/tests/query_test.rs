@@ -48,7 +48,7 @@ mod projects {
             cmd.arg("query").arg("projects");
         });
 
-        assert_snapshot!(assert.output());
+        assert_snapshot!(assert.output_standardized());
     }
 
     #[test]
@@ -331,7 +331,7 @@ mod tasks {
             cmd.arg("query").arg("tasks");
         });
 
-        assert_snapshot!(assert.output());
+        assert_snapshot!(assert.output_standardized());
     }
 
     #[test]

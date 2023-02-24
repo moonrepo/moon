@@ -17,9 +17,9 @@ where
     if file.starts_with('/') {
         workspace_root
             .as_ref()
-            .join(file.strip_prefix('/').unwrap())
+            .join(normalize_separators(file.strip_prefix('/').unwrap()))
     } else {
-        project_root.as_ref().join(file)
+        project_root.as_ref().join(normalize_separators(file))
     }
 }
 

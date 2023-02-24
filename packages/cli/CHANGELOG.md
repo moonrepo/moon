@@ -13,20 +13,23 @@
 - Added offline (no internet connection) support.
 - Added project-level TypeScript settings via `toolchain.typescript` in `moon.yml`.
 - Updated `language` setting in `moon.yml` to support any custom language.
-- Updated `toolchain.typescript` setting in `moon.yml` to support overriding workspace-level
-  settings.
 - Updated project, task, and target identifiers to support periods (`.`).
 
 ##### Moonbase
 
 - CI runs can now be tracked in moonbase to gather insights and metrics.
 
+#### 🐞 Fixes
+
+- Fixed an issue where task outputs were considered as input sources when hashing, causing
+  unnecessary cache misses.
+
 #### ⚙️ Internal
 
 - Updated Rust to v1.67.
 - Added `context` to `pipeline.started` and `pipeline.finished` events.
 - Refactored glob matching to use workspace relative paths instead of absolute. Please report an
-  issue if hashing or affected is now inaccurate.
+  issue if hashing or affected detection is now inaccurate.
 - We now build against older operating systems in an attempt to solve GLIBC version errors.
 
 ## 0.24.3

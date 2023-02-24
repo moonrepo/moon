@@ -137,7 +137,7 @@ impl FileGroup {
                     project_root
                 };
 
-                for path in glob::walk(root, &[file.clone()])? {
+                for path in glob::walk(root, &[file])? {
                     let allowed = if is_dir {
                         path.is_dir()
                     } else {

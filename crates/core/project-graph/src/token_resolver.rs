@@ -288,7 +288,7 @@ impl<'task> TokenResolver<'task> {
                 .ok_or_else(|| TokenError::UnknownFileGroup(token.to_owned(), id.to_owned()))
         };
 
-        let workspace_root = &self.workspace_root;
+        let workspace_root = self.workspace_root;
         let project_root = &self.project.root;
 
         match token_type {

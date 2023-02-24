@@ -2678,6 +2678,7 @@ name = "moon_runner"
 version = "0.1.0"
 dependencies = [
  "console",
+ "moon",
  "moon_action",
  "moon_action_context",
  "moon_cache",
@@ -2691,6 +2692,7 @@ dependencies = [
  "moon_target",
  "moon_task",
  "moon_terminal",
+ "moon_test_utils",
  "moon_tool",
  "moon_utils",
  "moon_vcs",

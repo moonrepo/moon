@@ -199,7 +199,6 @@ impl Task {
         project_source: &str,
     ) -> Result<Vec<PathBuf>, TaskError> {
         let mut files = vec![];
-        let has_globs = !self.input_globs.is_empty();
         let globset = self.create_globset()?;
 
         for file in touched_files {
@@ -210,7 +209,7 @@ impl Task {
 
             let abs_file = workspace_root.join(file);
 
-            if self.input_paths.contains(&abs_file) || (has_globs && globset.matches(file)) {
+            if self.input_paths.contains(&abs_file) || globset.matches(file) {
                 // Mimic relative from ("./")
                 files.push(PathBuf::from(".").join(file.strip_prefix(project_source).unwrap()));
             }

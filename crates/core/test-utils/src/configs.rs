@@ -52,6 +52,10 @@ pub fn get_cases_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Inherit
             ("targetScopeC".to_owned(), "target-scope-c".to_owned()),
             // Outputs
             ("outputs".to_owned(), "outputs".to_owned()),
+            (
+                "outputsFiltering".to_owned(),
+                "outputs-filtering".to_owned(),
+            ),
             ("outputStyles".to_owned(), "output-styles".to_owned()),
         ])),
         ..WorkspaceConfig::default()

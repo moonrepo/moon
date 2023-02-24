@@ -39,7 +39,7 @@ fn load_project_config(
     if config_path.exists() {
         return ProjectConfig::load(config_path).map_err(|e| {
             ProjectError::InvalidConfigFile(
-                String::from(project_source),
+                project_source.to_owned(),
                 if let ConfigError::FailedValidation(valids) = e {
                     format_figment_errors(valids)
                 } else {
@@ -337,13 +337,14 @@ impl Project {
         F: FnOnce(&Path) -> ProjectLanguage,
     {
         let log_target = format!("moon:project:{id}");
+        let source = path::normalize_separators(source);
 
         // For the root-level project, the "." dot actually causes
         // a ton of unwanted issues, so just use workspace root directly.
         let root = if source.is_empty() || source == "." {
             workspace_root.to_owned()
         } else {
-            workspace_root.join(path::normalize_separators(source))
+            workspace_root.join(&source)
         };
 
         debug!(
@@ -351,14 +352,14 @@ impl Project {
             "Loading project from {} (id = {}, path = {})",
             color::path(&root),
             color::id(id),
-            color::file(source),
+            color::file(&source),
         );
 
         if !root.exists() {
-            return Err(ProjectError::MissingProjectAtSource(String::from(source)));
+            return Err(ProjectError::MissingProjectAtSource(source));
         }
 
-        let config = load_project_config(&log_target, &root, source)?;
+        let config = load_project_config(&log_target, &root, &source)?;
         let language = if matches!(config.language, ProjectLanguage::Unknown) {
             detect_language(&root)
         } else {

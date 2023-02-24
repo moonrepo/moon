@@ -188,10 +188,19 @@ impl Platform for DenoPlatform {
     async fn sync_project(
         &self,
         _context: &ActionContext,
-        _project: &Project,
-        _dependencies: &FxHashMap<String, &Project>,
+        project: &Project,
+        dependencies: &FxHashMap<String, &Project>,
     ) -> Result<bool, ProjectError> {
-        Ok(false)
+        let modified = actions::sync_project(
+            project,
+            dependencies,
+            &self.workspace_root,
+            &self.config,
+            &self.typescript_config,
+        )
+        .await?;
+
+        Ok(modified)
     }
 
     async fn hash_manifest_deps(
@@ -205,18 +214,20 @@ impl Platform for DenoPlatform {
 
         if let Ok(Some(deno_json)) = DenoJson::read(manifest_path) {
             if let Some(imports) = &deno_json.imports {
-                hasher.hash_deps(&imports);
+                hasher.hash_deps(imports);
             }
 
             if let Some(import_map_path) = &deno_json.import_map {
                 if let Ok(Some(import_map)) = DenoJson::read(project_root.join(import_map_path)) {
                     if let Some(imports) = &import_map.imports {
-                        hasher.hash_deps(&imports);
+                        hasher.hash_deps(imports);
                     }
                 }
             }
 
-            // TODO scopes?
+            if let Some(scopes) = &deno_json.scopes {
+                hasher.hash_aliases(scopes);
+            }
         }
 
         // We can't parse TS files, so hash the file contents

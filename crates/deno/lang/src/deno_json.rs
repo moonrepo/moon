@@ -21,10 +21,10 @@ pub struct DenoJson {
     pub import_map: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub imports: Option<BTreeMap<String, BTreeMap<String, String>>>,
+    pub imports: Option<BTreeMap<String, String>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub scopes: Option<BTreeMap<String, String>>,
+    pub scopes: Option<BTreeMap<String, BTreeMap<String, String>>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tasks: Option<BTreeMap<String, String>>,

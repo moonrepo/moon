@@ -2,30 +2,41 @@ use crate::RunnerError;
 use moon_config::CONFIG_PROJECT_FILENAME;
 use moon_hasher::convert_paths_to_strings;
 use moon_task::Task;
-use moon_utils::{glob, path};
+use moon_utils::glob;
 use moon_vcs::Vcs;
 use rustc_hash::FxHashSet;
-use std::{
-    collections::BTreeMap,
-    path::{Path, PathBuf},
-};
+use std::{collections::BTreeMap, path::Path};
 
 type HashedInputs = BTreeMap<String, String>;
 
-fn collect_with_globs(task: &Task, workspace_root: &Path) -> Result<Vec<PathBuf>, RunnerError> {
-    let mut patterns = vec![];
-
-    // Find inputs
-    for glob in &task.input_globs {
-        patterns.push(glob.to_owned());
+fn is_valid_input_source(
+    task: &Task,
+    input_globset: &glob::GlobSet,
+    output_globset: &glob::GlobSet,
+    workspace_root: &Path,
+    workspace_relative_input: &str,
+) -> bool {
+    // Don't invalidate existing hashes when moon.yml changes
+    // as we already hash the contents of each task!
+    if workspace_relative_input.ends_with(CONFIG_PROJECT_FILENAME) {
+        return false;
     }
 
-    // Exclude outputs
-    for glob in &task.output_globs {
-        patterns.push(format!("!{glob}"));
+    let absolute_input = workspace_root.join(workspace_relative_input);
+
+    // Remove outputs first
+    if output_globset.matches(workspace_relative_input) {
+        return false;
     }
 
-    Ok(glob::walk(workspace_root, &patterns)?)
+    for output in &task.output_paths {
+        if &absolute_input == output || absolute_input.starts_with(output) {
+            return false;
+        }
+    }
+
+    // Filter inputs last
+    task.input_paths.contains(&absolute_input) || input_globset.matches(workspace_relative_input)
 }
 
 // Hash all inputs for a task, but exclude outputs
@@ -40,7 +51,8 @@ pub async fn collect_and_hash_inputs(
 ) -> Result<HashedInputs, RunnerError> {
     let mut files_to_hash = FxHashSet::default(); // Absolute paths
     let mut hashed_inputs: HashedInputs = BTreeMap::new();
-    let globset = task.create_globset()?;
+    let input_globset = glob::GlobSet::new(&task.input_globs, &FxHashSet::default())?;
+    let output_globset = glob::GlobSet::new(&task.output_globs, &FxHashSet::default())?;
 
     // 1: Collect inputs as a set of absolute paths
 
@@ -53,7 +65,7 @@ pub async fn collect_and_hash_inputs(
     if !task.input_globs.is_empty() {
         // Collect inputs by walking and globbing the file system
         if use_globs {
-            files_to_hash.extend(collect_with_globs(task, workspace_root)?);
+            files_to_hash.extend(glob::walk(workspace_root, &task.input_globs)?);
 
             // Collect inputs by querying VCS then matching against globs
         } else {
@@ -77,27 +89,8 @@ pub async fn collect_and_hash_inputs(
 
     // 3: Filter hashes to applicable inputs
 
-    hashed_inputs.retain(|f, _| globset.matches(f));
-
-    // 4: Remove outputs as sources
-
-    // This is gross, a better way???
-    let mut rel_output_paths = vec![];
-
-    for output in &task.output_paths {
-        rel_output_paths.push(path::to_string(
-            output.strip_prefix(workspace_root).unwrap(),
-        )?);
-    }
-
     hashed_inputs.retain(|f, _| {
-        // Don't invalidate existing hashes when moon.yml changes
-        // as we already hash the contents of each task!
-        if f.ends_with(CONFIG_PROJECT_FILENAME) {
-            false
-        } else {
-            rel_output_paths.iter().all(|o| !f.starts_with(o))
-        }
+        is_valid_input_source(task, &input_globset, &output_globset, workspace_root, f)
     });
 
     Ok(hashed_inputs)

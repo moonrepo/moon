@@ -145,3 +145,115 @@ async fn filters_using_input_globs_in_glob_mode() {
 
     assert!(files.keys().collect::<Vec<_>>().is_empty());
 }
+
+#[tokio::test]
+async fn filters_using_input_files() {
+    let sandbox = cases_sandbox();
+    sandbox.enable_git();
+
+    let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+    let project_graph = generate_project_graph(&mut workspace).await.unwrap();
+    let vcs = VcsLoader::load(&workspace.root, &workspace.config).unwrap();
+
+    let project = project_graph.get("outputsFiltering").unwrap();
+
+    create_out_files(&project.root);
+
+    // Out file
+    let files = collect_and_hash_inputs(
+        &vcs,
+        project.get_task("inFileOutFile").unwrap(),
+        &project.source,
+        &workspace.root,
+        false,
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(
+        files.keys().collect::<Vec<_>>(),
+        ["outputs-filtering/out/1", "outputs-filtering/out/3"]
+    );
+
+    // Out file
+    let files = collect_and_hash_inputs(
+        &vcs,
+        project.get_task("inFileOutDir").unwrap(),
+        &project.source,
+        &workspace.root,
+        false,
+    )
+    .await
+    .unwrap();
+
+    assert!(files.keys().collect::<Vec<_>>().is_empty());
+
+    // Out glob
+    let files = collect_and_hash_inputs(
+        &vcs,
+        project.get_task("inFileOutGlob").unwrap(),
+        &project.source,
+        &workspace.root,
+        false,
+    )
+    .await
+    .unwrap();
+
+    assert!(files.keys().collect::<Vec<_>>().is_empty());
+}
+
+#[tokio::test]
+async fn filters_using_input_files_in_glob_mode() {
+    let sandbox = cases_sandbox();
+    sandbox.enable_git();
+
+    let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+    let project_graph = generate_project_graph(&mut workspace).await.unwrap();
+    let vcs = VcsLoader::load(&workspace.root, &workspace.config).unwrap();
+
+    let project = project_graph.get("outputsFiltering").unwrap();
+
+    create_out_files(&project.root);
+
+    // Out file
+    let files = collect_and_hash_inputs(
+        &vcs,
+        project.get_task("inFileOutFile").unwrap(),
+        &project.source,
+        &workspace.root,
+        true,
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(
+        files.keys().collect::<Vec<_>>(),
+        ["outputs-filtering/out/1", "outputs-filtering/out/3"]
+    );
+
+    // Out file
+    let files = collect_and_hash_inputs(
+        &vcs,
+        project.get_task("inFileOutDir").unwrap(),
+        &project.source,
+        &workspace.root,
+        true,
+    )
+    .await
+    .unwrap();
+
+    assert!(files.keys().collect::<Vec<_>>().is_empty());
+
+    // Out glob
+    let files = collect_and_hash_inputs(
+        &vcs,
+        project.get_task("inFileOutGlob").unwrap(),
+        &project.source,
+        &workspace.root,
+        true,
+    )
+    .await
+    .unwrap();
+
+    assert!(files.keys().collect::<Vec<_>>().is_empty());
+}

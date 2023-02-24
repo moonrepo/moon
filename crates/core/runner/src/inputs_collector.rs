@@ -2,7 +2,7 @@ use crate::RunnerError;
 use moon_config::CONFIG_PROJECT_FILENAME;
 use moon_hasher::convert_paths_to_strings;
 use moon_task::Task;
-use moon_utils::glob;
+use moon_utils::{glob, path};
 use moon_vcs::Vcs;
 use rustc_hash::FxHashSet;
 use std::{collections::BTreeMap, path::Path};
@@ -92,6 +92,10 @@ pub async fn collect_and_hash_inputs(
     hashed_inputs.retain(|f, _| {
         is_valid_input_source(task, &input_globset, &output_globset, workspace_root, f)
     });
+
+    // 4: Normalize input key paths
+
+    hashed_inputs = hashed_inputs.into_iter().map(|(k, v)| (path::standardize_separators(k), v)).collect::<BTreeMap<_, _>>();
 
     Ok(hashed_inputs)
 }

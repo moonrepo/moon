@@ -1,5 +1,5 @@
 mod errors;
-mod inputs_collector;
+pub mod inputs_collector;
 mod runner;
 mod target_hasher;
 

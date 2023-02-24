@@ -1,8 +1,8 @@
 use crate::RunnerError;
+use moon_config::CONFIG_PROJECT_FILENAME;
 use moon_hasher::convert_paths_to_strings;
-use moon_project::Project;
 use moon_task::Task;
-use moon_utils::glob;
+use moon_utils::{glob, path};
 use moon_vcs::Vcs;
 use rustc_hash::FxHashSet;
 use std::{
@@ -33,16 +33,17 @@ fn collect_with_globs(task: &Task, workspace_root: &Path) -> Result<Vec<PathBuf>
 #[allow(clippy::borrowed_box)]
 pub async fn collect_and_hash_inputs(
     vcs: &Box<dyn Vcs + Send + Sync>,
-    project: &Project,
     task: &Task,
+    project_source: &str,
     workspace_root: &Path,
     use_globs: bool,
 ) -> Result<HashedInputs, RunnerError> {
-    let mut files_to_hash = FxHashSet::default();
+    let mut files_to_hash = FxHashSet::default(); // Absolute paths
     let mut hashed_inputs: HashedInputs = BTreeMap::new();
     let globset = task.create_globset()?;
 
-    // Gather inputs to hash
+    // 1: Collect inputs as a set of absolute paths
+
     if !task.input_paths.is_empty() {
         for input in &task.input_paths {
             files_to_hash.insert(input.to_path_buf());
@@ -56,29 +57,48 @@ pub async fn collect_and_hash_inputs(
 
             // Collect inputs by querying VCS then matching against globs
         } else {
-            let mut hashed_file_tree = vcs.get_file_tree_hashes(&project.source).await?;
-
-            // Filter out non-matching inputs
-            hashed_file_tree.retain(|f, _| globset.matches(f));
-
-            hashed_inputs.extend(hashed_file_tree);
+            hashed_inputs.extend(vcs.get_file_tree_hashes(project_source).await?);
         }
     }
 
-    // Convert absolute paths to workspace relative path strings
-    let mut files_to_hash = convert_paths_to_strings(&files_to_hash, workspace_root)?;
-
     // Include local file changes so that development builds work.
     // Also run this LAST as it should take highest precedence!
-    files_to_hash.extend(vcs.get_touched_files().await?.all);
+    for local_file in vcs.get_touched_files().await?.all {
+        files_to_hash.insert(workspace_root.join(local_file));
+    }
 
-    // Filter out inputs that overlap with outputs! This is very important!
-    files_to_hash.retain(|f| globset.matches(f));
+    // 2: Convert to workspace relative paths and extract file hashes
 
-    // Hash all files that we've collected
+    let files_to_hash = convert_paths_to_strings(&files_to_hash, workspace_root)?;
+
     if !files_to_hash.is_empty() {
         hashed_inputs.extend(vcs.get_file_hashes(&files_to_hash, true).await?);
     }
+
+    // 3: Filter hashes to applicable inputs
+
+    hashed_inputs.retain(|f, _| globset.matches(f));
+
+    // 4: Remove outputs as sources
+
+    // This is gross, a better way???
+    let mut rel_output_paths = vec![];
+
+    for output in &task.output_paths {
+        rel_output_paths.push(path::to_string(
+            output.strip_prefix(workspace_root).unwrap(),
+        )?);
+    }
+
+    hashed_inputs.retain(|f, _| {
+        // Don't invalidate existing hashes when moon.yml changes
+        // as we already hash the contents of each task!
+        if f.ends_with(CONFIG_PROJECT_FILENAME) {
+            false
+        } else {
+            rel_output_paths.iter().all(|o| !f.starts_with(o))
+        }
+    });
 
     Ok(hashed_inputs)
 }

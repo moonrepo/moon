@@ -210,8 +210,8 @@ impl<'a> Runner<'a> {
         hasher.hash_inputs(
             inputs_collector::collect_and_hash_inputs(
                 vcs,
-                project,
                 task,
+                &project.source,
                 &workspace.root,
                 use_globs,
             )

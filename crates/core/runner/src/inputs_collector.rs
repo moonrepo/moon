@@ -95,7 +95,10 @@ pub async fn collect_and_hash_inputs(
 
     // 4: Normalize input key paths
 
-    hashed_inputs = hashed_inputs.into_iter().map(|(k, v)| (path::standardize_separators(k), v)).collect::<BTreeMap<_, _>>();
+    hashed_inputs = hashed_inputs
+        .into_iter()
+        .map(|(k, v)| (path::standardize_separators(k), v))
+        .collect::<BTreeMap<_, _>>();
 
     Ok(hashed_inputs)
 }

@@ -1,10 +1,11 @@
 use crate::actions;
+use crate::target_hasher::DenoTargetHasher;
 use moon_action_context::ActionContext;
 use moon_config::{
-    DenoConfig, DependencyConfig, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap,
-    TypeScriptConfig,
+    DenoConfig, DependencyConfig, HasherConfig, HasherOptimization, PlatformType, ProjectConfig,
+    ProjectsAliasesMap, TypeScriptConfig,
 };
-use moon_deno_lang::{DenoJson, DENO_DEPS};
+use moon_deno_lang::{load_lockfile_dependencies, DenoJson, DENO_DEPS};
 use moon_deno_tool::DenoTool;
 use moon_error::MoonError;
 use moon_hasher::{DepsHasher, HashSet};
@@ -18,7 +19,10 @@ use moon_typescript_platform::TypeScriptTargetHasher;
 use moon_utils::{async_trait, process::Command};
 use proto::{get_sha256_hash_of_file, Proto};
 use rustc_hash::FxHashMap;
-use std::path::{Path, PathBuf};
+use std::{
+    collections::BTreeMap,
+    path::{Path, PathBuf},
+};
 
 const LOG_TARGET: &str = "moon:deno-platform";
 
@@ -174,7 +178,7 @@ impl Platform for DenoPlatform {
             .args([
                 "cache",
                 "--lock",
-                "deno.lock",
+                DENO_DEPS.lockfile,
                 "--lock-write",
                 &self.config.deps_file,
             ])
@@ -249,7 +253,16 @@ impl Platform for DenoPlatform {
         hashset: &mut HashSet,
         hasher_config: &HasherConfig,
     ) -> Result<(), ToolError> {
-        let deno_hasher = actions::create_target_hasher(None, project, hasher_config).await?;
+        let mut deno_hasher = DenoTargetHasher::new(None);
+
+        if matches!(hasher_config.optimization, HasherOptimization::Accuracy)
+            && self.config.lockfile
+        {
+            let resolved_dependencies =
+                load_lockfile_dependencies(project.root.join(DENO_DEPS.lockfile))?;
+
+            deno_hasher.hash_deps(BTreeMap::from_iter(resolved_dependencies));
+        };
 
         hashset.hash(deno_hasher);
 
@@ -270,10 +283,14 @@ impl Platform for DenoPlatform {
         &self,
         _context: &ActionContext,
         _project: &Project,
-        _task: &Task,
+        task: &Task,
         _runtime: &Runtime,
-        _working_dir: &Path,
+        working_dir: &Path,
     ) -> Result<Command, ToolError> {
-        Ok(Command::new("deno"))
+        let mut command = Command::new(&task.command);
+
+        command.args(&task.args).envs(&task.env).cwd(working_dir);
+
+        Ok(command)
     }
 }

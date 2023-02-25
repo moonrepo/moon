@@ -1,0 +1,47 @@
+language: javascript
+
+tasks:
+  inGlobOutFile:
+    command: noop
+    inputs:
+      - '**/*'
+    outputs:
+      - 'out/2'
+      - 'out/4'
+  inGlobOutDir:
+    command: noop
+    inputs:
+      - '**/*'
+    outputs:
+      - 'out'
+  inGlobOutGlob:
+    command: noop
+    inputs:
+      - '**/*'
+    outputs:
+      - 'out/**/*'
+  inFileOutFile:
+    command: noop
+    inputs:
+      - 'out/1'
+      - 'out/2'
+      - 'out/3'
+    outputs:
+      - 'out/2'
+      - 'out/4'
+  inFileOutDir:
+    command: noop
+    inputs:
+      - 'out/1'
+      - 'out/2'
+      - 'out/3'
+    outputs:
+      - 'out'
+  inFileOutGlob:
+    command: noop
+    inputs:
+      - 'out/1'
+      - 'out/2'
+      - 'out/3'
+    outputs:
+      - 'out/**/*'

@@ -1,13 +1,11 @@
 ---
 source: crates/cli/tests/run_system_test.rs
-assertion_line: 192
-expression: get_assert_output(&assert)
+expression: assert.output()
 ---
-▪▪▪▪ unix:outputs
-▪▪▪▪ unix:outputs (100ms)
+▪▪▪▪ unix:outputs (cached from previous run)
 
-Tasks: 1 completed
- Time: 100ms
+Tasks: 1 completed (1 cached)
+ Time: 100ms ❯❯❯❯ to the moon
 
 
 

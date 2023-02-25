@@ -16,29 +16,50 @@ lazy_static! {
 pub type GlobError = WaxGlobError<'static>;
 
 pub struct GlobSet<'t> {
-    any: Any<'t>,
+    expressions: Any<'t>,
+    negations: Any<'t>,
+    enabled: bool,
 }
 
 impl<'t> GlobSet<'t> {
-    #[track_caller]
-    pub fn new<V, I>(patterns: I) -> Result<Self, GlobError>
+    pub fn new<V, I>(expressions: I, negations: I) -> Result<Self, GlobError>
     where
         V: AsRef<str>,
         I: IntoIterator<Item = V>,
     {
-        let mut globs = vec![];
+        let mut ex = vec![];
+        let mut ng = vec![];
+        let mut count = 0;
 
-        for pattern in patterns.into_iter() {
-            globs.push(create_glob(pattern.as_ref())?.into_owned());
+        for pattern in expressions.into_iter() {
+            ex.push(create_glob(pattern.as_ref())?.into_owned());
+            count += 1;
+        }
+
+        for pattern in negations.into_iter() {
+            ng.push(create_glob(pattern.as_ref())?.into_owned());
+            count += 1;
         }
 
         Ok(GlobSet {
-            any: wax::any::<Glob, _>(globs).unwrap(),
+            expressions: wax::any::<Glob, _>(ex).unwrap(),
+            negations: wax::any::<Glob, _>(ng).unwrap(),
+            enabled: count > 0,
         })
     }
 
-    pub fn matches<P: AsRef<OsStr>>(&self, path: P) -> Result<bool, MoonError> {
-        Ok(self.any.is_match(path.as_ref()))
+    pub fn matches<P: AsRef<OsStr>>(&self, path: P) -> bool {
+        if !self.enabled {
+            return false;
+        }
+
+        let path = path.as_ref();
+
+        if self.negations.is_match(path) {
+            return false;
+        }
+
+        self.expressions.is_match(path)
     }
 }
 
@@ -183,6 +204,38 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    mod globset {
+        use super::*;
+        use crate::string_vec;
+
+        #[test]
+        fn doesnt_match_when_empty() {
+            let set = GlobSet::new(string_vec![], string_vec![]).unwrap();
+
+            assert!(!set.matches("file.ts"));
+        }
+
+        #[test]
+        fn matches_exprs() {
+            let set = GlobSet::new(vec!["files/*.ts"], vec![]).unwrap();
+
+            assert!(set.matches("files/index.ts"));
+            assert!(set.matches("files/test.ts"));
+            assert!(!set.matches("index.ts"));
+            assert!(!set.matches("files/index.js"));
+            assert!(!set.matches("files/dir/index.ts"));
+        }
+
+        #[test]
+        fn doesnt_match_negations() {
+            let set = GlobSet::new(vec!["files/*"], vec!["**/*.ts"]).unwrap();
+
+            assert!(set.matches("files/test.js"));
+            assert!(set.matches("files/test.go"));
+            assert!(!set.matches("files/test.ts"));
+        }
+    }
 
     mod is_glob {
         use super::*;

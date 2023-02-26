@@ -40,11 +40,44 @@ taking precedence over those defined in the extended configuration.
 
 :::
 
+## `deno`
+
+<HeadingApiLink to="/api/types/interface/ToolchainConfig#deno" />
+
+Enables and configures Deno.
+
+### `depsFile`
+
+<HeadingApiLink to="/api/types/interface/DenoConfig#depsFile" />
+
+Path to the
+[dependencies file](https://deno.land/manual/basics/modules#it-seems-unwieldy-to-import-urls-everywhere)
+that's used for re-exporting external libraries. This file is heavily used in hashing and caching
+related scenarios. Defaults to `deps.ts`.
+
+```yaml title=".moon/toolchain.yml" {2}
+deno:
+  depsFile: 'src/deps.ts'
+```
+
+### `lockfile`
+
+<HeadingApiLink to="/api/types/interface/DenoConfig#lockfile" />
+
+Enables lockfile (`deno.lock`) support for Deno dependencies. When enabled, will run
+[`deno cache`](https://deno.land/manual/basics/modules/integrity_checking) as part of the dependency
+installation action. Defaults to `false`.
+
+```yaml title=".moon/toolchain.yml" {2}
+deno:
+  lockfile: true
+```
+
 ## `node`
 
 <HeadingApiLink to="/api/types/interface/ToolchainConfig#node" />
 
-Defines the Node.js version and package manager to install within the toolchain.
+Enables and configures Node.js.
 
 ### `version`
 

@@ -170,6 +170,7 @@ const sidebars = {
 			label: 'JavaScript',
 			collapsed: false,
 			items: [
+				'guides/javascript/deno-handbook',
 				'guides/javascript/node-handbook',
 				'guides/javascript/typescript-project-refs',
 				{

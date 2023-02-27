@@ -34,7 +34,8 @@ The tiers break down as follows:
   ["system" task platform](../docs/faq#can-we-run-other-languages), which expects the tool to exist
   in the current environment.
 - &nbsp;<Label text="Tier 1" variant="warning" /> &nbsp; **Project categorization** - Projects can
-  configure their primary [language in `moon.yml`](../docs/config/project#language).
+  configure their primary [language in `moon.yml`](../docs/config/project#language), and have a
+  dedicated Rust crate for metadata.
 - &nbsp;<Label text="Tier 2" variant="info" /> &nbsp; **Ecosystem platformization** - moon deeply
   integrates with the language's ecosystem by parsing manifests, lockfiles, and other semantic files
   to infer dependencies, tasks, and other necessary information.
@@ -46,13 +47,13 @@ The tiers break down as follows:
 To learn more about our currently supported languages and their tiers,
 [jump to the official documentation](/docs#supported-languages).
 
-> One important facet we'd like to express, is that _all_ languages and tools fall into Tier 0. Feel
+> One important facet we'd like to express, is that _all_ languages and tools fall into tier 0. Feel
 > free to use anything you'd like as a task command!
 
 ## Basic support for Go, PHP, Python, Ruby, and, Rust
 
 As announced above, we now incrementally support new languages, and have integrated the following 5
-languages with Tier 1 support: Go, PHP, Python, Ruby, and, Rust! Start using these languages today
+languages with tier 1 support: Go, PHP, Python, Ruby, and, Rust! Start using these languages today
 by setting the [`language`](../docs/config/project#language) field in `moon.yml`, or by letting moon
 infer the language based on files in the project root (for example, `Cargo.toml` is Rust).
 
@@ -73,7 +74,7 @@ tasks:
       - 'Cargo.toml'
 ```
 
-> Because these languages are Tier 1, moon _does not_ install the language automatically, and will
+> Because these languages are tier 1, moon _does not_ install the language automatically, and will
 > require the command to already exist in the environment. Furthermore, the project language will
 > automatically set all task's `platform` to "system", at least until it's supported directly in the
 > toolchain.

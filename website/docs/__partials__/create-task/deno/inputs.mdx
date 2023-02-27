@@ -1,0 +1,10 @@
+```yaml title="<project>/moon.yml" {6-9}
+language: 'typescript'
+
+tasks:
+	build:
+		command: 'deno compile ./src/main.ts -o ./out.js'
+		inputs:
+			- 'src/**/*'
+			- 'deno.*'
+```

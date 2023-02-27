@@ -25,18 +25,22 @@ impl ActionNode {
     pub fn label(&self) -> String {
         match self {
             ActionNode::InstallDeps(platform) => match platform {
-                Runtime::Node(version) => format!("Install{platform}Deps({version})"),
+                Runtime::Deno(version) | Runtime::Node(version) => {
+                    format!("Install{platform}Deps({version})")
+                }
                 _ => format!("Install{platform}Deps"),
             },
             ActionNode::InstallProjectDeps(platform, id) => match platform {
-                Runtime::Node(version) => {
+                Runtime::Deno(version) | Runtime::Node(version) => {
                     format!("Install{platform}DepsInProject({version}, {id})")
                 }
                 _ => format!("Install{platform}DepsInProject({id})"),
             },
             ActionNode::RunTarget(_, id) => format!("RunTarget({id})"),
             ActionNode::SetupTool(platform) => match platform {
-                Runtime::Node(version) => format!("Setup{platform}Tool({version})"),
+                Runtime::Deno(version) | Runtime::Node(version) => {
+                    format!("Setup{platform}Tool({version})")
+                }
                 _ => format!("Setup{platform}Tool"),
             },
             ActionNode::SyncProject(platform, id) => format!("Sync{platform}Project({id})"),

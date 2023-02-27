@@ -2,41 +2,49 @@ use crate::{hash_btree, Digest, Hasher, Sha256};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
+pub type DepsMap = BTreeMap<String, String>;
+pub type DepsAliasesMap = BTreeMap<String, DepsMap>;
+
 #[derive(Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DepsHasher {
-    // Dependencies indexed by manifest name
-    deps: BTreeMap<String, BTreeMap<String, String>>,
+    aliases: DepsAliasesMap,
 
-    // Version of our hasher
-    #[allow(dead_code)]
-    version: String,
+    dependencies: DepsMap,
+
+    name: String,
 }
 
 impl DepsHasher {
-    pub fn new() -> Self {
+    pub fn new(name: String) -> Self {
         DepsHasher {
-            version: "1".into(),
+            name,
             ..DepsHasher::default()
         }
     }
 
-    pub fn hash_deps(&mut self, manifest: &str, deps: &BTreeMap<String, String>) {
-        if let Some(cache) = self.deps.get_mut(manifest) {
-            cache.extend(deps.to_owned());
-        } else {
-            self.deps.insert(manifest.to_owned(), deps.to_owned());
-        }
+    pub fn hash_aliases(&mut self, aliases: &DepsAliasesMap) {
+        self.aliases.extend(aliases.to_owned());
+    }
+
+    pub fn hash_dep<K: AsRef<str>, V: AsRef<str>>(&mut self, name: K, value: V) {
+        self.dependencies
+            .insert(name.as_ref().to_owned(), value.as_ref().to_owned());
+    }
+
+    pub fn hash_deps(&mut self, dependencies: &DepsMap) {
+        self.dependencies.extend(dependencies.to_owned());
     }
 }
 
 impl Hasher for DepsHasher {
     fn hash(&self, sha: &mut Sha256) {
-        sha.update(self.version.as_bytes());
+        sha.update(self.name.as_bytes());
+        hash_btree(&self.dependencies, sha);
 
-        for (manifest, deps) in &self.deps {
-            sha.update(manifest.as_bytes());
-            hash_btree(deps, sha);
+        for (alias, map) in &self.aliases {
+            sha.update(alias.as_bytes());
+            hash_btree(map, sha);
         }
     }
 

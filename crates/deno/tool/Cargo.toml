@@ -1,0 +1,11 @@
+[package]
+name = "moon_deno_tool"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_config = { path = "../../core/config" }
+moon_platform_runtime = { path = "../../core/platform-runtime" }
+moon_tool = { path = "../../core/tool" }
+proto_cli = { workspace = true }
+rustc-hash = { workspace = true }

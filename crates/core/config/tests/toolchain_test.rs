@@ -26,6 +26,7 @@ fn loads_defaults() {
             config,
             ToolchainConfig {
                 extends: None,
+                deno: None,
                 node: None,
                 typescript: None,
                 schema: String::new(),

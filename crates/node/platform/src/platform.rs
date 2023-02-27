@@ -16,6 +16,7 @@ use moon_platform::{Platform, Runtime, Version};
 use moon_project::{Project, ProjectError};
 use moon_task::Task;
 use moon_tool::{Tool, ToolError, ToolManager};
+use moon_typescript_platform::TypeScriptTargetHasher;
 use moon_utils::{async_trait, glob::GlobSet, process::Command};
 use proto::Proto;
 use rustc_hash::FxHashMap;
@@ -387,19 +388,19 @@ impl Platform for NodePlatform {
         _hasher_config: &HasherConfig,
     ) -> Result<(), ToolError> {
         if let Ok(Some(package)) = PackageJson::read(manifest_path) {
-            let mut hasher = DepsHasher::new();
             let name = package.name.unwrap_or_else(|| "unknown".into());
+            let mut hasher = DepsHasher::new(name);
 
             if let Some(peer_deps) = &package.peer_dependencies {
-                hasher.hash_deps(&name, peer_deps);
+                hasher.hash_deps(peer_deps);
             }
 
             if let Some(dev_deps) = &package.dev_dependencies {
-                hasher.hash_deps(&name, dev_deps);
+                hasher.hash_deps(dev_deps);
             }
 
             if let Some(deps) = &package.dependencies {
-                hasher.hash_deps(&name, deps);
+                hasher.hash_deps(deps);
             }
 
             hashset.hash(hasher);
@@ -415,16 +416,25 @@ impl Platform for NodePlatform {
         hashset: &mut HashSet,
         hasher_config: &HasherConfig,
     ) -> Result<(), ToolError> {
-        let hasher = actions::create_target_hasher(
+        let node_hasher = actions::create_target_hasher(
             self.toolchain.get_for_version(runtime.version()).ok(),
             project,
             &self.workspace_root,
             hasher_config,
-            &self.typescript_config,
         )
         .await?;
 
-        hashset.hash(hasher);
+        hashset.hash(node_hasher);
+
+        if let Some(typescript_config) = &self.typescript_config {
+            let ts_hasher = TypeScriptTargetHasher::generate(
+                typescript_config,
+                &self.workspace_root,
+                &project.root,
+            )?;
+
+            hashset.hash(ts_hasher);
+        }
 
         Ok(())
     }

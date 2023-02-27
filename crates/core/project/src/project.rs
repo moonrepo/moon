@@ -381,7 +381,7 @@ impl Project {
             language,
             log_target,
             root,
-            source: source.to_owned(),
+            source,
             tasks,
             type_of: config.type_of,
             inherited_config: global_tasks,

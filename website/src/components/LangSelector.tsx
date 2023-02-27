@@ -1,4 +1,15 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useLocation } from '@docusaurus/router';
+
+const STARTED_ROUTES = [
+	'install',
+	'setup-workspace',
+	'setup-toolchain',
+	'create-project',
+	'create-task',
+	'run-task',
+	'migrate-to-moon',
+];
 
 function hasLocalStorage() {
 	return typeof window !== 'undefined' && 'localStorage' in window;
@@ -28,6 +39,7 @@ export function useSelectedLanguage() {
 
 export default function LangSelector() {
 	const [lang, setLang] = useState(getSelectedLanguage());
+	const location = useLocation();
 
 	const handleChange = useCallback(({ target }: React.ChangeEvent<HTMLSelectElement>) => {
 		const nextLang = target.value;
@@ -48,6 +60,12 @@ export default function LangSelector() {
 			new CustomEvent('onMoonrepoChangeLanguage', { bubbles: true, detail: nextLang }),
 		);
 	}, []);
+
+	const isGettingStarted = STARTED_ROUTES.some((route) => location.pathname.endsWith(route));
+
+	if (!isGettingStarted) {
+		return null;
+	}
 
 	return (
 		<select

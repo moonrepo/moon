@@ -46,13 +46,13 @@ The tiers break down as follows:
 To learn more about our currently supported languages and their tiers,
 [jump to the official documentation](/docs#supported-languages).
 
-> One important facet we'd like to express, is that _all_ languages and tools fall into Tier 0. Feel
+> One important facet we'd like to express, is that _all_ languages and tools fall into tier 0. Feel
 > free to use anything you'd like as a task command!
 
 ## Basic support for Go, PHP, Python, Ruby, and, Rust
 
 As announced above, we now incrementally support new languages, and have integrated the following 5
-languages with Tier 1 support: Go, PHP, Python, Ruby, and, Rust! Start using these languages today
+languages with tier 1 support: Go, PHP, Python, Ruby, and, Rust! Start using these languages today
 by setting the [`language`](../docs/config/project#language) field in `moon.yml`, or by letting moon
 infer the language based on files in the project root (for example, `Cargo.toml` is Rust).
 
@@ -73,7 +73,7 @@ tasks:
       - 'Cargo.toml'
 ```
 
-> Because these languages are Tier 1, moon _does not_ install the language automatically, and will
+> Because these languages are tier 1, moon _does not_ install the language automatically, and will
 > require the command to already exist in the environment. Furthermore, the project language will
 > automatically set all task's `platform` to "system", at least until it's supported directly in the
 > toolchain.

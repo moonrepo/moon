@@ -10,6 +10,7 @@
 
 #### 🚀 Updates
 
+- Added experimental Deno tier 2 support.
 - Added offline (no internet connection) support.
 - Added project-level TypeScript settings via `toolchain.typescript` in `moon.yml`.
 - Updated `language` setting in `moon.yml` to support any custom language.
@@ -197,7 +198,7 @@ immediately see the benefits in your CI pipelines.
 
 ##### Toolchain
 
-- Added Bun as a Tier 1 language (doesn't do much at the moment).
+- Added Bun as a tier 1 language (doesn't do much at the moment).
 - Our toolchain now creates shims for all installed tools, and also utilizes these shims when
   executing commands in the pipeline. (Unix only)
 

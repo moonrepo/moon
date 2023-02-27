@@ -37,10 +37,24 @@ deno:
 
 This will enable the Deno platform and provide the following automations around its ecosystem:
 
-- Automatic handling and proper usage of lockfiles (when the setting is enabled).
+- Automatic handling and caching of lockfiles (when the setting is enabled).
 - Relationships between projects will automatically be discovered based on `imports`, `importMap`,
   and `deps.ts` (currently experimental).
 - And more to come!
+
+### Work in progress
+
+:::caution
+
+Deno support is currently experimental while we finalize the implementation.
+
+:::
+
+The following features are not supported:
+
+- `deno.jsonc` files (use `deno.json` instead).
+- `npm:` imports do not consider Node.js dependencies as hash sources.
+- `files.exclude` are currently considered an input. These will be filtered in a future release.
 
 ## Coming soon!
 

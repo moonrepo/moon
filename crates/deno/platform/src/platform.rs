@@ -107,7 +107,7 @@ impl Platform for DenoPlatform {
     fn get_dependency_configs(&self) -> Result<Option<(String, String)>, ToolError> {
         Ok(Some((
             DENO_DEPS.lockfile.to_owned(),
-            DENO_DEPS.manifest.to_owned(),
+            self.config.deps_file.to_owned(),
         )))
     }
 
@@ -234,7 +234,7 @@ impl Platform for DenoPlatform {
             }
         }
 
-        // We can't parse TS files, so hash the file contents
+        // We can't parse TS files right now, so hash the file contents
         let deps_path = project_root.join(&self.config.deps_file);
 
         if deps_path.exists() {
@@ -266,6 +266,16 @@ impl Platform for DenoPlatform {
 
         hashset.hash(deno_hasher);
 
+        if let Ok(Some(deno_json)) = DenoJson::read(&project.root) {
+            if let Some(compiler_options) = &deno_json.compiler_options {
+                let mut ts_hasher = TypeScriptTargetHasher::default();
+                ts_hasher.hash_compiler_options(compiler_options);
+
+                hashset.hash(ts_hasher);
+            }
+        }
+
+        // Do we need this if we're using compiler options from deno.json?
         if let Some(typescript_config) = &self.typescript_config {
             let ts_hasher = TypeScriptTargetHasher::generate(
                 typescript_config,

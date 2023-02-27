@@ -1,7 +1,7 @@
 use moon_config::TypeScriptConfig;
 use moon_error::MoonError;
 use moon_hasher::{hash_btree, Hasher, Sha256};
-use moon_typescript_lang::tsconfig::TsConfigJson;
+use moon_typescript_lang::tsconfig::{CompilerOptions, TsConfigJson};
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, path::Path};
 
@@ -23,37 +23,63 @@ impl TypeScriptTargetHasher {
         if let Some(root_tsconfig) =
             TsConfigJson::read_with_name(workspace_root, &config.root_config_file_name)?
         {
-            hasher.hash_tsconfig_json(&root_tsconfig);
+            if let Some(compiler_options) = &root_tsconfig.compiler_options {
+                hasher.hash_compiler_options(compiler_options);
+            }
         }
 
         if let Some(tsconfig) =
             TsConfigJson::read_with_name(project_root, &config.project_config_file_name)?
         {
-            hasher.hash_tsconfig_json(&tsconfig);
+            if let Some(compiler_options) = &tsconfig.compiler_options {
+                hasher.hash_compiler_options(compiler_options);
+            }
         }
 
         Ok(hasher)
     }
 
-    /// Hash `tsconfig.json` compiler options that may alter compiled/generated output.
-    pub fn hash_tsconfig_json(&mut self, tsconfig: &TsConfigJson) {
-        if let Some(compiler_options) = &tsconfig.compiler_options {
-            if let Some(module) = &compiler_options.module {
-                self.compiler_options
-                    .insert("module".to_owned(), format!("{module:?}"));
-            }
+    /// Hash compiler options that may alter compiled/generated output.
+    pub fn hash_compiler_options(&mut self, compiler_options: &CompilerOptions) {
+        if let Some(jsx) = &compiler_options.jsx {
+            self.compiler_options
+                .insert("jsx".to_owned(), format!("{jsx:?}"));
+        }
 
-            if let Some(module_resolution) = &compiler_options.module_resolution {
-                self.compiler_options.insert(
-                    "module_resolution".to_owned(),
-                    format!("{module_resolution:?}"),
-                );
-            }
+        if let Some(jsx_factory) = &compiler_options.jsx_factory {
+            self.compiler_options
+                .insert("jsxFactory".to_owned(), format!("{jsx_factory:?}"));
+        }
 
-            if let Some(target) = &compiler_options.target {
-                self.compiler_options
-                    .insert("target".to_owned(), format!("{target:?}"));
-            }
+        if let Some(jsx_fragment_factory) = &compiler_options.jsx_fragment_factory {
+            self.compiler_options.insert(
+                "jsxFragmentFactory".to_owned(),
+                format!("{jsx_fragment_factory:?}"),
+            );
+        }
+
+        if let Some(jsx_import_source) = &compiler_options.jsx_import_source {
+            self.compiler_options.insert(
+                "jsxImportSource".to_owned(),
+                format!("{jsx_import_source:?}"),
+            );
+        }
+
+        if let Some(module) = &compiler_options.module {
+            self.compiler_options
+                .insert("module".to_owned(), format!("{module:?}"));
+        }
+
+        if let Some(module_resolution) = &compiler_options.module_resolution {
+            self.compiler_options.insert(
+                "moduleResolution".to_owned(),
+                format!("{module_resolution:?}"),
+            );
+        }
+
+        if let Some(target) = &compiler_options.target {
+            self.compiler_options
+                .insert("target".to_owned(), format!("{target:?}"));
         }
     }
 }
@@ -84,7 +110,7 @@ mod tests {
         tsconfig.compiler_options.as_mut().unwrap().module = Some(Module::Es2022);
 
         let mut hasher1 = TypeScriptTargetHasher::default();
-        hasher1.hash_tsconfig_json(&tsconfig);
+        hasher1.hash_compiler_options(tsconfig.compiler_options.as_ref().unwrap());
         let hash1 = to_hash(&hasher1);
 
         tsconfig
@@ -94,13 +120,13 @@ mod tests {
             .module_resolution = Some(ModuleResolution::NodeNext);
 
         let mut hasher2 = TypeScriptTargetHasher::default();
-        hasher2.hash_tsconfig_json(&tsconfig);
+        hasher2.hash_compiler_options(tsconfig.compiler_options.as_ref().unwrap());
         let hash2 = to_hash(&hasher2);
 
         tsconfig.compiler_options.as_mut().unwrap().target = Some(Target::Es2019);
 
         let mut hasher3 = TypeScriptTargetHasher::default();
-        hasher3.hash_tsconfig_json(&tsconfig);
+        hasher3.hash_compiler_options(tsconfig.compiler_options.as_ref().unwrap());
         let hash3 = to_hash(&hasher3);
 
         assert_ne!(hash1, hash2);

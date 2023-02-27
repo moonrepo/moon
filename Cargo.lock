@@ -2125,6 +2125,7 @@ name = "moon"
 version = "0.1.0"
 dependencies = [
  "moon_config",
+ "moon_deno_platform",
  "moon_dep_graph",
  "moon_error",
  "moon_node_platform",
@@ -2330,7 +2331,9 @@ dependencies = [
  "moon_error",
  "moon_lang",
  "moon_logger",
+ "moon_typescript_lang",
  "moon_utils",
+ "rustc-hash",
  "serde",
  "serde_json",
 ]
@@ -2340,13 +2343,39 @@ name = "moon_deno_platform"
 version = "0.1.0"
 dependencies = [
  "moon",
+ "moon_action_context",
+ "moon_config",
+ "moon_deno_lang",
+ "moon_deno_tool",
+ "moon_error",
+ "moon_hasher",
+ "moon_logger",
+ "moon_platform",
+ "moon_project",
  "moon_project_graph",
+ "moon_task",
+ "moon_terminal",
  "moon_test_utils",
+ "moon_tool",
+ "moon_typescript_lang",
+ "moon_typescript_platform",
+ "moon_utils",
  "proto_cli",
  "rustc-hash",
  "serde",
  "serde_json",
  "tokio",
+]
+
+[[package]]
+name = "moon_deno_tool"
+version = "0.1.0"
+dependencies = [
+ "moon_config",
+ "moon_platform_runtime",
+ "moon_tool",
+ "proto_cli",
+ "rustc-hash",
 ]
 
 [[package]]
@@ -2815,12 +2844,15 @@ version = "0.1.0"
 dependencies = [
  "moon_config",
  "moon_error",
+ "moon_hasher",
  "moon_logger",
  "moon_project",
  "moon_test_utils",
  "moon_typescript_lang",
  "moon_utils",
  "rustc-hash",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

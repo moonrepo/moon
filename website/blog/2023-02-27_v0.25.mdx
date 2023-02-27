@@ -1,18 +1,69 @@
 ---
 slug: v0.25
-title: moon v0.25 - ???
+title: moon v0.25 - Deno tier 2 support, CI insights, and more
 authors: [milesj]
-tags: [offline]
-# image: ./img/v0.24.png
+tags: [deno, toolchain, moonbase, offline]
+# image: ./img/v0.25.png
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import Button from '@site/src/ui/Button';
 
-???
+With this release, we're landing Deno, our first supported language besides Node.js, and improving
+interoperability of languages as a whole.
 
 <!--truncate-->
+
+## Experimental Deno tier 2 support
+
+Three months ago we announced our [new tiered support structure](./v0.21) for languages, and as of
+today, we're happy to announce that our second language to reach tier 2 is
+[Deno](https://deno.land)! With tier 2 support, we now analyze Deno specific configuration files
+(like `deno.json`) to infer dependencies and relationships, as well as utilize this information for
+inputs and hashing purposes. With that being said, we're marking this release as experimental until
+we fine tune the implementation, and iron out all the bugs.
+
+To get started with using Deno, enable the new [`deno`](/docs/config/toolchain#deno) setting in
+[`.moon/toolchain.yml`](/docs/config/toolchain). At this time, we don't have many settings to
+configure, so simply defining an empty object is enough to enable the Deno platform! Learn more
+about this in our [Deno handbook](/docs/guides/javascript/deno-handbook).
+
+```yaml title=".moon/toolchain.yml"
+deno: {}
+```
+
+Once enabled, you can start using `deno` commands in your moon tasks. moon will automatically set
+the [`platform`](/docs/config/project#platform-1) to "deno" when using a deno command.
+
+```yaml title="moon.yml"
+tasks:
+	format:
+		command: 'deno fmt'
+```
+
+:::info
+
+Because this is only tier 2 support, moon _does not_ download and install Deno into its toolchain.
+moon expects the `deno` binary to exist in the current environment.
+
+:::
+
+Furthermore, if you're working a project that is composed of multiple JavaScript runtimes, like
+Deno, Bun, or Node.js, you can set the default `platform` for all tasks at the project-level.
+
+```yaml title="moon.yml"
+platform: 'deno'
+language: 'typescript'
+type: 'application'
+```
+
+We're very excited for this release as it paves the way for future language integrations, and
+enables additional JavaScript runtimes!
+
+## CI insights in moonbase
+
+TODO
 
 ## Offline mode
 
@@ -42,7 +93,7 @@ With this change, `.moon/tasks/kotlin-application.yml`, `.moon/tasks/dotnet.yml`
 variations are now possible! However, besides task inheritance, other functionality like platform
 detection, and Dockerfile support are not enabled.
 
-## Project-level TypeScript settings
+## Project-level TypeScript settings (breaking)
 
 Our TypeScript integration supports many automated workflows, like syncing project references, and
 routing `outDir` to our shared cache. This is wonderful for the majority, but for the handful of
@@ -81,9 +132,14 @@ View the
 full list of changes.
 
 - Updated project, task, and target identifiers to support periods (`.`).
+- Refactored glob matching to use workspace relative paths instead of absolute. Please report an
+  issue if hashing or affected detection is now inaccurate.
+- We now build against older operating systems in an attempt to solve GLIBC version errors.
 
 ## What's next?
 
 Expect the following in the v0.26 release!
 
-- ???
+- Officially release proto!
+- Improved Deno interoperability.
+- Deno tier 3 support (hopefully).

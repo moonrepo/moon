@@ -32,18 +32,11 @@ pub struct TargetHasher {
 
     // Task `target`
     target: String,
-
-    // Version of our hasher
-    #[allow(dead_code)]
-    version: String,
 }
 
 impl TargetHasher {
     pub fn new() -> Self {
-        TargetHasher {
-            version: "1".into(),
-            ..TargetHasher::default()
-        }
+        TargetHasher::default()
     }
 
     /// Hash additional args outside of the provided task.
@@ -110,9 +103,6 @@ impl TargetHasher {
 
 impl Hasher for TargetHasher {
     fn hash(&self, sha: &mut Sha256) {
-        // Order is important! Do not move things around as it will
-        // change the hash and break deterministic builds!
-        sha.update(self.version.as_bytes());
         sha.update(self.command.as_bytes());
         sha.update(self.target.as_bytes());
 

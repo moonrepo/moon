@@ -60,7 +60,8 @@ incremental integrate and improve them over time. The 4 tiers are as follows:
   ["system" task platform](/docs/faq#can-we-run-other-languages), which expects the tool to exist in
   the current environment.
 - &nbsp;<Label text="Tier 1" variant="warning" /> &nbsp; **Project categorization** - Projects can
-  configure their primary [language in `moon.yml`](/docs/config/project#language).
+  configure their primary [language in `moon.yml`](/docs/config/project#language), and have a
+  dedicated Rust crate for metadata.
 - &nbsp;<Label text="Tier 2" variant="info" /> &nbsp; **Ecosystem platformization** - moon deeply
   integrates with the language's ecosystem by parsing manifests, lockfiles, and other semantic files
   to infer dependencies, tasks, and other necessary information.
@@ -73,7 +74,7 @@ incremental integrate and improve them over time. The 4 tiers are as follows:
 | :---------------------------- | :----: | :----: | :----: | :----: |
 | Bash/Batch                    |   🟢   |   🟢   |        |        |
 | Bun (JavaScript, TypeScript)  |   🟢   |   🟢   |        |        |
-| Deno (JavaScript, TypeScript) |   🟢   |   🟢   |        |        |
+| Deno (JavaScript, TypeScript) |   🟢   |   🟢   |   🟣   |        |
 | Go                            |   🟢   |   🟢   |        |        |
 | Node (JavaScript, TypeScript) |   🟢   |   🟢   |   🟢   |   🟢   |
 | └─ npm, pnpm, yarn            |   🟢   |  ⚪️   |   🟢   |   🟢   |
@@ -86,6 +87,10 @@ incremental integrate and improve them over time. The 4 tiers are as follows:
 | Rust                          |   🟢   |   🟢   |        |        |
 | └─ Cargo                      |   🟢   |  ⚪️   |        |        |
 | Other ...                     |   🟢   |        |        |        |
+
+- ⚪️ Not applicable
+- 🟣 Partially supported (experimental)
+- 🟢 Fully Supported
 
 ### Supported targets
 

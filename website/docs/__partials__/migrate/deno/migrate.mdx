@@ -1,0 +1,39 @@
+```yaml title="<project>/moon.yml"
+language: 'typescript'
+
+fileGroups:
+	sources:
+		- 'src/**/*'
+		- 'deno.*'
+	tests:
+		- 'tests/**/*'
+
+tasks:
+	dev:
+		command: 'deno task dev'
+		inputs:
+			- '@globs(sources)'
+		local: true
+	format:
+		command: 'deno fmt --check'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+	lint:
+		command: 'deno lint'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+	test:
+		command: 'deno test --parallel'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+	typecheck:
+		command: 'deno check'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+			- 'tsconfig.json'
+			- '/tsconfig.json'
+```

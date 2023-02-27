@@ -275,6 +275,8 @@ For interoperability reasons, the following command names have special handling.
 
 - `noop`, `no-op`, `nop` - Marks the task as a "no operation". Will not execute a command in the
   action pipeline but can define dependencies.
+- When `platform` is "deno":
+  - Will execute with `deno` binary.
 - When `platform` is "node":
   - `node`, `npm`, `pnpm`, `yarn` - Uses the binaries from the toolchain.
 - When `platform` is "system":
@@ -467,6 +469,7 @@ The `platform` field defines the platform (language runtime) the command runs on
 its executable, and which tool to execute it with. By default moon will set to a value based on the
 project's [`language`](#language) or default [`platform`](#platform).
 
+- `deno` - Command is executed with Deno.
 - `node` - Command is a binary within `node_modules` and will be executed with Node.js.
 - `system` - Command is expected to exist within the system's environment / user's shell.
 - `unknown` - When not configured or inferred.

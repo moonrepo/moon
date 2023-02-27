@@ -6,11 +6,14 @@ edition = "2021"
 [dependencies]
 moon_config = { path = "../../core/config" }
 moon_error = { path = "../../core/error" }
+moon_hasher = { path = "../../core/hasher" }
 moon_logger = { path = "../../core/logger" }
 moon_project = { path = "../../core/project" }
 moon_utils = { path = "../../core/utils" }
 moon_typescript_lang = { path = "../lang" }
 rustc-hash = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true, features = ["preserve_order"] }
 
 [dev-dependencies]
 moon_test_utils = { path = "../../core/test-utils" }

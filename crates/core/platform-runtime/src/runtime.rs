@@ -6,6 +6,7 @@ use std::fmt::{self, Debug};
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(tag = "platform", content = "version")]
 pub enum Runtime {
+    Deno(Version),
     Node(Version),
     System,
 }
@@ -13,6 +14,7 @@ pub enum Runtime {
 impl Runtime {
     pub fn label(&self) -> String {
         match self {
+            Runtime::Deno(version) => format!("Deno {version}"),
             Runtime::Node(version) => format!("Node.js {version}"),
             Runtime::System => "system".into(),
         }
@@ -30,6 +32,7 @@ impl fmt::Display for Runtime {
     // Primarily used in action graph node labels
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            Runtime::Deno(_) => write!(f, "Deno"),
             Runtime::Node(_) => write!(f, "Node"),
             Runtime::System => write!(f, "System"),
         }
@@ -39,6 +42,7 @@ impl fmt::Display for Runtime {
 impl From<&Runtime> for PlatformType {
     fn from(value: &Runtime) -> Self {
         match value {
+            Runtime::Deno(_) => PlatformType::Deno,
             Runtime::Node(_) => PlatformType::Node,
             Runtime::System => PlatformType::System,
         }

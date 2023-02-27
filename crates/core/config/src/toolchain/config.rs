@@ -2,6 +2,7 @@
 
 use crate::errors::map_validation_errors_to_figment_errors;
 use crate::helpers::gather_extended_sources;
+use crate::toolchain::deno::DenoConfig;
 use crate::toolchain::node::NodeConfig;
 use crate::toolchain::typescript::TypeScriptConfig;
 use crate::validators::validate_extends;
@@ -24,6 +25,10 @@ pub struct ToolchainConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_extends")]
     pub extends: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[validate]
+    pub deno: Option<DenoConfig>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate]
@@ -51,8 +56,8 @@ impl ToolchainConfig {
         let mut config = ToolchainConfig::load_config(figment.select(profile_name))?;
         config.extends = None;
 
+        // Versions from env vars should take precedence
         if let Some(node_config) = &mut config.node {
-            // Versions from env vars should take precedence
             if let Ok(node_version) = env::var("MOON_NODE_VERSION") {
                 node_config.version = Some(node_version);
             }

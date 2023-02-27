@@ -1,8 +1,6 @@
 use crate::target_hasher::NodeTargetHasher;
 use moon_action_context::{ActionContext, ProfileType};
-use moon_config::{
-    HasherConfig, HasherOptimization, NodeConfig, NodePackageManager, TypeScriptConfig,
-};
+use moon_config::{HasherConfig, HasherOptimization, NodeConfig, NodePackageManager};
 use moon_error::MoonError;
 use moon_logger::{color, trace};
 use moon_node_lang::{
@@ -13,7 +11,6 @@ use moon_node_tool::NodeTool;
 use moon_project::Project;
 use moon_task::Task;
 use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
-use moon_typescript_lang::TsConfigJson;
 use moon_utils::{get_cache_dir, process::Command};
 use moon_utils::{path, string_vec};
 use proto::Installable;
@@ -224,7 +221,6 @@ pub async fn create_target_hasher(
     project: &Project,
     workspace_root: &Path,
     hasher_config: &HasherConfig,
-    typescript_config: &Option<TypeScriptConfig>,
 ) -> Result<NodeTargetHasher, ToolError> {
     let mut hasher =
         NodeTargetHasher::new(node.map(|n| n.config.version.clone()).unwrap_or_default());
@@ -245,21 +241,6 @@ pub async fn create_target_hasher(
 
     if let Some(package) = PackageJson::read(&project.root)? {
         hasher.hash_package_json(&package, &resolved_dependencies);
-    }
-
-    if let Some(typescript_config) = &typescript_config {
-        if let Some(root_tsconfig) =
-            TsConfigJson::read_with_name(workspace_root, &typescript_config.root_config_file_name)?
-        {
-            hasher.hash_tsconfig_json(&root_tsconfig);
-        }
-
-        if let Some(tsconfig) = TsConfigJson::read_with_name(
-            &project.root,
-            &typescript_config.project_config_file_name,
-        )? {
-            hasher.hash_tsconfig_json(&tsconfig);
-        }
     }
 
     Ok(hasher)

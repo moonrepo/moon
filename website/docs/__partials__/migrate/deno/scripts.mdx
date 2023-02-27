@@ -1,0 +1,22 @@
+Deno provides a built-in task runner through the
+[`deno task` command](https://deno.land/manual@v1.31.1/tools/task_runner). While Deno tasks are
+great, they're not as efficient as moon. They _do not_ support granular inputs, smart hashing,
+incremental caching, and all the other performance benefits that moon provides.
+
+With that being said, you _do not_ have to migrate away from Deno tasks. Instead, you can simply run
+them from within moon tasks. This gives you the best of both worlds.
+
+```yaml title="<project>/moon.yml"
+language: 'typescript'
+
+tasks:
+	analyze:
+		command: 'deno task analyze'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+			- 'Rakefile'
+```
+
+> When Deno tasks are ran through moon tasks, the current working directory is set to the project
+> root.

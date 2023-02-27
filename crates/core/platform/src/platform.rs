@@ -32,7 +32,7 @@ pub trait Platform: Debug + Send + Sync {
     /// Determine if the provided project is within the platform's dependency manager
     /// workspace (not to be confused with moon's workspace).
     fn is_project_in_dependency_workspace(&self, project: &Project) -> Result<bool, MoonError> {
-        Ok(true)
+        Ok(false)
     }
 
     /// Determine the language of project at the provided path by locating

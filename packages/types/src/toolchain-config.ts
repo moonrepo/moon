@@ -1,3 +1,8 @@
+export interface DenoConfig {
+	depsFile: string;
+	lockfile: string;
+}
+
 export type NodeVersionFormat =
 	| 'file'
 	| 'link'
@@ -10,7 +15,7 @@ export type NodeVersionFormat =
 	| 'workspace';
 
 export interface NodePackageManagerConfig {
-	version: string;
+	version: string | null;
 }
 
 export interface YarnConfig extends NodePackageManagerConfig {
@@ -29,7 +34,7 @@ export interface NodeConfig {
 	pnpm: NodePackageManagerConfig | null;
 	syncProjectWorkspaceDependencies: boolean;
 	syncVersionManagerConfig: 'nodenv' | 'nvm' | null;
-	version: string;
+	version: string | null;
 	yarn: YarnConfig | null;
 }
 
@@ -45,6 +50,7 @@ export interface TypeScriptConfig {
 
 export interface ToolchainConfig {
 	extends: string | null;
+	deno: DenoConfig | null;
 	node: NodeConfig | null;
 	typescript: TypeScriptConfig | null;
 }

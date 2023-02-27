@@ -3,6 +3,7 @@
 use cached::proc_macro::cached;
 use moon_error::MoonError;
 use moon_lang::config_cache;
+use moon_typescript_lang::tsconfig::CompilerOptions;
 use moon_utils::json::{self, read as read_json, JsonValue};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -15,6 +16,9 @@ config_cache!(DenoJson, "deno.json", read_json, write_preserved_json);
 #[serde(rename_all = "camelCase")]
 pub struct DenoJson {
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub compiler_options: Option<CompilerOptions>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub lock: Option<DenoJsonLock>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -22,6 +26,9 @@ pub struct DenoJson {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub imports: Option<BTreeMap<String, String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub scopes: Option<BTreeMap<String, BTreeMap<String, String>>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tasks: Option<BTreeMap<String, String>>,

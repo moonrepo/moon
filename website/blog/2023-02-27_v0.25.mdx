@@ -1,21 +1,22 @@
 ---
 slug: v0.25
-title: moon v0.25 - Deno tier 2 support, CI insights, and more
+title: moon v0.25 - Deno tier 2 support, CI insights, custom project languages, and more
 authors: [milesj]
-tags: [deno, toolchain, moonbase, offline]
-# image: ./img/v0.25.png
+tags: [deno, toolchain, moonbase, offline, github]
+image: ./img/v0.25.png
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import Button from '@site/src/ui/Button';
+import Image from '@site/src/components/Image';
 
 With this release, we're landing Deno, our first supported language besides Node.js, and improving
 interoperability of languages as a whole.
 
 <!--truncate-->
 
-## Experimental Deno tier 2 support
+## Deno tier 2 support (experimental)
 
 Three months ago we announced our [new tiered support structure](./v0.21) for languages, and as of
 today, we're happy to announce that our second language to reach tier 2 is
@@ -63,7 +64,23 @@ enables additional JavaScript runtimes!
 
 ## CI insights in moonbase
 
-TODO
+We've spent the last few weeks implementing a new [moonbase](https://moonrepo.app) feature called CI
+insights, where we track all CI runs (via [`moon ci`](/docs/commands/ci)), and all actions (tasks)
+that have ran based on affected files. In the future these insights will help catch regressions,
+alert on flakiness, provide granular metrics, and help monitor the health of your CI pipeline and
+repositories.
+
+<Image src={require('./img/v0.25/runs-list.png')} width="90%" />
+
+With this initial release, we track touched files, which targets are affected based on those files,
+an estimation on how much time was saved or lost, the actions that ran and their final status,
+outlined as a timeline.
+
+<Image src={require('./img/v0.25/run-detail.png')} width="90%" />
+
+Insights are enabled by default if you're using moonbase in your CI pipeline, and start using moon
+v0.25! You can disable insights gathering from your
+[organization settings page](https://moonrepo.app).
 
 ## Offline mode
 
@@ -123,6 +140,28 @@ toolchain:
 toolchain:
 	typescript:
 		disabled: true
+```
+
+## New `moonrepo/setup-moon-action` GitHub action
+
+If you're using GitHub Actions as your CI pipeline, we've introducing a new action called
+[moonrepo/setup-moon-action](https://github.com/moonrepo/setup-moon-action), that will install the
+`moon` binary globally, and will cache (and restore) the moon toolchain.
+
+With this new action, let moon handle all the heavy lifting, and avoid all the unnecessary steps
+around setting up Node.js, and install dependencies.
+
+```yaml
+jobs:
+  ci:
+    name: 'CI'
+    runs-on: 'ubuntu-latest'
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: moonrepo/setup-moon-action@v1
+      - run: moon ci
 ```
 
 ## Other changes

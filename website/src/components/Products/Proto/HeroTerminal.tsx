@@ -1,6 +1,6 @@
 import React from 'react';
 
-const LANGS = ['node', 'go'];
+const LANGS = ['deno', 'node', 'go'];
 
 function random(min: number, max: number) {
 	const minimum = Math.ceil(min);
@@ -18,6 +18,16 @@ export default function HeroTerminal() {
 		>
 			<li className="text-gray-800"># Install proto</li>
 			<li>curl -fsSL https://moonrepo.dev/proto/install.sh | bash</li>
+
+			{lang === 'deno' && (
+				<>
+					<li className="text-gray-800 pt-2"># Install Deno</li>
+					<li>proto install deno 1.31</li>
+
+					<li className="text-gray-800 pt-2"># Use immediately</li>
+					<li>deno run index.ts</li>
+				</>
+			)}
 
 			{lang === 'node' && (
 				<>

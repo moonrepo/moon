@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkwebsite=self.webpackChunkwebsite||[]).push([[8114],{24833:e=>{e.exports=JSON.parse('{"title":"Config files","keywords":["config"],"slug":"/config","permalink":"/docs/config","navigation":{"previous":{"title":"Workspace","permalink":"/docs/concepts/workspace"},"next":{"title":".moon/workspace.yml","permalink":"/docs/config/workspace"}}}')}}]);

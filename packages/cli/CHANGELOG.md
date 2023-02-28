@@ -28,6 +28,7 @@
 #### ⚙️ Internal
 
 - Updated Rust to v1.67.
+- Updated local development to support BSD based unix distros.
 - Added `context` to `pipeline.started` and `pipeline.finished` events.
 - Refactored glob matching to use workspace relative paths instead of absolute. Please report an
   issue if hashing or affected detection is now inaccurate.

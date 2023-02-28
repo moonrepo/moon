@@ -3499,9 +3499,9 @@ dependencies = [
 
 [[package]]
 name = "proto_cli"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "197195b1407be0c8577fbd7bec94a91233c8401d71791ebdd6bec19fa78bdd29"
+checksum = "99c57e263ebe5be9745512ab94292a1a6be8a93d6089fba16b63ce6deabf4d2f"
 dependencies = [
  "clap 4.1.4",
  "clap_complete",
@@ -3509,6 +3509,7 @@ dependencies = [
  "human-sort",
  "log",
  "proto_core",
+ "proto_deno",
  "proto_go",
  "proto_node",
  "rustc-hash",
@@ -3518,15 +3519,16 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d4b4176deb08ef896dfcfbda5c71f0674497e10f4af70b99331ce2954322272c"
+checksum = "ac6fc4230ec72f8f9d044c5f7772bd74553e79ccd33e02e977efa426c6f2b09a"
 dependencies = [
  "async-trait",
  "cached",
  "console",
  "dirs",
  "flate2",
+ "human-sort",
  "lenient_semver",
  "log",
  "reqwest",
@@ -3541,10 +3543,22 @@ dependencies = [
 ]
 
 [[package]]
-name = "proto_go"
+name = "proto_deno"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b0aff659b75aed2d5f2d9778f0098750f4009fba48dd4cec7c70e60dd435a3d2"
+checksum = "1333c169b61a62714f3522a18d52b2a0e73fa621864f14d645cc13682949c125"
+dependencies = [
+ "log",
+ "proto_core",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "proto_go"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7e240fbdba72a7b123a61900474bb86b79d109b074f1e5c0b1d906478ad9ba95"
 dependencies = [
  "log",
  "proto_core",
@@ -3554,9 +3568,9 @@ dependencies = [
 
 [[package]]
 name = "proto_node"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e723fc8c512e150ecfb219966c01ab459bc161d512bf9b0cae3fe56cf68b491e"
+checksum = "1f409bc8ed89e094f5604bf008c36aa2d1b8e9bf55a14091365617db9d168542"
 dependencies = [
  "clean-path",
  "log",

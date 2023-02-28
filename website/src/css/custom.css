@@ -173,3 +173,7 @@ ul ul {
 .tsd-index-list li + li {
 	margin-top: 0;
 }
+
+svg {
+	display: block;
+}

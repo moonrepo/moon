@@ -100,7 +100,7 @@ const config = {
 							},
 							// {
 							// 	to: '/proto',
-							// 	html: '<strong>proto</strong><div class="opacity-60">Language agnostic version manager</div>',
+							// 	html: '<strong class="block mr-2">proto</strong><div class="opacity-60">Language agnostic toolchain manager</div>',
 							// },
 						],
 					},

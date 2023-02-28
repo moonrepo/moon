@@ -7,6 +7,7 @@ import Icon from '../../../ui/iconography/Icon';
 import DocLink from '../../../ui/typography/Link';
 import Text from '../../../ui/typography/Text';
 import CTA from '../../Home/CTA';
+import HeroIcon from '../HeroIcon';
 import Screenshots from './Screenshots';
 
 export default function Hero() {
@@ -14,14 +15,7 @@ export default function Hero() {
 		<div className="bg-gradient-to-b from-slate-900 to-slate-600 star-pattern">
 			<div className="max-w-7xl mx-auto py-10 px-4 pb-6 sm:py-12 sm:px-6 md:py-14 lg:py-16 lg:px-8 xl:py-20 flex flex-col md:flex-row">
 				<div className="text-center md:text-left md:w-7/12">
-					<h1 className="text-white flex justify-center md:justify-start items-end gap-2">
-						<div style={{ height: 75, width: 75.35 }} className="relative">
-							<div className="absolute" style={{ left: 0, top: -2 }}>
-								<LogoIcon height={77} />
-							</div>
-						</div>
-						<TextVector height={70} />
-					</h1>
+					<HeroIcon icon={<LogoIcon height={77} />} text={<TextVector height={70} />} />
 
 					<p className="mt-1 mb-0 text-base text-white sm:text-lg sm:max-w-xl sm:mx-auto md:text-xl md:mx-0 md:w-[80%]">
 						A service for monitoring codebases, tracking ownership, and scaling CI pipelines.

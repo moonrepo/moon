@@ -1,6 +1,6 @@
 {
   "name": "@moonrepo/report",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "type": "commonjs",
   "description": "Utilities working with moon run reports.",
   "keywords": [

@@ -394,6 +394,13 @@ pub enum Commands {
         )]
         dependents: bool,
 
+        #[arg(
+            long,
+            short = 'f',
+            help = "Force run and ignore touched files and affected status"
+        )]
+        force: bool,
+
         #[arg(long, short = 'i', help = "Run the target interactively")]
         interactive: bool,
 

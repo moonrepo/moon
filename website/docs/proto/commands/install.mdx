@@ -1,0 +1,15 @@
+---
+title: install
+---
+
+The `proto install <tool>` command will download and install a tool by unpacking their archive to
+`~/.proto/tools/<tool>`. If the tool has already been installed, the command will exit early.
+
+```shell
+$ proto install deno 1.31
+```
+
+### Arguments
+
+- `<tool>` - Type of tool.
+- `[version]` - Version of tool. Defaults to "latest".

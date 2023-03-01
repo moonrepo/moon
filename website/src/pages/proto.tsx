@@ -47,6 +47,12 @@ export default function ProductProto() {
 						features={toolchainFeatures}
 						tier={2}
 					/>
+
+					<div className="relative py-4 sm:py-5 lg:py-6">
+						<div className="mx-auto max-w-md px-2 sm:max-w-3xl sm:px-3 lg:max-w-7xl lg:px-4">
+							<div className="bg-white rounded-lg p-6 drop-shadow">sdsds</div>
+						</div>
+					</div>
 				</div>
 			</main>
 		</Layout>

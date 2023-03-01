@@ -25,7 +25,7 @@ export default function Hero() {
 					</p>
 
 					<p className="mt-1 text-white opacity-50 text-sm md:text-base md:pr-4">
-						Supports Deno, Node.js (npm, pnpm, yarn) and Go.
+						Supports Bun, Deno, Node.js (npm, pnpm, yarn), and Go.
 					</p>
 
 					<div className="mt-3 flex justify-center md:justify-start">

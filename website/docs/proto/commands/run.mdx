@@ -1,0 +1,29 @@
+---
+title: run
+---
+
+The `proto run <tool>` command will run a tool after detecting a version from the environment. In
+order of priority, a version will be resolved from:
+
+- Explicitly passed as a CLI argument
+- A `PROTO_<TOOL>_VERSION` environment variable
+- A local version file (`.prototools`)
+- From the tool's ecosystem (for example, `package.json` in Node.js)
+- A global version file (`~/.proto/tools/<tool>/version`)
+
+```shell
+# Run and detect version from environment
+$ proto run bun
+
+# Run with explicit version
+$ proto run bun 0.5.3
+
+# Run with version from environment variable
+$ PROTO_BUN_VERSION=0.5.3 proto run bun
+```
+
+### Arguments
+
+- `<tool>` - Type of tool.
+- `[version]` - Version of tool. If not provided, will attempt to detect the version from the
+  environment.

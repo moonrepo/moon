@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where `moon init` would panic while checking for a newer version.
+
 ## 0.25.0
 
 #### 💥 Breaking

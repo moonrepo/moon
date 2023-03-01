@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Added a `--force` flag to `moon run` that will bypass affected checks. Useful for always forcing a
+  run in CI.
+
 #### 🐞 Fixes
 
 - Fixed an issue where `moon init` would panic while checking for a newer version.

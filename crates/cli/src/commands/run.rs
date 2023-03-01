@@ -17,6 +17,7 @@ pub struct RunOptions {
     pub affected: bool,
     pub concurrency: Option<usize>,
     pub dependents: bool,
+    pub force: bool,
     pub interactive: bool,
     pub status: Vec<TouchedStatus>,
     pub passthrough: Vec<String>,
@@ -44,8 +45,10 @@ pub async fn run_target(
         env::set_var("MOON_CACHE", CacheMode::Write.to_string());
     }
 
+    let should_run_affected = !options.force && options.affected;
+
     // Always query for a touched files list as it'll be used by many actions
-    let touched_files = if options.affected || workspace.vcs.is_enabled() {
+    let touched_files = if !options.force && (options.affected || workspace.vcs.is_enabled()) {
         query_touched_files(
             &workspace,
             &mut QueryTouchedFilesOptions {
@@ -65,7 +68,7 @@ pub async fn run_target(
     // Run targets, optionally based on affected files
     let primary_targets = dep_builder.run_targets_by_id(
         target_ids,
-        if options.affected {
+        if should_run_affected {
             Some(&touched_files)
         } else {
             None
@@ -75,7 +78,7 @@ pub async fn run_target(
     if primary_targets.is_empty() {
         let targets_list = map_list(target_ids, |id| color::target(id));
 
-        if options.affected {
+        if should_run_affected {
             let status_list = if options.status.is_empty() {
                 color::symbol(TouchedStatus::All.to_string())
             } else {
@@ -109,7 +112,7 @@ pub async fn run_target(
 
     // Process all tasks in the graph
     let context = ActionContext {
-        affected_only: options.affected,
+        affected_only: should_run_affected,
         initial_targets: FxHashSet::from_iter(target_ids.to_owned()),
         interactive: options.interactive,
         passthrough_args: options.passthrough,

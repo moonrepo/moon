@@ -1137,6 +1137,37 @@ mod affected {
     }
 
     #[test]
+    fn runs_if_forced() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("files:noop").arg("--force");
+        });
+
+        let output = assert.output();
+
+        assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+    }
+
+    #[test]
+    fn runs_if_not_affected_but_forced() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("files:noop")
+                .arg("--affected")
+                .arg("--force");
+        });
+
+        let output = assert.output();
+
+        assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+    }
+
+    #[test]
     fn runs_if_affected() {
         let sandbox = cases_sandbox();
         sandbox.enable_git();

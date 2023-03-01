@@ -221,6 +221,11 @@ pub async fn init(
         color::path(&dest_dir),
     );
 
+    println!(
+        "\nNot enjoying moon? Let us know with a 1 minute survey: {}",
+        color::url("https://bit.ly/moon-survey")
+    );
+
     Ok(())
 }
 

@@ -32,7 +32,6 @@ use moon_logger::{color, debug, LevelFilter, Logger};
 use moon_terminal::ExtendedTerm;
 use std::env;
 use std::path::PathBuf;
-use tokio::task;
 
 pub use app::BIN_NAME;
 
@@ -84,9 +83,6 @@ pub async fn run_cli() {
     setup_colors(args.color);
     setup_logging(&args.log, args.log_file);
     setup_caching(&args.cache);
-
-    let version = env!("CARGO_PKG_VERSION");
-    let version_check = task::spawn(check_version(version));
 
     // Match and run subcommand
     let result = match args.command {
@@ -287,24 +283,19 @@ pub async fn run_cli() {
         Commands::Teardown => teardown().await,
     };
 
-    match version_check.await {
-        Ok(Ok((newer_version, true))) => {
+    // Defer checking for a new version as it requires the workspace root
+    // to exist. Otherwise, the `init` command would panic while checking!
+    match check_version(env!("CARGO_PKG_VERSION")).await {
+        Ok((newer_version, true)) => {
             println!(
                 "There's a new version of moon! {newer_version}\n\
                 Run `moon upgrade` or install from https://moonrepo.dev/docs/install",
             );
         }
-        Ok(Err(error)) => {
-            debug!(
-                target: "moon:cli",
-                "Failed to get current version of the cli from remote: {}",
-                error
-            );
-        }
         Err(error) => {
-            debug!(target: "moon:cli", "Failed to spawn check for current version: {}", error);
+            debug!(target: "moon:cli", "Failed to check for current version: {}", error);
         }
-        Ok(Ok((_, false))) => {}
+        _ => {}
     }
 
     if let Err(error) = result {

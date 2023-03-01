@@ -2,10 +2,12 @@ use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_logger::debug;
 use moon_utils::semver::Version;
-use moon_utils::{fs, get_cache_dir, get_workspace_root, is_ci, is_test_env, path};
+use moon_utils::{fs, is_ci, is_test_env, path};
 use serde::{Deserialize, Serialize};
+use std::env;
 use std::error::Error;
 use std::fs::OpenOptions;
+use std::path::Path;
 use std::time::{Duration, SystemTime};
 use uuid::Uuid;
 
@@ -23,8 +25,10 @@ pub struct CheckState {
 }
 
 fn load_or_create_anonymous_uid() -> Result<String, MoonError> {
-    let moon_dir = path::get_home_dir().unwrap().join(CONFIG_DIRNAME);
-    let id_path = moon_dir.join("id");
+    let moon_home_dir = path::get_home_dir()
+        .expect("Invalid home directory.")
+        .join(CONFIG_DIRNAME);
+    let id_path = moon_home_dir.join("id");
 
     if id_path.exists() {
         return fs::read(id_path);
@@ -32,24 +36,31 @@ fn load_or_create_anonymous_uid() -> Result<String, MoonError> {
 
     let id = Uuid::new_v4().to_string();
 
-    fs::create_dir_all(&moon_dir)?;
+    fs::create_dir_all(&moon_home_dir)?;
     fs::write(id_path, &id)?;
 
     Ok(id)
 }
 
-fn create_anonymous_rid() -> String {
-    moon_utils::hash(fs::file_name(get_workspace_root()))
+fn create_anonymous_rid(workspace_root: &Path) -> String {
+    moon_utils::hash(fs::file_name(workspace_root))
 }
 
 pub async fn check_version(
     local_version_str: &str,
 ) -> Result<(String, bool), Box<dyn Error + Send + Sync>> {
-    if is_test_env() || proto::is_offline() {
+    let moon_dir = fs::find_upwards(
+        CONFIG_DIRNAME,
+        env::current_dir().expect("Invalid working directory."),
+    );
+
+    if is_test_env() || proto::is_offline() || moon_dir.is_none() {
         return Ok((local_version_str.to_owned(), false));
     }
 
-    let check_state_path = get_cache_dir().join("states/versionCheck.json");
+    let moon_dir = moon_dir.unwrap();
+    let workspace_root = moon_dir.parent().unwrap().to_path_buf();
+    let check_state_path = moon_dir.join("cache/states/versionCheck.json");
     let now = SystemTime::now();
 
     // Only check once every 8 hours
@@ -70,7 +81,7 @@ pub async fn check_version(
         .header("X-Moon-Version", local_version_str)
         .header("X-Moon-CI", is_ci().to_string())
         .header("X-Moon-UID", load_or_create_anonymous_uid()?)
-        .header("X-Moon-RID", create_anonymous_rid())
+        .header("X-Moon-RID", create_anonymous_rid(&workspace_root))
         .send()
         .await?
         .text()

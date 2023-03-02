@@ -8,7 +8,7 @@ import Text from '@site/src/ui/typography/Text';
 interface TierProps {
 	children: React.ReactNode;
 	cta: ButtonProps;
-	items: { label: string; monthly?: boolean; tooltip: string }[];
+	items: { label: string; monthly?: boolean; tooltip?: string }[];
 	title: string;
 }
 
@@ -23,7 +23,7 @@ function Tier({ children, cta, items, title }: TierProps) {
 				{children}
 			</div>
 
-			<div className="bg-gray-50 rounded p-4 lg:h-[220px]">
+			<div className="bg-gray-50 rounded p-4 lg:h-[260px]">
 				<ul className="flex flex-col gap-2 p-0 m-0">
 					{items.map((item) => (
 						<li key={item.label} className="list-none relative pl-4">
@@ -102,15 +102,18 @@ export default function Pricing() {
 									label: '10GB cloud storage',
 									tooltip: 'Across all repositories.',
 								},
+								{
+									label: 'Unlocked organization settings',
+								},
 							]}
-							cta={{ disabled: true, label: 'Coming soon' }}
+							cta={{ href: 'https://moonrepo.app/upgrade', label: 'Upgrade now' }}
 						>
 							<div className="flex justify-center gap-2">
 								<div>
-									<Heading level={1}>$8</Heading>
+									<Heading level={1}>$5</Heading>
 								</div>
 								<div className="text-left">
-									per member / repo
+									per member + repo
 									<Text variant="muted">monthly</Text>
 								</div>
 							</div>
@@ -142,10 +145,13 @@ export default function Pricing() {
 									label: 'Unlimited cloud storage',
 									tooltip: 'Across all repositories.',
 								},
+								{
+									label: '+ previous tier',
+								},
 							]}
 							cta={{ disabled: true, label: 'Coming soon' }}
 						>
-							<div className="flex justify-center gap-2">
+							{/* <div className="flex justify-center gap-2">
 								<div>
 									<Heading level={1}>$12</Heading>
 								</div>
@@ -153,7 +159,9 @@ export default function Pricing() {
 									per member / repo
 									<Text variant="muted">monthly</Text>
 								</div>
-							</div>
+							</div> */}
+
+							<Heading level={1}>Soon</Heading>
 						</Tier>
 					</div>
 				</div>

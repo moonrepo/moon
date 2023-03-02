@@ -207,6 +207,7 @@ const sidebars = {
 	],
 
 	proto: [
+		'proto/install',
 		{
 			type: 'category',
 			label: 'Commands',

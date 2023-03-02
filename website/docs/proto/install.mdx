@@ -1,0 +1,46 @@
+---
+title: Install proto
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
+import NextSteps from '@site/src/components/NextSteps';
+import AddDepsTabs from '@site/src/components/AddDepsTabs';
+
+<HeaderLabel text="2 min" />
+
+The following guide can be used to install proto into your environment.
+
+## Installing
+
+The entirety of proto is packaged and shipped as a single binary. It works on all _most_ operating
+systems, and does not require any external dependencies. For convenience, we provide the following
+scripts to download and install proto.
+
+### Linux, macOS
+
+In a terminal that supports Bash, run:
+
+```
+curl -fsSL https://moonrepo.dev/install/proto.sh | bash
+```
+
+### Windows
+
+:::caution
+
+Windows is blocked until we finalize better shim support. If you'd like to help, join us on Discord!
+
+:::
+
+### Other
+
+proto can also be downloaded and installed manually, by downloading an asset from
+[https://github.com/moonrepo/proto/releases](https://github.com/moonrepo/proto/releases). Be sure to
+rename the file after downloading, and apply the executable bit (`chmod +x`) on macOS and Linux.
+
+## Upgrading
+
+We provide no formal mechanism for upgrading the proto binary. However, you can re-run the install
+scripts above and it will download, install, and overwrite with the latest version.

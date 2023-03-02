@@ -21,7 +21,7 @@ scripts to download and install moon.
 
 ### Linux, macOS
 
-In a shell that supports Bash, run:
+In a terminal that supports Bash, run:
 
 ```
 curl -fsSL https://moonrepo.dev/install.sh | bash
@@ -67,8 +67,15 @@ rename the file after downloading, and apply the executable bit (`chmod +x`) on 
 
 ## Upgrading
 
-We provide no formal mechanism for upgrading the moon binary. However, you can re-run the install
-scripts above and it will download, install, and overwrite with the latest version.
+moon can be upgraded with the [`moon upgrade`](./commands/upgrade) command. However, this will only
+upgrade moon if installed with the official scripts (moon exists in `~/.moon`).
+
+```shell
+moon upgrade
+```
+
+Otherwise, you can re-run the installers above and it will download, install, and overwrite with the
+latest version.
 
 ## Next steps
 

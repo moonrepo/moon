@@ -3,6 +3,7 @@ import { faCheck } from '@fortawesome/pro-regular-svg-icons';
 import Button, { ButtonProps } from '@site/src/ui/Button';
 import Icon from '@site/src/ui/iconography/Icon';
 import Heading from '@site/src/ui/typography/Heading';
+import Link from '@site/src/ui/typography/Link';
 import Text from '@site/src/ui/typography/Text';
 
 interface TierProps {
@@ -167,6 +168,16 @@ export default function Pricing() {
 				</div>
 
 				<div className="mt-6 text-center">
+					<Text size="sm" variant="muted">
+						<Link size="sm" href="https://moonrepo.app/terms">
+							Terms of Service
+						</Link>
+						{' · '}
+						<Link size="sm" href="https://moonrepo.app/privacy">
+							Privacy Policy
+						</Link>
+					</Text>
+
 					<Text size="sm" variant="muted">
 						Prices and limits subject to change before release!
 					</Text>

@@ -207,10 +207,13 @@ const sidebars = {
 	],
 
 	proto: [
+		'proto/index',
 		'proto/install',
+		'proto/detection',
 		{
 			type: 'category',
 			label: 'Commands',
+			collapsed: false,
 			items: [
 				'proto/commands/bin',
 				'proto/commands/completions',
@@ -220,6 +223,7 @@ const sidebars = {
 				'proto/commands/list-remote',
 				'proto/commands/local',
 				'proto/commands/run',
+				'proto/commands/setup',
 				'proto/commands/uninstall',
 			],
 		},

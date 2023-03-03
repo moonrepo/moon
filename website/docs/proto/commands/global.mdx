@@ -3,8 +3,8 @@ title: global
 ---
 
 The `proto global <tool> <version>` command will set the global default version of a tool, by
-creating a version file in the `~/.proto/tools/<tool>` installation directory. This version will be
-used when attempting to detect a version in [`proto bin`](./bin) and [`proto run`](./run).
+creating a version file at `~/.proto/tools/<tool>/version`. This version will be used when
+attempting to [detect a version](../detection).
 
 ```shell
 $ proto global go 1.20.1

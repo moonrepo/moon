@@ -1,0 +1,62 @@
+---
+title: Version detection
+toc_max_heading_level: 6
+---
+
+The most powerful feature in proto is its contextual version detection, that is triggered with
+[`proto run`](./commands/run), [`proto bin`](./commands/bin), or when a shim is executed. So what
+does this mean exactly? Before a tool in proto's toolchain can be executed, we need to determine the
+version of the tool to execute with. If a detected version exists locally, we proceed using that
+binary, otherwise we fail with a missing installation error.
+
+When detecting a version, the following steps are checked, in the order as listed:
+
+#### 1. Version is explicitly passed as a command line argument
+
+```
+$ proto run node 18.0.0
+```
+
+#### 2. Version is provided with the `PROTO_TOOL_VERSION` environment variable
+
+```
+$ PROTO_NODE_VERSION=18.0.0 proto run node
+```
+
+#### 3. Version is located by traversing the file system
+
+This step will attempt to find a configuration or manifest file in the current working directory,
+and traverse upwards through parent directories until a file is found.
+
+##### 3.1. Version is defined locally in `.prototools`
+
+A `.prototools` file was found and a version entry exists for the current tool. This is also known
+as a "local version" and can be created with [`proto local`](./commands/local).
+
+```toml title=".prototools"
+node = "18.0.0"
+```
+
+##### 3.2. Version is defined in the tool's ecosystem
+
+Depending on the tool, a version is extracted from a found file unique to that tool's ecosystem.
+This includes version manager configs (`.nvmrc`, etc), manifest files (`package.json`, etc), and
+more.
+
+```text title=".nvmrc"
+18.0.0
+```
+
+#### 4. Version is defined globally
+
+As the last check, we look for a "global version" that was pinned with
+[`proto global`](./commands/global).
+
+```text title="~/.proto/tools/node/version"
+18.0.0
+```
+
+#### 5. Version _could not_ be detected
+
+If all the previous steps have failed, then we could not detect an applicable version, and the
+process will fail.

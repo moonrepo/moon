@@ -1,0 +1,31 @@
+---
+title: Introduction
+---
+
+## Supported tools
+
+A tool is either a programming language, or a dependency (package) manager for a language. The
+following tools are currently supported in proto:
+
+- **[Bun](https://bun.sh)**
+- **[Deno](https://deno.land)**
+- **[Node.js](https://nodejs.org)**
+  - [npm](https://docs.npmjs.com/cli/v9/)
+  - [pnpm](https://pnpm.io)
+  - [yarn](https://yarnpkg.com)
+- **[Go](https://go.dev)**
+
+## Supported targets
+
+Because proto is written in Rust, we only support targets that are explicitly compiled for, which
+are currently:
+
+| Operating system | Architecture | Target                       |
+| :--------------- | :----------- | :--------------------------- |
+| macOS 64-bit     | Intel        | `x86_64-apple-darwin`        |
+| macOS 64-bit     | ARM          | `aarch64-apple-darwin`       |
+| Linux 64-bit     | Intel GNU    | `x86_64-unknown-linux-gnu`   |
+| Linux 64-bit     | Intel musl   | `x86_64-unknown-linux-musl`  |
+| Linux 64-bit     | ARM GNU      | `aarch64-unknown-linux-gnu`  |
+| Linux 64-bit     | ARM musl     | `aarch64-unknown-linux-musl` |
+| Windows 64-bit   | Intel        | `x86_64-pc-windows-msvc`     |

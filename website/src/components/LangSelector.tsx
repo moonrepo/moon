@@ -2,13 +2,13 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation } from '@docusaurus/router';
 
 const STARTED_ROUTES = [
-	'install',
-	'setup-workspace',
-	'setup-toolchain',
-	'create-project',
-	'create-task',
-	'run-task',
-	'migrate-to-moon',
+	'/docs/install',
+	'/docs/setup-workspace',
+	'/docs/setup-toolchain',
+	'/docs/create-project',
+	'/docs/create-task',
+	'/docs/run-task',
+	'/docs/migrate-to-moon',
 ];
 
 function hasLocalStorage() {
@@ -61,7 +61,7 @@ export default function LangSelector() {
 		);
 	}, []);
 
-	const isGettingStarted = STARTED_ROUTES.some((route) => location.pathname.endsWith(route));
+	const isGettingStarted = STARTED_ROUTES.some((route) => location.pathname.startsWith(route));
 
 	if (!isGettingStarted) {
 		return null;

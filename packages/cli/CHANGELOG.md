@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where hashing would attempt to hash a directory and crash.
+
 ## 0.25.1
 
 #### 🚀 Updates

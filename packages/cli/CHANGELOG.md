@@ -5,6 +5,7 @@
 #### 🐞 Fixes
 
 - Fixed an issue where hashing would attempt to hash a directory and crash.
+- Fixed an issue where attempting to hash a large number of files (think 10,000) would hang.
 
 ## 0.25.1
 

@@ -9,6 +9,7 @@ use moon_utils::process::{output_to_string, output_to_trimmed_string, Command};
 use moon_utils::{fs, string_vec};
 use regex::Regex;
 use rustc_hash::FxHashSet;
+use std::cmp;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -218,15 +219,26 @@ impl Vcs for Git {
         // Sort for deterministic caching within the vcs layer
         objects.sort();
 
-        let mut command = self.create_command(vec!["hash-object", "--stdin-paths"]);
-        command.input(&[objects.join("\n")]);
+        // Chunk into slices to avoid passing too many files
+        let mut index = 0;
+        let end_index = objects.len();
 
-        let output = self.run_command(command, true).await?;
+        while index < end_index {
+            let next_index = cmp::min(index + 5000, end_index);
+            let slice = &objects[index..next_index];
 
-        for (index, hash) in output.split('\n').enumerate() {
-            if !hash.is_empty() {
-                map.insert(objects[index].clone(), hash.to_owned());
+            let mut command = self.create_command(vec!["hash-object", "--stdin-paths"]);
+            command.input(&[slice.join("\n")]);
+
+            let output = self.run_command(command, true).await?;
+
+            for (i, hash) in output.split('\n').enumerate() {
+                if !hash.is_empty() {
+                    map.insert(slice[i].clone(), hash.to_owned());
+                }
             }
+
+            index = next_index;
         }
 
         Ok(map)

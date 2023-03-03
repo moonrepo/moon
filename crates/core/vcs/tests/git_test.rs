@@ -26,6 +26,7 @@ async fn returns_local_branch() {
 
 mod file_hashing {
     use super::*;
+    use moon_test_utils::assert_debug_snapshot;
 
     #[tokio::test]
     async fn hashes_a_list_of_files() {
@@ -188,7 +189,11 @@ mod file_hashing {
             fs::write(sandbox.path().join(format!("file{}", i)), i.to_string()).unwrap();
         }
 
-        assert!(git.get_file_tree_hashes(".").await.unwrap().len() >= 10000);
+        let hashes = git.get_file_tree_hashes(".").await.unwrap();
+
+        assert!(hashes.len() >= 10000);
+
+        assert_debug_snapshot!(hashes);
     }
 
     #[tokio::test]

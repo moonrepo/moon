@@ -413,3 +413,120 @@ mod prune_node {
         // assert!(!sandbox.path().join("node_modules/react").exists());
     }
 }
+
+mod setup {
+    use super::*;
+
+    #[test]
+    fn errors_missing_manifest() {
+        let (workspace_config, toolchain_config, tasks_config) = get_node_fixture_configs();
+
+        let sandbox = create_sandbox_with_config(
+            "node",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&tasks_config),
+        );
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("docker").arg("setup");
+        });
+
+        assert!(
+            predicate::str::contains("Unable to setup, docker manifest missing. Has it been scaffolded with `moon docker scaffold`?")
+                .eval(&assert.output())
+        );
+    }
+}
+
+mod setup_node {
+    use super::*;
+
+    #[test]
+    fn installs_npm() {
+        let (workspace_config, toolchain_config, tasks_config) =
+            get_node_depman_fixture_configs("npm");
+
+        let sandbox = create_sandbox_with_config(
+            "node-npm/workspaces",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&tasks_config),
+        );
+
+        write_manifest(sandbox.path(), "other");
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("docker").arg("setup");
+        });
+
+        // only check root because of workspaces
+        assert!(sandbox.path().join("node_modules").exists());
+    }
+
+    #[test]
+    fn installs_pnpm() {
+        let (workspace_config, toolchain_config, tasks_config) =
+            get_node_depman_fixture_configs("pnpm");
+
+        let sandbox = create_sandbox_with_config(
+            "node-pnpm/workspaces",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&tasks_config),
+        );
+
+        write_manifest(sandbox.path(), "other");
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("docker").arg("setup");
+        });
+
+        // only check root because of workspaces
+        assert!(sandbox.path().join("node_modules").exists());
+    }
+
+    #[test]
+    fn installs_yarn() {
+        let (workspace_config, toolchain_config, tasks_config) =
+            get_node_depman_fixture_configs("yarn");
+
+        let sandbox = create_sandbox_with_config(
+            "node-yarn/workspaces",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&tasks_config),
+        );
+
+        write_manifest(sandbox.path(), "other");
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("docker").arg("setup");
+        });
+
+        // only check root because of workspaces
+        assert!(sandbox.path().join("node_modules").exists());
+    }
+
+    #[test]
+    fn installs_yarn1() {
+        let (workspace_config, toolchain_config, tasks_config) =
+            get_node_depman_fixture_configs("yarn1");
+
+        let sandbox = create_sandbox_with_config(
+            "node-yarn1/workspaces",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&tasks_config),
+        );
+
+        write_manifest(sandbox.path(), "other");
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("docker").arg("setup");
+        });
+
+        // only check root because of workspaces
+        assert!(sandbox.path().join("node_modules").exists());
+    }
+}

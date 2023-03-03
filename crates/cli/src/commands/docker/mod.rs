@@ -1,6 +1,6 @@
 mod prune;
-mod setup;
 mod scaffold;
+mod setup;
 
 pub use prune::prune;
 pub use scaffold::{scaffold, DockerManifest};

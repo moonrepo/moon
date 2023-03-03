@@ -556,7 +556,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             return Ok(String::new());
         }
 
-        let mut hasher = GraphHasher::default();
+        let mut hasher = GraphHasher::new();
 
         // Hash aliases and sources as-is as they're very explicit
         hasher.hash_aliases(aliases);

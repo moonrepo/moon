@@ -1,9 +1,9 @@
 use moon_config::{ProjectsAliasesMap, ProjectsSourcesMap};
-use moon_hasher::{hash_btree, Hasher, Sha256};
+use moon_hasher::{hash_btree, Digest, Hasher, Sha256};
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, env};
 
-#[derive(Default, Deserialize, Serialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GraphHasher {
     aliases: BTreeMap<String, String>,
@@ -11,9 +11,24 @@ pub struct GraphHasher {
     configs: BTreeMap<String, String>,
 
     sources: BTreeMap<String, String>,
+
+    // Version of the moon CLI. We need to include this so that the graph
+    // cache is invalidated between each release, otherwise internal Rust
+    // changes (in project or task crates) are not reflected until the cache
+    // is invalidated, which puts the program in a weird state.
+    version: String,
 }
 
 impl GraphHasher {
+    pub fn new() -> Self {
+        GraphHasher {
+            aliases: BTreeMap::default(),
+            configs: BTreeMap::default(),
+            sources: BTreeMap::default(),
+            version: env::var("MOON_VERSION").unwrap_or_default(),
+        }
+    }
+
     pub fn hash_aliases(&mut self, aliases: &ProjectsAliasesMap) {
         self.aliases.extend(aliases.to_owned());
     }
@@ -32,6 +47,7 @@ impl Hasher for GraphHasher {
         hash_btree(&self.aliases, sha);
         hash_btree(&self.configs, sha);
         hash_btree(&self.sources, sha);
+        sha.update(self.version.as_bytes());
     }
 
     fn serialize(&self) -> serde_json::Value {

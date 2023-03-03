@@ -224,7 +224,7 @@ impl Vcs for Git {
         let end_index = objects.len();
 
         while index < end_index {
-            let next_index = cmp::min(index + 5000, end_index);
+            let next_index = cmp::min(index + 2500, end_index);
             let slice = &objects[index..next_index];
 
             let mut command = self.create_command(vec!["hash-object", "--stdin-paths"]);

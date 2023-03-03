@@ -7,6 +7,8 @@
 - Fixed an issue where hashing would attempt to hash a directory and crash.
 - Fixed an issue where attempting to hash a large number of files (think 10,000) would hang.
 - Fixed an issue where offline checks would take longer than expected.
+- Fixed an issue where the project graph cache would not invalidate when Rust internals have
+  changed.
 
 ## 0.25.1
 

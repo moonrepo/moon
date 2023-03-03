@@ -23,14 +23,23 @@ Our smart hashing currently takes the following sources into account:
 - Output targets (`outputs`).
 - Environment variables (`env`).
 - Dependencies between projects (`dependsOn`) and tasks (`deps`).
-- **For Node.js tasks**:
-  - Node.js version.
-  - `package.json` dependencies (including development and peer).
-  - `tsconfig.json` compiler options (when applicable).
 - **For Deno tasks**:
   - Deno version.
   - `deno.json`/`deps.ts` imports, import maps, and scopes.
   - `tsconfig.json` compiler options (when applicable).
+- **For Node.js tasks**:
+  - Node.js version.
+  - `package.json` dependencies (including development and peer).
+  - `tsconfig.json` compiler options (when applicable).
+
+:::caution
+
+Be aware that greedy inputs (`**/*`, the default) will include _everything_ in the target directory
+as a source. We do our best to filter out VCS ignored files, and `outputs` for the current task, but
+files may slip through that you don't expect. We suggest using explicit `inputs` and routinely
+auditing the hash files for accuracy!
+
+:::
 
 ## Archiving & hydration
 
@@ -41,6 +50,10 @@ artifacts.
 When we encounter a cache hit on a hash, we trigger a mechanism known as hydration, where we
 efficiently unpack an existing tarball archive into a task's outputs. This can be understood as a
 timeline, where every point in time will have its own hash + archive that moon can play back.
+
+Furthermore, if we receive a cache hit on the hash, and the hash is the same as the last run, and
+outputs exist, we exit early without hydrating and assume the project is already hydrated. In the
+terminal, you'll see a message for "cached from previous run".
 
 ## File structure
 

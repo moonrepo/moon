@@ -26,6 +26,7 @@ async fn returns_local_branch() {
 
 mod file_hashing {
     use super::*;
+    use moon_test_utils::assert_debug_snapshot;
 
     #[tokio::test]
     async fn hashes_a_list_of_files() {
@@ -174,6 +175,41 @@ mod file_hashing {
                     "257cc5642cb1a054f08cc83f2d943e56fd3ebe99".to_owned()
                 )
             ])
+        );
+    }
+
+    #[tokio::test]
+    async fn hashes_a_massive_number_of_files() {
+        let sandbox = create_sandbox("vcs");
+        sandbox.enable_git();
+
+        let git = Git::load(&create_config("default"), sandbox.path()).unwrap();
+
+        for i in 0..10000 {
+            fs::write(sandbox.path().join(format!("file{}", i)), i.to_string()).unwrap();
+        }
+
+        let hashes = git.get_file_tree_hashes(".").await.unwrap();
+
+        assert!(hashes.len() >= 10000);
+
+        assert_debug_snapshot!(hashes);
+    }
+
+    #[tokio::test]
+    async fn ignores_folders() {
+        let sandbox = create_sandbox("vcs");
+        sandbox.enable_git();
+
+        let git = Git::load(&create_config("default"), sandbox.path()).unwrap();
+
+        fs::create_dir_all(sandbox.path().join("dir")).unwrap();
+
+        assert_eq!(
+            git.get_file_hashes(&string_vec!["dir"], false)
+                .await
+                .unwrap(),
+            BTreeMap::new()
         );
     }
 }

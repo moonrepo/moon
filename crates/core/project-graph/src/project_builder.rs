@@ -574,6 +574,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             &self.workspace.root,
         )?;
 
+        // Hash project-level config (moon.yml)
         let config_hashes = self
             .workspace
             .vcs
@@ -583,6 +584,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         hasher.hash_configs(&config_hashes);
 
+        // Hash workspace-level configs (entire .moon folder)
         let config_hashes = self
             .workspace
             .vcs

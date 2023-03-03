@@ -176,6 +176,20 @@ mod file_hashing {
             ])
         );
     }
+
+    #[tokio::test]
+    async fn hashes_a_massive_number_of_files() {
+        let sandbox = create_sandbox("vcs");
+        sandbox.enable_git();
+
+        let git = Git::load(&create_config("default"), sandbox.path()).unwrap();
+
+        for i in 0..10000 {
+            fs::write(sandbox.path().join(format!("file{}", i)), i.to_string()).unwrap();
+        }
+
+        assert!(git.get_file_tree_hashes(".").await.unwrap().len() >= 10000);
+    }
 }
 
 mod touched_files {

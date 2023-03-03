@@ -190,6 +190,23 @@ mod file_hashing {
 
         assert!(git.get_file_tree_hashes(".").await.unwrap().len() >= 10000);
     }
+
+    #[tokio::test]
+    async fn ignores_folders() {
+        let sandbox = create_sandbox("vcs");
+        sandbox.enable_git();
+
+        let git = Git::load(&create_config("default"), sandbox.path()).unwrap();
+
+        fs::create_dir_all(sandbox.path().join("dir")).unwrap();
+
+        assert_eq!(
+            git.get_file_hashes(&string_vec!["dir"], false)
+                .await
+                .unwrap(),
+            BTreeMap::new()
+        );
+    }
 }
 
 mod touched_files {

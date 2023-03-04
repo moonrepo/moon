@@ -1,18 +1,18 @@
 ---
-title: docker prune
-sidebar_label: prune
+title: docker setup
+sidebar_label: setup
 ---
 
 import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
-<VersionLabel header version="0.15" />
+<VersionLabel header version="0.26" />
 
-The `moon docker prune` command will reduce the overall filesize of the Docker environment by
-installing production only dependencies for projects that were scaffolded, and removing any
-applicable extraneous files.
+The `moon docker setup` command will efficiently install dependencies for focused projects. This is
+an all-in-one command for all dependency installations, and should replace `npm install` and other
+commands.
 
 ```shell
-$ moon docker prune
+$ moon docker setup
 ```
 
 > View the official [Docker usage guide](../../guides/docker) for a more in-depth example of how to

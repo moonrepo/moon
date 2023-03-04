@@ -84,7 +84,7 @@ COPY ./.yarn ./.yarn
 COPY ./.yarnrc.yml ./yarnrc.yml
 
 # Install toolchain and dependencies
-RUN moon setup
+RUN moon docker setup
 
 # Copy project and required files
 COPY ./packages/types ./packages/types
@@ -131,7 +131,7 @@ RUN npm install -g @moonrepo/cli
 COPY ./.moon/docker/workspace .
 
 # Install toolchain and dependencies
-RUN moon setup
+RUN moon docker setup
 ```
 
 </TabItem>
@@ -161,7 +161,7 @@ WORKDIR /app
 COPY --from=workspace /app/.moon/docker/workspace .
 
 # Install toolchain and dependencies
-RUN moon setup
+RUN moon docker setup
 ```
 
 </TabItem>
@@ -261,7 +261,7 @@ RUN npm install -g @moonrepo/cli
 COPY ./.moon/docker/workspace .
 
 # Install toolchain and dependencies
-RUN moon setup
+RUN moon docker setup
 
 # Copy source files
 COPY ./.moon/docker/sources .
@@ -302,7 +302,7 @@ WORKDIR /app
 COPY --from=workspace /app/.moon/docker/workspace .
 
 # Install toolchain and dependencies
-RUN moon setup
+RUN moon docker setup
 
 # Copy source files
 COPY --from=workspace /app/.moon/docker/sources .

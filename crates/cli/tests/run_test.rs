@@ -632,10 +632,58 @@ mod outputs {
 
         moon_archive::untar(tarball, &dir, None).unwrap();
 
-        assert!(dir.join("build/one.js").exists());
-        assert!(dir.join("build/two.js").exists());
-        assert!(!dir.join("build/styles.css").exists());
-        assert!(!dir.join("build/image.png").exists());
+        assert!(dir.join("outputs/build/one.js").exists());
+        assert!(dir.join("outputs/build/two.js").exists());
+        assert!(!dir.join("outputs/build/styles.css").exists());
+        assert!(!dir.join("outputs/build/image.png").exists());
+    }
+
+    #[test]
+    fn includes_project_files() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputs:generateFileAndFolder");
+        });
+
+        let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder");
+        let tarball = sandbox
+            .path()
+            .join(".moon/cache/outputs")
+            .join(format!("{hash}.tar.gz"));
+        let dir = sandbox.path().join(".moon/cache/outputs").join(hash);
+
+        moon_archive::untar(tarball, &dir, None).unwrap();
+
+        assert!(dir.join("stdout.log").exists());
+        assert!(dir.join("stderr.log").exists());
+        assert!(dir.join("outputs/lib/one.js").exists());
+        assert!(dir.join("outputs/esm/two.js").exists());
+    }
+
+    #[test]
+    fn includes_workspace_files() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputs:generateFileAndFolderWorkspace");
+        });
+
+        let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolderWorkspace");
+        let tarball = sandbox
+            .path()
+            .join(".moon/cache/outputs")
+            .join(format!("{hash}.tar.gz"));
+        let dir = sandbox.path().join(".moon/cache/outputs").join(hash);
+
+        moon_archive::untar(tarball, &dir, None).unwrap();
+
+        assert!(dir.join("stdout.log").exists());
+        assert!(dir.join("stderr.log").exists());
+        assert!(dir.join("lib/one.js").exists());
+        assert!(dir.join("esm/two.js").exists());
     }
 
     #[test]

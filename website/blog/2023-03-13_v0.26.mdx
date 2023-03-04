@@ -1,0 +1,76 @@
+---
+slug: v0.26
+title: moon v0.26 - ???
+authors: [milesj]
+tags: [docker]
+# image: ./img/v0.25.png
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import Button from '@site/src/ui/Button';
+import Image from '@site/src/components/Image';
+
+???
+
+<!--truncate-->
+
+## New `moon docker setup` command
+
+moon has provided [built-in `Dockerfile` support](/docs/guides/docker) since v0.15 (11 versions
+ago!) and we've always encouraged the use of the [`moon setup`](/docs/commands/setup) command to
+setup the toolchain and install project dependencies. Here's an example of a moon powered
+`Dockerfile`:
+
+```docker
+FROM node:latest
+WORKDIR /app
+
+# Install moon binary
+RUN npm install -g @moonrepo/cli
+
+# Copy workspace skeleton
+COPY ./.moon/docker/workspace .
+
+# Install toolchain and dependencies
+RUN moon setup
+
+# Copy source files
+COPY ./.moon/docker/sources .
+
+# Build something
+RUN moon run app:build
+
+# Prune workspace
+RUN moon docker prune
+
+CMD ["moon", "run", "app:start"]
+```
+
+However, over the course of these 11 releases since v0.15, we refactored the `moon setup` command to
+only setup the toolchain, and _no longer_ install project dependencies. We inadvertently broke our
+Docker integration. This was an oversight on our part.
+
+To rectify this situation, we're introducing a new
+[`moon docker setup`](/docs/commands/docker/setup) command that will efficiently install
+dependencies for projects focused/affected within the `Dockerfile`. This is a much better solution
+than before, and you should see improved Docker layer caching!
+
+```diff
+-RUN moon setup
++RUN moon docker setup
+```
+
+## Other changes
+
+View the
+[official release](https://github.com/moonrepo/moon/releases/tag/%40moonrepo%2Fcli%400.26.0) for a
+full list of changes.
+
+- ???
+
+## What's next?
+
+Expect the following in the v1 release!
+
+- Officially release a v1!

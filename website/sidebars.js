@@ -83,7 +83,7 @@ const sidebars = {
 				{
 					type: 'category',
 					label: 'docker',
-					items: ['commands/docker/prune', 'commands/docker/scaffold'],
+					items: ['commands/docker/prune', 'commands/docker/scaffold', 'commands/docker/setup'],
 					link: {
 						type: 'generated-index',
 						title: 'docker',

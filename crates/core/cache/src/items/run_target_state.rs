@@ -24,23 +24,42 @@ pub struct RunTargetState {
 
 cache_item!(RunTargetState);
 
+fn prepare_outputs_list(outputs: &[String], source: &str) -> Vec<String> {
+    let mut list = vec![];
+
+    for output in outputs {
+        if output.starts_with('/') {
+            list.push(output[1..].to_owned());
+        } else if source.is_empty() {
+            list.push(output.to_owned());
+        } else {
+            list.push(format!("{source}/{output}"));
+        }
+    }
+
+    list
+}
+
 impl RunTargetState {
     pub fn archive_outputs(
         &self,
         archive_file: &Path,
-        input_root: &Path,
+        workspace_root: &Path,
+        project_source: &str,
         outputs: &[String],
     ) -> Result<bool, MoonError> {
         if get_cache_mode().is_writable() && !archive_file.exists() {
-            let mut tar = TarArchiver::new(input_root, archive_file);
+            let mut tar = TarArchiver::new(workspace_root, archive_file);
 
             // Outputs are relative from project root (the input)
             if !outputs.is_empty() {
-                for output in outputs {
+                let outputs = prepare_outputs_list(outputs, project_source);
+
+                for output in &outputs {
                     if glob::is_glob(output) {
                         tar.add_source_glob(output, None);
                     } else {
-                        tar.add_source(input_root.join(output), Some(output));
+                        tar.add_source(workspace_root.join(output), Some(output));
                     }
                 }
             }
@@ -67,18 +86,20 @@ impl RunTargetState {
     pub fn hydrate_outputs(
         &self,
         archive_file: &Path,
-        project_root: &Path,
+        workspace_root: &Path,
+        project_source: &str,
         outputs: &[String],
     ) -> Result<bool, MoonError> {
         if get_cache_mode().is_readable() && archive_file.exists() {
-            let mut differ = TreeDiffer::load(project_root, outputs)?;
+            let outputs = prepare_outputs_list(outputs, project_source);
+            let mut differ = TreeDiffer::load(workspace_root, &outputs)?;
 
-            untar_with_diff(&mut differ, archive_file, project_root, None)
+            untar_with_diff(&mut differ, archive_file, workspace_root, None)
                 .map_err(|e| MoonError::Generic(e.to_string()))?;
 
             let cache_logs = self.get_output_logs();
-            let stdout_log = project_root.join("stdout.log");
-            let stderr_log = project_root.join("stderr.log");
+            let stdout_log = workspace_root.join("stdout.log");
+            let stderr_log = workspace_root.join("stderr.log");
 
             if stdout_log.exists() {
                 fs::rename(&stdout_log, cache_logs.0)?;

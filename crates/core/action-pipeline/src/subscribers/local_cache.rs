@@ -47,7 +47,12 @@ impl Subscriber for LocalCacheSubscriber {
             } => {
                 let archive_path = workspace.cache.get_hash_archive_path(hash);
 
-                if cache.archive_outputs(&archive_path, &project.root, &task.outputs)? {
+                if cache.archive_outputs(
+                    &archive_path,
+                    &workspace.root,
+                    &project.source,
+                    &task.outputs,
+                )? {
                     return Ok(EventFlow::Return(path::to_string(archive_path)?));
                 }
             }
@@ -62,7 +67,12 @@ impl Subscriber for LocalCacheSubscriber {
             } => {
                 let archive_path = workspace.cache.get_hash_archive_path(hash);
 
-                if cache.hydrate_outputs(&archive_path, &project.root, &task.outputs)? {
+                if cache.hydrate_outputs(
+                    &archive_path,
+                    &workspace.root,
+                    &project.source,
+                    &task.outputs,
+                )? {
                     return Ok(EventFlow::Return(path::to_string(archive_path)?));
                 }
             }

@@ -92,11 +92,10 @@ impl<'ws> DepGraphBuilder<'ws> {
 
     pub fn install_deps(
         &mut self,
-        task: &Task,
         project: &Project,
+        task: Option<&Task>,
     ) -> Result<NodeIndex, DepGraphError> {
-        let (project_runtime, workspace_runtime) =
-            self.get_runtimes_from_project(project, Some(task));
+        let (project_runtime, workspace_runtime) = self.get_runtimes_from_project(project, task);
         let mut installs_in_project = false;
 
         // If project is NOT in the package manager workspace, then we should
@@ -274,7 +273,7 @@ impl<'ws> DepGraphBuilder<'ws> {
         );
 
         // We should install deps & sync projects *before* running targets
-        let install_deps_index = self.install_deps(task, project)?;
+        let install_deps_index = self.install_deps(project, Some(task))?;
         let sync_project_index = self.sync_project(project)?;
         let index = self.insert_node(&node);
 

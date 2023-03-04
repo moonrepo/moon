@@ -20,7 +20,7 @@ const HEADING_PARALLELISM: &str = "Parallelism and distribution";
 pub enum DockerCommands {
     #[command(
         name = "prune",
-        about = "Remove extraneous files and folders within Dockerfile(s)."
+        about = "Remove extraneous files and folders within a Dockerfile."
     )]
     Prune,
 
@@ -35,6 +35,12 @@ pub enum DockerCommands {
         #[arg(long, help = "Additional file globs to include in sources")]
         include: Vec<FileGlob>,
     },
+
+    #[command(
+        name = "setup",
+        about = "Setup a Dockerfile by installing dependencies for necessary projects."
+    )]
+    Setup,
 }
 
 #[derive(Debug, Subcommand)]

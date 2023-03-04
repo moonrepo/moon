@@ -130,6 +130,7 @@ pub async fn run_cli() {
         Commands::Docker { command } => match command {
             DockerCommands::Prune => docker::prune().await,
             DockerCommands::Scaffold { ids, include } => docker::scaffold(&ids, &include).await,
+            DockerCommands::Setup => docker::setup().await,
         },
         Commands::Generate {
             name,

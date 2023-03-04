@@ -32,11 +32,17 @@ pub struct TargetHasher {
 
     // Task `target`
     target: String,
+
+    // Bump this to invalidate all caches
+    version: String,
 }
 
 impl TargetHasher {
     pub fn new() -> Self {
-        TargetHasher::default()
+        TargetHasher {
+            version: "1".into(),
+            ..TargetHasher::default()
+        }
     }
 
     /// Hash additional args outside of the provided task.
@@ -103,6 +109,7 @@ impl TargetHasher {
 
 impl Hasher for TargetHasher {
     fn hash(&self, sha: &mut Sha256) {
+        sha.update(self.version.as_bytes());
         sha.update(self.command.as_bytes());
         sha.update(self.target.as_bytes());
 

@@ -2,9 +2,10 @@ const fs = require('fs');
 const path = require('path');
 
 const type = process.argv[2];
+const inWorkspace = process.argv.includes('--workspace');
 
 function createFile(file, content) {
-	const filePath = path.join(__dirname, file);
+	const filePath = path.join(inWorkspace ? process.env.MOON_WORKSPACE_ROOT : __dirname, file);
 
 	fs.mkdirSync(path.dirname(filePath), { recursive: true });
 	fs.writeFileSync(filePath, content ?? String(Date.now()), 'utf8');

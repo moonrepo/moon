@@ -39,6 +39,14 @@ tasks:
     outputs:
       - 'lib/one.js'
       - 'esm'
+  generateFileAndFolderWorkspace:
+    command: node
+    args: generate.js both --workspace
+    inputs:
+      - '*.js'
+    outputs:
+      - '/lib/one.js'
+      - '/esm'
   generateFixed:
     command: node
     args: generate.js custom test.mjs

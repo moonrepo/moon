@@ -2,6 +2,10 @@
 
 ## 0.25.3
 
+#### 🚀 Updates
+
+- Added a `moon docker setup` command for efficiently installing project dependencies.
+
 #### 🐞 Fixes
 
 - Fixed an issue where workspace relative `outputs` were not being included in the hashed tarball.

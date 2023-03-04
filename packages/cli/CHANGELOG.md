@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where workspace relative `outputs` were not being included in the hashed tarball.
+
 ## 0.25.2
 
 #### 🐞 Fixes

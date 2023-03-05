@@ -84,6 +84,8 @@ pub async fn run_cli() {
     setup_logging(&args.log, args.log_file);
     setup_caching(&args.cache);
 
+    let version_check = tokio::spawn(check_version(env!("CARGO_PKG_VERSION")));
+
     // Match and run subcommand
     let result = match args.command {
         Commands::Bin { tool } => bin(tool).await,
@@ -287,14 +289,14 @@ pub async fn run_cli() {
 
     // Defer checking for a new version as it requires the workspace root
     // to exist. Otherwise, the `init` command would panic while checking!
-    match check_version(env!("CARGO_PKG_VERSION")).await {
-        Ok((newer_version, true)) => {
+    match version_check.await {
+        Ok(Ok((newer_version, true))) => {
             println!(
                 "There's a new version of moon! {newer_version}\n\
                 Run `moon upgrade` or install from https://moonrepo.dev/docs/install",
             );
         }
-        Err(error) => {
+        Ok(Err(error)) => {
             debug!(target: "moon:cli", "Failed to check for current version: {}", error);
         }
         _ => {}

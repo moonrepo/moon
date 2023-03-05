@@ -6,6 +6,10 @@
 
 - Fixed an issue where workspace relative `outputs` were not being included in the hashed tarball.
 
+#### ⚙️ Internal
+
+- Reduced new version check to once every 12 hours.
+
 ## 0.25.2
 
 #### 🐞 Fixes

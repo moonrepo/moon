@@ -32,7 +32,10 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+        shell: [bash, bash, powershell]
       fail-fast: false
+    env:
+      SHELL: ${{ matrix.shell }}
     steps:
       - uses: actions/checkout@v3
       # Unix

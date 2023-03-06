@@ -210,6 +210,7 @@ const sidebars = {
 		'proto/index',
 		'proto/install',
 		'proto/detection',
+		'proto/config',
 		{
 			type: 'category',
 			label: 'Commands',

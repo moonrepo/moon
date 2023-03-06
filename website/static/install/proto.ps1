@@ -40,7 +40,7 @@ if (!(Test-Path $InstallDir)) {
   New-Item $InstallDir -ItemType Directory | Out-Null
 }
 
-Copy-Item "${TempDir}\moon.exe" -Destination $BinPath
+Copy-Item "${TempDir}\${Target}\moon.exe" -Destination $BinPath
 Remove-Item $TempDir -Recurse -Force
 Remove-Item $DownloadFile -Force
 

@@ -122,8 +122,8 @@ export default function Home() {
 					stretched
 					id="proto"
 					color="text-pink-600"
-					suptitle="A toolchain for modern environments"
-					title="Accelerate your pipelines"
+					suptitle="A toolchain for the modern era"
+					title="Automate your environments"
 					logo={<img src="/brand/proto/icon.svg" height={75} className="block" />}
 					description={
 						<>

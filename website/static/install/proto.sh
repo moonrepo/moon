@@ -6,21 +6,23 @@
 
 set -e
 
-bin="moon"
+bin="proto"
 arch=$(uname -sm)
-version="${1:-latest}"
+version="${1:-0.1.5}" # TODO
+ext=".tar.xz"
 
 if [ "$OS" = "Windows_NT" ]; then
-	target="moon-x86_64-pc-windows-msvc.exe"
-	bin="moon.exe"
+	target="proto_cli-v$version-x86_64-pc-windows-msvc"
+	bin="proto.exe"
+	ext=".zip"
 else
 	case "$arch" in
-	"Darwin x86_64") target="moon-x86_64-apple-darwin" ;;
-	"Darwin arm64") target="moon-aarch64-apple-darwin" ;;
-	"Linux aarch64") target="moon-aarch64-unknown-linux" ;;
-	"Linux x86_64") target="moon-x86_64-unknown-linux" ;;
+	"Darwin x86_64") target="proto_cli-v$version-x86_64-apple-darwin" ;;
+	"Darwin arm64") target="proto_cli-v$version-aarch64-apple-darwin" ;;
+	# "Linux aarch64") target="proto_cli-v$version-aarch64-unknown-linux-gnu" ;;
+	"Linux x86_64") target="proto_cli-v$version-x86_64-unknown-linux-gnu" ;;
 	*)
-		echo "Unsupported system or architecture \"$arch\". Unable to install moon!"
+		echo "Unsupported system or architecture \"$arch\". Unable to install proto!"
 		exit 1
 	 ;;
 	esac
@@ -30,9 +32,7 @@ if [[ "$arch" == "Linux"* ]]; then
 	deps=$(ldd --version 2>&1 || true)
 
 	if [[ $deps == *"musl"* ]]; then
-		target="$target-musl"
-	else
-		target="$target-gnu"
+		target="${target/gnu/musl}"
 	fi
 fi
 
@@ -43,36 +43,47 @@ else
   is_wsl=false
 fi
 
-if [ $# -eq 0 ]; then
-	download_url="https://github.com/moonrepo/moon/releases/latest/download/${target}"
-else
-	download_url="https://github.com/moonrepo/moon/releases/download/%40moonrepo%2Fcli%40${1}/${target}"
+# if [ $# -eq 0 ]; then
+# 	download_url="https://github.com/moonrepo/proto/releases/latest/download/$target$ext"
+# else
+# 	download_url="https://github.com/moonrepo/proto/releases/download/proto_cli-v$version/$target$ext"
+# fi
+
+download_url="https://github.com/moonrepo/proto/releases/download/proto_cli-v$version/$target$ext"
+temp_dir="$HOME/.proto/temp/proto/$target"
+download_file="$temp_dir$ext"
+install_dir="$HOME/.proto/bin"
+bin_path="$install_dir/$bin"
+
+# Download and unpack in temp dir
+
+if [ ! -d "$temp_dir" ]; then
+	mkdir -p "$temp_dir"
 fi
 
-install_dir="$HOME/.moon/tools/moon/$version"
-bin_path="$install_dir/$bin"
+curl --fail --location --progress-bar --output "$download_file" "$download_url"
+tar xf "$download_file" --strip-components 1 -C "$temp_dir"
+
+# Move to bin dir and clean up
 
 if [ ! -d "$install_dir" ]; then
 	mkdir -p "$install_dir"
 fi
 
-curl --fail --location --progress-bar --output "$bin_path" "$download_url"
+mv "$temp_dir/$bin" "$bin_path"
 chmod +x "$bin_path"
+rm -rf "$download_file" "$temp_dir"
 
-echo "Successfully installed moon to $bin_path"
+# Run setup script to update shells
 
-if ln -sf "$bin_path" "/usr/local/bin/$bin" &> /dev/null; then
-	echo "Run 'moon --help' to get started!"
-else
-    echo "Manually update PATH in your shell to get started!"
-	echo
-	echo "  export PATH=\"$install_dir:\$PATH\""
-fi
+$bin_path setup
 
+echo "Successfully installed proto to $bin_path"
+echo "Launch a new terminal window to start using proto!"
 echo
 echo "Need help? Join our Discord https://discord.gg/qCh9MEynv2"
 
-if [ "$MOON_TEST" = "true" ]; then
+if [ "$PROTO_TEST" = "true" ]; then
 	echo
 	echo "arch=$arch"
 	echo "target=$target"

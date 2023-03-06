@@ -40,14 +40,14 @@ if (!(Test-Path $InstallDir)) {
   New-Item $InstallDir -ItemType Directory | Out-Null
 }
 
-Copy-Item "${TempDir}\${Target}\moon.exe" -Destination $BinPath
+Copy-Item "${TempDir}\${Target}\proto.exe" -Destination $BinPath
 Remove-Item $TempDir -Recurse -Force
 Remove-Item $DownloadFile -Force
 
 # Run setup script to update shells
 
 $env:RUST_LOG = "error"
-& $BinPath @('setup')
+# & $BinPath @('setup')
 
 Write-Output "Successfully installed proto to ${BinPath}"
 Write-Output "Launch a new terminal window to start using proto!"

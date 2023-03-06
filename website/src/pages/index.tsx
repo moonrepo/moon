@@ -1,6 +1,13 @@
 import React from 'react';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import { faDiagramProject, faDiagramSankey, faToolbox } from '@fortawesome/pro-duotone-svg-icons';
+import {
+	faBolt,
+	faDiagramProject,
+	faDiagramSankey,
+	faLeaf,
+	faSolarSystem,
+	faToolbox,
+} from '@fortawesome/pro-duotone-svg-icons';
 import ProductSection from '@site/src/components/Home/ProductSection';
 import UsedBy from '@site/src/components/Home/UsedBy';
 import MoonbaseScreenshots from '@site/src/components/Products/Moonbase/Screenshots';
@@ -35,6 +42,7 @@ export default function Home() {
 
 			<main className="bg-gradient-to-b from-slate-600 via-blurple-600 to-white">
 				<ProductSection
+					id="moon"
 					color="text-blurple-400"
 					suptitle="A system for a solid foundation"
 					title="Supercharge your codebase"
@@ -68,8 +76,13 @@ export default function Home() {
 							title: 'Better project organization',
 						},
 						{
-							description:
-								'With our integrated toolchain, the exact tooling version will be used, ensuring a deterministic environment across machines.',
+							description: (
+								<>
+									With our <Link href="#proto">integrated toolchain</Link>, development environments
+									will be spun up in minutes, ensuring the exact tools and versions are used across
+									developers and machines.
+								</>
+							),
 							icon: faToolbox,
 							title: 'Integrated development environment',
 						},
@@ -79,7 +92,8 @@ export default function Home() {
 				<ProductSection
 					reversed
 					stretched
-					color="text-purple-600"
+					id="moonbase"
+					color="text-teal-700"
 					suptitle="A service to expand to the cloud"
 					title="Accelerate your pipelines"
 					logo={<img src="/brand/moonbase/icon.svg" height={75} className="block" />}
@@ -95,7 +109,7 @@ export default function Home() {
 					}
 					cta={{
 						children: 'Learn more about moonbase',
-						color: 'bg-purple-600',
+						color: 'bg-teal-600',
 						href: '/moonbase',
 					}}
 				>
@@ -103,6 +117,52 @@ export default function Home() {
 						<MoonbaseScreenshots />
 					</div>
 				</ProductSection>
+
+				<ProductSection
+					stretched
+					id="proto"
+					color="text-pink-600"
+					suptitle="A toolchain for modern environments"
+					title="Accelerate your pipelines"
+					logo={<img src="/brand/proto/icon.svg" height={75} className="block" />}
+					description={
+						<>
+							Remove the hassle of managing and enforcing specific versions of programming languages
+							across teams or projects. With{' '}
+							<Link href="/moon" size="lg">
+								proto
+							</Link>
+							, our modern toolchain manager, this entire workflow is automated away through a
+							single tool.
+						</>
+					}
+					cta={{
+						children: 'Learn more about proto',
+						color: 'bg-pink-600',
+						href: '/proto',
+					}}
+					items={[
+						{
+							description:
+								'Manage versions of multiple languages and dependency managers through a single interface. A single source of truth.',
+							icon: faSolarSystem,
+							title: 'Multi-language support',
+						},
+
+						{
+							description:
+								"Detects and infers versions and semantic from a language's ecosystem for maximum compatibility and interoperability.",
+							icon: faLeaf,
+							title: 'Contextual detection',
+						},
+						{
+							description:
+								'Download, install, and run tools with lightspeed, thanks to our Rust based foundation.',
+							icon: faBolt,
+							title: 'Lightspeed commands',
+						},
+					]}
+				/>
 			</main>
 
 			<UsedBy />

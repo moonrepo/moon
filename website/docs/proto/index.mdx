@@ -37,8 +37,8 @@ The toolchain is a `.proto` directory within the current user's home directory, 
 
 The first step in a tool's life-cycle is being downloaded to `~/.proto/temp`. Downloads are
 typically an archive that can be unpacked into a target directory. Once downloaded, we verify the
-downloaded file by verifying a checksum. If this check fails for _any reason_, the toolchain is
-unusable, and the process is aborted.
+downloaded file by running a checksum. If this check fails for _any reason_, the tool is unusable,
+and the process is aborted.
 
 After a successful verification, the last step in the tool's life-cycle can begin, installation.
 Depending on the type of download, the installation process may differ. For archives, we unpack the
@@ -62,13 +62,27 @@ the [`proto setup`](./proto/commands/setup) command.
 
 The following tools are currently supported in proto:
 
+<div className="grid grid-cols-3">
+<div>
+
 - **[Bun](https://bun.sh)**
 - **[Deno](https://deno.land)**
+
+</div>
+<div>
+
 - **[Node.js](https://nodejs.org)**
   - [npm](https://docs.npmjs.com/cli/v9/)
   - [pnpm](https://pnpm.io)
   - [yarn](https://yarnpkg.com)
+
+</div>
+<div>
+
 - **[Go](https://go.dev)**
+
+</div>
+</div>
 
 ## Supported targets
 

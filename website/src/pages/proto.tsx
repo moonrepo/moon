@@ -17,7 +17,7 @@ const toolchainFeatures: Feature[] = [
 	{
 		title: 'Universal toolchain',
 		icon: faSolarSystem,
-		description: 'Manage multiple languages and dependency managers through a single command.',
+		description: 'Manage multiple languages and dependency managers through a single interface.',
 	},
 	{
 		title: 'Ecosystem aware',

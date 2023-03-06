@@ -92,7 +92,7 @@ const config = {
 						items: [
 							{
 								to: '/moon',
-								html: '<strong class="block mr-2">moon</strong><div class="opacity-60">Tool for managing codebases</div>',
+								html: '<strong class="block mr-2">moon</strong><div class="opacity-60">System for managing codebases</div>',
 							},
 							{
 								to: '/moonbase',

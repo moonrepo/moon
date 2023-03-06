@@ -6,44 +6,55 @@
 
 $ErrorActionPreference = 'Stop'
 
-$Target = "moon-x86_64-pc-windows-msvc.exe"
-$Version = "latest"
+$Version = "0.1.5" # TODO
 
 if ($Args.Length -eq 1) {
   $Version = $Args.Get(0)
 }
 
+$Target = "proto_cli-v${Version}-x86_64-pc-windows-msvc"
+
 $DownloadUrl = if ($Version -eq "latest") {
-  "https://github.com/moonrepo/moon/releases/latest/download/${Target}"
+  "https://github.com/moonrepo/proto/releases/latest/download/${Target}.zip"
 } else {
-  "https://github.com/moonrepo/moon/releases/download/%40moonrepo%2Fcli%40/${Version}/${Target}"
+  "https://github.com/moonrepo/proto/releases/download/proto_cli-v${Version}/${Target}.zip"
 }
 
-$InstallDir = "${Home}\.moon\tools\moon\${Version}"
-$BinPath = "${InstallDir}\moon.exe"
+$TempDir = "${HOME}\.proto\temp\proto\${Target}"
+$DownloadFile = "${TempDir}.zip"
+$InstallDir = "${Home}\.proto\bin"
+$BinPath = "${InstallDir}\proto.exe"
+
+# Download and unpack in temp dir
+
+if (!(Test-Path $TempDir)) {
+  New-Item $TempDir -ItemType Directory | Out-Null
+}
+
+curl.exe -Lo $DownloadFile $DownloadUrl
+Expand-Archive -Path $DownloadFile -DestinationPath $TempDir
+
+# Move to bin dir and clean up
 
 if (!(Test-Path $InstallDir)) {
   New-Item $InstallDir -ItemType Directory | Out-Null
 }
 
-curl.exe -Lo $BinPath $DownloadUrl
+Copy-Item "${TempDir}\moon.exe" -Destination $BinPath
+Remove-Item $TempDir -Recurse -Force
+Remove-Item $DownloadFile -Force
 
-# Windows doesn't support a "shared binaries" type of folder,
-# so instead of symlinking, we add the install dir to $PATH.
-$User = [System.EnvironmentVariableTarget]::User
-$Path = [System.Environment]::GetEnvironmentVariable('Path', $User)
+# Run setup script to update shells
 
-if (!(";${Path};".ToLower() -like "*;${InstallDir};*".ToLower())) {
-  [System.Environment]::SetEnvironmentVariable('Path', "${InstallDir};${Path}", $User)
-  $Env:Path = "${InstallDir};${Env:Path}"
-}
+$env:RUST_LOG = "error"
+& $BinPath @('setup')
 
-Write-Output "Successfully installed moon to ${BinPath}"
-Write-Output "Run 'moon --help' to get started!"
+Write-Output "Successfully installed proto to ${BinPath}"
+Write-Output "Launch a new terminal window to start using proto!"
 Write-Output ""
 Write-Output "Need help? Join our Discord https://discord.gg/qCh9MEynv2"
 
-if ($env:MOON_TEST -eq "true") {
+if ($env:PROTO_TEST -eq "true") {
 	Write-Output ""
 	Write-Output "target=${Target}"
 	Write-Output "download_url=${DownloadUrl}"

@@ -43,13 +43,12 @@ else
   is_wsl=false
 fi
 
-# if [ $# -eq 0 ]; then
-# 	download_url="https://github.com/moonrepo/proto/releases/latest/download/$target$ext"
-# else
-# 	download_url="https://github.com/moonrepo/proto/releases/download/proto_cli-v$version/$target$ext"
-# fi
+if [ $# -eq 0 ]; then
+	download_url="https://github.com/moonrepo/proto/releases/latest/download/$target$ext"
+else
+	download_url="https://github.com/moonrepo/proto/releases/download/proto_cli-v$version/$target$ext"
+fi
 
-download_url="https://github.com/moonrepo/proto/releases/download/proto_cli-v$version/$target$ext"
 temp_dir="$HOME/.proto/temp/proto/$target"
 download_file="$temp_dir$ext"
 install_dir="$HOME/.proto/bin"
@@ -76,6 +75,7 @@ rm -rf "$download_file" "$temp_dir"
 
 # Run setup script to update shells
 
+RUST_LOG=error
 $bin_path setup
 
 echo "Successfully installed proto to $bin_path"

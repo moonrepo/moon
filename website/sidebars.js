@@ -215,7 +215,6 @@ const sidebars = {
 		{
 			type: 'category',
 			label: 'Commands',
-			collapsed: false,
 			items: [
 				'proto/commands/bin',
 				'proto/commands/completions',

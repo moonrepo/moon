@@ -3,6 +3,10 @@ title: Version detection
 toc_max_heading_level: 6
 ---
 
+import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
+
+<HeaderLabel text="2 min" />
+
 The most powerful feature in proto is its contextual version detection, that is triggered with
 [`proto run`](./commands/run), [`proto bin`](./commands/bin), or when a shim is executed. So what
 does this mean exactly? Before a tool in proto's toolchain can be executed, we need to determine the
@@ -19,7 +23,7 @@ When detecting a version, the following steps are checked, in the order as liste
 $ proto run node 18.0.0
 ```
 
-#### 2. Version is provided with the `PROTO_TOOL_VERSION` environment variable
+#### 2. Version is provided with the `PROTO_*_VERSION` environment variable
 
 ```
 $ PROTO_NODE_VERSION=18.0.0 proto run node

@@ -2,5 +2,22 @@
 title: Project configuration
 ---
 
+import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
+
+<HeaderLabel text="1 min" />
+
 proto supports pinning versions of tools on a per-project or per-directory basis through our
-`.prototools` configuration file.
+`.prototools` configuration file. This file takes precedence during [version detection](./detection)
+and can be created/updated with [`proto local`](./commands/local).
+
+This configuration simply maps tools to semantic versions for the current directory. This file is in
+[TOML](https://toml.io/en/), which is pretty straight forward if you've never used it before, for
+example:
+
+```toml title="<project>/.prototools"
+node = "16.16.0"
+npm = "9.0.0"
+go = "1.20"
+```
+
+> The names of tools are the same used on the command line!

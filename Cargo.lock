@@ -1247,9 +1247,9 @@ dependencies = [
 
 [[package]]
 name = "futures"
-version = "0.3.25"
+version = "0.3.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "38390104763dc37a5145a53c29c63c1290b5d316d6086ec32c293f6736051bb0"
+checksum = "13e2792b0ff0340399d58445b88fd9770e3489eff258a4cbc1523418f12abf84"
 dependencies = [
  "futures-channel",
  "futures-core",
@@ -1278,9 +1278,9 @@ checksum = "ec90ff4d0fe1f57d600049061dc6bb68ed03c7d2fbd697274c41805dcb3f8608"
 
 [[package]]
 name = "futures-executor"
-version = "0.3.25"
+version = "0.3.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7acc85df6714c176ab5edf386123fafe217be88c0840ec11f199441134a074e2"
+checksum = "e8de0a35a6ab97ec8869e32a2473f4b1324459e14c29275d14b10cb1fd19b50e"
 dependencies = [
  "futures-core",
  "futures-task",
@@ -3499,9 +3499,9 @@ dependencies = [
 
 [[package]]
 name = "proto_bun"
-version = "0.1.1"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "581fa1377a473fe7b2746ca7c69fa382a22f5f350d02000e7f5750535778068b"
+checksum = "3982a86f8f4077751f709b454ca794d60a89b5a329fbea0d01fa4a5b6c37a54b"
 dependencies = [
  "log",
  "proto_core",
@@ -3511,14 +3511,15 @@ dependencies = [
 
 [[package]]
 name = "proto_cli"
-version = "0.1.4"
+version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "637a392c14446aa602e32c382c8e99cd6f649baf927505f27e9a2d1995783bc7"
+checksum = "a2aa838ad686d9de5381680156cb98d986c2976844a9645cd6db2d16896cf8c2"
 dependencies = [
  "clap 4.1.4",
  "clap_complete",
  "dirs",
  "env_logger",
+ "futures",
  "human-sort",
  "log",
  "proto_bun",
@@ -3533,9 +3534,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.1.3"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2a0c4755fcb998de0344742884e4ab93ba748c92dd60b0b2c53ebdfe6c388c2a"
+checksum = "bfcc4e593fcd922b98614211a437f8d84a1ceea38526981c5afd8e88be24943d"
 dependencies = [
  "async-trait",
  "cached",
@@ -3558,9 +3559,9 @@ dependencies = [
 
 [[package]]
 name = "proto_deno"
-version = "0.1.1"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b9eeaf593466b9eddf072f4ec027da42d6c520d955755f073cac76e713ba64d"
+checksum = "a0ad72c4a06e2ac70f4bd76c66b58f869506bcf8523a38b65f039b439bd86f45"
 dependencies = [
  "log",
  "proto_core",
@@ -3570,9 +3571,9 @@ dependencies = [
 
 [[package]]
 name = "proto_go"
-version = "0.1.2"
+version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dfa834fd6a263b29eaf73b94c8e6b8f4da61562796230e6c67784cc5421fab57"
+checksum = "693e4c67db0e3a2a38e5f4952133d8a6d29f959ffbfa1406b48ca39f485dc573"
 dependencies = [
  "log",
  "proto_core",
@@ -3582,9 +3583,9 @@ dependencies = [
 
 [[package]]
 name = "proto_node"
-version = "0.1.2"
+version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a8da07a8678b357ae16c9dd4f4160c0efc0ad68b9cd721312d499ae0c98cc5f3"
+checksum = "501b738a7b77d5610949b3238e7f597460c2791372edb1dc5199c473af2a9572"
 dependencies = [
  "clean-path",
  "log",

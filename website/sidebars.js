@@ -205,6 +205,31 @@ const sidebars = {
 			],
 		},
 	],
+
+	proto: [
+		'proto/index',
+		'proto/install',
+		'proto/detection',
+		'proto/config',
+		'proto/faq',
+		{
+			type: 'category',
+			label: 'Commands',
+			items: [
+				'proto/commands/bin',
+				'proto/commands/completions',
+				'proto/commands/global',
+				'proto/commands/install',
+				'proto/commands/list',
+				'proto/commands/list-remote',
+				'proto/commands/local',
+				'proto/commands/run',
+				'proto/commands/setup',
+				'proto/commands/uninstall',
+				'proto/commands/use',
+			],
+		},
+	],
 };
 
 // eslint-disable-next-line import/no-commonjs

@@ -1,0 +1,99 @@
+---
+title: What is proto?
+---
+
+import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
+import ToolsGrid from '@site/src/components/Products/Proto/ToolsGrid';
+
+<HeaderLabel text="3 min" />
+
+proto is a toolchain manager.
+
+If you're unfamiliar with the concept of a toolchain, a toolchain is a collection of tools that are
+downloaded, installed, and managed by version through a single interface. In the context of proto's
+toolchain, a tool is either a programming language, or a dependency/package manager for a language.
+It's the next step in the version manager evolution.
+
+## Why proto?
+
+proto was designed to be a modern and holistic version manager for all of your favorite programming
+languages. We believe a single tool that works the same across every language is better than
+multiple ad-hoc tools. While we only support a handful of languages today, we aim to support many
+more in the future!
+
+:::success
+
+proto powers [moon](/moon)'s toolchain, enabling a single source of truth for both tools!
+
+:::
+
+### Features
+
+- Lightspeed! With Rust, we can guarantee exceptional performance.
+- Multi-language. A single CLI for managing versions for all of your languages.
+- Cross-platform, for a consistent experience across machines and teams.
+- [Contextual version detection](./proto/detection), ensuring the correct version of a tool is
+  always used.
+- Checksum verification, ensuring a tool came from a trusted source.
+- Detects and infers from a language's ecosystem for maximum compatibility.
+
+## How does it work?
+
+The toolchain is a `.proto` directory within the current user's home directory, e.g., `~/.proto`.
+
+The first step in a tool's life-cycle is being downloaded to `~/.proto/temp`. Downloads are
+typically an archive that can be unpacked into a target directory. Once downloaded, we verify the
+downloaded file by running a checksum. If this check fails for _any reason_, the tool is unusable,
+and the process is aborted.
+
+After a successful verification, the last step in the tool's life-cycle can begin, installation.
+Depending on the type of download, the installation process may differ. For archives, we unpack the
+tool to `~/.proto/tools/<name>/<version>`. In the future, we'll support building from source.
+
+From here, we make these tools globally available by prepending `~/.proto/bin` to `PATH` (typically
+as part of your shell profile). Continue reading for more about this bin folder.
+
+### Shims
+
+proto is powered the by industry standard concept of shims. For each tool installed in proto, a shim
+file will exist at `~/.proto/bin/<tool>`. Shims _are not_ symlinks to the tool's binary, but are
+thin wrappers around [`proto run`](./proto/commands/run), enabling
+[automatic version detection](./proto/detection) on every invocation!
+
+:::info
+
+The `~/.proto/bin` directory _should_ be in your `PATH` if proto was setup correctly. If not, run
+the [`proto setup`](./proto/commands/setup) command.
+
+:::
+
+## Supported tools
+
+The following tools are currently supported in proto:
+
+<ToolsGrid />
+
+## Supported targets
+
+Because proto is written in Rust, we only support targets that are explicitly compiled for, which
+are currently:
+
+| Operating system | Architecture | Target                     |
+| :--------------- | :----------- | :------------------------- |
+| macOS 64-bit     | Intel        | `x86_64-apple-darwin`      |
+| macOS 64-bit     | ARM          | `aarch64-apple-darwin`     |
+| Linux 64-bit     | Intel GNU    | `x86_64-unknown-linux-gnu` |
+| Windows 64-bit   | Intel        | `x86_64-pc-windows-msvc`   |
+
+<!--
+| Linux 64-bit     | ARM GNU      | `aarch64-unknown-linux-gnu` |
+| Linux 64-bit     | Intel musl   | `x86_64-unknown-linux-musl` |
+| Linux 64-bit     | ARM musl     | `aarch64-unknown-linux-musl` | -->
+
+## Roadmap
+
+- Windows shim support.
+- Linux ARM/musl support.
+- Custom version aliasing.
+- Build from source for existing languages.
+- New languages.

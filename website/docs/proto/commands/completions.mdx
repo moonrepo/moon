@@ -1,0 +1,16 @@
+---
+title: completions
+---
+
+The `proto completions` command will generate proto command and argument completions for your
+current shell. This command will write to stdout, which can then be redirected to a file of your
+choice.
+
+```shell
+$ proto completions > ~/.bash_completion.d/proto.sh
+```
+
+### Options
+
+- `--shell` - Shell to explicitly generate for. Accepts "bash", "elvish", "fish", "powershell", or
+  "zsh".

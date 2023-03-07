@@ -7,7 +7,7 @@ const prismTheme = require('./prism.config');
 const social = [
 	{
 		label: 'GitHub',
-		to: 'https://github.com/moonrepo/moon',
+		to: 'https://github.com/moonrepo',
 	},
 	{
 		label: 'Discord',
@@ -22,7 +22,7 @@ const social = [
 /** @type {import('@docusaurus/types').Config} */
 const config = {
 	title: 'moonrepo',
-	tagline: 'A developer productivity platform for scaling codebases.',
+	tagline: 'A developer productivity tooling platform.',
 	url: 'https://moonrepo.dev',
 	baseUrl: '/',
 	onBrokenLinks: 'throw',
@@ -92,16 +92,16 @@ const config = {
 						items: [
 							{
 								to: '/moon',
-								html: '<strong class="block mr-2">moon</strong><div class="opacity-60">Tool for managing codebases</div>',
+								html: '<strong class="block mr-2">moon</strong><div class="opacity-60">System for managing codebases</div>',
 							},
 							{
 								to: '/moonbase',
 								html: '<strong class="block mr-2">moonbase</strong><div class="opacity-60">Service for scaling CI pipelines</div>',
 							},
-							// {
-							// 	to: '/proto',
-							// 	html: '<strong class="block mr-2">proto</strong><div class="opacity-60">Language agnostic toolchain manager</div>',
-							// },
+							{
+								to: '/proto',
+								html: '<strong class="block mr-2">proto</strong><div class="opacity-60">Multi-language toolchain manager</div>',
+							},
 						],
 					},
 					{
@@ -234,7 +234,7 @@ const config = {
 			prism: {
 				theme: prismTheme,
 				darkTheme: prismTheme,
-				additionalLanguages: ['docker', 'twig'],
+				additionalLanguages: ['docker', 'twig', 'toml'],
 			},
 		}),
 

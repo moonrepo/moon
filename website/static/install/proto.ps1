@@ -47,7 +47,7 @@ Remove-Item $DownloadFile -Force
 # Run setup script to update shells
 
 $env:RUST_LOG = "error"
-& $BinPath @('setup')
+# & $BinPath @('setup')
 
 Write-Output "Successfully installed proto to ${BinPath}"
 Write-Output "Launch a new terminal window to start using proto!"

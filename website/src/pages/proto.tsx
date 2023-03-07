@@ -106,11 +106,15 @@ export default function ProductProto() {
 											inherits.
 										</Text>
 
-										<Text>
+										<Text className="mb-2">
 											Furthermore, we believe that requiring multiple ad-hoc version managers for
 											all your languages, each with different workflows, CLI commands, and
-											configuration files, is a poor developer experience. Our goal is to unify all
-											of these into a single performant interface.
+											configuration files, is a poor developer experience.
+										</Text>
+
+										<Text>
+											Our goal is to unify all of these into a single performant interface. A
+											toolchain manager is the next step in the version manager evolution.
 										</Text>
 									</div>
 								</div>

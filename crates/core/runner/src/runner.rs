@@ -21,7 +21,6 @@ use moon_utils::{
 };
 use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
-use std::env;
 
 const LOG_TARGET: &str = "moon:runner";
 
@@ -333,7 +332,7 @@ impl<'a> Runner<'a> {
         env_vars.insert("MOON_TARGET".to_owned(), self.task.target.id.clone());
         env_vars.insert(
             "MOON_TOOLCHAIN_DIR".to_owned(),
-            env::var("PROTO_ROOT").unwrap(),
+            path::to_string(&self.workspace.toolchain_root)?,
         );
         env_vars.insert(
             "MOON_WORKSPACE_ROOT".to_owned(),

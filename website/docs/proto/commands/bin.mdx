@@ -1,0 +1,22 @@
+---
+title: bin
+---
+
+The `proto bin <tool>` command will return an absolute path to a tool's binary within the toolchain.
+When a tool has not been installed, or a version cannot be resolved, the command will exit with a
+failure.
+
+```shell
+$ proto bin node 16.10.0
+/Users/example/.proto/tools/node/16.10.0/bin/node
+```
+
+### Arguments
+
+- `<tool>` - Type of tool.
+- `[version]` - Version of tool. If not provided, will attempt to
+  [detect the version](../detection).
+
+### Options
+
+- `--shim` - When applicable, return an absolute path to a tool's local shim file.

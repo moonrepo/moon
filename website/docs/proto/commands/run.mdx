@@ -1,0 +1,32 @@
+---
+title: run
+---
+
+The `proto run <tool>` command will run a tool after [detecting a version](../detection) from the
+environment.
+
+```shell
+# Run and detect version from environment
+$ proto run bun
+
+# Run with explicit version
+$ proto run bun 0.5.3
+
+# Run with version from environment variable
+$ PROTO_BUN_VERSION=0.5.3 proto run bun
+```
+
+Arguments can be passed to the underlying tool binary by providing additional arguments after `--`.
+
+```shell
+$ proto run bun -- run ./script.ts
+
+# When using the binary on PATH
+$ bun run ./script.ts
+```
+
+### Arguments
+
+- `<tool>` - Type of tool.
+- `[version]` - Version of tool. If not provided, will attempt to detect the version from the
+  environment.

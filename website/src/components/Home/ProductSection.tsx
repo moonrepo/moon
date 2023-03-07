@@ -8,7 +8,7 @@ import CTA, { CTAProps } from './CTA';
 
 export interface ProductItem {
 	title: string;
-	description: string;
+	description: React.ReactNode;
 	icon: IconDefinition;
 }
 
@@ -17,6 +17,7 @@ export interface ProductSectionProps {
 	color: string;
 	cta?: CTAProps;
 	description: React.ReactNode;
+	id: string;
 	items?: ProductItem[];
 	logo: React.ReactNode;
 	reversed?: boolean;
@@ -30,6 +31,7 @@ export default function ProductSection({
 	color,
 	cta,
 	description,
+	id,
 	items,
 	logo,
 	reversed,
@@ -38,7 +40,7 @@ export default function ProductSection({
 	title,
 }: ProductSectionProps) {
 	return (
-		<div className="relative py-4 sm:py-5 lg:py-6">
+		<div className="relative py-4 sm:py-5 lg:py-6" id={id}>
 			<div className="mx-auto max-w-md px-2 sm:max-w-3xl sm:px-3 lg:max-w-7xl lg:px-4">
 				<div className="bg-white rounded-lg p-6 drop-shadow">
 					<div

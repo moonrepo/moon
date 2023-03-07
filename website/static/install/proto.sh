@@ -46,7 +46,7 @@ fi
 if [ $# -eq 0 ]; then
 	download_url="https://github.com/moonrepo/proto/releases/latest/download/$target$ext"
 else
-	download_url="https://github.com/moonrepo/proto/releases/download/proto_cli-v$version/$target$ext"
+	download_url="https://github.com/moonrepo/proto/releases/download/v$version/$target$ext"
 fi
 
 temp_dir="$HOME/.proto/temp/proto/$target"

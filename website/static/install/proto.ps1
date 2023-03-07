@@ -17,7 +17,7 @@ $Target = "proto_cli-v${Version}-x86_64-pc-windows-msvc"
 $DownloadUrl = if ($Version -eq "latest") {
   "https://github.com/moonrepo/proto/releases/latest/download/${Target}.zip"
 } else {
-  "https://github.com/moonrepo/proto/releases/download/proto_cli-v${Version}/${Target}.zip"
+  "https://github.com/moonrepo/proto/releases/download/v${Version}/${Target}.zip"
 }
 
 $TempDir = "${HOME}\.proto\temp\proto\${Target}"

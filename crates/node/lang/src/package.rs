@@ -21,9 +21,6 @@ pub struct PackageJson {
     pub bin: Option<Bin>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub browser: Option<String>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub bugs: Option<Bug>,
 
     #[serde(skip_serializing_if = "Option::is_none")]

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where an object `browser` field in `package.json` would fail to parse.
+
 ## 0.25.3
 
 #### 🐞 Fixes

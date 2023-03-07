@@ -90,19 +90,16 @@ pub async fn check_version(
     let data: CurrentVersion = serde_json::from_str(&response)?;
     let local_version = Version::parse(local_version_str)?;
     let remote_version = Version::parse(data.current_version.as_str())?;
+    let new_version_available = remote_version > local_version;
 
-    if remote_version > local_version {
-        fs::create_dir_all(check_state_path.parent().unwrap())?;
+    fs::create_dir_all(check_state_path.parent().unwrap())?;
 
-        let check_state = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .open(&check_state_path)?;
+    let check_state = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .open(&check_state_path)?;
 
-        serde_json::to_writer(check_state, &CheckState { last_alert: now })?;
+    serde_json::to_writer(check_state, &CheckState { last_alert: now })?;
 
-        return Ok((remote_version.to_string(), true));
-    }
-
-    Ok((remote_version.to_string(), false))
+    Ok((remote_version.to_string(), new_version_available))
 }

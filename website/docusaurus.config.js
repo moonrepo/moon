@@ -100,7 +100,7 @@ const config = {
 							},
 							{
 								to: '/proto',
-								html: '<strong class="block mr-2">proto</strong><div class="opacity-60">Language agnostic toolchain manager</div>',
+								html: '<strong class="block mr-2">proto</strong><div class="opacity-60">Multi-language toolchain manager</div>',
 							},
 						],
 					},

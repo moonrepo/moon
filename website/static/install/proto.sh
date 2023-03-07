@@ -8,7 +8,7 @@ set -e
 
 bin="proto"
 arch=$(uname -sm)
-version="${1:-0.1.5}" # TODO
+version="${1:-0.1.8}" # TODO
 ext=".tar.xz"
 
 if [ "$OS" = "Windows_NT" ]; then
@@ -61,7 +61,15 @@ if [ ! -d "$temp_dir" ]; then
 fi
 
 curl --fail --location --progress-bar --output "$download_file" "$download_url"
-tar xf "$download_file" --strip-components 1 -C "$temp_dir"
+
+if [ "$ext" = ".zip" ]; then
+	unzip -d "$temp_dir" "$download_file"
+
+	# Unzip doesnt remove components folder
+	temp_dir="$temp_dir/$target"
+else
+	tar xf "$download_file" --strip-components 1 -C "$temp_dir"
+fi
 
 # Move to bin dir and clean up
 
@@ -76,7 +84,7 @@ rm -rf "$download_file" "$temp_dir"
 # Run setup script to update shells
 
 RUST_LOG=error
-# $bin_path setup
+$bin_path setup
 
 echo "Successfully installed proto to $bin_path"
 echo "Launch a new terminal window to start using proto!"

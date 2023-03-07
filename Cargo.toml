@@ -26,7 +26,7 @@ console = "0.15.5"
 criterion = { version = "0.4.0", features = ["async_tokio"] }
 lazy_static = "1.4.0"
 petgraph = { version = "0.6.3", features = ["serde-1"] }
-proto_cli = "0.1.7"
+proto_cli = "0.1.8"
 reqwest = "0.11.14"
 rustc-hash = "1.1.0"
 serde = { version = "1.0.152", features = ["derive"] }

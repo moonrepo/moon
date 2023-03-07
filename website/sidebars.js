@@ -226,6 +226,7 @@ const sidebars = {
 				'proto/commands/run',
 				'proto/commands/setup',
 				'proto/commands/uninstall',
+				'proto/commands/use',
 			],
 		},
 	],

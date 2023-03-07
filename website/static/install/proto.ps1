@@ -6,7 +6,7 @@
 
 $ErrorActionPreference = 'Stop'
 
-$Version = "0.1.5" # TODO
+$Version = "0.1.8" # TODO
 
 if ($Args.Length -eq 1) {
   $Version = $Args.Get(0)
@@ -47,7 +47,7 @@ Remove-Item $DownloadFile -Force
 # Run setup script to update shells
 
 $env:RUST_LOG = "error"
-# & $BinPath @('setup')
+& $BinPath @('setup')
 
 Write-Output "Successfully installed proto to ${BinPath}"
 Write-Output "Launch a new terminal window to start using proto!"

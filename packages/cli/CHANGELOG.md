@@ -1,10 +1,12 @@
 # Changelog
 
-## 0.25.3
+## Unreleased
 
 #### 🚀 Updates
 
 - Added a `moon docker setup` command for efficiently installing project dependencies.
+
+## 0.25.3
 
 #### 🐞 Fixes
 

@@ -76,7 +76,7 @@ rm -rf "$download_file" "$temp_dir"
 # Run setup script to update shells
 
 RUST_LOG=error
-# $bin_path setup
+$bin_path setup
 
 echo "Successfully installed proto to $bin_path"
 echo "Launch a new terminal window to start using proto!"

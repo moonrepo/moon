@@ -7,7 +7,7 @@ const prismTheme = require('./prism.config');
 const social = [
 	{
 		label: 'GitHub',
-		to: 'https://github.com/moonrepo/moon',
+		to: 'https://github.com/moonrepo',
 	},
 	{
 		label: 'Discord',
@@ -22,7 +22,7 @@ const social = [
 /** @type {import('@docusaurus/types').Config} */
 const config = {
 	title: 'moonrepo',
-	tagline: 'A developer productivity platform for scaling codebases.',
+	tagline: 'A developer productivity tooling platform.',
 	url: 'https://moonrepo.dev',
 	baseUrl: '/',
 	onBrokenLinks: 'throw',

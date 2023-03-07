@@ -211,6 +211,7 @@ const sidebars = {
 		'proto/install',
 		'proto/detection',
 		'proto/config',
+		'proto/faq',
 		{
 			type: 'category',
 			label: 'Commands',

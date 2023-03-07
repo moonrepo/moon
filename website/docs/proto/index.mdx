@@ -44,6 +44,9 @@ After a successful verification, the last step in the tool's life-cycle can begi
 Depending on the type of download, the installation process may differ. For archives, we unpack the
 tool to `~/.proto/tools/<name>/<version>`. In the future, we'll support building from source.
 
+From here, we make these tools globally available by prepending `~/.proto/bin` to `PATH` (typically
+as part of your shell profile). Continue reading for more about this bin folder.
+
 ### Shims
 
 proto is powered the by industry standard concept of shims. For each tool installed in proto, a shim

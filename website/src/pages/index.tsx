@@ -151,9 +151,9 @@ export default function Home() {
 
 						{
 							description:
-								"Detects and infers versions and semantic from a language's ecosystem for maximum compatibility and interoperability.",
+								"Detects and infers versions and semantics from a language's ecosystem for maximum compatibility and interoperability.",
 							icon: faLeaf,
-							title: 'Contextual detection',
+							title: 'Contextual version detection',
 						},
 						{
 							description:

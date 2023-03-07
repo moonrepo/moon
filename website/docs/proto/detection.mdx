@@ -9,6 +9,8 @@ does this mean exactly? Before a tool in proto's toolchain can be executed, we n
 version of the tool to execute with. If a detected version exists locally, we proceed using that
 binary, otherwise we fail with a missing installation error.
 
+## Detection order
+
 When detecting a version, the following steps are checked, in the order as listed:
 
 #### 1. Version is explicitly passed as a command line argument
@@ -60,3 +62,24 @@ As the last check, we look for a "global version" that was pinned with
 
 If all the previous steps have failed, then we could not detect an applicable version, and the
 process will fail.
+
+## Language lookups
+
+The following language files are checked when attempting to detect a version.
+
+### Deno
+
+- A [`.dvmrc`](https://github.com/justjavac/dvm) file.
+
+### Go
+
+- Native [`go.work`](https://go.dev/doc/tutorial/workspaces) or
+  [`go.mod`](https://go.dev/doc/modules/gomod-ref) files.
+
+### Node.js
+
+- The [`engines`](https://docs.npmjs.com/cli/v9/configuring-npm/package-json#engines) field in
+  `package.json` _(only explicit/fixed versions)_.
+- The `packageManager` field in `package.json` for package managers.
+- An [`.nvmrc`](https://github.com/nvm-sh/nvm) or
+  [`.node-version`](https://github.com/nodenv/nodenv) file.

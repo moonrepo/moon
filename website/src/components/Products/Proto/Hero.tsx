@@ -30,7 +30,7 @@ export default function Hero() {
 
 					<div className="mt-3 flex justify-center md:justify-start">
 						<div>
-							<CTA href="https://moonrepo.app" color="bg-pink-600">
+							<CTA href="/docs/proto/install" color="bg-pink-600">
 								Get started
 								<Icon
 									icon={faStarShooting}

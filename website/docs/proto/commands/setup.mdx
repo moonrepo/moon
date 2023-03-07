@@ -1,0 +1,34 @@
+---
+title: setup
+---
+
+The `proto setup` command will setup proto in your current shell by modifying an applicable profile
+file and appending proto's bin directory to `PATH`.
+
+```shell
+$ proto setup
+```
+
+During setup, the following profiles will be searched:
+
+- All shells
+  - `~/.profile`
+  - `PROFILE` environment variable
+- Bash
+  - `~/.bash_profile`
+  - `~/.bashrc`
+- Elvish
+  - `~/.elvish/rc.elv`
+  - `~/.config/elvish/rc.elv`
+- Fish
+  - `~/.config/fish/config.fish`
+- PowerShell
+  - Will execute the `setx` command to modify `PATH`
+- Zsh
+  - `~/.zprofile`
+  - `~/.zshrc`
+
+### Options
+
+- `--shell` - Shell to explicitly generate for. Accepts "bash", "elvish", "fish", "powershell", or
+  "zsh".

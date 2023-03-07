@@ -1,5 +1,5 @@
 import React from 'react';
-// import Link from '@docusaurus/Link';
+import Link from '@docusaurus/Link';
 import { faStarShooting } from '@fortawesome/pro-duotone-svg-icons';
 import LogoIcon from '../../../../static/brand/proto/icon.svg';
 import TextVector from '../../../../static/brand/proto/text-vector.svg';
@@ -25,12 +25,12 @@ export default function Hero() {
 					</p>
 
 					<p className="mt-1 text-white opacity-50 text-sm md:text-base md:pr-4">
-						Supports Deno, Node.js (npm, pnpm, yarn) and Go.
+						Supports Bun, Deno, Node.js (npm, pnpm, yarn), and Go.
 					</p>
 
 					<div className="mt-3 flex justify-center md:justify-start">
 						<div>
-							<CTA href="https://moonrepo.app" color="bg-pink-600">
+							<CTA href="/docs/proto/install" color="bg-pink-600">
 								Get started
 								<Icon
 									icon={faStarShooting}
@@ -40,14 +40,14 @@ export default function Hero() {
 							</CTA>
 						</div>
 
-						{/* <div className="ml-1 sm:ml-2 lg:ml-3">
+						<div className="ml-1 sm:ml-2 lg:ml-3">
 							<Link
 								href="/docs/proto"
 								className="w-full flex items-center justify-center px-2 py-1 sm:px-3 sm:py-2 text-base font-bold rounded-md text-white hover:text-white bg-white/5 hover:scale-110 md:text-lg group transition-transform"
 							>
 								Docs
 							</Link>
-						</div> */}
+						</div>
 					</div>
 				</div>
 

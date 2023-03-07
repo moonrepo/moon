@@ -53,11 +53,11 @@ jobs:
         if: ${{ runner.os == 'Windows' }}
       - run: pwsh.exe ./website/static/install.ps1 '0.20.0'
         if: ${{ runner.os == 'Windows' }}
-      - run: pwsh.exe ./website/static/install/proto.ps1
-        if: ${{ runner.os == 'Windows' }}
-        env:
-          SHELL: powershell
-      - run: pwsh.exe ./website/static/install/proto.ps1 '0.1.8'
-        if: ${{ runner.os == 'Windows' }}
-        env:
-          SHELL: powershell
+      # - run: pwsh.exe ./website/static/install/proto.ps1
+      #   if: ${{ runner.os == 'Windows' }}
+      #   env:
+      #     SHELL: powershell
+      # - run: pwsh.exe ./website/static/install/proto.ps1 '0.1.8'
+      #   if: ${{ runner.os == 'Windows' }}
+      #   env:
+      #     SHELL: powershell

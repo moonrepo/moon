@@ -32,10 +32,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        shell: [bash, bash, powershell]
       fail-fast: false
-    env:
-      SHELL: ${{ matrix.shell }}
     steps:
       - uses: actions/checkout@v3
       # Unix
@@ -45,8 +42,12 @@ jobs:
         if: ${{ runner.os != 'Windows' }}
       - run: bash ./website/static/install/proto.sh
         if: ${{ runner.os != 'Windows' }}
+        env:
+          SHELL: bash
       - run: bash ./website/static/install/proto.sh '0.1.8'
         if: ${{ runner.os != 'Windows' }}
+        env:
+          SHELL: bash
       # Windows
       - run: pwsh.exe ./website/static/install.ps1
         if: ${{ runner.os == 'Windows' }}
@@ -54,5 +55,9 @@ jobs:
         if: ${{ runner.os == 'Windows' }}
       - run: pwsh.exe ./website/static/install/proto.ps1
         if: ${{ runner.os == 'Windows' }}
+        env:
+          SHELL: powershell
       - run: pwsh.exe ./website/static/install/proto.ps1 '0.1.8'
         if: ${{ runner.os == 'Windows' }}
+        env:
+          SHELL: powershell

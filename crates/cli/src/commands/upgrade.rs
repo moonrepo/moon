@@ -18,7 +18,7 @@ pub async fn upgrade() -> Result<(), AnyError> {
     }
 
     let version = env!("CARGO_PKG_VERSION");
-    let version_check = check_version(version).await;
+    let version_check = check_version(version, true).await;
 
     let new_version = match version_check {
         Ok((newer_version, _)) if Version::parse(&newer_version)? > Version::parse(version)? => {

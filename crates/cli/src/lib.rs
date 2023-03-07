@@ -84,7 +84,7 @@ pub async fn run_cli() {
     setup_logging(&args.log, args.log_file);
     setup_caching(&args.cache);
 
-    let version_check = tokio::spawn(check_version(env!("CARGO_PKG_VERSION")));
+    let version_check = tokio::spawn(check_version(env!("CARGO_PKG_VERSION"), false));
 
     // Match and run subcommand
     let result = match args.command {

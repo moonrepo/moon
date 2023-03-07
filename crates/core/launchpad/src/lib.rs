@@ -48,6 +48,7 @@ fn create_anonymous_rid(workspace_root: &Path) -> String {
 
 pub async fn check_version(
     local_version_str: &str,
+    bypass_cache: bool,
 ) -> Result<(String, bool), Box<dyn Error + Send + Sync>> {
     let moon_dir = fs::find_upwards(
         CONFIG_DIRNAME,
@@ -68,7 +69,7 @@ pub async fn check_version(
         let check_state: Result<CheckState, _> = serde_json::from_str(&file);
 
         if let Ok(state) = check_state {
-            if (state.last_alert + ALERT_PAUSE_DURATION) > now {
+            if (state.last_alert + ALERT_PAUSE_DURATION) > now && !bypass_cache {
                 return Ok((local_version_str.to_owned(), false));
             }
         }

@@ -5,6 +5,8 @@
 #### 🐞 Fixes
 
 - Fixed an issue where an object `browser` field in `package.json` would fail to parse.
+- Fixed an issue where checking for a new version would constantly run.
+- Fixed an issue where `moon upgrade` would not report a newer available version.
 
 ## 0.25.3
 

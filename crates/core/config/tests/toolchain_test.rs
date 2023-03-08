@@ -6,7 +6,14 @@ use proto::Config as ProtoTools;
 use std::path::Path;
 
 fn load_jailed_config(root: &Path) -> Result<ToolchainConfig, figment::Error> {
-    match ToolchainConfig::load(root.join(CONFIG_TOOLCHAIN_FILENAME), &ProtoTools::default()) {
+    load_jailed_config_with_proto(root, ProtoTools::default())
+}
+
+fn load_jailed_config_with_proto(
+    root: &Path,
+    proto_tools: ProtoTools,
+) -> Result<ToolchainConfig, figment::Error> {
+    match ToolchainConfig::load(root.join(CONFIG_TOOLCHAIN_FILENAME), &proto_tools) {
         Ok(cfg) => Ok(cfg),
         Err(err) => Err(match err {
             ConfigError::FailedValidation(errors) => errors.first().unwrap().to_owned(),
@@ -36,6 +43,301 @@ fn loads_defaults() {
 
         Ok(())
     });
+}
+
+mod proto_tools {
+    use super::*;
+    use moon_config::NodePackageManager;
+    use proto::ToolType;
+
+    #[test]
+    fn enables_deno() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(super::CONFIG_TOOLCHAIN_FILENAME, "{}")?;
+
+            let mut proto = ProtoTools::default();
+            proto.tools.insert(ToolType::Deno, "1.30.0".to_owned());
+
+            let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
+
+            assert!(config.deno.is_some());
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn enables_node() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(super::CONFIG_TOOLCHAIN_FILENAME, "{}")?;
+
+            let mut proto = ProtoTools::default();
+            proto.tools.insert(ToolType::Node, "16.16.0".to_owned());
+
+            let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
+
+            assert!(config.node.is_some());
+            assert_eq!(config.node.unwrap().version.unwrap(), "16.16.0");
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn enables_npm() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(super::CONFIG_TOOLCHAIN_FILENAME, "{}")?;
+
+            let mut proto = ProtoTools::default();
+            proto.tools.insert(ToolType::Node, "16.16.0".to_owned());
+            proto.tools.insert(ToolType::Npm, "9.0.0".to_owned());
+
+            let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
+
+            assert!(config.node.is_some());
+            assert_eq!(config.node.unwrap().npm.version.unwrap(), "9.0.0");
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn enables_pnpm() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                super::CONFIG_TOOLCHAIN_FILENAME,
+                r#"
+node:
+    packageManager: 'pnpm'"#,
+            )?;
+
+            let mut proto = ProtoTools::default();
+            proto.tools.insert(ToolType::Node, "16.16.0".to_owned());
+            proto.tools.insert(ToolType::Pnpm, "7.0.0".to_owned());
+
+            let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
+
+            assert!(config.node.is_some());
+            assert_eq!(
+                config.node.as_ref().unwrap().package_manager,
+                NodePackageManager::Pnpm
+            );
+            assert_eq!(config.node.unwrap().pnpm.unwrap().version.unwrap(), "7.0.0");
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn enables_yarn() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                super::CONFIG_TOOLCHAIN_FILENAME,
+                r#"
+node:
+    packageManager: 'yarn'"#,
+            )?;
+
+            let mut proto = ProtoTools::default();
+            proto.tools.insert(ToolType::Node, "16.16.0".to_owned());
+            proto.tools.insert(ToolType::Yarn, "3.0.0".to_owned());
+
+            let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
+
+            assert!(config.node.is_some());
+            assert_eq!(
+                config.node.as_ref().unwrap().package_manager,
+                NodePackageManager::Yarn
+            );
+            assert_eq!(config.node.unwrap().yarn.unwrap().version.unwrap(), "3.0.0");
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn sets_node_version_if_empty() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(super::CONFIG_TOOLCHAIN_FILENAME, "node: {}")?;
+
+            let mut proto = ProtoTools::default();
+            proto.tools.insert(ToolType::Node, "16.16.0".to_owned());
+
+            let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
+
+            assert!(config.node.is_some());
+            assert_eq!(config.node.unwrap().version.unwrap(), "16.16.0");
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn sets_npm_version_if_empty() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                super::CONFIG_TOOLCHAIN_FILENAME,
+                r#"
+node:
+    packageManager: 'npm'
+    npm: {}"#,
+            )?;
+
+            let mut proto = ProtoTools::default();
+            proto.tools.insert(ToolType::Node, "16.16.0".to_owned());
+            proto.tools.insert(ToolType::Npm, "9.0.0".to_owned());
+
+            let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
+
+            assert!(config.node.is_some());
+            assert_eq!(config.node.unwrap().npm.version.unwrap(), "9.0.0");
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn sets_pnpm_version_if_empty() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                super::CONFIG_TOOLCHAIN_FILENAME,
+                r#"
+node:
+    packageManager: 'pnpm'
+    pnpm: {}"#,
+            )?;
+
+            let mut proto = ProtoTools::default();
+            proto.tools.insert(ToolType::Node, "16.16.0".to_owned());
+            proto.tools.insert(ToolType::Pnpm, "7.0.0".to_owned());
+
+            let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
+
+            assert!(config.node.is_some());
+            assert_eq!(config.node.unwrap().pnpm.unwrap().version.unwrap(), "7.0.0");
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn sets_yarn_version_if_empty() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                super::CONFIG_TOOLCHAIN_FILENAME,
+                r#"
+node:
+    packageManager: 'yarn'
+    yarn: {}"#,
+            )?;
+
+            let mut proto = ProtoTools::default();
+            proto.tools.insert(ToolType::Node, "16.16.0".to_owned());
+            proto.tools.insert(ToolType::Yarn, "3.0.0".to_owned());
+
+            let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
+
+            assert!(config.node.is_some());
+            assert_eq!(config.node.unwrap().yarn.unwrap().version.unwrap(), "3.0.0");
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn doesnt_override_node_version() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                super::CONFIG_TOOLCHAIN_FILENAME,
+                "node:\n  version: '18.0.0'",
+            )?;
+
+            let mut proto = ProtoTools::default();
+            proto.tools.insert(ToolType::Node, "16.16.0".to_owned());
+
+            let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
+
+            assert!(config.node.is_some());
+            assert_eq!(config.node.unwrap().version.unwrap(), "18.0.0");
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn doesnt_override_npm_version() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                super::CONFIG_TOOLCHAIN_FILENAME,
+                r#"
+node:
+    packageManager: 'npm'
+    npm:
+        version: '9.0.0'"#,
+            )?;
+
+            let mut proto = ProtoTools::default();
+            proto.tools.insert(ToolType::Node, "16.16.0".to_owned());
+            proto.tools.insert(ToolType::Npm, "1.2.3".to_owned());
+
+            let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
+
+            assert!(config.node.is_some());
+            assert_eq!(config.node.unwrap().npm.version.unwrap(), "9.0.0");
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn doesnt_override_pnpm_version() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                super::CONFIG_TOOLCHAIN_FILENAME,
+                r#"
+node:
+    packageManager: 'pnpm'
+    pnpm:
+        version: '7.0.0'"#,
+            )?;
+
+            let mut proto = ProtoTools::default();
+            proto.tools.insert(ToolType::Node, "16.16.0".to_owned());
+            proto.tools.insert(ToolType::Pnpm, "1.2.3".to_owned());
+
+            let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
+
+            assert!(config.node.is_some());
+            assert_eq!(config.node.unwrap().pnpm.unwrap().version.unwrap(), "7.0.0");
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn doesnt_override_yarn_version() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                super::CONFIG_TOOLCHAIN_FILENAME,
+                r#"
+node:
+    packageManager: 'yarn'
+    yarn:
+        version: '3.0.0'"#,
+            )?;
+
+            let mut proto = ProtoTools::default();
+            proto.tools.insert(ToolType::Node, "16.16.0".to_owned());
+            proto.tools.insert(ToolType::Yarn, "1.2.3".to_owned());
+
+            let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
+
+            assert!(config.node.is_some());
+            assert_eq!(config.node.unwrap().yarn.unwrap().version.unwrap(), "3.0.0");
+
+            Ok(())
+        });
+    }
 }
 
 mod extends {

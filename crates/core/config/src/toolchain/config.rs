@@ -3,7 +3,7 @@
 use crate::errors::map_validation_errors_to_figment_errors;
 use crate::helpers::gather_extended_sources;
 use crate::toolchain::deno::DenoConfig;
-use crate::toolchain::node::{NodeConfig, NodePackageManager, NpmConfig, PnpmConfig, YarnConfig};
+use crate::toolchain::node::{NodeConfig, NodePackageManager, PnpmConfig, YarnConfig};
 use crate::toolchain::typescript::TypeScriptConfig;
 use crate::validators::validate_extends;
 use crate::ConfigError;
@@ -44,6 +44,44 @@ pub struct ToolchainConfig {
     pub schema: String,
 }
 
+fn apply_node_versions(node_config: &mut NodeConfig, proto_tools: &ProtoTools) {
+    if let Some(node_version) = proto_tools.tools.get(&ToolType::Node) {
+        if node_config.version.is_none() {
+            node_config.version = Some(node_version.to_owned());
+        }
+    }
+
+    if let Some(yarn_version) = proto_tools.tools.get(&ToolType::Yarn) {
+        if let Some(yarn_config) = &mut node_config.yarn {
+            if yarn_config.version.is_none() {
+                yarn_config.version = Some(yarn_version.to_owned());
+            }
+        } else if matches!(node_config.package_manager, NodePackageManager::Yarn) {
+            node_config.yarn = Some(YarnConfig {
+                version: Some(yarn_version.to_owned()),
+                ..YarnConfig::default()
+            });
+        }
+    } else if let Some(pnpm_version) = proto_tools.tools.get(&ToolType::Pnpm) {
+        if let Some(pnpm_config) = &mut node_config.pnpm {
+            if pnpm_config.version.is_none() {
+                pnpm_config.version = Some(pnpm_version.to_owned());
+            }
+        } else if matches!(node_config.package_manager, NodePackageManager::Pnpm) {
+            node_config.pnpm = Some(PnpmConfig {
+                version: Some(pnpm_version.to_owned()),
+                ..PnpmConfig::default()
+            });
+        }
+    } else if let Some(npm_version) = proto_tools.tools.get(&ToolType::Npm) {
+        node_config.package_manager = NodePackageManager::Npm;
+
+        if node_config.npm.version.is_none() {
+            node_config.npm.version = Some(npm_version.to_owned());
+        }
+    }
+}
+
 impl ToolchainConfig {
     pub fn load(path: PathBuf, proto_tools: &ProtoTools) -> Result<ToolchainConfig, ConfigError> {
         let profile_name = "toolchain";
@@ -67,40 +105,13 @@ impl ToolchainConfig {
         }
 
         if let Some(node_config) = &mut config.node {
-            if node_config.version.is_none() {
-                if let Some(node_version) = proto_tools.tools.get(&ToolType::Node) {
-                    node_config.version = Some(node_version.to_owned());
-                }
-            }
-        } else {
-            if let Some(node_version) = proto_tools.tools.get(&ToolType::Node) {
-                let mut node_config = NodeConfig {
-                    version: Some(node_version.to_owned()),
-                    ..NodeConfig::default()
-                };
+            apply_node_versions(node_config, proto_tools);
+        } else if proto_tools.tools.contains_key(&ToolType::Node) {
+            let mut node_config = NodeConfig::default();
 
-                if let Some(yarn_version) = proto_tools.tools.get(&ToolType::Yarn) {
-                    node_config.package_manager = NodePackageManager::Yarn;
-                    node_config.yarn = Some(YarnConfig {
-                        version: Some(yarn_version.to_owned()),
-                        ..YarnConfig::default()
-                    });
-                } else if let Some(pnpm_version) = proto_tools.tools.get(&ToolType::Pnpm) {
-                    node_config.package_manager = NodePackageManager::Pnpm;
-                    node_config.pnpm = Some(PnpmConfig {
-                        version: Some(pnpm_version.to_owned()),
-                        ..PnpmConfig::default()
-                    });
-                } else if let Some(npm_version) = proto_tools.tools.get(&ToolType::Npm) {
-                    node_config.package_manager = NodePackageManager::Npm;
-                    node_config.npm = NpmConfig {
-                        version: Some(npm_version.to_owned()),
-                        ..NpmConfig::default()
-                    };
-                }
+            apply_node_versions(&mut node_config, proto_tools);
 
-                config.node = Some(node_config);
-            }
+            config.node = Some(node_config);
         }
 
         // Versions from env vars should take precedence

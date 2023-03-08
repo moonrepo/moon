@@ -14,7 +14,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 fn get_global_lookups(home_dir: &Path) -> Vec<PathBuf> {
     vec![
         "/usr/local/bin".into(),
-        home_dir.join(".moon/tools"),
+        home_dir.join(".moon"),
         // Node
         home_dir.join(".nvm/versions/node"),
         home_dir.join(".nodenv/versions"),
@@ -28,7 +28,7 @@ fn get_global_lookups(home_dir: &Path) -> Vec<PathBuf> {
 #[cfg(windows)]
 fn get_global_lookups(home_dir: &Path) -> Vec<PathBuf> {
     vec![
-        home_dir.join(".moon\\tools"),
+        home_dir.join(".moon"),
         // Node
         home_dir.join(".nvm\\versions\\node"),
         home_dir.join(".nodenv\\versions"),

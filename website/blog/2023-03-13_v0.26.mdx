@@ -9,11 +9,27 @@ tags: [docker]
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import Button from '@site/src/ui/Button';
-import Image from '@site/src/components/Image';
+import Logo from '../static/brand/proto/logo.svg';
 
 ???
 
 <!--truncate-->
+
+## Full proto toolchain integration
+
+<div className="float-right ml-4 mb-1" style={{ width: '50%' }}>
+  <Logo />
+</div>
+
+Earlier this week we announced [proto](/proto), our own toolchain manager, and an attempt at a next
+generation version manager for multiple languages. proto was originally moon's toolchain layer, but
+we felt it best to extract it out into a stand-alone tool for everyone to use, especially those not
+using moon!
+
+Now that proto has been released, we've updated moon's Rust internals to utilize proto's latest Rust
+crates. For the most part, everything will continue to work the same. However, the biggest change is
+that the toolchain has moved from `~/.moon` to `~/.proto`, and will result in tools being
+re-downloaded and installed. Feel free to delete the old `~/.moon` directory manually.
 
 ## New `moon docker setup` command
 

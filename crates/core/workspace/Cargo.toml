@@ -13,5 +13,6 @@ moon_logger = { path = "../logger" }
 moon_platform = { path = "../platform" }
 moon_utils = { path = "../utils" }
 moon_vcs = { path = "../vcs" }
+proto_cli = { workspace = true }
 reqwest = { workspace = true }
 thiserror = { workspace = true }

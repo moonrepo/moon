@@ -324,7 +324,7 @@ fn retries_on_failure_till_count() {
 
     let output = assert.output();
 
-    assert!(predicate::str::contains("Process ~/.moon/tools/node/18.0.0").eval(&output));
+    assert!(predicate::str::contains("Process ~/.proto/tools/node/18.0.0").eval(&output));
 }
 
 #[test]

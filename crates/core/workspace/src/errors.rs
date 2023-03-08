@@ -3,6 +3,7 @@ use moon_error::MoonError;
 use moon_utils::glob::GlobError;
 use moon_vcs::VcsError;
 use moonbase::MoonbaseError;
+use proto::ProtoError;
 use std::path::PathBuf;
 use thiserror::Error;
 
@@ -52,6 +53,9 @@ pub enum WorkspaceError {
 
     #[error(transparent)]
     Moonbase(#[from] MoonbaseError),
+
+    #[error(transparent)]
+    Proto(#[from] ProtoError),
 
     #[error(transparent)]
     Vcs(#[from] VcsError),

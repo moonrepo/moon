@@ -63,12 +63,17 @@ export default function ProductProto() {
 										</Heading>
 
 										<Text className="mb-1">Install proto for Linux, macOS, or WSL:</Text>
-										<Text className="mb-2" variant="muted">
-											Windows support coming soon!
-										</Text>
 
 										<CodeBlock language="shell">
 											{'curl -fsSL https://moonrepo.dev/install/proto.sh | bash'}
+										</CodeBlock>
+
+										<Text className="mb-1" variant="muted">
+											Or Windows:
+										</Text>
+
+										<CodeBlock language="shell">
+											{'irm https://moonrepo.dev/install/proto.ps1 | iex'}
 										</CodeBlock>
 
 										<Heading level={4} className="mt-4 mb-2">

@@ -24,11 +24,13 @@ curl -fsSL https://moonrepo.dev/install/proto.sh | bash
 
 ### Windows
 
-:::caution
+In Powershell or Windows Terminal, run:
 
-Windows is blocked until we finalize better shim support. If you'd like to help, join us on Discord!
+```
+irm https://moonrepo.dev/install/proto.ps1 | iex
+```
 
-:::
+> Windows support is currently experimental. Please report any issues!
 
 ### Other
 
@@ -40,3 +42,7 @@ rename the file after downloading, and apply the executable bit (`chmod +x`) on 
 
 We provide no formal mechanism for upgrading the proto binary. However, you can re-run the install
 scripts above and it will download, install, and overwrite with the latest version.
+
+## Uninstalling
+
+To uninstall proto, delete the `~/.proto` directory.

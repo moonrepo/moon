@@ -1232,6 +1232,28 @@ mod affected {
     }
 
     #[test]
+    fn runs_if_not_affected_but_a_dep_of_an_affected() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        sandbox.create_file("affected/primary.js", "");
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("affected:primaryWithDeps")
+                .arg("--affected");
+        });
+
+        assert.debug();
+
+        let output = assert.output();
+
+        assert!(predicate::str::contains("affected:dep").eval(&output));
+        assert!(predicate::str::contains("affected:primaryWithDeps").eval(&output));
+        assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
+    }
+
+    #[test]
     fn runs_if_affected_by_multi_status() {
         let sandbox = cases_sandbox();
         sandbox.enable_git();

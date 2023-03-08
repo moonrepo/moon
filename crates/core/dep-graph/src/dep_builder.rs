@@ -125,9 +125,8 @@ impl<'ws> DepGraphBuilder<'ws> {
 
         trace!(
             target: LOG_TARGET,
-            "Adding install {} dependencies (in project {}) to graph",
-            runtime.label(),
-            color::id(project_id)
+            "Adding {} to graph",
+            color::muted(node.label())
         );
 
         // Before we install deps, we must ensure the language has been installed
@@ -148,8 +147,8 @@ impl<'ws> DepGraphBuilder<'ws> {
 
         trace!(
             target: LOG_TARGET,
-            "Adding install {} dependencies (in workspace) to graph",
-            runtime.label()
+            "Adding {} to graph",
+            color::muted(node.label())
         );
 
         // Before we install deps, we must ensure the language has been installed
@@ -268,8 +267,8 @@ impl<'ws> DepGraphBuilder<'ws> {
 
         trace!(
             target: LOG_TARGET,
-            "Adding run target {} to graph",
-            color::target(&target.id),
+            "Adding {} to graph",
+            color::muted(node.label())
         );
 
         // We should install deps & sync projects *before* running targets
@@ -355,8 +354,8 @@ impl<'ws> DepGraphBuilder<'ws> {
 
         trace!(
             target: LOG_TARGET,
-            "Adding setup {} tool to graph",
-            runtime.label()
+            "Adding {} to graph",
+            color::muted(node.label())
         );
 
         self.insert_node(&node)
@@ -372,8 +371,8 @@ impl<'ws> DepGraphBuilder<'ws> {
 
         trace!(
             target: LOG_TARGET,
-            "Adding sync project {} to graph",
-            color::id(&project.id),
+            "Adding {} to graph",
+            color::muted(node.label())
         );
 
         // Syncing depends on the language's tool to be installed

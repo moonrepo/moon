@@ -9,6 +9,9 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum RunnerError {
+    #[error("Encountered an empty hash for target <target>{0}</target>, which is a dependency of <target>{1}</target>. This either means the dependency hasn't ran, has failed, or there's a misconfiguration.")]
+    EmptyDependencyHash(String, String),
+
     #[error(transparent)]
     Glob(#[from] GlobError),
 

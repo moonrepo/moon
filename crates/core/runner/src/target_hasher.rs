@@ -1,3 +1,4 @@
+use crate::errors::RunnerError;
 use moon_hasher::{hash_btree, hash_vec, Digest, Hasher, Sha256};
 use moon_task::Task;
 use moon_utils::path;
@@ -94,16 +95,27 @@ impl TargetHasher {
     }
 
     /// Hash `deps` from a task and associate it with their current hash.
-    pub fn hash_task_deps(&mut self, task: &Task, hashes: &FxHashMap<String, String>) {
+    pub fn hash_task_deps(
+        &mut self,
+        task: &Task,
+        hashes: &FxHashMap<String, String>,
+    ) -> Result<(), RunnerError> {
         for dep in &task.deps {
             self.deps.insert(
                 dep.id.to_owned(),
                 match hashes.get(&dep.id) {
                     Some(hash) => hash.to_owned(),
-                    None => String::new(),
+                    None => {
+                        return Err(RunnerError::EmptyDependencyHash(
+                            dep.id.to_owned(),
+                            task.target.id.to_owned(),
+                        ));
+                    }
                 },
             );
         }
+
+        Ok(())
     }
 }
 

@@ -194,7 +194,7 @@ impl<'a> Runner<'a> {
 
         hasher.hash_project_deps(self.project.get_dependency_ids());
         hasher.hash_task(task);
-        hasher.hash_task_deps(task, &context.target_hashes);
+        hasher.hash_task_deps(task, &context.target_hashes)?;
 
         if context.should_inherit_args(&task.target) {
             hasher.hash_args(&context.passthrough_args);

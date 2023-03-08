@@ -7,6 +7,8 @@
 - Toolchain has been moved to `~/.proto` from `~/.moon`. This should be a transparent change but at
   minimum your tools will be re-downloaded and installed. Feel free to delete the old tools
   manually!
+- Targets that generate an empty hash are now considered a failure, as they may be an edge case not
+  accounted for.
 
 #### 🚀 Updates
 

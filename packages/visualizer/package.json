@@ -20,6 +20,9 @@
   "files": [
     "dist"
   ],
+  "scripts": {
+    "build": "vite build"
+  },
   "dependencies": {
     "cytoscape": "^3.23.0",
     "cytoscape-dagre": "^2.5.0",

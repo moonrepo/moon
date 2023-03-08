@@ -9,6 +9,10 @@ function random(min: number, max: number) {
 }
 
 export default function HeroTerminal() {
+	const isWindows =
+		typeof window === 'undefined'
+			? false
+			: window.navigator.userAgent.toLowerCase().includes('win');
 	const lang = LANGS[random(0, LANGS.length)] || LANGS[0];
 
 	return (
@@ -17,30 +21,34 @@ export default function HeroTerminal() {
 			style={{ height: 230 }}
 		>
 			<li className="text-gray-800"># Install proto</li>
-			<li>curl -fsSL https://moonrepo.dev/install/proto.sh | bash</li>
+			<li>
+				{isWindows
+					? 'irm https://moonrepo.dev/install/proto.ps1 | iex'
+					: 'curl -fsSL https://moonrepo.dev/install/proto.sh | bash'}
+			</li>
 
 			{lang === 'bun' && (
-				<>
+				<React.Fragment key="bun">
 					<li className="text-gray-800 pt-2"># Install Bun</li>
 					<li>proto install bun 0.5</li>
 
 					<li className="text-gray-800 pt-2"># Use immediately</li>
 					<li>bun run index.ts</li>
-				</>
+				</React.Fragment>
 			)}
 
 			{lang === 'deno' && (
-				<>
+				<React.Fragment key="deno">
 					<li className="text-gray-800 pt-2"># Install Deno</li>
 					<li>proto install deno 1.31</li>
 
 					<li className="text-gray-800 pt-2"># Use immediately</li>
 					<li>deno run index.ts</li>
-				</>
+				</React.Fragment>
 			)}
 
 			{lang === 'node' && (
-				<>
+				<React.Fragment key="node">
 					<li className="text-gray-800 pt-2"># Install Node.js</li>
 					<li>proto install node 18</li>
 					<li>proto install pnpm</li>
@@ -48,17 +56,17 @@ export default function HeroTerminal() {
 					<li className="text-gray-800 pt-2"># Use immediately</li>
 					<li>pnpm install</li>
 					<li>pnpm run dev</li>
-				</>
+				</React.Fragment>
 			)}
 
 			{lang === 'go' && (
-				<>
+				<React.Fragment key="go">
 					<li className="text-gray-800 pt-2"># Install Go</li>
 					<li>proto install go 1.20</li>
 
 					<li className="text-gray-800 pt-2"># Use immediately</li>
 					<li>go run .</li>
-				</>
+				</React.Fragment>
 			)}
 		</ul>
 	);

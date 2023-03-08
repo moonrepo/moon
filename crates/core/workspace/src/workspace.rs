@@ -10,7 +10,7 @@ use moon_platform::{BoxedPlatform, PlatformManager};
 use moon_utils::{fs, glob, semver};
 use moon_vcs::{Vcs, VcsLoader};
 use moonbase::Moonbase;
-use proto::get_root;
+use proto::{get_root, Config as ProtoTools, CONFIG_NAME};
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -97,7 +97,10 @@ fn load_tasks_config(root_dir: &Path) -> Result<InheritedTasksManager, Workspace
 }
 
 // .moon/toolchain.yml
-fn load_toolchain_config(root_dir: &Path) -> Result<ToolchainConfig, WorkspaceError> {
+fn load_toolchain_config(
+    root_dir: &Path,
+    proto_tools: &ProtoTools,
+) -> Result<ToolchainConfig, WorkspaceError> {
     let config_path = root_dir
         .join(constants::CONFIG_DIRNAME)
         .join(constants::CONFIG_TOOLCHAIN_FILENAME);
@@ -117,7 +120,7 @@ fn load_toolchain_config(root_dir: &Path) -> Result<ToolchainConfig, WorkspaceEr
         return Ok(ToolchainConfig::default());
     }
 
-    match ToolchainConfig::load(config_path) {
+    match ToolchainConfig::load(config_path, proto_tools) {
         Ok(cfg) => Ok(cfg),
         Err(errors) => Err(WorkspaceError::InvalidToolchainConfigFile(
             if let ConfigError::FailedValidation(valids) = errors {
@@ -172,6 +175,9 @@ pub struct Workspace {
     /// Registered platforms derived from toolchain configuration.
     pub platforms: PlatformManager,
 
+    /// Proto tools loaded from ".prototools".
+    pub proto_tools: ProtoTools,
+
     /// The root of the workspace that contains the ".moon" config folder.
     pub root: PathBuf,
 
@@ -214,9 +220,17 @@ impl Workspace {
             color::path(working_dir)
         );
 
+        // Load proto tools
+        let proto_path = root_dir.join(CONFIG_NAME);
+        let proto_tools = if proto_path.exists() {
+            ProtoTools::load(&proto_path)?
+        } else {
+            ProtoTools::default()
+        };
+
         // Load configs
         let config = load_workspace_config(&root_dir)?;
-        let toolchain_config = load_toolchain_config(&root_dir)?;
+        let toolchain_config = load_toolchain_config(&root_dir, &proto_tools)?;
         let tasks_config = load_tasks_config(&root_dir)?;
 
         if let Some(constraint) = &config.version_constraint {
@@ -238,6 +252,7 @@ impl Workspace {
             cache,
             config,
             platforms: PlatformManager::default(),
+            proto_tools,
             root: root_dir,
             session: None,
             tasks_config,

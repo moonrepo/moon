@@ -35,6 +35,12 @@ deno:
 	lockfile: true
 ```
 
+Or by pinning a `deno` version in [`.prototools`](../../proto/config) in the workspace root.
+
+```toml title=".prototools"
+deno = "1.31.0"
+```
+
 This will enable the Deno platform and provide the following automations around its ecosystem:
 
 - Automatic handling and caching of lockfiles (when the setting is enabled).

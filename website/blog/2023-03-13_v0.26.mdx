@@ -31,6 +31,15 @@ crates. For the most part, everything will continue to work the same. However, t
 that the toolchain has moved from `~/.moon` to `~/.proto`, and will result in tools being
 re-downloaded and installed. Feel free to delete the old `~/.moon` directory manually.
 
+Furthermore, we've added first-class support for the new [`.prototools`](/docs/proto/config)
+configuration file. If this file is found in the workspace root, we'll automatically enable the
+tools in our toolchain, and inject the versions (when not defined in `.moon/toolchain.yml`).
+
+```toml title=".prototools"
+node = "18.0.0"
+pnpm = "7.29.0"
+```
+
 ## New `moon docker setup` command
 
 moon has provided [built-in `Dockerfile` support](/docs/guides/docker) since v0.15 (11 versions

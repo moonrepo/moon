@@ -9,7 +9,10 @@ function random(min: number, max: number) {
 }
 
 export default function HeroTerminal() {
-	const isWindows = window.navigator.userAgent.toLowerCase().includes('win');
+	const isWindows =
+		typeof window === 'undefined'
+			? false
+			: window.navigator.userAgent.toLowerCase().includes('win');
 	const lang = LANGS[random(0, LANGS.length)] || LANGS[0];
 
 	return (

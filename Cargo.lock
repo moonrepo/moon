@@ -2915,6 +2915,7 @@ dependencies = [
  "moon_error",
  "moon_logger",
  "moon_platform",
+ "moon_test_utils",
  "moon_utils",
  "moon_vcs",
  "moonbase",

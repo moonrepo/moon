@@ -8,9 +8,7 @@ stdout
 ▪▪▪▪ node:processExitNonZero (100ms)
 stderr
 
- ERROR 
-
-Process ~/.proto/tools/node/18.0.0/shims/node failed with a 1 exit code.
+ ERROR  Process ~/.proto/tools/node/18.0.0/bin/node failed with a 1 exit code.
 
 
 

@@ -48,6 +48,14 @@ pub async fn run_target(
         runner.print_checkpoint(Checkpoint::RunPassed, &["no op"])?;
         runner.flush_output()?;
 
+        // We must give this task a fake hash for it to be
+        // considered complete for other tasks!
+        context
+            .write()
+            .await
+            .target_hashes
+            .insert(task.target.id.clone(), "noop".into());
+
         return Ok(ActionStatus::Passed);
     }
 

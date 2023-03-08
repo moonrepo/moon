@@ -9,8 +9,7 @@ use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
 use moon_utils::process::Command;
 use proto::{
-    async_trait, node::NodeLanguage, Describable, Executable, Installable, Proto, Shimable,
-    Tool as ProtoTool,
+    async_trait, node::NodeLanguage, Describable, Executable, Installable, Proto, Tool as ProtoTool,
 };
 use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
@@ -154,10 +153,6 @@ impl Tool for NodeTool {
         } else {
             self.tool.get_bin_path()?.to_path_buf()
         })
-    }
-
-    fn get_shim_path(&self) -> Option<PathBuf> {
-        self.tool.get_shim_path().map(|p| p.to_path_buf())
     }
 
     async fn setup(

@@ -113,18 +113,34 @@
       ]
     },
     "ProjectLanguage": {
-      "type": "string",
-      "enum": [
-        "bash",
-        "batch",
-        "go",
-        "javascript",
-        "php",
-        "python",
-        "ruby",
-        "rust",
-        "typescript",
-        "unknown"
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "bash",
+            "batch",
+            "go",
+            "javascript",
+            "php",
+            "python",
+            "ruby",
+            "rust",
+            "typescript",
+            "unknown"
+          ]
+        },
+        {
+          "type": "object",
+          "required": [
+            "other"
+          ],
+          "properties": {
+            "other": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
       ]
     },
     "ProjectMetadataConfig": {

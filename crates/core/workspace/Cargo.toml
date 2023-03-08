@@ -16,3 +16,6 @@ moon_vcs = { path = "../vcs" }
 proto_cli = { workspace = true }
 reqwest = { workspace = true }
 thiserror = { workspace = true }
+
+[dev-dependencies]
+moon_test_utils = { path = "../test-utils" }

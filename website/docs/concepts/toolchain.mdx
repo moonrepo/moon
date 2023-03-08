@@ -16,17 +16,9 @@ necessary tools, _and_ to keep them in sync as time passes.
 
 ## How it works
 
-The toolchain is a `.moon` directory within the current user's home directory, e.g., `~/.moon`.
-
-The first step in a tool's life-cycle is being downloaded to `~/.moon/temp`. Downloads are typically
-an archive that can be unpacked into a target directory.
-
-Once downloaded, we verify the downloaded file by running a sha256 checksum. If this check fails for
-_any reason_, the toolchain is unusable, and the process is aborted.
-
-After a successful verification, the last step in the tool's life-cycle can begin, installation.
-Depending on the type of download, the installation process may differ. For archives, we unpack the
-tool to `~/.moon/tools/<name>/<version>`.
+The toolchain is built around [proto](/proto), our stand-alone toolchain manager. moon will
+piggyback of proto's toolchain found at `~/.proto` and reuse any tools available, or download and
+install them if they're missing.
 
 ## Configuration
 
@@ -39,9 +31,6 @@ The tools that are managed by the toolchain are configured through the
 The following tools are currently managed by the toolchain.
 
 ### Node.js
-
-Since moon was designed for JavaScript based repo's, we intentionally support Node.js as a
-first-class citizen within the toolchain.
 
 - Configured with: [`node`](../config/toolchain#node)
 - Installed to: `~/.proto/tools/node/x.x.x`

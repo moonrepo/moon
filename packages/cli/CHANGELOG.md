@@ -13,6 +13,7 @@
 - Added a `moon docker setup` command for efficiently installing project dependencies.
 - Updated moon's toolchain to build upon [proto](https://github.com/moonrepo/proto), our new
   toolchain layer.
+- Updated our toolchain and configuration to take `.prototools` into account.
 
 ## 0.25.4
 

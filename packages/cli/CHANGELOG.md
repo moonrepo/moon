@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+#### 💥 Breaking
+
+- Toolchain has been moved to `~/.proto` from `~/.moon`. This should be a transparent change but at
+  minimum your tools will be re-downloaded and installed. Feel free to delete the old tools
+  manually!
+
+#### 🚀 Updates
+
+- Added a `moon docker setup` command for efficiently installing project dependencies.
+- Updated moon's toolchain to build upon [proto](https://github.com/moonrepo/proto), our new
+  toolchain layer.
+
 ## 0.25.4
 
 #### 🐞 Fixes
@@ -9,10 +23,6 @@
 - Fixed an issue where `moon upgrade` would not report a newer available version.
 
 ## 0.25.3
-
-#### 🚀 Updates
-
-- Added a `moon docker setup` command for efficiently installing project dependencies.
 
 #### 🐞 Fixes
 

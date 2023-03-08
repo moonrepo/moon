@@ -2917,6 +2917,7 @@ dependencies = [
  "moon_utils",
  "moon_vcs",
  "moonbase",
+ "proto_cli",
  "reqwest",
  "thiserror",
 ]

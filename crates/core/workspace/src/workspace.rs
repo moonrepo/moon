@@ -2,14 +2,15 @@ use crate::errors::WorkspaceError;
 use moon_cache::CacheEngine;
 use moon_config::{
     format_error_line, format_figment_errors, ConfigError, InheritedTasksConfig,
-    InheritedTasksManager, ToolchainConfig, WorkspaceConfig, CONFIG_DIRNAME,
+    InheritedTasksManager, ToolchainConfig, WorkspaceConfig,
 };
 use moon_constants as constants;
 use moon_logger::{color, debug, trace};
 use moon_platform::{BoxedPlatform, PlatformManager};
-use moon_utils::{fs, glob, path, semver};
+use moon_utils::{fs, glob, semver};
 use moon_vcs::{Vcs, VcsLoader};
 use moonbase::Moonbase;
+use proto::get_root;
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -183,6 +184,9 @@ pub struct Workspace {
     /// Toolchain configuration loaded from ".moon/toolchain.yml".
     pub toolchain_config: ToolchainConfig,
 
+    /// The root of the toolchain, typically "~/.proto".
+    pub toolchain_root: PathBuf,
+
     /// Configured version control system.
     pub vcs: Box<dyn Vcs + Send + Sync>,
 
@@ -199,7 +203,6 @@ impl Workspace {
 
     pub fn load_from<P: AsRef<Path>>(working_dir: P) -> Result<Workspace, WorkspaceError> {
         let working_dir = working_dir.as_ref();
-        let home_dir = path::get_home_dir().ok_or(WorkspaceError::MissingHomeDir)?;
         let Some(root_dir) = find_workspace_root(working_dir) else {
             return Err(WorkspaceError::MissingConfigDir);
         };
@@ -231,12 +234,6 @@ impl Workspace {
         let cache = CacheEngine::load(&root_dir)?;
         let vcs = VcsLoader::load(&root_dir, &config)?;
 
-        // This is temporary until we're fully on proto
-        env::set_var(
-            "PROTO_ROOT",
-            path::to_string(home_dir.join(CONFIG_DIRNAME))?,
-        );
-
         Ok(Workspace {
             cache,
             config,
@@ -245,6 +242,7 @@ impl Workspace {
             session: None,
             tasks_config,
             toolchain_config,
+            toolchain_root: get_root()?,
             vcs,
             working_dir: working_dir.to_owned(),
         })

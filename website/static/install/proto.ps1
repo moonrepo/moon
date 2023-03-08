@@ -40,13 +40,13 @@ if (!(Test-Path $InstallDir)) {
   New-Item $InstallDir -ItemType Directory | Out-Null
 }
 
-Copy-Item "${TempDir}\${Target}\proto.exe" -Destination $BinPath
+Copy-Item "${TempDir}\proto.exe" -Destination $BinPath -Force
 Remove-Item $TempDir -Recurse -Force
 Remove-Item $DownloadFile -Force
 
 # Run setup script to update shells
 
-$env:RUST_LOG = "error"
+$env:PROTO_LOG = "trace"
 & $BinPath @('setup')
 
 Write-Output "Successfully installed proto to ${BinPath}"

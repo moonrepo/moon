@@ -136,7 +136,7 @@ fn prepare_target_command(
 /// being executed). We then also pass arguments defined in the task.
 /// This would look something like the following:
 ///
-/// ~/.moon/tools/node/1.2.3/bin/node --inspect /path/to/node_modules/.bin/eslint
+/// ~/.proto/tools/node/1.2.3/bin/node --inspect /path/to/node_modules/.bin/eslint
 ///     --cache --color --fix --ext .ts,.tsx,.js,.jsx
 #[track_caller]
 pub fn create_target_command(

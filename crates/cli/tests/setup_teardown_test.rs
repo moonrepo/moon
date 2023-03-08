@@ -12,7 +12,7 @@ fn sets_up_and_tears_down() {
     // We use a different Node.js version as to not conflict with other tests!
     let node_version = "17.1.0";
     let home_dir = get_home_dir().unwrap();
-    let moon_dir = home_dir.join(".moon");
+    let moon_dir = home_dir.join(".proto");
     let node_dir = moon_dir.join("tools/node").join(node_version);
 
     assert!(!node_dir.exists());

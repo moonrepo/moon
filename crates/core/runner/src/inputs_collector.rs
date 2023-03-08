@@ -2,7 +2,7 @@ use crate::RunnerError;
 use moon_config::CONFIG_PROJECT_FILENAME;
 use moon_hasher::convert_paths_to_strings;
 use moon_task::Task;
-use moon_utils::{glob, path};
+use moon_utils::{glob, is_ci, path};
 use moon_vcs::Vcs;
 use rustc_hash::FxHashSet;
 use std::{collections::BTreeMap, path::Path};
@@ -75,8 +75,10 @@ pub async fn collect_and_hash_inputs(
 
     // Include local file changes so that development builds work.
     // Also run this LAST as it should take highest precedence!
-    for local_file in vcs.get_touched_files().await?.all {
-        files_to_hash.insert(workspace_root.join(local_file));
+    if !is_ci() {
+        for local_file in vcs.get_touched_files().await?.all {
+            files_to_hash.insert(workspace_root.join(local_file));
+        }
     }
 
     // 2: Convert to workspace relative paths and extract file hashes

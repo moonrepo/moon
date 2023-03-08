@@ -15,6 +15,10 @@
   toolchain layer.
 - Updated our toolchain and configuration to take `.prototools` into account.
 
+#### 🐞 Fixes
+
+- Fixed hashing to avoid including `git status` files when running in CI.
+
 ## 0.25.4
 
 #### 🐞 Fixes

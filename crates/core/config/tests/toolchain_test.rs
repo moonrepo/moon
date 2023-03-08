@@ -2,10 +2,11 @@ use httpmock::prelude::*;
 use moon_config::{ConfigError, NodeConfig, ToolchainConfig};
 use moon_constants::CONFIG_TOOLCHAIN_FILENAME;
 use moon_test_utils::get_fixtures_path;
+use proto::Config as ProtoTools;
 use std::path::Path;
 
 fn load_jailed_config(root: &Path) -> Result<ToolchainConfig, figment::Error> {
-    match ToolchainConfig::load(root.join(CONFIG_TOOLCHAIN_FILENAME)) {
+    match ToolchainConfig::load(root.join(CONFIG_TOOLCHAIN_FILENAME), &ProtoTools::default()) {
         Ok(cfg) => Ok(cfg),
         Err(err) => Err(match err {
             ConfigError::FailedValidation(errors) => errors.first().unwrap().to_owned(),
@@ -46,7 +47,8 @@ mod extends {
     #[test]
     fn recursive_merges() {
         let fixture = get_fixtures_path("config-extends/toolchain");
-        let config = ToolchainConfig::load(fixture.join("base-2.yml")).unwrap();
+        let config =
+            ToolchainConfig::load(fixture.join("base-2.yml"), &ProtoTools::default()).unwrap();
 
         assert_eq!(
             config,
@@ -70,7 +72,9 @@ mod extends {
     #[test]
     fn recursive_merges_typescript() {
         let fixture = get_fixtures_path("config-extends/toolchain");
-        let config = ToolchainConfig::load(fixture.join("typescript-2.yml")).unwrap();
+        let config =
+            ToolchainConfig::load(fixture.join("typescript-2.yml"), &ProtoTools::default())
+                .unwrap();
 
         assert_eq!(
             config.typescript,

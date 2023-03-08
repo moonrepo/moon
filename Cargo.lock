@@ -2307,6 +2307,7 @@ dependencies = [
  "moon_error",
  "moon_test_utils",
  "moon_utils",
+ "proto_cli",
  "reqwest",
  "rustc-hash",
  "schemars",

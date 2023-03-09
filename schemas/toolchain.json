@@ -4,6 +4,16 @@
   "description": "Docs: https://moonrepo.dev/docs/config/toolchain",
   "type": "object",
   "properties": {
+    "deno": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/DenoConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "extends": {
       "type": [
         "string",
@@ -32,6 +42,18 @@
     }
   },
   "definitions": {
+    "DenoConfig": {
+      "type": "object",
+      "properties": {
+        "depsFile": {
+          "default": "deps.ts",
+          "type": "string"
+        },
+        "lockfile": {
+          "type": "boolean"
+        }
+      }
+    },
     "NodeConfig": {
       "type": "object",
       "properties": {

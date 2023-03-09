@@ -1,0 +1,90 @@
+---
+slug: proto
+title: Introducing proto, a next-generation toolchain manager!
+authors: [milesj]
+tags: [proto, toolchain]
+image: ./img/proto-v0.png
+---
+
+import Button from '@site/src/ui/Button';
+import Image from '@site/src/components/Image';
+import Logo from '../static/brand/proto/logo.svg';
+
+We are proud to announce the launch of [proto](/proto), a next-generation toolchain manager for all
+of your favorite programming languages.
+
+<!--truncate-->
+
+<div className="flex justify-center mb-3">
+  <Logo width="40%" className="block" />
+</div>
+
+[proto](/proto) is a Rust based multi-language toolchain manager that will download and install
+tools by version, and immediately make them available on `PATH`. proto is launching with initial
+support for [Bun](https://bun.sh), [Deno](https://deno.land), [Node.js](https://nodejs.org) (with
+npm, pnpm, yarn), and [Go](https://go.dev), with more languages on the way!
+
+```shell
+proto install node 18
+proto install go 1.20
+proto install deno 1.30
+```
+
+Unlike other version managers that pin their global binary to a default version, proto will
+[contextually detect an applicable version](/docs/proto/detection) from the environment or the
+language's ecosystem (like `.nvmrc`), ensuring the correct tool is always being ran.
+
+```shell
+# Will detect a version before running
+bun run ./script.ts
+```
+
+Furthermore, with proto's [`.prototools`](/docs/proto/config) file, you can pin versions of all
+required tools on a per-project or per-repo basis, allowing for near instant setup of developer
+environments. Perfect for onboarding new developers!
+
+```toml title=".prototools"
+node = "18.12.0"
+yarn = "3.3.0"
+```
+
+```shell
+# Install all the things!
+proto use
+```
+
+And lastly, [moon](/moon)'s toolchain is built on proto, so if you're using moon, you might as well
+use proto. This will enable a single toolchain for both tools (in v0.26)!
+
+<div class="flex justify-center">
+  <Button label="View documentation" href="/docs/proto" size="lg" />
+</div>
+
+## How to get started?
+
+In a terminal that supports Bash, run:
+
+```
+curl -fsSL https://moonrepo.dev/install/proto.sh | bash
+```
+
+In Powershell or Windows Terminal, run:
+
+```
+irm https://moonrepo.dev/install/proto.ps1 | iex
+```
+
+Jump to the [documentation](/docs/proto) for more information on getting started and available
+commands!
+
+## Why another version manager?
+
+To start, proto powers [moon's](/moon) toolchain and integrated developer environment. We believed
+that moon's toolchain would be extremely beneficial for developers as a whole, and so we extracted
+proto out into a standalone Rust CLI and Rust crates that moon inherits.
+
+Furthermore, we believe that requiring multiple ad-hoc version managers for all your languages, each
+with different workflows, CLI commands, and configuration files, is a poor developer experience.
+
+Our goal is to unify all of these into a single performant interface. A toolchain manager is the
+next step in the version manager evolution.

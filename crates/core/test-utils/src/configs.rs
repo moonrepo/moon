@@ -35,6 +35,7 @@ pub fn get_cases_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Inherit
     let workspace_config = WorkspaceConfig {
         projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
             ("root".to_owned(), ".".to_owned()),
+            ("affected".to_owned(), "affected".to_owned()),
             ("base".to_owned(), "base".to_owned()),
             ("noop".to_owned(), "noop".to_owned()),
             ("files".to_owned(), "files".to_owned()),

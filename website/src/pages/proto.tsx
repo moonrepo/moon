@@ -14,7 +14,7 @@ import Text from '../ui/typography/Text';
 
 const toolchainFeatures: Feature[] = [
 	{
-		title: 'Lightspeed commands',
+		title: 'Lightspeed interface',
 		icon: faBolt,
 		description:
 			'Download, install, and run tools with lightspeed, thanks to our Rust based foundation.',
@@ -106,7 +106,7 @@ export default function ProductProto() {
 											To start, proto powers <Link href="/moon">moon's</Link> toolchain and
 											integrated developer environment. We believed that the toolchain would be
 											extremely beneficial for developers as a whole, and so we extracted proto out
-											into a standalone Rust CLI, and{' '}
+											into a standalone Rust CLI and{' '}
 											<Link href="https://crates.io/users/milesj">Rust crates</Link> that moon
 											inherits.
 										</Text>

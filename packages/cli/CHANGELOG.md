@@ -4,9 +4,8 @@
 
 #### 💥 Breaking
 
-- Toolchain has been moved to `~/.proto` from `~/.moon`. This should be a transparent change but at
-  minimum your tools will be re-downloaded and installed. Feel free to delete the old tools
-  manually!
+- Toolchain has been moved to `~/.proto` from `~/.moon`. This should be a transparent change, but at
+  minimum your tools will be re-downloaded and installed.
 - Targets that generate an empty hash are now considered a failure, as they may be an edge case not
   accounted for.
 
@@ -20,6 +19,7 @@
 #### 🐞 Fixes
 
 - Fixed hashing to avoid including `git status` files when running in CI.
+- Fixed an issue where dependencies of an affected target were not always being ran.
 
 ## 0.25.4
 

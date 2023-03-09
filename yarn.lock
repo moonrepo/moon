@@ -2724,13 +2724,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fortawesome/fontawesome-common-types@npm:6.2.1":
-  version: 6.2.1
-  resolution: "@fortawesome/fontawesome-common-types@npm:6.2.1::__archiveUrl=https%3A%2F%2Fnpm.fontawesome.com%2F%40fortawesome%2Ffontawesome-common-types%2F-%2F6.2.1%2Ffontawesome-common-types-6.2.1.tgz"
-  checksum: 1a6e202beac46bc7e7bf791b37b6164b15453cc70b078456121c77d516a1077a1cfdab8aa9c77358c71f87f54560c0d9cbfb440cfb871f6d0f1f4671aabf9a0a
-  languageName: node
-  linkType: hard
-
 "@fortawesome/fontawesome-common-types@npm:6.3.0":
   version: 6.3.0
   resolution: "@fortawesome/fontawesome-common-types@npm:6.3.0::__archiveUrl=https%3A%2F%2Fnpm.fontawesome.com%2F%40fortawesome%2Ffontawesome-common-types%2F-%2F6.3.0%2Ffontawesome-common-types-6.3.0.tgz"
@@ -2747,30 +2740,30 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fortawesome/free-brands-svg-icons@npm:^6.2.1":
-  version: 6.2.1
-  resolution: "@fortawesome/free-brands-svg-icons@npm:6.2.1::__archiveUrl=https%3A%2F%2Fnpm.fontawesome.com%2F%40fortawesome%2Ffree-brands-svg-icons%2F-%2F6.2.1%2Ffree-brands-svg-icons-6.2.1.tgz"
+"@fortawesome/free-brands-svg-icons@npm:^6.3.0":
+  version: 6.3.0
+  resolution: "@fortawesome/free-brands-svg-icons@npm:6.3.0::__archiveUrl=https%3A%2F%2Fnpm.fontawesome.com%2F%40fortawesome%2Ffree-brands-svg-icons%2F-%2F6.3.0%2Ffree-brands-svg-icons-6.3.0.tgz"
   dependencies:
-    "@fortawesome/fontawesome-common-types": 6.2.1
-  checksum: e826787631672faed91b0a1f4bf1580582bd20f3aba1a8e547f0b49548d554a0ac629ea9d3998f076fb2574440f75e08536d088404f760c9910b9f185a6877f5
+    "@fortawesome/fontawesome-common-types": 6.3.0
+  checksum: 4b854bd17170bb5444b8fcd97f732c190f0e3409a5ee04f9364078cd776b108852043666a7795cb8989aa9729aa34589beb3681a2e02563d70e9786635b0aeff
   languageName: node
   linkType: hard
 
-"@fortawesome/pro-duotone-svg-icons@npm:^6.2.1":
-  version: 6.2.1
-  resolution: "@fortawesome/pro-duotone-svg-icons@npm:6.2.1::__archiveUrl=https%3A%2F%2Fnpm.fontawesome.com%2F%40fortawesome%2Fpro-duotone-svg-icons%2F-%2F6.2.1%2Fpro-duotone-svg-icons-6.2.1.tgz"
+"@fortawesome/pro-duotone-svg-icons@npm:^6.3.0":
+  version: 6.3.0
+  resolution: "@fortawesome/pro-duotone-svg-icons@npm:6.3.0::__archiveUrl=https%3A%2F%2Fnpm.fontawesome.com%2F%40fortawesome%2Fpro-duotone-svg-icons%2F-%2F6.3.0%2Fpro-duotone-svg-icons-6.3.0.tgz"
   dependencies:
-    "@fortawesome/fontawesome-common-types": 6.2.1
-  checksum: ef75abb50b5890c8514dcc68b3250be3e2ebbefea13a634b2ca6c20161bc74d08df2d53d4c3807bc612e3a344e850cb74104efc4dd9330371ab108dee8e0bfd9
+    "@fortawesome/fontawesome-common-types": 6.3.0
+  checksum: cc461fe49689c95092ec73f5dac6fb7d4d552cd9fc6521fd9040870293ae0bc0746c082151d502fef1e71264aa8c9688d694bb21e86ba60d7370e7474a522b9c
   languageName: node
   linkType: hard
 
-"@fortawesome/pro-regular-svg-icons@npm:^6.2.1":
-  version: 6.2.1
-  resolution: "@fortawesome/pro-regular-svg-icons@npm:6.2.1::__archiveUrl=https%3A%2F%2Fnpm.fontawesome.com%2F%40fortawesome%2Fpro-regular-svg-icons%2F-%2F6.2.1%2Fpro-regular-svg-icons-6.2.1.tgz"
+"@fortawesome/pro-regular-svg-icons@npm:^6.3.0":
+  version: 6.3.0
+  resolution: "@fortawesome/pro-regular-svg-icons@npm:6.3.0::__archiveUrl=https%3A%2F%2Fnpm.fontawesome.com%2F%40fortawesome%2Fpro-regular-svg-icons%2F-%2F6.3.0%2Fpro-regular-svg-icons-6.3.0.tgz"
   dependencies:
-    "@fortawesome/fontawesome-common-types": 6.2.1
-  checksum: c6de852a11af5d52850124ee72eac670b052806972c51273f3526149e9f65c30d2bc197cc6bfb0b1114e7484b8c0f4db315f48a90b445fd0011d50cd97d8f17d
+    "@fortawesome/fontawesome-common-types": 6.3.0
+  checksum: c71ce0a9303e3b9a98113a449cca300dcd1346718ac7f4a769b30844433fb0588fbf04a91c3d4623717f7bb32f99c610e64a3571fdff55e9cccf09b4eccacc37
   languageName: node
   linkType: hard
 
@@ -16259,9 +16252,9 @@ __metadata:
     "@docusaurus/preset-classic": ^2.3.1
     "@docusaurus/theme-common": ^2.3.1
     "@fortawesome/fontawesome-svg-core": ^6.3.0
-    "@fortawesome/free-brands-svg-icons": ^6.2.1
-    "@fortawesome/pro-duotone-svg-icons": ^6.2.1
-    "@fortawesome/pro-regular-svg-icons": ^6.2.1
+    "@fortawesome/free-brands-svg-icons": ^6.3.0
+    "@fortawesome/pro-duotone-svg-icons": ^6.3.0
+    "@fortawesome/pro-regular-svg-icons": ^6.3.0
     "@fortawesome/react-fontawesome": ^0.2.0
     "@mdx-js/react": ^1.6.22
     "@moonrepo/runtime": "workspace:^"

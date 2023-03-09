@@ -159,7 +159,7 @@ export default function Home() {
 							description:
 								'Download, install, and run tools with lightspeed, thanks to our Rust based foundation.',
 							icon: faBolt,
-							title: 'Lightspeed commands',
+							title: 'Lightspeed interface',
 						},
 					]}
 				/>

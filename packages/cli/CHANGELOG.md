@@ -22,6 +22,10 @@
 - Fixed an issue where dependencies of an affected target were not always being ran.
 - Fixed an issue where gitignored folders were being considered projects if the globs matched.
 
+#### ⚙️ Internal
+
+- Updated terminal checkpoint colors for tools to pink.
+
 ## 0.25.4
 
 #### 🐞 Fixes

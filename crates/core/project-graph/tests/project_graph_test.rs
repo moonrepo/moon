@@ -181,9 +181,35 @@ mod globs {
         let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
         let graph = generate_project_graph(&mut workspace).await.unwrap();
 
+        assert_eq!(graph.sources.len(), 20);
         assert!(!graph.sources.contains_key(".foo"));
         assert!(!graph.sources.contains_key(".git"));
         assert!(!graph.sources.contains_key("node_modules"));
+    }
+
+    #[tokio::test]
+    async fn filters_ignored_sources() {
+        let workspace_config = WorkspaceConfig {
+            projects: WorkspaceProjects::Globs(string_vec!["*"]),
+            ..WorkspaceConfig::default()
+        };
+
+        // Use git so we can test against the .git folder
+        let sandbox =
+            create_sandbox_with_config("project-graph/langs", Some(&workspace_config), None, None);
+        sandbox.enable_git();
+        sandbox.create_file(".gitignore", "*-config");
+
+        let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+        let graph = generate_project_graph(&mut workspace).await.unwrap();
+
+        assert_eq!(graph.sources.len(), 12);
+        assert!(graph.sources.contains_key("deno"));
+        assert!(!graph.sources.contains_key("deno-config"));
+        assert!(graph.sources.contains_key("python"));
+        assert!(!graph.sources.contains_key("python-config"));
+        assert!(graph.sources.contains_key("ts"));
+        assert!(!graph.sources.contains_key("ts-config"));
     }
 
     #[tokio::test]

@@ -1,7 +1,7 @@
 use crate::errors::VcsError;
 use crate::git::Git;
 use crate::svn::Svn;
-use crate::vcs::Vcs;
+use crate::BoxedVcs;
 use moon_config::{VcsManager, WorkspaceConfig};
 use std::path::Path;
 
@@ -11,7 +11,7 @@ impl VcsLoader {
     pub fn load(
         working_dir: &Path,
         workspace_config: &WorkspaceConfig,
-    ) -> Result<Box<dyn Vcs + Send + Sync>, VcsError> {
+    ) -> Result<BoxedVcs, VcsError> {
         let vcs_config = &workspace_config.vcs;
 
         Ok(match vcs_config.manager {

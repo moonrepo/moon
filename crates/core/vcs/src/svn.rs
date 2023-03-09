@@ -279,4 +279,8 @@ impl Vcs for Svn {
     fn is_enabled(&self) -> bool {
         self.root.join(".svn").exists()
     }
+
+    fn is_ignored(&self, _file: &str) -> bool {
+        false
+    }
 }

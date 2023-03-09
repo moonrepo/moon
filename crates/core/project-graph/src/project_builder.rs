@@ -498,7 +498,12 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                 map_list(&globs, |g| color::file(g))
             );
 
-            detect_projects_with_globs(&self.workspace.root, &globs, &mut sources)?;
+            detect_projects_with_globs(
+                &self.workspace.vcs,
+                &self.workspace.root,
+                &globs,
+                &mut sources,
+            )?;
 
             cache.last_glob_time = time::now_millis();
         }

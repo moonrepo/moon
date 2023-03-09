@@ -113,18 +113,6 @@ impl Git {
         Ok(base.to_owned())
     }
 
-    fn is_file_ignored(&self, file: &str) -> bool {
-        if self.ignore.is_some() {
-            self.ignore
-                .as_ref()
-                .unwrap()
-                .matched(file, false)
-                .is_ignore()
-        } else {
-            false
-        }
-    }
-
     async fn run_command(&self, mut command: Command, trim: bool) -> VcsResult<String> {
         let mut cache = self.cache.write().await;
         let (mut cache_key, _) = command.get_command_line();
@@ -204,9 +192,7 @@ impl Vcs for Git {
             let abs_file = self.root.join(file);
 
             // File must exists or git fails
-            if abs_file.exists()
-                && abs_file.is_file()
-                && (allow_ignored || !self.is_file_ignored(file))
+            if abs_file.exists() && abs_file.is_file() && (allow_ignored || !self.is_ignored(file))
             {
                 objects.push(file.clone());
             }
@@ -502,5 +488,17 @@ impl Vcs for Git {
 
     fn is_enabled(&self) -> bool {
         self.root.join(".git").exists()
+    }
+
+    fn is_ignored(&self, file: &str) -> bool {
+        if self.ignore.is_some() {
+            self.ignore
+                .as_ref()
+                .unwrap()
+                .matched(file, false)
+                .is_ignore()
+        } else {
+            false
+        }
     }
 }

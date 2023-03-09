@@ -2680,6 +2680,7 @@ dependencies = [
  "moon_task",
  "moon_test_utils",
  "moon_utils",
+ "moon_vcs",
  "moon_workspace",
  "petgraph",
  "rustc-hash",

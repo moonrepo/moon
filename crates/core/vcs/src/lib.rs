@@ -13,6 +13,8 @@ pub use loader::*;
 pub use svn::Svn;
 pub use vcs::*;
 
+pub type BoxedVcs = Box<dyn Vcs + Send + Sync + 'static>;
+
 /// Detect the version control system being used and the current branch
 pub async fn detect_vcs(
     dest_dir: &Path,

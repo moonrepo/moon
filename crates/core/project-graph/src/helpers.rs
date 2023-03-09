@@ -1,7 +1,8 @@
 use crate::errors::ProjectGraphError;
 use moon_config::ProjectsSourcesMap;
-use moon_logger::{color, warn};
+use moon_logger::{color, debug, warn};
 use moon_utils::{fs, glob, path, regex};
+use moon_vcs::BoxedVcs;
 use std::path::Path;
 
 /// Infer a project name from a source path, by using the name of
@@ -20,6 +21,7 @@ pub fn infer_project_name_and_source(source: &str) -> (String, String) {
 /// for potential projects, and infer their name and source.
 #[track_caller]
 pub fn detect_projects_with_globs(
+    vcs: &BoxedVcs,
     workspace_root: &Path,
     globs: &[String],
     projects: &mut ProjectsSourcesMap,
@@ -45,6 +47,16 @@ pub fn detect_projects_with_globs(
         if project_root.is_dir() {
             let project_source =
                 path::to_virtual_string(project_root.strip_prefix(workspace_root).unwrap())?;
+
+            if vcs.is_ignored(&project_source) {
+                debug!(
+                    target: "moon:project",
+                    "Found a project with source {}, but this path has been ignored by your VCS. Skipping ignored source.",
+                    color::file(&project_source)
+                );
+
+                continue;
+            }
 
             let (id, source) = infer_project_name_and_source(&project_source);
             let id = regex::clean_id(&id);

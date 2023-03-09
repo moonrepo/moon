@@ -8,7 +8,7 @@ use moon_constants as constants;
 use moon_logger::{color, debug, trace};
 use moon_platform::{BoxedPlatform, PlatformManager};
 use moon_utils::{fs, glob, semver};
-use moon_vcs::{Vcs, VcsLoader};
+use moon_vcs::{BoxedVcs, VcsLoader};
 use moonbase::Moonbase;
 use proto::{get_root, Config as ProtoTools, CONFIG_NAME};
 use std::env;
@@ -194,7 +194,7 @@ pub struct Workspace {
     pub toolchain_root: PathBuf,
 
     /// Configured version control system.
-    pub vcs: Box<dyn Vcs + Send + Sync>,
+    pub vcs: BoxedVcs,
 
     /// The current working directory.
     pub working_dir: PathBuf,

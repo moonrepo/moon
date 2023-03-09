@@ -3,7 +3,7 @@ use moon_config::CONFIG_PROJECT_FILENAME;
 use moon_hasher::convert_paths_to_strings;
 use moon_task::Task;
 use moon_utils::{glob, is_ci, path};
-use moon_vcs::Vcs;
+use moon_vcs::BoxedVcs;
 use rustc_hash::FxHashSet;
 use std::{collections::BTreeMap, path::Path};
 
@@ -43,7 +43,7 @@ fn is_valid_input_source(
 // and moon specific configuration files!
 #[allow(clippy::borrowed_box)]
 pub async fn collect_and_hash_inputs(
-    vcs: &Box<dyn Vcs + Send + Sync>,
+    vcs: &BoxedVcs,
     task: &Task,
     project_source: &str,
     workspace_root: &Path,

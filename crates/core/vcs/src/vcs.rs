@@ -73,4 +73,7 @@ pub trait Vcs {
 
     /// Return true if the repo is currently VCS enabled.
     fn is_enabled(&self) -> bool;
+
+    /// Return true if the provided file path has been ignored.
+    fn is_ignored(&self, file: &str) -> bool;
 }

@@ -288,7 +288,9 @@ impl<'ws> DepGraphBuilder<'ws> {
                 color::target(target),
             );
 
-            for dep_index in self.run_target_task_dependencies(task, touched_files)? {
+            // We don't pass touched files to dependencies, because if the parent
+            // task is affected/going to run, then so should all of these!
+            for dep_index in self.run_target_task_dependencies(task, None)? {
                 self.graph.add_edge(index, dep_index, ());
             }
         }

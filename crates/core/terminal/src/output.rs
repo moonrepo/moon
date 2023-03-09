@@ -5,7 +5,7 @@ const STEP_CHAR: &str = "▪";
 const PASS_COLORS: [u8; 4] = [57, 63, 69, 75];
 const FAIL_COLORS: [u8; 4] = [124, 125, 126, 127];
 const MUTED_COLORS: [u8; 4] = [240, 242, 244, 246];
-const SETUP_COLORS: [u8; 4] = [28, 35, 42, 49];
+const SETUP_COLORS: [u8; 4] = [198, 205, 212, 219];
 
 pub enum Checkpoint {
     RunFailed,

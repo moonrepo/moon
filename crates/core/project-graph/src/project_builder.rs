@@ -499,10 +499,10 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             );
 
             detect_projects_with_globs(
-                &self.workspace.vcs,
                 &self.workspace.root,
                 &globs,
                 &mut sources,
+                Some(&self.workspace.vcs),
             )?;
 
             cache.last_glob_time = time::now_millis();

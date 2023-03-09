@@ -21,10 +21,10 @@ pub fn infer_project_name_and_source(source: &str) -> (String, String) {
 /// for potential projects, and infer their name and source.
 #[track_caller]
 pub fn detect_projects_with_globs(
-    vcs: &BoxedVcs,
     workspace_root: &Path,
     globs: &[String],
     projects: &mut ProjectsSourcesMap,
+    vcs: Option<&BoxedVcs>,
 ) -> Result<(), ProjectGraphError> {
     let root_source = ".".to_owned();
 
@@ -48,14 +48,16 @@ pub fn detect_projects_with_globs(
             let project_source =
                 path::to_virtual_string(project_root.strip_prefix(workspace_root).unwrap())?;
 
-            if vcs.is_ignored(&project_source) {
-                debug!(
-                    target: "moon:project",
-                    "Found a project with source {}, but this path has been ignored by your VCS. Skipping ignored source.",
-                    color::file(&project_source)
-                );
+            if let Some(vcs) = vcs {
+                if vcs.is_ignored(&project_source) {
+                    debug!(
+                        target: "moon:project",
+                        "Found a project with source {}, but this path has been ignored by your VCS. Skipping ignored source.",
+                        color::file(&project_source)
+                    );
 
-                continue;
+                    continue;
+                }
             }
 
             let (id, source) = infer_project_name_and_source(&project_source);

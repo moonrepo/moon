@@ -140,7 +140,7 @@ fn detect_projects(
             if index == 1 {
                 project_globs.extend(globs);
             } else if index == 2 {
-                detect_projects_with_globs(dest_dir, &globs, &mut projects)?;
+                detect_projects_with_globs(dest_dir, &globs, &mut projects, None)?;
             }
         }
     }

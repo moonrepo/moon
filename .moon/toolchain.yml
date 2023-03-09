@@ -1,10 +1,10 @@
 $schema: '../website/static/schemas/toolchain.json'
 
 node:
-  version: '16.18.0'
+  version: '16.19.1'
   packageManager: 'yarn'
   yarn:
-    version: '3.3.0'
+    version: '3.4.1'
     plugins:
       - 'interactive-tools'
       - 'version'

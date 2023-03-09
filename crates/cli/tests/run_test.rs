@@ -1244,8 +1244,6 @@ mod affected {
                 .arg("--affected");
         });
 
-        assert.debug();
-
         let output = assert.output();
 
         assert!(predicate::str::contains("affected:dep").eval(&output));

@@ -70,7 +70,6 @@ fn apply_node_versions(node_config: &mut NodeConfig, proto_tools: &ProtoTools) {
         } else if matches!(node_config.package_manager, NodePackageManager::Pnpm) {
             node_config.pnpm = Some(PnpmConfig {
                 version: Some(pnpm_version.to_owned()),
-                ..PnpmConfig::default()
             });
         }
     } else if let Some(npm_version) = proto_tools.tools.get(&ToolType::Npm) {
@@ -96,12 +95,10 @@ impl ToolchainConfig {
         config.extends = None;
 
         // Inherit settings if configuring in proto
-        if config.deno.is_none() {
-            if let Some(_) = proto_tools.tools.get(&ToolType::Deno) {
-                config.deno = Some(DenoConfig {
-                    ..DenoConfig::default()
-                });
-            }
+        if config.deno.is_none() && proto_tools.tools.get(&ToolType::Deno).is_some() {
+            config.deno = Some(DenoConfig {
+                ..DenoConfig::default()
+            });
         }
 
         if let Some(node_config) = &mut config.node {

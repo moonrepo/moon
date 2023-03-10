@@ -28,8 +28,8 @@ fn prepare_outputs_list(outputs: &[String], source: &str) -> Vec<String> {
     let mut list = vec![];
 
     for output in outputs {
-        if output.starts_with('/') {
-            list.push(output[1..].to_owned());
+        if let Some(value) = output.strip_prefix('/') {
+            list.push(value.to_owned());
         } else if source.is_empty() {
             list.push(output.to_owned());
         } else {

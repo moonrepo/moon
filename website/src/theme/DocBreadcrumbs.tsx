@@ -36,6 +36,7 @@ function BreadcrumbsItemLink({ active, children, href }: BreadcrumbsItemLinkProp
 			size="sm"
 			variant="muted"
 			weight="medium"
+			className="m-0"
 		>
 			{children}
 		</Text>

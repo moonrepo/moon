@@ -21,7 +21,7 @@ of your favorite programming languages.
 
 [proto](/proto) is a Rust based multi-language toolchain manager that will download and install
 tools by version, and immediately make them available on `PATH`. proto is launching with initial
-support for [Bun](https://bun.sh), [Deno](https://deno.land), [Node.js](https://nodejs.org) (with
+support for [Bun](https://bun.sh), [Deno](https://deno.land), [Node.js](https://nodejs.org) (and
 npm, pnpm, yarn), and [Go](https://go.dev), with more languages on the way!
 
 ```shell
@@ -32,7 +32,7 @@ proto install deno 1.30
 
 Unlike other version managers that pin their global binary to a default version, proto will
 [contextually detect an applicable version](/docs/proto/detection) from the environment or the
-language's ecosystem (like `.nvmrc`), ensuring the correct tool is always being ran.
+language's ecosystem (like `package.json`), ensuring the correct tool is always being ran.
 
 ```shell
 # Will detect a version before running
@@ -40,8 +40,8 @@ bun run ./script.ts
 ```
 
 Furthermore, with proto's [`.prototools`](/docs/proto/config) file, you can pin versions of all
-required tools on a per-project or per-repo basis, allowing for near instant setup of developer
-environments. Perfect for onboarding new developers!
+required tools on a per-project or per-repository basis, allowing for near instant setup of
+developer environments. Perfect for onboarding new developers!
 
 ```toml title=".prototools"
 node = "18.12.0"

@@ -117,7 +117,7 @@ export default function ProductProto() {
 											configuration files, is a poor developer experience.
 										</Text>
 
-										<Text>
+										<Text className="mb-0">
 											Our goal is to unify all of these into a single performant interface. A
 											toolchain manager is the next step in the version manager evolution.
 										</Text>

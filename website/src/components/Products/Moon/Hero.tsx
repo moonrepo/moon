@@ -65,7 +65,7 @@ export default function Hero() {
 
 					<div className="mt-2 flex justify-center items-start gap-1">
 						<div>
-							<Text className="text-white opacity-50" size="sm">
+							<Text className="text-white opacity-50 m-0" size="sm">
 								Backed by
 							</Text>
 						</div>

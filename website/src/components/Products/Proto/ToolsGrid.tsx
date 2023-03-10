@@ -75,7 +75,9 @@ export default function ToolsGrid() {
 					</svg>
 				</Link>
 
-				<Text variant="muted">+ npm, pnpm, yarn</Text>
+				<Text className="m-0" variant="muted">
+					+ npm, pnpm, yarn
+				</Text>
 			</div>
 		</div>
 	);

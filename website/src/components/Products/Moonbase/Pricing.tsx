@@ -115,7 +115,9 @@ export default function Pricing() {
 								</div>
 								<div className="text-left">
 									per member + repo
-									<Text variant="muted">monthly</Text>
+									<Text className="m-0" variant="muted">
+										monthly
+									</Text>
 								</div>
 							</div>
 						</Tier>
@@ -168,7 +170,7 @@ export default function Pricing() {
 				</div>
 
 				<div className="mt-6 text-center">
-					<Text size="sm" variant="muted">
+					<Text className="mb-1" size="sm" variant="muted">
 						<Link size="sm" href="https://moonrepo.app/terms">
 							Terms of Service
 						</Link>

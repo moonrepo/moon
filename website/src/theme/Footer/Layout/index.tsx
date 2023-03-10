@@ -32,7 +32,7 @@ export default function FooterLayout({ links, copyright }: FooterLayoutProps) {
 				</div>
 
 				<div className="mt-3 pt-3 md:mt-4 md:pt-4 border-0 border-t border-solid border-gray-200 dark:border-slate-400 flex items-center justify-between">
-					<Text variant="muted" size="sm" as="div">
+					<Text className="m-0" variant="muted" size="sm" as="div">
 						{copyright}
 					</Text>
 

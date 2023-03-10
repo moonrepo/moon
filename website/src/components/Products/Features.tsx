@@ -96,7 +96,7 @@ export default function Features({ header, description, features, reversed, tier
 												</p>
 											)}
 
-											<Text className="mt-1" variant="muted">
+											<Text className="mt-1 mb-0" variant="muted">
 												{feature.description}
 											</Text>
 										</div>

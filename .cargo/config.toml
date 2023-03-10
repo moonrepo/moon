@@ -7,5 +7,5 @@ lto = true
 panic = "abort"
 strip = "debuginfo"
 
-[registries.crates-io]
-protocol = "sparse"
+# [registries.crates-io]
+# protocol = "sparse"

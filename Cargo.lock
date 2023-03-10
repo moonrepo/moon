@@ -3563,9 +3563,9 @@ dependencies = [
 
 [[package]]
 name = "proto_bun"
-version = "0.1.4"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5116f7ad8ffa7e85a0ccc430e9d623011584bff6eca9e736eb6a6ee322e14158"
+checksum = "e965cb4652775b95ed43dc06c4ab27a04017d9a0842bf4db0e2b69ff23414e79"
 dependencies = [
  "log",
  "proto_core",
@@ -3575,9 +3575,9 @@ dependencies = [
 
 [[package]]
 name = "proto_cli"
-version = "0.1.9"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8da8fef530977d67ef3ac769326eee223c72786ced643ac2d8f0cfe7e894819"
+checksum = "84690869a380716f696f0bfccc0cb9366b169712a19ef28329403c95be488db8"
 dependencies = [
  "clap 4.1.8",
  "clap_complete",
@@ -3592,15 +3592,17 @@ dependencies = [
  "proto_go",
  "proto_node",
  "rustc-hash",
+ "serde",
+ "serde_json",
  "tokio",
  "toml",
 ]
 
 [[package]]
 name = "proto_core"
-version = "0.1.6"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b3d136414c2d906a70c0e6e59ab19cf585a6a9fe8f101a00c9935556836ba1bc"
+checksum = "8cbe1f30c172461cf61581bf285d3c20638e5b200526cc7829f6c9fc3dc2a430"
 dependencies = [
  "async-trait",
  "cached",
@@ -3623,9 +3625,9 @@ dependencies = [
 
 [[package]]
 name = "proto_deno"
-version = "0.1.4"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9eb3ae5ef65ba41f120bd67df7d68056919ea90cfb370db5a2714cb7d82881aa"
+checksum = "279ddbb08eb9944e007ac1d5e9b92375fe13b8e417fee9f3f9e9ab5976fa3ba7"
 dependencies = [
  "log",
  "proto_core",
@@ -3635,9 +3637,9 @@ dependencies = [
 
 [[package]]
 name = "proto_go"
-version = "0.1.5"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6524ddfddd52612c069f7e9ab536794c722b8eb45033281c2b04b66e72a2318"
+checksum = "f26376ba089574781760c5674d28bc098dce22d47c46a56616f5f391f3887d64"
 dependencies = [
  "log",
  "proto_core",
@@ -3647,9 +3649,9 @@ dependencies = [
 
 [[package]]
 name = "proto_node"
-version = "0.1.5"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c3973d1a23fef2ff15b4dd68e0d272ea620c1c12dbbab0dd91cb824bc6ec2a0"
+checksum = "2bd86736e02233e06b9719e106bcde83d260e7e6bd4f25812d12b6a1b2d46539"
 dependencies = [
  "clean-path",
  "log",

@@ -16,6 +16,7 @@ pub async fn hash_diff(options: &QueryHashDiffOptions) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;
     let mut result = query_hash_diff(&mut workspace, options).await?;
 
+    let is_tty = atty::is(atty::Stream::Stdout);
     let mut stdout = io::stdout().lock();
 
     if options.json {
@@ -34,9 +35,27 @@ pub async fn hash_diff(options: &QueryHashDiffOptions) -> Result<(), AnyError> {
 
         for diff in diff::lines(&result.left, &result.right) {
             match diff {
-                diff::Result::Left(l) => writeln!(stdout, "{}", color::success(l))?,
-                diff::Result::Both(l, _) => writeln!(stdout, "{}", l)?,
-                diff::Result::Right(r) => writeln!(stdout, "{}", color::failure(r))?,
+                diff::Result::Left(l) => {
+                    if is_tty {
+                        writeln!(stdout, "{}", color::success(l))?
+                    } else {
+                        writeln!(stdout, "+{}", l)?
+                    }
+                }
+                diff::Result::Both(l, _) => {
+                    if is_tty {
+                        writeln!(stdout, "{}", l)?
+                    } else {
+                        writeln!(stdout, " {}", l)?
+                    }
+                }
+                diff::Result::Right(r) => {
+                    if is_tty {
+                        writeln!(stdout, "{}", color::failure(r))?
+                    } else {
+                        writeln!(stdout, "-{}", r)?
+                    }
+                }
             };
         }
     }

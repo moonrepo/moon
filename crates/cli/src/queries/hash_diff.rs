@@ -18,17 +18,20 @@ pub struct QueryHashDiffOptions {
 #[derive(Clone, Default, Deserialize, Serialize)]
 pub struct QueryHashDiffResult {
     pub left: String,
+    pub left_hash: String,
     pub left_diffs: Vec<String>,
     pub right: String,
+    pub right_hash: String,
     pub right_diffs: Vec<String>,
 }
 
-fn find_hash(dir: &Path, hash: &str) -> Result<String, MoonError> {
+fn find_hash(dir: &Path, hash: &str) -> Result<(String, String), MoonError> {
     for file in fs::read_dir(dir)? {
         let path = file.path();
+        let name = fs::file_name(&path).replace(".json", "");
 
-        if fs::file_name(&path).starts_with(hash) {
-            return Ok(fs::read(path)?);
+        if hash == name || name.starts_with(hash) {
+            return Ok((name, fs::read(path)?));
         }
     }
 
@@ -41,11 +44,18 @@ fn find_hash(dir: &Path, hash: &str) -> Result<String, MoonError> {
 pub async fn query_hash_diff(
     workspace: &mut Workspace,
     options: &QueryHashDiffOptions,
-) -> Result<(String, String), AnyError> {
+) -> Result<QueryHashDiffResult, AnyError> {
     debug!(target: LOG_TARGET, "Diffing hashes");
 
-    let hash_left = find_hash(&workspace.cache.hashes_dir, &options.left)?;
-    let hash_right = find_hash(&workspace.cache.hashes_dir, &options.right)?;
+    let (left_hash, left) = find_hash(&workspace.cache.hashes_dir, &options.left)?;
+    let (right_hash, right) = find_hash(&workspace.cache.hashes_dir, &options.right)?;
 
-    Ok((hash_left, hash_right))
+    Ok(QueryHashDiffResult {
+        left,
+        left_hash,
+        left_diffs: vec![],
+        right,
+        right_hash,
+        right_diffs: vec![],
+    })
 }

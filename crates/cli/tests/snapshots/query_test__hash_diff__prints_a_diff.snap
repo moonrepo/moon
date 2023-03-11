@@ -1,0 +1,19 @@
+---
+source: crates/cli/tests/query_test.rs
+expression: output
+---
+Left:  a
+Right: b
+
+ {
++    "command": "base",
+-    "command": "other",
+     "args": [
+         "a",
++        "b",
+-        "123",
+         "c"
+     ]
+ }
+
+

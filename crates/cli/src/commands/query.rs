@@ -1,4 +1,5 @@
 use crate::helpers::AnyError;
+pub use crate::queries::hash_diff::{query_hash_diff, QueryHashDiffOptions};
 pub use crate::queries::projects::{
     query_projects, QueryProjectsOptions, QueryProjectsResult, QueryTasksResult,
 };
@@ -6,9 +7,61 @@ pub use crate::queries::touched_files::{
     query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
 };
 use moon::load_workspace;
+use moon_logger::color;
 use rustc_hash::FxHashMap;
 use std::io;
 use std::io::prelude::*;
+
+pub async fn hash_diff(options: &QueryHashDiffOptions) -> Result<(), AnyError> {
+    let mut workspace = load_workspace().await?;
+    let mut result = query_hash_diff(&mut workspace, options).await?;
+
+    let is_tty = atty::is(atty::Stream::Stdout);
+    let mut stdout = io::stdout().lock();
+
+    if options.json {
+        for diff in diff::lines(&result.left, &result.right) {
+            match diff {
+                diff::Result::Left(l) => result.left_diffs.push(l.trim().to_owned()),
+                diff::Result::Right(r) => result.right_diffs.push(r.trim().to_owned()),
+                _ => {}
+            };
+        }
+
+        writeln!(stdout, "{}", serde_json::to_string_pretty(&result)?)?;
+    } else {
+        writeln!(stdout, "Left:  {}", color::id(&result.left_hash))?;
+        writeln!(stdout, "Right: {}\n", color::id(&result.right_hash))?;
+
+        for diff in diff::lines(&result.left, &result.right) {
+            match diff {
+                diff::Result::Left(l) => {
+                    if is_tty {
+                        writeln!(stdout, "{}", color::success(l))?
+                    } else {
+                        writeln!(stdout, "+{}", l)?
+                    }
+                }
+                diff::Result::Both(l, _) => {
+                    if is_tty {
+                        writeln!(stdout, "{}", l)?
+                    } else {
+                        writeln!(stdout, " {}", l)?
+                    }
+                }
+                diff::Result::Right(r) => {
+                    if is_tty {
+                        writeln!(stdout, "{}", color::failure(r))?
+                    } else {
+                        writeln!(stdout, "-{}", r)?
+                    }
+                }
+            };
+        }
+    }
+
+    Ok(())
+}
 
 pub async fn projects(options: &QueryProjectsOptions) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;

@@ -1,0 +1,20 @@
+---
+source: crates/cli/tests/query_test.rs
+expression: output
+---
+{
+  "left": "{\n    \"command\": \"base\",\n    \"args\": [\n        \"a\",\n        \"b\",\n        \"c\"\n    ]\n}",
+  "left_hash": "a",
+  "left_diffs": [
+    "\"command\": \"base\",",
+    "\"b\","
+  ],
+  "right": "{\n    \"command\": \"other\",\n    \"args\": [\n        \"a\",\n        \"123\",\n        \"c\"\n    ]\n}",
+  "right_hash": "b",
+  "right_diffs": [
+    "\"command\": \"other\",",
+    "\"123\","
+  ]
+}
+
+

@@ -49,6 +49,7 @@ clap_lex = "0.3.0"
 console = { workspace = true }
 # console-subscriber = "0.1.8"
 dialoguer = "0.10.2"
+diff = "0.1.13"
 futures-util = "0.3.26"
 indicatif = "0.17.2"
 itertools = "0.10.5"

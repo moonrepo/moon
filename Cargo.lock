@@ -2332,6 +2332,7 @@ dependencies = [
  "clap_lex 0.3.2",
  "console",
  "dialoguer",
+ "diff",
  "futures-util",
  "httpmock",
  "indicatif",

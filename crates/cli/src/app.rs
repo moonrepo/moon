@@ -79,6 +79,22 @@ pub enum NodeCommands {
 #[derive(Debug, Subcommand)]
 pub enum QueryCommands {
     #[command(
+        name = "hash-diff",
+        about = "Query the difference between two hashes.",
+        long_about = "Query the difference between two hashes. The left differences will be printed in green, while the right in red, and equal lines in white."
+    )]
+    HashDiff {
+        #[arg(required = true, help = "Base hash to compare against")]
+        left: String,
+
+        #[arg(required = true, help = "Other hash to compare with")]
+        right: String,
+
+        #[arg(long, help = "Print the diff in JSON format")]
+        json: bool,
+    },
+
+    #[command(
         name = "projects",
         about = "Query for projects within the project graph.",
         long_about = "Query for projects within the project graph. All options support regex patterns."

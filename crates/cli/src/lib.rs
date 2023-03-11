@@ -30,6 +30,7 @@ use enums::{CacheMode, LogLevel};
 use moon_launchpad::check_version;
 use moon_logger::{color, debug, LevelFilter, Logger};
 use moon_terminal::ExtendedTerm;
+use query::QueryHashDiffOptions;
 use std::env;
 use std::path::PathBuf;
 
@@ -190,6 +191,9 @@ pub async fn run_cli() {
         Commands::ProjectGraph { id, dot, json } => project_graph(id, dot, json).await,
         Commands::Sync => sync().await,
         Commands::Query { command } => match command {
+            QueryCommands::HashDiff { left, right, json } => {
+                query::hash_diff(&QueryHashDiffOptions { json, left, right }).await
+            }
             QueryCommands::Projects {
                 alias,
                 affected,

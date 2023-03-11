@@ -1,0 +1,53 @@
+---
+title: query hash-diff
+sidebar_label: hash-diff
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel header version="0.26" />
+
+Use the `moon query hash-diff` sub-command to query the content and source differences between 2
+generated hashes. This is extremely useful in debugging task inputs.
+
+```shell
+# Diff between 2 hashes
+$ moon query hash-diff 0b55b234f1018581c45b00241d7340dc648c63e639fbafdaf85a4cd7e718fdde 2388552fee5a02062d0ef402bdc7232f0a447458b058c80ce9c3d0d4d7cfe171
+
+# Diff between 2 hashes using short form
+$ moon query hash-diff 0b55b234 2388552f
+```
+
+By default, this will output the contents of a hash file (which is JSON), highlighting the
+differences between the left and right hashes. Lines that match will be printed in white, while the
+left differences printed in green, and right differences printed in red. If you use `git diff`, this
+will feel familiar to you.
+
+```diff
+{
+	"command": "build",
+	"args": [
++		"./dist"
+-		"./build"
+	],
+	...
+}
+```
+
+The differences can also be output in JSON by passing the `--json` flag. The output has the
+following structure:
+
+```ts
+{
+	left: string,
+	left_hash: string,
+	left_diffs: string[],
+	right: string,
+	right_hash: string,
+	right_diffs: string[],
+}
+```
+
+### Options
+
+- `--json` - Display the diff in JSON format.

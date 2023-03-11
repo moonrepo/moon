@@ -32,5 +32,6 @@ rustc-hash = "1.1.0"
 serde = { version = "1.0.155", features = ["derive"] }
 serde_json = "1.0.94"
 serde_yaml = "0.9.19"
+strum = { version = "0.24.1", features = ["derive"] }
 thiserror = "1.0.38"
 tokio = { version = "1.26.0", default-features = false, features = ["tracing"] }

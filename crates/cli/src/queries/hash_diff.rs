@@ -35,7 +35,7 @@ fn find_hash(dir: &Path, hash: &str) -> Result<(String, String), MoonError> {
                 target: LOG_TARGET,
                 "Found manifest {} for hash {}",
                 color::hash(&name),
-                color::id(&hash)
+                color::id(hash)
             );
 
             return Ok((name, fs::read(path)?));

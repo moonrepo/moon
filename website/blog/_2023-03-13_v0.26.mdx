@@ -86,6 +86,32 @@ than before, and you should see improved Docker layer caching!
 +RUN moon docker setup
 ```
 
+## New `moon query hash-diff` command
+
+When moon runs a task, we generate a unique hash representing the state of that run. When something
+goes wrong however, and the hash is different than what you expect, debugging why is rather
+non-trivial and requires a lot of internal knowledge. We're looking to reduce this burden, by
+introducing the new [`moon query hash-diff`](/docs/commands/query/hash-diff) command, which requires
+2 hashes to compare with.
+
+```shell
+$ moon query hash-diff 0b55b234 2388552f
+```
+
+When ran, the command will print out the differences as highlighted lines. If you use `git diff`,
+this will feel familiar to you.
+
+```diff
+{
+	"command": "build",
+	"args": [
++		"./dist"
+-		"./build"
+	],
+	...
+}
+```
+
 ## Other changes
 
 View the

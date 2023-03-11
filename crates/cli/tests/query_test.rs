@@ -3,7 +3,7 @@ use moon_cli::queries::projects::{QueryProjectsResult, QueryTasksResult};
 use moon_cli::queries::touched_files::QueryTouchedFilesResult;
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, get_assert_stdout_output,
-    get_cases_fixture_configs, get_projects_fixture_configs, Sandbox,
+    get_cases_fixture_configs, get_projects_fixture_configs, predicates::prelude::*, Sandbox,
 };
 use moon_utils::{is_ci, string_vec};
 
@@ -27,6 +27,134 @@ fn touch_file(sandbox: &Sandbox) {
         sandbox.run_git(|cmd| {
             cmd.args(["commit", "-m", "Touch"]);
         });
+    }
+}
+
+mod hash_diff {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn errors_if_left_doesnt_exist() {
+        let sandbox = create_sandbox_with_config("base", None, None, None);
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("query").arg("hash-diff").arg("a").arg("b");
+        });
+
+        let output = assert.output();
+
+        assert!(!predicate::str::contains("Unable to find a hash manifest for {}!").eval(&output));
+    }
+
+    #[test]
+    fn errors_if_right_doesnt_exist() {
+        let sandbox = create_sandbox_with_config("base", None, None, None);
+
+        fs::create_dir_all(sandbox.path().join(".moon/cache/hashes")).unwrap();
+
+        fs::write(
+            sandbox.path().join(".moon/cache/hashes/a.json"),
+            r#"{
+    "command": "test",
+    "args": [
+        "a",
+        "b",
+        "c"
+    ]
+}"#,
+        )
+        .unwrap();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("query").arg("hash-diff").arg("a").arg("b");
+        });
+
+        let output = assert.output();
+
+        assert!(!predicate::str::contains("Unable to find a hash manifest for {}!").eval(&output));
+    }
+
+    #[test]
+    fn prints_a_diff() {
+        let sandbox = create_sandbox_with_config("base", None, None, None);
+
+        fs::create_dir_all(sandbox.path().join(".moon/cache/hashes")).unwrap();
+
+        fs::write(
+            sandbox.path().join(".moon/cache/hashes/a.json"),
+            r#"{
+    "command": "base",
+    "args": [
+        "a",
+        "b",
+        "c"
+    ]
+}"#,
+        )
+        .unwrap();
+
+        fs::write(
+            sandbox.path().join(".moon/cache/hashes/b.json"),
+            r#"{
+    "command": "other",
+    "args": [
+        "a",
+        "123",
+        "c"
+    ]
+}"#,
+        )
+        .unwrap();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("query").arg("hash-diff").arg("a").arg("b");
+        });
+
+        assert_snapshot!(assert.output());
+    }
+
+    #[test]
+    fn prints_a_diff_in_json() {
+        let sandbox = create_sandbox_with_config("base", None, None, None);
+
+        fs::create_dir_all(sandbox.path().join(".moon/cache/hashes")).unwrap();
+
+        fs::write(
+            sandbox.path().join(".moon/cache/hashes/a.json"),
+            r#"{
+    "command": "base",
+    "args": [
+        "a",
+        "b",
+        "c"
+    ]
+}"#,
+        )
+        .unwrap();
+
+        fs::write(
+            sandbox.path().join(".moon/cache/hashes/b.json"),
+            r#"{
+    "command": "other",
+    "args": [
+        "a",
+        "123",
+        "c"
+    ]
+}"#,
+        )
+        .unwrap();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("query")
+                .arg("hash-diff")
+                .arg("a")
+                .arg("b")
+                .arg("--json");
+        });
+
+        assert_snapshot!(assert.output());
     }
 }
 

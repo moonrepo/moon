@@ -15,6 +15,14 @@ pub struct QueryHashDiffOptions {
     pub right: String,
 }
 
+#[derive(Clone, Default, Deserialize, Serialize)]
+pub struct QueryHashDiffResult {
+    pub left: String,
+    pub left_diffs: Vec<String>,
+    pub right: String,
+    pub right_diffs: Vec<String>,
+}
+
 fn find_hash(dir: &Path, hash: &str) -> Result<String, MoonError> {
     for file in fs::read_dir(dir)? {
         let path = file.path();

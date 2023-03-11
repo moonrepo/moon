@@ -1,4 +1,5 @@
 use crate::helpers::AnyError;
+use crate::queries::hash_diff::QueryHashDiffResult;
 pub use crate::queries::hash_diff::{query_hash_diff, QueryHashDiffOptions};
 pub use crate::queries::projects::{
     query_projects, QueryProjectsOptions, QueryProjectsResult, QueryTasksResult,
@@ -18,12 +19,34 @@ pub async fn hash_diff(options: &QueryHashDiffOptions) -> Result<(), AnyError> {
 
     let mut stdout = io::stdout().lock();
 
-    for diff in diff::lines(&left, &right) {
-        match diff {
-            diff::Result::Left(l) => writeln!(stdout, "{}", color::success(l))?,
-            diff::Result::Both(l, _) => writeln!(stdout, " {}", l)?,
-            diff::Result::Right(r) => writeln!(stdout, "+{}", color::failure(r))?,
+    if options.json {
+        let mut left_diffs = vec![];
+        let mut right_diffs = vec![];
+
+        for diff in diff::lines(&left, &right) {
+            match diff {
+                diff::Result::Left(l) => left_diffs.push(l.trim().to_owned()),
+                diff::Result::Right(r) => right_diffs.push(r.trim().to_owned()),
+                _ => {}
+            };
+        }
+
+        let result = QueryHashDiffResult {
+            left,
+            left_diffs,
+            right,
+            right_diffs,
         };
+
+        writeln!(stdout, "{}", serde_json::to_string_pretty(&result)?)?;
+    } else {
+        for diff in diff::lines(&left, &right) {
+            match diff {
+                diff::Result::Left(l) => writeln!(stdout, "{}", color::success(l))?,
+                diff::Result::Both(l, _) => writeln!(stdout, "{}", l)?,
+                diff::Result::Right(r) => writeln!(stdout, "{}", color::failure(r))?,
+            };
+        }
     }
 
     Ok(())

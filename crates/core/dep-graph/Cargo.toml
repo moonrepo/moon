@@ -19,7 +19,7 @@ moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
 moon_target = { path = "../target" }
 moon_task = { path = "../task" }
-petgraph = { version = "0.6.2", features = ["serde"] }
+petgraph = { workspace = true }
 rustc-hash = { workspace = true }
 thiserror = { workspace = true }
 

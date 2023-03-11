@@ -20,7 +20,7 @@ figment = { version = "0.10.8", features = ["test", "yaml"] }
 proto_cli = { workspace = true }
 reqwest = { workspace = true, features = ["blocking"] }
 rustc-hash = { workspace = true }
-schemars = "0.8.11"
+schemars = "0.8.12"
 serde = { workspace = true }
 serde_json = { workspace = true, features = ["preserve_order"] }
 serde_yaml = { workspace = true }

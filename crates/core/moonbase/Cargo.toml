@@ -7,10 +7,10 @@ edition = "2021"
 moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
 moon_utils = { path = "../utils" }
-graphql_client = "0.12.0"
+graphql_client = { version = "0.12.0", features = ["reqwest-rustls"] }
 reqwest = { workspace = true, features = ["multipart", "stream"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
-tokio-util = "0.7.4"
+tokio-util = "0.7.7"

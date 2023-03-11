@@ -1,4 +1,5 @@
 use crate::helpers::AnyError;
+pub use crate::queries::hash_diff::{query_hash_diff, QueryHashDiffOptions};
 pub use crate::queries::projects::{
     query_projects, QueryProjectsOptions, QueryProjectsResult, QueryTasksResult,
 };
@@ -6,9 +7,27 @@ pub use crate::queries::touched_files::{
     query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
 };
 use moon::load_workspace;
+use moon_logger::color;
 use rustc_hash::FxHashMap;
 use std::io;
 use std::io::prelude::*;
+
+pub async fn hash_diff(options: &QueryHashDiffOptions) -> Result<(), AnyError> {
+    let mut workspace = load_workspace().await?;
+    let (left, right) = query_hash_diff(&mut workspace, options).await?;
+
+    let mut stdout = io::stdout().lock();
+
+    for diff in diff::lines(&left, &right) {
+        match diff {
+            diff::Result::Left(l) => writeln!(stdout, "{}", color::success(l))?,
+            diff::Result::Both(l, _) => writeln!(stdout, " {}", l)?,
+            diff::Result::Right(r) => writeln!(stdout, "+{}", color::failure(r))?,
+        };
+    }
+
+    Ok(())
+}
 
 pub async fn projects(options: &QueryProjectsOptions) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;

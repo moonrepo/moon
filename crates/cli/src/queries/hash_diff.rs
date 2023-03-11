@@ -10,6 +10,7 @@ const LOG_TARGET: &str = "moon:query:hash-diff";
 
 #[derive(Clone, Default, Deserialize, Serialize)]
 pub struct QueryHashDiffOptions {
+    pub json: bool,
     pub left: String,
     pub right: String,
 }

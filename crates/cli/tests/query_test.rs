@@ -44,7 +44,7 @@ mod hash_diff {
 
         let output = assert.output();
 
-        assert!(!predicate::str::contains("Unable to find a hash manifest for {}!").eval(&output));
+        assert!(predicate::str::contains("Unable to find a hash manifest for a!").eval(&output));
     }
 
     #[test]
@@ -72,7 +72,7 @@ mod hash_diff {
 
         let output = assert.output();
 
-        assert!(!predicate::str::contains("Unable to find a hash manifest for {}!").eval(&output));
+        assert!(predicate::str::contains("Unable to find a hash manifest for b!").eval(&output));
     }
 
     #[test]

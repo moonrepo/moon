@@ -31,6 +31,13 @@ fn find_hash(dir: &Path, hash: &str) -> Result<(String, String), MoonError> {
         let name = fs::file_name(&path).replace(".json", "");
 
         if hash == name || name.starts_with(hash) {
+            debug!(
+                target: LOG_TARGET,
+                "Found manifest {} for hash {}",
+                color::hash(&name),
+                color::id(&hash)
+            );
+
             return Ok((name, fs::read(path)?));
         }
     }

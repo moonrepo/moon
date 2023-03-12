@@ -12,6 +12,7 @@
 #### 🚀 Updates
 
 - Added a `moon docker setup` command for efficiently installing project dependencies.
+- Added a `moon query hash` command for inspecting the hash manifest.
 - Added a `moon query hash-diff` command for diffing 2 hashes.
 - Updated moon's toolchain to build upon [proto](https://github.com/moonrepo/proto), our new
   toolchain layer.
@@ -25,7 +26,7 @@
 
 #### ⚙️ Internal
 
-- Updated terminal checkpoint colors for tools to pink.
+- Updated terminal checkpoint colors for tools to pink (to match proto).
 
 ## 0.25.4
 

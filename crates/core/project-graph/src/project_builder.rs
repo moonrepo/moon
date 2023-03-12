@@ -613,9 +613,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         let mut normalized_globs = vec![];
 
         for glob in globs {
-            normalized_globs.push(glob::normalize(
-                glob.strip_prefix(&self.workspace.root).unwrap(),
-            )?);
+            normalized_globs.push(glob::normalize(glob)?);
         }
 
         Ok(normalized_globs)

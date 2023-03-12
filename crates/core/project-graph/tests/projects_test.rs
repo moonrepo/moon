@@ -1121,7 +1121,9 @@ mod task_expansion {
             let project = project_graph.get("tokens").unwrap();
             let task = project.get_task("outputs").unwrap();
 
-            assert!(task.output_paths.contains(&project.root.join("dir")));
+            assert!(task
+                .output_paths
+                .contains(&PathBuf::from(&project.source).join("dir")));
 
             let task = project.get_task("outputsGlobs").unwrap();
 
@@ -1149,13 +1151,13 @@ mod task_expansion {
                 FxHashSet::from_iter(task.output_paths.iter().map(PathBuf::from));
             let b: FxHashSet<PathBuf> = FxHashSet::from_iter(
                 vec![
-                    sandbox.path().join("package.json"),
-                    project.root.join("file.ts"),
-                    project.root.join("dir"),
-                    project.root.join("dir/subdir"),
-                    project.root.join("file.ts"),
-                    project.root.join("dir/other.tsx"),
-                    project.root.join("dir/subdir/another.ts"),
+                    PathBuf::from("package.json"),
+                    PathBuf::from(&project.source).join("file.ts"),
+                    PathBuf::from(&project.source).join("dir"),
+                    PathBuf::from(&project.source).join("dir/subdir"),
+                    PathBuf::from(&project.source).join("file.ts"),
+                    PathBuf::from(&project.source).join("dir/other.tsx"),
+                    PathBuf::from(&project.source).join("dir/subdir/another.ts"),
                 ]
                 .iter()
                 .map(PathBuf::from),

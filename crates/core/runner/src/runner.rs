@@ -78,10 +78,10 @@ impl<'a> Runner<'a> {
         // We don't check globs here as it would required walking the file system
         if !self.task.outputs.is_empty() {
             for output in &self.task.output_paths {
-                if !output.exists() {
+                if !self.workspace.root.join(&output).exists() {
                     return Err(RunnerError::Task(TaskError::MissingOutput(
                         self.task.target.id.clone(),
-                        path::to_string(output.strip_prefix(&self.project.root).unwrap())?,
+                        path::to_string(output.strip_prefix(&self.project.source).unwrap())?,
                     )));
                 }
             }
@@ -269,11 +269,8 @@ impl<'a> Runner<'a> {
         // Affected files (must be last args)
         if let Some(check_affected) = &self.task.options.affected_files {
             let mut affected_files = if context.affected_only {
-                self.task.get_affected_files(
-                    &context.touched_files,
-                    &self.workspace.root,
-                    &self.project.source,
-                )?
+                self.task
+                    .get_affected_files(&context.touched_files, &self.project.source)?
             } else {
                 Vec::with_capacity(0)
             };
@@ -442,7 +439,13 @@ impl<'a> Runner<'a> {
 
         // Hash is the same as the previous build, so simply abort!
         // However, ensure the outputs also exist, otherwise we should hydrate.
-        if self.cache.hash == hash && self.has_outputs() {
+        let has_outputs = self
+            .task
+            .output_paths
+            .iter()
+            .all(|p| self.workspace.root.join(p).exists());
+
+        if self.cache.hash == hash && has_outputs {
             debug!(
                 target: LOG_TARGET,
                 "Cache hit for hash {}, reusing previous build",
@@ -501,11 +504,6 @@ impl<'a> Runner<'a> {
     /// Return true if this target is a no-op.
     pub fn is_no_op(&self) -> bool {
         self.task.is_no_op()
-    }
-
-    /// Verify that all task outputs exist for the current target.
-    pub fn has_outputs(&self) -> bool {
-        self.task.output_paths.iter().all(|p| p.exists())
     }
 
     /// Run the command as a child process and capture its output. If the process fails

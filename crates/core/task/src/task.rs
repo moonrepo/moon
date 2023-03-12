@@ -195,7 +195,6 @@ impl Task {
     pub fn get_affected_files(
         &self,
         touched_files: &TouchedFilePaths,
-        workspace_root: &Path,
         project_source: &str,
     ) -> Result<Vec<PathBuf>, TaskError> {
         let mut files = vec![];
@@ -207,9 +206,7 @@ impl Task {
                 continue;
             }
 
-            let abs_file = workspace_root.join(file);
-
-            if self.input_paths.contains(&abs_file) || globset.matches(file) {
+            if self.input_paths.contains(file) || globset.matches(file) {
                 // Mimic relative from ("./")
                 files.push(PathBuf::from(".").join(file.strip_prefix(project_source).unwrap()));
             }

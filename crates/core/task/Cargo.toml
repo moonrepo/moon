@@ -12,7 +12,7 @@ moon_utils = { path = "../utils" }
 common-path = "1.0.0"
 rustc-hash = { workspace = true }
 serde = { workspace = true }
-strum = { version = "0.24.1", features = ["derive"] }
+strum = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]

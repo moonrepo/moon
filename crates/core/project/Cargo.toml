@@ -13,7 +13,7 @@ moon_task = { path = "../task" }
 moon_utils = { path = "../utils" }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
-strum = { version = "0.24.1", features = ["derive"] }
+strum = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]

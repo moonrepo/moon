@@ -74,21 +74,23 @@ pub fn create_task(config: Option<TaskConfig>) -> Task {
 }
 
 pub fn expand_task(project: &Project, task: &mut Task) {
+    let project_source = PathBuf::from(&project.source);
+
     for input in &task.inputs {
         if glob::is_glob(input) {
             task.input_globs
-                .insert(glob::normalize(PathBuf::from(&project.source).join(input)).unwrap());
+                .insert(glob::normalize(project_source.join(input)).unwrap());
         } else {
-            task.input_paths.insert(project.root.join(input));
+            task.input_paths.insert(project_source.join(input));
         }
     }
 
     for output in &task.outputs {
         if glob::is_glob(output) {
             task.output_globs
-                .insert(glob::normalize(PathBuf::from(&project.source).join(output)).unwrap());
+                .insert(glob::normalize(project_source.join(output)).unwrap());
         } else {
-            task.output_paths.insert(project.root.join(output));
+            task.output_paths.insert(project_source.join(output));
         }
     }
 }
@@ -226,7 +228,10 @@ mod resolve_args {
                 .resolve(&string_vec!["@dirs(static)"], &task)
                 .unwrap(),
             (
-                vec![project.root.join("dir"), project.root.join("dir/subdir")],
+                vec![
+                    PathBuf::from(&project.source).join("dir"),
+                    PathBuf::from(&project.source).join("dir/subdir")
+                ],
                 vec![]
             )
         );
@@ -244,7 +249,10 @@ mod resolve_args {
                 .resolve(&string_vec!["@dirs(dirs_glob)"], &task)
                 .unwrap(),
             (
-                vec![project.root.join("dir"), project.root.join("dir/subdir")],
+                vec![
+                    PathBuf::from(&project.source).join("dir"),
+                    PathBuf::from(&project.source).join("dir/subdir")
+                ],
                 vec![]
             )
         );
@@ -266,9 +274,9 @@ mod resolve_args {
             files,
             (
                 vec![
-                    project.root.join("dir/other.tsx"),
-                    project.root.join("dir/subdir/another.ts"),
-                    project.root.join("file.ts"),
+                    PathBuf::from(&project.source).join("dir/other.tsx"),
+                    PathBuf::from(&project.source).join("dir/subdir/another.ts"),
+                    PathBuf::from(&project.source).join("file.ts"),
                 ],
                 vec![]
             )
@@ -291,9 +299,9 @@ mod resolve_args {
             files,
             (
                 vec![
-                    project.root.join("dir/other.tsx"),
-                    project.root.join("dir/subdir/another.ts"),
-                    project.root.join("file.ts"),
+                    PathBuf::from(&project.source).join("dir/other.tsx"),
+                    PathBuf::from(&project.source).join("dir/subdir/another.ts"),
+                    PathBuf::from(&project.source).join("file.ts"),
                 ],
                 vec![]
             )
@@ -314,8 +322,8 @@ mod resolve_args {
             (
                 vec![],
                 vec![
-                    project.root.join("**/*.{ts,tsx}"),
-                    project.root.join("*.js")
+                    PathBuf::from(&project.source).join("**/*.{ts,tsx}"),
+                    PathBuf::from(&project.source).join("*.js")
                 ]
             )
         );
@@ -335,7 +343,7 @@ mod resolve_args {
 
         assert_eq!(
             resolver.resolve(&string_vec!["@in(1)"], &task).unwrap(),
-            (vec![project.root.join("file.ts")], vec![])
+            (vec![PathBuf::from(&project.source).join("file.ts")], vec![])
         );
     }
 
@@ -353,7 +361,10 @@ mod resolve_args {
 
         assert_eq!(
             resolver.resolve(&string_vec!["@in(0)"], &task).unwrap(),
-            (vec![], vec![PathBuf::from(project.source).join("src/**/*")])
+            (
+                vec![],
+                vec![PathBuf::from(&project.source).join("src/**/*")]
+            )
         );
     }
 
@@ -374,7 +385,10 @@ mod resolve_args {
                 .resolve(&string_vec!["@out(0)", "@out(1)"], &task)
                 .unwrap(),
             (
-                vec![project.root.join("dir"), project.root.join("file.ts")],
+                vec![
+                    PathBuf::from(&project.source).join("dir"),
+                    PathBuf::from(&project.source).join("file.ts")
+                ],
                 vec![]
             )
         );
@@ -391,7 +405,7 @@ mod resolve_args {
             resolver
                 .resolve(&string_vec!["@root(static)"], &task)
                 .unwrap(),
-            (vec![project.root.join("dir")], vec![])
+            (vec![PathBuf::from(&project.source).join("dir")], vec![])
         );
     }
 
@@ -473,7 +487,10 @@ mod resolve_inputs {
                 .resolve(&string_vec!["@dirs(static)"], &task)
                 .unwrap(),
             (
-                vec![project.root.join("dir"), project.root.join("dir/subdir")],
+                vec![
+                    PathBuf::from(&project.source).join("dir"),
+                    PathBuf::from(&project.source).join("dir/subdir")
+                ],
                 vec![]
             )
         );
@@ -491,7 +508,10 @@ mod resolve_inputs {
                 .resolve(&string_vec!["@dirs(dirs_glob)"], &task)
                 .unwrap(),
             (
-                vec![project.root.join("dir"), project.root.join("dir/subdir")],
+                vec![
+                    PathBuf::from(&project.source).join("dir"),
+                    PathBuf::from(&project.source).join("dir/subdir")
+                ],
                 vec![]
             )
         );
@@ -513,9 +533,9 @@ mod resolve_inputs {
             files,
             (
                 vec![
-                    project.root.join("dir/other.tsx"),
-                    project.root.join("dir/subdir/another.ts"),
-                    project.root.join("file.ts"),
+                    PathBuf::from(&project.source).join("dir/other.tsx"),
+                    PathBuf::from(&project.source).join("dir/subdir/another.ts"),
+                    PathBuf::from(&project.source).join("file.ts"),
                 ],
                 vec![]
             )
@@ -538,9 +558,9 @@ mod resolve_inputs {
             files,
             (
                 vec![
-                    project.root.join("dir/other.tsx"),
-                    project.root.join("dir/subdir/another.ts"),
-                    project.root.join("file.ts"),
+                    PathBuf::from(&project.source).join("dir/other.tsx"),
+                    PathBuf::from(&project.source).join("dir/subdir/another.ts"),
+                    PathBuf::from(&project.source).join("file.ts"),
                 ],
                 vec![]
             )
@@ -561,8 +581,8 @@ mod resolve_inputs {
             (
                 vec![],
                 vec![
-                    project.root.join("**/*.{ts,tsx}"),
-                    project.root.join("*.js")
+                    PathBuf::from(&project.source).join("**/*.{ts,tsx}"),
+                    PathBuf::from(&project.source).join("*.js")
                 ]
             ),
         );
@@ -601,7 +621,7 @@ mod resolve_inputs {
             resolver
                 .resolve(&string_vec!["@root(static)"], &task)
                 .unwrap(),
-            (vec![project.root.join("dir")], vec![]),
+            (vec![PathBuf::from(&project.source).join("dir")], vec![]),
         );
     }
 
@@ -614,7 +634,10 @@ mod resolve_inputs {
 
         assert_eq!(
             resolver.resolve(&string_vec!["dir"], &task).unwrap(),
-            (vec![], vec![project.root.join("dir/**/*")]),
+            (
+                vec![],
+                vec![PathBuf::from(&project.source).join("dir/**/*")]
+            ),
         );
     }
 }
@@ -634,7 +657,10 @@ mod resolve_outputs {
                 .resolve(&string_vec!["@dirs(static)"], &task)
                 .unwrap(),
             (
-                vec![project.root.join("dir"), project.root.join("dir/subdir")],
+                vec![
+                    PathBuf::from(&project.source).join("dir"),
+                    PathBuf::from(&project.source).join("dir/subdir")
+                ],
                 vec![]
             )
         );
@@ -652,7 +678,10 @@ mod resolve_outputs {
                 .resolve(&string_vec!["@dirs(dirs_glob)"], &task)
                 .unwrap(),
             (
-                vec![project.root.join("dir"), project.root.join("dir/subdir")],
+                vec![
+                    PathBuf::from(&project.source).join("dir"),
+                    PathBuf::from(&project.source).join("dir/subdir")
+                ],
                 vec![]
             )
         );
@@ -674,9 +703,9 @@ mod resolve_outputs {
             files,
             (
                 vec![
-                    project.root.join("dir/other.tsx"),
-                    project.root.join("dir/subdir/another.ts"),
-                    project.root.join("file.ts"),
+                    PathBuf::from(&project.source).join("dir/other.tsx"),
+                    PathBuf::from(&project.source).join("dir/subdir/another.ts"),
+                    PathBuf::from(&project.source).join("file.ts"),
                 ],
                 vec![]
             )
@@ -699,9 +728,9 @@ mod resolve_outputs {
             files,
             (
                 vec![
-                    project.root.join("dir/other.tsx"),
-                    project.root.join("dir/subdir/another.ts"),
-                    project.root.join("file.ts"),
+                    PathBuf::from(&project.source).join("dir/other.tsx"),
+                    PathBuf::from(&project.source).join("dir/subdir/another.ts"),
+                    PathBuf::from(&project.source).join("file.ts"),
                 ],
                 vec![]
             )
@@ -722,8 +751,8 @@ mod resolve_outputs {
             (
                 vec![],
                 vec![
-                    project.root.join("**/*.{ts,tsx}"),
-                    project.root.join("*.js")
+                    PathBuf::from(&project.source).join("**/*.{ts,tsx}"),
+                    PathBuf::from(&project.source).join("*.js")
                 ]
             ),
         );
@@ -762,7 +791,7 @@ mod resolve_outputs {
             resolver
                 .resolve(&string_vec!["@root(static)"], &task)
                 .unwrap(),
-            (vec![project.root.join("dir")], vec![]),
+            (vec![PathBuf::from(&project.source).join("dir")], vec![]),
         );
     }
 

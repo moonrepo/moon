@@ -47,7 +47,7 @@ pub struct Task {
     // Relative from workspace root
     pub input_globs: FxHashSet<FileGlob>,
 
-    // Absolute paths
+    // Relative from workspace root
     pub input_paths: FxHashSet<PathBuf>,
 
     pub input_vars: FxHashSet<String>,
@@ -62,7 +62,7 @@ pub struct Task {
     // Relative from workspace root
     pub output_globs: FxHashSet<FileGlob>,
 
-    // Absolute paths
+    // Relative from workspace root
     pub output_paths: FxHashSet<PathBuf>,
 
     pub platform: PlatformType,

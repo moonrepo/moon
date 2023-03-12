@@ -23,6 +23,31 @@ where
     }
 }
 
+/// If a file starts with "/", expand from the workspace root, otherwise the project root.
+#[inline]
+pub fn expand_root_path_new<F, P>(file: F, workspace_root: P, project_root: P) -> PathBuf
+where
+    F: AsRef<str>,
+    P: AsRef<Path>,
+{
+    let file = file.as_ref();
+    let workspace_root = workspace_root.as_ref();
+    let project_root = project_root.as_ref();
+    let project_source = project_root.strip_prefix(&workspace_root).unwrap();
+
+    if let Some(ws_rel_file) = file.strip_prefix('/') {
+        return PathBuf::from(normalize_separators(ws_rel_file));
+    }
+
+    if let Some(negative_glob) = file.strip_prefix('!') {
+        return PathBuf::from("!")
+            .join(project_source)
+            .join(normalize_separators(negative_glob));
+    }
+
+    project_source.join(normalize_separators(file))
+}
+
 #[inline]
 pub fn normalize<T: AsRef<Path>>(path: T) -> PathBuf {
     path.as_ref().clean()

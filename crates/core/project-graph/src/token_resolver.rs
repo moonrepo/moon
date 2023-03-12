@@ -309,7 +309,7 @@ impl<'task> TokenResolver<'task> {
                 globs.extend(all_globs);
             }
             TokenType::Root(token, group) => {
-                paths.push(get_file_group(&token, &group)?.root(project_root)?);
+                paths.push(get_file_group(&token, &group)?.root(workspace_root, project_root)?);
             }
             _ => {}
         }

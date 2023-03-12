@@ -14,8 +14,8 @@ use std::io;
 use std::io::prelude::*;
 
 pub async fn hash(hash: &str, json: bool) -> Result<(), AnyError> {
-    let mut workspace = load_workspace().await?;
-    let result = query_hash(&mut workspace, hash).await?;
+    let workspace = load_workspace().await?;
+    let result = query_hash(&workspace, hash).await?;
 
     if !json {
         println!("Hash: {}\n", color::id(result.0));

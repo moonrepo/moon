@@ -29,8 +29,8 @@ pub async fn query_hash_diff(
 ) -> Result<QueryHashDiffResult, AnyError> {
     debug!(target: LOG_TARGET, "Diffing hashes");
 
-    let (left_hash, left) = query_hash(&workspace, &options.left).await?;
-    let (right_hash, right) = query_hash(&workspace, &options.right).await?;
+    let (left_hash, left) = query_hash(workspace, &options.left).await?;
+    let (right_hash, right) = query_hash(workspace, &options.right).await?;
 
     Ok(QueryHashDiffResult {
         left,

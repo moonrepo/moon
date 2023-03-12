@@ -30,6 +30,76 @@ fn touch_file(sandbox: &Sandbox) {
     }
 }
 
+mod hash {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn errors_if_hash_doesnt_exist() {
+        let sandbox = create_sandbox_with_config("base", None, None, None);
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("query").arg("hash").arg("a");
+        });
+
+        let output = assert.output();
+
+        assert!(predicate::str::contains("Unable to find a hash manifest for a!").eval(&output));
+    }
+
+    #[test]
+    fn prints_the_manifest() {
+        let sandbox = create_sandbox_with_config("base", None, None, None);
+
+        fs::create_dir_all(sandbox.path().join(".moon/cache/hashes")).unwrap();
+
+        fs::write(
+            sandbox.path().join(".moon/cache/hashes/a.json"),
+            r#"{
+    "command": "base",
+    "args": [
+        "a",
+        "b",
+        "c"
+    ]
+}"#,
+        )
+        .unwrap();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("query").arg("hash").arg("a");
+        });
+
+        assert_snapshot!(assert.output());
+    }
+
+    #[test]
+    fn prints_the_manifest_in_json() {
+        let sandbox = create_sandbox_with_config("base", None, None, None);
+
+        fs::create_dir_all(sandbox.path().join(".moon/cache/hashes")).unwrap();
+
+        fs::write(
+            sandbox.path().join(".moon/cache/hashes/a.json"),
+            r#"{
+    "command": "base",
+    "args": [
+        "a",
+        "b",
+        "c"
+    ]
+}"#,
+        )
+        .unwrap();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("query").arg("hash").arg("a").arg("--json");
+        });
+
+        assert_snapshot!(assert.output());
+    }
+}
+
 mod hash_diff {
     use super::*;
     use std::fs;

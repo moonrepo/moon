@@ -1,0 +1,37 @@
+---
+title: query hash
+sidebar_label: hash
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel header version="0.26" />
+
+Use the `moon query hash` sub-command to inspect the contents and sources of a generated hash, also
+known as the hash manifest. This is extremely useful in debugging task inputs.
+
+```shell
+$ moon query hash 0b55b234f1018581c45b00241d7340dc648c63e639fbafdaf85a4cd7e718fdde
+
+# Query hash using short form
+$ moon query hash 0b55b234
+```
+
+By default, this will output the contents of the hash manifest (which is JSON), and the fully
+qualified resolved hash.
+
+```json
+Hash: 0b55b234f1018581c45b00241d7340dc648c63e639fbafdaf85a4cd7e718fdde
+
+{
+  "command": "build",
+  "args": ["./build"]
+  // ...
+}
+```
+
+The command can also be output raw JSON by passing the `--json` flag.
+
+### Options
+
+- `--json` - Display the diff in JSON format.

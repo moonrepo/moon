@@ -1,4 +1,5 @@
 use crate::helpers::AnyError;
+pub use crate::queries::hash::query_hash;
 pub use crate::queries::hash_diff::{query_hash_diff, QueryHashDiffOptions};
 pub use crate::queries::projects::{
     query_projects, QueryProjectsOptions, QueryProjectsResult, QueryTasksResult,
@@ -11,6 +12,19 @@ use moon_logger::color;
 use rustc_hash::FxHashMap;
 use std::io;
 use std::io::prelude::*;
+
+pub async fn hash(hash: &str, json: bool) -> Result<(), AnyError> {
+    let workspace = load_workspace().await?;
+    let result = query_hash(&workspace, hash).await?;
+
+    if !json {
+        println!("Hash: {}\n", color::id(result.0));
+    }
+
+    println!("{}", result.1);
+
+    Ok(())
+}
 
 pub async fn hash_diff(options: &QueryHashDiffOptions) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;

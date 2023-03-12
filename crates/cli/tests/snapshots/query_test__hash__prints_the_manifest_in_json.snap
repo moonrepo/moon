@@ -1,0 +1,14 @@
+---
+source: crates/cli/tests/query_test.rs
+expression: assert.output()
+---
+{
+    "command": "base",
+    "args": [
+        "a",
+        "b",
+        "c"
+    ]
+}
+
+

@@ -86,13 +86,34 @@ than before, and you should see improved Docker layer caching!
 +RUN moon docker setup
 ```
 
-## New `moon query hash-diff` command
+## New `moon query hash` command
 
 When moon runs a task, we generate a unique hash representing the state of that run. When something
 goes wrong however, and the hash is different than what you expect, debugging why is rather
 non-trivial and requires a lot of internal knowledge. We're looking to reduce this burden, by
-introducing the new [`moon query hash-diff`](/docs/commands/query/hash-diff) command, which requires
-2 hashes to compare with.
+introducing the new [`moon query hash`](/docs/commands/query/hash) command.
+
+```shell
+$ moon query hash 0b55b234
+```
+
+This command will print the contents of the hash manifest, which is all inputs and sources used to
+generate the unique hash. From here you can use this output to investigate what's actually
+happening.
+
+```json
+{
+  "command": "build",
+  "args": ["./build"]
+  // ...
+}
+```
+
+## New `moon query hash-diff` command
+
+Expanding on the new command above, we're also introducing the
+[`moon query hash-diff`](/docs/commands/query/hash-diff) command, which can be used to compute the
+difference between 2 hashes. Perfect in understanding what has changed between ran tasks.
 
 ```shell
 $ moon query hash-diff 0b55b234 2388552f
@@ -126,3 +147,5 @@ full list of changes.
 Expect the following in the v1 release!
 
 - Officially release a v1!
+- Project tagging and constraints.
+- Deno tier 3 support.

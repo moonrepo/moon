@@ -191,6 +191,7 @@ pub async fn run_cli() {
         Commands::ProjectGraph { id, dot, json } => project_graph(id, dot, json).await,
         Commands::Sync => sync().await,
         Commands::Query { command } => match command {
+            QueryCommands::Hash { hash, json } => query::hash(&hash, json).await,
             QueryCommands::HashDiff { left, right, json } => {
                 query::hash_diff(&QueryHashDiffOptions { json, left, right }).await
             }

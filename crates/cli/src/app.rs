@@ -79,6 +79,19 @@ pub enum NodeCommands {
 #[derive(Debug, Subcommand)]
 pub enum QueryCommands {
     #[command(
+        name = "hash",
+        about = "Inspect the contents of a generated hash.",
+        long_about = "Inspect the contents of a generated hash, and display all sources and inputs that were used to generate it."
+    )]
+    Hash {
+        #[arg(required = true, help = "Hash to inspect")]
+        hash: String,
+
+        #[arg(long, help = "Print the manifest in JSON format")]
+        json: bool,
+    },
+
+    #[command(
         name = "hash-diff",
         about = "Query the difference between two hashes.",
         long_about = "Query the difference between two hashes. The left differences will be printed in green, while the right in red, and equal lines in white."
@@ -520,7 +533,7 @@ pub enum Commands {
     #[command(
         name = "query",
         about = "Query information about moon, the environment, and pipeline.",
-        long_about = "Query information about moon, the environment, and pipeline. Each operation will output JSON so that it may be consumed easily."
+        long_about = "Query information about moon, the environment, and pipeline. Each operation can output JSON so that it may be consumed easily."
     )]
     Query {
         #[command(subcommand)]

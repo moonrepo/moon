@@ -132,7 +132,10 @@ fn doesnt_match_when_not_alone() {
         resolver
             .resolve(&string_vec!["foo/@dirs(static)/bar"], &task)
             .unwrap(),
-        (vec![project.root.join("foo/@dirs(static)/bar")], vec![])
+        (
+            vec![PathBuf::from(project.source).join("foo/@dirs(static)/bar")],
+            vec![]
+        )
     );
 }
 

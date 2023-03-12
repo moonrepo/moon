@@ -78,7 +78,7 @@ impl<'a> Runner<'a> {
         // We don't check globs here as it would required walking the file system
         if !self.task.outputs.is_empty() {
             for output in &self.task.output_paths {
-                if !self.workspace.root.join(&output).exists() {
+                if !self.workspace.root.join(output).exists() {
                     return Err(RunnerError::Task(TaskError::MissingOutput(
                         self.task.target.id.clone(),
                         path::to_string(output.strip_prefix(&self.project.source).unwrap())?,

@@ -581,30 +581,37 @@ mod task_expansion {
 
             assert_eq!(
                 *project.get_task("argsFileGroupsWorkspace").unwrap().args,
-                vec![
-                    "--dirs",
-                    project.root.join("dir").to_str().unwrap(),
-                    project.root.join("dir").join("subdir").to_str().unwrap(),
-                    "--files",
-                    project.root.join("file.ts").to_str().unwrap(),
-                    project.root.join("dir").join("other.tsx").to_str().unwrap(),
-                    project
-                        .root
-                        .join("dir")
-                        .join("subdir")
-                        .join("another.ts")
-                        .to_str()
-                        .unwrap(),
-                    "--globs",
-                    glob::remove_drive_prefix(
-                        glob::normalize(project.root.join("**/*.{ts,tsx}")).unwrap()
-                    )
-                    .as_str(),
-                    glob::remove_drive_prefix(glob::normalize(project.root.join("*.js")).unwrap())
-                        .as_str(),
-                    "--root",
-                    project.root.join("dir").to_str().unwrap(),
-                ],
+                if cfg!(windows) {
+                    vec![
+                        "--dirs",
+                        ".\\tokens\\dir",
+                        ".\\tokens\\dir\\subdir",
+                        "--files",
+                        ".\\tokens\\file.ts",
+                        ".\\tokens\\dir\\other.tsx",
+                        ".\\tokens\\dir\\subdir\\another.ts",
+                        "--globs",
+                        "./tokens/**/*.{ts,tsx}",
+                        "./tokens/*.js",
+                        "--root",
+                        ".\\tokens\\dir",
+                    ]
+                } else {
+                    vec![
+                        "--dirs",
+                        "./tokens/dir",
+                        "./tokens/dir/subdir",
+                        "--files",
+                        "./tokens/file.ts",
+                        "./tokens/dir/other.tsx",
+                        "./tokens/dir/subdir/another.ts",
+                        "--globs",
+                        "./tokens/**/*.{ts,tsx}",
+                        "./tokens/*.js",
+                        "--root",
+                        "./tokens/dir",
+                    ]
+                },
             );
         }
 
@@ -868,7 +875,9 @@ mod task_expansion {
             );
 
             assert!(task.inputs.contains(&".env".to_owned()));
-            assert!(task.input_paths.contains(&project.root.join(".env")));
+            assert!(task
+                .input_paths
+                .contains(&PathBuf::from(&project.source).join(".env")));
         }
 
         #[tokio::test]
@@ -889,7 +898,7 @@ mod task_expansion {
             assert!(task.inputs.contains(&".env.production".to_owned()));
             assert!(task
                 .input_paths
-                .contains(&project.root.join(".env.production")));
+                .contains(&PathBuf::from(&project.source).join(".env.production")));
         }
 
         #[tokio::test]
@@ -1034,17 +1043,18 @@ mod task_expansion {
 
         #[tokio::test]
         async fn resolves_file_group_tokens() {
-            let (sandbox, project_graph) = tasks_sandbox().await;
+            let (_, project_graph) = tasks_sandbox().await;
 
             let project = project_graph.get("tokens").unwrap();
+            let project_source = PathBuf::from(&project.source);
             let task = project.get_task("inputsFileGroups").unwrap();
 
             assert_eq!(
                 task.input_globs,
                 FxHashSet::from_iter([
                     glob::normalize(".moon/*.yml").unwrap(),
-                    glob::normalize(PathBuf::from(&project.source).join("**/*.{ts,tsx}")).unwrap(),
-                    glob::normalize(PathBuf::from(&project.source).join("*.js")).unwrap()
+                    glob::normalize(project_source.join("**/*.{ts,tsx}")).unwrap(),
+                    glob::normalize(project_source.join("*.js")).unwrap()
                 ]),
             );
 
@@ -1052,13 +1062,13 @@ mod task_expansion {
                 FxHashSet::from_iter(task.input_paths.iter().map(PathBuf::from));
             let b: FxHashSet<PathBuf> = FxHashSet::from_iter(
                 vec![
-                    sandbox.path().join("package.json"),
-                    project.root.join("file.ts"),
-                    project.root.join("dir"),
-                    project.root.join("dir/subdir"),
-                    project.root.join("file.ts"),
-                    project.root.join("dir/other.tsx"),
-                    project.root.join("dir/subdir/another.ts"),
+                    PathBuf::from("package.json"),
+                    project_source.join("file.ts"),
+                    project_source.join("dir"),
+                    project_source.join("dir/subdir"),
+                    project_source.join("file.ts"),
+                    project_source.join("dir/other.tsx"),
+                    project_source.join("dir/subdir/another.ts"),
                 ]
                 .iter()
                 .map(PathBuf::from),
@@ -1080,16 +1090,16 @@ mod task_expansion {
 
             assert!(task
                 .input_paths
-                .contains(&project.root.join("dir/javascript/file")));
+                .contains(&PathBuf::from(&project.source).join("dir/javascript/file")));
 
             assert!(task
                 .input_paths
-                .contains(&project.root.join("file.unknown")));
+                .contains(&PathBuf::from(&project.source).join("file.unknown")));
         }
 
         #[tokio::test]
         async fn expands_into_correct_containers() {
-            let (sandbox, project_graph) = tasks_sandbox().await;
+            let (_, project_graph) = tasks_sandbox().await;
 
             let project = project_graph.get("tokens").unwrap();
             let task = project.get_task("inputs").unwrap();
@@ -1101,8 +1111,10 @@ mod task_expansion {
                 .input_globs
                 .contains(&glob::normalize("glob.*").unwrap()));
 
-            assert!(task.input_paths.contains(&project.root.join("path.ts")));
-            assert!(task.input_paths.contains(&sandbox.path().join("path/dir")));
+            assert!(task
+                .input_paths
+                .contains(&PathBuf::from(&project.source).join("path.ts")));
+            assert!(task.input_paths.contains(&PathBuf::from("path/dir")));
 
             assert!(task.input_vars.contains("VAR"));
             assert!(task.input_vars.contains("FOO_BAR"));
@@ -1134,7 +1146,7 @@ mod task_expansion {
 
         #[tokio::test]
         async fn resolves_file_group_tokens() {
-            let (sandbox, project_graph) = tasks_sandbox().await;
+            let (_, project_graph) = tasks_sandbox().await;
 
             let project = project_graph.get("tokens").unwrap();
             let task = project.get_task("outputsFileGroups").unwrap();

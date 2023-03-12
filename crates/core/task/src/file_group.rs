@@ -111,7 +111,7 @@ impl FileGroup {
         project_root: &Path,
     ) -> Result<PathBuf, FileGroupError> {
         let dirs = self.dirs(workspace_root, project_root)?;
-        let project_source = project_root.strip_prefix(&workspace_root).unwrap();
+        let project_source = project_root.strip_prefix(workspace_root).unwrap();
 
         if !dirs.is_empty() {
             let paths: Vec<&Path> = dirs

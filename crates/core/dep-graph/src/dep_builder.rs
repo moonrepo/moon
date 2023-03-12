@@ -11,7 +11,6 @@ use petgraph::graph::NodeIndex;
 use petgraph::Graph;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::mem;
-use std::path::Path;
 
 const LOG_TARGET: &str = "moon:dep-graph";
 
@@ -26,15 +25,10 @@ pub struct DepGraphBuilder<'ws> {
     platforms: &'ws PlatformManager,
     project_graph: &'ws ProjectGraph,
     runtimes: FxHashMap<String, RuntimePair>,
-    workspace_root: &'ws Path,
 }
 
 impl<'ws> DepGraphBuilder<'ws> {
-    pub fn new(
-        workspace_root: &'ws Path,
-        platforms: &'ws PlatformManager,
-        project_graph: &'ws ProjectGraph,
-    ) -> Self {
+    pub fn new(platforms: &'ws PlatformManager, project_graph: &'ws ProjectGraph) -> Self {
         debug!(target: LOG_TARGET, "Creating dependency graph",);
 
         DepGraphBuilder {
@@ -43,7 +37,6 @@ impl<'ws> DepGraphBuilder<'ws> {
             platforms,
             project_graph,
             runtimes: FxHashMap::default(),
-            workspace_root,
         }
     }
 
@@ -126,7 +119,7 @@ impl<'ws> DepGraphBuilder<'ws> {
         trace!(
             target: LOG_TARGET,
             "Adding {} to graph",
-            color::muted(node.label())
+            color::muted_light(node.label())
         );
 
         // Before we install deps, we must ensure the language has been installed
@@ -148,7 +141,7 @@ impl<'ws> DepGraphBuilder<'ws> {
         trace!(
             target: LOG_TARGET,
             "Adding {} to graph",
-            color::muted(node.label())
+            color::muted_light(node.label())
         );
 
         // Before we install deps, we must ensure the language has been installed
@@ -254,7 +247,7 @@ impl<'ws> DepGraphBuilder<'ws> {
 
         // Compare against touched files if provided
         if let Some(touched) = touched_files {
-            if !task.is_affected(touched, self.workspace_root)? {
+            if !task.is_affected(touched)? {
                 trace!(
                     target: LOG_TARGET,
                     "Target {} not affected based on touched files, skipping",
@@ -268,7 +261,7 @@ impl<'ws> DepGraphBuilder<'ws> {
         trace!(
             target: LOG_TARGET,
             "Adding {} to graph",
-            color::muted(node.label())
+            color::muted_light(node.label())
         );
 
         // We should install deps & sync projects *before* running targets
@@ -357,7 +350,7 @@ impl<'ws> DepGraphBuilder<'ws> {
         trace!(
             target: LOG_TARGET,
             "Adding {} to graph",
-            color::muted(node.label())
+            color::muted_light(node.label())
         );
 
         self.insert_node(&node)
@@ -374,7 +367,7 @@ impl<'ws> DepGraphBuilder<'ws> {
         trace!(
             target: LOG_TARGET,
             "Adding {} to graph",
-            color::muted(node.label())
+            color::muted_light(node.label())
         );
 
         // Syncing depends on the language's tool to be installed

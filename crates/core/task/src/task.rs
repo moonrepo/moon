@@ -10,7 +10,7 @@ use moon_utils::glob;
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
 use std::env;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use strum::Display;
 
 type EnvVars = FxHashMap<String, String>;
@@ -217,11 +217,7 @@ impl Task {
 
     /// Return true if this task is affected based on touched files.
     /// Will attempt to find any file that matches our list of inputs.
-    pub fn is_affected(
-        &self,
-        touched_files: &TouchedFilePaths,
-        workspace_root: &Path,
-    ) -> Result<bool, TaskError> {
+    pub fn is_affected(&self, touched_files: &TouchedFilePaths) -> Result<bool, TaskError> {
         for var_name in &self.input_vars {
             if let Ok(var) = env::var(var_name) {
                 if !var.is_empty() {
@@ -239,13 +235,11 @@ impl Task {
         let globset = self.create_globset()?;
 
         for file in touched_files {
-            let abs_file = workspace_root.join(file);
-
-            if self.input_paths.contains(&abs_file) {
+            if self.input_paths.contains(file) {
                 trace!(
                     target: self.get_log_target(),
                     "Affected by {} (via input files)",
-                    color::path(&abs_file),
+                    color::path(file),
                 );
 
                 return Ok(true);
@@ -255,7 +249,7 @@ impl Task {
                 trace!(
                     target: self.get_log_target(),
                     "Affected by {} (via input globs)",
-                    color::path(&abs_file),
+                    color::path(file),
                 );
 
                 return Ok(true);

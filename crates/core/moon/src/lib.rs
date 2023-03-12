@@ -76,7 +76,7 @@ pub fn build_dep_graph<'g>(
     workspace: &'g Workspace,
     project_graph: &'g ProjectGraph,
 ) -> DepGraphBuilder<'g> {
-    DepGraphBuilder::new(&workspace.root, &workspace.platforms, project_graph)
+    DepGraphBuilder::new(&workspace.platforms, project_graph)
 }
 
 pub async fn build_project_graph(

@@ -340,9 +340,7 @@ mod is_affected {
 
         env::set_var("FOO", "foo");
 
-        assert!(task
-            .is_affected(&FxHashSet::default(), &PathBuf::new())
-            .unwrap());
+        assert!(task.is_affected(&FxHashSet::default()).unwrap());
 
         env::remove_var("FOO");
     }
@@ -356,9 +354,7 @@ mod is_affected {
 
         task.input_vars.insert("BAR".into());
 
-        assert!(!task
-            .is_affected(&FxHashSet::default(), &PathBuf::new())
-            .unwrap());
+        assert!(!task.is_affected(&FxHashSet::default()).unwrap());
     }
 
     #[test]
@@ -372,34 +368,29 @@ mod is_affected {
 
         env::set_var("BAZ", "");
 
-        assert!(!task
-            .is_affected(&FxHashSet::default(), &PathBuf::new())
-            .unwrap());
+        assert!(!task.is_affected(&FxHashSet::default()).unwrap());
 
         env::remove_var("BAZ");
     }
 
     #[test]
     fn returns_true_if_matches_file() {
-        let workspace_root = get_fixtures_path("base");
-        let project_root = workspace_root.join("files-and-dirs");
         let project_source = PathBuf::from("files-and-dirs");
         let mut task = create_task(TaskConfig {
             inputs: Some(string_vec!["file.ts"]),
             ..TaskConfig::default()
         });
 
-        task.input_paths.insert(project_root.join("file.ts"));
+        task.input_paths.insert(project_source.join("file.ts"));
 
         let mut set = FxHashSet::default();
         set.insert(project_source.join("file.ts"));
 
-        assert!(task.is_affected(&set, &workspace_root).unwrap());
+        assert!(task.is_affected(&set).unwrap());
     }
 
     #[test]
     fn returns_true_if_matches_glob() {
-        let workspace_root = get_fixtures_path("base");
         let project_source = PathBuf::from("files-and-dirs");
         let mut task = create_task(TaskConfig {
             inputs: Some(string_vec!["file.*"]),
@@ -411,23 +402,22 @@ mod is_affected {
         let mut set = FxHashSet::default();
         set.insert(project_source.join("file.ts"));
 
-        assert!(task.is_affected(&set, &workspace_root).unwrap());
+        assert!(task.is_affected(&set).unwrap());
     }
 
     #[test]
     fn returns_true_when_referencing_root_files() {
-        let workspace_root = get_fixtures_path("base");
         let mut task = create_task(TaskConfig {
             inputs: Some(string_vec!["/package.json"]),
             ..TaskConfig::default()
         });
 
-        task.input_paths.insert(workspace_root.join("package.json"));
+        task.input_paths.insert(PathBuf::from("package.json"));
 
         let mut set = FxHashSet::default();
         set.insert(PathBuf::from("package.json"));
 
-        assert!(task.is_affected(&set, &workspace_root).unwrap());
+        assert!(task.is_affected(&set).unwrap());
     }
 
     #[test]
@@ -444,7 +434,7 @@ mod is_affected {
         let mut set = FxHashSet::default();
         set.insert(PathBuf::from("base/other/outside.ts"));
 
-        assert!(!task.is_affected(&set, &workspace_root).unwrap());
+        assert!(!task.is_affected(&set).unwrap());
     }
 
     #[test]
@@ -463,7 +453,7 @@ mod is_affected {
         let mut set = FxHashSet::default();
         set.insert(project_source.join("another.rs"));
 
-        assert!(!task.is_affected(&set, &workspace_root).unwrap());
+        assert!(!task.is_affected(&set).unwrap());
     }
 
     #[test]
@@ -471,7 +461,6 @@ mod is_affected {
         let sandbox = create_sandbox("base");
         sandbox.create_file("files-and-dirs/.env", "");
 
-        let project_root = sandbox.path().join("files-and-dirs");
         let project_source = PathBuf::from("files-and-dirs");
         let mut task = create_task(TaskConfig {
             options: TaskOptionsConfig {
@@ -481,11 +470,11 @@ mod is_affected {
             ..TaskConfig::default()
         });
 
-        task.input_paths.insert(project_root.join(".env"));
+        task.input_paths.insert(project_source.join(".env"));
 
         let mut set = FxHashSet::default();
         set.insert(project_source.join(".env"));
 
-        assert!(task.is_affected(&set, sandbox.path()).unwrap());
+        assert!(task.is_affected(&set).unwrap());
     }
 }

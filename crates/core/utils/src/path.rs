@@ -33,11 +33,12 @@ where
     let file = file.as_ref();
     let workspace_root = workspace_root.as_ref();
     let project_root = project_root.as_ref();
-    let project_source = project_root.strip_prefix(&workspace_root).unwrap();
 
     if let Some(ws_rel_file) = file.strip_prefix('/') {
         return PathBuf::from(normalize_separators(ws_rel_file));
     }
+
+    let project_source = project_root.strip_prefix(workspace_root).unwrap();
 
     if let Some(negative_glob) = file.strip_prefix('!') {
         return PathBuf::from("!")

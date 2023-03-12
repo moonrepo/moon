@@ -191,21 +191,20 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         // When running from the workspace:
         //  - All paths are absolute
         let handle_path = |path: PathBuf, is_glob: bool| -> Result<String, ProjectGraphError> {
-            let abs_path = self.workspace.root.join(&path);
+            let arg = if !task.options.run_from_workspace_root && path.starts_with(&project.source)
+            {
+                path::to_string(
+                    path::relative_from(self.workspace.root.join(&path), &project.root).unwrap(),
+                )?
+            } else {
+                path::to_string(path)?
+            };
 
-            let arg =
-                if !task.options.run_from_workspace_root && abs_path.starts_with(&project.root) {
-                    let rel_path =
-                        path::to_string(path::relative_from(&abs_path, &project.root).unwrap())?;
-
-                    if rel_path.starts_with("..") {
-                        rel_path
-                    } else {
-                        format!(".{}{}", std::path::MAIN_SEPARATOR, rel_path)
-                    }
-                } else {
-                    path::to_string(abs_path)?
-                };
+            let arg = if arg.starts_with("..") {
+                arg
+            } else {
+                format!(".{}{}", std::path::MAIN_SEPARATOR, arg)
+            };
 
             // Annoying, but we need to force forward slashes,
             // and remove drive/UNC prefixes...

@@ -45,7 +45,7 @@ impl FileGroup {
         let mut globs = vec![];
 
         for file in &self.files {
-            let result = path::expand_root_path_new(file, workspace_root, project_root);
+            let result = path::expand_to_workspace_relative(file, workspace_root, project_root);
 
             if glob::is_glob(file) {
                 globs.push(result);
@@ -88,7 +88,7 @@ impl FileGroup {
 
         for file in &self.files {
             if glob::is_glob(file) {
-                globs.push(path::expand_root_path_new(
+                globs.push(path::expand_to_workspace_relative(
                     file,
                     workspace_root,
                     project_root,
@@ -147,7 +147,7 @@ impl FileGroup {
                     project_globs.push(file);
                 };
             } else {
-                let path = path::expand_root_path_new(file, workspace_root, project_root);
+                let path = path::expand_to_workspace_relative(file, workspace_root, project_root);
 
                 // Path is relative from workspace root!
                 let allowed = if is_dir {

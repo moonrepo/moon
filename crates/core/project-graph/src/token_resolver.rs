@@ -158,7 +158,7 @@ impl<'task> TokenResolver<'task> {
                 }
 
                 let mut is_glob = glob::is_glob(value);
-                let mut resolved = path::expand_root_path_new(
+                let mut resolved = path::expand_to_workspace_relative(
                     if has_var {
                         self.resolve_vars(value, task)?
                     } else {
@@ -345,7 +345,7 @@ impl<'task> TokenResolver<'task> {
                     }
                 };
             } else {
-                match task.input_paths.get(&path::expand_root_path_new(
+                match task.input_paths.get(&path::expand_to_workspace_relative(
                     input,
                     self.workspace_root,
                     &self.project.root,
@@ -393,7 +393,7 @@ impl<'task> TokenResolver<'task> {
                     }
                 };
             } else {
-                match task.output_paths.get(&path::expand_root_path_new(
+                match task.output_paths.get(&path::expand_to_workspace_relative(
                     output,
                     self.workspace_root,
                     &self.project.root,

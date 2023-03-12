@@ -112,6 +112,7 @@ const sidebars = {
 					type: 'category',
 					label: 'query',
 					items: [
+						'commands/query/hash',
 						'commands/query/hash-diff',
 						'commands/query/projects',
 						'commands/query/tasks',

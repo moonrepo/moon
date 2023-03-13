@@ -29,6 +29,7 @@
 #### ⚙️ Internal
 
 - Updated terminal checkpoint colors for tools to pink (to match proto).
+- Migrated to rustls from openssl. Please report any TLS/SSL issues.
 
 ## 0.25.4
 

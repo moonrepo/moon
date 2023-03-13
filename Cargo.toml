@@ -29,7 +29,6 @@ lazy_static = "1.4.0"
 petgraph = { version = "0.6.3", default-features = false, features = ["serde-1"] }
 proto_cli = "0.2.1"
 regex = "1.7.1"
-# We don't use openssl but its required for musl builds
 reqwest = { version = "0.11.14", default-features = false, features = ["rustls-tls"] }
 rustc-hash = "1.1.0"
 serde = { version = "1.0.155", features = ["derive"] }

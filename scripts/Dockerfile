@@ -92,7 +92,7 @@ RUN echo "Building OpenSSL" && \
   wget https://github.com/openssl/openssl/releases/download/OpenSSL_1_1_1t/openssl-1.1.1t.tar.gz && \
   tar zxvf openssl-1.1.1t.tar.gz && \
   cd openssl-1.1.1t/ && \
-  CC="musl-gcc -fPIE -pie" ./Configure no-shared no-async --prefix=/musl --openssldir=/musl/ssl linux-aarch64 && \
+  ./Configure no-shared no-async --prefix=/musl --openssldir=/musl/ssl linux-aarch64 && \
   make depend && \
   make -j$(nproc) && \
   make install

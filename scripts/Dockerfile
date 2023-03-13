@@ -40,6 +40,8 @@ COPY --from=build-gnu /out/target/ /target/
 # musl (amd64)
 
 FROM messense/rust-musl-cross:x86_64-musl AS base-musl-amd64
+RUN apt-get update
+RUN apt install --no-install-recommends -y libssl-dev pkg-config
 RUN cargo install cargo-chef --version ^0.1
 WORKDIR /app
 COPY rust-toolchain.toml .
@@ -62,6 +64,8 @@ RUN mkdir -p /out && cp --parents target/*/release/moon /out/
 # musl (arm64)
 
 FROM messense/rust-musl-cross:aarch64-musl AS base-musl-arm64
+RUN apt-get update
+RUN apt install --no-install-recommends -y libssl-dev pkg-config
 RUN cargo install cargo-chef --version ^0.1
 WORKDIR /app
 COPY rust-toolchain.toml .

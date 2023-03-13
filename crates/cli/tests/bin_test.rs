@@ -60,7 +60,7 @@ fn not_configured() {
     let assert = sandbox.run_moon(|cmd| {
         cmd.arg("bin")
             .arg("yarn")
-            .env("MOON_NODE_VERSION", "17.1.0");
+            .env("MOON_NODE_VERSION", "17.2.0");
     });
 
     assert.failure().code(1).stdout("");
@@ -73,7 +73,7 @@ fn not_configured() {
 //     let assert = create_moon_command(fixture.path())
 //         .arg("bin")
 //         .arg("node")
-//         .env("MOON_NODE_VERSION", "17.1.0")
+//         .env("MOON_NODE_VERSION", "17.2.0")
 //         .assert();
 
 //     assert.failure().code(2).stdout("");

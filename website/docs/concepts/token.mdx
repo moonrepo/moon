@@ -29,9 +29,6 @@ These functions reference file groups by name, where the name is passed as the a
 The `@group(file_group)` token is a standard token that will be replaced with the file group items
 as-is, for both file paths and globs. This token merely exists for reusability purposes.
 
-When used in [`args`](../config/project#args), it will return relative or absolute paths, depending
-on run context, while [`inputs`](../config/project#inputs) will return absolute paths.
-
 ```yaml
 fileGroups:
   storybook:
@@ -72,9 +69,6 @@ The `@dirs(file_group)` token will be replaced with an expanded list of director
 from the file group of the same name. If a glob pattern is detected within the file group, it will
 walk the file system and aggregate all directories found.
 
-When used in [`args`](../config/project#args), it will return relative or absolute paths, depending
-on run context, while [`inputs`](../config/project#inputs) will return absolute paths.
-
 ```yaml
 fileGroups:
   lintable:
@@ -113,9 +107,6 @@ The `@files(file_group)` token will be replaced with an expanded list of file pa
 the file group of the same name. If a glob pattern is detected within the file group, it will walk
 the file system and aggregate all files found.
 
-When used in [`args`](../config/project#args), it will return relative or absolute paths, depending
-on run context, while [`inputs`](../config/project#inputs) will return absolute paths.
-
 ```yaml
 fileGroups:
   config:
@@ -152,10 +143,6 @@ The `@globs(file_group)` token will be replaced with an expanded list of glob pa
 derived from the file group of the same name. If a non-glob pattern is detected within the file
 group, it will be ignored.
 
-When used in [`args`](../config/project#args), it will return relative or absolute paths, depending
-on run context, while [`inputs`](../config/project#inputs) will return absolute paths _and_ also be
-used in affected files detection by matching against the patterns.
-
 ```yaml
 fileGroups:
   tests:
@@ -189,9 +176,6 @@ tasks:
 The `@root(file_group)` token will be replaced with the lowest common directory, derived from the
 file group of the same name. If a glob pattern is detected within the file group, it will walk the
 file system and aggregate all directories found before reducing.
-
-When used in [`args`](../config/project#args), it will return relative paths, while
-[`inputs`](../config/project#inputs) will return absolute paths.
 
 ```yaml
 fileGroups:

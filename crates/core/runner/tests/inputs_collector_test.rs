@@ -215,11 +215,6 @@ async fn filters_using_input_files_in_glob_mode() {
 
     create_out_files(&project.root);
 
-    dbg!(project.get_task("inGlobOutFile").unwrap());
-
-    sandbox.debug_configs();
-    sandbox.debug_files();
-
     // Out file
     let files = collect_and_hash_inputs(
         &vcs,
@@ -230,8 +225,6 @@ async fn filters_using_input_files_in_glob_mode() {
     )
     .await
     .unwrap();
-
-    dbg!(&files);
 
     assert_eq!(
         files.keys().collect::<Vec<_>>(),
@@ -261,8 +254,6 @@ async fn filters_using_input_files_in_glob_mode() {
     )
     .await
     .unwrap();
-
-    dbg!(&files);
 
     assert!(files.keys().collect::<Vec<_>>().is_empty());
 }

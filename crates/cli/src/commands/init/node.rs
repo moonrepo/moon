@@ -5,7 +5,7 @@ use dialoguer::{Confirm, Select};
 use moon_config::load_toolchain_node_config_template;
 use moon_lang::{is_using_dependency_manager, is_using_version_manager};
 use moon_logger::color;
-use moon_node_lang::package::{PackageJson, PackageWorkspaces};
+use moon_node_lang::package_json::{PackageJson, PackageWorkspaces};
 use moon_node_lang::{NODENV, NPM, NVM, PNPM, YARN};
 use moon_project_graph::detect_projects_with_globs;
 use moon_terminal::label_header;

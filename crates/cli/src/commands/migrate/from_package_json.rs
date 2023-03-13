@@ -5,7 +5,7 @@ use moon_config::{DependencyConfig, DependencyScope, ProjectDependsOn};
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_error::MoonError;
 use moon_logger::info;
-use moon_node_lang::package::{DepsSet, PackageJson};
+use moon_node_lang::package_json::{DepsSet, PackageJson};
 use moon_node_platform::create_tasks_from_scripts;
 use moon_utils::yaml;
 use rustc_hash::FxHashMap;

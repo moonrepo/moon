@@ -1,4 +1,4 @@
-use crate::package::{PackageJson, PackageWorkspaces};
+use crate::package_json::{PackageJson, PackageWorkspaces};
 use crate::pnpm::workspace::PnpmWorkspace;
 use crate::NODE;
 use cached::proc_macro::cached;

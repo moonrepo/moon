@@ -41,24 +41,23 @@ COPY --from=build-gnu /out/target/ /target/
 
 FROM messense/rust-musl-cross:x86_64-musl AS base-musl-amd64
 RUN apt-get update
-RUN apt install --no-install-recommends -y libssl-dev pkg-config
+RUN apt install --no-install-recommends -y libssl-dev pkg-config musl-tools wget
+
 RUN echo "Building OpenSSL" && \
-  ls /usr/include/linux && \
-  mkdir -p /usr/local/musl/include && \
-  ln -s /usr/include/linux /usr/local/musl/include/linux && \
-  ln -s /usr/include/x86_64-linux-gnu/asm /usr/local/musl/include/asm && \
-  ln -s /usr/include/asm-generic /usr/local/musl/include/asm-generic && \
-  cd /tmp && \
-  short_version="$(echo "1.1.1m" | sed s'/[a-z]$//' )" && \
-  curl -fLO "https://www.openssl.org/source/openssl-1.1.1m.tar.gz" || \
-  curl -fLO "https://www.openssl.org/source/old/$short_version/openssl-1.1.1m.tar.gz" && \
-  tar xvzf "openssl-1.1.1m.tar.gz" && cd "openssl-1.1.1m" && \
-  env CC=musl-gcc ./Configure no-shared no-zlib -fPIC --prefix=/usr/local/musl -DOPENSSL_NO_SECURE_MEMORY linux-x86_64 && \
-  env C_INCLUDE_PATH=/usr/local/musl/include/ make depend && \
-  env C_INCLUDE_PATH=/usr/local/musl/include/ make && \
-  make install && \
-  rm /usr/local/musl/include/linux /usr/local/musl/include/asm /usr/local/musl/include/asm-generic && \
-  rm -r /tmp/*
+  ln -s /usr/include/x86_64-linux-gnu/asm /usr/include/x86_64-linux-musl/asm && \
+  ln -s /usr/include/asm-generic /usr/include/x86_64-linux-musl/asm-generic && \
+  ln -s /usr/include/linux /usr/include/x86_64-linux-musl/linux && \
+  mkdir /musl && \
+  wget https://github.com/openssl/openssl/releases/download/OpenSSL_1_1_1t/openssl-1.1.1t.tar.gz && \
+  tar zxvf openssl-1.1.1t.tar.gz && \
+  cd openssl-1.1.1t/ && \
+  CC="musl-gcc -fPIE -pie" ./Configure no-shared no-async --prefix=/musl --openssldir=/musl/ssl linux-x86_64 && \
+  make depend && \
+  make -j$(nproc) && \
+  make install
+ENV PKG_CONFIG_ALLOW_CROSS 1
+ENV OPENSSL_STATIC true
+ENV OPENSSL_DIR /musl
 
 RUN cargo install cargo-chef --version ^0.1
 WORKDIR /app
@@ -83,24 +82,23 @@ RUN mkdir -p /out && cp --parents target/*/release/moon /out/
 
 FROM messense/rust-musl-cross:aarch64-musl AS base-musl-arm64
 RUN apt-get update
-RUN apt install --no-install-recommends -y libssl-dev pkg-config
+RUN apt install --no-install-recommends -y libssl-dev pkg-config musl-tools wget
+
 RUN echo "Building OpenSSL" && \
-  ls /usr/include/linux && \
-  mkdir -p /usr/local/musl/include && \
-  ln -s /usr/include/linux /usr/local/musl/include/linux && \
-  ln -s /usr/include/aarch64-linux-gnu/asm /usr/local/musl/include/asm && \
-  ln -s /usr/include/asm-generic /usr/local/musl/include/asm-generic && \
-  cd /tmp && \
-  short_version="$(echo "1.1.1m" | sed s'/[a-z]$//' )" && \
-  curl -fLO "https://www.openssl.org/source/openssl-1.1.1m.tar.gz" || \
-  curl -fLO "https://www.openssl.org/source/old/$short_version/openssl-1.1.1m.tar.gz" && \
-  tar xvzf "openssl-1.1.1m.tar.gz" && cd "openssl-1.1.1m" && \
-  env CC=musl-gcc ./Configure no-shared no-zlib -fPIC --prefix=/usr/local/musl -DOPENSSL_NO_SECURE_MEMORY linux-aarch64 && \
-  env C_INCLUDE_PATH=/usr/local/musl/include/ make depend && \
-  env C_INCLUDE_PATH=/usr/local/musl/include/ make && \
-  make install && \
-  rm /usr/local/musl/include/linux /usr/local/musl/include/asm /usr/local/musl/include/asm-generic && \
-  rm -r /tmp/*
+  ln -s /usr/include/aarch64-linux-gnu/asm /usr/include/aarch64-linux-musl/asm && \
+  ln -s /usr/include/asm-generic /usr/include/aarch64-linux-musl/asm-generic && \
+  ln -s /usr/include/linux /usr/include/aarch64-linux-musl/linux && \
+  mkdir /musl && \
+  wget https://github.com/openssl/openssl/releases/download/OpenSSL_1_1_1t/openssl-1.1.1t.tar.gz && \
+  tar zxvf openssl-1.1.1t.tar.gz && \
+  cd openssl-1.1.1t/ && \
+  CC="musl-gcc -fPIE -pie" ./Configure no-shared no-async --prefix=/musl --openssldir=/musl/ssl linux-aarch64 && \
+  make depend && \
+  make -j$(nproc) && \
+  make install
+ENV PKG_CONFIG_ALLOW_CROSS 1
+ENV OPENSSL_STATIC true
+ENV OPENSSL_DIR /musl
 
 RUN cargo install cargo-chef --version ^0.1
 WORKDIR /app

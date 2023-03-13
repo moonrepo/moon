@@ -44,21 +44,21 @@ FROM messense/rust-musl-cross:x86_64-musl AS base-musl-amd64
 RUN apt-get update
 RUN apt install --no-install-recommends -y libssl-dev pkg-config musl-tools wget
 
-RUN echo "Building OpenSSL" && \
-  ln -s /usr/include/x86_64-linux-gnu/asm /usr/include/x86_64-linux-musl/asm && \
-  ln -s /usr/include/asm-generic /usr/include/x86_64-linux-musl/asm-generic && \
-  ln -s /usr/include/linux /usr/include/x86_64-linux-musl/linux && \
-  mkdir /musl && \
-  wget https://github.com/openssl/openssl/releases/download/OpenSSL_1_1_1t/openssl-1.1.1t.tar.gz && \
-  tar zxvf openssl-1.1.1t.tar.gz && \
-  cd openssl-1.1.1t/ && \
-  CC="musl-gcc -fPIE -pie" ./Configure no-shared no-async --prefix=/musl --openssldir=/musl/ssl linux-x86_64 && \
-  make depend && \
-  make -j$(nproc) && \
-  make install
-ENV PKG_CONFIG_ALLOW_CROSS 1
-ENV OPENSSL_STATIC true
-ENV OPENSSL_DIR /musl
+# RUN echo "Building OpenSSL" && \
+#   ln -s /usr/include/x86_64-linux-gnu/asm /usr/include/x86_64-linux-musl/asm && \
+#   ln -s /usr/include/asm-generic /usr/include/x86_64-linux-musl/asm-generic && \
+#   ln -s /usr/include/linux /usr/include/x86_64-linux-musl/linux && \
+#   mkdir /musl && \
+#   wget https://github.com/openssl/openssl/releases/download/OpenSSL_1_1_1t/openssl-1.1.1t.tar.gz && \
+#   tar zxvf openssl-1.1.1t.tar.gz && \
+#   cd openssl-1.1.1t/ && \
+#   CC="musl-gcc -fPIE -pie" ./Configure no-shared no-async --prefix=/musl --openssldir=/musl/ssl linux-x86_64 && \
+#   make depend && \
+#   make -j$(nproc) && \
+#   make install
+# ENV PKG_CONFIG_ALLOW_CROSS 1
+# ENV OPENSSL_STATIC true
+# ENV OPENSSL_DIR /musl
 
 RUN cargo install cargo-chef --version ^0.1
 WORKDIR /app
@@ -86,26 +86,26 @@ FROM messense/rust-musl-cross:aarch64-musl AS base-musl-arm64
 RUN apt-get update
 RUN apt install --no-install-recommends -y libssl-dev pkg-config musl-tools wget
 
-RUN wget https://musl.cc/aarch64-linux-musl-cross.tgz && \
-  tar zxvf aarch64-linux-musl-cross.tgz && \
-  mv aarch64-linux-musl-cross /usr/local && \
-  ln -s /usr/local/aarch64-linux-musl-cross/bin/* /usr/local/bin/
+# RUN wget https://musl.cc/aarch64-linux-musl-cross.tgz && \
+#   tar zxvf aarch64-linux-musl-cross.tgz && \
+#   mv aarch64-linux-musl-cross /usr/local && \
+#   ln -s /usr/local/aarch64-linux-musl-cross/bin/* /usr/local/bin/
 
-RUN echo "Building OpenSSL" && \
-  ln -s /usr/include/aarch64-linux-gnu/asm /usr/include/aarch64-linux-musl/asm && \
-  ln -s /usr/include/asm-generic /usr/include/aarch64-linux-musl/asm-generic && \
-  ln -s /usr/include/linux /usr/include/aarch64-linux-musl/linux && \
-  mkdir /musl && \
-  wget https://github.com/openssl/openssl/releases/download/OpenSSL_1_1_1t/openssl-1.1.1t.tar.gz && \
-  tar zxvf openssl-1.1.1t.tar.gz && \
-  cd openssl-1.1.1t/ && \
-  CC="aarch64-linux-musl-gcc" ./Configure no-shared no-async --prefix=/musl --openssldir=/musl/ssl linux-aarch64 && \
-  make depend && \
-  make -j$(nproc) && \
-  make install
-ENV PKG_CONFIG_ALLOW_CROSS 1
-ENV OPENSSL_STATIC true
-ENV OPENSSL_DIR /musl
+# RUN echo "Building OpenSSL" && \
+#   ln -s /usr/include/aarch64-linux-gnu/asm /usr/include/aarch64-linux-musl/asm && \
+#   ln -s /usr/include/asm-generic /usr/include/aarch64-linux-musl/asm-generic && \
+#   ln -s /usr/include/linux /usr/include/aarch64-linux-musl/linux && \
+#   mkdir /musl && \
+#   wget https://github.com/openssl/openssl/releases/download/OpenSSL_1_1_1t/openssl-1.1.1t.tar.gz && \
+#   tar zxvf openssl-1.1.1t.tar.gz && \
+#   cd openssl-1.1.1t/ && \
+#   CC="aarch64-linux-musl-gcc" ./Configure no-shared no-async --prefix=/musl --openssldir=/musl/ssl linux-aarch64 && \
+#   make depend && \
+#   make -j$(nproc) && \
+#   make install
+# ENV PKG_CONFIG_ALLOW_CROSS 1
+# ENV OPENSSL_STATIC true
+# ENV OPENSSL_DIR /musl
 
 RUN cargo install cargo-chef --version ^0.1
 WORKDIR /app

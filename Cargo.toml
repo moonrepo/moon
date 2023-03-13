@@ -26,6 +26,8 @@ clap_complete = "4.1.4"
 console = "0.15.5"
 criterion = { version = "0.4.0", features = ["async_tokio"] }
 lazy_static = "1.4.0"
+# We don't use this but is required for musl builds
+openssl-sys = { version = "0.9.80", features = ["vendored"] }
 petgraph = { version = "0.6.3", default-features = false, features = ["serde-1"] }
 proto_cli = "0.2.1"
 regex = "1.7.1"

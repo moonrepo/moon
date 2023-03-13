@@ -1,17 +1,11 @@
 use crate::path;
-use lazy_static::lazy_static;
 use moon_error::MoonError;
-use regex::Regex;
 use std::{
     ffi::OsStr,
     path::{Path, PathBuf},
 };
 pub use wax::Glob;
 use wax::{Any, GlobError as WaxGlobError, LinkBehavior, Negation, Pattern};
-
-lazy_static! {
-    pub static ref WINDOWS_PREFIX: Regex = Regex::new(r"^(//\?/)?[A-Z]:").unwrap();
-}
 
 pub type GlobError = WaxGlobError<'static>;
 
@@ -117,11 +111,6 @@ pub fn is_glob<T: AsRef<str>>(value: T) -> bool {
 #[inline]
 pub fn normalize<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
     path::to_virtual_string(path.as_ref())
-}
-
-#[inline]
-pub fn remove_drive_prefix<T: AsRef<str>>(glob: T) -> String {
-    WINDOWS_PREFIX.replace_all(glob.as_ref(), "**").to_string()
 }
 
 /// Wax currently doesn't support negated globs (starts with !),
@@ -266,20 +255,6 @@ mod tests {
             assert!(!is_glob("\\*.rs"));
             assert!(!is_glob("file\\?.js"));
             assert!(!is_glob("folder-\\[id\\]"));
-        }
-    }
-
-    mod windows_prefix {
-        use super::*;
-
-        #[test]
-        fn removes_unc_and_drive_prefix() {
-            assert_eq!(
-                WINDOWS_PREFIX
-                    .replace_all("//?/D:/Projects/moon", "**")
-                    .to_string(),
-                String::from("**/Projects/moon")
-            );
         }
     }
 }

@@ -191,24 +191,28 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         // When running from the workspace:
         //  - All paths are absolute
         let handle_path = |path: PathBuf, is_glob: bool| -> Result<String, ProjectGraphError> {
-            let arg = if !task.options.run_from_workspace_root
-                && path.starts_with(&self.workspace.root)
-            {
-                let rel_path = path::to_string(path::relative_from(&path, &project.root).unwrap())?;
+            let arg = path::to_string(
+                path::relative_from(
+                    self.workspace.root.join(path),
+                    if task.options.run_from_workspace_root {
+                        &self.workspace.root
+                    } else {
+                        &project.root
+                    },
+                )
+                .unwrap(),
+            )?;
 
-                if rel_path.starts_with("..") {
-                    rel_path
-                } else {
-                    format!(".{}{}", std::path::MAIN_SEPARATOR, rel_path)
-                }
+            let arg = if arg.starts_with("..") {
+                arg
             } else {
-                path::to_string(path)?
+                format!(".{}{}", std::path::MAIN_SEPARATOR, arg)
             };
 
             // Annoying, but we need to force forward slashes,
             // and remove drive/UNC prefixes...
             if cfg!(windows) && is_glob {
-                return Ok(glob::remove_drive_prefix(path::standardize_separators(arg)));
+                return Ok(path::standardize_separators(arg));
             }
 
             Ok(arg)
@@ -611,9 +615,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         let mut normalized_globs = vec![];
 
         for glob in globs {
-            normalized_globs.push(glob::normalize(
-                glob.strip_prefix(&self.workspace.root).unwrap(),
-            )?);
+            normalized_globs.push(glob::normalize(glob)?);
         }
 
         Ok(normalized_globs)

@@ -5,7 +5,10 @@ use moon_task::Task;
 use moon_utils::{glob, is_ci, path};
 use moon_vcs::BoxedVcs;
 use rustc_hash::FxHashSet;
-use std::{collections::BTreeMap, path::Path};
+use std::{
+    collections::BTreeMap,
+    path::{Path, PathBuf},
+};
 
 type HashedInputs = BTreeMap<String, String>;
 
@@ -13,7 +16,6 @@ fn is_valid_input_source(
     task: &Task,
     input_globset: &glob::GlobSet,
     output_globset: &glob::GlobSet,
-    workspace_root: &Path,
     workspace_relative_input: &str,
 ) -> bool {
     // Don't invalidate existing hashes when moon.yml changes
@@ -22,21 +24,22 @@ fn is_valid_input_source(
         return false;
     }
 
-    let absolute_input = workspace_root.join(workspace_relative_input);
-
     // Remove outputs first
     if output_globset.matches(workspace_relative_input) {
         return false;
     }
 
+    let workspace_relative_path = PathBuf::from(workspace_relative_input);
+
     for output in &task.output_paths {
-        if &absolute_input == output || absolute_input.starts_with(output) {
+        if &workspace_relative_path == output || workspace_relative_path.starts_with(output) {
             return false;
         }
     }
 
     // Filter inputs last
-    task.input_paths.contains(&absolute_input) || input_globset.matches(workspace_relative_input)
+    task.input_paths.contains(&workspace_relative_path)
+        || input_globset.matches(workspace_relative_input)
 }
 
 // Hash all inputs for a task, but exclude outputs
@@ -58,7 +61,7 @@ pub async fn collect_and_hash_inputs(
 
     if !task.input_paths.is_empty() {
         for input in &task.input_paths {
-            files_to_hash.insert(input.to_path_buf());
+            files_to_hash.insert(workspace_root.join(input));
         }
     }
 
@@ -91,9 +94,7 @@ pub async fn collect_and_hash_inputs(
 
     // 3: Filter hashes to applicable inputs
 
-    hashed_inputs.retain(|f, _| {
-        is_valid_input_source(task, &input_globset, &output_globset, workspace_root, f)
-    });
+    hashed_inputs.retain(|f, _| is_valid_input_source(task, &input_globset, &output_globset, f));
 
     // 4: Normalize input key paths
 

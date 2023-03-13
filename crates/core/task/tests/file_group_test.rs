@@ -16,7 +16,7 @@ mod merge {
     }
 }
 
-mod all {
+mod fg_all {
     use super::*;
 
     #[test]
@@ -32,17 +32,20 @@ mod all {
             file_group.all(&workspace_root, &project_root).unwrap(),
             (
                 vec![
-                    project_root.join("file.js"),
-                    project_root.join("folder/index.ts"),
-                    workspace_root.join("root.js")
+                    PathBuf::from("files-and-dirs").join("file.js"),
+                    PathBuf::from("files-and-dirs").join("folder/index.ts"),
+                    PathBuf::from("root.js")
                 ],
-                vec![project_root.join("**/*"), workspace_root.join("root/*")]
+                vec![
+                    PathBuf::from("files-and-dirs").join("**/*"),
+                    PathBuf::from("root/*")
+                ]
             )
         );
     }
 }
 
-mod dirs {
+mod fg_dirs {
     use super::*;
 
     #[test]
@@ -53,7 +56,10 @@ mod dirs {
 
         assert_eq!(
             file_group.dirs(&workspace_root, &project_root).unwrap(),
-            vec![project_root.join("dir"), project_root.join("dir/subdir")]
+            vec![
+                PathBuf::from("files-and-dirs").join("dir"),
+                PathBuf::from("files-and-dirs").join("dir/subdir")
+            ]
         );
     }
 
@@ -71,18 +77,20 @@ mod dirs {
     }
 }
 
-mod files {
+mod fg_files {
     use super::*;
 
     #[test]
     fn returns_all_files() {
         let workspace_root = get_fixtures_path("base");
         let project_root = workspace_root.join("files-and-dirs");
+        let project_source = PathBuf::from("files-and-dirs");
         let file_group = FileGroup::new(
             "id",
             string_vec![
                 // Globs
                 "**/*.{ts,tsx}",
+                "!dir/subdir/*",
                 "/*.json",
                 // Literals
                 "README.md",
@@ -96,12 +104,11 @@ mod files {
         assert_eq!(
             files,
             vec![
-                workspace_root.join("README.md"),
-                project_root.join("README.md"),
-                project_root.join("dir/other.tsx"),
-                project_root.join("dir/subdir/another.ts"),
-                project_root.join("file.ts"),
-                workspace_root.join("package.json"),
+                PathBuf::from("README.md"),
+                project_source.join("README.md"),
+                project_source.join("dir/other.tsx"),
+                project_source.join("file.ts"),
+                PathBuf::from("package.json"),
             ]
         );
     }
@@ -120,7 +127,7 @@ mod files {
     }
 }
 
-mod globs {
+mod fg_globs {
     use super::*;
 
     #[test]
@@ -133,15 +140,15 @@ mod globs {
         assert_eq!(
             file_group.globs(&workspace_root, &project_root).unwrap(),
             vec![
-                project_root.join("**/*"),
-                project_root.join("*.rs"),
-                workspace_root.join("*.js")
+                PathBuf::from("files-and-dirs").join("**/*"),
+                PathBuf::from("files-and-dirs").join("*.rs"),
+                PathBuf::from("*.js")
             ]
         );
     }
 }
 
-mod root {
+mod fg_root {
     use super::*;
 
     #[test]
@@ -151,8 +158,8 @@ mod root {
         let file_group = FileGroup::new("id", string_vec!["**/*"]);
 
         assert_eq!(
-            file_group.root(&project_root).unwrap(),
-            project_root.join("dir")
+            file_group.root(&workspace_root, &project_root).unwrap(),
+            PathBuf::from("files-and-dirs").join("dir")
         );
     }
 
@@ -161,7 +168,10 @@ mod root {
         let workspace_root = get_fixtures_path("projects");
         let file_group = FileGroup::new("id", string_vec!["**/*"]);
 
-        assert_eq!(file_group.root(&workspace_root).unwrap(), workspace_root);
+        assert_eq!(
+            file_group.root(&workspace_root, &workspace_root).unwrap(),
+            PathBuf::from(".")
+        );
     }
 
     #[test]
@@ -170,6 +180,9 @@ mod root {
         let project_root = workspace_root.join("files-and-dirs");
         let file_group = FileGroup::new("id", string_vec![]);
 
-        assert_eq!(file_group.root(&project_root).unwrap(), project_root);
+        assert_eq!(
+            file_group.root(&workspace_root, &project_root).unwrap(),
+            PathBuf::from(".")
+        );
     }
 }

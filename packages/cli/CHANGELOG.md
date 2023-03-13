@@ -23,6 +23,8 @@
 - Fixed hashing to avoid including `git status` files when running in CI.
 - Fixed an issue where dependencies of an affected target were not always being ran.
 - Fixed an issue where gitignored folders were being considered projects if the globs matched.
+- Fixed an issue where project-level glob negations (starting with `!`) weren't being handled
+  correctly.
 
 #### ⚙️ Internal
 

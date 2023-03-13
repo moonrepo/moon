@@ -7,20 +7,27 @@ pub use pathdiff::diff_paths as relative_from;
 
 /// If a file starts with "/", expand from the workspace root, otherwise the project root.
 #[inline]
-pub fn expand_root_path<F, P>(file: F, workspace_root: P, project_root: P) -> PathBuf
+pub fn expand_to_workspace_relative<F, P>(file: F, workspace_root: P, project_root: P) -> PathBuf
 where
     F: AsRef<str>,
     P: AsRef<Path>,
 {
     let file = file.as_ref();
+    let workspace_root = workspace_root.as_ref();
+    let project_root = project_root.as_ref();
 
-    if file.starts_with('/') {
-        workspace_root
-            .as_ref()
-            .join(normalize_separators(file.strip_prefix('/').unwrap()))
-    } else {
-        project_root.as_ref().join(normalize_separators(file))
+    if let Some(ws_rel_file) = file.strip_prefix('/') {
+        return PathBuf::from(normalize_separators(ws_rel_file));
     }
+
+    let project_source = project_root.strip_prefix(workspace_root).unwrap();
+
+    if let Some(negative_glob) = file.strip_prefix('!') {
+        return PathBuf::from(format!("!{}", project_source.to_string_lossy()))
+            .join(normalize_separators(negative_glob));
+    }
+
+    project_source.join(normalize_separators(file))
 }
 
 #[inline]

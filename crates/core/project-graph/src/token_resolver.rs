@@ -158,7 +158,7 @@ impl<'task> TokenResolver<'task> {
                 }
 
                 let mut is_glob = glob::is_glob(value);
-                let mut resolved = path::expand_root_path(
+                let mut resolved = path::expand_to_workspace_relative(
                     if has_var {
                         self.resolve_vars(value, task)?
                     } else {
@@ -170,7 +170,9 @@ impl<'task> TokenResolver<'task> {
 
                 // This is a special case for inputs that converts "foo" to "foo/**/*",
                 // when the input is a directory. This is necessary for VCS hashing.
-                if matches!(self.context, TokenContext::Inputs) && resolved.is_dir() {
+                if matches!(self.context, TokenContext::Inputs)
+                    && self.workspace_root.join(&resolved).is_dir()
+                {
                     is_glob = true;
                     resolved = resolved.join("**/*");
                 }
@@ -309,7 +311,7 @@ impl<'task> TokenResolver<'task> {
                 globs.extend(all_globs);
             }
             TokenType::Root(token, group) => {
-                paths.push(get_file_group(&token, &group)?.root(project_root)?);
+                paths.push(get_file_group(&token, &group)?.root(workspace_root, project_root)?);
             }
             _ => {}
         }
@@ -343,7 +345,7 @@ impl<'task> TokenResolver<'task> {
                     }
                 };
             } else {
-                match task.input_paths.get(&path::expand_root_path(
+                match task.input_paths.get(&path::expand_to_workspace_relative(
                     input,
                     self.workspace_root,
                     &self.project.root,
@@ -391,7 +393,7 @@ impl<'task> TokenResolver<'task> {
                     }
                 };
             } else {
-                match task.output_paths.get(&path::expand_root_path(
+                match task.output_paths.get(&path::expand_to_workspace_relative(
                     output,
                     self.workspace_root,
                     &self.project.root,

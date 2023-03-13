@@ -30,6 +30,7 @@ RUN cargo chef cook --release --recipe-path recipe.json
 COPY Cargo* .
 COPY crates crates
 RUN cargo build --bin moon --release
+RUN target/release/moon --version
 RUN set -ex; \
   export target="$(rustc --version --verbose | grep 'host:' | cut -d' ' -f2)"; \
   mkdir -p "/out/target/$target/release" && cp target/release/moon "/out/target/$target/release/moon"
@@ -76,6 +77,7 @@ RUN cargo chef cook --release --target x86_64-unknown-linux-musl --recipe-path r
 COPY Cargo* .
 COPY crates crates
 RUN cargo build --bin moon --release --target x86_64-unknown-linux-musl
+RUN target/x86_64-unknown-linux-musl/release/moon --version
 RUN mkdir -p /out && cp --parents target/*/release/moon /out/
 
 # musl (arm64)
@@ -83,6 +85,11 @@ RUN mkdir -p /out && cp --parents target/*/release/moon /out/
 FROM messense/rust-musl-cross:aarch64-musl AS base-musl-arm64
 RUN apt-get update
 RUN apt install --no-install-recommends -y libssl-dev pkg-config musl-tools wget
+
+RUN wget https://musl.cc/aarch64-linux-musl-cross.tgz && \
+  tar zxvf aarch64-linux-musl-cross.tgz && \
+  mv aarch64-linux-musl-cross /usr/local && \
+  ln -s /usr/local/aarch64-linux-musl-cross/bin/* /usr/local/bin/
 
 RUN echo "Building OpenSSL" && \
   ln -s /usr/include/aarch64-linux-gnu/asm /usr/include/aarch64-linux-musl/asm && \
@@ -92,7 +99,7 @@ RUN echo "Building OpenSSL" && \
   wget https://github.com/openssl/openssl/releases/download/OpenSSL_1_1_1t/openssl-1.1.1t.tar.gz && \
   tar zxvf openssl-1.1.1t.tar.gz && \
   cd openssl-1.1.1t/ && \
-  ./Configure no-shared no-async --prefix=/musl --openssldir=/musl/ssl linux-aarch64 && \
+  CC="aarch64-linux-musl-gcc" ./Configure no-shared no-async --prefix=/musl --openssldir=/musl/ssl linux-aarch64 && \
   make depend && \
   make -j$(nproc) && \
   make install
@@ -117,6 +124,7 @@ RUN cargo chef cook --release --target aarch64-unknown-linux-musl --recipe-path 
 COPY Cargo* .
 COPY crates crates
 RUN cargo build --bin moon --release --target aarch64-unknown-linux-musl
+RUN target/aarch64-unknown-linux-musl/release/moon --version
 RUN mkdir -p /out && cp --parents target/*/release/moon /out/
 
 # musl (dynamic arch based on target)

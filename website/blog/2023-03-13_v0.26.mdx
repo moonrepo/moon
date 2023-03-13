@@ -1,9 +1,9 @@
 ---
 slug: v0.26
-title: moon v0.26 - ???
+title: moon v0.26 - Deeper proto integration, Docker setup, and query commands
 authors: [milesj]
-tags: [docker]
-# image: ./img/v0.25.png
+tags: [proto, docker, query, hash]
+image: ./img/v0.26.png
 ---
 
 import Tabs from '@theme/Tabs';
@@ -11,7 +11,8 @@ import TabItem from '@theme/TabItem';
 import Button from '@site/src/ui/Button';
 import Logo from '../static/brand/proto/logo.svg';
 
-???
+With this release, we're providing deeper integration with our new [proto](/proto) toolchain
+manager, better Docker support, and new query commands for debugging.
 
 <!--truncate-->
 
@@ -139,6 +140,7 @@ View the
 [official release](https://github.com/moonrepo/moon/releases/tag/%40moonrepo%2Fcli%400.26.0) for a
 full list of changes.
 
+- A handful of critical bug fixes.
 - Targets that generate an empty hash are now considered a failure, as they may be an edge case not
   accounted for.
 

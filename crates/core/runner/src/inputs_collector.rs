@@ -24,12 +24,12 @@ fn is_valid_input_source(
         return false;
     }
 
-    let workspace_relative_path = PathBuf::from(workspace_relative_input);
-
     // Remove outputs first
     if output_globset.matches(workspace_relative_input) {
         return false;
     }
+
+    let workspace_relative_path = PathBuf::from(workspace_relative_input);
 
     for output in &task.output_paths {
         if &workspace_relative_path == output || workspace_relative_path.starts_with(output) {
@@ -61,7 +61,7 @@ pub async fn collect_and_hash_inputs(
 
     if !task.input_paths.is_empty() {
         for input in &task.input_paths {
-            files_to_hash.insert(input.to_path_buf());
+            files_to_hash.insert(workspace_root.join(input));
         }
     }
 

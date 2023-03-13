@@ -1,7 +1,7 @@
 use moon_config::{TaskCommandArgs, TaskConfig, TaskOptionEnvFileConfig, TaskOptionsConfig};
 use moon_target::Target;
 use moon_task::{Task, TaskOptions};
-use moon_test_utils::{create_sandbox, get_fixtures_path};
+use moon_test_utils::create_sandbox;
 use moon_utils::string_vec;
 use rustc_hash::FxHashSet;
 use std::env;
@@ -422,14 +422,13 @@ mod is_affected {
 
     #[test]
     fn returns_false_if_outside_project() {
-        let workspace_root = get_fixtures_path("base");
-        let project_root = workspace_root.join("files-and-dirs");
+        let project_source = PathBuf::from("files-and-dirs");
         let mut task = create_task(TaskConfig {
             inputs: Some(string_vec!["file.ts"]),
             ..TaskConfig::default()
         });
 
-        task.input_paths.insert(project_root.join("file.ts"));
+        task.input_paths.insert(project_source.join("file.ts"));
 
         let mut set = FxHashSet::default();
         set.insert(PathBuf::from("base/other/outside.ts"));
@@ -439,15 +438,13 @@ mod is_affected {
 
     #[test]
     fn returns_false_if_no_match() {
-        let workspace_root = get_fixtures_path("base");
-        let project_root = workspace_root.join("files-and-dirs");
         let project_source = PathBuf::from("files-and-dirs");
         let mut task = create_task(TaskConfig {
             inputs: Some(string_vec!["file.ts", "src/*"]),
             ..TaskConfig::default()
         });
 
-        task.input_paths.insert(project_root.join("file.ts"));
+        task.input_paths.insert(project_source.join("file.ts"));
         task.input_globs.insert("files-and-dirs/src/*".into());
 
         let mut set = FxHashSet::default();

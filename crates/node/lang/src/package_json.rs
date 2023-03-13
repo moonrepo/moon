@@ -11,138 +11,36 @@ use std::path::{Path, PathBuf};
 
 config_cache!(PackageJson, NPM.manifest, read_json, write_preserved_json);
 
+// Only define fields we interact with and care about!
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PackageJson {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub author: Option<Person>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bin: Option<Bin>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bugs: Option<Bug>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bundled_dependencies: Option<Vec<String>>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub config: Option<JsonValue>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub contributors: Option<Vec<Person>>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub cpu: Option<Vec<String>>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub dependencies: Option<DepsSet>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub dev_dependencies: Option<DepsSet>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub directories: Option<Directories>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub engines: Option<EnginesSet>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub files: Option<Vec<String>>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub funding: Option<Funding>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub homepage: Option<String>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub keywords: Option<Vec<String>>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub license: Option<License>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub main: Option<String>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub man: Option<StringOrArray<String>>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub module: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub optional_dependencies: Option<DepsSet>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub os: Option<Vec<String>>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub overrides: Option<OverridesSet>,
+    pub package_manager: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub peer_dependencies: Option<DepsSet>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub peer_dependencies_meta: Option<PeerDepsMetaSet>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub private: Option<bool>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub publish_config: Option<JsonValue>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub repository: Option<Repository>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub scripts: Option<ScriptsSet>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(rename = "type")]
-    pub type_of: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub workspaces: Option<PackageWorkspaces>,
-
-    // Node.js specific: https://nodejs.org/api/packages.html#nodejs-packagejson-field-definitions
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub exports: Option<JsonValue>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub imports: Option<JsonValue>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub package_manager: Option<String>,
-
-    // Pnpm specific: https://pnpm.io/package_json
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub pnpm: Option<Pnpm>,
-
-    // Yarn specific: https://yarnpkg.com/configuration/manifest
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub dependencies_meta: Option<DepsMetaSet>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub language_name: Option<String>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub install_config: Option<JsonValue>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub prefer_unplugged: Option<bool>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub resolutions: Option<DepsSet>,
 
     // Non-standard
     #[serde(skip)]
@@ -315,134 +213,9 @@ impl PackageJson {
     }
 }
 
-pub type BinSet = BTreeMap<String, String>;
-pub type DepsMetaSet = BTreeMap<String, DependencyMeta>;
 pub type DepsSet = BTreeMap<String, String>;
 pub type EnginesSet = BTreeMap<String, String>;
-pub type OverridesSet = BTreeMap<String, StringOrObject<DepsSet>>;
-pub type PeerDepsMetaSet = BTreeMap<String, PeerDependencyMeta>;
 pub type ScriptsSet = BTreeMap<String, String>;
-
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(untagged)]
-pub enum StringOrArray<T> {
-    String(String),
-    Array(Vec<T>),
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(untagged)]
-pub enum StringOrObject<T> {
-    String(String),
-    Object(T),
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(untagged)]
-pub enum StringArrayOrObject<T> {
-    String(String),
-    Array(Vec<T>),
-    Object(T),
-}
-
-pub type Bin = StringOrObject<BinSet>;
-
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-pub struct Bug {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub email: Option<String>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub url: Option<String>,
-}
-
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-pub struct DependencyMeta {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub optional: Option<bool>,
-
-    // Yarn
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub built: Option<bool>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub unplugged: Option<bool>,
-
-    // Pnpm
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub injected: Option<bool>,
-}
-
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-pub struct Directories {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bin: Option<String>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub man: Option<String>,
-}
-
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-pub struct FundingMetadata {
-    #[serde(rename = "type")]
-    pub type_of: String,
-    pub url: String,
-}
-
-pub type Funding = StringArrayOrObject<FundingMetadata>;
-
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-pub struct LicenseMetadata {
-    #[serde(rename = "type")]
-    pub type_of: String,
-    pub url: String,
-}
-
-pub type License = StringArrayOrObject<LicenseMetadata>;
-
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-pub struct PersonMetadata {
-    pub name: String,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub email: Option<String>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub url: Option<String>,
-}
-
-pub type Person = StringOrObject<PersonMetadata>;
-
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-pub struct PeerDependencyMeta {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub optional: Option<bool>,
-}
-
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-pub struct Pnpm {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub never_built_dependencies: Option<Vec<String>>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub overrides: Option<OverridesSet>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub package_extensions: Option<JsonValue>,
-}
-
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-pub struct RepositoryMetadata {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub directory: Option<String>,
-
-    #[serde(rename = "type")]
-    pub type_of: String,
-
-    pub url: String,
-}
-
-pub type Repository = StringOrObject<RepositoryMetadata>;
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 pub struct PackageWorkspacesExpanded {

@@ -1,6 +1,6 @@
 use moon_config::{TaskCommandArgs, TaskConfig, TasksConfigsMap};
 use moon_logger::{color, debug, warn};
-use moon_node_lang::package::{PackageJson, ScriptsSet};
+use moon_node_lang::package_json::{PackageJson, ScriptsSet};
 use moon_target::Target;
 use moon_task::{PlatformType, TaskError, TaskID};
 use moon_utils::regex::{UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};

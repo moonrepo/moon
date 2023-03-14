@@ -8,6 +8,10 @@
     "title"
   ],
   "properties": {
+    "$schema": {
+      "description": "JSON schema URI",
+      "type": "string"
+    },
     "description": {
       "type": "string"
     },

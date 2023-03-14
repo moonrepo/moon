@@ -65,8 +65,7 @@ pub enum TemplateVariable {
 
 /// Docs: https://moonrepo.dev/docs/config/template
 #[derive(Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
-#[schemars(default)]
-#[serde(default, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct TemplateConfig {
     #[validate(custom = "validate_description")]
     pub description: String,
@@ -78,7 +77,7 @@ pub struct TemplateConfig {
     pub variables: FxHashMap<String, TemplateVariable>,
 
     /// JSON schema URI
-    #[serde(rename = "$schema", skip_serializing_if = "is_default")]
+    #[serde(default, rename = "$schema", skip_serializing_if = "is_default")]
     pub schema: String,
 
     /// Unknown fields

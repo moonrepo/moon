@@ -100,9 +100,7 @@ impl Platform for NodePlatform {
         }
 
         if let Some(globs) = get_package_manager_workspaces(self.workspace_root.to_owned())? {
-            in_workspace = GlobSet::new(globs, vec![])
-                .map_err(|e| MoonError::Generic(e.to_string()))?
-                .matches(project.root.strip_prefix(&self.workspace_root).unwrap());
+            in_workspace = GlobSet::new(globs, vec![])?.matches(&project.source);
         }
 
         if !in_workspace {

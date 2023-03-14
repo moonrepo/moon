@@ -525,11 +525,17 @@ impl Command {
         }
 
         let mut envs_list = vec![];
+        let debug_env = env::var("MOON_DEBUG_PROCESS_ENV").is_ok();
 
         for (key, value) in &self.env {
             let key = key.to_str().unwrap_or_default();
+            let show_env = if debug_env {
+                true
+            } else {
+                key.starts_with("MOON_") || key.starts_with("PROTO_") || key.starts_with("NODE_")
+            };
 
-            if key.starts_with("MOON_") || key.starts_with("PROTO_") || key.starts_with("NODE_") {
+            if show_env {
                 envs_list.push(format!(
                     "\n  {}{}{}",
                     key,

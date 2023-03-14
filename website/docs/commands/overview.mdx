@@ -83,6 +83,10 @@ $ MOON_CONCURRENCY=1 moon run app:build
 At minimum, most debugging can be done by passing [`--log trace`](#logging) on the command line and
 sifting through the logs. We also provide the following environment variables to toggle output.
 
+- `MOON_DEBUG_PROCESS_ENV` - By default moon hides the environment variables (except for `MOON` or
+  `PROTO`) passed to processes to avoid leaking sensitive information. However, knowing what
+  environment variables are passed around is helpful in debugging. Declare this variable to reveal
+  the entire environment.
 - `MOON_DEBUG_PROCESS_INPUT` - By default moon truncates the stdin passed to processes to avoid
   thrashing the console with a large input string. However, knowing what input is passed around is
   helpful in debugging. Declare this variable to reveal the entire input.

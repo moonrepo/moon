@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where `moon docker setup` couldn't find the manifest file for staged builds.
+
 ## 0.26.0
 
 #### 💥 Breaking

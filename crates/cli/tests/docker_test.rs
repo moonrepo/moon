@@ -38,6 +38,7 @@ mod scaffold_workspace {
 
         let docker = sandbox.path().join(".moon/docker/workspace");
 
+        assert!(docker.join("dockerManifest.json").exists());
         assert!(docker.join("esbuild/package.json").exists());
         assert!(docker.join("lifecycles/package.json").exists());
         assert!(docker.join("swc/package.json").exists());
@@ -194,6 +195,7 @@ mod scaffold_sources {
 
         let docker = sandbox.path().join(".moon/docker/sources");
 
+        assert!(docker.join("dockerManifest.json").exists());
         assert!(docker.join("basic/file.ts").exists());
         assert!(docker.join("no-config/empty").exists());
 

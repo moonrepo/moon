@@ -15,7 +15,6 @@ use figment::{
     providers::{Format, Serialized, YamlExtended},
     Figment,
 };
-use moon_utils::get_workspace_root;
 use rustc_hash::FxHashMap;
 use schemars::JsonSchema;
 use serde::de::Deserializer;
@@ -193,10 +192,7 @@ impl ProjectConfig {
 
         let config: ProjectConfig = figment.extract()?;
 
-        warn_for_unknown_fields(
-            path.strip_prefix(get_workspace_root()).unwrap(),
-            &config.unknown,
-        );
+        warn_for_unknown_fields(&path, &config.unknown);
 
         if let Err(errors) = config.validate() {
             return Err(ConfigError::FailedValidation(

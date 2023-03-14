@@ -108,7 +108,7 @@ pub fn warn_for_unknown_fields<C: AsRef<OsStr>>(
         warn!(
             target: "moon:config",
             "Unknown fields in config file {}: {}",
-            moon_logger::color::file(config.as_ref().to_string_lossy().to_string()),
+            moon_logger::color::file(config.as_ref().to_string_lossy()),
             keys.join(", ")
         );
     }

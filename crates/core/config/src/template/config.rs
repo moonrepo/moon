@@ -7,7 +7,6 @@ use figment::{
     providers::{Format, Serialized, YamlExtended},
     Figment,
 };
-use moon_utils::get_workspace_root;
 use rustc_hash::FxHashMap;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -66,7 +65,8 @@ pub enum TemplateVariable {
 
 /// Docs: https://moonrepo.dev/docs/config/template
 #[derive(Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
-#[serde(rename_all = "camelCase")]
+#[schemars(default)]
+#[serde(default, rename_all = "camelCase")]
 pub struct TemplateConfig {
     #[validate(custom = "validate_description")]
     pub description: String,
@@ -99,10 +99,7 @@ impl TemplateConfig {
 
         let config: TemplateConfig = figment.extract()?;
 
-        warn_for_unknown_fields(
-            path.strip_prefix(get_workspace_root()).unwrap(),
-            &config.unknown,
-        );
+        warn_for_unknown_fields(&path, &config.unknown);
 
         if let Err(errors) = config.validate() {
             return Err(ConfigError::FailedValidation(

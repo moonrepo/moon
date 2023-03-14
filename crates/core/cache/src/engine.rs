@@ -9,7 +9,7 @@ use moon_platform_runtime::Runtime;
 use moon_utils::{fs, json, time};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use std::path::{Path, PathBuf};
+use std::path::{Path, PathBuf, MAIN_SEPARATOR_STR};
 
 pub struct CacheEngine {
     /// The `.moon/cache` directory relative to workspace root.
@@ -68,7 +68,7 @@ impl CacheEngine {
         let name = format!("deps{runtime}.json");
 
         DependenciesState::load(self.get_state_path(if let Some(id) = project_id {
-            format!("{id}/{name}")
+            format!("{id}{}{name}", MAIN_SEPARATOR_STR)
         } else {
             name
         }))
@@ -180,6 +180,6 @@ impl CacheEngine {
     }
 
     pub fn get_target_dir<T: AsRef<str>>(&self, target_id: T) -> PathBuf {
-        self.get_state_path(target_id.as_ref().replace(':', "/"))
+        self.get_state_path(target_id.as_ref().replace(':', MAIN_SEPARATOR_STR))
     }
 }

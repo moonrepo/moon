@@ -102,9 +102,14 @@ pub fn warn_for_unknown_fields<C: AsRef<OsStr>>(
     config: C,
     unknown: &BTreeMap<String, serde_yaml::Value>,
 ) {
-    if !unknown.is_empty() {
-        let keys = unknown.keys().cloned().collect::<Vec<_>>();
+    let keys = unknown
+        .keys()
+        .cloned()
+        // YAML anchors and aliases
+        .filter(|k| !k.starts_with('_'))
+        .collect::<Vec<_>>();
 
+    if !keys.is_empty() {
         warn!(
             target: "moon:config",
             "Unknown fields in config file {}: {}",

@@ -8,6 +8,7 @@
 
 #### ⚙️ Internal
 
+- Added a `MOON_DEBUG_PROCESS_ENV` env var for debugging processes.
 - Updated glob failures to include the glob expression for easier debugging.
 
 ## 0.26.0

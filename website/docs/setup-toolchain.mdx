@@ -43,19 +43,28 @@ import PackageWorkspaces from './__partials__/node/package-workspaces.mdx';
 
 ## Configuring Node.js
 
-As Node.js is the backbone of a JavaScript based repository, let's define the version we want to
-install in the toolchain, to enforce for developers, and to utilize when running `moon` commands, by
-updating [`node.version`](./config/toolchain#version) in
-[`.moon/toolchain.yml`](./config/toolchain).
+As Node.js is the backbone of a JavaScript based repository, we need to enable its functionality.
+This is done by defining [`node`](./config/toolchain#node) in
+[`.moon/toolchain.yml`](./config/toolchain). Languages are like plugins, where the existence of a
+setting enables the plugin, hence why an empty object below is acceptable.
 
-This setting requires an explicit semantic version and _does not_ support version ranges, so let's
-set it to the latest version. We suggest _always_ using an
-[Active LTS](https://nodejs.org/en/about/releases/) version.
+```yaml title=".moon/toolchain.yml"
+node: {}
+```
+
+By default, the language will execute tasks using the global `node` binary available on `PATH`.
+While this works, we suggest using our toolchain that will download, install, and execute tasks with
+the same version of Node.js across _all_ machienes. The version can be defined with
+[`node.version`](./config/toolchain#version).
 
 ```yaml title=".moon/toolchain.yml"
 node:
 	version: '18.0.0'
 ```
+
+This setting requires a fully qualified semantic version and _does not_ support version ranges, so
+be sure to use an explicit version. We suggest _always_ using an
+[Active LTS](https://nodejs.org/en/about/releases/) version.
 
 Let's now run [`moon setup --log debug`](./commands/setup) to verify that Node.js is downloaded and
 installed correctly. Pretty cool right?
@@ -99,10 +108,10 @@ configuration above, we'll be switching from npm (the default) to yarn.
 
 ## Adding a package script
 
-For scenarios like CI, `moon` can be ran with through a root `package.json` script — but this comes
-with a cost — which is the overhead of launching Node.js and your chosen package manager to execute
-the Rust binary, _instead of_ executing the Rust binary directly. If this is problematic, feel free
-to use the global binary.
+For scenarios like CI, `moon` can be ran through a root `package.json` script — but this comes with
+a cost — which is the overhead of launching Node.js and your chosen package manager to execute the
+Rust binary, _instead of_ executing the Rust binary directly. If this is problematic, feel free to
+use the global `moon` binary.
 
 ```json title="package.json"
 {

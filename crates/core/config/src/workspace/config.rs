@@ -1,7 +1,7 @@
 // .moon/workspace.yml
 
 use crate::errors::map_validation_errors_to_figment_errors;
-use crate::helpers::gather_extended_sources;
+use crate::helpers::{gather_extended_sources, warn_for_unknown_fields};
 use crate::types::{FileGlob, FilePath};
 use crate::validators::{
     is_default, validate_child_relative_path, validate_extends, validate_id,
@@ -20,6 +20,7 @@ use figment::{
 use rustc_hash::FxHashMap;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 use validator::{Validate, ValidationError};
 
@@ -112,9 +113,14 @@ pub struct WorkspaceConfig {
     #[validate(custom = "validate_version_constraint")]
     pub version_constraint: Option<String>,
 
-    /// JSON schema URI.
-    #[serde(skip, rename = "$schema")]
+    /// JSON schema URI
+    #[serde(rename = "$schema", skip_serializing_if = "is_default")]
     pub schema: String,
+
+    /// Unknown fields
+    #[serde(flatten)]
+    #[schemars(skip)]
+    pub unknown: BTreeMap<String, serde_yaml::Value>,
 }
 
 impl WorkspaceConfig {
@@ -135,6 +141,8 @@ impl WorkspaceConfig {
 
     fn load_config(figment: Figment) -> Result<WorkspaceConfig, ConfigError> {
         let config: WorkspaceConfig = figment.extract()?;
+
+        warn_for_unknown_fields(".moon/workspace.yml", &config.unknown);
 
         if let Err(errors) = config.validate() {
             return Err(ConfigError::FailedValidation(

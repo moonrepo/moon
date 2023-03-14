@@ -1,3 +1,4 @@
+use super::MANIFEST_NAME;
 use crate::commands::docker::scaffold::DockerManifest;
 use crate::helpers::AnyError;
 use moon::{build_dep_graph, generate_project_graph, load_workspace_with_toolchain};
@@ -7,7 +8,7 @@ use moon_utils::json;
 
 pub async fn setup() -> Result<(), AnyError> {
     let mut workspace = load_workspace_with_toolchain().await?;
-    let manifest_path = workspace.root.join("dockerManifest.json");
+    let manifest_path = workspace.root.join(MANIFEST_NAME);
 
     if !manifest_path.exists() {
         eprintln!("Unable to setup, docker manifest missing. Has it been scaffolded with `moon docker scaffold`?");

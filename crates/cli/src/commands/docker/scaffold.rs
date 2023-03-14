@@ -1,3 +1,4 @@
+use super::MANIFEST_NAME;
 use crate::helpers::AnyError;
 use moon::{generate_project_graph, load_workspace};
 use moon_config::{ProjectID, ProjectLanguage};
@@ -158,8 +159,11 @@ fn scaffold_sources(
         copy_files(&files, &workspace.root, &docker_sources_root)?;
     }
 
+    json::write(docker_sources_root.join(MANIFEST_NAME), &manifest, true)?;
+
+    // Sync to the workspace scaffold for staged builds
     json::write(
-        docker_sources_root.join("dockerManifest.json"),
+        docker_root.join("workspace").join(MANIFEST_NAME),
         &manifest,
         true,
     )?;

@@ -1,3 +1,4 @@
+use super::MANIFEST_NAME;
 use crate::commands::docker::scaffold::DockerManifest;
 use crate::helpers::AnyError;
 use moon::{generate_project_graph, load_workspace_with_toolchain};
@@ -47,7 +48,7 @@ pub async fn prune_node(
 
 pub async fn prune() -> Result<(), AnyError> {
     let mut workspace = load_workspace_with_toolchain().await?;
-    let manifest_path = workspace.root.join("dockerManifest.json");
+    let manifest_path = workspace.root.join(MANIFEST_NAME);
 
     if !manifest_path.exists() {
         eprintln!("Unable to prune, docker manifest missing. Has it been scaffolded with `moon docker scaffold`?");

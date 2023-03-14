@@ -57,8 +57,8 @@ impl<'t> GlobSet<'t> {
 
 #[inline]
 pub fn create_glob(pattern: &str) -> Result<Glob, MoonError> {
-    Ok(Glob::new(pattern)
-        .map_err(|e| MoonError::Glob(pattern.to_string(), GlobError::Build(e).into_owned()))?)
+    Glob::new(pattern)
+        .map_err(|e| MoonError::Glob(pattern.to_string(), GlobError::Build(e).into_owned()))
 }
 
 // This is not very exhaustive and may be inaccurate.

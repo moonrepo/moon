@@ -40,6 +40,14 @@ impl<'t> GlobSet<'t> {
         })
     }
 
+    pub fn is_negated<P: AsRef<OsStr>>(&self, path: P) -> bool {
+        self.negations.is_match(path.as_ref())
+    }
+
+    pub fn is_match<P: AsRef<OsStr>>(&self, path: P) -> bool {
+        self.expressions.is_match(path.as_ref())
+    }
+
     pub fn matches<P: AsRef<OsStr>>(&self, path: P) -> bool {
         if !self.enabled {
             return false;
@@ -47,11 +55,11 @@ impl<'t> GlobSet<'t> {
 
         let path = path.as_ref();
 
-        if self.negations.is_match(path) {
+        if self.is_negated(path) {
             return false;
         }
 
-        self.expressions.is_match(path)
+        self.is_match(path)
     }
 }
 

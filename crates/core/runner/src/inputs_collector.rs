@@ -14,8 +14,7 @@ type HashedInputs = BTreeMap<String, String>;
 
 fn is_valid_input_source(
     task: &Task,
-    input_globset: &glob::GlobSet,
-    output_globset: &glob::GlobSet,
+    globset: &glob::GlobSet,
     workspace_relative_input: &str,
 ) -> bool {
     // Don't invalidate existing hashes when moon.yml changes
@@ -25,7 +24,7 @@ fn is_valid_input_source(
     }
 
     // Remove outputs first
-    if output_globset.matches(workspace_relative_input) {
+    if globset.is_negated(workspace_relative_input) {
         return false;
     }
 
@@ -38,8 +37,7 @@ fn is_valid_input_source(
     }
 
     // Filter inputs last
-    task.input_paths.contains(&workspace_relative_path)
-        || input_globset.matches(workspace_relative_input)
+    task.input_paths.contains(&workspace_relative_path) || globset.matches(workspace_relative_input)
 }
 
 // Hash all inputs for a task, but exclude outputs
@@ -54,8 +52,7 @@ pub async fn collect_and_hash_inputs(
 ) -> Result<HashedInputs, RunnerError> {
     let mut files_to_hash = FxHashSet::default(); // Absolute paths
     let mut hashed_inputs: HashedInputs = BTreeMap::new();
-    let input_globset = glob::GlobSet::new(&task.input_globs, &FxHashSet::default())?;
-    let output_globset = glob::GlobSet::new(&task.output_globs, &FxHashSet::default())?;
+    let globset = task.create_globset()?;
 
     // 1: Collect inputs as a set of absolute paths
 
@@ -94,7 +91,7 @@ pub async fn collect_and_hash_inputs(
 
     // 3: Filter hashes to applicable inputs
 
-    hashed_inputs.retain(|f, _| is_valid_input_source(task, &input_globset, &output_globset, f));
+    hashed_inputs.retain(|f, _| is_valid_input_source(task, &globset, f));
 
     // 4: Normalize input key paths
 

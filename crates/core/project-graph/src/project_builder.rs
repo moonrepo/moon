@@ -478,10 +478,16 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         let mut aliases = FxHashMap::default();
         let mut cache = self.workspace.cache.cache_projects_state()?;
 
+        let mut add_sources = |map: &FxHashMap<String, String>| {
+            for (id, source) in map {
+                sources.insert(id.to_owned(), path::normalize_separators(source));
+            }
+        };
+
         // Load project sources
         match &self.workspace.config.projects {
             WorkspaceProjects::Sources(map) => {
-                sources.extend(map.clone());
+                add_sources(map);
             }
             WorkspaceProjects::Globs(list) => {
                 globs.extend(list.clone());
@@ -491,7 +497,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                 sources: map,
             } => {
                 globs.extend(list.clone());
-                sources.extend(map.clone());
+                add_sources(map);
             }
         };
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where tasks with `cache` disabled were considered empty hashes when declared as a
+  dependency of another task.
+
 ## 0.26.1
 
 #### 🚀 Updates

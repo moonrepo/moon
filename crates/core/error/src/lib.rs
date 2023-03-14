@@ -4,6 +4,7 @@ use serde_yaml::Error as YamlError;
 use std::io::{Error as IoError, ErrorKind as IoErrorKind};
 use std::path::PathBuf;
 use thiserror::Error;
+use wax::GlobError;
 
 // The native Rust IO error messages are not very intuitive as they do not include the
 // file path that triggered the error. This file attemps to mitigate this by mapping
@@ -16,6 +17,9 @@ pub enum MoonError {
 
     #[error("File system failure for <path>{0}</path>: {1}")]
     FileSystem(PathBuf, #[source] IoError),
+
+    #[error("Glob failure for <file>{0}</file>: {1}")]
+    Glob(String, #[source] GlobError<'static>),
 
     #[error("Failed to create a hard link from <path>{0}</path> to <path>{1}</path>.")]
     HardLink(PathBuf, PathBuf),

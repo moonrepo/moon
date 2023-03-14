@@ -1,6 +1,5 @@
 use moon_error::MoonError;
 use moon_target::TargetError;
-use moon_utils::glob::GlobError;
 use moon_utils::process::ArgsParseError;
 use std::path::PathBuf;
 use thiserror::Error;
@@ -30,9 +29,6 @@ pub enum TaskError {
     FileGroup(#[from] FileGroupError),
 
     #[error(transparent)]
-    Glob(#[from] GlobError),
-
-    #[error(transparent)]
     Moon(#[from] MoonError),
 
     #[error(transparent)]
@@ -43,9 +39,6 @@ pub enum TaskError {
 pub enum FileGroupError {
     #[error("No globs defined in file group <id>{0}</id>.")]
     NoGlobs(String), // file group
-
-    #[error(transparent)]
-    Glob(#[from] GlobError),
 
     #[error(transparent)]
     Moon(#[from] MoonError),

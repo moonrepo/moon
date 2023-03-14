@@ -6,6 +6,10 @@
 
 - Fixed an issue where `moon docker setup` couldn't find the manifest file for staged builds.
 
+#### ⚙️ Internal
+
+- Updated glob failures to include the glob expression for easier debugging.
+
 ## 0.26.0
 
 #### 💥 Breaking

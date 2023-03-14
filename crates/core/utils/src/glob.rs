@@ -5,9 +5,7 @@ use std::{
     path::{Path, PathBuf},
 };
 pub use wax::Glob;
-use wax::{Any, GlobError as WaxGlobError, LinkBehavior, Negation, Pattern};
-
-pub type GlobError = WaxGlobError<'static>;
+use wax::{Any, GlobError, LinkBehavior, Negation, Pattern};
 
 pub struct GlobSet<'t> {
     expressions: Any<'t>,
@@ -16,7 +14,7 @@ pub struct GlobSet<'t> {
 }
 
 impl<'t> GlobSet<'t> {
-    pub fn new<V, I>(expressions: I, negations: I) -> Result<Self, GlobError>
+    pub fn new<V, I>(expressions: I, negations: I) -> Result<Self, MoonError>
     where
         V: AsRef<str>,
         I: IntoIterator<Item = V>,
@@ -58,8 +56,9 @@ impl<'t> GlobSet<'t> {
 }
 
 #[inline]
-pub fn create_glob(pattern: &str) -> Result<Glob, GlobError> {
-    Ok(Glob::new(pattern).map_err(|e| e.into_owned())?)
+pub fn create_glob(pattern: &str) -> Result<Glob, MoonError> {
+    Glob::new(pattern)
+        .map_err(|e| MoonError::Glob(pattern.to_string(), GlobError::Build(e).into_owned()))
 }
 
 // This is not very exhaustive and may be inaccurate.
@@ -117,17 +116,17 @@ pub fn normalize<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
 /// so we must extract them manually.
 #[inline]
 #[track_caller]
-pub fn split_patterns<P: AsRef<str>>(patterns: &[P]) -> Result<(Vec<Glob>, Vec<Glob>), GlobError> {
+pub fn split_patterns<P: AsRef<str>>(patterns: &[P]) -> Result<(Vec<Glob>, Vec<Glob>), MoonError> {
     let mut expressions = vec![];
     let mut negations = vec![];
 
     for pattern in patterns {
         let pattern = pattern.as_ref();
 
-        if pattern.starts_with('!') {
-            negations.push(create_glob(pattern.strip_prefix('!').unwrap())?);
-        } else if pattern.starts_with('/') {
-            expressions.push(create_glob(pattern.strip_prefix('/').unwrap())?);
+        if let Some(neg) = pattern.strip_prefix('!') {
+            negations.push(create_glob(neg)?);
+        } else if let Some(exp) = pattern.strip_prefix('/') {
+            expressions.push(create_glob(exp)?);
         } else {
             expressions.push(create_glob(pattern)?);
         }
@@ -142,7 +141,7 @@ pub fn split_patterns<P: AsRef<str>>(patterns: &[P]) -> Result<(Vec<Glob>, Vec<G
 
 #[inline]
 #[track_caller]
-pub fn walk<P, V, I>(base_dir: P, patterns: I) -> Result<Vec<PathBuf>, GlobError>
+pub fn walk<P, V, I>(base_dir: P, patterns: I) -> Result<Vec<PathBuf>, MoonError>
 where
     P: AsRef<Path>,
     V: AsRef<str>,
@@ -165,7 +164,7 @@ where
                     paths.push(e.into_path());
                 }
                 Err(_) => {
-                    // Will crash if the file doesnt exist
+                    // Will crash if the file doesn't exist
                     continue;
                 }
             };
@@ -176,7 +175,7 @@ where
 }
 
 #[inline]
-pub fn walk_files<P, V, I>(base_dir: P, patterns: I) -> Result<Vec<PathBuf>, GlobError>
+pub fn walk_files<P, V, I>(base_dir: P, patterns: I) -> Result<Vec<PathBuf>, MoonError>
 where
     P: AsRef<Path>,
     V: AsRef<str>,

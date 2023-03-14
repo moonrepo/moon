@@ -2393,6 +2393,7 @@ dependencies = [
  "moon",
  "moon_constants",
  "moon_error",
+ "moon_logger",
  "moon_test_utils",
  "moon_utils",
  "proto_cli",

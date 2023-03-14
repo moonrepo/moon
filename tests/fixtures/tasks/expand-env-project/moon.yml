@@ -1,17 +1,19 @@
 env:
-  FOO: project-level
+  PROJECT: 'true'
+  SOURCE: project-level
 
 tasks:
   inherit: {}
   env:
     env:
-      FOO: task-level
+      SOURCE: task-level
+      TASK: 'true'
   envFile:
     options:
       envFile: true
   all:
     env:
-      FOO: task-level
-      BAZ: 'true'
+      SOURCE: task-level
+      TASK: 'true'
     options:
       envFile: true

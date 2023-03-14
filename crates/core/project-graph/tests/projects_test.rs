@@ -929,7 +929,10 @@ mod task_expansion {
 
                 assert_eq!(
                     task.env,
-                    FxHashMap::from_iter([("FOO".to_owned(), "project-level".to_owned())])
+                    FxHashMap::from_iter([
+                        ("SOURCE".to_owned(), "project-level".to_owned()),
+                        ("PROJECT".to_owned(), "true".to_owned())
+                    ])
                 );
             }
 
@@ -942,7 +945,11 @@ mod task_expansion {
 
                 assert_eq!(
                     task.env,
-                    FxHashMap::from_iter([("FOO".to_owned(), "task-level".to_owned())])
+                    FxHashMap::from_iter([
+                        ("SOURCE".to_owned(), "task-level".to_owned()),
+                        ("PROJECT".to_owned(), "true".to_owned()),
+                        ("TASK".to_owned(), "true".to_owned())
+                    ])
                 );
             }
 
@@ -956,8 +963,9 @@ mod task_expansion {
                 assert_eq!(
                     task.env,
                     FxHashMap::from_iter([
-                        ("FOO".to_owned(), "env-file".to_owned()),
-                        ("BAR".to_owned(), "123".to_owned())
+                        ("SOURCE".to_owned(), "env-file".to_owned()),
+                        ("PROJECT".to_owned(), "true".to_owned()),
+                        ("FILE".to_owned(), "true".to_owned())
                     ])
                 );
             }
@@ -972,9 +980,10 @@ mod task_expansion {
                 assert_eq!(
                     task.env,
                     FxHashMap::from_iter([
-                        ("FOO".to_owned(), "task-level".to_owned()),
-                        ("BAR".to_owned(), "123".to_owned()),
-                        ("BAZ".to_owned(), "true".to_owned()),
+                        ("SOURCE".to_owned(), "task-level".to_owned()),
+                        ("PROJECT".to_owned(), "true".to_owned()),
+                        ("FILE".to_owned(), "true".to_owned()),
+                        ("TASK".to_owned(), "true".to_owned()),
                     ])
                 );
             }

@@ -325,8 +325,8 @@ mod resolve_args {
             (
                 vec![],
                 vec![
-                    PathBuf::from(&project.source).join("**/*.{ts,tsx}"),
-                    PathBuf::from(&project.source).join("*.js")
+                    glob::normalize(PathBuf::from(&project.source).join("**/*.{ts,tsx}")).unwrap(),
+                    glob::normalize(PathBuf::from(&project.source).join("*.js")).unwrap()
                 ]
             )
         );
@@ -366,7 +366,7 @@ mod resolve_args {
             resolver.resolve(&string_vec!["@in(0)"], &task).unwrap(),
             (
                 vec![],
-                vec![PathBuf::from(&project.source).join("src/**/*")]
+                vec![glob::normalize(PathBuf::from(&project.source).join("src/**/*")).unwrap()]
             )
         );
     }
@@ -584,8 +584,8 @@ mod resolve_inputs {
             (
                 vec![],
                 vec![
-                    PathBuf::from(&project.source).join("**/*.{ts,tsx}"),
-                    PathBuf::from(&project.source).join("*.js")
+                    glob::normalize(PathBuf::from(&project.source).join("**/*.{ts,tsx}")).unwrap(),
+                    glob::normalize(PathBuf::from(&project.source).join("*.js")).unwrap()
                 ]
             ),
         );
@@ -639,7 +639,7 @@ mod resolve_inputs {
             resolver.resolve(&string_vec!["dir"], &task).unwrap(),
             (
                 vec![],
-                vec![PathBuf::from(&project.source).join("dir/**/*")]
+                vec![glob::normalize(PathBuf::from(&project.source).join("dir/**/*")).unwrap()]
             ),
         );
     }
@@ -754,8 +754,8 @@ mod resolve_outputs {
             (
                 vec![],
                 vec![
-                    PathBuf::from(&project.source).join("**/*.{ts,tsx}"),
-                    PathBuf::from(&project.source).join("*.js")
+                    glob::normalize(PathBuf::from(&project.source).join("**/*.{ts,tsx}")).unwrap(),
+                    glob::normalize(PathBuf::from(&project.source).join("*.js")).unwrap()
                 ]
             ),
         );

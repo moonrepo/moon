@@ -97,13 +97,23 @@ async fn can_use_map_and_globs_setting() {
 
     assert_eq!(
         graph.sources,
-        FxHashMap::from_iter([
-            ("noConfig".to_owned(), "no-config".to_owned()),
-            ("bar".to_owned(), "deps/bar".to_owned()),
-            ("basic".to_owned(), "basic".to_owned()),
-            ("baz".to_owned(), "deps/baz".to_owned()),
-            ("foo".to_owned(), "deps/foo".to_owned()),
-        ])
+        FxHashMap::from_iter(if cfg!(windows) {
+            [
+                ("noConfig".to_owned(), "no-config".to_owned()),
+                ("bar".to_owned(), "deps\\bar".to_owned()),
+                ("basic".to_owned(), "basic".to_owned()),
+                ("baz".to_owned(), "deps\\baz".to_owned()),
+                ("foo".to_owned(), "deps\\foo".to_owned()),
+            ]
+        } else {
+            [
+                ("noConfig".to_owned(), "no-config".to_owned()),
+                ("bar".to_owned(), "deps/bar".to_owned()),
+                ("basic".to_owned(), "basic".to_owned()),
+                ("baz".to_owned(), "deps/baz".to_owned()),
+                ("foo".to_owned(), "deps/foo".to_owned()),
+            ]
+        })
     );
 }
 

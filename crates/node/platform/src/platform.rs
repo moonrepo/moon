@@ -172,12 +172,12 @@ impl Platform for NodePlatform {
                         if let Some(existing_source) = projects_map.get(&alias) {
                             if existing_source != project_source {
                                 warn!(
-                                target: LOG_TARGET,
-                                "A project already exists with the ID {} ({}), skipping alias of the same name ({})",
-                                color::id(alias),
-                                color::file(existing_source),
-                                color::file(project_source)
-                            );
+                                    target: LOG_TARGET,
+                                    "A project already exists with the ID {} ({}), skipping alias of the same name ({})",
+                                    color::id(alias),
+                                    color::file(existing_source),
+                                    color::file(project_source)
+                                );
 
                                 continue;
                             }
@@ -185,12 +185,12 @@ impl Platform for NodePlatform {
 
                         if let Some(existing_id) = aliases_map.get(&alias) {
                             warn!(
-                            target: LOG_TARGET,
-                            "A project already exists with the alias {} (for ID {}), skipping conflicting alias (from {})",
-                            color::id(alias),
-                            color::id(existing_id),
-                            color::file(project_source)
-                        );
+                                target: LOG_TARGET,
+                                "A project already exists with the alias {} (for ID {}), skipping conflicting alias (from {})",
+                                color::id(alias),
+                                color::id(existing_id),
+                                color::file(project_source)
+                            );
 
                             continue;
                         }

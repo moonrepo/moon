@@ -3,15 +3,18 @@ use moon_config::ProjectsSourcesMap;
 use moon_logger::{color, debug, warn};
 use moon_utils::{fs, glob, path, regex};
 use moon_vcs::BoxedVcs;
-use std::path::Path;
+use std::path::{Path, MAIN_SEPARATOR_STR};
 
 /// Infer a project name from a source path, by using the name of
 /// the project folder.
 pub fn infer_project_name_and_source(source: &str) -> (String, String) {
-    let source = path::standardize_separators(source);
+    let source = path::normalize_separators(source);
 
-    if source.contains('/') {
-        (source.split('/').last().unwrap().to_owned(), source)
+    if source.contains(MAIN_SEPARATOR_STR) {
+        (
+            source.split(MAIN_SEPARATOR_STR).last().unwrap().to_owned(),
+            source,
+        )
     } else {
         (source.clone(), source)
     }
@@ -46,7 +49,7 @@ pub fn detect_projects_with_globs(
     for project_root in glob::walk(workspace_root, globs)? {
         if project_root.is_dir() {
             let project_source =
-                path::to_virtual_string(project_root.strip_prefix(workspace_root).unwrap())?;
+                path::to_string(project_root.strip_prefix(workspace_root).unwrap())?;
 
             if let Some(vcs) = vcs {
                 if vcs.is_ignored(&project_source) {

@@ -209,10 +209,8 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                 format!(".{}{}", std::path::MAIN_SEPARATOR, arg)
             };
 
-            // Annoying, but we need to force forward slashes,
-            // and remove drive/UNC prefixes...
-            if cfg!(windows) && is_glob {
-                return Ok(path::standardize_separators(arg));
+            if is_glob {
+                return Ok(glob::normalize(arg)?);
             }
 
             Ok(arg)
@@ -231,7 +229,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                 }
 
                 for glob in globs {
-                    args.push(handle_path(glob, true)?);
+                    args.push(handle_path(PathBuf::from(glob), true)?);
                 }
             } else if token_resolver.has_token_var(arg) {
                 args.push(token_resolver.resolve_vars(arg, task)?);
@@ -386,7 +384,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         let (paths, globs) = token_resolver.resolve(&inputs_without_vars, task)?;
 
         task.input_paths.extend(paths);
-        task.input_globs.extend(self.normalize_glob_list(globs)?);
+        task.input_globs.extend(globs);
 
         Ok(())
     }
@@ -405,7 +403,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             TokenResolver::new(TokenContext::Outputs, project, &self.workspace.root);
         let (paths, globs) = token_resolver.resolve(&task.outputs, task)?;
 
-        task.output_globs.extend(self.normalize_glob_list(globs)?);
+        task.output_globs.extend(globs);
 
         for path in paths {
             // Inputs must not consider outputs as a source
@@ -478,10 +476,16 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         let mut aliases = FxHashMap::default();
         let mut cache = self.workspace.cache.cache_projects_state()?;
 
+        let mut add_sources = |map: &FxHashMap<String, String>| {
+            for (id, source) in map {
+                sources.insert(id.to_owned(), path::normalize_separators(source));
+            }
+        };
+
         // Load project sources
         match &self.workspace.config.projects {
             WorkspaceProjects::Sources(map) => {
-                sources.extend(map.clone());
+                add_sources(map);
             }
             WorkspaceProjects::Globs(list) => {
                 globs.extend(list.clone());
@@ -491,7 +495,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                 sources: map,
             } => {
                 globs.extend(list.clone());
-                sources.extend(map.clone());
+                add_sources(map);
             }
         };
 
@@ -609,15 +613,5 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         self.workspace.cache.create_hash_manifest(&hash, &hasher)?;
 
         Ok(hash)
-    }
-
-    fn normalize_glob_list(&self, globs: Vec<PathBuf>) -> Result<Vec<String>, ProjectError> {
-        let mut normalized_globs = vec![];
-
-        for glob in globs {
-            normalized_globs.push(glob::normalize(glob)?);
-        }
-
-        Ok(normalized_globs)
     }
 }

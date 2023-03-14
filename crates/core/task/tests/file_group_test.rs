@@ -36,10 +36,7 @@ mod fg_all {
                     PathBuf::from("files-and-dirs").join("folder/index.ts"),
                     PathBuf::from("root.js")
                 ],
-                vec![
-                    PathBuf::from("files-and-dirs").join("**/*"),
-                    PathBuf::from("root/*")
-                ]
+                string_vec!["files-and-dirs/**/*", "root/*"]
             )
         );
     }
@@ -139,11 +136,7 @@ mod fg_globs {
 
         assert_eq!(
             file_group.globs(&workspace_root, &project_root).unwrap(),
-            vec![
-                PathBuf::from("files-and-dirs").join("**/*"),
-                PathBuf::from("files-and-dirs").join("*.rs"),
-                PathBuf::from("*.js")
-            ]
+            string_vec!["files-and-dirs/**/*", "files-and-dirs/*.rs", "*.js"]
         );
     }
 }

@@ -192,7 +192,7 @@ impl ProjectConfig {
 
         let config: ProjectConfig = figment.extract()?;
 
-        warn_for_unknown_fields(&path, &config.unknown);
+        warn_for_unknown_fields(path, &config.unknown);
 
         if let Err(errors) = config.validate() {
             return Err(ConfigError::FailedValidation(

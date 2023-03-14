@@ -10,7 +10,7 @@ tasks:
     command: noop
 
   noCache:
-    command: noop
+    command: echo 'not cached'
     options:
       cache: false
 

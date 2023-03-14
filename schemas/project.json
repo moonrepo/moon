@@ -4,6 +4,10 @@
   "description": "Docs: https://moonrepo.dev/docs/config/project",
   "type": "object",
   "properties": {
+    "$schema": {
+      "description": "JSON schema URI",
+      "type": "string"
+    },
     "dependsOn": {
       "type": "array",
       "items": {

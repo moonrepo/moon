@@ -9,6 +9,11 @@ tasks:
   standard:
     command: noop
 
+  noCache:
+    command: echo 'not cached'
+    options:
+      cache: false
+
   serialDeps:
     command: noop
     deps:
@@ -17,3 +22,19 @@ tasks:
       - 'depsA:standard'
     options:
       runDepsInParallel: false
+
+  depsOnNoop:
+    command: echo 'test'
+    deps:
+      - 'standard'
+
+  depsOnNoCache:
+    command: echo 'test'
+    deps:
+      - 'noCache'
+
+  depsOnNoopAndNoCache:
+    command: echo 'test'
+    deps:
+      - 'standard'
+      - 'noCache'

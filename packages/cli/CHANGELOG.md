@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where tasks with `cache` disabled were considered empty hashes when declared as a
+  dependency of another task.
+- Fixed an issue where matching against `package.json` workspaces would sometimes fail.
+- Fixed an issue where glob parsing would sometimes fail on Windows.
+
 ## 0.26.1
 
 #### 🚀 Updates

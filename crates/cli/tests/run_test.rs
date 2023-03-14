@@ -290,6 +290,48 @@ mod dependencies {
             extract_hash_from_run(sandbox.path(), "outputs:withDeps")
         ]);
     }
+
+    #[test]
+    fn can_depend_on_noop_task() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("dependsOn:depsOnNoop");
+        });
+
+        assert
+            .success()
+            .stderr(predicate::str::contains("Encountered a missing hash").not());
+    }
+
+    #[test]
+    fn can_depend_on_nocache_task() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("dependsOn:depsOnNoCache");
+        });
+
+        assert
+            .success()
+            .stderr(predicate::str::contains("Encountered a missing hash").not());
+    }
+
+    #[test]
+    fn can_depend_on_noop_and_nocache_task() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("dependsOn:depsOnNoopAndNoCache");
+        });
+
+        assert
+            .success()
+            .stderr(predicate::str::contains("Encountered a missing hash").not());
+    }
 }
 
 mod target_scopes {

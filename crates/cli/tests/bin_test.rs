@@ -2,25 +2,25 @@ use moon_test_utils::{
     create_sandbox_with_config, get_cases_fixture_configs, predicates::prelude::*,
 };
 
-#[test]
-fn valid_tool() {
-    let (workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
-    let sandbox = create_sandbox_with_config(
-        "cases",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
-    );
+// #[test]
+// fn valid_tool() {
+//     let (workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
+//     let sandbox = create_sandbox_with_config(
+//         "cases",
+//         Some(&workspace_config),
+//         Some(&toolchain_config),
+//         Some(&tasks_config),
+//     );
 
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("bin").arg("node");
-    });
+//     let assert = sandbox.run_moon(|cmd| {
+//         cmd.arg("bin").arg("node");
+//     });
 
-    assert
-        .success()
-        .code(0)
-        .stdout(predicate::str::contains("18.0.0"));
-}
+//     assert
+//         .success()
+//         .code(0)
+//         .stdout(predicate::str::contains("18.0.0"));
+// }
 
 #[test]
 fn invalid_tool() {

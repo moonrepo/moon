@@ -205,6 +205,14 @@ mod tests {
         }
 
         #[test]
+        fn matches_explicit() {
+            let set = GlobSet::new(vec!["source"], vec![]).unwrap();
+
+            assert!(set.matches("source"));
+            assert!(!set.matches("source.ts"));
+        }
+
+        #[test]
         fn matches_exprs() {
             let set = GlobSet::new(vec!["files/*.ts"], vec![]).unwrap();
 

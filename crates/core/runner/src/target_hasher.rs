@@ -106,7 +106,7 @@ impl TargetHasher {
                 match hashes.get(&dep.id) {
                     Some(hash) => hash.to_owned(),
                     None => {
-                        return Err(RunnerError::EmptyDependencyHash(
+                        return Err(RunnerError::MissingDependencyHash(
                             dep.id.to_owned(),
                             task.target.id.to_owned(),
                         ));

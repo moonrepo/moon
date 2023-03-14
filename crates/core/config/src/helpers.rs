@@ -1,11 +1,15 @@
 use crate::errors::ConfigError;
+use moon_logger::warn;
 use moon_utils::{
     fs::temp,
     path, time,
     yaml::{self, YamlValue},
 };
-use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
+use std::{
+    collections::{BTreeMap, VecDeque},
+    ffi::OsStr,
+};
 
 pub fn download_and_cache_config(url: &str) -> Result<PathBuf, ConfigError> {
     let file = temp::get_file(url, "yml");
@@ -92,4 +96,25 @@ pub fn gather_extended_sources<T: AsRef<Path>>(
     sources.reverse();
 
     Ok(sources)
+}
+
+pub fn warn_for_unknown_fields<C: AsRef<OsStr>>(
+    config: C,
+    unknown: &BTreeMap<String, serde_yaml::Value>,
+) {
+    let keys = unknown
+        .keys()
+        .cloned()
+        // YAML anchors and aliases
+        .filter(|k| !k.starts_with('_'))
+        .collect::<Vec<_>>();
+
+    if !keys.is_empty() {
+        warn!(
+            target: "moon:config",
+            "Unknown fields in config file {}: {}",
+            moon_logger::color::file(config.as_ref().to_string_lossy()),
+            keys.join(", ")
+        );
+    }
 }

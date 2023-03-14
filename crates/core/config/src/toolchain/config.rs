@@ -1,11 +1,11 @@
 // .moon/toolchain.yml
 
 use crate::errors::map_validation_errors_to_figment_errors;
-use crate::helpers::gather_extended_sources;
+use crate::helpers::{gather_extended_sources, warn_for_unknown_fields};
 use crate::toolchain::deno::DenoConfig;
 use crate::toolchain::node::{NodeConfig, NodePackageManager, PnpmConfig, YarnConfig};
 use crate::toolchain::typescript::TypeScriptConfig;
-use crate::validators::validate_extends;
+use crate::validators::{is_default, validate_extends};
 use crate::ConfigError;
 use figment::{
     providers::{Format, Serialized, YamlExtended},
@@ -14,6 +14,7 @@ use figment::{
 use proto::{Config as ProtoTools, ToolType};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use std::env;
 use std::path::PathBuf;
 use validator::Validate;
@@ -39,9 +40,14 @@ pub struct ToolchainConfig {
     #[validate]
     pub typescript: Option<TypeScriptConfig>,
 
-    /// JSON schema URI.
-    #[serde(skip, rename = "$schema")]
+    /// JSON schema URI
+    #[serde(rename = "$schema", skip_serializing_if = "is_default")]
     pub schema: String,
+
+    /// Unknown fields
+    #[serde(flatten)]
+    #[schemars(skip)]
+    pub unknown: BTreeMap<String, serde_yaml::Value>,
 }
 
 fn apply_node_versions(node_config: &mut NodeConfig, proto_tools: &ProtoTools) {
@@ -139,6 +145,8 @@ impl ToolchainConfig {
 
     fn load_config(figment: Figment) -> Result<ToolchainConfig, ConfigError> {
         let config: ToolchainConfig = figment.extract()?;
+
+        warn_for_unknown_fields(".moon/toolchain.yml", &config.unknown);
 
         if let Err(errors) = config.validate() {
             return Err(ConfigError::FailedValidation(

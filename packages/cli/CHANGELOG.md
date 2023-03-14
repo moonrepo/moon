@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Unknown config fields will now display a warning.
+
 #### 🐞 Fixes
 
 - Fixed an issue where `moon docker setup` couldn't find the manifest file for staged builds.

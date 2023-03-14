@@ -4,7 +4,7 @@ use moon_config::{
 };
 use moon_constants::CONFIG_WORKSPACE_FILENAME;
 use moon_test_utils::get_fixtures_path;
-use std::path::Path;
+use std::{collections::BTreeMap, path::Path};
 
 fn load_jailed_config(root: &Path) -> Result<WorkspaceConfig, figment::Error> {
     match WorkspaceConfig::load(root.join(CONFIG_WORKSPACE_FILENAME)) {
@@ -36,6 +36,7 @@ fn loads_defaults() {
                 vcs: VcsConfig::default(),
                 version_constraint: None,
                 schema: String::new(),
+                unknown: BTreeMap::new(),
             }
         );
 

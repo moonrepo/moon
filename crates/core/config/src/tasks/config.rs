@@ -3,7 +3,7 @@
 use crate::errors::{
     create_validation_error, map_validation_errors_to_figment_errors, ConfigError,
 };
-use crate::helpers::gather_extended_sources;
+use crate::helpers::{gather_extended_sources, warn_for_unknown_fields};
 use crate::project::TaskConfig;
 use crate::types::FileGroups;
 use crate::validators::{is_default, validate_extends, validate_id, validate_target};
@@ -82,9 +82,14 @@ pub struct InheritedTasksConfig {
     #[validate]
     pub tasks: BTreeMap<String, TaskConfig>,
 
-    /// JSON schema URI.
-    #[serde(skip, rename = "$schema")]
+    /// JSON schema URI
+    #[serde(rename = "$schema", skip_serializing_if = "is_default")]
     pub schema: String,
+
+    /// Unknown fields
+    #[serde(flatten)]
+    #[schemars(skip)]
+    pub unknown: BTreeMap<String, serde_yaml::Value>,
 }
 
 impl InheritedTasksConfig {
@@ -104,6 +109,8 @@ impl InheritedTasksConfig {
 
     fn load_config(figment: Figment) -> Result<InheritedTasksConfig, ConfigError> {
         let config: InheritedTasksConfig = figment.extract()?;
+
+        warn_for_unknown_fields(".moon/tasks.yml", &config.unknown);
 
         if let Err(errors) = config.validate() {
             return Err(ConfigError::FailedValidation(

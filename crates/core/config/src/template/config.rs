@@ -1,6 +1,7 @@
 // template.yml
 
-use crate::validators::validate_non_empty;
+use crate::helpers::warn_for_unknown_fields;
+use crate::validators::{is_default, validate_non_empty};
 use crate::{errors::map_validation_errors_to_figment_errors, ConfigError};
 use figment::{
     providers::{Format, Serialized, YamlExtended},
@@ -9,6 +10,7 @@ use figment::{
 use rustc_hash::FxHashMap;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use std::path::Path;
 use validator::{Validate, ValidationError};
 
@@ -74,9 +76,14 @@ pub struct TemplateConfig {
     #[schemars(default)]
     pub variables: FxHashMap<String, TemplateVariable>,
 
-    /// JSON schema URI.
-    #[serde(skip, rename = "$schema")]
+    /// JSON schema URI
+    #[serde(default, rename = "$schema", skip_serializing_if = "is_default")]
     pub schema: String,
+
+    /// Unknown fields
+    #[serde(flatten)]
+    #[schemars(skip)]
+    pub unknown: BTreeMap<String, serde_yaml::Value>,
 }
 
 impl TemplateConfig {
@@ -90,6 +97,8 @@ impl TemplateConfig {
                 .select(profile_name);
 
         let config: TemplateConfig = figment.extract()?;
+
+        warn_for_unknown_fields(&path, &config.unknown);
 
         if let Err(errors) = config.validate() {
             return Err(ConfigError::FailedValidation(

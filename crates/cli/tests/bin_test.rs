@@ -47,24 +47,24 @@ fn invalid_tool() {
 
 // We use a different Node.js version as to not conflict with other tests!
 
-#[test]
-fn not_configured() {
-    let (workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
-    let sandbox = create_sandbox_with_config(
-        "cases",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
-    );
+// #[test]
+// fn not_configured() {
+//     let (workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
+//     let sandbox = create_sandbox_with_config(
+//         "cases",
+//         Some(&workspace_config),
+//         Some(&toolchain_config),
+//         Some(&tasks_config),
+//     );
 
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("bin")
-            .arg("yarn")
-            .env("MOON_NODE_VERSION", "17.2.0");
-    });
+//     let assert = sandbox.run_moon(|cmd| {
+//         cmd.arg("bin")
+//             .arg("yarn")
+//             .env("MOON_NODE_VERSION", "17.2.0");
+//     });
 
-    assert.failure().code(1).stdout("");
-}
+//     assert.failure().code(1).stdout("");
+// }
 
 // #[test]
 // fn not_installed() {

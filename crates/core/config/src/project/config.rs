@@ -3,6 +3,7 @@
 use crate::errors::{
     create_validation_error, map_validation_errors_to_figment_errors, ConfigError,
 };
+use crate::helpers::warn_for_unknown_fields;
 use crate::project::dep::DependencyConfig;
 use crate::project::language_platform::{PlatformType, ProjectLanguage};
 use crate::project::task::TaskConfig;
@@ -170,9 +171,14 @@ pub struct ProjectConfig {
     #[validate]
     pub workspace: ProjectWorkspaceConfig,
 
-    /// JSON schema URI.
-    #[serde(skip, rename = "$schema")]
+    /// JSON schema URI
+    #[serde(rename = "$schema", skip_serializing_if = "is_default")]
     pub schema: String,
+
+    /// Unknown fields
+    #[serde(flatten)]
+    #[schemars(skip)]
+    pub unknown: BTreeMap<String, serde_yaml::Value>,
 }
 
 impl ProjectConfig {
@@ -185,6 +191,8 @@ impl ProjectConfig {
                 .select(profile_name);
 
         let config: ProjectConfig = figment.extract()?;
+
+        warn_for_unknown_fields(&path, &config.unknown);
 
         if let Err(errors) = config.validate() {
             return Err(ConfigError::FailedValidation(

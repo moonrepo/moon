@@ -3,7 +3,7 @@ use moon_config::{ConfigError, NodeConfig, ToolchainConfig};
 use moon_constants::CONFIG_TOOLCHAIN_FILENAME;
 use moon_test_utils::get_fixtures_path;
 use proto::Config as ProtoTools;
-use std::path::Path;
+use std::{collections::BTreeMap, path::Path};
 
 fn load_jailed_config(root: &Path) -> Result<ToolchainConfig, figment::Error> {
     load_jailed_config_with_proto(root, ProtoTools::default())
@@ -38,6 +38,7 @@ fn loads_defaults() {
                 node: None,
                 typescript: None,
                 schema: String::new(),
+                unknown: BTreeMap::new()
             }
         );
 

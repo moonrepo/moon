@@ -9,7 +9,7 @@ use moon_utils::regex::{
 use moon_utils::{glob, path};
 use std::path::{Path, PathBuf};
 
-type PathsGlobsResolved = (Vec<PathBuf>, Vec<PathBuf>);
+type PathsGlobsResolved = (Vec<PathBuf>, Vec<String>);
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum TokenContext {
@@ -142,7 +142,7 @@ impl<'task> TokenResolver<'task> {
         task: &Task,
     ) -> Result<PathsGlobsResolved, TokenError> {
         let mut paths: Vec<PathBuf> = vec![];
-        let mut globs: Vec<PathBuf> = vec![];
+        let mut globs: Vec<String> = vec![];
 
         for value in values {
             if self.has_token_func(value) {
@@ -178,7 +178,7 @@ impl<'task> TokenResolver<'task> {
                 }
 
                 if is_glob {
-                    globs.push(resolved);
+                    globs.push(glob::normalize(resolved)?);
                 } else {
                     paths.push(resolved);
                 }
@@ -281,7 +281,7 @@ impl<'task> TokenResolver<'task> {
         token_type.check_context(&self.context)?;
 
         let mut paths: Vec<PathBuf> = vec![];
-        let mut globs: Vec<PathBuf> = vec![];
+        let mut globs: Vec<String> = vec![];
         let file_groups = &self.project.file_groups;
 
         let get_file_group = |token: &str, id: &str| {
@@ -326,8 +326,8 @@ impl<'task> TokenResolver<'task> {
     ) -> Result<PathsGlobsResolved, TokenError> {
         token_type.check_context(&self.context)?;
 
-        let mut paths = vec![];
-        let mut globs = vec![];
+        let mut paths: Vec<PathBuf> = vec![];
+        let mut globs: Vec<String> = vec![];
 
         if let TokenType::In(token, index) = token_type {
             let error = TokenError::InvalidInIndex(token, index);
@@ -338,7 +338,7 @@ impl<'task> TokenResolver<'task> {
             if glob::is_glob(input) {
                 match task.input_globs.iter().find(|g| g.ends_with(input)) {
                     Some(g) => {
-                        globs.push(PathBuf::from(g));
+                        globs.push(g.to_owned());
                     }
                     None => {
                         return Err(error);
@@ -371,7 +371,7 @@ impl<'task> TokenResolver<'task> {
         token_type.check_context(&self.context)?;
 
         let mut paths: Vec<PathBuf> = vec![];
-        let mut globs: Vec<PathBuf> = vec![];
+        let mut globs: Vec<String> = vec![];
 
         if let TokenType::Out(token, index) = token_type {
             let error = TokenError::InvalidOutIndex(token.clone(), index);
@@ -386,7 +386,7 @@ impl<'task> TokenResolver<'task> {
             if glob::is_glob(output) {
                 match task.output_globs.iter().find(|g| g.ends_with(output)) {
                     Some(g) => {
-                        globs.push(PathBuf::from(g));
+                        globs.push(g.to_owned());
                     }
                     None => {
                         return Err(error);

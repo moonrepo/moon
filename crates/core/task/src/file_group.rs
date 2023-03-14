@@ -40,7 +40,7 @@ impl FileGroup {
         &self,
         workspace_root: &Path,
         project_root: &Path,
-    ) -> Result<(Vec<PathBuf>, Vec<PathBuf>), FileGroupError> {
+    ) -> Result<(Vec<PathBuf>, Vec<String>), FileGroupError> {
         let mut paths = vec![];
         let mut globs = vec![];
 
@@ -48,7 +48,7 @@ impl FileGroup {
             let result = path::expand_to_workspace_relative(file, workspace_root, project_root);
 
             if glob::is_glob(file) {
-                globs.push(result);
+                globs.push(glob::normalize(result)?);
             } else {
                 paths.push(result);
             }
@@ -83,16 +83,16 @@ impl FileGroup {
         &self,
         workspace_root: &Path,
         project_root: &Path,
-    ) -> Result<Vec<PathBuf>, FileGroupError> {
+    ) -> Result<Vec<String>, FileGroupError> {
         let mut globs = vec![];
 
         for file in &self.files {
             if glob::is_glob(file) {
-                globs.push(path::expand_to_workspace_relative(
+                globs.push(glob::normalize(path::expand_to_workspace_relative(
                     file,
                     workspace_root,
                     project_root,
-                ));
+                ))?);
             }
         }
 
@@ -135,50 +135,25 @@ impl FileGroup {
         workspace_root: &Path,
         project_root: &Path,
     ) -> Result<Vec<PathBuf>, FileGroupError> {
+        let (paths, globs) = self.all(workspace_root, project_root)?;
         let mut list = vec![];
-        let mut workspace_globs = vec![];
-        let mut project_globs = vec![];
 
-        for file in &self.files {
-            if glob::is_glob(file) {
-                if let Some(root_glob) = file.strip_prefix('/') {
-                    workspace_globs.push(root_glob);
-                } else {
-                    project_globs.push(file);
-                };
+        // Paths are relative from workspace root!
+        for path in paths {
+            let allowed = if is_dir {
+                workspace_root.join(&path).is_dir()
             } else {
-                let path = path::expand_to_workspace_relative(file, workspace_root, project_root);
+                workspace_root.join(&path).is_file()
+            };
 
-                // Path is relative from workspace root!
-                let allowed = if is_dir {
-                    workspace_root.join(&path).is_dir()
-                } else {
-                    workspace_root.join(&path).is_file()
-                };
-
-                if allowed {
-                    list.push(path::normalize(path));
-                }
+            if allowed {
+                list.push(path::normalize(path));
             }
         }
 
-        // We must run globs separately so that negated patterns work correctly
-        if !workspace_globs.is_empty() {
-            for path in glob::walk(workspace_root, &workspace_globs)? {
-                let allowed = if is_dir {
-                    path.is_dir()
-                } else {
-                    path.is_file()
-                };
-
-                if allowed {
-                    list.push(path::normalize(path.strip_prefix(workspace_root).unwrap()));
-                }
-            }
-        }
-
-        if !project_globs.is_empty() {
-            for path in glob::walk(project_root, &project_globs)? {
+        if !globs.is_empty() {
+            // Glob results are absolute paths!
+            for path in glob::walk(workspace_root, &globs)? {
                 let allowed = if is_dir {
                     path.is_dir()
                 } else {

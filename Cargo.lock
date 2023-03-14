@@ -2520,6 +2520,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "thiserror",
+ "wax",
 ]
 
 [[package]]

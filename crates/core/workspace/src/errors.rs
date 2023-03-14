@@ -1,6 +1,5 @@
 use moon_constants as constants;
 use moon_error::MoonError;
-use moon_utils::glob::GlobError;
 use moon_vcs::VcsError;
 use moonbase::MoonbaseError;
 use proto::ProtoError;
@@ -44,9 +43,6 @@ pub enum WorkspaceError {
 
     #[error("Invalid moon version, unable to proceed. Found {0}, expected {1}.")]
     InvalidMoonVersion(String, String),
-
-    #[error(transparent)]
-    Glob(#[from] GlobError),
 
     #[error(transparent)]
     Moon(#[from] MoonError),

@@ -2,11 +2,38 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moonrepo Blog</title>
-    <updated>2023-03-13T00:00:00.000Z</updated>
+    <updated>2023-03-15T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moonrepo Blog</subtitle>
     <icon>https://moonrepo.dev/img/favicon.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[proto v0.3 - Improved npm, go, and version requirement support]]></title>
+        <id>https://moonrepo.dev/blog/proto-v0.3</id>
+        <link href="https://moonrepo.dev/blog/proto-v0.3"/>
+        <updated>2023-03-15T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[With this release, we're improving some workflows and version detection logic based on initial]]></summary>
+        <content type="html"><![CDATA[<p>With this release, we're improving some workflows and version detection logic based on initial
+feedback.</p><h2 class="anchor anchorWithStickyNavbar_JmGV" id="bundled-npm-support">Bundled npm support<a href="#bundled-npm-support" class="hash-link" aria-label="Direct link to Bundled npm support" title="Direct link to Bundled npm support">​</a></h2><p>After Node.js is installed, the version of npm that came bundled with that Node.js version will also
+be installed into proto. This functionality can be skipped by passing <code>--no-bundled-npm</code> during
+installation.</p><div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">node</span><span class="token plain"> -- --no-bundled-npm</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg class="copyButtonIcon_FoOz" viewBox="0 0 24 24"><path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg class="copyButtonSuccessIcon_L0B6" viewBox="0 0 24 24"><path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div><p>To further expand upon this, <code>bundled</code> is now considered a built-in alias, and will be used during
+version detection. When encountered, we'll first detect the version of Node.js running, and infer
+the npm version from there.</p><div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto global </span><span class="token function" style="color:#ff94ff;font-weight:bold">npm</span><span class="token plain"> bundled</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg class="copyButtonIcon_FoOz" viewBox="0 0 24 24"><path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg class="copyButtonSuccessIcon_L0B6" viewBox="0 0 24 24"><path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div><blockquote><p>Only supported by proto, not moon.</p></blockquote><h2 class="anchor anchorWithStickyNavbar_JmGV" id="automatic-gobin-setup">Automatic <code>GOBIN</code> setup<a href="#automatic-gobin-setup" class="hash-link" aria-label="Direct link to automatic-gobin-setup" title="Direct link to automatic-gobin-setup">​</a></h2><p>After Go is installed, we'll now inject a <code>GOBIN</code> environment variable into your shell, pointing to
+<code>~/go/bin</code>, if it doesn't already exist. This variable will be used to locate Go binaries across all
+installed versions, and help to avoid binary not found errors.</p><p>This functionality can be skipped by passing <code>--no-gobin</code> during installation.</p><div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> go -- --no-gobin</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg class="copyButtonIcon_FoOz" viewBox="0 0 24 24"><path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg class="copyButtonSuccessIcon_L0B6" viewBox="0 0 24 24"><path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div><blockquote><p>Only supported by proto, not moon.</p></blockquote><h2 class="anchor anchorWithStickyNavbar_JmGV" id="better-version-requirement-detection">Better version requirement detection<a href="#better-version-requirement-detection" class="hash-link" aria-label="Direct link to Better version requirement detection" title="Direct link to Better version requirement detection">​</a></h2><p>Previously when proto encounted a version requirement (<code>^</code>, <code>~</code>, <code>&gt;=</code>, etc) during version
+detection, we would attempt to resolve a version that satisfied the requirement based on versions
+available in the remote manifest (what's been officially released). While this worked, it would
+result in far too many local installs as that satisfied version constantly changed.</p><p>Instead, we now satisfy the version requirement based on versions that have been installed locally
+to <code>~/.proto/tools</code>. If no version matches, detection will simply move on to the next case, and
+eventually fallback to the global default version.</p>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="proto" term="proto"/>
+        <category label="npm" term="npm"/>
+        <category label="go" term="go"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[moon v0.26 - Deeper proto integration, Docker setup, and query commands]]></title>
         <id>https://moonrepo.dev/blog/v0.26</id>

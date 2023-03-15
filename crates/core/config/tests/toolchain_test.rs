@@ -49,7 +49,6 @@ fn loads_defaults() {
 mod proto_tools {
     use super::*;
     use moon_config::NodePackageManager;
-    use proto::ToolType;
 
     #[test]
     fn enables_deno() {
@@ -57,7 +56,7 @@ mod proto_tools {
             jail.create_file(super::CONFIG_TOOLCHAIN_FILENAME, "{}")?;
 
             let mut proto = ProtoTools::default();
-            proto.tools.insert(ToolType::Deno, "1.30.0".to_owned());
+            proto.tools.insert("deno".to_owned(), "1.30.0".to_owned());
 
             let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
 
@@ -73,7 +72,7 @@ mod proto_tools {
             jail.create_file(super::CONFIG_TOOLCHAIN_FILENAME, "{}")?;
 
             let mut proto = ProtoTools::default();
-            proto.tools.insert(ToolType::Node, "16.16.0".to_owned());
+            proto.tools.insert("node".to_owned(), "16.16.0".to_owned());
 
             let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
 
@@ -90,8 +89,8 @@ mod proto_tools {
             jail.create_file(super::CONFIG_TOOLCHAIN_FILENAME, "{}")?;
 
             let mut proto = ProtoTools::default();
-            proto.tools.insert(ToolType::Node, "16.16.0".to_owned());
-            proto.tools.insert(ToolType::Npm, "9.0.0".to_owned());
+            proto.tools.insert("node".to_owned(), "16.16.0".to_owned());
+            proto.tools.insert("npm".to_owned(), "9.0.0".to_owned());
 
             let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
 
@@ -113,8 +112,8 @@ node:
             )?;
 
             let mut proto = ProtoTools::default();
-            proto.tools.insert(ToolType::Node, "16.16.0".to_owned());
-            proto.tools.insert(ToolType::Pnpm, "7.0.0".to_owned());
+            proto.tools.insert("node".to_owned(), "16.16.0".to_owned());
+            proto.tools.insert("pnpm".to_owned(), "7.0.0".to_owned());
 
             let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
 
@@ -140,8 +139,8 @@ node:
             )?;
 
             let mut proto = ProtoTools::default();
-            proto.tools.insert(ToolType::Node, "16.16.0".to_owned());
-            proto.tools.insert(ToolType::Yarn, "3.0.0".to_owned());
+            proto.tools.insert("node".to_owned(), "16.16.0".to_owned());
+            proto.tools.insert("yarn".to_owned(), "3.0.0".to_owned());
 
             let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
 
@@ -162,7 +161,7 @@ node:
             jail.create_file(super::CONFIG_TOOLCHAIN_FILENAME, "node: {}")?;
 
             let mut proto = ProtoTools::default();
-            proto.tools.insert(ToolType::Node, "16.16.0".to_owned());
+            proto.tools.insert("node".to_owned(), "16.16.0".to_owned());
 
             let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
 
@@ -185,8 +184,8 @@ node:
             )?;
 
             let mut proto = ProtoTools::default();
-            proto.tools.insert(ToolType::Node, "16.16.0".to_owned());
-            proto.tools.insert(ToolType::Npm, "9.0.0".to_owned());
+            proto.tools.insert("node".to_owned(), "16.16.0".to_owned());
+            proto.tools.insert("npm".to_owned(), "9.0.0".to_owned());
 
             let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
 
@@ -209,8 +208,8 @@ node:
             )?;
 
             let mut proto = ProtoTools::default();
-            proto.tools.insert(ToolType::Node, "16.16.0".to_owned());
-            proto.tools.insert(ToolType::Pnpm, "7.0.0".to_owned());
+            proto.tools.insert("node".to_owned(), "16.16.0".to_owned());
+            proto.tools.insert("pnpm".to_owned(), "7.0.0".to_owned());
 
             let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
 
@@ -233,8 +232,8 @@ node:
             )?;
 
             let mut proto = ProtoTools::default();
-            proto.tools.insert(ToolType::Node, "16.16.0".to_owned());
-            proto.tools.insert(ToolType::Yarn, "3.0.0".to_owned());
+            proto.tools.insert("node".to_owned(), "16.16.0".to_owned());
+            proto.tools.insert("yarn".to_owned(), "3.0.0".to_owned());
 
             let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
 
@@ -254,7 +253,7 @@ node:
             )?;
 
             let mut proto = ProtoTools::default();
-            proto.tools.insert(ToolType::Node, "16.16.0".to_owned());
+            proto.tools.insert("node".to_owned(), "16.16.0".to_owned());
 
             let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
 
@@ -278,8 +277,8 @@ node:
             )?;
 
             let mut proto = ProtoTools::default();
-            proto.tools.insert(ToolType::Node, "16.16.0".to_owned());
-            proto.tools.insert(ToolType::Npm, "1.2.3".to_owned());
+            proto.tools.insert("node".to_owned(), "16.16.0".to_owned());
+            proto.tools.insert("npm".to_owned(), "1.2.3".to_owned());
 
             let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
 
@@ -303,8 +302,8 @@ node:
             )?;
 
             let mut proto = ProtoTools::default();
-            proto.tools.insert(ToolType::Node, "16.16.0".to_owned());
-            proto.tools.insert(ToolType::Pnpm, "1.2.3".to_owned());
+            proto.tools.insert("node".to_owned(), "16.16.0".to_owned());
+            proto.tools.insert("pnpm".to_owned(), "1.2.3".to_owned());
 
             let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
 
@@ -328,8 +327,8 @@ node:
             )?;
 
             let mut proto = ProtoTools::default();
-            proto.tools.insert(ToolType::Node, "16.16.0".to_owned());
-            proto.tools.insert(ToolType::Yarn, "1.2.3".to_owned());
+            proto.tools.insert("node".to_owned(), "16.16.0".to_owned());
+            proto.tools.insert("yarn".to_owned(), "1.2.3".to_owned());
 
             let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
 

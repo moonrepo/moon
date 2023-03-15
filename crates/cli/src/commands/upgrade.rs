@@ -1,9 +1,10 @@
+use crate::app::BIN_NAME;
 use crate::helpers::{create_progress_bar, AnyError};
 use bytes::Buf;
 use itertools::Itertools;
 use moon_launchpad::check_version;
 use moon_logger::error;
-use moon_utils::{fs, semver::Version};
+use moon_utils::{fs, path::get_home_dir, semver::Version};
 use proto::ProtoError;
 use std::{
     env::{self, consts},
@@ -29,7 +30,7 @@ pub async fn upgrade() -> Result<(), AnyError> {
             return Ok(());
         }
         Err(err) => {
-            error!("Failed to get current version of the cli from remote: {err}");
+            error!("Failed to get current version of moon from remote: {err}");
             return Err(err);
         }
     };
@@ -56,18 +57,22 @@ pub async fn upgrade() -> Result<(), AnyError> {
         }
     };
 
-    let bin_path = env::current_exe()?;
+    let current_bin_path = env::current_exe()?;
+    let bin_dir = get_home_dir()
+        .expect("Invalid home directory.")
+        .join(".moon")
+        .join("bin");
 
     // We can only upgrade moon if it's installed under .moon
-    let upgradeable = bin_path
+    let upgradeable = current_bin_path
         .components()
         .contains(&Component::Normal(".moon".as_ref()));
 
     if !upgradeable {
         return Err(format!(
-            "moon can only upgrade itself when installed in the  ~/.moon directory.\n\
+            "moon can only upgrade itself when installed in the ~/.moon directory.\n\
             moon is currently installed at: {}",
-            bin_path.to_string_lossy()
+            current_bin_path.to_string_lossy()
         )
         .into());
     }
@@ -75,17 +80,13 @@ pub async fn upgrade() -> Result<(), AnyError> {
     let done = create_progress_bar(format!("Upgrading moon to version {new_version}..."));
 
     // Move the old binary to a versioned path
-    let ver_path = bin_path
-        .parent()
-        .unwrap()
-        .parent()
-        .unwrap()
-        .join(version)
-        .join(fs::file_name(&bin_path));
+    let versioned_bin_path = bin_dir.join(version).join(fs::file_name(&current_bin_path));
 
-    fs::create_dir_all(ver_path.parent().unwrap())?;
-    fs::rename(&bin_path, ver_path)?;
+    fs::create_dir_all(versioned_bin_path.parent().unwrap())?;
+    fs::rename(&current_bin_path, versioned_bin_path)?;
 
+    // Download the new binary
+    let bin_path = bin_dir.join(BIN_NAME);
     let mut file = File::create(bin_path)?;
 
     #[cfg(target_family = "unix")]

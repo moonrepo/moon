@@ -1,6 +1,13 @@
 # Changelog
 
+## Unreleased
+
 ## 0.26.2
+
+#### 💥 Breaking
+
+- Updated the installer scripts and the `moon upgrade` command to install the `moon` binary to
+  `~/.moon/bin`.
 
 #### 🐞 Fixes
 

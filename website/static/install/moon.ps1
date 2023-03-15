@@ -15,11 +15,13 @@ if ($Args.Length -eq 1) {
 
 $DownloadUrl = if ($Version -eq "latest") {
   "https://github.com/moonrepo/moon/releases/latest/download/${Target}"
+} else if ($Version -like "0*") {
+  "https://github.com/moonrepo/moon/releases/download/%40moonrepo%2Fcli%40${Version}/${Target}"
 } else {
-  "https://github.com/moonrepo/moon/releases/download/%40moonrepo%2Fcli%40/${Version}/${Target}"
+  "https://github.com/moonrepo/moon/releases/download/v${Version}/${Target}"
 }
 
-$InstallDir = "${Home}\.moon\tools\moon\${Version}"
+$InstallDir = "${Home}\.moon\bin"
 $BinPath = "${InstallDir}\moon.exe"
 
 if (!(Test-Path $InstallDir)) {

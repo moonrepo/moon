@@ -24,22 +24,21 @@ scripts to download and install moon.
 In a terminal that supports Bash, run:
 
 ```
-curl -fsSL https://moonrepo.dev/install.sh | bash
+curl -fsSL https://moonrepo.dev/install/moon.sh | bash
 ```
 
-This will install moon to `~/.moon/tools/moon` and create a symlink in `/usr/local/bin`. On WSL, we
-prepand the `PATH` environment variable.
+This will install moon to `~/.moon/bin` and create a symlink in `/usr/local/bin`.
 
 ### Windows
 
 In Powershell or Windows Terminal, run:
 
 ```
-irm https://moonrepo.dev/install.ps1 | iex
+irm https://moonrepo.dev/install/moon.ps1 | iex
 ```
 
-This will install moon to `~\.moon\tools\moon` and prepend to the `PATH` environment variable for
-the current session. To persist across sessions, update `PATH` manually.
+This will install moon to `~\.moon\bin` and prepend to the `PATH` environment variable for the
+current session. To persist across sessions, update `PATH` manually.
 
 ### Homebrew
 

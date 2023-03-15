@@ -1,7 +1,7 @@
 # @moonrepo/cli
 
 The official CLI for [moon](https://moonrepo.dev), a task runner and repo management tool for the
-web ecosystem, written in Rust! Supports JavaScript, TypeScript, Bash, and Batch.
+web ecosystem, written in Rust! Supports JavaScript, TypeScript, Bash, and much more!
 
 - [Documentation](https://moonrepo.dev/docs)
 - [Getting started](https://moonrepo.dev/docs/install)
@@ -12,18 +12,20 @@ web ecosystem, written in Rust! Supports JavaScript, TypeScript, Bash, and Batch
 
 moon can be installed with bash:
 
-```bash
-curl -fsSL https://moonrepo.dev/install.sh | bash
+```shell
+curl -fsSL https://moonrepo.dev/install/moon.sh | bash
 ```
 
 Or with npm, pnpm, or yarn.
 
-```bash
-# Install the dependency
+```shell
 yarn add --dev @moonrepo/cli
+```
 
-# Initialize moon in the repo
-npx @moonrepo/cli init
+Once installed, initialize moon in your repository.
+
+```shell
+moon init
 ```
 
 ## Usage

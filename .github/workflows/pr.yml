@@ -36,9 +36,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       # Unix
-      - run: bash ./website/static/install.sh
+      - run: bash ./website/static/install/moon.sh
         if: ${{ runner.os != 'Windows' }}
-      - run: bash ./website/static/install.sh '0.20.0'
+      - run: bash ./website/static/install/moon.sh '0.20.0'
         if: ${{ runner.os != 'Windows' }}
       - run: bash ./website/static/install/proto.sh
         if: ${{ runner.os != 'Windows' }}
@@ -49,9 +49,9 @@ jobs:
         env:
           SHELL: bash
       # Windows
-      - run: pwsh.exe ./website/static/install.ps1
+      - run: pwsh.exe ./website/static/install/moon.ps1
         if: ${{ runner.os == 'Windows' }}
-      - run: pwsh.exe ./website/static/install.ps1 '0.20.0'
+      - run: pwsh.exe ./website/static/install/moon.ps1 '0.20.0'
         if: ${{ runner.os == 'Windows' }}
       - run: pwsh.exe ./website/static/install/proto.ps1
         if: ${{ runner.os == 'Windows' }}

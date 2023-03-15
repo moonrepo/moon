@@ -1,0 +1,60 @@
+---
+slug: proto-v0.3
+title: proto v0.3 - Improved npm, go, and version requirement support
+authors: [milesj]
+tags: [proto, npm, go]
+image: ./img/proto/v0.3.png
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import Button from '@site/src/ui/Button';
+import Logo from '../static/brand/proto/logo.svg';
+
+With this release, we're improving some workflows and version detection logic based on initial
+feedback.
+
+## Bundled npm support
+
+After Node.js is installed, the version of npm that came bundled with that Node.js version will also
+be installed into proto. This functionality can be skipped by passing `--no-bundled-npm` during
+installation.
+
+```shell
+$ proto install node -- --no-bundled-npm
+```
+
+To further expand upon this, `bundled` is now considered a built-in alias, and will be used during
+version detection. When encountered, we'll first detect the version of Node.js running, and infer
+the npm version from there.
+
+```shell
+$ proto global npm bundled
+```
+
+> Only supported by proto, not moon.
+
+## Automatic `GOBIN` setup
+
+After Go is installed, we'll now inject a `GOBIN` environment variable into your shell, pointing to
+`~/go/bin`, if it doesn't already exist. This variable will be used to locate Go binaries across all
+installed versions, and help to avoid binary not found errors.
+
+This functionality can be skipped by passing `--no-gobin` during installation.
+
+```shell
+$ proto install go -- --no-gobin
+```
+
+> Only supported by proto, not moon.
+
+## Better version requirement detection
+
+Previously when proto encounted a version requirement (`^`, `~`, `>=`, etc) during version
+detection, we would attempt to resolve a version that satisfied the requirement based on versions
+available in the remote manifest (what's been officially released). While this worked, it would
+result in far too many local installs as that satisfied version constantly changed.
+
+Instead, we now satisfy the version requirement based on versions that have been installed locally
+to `~/.proto/tools`. If no version matches, detection will simply move on to the next case, and
+eventually fallback to the global default version.

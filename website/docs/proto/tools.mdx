@@ -1,0 +1,76 @@
+---
+title: Supported tools
+---
+
+The following tools are supported in proto's toolchain.
+
+## Bun
+
+[Bun](https://bun.sh/) (`bun`) is an all-in-one runtime and toolset for JavaScript and TypeScript,
+powered by Zig and Webkit.
+
+## Deno
+
+[Deno](https://deno.land/) (`deno`) is a secure runtime for JavaScript and TypeScript, powered by
+Rust and Chrome's V8 engine.
+
+#### Detection sources
+
+- A [`.dvmrc`](https://github.com/justjavac/dvm) file.
+
+## Go
+
+[Go](https://go.dev/) (`go`) is a simple, secure, and fast systems language.
+
+#### Post-install hook
+
+After installation, we'll inject a `GOBIN` environment variable into your shell, pointing to
+`~/go/bin`, if it does not already exist. This variable will be used to locate Go binaries across
+all installed versions. This functionality can be skipped by passing `--no-gobin` during
+installation.
+
+```shell
+$ proto install go -- --no-gobin
+```
+
+#### Detection sources
+
+- Native [`go.work`](https://go.dev/doc/tutorial/workspaces) or
+  [`go.mod`](https://go.dev/doc/modules/gomod-ref) files.
+
+## Node.js
+
+[Node.js](https://nodejs.org/) (`node`) is a JavaScript runtime built on Chrome's V8 engine.
+
+#### Post-install hook
+
+After installation, the version of npm that came bundled with Node.js will also be installed. This
+functionality can be skipped by passing `--no-bundled-npm` during installation.
+
+```shell
+$ proto install node -- --no-bundled-npm
+```
+
+#### Detection sources
+
+- An [`.nvmrc`](https://github.com/nvm-sh/nvm) or
+  [`.node-version`](https://github.com/nodenv/nodenv) file.
+- The [`engines`](https://docs.npmjs.com/cli/v9/configuring-npm/package-json#engines) field in
+  `package.json`.
+
+:::info
+
+When parsing engines, explicit versions (`1.2.3`, `=1.2.3`) will be used as-is, but
+requirements/ranges (`^1.2.3`, `>=1.2.3`) will scan `~/.proto/tools/node` for an applicable match.
+
+:::
+
+### npm, pnpm, yarn
+
+proto supports all popular Node.js package managers: `npm`, `pnpm`, `yarn`.
+
+#### Detection sources
+
+- The `packageManager` field in `package.json`.
+- The [`engines`](https://docs.npmjs.com/cli/v9/configuring-npm/package-json#engines) field in
+  `package.json` (same notice above applies).

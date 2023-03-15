@@ -11,7 +11,7 @@ use figment::{
     providers::{Format, Serialized, YamlExtended},
     Figment,
 };
-use proto::{Config as ProtoTools, ToolType};
+use proto::Config as ProtoTools;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -51,13 +51,13 @@ pub struct ToolchainConfig {
 }
 
 fn apply_node_versions(node_config: &mut NodeConfig, proto_tools: &ProtoTools) {
-    if let Some(node_version) = proto_tools.tools.get(&ToolType::Node) {
+    if let Some(node_version) = proto_tools.tools.get("node") {
         if node_config.version.is_none() {
             node_config.version = Some(node_version.to_owned());
         }
     }
 
-    if let Some(yarn_version) = proto_tools.tools.get(&ToolType::Yarn) {
+    if let Some(yarn_version) = proto_tools.tools.get("yarn") {
         if let Some(yarn_config) = &mut node_config.yarn {
             if yarn_config.version.is_none() {
                 yarn_config.version = Some(yarn_version.to_owned());
@@ -68,7 +68,7 @@ fn apply_node_versions(node_config: &mut NodeConfig, proto_tools: &ProtoTools) {
                 ..YarnConfig::default()
             });
         }
-    } else if let Some(pnpm_version) = proto_tools.tools.get(&ToolType::Pnpm) {
+    } else if let Some(pnpm_version) = proto_tools.tools.get("pnpm") {
         if let Some(pnpm_config) = &mut node_config.pnpm {
             if pnpm_config.version.is_none() {
                 pnpm_config.version = Some(pnpm_version.to_owned());
@@ -78,7 +78,7 @@ fn apply_node_versions(node_config: &mut NodeConfig, proto_tools: &ProtoTools) {
                 version: Some(pnpm_version.to_owned()),
             });
         }
-    } else if let Some(npm_version) = proto_tools.tools.get(&ToolType::Npm) {
+    } else if let Some(npm_version) = proto_tools.tools.get("npm") {
         node_config.package_manager = NodePackageManager::Npm;
 
         if node_config.npm.version.is_none() {
@@ -101,7 +101,7 @@ impl ToolchainConfig {
         config.extends = None;
 
         // Inherit settings if configuring in proto
-        if config.deno.is_none() && proto_tools.tools.get(&ToolType::Deno).is_some() {
+        if config.deno.is_none() && proto_tools.tools.get("deno").is_some() {
             config.deno = Some(DenoConfig {
                 ..DenoConfig::default()
             });
@@ -109,7 +109,7 @@ impl ToolchainConfig {
 
         if let Some(node_config) = &mut config.node {
             apply_node_versions(node_config, proto_tools);
-        } else if proto_tools.tools.contains_key(&ToolType::Node) {
+        } else if proto_tools.tools.contains_key("node") {
             let mut node_config = NodeConfig::default();
 
             apply_node_versions(&mut node_config, proto_tools);

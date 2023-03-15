@@ -12,10 +12,18 @@ acceptable. It even supports aliases when applicable, like `latest`, `next`, `be
 $ proto install deno 1.31
 ```
 
+Some tools run [post-install hooks](../tools) that support arbitrary arguments that can be passed
+after `--`.
+
+```shell
+$ proto install go -- --no-gobin
+```
+
 ### Arguments
 
 - `<tool>` - Type of tool.
 - `[version]` - Version of tool. Defaults to "latest".
+- `[-- <args>]` - Additional arguments to pass to post-install hooks.
 
 ### Options
 

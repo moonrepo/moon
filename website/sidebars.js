@@ -213,6 +213,7 @@ const sidebars = {
 		'proto/install',
 		'proto/detection',
 		'proto/config',
+		'proto/tools',
 		'proto/faq',
 		{
 			type: 'category',

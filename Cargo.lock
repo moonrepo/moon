@@ -206,6 +206,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-recursion"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3b015a331cc64ebd1774ba119538573603427eaace0a1950c423ab971f903796"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "async-std"
 version = "1.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1300,9 +1311,9 @@ dependencies = [
 
 [[package]]
 name = "futures"
-version = "0.3.26"
+version = "0.3.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13e2792b0ff0340399d58445b88fd9770e3489eff258a4cbc1523418f12abf84"
+checksum = "531ac96c6ff5fd7c62263c5e3c67a603af4fcaee2e1a0ae5565ba3a11e69e549"
 dependencies = [
  "futures-channel",
  "futures-core",
@@ -1315,9 +1326,9 @@ dependencies = [
 
 [[package]]
 name = "futures-channel"
-version = "0.3.26"
+version = "0.3.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2e5317663a9089767a1ec00a487df42e0ca174b61b4483213ac24448e4664df5"
+checksum = "164713a5a0dcc3e7b4b1ed7d3b433cabc18025386f9339346e8daf15963cf7ac"
 dependencies = [
  "futures-core",
  "futures-sink",
@@ -1325,15 +1336,15 @@ dependencies = [
 
 [[package]]
 name = "futures-core"
-version = "0.3.26"
+version = "0.3.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec90ff4d0fe1f57d600049061dc6bb68ed03c7d2fbd697274c41805dcb3f8608"
+checksum = "86d7a0c1aa76363dac491de0ee99faf6941128376f1cf96f07db7603b7de69dd"
 
 [[package]]
 name = "futures-executor"
-version = "0.3.26"
+version = "0.3.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8de0a35a6ab97ec8869e32a2473f4b1324459e14c29275d14b10cb1fd19b50e"
+checksum = "1997dd9df74cdac935c76252744c1ed5794fac083242ea4fe77ef3ed60ba0f83"
 dependencies = [
  "futures-core",
  "futures-task",
@@ -1342,9 +1353,9 @@ dependencies = [
 
 [[package]]
 name = "futures-io"
-version = "0.3.26"
+version = "0.3.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bfb8371b6fb2aeb2d280374607aeabfc99d95c72edfe51692e42d3d7f0d08531"
+checksum = "89d422fa3cbe3b40dca574ab087abb5bc98258ea57eea3fd6f1fa7162c778b91"
 
 [[package]]
 name = "futures-lite"
@@ -1363,9 +1374,9 @@ dependencies = [
 
 [[package]]
 name = "futures-macro"
-version = "0.3.26"
+version = "0.3.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "95a73af87da33b5acf53acfebdc339fe592ecf5357ac7c0a7734ab9d8c876a70"
+checksum = "3eb14ed937631bd8b8b8977f2c198443447a8355b6e3ca599f38c975e5a963b6"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1374,21 +1385,21 @@ dependencies = [
 
 [[package]]
 name = "futures-sink"
-version = "0.3.26"
+version = "0.3.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f310820bb3e8cfd46c80db4d7fb8353e15dfff853a127158425f31e0be6c8364"
+checksum = "ec93083a4aecafb2a80a885c9de1f0ccae9dbd32c2bb54b0c3a65690e0b8d2f2"
 
 [[package]]
 name = "futures-task"
-version = "0.3.26"
+version = "0.3.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcf79a1bf610b10f42aea489289c5a2c478a786509693b80cd39c44ccd936366"
+checksum = "fd65540d33b37b16542a0438c12e6aeead10d4ac5d05bd3f805b8f35ab592879"
 
 [[package]]
 name = "futures-util"
-version = "0.3.26"
+version = "0.3.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c1d6de3acfef38d2be4b1f543f553131788603495be83da675e180c8d6b7bd1"
+checksum = "3ef6b17e481503ec85211fed8f39d1970f128935ca1f814cd32ac4a6842e84ab"
 dependencies = [
  "futures-channel",
  "futures-core",
@@ -2006,7 +2017,6 @@ checksum = "de8de3f4f3754c280ce1c8c42ed8dd26a9c8385c2e5ad4ec5a77e774cea9c1ec"
 dependencies = [
  "lenient_semver_parser",
  "lenient_version",
- "semver",
 ]
 
 [[package]]
@@ -2016,7 +2026,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f650c1d024ddc26b4bb79c3076b30030f2cf2b18292af698c81f7337a64d7d6"
 dependencies = [
  "lenient_semver_version_builder",
- "semver",
 ]
 
 [[package]]
@@ -2024,9 +2033,6 @@ name = "lenient_semver_version_builder"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9049f8ff49f75b946f95557148e70230499c8a642bf2d6528246afc7d0282d17"
-dependencies = [
- "semver",
-]
 
 [[package]]
 name = "lenient_version"
@@ -2036,7 +2042,6 @@ checksum = "bad7b41cc0ad9b8a9f8d8fcb7c2ab6703a6da4b369cbb7e3a63ee0840769b4eb"
 dependencies = [
  "lenient_semver_parser",
  "lenient_semver_version_builder",
- "serde",
 ]
 
 [[package]]
@@ -3577,9 +3582,9 @@ dependencies = [
 
 [[package]]
 name = "proto_bun"
-version = "0.2.1"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6391cf2c6f7d7b4cf85281fb1fe93731a96be29a4d85f0faad33da7d2b69b4fb"
+checksum = "1607e1e796f5b7d07397ba7862baf09cc5c179f44a575f4e8f5eac67888cf675"
 dependencies = [
  "log",
  "proto_core",
@@ -3589,10 +3594,11 @@ dependencies = [
 
 [[package]]
 name = "proto_cli"
-version = "0.2.1"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "622e3a0a537a06fd3ffbda3de5da0c82212ff07b67d3b141880df2ed473b3118"
+checksum = "80df73762fc198844a6cef1ca17efc535c898f3159d3d12830e65e22c01fd790"
 dependencies = [
+ "async-recursion",
  "clap 4.1.8",
  "clap_complete",
  "dirs",
@@ -3607,14 +3613,13 @@ dependencies = [
  "proto_node",
  "rustc-hash",
  "tokio",
- "toml",
 ]
 
 [[package]]
 name = "proto_core"
-version = "0.2.1"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0f24dbe4cd45fc9418545ed771ccf5fc8d4bb5cf5908c7593a711af993797a7"
+checksum = "7bb14d5b5211249ac0a6df6aa4fd8c071a06a37a90d943bc01905eed1af99009"
 dependencies = [
  "async-trait",
  "cached",
@@ -3626,6 +3631,7 @@ dependencies = [
  "log",
  "reqwest",
  "rustc-hash",
+ "semver",
  "serde",
  "serde_json",
  "sha2",
@@ -3633,14 +3639,15 @@ dependencies = [
  "thiserror",
  "tinytemplate",
  "tokio",
+ "toml",
  "zip",
 ]
 
 [[package]]
 name = "proto_deno"
-version = "0.2.1"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f55a51d35a1049f61558d54a16273bcc7ed45ebffa6e0d90d1ac6b45ca44822"
+checksum = "6b5db0017eb52578960cc5bb03da5316ce339b094f1b956900ff8f85a12f9e4b"
 dependencies = [
  "log",
  "proto_core",
@@ -3650,9 +3657,9 @@ dependencies = [
 
 [[package]]
 name = "proto_go"
-version = "0.2.1"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "800485d9467715765114324b5679d3a81fd4fbba0f24443a4e0a5be6e84ba1dd"
+checksum = "38eb47f096d26f5f0c3d2acbfbbac924a4bf8ef598af6342c3d9ab21391e7eee"
 dependencies = [
  "log",
  "proto_core",
@@ -3662,9 +3669,9 @@ dependencies = [
 
 [[package]]
 name = "proto_node"
-version = "0.2.1"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b0c54f87b0740e16914cfa510f882cbd01f8e8e39e84a77253d54f44307a3bf7"
+checksum = "6e813736a989390b74bd19a9c31a5f0acf37ef06b12081de002dc2f103c11e06"
 dependencies = [
  "clean-path",
  "log",
@@ -3993,9 +4000,9 @@ dependencies = [
 
 [[package]]
 name = "semver"
-version = "1.0.16"
+version = "1.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "58bc9567378fc7690d6b2addae4e60ac2eeea07becb2c64b9f218b53865cba2a"
+checksum = "bebd363326d05ec3e2f532ab7660680f3b02130d780c299bca73469d521bc0ed"
 
 [[package]]
 name = "serde"

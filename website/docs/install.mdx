@@ -23,17 +23,22 @@ scripts to download and install moon.
 
 In a terminal that supports Bash, run:
 
-```
+```shell
 curl -fsSL https://moonrepo.dev/install/moon.sh | bash
 ```
 
-This will install moon to `~/.moon/bin` and create a symlink in `/usr/local/bin`.
+This will install moon to `~/.moon/bin` and create a symlink in `/usr/local/bin`. If the symlink
+fails, you'll need to set the `PATH` manually in your shell.
+
+```shell
+export PATH="$HOME/.moon/bin:$PATH"
+```
 
 ### Windows
 
 In Powershell or Windows Terminal, run:
 
-```
+```shell
 irm https://moonrepo.dev/install/moon.ps1 | iex
 ```
 
@@ -44,7 +49,7 @@ current session. To persist across sessions, update `PATH` manually.
 
 Install with Homebrew:
 
-```
+```shell
 brew tap moonrepo/tap
 brew install moonrepo/tap/moon
 ```

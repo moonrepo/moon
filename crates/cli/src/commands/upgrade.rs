@@ -80,7 +80,7 @@ pub async fn upgrade() -> Result<(), AnyError> {
     let done = create_progress_bar(format!("Upgrading moon to version {new_version}..."));
 
     // Move the old binary to a versioned path
-    let versioned_bin_path = bin_dir.join(version).join(fs::file_name(&current_bin_path));
+    let versioned_bin_path = bin_dir.join(version).join(BIN_NAME);
 
     fs::create_dir_all(versioned_bin_path.parent().unwrap())?;
     fs::rename(&current_bin_path, versioned_bin_path)?;

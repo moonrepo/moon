@@ -22,8 +22,16 @@ Rust and Chrome's V8 engine.
 
 [Go](https://go.dev/) (`go`) is a simple, secure, and fast systems language.
 
-When installed, proto will inject a `GOBIN` environment variable into your shell, pointing to
-`~/go/bin`, which will be used to locate Go binaries.
+#### Post-install hook
+
+After installation, we'll inject a `GOBIN` environment variable into your shell, pointing to
+`~/go/bin`, if it does not already exist. This variable will be used to locate Go binaries across
+all installed versions. This functionality can be skipped by passing `--no-gobin` during
+installation.
+
+```shell
+$ proto install go -- --no-gobin
+```
 
 #### Detection sources
 
@@ -34,7 +42,14 @@ When installed, proto will inject a `GOBIN` environment variable into your shell
 
 [Node.js](https://nodejs.org/) (`node`) is a JavaScript runtime built on Chrome's V8 engine.
 
-When installed, the version of npm that came bundled with Node.js will also be installed.
+#### Post-install hook
+
+After installation, the version of npm that came bundled with Node.js will also be installed. This
+functionality can be skipped by passing `--no-bundled-npm` during installation.
+
+```shell
+$ proto install node -- --no-bundled-npm
+```
 
 #### Detection sources
 

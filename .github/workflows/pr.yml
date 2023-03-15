@@ -3,6 +3,7 @@ on:
   pull_request:
 env:
   MOON_TEST: 'true'
+  PROTO_TEST: 'true'
 jobs:
   version:
     name: Version check
@@ -38,26 +39,26 @@ jobs:
       # Unix
       - run: bash ./website/static/install/moon.sh
         if: ${{ runner.os != 'Windows' }}
-      - run: bash ./website/static/install/moon.sh '0.20.0'
+      - run: bash ./website/static/install/moon.sh '0.26.0'
         if: ${{ runner.os != 'Windows' }}
       - run: bash ./website/static/install/proto.sh
         if: ${{ runner.os != 'Windows' }}
         env:
           SHELL: bash
-      - run: bash ./website/static/install/proto.sh '0.1.8'
+      - run: bash ./website/static/install/proto.sh '0.2.1'
         if: ${{ runner.os != 'Windows' }}
         env:
           SHELL: bash
       # Windows
       - run: pwsh.exe ./website/static/install/moon.ps1
         if: ${{ runner.os == 'Windows' }}
-      - run: pwsh.exe ./website/static/install/moon.ps1 '0.20.0'
+      - run: pwsh.exe ./website/static/install/moon.ps1 '0.26.0'
         if: ${{ runner.os == 'Windows' }}
       - run: pwsh.exe ./website/static/install/proto.ps1
         if: ${{ runner.os == 'Windows' }}
         env:
           SHELL: powershell
-      - run: pwsh.exe ./website/static/install/proto.ps1 '0.1.8'
+      - run: pwsh.exe ./website/static/install/proto.ps1 '0.2.1'
         if: ${{ runner.os == 'Windows' }}
         env:
           SHELL: powershell

@@ -552,6 +552,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cca491388666e04d7248af3f60f0c40cfb0991c72205595d7c396e3510207d1a"
 
 [[package]]
+name = "ci_env"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "71157beba4bf8316468466c26923b47b09391d4ecab10af5a3f83aefe208edd0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "ciborium"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2252,6 +2261,7 @@ dependencies = [
 name = "moon_action_pipeline"
 version = "0.1.0"
 dependencies = [
+ "ci_env",
  "console",
  "criterion",
  "moon",
@@ -2264,7 +2274,6 @@ dependencies = [
  "moon_hasher",
  "moon_logger",
  "moon_notifier",
- "moon_pipeline_provider",
  "moon_platform",
  "moon_project",
  "moon_project_graph",
@@ -2331,6 +2340,7 @@ version = "0.26.2"
 dependencies = [
  "atty",
  "bytes",
+ "ci_env",
  "clap 4.1.8",
  "clap_complete",
  "clap_lex 0.3.2",
@@ -2359,7 +2369,6 @@ dependencies = [
  "moon_node_platform",
  "moon_node_tool",
  "moon_notifier",
- "moon_pipeline_provider",
  "moon_platform",
  "moon_platform_detector",
  "moon_project",
@@ -2669,10 +2678,10 @@ name = "moon_notifier"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "ci_env",
  "moon_emitter",
  "moon_error",
  "moon_logger",
- "moon_pipeline_provider",
  "moon_utils",
  "moon_workspace",
  "reqwest",

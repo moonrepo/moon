@@ -20,7 +20,6 @@ moon_error = { path = "../error" }
 moon_hasher = { path = "../hasher" }
 moon_logger = { path = "../logger" }
 moon_notifier = { path = "../notifier" }
-moon_pipeline_provider = { path = "../pipeline-provider" }
 moon_platform = { path = "../platform" }
 moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
@@ -31,6 +30,7 @@ moon_tool = { path = "../tool" }
 moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
 moonbase = { path = "../moonbase" }
+ci_env = "0.1.0"
 console = { workspace = true }
 proto_cli = { workspace = true }
 rustc-hash = { workspace = true }

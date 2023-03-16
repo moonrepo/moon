@@ -12,6 +12,7 @@
 - Will now detect 16 additional CI environments: Agola, AppCenter, Appcircle, Azure, Bamboo,
   Bitrise, Buddy, Cirrus, Codemagic, Heroku, Jenkins, Jenkins X, Netlify, TeamCity, Vela,
   Woodpecker.
+- Will now attempt to detect CD environments for more accurate metrics.
 
 ## 0.26.2
 

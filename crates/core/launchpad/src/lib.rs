@@ -1,4 +1,4 @@
-use ci_env::{detect_ci_provider, CiProvider};
+use ci_env::detect_ci_provider;
 use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_logger::debug;
@@ -78,19 +78,11 @@ pub async fn check_version(
 
     debug!(target: "moon:launchpad", "Checking for new version of moon");
 
-    let ci_provider = detect_ci_provider();
-
     let response = reqwest::Client::new()
         .get(CURRENT_VERSION_URL)
         .header("X-Moon-Version", local_version_str)
-        .header(
-            "X-Moon-CI",
-            if matches!(ci_provider, CiProvider::Unknown) {
-                is_ci().to_string()
-            } else {
-                format!("{:?}", ci_provider)
-            },
-        )
+        .header("X-Moon-CI", is_ci().to_string())
+        .header("X-Moon-CI-Provider", format!("{:?}", detect_ci_provider()))
         .header("X-Moon-UID", load_or_create_anonymous_uid()?)
         .header("X-Moon-RID", create_anonymous_rid(&workspace_root))
         .send()

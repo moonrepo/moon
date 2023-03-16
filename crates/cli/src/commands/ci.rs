@@ -1,6 +1,6 @@
 use crate::helpers::AnyError;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
-use ci_env::{get_ci_output, CiOutput};
+use ci_env::CiOutput;
 use itertools::Itertools;
 use moon::{build_dep_graph, generate_project_graph, load_workspace};
 use moon_action_context::ActionContext;
@@ -182,7 +182,7 @@ pub struct CiOptions {
 
 pub async fn ci(options: CiOptions) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;
-    let ci_provider = get_ci_output().unwrap_or_else(|| CiOutput {
+    let ci_provider = ci_env::get_output().unwrap_or(CiOutput {
         close_log_group: "",
         open_log_group: "▪▪▪▪ ",
     });

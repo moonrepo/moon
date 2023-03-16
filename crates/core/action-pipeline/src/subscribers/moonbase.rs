@@ -1,4 +1,4 @@
-use ci_env::get_ci_environment;
+use ci_env::get_environment;
 use moon_action::{ActionNode, ActionStatus};
 use moon_cache::get_cache_mode;
 use moon_emitter::{Event, EventFlow, Subscriber};
@@ -125,7 +125,7 @@ impl Subscriber for MoonbaseSubscriber {
                     let mut revision = env::var("MOONBASE_CI_REVISION").unwrap_or_default();
                     let mut request_number = env::var("MOONBASE_CI_REQUEST_NUMBER").ok();
 
-                    if let Some(ci) = get_ci_environment() {
+                    if let Some(ci) = get_environment() {
                         if branch.is_empty() {
                             branch = ci.branch;
                         }

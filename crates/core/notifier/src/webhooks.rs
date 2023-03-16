@@ -1,4 +1,4 @@
-use ci_env::{get_ci_environment, CiEnvironment};
+use ci_env::{get_environment, CiEnvironment};
 use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_error::MoonError;
 use moon_logger::{color, error, trace};
@@ -54,7 +54,7 @@ impl WebhooksSubscriber {
     pub fn new(url: String) -> Self {
         WebhooksSubscriber {
             enabled: true,
-            environment: get_ci_environment(),
+            environment: get_environment(),
             requests: vec![],
             uuid: if url.contains("127.0.0.1") {
                 "XXXX-XXXX-XXXX-XXXX".into()

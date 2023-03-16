@@ -8,9 +8,7 @@ on:
   pull_request:
     paths:
       - .github/workflows/moon.yml
-      - .moon/workspace.yml
-      - .moon/tasks.yml
-      - .moon/toolchain.yml
+      - .moon/*.yml
       - crates/**
       - packages/**
       - website/**

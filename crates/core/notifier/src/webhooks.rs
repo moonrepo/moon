@@ -1,7 +1,7 @@
+use ci_env::{get_ci_environment, CiEnvironment};
 use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_error::MoonError;
 use moon_logger::{color, error, trace};
-use moon_pipeline_provider::{get_pipeline_environment, PipelineEnvironment};
 use moon_utils::time::{chrono::prelude::*, now_timestamp};
 use moon_workspace::Workspace;
 use serde::{Deserialize, Serialize};
@@ -15,7 +15,7 @@ const LOG_TARGET: &str = "moon:notifier:webhooks";
 pub struct WebhookPayload<T: Serialize> {
     pub created_at: NaiveDateTime,
 
-    pub environment: Option<PipelineEnvironment>,
+    pub environment: Option<CiEnvironment>,
 
     // Only for testing!
     #[serde(skip_deserializing)]
@@ -44,7 +44,7 @@ pub async fn notify_webhook(
 
 pub struct WebhooksSubscriber {
     enabled: bool,
-    environment: Option<PipelineEnvironment>,
+    environment: Option<CiEnvironment>,
     requests: Vec<JoinHandle<()>>,
     url: String,
     uuid: String,
@@ -54,7 +54,7 @@ impl WebhooksSubscriber {
     pub fn new(url: String) -> Self {
         WebhooksSubscriber {
             enabled: true,
-            environment: get_pipeline_environment(),
+            environment: get_ci_environment(),
             requests: vec![],
             uuid: if url.contains("127.0.0.1") {
                 "XXXX-XXXX-XXXX-XXXX".into()

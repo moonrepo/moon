@@ -1,12 +1,12 @@
 use crate::helpers::AnyError;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
+use ci_env::{get_ci_output, CiOutput};
 use itertools::Itertools;
 use moon::{build_dep_graph, generate_project_graph, load_workspace};
 use moon_action_context::ActionContext;
 use moon_action_pipeline::Pipeline;
 use moon_dep_graph::{DepGraph, DepGraphError};
 use moon_logger::{color, debug};
-use moon_pipeline_provider::{get_pipeline_output, PipelineOutput};
 use moon_project::ProjectError;
 use moon_project_graph::ProjectGraph;
 use moon_target::Target;
@@ -19,11 +19,11 @@ type TargetList = Vec<Target>;
 
 const LOG_TARGET: &str = "moon:ci";
 
-fn print_header(provider: &PipelineOutput, title: &str) {
+fn print_header(provider: &CiOutput, title: &str) {
     println!("{}{}", provider.open_log_group, title);
 }
 
-fn print_footer(provider: &PipelineOutput) {
+fn print_footer(provider: &CiOutput) {
     if !provider.close_log_group.is_empty() {
         println!("{}", provider.close_log_group);
     }
@@ -44,7 +44,7 @@ fn print_targets(targets: &TargetList) {
 
 /// Gather a list of files that have been modified between branches.
 async fn gather_touched_files(
-    provider: &PipelineOutput,
+    provider: &CiOutput,
     workspace: &Workspace,
     options: &CiOptions,
 ) -> Result<TouchedFilePaths, WorkspaceError> {
@@ -69,7 +69,7 @@ async fn gather_touched_files(
 
 /// Gather runnable targets by checking if all projects/tasks are affected based on touched files.
 fn gather_runnable_targets(
-    provider: &PipelineOutput,
+    provider: &CiOutput,
     project_graph: &ProjectGraph,
     touched_files: &TouchedFilePaths,
 ) -> Result<TargetList, ProjectError> {
@@ -110,7 +110,7 @@ fn gather_runnable_targets(
 
 /// Distribute targets across jobs if parallelism is enabled.
 fn distribute_targets_across_jobs(
-    provider: &PipelineOutput,
+    provider: &CiOutput,
     options: &CiOptions,
     targets: TargetList,
 ) -> TargetList {
@@ -146,7 +146,7 @@ fn distribute_targets_across_jobs(
 
 /// Generate a dependency graph with the runnable targets.
 fn generate_dep_graph(
-    provider: &PipelineOutput,
+    provider: &CiOutput,
     workspace: &Workspace,
     project_graph: &ProjectGraph,
     targets: &TargetList,
@@ -182,7 +182,7 @@ pub struct CiOptions {
 
 pub async fn ci(options: CiOptions) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;
-    let ci_provider = get_pipeline_output();
+    let ci_provider = get_ci_output();
     let project_graph = generate_project_graph(&mut workspace).await?;
     let touched_files = gather_touched_files(&ci_provider, &workspace, &options).await?;
     let targets = gather_runnable_targets(&ci_provider, &project_graph, &touched_files)?;

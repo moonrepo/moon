@@ -2699,13 +2699,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_pipeline_provider"
-version = "0.1.0"
-dependencies = [
- "serde",
-]
-
-[[package]]
 name = "moon_platform"
 version = "0.1.0"
 dependencies = [

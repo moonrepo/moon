@@ -1,9 +1,9 @@
+use ci_env::get_ci_environment;
 use moon_action::{ActionNode, ActionStatus};
 use moon_cache::get_cache_mode;
 use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_error::MoonError;
 use moon_logger::{color, debug, error, map_list, trace, warn};
-use moon_pipeline_provider::get_pipeline_environment;
 use moon_platform::Runtime;
 use moon_utils::{async_trait, fs};
 use moon_workspace::Workspace;
@@ -125,17 +125,17 @@ impl Subscriber for MoonbaseSubscriber {
                     let mut revision = env::var("MOONBASE_CI_REVISION").unwrap_or_default();
                     let mut request_number = env::var("MOONBASE_CI_REQUEST_NUMBER").ok();
 
-                    if let Some(pipeline_env) = get_pipeline_environment() {
+                    if let Some(ci) = get_ci_environment() {
                         if branch.is_empty() {
-                            branch = pipeline_env.branch;
+                            branch = ci.branch;
                         }
 
                         if revision.is_empty() {
-                            revision = pipeline_env.revision;
+                            revision = ci.revision;
                         }
 
                         if request_number.is_none() {
-                            request_number = pipeline_env.request_id;
+                            request_number = ci.request_id;
                         }
                     }
 

@@ -30,7 +30,7 @@ moon_tool = { path = "../tool" }
 moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
 moonbase = { path = "../moonbase" }
-ci_env = "0.1.0"
+ci_env = { workspace = true }
 console = { workspace = true }
 proto_cli = { workspace = true }
 rustc-hash = { workspace = true }

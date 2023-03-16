@@ -21,6 +21,7 @@ default-members = ["crates/cli"]
 [workspace.dependencies]
 async-trait = "0.1.61"
 cached = "0.42.0"
+ci_env = "0.1.0"
 clap = { version = "4.1.8", features = ["derive", "env", "wrap_help"] }
 clap_complete = "4.1.4"
 console = "0.15.5"

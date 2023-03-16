@@ -83,6 +83,11 @@ pub async fn check_version(
         .header("X-Moon-Version", local_version_str)
         .header("X-Moon-CI", is_ci().to_string())
         .header("X-Moon-CI-Provider", format!("{:?}", detect_ci_provider()))
+        .header("X-Moon-CD", cd_env::is_cd().to_string())
+        .header(
+            "X-Moon-CD-Provider",
+            format!("{:?}", cd_env::detect_provider()),
+        )
         .header("X-Moon-UID", load_or_create_anonymous_uid()?)
         .header("X-Moon-RID", create_anonymous_rid(&workspace_root))
         .send()

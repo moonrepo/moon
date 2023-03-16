@@ -502,6 +502,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "cd_env"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aef3c3bf92fbd27bdaa148fd94129f6624e1270decee56e9958b8e73becbfac5"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2584,6 +2593,7 @@ dependencies = [
 name = "moon_launchpad"
 version = "0.1.0"
 dependencies = [
+ "cd_env",
  "ci_env",
  "moon_constants",
  "moon_error",

@@ -22,9 +22,8 @@ for package in packages/cli packages/core-*; do
 done
 
 # Set the tag to use for GitHub releases
-name=$(cat packages/cli/package.json | jq -r '.name')
 version=$(cat packages/cli/package.json | jq -r '.version')
-tag="$name@$version"
+tag="v$version"
 
 echo "NPM_TAG_NAME=$tag" >> $GITHUB_ENV
 export NPM_TAG_NAME="$tag"

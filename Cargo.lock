@@ -2584,6 +2584,7 @@ dependencies = [
 name = "moon_launchpad"
 version = "0.1.0"
 dependencies = [
+ "ci_env",
  "moon_constants",
  "moon_error",
  "moon_logger",

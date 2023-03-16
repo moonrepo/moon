@@ -8,6 +8,7 @@ moon_constants = { path = "../constants" }
 moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
 moon_utils = { path = "../utils" }
+ci_env = { workspace = true }
 proto_cli = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true }

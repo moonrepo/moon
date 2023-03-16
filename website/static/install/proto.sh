@@ -83,7 +83,7 @@ rm -rf "$download_file" "$temp_dir"
 
 # Run setup script to update shells
 
-PROTO_LOG=error
+export PROTO_LOG=error
 $bin_path setup
 
 echo "Successfully installed proto to $bin_path"

@@ -182,7 +182,10 @@ pub struct CiOptions {
 
 pub async fn ci(options: CiOptions) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;
-    let ci_provider = get_ci_output();
+    let ci_provider = get_ci_output().unwrap_or_else(|| CiOutput {
+        close_log_group: "",
+        open_log_group: "▪▪▪▪ ",
+    });
     let project_graph = generate_project_graph(&mut workspace).await?;
     let touched_files = gather_touched_files(&ci_provider, &workspace, &options).await?;
     let targets = gather_runnable_targets(&ci_provider, &project_graph, &touched_files)?;

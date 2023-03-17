@@ -35,11 +35,11 @@ if (!(Test-Path $TempDir)) {
 $wc = New-Object Net.Webclient
 $wc.downloadFile($DownloadUrl, $DownloadFile)
 
-Get-ChildItem -Path $TempDir -Recurse
-
-Expand-Archive -Path $DownloadFile -DestinationPath $TempDir -PassThru
-
-Get-ChildItem -Path $TempDir -Recurse
+if ($env:PROTO_DEBUG -eq "true") {
+  Expand-Archive -Path $DownloadFile -DestinationPath $TempDir -PassThru
+} else {
+  Expand-Archive -Path $DownloadFile -DestinationPath $TempDir
+}
 
 # Move to bin dir and clean up
 
@@ -61,7 +61,7 @@ Write-Output "Launch a new terminal window to start using proto!"
 Write-Output ""
 Write-Output "Need help? Join our Discord https://discord.gg/qCh9MEynv2"
 
-if ($env:PROTO_TEST -eq "true") {
+if ($env:PROTO_DEBUG -eq "true") {
 	Write-Output ""
 	Write-Output "target=${Target}"
 	Write-Output "download_url=${DownloadUrl}"

@@ -91,7 +91,7 @@ echo "Launch a new terminal window to start using proto!"
 echo
 echo "Need help? Join our Discord https://discord.gg/qCh9MEynv2"
 
-if [ "$PROTO_TEST" = "true" ]; then
+if [ "$PROTO_DEBUG" = "true" ]; then
 	echo
 	echo "arch=$arch"
 	echo "target=$target"

@@ -476,7 +476,7 @@ mod resolve_args {
                 .eval(&resolver.resolve_var("$datetime", &task).unwrap())
         );
 
-        assert!(predicate::str::is_match("[0-9]{13}")
+        assert!(predicate::str::is_match("[0-9]{10}")
             .unwrap()
             .eval(&resolver.resolve_var("$timestamp", &task).unwrap()));
 

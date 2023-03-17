@@ -265,7 +265,7 @@ impl<'task> TokenResolver<'task> {
             "date" => time::now_timestamp().format("%F").to_string(),
             "datetime" => time::now_timestamp().format("%F_%T").to_string(),
             "time" => time::now_timestamp().format("%T").to_string(),
-            "timestamp" => time::now_millis().to_string(),
+            "timestamp" => (time::now_millis() / 1000).to_string(),
             _ => {
                 return Ok(value.to_owned());
             }

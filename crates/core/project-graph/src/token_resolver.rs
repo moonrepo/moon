@@ -6,7 +6,7 @@ use moon_utils::regex::{
     matches_token_func, matches_token_var, TOKEN_FUNC_ANYWHERE_PATTERN, TOKEN_FUNC_PATTERN,
     TOKEN_VAR_PATTERN,
 };
-use moon_utils::{glob, path};
+use moon_utils::{glob, path, time};
 use std::path::{Path, PathBuf};
 
 type PathsGlobsResolved = (Vec<PathBuf>, Vec<String>);
@@ -249,16 +249,23 @@ impl<'task> TokenResolver<'task> {
         let project = self.project;
 
         let var_value = match var {
+            "workspaceRoot" => path::to_string(workspace_root)?,
+            // Project
             "language" => project.language.to_string(),
             "project" => project.id.to_string(),
             "projectRoot" => path::to_string(&project.root)?,
             "projectSource" => project.source.to_string(),
             "projectType" => project.type_of.to_string(),
+            // Task
             "target" => task.target.id.to_string(),
             "task" => task.id.to_string(),
             "taskPlatform" => task.platform.to_string(),
             "taskType" => task.type_of.to_string(),
-            "workspaceRoot" => path::to_string(workspace_root)?,
+            // Datetime
+            "date" => time::now_timestamp().format("%T").to_string(),
+            "datetime" => time::now_timestamp().format("%T_%F").to_string(),
+            "time" => time::now_timestamp().format("%F").to_string(),
+            "timestamp" => time::now_millis().to_string(),
             _ => {
                 return Ok(value.to_owned());
             }

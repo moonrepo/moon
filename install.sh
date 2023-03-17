@@ -72,7 +72,7 @@ fi
 echo
 echo "Need help? Join our Discord https://discord.gg/qCh9MEynv2"
 
-if [ "$MOON_TEST" = "true" ]; then
+if [ "$MOON_DEBUG" = "true" ]; then
 	echo
 	echo "arch=$arch"
 	echo "target=$target"

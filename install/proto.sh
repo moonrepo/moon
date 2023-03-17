@@ -8,7 +8,7 @@ set -e
 
 bin="proto"
 arch=$(uname -sm)
-version="${1:-0.3.0}" # TODO
+version="${1:-0.3.1}" # TODO
 ext=".tar.xz"
 
 if [ "$OS" = "Windows_NT" ]; then
@@ -91,7 +91,7 @@ echo "Launch a new terminal window to start using proto!"
 echo
 echo "Need help? Join our Discord https://discord.gg/qCh9MEynv2"
 
-if [ "$PROTO_TEST" = "true" ]; then
+if [ "$PROTO_DEBUG" = "true" ]; then
 	echo
 	echo "arch=$arch"
 	echo "target=$target"

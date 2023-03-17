@@ -262,9 +262,9 @@ impl<'task> TokenResolver<'task> {
             "taskPlatform" => task.platform.to_string(),
             "taskType" => task.type_of.to_string(),
             // Datetime
-            "date" => time::now_timestamp().format("%T").to_string(),
-            "datetime" => time::now_timestamp().format("%T_%F").to_string(),
-            "time" => time::now_timestamp().format("%F").to_string(),
+            "date" => time::now_timestamp().format("%F").to_string(),
+            "datetime" => time::now_timestamp().format("%F_%T").to_string(),
+            "time" => time::now_timestamp().format("%T").to_string(),
             "timestamp" => time::now_millis().to_string(),
             _ => {
                 return Ok(value.to_owned());

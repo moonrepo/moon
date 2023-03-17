@@ -3,6 +3,7 @@ on:
   pull_request:
 env:
   MOON_TEST: 'true'
+  PROTO_TEST: 'true'
 jobs:
   version:
     name: Version check

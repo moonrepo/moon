@@ -37,7 +37,7 @@ $wc.downloadFile($DownloadUrl, $DownloadFile)
 
 Get-ChildItem -Path $TempDir -Recurse
 
-Expand-Archive -Path $DownloadFile -DestinationPath $TempDir
+Expand-Archive -Path $DownloadFile -DestinationPath $TempDir -PassThru
 
 Get-ChildItem -Path $TempDir -Recurse
 

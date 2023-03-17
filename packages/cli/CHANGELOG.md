@@ -7,7 +7,6 @@
 - Updated the installer scripts and the `moon upgrade` command to install the `moon` binary to
   `~/.moon/bin`.
 
-<<<<<<< HEAD
 #### 🚀 Updates
 
 - Added a `constraints` setting to `.moon/workspace.yml`, allowing for project/dep relationships to
@@ -36,8 +35,6 @@
 
 - Fixed an issue where using a custom project language would break the project graph cache.
 
-=======
->>>>>>> 90e92cb66 (build: Update installer and upgrade scripts. (#707))
 ## 0.26.5
 
 #### 🐞 Fixes

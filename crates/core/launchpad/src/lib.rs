@@ -2,7 +2,7 @@ use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_logger::debug;
 use moon_utils::semver::Version;
-use moon_utils::{fs, is_ci, is_test_env, path};
+use moon_utils::{fs, is_test_env, path};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::error::Error;
@@ -80,7 +80,16 @@ pub async fn check_version(
     let response = reqwest::Client::new()
         .get(CURRENT_VERSION_URL)
         .header("X-Moon-Version", local_version_str)
-        .header("X-Moon-CI", is_ci().to_string())
+        .header("X-Moon-CI", ci_env::is_ci().to_string())
+        .header(
+            "X-Moon-CI-Provider",
+            format!("{:?}", ci_env::detect_provider()),
+        )
+        .header("X-Moon-CD", cd_env::is_cd().to_string())
+        .header(
+            "X-Moon-CD-Provider",
+            format!("{:?}", cd_env::detect_provider()),
+        )
         .header("X-Moon-UID", load_or_create_anonymous_uid()?)
         .header("X-Moon-RID", create_anonymous_rid(&workspace_root))
         .send()

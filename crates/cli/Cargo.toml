@@ -27,7 +27,6 @@ moon_logger = { path = "../core/logger" }
 moon_node_lang = { path = "../node/lang" }
 moon_node_platform = { path = "../node/platform" }
 moon_node_tool = { path = "../node/tool" }
-moon_pipeline_provider = { path = "../core/pipeline-provider" }
 moon_platform = { path = "../core/platform" }
 moon_platform_detector = { path = "../core/platform-detector" }
 moon_project = { path = "../core/project" }
@@ -43,6 +42,7 @@ moon_vcs = { path = "../core/vcs" }
 moon_workspace = { path = "../core/workspace" }
 atty = "0.2.14"
 bytes = "1.4.0"
+ci_env = { workspace = true }
 clap = { workspace = true }
 clap_complete = { workspace = true }
 clap_lex = "0.3.2"

@@ -283,6 +283,32 @@ A token variable is a value that starts with `$` and is substituted to a value d
 current workspace, project, and task. And unlike token functions, token variables can be placed
 _within_ content when necessary, and supports multiple variables within the same content.
 
+### Workspace
+
+### `$workspaceRoot`
+
+Absolute file path to the workspace root.
+
+```yaml
+# Configured as
+tasks:
+  build:
+    command:
+      - 'example'
+      - '--cwd'
+      - '$workspaceRoot'
+
+# Resolves to
+tasks:
+  build:
+    command:
+      - 'example'
+      - '--cwd'
+      - '/path/to/repo'
+```
+
+### Project
+
 ### `$language`<VersionLabel version="0.7" />
 
 Programming language the project is written in, as defined in [`moon.yml`](../config/project). If
@@ -386,6 +412,8 @@ tasks:
       - 'application'
 ```
 
+### Task
+
 ### `$target`
 
 Target that is currently running. Is a combination of project and task name.
@@ -460,24 +488,80 @@ tasks:
       - 'build'
 ```
 
-### `$workspaceRoot`
+### Date/Time
 
-Absolute file path to the workspace root.
+### `$date`
+
+The current date in the format of `YYYY-MM-DD`.
 
 ```yaml
 # Configured as
 tasks:
   build:
-    command:
-      - 'example'
-      - '--cwd'
-      - '$workspaceRoot'
+    command: 'example --date $date'
 
 # Resolves to
 tasks:
   build:
     command:
       - 'example'
-      - '--cwd'
-      - '/path/to/repo'
+      - '--date'
+      - '2023-03-17'
+```
+
+### `$time`
+
+The current time in the format of `HH:MM:SS`.
+
+```yaml
+# Configured as
+tasks:
+  build:
+    command: 'example --time $time'
+
+# Resolves to
+tasks:
+  build:
+    command:
+      - 'example'
+      - '--time'
+      - '14:05:10'
+```
+
+### `$datetime`
+
+The current date and time in the format of `YYYY-MM-DD_HH:MM:SS`.
+
+```yaml
+# Configured as
+tasks:
+  build:
+    command: 'example --datetime $datetime'
+
+# Resolves to
+tasks:
+  build:
+    command:
+      - 'example'
+      - '--datetime'
+      - '2023-03-17_14:05:10'
+```
+
+### `$timestamp`
+
+The current date and time as a UNIX timestamp in seconds.
+
+```yaml
+# Configured as
+tasks:
+  build:
+    command: 'example --timestamp $timestamp'
+
+# Resolves to
+tasks:
+  build:
+    command:
+      - 'example'
+      - '--timestamp'
+      - '1679087127'
 ```

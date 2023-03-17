@@ -31,8 +31,15 @@ if (!(Test-Path $TempDir)) {
   New-Item $TempDir -ItemType Directory | Out-Null
 }
 
-curl.exe -Lo $DownloadFile $DownloadUrl
+# curl.exe -Lo $DownloadFile $DownloadUrl
+$wc = New-Object Net.Webclient
+$wc.downloadFile($DownloadUrl, $DownloadFile)
+
+Get-ChildItem -Path $TempDir -Recurse
+
 Expand-Archive -Path $DownloadFile -DestinationPath $TempDir
+
+Get-ChildItem -Path $TempDir -Recurse
 
 # Move to bin dir and clean up
 
@@ -46,7 +53,7 @@ Remove-Item $DownloadFile -Force
 
 # Run setup script to update shells
 
-$env:PROTO_LOG = "trace"
+$env:PROTO_LOG = "error"
 & $BinPath @('setup')
 
 Write-Output "Successfully installed proto to ${BinPath}"

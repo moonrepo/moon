@@ -7,6 +7,10 @@
 - Updated the installer scripts and the `moon upgrade` command to install the `moon` binary to
   `~/.moon/bin`.
 
+#### 🚀 Updates
+
+- Added 4 new token variables: `$date`, `$time`, `$datetime`, and `$timestamp`
+
 #### ⚙️ Internal
 
 - Will now detect 16 additional CI environments: Agola, AppCenter, Appcircle, Azure, Bamboo,

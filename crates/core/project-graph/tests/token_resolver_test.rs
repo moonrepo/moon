@@ -3,7 +3,7 @@ use moon_project::Project;
 use moon_project_graph::{TokenContext, TokenResolver};
 use moon_target::Target;
 use moon_task::{FileGroup, Task};
-use moon_test_utils::get_fixtures_path;
+use moon_test_utils::{get_fixtures_path, predicates::prelude::*};
 use moon_utils::{glob, string_vec};
 use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
@@ -461,6 +461,24 @@ mod resolve_args {
             resolver.resolve_var("$workspaceRoot", &task).unwrap(),
             workspace_root.to_string_lossy()
         );
+
+        assert!(predicate::str::is_match("[0-9]{4}-[0-9]{2}-[0-9]{2}")
+            .unwrap()
+            .eval(&resolver.resolve_var("$date", &task).unwrap()));
+
+        assert!(predicate::str::is_match("[0-9]{2}:[0-9]{2}:[0-9]{2}")
+            .unwrap()
+            .eval(&resolver.resolve_var("$time", &task).unwrap()));
+
+        assert!(
+            predicate::str::is_match("[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}:[0-9]{2}:[0-9]{2}")
+                .unwrap()
+                .eval(&resolver.resolve_var("$datetime", &task).unwrap())
+        );
+
+        assert!(predicate::str::is_match("[0-9]{10}")
+            .unwrap()
+            .eval(&resolver.resolve_var("$timestamp", &task).unwrap()));
 
         // Multiple vars
         assert_eq!(

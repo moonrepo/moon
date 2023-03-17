@@ -1,0 +1,40 @@
+---
+slug: moon-v1.0
+title: moon v1.0 - Official release!
+authors: [milesj]
+tags: []
+# image: ./img/v0.26.png
+---
+
+???
+
+<!--truncate-->
+
+## New date/time token variables
+
+[Tokens](/docs/concepts/token) are a mechanism used in task configuration for dynamically injecting
+values from the current project or task, especially when task inheritance is involved. Tokens have
+existed since moon's inception, without much change... until now.
+
+We're excited to introduce a new set of tokens for referencing the
+[current date or time](/docs/concepts/token#datetime): `$date`, `$time`, `$datetime`, and
+`$timestamp`. With these new tokens, you're now able to implement clever or unusual solutions, like
+grouping builds or deploys based on the current timestamp.
+
+```yaml title="moon.yml"
+tasks:
+  deploy: 'app deploy --output ./build/$timestamp'
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.0.0) for a full list of
+changes.
+
+- ???
+
+## What's next?
+
+Expect the following in the v1.1 release!
+
+- ???

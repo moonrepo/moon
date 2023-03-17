@@ -6,7 +6,7 @@
 
 $ErrorActionPreference = 'Stop'
 
-$Version = "0.3.0" # TODO
+$Version = "0.3.1" # TODO
 
 if ($Args.Length -eq 1) {
   $Version = $Args.Get(0)
@@ -31,8 +31,15 @@ if (!(Test-Path $TempDir)) {
   New-Item $TempDir -ItemType Directory | Out-Null
 }
 
-curl.exe -Lo $DownloadFile $DownloadUrl
-Expand-Archive -Path $DownloadFile -DestinationPath $TempDir
+# curl.exe -Lo $DownloadFile $DownloadUrl
+$wc = New-Object Net.Webclient
+$wc.downloadFile($DownloadUrl, $DownloadFile)
+
+if ($env:PROTO_DEBUG -eq "true") {
+  Expand-Archive -Path $DownloadFile -DestinationPath $TempDir -PassThru
+} else {
+  Expand-Archive -Path $DownloadFile -DestinationPath $TempDir
+}
 
 # Move to bin dir and clean up
 
@@ -46,7 +53,7 @@ Remove-Item $DownloadFile -Force
 
 # Run setup script to update shells
 
-$env:PROTO_LOG = "trace"
+$env:PROTO_LOG = "error"
 & $BinPath @('setup')
 
 Write-Output "Successfully installed proto to ${BinPath}"
@@ -54,7 +61,7 @@ Write-Output "Launch a new terminal window to start using proto!"
 Write-Output ""
 Write-Output "Need help? Join our Discord https://discord.gg/qCh9MEynv2"
 
-if ($env:PROTO_TEST -eq "true") {
+if ($env:PROTO_DEBUG -eq "true") {
 	Write-Output ""
 	Write-Output "target=${Target}"
 	Write-Output "download_url=${DownloadUrl}"

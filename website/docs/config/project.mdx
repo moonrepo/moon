@@ -5,7 +5,6 @@ toc_max_heading_level: 6
 
 import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 The `moon.yml` configuration file _is not required_ but can be used to define additional metadata
 for a project, override inherited tasks, and more at the project-level. When used, this file must
@@ -15,7 +14,7 @@ exist in a project's root, as configured in [`projects`](./workspace#projects).
 $schema: 'https://moonrepo.dev/schemas/project.json'
 ```
 
-## `dependsOn`<VersionLabel updated version="0.9" />
+## `dependsOn`
 
 <HeadingApiLink to="/api/types/interface/ProjectConfig#dependsOn" />
 
@@ -50,32 +49,26 @@ dependsOn:
 
 ## Metadata
 
-## `language`<VersionLabel version="0.3" />
+## `language`
 
 <HeadingApiLink to="/api/types/interface/ProjectConfig#language" />
 
 The primary programming language the project is written in. Supports the following values:
 
 - `bash` - A [Bash](<https://en.wikipedia.org/wiki/Bash_(Unix_shell)>) based project (Unix only).
-  <VersionLabel version="0.6" />
-- `batch` - A [Batch](https://en.wikibooks.org/wiki/Windows_Batch_Scripting) based project (Windows
-  only). <VersionLabel version="0.9" />
+- `batch` - A [Batch](https://en.wikibooks.org/wiki/Windows_Batch_Scripting)/PowerShell based
+  project (Windows only).
 - `go` - A [Go](https://go.dev/) based project.
-  <VersionLabel version="0.21" />
 - `javascript` - A [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript) based
   project.
 - `php` - A [PHP](https://www.php.net) based project.
-  <VersionLabel version="0.21" />
 - `python` - A [Python](https://www.python.org/) based project.
-  <VersionLabel version="0.21" />
 - `ruby` - A [Ruby](https://www.ruby-lang.org/en/) based project.
-  <VersionLabel version="0.21" />
 - `rust` - A [Rust](https://www.rust-lang.org/) based project.
-  <VersionLabel version="0.21" />
 - `typescript` - A [TypeScript](https://www.typescriptlang.org/) based project.
 - `unknown` (default) - When not configured or inferred.
 - `*` - A custom language for use in [task inheritance](./tasks). Values will be converted to
-  kebab-case. <VersionLabel version="0.25" />
+  kebab-case.
 
 ```yaml title="moon.yml"
 language: 'javascript'
@@ -157,7 +150,7 @@ type: 'application'
 
 ## Tasks
 
-## `env`<VersionLabel version="0.23" />
+## `env`
 
 <HeadingApiLink to="/api/types/interface/ProjectConfig#env" />
 
@@ -214,7 +207,7 @@ fileGroups:
 > modify the glob lists, add and remove groups, or implement completely new groups. The choice is
 > yours!
 
-## `platform`<VersionLabel version="0.24" />
+## `platform`
 
 <HeadingApiLink to="/api/types/interface/ProjectConfig#platform" />
 
@@ -367,7 +360,7 @@ tasks:
       NODE_ENV: 'production'
 ```
 
-### `inputs`<VersionLabel updated version="0.9" />
+### `inputs`
 
 <HeadingApiLink to="/api/types/interface/TaskConfig#inputs" />
 
@@ -377,7 +370,7 @@ defined, then all files within a project are considered an input (`**/*`).
 
 Inputs support the following source types:
 
-- Environment variables (must start with a `$`) <VersionLabel version="0.9" />
+- Environment variables (must start with a `$`)
 - Files, folders, globs
   ([project and workspace relative file patterns](../concepts/file-pattern#project-relative))
 
@@ -411,7 +404,7 @@ similar), will _not_ be considered an input. To work around this, use explicit f
 
 :::
 
-### `local`<VersionLabel version="0.11" />
+### `local`
 
 <HeadingApiLink to="/api/types/interface/TaskConfig#local" />
 
@@ -509,7 +502,7 @@ tasks:
       runFromWorkspaceRoot: true
 ```
 
-#### `affectedFiles`<VersionLabel version="0.19" />
+#### `affectedFiles`
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#affectedFiles" />
 
@@ -539,7 +532,7 @@ list of files being passed as arguments.
 
 :::
 
-#### `cache`<VersionLabel version="0.9" />
+#### `cache`
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#cache" />
 
@@ -558,7 +551,7 @@ tasks:
       cache: false
 ```
 
-#### `envFile`<VersionLabel version="0.11" />
+#### `envFile`
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#envFile" />
 
@@ -614,7 +607,7 @@ with an inherited task. Defaults to "append".
 The [strategy](../concepts/task#merge-strategies) to use when merging the [`outputs`](#outputs) list
 with an inherited task. Defaults to "append".
 
-#### `outputStyle`<VersionLabel version="0.10" />
+#### `outputStyle`
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#outputStyle" />
 
@@ -624,10 +617,10 @@ following values:
 
 - `buffer` - Buffers output and displays after the task has exited (either success or failure).
 - `buffer-only-failure` - Like `buffer`, but only displays on failures.
-  <VersionLabel version="0.11" />
+
 - `hash` - Ignores output and only displays the generated [hash](../concepts/cache#hashing).
-  <VersionLabel version="0.11" />
-- `none` - Ignores output. <VersionLabel version="0.11" />
+
+- `none` - Ignores output.
 - `stream` - Streams output directly to the terminal. Will prefix each line of output with the
   target.
 
@@ -654,7 +647,7 @@ tasks:
       retryCount: 3
 ```
 
-#### `runDepsInParallel`<VersionLabel version="0.10" />
+#### `runDepsInParallel`
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#runDepsInParallel" />
 
@@ -711,7 +704,7 @@ Dictates how a project interacts with settings defined at the top-level.
 
 <HeadingApiLink to="/api/types/interface/ProjectConfig#toolchain" />
 
-### `node`<VersionLabel version="0.16" />
+### `node`
 
 <HeadingApiLink to="/api/types/interface/ProjectToolchainConfig#node" />
 
@@ -728,7 +721,7 @@ toolchain:
     version: '12.12.0'
 ```
 
-### `typescript`<VersionLabel version="0.25" />
+### `typescript`
 
 <HeadingApiLink to="/api/types/interface/ProjectToolchainConfig#typescript" />
 

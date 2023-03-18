@@ -7,6 +7,13 @@ use moon_system_platform::SystemPlatform;
 use moon_utils::{is_test_env, json};
 use moon_workspace::{Workspace, WorkspaceError};
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
+
+static TELEMETRY: AtomicBool = AtomicBool::new(true);
+
+pub fn is_telemetry_enabled() -> bool {
+    TELEMETRY.load(Ordering::Relaxed)
+}
 
 pub fn register_platforms(workspace: &mut Workspace) -> Result<(), WorkspaceError> {
     if let Some(deno_config) = &workspace.toolchain_config.deno {
@@ -34,6 +41,10 @@ pub fn register_platforms(workspace: &mut Workspace) -> Result<(), WorkspaceErro
 /// Loads the workspace from the current working directory.
 pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
     let mut workspace = Workspace::load()?;
+
+    if !workspace.config.telemetry {
+        TELEMETRY.store(false, Ordering::Relaxed);
+    }
 
     register_platforms(&mut workspace)?;
 

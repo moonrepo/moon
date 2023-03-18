@@ -169,6 +169,14 @@ env:
   NODE_ENV: 'production'
 ```
 
+Variables also support substitution using the syntax `${VAR_NAME}`. When using substitution, only
+variables in the current process can be referenced, and not those currently defined in `env`.
+
+```yaml title="moon.yml" {1,2}
+env:
+  APP_TARGET: '${REGION}-${ENVIRONMENT}'
+```
+
 ## `fileGroups`
 
 <HeadingApiLink to="/api/types/interface/ProjectConfig#fileGroups" />
@@ -568,6 +576,8 @@ tasks:
       # Or
       envFile: '.env.production'
 ```
+
+> Variables defined in the file support value substitution using `${VAR_NAME}` syntax.
 
 #### `mergeArgs`
 

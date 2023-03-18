@@ -9,7 +9,8 @@
 
 #### 🚀 Updates
 
-- Added 4 new token variables: `$date`, `$time`, `$datetime`, and `$timestamp`
+- Added 4 new token variables: `$date`, `$time`, `$datetime`, and `$timestamp`.
+- Updated task `env` and `.env` files to support variable substitution using `${VAR_NAME}` syntax.
 
 #### ⚙️ Internal
 

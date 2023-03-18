@@ -4,7 +4,6 @@ sidebar_label: .moon/tasks...
 ---
 
 import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 The `.moon/tasks.yml` file configures file groups and tasks that are inherited by _every_ project in
 the workspace, while `.moon/tasks/*.yml` configures for projects based on their language or type.
@@ -16,7 +15,7 @@ Projects can override or merge with these settings within their respective [`moo
 $schema: 'https://moonrepo.dev/schemas/tasks.json'
 ```
 
-## `extends`<VersionLabel version="0.4" />
+## `extends`
 
 <HeadingApiLink to="/api/types/interface/InheritedTasksConfig#extends" />
 
@@ -68,7 +67,7 @@ fileGroups:
 > File paths and globs used within a file group are relative from the inherited project's root, and
 > not the workspace.
 
-## `implicitDeps`<VersionLabel version="0.23" />
+## `implicitDeps`
 
 <HeadingApiLink to="/api/types/interface/InheritedTasksConfig#implicitDeps" />
 
@@ -81,7 +80,7 @@ implicitDeps:
   - '^:build'
 ```
 
-## `implicitInputs`<VersionLabel version="0.23" />
+## `implicitInputs`
 
 <HeadingApiLink to="/api/types/interface/InheritedTasksConfig#implicitInputs" />
 

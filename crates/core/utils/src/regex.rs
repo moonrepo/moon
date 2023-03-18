@@ -16,6 +16,7 @@ lazy_static! {
 
     // Input values
     pub static ref ENV_VAR: Regex = Regex::new("^\\$[A-Z0-9_]+$").unwrap();
+    pub static ref ENV_VAR_SUBSTITUTE: Regex = Regex::new("\\$\\{([A-Z0-9_]+)\\}").unwrap();
 
     // Token function: `@func(arg)`
     static ref TOKEN_GROUP: &'static str = "([0-9A-Za-z_-]+)";

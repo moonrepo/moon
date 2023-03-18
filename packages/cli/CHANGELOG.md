@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Task `inputs` declared as literal file paths will now be logged to the console as a warning when
+  they do not exist during hashing.
+
 #### 🐞 Fixes
 
 - Fixed an issue when project dependencies that form a cycle would recurse indefinitely and panic.

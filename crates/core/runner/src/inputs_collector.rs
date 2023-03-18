@@ -1,6 +1,6 @@
 use crate::RunnerError;
 use moon_config::CONFIG_PROJECT_FILENAME;
-use moon_hasher::convert_paths_to_strings;
+use moon_logger::{color, warn, Logable};
 use moon_task::Task;
 use moon_utils::{glob, is_ci, path};
 use moon_vcs::BoxedVcs;
@@ -11,6 +11,49 @@ use std::{
 };
 
 type HashedInputs = BTreeMap<String, String>;
+
+fn convert_paths_to_strings(
+    log_target: &str,
+    paths: &FxHashSet<PathBuf>,
+    workspace_root: &Path,
+) -> Result<Vec<String>, RunnerError> {
+    let mut files: Vec<String> = vec![];
+
+    for path in paths {
+        // We need to use relative paths from the workspace root
+        // so that it works the same across all machines
+        let rel_path = if path.starts_with(workspace_root) {
+            path.strip_prefix(workspace_root).unwrap()
+        } else {
+            path
+        };
+
+        // `git hash-object` will fail if you pass an unknown file
+        if !path.exists() {
+            warn!(
+                target: log_target,
+                "Attempted to hash input {} but it does not exist, skipping",
+                color::path(rel_path),
+            );
+
+            continue;
+        }
+
+        if !path.is_file() {
+            warn!(
+                target: log_target,
+                "Attempted to hash input {} but only files can be hashed, skipping",
+                color::path(rel_path),
+            );
+
+            continue;
+        }
+
+        files.push(path::to_string(rel_path)?);
+    }
+
+    Ok(files)
+}
 
 fn is_valid_input_source(
     task: &Task,
@@ -83,7 +126,8 @@ pub async fn collect_and_hash_inputs(
 
     // 2: Convert to workspace relative paths and extract file hashes
 
-    let files_to_hash = convert_paths_to_strings(&files_to_hash, workspace_root)?;
+    let files_to_hash =
+        convert_paths_to_strings(task.get_log_target(), &files_to_hash, workspace_root)?;
 
     if !files_to_hash.is_empty() {
         hashed_inputs.extend(vcs.get_file_hashes(&files_to_hash, true).await?);

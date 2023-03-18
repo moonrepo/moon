@@ -7,7 +7,6 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 The `.moon/workspace.yml` file configures projects and services in the workspace. This file is
 _required_.
@@ -16,7 +15,7 @@ _required_.
 $schema: 'https://moonrepo.dev/schemas/workspace.json'
 ```
 
-## `extends`<VersionLabel version="0.4" />
+## `extends`
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#extends" />
 
@@ -77,7 +76,7 @@ projects:
   - 'packages/*'
 ```
 
-### Using a map _and_ globs<VersionLabel version="0.18" />
+### Using a map _and_ globs
 
 For those situations where you want to use _both_ patterns, you can! The list of globs can be
 defined under a `globs` field, while the map of projects under a `sources` field.
@@ -91,7 +90,7 @@ projects:
     www: 'www'
 ```
 
-## `generator`<VersionLabel version="0.14" />
+## `generator`
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#generator" />
 
@@ -111,7 +110,7 @@ generator:
     - './other/templates'
 ```
 
-## `hasher`<VersionLabel version="0.13" />
+## `hasher`
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#hasher" />
 
@@ -147,7 +146,7 @@ hasher:
   walkStrategy: 'glob'
 ```
 
-## `notifier`<VersionLabel version="0.17" />
+## `notifier`
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#notifier" />
 
@@ -165,13 +164,13 @@ notifier:
   webhookUrl: 'https://api.company.com/some/endpoint'
 ```
 
-## `runner`<VersionLabel updated version="0.13" />
+## `runner`
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#runner" />
 
 Configures aspects of the action pipeline.
 
-### `cacheLifetime`<VersionLabel version="0.11" />
+### `cacheLifetime`
 
 <HeadingApiLink to="/api/types/interface/RunnerConfig#cacheLifetime" />
 
@@ -184,7 +183,7 @@ runner:
   cacheLifetime: '24 hours'
 ```
 
-### `archivableTargets`<VersionLabel version="0.20" />
+### `archivableTargets`
 
 <HeadingApiLink to="/api/types/interface/RunnerConfig#archivableTargets" />
 
@@ -202,7 +201,7 @@ runner:
 > This setting primarily exists for [remote caching](../guides/remote-cache) as it will create and
 > persist tar archives located in `.moon/cache/outputs`.
 
-### `inheritColorsForPipedTasks`<VersionLabel version="0.3" />
+### `inheritColorsForPipedTasks`
 
 <HeadingApiLink to="/api/types/interface/RunnerConfig#inheritColorsForPipedTasks" />
 
@@ -215,7 +214,7 @@ runner:
   inheritColorsForPipedTasks: true
 ```
 
-### `logRunningCommand`<VersionLabel version="0.4" />
+### `logRunningCommand`
 
 <HeadingApiLink to="/api/types/interface/RunnerConfig#logRunningCommand" />
 
@@ -259,7 +258,7 @@ vcs:
   manager: 'git'
 ```
 
-### `remoteCandidates` <VersionLabel version="0.20" />
+### `remoteCandidates`
 
 <HeadingApiLink to="/api/types/interface/VcsConfig#remoteCandidates" />
 
@@ -273,7 +272,7 @@ vcs:
     - 'upstream'
 ```
 
-## `versionConstraint`<VersionLabel version="0.22" />
+## `versionConstraint`
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#versionConstraint" />
 

@@ -3,10 +3,6 @@ title: docker scaffold
 sidebar_label: scaffold
 ---
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
-<VersionLabel header version="0.15" />
-
 The `moon docker scaffold <...projects>` command creates multiple repository skeletons for use
 within `Dockerfile`s to effectively take advantage of Docker's layer caching. It utilizes the
 [project graph][graph] to copy all critical files, like manifest, lockfiles, and configuration.

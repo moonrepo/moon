@@ -4,10 +4,6 @@ toc_max_heading_level: 6
 tags: [codegen, generator, scaffold, template]
 ---
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
-<VersionLabel header version="0.14" />
-
 Code generation provides an easy mechanism for automating common development workflows and file
 structures. Whether it's scaffolding a new library or application, updating configuration, or
 standardizing patterns.
@@ -65,7 +61,7 @@ templates/
 > a template file `src/[type].ts`, and a variable `type` with a value of "bin", then the destination
 > file path would be `src/bin.ts`.
 
-#### File extensions<VersionLabel version="0.16" />
+#### File extensions
 
 To enable syntax highlighting for template engine syntax, you may use the `.tera` (preferred) or
 `.twig` file extensions. These extensions are optional, but will be removed when the files are
@@ -92,7 +88,7 @@ be generated into the target destination, and _do not_ support frontmatter.
 To ensure they are not generated, include the word "partial" anywhere in the file path. For example,
 `partials/header.tpl` or `header.partial.tpl`.
 
-#### Frontmatter<VersionLabel version="0.15" />
+#### Frontmatter
 
 Frontmatter is a well-known concept for "per file configuration", and is achieved by inserting YAML
 at the top of the file, delimited by wrapping `---`. This is a very powerful feature that provides
@@ -178,7 +174,7 @@ we also provide the following custom filters:
 {{ some_value | upper_case }}
 ```
 
-- Paths - `path_join`, `path_relative`<VersionLabel version="0.20" />
+- Paths - `path_join`, `path_relative`
 
 ```twig
 {{ some_path | path_join(part = "another/folder") }}
@@ -186,7 +182,7 @@ we also provide the following custom filters:
 {{ some_path | path_relative(to = other_path) }}
 ```
 
-#### Variables<VersionLabel version="0.20" />
+#### Variables
 
 The following variables are always available within a template:
 

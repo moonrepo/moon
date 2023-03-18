@@ -15,6 +15,7 @@ use moon_test_utils::{
 use moon_utils::{glob, string_vec};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
+use std::env;
 use std::path::PathBuf;
 
 async fn tasks_sandbox() -> (Sandbox, ProjectGraph) {
@@ -917,11 +918,70 @@ mod task_expansion {
             );
         }
 
+        #[tokio::test]
+        async fn substitutes_values() {
+            env::set_var("VALID", "valid-value");
+            env::set_var("FOO", "foo");
+            env::set_var("BAR", "bar");
+
+            let (_sandbox, project_graph) = tasks_sandbox().await;
+
+            let project = project_graph.get("expandEnv").unwrap();
+            let task = project.get_task("substitute").unwrap();
+
+            assert_eq!(
+                task.env,
+                FxHashMap::from_iter([
+                    ("BASE".to_owned(), "base".to_owned()),
+                    ("SUB".to_owned(), "valid-value".to_owned()),
+                    ("SUB_MISSING".to_owned(), "".to_owned()),
+                    ("SUB_MULTI".to_owned(), "foo-bar".to_owned()),
+                    ("SUB_MULTI_SAME".to_owned(), "foo-foo".to_owned()),
+                    ("SUB_REF_SELF".to_owned(), "".to_owned())
+                ])
+            );
+
+            env::remove_var("VALID");
+            env::remove_var("FOO");
+            env::remove_var("BAR");
+        }
+
+        #[tokio::test]
+        async fn substitutes_values_in_env_file() {
+            env::set_var("VALID", "valid-value");
+            env::set_var("FOO", "foo");
+            env::set_var("BAR", "bar");
+
+            let (_sandbox, project_graph) = tasks_sandbox().await;
+
+            let project = project_graph.get("expandEnv").unwrap();
+            let task = project.get_task("substituteEnvFile").unwrap();
+
+            assert_eq!(
+                task.env,
+                FxHashMap::from_iter([
+                    ("BASE".to_owned(), "base".to_owned()),
+                    ("SUB".to_owned(), "valid-value".to_owned()),
+                    ("SUB_MISSING".to_owned(), "".to_owned()),
+                    ("SUB_MULTI".to_owned(), "foo-bar".to_owned()),
+                    ("SUB_MULTI_SAME".to_owned(), "foo-foo".to_owned()),
+                    // This is different than the `env` setting
+                    ("SUB_REF_SELF".to_owned(), "base".to_owned())
+                ])
+            );
+
+            env::remove_var("VALID");
+            env::remove_var("FOO");
+            env::remove_var("BAR");
+        }
+
         mod project_level {
             use super::*;
 
             #[tokio::test]
             async fn inherits_by_default() {
+                env::set_var("VALID", "valid-value");
+
                 let (_sandbox, project_graph) = tasks_sandbox().await;
 
                 let project = project_graph.get("expandEnvProject").unwrap();
@@ -931,9 +991,12 @@ mod task_expansion {
                     task.env,
                     FxHashMap::from_iter([
                         ("SOURCE".to_owned(), "project-level".to_owned()),
-                        ("PROJECT".to_owned(), "true".to_owned())
+                        ("PROJECT".to_owned(), "true".to_owned()),
+                        ("SUB".to_owned(), "valid-value".to_owned())
                     ])
                 );
+
+                env::remove_var("VALID");
             }
 
             #[tokio::test]
@@ -948,7 +1011,8 @@ mod task_expansion {
                     FxHashMap::from_iter([
                         ("SOURCE".to_owned(), "task-level".to_owned()),
                         ("PROJECT".to_owned(), "true".to_owned()),
-                        ("TASK".to_owned(), "true".to_owned())
+                        ("TASK".to_owned(), "true".to_owned()),
+                        ("SUB".to_owned(), "".to_owned()),
                     ])
                 );
             }
@@ -965,7 +1029,8 @@ mod task_expansion {
                     FxHashMap::from_iter([
                         ("SOURCE".to_owned(), "env-file".to_owned()),
                         ("PROJECT".to_owned(), "true".to_owned()),
-                        ("FILE".to_owned(), "true".to_owned())
+                        ("FILE".to_owned(), "true".to_owned()),
+                        ("SUB".to_owned(), "".to_owned()),
                     ])
                 );
             }
@@ -984,6 +1049,7 @@ mod task_expansion {
                         ("PROJECT".to_owned(), "true".to_owned()),
                         ("FILE".to_owned(), "true".to_owned()),
                         ("TASK".to_owned(), "true".to_owned()),
+                        ("SUB".to_owned(), "".to_owned()),
                     ])
                 );
             }

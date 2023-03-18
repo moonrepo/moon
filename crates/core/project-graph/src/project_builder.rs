@@ -313,18 +313,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         project: &mut Project,
         task: &mut Task,
     ) -> Result<(), ProjectGraphError> {
-        // Expand interpolated vars
-        task.env.iter_mut().for_each(|(_, value)| {
-            if let Some(matches) = ENV_VAR_SUBSTITUTE.captures(value) {
-                let sub = matches.get(0).unwrap().as_str();
-                let sub_key = matches.get(1).unwrap().as_str();
-                let sub_value = env::var(sub_key).unwrap_or_default();
-
-                *value = value.replace(sub, &sub_value);
-            };
-        });
-
-        // Load from env file
+        // Load from env file first
         if let Some(env_file) = &task.options.env_file {
             let env_path = project.root.join(env_file);
             let error_handler =
@@ -358,6 +347,17 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                     .or_insert_with(|| value.to_owned());
             }
         }
+
+        // Expand interpolated vars last
+        task.env.iter_mut().for_each(|(_, value)| {
+            while let Some(matches) = ENV_VAR_SUBSTITUTE.captures(value) {
+                let sub = matches.get(0).unwrap().as_str();
+                let sub_key = matches.get(1).unwrap().as_str();
+                let sub_value = env::var(sub_key).unwrap_or_default();
+
+                *value = value.replace(sub, &sub_value);
+            }
+        });
 
         Ok(())
     }

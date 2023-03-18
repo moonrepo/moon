@@ -30,6 +30,9 @@ pub struct ProjectGraphBuilder<'ws> {
     graph: GraphType,
     indices: IndicesType,
     sources: ProjectsSourcesMap,
+
+    // Project and its dependencies being created.
+    // We use this to prevent circular dependencies.
     created: FxHashSet<String>,
 
     pub is_cached: bool,
@@ -479,6 +482,9 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         for dep_index in dep_indices {
             self.graph.add_edge(index, dep_index, ());
         }
+
+        // Reset for the next project
+        self.created.clear();
 
         Ok(index)
     }

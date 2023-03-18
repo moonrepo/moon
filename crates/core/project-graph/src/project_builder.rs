@@ -9,7 +9,7 @@ use moon_config::{
 };
 use moon_error::MoonError;
 use moon_hasher::{convert_paths_to_strings, to_hash};
-use moon_logger::{color, debug, map_list, trace, Logable};
+use moon_logger::{color, debug, map_list, trace, warn, Logable};
 use moon_platform_detector::{detect_project_language, detect_task_platform};
 use moon_project::{Project, ProjectDependency, ProjectDependencySource, ProjectError};
 use moon_target::{Target, TargetError, TargetProjectScope};
@@ -31,6 +31,10 @@ pub struct ProjectGraphBuilder<'ws> {
     indices: IndicesType,
     sources: ProjectsSourcesMap,
 
+    // Project and its dependencies being created.
+    // We use this to prevent circular dependencies.
+    created: FxHashSet<String>,
+
     pub is_cached: bool,
     pub hash: String,
 }
@@ -43,6 +47,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         let mut graph = ProjectGraphBuilder {
             aliases: FxHashMap::default(),
+            created: FxHashSet::default(),
             graph: DiGraph::new(),
             hash: String::new(),
             indices: FxHashMap::default(),
@@ -448,11 +453,22 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         let mut project = self.create_project(&id, source)?;
 
+        self.created.insert(id.clone());
+
         // Create dependent projects
         let mut dep_indices = FxHashSet::default();
 
         for dep_id in project.get_dependency_ids() {
-            dep_indices.insert(self.internal_load(dep_id)?);
+            if self.created.contains(dep_id) {
+                warn!(
+                    target: LOG_TARGET,
+                    "Found a cycle between {} and {}, and will disconnect nodes to avoid recursion",
+                    color::id(&id),
+                    color::id(dep_id),
+                );
+            } else {
+                dep_indices.insert(self.internal_load(dep_id)?);
+            }
         }
 
         // Expand tasks for the current project
@@ -466,6 +482,9 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         for dep_index in dep_indices {
             self.graph.add_edge(index, dep_index, ());
         }
+
+        // Reset for the next project
+        self.created.clear();
 
         Ok(index)
     }

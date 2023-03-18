@@ -61,7 +61,8 @@ The Node.js
 can be used as a reference.
 
 - [ ] Implemented manifests (if applicable)
-- [ ] Implemented manifests (if applicable)
+- [ ] Implemented lockfiles (if applicable)
+  - [ ] `load_lockfile_dependencies`
 
 ### Update `moon_platform_detector` crate
 
@@ -125,6 +126,7 @@ pub struct ToolchainConfig {
 ```
 
 - [ ] Created language struct
+- [ ] Created config template file
 - [ ] Updated `ToolchainConfig` struct
 - [ ] Ran `cargo make json-schemas` and updated the JSON schemas
 
@@ -175,3 +177,38 @@ pub enum Runtime {
 Tasks run against the platform, so we can now attempt to detect this.
 
 - [ ] Updated `detect_task_platform`
+
+### Create tool crate
+
+Every language will have a "tool" crate that implements the moon `Tool` trait (and eventually the
+proto `Tool` trait). This trait defines a handful of methods for how to install and execute the
+toon.
+
+This is required _even when not using_ the toolchain, as we fallback to a global binary available on
+`PATH`.
+
+Crate must exist at `crates/<language>/tool`. Feel free to copy an existing tool crate and update
+the implementation.
+
+- [ ] Implemented `Tool` trait
+- [ ] Implemented `PackageManager` trait (when applicable)
+- [ ] Handled `global` binary
+
+### Create platform crate
+
+Every language will have a "platform" crate that implements the `Platform` trait. This trait defines
+a ton of methods for interacting with the language's ecosystem, and how that interoperates with
+moon.
+
+Crate must exist at `crates/<language>/platform`. Feel free to copy an existing platform crate and
+update the implementation.
+
+- [ ] Implemented `Platform` trait
+
+## Tier 3
+
+### Add tool to proto
+
+### Support `version` in `moon_config`
+
+### Support project-level config overrides

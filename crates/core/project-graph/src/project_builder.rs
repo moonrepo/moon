@@ -14,12 +14,13 @@ use moon_platform_detector::{detect_project_language, detect_task_platform};
 use moon_project::{Project, ProjectDependency, ProjectDependencySource, ProjectError};
 use moon_target::{Target, TargetError, TargetProjectScope};
 use moon_task::{Task, TaskError};
-use moon_utils::regex::ENV_VAR;
+use moon_utils::regex::{ENV_VAR, ENV_VAR_SUBSTITUTE};
 use moon_utils::{glob, is_ci, path, time};
 use moon_workspace::Workspace;
 use petgraph::graph::{DiGraph, NodeIndex};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
+use std::env;
 use std::mem;
 use std::path::PathBuf;
 
@@ -317,7 +318,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         project: &mut Project,
         task: &mut Task,
     ) -> Result<(), ProjectGraphError> {
-        // Load from env file
+        // Load from env file first
         if let Some(env_file) = &task.options.env_file {
             let env_path = project.root.join(env_file);
             let error_handler =
@@ -351,6 +352,17 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                     .or_insert_with(|| value.to_owned());
             }
         }
+
+        // Expand interpolated vars last
+        task.env.iter_mut().for_each(|(_, value)| {
+            while let Some(matches) = ENV_VAR_SUBSTITUTE.captures(value) {
+                let sub = matches.get(0).unwrap().as_str();
+                let sub_key = matches.get(1).unwrap().as_str();
+                let sub_value = env::var(sub_key).unwrap_or_default();
+
+                *value = value.replace(sub, &sub_value);
+            }
+        });
 
         Ok(())
     }

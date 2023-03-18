@@ -10,7 +10,30 @@ tags: []
 
 <!--truncate-->
 
-## New date/time token variables
+## Environment variable substitution
+
+moon supports granular environment variables through the project-level
+[`env`](/docs/config/project#env) setting, task-level [`env`](/docs/config/project#env-1) setting,
+and the task [`envFile`](/docs/config/project#envfile) option. We're expanding their functionality
+with variable substitution, allowing the value of another environment variable to be interpolated
+using the syntax `${VAR_NAME}`. This is especially useful for composing complex environment
+variables.
+
+```yaml title="moon.yml"
+tasks:
+  dev:
+    command: 'app start'
+    env:
+      APP_TARGET: '${REGION}-${ENVIRONMENT}'
+```
+
+The same substitution syntax can also be used within `.env` files.
+
+```toml title=".env"
+APP_TARGET="${REGION}-${ENVIRONMENT}"
+```
+
+## Date/time token variables
 
 [Tokens](/docs/concepts/token) are a mechanism used in task configuration for dynamically injecting
 values from the current project or task, especially when task inheritance is involved. Tokens have
@@ -23,7 +46,8 @@ grouping builds or deploys based on the current timestamp.
 
 ```yaml title="moon.yml"
 tasks:
-  deploy: 'app deploy --output ./build/$timestamp'
+  deploy:
+    command: 'app deploy --output ./build/$timestamp'
 ```
 
 ## Other changes

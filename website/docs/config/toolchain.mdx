@@ -7,9 +7,6 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
-<VersionLabel header version="0.20" />
 
 The `.moon/toolchain.yml` file configures the toolchain and the workspace development environment.
 This file is _optional_.
@@ -177,7 +174,7 @@ ensure other Node.js processes outside of our toolchain are utilizing the same v
 }
 ```
 
-### `aliasPackageNames`<VersionLabel version="0.10" />
+### `aliasPackageNames`
 
 <HeadingApiLink to="/api/types/interface/NodeConfig#aliasPackageNames" />
 
@@ -227,7 +224,7 @@ node:
   dedupeOnLockfileChange: true
 ```
 
-### `dependencyVersionFormat`<VersionLabel version="0.9" />
+### `dependencyVersionFormat`
 
 <HeadingApiLink to="/api/types/interface/NodeConfig#dependencyVersionFormat" />
 
@@ -256,7 +253,7 @@ node:
 > This setting does not apply to peer dependencies, as they will always use a format of
 > `^<major>.0.0`.
 
-### `inferTasksFromScripts`<VersionLabel version="0.8" />
+### `inferTasksFromScripts`
 
 <HeadingApiLink to="/api/types/interface/NodeConfig#inferTasksFromScripts" />
 
@@ -340,14 +337,14 @@ node:
 This is a special setting that ensure other Node.js processes outside of our toolchain are utilizing
 the same version, which is a very common practice when managing dependencies.
 
-## `typescript`<VersionLabel updated version="0.12" />
+## `typescript`
 
 <HeadingApiLink to="/api/types/interface/ToolchainConfig#typescript" />
 
 Dictates how moon interacts with and utilizes TypeScript within the workspace. This field is
 optional and is undefined by default. Define it to enable TypeScript support.
 
-### `createMissingConfig`<VersionLabel version="0.6" />
+### `createMissingConfig`
 
 <HeadingApiLink to="/api/types/interface/TypeScriptConfig#createMissingConfig" />
 
@@ -383,7 +380,7 @@ typescript:
   rootConfigFileName: 'tsconfig.projects.json'
 ```
 
-### `rootOptionsConfigFileName`<VersionLabel version="0.6" />
+### `rootOptionsConfigFileName`
 
 <HeadingApiLink to="/api/types/interface/TypeScriptConfig#rootOptionsConfigFileName" />
 

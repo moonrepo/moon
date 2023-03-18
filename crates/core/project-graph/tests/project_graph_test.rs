@@ -117,6 +117,34 @@ async fn can_use_map_and_globs_setting() {
     );
 }
 
+#[tokio::test]
+async fn can_generate_with_deps_cycles() {
+    let workspace_config = WorkspaceConfig {
+        projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
+            ("a".to_owned(), "a".to_owned()),
+            ("b".to_owned(), "b".to_owned()),
+        ])),
+        ..WorkspaceConfig::default()
+    };
+
+    let sandbox =
+        create_sandbox_with_config("project-graph/cycle", Some(&workspace_config), None, None);
+
+    let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+    let graph = generate_project_graph(&mut workspace).await.unwrap();
+
+    assert_eq!(
+        graph.sources,
+        FxHashMap::from_iter([
+            ("a".to_owned(), "a".to_owned()),
+            ("b".to_owned(), "b".to_owned()),
+        ])
+    );
+
+    assert_eq!(graph.get("a").unwrap().get_dependency_ids(), vec!["b"]);
+    assert_eq!(graph.get("b").unwrap().get_dependency_ids(), vec!["a"]);
+}
+
 mod caching {
     use super::*;
     use moon_cache::ProjectsState;

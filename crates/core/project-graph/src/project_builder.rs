@@ -30,6 +30,7 @@ pub struct ProjectGraphBuilder<'ws> {
     graph: GraphType,
     indices: IndicesType,
     sources: ProjectsSourcesMap,
+    created: FxHashSet<String>,
 
     pub is_cached: bool,
     pub hash: String,
@@ -43,6 +44,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         let mut graph = ProjectGraphBuilder {
             aliases: FxHashMap::default(),
+            created: FxHashSet::default(),
             graph: DiGraph::new(),
             hash: String::new(),
             indices: FxHashMap::default(),
@@ -448,11 +450,15 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         let mut project = self.create_project(&id, source)?;
 
+        self.created.insert(id.clone());
+
         // Create dependent projects
         let mut dep_indices = FxHashSet::default();
 
         for dep_id in project.get_dependency_ids() {
-            dep_indices.insert(self.internal_load(dep_id)?);
+            if !self.created.contains(dep_id) {
+                dep_indices.insert(self.internal_load(dep_id)?);
+            }
         }
 
         // Expand tasks for the current project

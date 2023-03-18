@@ -9,7 +9,7 @@ use moon_config::{
 };
 use moon_error::MoonError;
 use moon_hasher::{convert_paths_to_strings, to_hash};
-use moon_logger::{color, debug, map_list, trace, Logable};
+use moon_logger::{color, debug, map_list, trace, warn, Logable};
 use moon_platform_detector::{detect_project_language, detect_task_platform};
 use moon_project::{Project, ProjectDependency, ProjectDependencySource, ProjectError};
 use moon_target::{Target, TargetError, TargetProjectScope};
@@ -456,7 +456,14 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         let mut dep_indices = FxHashSet::default();
 
         for dep_id in project.get_dependency_ids() {
-            if !self.created.contains(dep_id) {
+            if self.created.contains(dep_id) {
+                warn!(
+                    target: LOG_TARGET,
+                    "Found a cycle between {} and {}, and will disconnect nodes to avoid recursion",
+                    color::id(&id),
+                    color::id(dep_id),
+                );
+            } else {
                 dep_indices.insert(self.internal_load(dep_id)?);
             }
         }

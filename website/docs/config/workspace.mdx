@@ -28,7 +28,7 @@ must be an HTTPS URL _or_ relative file system path that points to a valid YAML 
 extends: 'https://raw.githubusercontent.com/organization/repository/master/.moon/workspace.yml'
 ```
 
-:::caution
+:::info
 
 Settings will be merged recursively for blocks, with values defined in the local configuration
 taking precedence over those defined in the extended configuration. However, the `projects` setting
@@ -43,6 +43,14 @@ _does not merge_!
 Defines the location of all [projects](../concepts/project) within the workspace. Supports either a
 manual map of projects (default), a list of globs in which to automatically locate projects, _or_
 both.
+
+:::caution
+
+Projects that depend on each other and form a cycle must be avoided! While we do our best to avoid
+an infinite loop and disconnect nodes from each other, there's no guarantee that tasks will run in
+the correct order.
+
+:::
 
 ### Using a map
 

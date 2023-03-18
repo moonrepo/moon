@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue when project dependencies that form a cycle would recurse indefinitely and panic.
+
 ## 0.26.2
 
 #### 🐞 Fixes

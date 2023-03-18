@@ -74,6 +74,7 @@ jobs:
           components: llvm-tools-preview
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
+        if: ${{ runner.os != 'Windows' }}
         with:
           shared-key: test
       - name: Install cargo-make

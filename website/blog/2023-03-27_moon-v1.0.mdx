@@ -26,6 +26,16 @@ Tags can be used to group projects together for easier querying, enforcing of pr
 applying constraints, and more in the future. Tags will become a staple for maintaining repositories
 at scale. Continue reading for more information!
 
+### Querying projects by tag
+
+The first integration with tags is project querying. You can now query for projects by tag using the
+new `--tags` option in the [`moon query projects`](/docs/commands/query/projects) command. For
+example, say you want to find all projects that are tagged with `vue` or `trpc`:
+
+```shell
+$ moon query projects --tags 'vue|trpc'
+```
+
 ## Environment variable substitution
 
 moon supports granular environment variables through the project-level

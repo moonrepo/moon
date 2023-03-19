@@ -202,6 +202,7 @@ pub async fn run_cli() {
                 json,
                 language,
                 source,
+                tags,
                 tasks,
                 type_of,
             } => {
@@ -212,6 +213,7 @@ pub async fn run_cli() {
                     json,
                     language,
                     source,
+                    tags,
                     tasks,
                     type_of,
                 })
@@ -255,6 +257,7 @@ pub async fn run_cli() {
                     source,
                     tasks,
                     type_of,
+                    ..QueryProjectsOptions::default()
                 })
                 .await
             }

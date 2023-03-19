@@ -50,6 +50,16 @@ fn validate_file_groups(map: &FileGroups) -> Result<(), ValidationError> {
     Ok(())
 }
 
+fn validate_tags(list: &[String]) -> Result<(), ValidationError> {
+    for (index, item) in list.iter().enumerate() {
+        let key = format!("tags[{index}]");
+
+        validate_id(key, item)?;
+    }
+
+    Ok(())
+}
+
 fn validate_tasks(map: &BTreeMap<String, TaskConfig>) -> Result<(), ValidationError> {
     for (name, task) in map {
         validate_id(format!("tasks.{name}"), name)?;
@@ -153,6 +163,10 @@ pub struct ProjectConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate]
     pub project: Option<ProjectMetadataConfig>,
+
+    #[serde(skip_serializing_if = "is_default")]
+    #[validate(custom = "validate_tags")]
+    pub tags: Vec<String>,
 
     #[serde(skip_serializing_if = "is_default")]
     #[validate(custom = "validate_tasks")]

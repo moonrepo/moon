@@ -84,6 +84,21 @@ mod unix {
         });
 
         assert_snapshot!(assert.output());
+
+        assert.code(1);
+    }
+
+    #[test]
+    fn handles_process_exit_nonzero_inline() {
+        let sandbox = system_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("unix:exitNonZeroInline");
+        });
+
+        assert_snapshot!(assert.output());
+
+        assert.code(1);
     }
 
     #[test]
@@ -365,6 +380,8 @@ mod windows {
         });
 
         assert_snapshot!(assert.output());
+
+        assert.code(1);
     }
 
     #[test]

@@ -20,12 +20,8 @@ $schema: 'https://moonrepo.dev/schemas/project.json'
 
 Explicitly defines _other_ projects that _this_ project depends on, primarily when generating the
 project and task graphs. The most common use case for this is building those projects _before_
-building this one, and for syncing [`package.json`](./workspace#syncprojectworkspacedependencies)
-dependencies and [`tsconfig.json`](./workspace#syncprojectreferences) project references when
-applicable.
-
-When defined, this setting requires an array of project names, which are the keys found in the
-[`projects`](./workspace#projects) map.
+building this one. When defined, this setting requires an array of project names, which are the keys
+found in the [`projects`](./workspace#projects) map.
 
 ```yaml title="moon.yml"
 dependsOn:
@@ -34,8 +30,7 @@ dependsOn:
 ```
 
 A dependency object can also be defined, where a specific `scope` can be assigned, which accepts
-"production" (default), "development", or "peer". This maps to the appropriate field in
-`package.json` when syncing.
+"production" (default), "development", or "peer".
 
 ```yaml title="moon.yml"
 dependsOn:
@@ -132,6 +127,19 @@ A human readable name of the project. This is _different_ from the unique projec
 
 The team or organization that owns the project. Can be a title, LDAP name, GitHub team, etc. We
 suggest _not_ listing people/developers as the owner, use [maintainers](#maintainers) instead.
+
+## `tags`
+
+<HeadingApiLink to="/api/types/interface/ProjectMetadataConfig#tags" />
+
+Tags are a simple mechanism for categorizing projects. They can be used to group projects together
+for easier querying, enforcing of project boundaries, applying constraints, and more.
+
+```yaml title="moon.yml"
+tags:
+  - 'react'
+  - 'prisma'
+```
 
 ## `type`
 

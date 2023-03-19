@@ -2,13 +2,29 @@
 slug: moon-v1.0
 title: moon v1.0 - Official release!
 authors: [milesj]
-tags: []
-# image: ./img/v0.26.png
+tags: [tags, env-vars, tokens]
+# image: ./img/moon/v1.0.png
 ---
 
 ???
 
 <!--truncate-->
+
+## Project tagging
+
+Everyone is familiar with the concept of tagging, and moon's implementation is no different. Tags
+are a simple mechanism for categorizing projects, and can be defined through the
+[`tags`](/docs/config/project#tags) setting in [`moon.yml`](/docs/config/project).
+
+```yaml title="moon.yml"
+tags:
+  - 'react'
+  - 'prisma'
+```
+
+Tags can be used to group projects together for easier querying, enforcing of project boundaries,
+applying constraints, and more in the future. Tags will become a staple for maintaining repositories
+at scale. Continue reading for more information!
 
 ## Environment variable substitution
 

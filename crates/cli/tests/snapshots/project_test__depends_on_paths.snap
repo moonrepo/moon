@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/project_test.rs
-expression: assert.output()
+expression: assert.output_standardized()
 ---
 
  FOO 
@@ -9,6 +9,7 @@ ID: foo
 Source: deps/foo
 Language: javascript
 Type: application
+Tags: react
 
  DEPENDS ON 
 

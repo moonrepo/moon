@@ -48,7 +48,9 @@ async fn setup_workspace(mut workspace: Workspace) -> Result<Workspace, Workspac
 
     if !is_test_env() {
         if workspace.vcs.is_enabled() {
-            env::set_var("MOON_REPO_SLUG", workspace.vcs.get_repository_slug().await?);
+            if let Ok(slug) = workspace.vcs.get_repository_slug().await {
+                env::set_var("MOON_REPO_SLUG", slug);
+            }
         }
 
         workspace.signin_to_moonbase().await?;

@@ -348,7 +348,10 @@ pub fn get_typescript_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, In
 {
     let (mut workspace_config, mut toolchain_config, tasks_config) = get_node_fixture_configs();
 
-    workspace_config.projects = WorkspaceProjects::Globs(vec!["*".into()]);
+    workspace_config.projects = WorkspaceProjects::Both {
+        globs: vec!["*".into()],
+        sources: FxHashMap::from_iter([("root".into(), ".".into())]),
+    };
 
     if let Some(ts_config) = &mut toolchain_config.typescript {
         ts_config.create_missing_config = true;

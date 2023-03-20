@@ -132,6 +132,17 @@ mod refs {
     }
 
     #[test]
+    fn doesnt_sync_root_project() {
+        let sandbox = typescript_sandbox(|_| {});
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("root:noop");
+        });
+
+        assert_snapshot!(read_to_string(sandbox.path().join("tsconfig.json")).unwrap());
+    }
+
+    #[test]
     fn doesnt_sync_depends_on_as_refs_if_disabled() {
         let sandbox = typescript_sandbox(|cfg| {
             cfg.sync_project_references = false;

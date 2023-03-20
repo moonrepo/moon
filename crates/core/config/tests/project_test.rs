@@ -715,3 +715,69 @@ mod language {
         });
     }
 }
+
+mod tags {
+    use moon_utils::string_vec;
+
+    #[test]
+    #[should_panic(
+        expected = "invalid type: found unsigned int `123`, expected a sequence for key \"project.tags\""
+    )]
+    fn invalid_type() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(super::CONFIG_PROJECT_FILENAME, "tags: 123")?;
+
+            super::load_jailed_config()?;
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "Must be a valid ID (accepts A-Z, a-z, 0-9, . (periods), - (dashes), _ (underscores), /, and must start with a letter)"
+    )]
+    fn invalid_format() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(super::CONFIG_PROJECT_FILENAME, "tags: ['foo bar']")?;
+
+            super::load_jailed_config()?;
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn valid_tags() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                super::CONFIG_PROJECT_FILENAME,
+                r#"
+tags:
+    - normal
+    - camelCase
+    - kebab-case
+    - snake_case
+    - dot.case
+    - slash/case
+"#,
+            )?;
+
+            let config = super::load_jailed_config()?;
+
+            assert_eq!(
+                config.tags,
+                string_vec![
+                    "normal",
+                    "camelCase",
+                    "kebab-case",
+                    "snake_case",
+                    "dot.case",
+                    "slash/case"
+                ]
+            );
+
+            Ok(())
+        });
+    }
+}

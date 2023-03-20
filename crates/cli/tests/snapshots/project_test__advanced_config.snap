@@ -9,6 +9,7 @@ ID: advanced
 Source: advanced
 Language: typescript
 Type: application
+Tags: react
 Name: Advanced
 Description: Advanced example.
 Owner: Batman

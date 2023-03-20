@@ -48,6 +48,10 @@ pub async fn project(id: String, json: bool) -> Result<(), AnyError> {
     term.render_entry("Language", term.format(&project.language))?;
     term.render_entry("Type", term.format(&project.type_of))?;
 
+    if !config.tags.is_empty() {
+        term.render_entry("Tags", map_list(&config.tags, |tag| color::id(tag)))?;
+    }
+
     if let Some(meta) = &config.project {
         if let Some(name) = &meta.name {
             term.render_entry("Name", name)?;

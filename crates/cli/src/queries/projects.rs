@@ -29,6 +29,7 @@ pub struct QueryProjectsOptions {
     pub json: bool,
     pub language: Option<String>,
     pub source: Option<String>,
+    pub tags: Option<String>,
     pub tasks: Option<String>,
     pub type_of: Option<String>,
 }
@@ -108,6 +109,7 @@ pub async fn query_projects(
     let id_regex = convert_to_regex("id", &options.id)?;
     let language_regex = convert_to_regex("language", &options.language)?;
     let source_regex = convert_to_regex("source", &options.source)?;
+    let tags_regex = convert_to_regex("tags", &options.tags)?;
     let tasks_regex = convert_to_regex("tasks", &options.tasks)?;
     let type_regex = convert_to_regex("type", &options.type_of)?;
     let touched_files = if options.affected {
@@ -144,6 +146,14 @@ pub async fn query_projects(
 
         if let Some(regex) = &source_regex {
             if !regex.is_match(&project.source) {
+                continue;
+            }
+        }
+
+        if let Some(regex) = &tags_regex {
+            let has_tag = project.config.tags.iter().any(|tag| regex.is_match(tag));
+
+            if !has_tag {
                 continue;
             }
         }

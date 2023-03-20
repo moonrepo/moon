@@ -436,6 +436,45 @@ mod projects {
     }
 
     #[test]
+    fn can_filter_by_tags() {
+        let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
+
+        let sandbox = create_sandbox_with_config(
+            "projects",
+            Some(&workspace_config),
+            Some(&toolchain_config),
+            Some(&tasks_config),
+        );
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("query")
+                .arg("projects")
+                .arg("--json")
+                .args(["--tags", "react"]);
+        });
+
+        let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
+        let ids: Vec<String> = json.projects.iter().map(|p| p.id.clone()).collect();
+
+        assert_eq!(ids, string_vec!["advanced", "foo"]);
+        assert_eq!(json.options.tags.unwrap(), "react".to_string());
+
+        // Multiple
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("query")
+                .arg("projects")
+                .arg("--json")
+                .args(["--tags", "react|vue"]);
+        });
+
+        let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
+        let ids: Vec<String> = json.projects.iter().map(|p| p.id.clone()).collect();
+
+        assert_eq!(ids, string_vec!["advanced", "basic", "foo"]);
+        assert_eq!(json.options.tags.unwrap(), "react|vue".to_string());
+    }
+
+    #[test]
     fn can_filter_by_tasks() {
         let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
 

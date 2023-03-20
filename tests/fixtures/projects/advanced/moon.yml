@@ -7,3 +7,5 @@ project:
 
 type: 'application'
 language: 'typescript'
+
+tags: ['react']

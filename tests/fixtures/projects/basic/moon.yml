@@ -6,3 +6,5 @@ fileGroups:
     - '**/*_test.rs'
 
 language: javascript
+
+tags: ['vue']

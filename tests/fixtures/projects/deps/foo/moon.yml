@@ -4,3 +4,5 @@ dependsOn:
 
 type: application
 language: javascript
+
+tags: ['react']

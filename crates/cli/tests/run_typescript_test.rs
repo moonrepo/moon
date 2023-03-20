@@ -2,7 +2,7 @@ use moon_config::TypeScriptConfig;
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, get_typescript_fixture_configs, Sandbox,
 };
-use std::fs::read_to_string;
+use std::fs::{self, read_to_string};
 
 fn typescript_sandbox<C>(callback: C) -> Sandbox
 where
@@ -129,6 +129,32 @@ mod refs {
         assert_snapshot!(
             read_to_string(sandbox.path().join("syncs-deps-refs/tsconfig.json")).unwrap()
         );
+    }
+
+    #[test]
+    fn syncs_root_project_if_root_config_custom_name() {
+        let sandbox = typescript_sandbox(|cfg| {
+            cfg.root_config_file_name = "tsconfig.root.json".into();
+        });
+
+        fs::write(sandbox.path().join("tsconfig.root.json"), "{}").unwrap();
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("root:noop");
+        });
+
+        assert_snapshot!(read_to_string(sandbox.path().join("tsconfig.root.json")).unwrap());
+    }
+
+    #[test]
+    fn doesnt_sync_root_project() {
+        let sandbox = typescript_sandbox(|_| {});
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("root:noop");
+        });
+
+        assert_snapshot!(read_to_string(sandbox.path().join("tsconfig.json")).unwrap());
     }
 
     #[test]

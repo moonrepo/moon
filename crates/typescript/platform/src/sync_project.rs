@@ -51,6 +51,11 @@ pub fn sync_root_tsconfig_references(
     workspace_root: &Path,
 ) -> Result<bool, MoonError> {
     TsConfigJson::sync_with_name(workspace_root, tsconfig_root_name, |tsconfig_json| {
+        // Don't sync a root project to itself
+        if tsconfig_root_name == "tsconfig.json" && project.source == "." {
+            return Ok(false);
+        }
+
         if project.root.join(tsconfig_project_name).exists()
             && tsconfig_json.add_project_ref(&project.source, tsconfig_project_name)
         {

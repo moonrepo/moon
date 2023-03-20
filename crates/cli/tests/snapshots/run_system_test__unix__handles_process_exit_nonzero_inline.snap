@@ -1,0 +1,11 @@
+---
+source: crates/cli/tests/run_system_test.rs
+expression: assert.output()
+---
+▪▪▪▪ unix:exitNonZeroInline
+▪▪▪▪ unix:exitNonZeroInline (100ms)
+
+ ERROR  Process bash failed with a 2 exit code.
+
+
+

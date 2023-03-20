@@ -17,6 +17,9 @@ tasks:
     command: bash
     args: ./exitNonZero.sh
     platform: system
+  exitNonZeroInline:
+    command: bash -c 'exit 2'
+    platform: system
   exitZero:
     command: bash
     args: ./exitZero.sh

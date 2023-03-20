@@ -2,6 +2,7 @@ use mimalloc::MiMalloc;
 use moon_cli::{run_cli, BIN_NAME};
 use moon_constants::CONFIG_DIRNAME;
 use moon_node_lang::NODE;
+use moon_terminal::safe_exit;
 use moon_utils::{is_test_env, path};
 use std::env;
 use std::path::{Path, PathBuf};
@@ -95,12 +96,16 @@ async fn run_bin(bin_path: &Path, current_dir: &Path) -> Result<(), std::io::Err
         .collect::<Vec<String>>();
 
     // Execute the found moon binary with the current filtered args
-    Command::new(bin_path)
+    let result = Command::new(bin_path)
         .args(args)
         .current_dir(current_dir)
         .spawn()?
         .wait()
         .await?;
+
+    if !result.success() {
+        safe_exit(result.code().unwrap_or(1));
+    }
 
     Ok(())
 }
@@ -108,7 +113,6 @@ async fn run_bin(bin_path: &Path, current_dir: &Path) -> Result<(), std::io::Err
 #[tokio::main]
 async fn main() {
     // console_subscriber::init();
-    let mut run = true;
 
     // Detect if we've been installed globally
     if let Ok(current_dir) = env::current_dir() {
@@ -126,20 +130,18 @@ async fn main() {
                 // we're running the version pinned in `package.json`,
                 // instead of this global one!
                 if moon_bin.exists() {
-                    run = false;
-
                     set_executed_with(&moon_bin);
 
                     run_bin(&moon_bin, &current_dir)
                         .await
                         .expect("Failed to run moon binary!");
+
+                    return;
                 }
             }
         }
     }
 
     // Otherwise just run the CLI
-    if run {
-        run_cli().await
-    }
+    run_cli().await
 }

@@ -85,32 +85,32 @@ pub fn setup_colors(force: bool) {
 
 pub async fn check_for_new_version() {
     // Try and "wait" for the workspace to be loaded
-    std::thread::sleep(Duration::from_millis(50));
+    // std::thread::sleep(Duration::from_millis(50));
 
-    if moon::is_telemetry_enabled() {
-        let version = env!("CARGO_PKG_VERSION");
-        let prefix = get_checkpoint_prefix(Checkpoint::Announcement);
+    // if moon::is_telemetry_enabled() {
+    let version = env!("CARGO_PKG_VERSION");
+    let prefix = get_checkpoint_prefix(Checkpoint::Announcement);
 
-        match check_version(version, false).await {
-            Ok((newer_version, true)) => {
-                println!(
-                    "{} There's a new version of moon available, {}!",
-                    prefix,
-                    color::success(newer_version)
-                );
-                println!(
-                    "{} Run {} or install from {}",
-                    prefix,
-                    color::success("moon upgrade"),
-                    color::url("https://moonrepo.dev/docs/install"),
-                );
-            }
-            Err(error) => {
-                debug!(target: "moon:cli", "Failed to check for current version: {}", error);
-            }
-            _ => {}
+    match check_version(version, false).await {
+        Ok((newer_version, true)) => {
+            println!(
+                "{} There's a new version of moon available, {}!",
+                prefix,
+                color::success(newer_version)
+            );
+            println!(
+                "{} Run {} or install from {}",
+                prefix,
+                color::success("moon upgrade"),
+                color::url("https://moonrepo.dev/docs/install"),
+            );
         }
+        Err(error) => {
+            debug!(target: "moon:cli", "Failed to check for current version: {}", error);
+        }
+        _ => {}
     }
+    // }
 }
 
 #[cfg(test)]

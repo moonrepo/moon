@@ -2327,7 +2327,7 @@ dependencies = [
 
 [[package]]
 name = "moon_cli"
-version = "0.26.3"
+version = "0.26.4"
 dependencies = [
  "atty",
  "bytes",

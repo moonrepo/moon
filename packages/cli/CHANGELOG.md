@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where failing tasks ran with the global `moon` binary wouldn't bubble up the
+  correct exit code.
+
 ## 0.26.3
 
 #### 🚀 Updates

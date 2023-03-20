@@ -33,6 +33,7 @@ use moon_terminal::ExtendedTerm;
 use query::QueryHashDiffOptions;
 use std::env;
 use std::path::PathBuf;
+use std::time::Duration;
 
 pub use app::BIN_NAME;
 
@@ -85,7 +86,26 @@ pub async fn run_cli() {
     setup_logging(&args.log, args.log_file);
     setup_caching(&args.cache);
 
-    let version_check = tokio::spawn(check_version(env!("CARGO_PKG_VERSION"), false));
+    // Check for new version
+    let version_check = if matches!(
+        &args.command,
+        Commands::Init { .. } | Commands::Upgrade { .. }
+    ) {
+        None
+    } else {
+        Some(tokio::spawn(async {
+            // Try and "wait" for the workspace to be loaded
+            std::thread::sleep(Duration::from_millis(50));
+
+            let version = env!("CARGO_PKG_VERSION");
+
+            if moon::is_telemetry_enabled() {
+                check_version(version, false).await
+            } else {
+                Ok((version.to_owned(), false))
+            }
+        }))
+    };
 
     // Match and run subcommand
     let result = match args.command {
@@ -298,17 +318,17 @@ pub async fn run_cli() {
 
     // Defer checking for a new version as it requires the workspace root
     // to exist. Otherwise, the `init` command would panic while checking!
-    match version_check.await {
-        Ok(Ok((newer_version, true))) => {
-            println!(
-                "There's a new version of moon! {newer_version}\n\
-                Run `moon upgrade` or install from https://moonrepo.dev/docs/install",
-            );
+    if let Some(check_result) = version_check {
+        match check_result.await {
+            Ok(Ok((newer_version, true))) => {
+                println!("There's a new version of moon available, {newer_version}!");
+                println!("Run `moon upgrade` or install from https://moonrepo.dev/docs/install");
+            }
+            Ok(Err(error)) => {
+                debug!(target: "moon:cli", "Failed to check for current version: {}", error);
+            }
+            _ => {}
         }
-        Ok(Err(error)) => {
-            debug!(target: "moon:cli", "Failed to check for current version: {}", error);
-        }
-        _ => {}
     }
 
     if let Err(error) = result {

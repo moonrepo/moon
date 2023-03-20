@@ -43,7 +43,11 @@ fn load_or_create_anonymous_uid() -> Result<String, MoonError> {
 }
 
 fn create_anonymous_rid(workspace_root: &Path) -> String {
-    moon_utils::hash(fs::file_name(workspace_root))
+    moon_utils::hash(
+        env::var("MOONBASE_REPO_SLUG")
+            .or_else(|_| env::var("MOON_REPO_SLUG"))
+            .unwrap_or_else(|_| fs::file_name(workspace_root)),
+    )
 }
 
 pub async fn check_version(

@@ -6,6 +6,7 @@ use moon_project_graph::{ProjectGraph, ProjectGraphBuilder, ProjectGraphError};
 use moon_system_platform::SystemPlatform;
 use moon_utils::{is_test_env, json};
 use moon_workspace::{Workspace, WorkspaceError};
+use std::env;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -38,10 +39,7 @@ pub fn register_platforms(workspace: &mut Workspace) -> Result<(), WorkspaceErro
     Ok(())
 }
 
-/// Loads the workspace from the current working directory.
-pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
-    let mut workspace = Workspace::load()?;
-
+async fn setup_workspace(mut workspace: Workspace) -> Result<Workspace, WorkspaceError> {
     if !workspace.config.telemetry {
         TELEMETRY.store(false, Ordering::Relaxed);
     }
@@ -49,23 +47,24 @@ pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
     register_platforms(&mut workspace)?;
 
     if !is_test_env() {
+        if workspace.vcs.is_enabled() {
+            env::set_var("MOON_REPO_SLUG", workspace.vcs.get_repository_slug().await?);
+        }
+
         workspace.signin_to_moonbase().await?;
     }
 
     Ok(workspace)
 }
 
+/// Loads the workspace from the current working directory.
+pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
+    setup_workspace(Workspace::load()?).await
+}
+
 /// Loads the workspace from a provided directory.
 pub async fn load_workspace_from(path: &Path) -> Result<Workspace, WorkspaceError> {
-    let mut workspace = Workspace::load_from(path)?;
-
-    register_platforms(&mut workspace)?;
-
-    if !is_test_env() {
-        workspace.signin_to_moonbase().await?;
-    }
-
-    Ok(workspace)
+    setup_workspace(Workspace::load_from(path)?).await
 }
 
 // Some commands require the toolchain to exist, but don't use

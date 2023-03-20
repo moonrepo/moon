@@ -85,12 +85,14 @@ pub async fn run_cli() {
     setup_caching(&args.cache);
 
     // Check for new version
-    if !matches!(
+    let version_handle = if matches!(
         &args.command,
-        Commands::Init { .. } | Commands::Upgrade { .. }
+        Commands::Check { .. } | Commands::Ci { .. } | Commands::Run { .. } | Commands::Sync { .. }
     ) {
-        tokio::spawn(check_for_new_version());
-    }
+        Some(tokio::spawn(check_for_new_version()))
+    } else {
+        None
+    };
 
     // Match and run subcommand
     let result = match args.command {
@@ -194,7 +196,6 @@ pub async fn run_cli() {
         },
         Commands::Project { id, json } => project(id, json).await,
         Commands::ProjectGraph { id, dot, json } => project_graph(id, dot, json).await,
-        Commands::Sync => sync().await,
         Commands::Query { command } => match command {
             QueryCommands::Hash { hash, json } => query::hash(&hash, json).await,
             QueryCommands::HashDiff { left, right, json } => {
@@ -296,10 +297,15 @@ pub async fn run_cli() {
             )
             .await
         }
-        Commands::Upgrade => upgrade().await,
         Commands::Setup => setup().await,
+        Commands::Sync => sync().await,
         Commands::Teardown => teardown().await,
+        Commands::Upgrade => upgrade().await,
     };
+
+    if let Some(version_check) = version_handle {
+        let _ = version_check.await;
+    }
 
     if let Err(error) = result {
         let error_message = error.to_string();

@@ -6,6 +6,7 @@
 
 - Fixed an issue where failing tasks ran with the global `moon` binary wouldn't bubble up the
   correct exit code.
+- Fixed an issue where a root-level project was synced as a TypeScript project reference to itself.
 
 ## 0.26.3
 

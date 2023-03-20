@@ -95,6 +95,7 @@ export interface ProjectConfig {
 	language: ProjectLanguage;
 	platform: Platform | null;
 	project: ProjectMetadataConfig | null;
+	tags: string[];
 	tasks: Record<string, TaskConfig>;
 	toolchain: ProjectToolchainConfig;
 	type: ProjectType;

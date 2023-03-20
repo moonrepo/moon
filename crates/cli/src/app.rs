@@ -134,6 +134,9 @@ pub enum QueryCommands {
         #[arg(long, help = "Filter projects that match this source path")]
         source: Option<String>,
 
+        #[arg(long, help = "Filter projects that have the following tags")]
+        tags: Option<String>,
+
         #[arg(long, help = "Filter projects that have the following tasks")]
         tasks: Option<String>,
 

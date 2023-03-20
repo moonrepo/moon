@@ -22,7 +22,7 @@
 
 #### ⚙️ Internal
 
-- Updated the new version check to only run on the `check`, `ci`, `run`, and `setup` commands.
+- Updated the new version check to only run on the `check`, `ci`, `run`, and `sync` commands.
 - Will now detect 16 additional CI environments: Agola, AppCenter, Appcircle, Azure, Bamboo,
   Bitrise, Buddy, Cirrus, Codemagic, Heroku, Jenkins, Jenkins X, Netlify, TeamCity, Vela,
   Woodpecker.

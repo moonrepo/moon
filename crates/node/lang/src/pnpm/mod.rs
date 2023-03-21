@@ -64,7 +64,7 @@ pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVer
 
     if let Some(lockfile) = PnpmLock::read(path)? {
         for (package_name, details) in lockfile.packages {
-            let parsed_dependency = PnpmDependencyPath::parse(&package_name)?;
+            let parsed_dependency = PnpmDependencyPath::parse(&package_name);
             let entry = deps
                 .entry(parsed_dependency.name.unwrap_or_default())
                 .or_default();

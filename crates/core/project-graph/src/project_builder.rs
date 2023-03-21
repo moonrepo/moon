@@ -7,6 +7,7 @@ use moon_config::{
     ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceProjects, CONFIG_DIRNAME,
     CONFIG_PROJECT_FILENAME,
 };
+use moon_enforcer::{enforce_project_type_relationships, enforce_tag_relationships};
 use moon_error::MoonError;
 use moon_hasher::{convert_paths_to_strings, to_hash};
 use moon_logger::{color, debug, map_list, trace, warn, Logable};
@@ -175,6 +176,27 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         }
 
         project.tasks.extend(tasks);
+
+        // Enforce project constraints and boundaries
+        for dep_id in project.get_dependency_ids() {
+            let dep_index = self.internal_load(dep_id)?;
+            let dep = self.graph.node_weight(dep_index).unwrap();
+
+            // Enforce type constraints
+            if self
+                .workspace
+                .config
+                .constraints
+                .enforce_project_type_relationships
+            {
+                enforce_project_type_relationships(project, dep)?;
+            }
+
+            // Enforce tag constraints
+            for (source_tag, allowed_tags) in &self.workspace.config.constraints.tag_relationships {
+                enforce_tag_relationships(project, source_tag, dep, allowed_tags)?;
+            }
+        }
 
         Ok(())
     }

@@ -36,7 +36,7 @@ pub fn enforce_tag_relationships(
     source: &Project,
     source_tag: &String,
     dependency: &Project,
-    dependency_tags: &[String],
+    allowed_tags: &[String],
 ) -> Result<(), EnforcerError> {
     // Source project isn't using the source tag
     if source_tag.is_empty()
@@ -47,19 +47,28 @@ pub fn enforce_tag_relationships(
     }
 
     // Dependency project doesn't have any tags
-    if dependency_tags.is_empty() || dependency.config.tags.is_empty() {
+    if allowed_tags.is_empty() {
         return Ok(());
     }
 
-    // Dependency has the tag!
-    if dependency.config.tags.contains(source_tag) {
+    // Dependency has the source tag or one of the allowed tags
+    if dependency.config.tags.contains(source_tag)
+        || dependency
+            .config
+            .tags
+            .iter()
+            .any(|tag| allowed_tags.contains(tag))
+    {
         return Ok(());
     }
+
+    let mut allowed = Vec::from(allowed_tags);
+    allowed.push(source_tag.to_owned());
 
     Err(EnforcerError::InvalidTagRelationship(
         source.id.clone(),
         source_tag.clone(),
         dependency.id.clone(),
-        dependency_tags.join(", "),
+        allowed.join(", "),
     ))
 }

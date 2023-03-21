@@ -102,8 +102,8 @@ projects:
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#constraints" />
 
-Configures constraints between projects that are enforced during
-[project syncing](../commands/sync). This is also known as project boundaries.
+Configures constraints between projects that are enforced during project graph generation. This is
+also known as project boundaries.
 
 ### `enforceProjectTypeRelationships`
 
@@ -127,13 +127,14 @@ constraints:
 
 <HeadingApiLink to="/api/types/interface/ConstraintsConfig#tagRelationships" />
 
-Enforces allowed relationships between a project its dependencies based on the project's
+Enforces allowed relationships between a project and its dependencies based on the project's
 [`tags`](./project#tags) setting. This works in a similar fashion to
 `enforceProjectTypeRelationships`, but gives you far more control over what these relationships look
 like.
 
 For example, let's enforce that Next.js projects using the `next` tag can only depend on projects
-that support React using the `react` tag.
+that support React using the `react` tag. If a dependency does not have one of the configured
+allowed tags, in this case `react`, an error will occur.
 
 ```yaml title=".moon/workspace.yml" {2,3}
 constraints:
@@ -141,7 +142,16 @@ constraints:
     next: ['react']
 ```
 
-> Projects with no tags are considered an allowed relationship for easier interoperability.
+On the project side, we would configure [`moon.yml`](./project#tags) like so:
+
+```yaml title="app/moon.yml"
+tags: ['next']
+dependsOn: ['components']
+```
+
+```yaml title="packages/components/moon.yml"
+tags: ['react']
+```
 
 ## `generator`
 

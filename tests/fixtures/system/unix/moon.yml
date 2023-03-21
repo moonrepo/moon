@@ -82,11 +82,17 @@ tasks:
 
   # Misc
   foo:
-    command: echo 'foo'
+    command: bash -c "echo 'foo'"
     platform: system
+    options:
+      shell: false
   bar:
-    command: echo 'bar'
+    command: sh -c "echo 'bar'"
     platform: system
+    options:
+      shell: false
   baz:
-    command: echo 'baz'
+    command: /bin/bash -c "echo 'baz'"
     platform: system
+    options:
+      shell: false

@@ -54,10 +54,11 @@ pub fn format_running_command(
         )
     };
 
-    let suffix = format!("(in {target_dir})");
-    let message = format!("{} {}", command_line, color::muted(suffix));
-
-    color::muted_light(message)
+    format!(
+        "{} {}",
+        color::muted_light(command_line),
+        color::muted(format!("(in {target_dir})"))
+    )
 }
 
 #[derive(Debug)]
@@ -78,9 +79,6 @@ pub struct Command {
 
     /// Log the command to the terminal before running
     log_command: bool,
-
-    /// Arguments will be passed via stdin to the command
-    pass_args_stdin: bool,
 
     /// Prefix to prepend to all log lines
     prefix: Option<String>,
@@ -103,15 +101,13 @@ impl Command {
             error_on_nonzero: true,
             input: vec![],
             log_command: false,
-            pass_args_stdin: false,
             prefix: None,
             shell: None,
         };
 
         // Referencing a batch script needs to be ran with a shell
         if is_windows_script(&command.bin) {
-            command.pass_args_stdin = true;
-            command.shell = Some(shell::create_windows_shell());
+            command.shell = Some(shell::create_windows_shell(false));
         }
 
         command
@@ -192,9 +188,7 @@ impl Command {
         let error_handler = |e| map_io_to_process_error(e, &self.bin);
         let output: Output;
 
-        if !self.has_input() {
-            output = command.output().await.map_err(error_handler)?;
-        } else {
+        if self.has_input() {
             let mut child = command
                 .stdin(Stdio::piped())
                 .stdout(Stdio::piped())
@@ -205,6 +199,8 @@ impl Command {
             self.write_input_to_child(&mut child).await?;
 
             output = child.wait_with_output().await.map_err(error_handler)?;
+        } else {
+            output = command.output().await.map_err(error_handler)?;
         }
 
         self.handle_nonzero_status(&output)?;
@@ -219,15 +215,15 @@ impl Command {
         let error_handler = |e| map_io_to_process_error(e, &self.bin);
         let mut child: Child;
 
-        if !self.has_input() {
-            child = command.spawn().map_err(error_handler)?;
-        } else {
+        if self.has_input() {
             child = command
                 .stdin(Stdio::piped())
                 .spawn()
                 .map_err(error_handler)?;
 
             self.write_input_to_child(&mut child).await?;
+        } else {
+            child = command.spawn().map_err(error_handler)?;
         };
 
         let status = child.wait().await.map_err(error_handler)?;
@@ -352,9 +348,16 @@ impl Command {
             let mut cmd = TokioCommand::new(&shell.command);
             cmd.args(&shell.args);
 
-            if !self.pass_args_stdin {
-                cmd.arg(&self.bin);
-                cmd.args(&self.args);
+            // Shells use -c to execute a command, which requires the entire
+            // command to executed to be a single argument!
+            if !shell.pass_args_stdin {
+                let args = self
+                    .args
+                    .iter()
+                    .map(|a| a.to_str().unwrap())
+                    .collect::<Vec<_>>();
+
+                cmd.arg(format!("{} {}", &self.bin, args.join(" ")));
             }
 
             cmd
@@ -382,13 +385,12 @@ impl Command {
         } else {
             format!(
                 "{} {}",
-                &self.bin,
-                join_args(
-                    self.args
-                        .iter()
-                        .map(|a| a.to_str().unwrap_or("<unknown>"))
-                        .collect::<Vec<_>>()
-                )
+                self.bin,
+                self.args
+                    .iter()
+                    .map(|a| a.to_str().unwrap_or("<unknown>"))
+                    .collect::<Vec<_>>()
+                    .join(" ")
             )
         };
 
@@ -476,6 +478,15 @@ impl Command {
         MoonError::ProcessNonZeroWithOutput(self.bin.clone(), code, message)
     }
 
+    pub fn wrap_in_shell(&mut self) -> &mut Command {
+        self.shell = Some(if cfg!(windows) {
+            shell::create_windows_shell(true)
+        } else {
+            shell::create_unix_shell()
+        });
+        self
+    }
+
     fn handle_nonzero_status(&self, output: &Output) -> Result<(), MoonError> {
         if self.error_on_nonzero && !output.status.success() {
             return Err(self.output_to_error(output, true));
@@ -485,12 +496,32 @@ impl Command {
     }
 
     fn has_input(&self) -> bool {
-        !self.input.is_empty() || self.pass_args_stdin
+        !self.input.is_empty()
+            || self
+                .shell
+                .as_ref()
+                .map(|s| s.pass_args_stdin)
+                .unwrap_or(false)
     }
 
     #[track_caller]
     fn log_command_info(&self) {
-        let (mut command_line, working_dir) = self.get_command_line();
+        let working_dir = self.cwd.as_deref();
+        let mut command_line = format!(
+            "{} {}",
+            self.bin,
+            self.args
+                .iter()
+                .map(|a| a.to_str().unwrap_or("<unknown>"))
+                .collect::<Vec<_>>()
+                .join(" ")
+        );
+
+        if let Some(shell) = &self.shell {
+            if shell.pass_args_stdin {
+                command_line = self.get_input_line();
+            }
+        }
 
         if self.log_command {
             println!(
@@ -502,26 +533,6 @@ impl Command {
         // Avoid all this overhead if we're not logging
         if !logging_enabled() {
             return;
-        }
-
-        if self.has_input() {
-            let input_line = self.get_input_line();
-            let debug_input = env::var("MOON_DEBUG_PROCESS_INPUT").is_ok();
-
-            command_line = format!(
-                "{}{}{}",
-                command_line,
-                if command_line.ends_with('-') {
-                    " "
-                } else {
-                    " - "
-                },
-                if input_line.len() > 200 && !debug_input {
-                    "(truncated files list)".into()
-                } else {
-                    input_line.replace('\n', " ")
-                }
-            );
         }
 
         let mut envs_list = vec![];
@@ -545,10 +556,32 @@ impl Command {
             }
         }
 
+        command_line = if let Some(shell) = &self.shell {
+            let shell_line = format!("{} {}", shell.command, shell.args.join(" "));
+
+            if shell.pass_args_stdin {
+                let debug_input = env::var("MOON_DEBUG_PROCESS_INPUT").is_ok();
+
+                format!(
+                    "{} {}",
+                    shell_line,
+                    if command_line.len() > 200 && !debug_input {
+                        "(truncated)".into()
+                    } else {
+                        command_line.replace('\n', " ")
+                    }
+                )
+            } else {
+                format!("{} {}", shell_line, command_line)
+            }
+        } else {
+            command_line
+        };
+
         trace!(
             target: "moon:utils:process",
             "Running command {} (in {}){}",
-            color::shell(&command_line),
+            color::shell(command_line.trim()),
             if let Some(cwd) = working_dir {
                 color::path(cwd)
             } else {

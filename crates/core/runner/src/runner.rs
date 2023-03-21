@@ -250,6 +250,11 @@ impl<'a> Runner<'a> {
             // We need to handle non-zero's manually
             .no_error_on_failure();
 
+        // Wrap in a shell
+        if task.platform.is_system() && task.options.shell {
+            command.wrap_in_shell();
+        }
+
         // Passthrough args
         if context.should_inherit_args(&self.task.target) {
             command.args(&context.passthrough_args);

@@ -72,7 +72,7 @@ pub async fn query_touched_files(
 
         // Otherwise, check locally touched files
     } else {
-        trace!(target: LOG_TARGET, "Against locally touched",);
+        trace!(target: LOG_TARGET, "Against locally touched");
 
         vcs.get_touched_files().await?
     };

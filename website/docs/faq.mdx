@@ -126,6 +126,15 @@ tasks:
 		platform: 'system'
 ```
 
+:::caution
+
+Be careful when using this approach, as it may not be portable across operating systems, nor will it
+utilize the toolchain. For example, if your Bash script uses `node`, this will be the binary found
+on your machine, and _not_ the one in moon's toolchain. [proto](/proto) helps to solve this, but
+it's not a perfect solution.
+
+:::
+
 ### How to run multiple commands within a task?
 
 A task in moon is a single command, representing its inputs and outputs, and as such, cannot run
@@ -141,28 +150,36 @@ alternatives:
 
 ### How to run tasks in a shell?
 
-By default, all tasks _do not_ run in a shell, as we interact with and execute a tool's binary
-directly within the toolchain. We also provide no built-in support for shells, but that doesn't mean
-you can't use them. Since tasks can execute any commands available on your system, you can implement
-the shell manually like so:
+By default, all non-system tasks _will not_ run in a shell, as we interact with and execute a tool's
+binary directly within the toolchain. We also provide no built-in support for wrapping language
+based tasks within a shell, and have no plans to support this as it makes tasks less deterministic.
+
+However, system based tasks do support shells, and will run in a shell based on the task's
+[`shell`](./config/project#shell) option, as demonstrated below:
 
 ```yaml title="moon.yml"
 tasks:
-  bash:
+  # Runs in a shell
+  global:
+    command: 'some-command-on-path'
+    platform: 'system'
+
+  # Custom shells
+  unix:
     command: 'bash -c some-command'
     platform: 'system'
-  # Windows
-  cmd:
-    command: 'cmd.exe /d /s /c some-command'
-    platform: 'system'
-  pwsh:
+    options:
+      shell: false
+  windows:
     command: 'pwsh.exe -c some-command'
     platform: 'system'
+    options:
+      shell: false
 ```
 
 ### Can we run other languages?
 
-Yes! Although our toolchain only supports JavaScript/Node.js at this time, you can still run other
+Yes! Although our toolchain only supports a few languages at this time, you can still run other
 languages within tasks by setting their [`platform`](./config/project#platform-1) to "system".
 System tasks are an escape hatch that will use any command available on the current machine.
 

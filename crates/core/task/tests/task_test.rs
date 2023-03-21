@@ -38,7 +38,8 @@ mod from_config {
                 retry_count: 0,
                 run_deps_in_parallel: true,
                 run_in_ci: true,
-                run_from_workspace_root: false
+                run_from_workspace_root: false,
+                shell: true,
             }
         )
     }

@@ -7,27 +7,27 @@ pub fn enforce_project_type_relationships(
     source: &Project,
     dependency: &Project,
 ) -> Result<(), EnforcerError> {
-    let enforce_is_library = |project: &Project| -> Result<(), EnforcerError> {
-        if matches!(project.type_of, ProjectType::Library) {
-            return Ok(());
+    let valid = match source.type_of {
+        ProjectType::Application => {
+            matches!(dependency.type_of, ProjectType::Library | ProjectType::Tool)
         }
-
-        Err(EnforcerError::InvalidTypeRelationship(
-            source.id.clone(),
-            source.type_of,
-            project.id.clone(),
-            project.type_of,
-        ))
-    };
-
-    match source.type_of {
-        ProjectType::Application | ProjectType::Library | ProjectType::Tool => {
-            enforce_is_library(dependency)?;
+        ProjectType::Library | ProjectType::Tool => {
+            matches!(dependency.type_of, ProjectType::Library)
         }
         ProjectType::Unknown => {
             // Do nothing?
+            true
         }
     };
+
+    if !valid {
+        return Err(EnforcerError::InvalidTypeRelationship(
+            source.id.clone(),
+            source.type_of,
+            dependency.id.clone(),
+            dependency.type_of,
+        ));
+    }
 
     Ok(())
 }

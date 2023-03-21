@@ -7,6 +7,19 @@ use moon_test_utils::{
 };
 use moon_utils::string_vec;
 use rustc_hash::FxHashMap;
+use std::fs::OpenOptions;
+use std::io::Write;
+use std::path::Path;
+
+pub fn append_file<P: AsRef<Path>>(path: P, data: &str) {
+    let mut file = OpenOptions::new()
+        .write(true)
+        .append(true)
+        .open(path.as_ref())
+        .unwrap();
+
+    writeln!(file, "\n\n{data}").unwrap();
+}
 
 async fn get_aliases_graph() -> (ProjectGraph, Sandbox) {
     let (workspace_config, toolchain_config, tasks_config) =
@@ -70,6 +83,34 @@ async fn get_dependents_graph() -> (ProjectGraph, Sandbox) {
         None,
         None,
     );
+
+    let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+    let graph = generate_project_graph(&mut workspace).await.unwrap();
+
+    (graph, sandbox)
+}
+
+async fn get_type_constraints_graph<F>(setup: F) -> (ProjectGraph, Sandbox)
+where
+    F: FnOnce(&Sandbox),
+{
+    let mut workspace_config = WorkspaceConfig {
+        projects: WorkspaceProjects::Globs(vec!["*".into()]),
+        ..WorkspaceConfig::default()
+    };
+
+    workspace_config
+        .constraints
+        .enforce_project_type_relationships = true;
+
+    let sandbox = create_sandbox_with_config(
+        "project-graph/type-constraints",
+        Some(&workspace_config),
+        None,
+        None,
+    );
+
+    setup(&sandbox);
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
     let graph = generate_project_graph(&mut workspace).await.unwrap();
@@ -465,5 +506,99 @@ mod implicit_explicit_deps {
                 )
             ])
         );
+    }
+}
+
+mod type_constraints {
+    use super::*;
+
+    #[tokio::test]
+    async fn app_can_use_library() {
+        get_type_constraints_graph(|sandbox| {
+            append_file(sandbox.path().join("app/moon.yml"), "dependsOn: [library]");
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    async fn app_can_use_tool() {
+        get_type_constraints_graph(|sandbox| {
+            append_file(sandbox.path().join("app/moon.yml"), "dependsOn: [tool]");
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    #[should_panic(
+        expected = "InvalidTypeRelationship(\"app\", Application, \"app-other\", Application)"
+    )]
+    async fn app_cannot_use_app() {
+        get_type_constraints_graph(|sandbox| {
+            append_file(
+                sandbox.path().join("app/moon.yml"),
+                "dependsOn: [app-other]",
+            );
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    async fn library_can_use_library() {
+        get_type_constraints_graph(|sandbox| {
+            append_file(
+                sandbox.path().join("library/moon.yml"),
+                "dependsOn: [library-other]",
+            );
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    #[should_panic(
+        expected = "InvalidTypeRelationship(\"library\", Library, \"app\", Application)"
+    )]
+    async fn library_cannot_use_app() {
+        get_type_constraints_graph(|sandbox| {
+            append_file(sandbox.path().join("library/moon.yml"), "dependsOn: [app]");
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "InvalidTypeRelationship(\"library\", Library, \"tool\", Tool)")]
+    async fn library_cannot_use_tool() {
+        get_type_constraints_graph(|sandbox| {
+            append_file(sandbox.path().join("library/moon.yml"), "dependsOn: [tool]");
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    async fn tool_can_use_library() {
+        get_type_constraints_graph(|sandbox| {
+            append_file(sandbox.path().join("tool/moon.yml"), "dependsOn: [library]");
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "InvalidTypeRelationship(\"tool\", Tool, \"app\", Application)")]
+    async fn tool_cannot_use_app() {
+        get_type_constraints_graph(|sandbox| {
+            append_file(sandbox.path().join("tool/moon.yml"), "dependsOn: [app]");
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "InvalidTypeRelationship(\"tool\", Tool, \"tool-other\", Tool)")]
+    async fn tool_cannot_use_tool() {
+        get_type_constraints_graph(|sandbox| {
+            append_file(
+                sandbox.path().join("tool/moon.yml"),
+                "dependsOn: [tool-other]",
+            );
+        })
+        .await;
     }
 }

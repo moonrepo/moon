@@ -20,6 +20,8 @@ tasks:
   exitNonZeroInline:
     command: bash -c 'exit 2'
     platform: system
+    options:
+      shell: false
   exitZero:
     command: bash
     args: ./exitZero.sh
@@ -64,14 +66,17 @@ tasks:
       - 'folder'
   affectedFiles:
     command: bash ./affectedFiles.sh
+    platform: system
     options:
       affectedFiles: true
   affectedFilesArgs:
     command: bash ./affectedFiles.sh
+    platform: system
     options:
       affectedFiles: 'args'
   affectedFilesEnvVar:
     command: bash ./affectedFiles.sh
+    platform: system
     options:
       affectedFiles: 'env'
 

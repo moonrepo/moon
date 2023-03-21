@@ -55,6 +55,12 @@
         }
       ]
     },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "tasks": {
       "type": "object",
       "additionalProperties": {

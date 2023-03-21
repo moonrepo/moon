@@ -62,6 +62,9 @@
         },
         "walkStrategy": {
           "$ref": "#/definitions/HasherWalkStrategy"
+        },
+        "warnOnMissingInputs": {
+          "type": "boolean"
         }
       }
     },

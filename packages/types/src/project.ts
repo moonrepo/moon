@@ -30,6 +30,7 @@ export interface TaskOptions {
 	runDepsInParallel: boolean;
 	runInCI: boolean;
 	runFromWorkspaceRoot: boolean;
+	shell: boolean;
 }
 
 export interface Task {

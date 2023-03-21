@@ -288,10 +288,6 @@ For interoperability reasons, the following command names have special handling.
   - Will execute with `deno` binary.
 - When `platform` is "node":
   - `node`, `npm`, `pnpm`, `yarn` - Uses the binaries from the toolchain.
-- When `platform` is "system":
-  - `cmd`, `cmd.exe` - Will execute the arguments with `cmd.exe` (Windows only).
-  - `powershell`, `powershell.exe` - Will execute the arguments with `powershell.exe` (Windows
-    only).
 
 ### `args`
 
@@ -702,6 +698,37 @@ tasks:
     # ...
     options:
       runFromWorkspaceRoot: true
+```
+
+#### `shell`
+
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#shell" />
+
+For [system tasks](#platform-1), whether to run the command within a shell or not. Defaults to
+`true`.
+
+- On Unix, will derive the shell from the `SHELL` environment variable, or default to `/bin/sh`. The
+  shell will be ran using the `-c` option.
+- On Windows, will use `pwsh.exe` or `powershell.exe`. The shell will be ran using the `-Command`
+  option, coupled with `-`, so that args are passed via stdin.
+
+```yaml title="moon.yml" {3-5}
+tasks:
+  native:
+    command: 'echo $SHELL'
+    options:
+      shell: true
+```
+
+If you'd like to use a different shell, or customize the shell's arguments, you can set `shell` to
+false and configure a fully qualified command.
+
+```yaml title="moon.yml" {3-5}
+tasks:
+  native:
+    command: '/bin/zsh -c "echo $SHELL"'
+    options:
+      shell: false
 ```
 
 ## Overrides

@@ -64,6 +64,8 @@ pub struct TaskOptions {
     pub run_in_ci: bool,
 
     pub run_from_workspace_root: bool,
+
+    pub shell: bool,
 }
 
 impl Default for TaskOptions {
@@ -82,6 +84,7 @@ impl Default for TaskOptions {
             run_deps_in_parallel: true,
             run_in_ci: true,
             run_from_workspace_root: false,
+            shell: true,
         }
     }
 }
@@ -135,6 +138,10 @@ impl TaskOptions {
         if let Some(run_from_workspace_root) = &config.run_from_workspace_root {
             self.run_from_workspace_root = *run_from_workspace_root;
         }
+
+        if let Some(shell) = &config.shell {
+            self.shell = *shell;
+        }
     }
 
     pub fn from_config(config: TaskOptionsConfig, is_local: bool) -> TaskOptions {
@@ -159,6 +166,7 @@ impl TaskOptions {
             run_deps_in_parallel: config.run_deps_in_parallel.unwrap_or(true),
             run_in_ci: config.run_in_ci.unwrap_or(!is_local),
             run_from_workspace_root: config.run_from_workspace_root.unwrap_or_default(),
+            shell: config.shell.unwrap_or(true),
         }
     }
 
@@ -198,6 +206,10 @@ impl TaskOptions {
 
         if self.run_from_workspace_root != default_options.run_from_workspace_root {
             config.run_from_workspace_root = Some(self.run_from_workspace_root);
+        }
+
+        if self.shell != default_options.shell {
+            config.shell = Some(self.shell);
         }
 
         config

@@ -115,4 +115,7 @@ pub struct TaskOptionsConfig {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub run_from_workspace_root: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub shell: Option<bool>,
 }

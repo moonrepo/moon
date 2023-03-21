@@ -79,9 +79,6 @@ pub struct Command {
     /// Log the command to the terminal before running
     log_command: bool,
 
-    /// Arguments will be passed via stdin to the command
-    pass_args_stdin: bool,
-
     /// Prefix to prepend to all log lines
     prefix: Option<String>,
 
@@ -103,14 +100,12 @@ impl Command {
             error_on_nonzero: true,
             input: vec![],
             log_command: false,
-            pass_args_stdin: false,
             prefix: None,
             shell: None,
         };
 
         // Referencing a batch script needs to be ran with a shell
         if is_windows_script(&command.bin) {
-            command.pass_args_stdin = true;
             command.shell = Some(shell::create_windows_shell());
         }
 
@@ -352,7 +347,7 @@ impl Command {
             let mut cmd = TokioCommand::new(&shell.command);
             cmd.args(&shell.args);
 
-            if !self.pass_args_stdin {
+            if !shell.pass_args_stdin {
                 cmd.arg(&self.bin);
                 cmd.args(&self.args);
             }
@@ -485,7 +480,12 @@ impl Command {
     }
 
     fn has_input(&self) -> bool {
-        !self.input.is_empty() || self.pass_args_stdin
+        !self.input.is_empty()
+            || self
+                .shell
+                .as_ref()
+                .map(|s| s.pass_args_stdin)
+                .unwrap_or(false)
     }
 
     #[track_caller]

@@ -23,6 +23,7 @@ fn is_program_on_path(program_name: String) -> bool {
 pub struct Shell {
     pub command: String,
     pub args: Vec<String>,
+    pub pass_args_stdin: bool,
 }
 
 // https://thinkpowershell.com/decision-to-switch-to-powershell-core-pwsh/
@@ -44,5 +45,15 @@ pub fn create_windows_shell() -> Shell {
             // https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_pwsh?view=powershell-7.2#-command---c
             "-"
         ],
+        pass_args_stdin: true,
+    }
+}
+
+#[inline]
+pub fn create_unix_shell() -> Shell {
+    Shell {
+        command: env::var("SHELL").unwrap_or_else(|_| "/bin/sh".into()),
+        args: string_vec!["-c"],
+        pass_args_stdin: false,
     }
 }

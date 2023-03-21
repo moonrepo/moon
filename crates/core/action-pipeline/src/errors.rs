@@ -1,4 +1,5 @@
 use moon_dep_graph::DepGraphError;
+use moon_enforcer::EnforcerError;
 use moon_error::MoonError;
 use moon_project::ProjectError;
 use moon_runner::RunnerError;
@@ -17,6 +18,9 @@ pub enum PipelineError {
 
     #[error(transparent)]
     DepGraph(#[from] DepGraphError),
+
+    #[error(transparent)]
+    Enforcer(#[from] EnforcerError),
 
     #[error(transparent)]
     Moon(#[from] MoonError),

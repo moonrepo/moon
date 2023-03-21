@@ -2279,6 +2279,7 @@ dependencies = [
  "moon_cache",
  "moon_dep_graph",
  "moon_emitter",
+ "moon_enforcer",
  "moon_error",
  "moon_hasher",
  "moon_logger",

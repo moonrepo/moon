@@ -1,6 +1,7 @@
 use crate::errors::PipelineError;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
+use moon_enforcer::{enforce_project_type_relationships, enforce_tag_relationships};
 use moon_logger::{color, debug};
 use moon_platform::Runtime;
 use moon_project::Project;
@@ -39,7 +40,23 @@ pub async fn sync_project(
     let mut dependencies = FxHashMap::default();
 
     for dep_id in project.dependencies.keys() {
-        dependencies.insert(dep_id.to_owned(), project_graph.get(dep_id)?);
+        let dep = project_graph.get(dep_id)?;
+
+        // Enforce type constraints
+        if workspace
+            .config
+            .constraints
+            .enforce_project_type_relationships
+        {
+            enforce_project_type_relationships(project, dep)?;
+        }
+
+        // Enforce tag constraints
+        for (source_tag, allowed_tags) in &workspace.config.constraints.tag_relationships {
+            enforce_tag_relationships(project, source_tag, dep, allowed_tags)?;
+        }
+
+        dependencies.insert(dep_id.to_owned(), dep);
     }
 
     // Sync the projects and return true if any files have been mutated

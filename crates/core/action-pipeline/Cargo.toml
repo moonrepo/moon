@@ -16,6 +16,7 @@ moon_action_context = { path = "../action-context" }
 moon_cache = { path = "../cache" }
 moon_dep_graph = { path = "../dep-graph" }
 moon_emitter = { path = "../emitter" }
+moon_enforcer = { path = "../enforcer" }
 moon_error = { path = "../error" }
 moon_hasher = { path = "../hasher" }
 moon_logger = { path = "../logger" }

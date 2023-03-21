@@ -1,5 +1,5 @@
 use crate::RunnerError;
-use moon_config::CONFIG_PROJECT_FILENAME;
+use moon_config::{HasherConfig, HasherWalkStrategy, CONFIG_PROJECT_FILENAME};
 use moon_logger::{color, warn, Logable};
 use moon_task::Task;
 use moon_utils::{glob, is_ci, path};
@@ -14,6 +14,7 @@ type HashedInputs = BTreeMap<String, String>;
 
 fn convert_paths_to_strings(
     log_target: &str,
+    log_missing: bool,
     paths: &FxHashSet<PathBuf>,
     workspace_root: &Path,
 ) -> Result<Vec<String>, RunnerError> {
@@ -29,7 +30,7 @@ fn convert_paths_to_strings(
         };
 
         // `git hash-object` will fail if you pass an unknown file
-        if !path.exists() {
+        if !path.exists() && log_missing {
             warn!(
                 target: log_target,
                 "Attempted to hash input {} but it does not exist, skipping",
@@ -39,7 +40,7 @@ fn convert_paths_to_strings(
             continue;
         }
 
-        if !path.is_file() {
+        if !path.is_file() && log_missing {
             warn!(
                 target: log_target,
                 "Attempted to hash input {} but only files can be hashed, skipping",
@@ -89,13 +90,15 @@ fn is_valid_input_source(
 pub async fn collect_and_hash_inputs(
     vcs: &BoxedVcs,
     task: &Task,
-    project_source: &str,
+    project_root: &Path,
     workspace_root: &Path,
-    use_globs: bool,
+    hasher_config: &HasherConfig,
 ) -> Result<HashedInputs, RunnerError> {
     let mut files_to_hash = FxHashSet::default(); // Absolute paths
     let mut hashed_inputs: HashedInputs = BTreeMap::new();
     let globset = task.create_globset()?;
+    let use_globs = project_root == workspace_root
+        || matches!(hasher_config.walk_strategy, HasherWalkStrategy::Glob);
 
     // 1: Collect inputs as a set of absolute paths
 
@@ -112,7 +115,10 @@ pub async fn collect_and_hash_inputs(
 
             // Collect inputs by querying VCS then matching against globs
         } else {
-            hashed_inputs.extend(vcs.get_file_tree_hashes(project_source).await?);
+            let project_source =
+                path::to_string(project_root.strip_prefix(workspace_root).unwrap())?;
+
+            hashed_inputs.extend(vcs.get_file_tree_hashes(&project_source).await?);
         }
     }
 
@@ -126,8 +132,12 @@ pub async fn collect_and_hash_inputs(
 
     // 2: Convert to workspace relative paths and extract file hashes
 
-    let files_to_hash =
-        convert_paths_to_strings(task.get_log_target(), &files_to_hash, workspace_root)?;
+    let files_to_hash = convert_paths_to_strings(
+        task.get_log_target(),
+        hasher_config.warn_on_missing_inputs,
+        &files_to_hash,
+        workspace_root,
+    )?;
 
     if !files_to_hash.is_empty() {
         hashed_inputs.extend(vcs.get_file_hashes(&files_to_hash, true).await?);

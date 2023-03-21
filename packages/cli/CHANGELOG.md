@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue with pnpm lockfile parsing.
+
 ## 0.26.4
 
 #### 🐞 Fixes

@@ -54,10 +54,11 @@ pub fn format_running_command(
         )
     };
 
-    let suffix = format!("(in {target_dir})");
-    let message = format!("{} {}", command_line, color::muted(suffix));
-
-    color::muted_light(message)
+    format!(
+        "{} {}",
+        color::muted_light(command_line),
+        color::muted(format!("(in {target_dir})"))
+    )
 }
 
 #[derive(Debug)]
@@ -187,9 +188,7 @@ impl Command {
         let error_handler = |e| map_io_to_process_error(e, &self.bin);
         let output: Output;
 
-        if !self.has_input() {
-            output = command.output().await.map_err(error_handler)?;
-        } else {
+        if self.has_input() {
             let mut child = command
                 .stdin(Stdio::piped())
                 .stdout(Stdio::piped())
@@ -200,6 +199,8 @@ impl Command {
             self.write_input_to_child(&mut child).await?;
 
             output = child.wait_with_output().await.map_err(error_handler)?;
+        } else {
+            output = command.output().await.map_err(error_handler)?;
         }
 
         self.handle_nonzero_status(&output)?;
@@ -214,15 +215,15 @@ impl Command {
         let error_handler = |e| map_io_to_process_error(e, &self.bin);
         let mut child: Child;
 
-        if !self.has_input() {
-            child = command.spawn().map_err(error_handler)?;
-        } else {
+        if self.has_input() {
             child = command
                 .stdin(Stdio::piped())
                 .spawn()
                 .map_err(error_handler)?;
 
             self.write_input_to_child(&mut child).await?;
+        } else {
+            child = command.spawn().map_err(error_handler)?;
         };
 
         let status = child.wait().await.map_err(error_handler)?;
@@ -347,9 +348,16 @@ impl Command {
             let mut cmd = TokioCommand::new(&shell.command);
             cmd.args(&shell.args);
 
+            // Shells use -c to execute a command, which requires the entire
+            // command to executed to be a single argument!
             if !shell.pass_args_stdin {
-                cmd.arg(&self.bin);
-                cmd.args(&self.args);
+                let args = self
+                    .args
+                    .iter()
+                    .map(|a| a.to_str().unwrap())
+                    .collect::<Vec<_>>();
+
+                cmd.arg(format!("{} {}", &self.bin, args.join(" ")));
             }
 
             cmd
@@ -372,19 +380,28 @@ impl Command {
     }
 
     pub fn get_command_line(&self) -> (String, Option<&Path>) {
-        let line = if self.args.is_empty() {
-            self.bin.to_owned()
-        } else {
-            format!(
-                "{} {}",
-                &self.bin,
-                join_args(
-                    self.args
-                        .iter()
-                        .map(|a| a.to_str().unwrap_or("<unknown>"))
-                        .collect::<Vec<_>>()
+        let args = self
+            .args
+            .iter()
+            .map(|a| a.to_str().unwrap_or("<unknown>"))
+            .collect::<Vec<_>>();
+
+        let line = if let Some(shell) = &self.shell {
+            if shell.pass_args_stdin {
+                format!("{} {}", shell.command, shell.args.join(" "))
+            } else {
+                format!(
+                    "{} {} '{} {}'",
+                    shell.command,
+                    shell.args.join(" "),
+                    self.bin,
+                    args.join(" ")
                 )
-            )
+            }
+        } else if !args.is_empty() {
+            format!("{} {}", self.bin, args.join(" "))
+        } else {
+            self.bin.to_owned()
         };
 
         (path::replace_home_dir(line), self.cwd.as_deref())
@@ -469,6 +486,15 @@ impl Command {
         }
 
         MoonError::ProcessNonZeroWithOutput(self.bin.clone(), code, message)
+    }
+
+    pub fn wrap_in_shell(&mut self) -> &mut Command {
+        self.shell = Some(if cfg!(windows) {
+            shell::create_windows_shell()
+        } else {
+            shell::create_unix_shell()
+        });
+        self
     }
 
     fn handle_nonzero_status(&self, output: &Output) -> Result<(), MoonError> {

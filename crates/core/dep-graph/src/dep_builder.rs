@@ -29,7 +29,7 @@ pub struct DepGraphBuilder<'ws> {
 
 impl<'ws> DepGraphBuilder<'ws> {
     pub fn new(platforms: &'ws PlatformManager, project_graph: &'ws ProjectGraph) -> Self {
-        debug!(target: LOG_TARGET, "Creating dependency graph",);
+        debug!(target: LOG_TARGET, "Creating dependency graph");
 
         DepGraphBuilder {
             graph: Graph::new(),

@@ -9,6 +9,8 @@
 
 #### 🚀 Updates
 
+- Added a `constraints` setting to `.moon/workspace.yml`, allowing for project/dep relationships to
+  be enforced.
 - Added a `hasher.warnOnMissingInputs` setting to `.moon/workspace.yml`.
 - Added a `shell` task option to `moon.yml` that will wrap system tasks in a shell.
 - Added a `tags` setting to `moon.yml` for project categorization.

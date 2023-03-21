@@ -9,7 +9,7 @@ use validator::Validate;
 #[serde(default, rename_all = "camelCase")]
 pub struct ConstraintsConfig {
     #[serde(skip_serializing_if = "is_default_true")]
-    pub enforce_project_boundaries: bool,
+    pub enforce_project_type_relationships: bool,
 
     #[serde(skip_serializing_if = "is_default")]
     pub tag_relationships: FxHashMap<String, Vec<String>>,
@@ -18,7 +18,7 @@ pub struct ConstraintsConfig {
 impl Default for ConstraintsConfig {
     fn default() -> Self {
         ConstraintsConfig {
-            enforce_project_boundaries: true,
+            enforce_project_type_relationships: true,
             tag_relationships: FxHashMap::default(),
         }
     }

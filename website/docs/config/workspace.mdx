@@ -98,6 +98,51 @@ projects:
     www: 'www'
 ```
 
+## `constraints`
+
+<HeadingApiLink to="/api/types/interface/WorkspaceConfig#constraints" />
+
+Configures constraints between projects that are enforced during
+[project syncing](../commands/sync). This is also known as project boundaries.
+
+### `enforceProjectTypeRelationships`
+
+<HeadingApiLink to="/api/types/interface/ConstraintsConfig#enforceProjectTypeRelationships" />
+
+Enforces allowed relationships between a project its dependencies based on the project's
+[`type`](./project#type) setting. When a project depends on another project of an invalid type, an
+error will be thrown when attempting to run a task. The following relationships are enforced when
+this setting is enabled, which defaults to `true`.
+
+- Applications can _only_ depend on libraries.
+- Libraries can _only_ depend on other libraries.
+- Tools can _only_ depend on libraries.
+
+```yaml title=".moon/workspace.yml" {2}
+constraints:
+  enforceProjectTypeRelationships: false
+```
+
+### `tagRelationships`
+
+<HeadingApiLink to="/api/types/interface/ConstraintsConfig#tagRelationships" />
+
+Enforces allowed relationships between a project its dependencies based on the project's
+[`tags`](./project#tags) setting. This works in a similar fashion to
+`enforceProjectTypeRelationships`, but gives you far more control over what these relationships look
+like.
+
+For example, let's enforce that Next.js projects using the `next` tag can only depend on projects
+that support React using the `react` tag.
+
+```yaml title=".moon/workspace.yml" {2,3}
+constraints:
+  tagRelationships:
+    next: ['react']
+```
+
+> Projects with no tags are considered an allowed relationship for easier interoperability.
+
 ## `generator`
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#generator" />

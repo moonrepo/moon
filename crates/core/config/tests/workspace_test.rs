@@ -494,7 +494,7 @@ mod generator {
 mod constraints {
     #[test]
     #[should_panic(
-        expected = "invalid type: found unsigned int `123`, expected a boolean for key \"workspace.constraints.enforceProjectBoundaries\""
+        expected = "invalid type: found unsigned int `123`, expected a boolean for key \"workspace.constraints.enforceProjectTypeRelationships\""
     )]
     fn invalid_boundary_type() {
         figment::Jail::expect_with(|jail| {
@@ -502,7 +502,7 @@ mod constraints {
                 super::CONFIG_WORKSPACE_FILENAME,
                 r#"
 constraints:
-    enforceProjectBoundaries: 123"#,
+    enforceProjectTypeRelationships: 123"#,
             )?;
 
             super::load_jailed_config(jail.directory())?;

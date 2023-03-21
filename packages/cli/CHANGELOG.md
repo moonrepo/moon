@@ -9,6 +9,7 @@
 
 #### 🚀 Updates
 
+- Added a `hasher.warnOnMissingInputs` setting to `.moon/workspace.yml`.
 - Added a `tags` setting to `moon.yml` for project categorization.
 - Added a `--tags` option to the `moon query projects` command.
 - Added 4 new token variables: `$date`, `$time`, `$datetime`, and `$timestamp`.

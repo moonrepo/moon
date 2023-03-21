@@ -2537,6 +2537,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_enforcer"
+version = "0.1.0"
+dependencies = [
+ "moon_project",
+ "thiserror",
+]
+
+[[package]]
 name = "moon_error"
 version = "0.1.0"
 dependencies = [

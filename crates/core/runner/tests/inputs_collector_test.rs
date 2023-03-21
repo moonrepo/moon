@@ -1,4 +1,5 @@
 use moon::{generate_project_graph, load_workspace_from};
+use moon_config::HasherWalkStrategy;
 use moon_runner::inputs_collector::collect_and_hash_inputs;
 use moon_test_utils::{create_sandbox_with_config, get_cases_fixture_configs, Sandbox};
 use moon_vcs::VcsLoader;
@@ -43,9 +44,9 @@ async fn filters_using_input_globs() {
     let files = collect_and_hash_inputs(
         &vcs,
         project.get_task("inGlobOutFile").unwrap(),
-        &project.source,
+        &project.root,
         &workspace.root,
-        false,
+        &workspace.config.hasher,
     )
     .await
     .unwrap();
@@ -63,9 +64,9 @@ async fn filters_using_input_globs() {
     let files = collect_and_hash_inputs(
         &vcs,
         project.get_task("inGlobOutDir").unwrap(),
-        &project.source,
+        &project.root,
         &workspace.root,
-        false,
+        &workspace.config.hasher,
     )
     .await
     .unwrap();
@@ -76,9 +77,9 @@ async fn filters_using_input_globs() {
     let files = collect_and_hash_inputs(
         &vcs,
         project.get_task("inGlobOutGlob").unwrap(),
-        &project.source,
+        &project.root,
         &workspace.root,
-        false,
+        &workspace.config.hasher,
     )
     .await
     .unwrap();
@@ -95,6 +96,8 @@ async fn filters_using_input_globs_in_glob_mode() {
     let project_graph = generate_project_graph(&mut workspace).await.unwrap();
     let vcs = VcsLoader::load(&workspace.root, &workspace.config).unwrap();
 
+    workspace.config.hasher.walk_strategy = HasherWalkStrategy::Glob;
+
     let project = project_graph.get("outputsFiltering").unwrap();
 
     create_out_files(&project.root);
@@ -103,9 +106,9 @@ async fn filters_using_input_globs_in_glob_mode() {
     let files = collect_and_hash_inputs(
         &vcs,
         project.get_task("inGlobOutFile").unwrap(),
-        &project.source,
+        &project.root,
         &workspace.root,
-        true,
+        &workspace.config.hasher,
     )
     .await
     .unwrap();
@@ -123,9 +126,9 @@ async fn filters_using_input_globs_in_glob_mode() {
     let files = collect_and_hash_inputs(
         &vcs,
         project.get_task("inGlobOutDir").unwrap(),
-        &project.source,
+        &project.root,
         &workspace.root,
-        true,
+        &workspace.config.hasher,
     )
     .await
     .unwrap();
@@ -136,9 +139,9 @@ async fn filters_using_input_globs_in_glob_mode() {
     let files = collect_and_hash_inputs(
         &vcs,
         project.get_task("inGlobOutGlob").unwrap(),
-        &project.source,
+        &project.root,
         &workspace.root,
-        true,
+        &workspace.config.hasher,
     )
     .await
     .unwrap();
@@ -163,9 +166,9 @@ async fn filters_using_input_files() {
     let files = collect_and_hash_inputs(
         &vcs,
         project.get_task("inFileOutFile").unwrap(),
-        &project.source,
+        &project.root,
         &workspace.root,
-        false,
+        &workspace.config.hasher,
     )
     .await
     .unwrap();
@@ -179,9 +182,9 @@ async fn filters_using_input_files() {
     let files = collect_and_hash_inputs(
         &vcs,
         project.get_task("inFileOutDir").unwrap(),
-        &project.source,
+        &project.root,
         &workspace.root,
-        false,
+        &workspace.config.hasher,
     )
     .await
     .unwrap();
@@ -192,9 +195,9 @@ async fn filters_using_input_files() {
     let files = collect_and_hash_inputs(
         &vcs,
         project.get_task("inFileOutGlob").unwrap(),
-        &project.source,
+        &project.root,
         &workspace.root,
-        false,
+        &workspace.config.hasher,
     )
     .await
     .unwrap();
@@ -211,6 +214,8 @@ async fn filters_using_input_files_in_glob_mode() {
     let project_graph = generate_project_graph(&mut workspace).await.unwrap();
     let vcs = VcsLoader::load(&workspace.root, &workspace.config).unwrap();
 
+    workspace.config.hasher.walk_strategy = HasherWalkStrategy::Glob;
+
     let project = project_graph.get("outputsFiltering").unwrap();
 
     create_out_files(&project.root);
@@ -219,9 +224,9 @@ async fn filters_using_input_files_in_glob_mode() {
     let files = collect_and_hash_inputs(
         &vcs,
         project.get_task("inFileOutFile").unwrap(),
-        &project.source,
+        &project.root,
         &workspace.root,
-        true,
+        &workspace.config.hasher,
     )
     .await
     .unwrap();
@@ -235,9 +240,9 @@ async fn filters_using_input_files_in_glob_mode() {
     let files = collect_and_hash_inputs(
         &vcs,
         project.get_task("inFileOutDir").unwrap(),
-        &project.source,
+        &project.root,
         &workspace.root,
-        true,
+        &workspace.config.hasher,
     )
     .await
     .unwrap();
@@ -248,9 +253,9 @@ async fn filters_using_input_files_in_glob_mode() {
     let files = collect_and_hash_inputs(
         &vcs,
         project.get_task("inFileOutGlob").unwrap(),
-        &project.source,
+        &project.root,
         &workspace.root,
-        true,
+        &workspace.config.hasher,
     )
     .await
     .unwrap();

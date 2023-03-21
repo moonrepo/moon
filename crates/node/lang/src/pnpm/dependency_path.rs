@@ -2,21 +2,7 @@
 // https://github.com/pnpm/pnpm/blob/75ac5ca2e63101817b7c02144083641a5274c182/packages/dependency-path/test/index.ts
 // (and the corresponding library). All credits go to original authors.
 
-use moon_error::MoonError;
 use moon_utils::semver::Version;
-use thiserror::Error;
-
-#[derive(Error, Debug, PartialEq, Eq)]
-pub enum DependencyPathError {
-    #[error("<symbol>{0}</symbol> is an invalid pnpm relative dependency path.")]
-    IsNotAbsolute(String),
-}
-
-impl From<DependencyPathError> for MoonError {
-    fn from(error: DependencyPathError) -> Self {
-        Self::Generic(error.to_string())
-    }
-}
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct PnpmDependencyPath {
@@ -32,7 +18,7 @@ impl PnpmDependencyPath {
         !path.starts_with('/')
     }
 
-    pub fn parse(path: &str) -> Result<Self, DependencyPathError> {
+    pub fn parse(path: &str) -> Self {
         let is_absolute = Self::is_absolute(path);
         let mut parts = path.split('/').map(String::from).collect::<Vec<_>>();
 
@@ -47,11 +33,11 @@ impl PnpmDependencyPath {
         };
 
         if parts.is_empty() {
-            return Ok(PnpmDependencyPath {
+            return PnpmDependencyPath {
                 host,
                 is_absolute,
                 ..PnpmDependencyPath::default()
-            });
+            };
         }
 
         let name = if parts[0].starts_with('@') {
@@ -82,25 +68,21 @@ impl PnpmDependencyPath {
             }
 
             if Version::parse(&ver).is_ok() {
-                return Ok(Self {
+                return PnpmDependencyPath {
                     host,
                     is_absolute,
                     name,
                     peers_suffix,
                     version: Some(ver),
-                });
+                };
             }
         }
 
-        if !is_absolute {
-            return Err(DependencyPathError::IsNotAbsolute(path.to_string()));
-        }
-
-        Ok(PnpmDependencyPath {
+        PnpmDependencyPath {
             host,
             is_absolute,
             ..PnpmDependencyPath::default()
-        })
+        }
     }
 }
 
@@ -120,13 +102,13 @@ mod tests {
     fn parses_basic() {
         assert_eq!(
             PnpmDependencyPath::parse("/foo/1.0.0"),
-            Ok(PnpmDependencyPath {
+            PnpmDependencyPath {
                 host: None,
                 is_absolute: false,
                 name: Some("foo".to_string()),
                 peers_suffix: None,
                 version: Some("1.0.0".to_string())
-            })
+            }
         );
     }
 
@@ -134,13 +116,13 @@ mod tests {
     fn parses_file() {
         assert_eq!(
             PnpmDependencyPath::parse("file:project(foo@1.0.0)"),
-            Ok(PnpmDependencyPath {
+            PnpmDependencyPath {
                 host: Some("file:project(foo@1.0.0)".to_string()),
                 is_absolute: true,
                 name: None,
                 peers_suffix: None,
                 version: None,
-            })
+            }
         );
     }
 
@@ -148,13 +130,13 @@ mod tests {
     fn parses_scoped() {
         assert_eq!(
             PnpmDependencyPath::parse("/@foo/bar/1.0.0"),
-            Ok(PnpmDependencyPath {
+            PnpmDependencyPath {
                 host: None,
                 is_absolute: false,
                 name: Some("@foo/bar".to_string()),
                 peers_suffix: None,
                 version: Some("1.0.0".to_string()),
-            })
+            }
         );
     }
 
@@ -162,13 +144,13 @@ mod tests {
     fn parses_with_registry() {
         assert_eq!(
             PnpmDependencyPath::parse("registry.npmjs.org/foo/1.0.0"),
-            Ok(PnpmDependencyPath {
+            PnpmDependencyPath {
                 host: Some("registry.npmjs.org".to_string()),
                 is_absolute: true,
                 name: Some("foo".to_string()),
                 peers_suffix: None,
                 version: Some("1.0.0".to_string()),
-            })
+            }
         );
     }
 
@@ -176,13 +158,13 @@ mod tests {
     fn parses_with_registry_with_scope() {
         assert_eq!(
             PnpmDependencyPath::parse("registry.npmjs.org/@foo/bar/1.0.0"),
-            Ok(PnpmDependencyPath {
+            PnpmDependencyPath {
                 host: Some("registry.npmjs.org".to_string()),
                 is_absolute: true,
                 name: Some("@foo/bar".to_string()),
                 peers_suffix: None,
                 version: Some("1.0.0".to_string()),
-            })
+            }
         );
     }
 
@@ -190,13 +172,13 @@ mod tests {
     fn parses_from_github() {
         assert_eq!(
             PnpmDependencyPath::parse("github.com/kevva/is-positive"),
-            Ok(PnpmDependencyPath {
+            PnpmDependencyPath {
                 host: Some("github.com".to_string()),
                 is_absolute: true,
                 name: None,
                 peers_suffix: None,
                 version: None,
-            })
+            }
         );
     }
 
@@ -204,13 +186,13 @@ mod tests {
     fn parses_from_custom_regsitry_with_peer_deps() {
         assert_eq!(
             PnpmDependencyPath::parse("example.com/foo/1.0.0_bar@2.0.0"),
-            Ok(PnpmDependencyPath {
+            PnpmDependencyPath {
                 host: Some("example.com".to_string()),
                 is_absolute: true,
                 name: Some("foo".to_string()),
                 peers_suffix: Some("bar@2.0.0".to_string()),
                 version: Some("1.0.0".to_string()),
-            })
+            }
         );
     }
 
@@ -218,28 +200,27 @@ mod tests {
     fn parses_with_peer_deps() {
         assert_eq!(
             PnpmDependencyPath::parse("/foo/1.0.0_@types+babel__core@7.1.14"),
-            Ok(PnpmDependencyPath {
+            PnpmDependencyPath {
                 host: None,
                 is_absolute: false,
                 name: Some("foo".to_string()),
                 peers_suffix: Some("@types+babel__core@7.1.14".to_string()),
                 version: Some("1.0.0".to_string()),
-            })
+            }
         );
-        assert!(PnpmDependencyPath::parse("/foo/bar").is_err());
     }
 
     #[test]
     fn parses_with_peer_deps_new() {
         assert_eq!(
             PnpmDependencyPath::parse("example.com/foo/1.0.0(bar@2.0.0)"),
-            Ok(PnpmDependencyPath {
+            PnpmDependencyPath {
                 host: Some("example.com".to_string()),
                 is_absolute: true,
                 name: Some("foo".to_string()),
                 peers_suffix: Some("(bar@2.0.0)".to_string()),
                 version: Some("1.0.0".to_string()),
-            })
+            }
         );
     }
 
@@ -247,13 +228,13 @@ mod tests {
     fn parses_with_peer_deps_new_multi() {
         assert_eq!(
             PnpmDependencyPath::parse("/foo/1.0.0(@types/babel__core@7.1.14)(foo@1.0.0)"),
-            Ok(PnpmDependencyPath {
+            PnpmDependencyPath {
                 host: None,
                 is_absolute: false,
                 name: Some("foo".to_string()),
                 peers_suffix: Some("(@types/babel__core@7.1.14)(foo@1.0.0)".to_string()),
                 version: Some("1.0.0".to_string()),
-            })
+            }
         );
     }
 }

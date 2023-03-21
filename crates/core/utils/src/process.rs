@@ -107,7 +107,7 @@ impl Command {
 
         // Referencing a batch script needs to be ran with a shell
         if is_windows_script(&command.bin) {
-            command.shell = Some(shell::create_windows_shell());
+            command.shell = Some(shell::create_windows_shell(false));
         }
 
         command
@@ -380,28 +380,18 @@ impl Command {
     }
 
     pub fn get_command_line(&self) -> (String, Option<&Path>) {
-        let args = self
-            .args
-            .iter()
-            .map(|a| a.to_str().unwrap_or("<unknown>"))
-            .collect::<Vec<_>>();
-
-        let line = if let Some(shell) = &self.shell {
-            if shell.pass_args_stdin {
-                format!("{} {}", shell.command, shell.args.join(" "))
-            } else {
-                format!(
-                    "{} {} '{} {}'",
-                    shell.command,
-                    shell.args.join(" "),
-                    self.bin,
-                    args.join(" ")
-                )
-            }
-        } else if !args.is_empty() {
-            format!("{} {}", self.bin, args.join(" "))
-        } else {
+        let line = if self.args.is_empty() {
             self.bin.to_owned()
+        } else {
+            format!(
+                "{} {}",
+                self.bin,
+                self.args
+                    .iter()
+                    .map(|a| a.to_str().unwrap_or("<unknown>"))
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            )
         };
 
         (path::replace_home_dir(line), self.cwd.as_deref())
@@ -490,7 +480,7 @@ impl Command {
 
     pub fn wrap_in_shell(&mut self) -> &mut Command {
         self.shell = Some(if cfg!(windows) {
-            shell::create_windows_shell()
+            shell::create_windows_shell(true)
         } else {
             shell::create_unix_shell()
         });
@@ -516,7 +506,22 @@ impl Command {
 
     #[track_caller]
     fn log_command_info(&self) {
-        let (mut command_line, working_dir) = self.get_command_line();
+        let working_dir = self.cwd.as_deref();
+        let mut command_line = format!(
+            "{} {}",
+            self.bin,
+            self.args
+                .iter()
+                .map(|a| a.to_str().unwrap_or("<unknown>"))
+                .collect::<Vec<_>>()
+                .join(" ")
+        );
+
+        if let Some(shell) = &self.shell {
+            if shell.pass_args_stdin {
+                command_line = self.get_input_line();
+            }
+        }
 
         if self.log_command {
             println!(
@@ -528,26 +533,6 @@ impl Command {
         // Avoid all this overhead if we're not logging
         if !logging_enabled() {
             return;
-        }
-
-        if self.has_input() {
-            let input_line = self.get_input_line();
-            let debug_input = env::var("MOON_DEBUG_PROCESS_INPUT").is_ok();
-
-            command_line = format!(
-                "{}{}{}",
-                command_line,
-                if command_line.ends_with('-') {
-                    " "
-                } else {
-                    " - "
-                },
-                if input_line.len() > 200 && !debug_input {
-                    "(truncated files list)".into()
-                } else {
-                    input_line.replace('\n', " ")
-                }
-            );
         }
 
         let mut envs_list = vec![];
@@ -571,10 +556,32 @@ impl Command {
             }
         }
 
+        command_line = if let Some(shell) = &self.shell {
+            let shell_line = format!("{} {}", shell.command, shell.args.join(" "));
+
+            if shell.pass_args_stdin {
+                let debug_input = env::var("MOON_DEBUG_PROCESS_INPUT").is_ok();
+
+                format!(
+                    "{} {}",
+                    shell_line,
+                    if command_line.len() > 200 && !debug_input {
+                        "(truncated)".into()
+                    } else {
+                        command_line.replace('\n', " ")
+                    }
+                )
+            } else {
+                format!("{} {}", shell_line, command_line)
+            }
+        } else {
+            command_line
+        };
+
         trace!(
             target: "moon:utils:process",
             "Running command {} (in {}){}",
-            color::shell(&command_line),
+            color::shell(command_line.trim()),
             if let Some(cwd) = working_dir {
                 color::path(cwd)
             } else {

@@ -27,6 +27,7 @@ export interface TaskOptionsConfig {
 	runDepsInParallel: boolean | null;
 	runInCI: boolean | null;
 	runFromWorkspaceRoot: boolean | null;
+	shell: boolean | null;
 }
 
 export interface TaskConfig {

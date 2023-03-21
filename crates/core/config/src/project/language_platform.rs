@@ -119,6 +119,10 @@ pub enum PlatformType {
 }
 
 impl PlatformType {
+    pub fn is_system(&self) -> bool {
+        matches!(self, PlatformType::System)
+    }
+
     pub fn is_unknown(&self) -> bool {
         matches!(self, PlatformType::Unknown)
     }

@@ -11,6 +11,7 @@ tasks:
 
   noCache:
     command: echo 'not cached'
+    platform: system
     options:
       cache: false
 
@@ -25,16 +26,19 @@ tasks:
 
   depsOnNoop:
     command: echo 'test'
+    platform: system
     deps:
       - 'standard'
 
   depsOnNoCache:
     command: echo 'test'
+    platform: system
     deps:
       - 'noCache'
 
   depsOnNoopAndNoCache:
     command: echo 'test'
+    platform: system
     deps:
       - 'standard'
       - 'noCache'

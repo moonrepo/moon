@@ -36,6 +36,46 @@ example, say you want to find all projects that are tagged with `vue` or `trpc`:
 $ moon query projects --tags 'vue|trpc'
 ```
 
+## Shells for system tasks
+
+Up until now, all executed tasks would not be wrapped in a shell for 1 reason, to ensure tasks are
+deterministic. A major goal for moon is that tasks are deterministic and easily reproducible across
+all machines. Shells break this guarantee, as they can introduce subtle bugs that are difficult to
+diagnose, and may differ wildly between developers and machines.
+
+However in practice, not supporting shells has been a major pain point for many users, and for the
+most part, most system tasks typically run common commands or execute pre-defined scripts. The
+chance of a non-deterministic build is very small. As such, we've decided to make a compromise, and
+allow shells for [system tasks](/docs/config/project#platform-1), but not for language based tasks.
+
+For example, the following tasks:
+
+```yaml title="moon.yml"
+tasks:
+  example:
+    command: 'echo $PWD'
+    platform: 'system'
+  global:
+    command: 'bin-on-path'
+    platform: 'system'
+```
+
+Would now be executed as `/bin/sh -c 'echo $PWD'` and `/bin/sh -c 'bin-on-path'` on Unix platforms
+respectively. On Windows, we execute tasks with `pwsh.exe -c` and pass arguments via stdin.
+
+We're also taking this a step further, by introducing a new task option called
+[`shell`](/docs/config/project#shell), that can be used to toggle the shell wrapping on or off. When
+turned off, this allows you to customize and execute the shell as you please.
+
+```yaml title="moon.yml"
+tasks:
+  example:
+    command: 'bash -c "echo $PWD"'
+    platform: 'system'
+    options:
+      shell: false
+```
+
 ## Environment variable substitution
 
 moon supports granular environment variables through the project-level

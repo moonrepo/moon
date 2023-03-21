@@ -45,11 +45,17 @@ tasks:
 
   # Misc
   foo:
-    command: cmd /q /c ./echo.bat 'foo'
+    command: powershell -c "./echo.bat 'foo'"
     platform: system
+    options:
+      shell: false
   bar:
-    command: cmd /q /c ./echo.bat 'bar'
+    command: powershell.exe -c "./echo.bat 'bar'"
     platform: system
+    options:
+      shell: false
   baz:
     command: cmd /q /c ./echo.bat 'baz'
     platform: system
+    options:
+      shell: false

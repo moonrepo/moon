@@ -154,6 +154,18 @@ hasher:
   walkStrategy: 'glob'
 ```
 
+### `warnOnMissingInputs`
+
+<HeadingApiLink to="/api/types/interface/HasherConfig#warnOnMissingInputs" />
+
+When enabled, will log warnings to the console when attempting to hash an input that does not exist.
+This is useful in uncovering misconfigured tasks. Defaults to `true`.
+
+```yaml title=".moon/workspace.yml" {2}
+hasher:
+  warnOnMissingInputs: false
+```
+
 ## `notifier`
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#notifier" />

@@ -5,6 +5,7 @@ export interface GeneratorConfig {
 export interface HasherConfig {
 	optimization: 'accuracy' | 'performance';
 	walkStrategy: 'glob' | 'vcs';
+	warnOnMissingInputs: boolean;
 }
 
 export interface NotifierConfig {

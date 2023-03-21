@@ -4,7 +4,7 @@ use console::Term;
 use moon_action::{ActionStatus, Attempt};
 use moon_action_context::ActionContext;
 use moon_cache::RunTargetState;
-use moon_config::{HasherWalkStrategy, TaskOutputStyle};
+use moon_config::TaskOutputStyle;
 use moon_emitter::{Emitter, Event, EventFlow};
 use moon_error::MoonError;
 use moon_hasher::HashSet;
@@ -200,19 +200,13 @@ impl<'a> Runner<'a> {
             hasher.hash_args(&context.passthrough_args);
         }
 
-        let use_globs = self.project.root == self.workspace.root
-            || matches!(
-                workspace.config.hasher.walk_strategy,
-                HasherWalkStrategy::Glob
-            );
-
         hasher.hash_inputs(
             inputs_collector::collect_and_hash_inputs(
                 vcs,
                 task,
-                &project.source,
+                &project.root,
                 &workspace.root,
-                use_globs,
+                &workspace.config.hasher,
             )
             .await?,
         );

@@ -42,7 +42,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [buildjet-8vcpu-ubuntu-2204, windows-latest]
+        os: [buildjet-8vcpu-ubuntu-2204, ec2-windows-cx5]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -63,7 +63,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [buildjet-8vcpu-ubuntu-2204, macos-latest, windows-latest]
+        os: [buildjet-8vcpu-ubuntu-2204, macos-latest, ec2-windows-cx5]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -106,7 +106,7 @@ jobs:
         uses: actions/upload-artifact@v3
         if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
         with:
-          name: coverage-${{ matrix.os }}
+          name: coverage-${{ runner.os }}
           path: ./report.txt
           if-no-files-found: error
   coverage:
@@ -124,6 +124,6 @@ jobs:
       - uses: codecov/codecov-action@v3
         name: Upload to Codecov
         with:
-          files: ./coverage/coverage-ubuntu-latest/report.txt,./coverage/coverage-macos-latest/report.txt
+          files: ./coverage/coverage-Linux/report.txt,./coverage/coverage-macOS/report.txt
           flags: rust
           verbose: true

@@ -60,11 +60,9 @@ impl PnpmDependencyPath {
                     peers_suffix = Some(ver[index..].to_string());
                     ver = ver[0..index].to_string();
                 }
-            } else {
-                if let Some(index) = ver.find('_') {
-                    peers_suffix = Some(ver[index + 1..].to_string());
-                    ver = ver[0..index].to_string();
-                }
+            } else if let Some(index) = ver.find('_') {
+                peers_suffix = Some(ver[index + 1..].to_string());
+                ver = ver[0..index].to_string();
             }
 
             if Version::parse(&ver).is_ok() {

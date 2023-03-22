@@ -5,6 +5,8 @@
 #### 🐞 Fixes
 
 - Fixed an issue with pnpm lockfile parsing.
+- Fixed an issue where the project graph cache wouldn't be invalidated if moon was ran from a
+  sub-directory.
 
 ## 0.26.4
 

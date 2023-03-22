@@ -175,8 +175,8 @@ const projectsRows: Comparison[] = [
 	{
 		feature: 'Tags and scopes (boundaries)',
 		support: {
-			moon: SUPPORTED,
-			nx: SUPPORTED,
+			moon: [SUPPORTED, 'native for all languages'],
+			nx: [SUPPORTED, 'via ESLint (JavaScript only)'],
 		},
 	},
 ];

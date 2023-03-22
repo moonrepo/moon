@@ -183,7 +183,7 @@ const additionalFeatures: Feature[] = [
 export default function ProductMoon() {
 	return (
 		<Layout
-			title="moon - A task runner and repository management tool for the web ecosystem, written in Rust"
+			title="moon - A task runner and monorepo management tool for the web ecosystem, written in Rust"
 			description="Reduces build times and repository maintenance costs through high-quality developer tooling."
 		>
 			<Hero />

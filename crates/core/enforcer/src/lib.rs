@@ -9,10 +9,16 @@ pub fn enforce_project_type_relationships(
 ) -> Result<(), EnforcerError> {
     let valid = match source.type_of {
         ProjectType::Application => {
-            matches!(dependency.type_of, ProjectType::Library | ProjectType::Tool)
+            matches!(
+                dependency.type_of,
+                ProjectType::Library | ProjectType::Tool | ProjectType::Unknown
+            )
         }
         ProjectType::Library | ProjectType::Tool => {
-            matches!(dependency.type_of, ProjectType::Library)
+            matches!(
+                dependency.type_of,
+                ProjectType::Library | ProjectType::Unknown
+            )
         }
         ProjectType::Unknown => {
             // Do nothing?
@@ -36,7 +42,7 @@ pub fn enforce_tag_relationships(
     source: &Project,
     source_tag: &String,
     dependency: &Project,
-    allowed_tags: &[String],
+    required_tags: &[String],
 ) -> Result<(), EnforcerError> {
     // Source project isn't using the source tag
     if source_tag.is_empty()
@@ -47,7 +53,7 @@ pub fn enforce_tag_relationships(
     }
 
     // Dependency project doesn't have any tags
-    if allowed_tags.is_empty() {
+    if required_tags.is_empty() {
         return Ok(());
     }
 
@@ -57,12 +63,12 @@ pub fn enforce_tag_relationships(
             .config
             .tags
             .iter()
-            .any(|tag| allowed_tags.contains(tag))
+            .any(|tag| required_tags.contains(tag))
     {
         return Ok(());
     }
 
-    let mut allowed = Vec::from(allowed_tags);
+    let mut allowed = Vec::from(required_tags);
     allowed.push(source_tag.to_owned());
 
     Err(EnforcerError::InvalidTagRelationship(

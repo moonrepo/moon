@@ -429,7 +429,7 @@ mod to_dot {
 
         graph.load("b").unwrap();
 
-        let graph = graph.build();
+        let graph = graph.build().unwrap();
 
         assert_snapshot!(graph.to_dot());
     }
@@ -545,6 +545,14 @@ mod type_constraints {
     use super::*;
 
     #[tokio::test]
+    async fn app_can_use_unknown() {
+        get_type_constraints_graph(|sandbox| {
+            append_file(sandbox.path().join("app/moon.yml"), "dependsOn: [unknown]");
+        })
+        .await;
+    }
+
+    #[tokio::test]
     async fn app_can_use_library() {
         get_type_constraints_graph(|sandbox| {
             append_file(sandbox.path().join("app/moon.yml"), "dependsOn: [library]");
@@ -569,6 +577,17 @@ mod type_constraints {
             append_file(
                 sandbox.path().join("app/moon.yml"),
                 "dependsOn: [app-other]",
+            );
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    async fn library_can_use_unknown() {
+        get_type_constraints_graph(|sandbox| {
+            append_file(
+                sandbox.path().join("library/moon.yml"),
+                "dependsOn: [unknown]",
             );
         })
         .await;
@@ -601,6 +620,14 @@ mod type_constraints {
     async fn library_cannot_use_tool() {
         get_type_constraints_graph(|sandbox| {
             append_file(sandbox.path().join("library/moon.yml"), "dependsOn: [tool]");
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    async fn tool_can_use_unknown() {
+        get_type_constraints_graph(|sandbox| {
+            append_file(sandbox.path().join("tool/moon.yml"), "dependsOn: [unknown]");
         })
         .await;
     }
@@ -714,7 +741,7 @@ mod tag_constraints {
         get_tag_constraints_graph(|sandbox| {
             append_file(
                 sandbox.path().join("a/moon.yml"),
-                "dependsOn: [b, c]\ntags: [mage]",
+                "dependsOn: [b]\ntags: [mage]",
             );
         })
         .await;

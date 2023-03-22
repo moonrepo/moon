@@ -1,18 +1,19 @@
 // .moon/workspace.yml
 
 use crate::errors::map_validation_errors_to_figment_errors;
+use crate::errors::ConfigError;
 use crate::helpers::{gather_extended_sources, warn_for_unknown_fields};
 use crate::types::{FileGlob, FilePath};
 use crate::validators::{
     is_default, validate_child_relative_path, validate_extends, validate_id,
     validate_semver_requirement,
 };
+use crate::workspace::constraints::ConstraintsConfig;
 use crate::workspace::generator::GeneratorConfig;
 use crate::workspace::hasher::HasherConfig;
 use crate::workspace::notifier::NotifierConfig;
 use crate::workspace::runner::RunnerConfig;
 use crate::workspace::vcs::VcsConfig;
-use crate::ConfigError;
 use figment::{
     providers::{Format, Serialized, YamlExtended},
     Figment,
@@ -81,6 +82,10 @@ impl Default for WorkspaceProjects {
 #[schemars(default)]
 #[serde(default, rename_all = "camelCase")]
 pub struct WorkspaceConfig {
+    #[serde(skip_serializing_if = "is_default")]
+    #[validate]
+    pub constraints: ConstraintsConfig,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_extends")]
     pub extends: Option<String>,

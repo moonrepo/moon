@@ -7,6 +7,7 @@ use moon_config::{
     ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceProjects, CONFIG_DIRNAME,
     CONFIG_PROJECT_FILENAME,
 };
+use moon_enforcer::{enforce_project_type_relationships, enforce_tag_relationships};
 use moon_error::MoonError;
 use moon_hasher::{convert_paths_to_strings, to_hash};
 use moon_logger::{color, debug, map_list, trace, warn, Logable};
@@ -18,6 +19,7 @@ use moon_utils::regex::{ENV_VAR, ENV_VAR_SUBSTITUTE};
 use moon_utils::{glob, is_ci, path, time};
 use moon_workspace::Workspace;
 use petgraph::graph::{DiGraph, NodeIndex};
+use petgraph::Direction;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::env;
@@ -62,13 +64,15 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         Ok(graph)
     }
 
-    pub fn build(&mut self) -> ProjectGraph {
-        ProjectGraph::new(
+    pub fn build(&mut self) -> Result<ProjectGraph, ProjectGraphError> {
+        self.enforce_constraints()?;
+
+        Ok(ProjectGraph::new(
             mem::take(&mut self.graph),
             mem::take(&mut self.indices),
             mem::take(&mut self.sources),
             mem::take(&mut self.aliases),
-        )
+        ))
     }
 
     pub fn load(&mut self, alias_or_id: &str) -> Result<&Self, ProjectGraphError> {
@@ -141,6 +145,36 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         }
 
         Ok(project)
+    }
+
+    /// Enforce project constraints and boundaries.
+    fn enforce_constraints(&self) -> Result<(), ProjectGraphError> {
+        let type_relationships = self
+            .workspace
+            .config
+            .constraints
+            .enforce_project_type_relationships;
+        let tag_relationships = &self.workspace.config.constraints.tag_relationships;
+
+        for project in self.graph.node_weights() {
+            let deps: Vec<_> = self
+                .graph
+                .neighbors_directed(*self.indices.get(&project.id).unwrap(), Direction::Outgoing)
+                .map(|idx| self.graph.node_weight(idx).unwrap())
+                .collect();
+
+            for dep in deps {
+                if type_relationships {
+                    enforce_project_type_relationships(project, dep)?;
+                }
+
+                for (source_tag, required_tags) in tag_relationships {
+                    enforce_tag_relationships(project, source_tag, dep, required_tags)?;
+                }
+            }
+        }
+
+        Ok(())
     }
 
     /// Expand all tasks within a project, by expanding data and resolving any tokens.

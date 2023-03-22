@@ -11,7 +11,7 @@ pub async fn project(id: String, json: bool) -> Result<(), AnyError> {
     let mut project_builder = build_project_graph(&mut workspace).await?;
     project_builder.load(&id)?;
 
-    let project_graph = project_builder.build();
+    let project_graph = project_builder.build()?;
     let project = project_graph.get(&id)?;
     let config = &project.config;
 

@@ -12,6 +12,7 @@ harness = false
 
 [dependencies]
 moon_config = { path = "../config" }
+moon_enforcer = { path = "../enforcer" }
 moon_error = { path = "../error" }
 moon_hasher = { path = "../hasher" }
 moon_logger = { path = "../logger" }

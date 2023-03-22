@@ -18,7 +18,7 @@ pub async fn project_graph(
         project_build.load_all()?;
     }
 
-    let project_graph = project_build.build();
+    let project_graph = project_build.build()?;
 
     if dot {
         println!("{}", project_graph.to_dot());

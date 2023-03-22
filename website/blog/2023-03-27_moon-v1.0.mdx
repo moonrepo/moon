@@ -1,14 +1,43 @@
 ---
 slug: moon-v1.0
-title: moon v1.0 - Official release!
+title: moon v1.0 - Official release! Project constraints, tagging, and more!
 authors: [milesj]
-tags: [tags, env-vars, tokens]
+tags: [projects, constraints, tags, env-vars, tokens]
 # image: ./img/moon/v1.0.png
 ---
 
-???
+🎉 It's finally here! After almost a year of development, a handful of breaking changes, we've
+officially reached a stable v1 of moon! This release is feature packed with quality of life
+improvements.
 
 <!--truncate-->
+
+## The road to v1
+
+TODO
+
+## Project boundaries with constraints
+
+One feature that moon has not supported, but is critical for large monorepos, is project boundaries.
+A project boundary is a concept that enforces a strict relationship between projects, and is a
+common pattern in monorepos. For example, a project may only be allowed to depend on projects with a
+[specific tag](#enforce-relationships-with-tags), or a project of a specific type.
+
+moon now supports this functionality through the new
+[`constraints`](/docs/config/workspace#constraints) setting in
+[`.moon/workspace.yml`](/docs/config/workspace). The primary constraint we're introducing is
+[`enforceProjectTypeRelationships`](/docs/config/workspace#enforceprojecttyperelationships), which
+enforces relationships between projects based on their [`type`](/docs/config/project#type) field.
+
+For example, an application can only depend on library or tool based projects, but _not_ other
+applications (this is a code smell). This setting is enabled by default!
+
+```yaml title=".moon/workspace.yml"
+constraints:
+  enforceProjectTypeRelationships: true
+```
+
+And that's not all, continue reading for more information on tag based constraints!
 
 ## Project tagging
 
@@ -35,6 +64,25 @@ example, say you want to find all projects that are tagged with `vue` or `trpc`:
 ```shell
 $ moon query projects --tags 'vue|trpc'
 ```
+
+### Enforce relationships with tags
+
+Another feature of tags is enforcing relationships between projects using our new
+[`constraints`](#project-constraints) setting. When a tagged constraint is defined, it requires all
+[dependencies](/docs/concepts/project#dependencies) of a tagged project to require 1 of the
+configured tags, otherwise an error is thrown during project graph creation.
+
+To demonstrate this, take the following configuration:
+
+```yaml title=".moon/workspace.yml" {2,3}
+constraints:
+  tagRelationships:
+    next: ['react', 'trpc']
+```
+
+This dictates that all dependencies of a project with the `next` tag, must declare either `react`,
+`trpc`, or `next` in their own tags. This is great for crafting a monorepo with strict project
+boundaries!
 
 ## Shells for system tasks
 
@@ -122,9 +170,11 @@ View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.0.0
 changes.
 
 - Added a `hasher.warnOnMissingInputs` setting to `.moon/workspace.yml`.
+- Added a `$projectAlias` task token.
 
 ## What's next?
 
 Expect the following in the v1.1 release!
 
-- ???
+- Task inheritance based on tags.
+- Deno tier 3 support.

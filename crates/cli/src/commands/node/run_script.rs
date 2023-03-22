@@ -28,7 +28,7 @@ pub async fn run_script(name: String, project: Option<String>) -> Result<(), Any
         let mut project_graph = build_project_graph(&mut workspace).await?;
         project_graph.load(project_id)?;
 
-        command.cwd(&project_graph.build().get(project_id)?.root);
+        command.cwd(&project_graph.build()?.get(project_id)?.root);
 
         // This should rarely happen...
     } else {

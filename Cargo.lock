@@ -2537,6 +2537,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_enforcer"
+version = "0.1.0"
+dependencies = [
+ "moon_project",
+ "thiserror",
+]
+
+[[package]]
 name = "moon_error"
 version = "0.1.0"
 dependencies = [
@@ -2779,6 +2787,7 @@ dependencies = [
  "moon",
  "moon_cache",
  "moon_config",
+ "moon_enforcer",
  "moon_error",
  "moon_hasher",
  "moon_logger",

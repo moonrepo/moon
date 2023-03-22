@@ -10,6 +10,8 @@ tags: [tags, env-vars, tokens]
 
 <!--truncate-->
 
+## Project constraints
+
 ## Project tagging
 
 Everyone is familiar with the concept of tagging, and moon's implementation is no different. Tags
@@ -35,6 +37,25 @@ example, say you want to find all projects that are tagged with `vue` or `trpc`:
 ```shell
 $ moon query projects --tags 'vue|trpc'
 ```
+
+### Enforce relationships with tags
+
+Another feature of tags is enforcing relationships between projects using our new
+[`constraints`](#project-constraints) setting. When a tagged constraint is defined, it requires all
+[dependencies](/docs/concepts/project#dependencies) of a tagged project to require 1 of the
+configured tags, otherwise an error is thrown during project graph creation.
+
+To demonstrate this, take the following configuration:
+
+```yaml title=".moon/workspace.yml" {2,3}
+constraints:
+  tagRelationships:
+    next: ['react', 'trpc']
+```
+
+This dictates that all dependencies of a project with the `next` tag, must declare either `react`,
+`trpc`, or `next` in their own tags. This is great for crafting a monorepo with strict project
+boundaries!
 
 ## Shells for system tasks
 

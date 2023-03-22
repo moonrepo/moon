@@ -42,7 +42,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [buildjet-8vcpu-ubuntu-2204, windows-latest]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -63,24 +63,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [buildjet-8vcpu-ubuntu-2204, macos-latest, windows-latest]
       fail-fast: false
     steps:
-      - run: Get-PSDrive
-        if: ${{ runner.os == 'Windows' }}
-      - name: Maximize build space
-        uses: easimon/maximize-build-space@master
-        if: ${{ matrix.os == 'ubuntu-latest' }}
-        with:
-          remove-android: true
-          remove-dotnet: true
-          remove-haskell: true
-      - name: Maximize build space
-        if: ${{ matrix.os == 'windows-latest' }}
-        shell: pwsh
-        run: |
-          rm -Force -Recurse -Path 'C:\Program Files (x86)\Android'
-          rm -Force -Recurse -Path 'C:\Program Files\dotnet'
       - uses: actions/checkout@v3
       - run: Get-PSDrive
         if: ${{ runner.os == 'Windows' }}

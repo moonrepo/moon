@@ -71,6 +71,7 @@ jobs:
         if: ${{ runner.os == 'Windows' }}
       - uses: actions-rs/toolchain@v1
         name: Setup toolchain
+        if: ${{ runner.os != 'Windows' }}
         with:
           toolchain: 1.68.1
           profile: minimal

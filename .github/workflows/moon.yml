@@ -30,6 +30,7 @@ jobs:
         with:
           cache: yarn
       - uses: actions-rs/toolchain@v1
+        if: ${{ runner.os != 'Windows' }}
         with:
           toolchain: 1.68.1
           profile: minimal

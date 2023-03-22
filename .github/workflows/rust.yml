@@ -67,6 +67,7 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
+      - run: Get-PSDrive
       - uses: actions-rs/toolchain@v1
         name: Setup toolchain
         with:
@@ -87,6 +88,7 @@ jobs:
         if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+      - run: Get-PSDrive
       - name: Run tests with coverage
         if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
         run: cargo make test-coverage

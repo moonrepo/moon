@@ -80,10 +80,7 @@ jobs:
         shell: pwsh
         run: |
           rm -Force -Recurse -Path 'C:\Program Files (x86)\Android'
-          rm -Force -Recurse -Path 'C:\Program Files\Java'
           rm -Force -Recurse -Path 'C:\Program Files\dotnet'
-          rm -Force -Recurse -Path 'C:\Program Files (x86)\Google'
-          rm -Force -Recurse -Path 'C:\tools\php'
       - uses: actions/checkout@v3
       - run: Get-PSDrive
         if: ${{ runner.os == 'Windows' }}

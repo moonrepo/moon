@@ -1,6 +1,6 @@
 use moon_config::{
-    ConfigError, GeneratorConfig, HasherConfig, NotifierConfig, RunnerConfig, VcsConfig,
-    VcsManager, WorkspaceConfig, WorkspaceProjects,
+    ConfigError, ConstraintsConfig, GeneratorConfig, HasherConfig, NotifierConfig, RunnerConfig,
+    VcsConfig, VcsManager, WorkspaceConfig, WorkspaceProjects,
 };
 use moon_constants::CONFIG_WORKSPACE_FILENAME;
 use moon_test_utils::get_fixtures_path;
@@ -27,6 +27,7 @@ fn loads_defaults() {
         assert_eq!(
             config,
             WorkspaceConfig {
+                constraints: ConstraintsConfig::default(),
                 runner: RunnerConfig::default(),
                 generator: GeneratorConfig::default(),
                 extends: None,
@@ -459,7 +460,6 @@ vcs:
 }
 
 mod generator {
-
     #[test]
     #[should_panic(expected = "At least 1 template path is required")]
     fn empty_templates() {
@@ -482,6 +482,66 @@ mod generator {
             jail.create_file(
                 super::CONFIG_WORKSPACE_FILENAME,
                 "generator:\n  templates: ['../templates']",
+            )?;
+
+            super::load_jailed_config(jail.directory())?;
+
+            Ok(())
+        });
+    }
+}
+
+mod constraints {
+    #[test]
+    #[should_panic(
+        expected = "invalid type: found unsigned int `123`, expected a boolean for key \"workspace.constraints.enforceProjectTypeRelationships\""
+    )]
+    fn invalid_boundary_type() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                super::CONFIG_WORKSPACE_FILENAME,
+                r#"
+constraints:
+    enforceProjectTypeRelationships: 123"#,
+            )?;
+
+            super::load_jailed_config(jail.directory())?;
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "invalid type: found unsigned int `123`, expected a map for key \"workspace.constraints.tagRelationships\""
+    )]
+    fn invalid_relationship_type() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                super::CONFIG_WORKSPACE_FILENAME,
+                r#"
+constraints:
+    tagRelationships: 123"#,
+            )?;
+
+            super::load_jailed_config(jail.directory())?;
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "invalid type: found unsigned int `123`, expected a sequence for key \"workspace.constraints.tagRelationships.tag\""
+    )]
+    fn invalid_relationship_item_type() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                super::CONFIG_WORKSPACE_FILENAME,
+                r#"
+constraints:
+    tagRelationships:
+        tag: 123"#,
             )?;
 
             super::load_jailed_config(jail.directory())?;

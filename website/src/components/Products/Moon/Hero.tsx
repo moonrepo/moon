@@ -25,7 +25,7 @@ export default function Hero() {
 					/>
 
 					<p className="mt-1 mb-0 text-base text-white sm:text-lg sm:max-w-xl sm:mx-auto md:text-xl md:mx-0 md:pr-4">
-						A task runner and repository management tool for the web ecosystem, written in Rust.
+						A task runner and monorepo management tool for the web ecosystem, written in Rust.
 					</p>
 
 					<p className="mt-1 text-white opacity-50 text-sm md:text-base md:pr-4">

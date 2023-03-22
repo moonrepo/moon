@@ -123,7 +123,7 @@ constraints:
   enforceProjectTypeRelationships: false
 ```
 
-> Unknown project types are ignored during enforcement.
+> Projects with an unconfigured or unknown type are ignored during enforcement.
 
 ### `tagRelationships`
 
@@ -134,9 +134,9 @@ Enforces allowed relationships between a project and its dependencies based on t
 `enforceProjectTypeRelationships`, but gives you far more control over what these relationships look
 like.
 
-For example, let's enforce that Next.js projects using the `next` tag can only depend on projects
-that support React using the `react` tag. If a dependency does not have one of the configured
-allowed tags, in this case `react`, an error will occur.
+For example, let's enforce that Next.js projects using the `next` tag can only depend on React
+projects using the `react` tag. If a dependency does not have one of the configured required tags,
+in this case `react`, an error will occur.
 
 ```yaml title=".moon/workspace.yml" {2,3}
 constraints:

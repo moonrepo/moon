@@ -48,7 +48,8 @@ dependsOn:
 
 <HeadingApiLink to="/api/types/interface/ProjectConfig#language" />
 
-The primary programming language the project is written in. Supports the following values:
+The primary programming language the project is written in. This setting is required for
+[task inheritance](./tasks), editor extensions, and more. Supports the following values:
 
 - `bash` - A [Bash](<https://en.wikipedia.org/wiki/Bash_(Unix_shell)>) based project (Unix only).
 - `batch` - A [Batch](https://en.wikibooks.org/wiki/Windows_Batch_Scripting)/PowerShell based
@@ -62,8 +63,7 @@ The primary programming language the project is written in. Supports the followi
 - `rust` - A [Rust](https://www.rust-lang.org/) based project.
 - `typescript` - A [TypeScript](https://www.typescriptlang.org/) based project.
 - `unknown` (default) - When not configured or inferred.
-- `*` - A custom language for use in [task inheritance](./tasks). Values will be converted to
-  kebab-case.
+- `*` - A custom language. Values will be converted to kebab-case.
 
 ```yaml title="moon.yml"
 language: 'javascript'

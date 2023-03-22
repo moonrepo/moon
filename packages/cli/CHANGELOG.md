@@ -15,7 +15,7 @@
 - Added a `shell` task option to `moon.yml` that will wrap system tasks in a shell.
 - Added a `tags` setting to `moon.yml` for project categorization.
 - Added a `--tags` option to the `moon query projects` command.
-- Added 4 new token variables: `$date`, `$time`, `$datetime`, and `$timestamp`.
+- Added 5 new token variables: `$projectAlias`, `$date`, `$time`, `$datetime`, and `$timestamp`.
 - Updated task `env` and `.env` files to support variable substitution using `${VAR_NAME}` syntax.
 - Updated system tasks to now execute within a shell.
 

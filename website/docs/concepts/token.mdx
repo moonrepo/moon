@@ -348,6 +348,27 @@ tasks:
       - 'web'
 ```
 
+### `$projectAlias`
+
+Alias of the project that owns the currently running task. Requires aliasing to be enabled with
+[`node.aliasPackageNames`](../config/toolchain#aliaspackagenames). If not enabled, or no alias
+exists for the project, this will return an empty string.
+
+```yaml
+# Configured as
+tasks:
+  build:
+    command: 'example --projectAlias $projectAlias'
+
+# Resolves to
+tasks:
+  build:
+    command:
+      - 'example'
+      - '--projectAlias'
+      - '@web/app'
+```
+
 ### `$projectRoot`
 
 Absolute file path to the project root.

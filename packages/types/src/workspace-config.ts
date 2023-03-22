@@ -1,3 +1,8 @@
+export interface ConstraintsConfig {
+	enforceProjectTypeRelationships: boolean;
+	tagRelationships: Record<string, string[]>;
+}
+
 export interface GeneratorConfig {
 	templates: string[];
 }
@@ -27,6 +32,7 @@ export interface VcsConfig {
 
 export interface WorkspaceConfig {
 	extends: string | null;
+	constraints: ConstraintsConfig;
 	generator: GeneratorConfig;
 	hasher: HasherConfig;
 	notifier: NotifierConfig;

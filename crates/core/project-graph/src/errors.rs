@@ -1,3 +1,4 @@
+use moon_enforcer::EnforcerError;
 use moon_error::MoonError;
 use moon_project::ProjectError;
 use moon_target::TargetError;
@@ -6,6 +7,9 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ProjectGraphError {
+    #[error(transparent)]
+    Enforcer(#[from] EnforcerError),
+
     #[error(transparent)]
     Moon(#[from] MoonError),
 

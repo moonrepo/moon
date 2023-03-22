@@ -173,9 +173,10 @@ const projectsRows: Comparison[] = [
 		},
 	},
 	{
-		feature: 'Tags and scopes',
+		feature: 'Tags and scopes (boundaries)',
 		support: {
-			nx: SUPPORTED,
+			moon: [SUPPORTED, 'native for all languages'],
+			nx: [SUPPORTED, 'via ESLint (JavaScript only)'],
 		},
 	},
 ];
@@ -421,7 +422,7 @@ const taskRunnerRows: Comparison[] = [
 	{
 		feature: 'Remote / cloud caching and syncing',
 		support: {
-			moon: [SUPPORTED, 'with moonbase (paid)'],
+			moon: [SUPPORTED, 'with moonrepo.app (free + paid)'],
 			nx: [SUPPORTED, 'with Nx cloud (paid)'],
 			turborepo: [SUPPORTED, 'requires a Vercel account (free)'],
 		},
@@ -529,6 +530,12 @@ const generatorRows: Comparison[] = [
 const otherSystemRows: Comparison[] = [
 	{
 		feature: 'Can send webhooks for critical pipeline events',
+		support: {
+			moon: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Generates run reports with granular stats/metrics',
 		support: {
 			moon: SUPPORTED,
 		},

@@ -98,6 +98,63 @@ projects:
     www: 'www'
 ```
 
+## `constraints`
+
+<HeadingApiLink to="/api/types/interface/WorkspaceConfig#constraints" />
+
+Configures constraints between projects that are enforced during project graph generation. This is
+also known as project boundaries.
+
+### `enforceProjectTypeRelationships`
+
+<HeadingApiLink to="/api/types/interface/ConstraintsConfig#enforceProjectTypeRelationships" />
+
+Enforces allowed relationships between a project its dependencies based on the project's
+[`type`](./project#type) setting. When a project depends on another project of an invalid type, an
+error will be thrown when attempting to run a task. The following relationships are enforced when
+this setting is enabled, which defaults to `true`.
+
+- Applications can _only_ depend on libraries or tools.
+- Libraries can _only_ depend on other libraries.
+- Tools can _only_ depend on libraries.
+
+```yaml title=".moon/workspace.yml" {2}
+constraints:
+  enforceProjectTypeRelationships: false
+```
+
+> Projects with an unconfigured or unknown type are ignored during enforcement.
+
+### `tagRelationships`
+
+<HeadingApiLink to="/api/types/interface/ConstraintsConfig#tagRelationships" />
+
+Enforces allowed relationships between a project and its dependencies based on the project's
+[`tags`](./project#tags) setting. This works in a similar fashion to
+`enforceProjectTypeRelationships`, but gives you far more control over what these relationships look
+like.
+
+For example, let's enforce that Next.js projects using the `next` tag can only depend on React
+projects using the `react` tag. If a dependency does not have one of the configured required tags,
+in this case `react`, an error will occur.
+
+```yaml title=".moon/workspace.yml" {2,3}
+constraints:
+  tagRelationships:
+    next: ['react']
+```
+
+On the project side, we would configure [`moon.yml`](./project#tags) like so:
+
+```yaml title="app/moon.yml"
+tags: ['next']
+dependsOn: ['components']
+```
+
+```yaml title="packages/components/moon.yml"
+tags: ['react']
+```
+
 ## `generator`
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#generator" />

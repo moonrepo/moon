@@ -99,7 +99,7 @@ pub async fn generate_project_graph(
 
     builder.load_all()?;
 
-    let graph = builder.build();
+    let graph = builder.build()?;
 
     if !builder.hash.is_empty() {
         json::write(&cache_path, &graph, false)?;

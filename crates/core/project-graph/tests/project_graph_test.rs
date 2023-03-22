@@ -7,6 +7,19 @@ use moon_test_utils::{
 };
 use moon_utils::string_vec;
 use rustc_hash::FxHashMap;
+use std::fs::OpenOptions;
+use std::io::Write;
+use std::path::Path;
+
+pub fn append_file<P: AsRef<Path>>(path: P, data: &str) {
+    let mut file = OpenOptions::new()
+        .write(true)
+        .append(true)
+        .open(path.as_ref())
+        .unwrap();
+
+    writeln!(file, "\n\n{data}").unwrap();
+}
 
 async fn get_aliases_graph() -> (ProjectGraph, Sandbox) {
     let (workspace_config, toolchain_config, tasks_config) =
@@ -70,6 +83,66 @@ async fn get_dependents_graph() -> (ProjectGraph, Sandbox) {
         None,
         None,
     );
+
+    let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+    let graph = generate_project_graph(&mut workspace).await.unwrap();
+
+    (graph, sandbox)
+}
+
+async fn get_tag_constraints_graph<F>(setup: F) -> (ProjectGraph, Sandbox)
+where
+    F: FnOnce(&Sandbox),
+{
+    let mut workspace_config = WorkspaceConfig {
+        projects: WorkspaceProjects::Globs(vec!["*".into()]),
+        ..WorkspaceConfig::default()
+    };
+
+    workspace_config.constraints.tag_relationships = FxHashMap::from_iter([
+        (
+            "warrior".into(),
+            string_vec!["barbarian", "paladin", "druid"],
+        ),
+        ("mage".into(), string_vec!["wizard", "sorcerer", "druid"]),
+    ]);
+
+    let sandbox = create_sandbox_with_config(
+        "project-graph/tag-constraints",
+        Some(&workspace_config),
+        None,
+        None,
+    );
+
+    setup(&sandbox);
+
+    let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+    let graph = generate_project_graph(&mut workspace).await.unwrap();
+
+    (graph, sandbox)
+}
+
+async fn get_type_constraints_graph<F>(setup: F) -> (ProjectGraph, Sandbox)
+where
+    F: FnOnce(&Sandbox),
+{
+    let mut workspace_config = WorkspaceConfig {
+        projects: WorkspaceProjects::Globs(vec!["*".into()]),
+        ..WorkspaceConfig::default()
+    };
+
+    workspace_config
+        .constraints
+        .enforce_project_type_relationships = true;
+
+    let sandbox = create_sandbox_with_config(
+        "project-graph/type-constraints",
+        Some(&workspace_config),
+        None,
+        None,
+    );
+
+    setup(&sandbox);
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
     let graph = generate_project_graph(&mut workspace).await.unwrap();
@@ -356,7 +429,7 @@ mod to_dot {
 
         graph.load("b").unwrap();
 
-        let graph = graph.build();
+        let graph = graph.build().unwrap();
 
         assert_snapshot!(graph.to_dot());
     }
@@ -465,5 +538,240 @@ mod implicit_explicit_deps {
                 )
             ])
         );
+    }
+}
+
+mod type_constraints {
+    use super::*;
+
+    #[tokio::test]
+    async fn app_can_use_unknown() {
+        get_type_constraints_graph(|sandbox| {
+            append_file(sandbox.path().join("app/moon.yml"), "dependsOn: [unknown]");
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    async fn app_can_use_library() {
+        get_type_constraints_graph(|sandbox| {
+            append_file(sandbox.path().join("app/moon.yml"), "dependsOn: [library]");
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    async fn app_can_use_tool() {
+        get_type_constraints_graph(|sandbox| {
+            append_file(sandbox.path().join("app/moon.yml"), "dependsOn: [tool]");
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    #[should_panic(
+        expected = "InvalidTypeRelationship(\"app\", Application, \"app-other\", Application)"
+    )]
+    async fn app_cannot_use_app() {
+        get_type_constraints_graph(|sandbox| {
+            append_file(
+                sandbox.path().join("app/moon.yml"),
+                "dependsOn: [app-other]",
+            );
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    async fn library_can_use_unknown() {
+        get_type_constraints_graph(|sandbox| {
+            append_file(
+                sandbox.path().join("library/moon.yml"),
+                "dependsOn: [unknown]",
+            );
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    async fn library_can_use_library() {
+        get_type_constraints_graph(|sandbox| {
+            append_file(
+                sandbox.path().join("library/moon.yml"),
+                "dependsOn: [library-other]",
+            );
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    #[should_panic(
+        expected = "InvalidTypeRelationship(\"library\", Library, \"app\", Application)"
+    )]
+    async fn library_cannot_use_app() {
+        get_type_constraints_graph(|sandbox| {
+            append_file(sandbox.path().join("library/moon.yml"), "dependsOn: [app]");
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "InvalidTypeRelationship(\"library\", Library, \"tool\", Tool)")]
+    async fn library_cannot_use_tool() {
+        get_type_constraints_graph(|sandbox| {
+            append_file(sandbox.path().join("library/moon.yml"), "dependsOn: [tool]");
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    async fn tool_can_use_unknown() {
+        get_type_constraints_graph(|sandbox| {
+            append_file(sandbox.path().join("tool/moon.yml"), "dependsOn: [unknown]");
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    async fn tool_can_use_library() {
+        get_type_constraints_graph(|sandbox| {
+            append_file(sandbox.path().join("tool/moon.yml"), "dependsOn: [library]");
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "InvalidTypeRelationship(\"tool\", Tool, \"app\", Application)")]
+    async fn tool_cannot_use_app() {
+        get_type_constraints_graph(|sandbox| {
+            append_file(sandbox.path().join("tool/moon.yml"), "dependsOn: [app]");
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "InvalidTypeRelationship(\"tool\", Tool, \"tool-other\", Tool)")]
+    async fn tool_cannot_use_tool() {
+        get_type_constraints_graph(|sandbox| {
+            append_file(
+                sandbox.path().join("tool/moon.yml"),
+                "dependsOn: [tool-other]",
+            );
+        })
+        .await;
+    }
+}
+
+mod tag_constraints {
+    use super::*;
+
+    #[tokio::test]
+    async fn can_depon_tags_but_self_empty() {
+        get_tag_constraints_graph(|sandbox| {
+            append_file(sandbox.path().join("a/moon.yml"), "dependsOn: [b, c]");
+            append_file(sandbox.path().join("b/moon.yml"), "tags: [barbarian]");
+            append_file(sandbox.path().join("c/moon.yml"), "tags: [druid]");
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    async fn ignores_unconfigured_relationships() {
+        get_tag_constraints_graph(|sandbox| {
+            append_file(sandbox.path().join("a/moon.yml"), "dependsOn: [b, c]");
+            append_file(sandbox.path().join("b/moon.yml"), "tags: [some]");
+            append_file(sandbox.path().join("c/moon.yml"), "tags: [value]");
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    async fn matches_with_source_tag() {
+        get_tag_constraints_graph(|sandbox| {
+            append_file(
+                sandbox.path().join("a/moon.yml"),
+                "dependsOn: [b]\ntags: [warrior]",
+            );
+            append_file(sandbox.path().join("b/moon.yml"), "tags: [warrior]");
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "InvalidTagRelationship(\"a\", \"warrior\", \"b\",")]
+    async fn errors_for_no_source_tag_match() {
+        get_tag_constraints_graph(|sandbox| {
+            append_file(
+                sandbox.path().join("a/moon.yml"),
+                "dependsOn: [b]\ntags: [warrior]",
+            );
+            append_file(sandbox.path().join("b/moon.yml"), "tags: [other]");
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    async fn matches_with_allowed_tag() {
+        get_tag_constraints_graph(|sandbox| {
+            append_file(
+                sandbox.path().join("a/moon.yml"),
+                "dependsOn: [b]\ntags: [warrior]",
+            );
+            append_file(sandbox.path().join("b/moon.yml"), "tags: [barbarian]");
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "InvalidTagRelationship(\"a\", \"warrior\", \"b\",")]
+    async fn errors_for_no_allowed_tag_match() {
+        get_tag_constraints_graph(|sandbox| {
+            append_file(
+                sandbox.path().join("a/moon.yml"),
+                "dependsOn: [b]\ntags: [warrior]",
+            );
+            append_file(sandbox.path().join("b/moon.yml"), "tags: [other]");
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "InvalidTagRelationship(\"a\", \"mage\", \"b\",")]
+    async fn errors_for_depon_empty_tags() {
+        get_tag_constraints_graph(|sandbox| {
+            append_file(
+                sandbox.path().join("a/moon.yml"),
+                "dependsOn: [b]\ntags: [mage]",
+            );
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    async fn matches_multiple_source_tags_to_a_single_allowed_tag() {
+        get_tag_constraints_graph(|sandbox| {
+            append_file(
+                sandbox.path().join("a/moon.yml"),
+                "dependsOn: [b]\ntags: [warrior, mage]",
+            );
+            append_file(sandbox.path().join("b/moon.yml"), "tags: [druid]");
+        })
+        .await;
+    }
+
+    #[tokio::test]
+    async fn matches_single_source_tag_to_a_multiple_allowed_tags() {
+        get_tag_constraints_graph(|sandbox| {
+            append_file(
+                sandbox.path().join("a/moon.yml"),
+                "dependsOn: [b, c]\ntags: [mage]",
+            );
+            append_file(sandbox.path().join("b/moon.yml"), "tags: [druid, wizard]");
+            append_file(
+                sandbox.path().join("c/moon.yml"),
+                "tags: [wizard, sorcerer, barbarian]",
+            );
+        })
+        .await;
     }
 }

@@ -8,7 +8,7 @@ use moon_config::{
     CONFIG_PROJECT_FILENAME,
 };
 use moon_error::MoonError;
-use moon_hasher::{convert_paths_to_strings, to_hash};
+use moon_hasher::to_hash;
 use moon_logger::{color, debug, map_list, trace, warn, Logable};
 use moon_platform_detector::{detect_project_language, detect_task_platform};
 use moon_project::{Project, ProjectDependency, ProjectDependencySource, ProjectError};
@@ -597,14 +597,17 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         // Hash all project-oriented config files, as a single change in any of
         // these files would invalidate the entire project graph cache!
         // TODO: handle extended config files?
-        let configs = convert_paths_to_strings(
-            &FxHashSet::from_iter(
-                sources
-                    .values()
-                    .map(|source| PathBuf::from(source).join(CONFIG_PROJECT_FILENAME)),
-            ),
-            &self.workspace.root,
-        )?;
+        let mut configs = vec![];
+
+        for source in sources.values() {
+            if source == "." {
+                configs.push(CONFIG_PROJECT_FILENAME.to_owned());
+            } else {
+                configs.push(path::to_string(
+                    PathBuf::from(source).join(CONFIG_PROJECT_FILENAME),
+                )?);
+            }
+        }
 
         // Hash project-level config (moon.yml)
         let config_hashes = self

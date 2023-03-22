@@ -598,11 +598,16 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         // these files would invalidate the entire project graph cache!
         // TODO: handle extended config files?
         let configs = convert_paths_to_strings(
-            &FxHashSet::from_iter(
-                sources
-                    .values()
-                    .map(|source| PathBuf::from(source).join(CONFIG_PROJECT_FILENAME)),
-            ),
+            &FxHashSet::from_iter(sources.values().map(|source| {
+                if source == "." {
+                    self.workspace.root.join(CONFIG_PROJECT_FILENAME)
+                } else {
+                    self.workspace
+                        .root
+                        .join(source)
+                        .join(CONFIG_PROJECT_FILENAME)
+                }
+            })),
             &self.workspace.root,
         )?;
 

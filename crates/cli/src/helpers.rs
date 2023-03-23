@@ -4,6 +4,7 @@ use moon_launchpad::check_version;
 use moon_logger::color::{self, no_color, supports_color};
 use moon_logger::debug;
 use moon_terminal::{create_theme, get_checkpoint_prefix, Checkpoint};
+use moon_utils::is_test_env;
 use std::env;
 use std::time::Duration;
 
@@ -84,7 +85,7 @@ pub fn setup_colors(force: bool) {
 }
 
 pub async fn check_for_new_version() {
-    if moon::is_telemetry_enabled() {
+    if !is_test_env() && moon::is_telemetry_enabled() {
         let version = env!("CARGO_PKG_VERSION");
         let prefix = get_checkpoint_prefix(Checkpoint::Announcement);
 

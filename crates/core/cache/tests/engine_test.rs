@@ -39,6 +39,18 @@ mod create {
 
         dir.close().unwrap();
     }
+
+    #[test]
+    #[serial]
+    fn creates_cachedir_tag() {
+        let dir = create_temp_dir();
+
+        CacheEngine::load(dir.path()).unwrap();
+
+        assert!(dir.path().join(".moon/cache/CACHEDIR.TAG").exists());
+
+        dir.close().unwrap();
+    }
 }
 
 mod create_runfile {

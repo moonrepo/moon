@@ -31,7 +31,6 @@ impl CacheEngine {
     pub fn load(workspace_root: &Path) -> Result<Self, MoonError> {
         let dir = workspace_root.join(CONFIG_DIRNAME).join("cache");
         let hashes_dir = dir.join("hashes");
-        let out_dir = dir.join("out");
         let outputs_dir = dir.join("outputs");
         let states_dir = dir.join("states");
         let cache_tag = dir.join("CACHEDIR.TAG");
@@ -41,12 +40,6 @@ impl CacheEngine {
             "Creating cache engine at {}",
             color::path(&dir)
         );
-
-        // TODO: Remove in v1. This was renamed from out -> outputs,
-        // but we didn't want to lose existing cache.
-        if out_dir.exists() {
-            let _ = fs::rename(out_dir, &outputs_dir);
-        }
 
         // Do this once instead of each time we are writing cache items
         fs::create_dir_all(&hashes_dir)?;

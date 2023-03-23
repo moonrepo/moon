@@ -8,7 +8,6 @@ lazy_static! {
         Regex::new("^(node|nodejs|npm|npx|yarn|yarnpkg|pnpm|pnpx|corepack)$").unwrap();
 }
 
-// TODO: Differentiate JS/TS between Node and Deno and Bun (in the future)
 pub fn detect_task_platform(command: &str, language: &ProjectLanguage) -> PlatformType {
     if DENO_COMMANDS.is_match(command) {
         return PlatformType::Deno;

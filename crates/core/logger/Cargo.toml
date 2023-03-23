@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-chrono = "0.4.23"
+chrono = "0.4.24"
 console = { workspace = true }
-dirs = "4.0.0"
-fern = "0.6.1"
+dirs = "5.0.0"
+fern = "0.6.2"
 log = "0.4.17"

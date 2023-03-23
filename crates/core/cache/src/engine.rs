@@ -34,6 +34,7 @@ impl CacheEngine {
         let out_dir = dir.join("out");
         let outputs_dir = dir.join("outputs");
         let states_dir = dir.join("states");
+        let cache_tag = dir.join("CACHEDIR.TAG");
 
         debug!(
             target: LOG_TARGET,
@@ -51,6 +52,16 @@ impl CacheEngine {
         fs::create_dir_all(&hashes_dir)?;
         fs::create_dir_all(&outputs_dir)?;
         fs::create_dir_all(&states_dir)?;
+
+        // Create a cache directory tag
+        if !cache_tag.exists() {
+            fs::write(
+                cache_tag,
+                r#"Signature: 8a477f597d28d172789f06886806bc55
+# This file is a cache directory tag created by moon.
+# For information see https://bford.info/cachedir"#,
+            )?;
+        }
 
         Ok(CacheEngine {
             dir,

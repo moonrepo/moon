@@ -25,6 +25,7 @@
   Bitrise, Buddy, Cirrus, Codemagic, Heroku, Jenkins, Jenkins X, Netlify, TeamCity, Vela,
   Woodpecker.
 - Will now attempt to detect CD environments for more accurate metrics.
+- We now create a [cache directory tag](https://bford.info/cachedir) in `.moon/cache`.
 
 ## 0.26.5
 

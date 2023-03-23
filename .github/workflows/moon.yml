@@ -20,7 +20,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, self-hosted-windows-c5xl]
+        os: [ubuntu-latest, self-hosted-windows-4xl]
         node-version: [16, 18]
     steps:
       - uses: actions/checkout@v3

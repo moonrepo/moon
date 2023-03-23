@@ -42,7 +42,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [buildjet-8vcpu-ubuntu-2204, self-hosted-windows-c5xl]
+        os: [buildjet-8vcpu-ubuntu-2204, self-hosted-windows-4xl]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -63,7 +63,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [buildjet-8vcpu-ubuntu-2204, macos-latest, self-hosted-windows-c5xl]
+        os: [buildjet-8vcpu-ubuntu-2204, macos-latest, self-hosted-windows-4xl]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3

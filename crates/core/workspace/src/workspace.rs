@@ -40,15 +40,9 @@ fn find_workspace_root<P: AsRef<Path>>(current_dir: P) -> Option<PathBuf> {
 // .moon/tasks.yml, .moon/tasks/*.yml
 fn load_tasks_config(root_dir: &Path) -> Result<InheritedTasksManager, WorkspaceError> {
     let mut manager = InheritedTasksManager::default();
-    let old_config_path = root_dir.join(constants::CONFIG_DIRNAME).join("project.yml");
     let config_path = root_dir
         .join(constants::CONFIG_DIRNAME)
         .join(constants::CONFIG_TASKS_FILENAME);
-
-    // TODO: Remove in v1
-    if old_config_path.exists() && !config_path.exists() {
-        fs::rename(&old_config_path, &config_path)?;
-    }
 
     let do_load = |cfg_path: &Path| match InheritedTasksConfig::load(cfg_path.to_path_buf()) {
         Ok(cfg) => Ok(cfg),

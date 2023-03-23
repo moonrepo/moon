@@ -34,6 +34,7 @@ fn loads_defaults() {
                 hasher: HasherConfig::default(),
                 notifier: NotifierConfig::default(),
                 projects: WorkspaceProjects::default(),
+                telemetry: true,
                 vcs: VcsConfig::default(),
                 version_constraint: None,
                 schema: String::new(),

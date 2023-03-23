@@ -348,9 +348,7 @@ fn avoids_postinstall_recursion() {
     let sandbox = node_sandbox();
 
     let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("run")
-            .arg("postinstallRecursion:noop")
-            .env_remove("MOON_TEST");
+        cmd.arg("run").arg("postinstallRecursion:noop");
     });
 
     let output = assert.output();

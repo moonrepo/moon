@@ -14,6 +14,7 @@ on:
       - Makefile.toml
       - rust-toolchain.toml
 env:
+  RUST_BACKTRACE: 1
   # Windows fails to compile right now...
   WITH_COVERAGE: ${{ contains(github.head_ref, 'develop-') || endsWith(github.ref, 'master') }}
 jobs:

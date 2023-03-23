@@ -20,7 +20,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, self-hosted-windows-4xl]
+        os: [ubuntu-latest, windows-latest]
         node-version: [16, 18]
     steps:
       - uses: actions/checkout@v3
@@ -30,7 +30,6 @@ jobs:
         with:
           cache: yarn
       - uses: actions-rs/toolchain@v1
-        if: ${{ runner.os != 'Windows' }}
         with:
           toolchain: 1.68.1
           profile: minimal

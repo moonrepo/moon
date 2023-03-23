@@ -11,8 +11,13 @@ use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 static TELEMETRY: AtomicBool = AtomicBool::new(true);
+static TELEMETRY_READY: AtomicBool = AtomicBool::new(false);
 
 pub fn is_telemetry_enabled() -> bool {
+    while !TELEMETRY_READY.load(Ordering::Acquire) {
+        continue;
+    }
+
     TELEMETRY.load(Ordering::Relaxed)
 }
 
@@ -40,9 +45,8 @@ pub fn register_platforms(workspace: &mut Workspace) -> Result<(), WorkspaceErro
 }
 
 async fn setup_workspace(mut workspace: Workspace) -> Result<Workspace, WorkspaceError> {
-    if !workspace.config.telemetry {
-        TELEMETRY.store(false, Ordering::Relaxed);
-    }
+    TELEMETRY.store(workspace.config.telemetry, Ordering::Relaxed);
+    TELEMETRY_READY.store(true, Ordering::Release);
 
     register_platforms(&mut workspace)?;
 

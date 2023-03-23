@@ -1,11 +1,11 @@
 use moon_error::MoonError;
 use moon_utils::regex::clean_id;
 use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::{fmt, str::FromStr};
 use strum::{Display, EnumIter};
 
-#[derive(Clone, Debug, Default, Deserialize, EnumIter, Eq, JsonSchema, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, EnumIter, Eq, JsonSchema, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum ProjectLanguage {
     Bash,
@@ -24,6 +24,26 @@ pub enum ProjectLanguage {
 
     // An unsupported language
     Other(String),
+}
+
+impl<'de> Deserialize<'de> for ProjectLanguage {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let lang = String::deserialize(deserializer)?.to_lowercase();
+
+        Ok(ProjectLanguage::from_str(&lang).unwrap())
+    }
+}
+
+impl Serialize for ProjectLanguage {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
 }
 
 impl FromStr for ProjectLanguage {
@@ -135,6 +155,30 @@ mod tests {
         assert_eq!(
             ProjectLanguage::Other("dotnet".into()).to_string(),
             "dotnet"
+        );
+    }
+
+    #[test]
+    fn serializes_lang_to_string() {
+        assert_eq!(
+            serde_json::to_string(&ProjectLanguage::Go).unwrap(),
+            "\"go\""
+        );
+        assert_eq!(
+            serde_json::to_string(&ProjectLanguage::JavaScript).unwrap(),
+            "\"javascript\""
+        );
+        assert_eq!(
+            serde_json::to_string(&ProjectLanguage::Ruby).unwrap(),
+            "\"ruby\""
+        );
+        assert_eq!(
+            serde_json::to_string(&ProjectLanguage::Unknown).unwrap(),
+            "\"unknown\""
+        );
+        assert_eq!(
+            serde_json::to_string(&ProjectLanguage::Other("dotnet".into())).unwrap(),
+            "\"dotnet\""
         );
     }
 }

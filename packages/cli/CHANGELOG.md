@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where using a custom project language would break the project graph cache.
+
 ## 0.26.5
 
 #### 🐞 Fixes

@@ -181,4 +181,28 @@ mod tests {
             "\"dotnet\""
         );
     }
+
+    #[test]
+    fn deserializes_lang_to_enum() {
+        assert_eq!(
+            serde_json::from_str::<ProjectLanguage>("\"go\"").unwrap(),
+            ProjectLanguage::Go,
+        );
+        assert_eq!(
+            serde_json::from_str::<ProjectLanguage>("\"javascript\"").unwrap(),
+            ProjectLanguage::JavaScript,
+        );
+        assert_eq!(
+            serde_json::from_str::<ProjectLanguage>("\"ruby\"").unwrap(),
+            ProjectLanguage::Ruby,
+        );
+        assert_eq!(
+            serde_json::from_str::<ProjectLanguage>("\"unknown\"").unwrap(),
+            ProjectLanguage::Unknown,
+        );
+        assert_eq!(
+            serde_json::from_str::<ProjectLanguage>("\"dotnet\"").unwrap(),
+            ProjectLanguage::Other("dotnet".into()),
+        );
+    }
 }

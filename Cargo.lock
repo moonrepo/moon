@@ -3582,9 +3582,9 @@ dependencies = [
 
 [[package]]
 name = "proto_bun"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1607e1e796f5b7d07397ba7862baf09cc5c179f44a575f4e8f5eac67888cf675"
+checksum = "98ca8b896e6ec80cfb3e9bed1879c23466a93d054b6b9a512be231bc2db97ecf"
 dependencies = [
  "log",
  "proto_core",
@@ -3594,9 +3594,9 @@ dependencies = [
 
 [[package]]
 name = "proto_cli"
-version = "0.3.0"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "80df73762fc198844a6cef1ca17efc535c898f3159d3d12830e65e22c01fd790"
+checksum = "4d0285c66ada55658bcd55ce19b2e90517fbad94e6377b0fd0a9e9d1d45fdf78"
 dependencies = [
  "async-recursion",
  "clap 4.1.8",
@@ -3617,9 +3617,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7bb14d5b5211249ac0a6df6aa4fd8c071a06a37a90d943bc01905eed1af99009"
+checksum = "b52dfa7b9e7cf48c2dd8b432e539fea4012379f157be6f464df29dca0d8039ef"
 dependencies = [
  "async-trait",
  "cached",
@@ -3645,9 +3645,9 @@ dependencies = [
 
 [[package]]
 name = "proto_deno"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6b5db0017eb52578960cc5bb03da5316ce339b094f1b956900ff8f85a12f9e4b"
+checksum = "84cf43eba43147eff296df88028570fa6b84ea9bf58363daf643a3328191b0c2"
 dependencies = [
  "log",
  "proto_core",
@@ -3657,9 +3657,9 @@ dependencies = [
 
 [[package]]
 name = "proto_go"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "38eb47f096d26f5f0c3d2acbfbbac924a4bf8ef598af6342c3d9ab21391e7eee"
+checksum = "c3cb48c3392e4fd6a2c674a02338e5cd55e962118c311802ecbae8164e364141"
 dependencies = [
  "log",
  "proto_core",
@@ -3669,9 +3669,9 @@ dependencies = [
 
 [[package]]
 name = "proto_node"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e813736a989390b74bd19a9c31a5f0acf37ef06b12081de002dc2f103c11e06"
+checksum = "e9cd014faedd95abd49214fff4b64c2eda7e992cc1b5e9beefb48aaa9de3fa46"
 dependencies = [
  "clean-path",
  "log",

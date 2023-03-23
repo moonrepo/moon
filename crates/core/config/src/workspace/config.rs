@@ -134,6 +134,7 @@ pub struct WorkspaceConfig {
 impl Default for WorkspaceConfig {
     fn default() -> Self {
         WorkspaceConfig {
+            constraints: ConstraintsConfig::default(),
             extends: None,
             generator: GeneratorConfig::default(),
             hasher: HasherConfig::default(),

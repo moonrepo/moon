@@ -6,7 +6,7 @@
 
 $ErrorActionPreference = 'Stop'
 
-$Version = "0.3.1" # TODO
+$Version = "0.3.2" # TODO
 
 if ($Args.Length -eq 1) {
   $Version = $Args.Get(0)

@@ -44,11 +44,11 @@ pub fn register_platforms(workspace: &mut Workspace) -> Result<(), WorkspaceErro
     Ok(())
 }
 
-async fn setup_workspace(mut workspace: Workspace) -> Result<Workspace, WorkspaceError> {
+async fn setup_workspace(workspace: &mut Workspace) -> Result<(), WorkspaceError> {
     TELEMETRY.store(workspace.config.telemetry, Ordering::Relaxed);
     TELEMETRY_READY.store(true, Ordering::Release);
 
-    register_platforms(&mut workspace)?;
+    register_platforms(workspace)?;
 
     if !is_test_env() {
         if workspace.vcs.is_enabled() {
@@ -60,17 +60,25 @@ async fn setup_workspace(mut workspace: Workspace) -> Result<Workspace, Workspac
         workspace.signin_to_moonbase().await?;
     }
 
-    Ok(workspace)
+    Ok(())
 }
 
 /// Loads the workspace from the current working directory.
 pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
-    setup_workspace(Workspace::load()?).await
+    let mut workspace = Workspace::load()?;
+
+    setup_workspace(&mut workspace).await?;
+
+    Ok(workspace)
 }
 
 /// Loads the workspace from a provided directory.
 pub async fn load_workspace_from(path: &Path) -> Result<Workspace, WorkspaceError> {
-    setup_workspace(Workspace::load_from(path)?).await
+    let mut workspace = Workspace::load_from(path)?;
+
+    setup_workspace(&mut workspace).await?;
+
+    Ok(workspace)
 }
 
 // Some commands require the toolchain to exist, but don't use

@@ -640,10 +640,10 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         hasher.hash_aliases(aliases);
         hasher.hash_sources(sources);
 
-        // Hash all project-oriented config files, as a single change in any of
+        // Hash all project-level config files, as a single change in any of
         // these files would invalidate the entire project graph cache!
         // TODO: handle extended config files?
-        let configs = convert_paths_to_strings(
+        let project_configs = convert_paths_to_strings(
             &FxHashSet::from_iter(sources.values().map(|source| {
                 if source == "." {
                     self.workspace.root.join(CONFIG_PROJECT_FILENAME)
@@ -657,21 +657,24 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             &self.workspace.root,
         )?;
 
-        // Hash project-level config (moon.yml)
+        // Hash all workspace-level config files for the same reason!
+        let workspace_configs = convert_paths_to_strings(
+            &FxHashSet::from_iter(glob::walk(
+                self.workspace.root.join(CONFIG_DIRNAME),
+                ["*.yml", "tasks/*.yml"],
+            )?),
+            &self.workspace.root,
+        )?;
+
+        // Hash all the configs!
+        let mut configs = Vec::with_capacity(project_configs.len() + workspace_configs.len());
+        configs.extend(project_configs);
+        configs.extend(workspace_configs);
+
         let config_hashes = self
             .workspace
             .vcs
             .get_file_hashes(&configs, false)
-            .await
-            .map_err(|e| MoonError::Generic(e.to_string()))?;
-
-        hasher.hash_configs(&config_hashes);
-
-        // Hash workspace-level configs (entire .moon folder)
-        let config_hashes = self
-            .workspace
-            .vcs
-            .get_file_tree_hashes(CONFIG_DIRNAME)
             .await
             .map_err(|e| MoonError::Generic(e.to_string()))?;
 

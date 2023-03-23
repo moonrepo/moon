@@ -41,6 +41,7 @@ export interface WorkspaceConfig {
 		| string[]
 		| { globs: string[]; sources: Record<string, string> };
 	runner: RunnerConfig;
+	telemetry: boolean;
 	vcs: VcsConfig;
 	versionConstraint: string | null;
 }

@@ -5,7 +5,7 @@ use crate::errors::ConfigError;
 use crate::helpers::{gather_extended_sources, warn_for_unknown_fields};
 use crate::types::{FileGlob, FilePath};
 use crate::validators::{
-    is_default, validate_child_relative_path, validate_extends, validate_id,
+    is_default, is_default_true, validate_child_relative_path, validate_extends, validate_id,
     validate_semver_requirement,
 };
 use crate::workspace::constraints::ConstraintsConfig;
@@ -78,7 +78,7 @@ impl Default for WorkspaceProjects {
 }
 
 /// Docs: https://moonrepo.dev/docs/config/workspace
-#[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
+#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
 #[serde(default, rename_all = "camelCase")]
 pub struct WorkspaceConfig {
@@ -110,6 +110,9 @@ pub struct WorkspaceConfig {
     #[validate]
     pub runner: RunnerConfig,
 
+    #[serde(skip_serializing_if = "is_default_true")]
+    pub telemetry: bool,
+
     #[serde(skip_serializing_if = "is_default")]
     #[validate]
     pub vcs: VcsConfig,
@@ -126,6 +129,25 @@ pub struct WorkspaceConfig {
     #[serde(flatten)]
     #[schemars(skip)]
     pub unknown: BTreeMap<String, serde_yaml::Value>,
+}
+
+impl Default for WorkspaceConfig {
+    fn default() -> Self {
+        WorkspaceConfig {
+            constraints: ConstraintsConfig::default(),
+            extends: None,
+            generator: GeneratorConfig::default(),
+            hasher: HasherConfig::default(),
+            notifier: NotifierConfig::default(),
+            projects: WorkspaceProjects::default(),
+            runner: RunnerConfig::default(),
+            telemetry: true,
+            vcs: VcsConfig::default(),
+            version_constraint: None,
+            schema: String::new(),
+            unknown: BTreeMap::new(),
+        }
+    }
 }
 
 impl WorkspaceConfig {

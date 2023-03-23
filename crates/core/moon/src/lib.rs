@@ -6,7 +6,20 @@ use moon_project_graph::{ProjectGraph, ProjectGraphBuilder, ProjectGraphError};
 use moon_system_platform::SystemPlatform;
 use moon_utils::{is_test_env, json};
 use moon_workspace::{Workspace, WorkspaceError};
+use std::env;
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
+
+static TELEMETRY: AtomicBool = AtomicBool::new(true);
+static TELEMETRY_READY: AtomicBool = AtomicBool::new(false);
+
+pub fn is_telemetry_enabled() -> bool {
+    while !TELEMETRY_READY.load(Ordering::Acquire) {
+        continue;
+    }
+
+    TELEMETRY.load(Ordering::Relaxed)
+}
 
 pub fn register_platforms(workspace: &mut Workspace) -> Result<(), WorkspaceError> {
     if let Some(deno_config) = &workspace.toolchain_config.deno {
@@ -31,15 +44,30 @@ pub fn register_platforms(workspace: &mut Workspace) -> Result<(), WorkspaceErro
     Ok(())
 }
 
+async fn setup_workspace(workspace: &mut Workspace) -> Result<(), WorkspaceError> {
+    TELEMETRY.store(workspace.config.telemetry, Ordering::Relaxed);
+    TELEMETRY_READY.store(true, Ordering::Release);
+
+    register_platforms(workspace)?;
+
+    if !is_test_env() {
+        if workspace.vcs.is_enabled() {
+            if let Ok(slug) = workspace.vcs.get_repository_slug().await {
+                env::set_var("MOON_REPO_SLUG", slug);
+            }
+        }
+
+        workspace.signin_to_moonbase().await?;
+    }
+
+    Ok(())
+}
+
 /// Loads the workspace from the current working directory.
 pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
     let mut workspace = Workspace::load()?;
 
-    register_platforms(&mut workspace)?;
-
-    if !is_test_env() {
-        workspace.signin_to_moonbase().await?;
-    }
+    setup_workspace(&mut workspace).await?;
 
     Ok(workspace)
 }
@@ -48,11 +76,7 @@ pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
 pub async fn load_workspace_from(path: &Path) -> Result<Workspace, WorkspaceError> {
     let mut workspace = Workspace::load_from(path)?;
 
-    register_platforms(&mut workspace)?;
-
-    if !is_test_env() {
-        workspace.signin_to_moonbase().await?;
-    }
+    setup_workspace(&mut workspace).await?;
 
     Ok(workspace)
 }

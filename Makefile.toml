@@ -1,4 +1,5 @@
 # env = { RUSTFLAGS = "--cfg tokio_unstable" }
+env = { MOON_TEST = "true" }
 
 [config]
 default_to_workspace = false
@@ -36,7 +37,6 @@ args = ["clippy", "--workspace", "--all-targets", "--fix", "--allow-dirty", "--a
 [tasks.setup-test]
 command = "cargo"
 args = ["run", "--", "--log", "debug", "setup"]
-env = { MOON_TEST = "true" }
 cwd = "./tests/fixtures/cases"
 
 [tasks.run-tests]

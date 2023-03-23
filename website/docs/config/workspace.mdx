@@ -303,6 +303,17 @@ runner:
   logRunningCommand: true
 ```
 
+## `telemetry`
+
+<HeadingApiLink to="/api/types/interface/WorkspaceConfig#telemetry" />
+
+When enabled, will check for a newer moon version and send anonymous usage data to the moonrepo
+team. This data is used to improve the quality and reliability of the tool. Defaults to `true`.
+
+```yaml title=".moon/workspace.yml" {1}
+telemetry: false
+```
+
 ## `vcs`
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#vcs" />

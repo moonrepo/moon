@@ -24,10 +24,10 @@ tasks:
     command: cmd /q /c ./envVarsMoon.bat
     platform: system
   runFromProject:
-    command: cmd.exe /q /c "./echo.bat \windows"
+    command: cmd.exe /q /c ./echo.bat "\\windows"
     platform: system
   runFromWorkspace:
-    command: cmd /q /c "./windows/echo.bat \"
+    command: cmd /q /c ./windows/echo.bat "\\"
     platform: system
     options:
       runFromWorkspaceRoot: true

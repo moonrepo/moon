@@ -69,6 +69,12 @@ jobs:
       - uses: actions/checkout@v3
       - run: Get-PSDrive
         if: ${{ runner.os == 'Windows' }}
+      - run: 'gci env:'
+        if: ${{ runner.os == 'Windows' }}
+        shell: pwsh
+      - run: 'echo $env:PATH'
+        if: ${{ runner.os == 'Windows' }}
+        shell: pwsh
       - uses: actions-rs/toolchain@v1
         name: Setup toolchain
         with:

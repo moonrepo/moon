@@ -86,25 +86,25 @@ jobs:
         uses: taiki-e/install-action@nextest
       - name: Install llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
-        if: ${{ env.WITH_COVERAGE == 'true' }}
+        if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
       - name: Run tests with coverage
-        if: ${{ env.WITH_COVERAGE == 'true' }}
+        if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
         run: cargo make test-coverage
         env:
           NEXTEST_PROFILE: ci
       - name: Run tests
-        if: ${{ env.WITH_COVERAGE == 'false' }}
+        if: ${{ runner.os == 'Windows' || env.WITH_COVERAGE == 'false' }}
         run: cargo make test
         env:
           NEXTEST_PROFILE: ci
       - name: Generate code coverage
-        if: ${{ env.WITH_COVERAGE == 'true' }}
+        if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
         run: cargo make generate-report
       - run: Get-PSDrive
         if: ${{ runner.os == 'Windows' }}
       - name: Upload coverage report
         uses: actions/upload-artifact@v3
-        if: ${{ env.WITH_COVERAGE == 'true' }}
+        if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
         with:
           name: coverage-${{ runner.os }}
           path: ./report.txt
@@ -124,6 +124,6 @@ jobs:
       - uses: codecov/codecov-action@v3
         name: Upload to Codecov
         with:
-          files: ./coverage/coverage-Linux/report.txt,./coverage/coverage-macOS/report.txt,./coverage/coverage-Windows/report.txt
+          files: ./coverage/coverage-Linux/report.txt,./coverage/coverage-macOS/report.txt
           flags: rust
           verbose: true

@@ -4,6 +4,7 @@ use crate::{
         query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
     },
 };
+use is_terminal::IsTerminal;
 use moon::generate_project_graph;
 use moon_error::MoonError;
 use moon_logger::{debug, trace};
@@ -68,7 +69,7 @@ async fn load_touched_files(workspace: &Workspace) -> Result<TouchedFilePaths, W
 
     // Only read piped data when stdin is not a TTY,
     // otherwise the process will hang indefinitely waiting for EOF.
-    if atty::isnt(atty::Stream::Stdin) {
+    if !stdin().is_terminal() {
         stdin().read_to_string(&mut buffer).map_err(MoonError::Io)?;
     }
 

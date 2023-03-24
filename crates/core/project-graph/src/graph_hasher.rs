@@ -1,5 +1,6 @@
 use moon_config::{ProjectsAliasesMap, ProjectsSourcesMap};
 use moon_hasher::{hash_btree, Digest, Hasher, Sha256};
+use moon_utils::path;
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, env};
 
@@ -34,7 +35,10 @@ impl GraphHasher {
     }
 
     pub fn hash_configs(&mut self, configs: &BTreeMap<String, String>) {
-        self.configs.extend(configs.to_owned());
+        for (config, hash) in configs {
+            self.configs
+                .insert(path::standardize_separators(config), hash.to_owned());
+        }
     }
 
     pub fn hash_sources(&mut self, sources: &ProjectsSourcesMap) {

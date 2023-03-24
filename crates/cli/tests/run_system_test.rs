@@ -450,7 +450,14 @@ mod windows {
             cmd.arg("run").arg("windows:runFromProject");
         });
 
-        assert_snapshot!(assert.output());
+        dbg!(self.sandbox.path().to_str().unwrap());
+        dbg!(moon_utils::path::get_home_dir());
+
+        let o = assert.output();
+
+        dbg!(&o);
+
+        assert_snapshot!(o);
     }
 
     #[test]
@@ -461,7 +468,14 @@ mod windows {
             cmd.arg("run").arg("windows:runFromWorkspace");
         });
 
-        assert_snapshot!(assert.output());
+        dbg!(self.sandbox.path().to_str().unwrap());
+        dbg!(moon_utils::path::get_home_dir());
+
+        let o = assert.output();
+
+        dbg!(&o);
+
+        assert_snapshot!(o);
     }
 
     #[test]

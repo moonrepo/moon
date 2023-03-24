@@ -233,6 +233,18 @@ mod caching {
 
         let state = ProjectsState::load(state_path).unwrap();
 
+        println!("{}", std::fs::read_to_string(graph_path).unwrap());
+        println!(
+            "{}",
+            std::fs::read_to_string(
+                sandbox
+                    .path()
+                    .join(".moon/cache/hashes")
+                    .join(format!("{}.json", state.last_hash))
+            )
+            .unwrap()
+        );
+
         assert_eq!(state.globs, string_vec![]);
         assert_eq!(state.last_glob_time, 0);
         assert_eq!(

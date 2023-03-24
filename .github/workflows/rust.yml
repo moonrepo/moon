@@ -63,10 +63,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [buildjet-4vcpu-ubuntu-2204, macos-latest, self-hosted-windows-4xl]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
+      - run: Get-PSDrive
+        if: ${{ runner.os == 'Windows' }}
       - uses: actions-rs/toolchain@v1
         name: Setup toolchain
         with:
@@ -85,8 +87,6 @@ jobs:
       - name: Install llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
         if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Run tests with coverage
         if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
         run: cargo make test-coverage
@@ -100,11 +100,13 @@ jobs:
       - name: Generate code coverage
         if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
         run: cargo make generate-report
+      - run: Get-PSDrive
+        if: ${{ runner.os == 'Windows' }}
       - name: Upload coverage report
         uses: actions/upload-artifact@v3
         if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
         with:
-          name: coverage-${{ matrix.os }}
+          name: coverage-${{ runner.os }}
           path: ./report.txt
           if-no-files-found: error
   coverage:
@@ -122,6 +124,6 @@ jobs:
       - uses: codecov/codecov-action@v3
         name: Upload to Codecov
         with:
-          files: ./coverage/coverage-ubuntu-latest/report.txt,./coverage/coverage-macos-latest/report.txt
+          files: ./coverage/coverage-Linux/report.txt,./coverage/coverage-macOS/report.txt
           flags: rust
           verbose: true

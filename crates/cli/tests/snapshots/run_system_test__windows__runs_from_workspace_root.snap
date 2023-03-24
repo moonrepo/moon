@@ -3,7 +3,7 @@ source: crates/cli/tests/run_system_test.rs
 expression: assert.output()
 ---
 ▪▪▪▪ windows:runFromWorkspace
-workspace
+<WORKSPACE>
 ▪▪▪▪ windows:runFromWorkspace (100ms)
 
 Tasks: 1 completed

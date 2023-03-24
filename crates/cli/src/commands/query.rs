@@ -7,6 +7,7 @@ pub use crate::queries::projects::{
 pub use crate::queries::touched_files::{
     query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
 };
+use is_terminal::IsTerminal;
 use moon::load_workspace;
 use moon_logger::color;
 use rustc_hash::FxHashMap;
@@ -30,7 +31,7 @@ pub async fn hash_diff(options: &QueryHashDiffOptions) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;
     let mut result = query_hash_diff(&mut workspace, options).await?;
 
-    let is_tty = atty::is(atty::Stream::Stdout);
+    let is_tty = io::stdout().is_terminal();
     let mut stdout = io::stdout().lock();
 
     if options.json {

@@ -16,7 +16,7 @@ on:
 env:
   RUST_BACKTRACE: 1
   # Windows fails to compile right now...
-  WITH_COVERAGE: 'true' # ${{ contains(github.head_ref, 'develop-') || endsWith(github.ref, 'master') }}
+  WITH_COVERAGE: ${{ contains(github.head_ref, 'develop-') || endsWith(github.ref, 'master') }}
 jobs:
   format:
     name: Format
@@ -42,7 +42,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [buildjet-8vcpu-ubuntu-2204, windows-latest]
+        os: [ubuntu-latest, windows-latest]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3

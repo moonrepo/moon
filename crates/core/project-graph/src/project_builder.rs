@@ -416,7 +416,9 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             return Ok(());
         }
 
-        let inputs_without_vars = task
+        let inputs = vec![];
+
+        let mut inputs = task
             .inputs
             .iter()
             .filter(|input| {
@@ -432,7 +434,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         let token_resolver =
             TokenResolver::new(TokenContext::Inputs, project, &self.workspace.root);
-        let (paths, globs) = token_resolver.resolve(&inputs_without_vars, task)?;
+        let (paths, globs) = token_resolver.resolve(&inputs, task)?;
 
         task.input_paths.extend(paths);
         task.input_globs.extend(globs);

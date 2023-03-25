@@ -72,6 +72,9 @@ pub struct TaskConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub env: Option<FxHashMap<String, String>>,
 
+    #[serde(skip)]
+    pub global_inputs: Vec<InputValue>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_inputs")]
     pub inputs: Option<Vec<InputValue>>,

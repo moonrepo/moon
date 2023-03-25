@@ -1,0 +1,7 @@
+tasks:
+  # Remove all inputs
+  a:
+    inputs: []
+  # Append some inputs
+  b:
+    inputs: [other]

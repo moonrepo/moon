@@ -325,6 +325,28 @@ mod merge {
         assert_eq!(task.command, "foo".to_owned());
         assert_eq!(task.args, string_vec!["--r"]);
     }
+
+    #[test]
+    fn can_overwrite_to_empty_inputs() {
+        let mut task = Task {
+            command: "cmd".to_owned(),
+            args: string_vec!["--arg"],
+            inputs: string_vec!["**/*"],
+            ..Task::default()
+        };
+
+        task.merge(&TaskConfig {
+            inputs: Some(vec![]),
+            options: TaskOptionsConfig {
+                merge_inputs: Some(TaskMergeStrategy::Replace),
+                ..TaskOptionsConfig::default()
+            },
+            ..TaskConfig::default()
+        })
+        .unwrap();
+
+        assert_eq!(task.inputs, string_vec![]);
+    }
 }
 
 mod is_affected {

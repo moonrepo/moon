@@ -520,6 +520,24 @@ mod task_inheritance {
                 PlatformType::System
             );
         }
+
+        #[tokio::test]
+        async fn replaces_inputs() {
+            let (_sandbox, project_graph) = tasks_inheritance_sandbox().await;
+
+            let project = project_graph.get("inputs").unwrap();
+
+            assert_eq!(project.get_task("a").unwrap().inputs, string_vec![]);
+        }
+
+        #[tokio::test]
+        async fn appends_inputs() {
+            let (_sandbox, project_graph) = tasks_inheritance_sandbox().await;
+
+            let project = project_graph.get("inputs").unwrap();
+
+            assert_eq!(project.get_task("b").unwrap().inputs, string_vec![]);
+        }
     }
 }
 

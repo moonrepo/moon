@@ -1,0 +1,6 @@
+language: javascript
+
+tasks:
+  noInputs:
+    command: noop
+    input: []

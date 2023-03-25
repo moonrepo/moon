@@ -3,6 +3,8 @@ title: Cheat sheet
 toc_max_heading_level: 4
 ---
 
+import Columns from '@site/src/components/Columns';
+
 Don't have time to read the docs? Here's a quick cheat sheet to get you started.
 
 ## Tasks
@@ -100,6 +102,10 @@ tasks:
 tasks:
 	example:
 		# ...
+		deps:
+			- 'first'
+			- 'second'
+			- 'third'
 		options:
 			runDepsInParallel: false
 ```
@@ -115,3 +121,68 @@ tasks:
 			- 'backend:start'
 			- 'tailwind:watch'
 ```
+
+## Languages
+
+#### Run system binaries available on `PATH`
+
+<Columns count={2}>
+<div>
+
+```yaml title="moon.yml"
+language: 'bash' # batch, etc
+
+tasks:
+	example:
+		command: 'printenv'
+```
+
+</div>
+<div>
+
+```yaml title="moon.yml"
+tasks:
+	example:
+		command: 'printenv'
+		platform: 'system'
+```
+
+</div>
+</Columns>
+
+#### Run language binaries not supported in moon's toolchain
+
+```yaml title="moon.yml"
+language: 'ruby'
+
+tasks:
+	example:
+		command: 'rubocop'
+		platform: 'system'
+```
+
+#### Run npm binaries (Node.js)
+
+<Columns count={2}>
+<div>
+
+```yaml title="moon.yml"
+language: 'javascript' # typescript
+
+tasks:
+	example:
+		command: 'eslint'
+```
+
+</div>
+<div>
+
+```yaml title="moon.yml"
+tasks:
+	example:
+		command: 'eslint'
+		platform: 'node'
+```
+
+</div>
+</Columns>

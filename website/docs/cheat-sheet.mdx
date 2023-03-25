@@ -1,0 +1,117 @@
+---
+title: Cheat sheet
+toc_max_heading_level: 4
+---
+
+Don't have time to read the docs? Here's a quick cheat sheet to get you started.
+
+## Tasks
+
+Learn more about [tasks](./concepts/task) and [targets](./concepts/target).
+
+#### Run all build and test tasks for all projects
+
+```shell
+moon check --all
+```
+
+#### Run all build and test tasks in a project
+
+```shell
+moon check project
+```
+
+#### Run a task in all projects
+
+```shell
+moon run :task
+```
+
+#### Run a task in a project
+
+```shell
+moon run project:task
+```
+
+#### Run multiple tasks in all projects
+
+```shell
+moon run :task1 :task2
+```
+
+#### Run multiple tasks in any project
+
+```shell
+moon run projecta:task1 projectb:task2
+```
+
+## Task configuration
+
+Learn more about [available options](./config/project#tasks).
+
+#### Disable caching
+
+```yaml title="moon.yml"
+tasks:
+	example:
+		# ...
+		options:
+			cache: false
+```
+
+#### Re-run flaky tasks
+
+```yaml title="moon.yml"
+tasks:
+	example:
+		# ...
+		options:
+			retryCount: 3
+```
+
+#### Depend on tasks from parent project's dependencies
+
+```yaml title="moon.yml"
+# Are also inferred from the environment
+dependsOn:
+	- 'project-a'
+	- 'project-b'
+
+tasks:
+	example:
+		# ...
+		deps:
+			- '^:build'
+```
+
+#### Depend on tasks from arbitrary projects
+
+```yaml title="moon.yml"
+tasks:
+	example:
+		# ...
+		deps:
+			- 'other-project:task'
+```
+
+#### Run dependencies serially
+
+```yaml title="moon.yml"
+tasks:
+	example:
+		# ...
+		options:
+			runDepsInParallel: false
+```
+
+#### Run multiple watchers/servers in parallel
+
+```yaml title="moon.yml"
+tasks:
+	example:
+		command: 'noop'
+		deps:
+			- 'app:watch'
+			- 'backend:start'
+			- 'tailwind:watch'
+```

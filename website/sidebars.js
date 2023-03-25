@@ -140,6 +140,7 @@ const sidebars = {
 				keywords: ['cli', 'commands'],
 			},
 		},
+		'cheat-sheet',
 		'comparison',
 		'terminology',
 		'faq',

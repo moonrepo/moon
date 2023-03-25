@@ -537,6 +537,7 @@ impl Command {
 
         let mut envs_list = vec![];
         let debug_env = env::var("MOON_DEBUG_PROCESS_ENV").is_ok();
+        let debug_input = env::var("MOON_DEBUG_PROCESS_INPUT").is_ok();
 
         for (key, value) in &self.env {
             let key = key.to_str().unwrap_or_default();
@@ -556,24 +557,29 @@ impl Command {
             }
         }
 
+        let format_input = |cmd: &str, input: &str| {
+            format!(
+                "{}{}{}",
+                cmd,
+                if cmd.ends_with('-') { " " } else { " - " },
+                if input.len() > 200 && !debug_input {
+                    "(truncated)".into()
+                } else {
+                    input.replace('\n', " ")
+                }
+            )
+        };
+
         command_line = if let Some(shell) = &self.shell {
             let shell_line = format!("{} {}", shell.command, shell.args.join(" "));
 
             if shell.pass_args_stdin {
-                let debug_input = env::var("MOON_DEBUG_PROCESS_INPUT").is_ok();
-
-                format!(
-                    "{} {}",
-                    shell_line,
-                    if command_line.len() > 200 && !debug_input {
-                        "(truncated)".into()
-                    } else {
-                        command_line.replace('\n', " ")
-                    }
-                )
+                format_input(&shell_line, &command_line)
             } else {
                 format!("{} {}", shell_line, command_line)
             }
+        } else if self.has_input() {
+            format_input(&command_line, &self.get_input_line())
         } else {
             command_line
         };

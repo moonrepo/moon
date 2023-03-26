@@ -1,0 +1,139 @@
+---
+title: Languages
+---
+
+import LangGraph from '@site/src/components/Docs/LangGraph';
+
+Although moon only supports the JavaScript ecosystem at this time, our long-term vision is to be a
+multi-language task runner and monorepo management tool. To that end, we've designed our languages
+to work like plugins, where their functionality is implemented in isolation, and is _opt-in_.
+
+:::info
+
+We do not support third-party language plugins at this time, but are working towards it!
+
+:::
+
+## Enabling a language
+
+moon [supported languages](../#supported-languages) are opt-in, and _are not_ enabled by default. We
+chose this pattern to avoid unnecessary overhead, especially for the future when we have 10 or more
+built-in languages.
+
+To enable a supported language, simply define a configuration block with the language's name in
+[`.moon/toolchain.yml`](../config/toolchain). Even an empty block will enable the language.
+
+```yaml title=".moon/toolchain.yml"
+# Enable Node.js
+node: {}
+
+# Enable Node.js with custom settings
+node:
+	packageManager: 'pnpm'
+
+# Enable Deno
+deno: {}
+```
+
+> For unsupported languages, use the system platform. Continue reading to learn more!
+
+## System language and platform
+
+When working with moon, you'll most likely have tasks that run built-in system commands that do not
+belong to any of the supported languages. For example, you may have a task that runs `git` or
+`docker` commands, or common commands like `rm`, `cp`, `mv`, etc.
+
+For these cases, moon provides a special language/platform called `system`, that is always enabled.
+This platform is a catch-all, an escape-hatch, a fallback, and provides the following:
+
+- Runs a system command or a binary found on `PATH`.
+- Wraps the execution in a shell. `SHELL` or `/bin/sh` on Unix, and `pwsh` on Windows.
+
+To run system commands, set a task's [`platform`](../config/project#platform-1) setting to "system".
+
+```yaml title="moon.yml"
+tasks:
+	example:
+		command: 'git status'
+		platform: 'system'
+```
+
+## Tier structure and responsibilities
+
+As mentioned in our introduction,
+[language support is divided up into tiers](../#supported-languages), where each tier introduces
+more internal integrations and automations, but requires more work to properly implement. Internally
+each tier maps to a Rust crate.
+
+### Tier 1 = Language
+
+The first tier is the language itself. This is the most basic level of support, and is the only tier
+that is required to be implemented for a language to be considered minimally supported. This tier is
+in charge of:
+
+- Declaring metadata about the language. For example, the name of the binary, supported file
+  extensions, available dependency/package/version managers, names of config/manifest/lock files,
+  etc.
+- Helpers for parsing lockfiles and manifest files, and interacting with the language's ecosystem
+  (for example, Node.js module resolution).
+- Mechanisms for detecting the language of a project based on config files and other criteria.
+- Maps to a project's [`language`](../config/project#language) setting.
+
+```yaml title="moon.yml"
+language: 'javascript'
+```
+
+### Tier 2 = Platform
+
+The second tier requires the language functionality from tier 1, and eventually the toolchain
+functionality from tier 3, and provides interoperability with moon's internals. This is the most
+complex of all tiers, and the tier is in charge of:
+
+- Determining when, where, and how to install dependencies for a project or the workspace.
+- Loading project aliases and inferring implicit relationships between projects.
+- Syncing a project and ensuring a healthy project state.
+- Hashing efficiently for dependency installs and target runs.
+- Finding an appropriate binary for a task's command (for example, Node.js tasks will find the
+  command in `node_modules/.bin`).
+- Running a target's command with proper arguments, environment variables, and flags.
+- When tier 3 is supported, integrating the toolchain for running targets with the language's
+  binary. When not tier 3, relies on the language's binary on `PATH`.
+- Maps to a project's [`platform`](../config/project#platform) or task's
+  [`platform`](../config/project#platform-1) setting.
+- Supports a configuration block by name in [`.moon/toolchain.yml`](../config/toolchain).
+
+```yaml title="moon.yml"
+tasks:
+	example:
+		command: 'webpack'
+		platform: 'node'
+```
+
+```yaml title=".moon/toolchain.yml"
+node: {}
+```
+
+### Tier 3 = Toolchain
+
+The third tier is toolchain support via [proto](/proto). This is the final tier, as the toolchain is
+unusable unless the platform has been entirely integrated, and as such, the platform depends on this
+tier. This tier handles:
+
+- Downloading and installing a language into the toolchain.
+- Installing and deduping project dependencies.
+- Detecting appropriate versions of tools to use.
+- Determining which binary to use and execute targets with.
+- Supports a `version` field in the named configuration block in
+  [`.moon/toolchain.yml`](../config/toolchain).
+
+```yaml title=".moon/toolchain.yml"
+node:
+	version: '18.0.0'
+```
+
+### Tier relationships
+
+The tiers (and crates) mentioned above can be demonstrated using a directed acyclic graph. Below is
+an example of how a language is implemented, from tier 0 to tier 3.
+
+<LangGraph />

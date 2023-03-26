@@ -16269,7 +16269,11 @@ __metadata:
     "@mdx-js/react": ^1.6.22
     "@moonrepo/runtime": "workspace:^"
     "@moonrepo/types": "workspace:^"
+    "@types/cytoscape": ^3.19.9
+    "@types/cytoscape-dagre": ^2.3.0
     clsx: ^1.2.1
+    cytoscape: ^3.23.0
+    cytoscape-dagre: ^2.5.0
     docusaurus-plugin-typedoc-api: ^2.5.1
     prism-react-renderer: ^1.3.5
     react: ^17.0.2

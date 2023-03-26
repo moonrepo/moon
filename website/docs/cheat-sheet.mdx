@@ -74,7 +74,7 @@ tasks:
 #### Depend on tasks from parent project's dependencies
 
 ```yaml title="moon.yml"
-# Are also inferred from the environment
+# Also inferred from the language's platform
 dependsOn:
 	- 'project-a'
 	- 'project-b'
@@ -121,6 +121,9 @@ tasks:
 			- 'backend:start'
 			- 'tailwind:watch'
 ```
+
+> All dependencies must resolve to the "same level" in the project graph for this to work. Run
+> `moon dep-graph <target>` to verify.
 
 ## Languages
 

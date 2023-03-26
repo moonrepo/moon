@@ -7,6 +7,13 @@ const sidebars = {
 		'intro',
 		{
 			type: 'category',
+			label: 'How it works',
+			collapsed: true,
+			collapsible: true,
+			items: ['how-it-works/languages'],
+		},
+		{
+			type: 'category',
 			label: 'Getting started',
 			collapsed: false,
 			collapsible: true,

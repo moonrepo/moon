@@ -1,4 +1,4 @@
-import { ActionStatus, Duration, RunReport } from '@moonrepo/types';
+import type { ActionStatus, Duration, RunReport } from '@moonrepo/types';
 import { getIconForStatus, isFlaky, isSlow } from './action';
 import { formatDuration, getDurationInMillis } from './time';
 

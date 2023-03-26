@@ -1,6 +1,6 @@
 import cytoscape from 'cytoscape';
 import dagre from 'cytoscape-dagre';
-import { GraphInfo } from './types';
+import type { GraphInfo } from './types';
 
 cytoscape.use(dagre);
 

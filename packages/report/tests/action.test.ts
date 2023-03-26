@@ -1,4 +1,4 @@
-import { Action } from '@moonrepo/types';
+import type { Action } from '@moonrepo/types';
 import { isFlaky, isSlow } from '../src';
 
 const action: Action = {

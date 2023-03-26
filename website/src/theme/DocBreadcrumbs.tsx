@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 
 import React from 'react';
-// @ts-expect-error Not typed!
 import { useHomePageRoute, useSidebarBreadcrumbs } from '@docusaurus/theme-common/internal';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import { faAngleRight, faHouseBlank } from '@fortawesome/pro-regular-svg-icons';

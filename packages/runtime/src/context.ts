@@ -1,6 +1,6 @@
 import fs from 'fs';
 import { json, Path } from '@boost/common';
-import { Project } from '@moonrepo/types';
+import { type Project } from '@moonrepo/types';
 
 export interface RuntimeContext {
 	project: Project;

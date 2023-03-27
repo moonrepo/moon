@@ -6,7 +6,7 @@ use moon_config::{
 };
 use moon_logger::{color, debug, trace, Logable};
 use moon_target::{Target, TargetError};
-use moon_utils::{glob, string_vec};
+use moon_utils::glob;
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -14,6 +14,12 @@ use std::path::PathBuf;
 use strum::Display;
 
 type EnvVars = FxHashMap<String, String>;
+
+#[derive(Clone, Debug, Deserialize, Display, Eq, Hash, PartialEq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum TaskFlag {
+    EmptyInputs,
+}
 
 #[derive(Clone, Debug, Default, Deserialize, Display, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
@@ -39,6 +45,10 @@ pub struct Task {
     pub deps: Vec<Target>,
 
     pub env: EnvVars,
+
+    pub flags: FxHashSet<TaskFlag>,
+
+    pub global_inputs: Vec<InputValue>,
 
     pub id: String,
 
@@ -97,13 +107,15 @@ impl Task {
             color::shell(&command)
         );
 
-        let task = Task {
+        let mut task = Task {
             args,
             command,
             deps: Task::create_dep_targets(&cloned_config.deps.unwrap_or_default())?,
             env: cloned_config.env.unwrap_or_default(),
+            flags: FxHashSet::default(),
+            global_inputs: cloned_config.global_inputs,
             id: target.task_id.clone(),
-            inputs: cloned_config.inputs.unwrap_or_else(|| string_vec!["**/*"]),
+            inputs: cloned_config.inputs.unwrap_or_default(),
             input_vars: FxHashSet::default(),
             input_globs: FxHashSet::default(),
             input_paths: FxHashSet::default(),
@@ -116,6 +128,15 @@ impl Task {
             target,
             type_of: TaskType::Test,
         };
+
+        if config
+            .inputs
+            .as_ref()
+            .map(|i| i.is_empty())
+            .unwrap_or(false)
+        {
+            task.flags.insert(TaskFlag::EmptyInputs);
+        }
 
         Ok(task)
     }
@@ -303,7 +324,13 @@ impl Task {
         }
 
         if let Some(inputs) = &config.inputs {
-            self.inputs = self.merge_vec(&self.inputs, inputs, &self.options.merge_inputs);
+            if inputs.is_empty() {
+                self.flags.insert(TaskFlag::EmptyInputs);
+                self.inputs = vec![];
+            } else {
+                self.flags.remove(&TaskFlag::EmptyInputs);
+                self.inputs = self.merge_vec(&self.inputs, inputs, &self.options.merge_inputs);
+            }
         }
 
         if let Some(outputs) = &config.outputs {

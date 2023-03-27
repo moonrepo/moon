@@ -416,21 +416,15 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             return Ok(());
         }
 
-        let inputs = vec![];
+        let mut inputs = task.global_inputs.clone();
 
-        let mut inputs = task
-            .inputs
-            .iter()
-            .filter(|input| {
-                if ENV_VAR.is_match(input) {
-                    task.input_vars.insert(input[1..].to_owned());
-                    false
-                } else {
-                    true
-                }
-            })
-            .map(|input| input.to_owned())
-            .collect::<Vec<_>>();
+        for input in &task.inputs {
+            if ENV_VAR.is_match(input) {
+                task.input_vars.insert(input[1..].to_owned());
+            } else {
+                inputs.push(input.to_owned());
+            }
+        }
 
         let token_resolver =
             TokenResolver::new(TokenContext::Inputs, project, &self.workspace.root);

@@ -20,7 +20,7 @@ mod from_config {
         let task =
             Task::from_config(Target::new("foo", "test").unwrap(), &TaskConfig::default()).unwrap();
 
-        assert_eq!(task.inputs, string_vec!["**/*"]);
+        assert_eq!(task.inputs, string_vec![]);
         assert_eq!(task.log_target, "moon:project:foo:test");
         assert_eq!(task.target, Target::new("foo", "test").unwrap());
         assert_eq!(
@@ -167,6 +167,34 @@ mod from_config {
 
         assert_eq!(task.command, "foo".to_owned());
         assert_eq!(task.args, string_vec!["--bar", "--baz"]);
+    }
+
+    #[test]
+    fn sets_inputs() {
+        let task = Task::from_config(
+            Target::new("foo", "test").unwrap(),
+            &TaskConfig {
+                inputs: Some(string_vec!["foo", "bar"]),
+                ..TaskConfig::default()
+            },
+        )
+        .unwrap();
+
+        assert_eq!(task.inputs, string_vec!["foo", "bar"]);
+    }
+
+    #[test]
+    fn sets_empty_inputs() {
+        let task = Task::from_config(
+            Target::new("foo", "test").unwrap(),
+            &TaskConfig {
+                inputs: Some(string_vec![]),
+                ..TaskConfig::default()
+            },
+        )
+        .unwrap();
+
+        assert_eq!(task.inputs, string_vec![]);
     }
 }
 
@@ -341,6 +369,24 @@ mod merge {
                 merge_inputs: Some(TaskMergeStrategy::Replace),
                 ..TaskOptionsConfig::default()
             },
+            ..TaskConfig::default()
+        })
+        .unwrap();
+
+        assert_eq!(task.inputs, string_vec![]);
+    }
+
+    #[test]
+    fn can_overwrite_to_empty_inputs_without_strategy() {
+        let mut task = Task {
+            command: "cmd".to_owned(),
+            args: string_vec!["--arg"],
+            inputs: string_vec!["**/*"],
+            ..Task::default()
+        };
+
+        task.merge(&TaskConfig {
+            inputs: Some(vec![]),
             ..TaskConfig::default()
         })
         .unwrap();

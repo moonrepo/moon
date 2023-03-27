@@ -18,7 +18,7 @@ type EnvVars = FxHashMap<String, String>;
 #[derive(Clone, Debug, Deserialize, Display, Eq, Hash, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum TaskFlag {
-    EmptyInputs,
+    NoInputs,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Display, Eq, PartialEq, Serialize)]
@@ -135,7 +135,7 @@ impl Task {
             .map(|i| i.is_empty())
             .unwrap_or(false)
         {
-            task.flags.insert(TaskFlag::EmptyInputs);
+            task.flags.insert(TaskFlag::NoInputs);
         }
 
         Ok(task)
@@ -232,7 +232,7 @@ impl Task {
     /// Will attempt to find any file that matches our list of inputs.
     pub fn is_affected(&self, touched_files: &TouchedFilePaths) -> Result<bool, TaskError> {
         // If an empty inputs ([]), we should always run
-        if self.flags.contains(&TaskFlag::EmptyInputs) {
+        if self.flags.contains(&TaskFlag::NoInputs) {
             return Ok(true);
         }
 
@@ -330,10 +330,10 @@ impl Task {
 
         if let Some(inputs) = &config.inputs {
             if inputs.is_empty() {
-                self.flags.insert(TaskFlag::EmptyInputs);
+                self.flags.insert(TaskFlag::NoInputs);
                 self.inputs = vec![];
             } else {
-                self.flags.remove(&TaskFlag::EmptyInputs);
+                self.flags.remove(&TaskFlag::NoInputs);
                 self.inputs = self.merge_vec(&self.inputs, inputs, &self.options.merge_inputs);
             }
         }

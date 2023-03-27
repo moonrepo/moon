@@ -226,7 +226,7 @@ mod from_config {
         )
         .unwrap();
 
-        assert!(task.flags.contains(&TaskFlag::EmptyInputs));
+        assert!(task.flags.contains(&TaskFlag::NoInputs));
     }
 
     #[test]
@@ -240,7 +240,7 @@ mod from_config {
         )
         .unwrap();
 
-        assert!(!task.flags.contains(&TaskFlag::EmptyInputs));
+        assert!(!task.flags.contains(&TaskFlag::NoInputs));
     }
 
     #[test]
@@ -254,7 +254,7 @@ mod from_config {
         )
         .unwrap();
 
-        assert!(!task.flags.contains(&TaskFlag::EmptyInputs));
+        assert!(!task.flags.contains(&TaskFlag::NoInputs));
     }
 }
 
@@ -469,7 +469,7 @@ mod merge {
         })
         .unwrap();
 
-        assert!(task.flags.contains(&TaskFlag::EmptyInputs));
+        assert!(task.flags.contains(&TaskFlag::NoInputs));
     }
 
     #[test]
@@ -487,7 +487,7 @@ mod merge {
         })
         .unwrap();
 
-        assert!(!task.flags.contains(&TaskFlag::EmptyInputs));
+        assert!(!task.flags.contains(&TaskFlag::NoInputs));
     }
 
     #[test]
@@ -496,7 +496,7 @@ mod merge {
             command: "cmd".to_owned(),
             args: string_vec!["--arg"],
             inputs: string_vec!["**/*"],
-            flags: FxHashSet::from_iter([TaskFlag::EmptyInputs]),
+            flags: FxHashSet::from_iter([TaskFlag::NoInputs]),
             ..Task::default()
         };
 
@@ -506,7 +506,7 @@ mod merge {
         })
         .unwrap();
 
-        assert!(task.flags.contains(&TaskFlag::EmptyInputs));
+        assert!(task.flags.contains(&TaskFlag::NoInputs));
     }
 }
 

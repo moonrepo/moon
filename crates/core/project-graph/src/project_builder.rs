@@ -422,7 +422,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         });
 
         // When no inputs defined, default to the whole project
-        if task.inputs.is_empty() && !task.flags.contains(&TaskFlag::EmptyInputs) {
+        if task.inputs.is_empty() && !task.flags.contains(&TaskFlag::NoInputs) {
             task.inputs.push("**/*".to_owned());
         }
 

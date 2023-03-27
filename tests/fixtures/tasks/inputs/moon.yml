@@ -1,0 +1,11 @@
+language: javascript
+
+tasks:
+  noInputs:
+    command: noop
+    inputs: []
+  allInputs:
+    command: noop
+  explicitInputs:
+    command: noop
+    inputs: [a, b, c]

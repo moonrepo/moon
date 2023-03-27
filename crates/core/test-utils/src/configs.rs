@@ -161,6 +161,7 @@ pub fn get_tasks_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Inherit
             ("inputA".to_owned(), "input-a".to_owned()),
             ("inputB".to_owned(), "input-b".to_owned()),
             ("inputC".to_owned(), "input-c".to_owned()),
+            ("inputs".to_owned(), "inputs".to_owned()),
             (
                 "mergeAllStrategies".to_owned(),
                 "merge-all-strategies".to_owned(),

@@ -15,6 +15,12 @@ use strum::Display;
 
 type EnvVars = FxHashMap<String, String>;
 
+#[derive(Clone, Debug, Deserialize, Display, Eq, Hash, PartialEq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum TaskFlag {
+    NoInputs,
+}
+
 #[derive(Clone, Debug, Default, Deserialize, Display, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum TaskType {
@@ -39,6 +45,10 @@ pub struct Task {
     pub deps: Vec<Target>,
 
     pub env: EnvVars,
+
+    pub flags: FxHashSet<TaskFlag>,
+
+    pub global_inputs: Vec<InputValue>,
 
     pub id: String,
 
@@ -102,6 +112,8 @@ impl Task {
             command,
             deps: Task::create_dep_targets(&cloned_config.deps.unwrap_or_default())?,
             env: cloned_config.env.unwrap_or_default(),
+            flags: FxHashSet::default(),
+            global_inputs: cloned_config.global_inputs,
             id: target.task_id.clone(),
             inputs: cloned_config.inputs.unwrap_or_default(),
             input_vars: FxHashSet::default(),
@@ -117,10 +129,13 @@ impl Task {
             type_of: TaskType::Test,
         };
 
-        // When no inputs are defined, excluding the top-level .moon configuration,
-        // we should default inputs to glob the entire project directory!
-        if task.inputs.iter().all(|i| i.starts_with("/.moon")) {
-            task.inputs.push("**/*".into());
+        if config
+            .inputs
+            .as_ref()
+            .map(|i| i.is_empty())
+            .unwrap_or(false)
+        {
+            task.flags.insert(TaskFlag::NoInputs);
         }
 
         Ok(task)
@@ -144,9 +159,7 @@ impl Task {
             config.env = Some(self.env.clone());
         }
 
-        if !self.inputs.is_empty()
-            || (self.inputs.len() == 1 && !self.inputs.contains(&"**/*".to_owned()))
-        {
+        if !self.inputs.is_empty() || (self.inputs.len() == 1 && self.inputs[0] == "**/*") {
             config.inputs = Some(self.inputs.clone());
         }
 
@@ -218,6 +231,11 @@ impl Task {
     /// Return true if this task is affected based on touched files.
     /// Will attempt to find any file that matches our list of inputs.
     pub fn is_affected(&self, touched_files: &TouchedFilePaths) -> Result<bool, TaskError> {
+        // If an empty inputs ([]), we should always run
+        if self.flags.contains(&TaskFlag::NoInputs) {
+            return Ok(true);
+        }
+
         for var_name in &self.input_vars {
             if let Ok(var) = env::var(var_name) {
                 if !var.is_empty() {
@@ -311,7 +329,13 @@ impl Task {
         }
 
         if let Some(inputs) = &config.inputs {
-            self.inputs = self.merge_vec(&self.inputs, inputs, &self.options.merge_inputs);
+            if inputs.is_empty() {
+                self.flags.insert(TaskFlag::NoInputs);
+                self.inputs = vec![];
+            } else {
+                self.flags.remove(&TaskFlag::NoInputs);
+                self.inputs = self.merge_vec(&self.inputs, inputs, &self.options.merge_inputs);
+            }
         }
 
         if let Some(outputs) = &config.outputs {

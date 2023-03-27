@@ -31,7 +31,7 @@ impl InheritedTasksManager {
         let mut lookup = string_vec!["*"];
 
         // JS/TS is special in that it runs on multiple platforms
-        let is_js_platform = matches!(platform, PlatformType::Node);
+        let is_js_platform = matches!(platform, PlatformType::Deno | PlatformType::Node);
 
         if is_js_platform {
             lookup.push(format!("{platform}"));
@@ -60,20 +60,15 @@ impl InheritedTasksManager {
             if let Some(managed_config) = self.configs.get(&lookup) {
                 let mut managed_config = managed_config.clone();
 
-                if lookup != "*" {
-                    for task in managed_config.tasks.values_mut() {
+                for task in managed_config.tasks.values_mut() {
+                    if lookup != "*" {
+                        // Automatically set this lookup as an input
+                        task.global_inputs
+                            .push(format!("/.moon/tasks/{lookup}.yml"));
+
                         // Automatically set the platform
                         if task.platform.is_unknown() {
                             task.platform = platform.to_owned();
-                        }
-
-                        // Automatically set this lookup as an input
-                        let input = format!("/.moon/tasks/{lookup}.yml");
-
-                        if let Some(inputs) = &mut task.inputs {
-                            inputs.push(input);
-                        } else {
-                            task.inputs = Some(vec![input]);
                         }
                     }
                 }
@@ -81,9 +76,6 @@ impl InheritedTasksManager {
                 config.merge(managed_config);
             }
         }
-
-        // Always break cache if a core configuration changes
-        config.implicit_inputs.push("/.moon/*.yml".into());
 
         config
     }

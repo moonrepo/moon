@@ -8,13 +8,15 @@ use moon_utils::string_vec;
 use rustc_hash::FxHashMap;
 
 fn mock_task(command: &str, platform: PlatformType) -> TaskConfig {
+    let mut global_inputs = string_vec![];
+
+    if command != "global" {
+        global_inputs.push(format!("/.moon/tasks/{command}.yml"));
+    }
+
     TaskConfig {
         command: Some(TaskCommandArgs::String(command.to_owned())),
-        inputs: if command == "global" {
-            None
-        } else {
-            Some(string_vec![format!("/.moon/tasks/{command}.yml")])
-        },
+        global_inputs,
         platform,
         ..TaskConfig::default()
     }
@@ -156,6 +158,7 @@ mod lookup_order {
 
 mod config_merging {
     use super::*;
+    use moon_test_utils::pretty_assertions::assert_eq;
     use std::collections::BTreeMap;
 
     #[tokio::test]
@@ -170,7 +173,6 @@ mod config_merging {
                 &ProjectType::Application
             ),
             InheritedTasksConfig {
-                implicit_inputs: string_vec!["/.moon/*.yml"],
                 tasks: BTreeMap::from_iter([
                     ("global".into(), mock_task("global", PlatformType::Unknown)),
                     ("node".into(), mock_task("node", PlatformType::Node)),
@@ -200,7 +202,6 @@ mod config_merging {
                 &ProjectType::Tool
             ),
             InheritedTasksConfig {
-                implicit_inputs: string_vec!["/.moon/*.yml"],
                 tasks: BTreeMap::from_iter([
                     ("global".into(), mock_task("global", PlatformType::Unknown)),
                     ("node".into(), mock_task("node", PlatformType::Node)),
@@ -226,7 +227,6 @@ mod config_merging {
                 &ProjectType::Library
             ),
             InheritedTasksConfig {
-                implicit_inputs: string_vec!["/.moon/*.yml"],
                 tasks: BTreeMap::from_iter([
                     ("global".into(), mock_task("global", PlatformType::Unknown)),
                     ("rust".into(), mock_task("rust", PlatformType::System)),
@@ -248,7 +248,6 @@ mod config_merging {
                 &ProjectType::Library
             ),
             InheritedTasksConfig {
-                implicit_inputs: string_vec!["/.moon/*.yml"],
                 tasks: BTreeMap::from_iter([
                     ("global".into(), mock_task("global", PlatformType::Unknown)),
                     ("kotlin".into(), mock_task("kotlin", PlatformType::System)),
@@ -264,7 +263,7 @@ mod config_merging {
         let workspace = load_workspace_from(sandbox.path()).await.unwrap();
 
         let mut task = mock_task("node-library", PlatformType::Node);
-        task.inputs = Some(string_vec!["c", "/.moon/tasks/node-library.yml"]);
+        task.inputs = Some(string_vec!["c"]);
 
         assert_eq!(
             workspace.tasks_config.get_inherited_config(
@@ -273,7 +272,6 @@ mod config_merging {
                 &ProjectType::Library
             ),
             InheritedTasksConfig {
-                implicit_inputs: string_vec!["/.moon/*.yml"],
                 tasks: BTreeMap::from_iter([("command".into(), task)]),
                 ..InheritedTasksConfig::default()
             }
@@ -286,7 +284,7 @@ mod config_merging {
         let workspace = load_workspace_from(sandbox.path()).await.unwrap();
 
         let mut task = mock_task("dotnet-application", PlatformType::System);
-        task.inputs = Some(string_vec!["c", "/.moon/tasks/dotnet-application.yml"]);
+        task.inputs = Some(string_vec!["c"]);
 
         assert_eq!(
             workspace.tasks_config.get_inherited_config(
@@ -295,7 +293,6 @@ mod config_merging {
                 &ProjectType::Application
             ),
             InheritedTasksConfig {
-                implicit_inputs: string_vec!["/.moon/*.yml"],
                 tasks: BTreeMap::from_iter([("command".into(), task)]),
                 ..InheritedTasksConfig::default()
             }
@@ -306,6 +303,7 @@ mod config_merging {
 mod config_loading {
     use super::*;
     use moon::generate_project_graph;
+    use moon_test_utils::pretty_assertions::assert_eq;
 
     #[tokio::test]
     async fn inherits_when_lang_is_detected() {
@@ -318,23 +316,26 @@ mod config_loading {
         let task = graph.get("explicit").unwrap().get_task("command").unwrap();
 
         assert_eq!(task.command, "node");
+        assert_eq!(task.inputs, string_vec!["**/*"]);
         assert_eq!(
-            task.inputs,
-            string_vec!["/.moon/tasks/node.yml", "**/*", "/.moon/*.yml"]
+            task.global_inputs,
+            string_vec!["/.moon/tasks/node.yml", "/.moon/*.yml"]
         );
 
         let task = graph.get("detected").unwrap().get_task("command").unwrap();
 
         assert_eq!(task.command, "node");
+        assert_eq!(task.inputs, string_vec!["**/*"]);
         assert_eq!(
-            task.inputs,
-            string_vec!["/.moon/tasks/node.yml", "**/*", "/.moon/*.yml"]
+            task.global_inputs,
+            string_vec!["/.moon/tasks/node.yml", "/.moon/*.yml"]
         );
 
         let task = graph.get("other").unwrap().get_task("command").unwrap();
 
         assert_eq!(task.command, "global");
-        assert_eq!(task.inputs, string_vec!["**/*", "/.moon/*.yml"]);
+        assert_eq!(task.global_inputs, string_vec!["/.moon/*.yml"]);
+        assert_eq!(task.inputs, string_vec!["**/*"]);
     }
 
     #[tokio::test]

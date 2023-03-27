@@ -1,0 +1,12 @@
+tasks:
+  # Remove all inputs
+  a:
+    inputs: []
+  # Replace inputs
+  b:
+    inputs: [other]
+    options:
+      mergeInputs: replace
+  # Append some inputs
+  c:
+    inputs: [other]

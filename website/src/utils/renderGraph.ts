@@ -22,7 +22,7 @@ export function renderGraph(element: HTMLElement, graph: cytoscape.ElementsDefin
 					'curve-style': 'straight',
 					'line-cap': 'round',
 					'line-color': '#c9eef6', // '#012a4a',
-					'line-opacity': 0.15,
+					'line-opacity': 0.25,
 					'overlay-color': '#c9eef6',
 					'target-arrow-color': '#c9eef6', // '#1a3f5c',
 					'target-arrow-shape': 'tee',

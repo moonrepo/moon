@@ -8,6 +8,8 @@ Although moon only supports the JavaScript ecosystem at this time, our long-term
 multi-language task runner and monorepo management tool. To that end, we've designed our languages
 to work like plugins, where their functionality is implemented in isolation, and is _opt-in_.
 
+<LangGraph />
+
 :::info
 
 We do not support third-party language plugins at this time, but are working towards it!
@@ -62,8 +64,22 @@ tasks:
 
 As mentioned in our introduction,
 [language support is divided up into tiers](../#supported-languages), where each tier introduces
-more internal integrations and automations, but requires more work to properly implement. Internally
-each tier maps to a Rust crate.
+more internal integrations and automations, but requires more work to properly implement.
+
+Internally each tier maps to a Rust crate, as demonstrated by the graph at the top of the article.
+
+### Tier 0 = Unsupported
+
+The zero tier represents all languages _not directly_ supported by moon. This tier merely exists as
+a mechanism for running non-supported language binaries via the
+[system platform](#system-language-and-platform).
+
+```yaml title="moon.yml"
+tasks:
+	example:
+		command: 'ruby'
+		platform: 'system'
+```
 
 ### Tier 1 = Language
 
@@ -130,10 +146,3 @@ tier. This tier handles:
 node:
 	version: '18.0.0'
 ```
-
-### Tier relationships
-
-The tiers (and crates) mentioned above can be demonstrated using a directed acyclic graph. Below is
-an example of how a language is implemented, from tier 0 to tier 3.
-
-<LangGraph />

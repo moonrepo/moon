@@ -197,8 +197,8 @@ export default function LangGraph() {
 		<div
 			id="lang-graph"
 			ref={graphRef}
-			className="p-1 rounded bg-slate-800"
-			style={{ height: '400px', width: '100%' }}
+			className="p-1 mb-2 rounded bg-slate-800"
+			style={{ height: '600px', width: '100%' }}
 		/>
 	);
 }

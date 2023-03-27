@@ -32,8 +32,9 @@ config file, using the [`dependsOn`](../config/project#dependson) setting.
 
 ```yaml title="moon.yml"
 dependsOn:
-	- 'components'
-	- 'utils'
+  - 'components'
+  - id: 'utils'
+    scope: 'peer'
 ```
 
 ### Implicit
@@ -47,7 +48,9 @@ functions.
 {
   // ...
   "dependencies": {
-    "@company/components": "workspace:*",
+    "@company/components": "workspace:*"
+  },
+  "peerDependencies": {
     "@company/utils": "workspace:*"
   }
 }
@@ -60,7 +63,7 @@ resolved. For unsupported languages, you must explicitly configure dependencies.
 
 :::
 
-## Scopes
+### Scopes
 
 Every relationship is categorized into a scope that describes the type of relationship between the
 parent and child. Scopes are currently used for [project syncing](../commands/sync) and deep Docker
@@ -83,3 +86,16 @@ functions, but mainly:
 - Powers our [Docker](../guides/docker) layer caching and scaffolding implementations.
 - Utilized for [project syncing](../commands/sync) to ensure a healthy repository state.
 - Determines affected projects in [continuous integration](../guides/ci) workflows.
+
+<!--
+## Debugging the graph
+
+moon consistently caches the project graph, but as they say, cache invalidation is hard. As such,
+you may run into issues where you update configuration or modify tasks, but the change is not
+reflected when running `moon` commands. With that said, we apologize ahead of time, but we do offer
+this guide to help you debug any issues.
+
+To start, you can verify if the project graph cache is the problem by deleting the
+`.moon/cache/states/projectGraph.json` file, and re-running commands. If the issue was resolved,
+then the cache is the culprit, otherwise it may be another bug.
+-->

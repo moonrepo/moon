@@ -1,5 +1,4 @@
 import React from 'react';
-// @ts-expect-error Ignore deep imports
 import { Markdown } from 'docusaurus-plugin-typedoc-api/lib/components/Markdown';
 
 const SUPPORTED = '🟩';

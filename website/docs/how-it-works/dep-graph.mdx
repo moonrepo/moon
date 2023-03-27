@@ -1,0 +1,84 @@
+---
+title: Dependency graph
+---
+
+import DepGraph from '@site/src/components/Docs/DepGraph';
+
+When you run a [task](../config/project#tasks-1) on the command line, we generate a dependency graph
+to ensure [dependencies](../config/project#deps) of tasks have ran before running run the primary
+task.
+
+The dependency graph is a representation of all [tasks](../concepts/task), derived from the
+[project graph](./project-graph), and is also represented internally as a directed acyclic graph
+(DAG).
+
+<DepGraph />
+
+## Actions
+
+Unlike other task runners in the industry that represent each node in the graph as a task to run, we
+represent each node in the graph as an action to perform. This allows us to be more flexible and
+efficient with how we run tasks, and allows us to provide more functionality and automation than
+other runners.
+
+The following actions compose our dependency graph:
+
+### Setup toolchain
+
+The most important action in the graph is the setup toolchain action, which downloads and installs a
+tier 3 language into the toolchain. For other tiers, this is basically a no-operation.
+
+- When the tool has already been installed, this action will be skipped.
+- Actions will be scoped by language and version, also known as a runtime. For example,
+  `SetupNodeTool(18.1.0)` or `SetupDenoTool(1.31.0)`.
+- Tools that require a global language binary will display the version as "global". For example,
+  `SetupNodeTool(global)`.
+
+### Install dependencies
+
+Before we run a target, we ensure that all language dependencies (`node_modules` for example) have
+been installed, by automatically installing them if we detect changes since the last run. We achieve
+this by comparing lockfile modified timestamps, parsing manifest files, and hashing resolved
+dependency versions.
+
+- When dependencies do _not_ need to be installed, this action will be skipped.
+- Depending on the language and configuration, we may install dependencies in a project
+  (`InstallDepsInProject`), or in the workspace root for all projects (`InstallDeps`).
+- Actions will be scoped by language and version, also known as a runtime. For example,
+  `InstallNodeDeps(18.1.0)` or `InstallNodeDepsInProject(18.1.0, example)`.
+
+> This action depends on the setup toolchain action, because we utilize the binaries in the
+> toolchain to install dependencies.
+
+### Sync project
+
+To ensure a consistently healthy project and repository, we run a process known as syncing
+_everytime_ a target is ran. Actions will be scoped by language, for example,
+`SyncNodeProject(example)`.
+
+What is synced or considered healthcare is dependent on the language and its ecosystem.
+
+- JavaScript
+  - Syncs `package.json` dependencies based on [project graph](./project-graph) dependencies.
+  - Applies [`deno`](../config/toolchain#deno) and [`node`](../config/toolchain#node) related
+    settings.
+- TypeScript
+  - Syncs project references based on [project graph](./project-graph) dependencies.
+  - Applies [`typescript`](../config/toolchain#typescript) related settings.
+
+> This action depends on the setup toolchain action, in case it requires binaries or functionality
+> that the toolchain provides.
+
+### Run target
+
+The primary action in the graph is the run [target](../concepts/target) action, which runs a
+project's task as a child process. Tasks can depend on other tasks, and they'll be effectively
+orchestrated and executed by running in topological order _and_ in batches via a worker pool.
+
+> This action depends on the previous actions, as the toolchain is used for running the task's
+> command, and the outcome of the task is best when the project state is healthy and deterministic.
+
+## What is the graph used for?
+
+Without the dependency graph, tasks would not efficiently, or possibly at all! The graph helps to
+run tasks in parallel, in the correct order, and to ensure a reliable outcome.

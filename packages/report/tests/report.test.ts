@@ -1,4 +1,4 @@
-import { RunReport } from '@moonrepo/types';
+import type { RunReport } from '@moonrepo/types';
 import { prepareReportActions, sortReport } from '../src';
 
 function mockReport(): RunReport {

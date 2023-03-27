@@ -1,5 +1,6 @@
 {
   "extends": "../tsconfig.options.json",
+  // "extends": "@tsconfig/docusaurus/tsconfig.json",
   "compilerOptions": {
     "outDir": "../.moon/cache/types/website",
     "types": [
@@ -12,11 +13,13 @@
     "lib": [
       "dom"
     ],
+    "moduleResolution": "Node16",
     "paths": {
       "@site/*": [
         "./*"
       ]
-    }
+    },
+    "verbatimModuleSyntax": false
   },
   "include": [
     ".eslintrc.js",

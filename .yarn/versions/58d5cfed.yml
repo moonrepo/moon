@@ -10,6 +10,7 @@ releases:
   '@moonrepo/types': major
   '@moonrepo/report': major
   '@moonrepo/runtime': patch
+  '@moonrepo/visualizer': patch
 
 declined:
   - 'website'

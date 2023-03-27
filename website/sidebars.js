@@ -10,12 +10,20 @@ const sidebars = {
 			label: 'How it works',
 			collapsed: true,
 			collapsible: true,
-			items: ['how-it-works/languages', 'how-it-works/project-graph'],
+			items: ['how-it-works/languages', 'how-it-works/project-graph', 'how-it-works/dep-graph'],
 			link: {
 				type: 'generated-index',
 				title: 'How it works',
 				slug: '/how-it-works',
-				keywords: ['how', 'works', 'mental-model', 'languages', 'project-graph'],
+				keywords: [
+					'how',
+					'works',
+					'mental-model',
+					'languages',
+					'project-graph',
+					'dep-graph',
+					'dependency-graph',
+				],
 			},
 		},
 		{

@@ -81,8 +81,8 @@ integration.
 Great question, the project graph is used throughout the codebase to accomplish a variety of
 functions, but mainly:
 
-- Is fed into the [dependency graph](#todo) to determine relationships of tasks between other tasks,
-  and across projects.
+- Is fed into the [dependency graph](./dep-graph) to determine relationships of tasks between other
+  tasks, and across projects.
 - Powers our [Docker](../guides/docker) layer caching and scaffolding implementations.
 - Utilized for [project syncing](../commands/sync) to ensure a healthy repository state.
 - Determines affected projects in [continuous integration](../guides/ci) workflows.

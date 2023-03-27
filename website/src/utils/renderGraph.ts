@@ -1,48 +1,18 @@
 import cytoscape from 'cytoscape';
 import dagre from 'cytoscape-dagre';
-import type { GraphInfo } from './types';
 
 cytoscape.use(dagre);
 
-function getActionType(label: string) {
-	if (label.startsWith('RunTarget')) {
-		return 'run-target';
-	}
-
-	if (label.startsWith('Sync') && label.includes('Project')) {
-		return 'sync-project';
-	}
-
-	if (label.startsWith('Install') && label.includes('Deps')) {
-		return 'install-deps';
-	}
-
-	if (label.startsWith('Setup') && label.includes('Tool')) {
-		return 'setup-tool';
-	}
-
-	return 'unknown';
-}
-
-export function render(element: HTMLElement, data: GraphInfo) {
-	const nodes = data.nodes.map((n) => ({
-		data: { id: n.id.toString(), label: n.label, type: getActionType(n.label) },
-	}));
-
-	const edges = data.edges.map((e) => ({
-		data: { id: e.id.toString(), source: e.source.toString(), target: e.target.toString() },
-	}));
-
-	// https://js.cytoscape.org/
+export function renderGraph(element: HTMLElement, graph: cytoscape.ElementsDefinition) {
 	return cytoscape({
 		container: element,
-		elements: { edges, nodes },
+		elements: graph,
 		layout: {
 			fit: true,
 			// @ts-expect-error Types incorrect
 			name: 'dagre',
 			nodeDimensionsIncludeLabels: true,
-			spacingFactor: 1.5,
+			spacingFactor: 1,
 		},
 		style: [
 			{
@@ -52,7 +22,7 @@ export function render(element: HTMLElement, data: GraphInfo) {
 					'curve-style': 'straight',
 					'line-cap': 'round',
 					'line-color': '#c9eef6', // '#012a4a',
-					'line-opacity': 0.15,
+					'line-opacity': 0.25,
 					'overlay-color': '#c9eef6',
 					'target-arrow-color': '#c9eef6', // '#1a3f5c',
 					'target-arrow-shape': 'tee',
@@ -81,14 +51,14 @@ export function render(element: HTMLElement, data: GraphInfo) {
 				},
 			},
 			{
-				selector: 'node[type="run-target"]',
+				selector: 'node[type="run-target"], node[type="sm"]',
 				style: {
 					// @ts-expect-error Types incorrect
 					'background-gradient-stop-colors': '#6e58d1 #4a2ec6 #3b259e',
 				},
 			},
 			{
-				selector: 'node[type="sync-project"]',
+				selector: 'node[type="sync-project"], node[type="md"]',
 				style: {
 					// @ts-expect-error Types incorrect
 					'background-gradient-stop-colors': '#ffafff #ff79ff #cc61cc',
@@ -97,7 +67,7 @@ export function render(element: HTMLElement, data: GraphInfo) {
 				},
 			},
 			{
-				selector: 'node[type="install-deps"]',
+				selector: 'node[type="install-deps"], node[type="lg"]',
 				style: {
 					// @ts-expect-error Types incorrect
 					'background-gradient-stop-colors': '#afe6f2 #79d5e9 #61aaba',
@@ -106,7 +76,7 @@ export function render(element: HTMLElement, data: GraphInfo) {
 				},
 			},
 			{
-				selector: 'node[type="setup-tool"]',
+				selector: 'node[type="setup-tool"], node[type="xl"]',
 				style: {
 					// @ts-expect-error Types incorrect
 					'background-gradient-stop-colors': '#ff9da6 #ff5b6b #cc4956',

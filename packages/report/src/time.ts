@@ -1,4 +1,4 @@
-import { Duration } from '@moonrepo/types';
+import type { Duration } from '@moonrepo/types';
 
 export function getDurationInMillis(duration: Duration): number {
 	return duration.secs * 1000 + duration.nanos / 1_000_000;

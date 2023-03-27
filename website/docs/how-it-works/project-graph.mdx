@@ -1,0 +1,101 @@
+---
+title: Project graph
+---
+
+import ProjectGraph from '@site/src/components/Docs/ProjectGraph';
+
+The project graph is a representation of all configured
+[projects in the workspace](../config/workspace#projects) and their relationships between each
+other, and is represented internally as a directed acyclic graph (DAG). Below is a visual
+representation of a project graph, composed of multiple applications and libraries, where both
+project types depend on libraries.
+
+<ProjectGraph />
+
+:::info
+
+The [`moon project-graph`](../commands/project-graph) command can be used to view the structure of
+your workspace.
+
+:::
+
+## Relationships
+
+A relationship is between a dependent (the parent project) and a dependency/requirement (a child
+project). Relationships are derived from source code and configuration files within the repository,
+and fall into 1 of 2 categories:
+
+### Explicit
+
+These are dependencies that are explicitly defined in a project's [`moon.yml`](../config/project)
+config file, using the [`dependsOn`](../config/project#dependson) setting.
+
+```yaml title="moon.yml"
+dependsOn:
+  - 'components'
+  - id: 'utils'
+    scope: 'peer'
+```
+
+### Implicit
+
+These are dependencies that are implicitly discovered by moon when scanning the repository. How an
+implicit dependency is discovered is based on a
+[language's platform integration](./languages#tier-2--platform), and how that language's ecosystem
+functions.
+
+```json title="package.json"
+{
+  // ...
+  "dependencies": {
+    "@company/components": "workspace:*"
+  },
+  "peerDependencies": {
+    "@company/utils": "workspace:*"
+  }
+}
+```
+
+:::caution
+
+If a language is not officially supported by moon, then implicit dependencies will _not_ be
+resolved. For unsupported languages, you must explicitly configure dependencies.
+
+:::
+
+### Scopes
+
+Every relationship is categorized into a scope that describes the type of relationship between the
+parent and child. Scopes are currently used for [project syncing](../commands/sync) and deep Docker
+integration.
+
+- **Production** - Dependency is required in production, _will not be_ pruned in production
+  environments, and will sync as a production dependency.
+- **Development** - Dependency is required in development and production, _will be_ pruned from
+  production environments, and will sync as a development-only dependency.
+- **Peer** - Dependency is a peer requirement, with language specific semantics. Will sync as a peer
+  dependency when applicable.
+
+## What is the graph used for?
+
+Great question, the project graph is used throughout the codebase to accomplish a variety of
+functions, but mainly:
+
+- Is fed into the [dependency graph](./dep-graph) to determine relationships of tasks between other
+  tasks, and across projects.
+- Powers our [Docker](../guides/docker) layer caching and scaffolding implementations.
+- Utilized for [project syncing](../commands/sync) to ensure a healthy repository state.
+- Determines affected projects in [continuous integration](../guides/ci) workflows.
+
+<!--
+## Debugging the graph
+
+moon consistently caches the project graph, but as they say, cache invalidation is hard. As such,
+you may run into issues where you update configuration or modify tasks, but the change is not
+reflected when running `moon` commands. With that said, we apologize ahead of time, but we do offer
+this guide to help you debug any issues.
+
+To start, you can verify if the project graph cache is the problem by deleting the
+`.moon/cache/states/projectGraph.json` file, and re-running commands. If the issue was resolved,
+then the cache is the culprit, otherwise it may be another bug.
+-->

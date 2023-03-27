@@ -1,4 +1,4 @@
-import { Action, ActionStatus } from '@moonrepo/types';
+import type { Action, ActionStatus } from '@moonrepo/types';
 import { getDurationInMillis } from './time';
 
 export function getIconForStatus(status: ActionStatus): string {

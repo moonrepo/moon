@@ -20,6 +20,10 @@
 - Updated task `env` and `.env` files to support variable substitution using `${VAR_NAME}` syntax.
 - Updated system tasks to now execute within a shell.
 
+#### 🐞 Fixes
+
+- Reworked how task inputs are resolved when empty `[]` is configured, and all `**/*` is inherited.
+
 #### ⚙️ Internal
 
 - Updated the new version check to only run on the `check`, `ci`, `run`, and `sync` commands.

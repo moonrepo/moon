@@ -231,6 +231,11 @@ impl Task {
     /// Return true if this task is affected based on touched files.
     /// Will attempt to find any file that matches our list of inputs.
     pub fn is_affected(&self, touched_files: &TouchedFilePaths) -> Result<bool, TaskError> {
+        // If an empty inputs ([]), we should always run
+        if self.flags.contains(&TaskFlag::EmptyInputs) {
+            return Ok(true);
+        }
+
         for var_name in &self.input_vars {
             if let Ok(var) = env::var(var_name) {
                 if !var.is_empty() {

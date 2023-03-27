@@ -1099,6 +1099,45 @@ mod task_expansion {
         use moon_test_utils::pretty_assertions::assert_eq;
 
         #[tokio::test]
+        async fn sets_empty_inputs() {
+            let (_sandbox, project_graph) = tasks_sandbox().await;
+
+            let task = project_graph
+                .get("inputs")
+                .unwrap()
+                .get_task("noInputs")
+                .unwrap();
+
+            assert_eq!(task.inputs, string_vec![]);
+        }
+
+        #[tokio::test]
+        async fn sets_explicit_inputs() {
+            let (_sandbox, project_graph) = tasks_sandbox().await;
+
+            let task = project_graph
+                .get("inputs")
+                .unwrap()
+                .get_task("explicitInputs")
+                .unwrap();
+
+            assert_eq!(task.inputs, string_vec!["a", "b", "c"]);
+        }
+
+        #[tokio::test]
+        async fn defaults_to_all_glob_when_no_inputs() {
+            let (_sandbox, project_graph) = tasks_sandbox().await;
+
+            let task = project_graph
+                .get("inputs")
+                .unwrap()
+                .get_task("allInputs")
+                .unwrap();
+
+            assert_eq!(task.inputs, string_vec!["**/*"]);
+        }
+
+        #[tokio::test]
         async fn inherits_implicit_inputs() {
             let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
                 tasks_config.implicit_inputs = string_vec!["package.json"];

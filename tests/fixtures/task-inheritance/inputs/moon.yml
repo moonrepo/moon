@@ -2,6 +2,11 @@ tasks:
   # Remove all inputs
   a:
     inputs: []
-  # Append some inputs
+  # Replace inputs
   b:
+    inputs: [other]
+    options:
+      mergeInputs: replace
+  # Append some inputs
+  c:
     inputs: [other]

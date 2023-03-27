@@ -14,7 +14,7 @@ use moon_logger::{color, debug, map_list, trace, warn, Logable};
 use moon_platform_detector::{detect_project_language, detect_task_platform};
 use moon_project::{Project, ProjectDependency, ProjectDependencySource, ProjectError};
 use moon_target::{Target, TargetError, TargetProjectScope};
-use moon_task::{Task, TaskError};
+use moon_task::{Task, TaskError, TaskFlag};
 use moon_utils::regex::{ENV_VAR, ENV_VAR_SUBSTITUTE};
 use moon_utils::{glob, is_ci, path, time};
 use moon_workspace::Workspace;
@@ -412,23 +412,37 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                 .extend(project.inherited_config.implicit_inputs.clone());
         }
 
-        if task.inputs.is_empty() {
-            return Ok(());
-        }
-
-        let mut inputs = task.global_inputs.clone();
-
-        for input in &task.inputs {
+        task.inputs.retain(|input| {
             if ENV_VAR.is_match(input) {
                 task.input_vars.insert(input[1..].to_owned());
+                false
             } else {
-                inputs.push(input.to_owned());
+                true
             }
+        });
+
+        // When no inputs defined, default to the whole project
+        if task.inputs.is_empty() && !task.flags.contains(&TaskFlag::EmptyInputs) {
+            task.inputs.push("**/*".to_owned());
+        }
+
+        // Always break cache if a core configuration changes
+        task.global_inputs.push("/.moon/*.yml".into());
+
+        let mut inputs_to_resolve = vec![];
+        inputs_to_resolve.extend(&task.inputs);
+        inputs_to_resolve.extend(&task.global_inputs);
+
+        if inputs_to_resolve.is_empty() {
+            return Ok(());
         }
 
         let token_resolver =
             TokenResolver::new(TokenContext::Inputs, project, &self.workspace.root);
-        let (paths, globs) = token_resolver.resolve(&inputs, task)?;
+        let (paths, globs) = token_resolver.resolve(
+            &inputs_to_resolve.into_iter().cloned().collect::<Vec<_>>(),
+            task,
+        )?;
 
         task.input_paths.extend(paths);
         task.input_globs.extend(globs);

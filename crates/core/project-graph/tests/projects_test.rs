@@ -291,6 +291,7 @@ mod task_inheritance {
                         "a".to_owned(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::String("a".into())),
+                            inputs: Some(string_vec!["a"]),
                             platform: PlatformType::Unknown,
                             ..TaskConfig::default()
                         },
@@ -299,6 +300,7 @@ mod task_inheritance {
                         "b".to_owned(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::String("b".into())),
+                            inputs: Some(string_vec!["b"]),
                             platform: PlatformType::Node,
                             ..TaskConfig::default()
                         },
@@ -307,6 +309,7 @@ mod task_inheritance {
                         "c".to_owned(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::String("c".into())),
+                            inputs: Some(string_vec!["c"]),
                             platform: PlatformType::System,
                             ..TaskConfig::default()
                         },
@@ -527,7 +530,7 @@ mod task_inheritance {
         }
 
         #[tokio::test]
-        async fn replaces_inputs() {
+        async fn resets_inputs_to_empty() {
             let (_sandbox, project_graph) = tasks_inheritance_sandbox().await;
 
             let project = project_graph.get("inputs").unwrap();
@@ -536,12 +539,24 @@ mod task_inheritance {
         }
 
         #[tokio::test]
+        async fn replaces_inputs() {
+            let (_sandbox, project_graph) = tasks_inheritance_sandbox().await;
+
+            let project = project_graph.get("inputs").unwrap();
+
+            assert_eq!(project.get_task("b").unwrap().inputs, string_vec!["other"]);
+        }
+
+        #[tokio::test]
         async fn appends_inputs() {
             let (_sandbox, project_graph) = tasks_inheritance_sandbox().await;
 
             let project = project_graph.get("inputs").unwrap();
 
-            assert_eq!(project.get_task("b").unwrap().inputs, string_vec![]);
+            assert_eq!(
+                project.get_task("c").unwrap().inputs,
+                string_vec!["c", "other"]
+            );
         }
     }
 }
@@ -1098,7 +1113,7 @@ mod task_expansion {
             let c = project_graph.get("inputC").unwrap().get_task("c").unwrap();
 
             assert_eq!(c.global_inputs, string_vec!["/.moon/*.yml"]);
-            assert_eq!(c.inputs, string_vec!["**/*", "package.json"]);
+            assert_eq!(c.inputs, string_vec!["package.json"]);
         }
 
         #[tokio::test]

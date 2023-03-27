@@ -61,10 +61,7 @@ impl InheritedTasksManager {
                 let mut managed_config = managed_config.clone();
 
                 for task in managed_config.tasks.values_mut() {
-                    if lookup == "*" {
-                        // Always break cache if a core configuration changes
-                        task.global_inputs.push("/.moon/*.yml".into());
-                    } else {
+                    if lookup != "*" {
                         // Automatically set this lookup as an input
                         task.global_inputs
                             .push(format!("/.moon/tasks/{lookup}.yml"));

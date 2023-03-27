@@ -1,6 +1,9 @@
-use moon_config::{TaskCommandArgs, TaskConfig, TaskOptionEnvFileConfig, TaskOptionsConfig};
+use moon_config::{
+    TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskOptionEnvFileConfig, TaskOptionsConfig,
+    TaskOutputStyle,
+};
 use moon_target::Target;
-use moon_task::{Task, TaskOptions};
+use moon_task::{Task, TaskFlag, TaskOptions};
 use moon_test_utils::create_sandbox;
 use moon_utils::string_vec;
 use rustc_hash::FxHashSet;
@@ -13,7 +16,6 @@ pub fn create_task(config: TaskConfig) -> Task {
 
 mod from_config {
     use super::*;
-    use moon_config::{TaskMergeStrategy, TaskOutputStyle};
 
     #[test]
     fn sets_defaults() {
@@ -195,6 +197,64 @@ mod from_config {
         .unwrap();
 
         assert_eq!(task.inputs, string_vec![]);
+    }
+
+    #[test]
+    fn sets_global_and_local_inputs() {
+        let task = Task::from_config(
+            Target::new("foo", "test").unwrap(),
+            &TaskConfig {
+                global_inputs: string_vec!["global"],
+                inputs: Some(string_vec!["local"]),
+                ..TaskConfig::default()
+            },
+        )
+        .unwrap();
+
+        assert_eq!(task.global_inputs, string_vec!["global"]);
+        assert_eq!(task.inputs, string_vec!["local"]);
+    }
+
+    #[test]
+    fn sets_empty_flag() {
+        let task = Task::from_config(
+            Target::new("foo", "test").unwrap(),
+            &TaskConfig {
+                inputs: Some(string_vec![]),
+                ..TaskConfig::default()
+            },
+        )
+        .unwrap();
+
+        assert!(task.flags.contains(&TaskFlag::EmptyInputs));
+    }
+
+    #[test]
+    fn doesnt_set_empty_flag_when_inputs() {
+        let task = Task::from_config(
+            Target::new("foo", "test").unwrap(),
+            &TaskConfig {
+                inputs: Some(string_vec!["foo"]),
+                ..TaskConfig::default()
+            },
+        )
+        .unwrap();
+
+        assert!(!task.flags.contains(&TaskFlag::EmptyInputs));
+    }
+
+    #[test]
+    fn doesnt_set_empty_flag_when_none() {
+        let task = Task::from_config(
+            Target::new("foo", "test").unwrap(),
+            &TaskConfig {
+                inputs: None,
+                ..TaskConfig::default()
+            },
+        )
+        .unwrap();
+
+        assert!(!task.flags.contains(&TaskFlag::EmptyInputs));
     }
 }
 
@@ -392,6 +452,61 @@ mod merge {
         .unwrap();
 
         assert_eq!(task.inputs, string_vec![]);
+    }
+
+    #[test]
+    fn sets_empty_flag() {
+        let mut task = Task {
+            command: "cmd".to_owned(),
+            args: string_vec!["--arg"],
+            inputs: string_vec!["**/*"],
+            ..Task::default()
+        };
+
+        task.merge(&TaskConfig {
+            inputs: Some(vec![]),
+            ..TaskConfig::default()
+        })
+        .unwrap();
+
+        assert!(task.flags.contains(&TaskFlag::EmptyInputs));
+    }
+
+    #[test]
+    fn doesnt_set_empty_flag_when_inputs() {
+        let mut task = Task {
+            command: "cmd".to_owned(),
+            args: string_vec!["--arg"],
+            inputs: string_vec!["**/*"],
+            ..Task::default()
+        };
+
+        task.merge(&TaskConfig {
+            inputs: Some(string_vec!["foo"]),
+            ..TaskConfig::default()
+        })
+        .unwrap();
+
+        assert!(!task.flags.contains(&TaskFlag::EmptyInputs));
+    }
+
+    #[test]
+    fn doesnt_overwrite_parent_flag_when_none() {
+        let mut task = Task {
+            command: "cmd".to_owned(),
+            args: string_vec!["--arg"],
+            inputs: string_vec!["**/*"],
+            flags: FxHashSet::from_iter([TaskFlag::EmptyInputs]),
+            ..Task::default()
+        };
+
+        task.merge(&TaskConfig {
+            inputs: None,
+            ..TaskConfig::default()
+        })
+        .unwrap();
+
+        assert!(task.flags.contains(&TaskFlag::EmptyInputs));
     }
 }
 

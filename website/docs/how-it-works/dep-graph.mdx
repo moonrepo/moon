@@ -4,9 +4,24 @@ title: Dependency graph
 
 import DepGraph from '@site/src/components/Docs/DepGraph';
 
+When you run a [task](../config/project#tasks-1) on the command line, we generate a dependency graph
+to ensure [dependencies](../config/project#deps) of tasks have ran before running run the primary
+task.
+
+The dependency graph is a representation of all [tasks](../concepts/task), derived from the
+[project graph](./project-graph), and is also represented internally as a directed acyclic graph
+(DAG).
+
 <DepGraph />
 
 ## Actions
+
+Unlike other task runners in the industry that represent each node in the graph as a task to run, we
+represent each node in the graph as an action to perform. This allows us to be more flexible and
+efficient with how we run tasks, and allows us to provide more functionality and automation than
+other runners.
+
+The following actions compose our dependency graph:
 
 ### Setup toolchain
 
@@ -56,4 +71,14 @@ What is synced or considered healthcare is dependent on the language and its eco
 
 ### Run target
 
+The primary action in the graph is the run [target](../concepts/target) action, which runs a
+project's task as a child process. Tasks can depend on other tasks, and they'll be effectively
+orchestrated and executed by running in topological order _and_ in batches via a worker pool.
+
+> This action depends on the previous actions, as the toolchain is used for running the task's
+> command, and the outcome of the task is best when the project state is healthy and deterministic.
+
 ## What is the graph used for?
+
+Without the dependency graph, tasks would not efficiently, or possibly at all! The graph helps to
+run tasks in parallel, in the correct order, and to ensure a reliable outcome.

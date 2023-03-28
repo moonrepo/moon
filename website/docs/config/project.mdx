@@ -561,7 +561,7 @@ tasks:
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#envFile" />
 
-A boolean or path to a project relative file (also know as dotenv file) that defines a collection of
+A boolean or path to a `.env` file (also know as dotenv file) that defines a collection of
 [environment variables](#env-1) for the current task. Variables will be loaded on project creation,
 but will _not_ override those defined in [`env`](#env-1).
 
@@ -574,6 +574,8 @@ tasks:
       envFile: true
       # Or
       envFile: '.env.production'
+      # Or from the workspace root
+      envFile: '/.env.shared'
 ```
 
 > Variables defined in the file support value substitution using `${VAR_NAME}` syntax.

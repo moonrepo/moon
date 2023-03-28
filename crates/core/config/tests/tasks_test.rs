@@ -653,7 +653,7 @@ options:
 
     #[test]
     #[should_panic(
-        expected = "expected a boolean or a relative file system path for key \"default.options.envFile\""
+        expected = "expected a boolean or a file system path for key \"default.options.envFile\""
     )]
     fn invalid_env_file_type() {
         figment::Jail::expect_with(|jail| {
@@ -694,7 +694,6 @@ options:
     //         }
 
     mod affected_files {
-
         #[test]
         #[should_panic(
             expected = "expected `args`, `env`, or a boolean for key \"default.options.affectedFiles\""

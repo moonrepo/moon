@@ -925,6 +925,24 @@ mod task_expansion {
         }
 
         #[tokio::test]
+        async fn loads_from_workspace_root() {
+            let (_sandbox, project_graph) = tasks_sandbox().await;
+
+            let project = project_graph.get("expandEnv").unwrap();
+            let task = project.get_task("envFileWorkspace").unwrap();
+
+            assert_eq!(
+                task.env,
+                FxHashMap::from_iter([("SOURCE".to_owned(), "workspace-level".to_owned()),])
+            );
+
+            dbg!(&task);
+
+            assert!(task.inputs.contains(&"/.env".to_owned()));
+            assert!(task.input_paths.contains(&PathBuf::from(".env")));
+        }
+
+        #[tokio::test]
         async fn doesnt_override_other_env() {
             let (_sandbox, project_graph) = tasks_sandbox().await;
 

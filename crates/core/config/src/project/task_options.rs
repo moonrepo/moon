@@ -1,4 +1,4 @@
-use crate::{errors::create_validation_error, validators::validate_child_relative_path};
+use crate::{errors::create_validation_error, validators::validate_child_or_root_path};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use validator::{Validate, ValidationError};
@@ -19,7 +19,7 @@ fn validate_affected_files(file: &TaskOptionAffectedFilesConfig) -> Result<(), V
 
 fn validate_env_file(file: &TaskOptionEnvFileConfig) -> Result<(), ValidationError> {
     if let TaskOptionEnvFileConfig::File(path) = file {
-        validate_child_relative_path("options.envFile", path)?;
+        validate_child_or_root_path("options.envFile", path)?;
     }
 
     Ok(())
@@ -33,10 +33,7 @@ pub enum TaskOptionAffectedFilesConfig {
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
-#[serde(
-    untagged,
-    expecting = "expected a boolean or a relative file system path"
-)]
+#[serde(untagged, expecting = "expected a boolean or a file system path")]
 pub enum TaskOptionEnvFileConfig {
     Enabled(bool),
     File(String),

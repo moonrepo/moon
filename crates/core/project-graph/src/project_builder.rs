@@ -15,6 +15,7 @@ use moon_platform_detector::{detect_project_language, detect_task_platform};
 use moon_project::{Project, ProjectDependency, ProjectDependencySource, ProjectError};
 use moon_target::{Target, TargetError, TargetProjectScope};
 use moon_task::{Task, TaskError, TaskFlag};
+use moon_utils::path::expand_to_workspace_relative;
 use moon_utils::regex::{ENV_VAR, ENV_VAR_SUBSTITUTE};
 use moon_utils::{glob, path, time};
 use moon_workspace::Workspace;
@@ -354,7 +355,12 @@ impl<'ws> ProjectGraphBuilder<'ws> {
     ) -> Result<(), ProjectGraphError> {
         // Load from env file first
         if let Some(env_file) = &task.options.env_file {
-            let env_path = project.root.join(env_file);
+            let env_path = self.workspace.root.join(expand_to_workspace_relative(
+                env_file,
+                &self.workspace.root,
+                &project.root,
+            ));
+
             let error_handler =
                 |e: dotenvy::Error| TaskError::InvalidEnvFile(env_path.clone(), e.to_string());
 

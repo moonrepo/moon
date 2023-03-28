@@ -56,6 +56,10 @@ mod scaffold_workspace {
             Some(&tasks_config),
         );
 
+        // Test inherited configs
+        fs::create_dir(sandbox.path().join(".moon/tasks")).unwrap();
+        fs::write(sandbox.path().join(".moon/tasks/node.yml"), "{}").unwrap();
+
         sandbox.run_moon(|cmd| {
             cmd.arg("docker").arg("scaffold").arg("lifecycles");
         });
@@ -63,6 +67,7 @@ mod scaffold_workspace {
         let docker = sandbox.path().join(".moon/docker/workspace");
 
         assert!(docker.join(".moon/tasks.yml").exists());
+        assert!(docker.join(".moon/tasks/node.yml").exists());
         assert!(docker.join(".moon/toolchain.yml").exists());
         assert!(docker.join(".moon/workspace.yml").exists());
     }

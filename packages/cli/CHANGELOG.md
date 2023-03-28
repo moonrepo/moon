@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where `.moon/tasks/*.yml` were not scaffolded into `Dockerfile`s.
+
 ## 1.0.0
 
 #### 💥 Breaking

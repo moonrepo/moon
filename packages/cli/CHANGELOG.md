@@ -4,6 +4,8 @@
 
 #### 🐞 Fixes
 
+- Updated `envFile` to log a warning instead of triggering an error when `.env.` is missing.
+- Updated `envFile` to support workspace relative paths when prefixed with `/`.
 - Fixed an issue where `.moon/tasks/*.yml` were not scaffolded into `Dockerfile`s.
 
 ## 1.0.0

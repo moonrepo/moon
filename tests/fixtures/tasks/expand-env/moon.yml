@@ -5,6 +5,9 @@ tasks:
   envFileNamed:
     options:
       envFile: '.env.production'
+  envFileWorkspace:
+    options:
+      envFile: '/.env'
   mergeWithEnv:
     env:
       FOO: original

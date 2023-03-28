@@ -883,22 +883,6 @@ mod task_expansion {
         }
 
         #[tokio::test]
-        // Windows = "The system cannot find the file specified"
-        // Unix = "No such file or directory"
-        #[should_panic(expected = "InvalidEnvFile")]
-        async fn errors_on_missing_file() {
-            // `expand_env` has a CI check that avoids this from crashing, so emulate it
-            if moon_utils::is_ci() {
-                panic!("InvalidEnvFile");
-            } else {
-                tasks_sandbox_with_setup(|sandbox| {
-                    std::fs::remove_file(sandbox.path().join("expand-env/.env")).unwrap();
-                })
-                .await;
-            }
-        }
-
-        #[tokio::test]
         async fn loads_using_bool() {
             let (_sandbox, project_graph) = tasks_sandbox().await;
 
@@ -938,6 +922,24 @@ mod task_expansion {
             assert!(task
                 .input_paths
                 .contains(&PathBuf::from(&project.source).join(".env.production")));
+        }
+
+        #[tokio::test]
+        async fn loads_from_workspace_root() {
+            let (_sandbox, project_graph) = tasks_sandbox().await;
+
+            let project = project_graph.get("expandEnv").unwrap();
+            let task = project.get_task("envFileWorkspace").unwrap();
+
+            assert_eq!(
+                task.env,
+                FxHashMap::from_iter([("SOURCE".to_owned(), "workspace-level".to_owned()),])
+            );
+
+            dbg!(&task);
+
+            assert!(task.inputs.contains(&"/.env".to_owned()));
+            assert!(task.input_paths.contains(&PathBuf::from(".env")));
         }
 
         #[tokio::test]

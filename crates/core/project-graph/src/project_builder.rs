@@ -15,8 +15,9 @@ use moon_platform_detector::{detect_project_language, detect_task_platform};
 use moon_project::{Project, ProjectDependency, ProjectDependencySource, ProjectError};
 use moon_target::{Target, TargetError, TargetProjectScope};
 use moon_task::{Task, TaskError, TaskFlag};
+use moon_utils::path::expand_to_workspace_relative;
 use moon_utils::regex::{ENV_VAR, ENV_VAR_SUBSTITUTE};
-use moon_utils::{glob, is_ci, path, time};
+use moon_utils::{glob, path, time};
 use moon_workspace::Workspace;
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::Direction;
@@ -354,26 +355,32 @@ impl<'ws> ProjectGraphBuilder<'ws> {
     ) -> Result<(), ProjectGraphError> {
         // Load from env file first
         if let Some(env_file) = &task.options.env_file {
-            let env_path = project.root.join(env_file);
+            let env_path = self.workspace.root.join(expand_to_workspace_relative(
+                env_file,
+                &self.workspace.root,
+                &project.root,
+            ));
+
             let error_handler =
                 |e: dotenvy::Error| TaskError::InvalidEnvFile(env_path.clone(), e.to_string());
 
             // Add as an input
             task.inputs.push(env_file.to_owned());
 
-            // The `.env` file may not have been committed, so avoid crashing in CI
-            if is_ci() && !env_path.exists() {
-                debug!(
-                    target: task.get_log_target(),
-                    "The `envFile` option is enabled but no `.env` file exists in CI, skipping as this may be intentional",
-                );
-            } else {
+            // The `.env` file may not have been committed, so avoid crashing
+            if env_path.exists() {
                 for entry in dotenvy::from_path_iter(&env_path).map_err(error_handler)? {
                     let (key, value) = entry.map_err(error_handler)?;
 
                     // Vars defined in task `env` take precedence over those in the env file
                     task.env.entry(key).or_insert(value);
                 }
+            } else {
+                warn!(
+                    target: task.get_log_target(),
+                    "The `envFile` option is enabled but no {} file exists, skipping as this may be intentional",
+                    color::file(env_file),
+                );
             }
         }
 

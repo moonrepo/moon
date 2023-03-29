@@ -936,8 +936,6 @@ mod task_expansion {
                 FxHashMap::from_iter([("SOURCE".to_owned(), "workspace-level".to_owned()),])
             );
 
-            dbg!(&task);
-
             assert!(task.inputs.contains(&"/.env".to_owned()));
             assert!(task.input_paths.contains(&PathBuf::from(".env")));
         }

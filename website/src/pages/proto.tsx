@@ -69,7 +69,8 @@ export default function ProductProto() {
 										</CodeBlock>
 
 										<Text className="mb-1" variant="muted">
-											Or Windows:
+											Or Windows (<Link href="/docs/proto/install#windows">full instructions</Link>
+											):
 										</Text>
 
 										<CodeBlock language="shell">

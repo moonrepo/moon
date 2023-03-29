@@ -8,6 +8,10 @@ import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
 
 The following guide can be used to install proto into your environment.
 
+## Requirements
+
+- Git >= 2.22
+
 ## Installing
 
 The entirety of proto is packaged and shipped as a single binary. It works on all _most_ operating
@@ -18,13 +22,13 @@ scripts to download and install proto.
 
 In a terminal that supports Bash, run:
 
-```
+```shell
 curl -fsSL https://moonrepo.dev/install/proto.sh | bash
 ```
 
 ### Windows
 
-In Powershell or Windows Terminal, run:
+In an _administrator_ Powershell or Windows Terminal, run:
 
 ```
 irm https://moonrepo.dev/install/proto.ps1 | iex
@@ -32,8 +36,11 @@ irm https://moonrepo.dev/install/proto.ps1 | iex
 
 You'll also need to run the following command for shims to be executable:
 
-```
+```shell
 Set-ExecutionPolicy RemoteSigned
+
+# Without admin privileges
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 ```
 
 > Windows support is currently experimental. Please report any issues!

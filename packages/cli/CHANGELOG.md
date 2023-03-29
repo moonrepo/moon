@@ -7,6 +7,8 @@
 - Updated `envFile` to log a warning instead of triggering an error when `.env.` is missing.
 - Updated `envFile` to support workspace relative paths when prefixed with `/`.
 - Fixed an issue where `.moon/tasks/*.yml` were not scaffolded into `Dockerfile`s.
+- Fixed an issue where a CI environment wasn't detected for some CI providers.
+- Fixed a project cache issue when running tasks inside and outside of a container.
 
 ## 1.0.0
 

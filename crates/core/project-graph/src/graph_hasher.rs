@@ -1,6 +1,6 @@
 use moon_config::{ProjectsAliasesMap, ProjectsSourcesMap};
 use moon_hasher::{hash_btree, Digest, Hasher, Sha256};
-use moon_utils::path;
+use moon_utils::{is_docker_container, path};
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, env};
 
@@ -12,6 +12,11 @@ pub struct GraphHasher {
     configs: BTreeMap<String, String>,
 
     sources: BTreeMap<String, String>,
+
+    // The project graph stores absolute file paths, which breaks moon when
+    // running tasks inside and outside of a container at the same time.
+    // This flag helps to continuously bust the cache.
+    in_container: bool,
 
     // Version of the moon CLI. We need to include this so that the graph
     // cache is invalidated between each release, otherwise internal Rust
@@ -25,6 +30,7 @@ impl GraphHasher {
         GraphHasher {
             aliases: BTreeMap::default(),
             configs: BTreeMap::default(),
+            in_container: is_docker_container(),
             sources: BTreeMap::default(),
             version: env::var("MOON_VERSION").unwrap_or_default(),
         }

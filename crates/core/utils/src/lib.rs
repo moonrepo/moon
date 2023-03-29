@@ -60,7 +60,7 @@ pub fn get_cache_dir() -> PathBuf {
 #[inline]
 pub fn is_ci() -> bool {
     match env::var("CI") {
-        Ok(var) => var == "true",
+        Ok(var) => var != "",
         Err(_) => false,
     }
 }

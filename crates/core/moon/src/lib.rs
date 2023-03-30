@@ -51,9 +51,9 @@ pub fn register_platforms(workspace: &mut Workspace) -> Result<(), WorkspaceErro
 
 /// Loads the workspace from the current working directory.
 pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
-    let current_dir = env::current_dir().expect("Failed to get current directory.");
+    let current_dir = env::current_dir().map_err(|_| WorkspaceError::MissingWorkingDir)?;
 
-    Ok(load_workspace_from(&current_dir).await?)
+    load_workspace_from(&current_dir).await
 }
 
 /// Loads the workspace from a provided directory.

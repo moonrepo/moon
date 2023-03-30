@@ -18,11 +18,11 @@ const LOG_TARGET: &str = "moon:workspace";
 
 /// Recursively attempt to find the workspace root by locating the ".moon"
 /// configuration folder, starting from the current working directory.
-fn find_workspace_root<P: AsRef<Path>>(current_dir: P) -> Option<PathBuf> {
+fn find_workspace_root<P: AsRef<Path>>(current_dir: P) -> Result<PathBuf, WorkspaceError> {
     if let Ok(root) = env::var("MOON_WORKSPACE_ROOT") {
         let root: PathBuf = root.parse().expect("Failed to parse MOON_WORKSPACE_ROOT.");
 
-        return Some(root);
+        return Ok(root);
     }
 
     let current_dir = current_dir.as_ref();
@@ -35,17 +35,17 @@ fn find_workspace_root<P: AsRef<Path>>(current_dir: P) -> Option<PathBuf> {
 
     let Some(possible_root) = fs::find_upwards(constants::CONFIG_DIRNAME, current_dir)
         .map(|dir| dir.parent().unwrap().to_path_buf()) else {
-        return None;
+        return Err(WorkspaceError::MissingConfigDir);
     };
 
     // Avoid finding the ~/.moon directory
-    if let Some(home_dir) = path::get_home_dir() {
-        if home_dir == possible_root {
-            return None;
-        }
+    let home_dir = path::get_home_dir().ok_or(WorkspaceError::MissingHomeDir)?;
+
+    if home_dir == possible_root {
+        return Err(WorkspaceError::MissingConfigDir);
     }
 
-    Some(possible_root)
+    Ok(possible_root)
 }
 
 // .moon/tasks.yml, .moon/tasks/*.yml
@@ -210,9 +210,7 @@ impl Workspace {
     /// Will locate the workspace root and load available configuration files.
     pub fn load_from<P: AsRef<Path>>(working_dir: P) -> Result<Workspace, WorkspaceError> {
         let working_dir = working_dir.as_ref();
-        let Some(root_dir) = find_workspace_root(working_dir) else {
-            return Err(WorkspaceError::MissingConfigDir);
-        };
+        let root_dir = find_workspace_root(working_dir)?;
 
         debug!(
             target: LOG_TARGET,

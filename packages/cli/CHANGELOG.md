@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where workspace root finding will locate `~/.moon`.
+
 ## 1.0.1
 
 #### 🐞 Fixes

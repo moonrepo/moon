@@ -7,7 +7,7 @@ use moon_config::{
 use moon_constants as constants;
 use moon_logger::{color, debug, trace};
 use moon_platform::{BoxedPlatform, PlatformManager};
-use moon_utils::{fs, glob, semver};
+use moon_utils::{fs, glob, path, semver};
 use moon_vcs::{BoxedVcs, VcsLoader};
 use moonbase::Moonbase;
 use proto::{get_root, Config as ProtoTools, CONFIG_NAME};
@@ -33,8 +33,19 @@ fn find_workspace_root<P: AsRef<Path>>(current_dir: P) -> Option<PathBuf> {
         color::path(current_dir),
     );
 
-    fs::find_upwards(constants::CONFIG_DIRNAME, current_dir)
-        .map(|dir| dir.parent().unwrap().to_path_buf())
+    let Some(possible_root) = fs::find_upwards(constants::CONFIG_DIRNAME, current_dir)
+        .map(|dir| dir.parent().unwrap().to_path_buf()) else {
+        return None;
+    };
+
+    // Avoid finding the ~/.moon directory
+    if let Some(home_dir) = path::get_home_dir() {
+        if home_dir == possible_root {
+            return None;
+        }
+    }
+
+    Some(possible_root)
 }
 
 // .moon/tasks.yml, .moon/tasks/*.yml

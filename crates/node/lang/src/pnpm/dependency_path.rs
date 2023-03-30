@@ -259,4 +259,18 @@ mod tests {
             }
         );
     }
+
+    #[test]
+    fn parses_many_peers() {
+        assert_eq!(
+            PnpmDependencyPath::parse("/@pnpm/default-reporter@11.0.45(@pnpm/logger@5.0.0)(@yarnpkg/core@4.0.0-rc.14)(typanion@3.12.1)"),
+            PnpmDependencyPath {
+                host: None,
+                is_absolute: false,
+                name: Some("@pnpm/default-reporter".to_string()),
+                peers_suffix: Some("(@pnpm/logger@5.0.0)(@yarnpkg/core@4.0.0-rc.14)(typanion@3.12.1)".to_string()),
+                version: Some("11.0.45".to_string()),
+            }
+        );
+    }
 }

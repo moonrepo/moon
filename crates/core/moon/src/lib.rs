@@ -58,30 +58,30 @@ pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
 
 /// Loads the workspace from a provided directory.
 pub async fn load_workspace_from(path: &Path) -> Result<Workspace, WorkspaceError> {
-    match Workspace::load_from(path) {
-        Ok(mut workspace) => {
+    let mut workspace = match Workspace::load_from(path) {
+        Ok(workspace) => {
             set_telemetry(workspace.config.telemetry);
-
-            register_platforms(&mut workspace)?;
-
-            if !is_test_env() {
-                if workspace.vcs.is_enabled() {
-                    if let Ok(slug) = workspace.vcs.get_repository_slug().await {
-                        env::set_var("MOON_REPO_SLUG", slug);
-                    }
-                }
-
-                workspace.signin_to_moonbase().await?;
-            }
-
-            Ok(workspace)
+            workspace
         }
         Err(err) => {
             set_telemetry(false);
-
-            Err(err)
+            return Err(err);
         }
+    };
+
+    register_platforms(&mut workspace)?;
+
+    if !is_test_env() {
+        if workspace.vcs.is_enabled() {
+            if let Ok(slug) = workspace.vcs.get_repository_slug().await {
+                env::set_var("MOON_REPO_SLUG", slug);
+            }
+        }
+
+        workspace.signin_to_moonbase().await?;
     }
+
+    Ok(workspace)
 }
 
 // Some commands require the toolchain to exist, but don't use

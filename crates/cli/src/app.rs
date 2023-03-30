@@ -281,7 +281,7 @@ pub enum Commands {
     // moon dep-graph [target]
     #[command(
         name = "dep-graph",
-        about = "Display a dependency graph of all tasks and actions in DOT format.",
+        about = "Display an interactive dependency graph of all tasks and actions.",
         alias = "dg"
     )]
     DepGraph {
@@ -291,7 +291,7 @@ pub enum Commands {
         #[arg(long, help = "Print the graph in DOT format")]
         dot: bool,
 
-        #[arg(long, help = "Print the graph data in JSON format")]
+        #[arg(long, help = "Print the graph in JSON format")]
         json: bool,
     },
 
@@ -312,7 +312,7 @@ pub enum Commands {
     // moon project-graph [id]
     #[command(
         name = "project-graph",
-        about = "Display a graph of projects in DOT format.",
+        about = "Display an interactive graph of projects.",
         alias = "pg"
     )]
     ProjectGraph {
@@ -322,7 +322,7 @@ pub enum Commands {
         #[arg(long, help = "Print the graph in DOT format")]
         dot: bool,
 
-        #[arg(long, help = "Print the graph data in JSON format")]
+        #[arg(long, help = "Print the graph in JSON format")]
         json: bool,
     },
 

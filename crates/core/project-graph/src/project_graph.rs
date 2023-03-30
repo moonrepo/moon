@@ -83,11 +83,8 @@ impl ProjectGraph {
 
         let file = if current_file == workspace_root {
             PathBuf::from(".")
-        } else if current_file.starts_with(&workspace_root) {
-            current_file
-                .strip_prefix(&workspace_root)
-                .unwrap()
-                .to_path_buf()
+        } else if let Ok(rel_file) = current_file.strip_prefix(&workspace_root) {
+            rel_file.to_path_buf()
         } else {
             current_file.to_path_buf()
         };

@@ -7,7 +7,6 @@ use clap::{Parser, Subcommand};
 use clap_complete::Shell;
 use moon_action_context::ProfileType;
 use moon_config::{FileGlob, ProjectID};
-use moon_task::TargetID;
 use std::path::PathBuf;
 
 pub const BIN_NAME: &str = if cfg!(windows) { "moon.exe" } else { "moon" };
@@ -424,7 +423,7 @@ pub enum Commands {
     )]
     Run {
         #[arg(required = true, help = "List of targets (project:task) to run")]
-        targets: Vec<TargetID>,
+        targets: Vec<String>,
 
         #[arg(
             long,

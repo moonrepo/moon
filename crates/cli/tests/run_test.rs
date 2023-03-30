@@ -360,6 +360,21 @@ mod target_scopes {
     }
 
     #[test]
+    fn errors_for_cwd() {
+        let sandbox = cases_sandbox();
+
+        fs::create_dir(sandbox.path().join("fakeDir")).unwrap();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("taskName")
+                .current_dir(sandbox.path().join("fakeDir"));
+        });
+
+        assert_snapshot!(assert.output());
+    }
+
+    #[test]
     fn supports_all_scope() {
         let sandbox = cases_sandbox();
         sandbox.enable_git();
@@ -406,6 +421,58 @@ mod target_scopes {
         assert!(predicate::str::contains("scope=self").eval(&output));
         assert!(predicate::str::contains("targetScopeB:selfOther").eval(&output));
         assert!(predicate::str::contains("selfOther").eval(&output));
+        assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
+    }
+
+    #[test]
+    fn runs_closest_project_task_from_cwd() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("runFromProject")
+                .current_dir(sandbox.path().join("base"));
+        });
+        let output = assert.output();
+
+        assert!(predicate::str::contains("base:runFromProject").eval(&output));
+        assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+    }
+
+    #[test]
+    fn runs_multiple_tasks_from_cwd() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("runFromProject")
+                .arg("localOnly")
+                .current_dir(sandbox.path().join("base"));
+        });
+        let output = assert.output();
+
+        assert!(predicate::str::contains("base:runFromProject").eval(&output));
+        assert!(predicate::str::contains("base:localOnly").eval(&output));
+        assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
+    }
+
+    #[test]
+    fn can_mix_cwd_tasks_and_targets() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg("runFromProject")
+                .arg("noop:noop")
+                .current_dir(sandbox.path().join("base"));
+        });
+        let output = assert.output();
+
+        assert!(predicate::str::contains("base:runFromProject").eval(&output));
+        assert!(predicate::str::contains("noop:noop").eval(&output));
         assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
     }
 }

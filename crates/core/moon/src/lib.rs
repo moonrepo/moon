@@ -21,6 +21,11 @@ pub fn is_telemetry_enabled() -> bool {
     TELEMETRY.load(Ordering::Relaxed)
 }
 
+pub fn set_telemetry(state: bool) {
+    TELEMETRY.store(state, Ordering::Relaxed);
+    TELEMETRY_READY.store(true, Ordering::Release);
+}
+
 pub fn register_platforms(workspace: &mut Workspace) -> Result<(), WorkspaceError> {
     if let Some(deno_config) = &workspace.toolchain_config.deno {
         workspace.register_platform(Box::new(DenoPlatform::new(
@@ -44,41 +49,39 @@ pub fn register_platforms(workspace: &mut Workspace) -> Result<(), WorkspaceErro
     Ok(())
 }
 
-async fn setup_workspace(workspace: &mut Workspace) -> Result<(), WorkspaceError> {
-    TELEMETRY.store(workspace.config.telemetry, Ordering::Relaxed);
-    TELEMETRY_READY.store(true, Ordering::Release);
-
-    register_platforms(workspace)?;
-
-    if !is_test_env() {
-        if workspace.vcs.is_enabled() {
-            if let Ok(slug) = workspace.vcs.get_repository_slug().await {
-                env::set_var("MOON_REPO_SLUG", slug);
-            }
-        }
-
-        workspace.signin_to_moonbase().await?;
-    }
-
-    Ok(())
-}
-
 /// Loads the workspace from the current working directory.
 pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
-    let mut workspace = Workspace::load()?;
+    let current_dir = env::current_dir().expect("Failed to get current directory.");
 
-    setup_workspace(&mut workspace).await?;
-
-    Ok(workspace)
+    Ok(load_workspace_from(&current_dir).await?)
 }
 
 /// Loads the workspace from a provided directory.
 pub async fn load_workspace_from(path: &Path) -> Result<Workspace, WorkspaceError> {
-    let mut workspace = Workspace::load_from(path)?;
+    match Workspace::load_from(path) {
+        Ok(mut workspace) => {
+            set_telemetry(workspace.config.telemetry);
 
-    setup_workspace(&mut workspace).await?;
+            register_platforms(&mut workspace)?;
 
-    Ok(workspace)
+            if !is_test_env() {
+                if workspace.vcs.is_enabled() {
+                    if let Ok(slug) = workspace.vcs.get_repository_slug().await {
+                        env::set_var("MOON_REPO_SLUG", slug);
+                    }
+                }
+
+                workspace.signin_to_moonbase().await?;
+            }
+
+            Ok(workspace)
+        }
+        Err(err) => {
+            set_telemetry(false);
+
+            Err(err)
+        }
+    }
 }
 
 // Some commands require the toolchain to exist, but don't use

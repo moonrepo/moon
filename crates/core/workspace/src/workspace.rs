@@ -208,10 +208,6 @@ pub struct Workspace {
 impl Workspace {
     /// Create a new workspace instance starting from the current working directory.
     /// Will locate the workspace root and load available configuration files.
-    pub fn load() -> Result<Workspace, WorkspaceError> {
-        Workspace::load_from(env::current_dir().unwrap())
-    }
-
     pub fn load_from<P: AsRef<Path>>(working_dir: P) -> Result<Workspace, WorkspaceError> {
         let working_dir = working_dir.as_ref();
         let Some(root_dir) = find_workspace_root(working_dir) else {

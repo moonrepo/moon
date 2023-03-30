@@ -1,0 +1,9 @@
+---
+source: crates/cli/tests/run_test.rs
+expression: assert.output()
+---
+
+ ERROR  No project could be located starting from path fakeDir.
+
+
+

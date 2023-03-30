@@ -1,0 +1,24 @@
+---
+slug: moon-v1.1
+title: moon v1.1 - ???
+authors: [milesj]
+tags: []
+# image: ./img/moon/v1.1.png
+---
+
+???
+
+<!--truncate-->
+
+# Run targets in closes project
+
+The [`moon run`](/docs/commands/run) command can run targets in an array of different formats, but
+it was unable to run targets based on the current working directory. Well no more! You can now run
+tasks for the closest project based on file path by omitting `:` from the target name.
+
+```shell
+$ cd packages/components
+
+# Runs `components:build` internally
+$ moon run build
+```

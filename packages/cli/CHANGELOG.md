@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated `moon run` to run tasks in the closest project based on current working directory.
+
 ## 1.0.3
 
 #### 🚀 Updates

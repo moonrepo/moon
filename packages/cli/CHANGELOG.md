@@ -6,6 +6,10 @@
 
 - Updated `moon run` to run tasks in the closest project based on current working directory.
 
+#### ⚙️ Internal
+
+- Support pnpm v8's new lockfile format.
+
 ## 1.0.3
 
 #### 🚀 Updates

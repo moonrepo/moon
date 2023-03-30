@@ -15,13 +15,17 @@ $ moon run app:lint server:lint
 
 # Run `lint` in all projects
 $ moon run :lint
+
+# Run `lint` in closest project (`client`)
+$ cd apps/client
+$ moon run lint
 ```
 
 > View the official [Run a task](../run-task) article for more information!
 
 ### Arguments
 
-- `...<target>` - [Targets](../concepts/target) to run.
+- `...<target>` - [Targets](../concepts/target) or project relative tasks to run.
 - `[-- <args>]` - Additional arguments to
   [pass to the underlying command](../run-task#passing-arguments-to-the-underlying-command).
 

@@ -23,6 +23,7 @@ pub trait ExtendedTerm {
     // RENDERERS
 
     fn render_entry<K: AsRef<str>, V: AsRef<str>>(&self, key: K, value: V) -> TermWriteResult;
+    fn render_entry_bool<K: AsRef<str>>(&self, key: K, value: bool) -> TermWriteResult;
     fn render_entry_list<K: AsRef<str>, V: AsRef<[String]>>(
         &self,
         key: K,
@@ -70,6 +71,10 @@ impl ExtendedTerm for Term {
         self.write_line(&format!("{} {}", label, value.as_ref()))
     }
 
+    fn render_entry_bool<K: AsRef<str>>(&self, key: K, value: bool) -> TermWriteResult {
+        self.render_entry(key, if value { "Yes" } else { "No" })
+    }
+
     fn render_entry_list<K: AsRef<str>, V: AsRef<[String]>>(
         &self,
         key: K,
@@ -113,7 +118,10 @@ impl ExtendedTerm for Term {
     }
 
     fn render_list<V: AsRef<[String]>>(&self, values: V) -> TermWriteResult {
-        for value in values.as_ref() {
+        let mut values = values.as_ref().to_owned();
+        values.sort();
+
+        for value in values {
             self.write_line(&format!(" {} {}", color::muted("-"), value))?;
         }
 

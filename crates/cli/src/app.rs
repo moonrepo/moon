@@ -6,7 +6,7 @@ use crate::enums::{CacheMode, LogLevel, TouchedStatus};
 use clap::{Parser, Subcommand};
 use clap_complete::Shell;
 use moon_action_context::ProfileType;
-use moon_config::{FileGlob, ProjectID};
+use moon_config::{FileGlob, ProjectID, TargetID};
 use std::path::PathBuf;
 
 pub const BIN_NAME: &str = if cfg!(windows) { "moon.exe" } else { "moon" };
@@ -331,6 +331,20 @@ pub enum Commands {
         about = "Sync all projects in the workspace to a healthy state."
     )]
     Sync,
+
+    // moon task <id>
+    #[command(
+        name = "task",
+        about = "Display information about a single task.",
+        alias = "t"
+    )]
+    Task {
+        #[arg(help = "Target of task to display")]
+        id: TargetID,
+
+        #[arg(long, help = "Print in JSON format")]
+        json: bool,
+    },
 
     // GENERATOR
 

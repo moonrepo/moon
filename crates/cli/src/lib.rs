@@ -20,6 +20,7 @@ use crate::commands::query::{self, QueryProjectsOptions, QueryTouchedFilesOption
 use crate::commands::run::{run, RunOptions};
 use crate::commands::setup::setup;
 use crate::commands::sync::sync;
+use crate::commands::task::task;
 use crate::commands::teardown::teardown;
 use crate::commands::upgrade::upgrade;
 use crate::helpers::{check_for_new_version, setup_colors};
@@ -299,6 +300,7 @@ pub async fn run_cli() {
         }
         Commands::Setup => setup().await,
         Commands::Sync => sync().await,
+        Commands::Task { id, json } => task(id, json).await,
         Commands::Teardown => teardown().await,
         Commands::Upgrade => upgrade().await,
     };

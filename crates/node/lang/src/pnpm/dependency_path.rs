@@ -206,6 +206,16 @@ mod tests {
                 version: Some("1.0.0".to_string()),
             }
         );
+        assert_eq!(
+            PnpmDependencyPath::parse("/foo/1.0.0(@types/babel__core@7.1.14)(foo@1.0.0)"),
+            PnpmDependencyPath {
+                host: None,
+                is_absolute: false,
+                name: Some("foo".to_string()),
+                peers_suffix: Some("(@types/babel__core@7.1.14)(foo@1.0.0)".to_string()),
+                version: Some("1.0.0".to_string()),
+            }
+        );
     }
 
     #[test]
@@ -232,6 +242,20 @@ mod tests {
                 name: Some("foo".to_string()),
                 peers_suffix: Some("(@types/babel__core@7.1.14)(foo@1.0.0)".to_string()),
                 version: Some("1.0.0".to_string()),
+            }
+        );
+    }
+
+    #[test]
+    fn parses_with_peer_deps_hash() {
+        assert_eq!(
+            PnpmDependencyPath::parse("/ts-node/10.9.1_xl7wyiapi7jo5c2pfz5vjm55na"),
+            PnpmDependencyPath {
+                host: None,
+                is_absolute: false,
+                name: Some("ts-node".to_string()),
+                peers_suffix: Some("xl7wyiapi7jo5c2pfz5vjm55na".to_string()),
+                version: Some("10.9.1".to_string()),
             }
         );
     }

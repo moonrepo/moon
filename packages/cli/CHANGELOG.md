@@ -23,6 +23,7 @@
 
 - Updated the installer scripts and the `moon upgrade` command to install the `moon` binary to
   `~/.moon/bin`.
+- Removed Homebrew support.
 
 #### 🚀 Updates
 

@@ -349,7 +349,7 @@ impl<'ws> DepGraphBuilder<'ws> {
 
             for target_id in project_targets {
                 qualified_targets.extend(
-                    self.run_target(Target::new(&project.id, &target_id)?, touched_files)?
+                    self.run_target(Target::new(&project.id, target_id)?, touched_files)?
                         .0,
                 );
             }

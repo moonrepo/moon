@@ -21,6 +21,11 @@ pub fn is_telemetry_enabled() -> bool {
     TELEMETRY.load(Ordering::Relaxed)
 }
 
+pub fn set_telemetry(state: bool) {
+    TELEMETRY.store(state, Ordering::Relaxed);
+    TELEMETRY_READY.store(true, Ordering::Release);
+}
+
 pub fn register_platforms(workspace: &mut Workspace) -> Result<(), WorkspaceError> {
     if let Some(deno_config) = &workspace.toolchain_config.deno {
         workspace.register_platform(Box::new(DenoPlatform::new(
@@ -44,11 +49,27 @@ pub fn register_platforms(workspace: &mut Workspace) -> Result<(), WorkspaceErro
     Ok(())
 }
 
-async fn setup_workspace(workspace: &mut Workspace) -> Result<(), WorkspaceError> {
-    TELEMETRY.store(workspace.config.telemetry, Ordering::Relaxed);
-    TELEMETRY_READY.store(true, Ordering::Release);
+/// Loads the workspace from the current working directory.
+pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
+    let current_dir = env::current_dir().map_err(|_| WorkspaceError::MissingWorkingDir)?;
 
-    register_platforms(workspace)?;
+    load_workspace_from(&current_dir).await
+}
+
+/// Loads the workspace from a provided directory.
+pub async fn load_workspace_from(path: &Path) -> Result<Workspace, WorkspaceError> {
+    let mut workspace = match Workspace::load_from(path) {
+        Ok(workspace) => {
+            set_telemetry(workspace.config.telemetry);
+            workspace
+        }
+        Err(err) => {
+            set_telemetry(false);
+            return Err(err);
+        }
+    };
+
+    register_platforms(&mut workspace)?;
 
     if !is_test_env() {
         if workspace.vcs.is_enabled() {
@@ -59,24 +80,6 @@ async fn setup_workspace(workspace: &mut Workspace) -> Result<(), WorkspaceError
 
         workspace.signin_to_moonbase().await?;
     }
-
-    Ok(())
-}
-
-/// Loads the workspace from the current working directory.
-pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
-    let mut workspace = Workspace::load()?;
-
-    setup_workspace(&mut workspace).await?;
-
-    Ok(workspace)
-}
-
-/// Loads the workspace from a provided directory.
-pub async fn load_workspace_from(path: &Path) -> Result<Workspace, WorkspaceError> {
-    let mut workspace = Workspace::load_from(path)?;
-
-    setup_workspace(&mut workspace).await?;
 
     Ok(workspace)
 }

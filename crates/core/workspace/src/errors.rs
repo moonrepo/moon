@@ -17,6 +17,9 @@ pub enum WorkspaceError {
     #[error("Unable to determine your home directory.")]
     MissingHomeDir,
 
+    #[error("Unable to determine your current working directory.")]
+    MissingWorkingDir,
+
     #[error(
         "Unable to locate <file>{}/{}</file> configuration file.",
         constants::CONFIG_DIRNAME,

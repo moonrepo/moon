@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where `moon run` or `moon check` would hang when not running in a workspace.
+- Fixed an issue where workspace root finding will locate `~/.moon`.
+
 ## 1.0.1
 
 #### 🐞 Fixes

@@ -330,11 +330,29 @@ impl<'ws> DepGraphBuilder<'ws> {
         touched_files: Option<&TouchedFilePaths>,
     ) -> Result<Vec<Target>, DepGraphError> {
         let mut qualified_targets = vec![];
+        let mut project_targets = vec![];
 
         for target_id in target_ids {
-            let (targets, _) = self.run_target(Target::parse(target_id)?, touched_files)?;
+            // Target (with possible scope) provided
+            if target_id.contains(':') {
+                qualified_targets
+                    .extend(self.run_target(Target::parse(target_id)?, touched_files)?.0);
+            // Task name provided, find closest project
+            } else {
+                project_targets.push(target_id);
+            }
+        }
 
-            qualified_targets.extend(targets);
+        if !project_targets.is_empty() {
+            let cwd = std::env::current_dir().unwrap();
+            let project = self.project_graph.get_from_path(&cwd)?;
+
+            for target_id in project_targets {
+                qualified_targets.extend(
+                    self.run_target(Target::new(&project.id, target_id)?, touched_files)?
+                        .0,
+                );
+            }
         }
 
         Ok(qualified_targets)

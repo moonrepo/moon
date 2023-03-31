@@ -46,7 +46,7 @@ impl Moonbase {
             color::id(&slug),
         );
 
-        let data = post_request(
+        let data: Result<Response<SigninResponse>, MoonbaseError> = post_request(
             "auth/repository/signin",
             SigninInput {
                 organization_key: secret_key,

@@ -18,13 +18,6 @@ pub fn endpoint<P: AsRef<str>>(path: P) -> String {
     )
 }
 
-pub fn parse_response<O>(data: String) -> Result<O, MoonbaseError>
-where
-    O: DeserializeOwned,
-{
-    serde_json::from_str(&data).map_err(|e| MoonbaseError::JsonDeserializeFailure(e.to_string()))
-}
-
 pub async fn fetch<O>(request: RequestBuilder, token: Option<&str>) -> Result<O, MoonbaseError>
 where
     O: DeserializeOwned,
@@ -40,7 +33,7 @@ where
     }
 
     let response = request.send().await?;
-    let data: O = parse_response(response.text().await?)?;
+    let data = response.json::<O>().await?;
 
     Ok(data)
 }

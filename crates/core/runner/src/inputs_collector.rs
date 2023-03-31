@@ -150,23 +150,24 @@ pub async fn collect_and_hash_inputs(
         }
     }
 
-    // 2: Convert to workspace relative paths and extract file hashes
+    // 2: Convert to workspace relative paths and filter out invalid inputs
 
-    let mut hashed_inputs: HashedInputs = BTreeMap::new();
-    let files_to_hash = convert_paths_to_strings(
+    let mut files_to_hash = convert_paths_to_strings(
         task.get_log_target(),
         hasher_config.warn_on_missing_inputs,
         &files_to_hash,
         workspace_root,
     )?;
 
+    files_to_hash.retain(|f| is_valid_input_source(task, &globset, f));
+
+    // 3: Extract hashes
+
+    let mut hashed_inputs: HashedInputs = BTreeMap::new();
+
     if !files_to_hash.is_empty() {
         hashed_inputs.extend(vcs.get_file_hashes(&files_to_hash, true).await?);
     }
-
-    // 3: Filter hashes to applicable inputs
-
-    hashed_inputs.retain(|f, _| is_valid_input_source(task, &globset, f));
 
     // 4: Normalize input key paths
 

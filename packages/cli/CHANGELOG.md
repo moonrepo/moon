@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where non-input matching files were being passed to `git hash-object` during the
+  inputs collection process. For large projects, you'll see improved performance.
+- Fixed an issue where root-level input globs were not matching correctly when `hasher.walkStrategy`
+  was "vcs".
+
+#### ⚙️ Internal
+
+- Upgraded to proto v0.4.
+
 ## 1.0.2
 
 #### 🐞 Fixes

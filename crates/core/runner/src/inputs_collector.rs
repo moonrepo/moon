@@ -127,13 +127,7 @@ pub async fn collect_and_hash_inputs(
             let workspace_globs = task
                 .input_globs
                 .iter()
-                .filter_map(|g| {
-                    if g.starts_with(&project_source) {
-                        None
-                    } else {
-                        Some(g)
-                    }
-                })
+                .filter(|g| !g.starts_with(&project_source))
                 .collect::<Vec<_>>();
 
             if !workspace_globs.is_empty() {

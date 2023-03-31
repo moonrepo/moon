@@ -1,6 +1,6 @@
 import React from 'react';
 
-const LANGS = ['bun', 'deno', 'node', 'go'];
+const LANGS = ['bun', 'deno', 'node', 'go', 'rust'];
 
 function random(min: number, max: number) {
 	const minimum = Math.ceil(min);
@@ -66,6 +66,16 @@ export default function HeroTerminal() {
 
 					<li className="text-gray-800 pt-2"># Use immediately</li>
 					<li>go run .</li>
+				</React.Fragment>
+			)}
+
+			{lang === 'rust' && (
+				<React.Fragment key="rust">
+					<li className="text-gray-800 pt-2"># Install Rust (requires rustup)</li>
+					<li>proto install rust 1.68</li>
+
+					<li className="text-gray-800 pt-2"># Use immediately</li>
+					<li>cargo build</li>
 				</React.Fragment>
 			)}
 		</ul>

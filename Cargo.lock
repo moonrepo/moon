@@ -2187,6 +2187,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "lzma-sys"
+version = "0.1.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5fda04ab3764e6cde78b9974eec4f779acaba7c4e84b36eca3cf77c581b85d27"
+dependencies = [
+ "cc",
+ "libc",
+ "pkg-config",
+]
+
+[[package]]
 name = "matches"
 version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3638,9 +3649,9 @@ dependencies = [
 
 [[package]]
 name = "proto_bun"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "98ca8b896e6ec80cfb3e9bed1879c23466a93d054b6b9a512be231bc2db97ecf"
+checksum = "9054fbfb31b9bf694d5cb6b072dfc67896f1138e2a20633bac8946387e6d1cc4"
 dependencies = [
  "log",
  "proto_core",
@@ -3650,9 +3661,9 @@ dependencies = [
 
 [[package]]
 name = "proto_cli"
-version = "0.3.2"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d0285c66ada55658bcd55ce19b2e90517fbad94e6377b0fd0a9e9d1d45fdf78"
+checksum = "346097e1d435a3f6aa006efe771add17dd25863b02488bc3447d80c121794a7f"
 dependencies = [
  "async-recursion",
  "clap 4.1.12",
@@ -3661,21 +3672,26 @@ dependencies = [
  "env_logger",
  "futures",
  "human-sort",
+ "indicatif",
  "log",
  "proto_bun",
  "proto_core",
  "proto_deno",
  "proto_go",
  "proto_node",
+ "proto_rust",
+ "reqwest",
  "rustc-hash",
+ "semver",
  "tokio",
+ "winreg 0.11.0",
 ]
 
 [[package]]
 name = "proto_core"
-version = "0.3.1"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b52dfa7b9e7cf48c2dd8b432e539fea4012379f157be6f464df29dca0d8039ef"
+checksum = "ef29b6ff505e92f9779c0e218f1498f2bbfb09f42f8b5d8229864c94d75a6821"
 dependencies = [
  "async-trait",
  "cached",
@@ -3696,14 +3712,15 @@ dependencies = [
  "tinytemplate",
  "tokio",
  "toml",
+ "xz2",
  "zip",
 ]
 
 [[package]]
 name = "proto_deno"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "84cf43eba43147eff296df88028570fa6b84ea9bf58363daf643a3328191b0c2"
+checksum = "8112db42484888a9b9af348109e537aa2f258577c3568e1a043d050179758a4a"
 dependencies = [
  "log",
  "proto_core",
@@ -3713,9 +3730,9 @@ dependencies = [
 
 [[package]]
 name = "proto_go"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3cb48c3392e4fd6a2c674a02338e5cd55e962118c311802ecbae8164e364141"
+checksum = "6338f762a07749de3445bf30846a997caa2ad5ef1976af248f027edaff4bd0de"
 dependencies = [
  "log",
  "proto_core",
@@ -3725,9 +3742,9 @@ dependencies = [
 
 [[package]]
 name = "proto_node"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9cd014faedd95abd49214fff4b64c2eda7e992cc1b5e9beefb48aaa9de3fa46"
+checksum = "5f5cd1f8caba92215441e5dc6611f516b062f34f81959213bc3fab90e15cf888"
 dependencies = [
  "clean-path",
  "log",
@@ -3735,6 +3752,17 @@ dependencies = [
  "rustc-hash",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "proto_rust"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "25a60dfe570b037e4294a9b63f030f1247064562cdfaa90ce848372e99e4aecc"
+dependencies = [
+ "log",
+ "proto_core",
+ "tokio",
 ]
 
 [[package]]
@@ -3883,7 +3911,7 @@ dependencies = [
  "wasm-streams",
  "web-sys",
  "webpki-roots",
- "winreg",
+ "winreg 0.10.1",
 ]
 
 [[package]]
@@ -5233,12 +5261,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "winreg"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "76a1a57ff50e9b408431e8f97d5456f2807f8eb2a2cd79b06068fc87f8ecf189"
+dependencies = [
+ "cfg-if",
+ "winapi",
+]
+
+[[package]]
 name = "xattr"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6d1526bbe5aaeb5eb06885f4d987bcdfa5e23187055de9b83fe00156a821fabc"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "xz2"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "388c44dc09d76f1536602ead6d325eb532f5c122f17782bd57fb47baeeb767e2"
+dependencies = [
+ "lzma-sys",
 ]
 
 [[package]]

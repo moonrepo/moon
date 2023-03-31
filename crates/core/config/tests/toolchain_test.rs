@@ -2,16 +2,16 @@ use httpmock::prelude::*;
 use moon_config::{ConfigError, NodeConfig, ToolchainConfig};
 use moon_constants::CONFIG_TOOLCHAIN_FILENAME;
 use moon_test_utils::get_fixtures_path;
-use proto::Config as ProtoTools;
+use proto::ToolsConfig;
 use std::{collections::BTreeMap, path::Path};
 
 fn load_jailed_config(root: &Path) -> Result<ToolchainConfig, figment::Error> {
-    load_jailed_config_with_proto(root, ProtoTools::default())
+    load_jailed_config_with_proto(root, ToolsConfig::default())
 }
 
 fn load_jailed_config_with_proto(
     root: &Path,
-    proto_tools: ProtoTools,
+    proto_tools: ToolsConfig,
 ) -> Result<ToolchainConfig, figment::Error> {
     match ToolchainConfig::load(root.join(CONFIG_TOOLCHAIN_FILENAME), &proto_tools) {
         Ok(cfg) => Ok(cfg),
@@ -55,7 +55,7 @@ mod proto_tools {
         figment::Jail::expect_with(|jail| {
             jail.create_file(super::CONFIG_TOOLCHAIN_FILENAME, "{}")?;
 
-            let mut proto = ProtoTools::default();
+            let mut proto = ToolsConfig::default();
             proto.tools.insert("deno".to_owned(), "1.30.0".to_owned());
 
             let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
@@ -71,7 +71,7 @@ mod proto_tools {
         figment::Jail::expect_with(|jail| {
             jail.create_file(super::CONFIG_TOOLCHAIN_FILENAME, "{}")?;
 
-            let mut proto = ProtoTools::default();
+            let mut proto = ToolsConfig::default();
             proto.tools.insert("node".to_owned(), "16.16.0".to_owned());
 
             let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
@@ -88,7 +88,7 @@ mod proto_tools {
         figment::Jail::expect_with(|jail| {
             jail.create_file(super::CONFIG_TOOLCHAIN_FILENAME, "{}")?;
 
-            let mut proto = ProtoTools::default();
+            let mut proto = ToolsConfig::default();
             proto.tools.insert("node".to_owned(), "16.16.0".to_owned());
             proto.tools.insert("npm".to_owned(), "9.0.0".to_owned());
 
@@ -111,7 +111,7 @@ node:
     packageManager: 'pnpm'"#,
             )?;
 
-            let mut proto = ProtoTools::default();
+            let mut proto = ToolsConfig::default();
             proto.tools.insert("node".to_owned(), "16.16.0".to_owned());
             proto.tools.insert("pnpm".to_owned(), "7.0.0".to_owned());
 
@@ -138,7 +138,7 @@ node:
     packageManager: 'yarn'"#,
             )?;
 
-            let mut proto = ProtoTools::default();
+            let mut proto = ToolsConfig::default();
             proto.tools.insert("node".to_owned(), "16.16.0".to_owned());
             proto.tools.insert("yarn".to_owned(), "3.0.0".to_owned());
 
@@ -160,7 +160,7 @@ node:
         figment::Jail::expect_with(|jail| {
             jail.create_file(super::CONFIG_TOOLCHAIN_FILENAME, "node: {}")?;
 
-            let mut proto = ProtoTools::default();
+            let mut proto = ToolsConfig::default();
             proto.tools.insert("node".to_owned(), "16.16.0".to_owned());
 
             let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
@@ -183,7 +183,7 @@ node:
     npm: {}"#,
             )?;
 
-            let mut proto = ProtoTools::default();
+            let mut proto = ToolsConfig::default();
             proto.tools.insert("node".to_owned(), "16.16.0".to_owned());
             proto.tools.insert("npm".to_owned(), "9.0.0".to_owned());
 
@@ -207,7 +207,7 @@ node:
     pnpm: {}"#,
             )?;
 
-            let mut proto = ProtoTools::default();
+            let mut proto = ToolsConfig::default();
             proto.tools.insert("node".to_owned(), "16.16.0".to_owned());
             proto.tools.insert("pnpm".to_owned(), "7.0.0".to_owned());
 
@@ -231,7 +231,7 @@ node:
     yarn: {}"#,
             )?;
 
-            let mut proto = ProtoTools::default();
+            let mut proto = ToolsConfig::default();
             proto.tools.insert("node".to_owned(), "16.16.0".to_owned());
             proto.tools.insert("yarn".to_owned(), "3.0.0".to_owned());
 
@@ -252,7 +252,7 @@ node:
                 "node:\n  version: '18.0.0'",
             )?;
 
-            let mut proto = ProtoTools::default();
+            let mut proto = ToolsConfig::default();
             proto.tools.insert("node".to_owned(), "16.16.0".to_owned());
 
             let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
@@ -276,7 +276,7 @@ node:
         version: '9.0.0'"#,
             )?;
 
-            let mut proto = ProtoTools::default();
+            let mut proto = ToolsConfig::default();
             proto.tools.insert("node".to_owned(), "16.16.0".to_owned());
             proto.tools.insert("npm".to_owned(), "1.2.3".to_owned());
 
@@ -301,7 +301,7 @@ node:
         version: '7.0.0'"#,
             )?;
 
-            let mut proto = ProtoTools::default();
+            let mut proto = ToolsConfig::default();
             proto.tools.insert("node".to_owned(), "16.16.0".to_owned());
             proto.tools.insert("pnpm".to_owned(), "1.2.3".to_owned());
 
@@ -326,7 +326,7 @@ node:
         version: '3.0.0'"#,
             )?;
 
-            let mut proto = ProtoTools::default();
+            let mut proto = ToolsConfig::default();
             proto.tools.insert("node".to_owned(), "16.16.0".to_owned());
             proto.tools.insert("yarn".to_owned(), "1.2.3".to_owned());
 
@@ -350,7 +350,7 @@ mod extends {
     fn recursive_merges() {
         let fixture = get_fixtures_path("config-extends/toolchain");
         let config =
-            ToolchainConfig::load(fixture.join("base-2.yml"), &ProtoTools::default()).unwrap();
+            ToolchainConfig::load(fixture.join("base-2.yml"), &ToolsConfig::default()).unwrap();
 
         assert_eq!(
             config,
@@ -375,7 +375,7 @@ mod extends {
     fn recursive_merges_typescript() {
         let fixture = get_fixtures_path("config-extends/toolchain");
         let config =
-            ToolchainConfig::load(fixture.join("typescript-2.yml"), &ProtoTools::default())
+            ToolchainConfig::load(fixture.join("typescript-2.yml"), &ToolsConfig::default())
                 .unwrap();
 
         assert_eq!(

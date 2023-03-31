@@ -95,7 +95,6 @@ pub async fn collect_and_hash_inputs(
     hasher_config: &HasherConfig,
 ) -> Result<HashedInputs, RunnerError> {
     let mut files_to_hash = FxHashSet::default(); // Absolute paths
-    let mut hashed_inputs: HashedInputs = BTreeMap::new();
     let globset = task.create_globset()?;
     let use_globs = project_root == workspace_root
         || matches!(hasher_config.walk_strategy, HasherWalkStrategy::Glob);
@@ -113,12 +112,27 @@ pub async fn collect_and_hash_inputs(
         if use_globs {
             files_to_hash.extend(glob::walk(workspace_root, &task.input_globs)?);
 
-            // Collect inputs by querying VCS then matching against globs
+            // Collect inputs by querying VCS
         } else {
             let project_source =
                 path::to_string(project_root.strip_prefix(workspace_root).unwrap())?;
 
-            hashed_inputs.extend(vcs.get_file_tree_hashes(&project_source).await?);
+            // Using VCS to collect inputs in a project is faster than globbing
+            for file in vcs.get_file_tree(&project_source).await? {
+                files_to_hash.insert(workspace_root.join(file));
+            }
+
+            // However that completely ignores workspace level globs,
+            // so we must still manually glob those here!
+            let workspace_globs = task
+                .input_globs
+                .iter()
+                .filter(|g| !g.starts_with(&project_source))
+                .collect::<Vec<_>>();
+
+            if !workspace_globs.is_empty() {
+                files_to_hash.extend(glob::walk(workspace_root, workspace_globs)?);
+            }
         }
     }
 
@@ -130,22 +144,27 @@ pub async fn collect_and_hash_inputs(
         }
     }
 
-    // 2: Convert to workspace relative paths and extract file hashes
+    // 2: Convert to workspace relative paths and filter out invalid inputs
 
-    let files_to_hash = convert_paths_to_strings(
+    let mut files_to_hash = convert_paths_to_strings(
         task.get_log_target(),
         hasher_config.warn_on_missing_inputs,
         &files_to_hash,
         workspace_root,
     )?;
 
+    files_to_hash.retain(|f| is_valid_input_source(task, &globset, f));
+
+    // 3: Extract hashes
+
+    let mut hashed_inputs: HashedInputs = BTreeMap::new();
+
     if !files_to_hash.is_empty() {
-        hashed_inputs.extend(vcs.get_file_hashes(&files_to_hash, true).await?);
+        hashed_inputs.extend(
+            vcs.get_file_hashes(&files_to_hash, true, hasher_config.batch_size)
+                .await?,
+        );
     }
-
-    // 3: Filter hashes to applicable inputs
-
-    hashed_inputs.retain(|f, _| is_valid_input_source(task, &globset, f));
 
     // 4: Normalize input key paths
 

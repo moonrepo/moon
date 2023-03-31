@@ -38,16 +38,17 @@ pub trait Vcs {
     async fn get_default_branch_revision(&self) -> VcsResult<String>;
 
     /// Get a map of hashes for the provided files.
-    /// Files are relative from the repository root.
+    /// Files returned are relative from the repository root.
     async fn get_file_hashes(
         &self,
         files: &[String],
         allow_ignored: bool,
+        batch_size: Option<u16>,
     ) -> VcsResult<BTreeMap<String, String>>;
 
-    /// Get a map of hashes for all files recursively starting from a directory.
-    /// Files are relative from the repository root.
-    async fn get_file_tree_hashes(&self, dir: &str) -> VcsResult<BTreeMap<String, String>>;
+    /// Get a list of all files in the provided directory, recursing through all sub-directories.
+    /// Files returned are relative from the repository root.
+    async fn get_file_tree(&self, dir: &str) -> VcsResult<Vec<String>>;
 
     /// Return the repository slug ("moonrepo/moon") of the current checkout.
     async fn get_repository_slug(&self) -> VcsResult<String>;

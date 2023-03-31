@@ -8,6 +8,7 @@ export interface GeneratorConfig {
 }
 
 export interface HasherConfig {
+	batchSize: number | null;
 	optimization: 'accuracy' | 'performance';
 	walkStrategy: 'glob' | 'vcs';
 	warnOnMissingInputs: boolean;

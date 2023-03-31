@@ -184,6 +184,7 @@ impl Vcs for Git {
         &self,
         files: &[String],
         allow_ignored: bool,
+        batch_size: Option<u16>,
     ) -> VcsResult<BTreeMap<String, String>> {
         let mut objects = vec![];
         let mut map = BTreeMap::new();
@@ -208,9 +209,10 @@ impl Vcs for Git {
         // Chunk into slices to avoid passing too many files
         let mut index = 0;
         let end_index = objects.len();
+        let batch_size = batch_size.unwrap_or(2500) as usize;
 
         while index < end_index {
-            let next_index = cmp::min(index + 2500, end_index);
+            let next_index = cmp::min(index + batch_size, end_index);
             let slice = &objects[index..next_index];
 
             let mut command = self.create_command(vec!["hash-object", "--stdin-paths"]);
@@ -230,7 +232,7 @@ impl Vcs for Git {
         Ok(map)
     }
 
-    async fn get_file_tree_hashes(&self, dir: &str) -> VcsResult<BTreeMap<String, String>> {
+    async fn get_file_tree(&self, dir: &str) -> VcsResult<Vec<String>> {
         // Extract all tracked and untracked files in the directory
         let output = self
             .run_command(
@@ -249,14 +251,7 @@ impl Vcs for Git {
             )
             .await?;
 
-        let files = output
-            .split('\n')
-            .map(|f| f.to_owned())
-            .collect::<Vec<String>>();
-
-        // Convert these file paths to hashes. We can't use `git ls-tree` as it
-        // doesn't take untracked/modified files in the working tree into account.
-        self.get_file_hashes(&files, false).await
+        Ok(output.split('\n').map(|l| l.to_owned()).collect::<Vec<_>>())
     }
 
     async fn get_repository_slug(&self) -> VcsResult<String> {

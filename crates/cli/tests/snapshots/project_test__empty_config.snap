@@ -5,7 +5,7 @@ expression: assert.output()
 
  EMPTYCONFIG 
 
-ID: emptyConfig
+Project: emptyConfig
 Source: empty-config
 Language: unknown
 Type: unknown

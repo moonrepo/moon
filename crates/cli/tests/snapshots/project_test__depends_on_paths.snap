@@ -5,7 +5,7 @@ expression: assert.output_standardized()
 
  FOO 
 
-ID: foo
+Project: foo
 Source: deps/foo
 Language: javascript
 Type: application

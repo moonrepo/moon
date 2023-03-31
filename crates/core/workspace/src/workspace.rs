@@ -10,7 +10,7 @@ use moon_platform::{BoxedPlatform, PlatformManager};
 use moon_utils::{fs, glob, path, semver};
 use moon_vcs::{BoxedVcs, VcsLoader};
 use moonbase::Moonbase;
-use proto::{get_root, Config as ProtoTools, CONFIG_NAME};
+use proto::{get_root, ToolsConfig, TOOLS_CONFIG_NAME};
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -104,7 +104,7 @@ fn load_tasks_config(root_dir: &Path) -> Result<InheritedTasksManager, Workspace
 // .moon/toolchain.yml
 fn load_toolchain_config(
     root_dir: &Path,
-    proto_tools: &ProtoTools,
+    proto_tools: &ToolsConfig,
 ) -> Result<ToolchainConfig, WorkspaceError> {
     let config_path = root_dir
         .join(constants::CONFIG_DIRNAME)
@@ -181,7 +181,7 @@ pub struct Workspace {
     pub platforms: PlatformManager,
 
     /// Proto tools loaded from ".prototools".
-    pub proto_tools: ProtoTools,
+    pub proto_tools: ToolsConfig,
 
     /// The root of the workspace that contains the ".moon" config folder.
     pub root: PathBuf,
@@ -220,12 +220,7 @@ impl Workspace {
         );
 
         // Load proto tools
-        let proto_path = root_dir.join(CONFIG_NAME);
-        let proto_tools = if proto_path.exists() {
-            ProtoTools::load(&proto_path)?
-        } else {
-            ProtoTools::default()
-        };
+        let proto_tools = ToolsConfig::load(root_dir.join(TOOLS_CONFIG_NAME))?;
 
         // Load configs
         let config = load_workspace_config(&root_dir)?;

@@ -45,7 +45,7 @@ export default function Hero() {
 								href="/docs/proto"
 								className="w-full flex items-center justify-center px-2 py-1 sm:px-3 sm:py-2 text-base font-bold rounded-md text-white hover:text-white bg-white/5 hover:scale-110 md:text-lg group transition-transform"
 							>
-								v0.3.2
+								v0.4.0
 							</Link>
 						</div>
 					</div>

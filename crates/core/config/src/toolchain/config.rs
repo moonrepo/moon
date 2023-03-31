@@ -11,7 +11,7 @@ use figment::{
     providers::{Format, Serialized, YamlExtended},
     Figment,
 };
-use proto::Config as ProtoTools;
+use proto::ToolsConfig;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -50,7 +50,7 @@ pub struct ToolchainConfig {
     pub unknown: BTreeMap<String, serde_yaml::Value>,
 }
 
-fn apply_node_versions(node_config: &mut NodeConfig, proto_tools: &ProtoTools) {
+fn apply_node_versions(node_config: &mut NodeConfig, proto_tools: &ToolsConfig) {
     if let Some(node_version) = proto_tools.tools.get("node") {
         if node_config.version.is_none() {
             node_config.version = Some(node_version.to_owned());
@@ -88,7 +88,7 @@ fn apply_node_versions(node_config: &mut NodeConfig, proto_tools: &ProtoTools) {
 }
 
 impl ToolchainConfig {
-    pub fn load(path: PathBuf, proto_tools: &ProtoTools) -> Result<ToolchainConfig, ConfigError> {
+    pub fn load(path: PathBuf, proto_tools: &ToolsConfig) -> Result<ToolchainConfig, ConfigError> {
         let profile_name = "toolchain";
         let mut figment =
             Figment::from(Serialized::defaults(ToolchainConfig::default()).profile(profile_name));

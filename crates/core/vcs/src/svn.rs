@@ -183,6 +183,7 @@ impl Vcs for Svn {
         &self,
         files: &[String],
         _allow_ignored: bool,
+        _batch_size: Option<u16>,
     ) -> VcsResult<BTreeMap<String, String>> {
         let mut map = BTreeMap::new();
 

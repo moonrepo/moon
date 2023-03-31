@@ -23,6 +23,9 @@ pub enum HasherWalkStrategy {
 #[schemars(default)]
 #[serde(default, rename_all = "camelCase")]
 pub struct HasherConfig {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub batch_size: Option<u16>,
+
     #[serde(skip_serializing_if = "is_default")]
     pub optimization: HasherOptimization,
 
@@ -36,6 +39,7 @@ pub struct HasherConfig {
 impl Default for HasherConfig {
     fn default() -> Self {
         HasherConfig {
+            batch_size: None,
             optimization: HasherOptimization::default(),
             walk_strategy: HasherWalkStrategy::default(),
             warn_on_missing_inputs: true,

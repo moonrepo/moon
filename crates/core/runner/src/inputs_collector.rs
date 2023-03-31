@@ -160,7 +160,10 @@ pub async fn collect_and_hash_inputs(
     let mut hashed_inputs: HashedInputs = BTreeMap::new();
 
     if !files_to_hash.is_empty() {
-        hashed_inputs.extend(vcs.get_file_hashes(&files_to_hash, true).await?);
+        hashed_inputs.extend(
+            vcs.get_file_hashes(&files_to_hash, true, hasher_config.batch_size)
+                .await?,
+        );
     }
 
     // 4: Normalize input key paths

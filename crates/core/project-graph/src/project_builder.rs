@@ -691,7 +691,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         let config_hashes = self
             .workspace
             .vcs
-            .get_file_hashes(&configs, false)
+            .get_file_hashes(&configs, false, None)
             .await
             .map_err(|e| MoonError::Generic(e.to_string()))?;
 

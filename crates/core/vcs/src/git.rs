@@ -184,6 +184,7 @@ impl Vcs for Git {
         &self,
         files: &[String],
         allow_ignored: bool,
+        batch_size: Option<u16>,
     ) -> VcsResult<BTreeMap<String, String>> {
         let mut objects = vec![];
         let mut map = BTreeMap::new();
@@ -208,9 +209,10 @@ impl Vcs for Git {
         // Chunk into slices to avoid passing too many files
         let mut index = 0;
         let end_index = objects.len();
+        let batch_size = batch_size.unwrap_or(2500) as usize;
 
         while index < end_index {
-            let next_index = cmp::min(index + 2500, end_index);
+            let next_index = cmp::min(index + batch_size, end_index);
             let slice = &objects[index..next_index];
 
             let mut command = self.create_command(vec!["hash-object", "--stdin-paths"]);

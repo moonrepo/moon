@@ -36,7 +36,7 @@ mod file_hashing {
         let git = Git::load(&create_config("default"), sandbox.path()).unwrap();
 
         assert_eq!(
-            git.get_file_hashes(&string_vec!["existing.txt", "rename-me.txt"], false)
+            git.get_file_hashes(&string_vec!["existing.txt", "rename-me.txt"], false, None)
                 .await
                 .unwrap(),
             BTreeMap::from([
@@ -62,7 +62,7 @@ mod file_hashing {
         let git = Git::load(&create_config("default"), sandbox.path()).unwrap();
 
         assert_eq!(
-            git.get_file_hashes(&string_vec!["existing.txt", "rename-me.txt"], false)
+            git.get_file_hashes(&string_vec!["existing.txt", "rename-me.txt"], false, None)
                 .await
                 .unwrap(),
             BTreeMap::from([(
@@ -82,7 +82,7 @@ mod file_hashing {
         let git = Git::load(&create_config("default"), sandbox.path()).unwrap();
 
         assert_eq!(
-            git.get_file_hashes(&string_vec!["existing.txt", "rename-me.txt"], true)
+            git.get_file_hashes(&string_vec!["existing.txt", "rename-me.txt"], true, None)
                 .await
                 .unwrap(),
             BTreeMap::from([
@@ -106,7 +106,7 @@ mod file_hashing {
         let git = Git::load(&create_config("default"), sandbox.path()).unwrap();
 
         let tree = git.get_file_tree(".").await.unwrap();
-        let hashes = git.get_file_hashes(&tree, false).await.unwrap();
+        let hashes = git.get_file_hashes(&tree, false, None).await.unwrap();
 
         assert_eq!(
             hashes,
@@ -139,9 +139,13 @@ mod file_hashing {
         let git = Git::load(&create_config("master"), sandbox.path()).unwrap();
 
         assert_eq!(
-            git.get_file_hashes(&string_vec!["foo", "bar", "dir/baz", "dir/qux"], false)
-                .await
-                .unwrap(),
+            git.get_file_hashes(
+                &string_vec!["foo", "bar", "dir/baz", "dir/qux"],
+                false,
+                None
+            )
+            .await
+            .unwrap(),
             BTreeMap::from([
                 (
                     "dir/qux".to_owned(),
@@ -180,7 +184,7 @@ mod file_hashing {
         }
 
         let tree = git.get_file_tree(".").await.unwrap();
-        let hashes = git.get_file_hashes(&tree, false).await.unwrap();
+        let hashes = git.get_file_hashes(&tree, false, None).await.unwrap();
 
         assert!(hashes.len() >= 10000);
 
@@ -197,7 +201,7 @@ mod file_hashing {
         fs::create_dir_all(sandbox.path().join("dir")).unwrap();
 
         assert_eq!(
-            git.get_file_hashes(&string_vec!["dir"], false)
+            git.get_file_hashes(&string_vec!["dir"], false, None)
                 .await
                 .unwrap(),
             BTreeMap::new()

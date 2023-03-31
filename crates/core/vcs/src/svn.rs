@@ -206,9 +206,7 @@ impl Vcs for Svn {
         Ok(map)
     }
 
-    async fn get_file_tree_hashes(&self, dir: &str) -> VcsResult<BTreeMap<String, String>> {
-        let mut map = BTreeMap::new();
-
+    async fn get_file_tree(&self, dir: &str) -> VcsResult<Vec<String>> {
         let output = self
             .run_command(
                 self.create_command(vec!["ls", "--recursive", "--depth", "infinity", dir]),
@@ -216,13 +214,7 @@ impl Vcs for Svn {
             )
             .await?;
 
-        // svn doesnt support file hashing, so instead of generating some
-        // random hash ourselves, just pass an emptry string.
-        for file in output.split('\n') {
-            map.insert(file.to_owned(), String::new());
-        }
-
-        Ok(map)
+        Ok(output.split('\n').map(|l| l.to_owned()).collect::<Vec<_>>())
     }
 
     async fn get_repository_slug(&self) -> VcsResult<String> {

@@ -230,7 +230,7 @@ impl Vcs for Git {
         Ok(map)
     }
 
-    async fn get_file_tree_hashes(&self, dir: &str) -> VcsResult<BTreeMap<String, String>> {
+    async fn get_file_tree(&self, dir: &str) -> VcsResult<Vec<String>> {
         // Extract all tracked and untracked files in the directory
         let output = self
             .run_command(
@@ -249,14 +249,7 @@ impl Vcs for Git {
             )
             .await?;
 
-        let files = output
-            .split('\n')
-            .map(|f| f.to_owned())
-            .collect::<Vec<String>>();
-
-        // Convert these file paths to hashes. We can't use `git ls-tree` as it
-        // doesn't take untracked/modified files in the working tree into account.
-        self.get_file_hashes(&files, false).await
+        Ok(output.split('\n').map(|l| l.to_owned()).collect::<Vec<_>>())
     }
 
     async fn get_repository_slug(&self) -> VcsResult<String> {

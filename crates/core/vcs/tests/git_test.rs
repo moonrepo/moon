@@ -105,8 +105,11 @@ mod file_hashing {
 
         let git = Git::load(&create_config("default"), sandbox.path()).unwrap();
 
+        let tree = git.get_file_tree(".").await.unwrap();
+        let hashes = git.get_file_hashes(&tree, false).await.unwrap();
+
         assert_eq!(
-            git.get_file_tree_hashes(".").await.unwrap(),
+            hashes,
             BTreeMap::from([
                 (
                     ".gitignore".to_owned(),
@@ -160,21 +163,8 @@ mod file_hashing {
         let git = Git::load(&create_config("master"), sandbox.path()).unwrap();
 
         assert_eq!(
-            git.get_file_tree_hashes(".").await.unwrap(),
-            BTreeMap::from([
-                (
-                    ".gitignore".to_owned(),
-                    "589c59be54beff591804a008c972e76dea31d2d1".to_owned()
-                ),
-                (
-                    "dir/qux".to_owned(),
-                    "100b0dec8c53a40e4de7714b2c612dad5fad9985".to_owned()
-                ),
-                (
-                    "foo".to_owned(),
-                    "257cc5642cb1a054f08cc83f2d943e56fd3ebe99".to_owned()
-                )
-            ])
+            git.get_file_tree(".").await.unwrap(),
+            string_vec![".gitignore", "dir/qux", "foo",]
         );
     }
 
@@ -189,7 +179,8 @@ mod file_hashing {
             fs::write(sandbox.path().join(format!("file{}", i)), i.to_string()).unwrap();
         }
 
-        let hashes = git.get_file_tree_hashes(".").await.unwrap();
+        let tree = git.get_file_tree(".").await.unwrap();
+        let hashes = git.get_file_hashes(&tree, false).await.unwrap();
 
         assert!(hashes.len() >= 10000);
 

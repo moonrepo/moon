@@ -14,5 +14,6 @@ pub mod query;
 pub mod run;
 pub mod setup;
 pub mod sync;
+pub mod task;
 pub mod teardown;
 pub mod upgrade;

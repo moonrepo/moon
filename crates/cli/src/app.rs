@@ -6,7 +6,7 @@ use crate::enums::{CacheMode, LogLevel, TouchedStatus};
 use clap::{Parser, Subcommand};
 use clap_complete::Shell;
 use moon_action_context::ProfileType;
-use moon_config::{FileGlob, ProjectID};
+use moon_config::{FileGlob, ProjectID, TargetID};
 use std::path::PathBuf;
 
 pub const BIN_NAME: &str = if cfg!(windows) { "moon.exe" } else { "moon" };
@@ -281,7 +281,7 @@ pub enum Commands {
     // moon dep-graph [target]
     #[command(
         name = "dep-graph",
-        about = "Display a dependency graph of all tasks and actions in DOT format.",
+        about = "Display an interactive dependency graph of all tasks and actions.",
         alias = "dg"
     )]
     DepGraph {
@@ -291,7 +291,7 @@ pub enum Commands {
         #[arg(long, help = "Print the graph in DOT format")]
         dot: bool,
 
-        #[arg(long, help = "Print the graph data in JSON format")]
+        #[arg(long, help = "Print the graph in JSON format")]
         json: bool,
     },
 
@@ -312,7 +312,7 @@ pub enum Commands {
     // moon project-graph [id]
     #[command(
         name = "project-graph",
-        about = "Display a graph of projects in DOT format.",
+        about = "Display an interactive graph of projects.",
         alias = "pg"
     )]
     ProjectGraph {
@@ -322,7 +322,7 @@ pub enum Commands {
         #[arg(long, help = "Print the graph in DOT format")]
         dot: bool,
 
-        #[arg(long, help = "Print the graph data in JSON format")]
+        #[arg(long, help = "Print the graph in JSON format")]
         json: bool,
     },
 
@@ -331,6 +331,20 @@ pub enum Commands {
         about = "Sync all projects in the workspace to a healthy state."
     )]
     Sync,
+
+    // moon task <id>
+    #[command(
+        name = "task",
+        about = "Display information about a single task.",
+        alias = "t"
+    )]
+    Task {
+        #[arg(help = "Target of task to display")]
+        id: TargetID,
+
+        #[arg(long, help = "Print in JSON format")]
+        json: bool,
+    },
 
     // GENERATOR
 

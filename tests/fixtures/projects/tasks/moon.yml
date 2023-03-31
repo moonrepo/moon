@@ -6,8 +6,12 @@ tasks:
     args:
       - --cache
       - --color
+    inputs:
+      - 'tests/**/*'
   lint:
     command: eslint
     args:
       - --cache
       - --report-unused-disable-directives
+    outputs:
+      - 'cache'

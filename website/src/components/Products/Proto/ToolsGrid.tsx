@@ -6,7 +6,7 @@ export default function ToolsGrid() {
 	return (
 		<div className="grid grid-cols-5 gap-2 px-2">
 			<div className="text-center">
-				<Link href="https://bun.sh">
+				<Link href="/docs/proto/tools#bun">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						viewBox="0 0 128 128"
@@ -22,7 +22,7 @@ export default function ToolsGrid() {
 			</div>
 
 			<div className="text-center">
-				<Link href="https://deno.land">
+				<Link href="/docs/proto/tools#deno">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						viewBox="0 0 128 128"
@@ -42,7 +42,7 @@ export default function ToolsGrid() {
 			</div>
 
 			<div className="text-center">
-				<Link href="https://go.dev">
+				<Link href="/docs/proto/tools#go">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						viewBox="0 0 128 128"
@@ -61,7 +61,7 @@ export default function ToolsGrid() {
 			</div>
 
 			<div className="text-center">
-				<Link href="https://nodejs.org">
+				<Link href="/docs/proto/tools#node">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						viewBox="0 0 128 128"
@@ -79,8 +79,9 @@ export default function ToolsGrid() {
 					+ npm, pnpm, yarn
 				</Text>
 			</div>
+
 			<div className="text-center">
-				<Link href="https://www.rust-lang.org">
+				<Link href="/docs/proto/tools#rust">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						viewBox="0 0 128 128"

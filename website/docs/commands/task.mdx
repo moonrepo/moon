@@ -1,0 +1,60 @@
+---
+title: task
+---
+
+The `moon task <target>` (or `moon t`) command will display information about a task that has been
+configured and exists within a project. If a task does not exist, the program will return with a 1
+exit code.
+
+```shell
+$ moon task web:build
+```
+
+### Arguments
+
+- `<target>` - Fully qualified project + task target.
+
+### Options
+
+- `--json` - Print the task and its configuration as JSON.
+
+## Example output
+
+The following output is an example of what this command prints, using our very own
+`@moonrepo/runtime` package.
+
+```
+RUNTIME:BUILD
+
+ID: build
+Project: runtime
+Platform: node
+Type: build
+
+PROCESS
+
+Command: packemon build --addFiles --addExports --declaration
+Environment variables:
+ - NODE_ENV = production
+Working directory: /Projects/moon/packages/runtime
+Runs dependencies: Concurrently
+Runs in CI: Yes
+
+DEPENDS ON
+
+ - types:build
+
+INPUTS
+
+ - .moon/*.yml
+ - packages/runtime/src/**/*
+ - packages/runtime/tsconfig.*.json
+ - packages/runtime/types/**/*
+ - packages/runtime/package.json
+ - packages/runtime/tsconfig.json
+ - tsconfig.options.json
+
+OUTPUTS
+
+ - packages/runtime/cjs
+```

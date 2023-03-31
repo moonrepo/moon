@@ -25,7 +25,7 @@ pub async fn project(id: String, json: bool) -> Result<(), AnyError> {
 
     term.write_line("")?;
     term.render_label(Label::Brand, &project.id)?;
-    term.render_entry("ID", color::id(&project.id))?;
+    term.render_entry("Project", color::id(&project.id))?;
 
     if !project.aliases.is_empty() {
         term.render_entry(

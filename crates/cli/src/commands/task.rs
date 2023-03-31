@@ -30,7 +30,7 @@ pub async fn task(id: String, json: bool) -> Result<(), AnyError> {
 
     term.write_line("")?;
     term.render_label(Label::Brand, &target.id)?;
-    term.render_entry("ID", color::id(&target.task_id))?;
+    term.render_entry("Task", color::id(&target.task_id))?;
     term.render_entry("Project", color::id(&project_id))?;
     term.render_entry("Platform", term.format(&task.platform))?;
     term.render_entry("Type", term.format(&task.type_of))?;
@@ -41,6 +41,17 @@ pub async fn task(id: String, json: bool) -> Result<(), AnyError> {
         "Command",
         color::shell(format!("{} {}", task.command, task.args.join(" "))),
     )?;
+
+    if !task.env.is_empty() {
+        term.render_entry_list(
+            "Environment variables",
+            task.env
+                .iter()
+                .map(|(k, v)| format!("{} {} {}", k, color::muted_light("="), v))
+                .collect::<Vec<_>>(),
+        )?;
+    }
+
     term.render_entry(
         "Working directory",
         color::path(if task.options.run_from_workspace_root {
@@ -58,16 +69,6 @@ pub async fn task(id: String, json: bool) -> Result<(), AnyError> {
         },
     )?;
     term.render_entry_bool("Runs in CI", task.options.run_in_ci)?;
-
-    if !task.env.is_empty() {
-        term.render_entry_list(
-            "Environment variables",
-            task.env
-                .iter()
-                .map(|(k, v)| format!("{} {} {}", k, color::muted_light("="), v))
-                .collect::<Vec<_>>(),
-        )?;
-    }
 
     if !task.deps.is_empty() {
         term.write_line("")?;

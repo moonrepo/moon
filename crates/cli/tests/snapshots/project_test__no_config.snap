@@ -5,7 +5,7 @@ expression: assert.output()
 
  NOCONFIG 
 
-ID: noConfig
+Project: noConfig
 Source: no-config
 Language: unknown
 Type: unknown

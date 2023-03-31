@@ -151,6 +151,7 @@ const sidebars = {
 				'commands/run',
 				'commands/setup',
 				'commands/sync',
+				'commands/task',
 				'commands/teardown',
 				'commands/upgrade',
 			],

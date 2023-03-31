@@ -4,7 +4,7 @@ use moon_error::MoonError;
 use moon_node_platform::NodePlatform;
 use moon_project_graph::{ProjectGraph, ProjectGraphBuilder, ProjectGraphError};
 use moon_system_platform::SystemPlatform;
-use moon_utils::{is_test_env, json};
+use moon_utils::{is_ci, is_test_env, json};
 use moon_workspace::{Workspace, WorkspaceError};
 use std::env;
 use std::path::Path;
@@ -26,7 +26,39 @@ pub fn set_telemetry(state: bool) {
     TELEMETRY_READY.store(true, Ordering::Release);
 }
 
-pub fn register_platforms(workspace: &mut Workspace) -> Result<(), WorkspaceError> {
+/// Loads the workspace from the current working directory.
+pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
+    let current_dir = env::current_dir().map_err(|_| WorkspaceError::MissingWorkingDir)?;
+    let mut workspace = load_workspace_from(&current_dir).await?;
+
+    if !is_test_env() {
+        if workspace.vcs.is_enabled() {
+            if let Ok(slug) = workspace.vcs.get_repository_slug().await {
+                env::set_var("MOON_REPO_SLUG", slug);
+            }
+        }
+
+        if is_ci() {
+            workspace.signin_to_moonbase().await?;
+        }
+    }
+
+    Ok(workspace)
+}
+
+/// Loads the workspace from a provided directory.
+pub async fn load_workspace_from(path: &Path) -> Result<Workspace, WorkspaceError> {
+    let mut workspace = match Workspace::load_from(path) {
+        Ok(workspace) => {
+            set_telemetry(workspace.config.telemetry);
+            workspace
+        }
+        Err(err) => {
+            set_telemetry(false);
+            return Err(err);
+        }
+    };
+
     if let Some(deno_config) = &workspace.toolchain_config.deno {
         workspace.register_platform(Box::new(DenoPlatform::new(
             deno_config,
@@ -45,41 +77,6 @@ pub fn register_platforms(workspace: &mut Workspace) -> Result<(), WorkspaceErro
 
     // Should be last since it's the most common
     workspace.register_platform(Box::<SystemPlatform>::default());
-
-    Ok(())
-}
-
-/// Loads the workspace from the current working directory.
-pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
-    let current_dir = env::current_dir().map_err(|_| WorkspaceError::MissingWorkingDir)?;
-
-    load_workspace_from(&current_dir).await
-}
-
-/// Loads the workspace from a provided directory.
-pub async fn load_workspace_from(path: &Path) -> Result<Workspace, WorkspaceError> {
-    let mut workspace = match Workspace::load_from(path) {
-        Ok(workspace) => {
-            set_telemetry(workspace.config.telemetry);
-            workspace
-        }
-        Err(err) => {
-            set_telemetry(false);
-            return Err(err);
-        }
-    };
-
-    register_platforms(&mut workspace)?;
-
-    if !is_test_env() {
-        if workspace.vcs.is_enabled() {
-            if let Ok(slug) = workspace.vcs.get_repository_slug().await {
-                env::set_var("MOON_REPO_SLUG", slug);
-            }
-        }
-
-        workspace.signin_to_moonbase().await?;
-    }
 
     Ok(workspace)
 }

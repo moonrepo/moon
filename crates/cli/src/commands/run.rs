@@ -8,7 +8,7 @@ use moon_logger::{color, map_list};
 use moon_project_graph::ProjectGraph;
 use moon_utils::is_ci;
 use moon_workspace::Workspace;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashSet;
 use std::env;
 use std::string::ToString;
 
@@ -118,9 +118,9 @@ pub async fn run_target(
         passthrough_args: options.passthrough,
         primary_targets: FxHashSet::from_iter(primary_targets),
         profile: options.profile,
-        target_hashes: FxHashMap::default(),
         touched_files,
         workspace_root: workspace.root.clone(),
+        ..ActionContext::default()
     };
 
     let dep_graph = dep_builder.build();

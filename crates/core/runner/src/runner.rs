@@ -338,16 +338,14 @@ impl<'a> Runner<'a> {
             "MOON_WORKING_DIR".to_owned(),
             path::to_string(&self.workspace.working_dir)?,
         );
-
-        // Store runtime data on the file system so that downstream commands can utilize it
-        let runfile = self
-            .workspace
-            .cache
-            .create_runfile(&self.project.id, self.project)?;
-
         env_vars.insert(
             "MOON_PROJECT_RUNFILE".to_owned(),
-            path::to_string(runfile.path)?,
+            path::to_string(
+                self.workspace
+                    .cache
+                    .get_state_path(&self.project.id)
+                    .join("runfile.json"),
+            )?,
         );
 
         Ok(env_vars)
@@ -434,7 +432,7 @@ impl<'a> Runner<'a> {
 
         context
             .target_hashes
-            .insert(self.task.target.id.clone(), hash.clone());
+            .insert(self.task.target.clone(), hash.clone());
 
         // Hash is the same as the previous build, so simply abort!
         // However, ensure the outputs also exist, otherwise we should hydrate.
@@ -498,11 +496,6 @@ impl<'a> Runner<'a> {
         );
 
         Ok(None)
-    }
-
-    /// Return true if this target is a no-op.
-    pub fn is_no_op(&self) -> bool {
-        self.task.is_no_op()
     }
 
     /// Run the command as a child process and capture its output. If the process fails

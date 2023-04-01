@@ -2,7 +2,7 @@ use crate::errors::PipelineError;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_emitter::Emitter;
-use moon_logger::{color, debug, warn};
+use moon_logger::{color, debug};
 use moon_platform::Runtime;
 use moon_project::Project;
 use moon_runner::Runner;
@@ -34,25 +34,31 @@ pub async fn run_target(
     debug!(
         target: LOG_TARGET,
         "Running target {}",
-        color::id(&task.target)
+        color::target(&task.target)
     );
+
+    let is_no_op = task.is_no_op();
+
+    // If the VCS root does not exist (like in a Docker container),
+    // we should avoid failing and simply disable caching.
+    let is_cache_enabled = task.options.cache && workspace.vcs.is_enabled();
 
     // We must give this task a fake hash for it to be considered complete
     // for other tasks! This case triggers for noop or cache disabled tasks.
-    {
+    if is_no_op || !is_cache_enabled {
         context
             .write()
             .await
             .target_hashes
-            .insert(task.target.id.clone(), "skipped".into());
+            .insert(target.clone(), "skipped".into());
     }
 
     // Abort early if a no operation
-    if runner.is_no_op() {
+    if is_no_op {
         debug!(
             target: LOG_TARGET,
             "Target {} is a no operation, skipping",
-            color::id(&task.target),
+            color::target(&task.target),
         );
 
         runner.print_checkpoint(Checkpoint::RunPassed, &["no op"])?;
@@ -61,34 +67,37 @@ pub async fn run_target(
         return Ok(ActionStatus::Passed);
     }
 
-    let mut should_cache = task.options.cache;
+    // Abort early if this build has already been cached/hashed
+    if is_cache_enabled {
+        let mut ctx = context.write().await;
 
-    // If the VCS root does not exist (like in a Docker image),
-    // we should avoid failing and instead log a warning.
-    if !workspace.vcs.is_enabled() {
-        should_cache = false;
-
-        warn!(
+        if let Some(cache_location) = runner.is_cached(&mut ctx, runtime).await? {
+            return Ok(runner.hydrate(cache_location).await?);
+        }
+    } else {
+        debug!(
             target: LOG_TARGET,
-            "VCS root not found, caching will be disabled!"
+            "Cache disabled for target {}",
+            color::target(&task.target),
         );
     }
 
-    // Abort early if this build has already been cached/hashed
-    if should_cache {
-        let mut context = context.write().await;
+    let attempts = if is_cache_enabled {
+        let context = context.read().await;
+        let mut command = runner.create_command(&context, runtime).await?;
 
-        if let Some(cache_location) = runner.is_cached(&mut context, runtime).await? {
-            return Ok(runner.hydrate(cache_location).await?);
-        }
-    }
+        runner.run_command(&context, &mut command).await?
+    } else {
+        // Concurrent long-running tasks will cause a deadlock, as some threads will
+        // attempt to write to context while others are reading from it, and long-running
+        // tasks may never release the lock. Unfortuantely we have to clone  here to work
+        // around it, so revisit in the future.
+        let context = (context.read().await).clone();
+        let mut command = runner.create_command(&context, runtime).await?;
 
-    // Create the command to run based on the task
-    let context = context.read().await;
-    let mut command = runner.create_command(&context, runtime).await?;
+        runner.run_command(&context, &mut command).await?
+    };
 
-    // Execute the command and return the number of attempts
-    let attempts = runner.run_command(&context, &mut command).await?;
     let status = if action.set_attempts(attempts) {
         ActionStatus::Passed
     } else {
@@ -96,7 +105,7 @@ pub async fn run_target(
     };
 
     // If successful, cache the task outputs
-    if should_cache {
+    if is_cache_enabled {
         runner.archive_outputs().await?;
     }
 

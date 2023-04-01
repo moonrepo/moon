@@ -10,7 +10,7 @@ pub enum ProfileType {
     Heap,
 }
 
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ActionContext {
     pub affected_only: bool,
@@ -25,7 +25,7 @@ pub struct ActionContext {
 
     pub profile: Option<ProfileType>,
 
-    pub target_hashes: FxHashMap<String, String>,
+    pub target_hashes: FxHashMap<Target, String>,
 
     pub touched_files: FxHashSet<PathBuf>,
 

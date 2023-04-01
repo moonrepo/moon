@@ -16,10 +16,9 @@ use moon_project_graph::ProjectGraph;
 use moon_terminal::{label_to_the_moon, replace_style_tokens, ExtendedTerm};
 use moon_utils::{is_ci, is_test_env, time};
 use moon_workspace::Workspace;
-use rusty_pool::ThreadPool;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use tokio::sync::RwLock;
+use tokio::sync::{RwLock, Semaphore};
 
 const LOG_TARGET: &str = "moon:action-pipeline";
 
@@ -102,11 +101,10 @@ impl Pipeline {
             })
             .await?;
 
-        let pool = if let Some(concurrency) = &self.concurrency {
-            ThreadPool::new(*concurrency, *concurrency, Duration::from_secs(30))
-        } else {
-            ThreadPool::default()
-        };
+        // This limits how many tasks can run in parallel
+        let semaphore = Arc::new(Semaphore::new(
+            self.concurrency.unwrap_or_else(num_cpus::get),
+        ));
 
         for (b, batch) in batches.into_iter().enumerate() {
             let batch_index = b + 1;
@@ -129,24 +127,31 @@ impl Pipeline {
                     let emitter_clone = Arc::clone(&emitter);
                     let workspace_clone = Arc::clone(&workspace);
                     let project_graph_clone = Arc::clone(&project_graph);
-                    let runtime = tokio::runtime::Handle::current();
 
                     let mut action = Action::new(node.to_owned());
                     action.log_target = format!("{batch_target_name}:{action_index}");
 
-                    action_handles.push(pool.complete(async move {
-                        runtime
-                            .spawn(async move {
-                                process_action(
-                                    action,
-                                    Arc::clone(&context_clone),
-                                    Arc::clone(&emitter_clone),
-                                    Arc::clone(&workspace_clone),
-                                    Arc::clone(&project_graph_clone),
-                                )
-                                .await
-                            })
-                            .await
+                    // let semaphore_clone = semaphore.clone();
+                    let permit = semaphore.clone().acquire_owned().await.unwrap();
+
+                    action_handles.push(tokio::spawn(async move {
+                        // let permit = semaphore_clone
+                        //     .acquire()
+                        //     .await
+                        //     .expect("Failed to acquire semaphore!");
+
+                        let result = process_action(
+                            action,
+                            context_clone,
+                            emitter_clone,
+                            workspace_clone,
+                            project_graph_clone,
+                        )
+                        .await;
+
+                        drop(permit);
+
+                        result
                     }));
                 } else {
                     return Err(PipelineError::UnknownActionNode);
@@ -155,8 +160,8 @@ impl Pipeline {
 
             // Wait for all actions in this batch to complete
             for handle in action_handles {
-                match handle.try_await_complete() {
-                    Ok(Ok(Ok(result))) => {
+                match handle.await {
+                    Ok(Ok(result)) => {
                         if result.has_failed() {
                             failed_count += 1;
                         } else if result.was_cached() {
@@ -187,7 +192,7 @@ impl Pipeline {
 
                         results.push(result);
                     }
-                    Ok(Ok(Err(error))) => {
+                    Ok(Err(error)) => {
                         return Err(PipelineError::Aborted(error.to_string()));
                     }
                     _ => {

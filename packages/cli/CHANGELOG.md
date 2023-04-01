@@ -12,7 +12,7 @@
   inputs collection process. For large projects, you'll see improved performance.
 - Fixed an issue where root-level input globs were not matching correctly when `hasher.walkStrategy`
   was "vcs".
-- Fixed an issue where some concurrent tasks via a parent `noop` task would not start or run in
+- Fixed a deadlock where some concurrent tasks via a parent `noop` task would not start or run in
   parallel.
 
 #### ⚙️ Internal

@@ -46,12 +46,11 @@ pub async fn run_target(
     // We must give this task a fake hash for it to be considered complete
     // for other tasks! This case triggers for noop or cache disabled tasks.
     if is_no_op || !is_cache_enabled {
-        dbg!(&target.id, "WRITE 1");
-        let mut ctx = context.write().await;
-        dbg!(&target.id, "WRITE 2");
-        ctx.target_hashes.insert(target.clone(), "skipped".into());
-        dbg!(&target.id, "WRITE 3");
-        drop(ctx);
+        context
+            .write()
+            .await
+            .target_hashes
+            .insert(target.clone(), "skipped".into());
     }
 
     // Abort early if a no operation
@@ -70,8 +69,6 @@ pub async fn run_target(
 
     // Abort early if this build has already been cached/hashed
     if is_cache_enabled {
-        dbg!(&target, "CACHE");
-
         let mut ctx = context.write().await;
 
         if let Some(cache_location) = runner.is_cached(&mut ctx, runtime).await? {
@@ -85,14 +82,22 @@ pub async fn run_target(
         );
     }
 
-    dbg!("BEFORE");
+    let attempts = if is_cache_enabled {
+        let context = context.read().await;
+        let mut command = runner.create_command(&context, runtime).await?;
 
-    // Create the command to run based on the task
-    let context = context.read().await;
-    let mut command = runner.create_command(&context, runtime).await?;
+        runner.run_command(&context, &mut command).await?
+    } else {
+        // Concurrent long-running tasks will cause a deadlock, as some threads will
+        // attempt to write to context while others are reading from it, and long-running
+        // tasks may never release the lock. Unfortuantely we have to clone  here to work
+        // around it, so revisit in the future.
+        let context = (context.read().await).clone();
+        let mut command = runner.create_command(&context, runtime).await?;
 
-    // Execute the command and return the number of attempts
-    let attempts = runner.run_command(&context, &mut command).await?;
+        runner.run_command(&context, &mut command).await?
+    };
+
     let status = if action.set_attempts(attempts) {
         ActionStatus::Passed
     } else {

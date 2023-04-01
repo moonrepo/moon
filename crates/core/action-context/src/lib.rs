@@ -10,7 +10,7 @@ pub enum ProfileType {
     Heap,
 }
 
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ActionContext {
     pub affected_only: bool,

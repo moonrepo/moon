@@ -16,6 +16,7 @@
 #### ⚙️ Internal
 
 - Upgraded to proto v0.4.
+- Switched to a semaphore for restricting task concurrency.
 
 ## 1.0.2
 

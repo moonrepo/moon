@@ -14,9 +14,11 @@ use uuid::Uuid;
 const CURRENT_VERSION_URL: &str = "https://launch.moonrepo.app/versions/cli/current";
 const ALERT_PAUSE_DURATION: Duration = Duration::from_secs(43200); // 12 hours
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(default)]
 pub struct CurrentVersion {
     pub current_version: String,
+    pub message: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -53,14 +55,14 @@ fn create_anonymous_rid(workspace_root: &Path) -> String {
 pub async fn check_version(
     local_version_str: &str,
     bypass_cache: bool,
-) -> Result<(String, bool), Box<dyn Error + Send + Sync>> {
+) -> Result<Option<CurrentVersion>, Box<dyn Error + Send + Sync>> {
     let moon_dir = fs::find_upwards(
         CONFIG_DIRNAME,
         env::current_dir().expect("Invalid working directory."),
     );
 
     if is_test_env() || proto::is_offline() || moon_dir.is_none() {
-        return Ok((local_version_str.to_owned(), false));
+        return Ok(None);
     }
 
     let moon_dir = moon_dir.unwrap();
@@ -74,7 +76,7 @@ pub async fn check_version(
 
         if let Ok(state) = check_state {
             if (state.last_alert + ALERT_PAUSE_DURATION) > now && !bypass_cache {
-                return Ok((local_version_str.to_owned(), false));
+                return Ok(None);
             }
         }
     }
@@ -104,7 +106,6 @@ pub async fn check_version(
     let data: CurrentVersion = serde_json::from_str(&response)?;
     let local_version = Version::parse(local_version_str)?;
     let remote_version = Version::parse(data.current_version.as_str())?;
-    let new_version_available = remote_version > local_version;
 
     fs::create_dir_all(check_state_path.parent().unwrap())?;
 
@@ -115,5 +116,9 @@ pub async fn check_version(
 
     serde_json::to_writer(check_state, &CheckState { last_alert: now })?;
 
-    Ok((remote_version.to_string(), new_version_available))
+    if remote_version > local_version {
+        return Ok(Some(data));
+    }
+
+    Ok(None)
 }

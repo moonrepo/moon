@@ -131,15 +131,11 @@ impl Pipeline {
                     let mut action = Action::new(node.to_owned());
                     action.log_target = format!("{batch_target_name}:{action_index}");
 
-                    // let semaphore_clone = semaphore.clone();
-                    let permit = semaphore.clone().acquire_owned().await.unwrap();
+                    let Ok(permit) = semaphore.clone().acquire_owned().await else {
+                        break; // Should error?
+                    };
 
                     action_handles.push(tokio::spawn(async move {
-                        // let permit = semaphore_clone
-                        //     .acquire()
-                        //     .await
-                        //     .expect("Failed to acquire semaphore!");
-
                         let result = process_action(
                             action,
                             context_clone,

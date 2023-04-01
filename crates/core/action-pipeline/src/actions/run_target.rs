@@ -51,6 +51,7 @@ pub async fn run_target(
         dbg!(&target.id, "WRITE 2");
         ctx.target_hashes.insert(target.clone(), "skipped".into());
         dbg!(&target.id, "WRITE 3");
+        drop(ctx);
     }
 
     // Abort early if a no operation

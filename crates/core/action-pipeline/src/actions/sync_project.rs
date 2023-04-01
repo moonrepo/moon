@@ -34,6 +34,9 @@ pub async fn sync_project(
         color::id(&project.id)
     );
 
+    // Create a runfile for tasks to reference
+    workspace.cache.create_runfile(&project.id, project)?;
+
     // Collect all project dependencies so we can pass them along.
     // We can't pass the graph itself because of circuler references between crates!
     let mut dependencies = FxHashMap::default();

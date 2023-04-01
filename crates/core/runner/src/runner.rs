@@ -338,16 +338,14 @@ impl<'a> Runner<'a> {
             "MOON_WORKING_DIR".to_owned(),
             path::to_string(&self.workspace.working_dir)?,
         );
-
-        // Store runtime data on the file system so that downstream commands can utilize it
-        let runfile = self
-            .workspace
-            .cache
-            .create_runfile(&self.project.id, self.project)?;
-
         env_vars.insert(
             "MOON_PROJECT_RUNFILE".to_owned(),
-            path::to_string(runfile.path)?,
+            path::to_string(
+                self.workspace
+                    .cache
+                    .get_state_path(&self.project.id)
+                    .join("runfile.json"),
+            )?,
         );
 
         Ok(env_vars)

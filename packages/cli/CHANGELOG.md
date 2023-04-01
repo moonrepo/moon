@@ -5,6 +5,7 @@
 #### 🚀 Updates
 
 - Added `hasher.batchSize` to control the number of files to be hashed per batch.
+- Updated new version checks to include an optional message.
 
 #### 🐞 Fixes
 

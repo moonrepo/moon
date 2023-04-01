@@ -1,5 +1,6 @@
 use crate::errors::RunnerError;
 use moon_hasher::{hash_btree, hash_vec, Digest, Hasher, Sha256};
+use moon_target::Target;
 use moon_task::Task;
 use moon_utils::path;
 use rustc_hash::FxHashMap;
@@ -98,12 +99,12 @@ impl TargetHasher {
     pub fn hash_task_deps(
         &mut self,
         task: &Task,
-        hashes: &FxHashMap<String, String>,
+        hashes: &FxHashMap<Target, String>,
     ) -> Result<(), RunnerError> {
         for dep in &task.deps {
             self.deps.insert(
                 dep.id.to_owned(),
-                match hashes.get(&dep.id) {
+                match hashes.get(dep) {
                     Some(hash) => hash.to_owned(),
                     None => {
                         return Err(RunnerError::MissingDependencyHash(

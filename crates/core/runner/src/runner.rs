@@ -432,7 +432,7 @@ impl<'a> Runner<'a> {
 
         context
             .target_hashes
-            .insert(self.task.target.id.clone(), hash.clone());
+            .insert(self.task.target.clone(), hash.clone());
 
         // Hash is the same as the previous build, so simply abort!
         // However, ensure the outputs also exist, otherwise we should hydrate.

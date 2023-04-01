@@ -25,7 +25,7 @@ pub struct ActionContext {
 
     pub profile: Option<ProfileType>,
 
-    pub target_hashes: FxHashMap<String, String>,
+    pub target_hashes: FxHashMap<Target, String>,
 
     pub touched_files: FxHashSet<PathBuf>,
 

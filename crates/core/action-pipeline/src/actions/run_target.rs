@@ -37,16 +37,6 @@ pub async fn run_target(
         color::id(&task.target)
     );
 
-    // We must give this task a fake hash for it to be considered complete
-    // for other tasks! This case triggers for noop or cache disabled tasks.
-    // {
-    //     context
-    //         .write()
-    //         .await
-    //         .target_hashes
-    //         .insert(task.target.id.clone(), "skipped".into());
-    // }
-
     // Abort early if a no operation
     if runner.is_no_op() {
         debug!(

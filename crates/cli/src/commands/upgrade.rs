@@ -22,8 +22,10 @@ pub async fn upgrade() -> Result<(), AnyError> {
     let version_check = check_version(version, true).await;
 
     let new_version = match version_check {
-        Ok((newer_version, _)) if Version::parse(&newer_version)? > Version::parse(version)? => {
-            newer_version
+        Ok(Some(newer_version))
+            if Version::parse(&newer_version.current_version)? > Version::parse(version)? =>
+        {
+            newer_version.current_version
         }
         Ok(_) => {
             println!("You're already on the latest version of moon!");

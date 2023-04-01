@@ -90,12 +90,17 @@ pub async fn check_for_new_version() {
         let prefix = get_checkpoint_prefix(Checkpoint::Announcement);
 
         match check_version(version, false).await {
-            Ok((newer_version, true)) => {
+            Ok(Some(newer_version)) => {
                 println!(
                     "{} There's a new version of moon available, {}!",
                     prefix,
-                    color::success(newer_version)
+                    color::success(newer_version.current_version)
                 );
+
+                if let Some(newer_message) = newer_version.message {
+                    println!("{} {}", prefix, newer_message);
+                }
+
                 println!(
                     "{} Run {} or install from {}",
                     prefix,

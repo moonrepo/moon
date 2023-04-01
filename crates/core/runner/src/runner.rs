@@ -498,11 +498,6 @@ impl<'a> Runner<'a> {
         Ok(None)
     }
 
-    /// Return true if this target is a no-op.
-    pub fn is_no_op(&self) -> bool {
-        self.task.is_no_op()
-    }
-
     /// Run the command as a child process and capture its output. If the process fails
     /// and `retry_count` is greater than 0, attempt the process again in case it passes.
     pub async fn run_command(

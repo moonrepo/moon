@@ -2,7 +2,7 @@ use crate::errors::PipelineError;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_emitter::Emitter;
-use moon_logger::{color, debug, warn};
+use moon_logger::{color, debug};
 use moon_platform::Runtime;
 use moon_project::Project;
 use moon_runner::Runner;
@@ -34,44 +34,41 @@ pub async fn run_target(
     debug!(
         target: LOG_TARGET,
         "Running target {}",
-        color::id(&task.target)
+        color::target(&task.target)
     );
 
-    // Abort early if a no operation
-    if runner.is_no_op() {
-        dbg!(&target, "NO-OP");
+    let is_no_op = task.is_no_op();
 
+    // If the VCS root does not exist (like in a Docker container),
+    // we should avoid failing and simply disable caching.
+    let is_cache_enabled = task.options.cache && workspace.vcs.is_enabled();
+
+    // We must give this task a fake hash for it to be considered complete
+    // for other tasks! This case triggers for noop or cache disabled tasks.
+    if is_no_op || !is_cache_enabled {
+        dbg!(&target.id, "WRITE 1");
+        let mut ctx = context.write().await;
+        dbg!(&target.id, "WRITE 2");
+        ctx.target_hashes.insert(target.clone(), "skipped".into());
+        dbg!(&target.id, "WRITE 3");
+    }
+
+    // Abort early if a no operation
+    if is_no_op {
         debug!(
             target: LOG_TARGET,
             "Target {} is a no operation, skipping",
-            color::id(&task.target),
+            color::target(&task.target),
         );
 
         runner.print_checkpoint(Checkpoint::RunPassed, &["no op"])?;
         runner.flush_output()?;
 
-        let mut ctx = context.write().await;
-        ctx.target_hashes.insert(target.clone(), "no-op".into());
-        drop(ctx);
-
         return Ok(ActionStatus::Passed);
     }
 
-    let mut should_cache = task.options.cache;
-
-    // If the VCS root does not exist (like in a Docker image),
-    // we should avoid failing and instead log a warning.
-    if !workspace.vcs.is_enabled() {
-        should_cache = false;
-
-        warn!(
-            target: LOG_TARGET,
-            "VCS root not found, caching will be disabled!"
-        );
-    }
-
     // Abort early if this build has already been cached/hashed
-    if should_cache {
+    if is_cache_enabled {
         dbg!(&target, "CACHE");
 
         let mut ctx = context.write().await;
@@ -80,11 +77,11 @@ pub async fn run_target(
             return Ok(runner.hydrate(cache_location).await?);
         }
     } else {
-        dbg!(&target, "NO-CACHE");
-
-        let mut ctx = context.write().await;
-        ctx.target_hashes.insert(target.clone(), "no-cache".into());
-        drop(ctx);
+        debug!(
+            target: LOG_TARGET,
+            "Cache disabled for target {}",
+            color::target(&task.target),
+        );
     }
 
     dbg!("BEFORE");
@@ -102,7 +99,7 @@ pub async fn run_target(
     };
 
     // If successful, cache the task outputs
-    if should_cache {
+    if is_cache_enabled {
         runner.archive_outputs().await?;
     }
 

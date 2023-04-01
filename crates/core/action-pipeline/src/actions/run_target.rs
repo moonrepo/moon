@@ -39,6 +39,8 @@ pub async fn run_target(
 
     // Abort early if a no operation
     if runner.is_no_op() {
+        dbg!(&target, "NO-OP");
+
         debug!(
             target: LOG_TARGET,
             "Target {} is a no operation, skipping",
@@ -47,6 +49,10 @@ pub async fn run_target(
 
         runner.print_checkpoint(Checkpoint::RunPassed, &["no op"])?;
         runner.flush_output()?;
+
+        let mut ctx = context.write().await;
+        ctx.target_hashes.insert(target.clone(), "no-op".into());
+        drop(ctx);
 
         return Ok(ActionStatus::Passed);
     }
@@ -66,12 +72,22 @@ pub async fn run_target(
 
     // Abort early if this build has already been cached/hashed
     if should_cache {
-        let mut context = context.write().await;
+        dbg!(&target, "CACHE");
 
-        if let Some(cache_location) = runner.is_cached(&mut context, runtime).await? {
+        let mut ctx = context.write().await;
+
+        if let Some(cache_location) = runner.is_cached(&mut ctx, runtime).await? {
             return Ok(runner.hydrate(cache_location).await?);
         }
+    } else {
+        dbg!(&target, "NO-CACHE");
+
+        let mut ctx = context.write().await;
+        ctx.target_hashes.insert(target.clone(), "no-cache".into());
+        drop(ctx);
     }
+
+    dbg!("BEFORE");
 
     // Create the command to run based on the task
     let context = context.read().await;

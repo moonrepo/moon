@@ -8,7 +8,7 @@ use moon_logger::{color, map_list};
 use moon_project_graph::ProjectGraph;
 use moon_utils::is_ci;
 use moon_workspace::Workspace;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashSet;
 use std::env;
 use std::string::ToString;
 
@@ -110,12 +110,6 @@ pub async fn run_target(
         }
     }
 
-    // Pre-populate target hashes with "none" for all primary targets
-    let target_hashes = primary_targets
-        .iter()
-        .map(|t| (t.to_owned(), "none".to_string()))
-        .collect::<FxHashMap<_, _>>();
-
     // Process all tasks in the graph
     let context = ActionContext {
         affected_only: should_run_affected,
@@ -124,9 +118,9 @@ pub async fn run_target(
         passthrough_args: options.passthrough,
         primary_targets: FxHashSet::from_iter(primary_targets),
         profile: options.profile,
-        target_hashes,
         touched_files,
         workspace_root: workspace.root.clone(),
+        ..ActionContext::default()
     };
 
     let dep_graph = dep_builder.build();

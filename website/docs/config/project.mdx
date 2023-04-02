@@ -172,13 +172,7 @@ env:
   NODE_ENV: 'production'
 ```
 
-Variables also support substitution using the syntax `${VAR_NAME}`. When using substitution, only
-variables in the current process can be referenced, and not those currently defined in `env`.
-
-```yaml title="moon.yml" {1,2}
-env:
-  APP_TARGET: '${REGION}-${ENVIRONMENT}'
-```
+> View the task [`env`](#env-1) setting for more usage examples and information.
 
 ## `fileGroups`
 
@@ -364,6 +358,17 @@ tasks:
     command: 'webpack'
     env:
       NODE_ENV: 'production'
+```
+
+Variables also support substitution using the syntax `${VAR_NAME}`. When using substitution, only
+variables in the current process can be referenced, and not those currently defined in `env`.
+
+```yaml title="moon.yml" {4,5}
+tasks:
+  build:
+    command: 'webpack'
+    env:
+      APP_TARGET: '${REGION}-${ENVIRONMENT}'
 ```
 
 ### `inputs`
@@ -565,6 +570,9 @@ A boolean or path to a `.env` file (also know as dotenv file) that defines a col
 [environment variables](#env-1) for the current task. Variables will be loaded on project creation,
 but will _not_ override those defined in [`env`](#env-1).
 
+Variables defined in the file support value substitution/expansion by wrapping the variable name in
+curly brackets, such as `${VAR_NAME}`.
+
 ```yaml title="moon.yml" {6}
 tasks:
   build:
@@ -578,7 +586,13 @@ tasks:
       envFile: '/.env.shared'
 ```
 
-> Variables defined in the file support value substitution using `${VAR_NAME}` syntax.
+:::caution
+
+File parsing is done using the Rust [`dotenvy`](https://crates.io/crates/dotenvy) crate, which is
+_different_ than the Node.js [`dotenv`](https://www.npmjs.com/package/dotenv) package. The biggest
+differences are around quote handling and variable substitution, so be aware of this!
+
+:::
 
 #### `mergeArgs`
 

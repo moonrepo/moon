@@ -84,11 +84,22 @@ fn find_package_bin(
     bin_name: &str,
 ) -> Result<Option<Command>, ToolError> {
     let possible_bin_path = match node::find_package_bin(starting_dir, bin_name)? {
-        Some(bin) => Ok(bin),
-        None => Err(ToolError::MissingBinary(bin_name.to_owned())),
+        Some(bin) => bin,
+        None => {
+            // moon isn't installed as a node module, but probably
+            // exists globally, so let's go with that instead of failing
+            if bin_name == "moon" {
+                return Ok(Some(Command::new(bin_name)));
+            }
+
+            return Err(ToolError::MissingBinary(
+                "node module".into(),
+                bin_name.to_owned(),
+            ));
+        }
     };
 
-    match possible_bin_path? {
+    match possible_bin_path {
         // Rust, Go
         BinFile::Binary(bin_path) => {
             return Ok(Some(Command::new(bin_path)));

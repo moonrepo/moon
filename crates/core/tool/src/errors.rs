@@ -5,8 +5,8 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ToolError {
-    #[error("Unable to find a binary for <symbol>{0}</symbol>. Have you installed the corresponding dependency?")]
-    MissingBinary(String),
+    #[error("Unable to find a {0} for <symbol>{1}</symbol>. Have you installed the corresponding dependency?")]
+    MissingBinary(String, String),
 
     #[error("{0} has not been configured or installed, unable to proceed.")]
     UnknownTool(String),

@@ -13,6 +13,7 @@ type PathsGlobsResolved = (Vec<PathBuf>, Vec<String>);
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum TokenContext {
+    Command,
     Args,
     Inputs,
     Outputs,
@@ -21,6 +22,7 @@ pub enum TokenContext {
 impl TokenContext {
     pub fn context_label(&self) -> String {
         String::from(match self {
+            TokenContext::Command => "command",
             TokenContext::Args => "args",
             TokenContext::Inputs => "inputs",
             TokenContext::Outputs => "outputs",
@@ -61,7 +63,10 @@ impl TokenType {
                 matches!(context, TokenContext::Args)
             }
             TokenType::Var(_) => {
-                matches!(context, TokenContext::Args | TokenContext::Inputs)
+                matches!(
+                    context,
+                    TokenContext::Command | TokenContext::Args | TokenContext::Inputs
+                )
             }
         };
 
@@ -151,19 +156,9 @@ impl<'task> TokenResolver<'task> {
                 paths.extend(resolved_paths);
                 globs.extend(resolved_globs);
             } else {
-                let has_var = self.has_token_var(value);
-
-                if has_var {
-                    TokenType::Var(String::new()).check_context(&self.context)?;
-                }
-
                 let mut is_glob = glob::is_glob(value);
                 let mut resolved = path::expand_to_workspace_relative(
-                    if has_var {
-                        self.resolve_vars(value, task)?
-                    } else {
-                        value.to_owned()
-                    },
+                    self.resolve_vars(value, task)?,
                     self.workspace_root,
                     &self.project.root,
                 );
@@ -186,6 +181,17 @@ impl<'task> TokenResolver<'task> {
         }
 
         Ok((paths, globs))
+    }
+
+    pub fn resolve_command(&self, task: &Task) -> Result<String, TokenError> {
+        if self.has_token_func(&task.command) {
+            // Trigger validation only
+            self.resolve_func(&task.command, task)?;
+
+            return Ok(task.command.clone());
+        }
+
+        self.resolve_vars(&task.command, task)
     }
 
     pub fn resolve_func(&self, value: &str, task: &Task) -> Result<PathsGlobsResolved, TokenError> {
@@ -247,6 +253,8 @@ impl<'task> TokenResolver<'task> {
         let var = matches.get(1).unwrap().as_str(); // var
         let workspace_root = &self.workspace_root;
         let project = self.project;
+
+        TokenType::Var(var.to_owned()).check_context(&self.context)?;
 
         let var_value = match var {
             "workspaceRoot" => path::to_string(workspace_root)?,

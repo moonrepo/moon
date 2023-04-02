@@ -202,6 +202,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             self.expand_task_inputs(project, &mut task)?;
             self.expand_task_outputs(project, &mut task)?;
             self.expand_task_args(project, &mut task)?;
+            self.expand_task_command(project, &mut task)?;
 
             // Determine type after expanding
             task.determine_type();
@@ -210,6 +211,17 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         }
 
         project.tasks.extend(tasks);
+
+        Ok(())
+    }
+
+    pub fn expand_task_command(
+        &self,
+        project: &mut Project,
+        task: &mut Task,
+    ) -> Result<(), ProjectGraphError> {
+        task.command = TokenResolver::new(TokenContext::Command, project, &self.workspace.root)
+            .resolve_command(&task)?;
 
         Ok(())
     }

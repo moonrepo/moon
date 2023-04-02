@@ -11,6 +11,7 @@
 #### ⚙️ Internal
 
 - Support pnpm v8's new lockfile format.
+- Better handling for task's that execute the `moon` binary.
 
 ## 1.0.3
 

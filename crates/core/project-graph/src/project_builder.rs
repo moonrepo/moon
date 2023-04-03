@@ -221,7 +221,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         task: &mut Task,
     ) -> Result<(), ProjectGraphError> {
         task.command = TokenResolver::new(TokenContext::Command, project, &self.workspace.root)
-            .resolve_command(&task)?;
+            .resolve_command(task)?;
 
         Ok(())
     }

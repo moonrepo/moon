@@ -599,12 +599,38 @@ impl<'a> Runner<'a> {
 
         // Write the cache with the result and output
         self.cache.exit_code = output.status.code().unwrap_or(0);
-        self.cache.last_run_time = time::now_millis();
-        self.cache.save()?;
         self.cache.save_output_logs(
             output_to_string(&output.stdout),
             output_to_string(&output.stderr),
         )?;
+
+        Ok(attempts)
+    }
+
+    pub async fn create_and_run_command(
+        &mut self,
+        context: &ActionContext,
+        runtime: &Runtime,
+    ) -> Result<Vec<Attempt>, RunnerError> {
+        let attempts = if self.task.is_no_op() {
+            debug!(
+                target: LOG_TARGET,
+                "Target {} is a no operation, skipping",
+                color::target(&self.task.target),
+            );
+
+            self.print_target_label(Checkpoint::RunPassed, &Attempt::new(0), 0)?;
+            self.flush_output()?;
+
+            vec![]
+        } else {
+            let mut command = self.create_command(&context, runtime).await?;
+
+            self.run_command(&context, &mut command).await?
+        };
+
+        self.cache.last_run_time = time::now_millis();
+        self.cache.save()?;
 
         Ok(attempts)
     }
@@ -738,7 +764,9 @@ impl<'a> Runner<'a> {
     ) -> Result<(), MoonError> {
         let mut comments = vec![];
 
-        if attempt.index > 1 {
+        if self.task.is_no_op() {
+            comments.push("no op".to_owned());
+        } else if attempt.index > 1 {
             comments.push(format!("{}/{}", attempt.index, attempt_total));
         }
 

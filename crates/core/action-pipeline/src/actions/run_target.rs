@@ -7,7 +7,6 @@ use moon_platform::Runtime;
 use moon_project::Project;
 use moon_runner::Runner;
 use moon_target::Target;
-use moon_terminal::Checkpoint;
 use moon_workspace::Workspace;
 use std::env;
 use std::sync::Arc;
@@ -64,36 +63,18 @@ pub async fn run_target(
             .insert(target.clone(), "skipped".into());
     }
 
-    let mut attempts = vec![];
-
-    // When a no operation, we can skip running a command all together
-    if task.is_no_op() {
-        debug!(
-            target: LOG_TARGET,
-            "Target {} is a no operation, skipping",
-            color::target(&task.target),
-        );
-
-        runner.print_checkpoint(Checkpoint::RunPassed, &["no op"])?;
-        runner.flush_output()?;
-
-    // When cache is enabled, we can run the command normally
-    } else if is_cache_enabled {
+    let attempts = if is_cache_enabled {
         let context = context.read().await;
-        let mut command = runner.create_command(&context, runtime).await?;
 
-        attempts = runner.run_command(&context, &mut command).await?;
-
-    // When cache is disabled, we must clone the context to avoid a deadlock
+        runner.create_and_run_command(&context, runtime).await?
     } else {
         // Concurrent long-running tasks will cause a deadlock, as some threads will
         // attempt to write to context while others are reading from it, and long-running
         // tasks may never release the lock. Unfortuantely we have to clone  here to work
         // around it, so revisit in the future.
         let context = (context.read().await).clone();
-        let mut command = runner.create_command(&context, runtime).await?;
 
-        attempts = runner.run_command(&context, &mut command).await?;
+        runner.create_and_run_command(&context, runtime).await?
     };
 
     let status = if action.set_attempts(attempts) {

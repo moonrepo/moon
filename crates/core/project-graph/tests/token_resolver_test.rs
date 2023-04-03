@@ -216,6 +216,38 @@ mod out_token {
     }
 }
 
+mod resolve_command {
+    use super::*;
+
+    #[test]
+    #[should_panic(expected = "InvalidTokenContext(\"@in\", \"command\")")]
+    fn doesnt_support_functions() {
+        let workspace_root = get_workspace_root();
+        let project = create_project(&workspace_root);
+
+        let resolver = TokenResolver::new(TokenContext::Command, &project, &workspace_root);
+        let mut task = create_task(None);
+        task.command = "@in(0)".into();
+
+        resolver.resolve_command(&task).unwrap();
+    }
+
+    #[test]
+    fn supports_vars() {
+        let workspace_root = get_workspace_root();
+        let project = create_project(&workspace_root);
+
+        let resolver = TokenResolver::new(TokenContext::Command, &project, &workspace_root);
+        let mut task = create_task(None);
+        task.command = "$language/script.sh".into();
+
+        assert_eq!(
+            resolver.resolve_command(&task).unwrap(),
+            "unknown/script.sh"
+        );
+    }
+}
+
 mod resolve_args {
     use super::*;
 
@@ -817,7 +849,7 @@ mod resolve_outputs {
     }
 
     #[test]
-    #[should_panic(expected = "InvalidTokenContext(\"$var\", \"outputs\")")]
+    #[should_panic(expected = "InvalidTokenContext(\"$project\", \"outputs\")")]
     fn doesnt_support_vars() {
         let workspace_root = get_workspace_root();
         let project = create_project(&workspace_root);

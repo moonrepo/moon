@@ -1,6 +1,8 @@
 language: javascript
 
 tasks:
+  commandVars:
+    command: '$workspaceRoot/$task-script.sh'
   argsFileGroups:
     args:
       - '--dirs'

@@ -4,6 +4,7 @@
 
 #### 🚀 Updates
 
+- Added token variable substitution support for task `command`s.
 - Added a `moon task` command, for viewing resolved information about a task.
 - Updated `moon run` to be able to run tasks in the closest project based on current working
   directory.

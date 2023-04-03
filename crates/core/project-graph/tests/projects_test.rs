@@ -564,6 +564,26 @@ mod task_inheritance {
 mod task_expansion {
     use super::*;
 
+    mod expand_command {
+        use super::*;
+
+        #[tokio::test]
+        async fn resolves_var_tokens() {
+            let (sandbox, project_graph) = tasks_sandbox().await;
+
+            let project = project_graph.get("tokens").unwrap();
+
+            assert_eq!(
+                *project.get_task("commandVars").unwrap().command,
+                format!(
+                    "{}/{}-script.sh",
+                    sandbox.path().to_str().unwrap(),
+                    "commandVars"
+                )
+            );
+        }
+    }
+
     mod expand_args {
         use super::*;
 

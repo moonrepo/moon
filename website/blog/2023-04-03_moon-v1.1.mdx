@@ -10,6 +10,22 @@ tags: []
 
 <!--truncate-->
 
+## Token variable support in task commands
+
+moon supports a concept known as [tokens](/docs/concepts/token) where values are injected into tasks
+during project graph creation. This allows for dynamic values in your tasks, such as the current
+project language, or the current task name, and is crucial for task inheritance to work.
+
+However, tokens were only supported by task args, inputs, and outputs, but not commands... until
+now. Commands can now use token variables (but not token functions). For example, this is useful for
+referencing shared scripts from the workspace root.
+
+```yaml title="moon.yml"
+tasks:
+	precheck:
+		command: '$workspaceRoot/scripts/precheck.sh'
+```
+
 ## Run targets in closest project
 
 The [`moon run`](/docs/commands/run) command can run targets in an array of different formats, but

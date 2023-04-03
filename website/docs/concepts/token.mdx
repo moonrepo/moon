@@ -2,10 +2,11 @@
 title: Tokens
 ---
 
-Tokens are variables and functions that can be used by [`args`](../config/project#args),
-[`inputs`](../config/project#inputs), and [`outputs`](../config/project#outputs) when configuring a
-task. They provide a way of accessing file group paths, referencing values from other task fields,
-and referencing metadata about the project and task itself.
+Tokens are variables and functions that can be used by [`command`](../config/project#command),
+[`args`](../config/project#args), [`inputs`](../config/project#inputs), and
+[`outputs`](../config/project#outputs) when configuring a task. They provide a way of accessing file
+group paths, referencing values from other task fields, and referencing metadata about the project
+and task itself.
 
 ## Functions
 
@@ -275,7 +276,7 @@ tasks:
 
 ## Variables
 
-> Usable in `args` and `inputs` only.
+> Usable in `command`, `args`, and `inputs` only.
 
 A token variable is a value that starts with `$` and is substituted to a value derived from the
 current workspace, project, and task. And unlike token functions, token variables can be placed

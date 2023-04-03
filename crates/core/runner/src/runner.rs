@@ -624,9 +624,9 @@ impl<'a> Runner<'a> {
 
             vec![]
         } else {
-            let mut command = self.create_command(&context, runtime).await?;
+            let mut command = self.create_command(context, runtime).await?;
 
-            self.run_command(&context, &mut command).await?
+            self.run_command(context, &mut command).await?
         };
 
         self.cache.last_run_time = time::now_millis();

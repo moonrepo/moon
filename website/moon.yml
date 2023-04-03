@@ -22,7 +22,7 @@ tasks:
     local: true
 
   typecheck:
-    command: 'tsc --build --pretty --verbose'
+    command: 'tsc --build --pretty'
     inputs:
       - '@globs(sources)'
       - '*.js'

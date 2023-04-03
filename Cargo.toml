@@ -19,23 +19,23 @@ members = [
 default-members = ["crates/cli"]
 
 [workspace.dependencies]
-async-trait = "0.1.67"
+async-trait = "0.1.68"
 cached = "0.42.0"
 ci_env = "0.2.0"
-clap = { version = "4.1.12", features = ["derive", "env", "wrap_help"] }
-clap_complete = "4.1.5"
+clap = { version = "4.2.1", features = ["derive", "env", "wrap_help"] }
+clap_complete = "4.2.0"
 console = "0.15.5"
 criterion = { version = "0.4.0", features = ["async_tokio"] }
 lazy_static = "1.4.0"
 petgraph = { version = "0.6.3", default-features = false, features = ["serde-1"] }
 proto_cli = "0.4.0"
-regex = "1.7.2"
+regex = "1.7.3"
 # We don't use openssl but its required for musl builds
-reqwest = { version = "0.11.15", default-features = false, features = ["rustls-tls", "native-tls-vendored"] }
+reqwest = { version = "0.11.16", default-features = false, features = ["rustls-tls", "native-tls-vendored"] }
 rustc-hash = "1.1.0"
-serde = { version = "1.0.158", features = ["derive"] }
-serde_json = "1.0.94"
+serde = { version = "1.0.159", features = ["derive"] }
+serde_json = "1.0.95"
 serde_yaml = "0.9.19"
 strum = { version = "0.24.1", features = ["derive"] }
 thiserror = "1.0.40"
-tokio = { version = "1.26.0", default-features = false, features = ["tracing"] }
+tokio = { version = "1.27.0", default-features = false, features = ["tracing"] }

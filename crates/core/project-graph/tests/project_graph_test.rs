@@ -237,7 +237,7 @@ mod caching {
         assert_eq!(state.last_glob_time, 0);
         assert_eq!(
             state.last_hash,
-            "10fd6ac2077508f6b72809de3cb0e94936e3a9ea685a8fc9e7b032be6aee6ee0"
+            "7ea65b6c65b3c9c3f24d6cde0215268c249686eedde0b689b5085e4c116750ed"
         );
         assert_eq!(
             state.projects,

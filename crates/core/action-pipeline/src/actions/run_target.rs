@@ -37,35 +37,9 @@ pub async fn run_target(
         color::target(&task.target)
     );
 
-    let is_no_op = task.is_no_op();
-
     // If the VCS root does not exist (like in a Docker container),
     // we should avoid failing and simply disable caching.
     let is_cache_enabled = task.options.cache && workspace.vcs.is_enabled();
-
-    // We must give this task a fake hash for it to be considered complete
-    // for other tasks! This case triggers for noop or cache disabled tasks.
-    if is_no_op || !is_cache_enabled {
-        context
-            .write()
-            .await
-            .target_hashes
-            .insert(target.clone(), "skipped".into());
-    }
-
-    // Abort early if a no operation
-    if is_no_op {
-        debug!(
-            target: LOG_TARGET,
-            "Target {} is a no operation, skipping",
-            color::target(&task.target),
-        );
-
-        runner.print_checkpoint(Checkpoint::RunPassed, &["no op"])?;
-        runner.flush_output()?;
-
-        return Ok(ActionStatus::Passed);
-    }
 
     // Abort early if this build has already been cached/hashed
     if is_cache_enabled {
@@ -80,13 +54,37 @@ pub async fn run_target(
             "Cache disabled for target {}",
             color::target(&task.target),
         );
+
+        // We must give this task a fake hash for it to be considered complete
+        // for other tasks! This case triggers for noop or cache disabled tasks.
+        context
+            .write()
+            .await
+            .target_hashes
+            .insert(target.clone(), "skipped".into());
     }
 
-    let attempts = if is_cache_enabled {
+    let mut attempts = vec![];
+
+    // When a no operation, we can skip running a command all together
+    if task.is_no_op() {
+        debug!(
+            target: LOG_TARGET,
+            "Target {} is a no operation, skipping",
+            color::target(&task.target),
+        );
+
+        runner.print_checkpoint(Checkpoint::RunPassed, &["no op"])?;
+        runner.flush_output()?;
+
+    // When cache is enabled, we can run the command normally
+    } else if is_cache_enabled {
         let context = context.read().await;
         let mut command = runner.create_command(&context, runtime).await?;
 
-        runner.run_command(&context, &mut command).await?
+        attempts = runner.run_command(&context, &mut command).await?;
+
+    // When cache is disabled, we must clone the context to avoid a deadlock
     } else {
         // Concurrent long-running tasks will cause a deadlock, as some threads will
         // attempt to write to context while others are reading from it, and long-running
@@ -95,7 +93,7 @@ pub async fn run_target(
         let context = (context.read().await).clone();
         let mut command = runner.create_command(&context, runtime).await?;
 
-        runner.run_command(&context, &mut command).await?
+        attempts = runner.run_command(&context, &mut command).await?;
     };
 
     let status = if action.set_attempts(attempts) {

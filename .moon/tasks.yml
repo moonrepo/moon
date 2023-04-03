@@ -82,10 +82,10 @@ tasks:
     inputs:
       - '@globs(sources)'
       - '@globs(tests)'
-      - 'jest.config.js'
+      - 'jest.config.*'
 
   typecheck:
-    command: 'tsc --build --verbose'
+    command: 'tsc --build'
     inputs:
       - '@globs(sources)'
       - '@globs(tests)'

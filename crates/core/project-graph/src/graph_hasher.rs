@@ -58,6 +58,7 @@ impl Hasher for GraphHasher {
         hash_btree(&self.configs, sha);
         hash_btree(&self.sources, sha);
         sha.update(self.version.as_bytes());
+        sha.update(self.in_container.to_string().as_bytes());
     }
 
     fn serialize(&self) -> serde_json::Value {

@@ -201,6 +201,6 @@ impl FileGroup {
 
 impl PartialEq for FileGroup {
     fn eq(&self, other: &Self) -> bool {
-        self.id == other.id && self.files == other.files
+        self.id == other.id && self.files == other.files && self.globs == other.globs
     }
 }

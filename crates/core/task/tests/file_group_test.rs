@@ -8,11 +8,12 @@ mod merge {
 
     #[test]
     fn overwrites() {
-        let mut file_group = FileGroup::new("id", string_vec!["**/*"]);
+        let mut file_group = FileGroup::new("id", string_vec!["a", "**/*"]);
 
-        file_group.merge(string_vec!["*"]);
+        file_group.merge(string_vec!["b", "*"]);
 
-        assert_eq!(file_group.files, string_vec!["*"]);
+        assert_eq!(file_group.files, string_vec!["b"]);
+        assert_eq!(file_group.globs, string_vec!["*"]);
     }
 }
 

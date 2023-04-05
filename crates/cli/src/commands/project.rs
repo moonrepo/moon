@@ -108,14 +108,19 @@ pub async fn project(id: String, json: bool) -> Result<(), AnyError> {
         term.write_line("")?;
         term.render_label(Label::Default, "File groups")?;
 
-        for group in project.file_groups.keys().sorted() {
+        for group_name in project.file_groups.keys().sorted() {
             let mut files = vec![];
+            let group = project.file_groups.get(group_name).unwrap();
 
-            for file in &project.file_groups.get(group).unwrap().files {
+            for file in &group.files {
                 files.push(color::file(file));
             }
 
-            term.render_entry_list(group, files)?;
+            for file in &group.globs {
+                files.push(color::file(file));
+            }
+
+            term.render_entry_list(group_name, files)?;
         }
     }
 

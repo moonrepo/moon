@@ -99,7 +99,7 @@ mod task_inheritance {
                 .file_groups
                 .get("files_glob")
                 .unwrap()
-                .files,
+                .globs,
             string_vec!["**/*.{ts,tsx}"]
         );
 
@@ -132,7 +132,7 @@ mod task_inheritance {
                 .file_groups
                 .get("files_glob")
                 .unwrap()
-                .files,
+                .globs,
             string_vec!["**/*.{ts,tsx}"]
         );
 

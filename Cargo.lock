@@ -2997,6 +2997,7 @@ dependencies = [
  "moon_target",
  "moon_test_utils",
  "moon_utils",
+ "once_cell",
  "rustc-hash",
  "serde",
  "strum",

@@ -2,16 +2,23 @@ use crate::errors::FileGroupError;
 use common_path::common_path_all;
 use moon_logger::{color, map_list, trace};
 use moon_utils::{glob, path};
+use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
 const LOG_TARGET: &str = "moon:task:file-group";
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[serde(default)]
 pub struct FileGroup {
     pub files: Vec<String>,
 
+    pub globs: Vec<String>,
+
     pub id: String,
+
+    #[serde(skip)]
+    walk_cache: OnceCell<Vec<PathBuf>>,
 }
 
 impl FileGroup {
@@ -23,15 +30,29 @@ impl FileGroup {
             map_list(&files, |f| color::file(f))
         );
 
-        FileGroup {
-            files,
+        let mut group = FileGroup {
+            files: vec![],
+            globs: vec![],
             id: id.to_owned(),
-        }
+            walk_cache: OnceCell::new(),
+        };
+
+        group.merge(files);
+        group
     }
 
     pub fn merge(&mut self, files: Vec<String>) {
         // Local files should always override global
-        self.files = files;
+        self.files = vec![];
+        self.globs = vec![];
+
+        for file in files {
+            if glob::is_glob(&file) {
+                self.globs.push(file);
+            } else {
+                self.files.push(file);
+            }
+        }
     }
 
     // Returns the file group as-is, with each file converted to an absolute path.
@@ -45,13 +66,19 @@ impl FileGroup {
         let mut globs = vec![];
 
         for file in &self.files {
-            let result = path::expand_to_workspace_relative(file, workspace_root, project_root);
+            paths.push(path::expand_to_workspace_relative(
+                file,
+                workspace_root,
+                project_root,
+            ));
+        }
 
-            if glob::is_glob(file) {
-                globs.push(glob::normalize(result)?);
-            } else {
-                paths.push(result);
-            }
+        for file in &self.globs {
+            globs.push(glob::normalize(path::expand_to_workspace_relative(
+                file,
+                workspace_root,
+                project_root,
+            ))?);
         }
 
         Ok((paths, globs))
@@ -84,20 +111,18 @@ impl FileGroup {
         workspace_root: &Path,
         project_root: &Path,
     ) -> Result<Vec<String>, FileGroupError> {
-        let mut globs = vec![];
-
-        for file in &self.files {
-            if glob::is_glob(file) {
-                globs.push(glob::normalize(path::expand_to_workspace_relative(
-                    file,
-                    workspace_root,
-                    project_root,
-                ))?);
-            }
+        if self.globs.is_empty() {
+            return Err(FileGroupError::NoGlobs(self.id.to_owned()));
         }
 
-        if globs.is_empty() {
-            return Err(FileGroupError::NoGlobs(self.id.to_owned()));
+        let mut globs = vec![];
+
+        for file in &self.globs {
+            globs.push(glob::normalize(path::expand_to_workspace_relative(
+                file,
+                workspace_root,
+                project_root,
+            ))?);
         }
 
         Ok(globs)
@@ -138,8 +163,8 @@ impl FileGroup {
         let (paths, globs) = self.all(workspace_root, project_root)?;
         let mut list = vec![];
 
-        // Paths are relative from workspace root!
         for path in paths {
+            // Paths are relative from workspace root!
             let allowed = if is_dir {
                 workspace_root.join(&path).is_dir()
             } else {
@@ -152,8 +177,12 @@ impl FileGroup {
         }
 
         if !globs.is_empty() {
+            let walk_paths = self
+                .walk_cache
+                .get_or_try_init(|| glob::walk(workspace_root, &globs))?;
+
             // Glob results are absolute paths!
-            for path in glob::walk(workspace_root, &globs)? {
+            for path in walk_paths {
                 let allowed = if is_dir {
                     path.is_dir()
                 } else {
@@ -167,5 +196,11 @@ impl FileGroup {
         }
 
         Ok(list)
+    }
+}
+
+impl PartialEq for FileGroup {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id && self.files == other.files && self.globs == other.globs
     }
 }

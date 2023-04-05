@@ -1,0 +1,30 @@
+---
+title: install-global
+---
+
+The `proto install-global <tool> <dependency>` command will install a global
+package/module/dependency for the provided tool.
+
+Where globals are installed and linked are dependent on the tool. For example, Deno installs to
+`~/.deno/bin` and Rust to `~/.cargo/bin`. Refer to the [supported tools](../tools) section for all
+install locations.
+
+```shell
+# Install a global by name
+$ proto install-global rust cargo-release
+
+# Can also include an optional version (depending on the language)
+$ proto install-global node typescript@v5
+```
+
+:::caution
+
+proto installs globals but _does not_ make them available on `PATH`. You'll need to manually add all
+the [global binary locations](../tools) to `PATH` from your shell profile.
+
+:::
+
+### Arguments
+
+- `<tool>` - Type of tool.
+- `<dependency>` - Name of dependency and optional version.

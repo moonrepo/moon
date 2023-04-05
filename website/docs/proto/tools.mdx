@@ -9,10 +9,18 @@ The following tools are supported in proto's toolchain.
 [Bun](https://bun.sh/) (`bun`) is an all-in-one runtime and toolset for JavaScript and TypeScript,
 powered by Zig and Webkit.
 
+#### Global binaries
+
+- Installs to `~/.bun/bin`.
+
 ## Deno
 
 [Deno](https://deno.land/) (`deno`) is a secure runtime for JavaScript and TypeScript, powered by
 Rust and Chrome's V8 engine.
+
+#### Global binaries
+
+- Installs to `DENO_INSTALL_ROOT` or `~/.deno/bin`.
 
 #### Detection sources
 
@@ -33,6 +41,10 @@ installation.
 $ proto install go -- --no-gobin
 ```
 
+#### Global binaries
+
+- Installs to `GOBIN` or `~/go/bin`.
+
 #### Detection sources
 
 - Native [`go.work`](https://go.dev/doc/tutorial/workspaces) or
@@ -51,6 +63,10 @@ functionality can be skipped by passing `--no-bundled-npm` during installation.
 $ proto install node -- --no-bundled-npm
 ```
 
+#### Global binaries
+
+- Installs to `~/.proto/tools/node/globals/bin`.
+
 #### Detection sources
 
 - An [`.nvmrc`](https://github.com/nvm-sh/nvm) or
@@ -68,6 +84,12 @@ requirements/ranges (`^1.2.3`, `>=1.2.3`) will scan `~/.proto/tools/node` for an
 ### npm, pnpm, yarn
 
 proto supports all popular Node.js package managers: `npm`, `pnpm`, `yarn`.
+
+#### Global binaries
+
+- Installs to `~/.proto/tools/node/globals/bin`.
+- Internally all package managers [install globals](./commands/install-global) with `npm` into the
+  location above.
 
 #### Detection sources
 
@@ -92,6 +114,10 @@ using Rust in proto:
 - We don't create shims for `cargo`, `rustup`, etc.
 
 :::
+
+#### Global binaries
+
+- Installs to `CARGO_INSTALL_ROOT` or `~/.cargo/bin`.
 
 #### Detection sources
 

@@ -246,6 +246,7 @@ const sidebars = {
 				'proto/commands/completions',
 				'proto/commands/global',
 				'proto/commands/install',
+				'proto/commands/install-global',
 				'proto/commands/list',
 				'proto/commands/list-remote',
 				'proto/commands/local',

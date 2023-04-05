@@ -44,3 +44,15 @@ around pre-built archives for easier portability.
 Yes, go for it! We have no official guide on how to do this, but the Rust code is rather straight
 forward. Feel free to copy another
 [language crate](https://github.com/moonrepo/proto/tree/master/crates).
+
+### How can I install a global binary for a language?
+
+You can install a global with the [`proto install-global`](./commands/install-global) command. Most
+languages install a global to a shared location regardless of the language's version (Deno is
+`~/.deno/bin`, Rust is `~/.cargo/bin`, etc), so globals can also be installed _outside_ of proto
+using language specific commands.
+
+The exception to this is Node.js (and npm, pnpm, yarn). Each of these tools install global packages
+_differently_, and they're also tied to the parent tools version. So if you install a new language
+version, you lose your global packages. We suggest using `proto install-global` for all Node.js
+packages, which installs everything to a shared location, `~/.proto/tools/node/globals`.

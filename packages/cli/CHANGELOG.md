@@ -2,6 +2,8 @@
 
 ## 1.1.1
 
+#### 🐞 Fixes
+
 - Fixed an issue where token function resolving would cause massive performance degradation.
 
 ## 1.1.0

@@ -3,15 +3,21 @@ use common_path::common_path_all;
 use moon_logger::{color, map_list, trace};
 use moon_utils::{glob, path};
 use serde::{Deserialize, Serialize};
-use std::path::{Path, PathBuf};
+use std::{
+    path::{Path, PathBuf},
+    sync::{Arc, RwLock},
+};
 
 const LOG_TARGET: &str = "moon:task:file-group";
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct FileGroup {
     pub files: Vec<String>,
 
     pub id: String,
+
+    #[serde(skip)]
+    walk_cache: Arc<RwLock<Vec<PathBuf>>>,
 }
 
 impl FileGroup {
@@ -26,6 +32,7 @@ impl FileGroup {
         FileGroup {
             files,
             id: id.to_owned(),
+            walk_cache: Arc::new(RwLock::new(vec![])),
         }
     }
 
@@ -152,8 +159,17 @@ impl FileGroup {
         }
 
         if !globs.is_empty() {
+            // Load into cache if empty
+            {
+                let mut walk_cache = self.walk_cache.write().unwrap();
+
+                if walk_cache.is_empty() {
+                    walk_cache.extend(glob::walk(workspace_root, &globs)?);
+                }
+            }
+
             // Glob results are absolute paths!
-            for path in glob::walk(workspace_root, &globs)? {
+            for path in self.walk_cache.read().unwrap().iter() {
                 let allowed = if is_dir {
                     path.is_dir()
                 } else {
@@ -167,5 +183,11 @@ impl FileGroup {
         }
 
         Ok(list)
+    }
+}
+
+impl PartialEq for FileGroup {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id && self.files == other.files
     }
 }

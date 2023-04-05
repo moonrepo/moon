@@ -2,15 +2,14 @@ use crate::errors::FileGroupError;
 use common_path::common_path_all;
 use moon_logger::{color, map_list, trace};
 use moon_utils::{glob, path};
+use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
-use std::{
-    path::{Path, PathBuf},
-    sync::{Arc, RwLock},
-};
+use std::path::{Path, PathBuf};
 
 const LOG_TARGET: &str = "moon:task:file-group";
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[serde(default)]
 pub struct FileGroup {
     pub files: Vec<String>,
 
@@ -19,7 +18,7 @@ pub struct FileGroup {
     pub id: String,
 
     #[serde(skip)]
-    walk_cache: Arc<RwLock<Vec<PathBuf>>>,
+    walk_cache: OnceCell<Vec<PathBuf>>,
 }
 
 impl FileGroup {
@@ -35,7 +34,7 @@ impl FileGroup {
             files: vec![],
             globs: vec![],
             id: id.to_owned(),
-            walk_cache: Arc::new(RwLock::new(vec![])),
+            walk_cache: OnceCell::new(),
         };
 
         group.merge(files);
@@ -178,17 +177,12 @@ impl FileGroup {
         }
 
         if !globs.is_empty() {
-            // Load into cache if empty
-            {
-                let mut walk_cache = self.walk_cache.write().unwrap();
-
-                if walk_cache.is_empty() {
-                    walk_cache.extend(glob::walk(workspace_root, &globs)?);
-                }
-            }
+            let walk_paths = self
+                .walk_cache
+                .get_or_try_init(|| glob::walk(workspace_root, &globs))?;
 
             // Glob results are absolute paths!
-            for path in self.walk_cache.read().unwrap().iter() {
+            for path in walk_paths {
                 let allowed = if is_dir {
                     path.is_dir()
                 } else {

@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.1.1
 
 - Fixed an issue where token function resolving would cause massive performance degradation.
 

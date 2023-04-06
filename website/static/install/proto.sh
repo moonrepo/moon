@@ -8,7 +8,7 @@ set -e
 
 bin="proto"
 arch=$(uname -sm)
-version="${1:-0.4.0}" # TODO
+version="${1:-0.5.0}" # TODO
 ext=".tar.xz"
 
 if [ "$OS" = "Windows_NT" ]; then

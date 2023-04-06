@@ -55,4 +55,6 @@ using language specific commands.
 The exception to this is Node.js (and npm, pnpm, yarn). Each of these tools install global packages
 _differently_, and they're also tied to the parent tools version. So if you install a new language
 version, you lose your global packages. We suggest using `proto install-global` for all Node.js
-packages, which installs everything to a shared location, `~/.proto/tools/node/globals`.
+packages, which installs everything to a shared location, `~/.proto/tools/node/globals/bin`.
+
+You'll also need to manually add these global directories to your `PATH`.

@@ -3,14 +3,63 @@ slug: proto-v0.5
 title: proto v0.5 - Version aliasing and global binaries
 authors: [milesj]
 tags: [proto, alias, globals]
-# image: ./img/proto/v0.4.png
+image: ./img/proto/v0.5.png
 ---
 
-With this release, we've added Rust language support, user configs, and a few other improvements.
+With this release, we're providing solutions for installing globals and using aliases.
 
 <!--truncate-->
 
-## Rust language support
+## Install global binaries
+
+Installing global binaries (packages, modules, etc) is a common task for developers, and proto now
+provides a solution for this workflow with the
+[`proto install-global`](/docs/proto/commands/install-global) command. Continue reading for more
+information.
+
+:::info
+
+Global install directories will need to be added manually to your `PATH` from your shell.
+
+:::
+
+### Bun, Deno, Go, Rust
+
+All of these languages provide a built-in solution for installing global binaries to a shared
+location, regardless of the language's current version. Because of this, proto will simply call
+their install commands under the hood.
+
+```shell
+$ proto install-global rust cargo-release
+
+# Same as
+$ cargo install cargo-release --force
+```
+
+Globals will be installed to the following locations:
+
+- **Bun**: `~/.bun/bin`
+- **Deno**: `~/.deno/bin`
+- **Go**: `~/go/bin`
+- **Rust**: `~/.cargo/bin`
+
+### Node.js, npm, pnpm, yarn
+
+Unfortunately, the Node.js ecosystem is pretty fractured when it comes to installing global
+binaries. Each package manager provides their own solution for installing globals, and each has
+their own quirks. The problem is further exacerbated by the fact that globals are tied to Node.js
+version, so if you switch versions, you lose all your previous globals!
+
+To work around this, proto standardizes the global installation process for Node.js, but requires
+all globals to be installed through proto. You can no longer use `npm install -g`, `pnpm add -g`, so
+on and so forth, and must use:
+
+```shell
+$ proto install-global node webpack-cli
+```
+
+Globals will be installed to a shared location, `~/.proto/tools/node/globals/bin`, and will persist
+across versions!
 
 ## Custom version aliases
 

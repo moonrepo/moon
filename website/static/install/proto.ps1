@@ -14,8 +14,7 @@ if ($Args.Length -eq 1) {
 
 if ($Version -eq "latest") {
   $Response = Invoke-WebRequest -URI "https://raw.githubusercontent.com/moonrepo/proto/master/version"
-  $Version = $Response.Content
-  Write-Output "Version=${Version}"
+  $Version = $Response.Content.Trim()
 }
 
 $Target = "proto_cli-v${Version}-x86_64-pc-windows-msvc"

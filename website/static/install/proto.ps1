@@ -6,10 +6,16 @@
 
 $ErrorActionPreference = 'Stop'
 
-$Version = "0.5.0" # TODO
+$Version = "latest"
 
 if ($Args.Length -eq 1) {
   $Version = $Args.Get(0)
+}
+
+if ($Version -eq "latest") {
+  $Response = Invoke-WebRequest -URI "https://raw.githubusercontent.com/moonrepo/proto/master/version"
+  $Version = $Response.Content
+  Write-Output "Version=${Version}"
 }
 
 $Target = "proto_cli-v${Version}-x86_64-pc-windows-msvc"

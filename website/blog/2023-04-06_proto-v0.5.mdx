@@ -1,0 +1,84 @@
+---
+slug: proto-v0.5
+title: proto v0.5 - Version aliasing and global binaries
+authors: [milesj]
+tags: [proto, alias, globals]
+image: ./img/proto/v0.5.png
+---
+
+With this release, we're providing solutions for installing globals and using aliases.
+
+<!--truncate-->
+
+## Install global binaries
+
+Installing global binaries (packages, modules, etc) is a common task for developers, and proto now
+provides a solution for this workflow with the
+[`proto install-global`](/docs/proto/commands/install-global) command. Continue reading for more
+information.
+
+:::info
+
+Global install directories will need to be added manually to your `PATH` from your shell.
+
+:::
+
+### Bun, Deno, Go, Rust
+
+All of these languages provide a built-in solution for installing global binaries to a shared
+location, regardless of the language's current version. Because of this, proto will simply call
+their install commands under the hood.
+
+```shell
+$ proto install-global rust cargo-release
+
+# Same as
+$ cargo install cargo-release --force
+```
+
+Globals will be installed to the following locations:
+
+- **Bun**: `~/.bun/bin`
+- **Deno**: `~/.deno/bin`
+- **Go**: `~/go/bin`
+- **Rust**: `~/.cargo/bin`
+
+### Node.js, npm, pnpm, yarn
+
+Unfortunately, the Node.js ecosystem is pretty fractured when it comes to installing global
+binaries. Each package manager provides their own solution for installing globals, and each has
+their own quirks. The problem is further exacerbated by the fact that globals are tied to Node.js
+version, so if you switch versions, you lose all your previous globals!
+
+To work around this, proto standardizes the global installation process for Node.js, but requires
+all globals to be installed through proto. You can no longer use `npm install -g`, `pnpm add -g`, so
+on and so forth, and must use:
+
+```shell
+$ proto install-global node webpack-cli
+```
+
+Globals will be installed to a shared location, `~/.proto/tools/node/globals/bin`, and will persist
+across versions!
+
+## Custom version aliases
+
+We are excited to announce 2 new commands that enable you to define custom version aliases,
+[`proto alias`](/docs/proto/commands/alias) and [`proto unalias`](/docs/proto/commands/unalias).
+Aliasing of versions is a feature that allows you to assign a custom name or label to a specific
+version of a tool.
+
+For example, instead of using the version number, you can assign a label such as "work" or
+"personal" to a version. This makes it easier to remember and manage different versions.
+
+```shell
+$ proto alias node work 16.16
+$ proto alias node personal 18
+```
+
+Aliases can be used anywhere a version is accepted, for example:
+
+```shell
+$ proto bin node work
+$ proto install node personal
+```

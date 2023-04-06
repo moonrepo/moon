@@ -1,0 +1,17 @@
+---
+title: alias
+---
+
+The `proto alias <tool> <label> <version>` (or `proto a`) command will define a custom alias that
+maps to a specific version for the provided tool. Aliases can be used anywhere a version is
+accepted.
+
+```shell
+$ proto alias node work 16.16
+```
+
+### Arguments
+
+- `<tool>` - Type of tool.
+- `<label>` - Name of the alias. Supports alpanumeric chars.
+- `<version>` - Version to map to the alias.

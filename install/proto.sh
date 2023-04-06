@@ -8,8 +8,12 @@ set -e
 
 bin="proto"
 arch=$(uname -sm)
-version="${1:-0.4.0}" # TODO
+version="${1:-latest}"
 ext=".tar.xz"
+
+if [ "$version" == "latest" ]; then
+	version=$(curl -s https://raw.githubusercontent.com/moonrepo/proto/master/version)
+fi
 
 if [ "$OS" = "Windows_NT" ]; then
 	target="proto_cli-v$version-x86_64-pc-windows-msvc"

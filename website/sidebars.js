@@ -242,6 +242,7 @@ const sidebars = {
 			type: 'category',
 			label: 'Commands',
 			items: [
+				'proto/commands/alias',
 				'proto/commands/bin',
 				'proto/commands/completions',
 				'proto/commands/global',
@@ -252,6 +253,7 @@ const sidebars = {
 				'proto/commands/local',
 				'proto/commands/run',
 				'proto/commands/setup',
+				'proto/commands/unalias',
 				'proto/commands/uninstall',
 				'proto/commands/upgrade',
 				'proto/commands/use',

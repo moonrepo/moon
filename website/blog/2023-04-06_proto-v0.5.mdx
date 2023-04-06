@@ -1,0 +1,35 @@
+---
+slug: proto-v0.5
+title: proto v0.5 - Version aliasing and global binaries
+authors: [milesj]
+tags: [proto, alias, globals]
+# image: ./img/proto/v0.4.png
+---
+
+With this release, we've added Rust language support, user configs, and a few other improvements.
+
+<!--truncate-->
+
+## Rust language support
+
+## Custom version aliases
+
+We are excited to announce 2 new commands that enable you to define custom version aliases,
+[`proto alias`](/docs/proto/commands/alias) and [`proto unalias`](/docs/proto/commands/unalias).
+Aliasing of versions is a feature that allows you to assign a custom name or label to a specific
+version of a tool.
+
+For example, instead of using the version number, you can assign a label such as "work" or
+"personal" to a version. This makes it easier to remember and manage different versions.
+
+```shell
+$ proto alias node work 16.16
+$ proto alias node personal 18
+```
+
+Aliases can be used anywhere a version is accepted, for example:
+
+```shell
+$ proto bin node work
+$ proto install node personal
+```

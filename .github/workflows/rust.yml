@@ -140,14 +140,15 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Start EC2 runner
         id: start-ec2-runner
-        uses: machulav/ec2-github-runner@v2
+        uses: crunchy234/ec2-github-runner@windows-support-7
         with:
           mode: start
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          ec2-os: windows
           ec2-image-id: ami-091d37f850c354b57
           ec2-instance-type: c5.2xlarge
-          # subnet-id: subnet-123
-          # security-group-id: sg-123
+          subnet-id: subnet-0f8bf94f6c4aea9c8
+          security-group-id: sg-0c3966ae00031841f
           # iam-role-name: my-role-name # optional, requires additional permissions
           # aws-resource-tags: > # optional, requires additional permissions
           #   [
@@ -194,9 +195,10 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Stop EC2 runner
-        uses: machulav/ec2-github-runner@v2
+        uses: crunchy234/ec2-github-runner@windows-support-7
         with:
           mode: stop
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
           label: ${{ needs.start-runner.outputs.label }}
+          ec2-os: windows
           ec2-instance-id: ${{ needs.start-runner.outputs.ec2-instance-id }}

@@ -148,13 +148,7 @@ jobs:
           ec2-image-id: ami-091d37f850c354b57
           ec2-instance-type: c5.2xlarge
           subnet-id: subnet-0f8bf94f6c4aea9c8
-          security-group-id: sg-0c3966ae00031841f
-          # iam-role-name: my-role-name # optional, requires additional permissions
-          # aws-resource-tags: > # optional, requires additional permissions
-          #   [
-          #     {"Key": "Name", "Value": "ec2-github-runner"},
-          #     {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
-          #   ]
+          security-group-id: sg-0a03a96e6079eda33
   test-windows:
     name: Test
     needs: start-runner

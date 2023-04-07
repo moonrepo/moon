@@ -63,12 +63,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [buildjet-4vcpu-ubuntu-2204, macos-latest, self-hosted-windows-4xl]
+        os: [buildjet-4vcpu-ubuntu-2204, macos-latest]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
-      - run: Get-PSDrive
-        if: ${{ runner.os == 'Windows' }}
       - uses: actions-rs/toolchain@v1
         name: Setup toolchain
         with:
@@ -77,7 +75,6 @@ jobs:
           components: llvm-tools-preview
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
-        if: ${{ runner.os != 'Windows' }}
         with:
           shared-key: test
       - name: Install cargo-make
@@ -86,25 +83,23 @@ jobs:
         uses: taiki-e/install-action@nextest
       - name: Install llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
-        if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
+        if: ${{ env.WITH_COVERAGE == 'true' }}
       - name: Run tests with coverage
-        if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
+        if: ${{ env.WITH_COVERAGE == 'true' }}
         run: cargo make test-coverage
         env:
           NEXTEST_PROFILE: ci
       - name: Run tests
-        if: ${{ runner.os == 'Windows' || env.WITH_COVERAGE == 'false' }}
+        if: ${{ env.WITH_COVERAGE == 'false' }}
         run: cargo make test
         env:
           NEXTEST_PROFILE: ci
       - name: Generate code coverage
-        if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
+        if: ${{ env.WITH_COVERAGE == 'true' }}
         run: cargo make generate-report
-      - run: Get-PSDrive
-        if: ${{ runner.os == 'Windows' }}
       - name: Upload coverage report
         uses: actions/upload-artifact@v3
-        if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
+        if: ${{ env.WITH_COVERAGE == 'true' }}
         with:
           name: coverage-${{ runner.os }}
           path: ./report.txt
@@ -127,3 +122,81 @@ jobs:
           files: ./coverage/coverage-Linux/report.txt,./coverage/coverage-macOS/report.txt
           flags: rust
           verbose: true
+
+  # WINDOWS
+
+  start-runner:
+    name: Start self-hosted EC2 runner
+    runs-on: ubuntu-latest
+    outputs:
+      label: ${{ steps.start-ec2-runner.outputs.label }}
+      ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Start EC2 runner
+        id: start-ec2-runner
+        uses: machulav/ec2-github-runner@v2
+        with:
+          mode: start
+          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          ec2-image-id: ami-091d37f850c354b57
+          ec2-instance-type: c5.2xlarge
+          # subnet-id: subnet-123
+          # security-group-id: sg-123
+          # iam-role-name: my-role-name # optional, requires additional permissions
+          # aws-resource-tags: > # optional, requires additional permissions
+          #   [
+          #     {"Key": "Name", "Value": "ec2-github-runner"},
+          #     {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
+          #   ]
+  test-windows:
+    name: Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [self-hosted-windows-4xl]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - run: Get-PSDrive
+      - uses: actions-rs/toolchain@v1
+        name: Setup toolchain
+        with:
+          toolchain: 1.68.1
+          profile: minimal
+          components: llvm-tools-preview
+      - name: Install cargo-make
+        uses: davidB/rust-cargo-make@v1
+      - name: Install nextest
+        uses: taiki-e/install-action@nextest
+      - name: Run tests
+        run: cargo make test
+        env:
+          NEXTEST_PROFILE: ci
+      - run: Get-PSDrive
+  stop-runner:
+    name: Stop self-hosted EC2 runner
+    needs:
+      - start-runner
+      - test-windows
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Stop EC2 runner
+        uses: machulav/ec2-github-runner@v2
+        with:
+          mode: stop
+          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          label: ${{ needs.start-runner.outputs.label }}
+          ec2-instance-id: ${{ needs.start-runner.outputs.ec2-instance-id }}

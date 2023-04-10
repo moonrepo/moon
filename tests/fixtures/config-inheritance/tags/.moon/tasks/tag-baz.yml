@@ -1,0 +1,3 @@
+tasks:
+  baz:
+    command: 'baz'

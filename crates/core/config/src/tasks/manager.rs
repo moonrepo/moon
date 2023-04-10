@@ -27,6 +27,7 @@ impl InheritedTasksManager {
         platform: &PlatformType,
         language: &ProjectLanguage,
         type_of: &ProjectType,
+        tags: &[String],
     ) -> Vec<String> {
         let mut lookup = string_vec!["*"];
 
@@ -45,6 +46,10 @@ impl InheritedTasksManager {
 
         lookup.push(format!("{language}-{type_of}"));
 
+        for tag in tags {
+            lookup.push(format!("tag-{tag}"));
+        }
+
         lookup
     }
 
@@ -53,10 +58,11 @@ impl InheritedTasksManager {
         platform: &PlatformType,
         language: &ProjectLanguage,
         type_of: &ProjectType,
+        tags: &[String],
     ) -> InheritedTasksConfig {
         let mut config = InheritedTasksConfig::default();
 
-        for lookup in self.get_lookup_order(platform, language, type_of) {
+        for lookup in self.get_lookup_order(platform, language, type_of, tags) {
             if let Some(managed_config) = self.configs.get(&lookup) {
                 let mut managed_config = managed_config.clone();
 

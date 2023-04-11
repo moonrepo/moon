@@ -41,16 +41,16 @@ Workspace-level tasks (also known as global tasks) are defined in [`.moon/tasks.
 exclude, or rename inherited tasks using the
 [`workspace.inheritedTasks`](../config/project#inheritedtasks) in [`moon.yml`](../config/project).
 
-### Scope by project language and type
+### Scope by project metadata
 
 By default tasks defined in [`.moon/tasks.yml`][tasks] will be inherited by _all_ projects. This
 approach works well when a monorepo is comprised of a single programming language, but breaks down
 quickly in multi-language setups.
 
 To support these complex repositories, we support scoped tasks with [`.moon/tasks/*.yml`][tasks],
-where `*.yml` maps to a project based on a combination of its [language][language] and [type][type].
-This enables you to easily declare tasks for "JavaScript projects", "Go applications", "Ruby
-libraries", so on and so forth.
+where `*.yml` maps to a project based on a combination of its [language][language], [type][type], or
+[tags][tags]. This enables you to easily declare tasks for "JavaScript projects", "Go applications",
+"Ruby libraries", so on and so forth.
 
 When resolving configuration files, moon will locate and _shallow_ merge files in the following
 order, from widest scope to narrowest scope:
@@ -59,10 +59,13 @@ order, from widest scope to narrowest scope:
 - `.moon/tasks/<language>.yml` - Projects with a matching [`language`][language] setting.
 - `.moon/tasks/<language>-<type>.yml` - Projects with matching [`language`][language] and
   [`type`][type] settings.
+- `.moon/tasks/tag-<name>.yml` - Projects with a matching [`tag`][tags].
 
 As mentioned above, all of these files are shallow merged into a single "global tasks" configuration
 that is unique per-project. Merging **does not** utilize the [merge strategies](#merge-strategies)
 below, as those strategies are only utilized when merging global and local tasks.
+
+> Tags are resolved in the order they are defined in `moon.yml` `tags` setting.
 
 #### JavaScript platforms
 
@@ -76,6 +79,7 @@ TypeScript) based projects have a special lookup order using
 - `.moon/tasks/<language>.yml`
 - `.moon/tasks/<platform>-<type>.yml`
 - `.moon/tasks/<language>-<type>.yml`
+- `.moon/tasks/tag-<name>.yml`
 
 For example, `node.yml` would be inherited for Node.js projects, `bun-library.yml` for Bun
 libraries, and `deno-application.yml` for Deno applications. While `javascript.yml`,
@@ -158,6 +162,7 @@ tasks:
       mergeInputs: 'replace'
 ```
 
+[tags]: ../config/project#tags
 [tasks]: ../config/tasks
 [language]: ../config/project#language
 [type]: ../config/project#type

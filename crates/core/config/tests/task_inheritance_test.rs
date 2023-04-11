@@ -15,7 +15,7 @@ fn mock_task(command: &str, platform: PlatformType) -> TaskConfig {
     }
 
     TaskConfig {
-        command: Some(TaskCommandArgs::String(command.to_owned())),
+        command: Some(TaskCommandArgs::String(command.replace("tag-", ""))),
         global_inputs,
         platform,
         ..TaskConfig::default()
@@ -28,6 +28,18 @@ fn mock_tasks_config(command: &str) -> InheritedTasksConfig {
         command.to_owned(),
         TaskConfig {
             command: Some(TaskCommandArgs::String(command.to_owned())),
+            ..TaskConfig::default()
+        },
+    );
+    config
+}
+
+fn mock_tasks_config_for_tag(case: &str) -> InheritedTasksConfig {
+    let mut config = InheritedTasksConfig::default();
+    config.tasks.insert(
+        "tag".to_owned(),
+        TaskConfig {
+            command: Some(TaskCommandArgs::String(case.to_owned())),
             ..TaskConfig::default()
         },
     );
@@ -62,6 +74,16 @@ async fn loads_all_task_configs_into_manager() {
             ("rust".into(), mock_tasks_config("rust")),
             ("typescript".into(), mock_tasks_config("typescript")),
             ("kotlin".into(), mock_tasks_config("kotlin")),
+            ("tag-normal".into(), mock_tasks_config_for_tag("normal")),
+            (
+                "tag-kebab-case".into(),
+                mock_tasks_config_for_tag("kebab-case")
+            ),
+            (
+                "tag-camelCase".into(),
+                mock_tasks_config_for_tag("camelCase")
+            ),
+            ("tag-dot.case".into(), mock_tasks_config_for_tag("dot.case")),
         ])
     );
 }
@@ -77,7 +99,8 @@ mod lookup_order {
             manager.get_lookup_order(
                 &PlatformType::Node,
                 &ProjectLanguage::JavaScript,
-                &ProjectType::Application
+                &ProjectType::Application,
+                &[]
             ),
             string_vec![
                 "*",
@@ -97,7 +120,8 @@ mod lookup_order {
             manager.get_lookup_order(
                 &PlatformType::Node,
                 &ProjectLanguage::TypeScript,
-                &ProjectType::Library
+                &ProjectType::Library,
+                &[]
             ),
             string_vec![
                 "*",
@@ -117,7 +141,8 @@ mod lookup_order {
             manager.get_lookup_order(
                 &PlatformType::Unknown,
                 &ProjectLanguage::Ruby,
-                &ProjectType::Tool
+                &ProjectType::Tool,
+                &[]
             ),
             string_vec!["*", "ruby", "ruby-tool"]
         );
@@ -126,7 +151,8 @@ mod lookup_order {
             manager.get_lookup_order(
                 &PlatformType::Unknown,
                 &ProjectLanguage::Rust,
-                &ProjectType::Application
+                &ProjectType::Application,
+                &[]
             ),
             string_vec!["*", "rust", "rust-application"]
         );
@@ -140,7 +166,8 @@ mod lookup_order {
             manager.get_lookup_order(
                 &PlatformType::Unknown,
                 &ProjectLanguage::Other("kotlin".into()),
-                &ProjectType::Tool
+                &ProjectType::Tool,
+                &[]
             ),
             string_vec!["*", "kotlin", "kotlin-tool"]
         );
@@ -149,9 +176,25 @@ mod lookup_order {
             manager.get_lookup_order(
                 &PlatformType::System,
                 &ProjectLanguage::Other("dotnet".into()),
-                &ProjectType::Application
+                &ProjectType::Application,
+                &[]
             ),
             string_vec!["*", "dotnet", "dotnet-application"]
+        );
+    }
+
+    #[test]
+    fn includes_tags() {
+        let manager = InheritedTasksManager::default();
+
+        assert_eq!(
+            manager.get_lookup_order(
+                &PlatformType::Unknown,
+                &ProjectLanguage::Rust,
+                &ProjectType::Application,
+                &["cargo".into(), "cli-app".into()]
+            ),
+            string_vec!["*", "rust", "rust-application", "tag-cargo", "tag-cli-app"]
         );
     }
 }
@@ -170,7 +213,8 @@ mod config_merging {
             workspace.tasks_config.get_inherited_config(
                 &PlatformType::Node,
                 &ProjectLanguage::JavaScript,
-                &ProjectType::Application
+                &ProjectType::Application,
+                &[]
             ),
             InheritedTasksConfig {
                 tasks: BTreeMap::from_iter([
@@ -199,7 +243,8 @@ mod config_merging {
             workspace.tasks_config.get_inherited_config(
                 &PlatformType::Node,
                 &ProjectLanguage::TypeScript,
-                &ProjectType::Tool
+                &ProjectType::Tool,
+                &[]
             ),
             InheritedTasksConfig {
                 tasks: BTreeMap::from_iter([
@@ -224,12 +269,43 @@ mod config_merging {
             workspace.tasks_config.get_inherited_config(
                 &PlatformType::System,
                 &ProjectLanguage::Rust,
-                &ProjectType::Library
+                &ProjectType::Library,
+                &[]
             ),
             InheritedTasksConfig {
                 tasks: BTreeMap::from_iter([
                     ("global".into(), mock_task("global", PlatformType::Unknown)),
                     ("rust".into(), mock_task("rust", PlatformType::System)),
+                ]),
+                ..InheritedTasksConfig::default()
+            }
+        );
+    }
+
+    #[tokio::test]
+    async fn creates_config_with_tags() {
+        let sandbox = create_sandbox("config-inheritance/files");
+        let workspace = load_workspace_from(sandbox.path()).await.unwrap();
+
+        assert_eq!(
+            workspace.tasks_config.get_inherited_config(
+                &PlatformType::Node,
+                &ProjectLanguage::TypeScript,
+                &ProjectType::Tool,
+                &["normal".into(), "kebab-case".into()]
+            ),
+            InheritedTasksConfig {
+                tasks: BTreeMap::from_iter([
+                    ("global".into(), mock_task("global", PlatformType::Unknown)),
+                    ("node".into(), mock_task("node", PlatformType::Node)),
+                    (
+                        "typescript".into(),
+                        mock_task("typescript", PlatformType::Node)
+                    ),
+                    (
+                        "tag".into(),
+                        mock_task("tag-kebab-case", PlatformType::Node)
+                    ),
                 ]),
                 ..InheritedTasksConfig::default()
             }
@@ -245,7 +321,8 @@ mod config_merging {
             workspace.tasks_config.get_inherited_config(
                 &PlatformType::System,
                 &ProjectLanguage::Other("kotlin".into()),
-                &ProjectType::Library
+                &ProjectType::Library,
+                &[]
             ),
             InheritedTasksConfig {
                 tasks: BTreeMap::from_iter([
@@ -269,7 +346,8 @@ mod config_merging {
             workspace.tasks_config.get_inherited_config(
                 &PlatformType::Node,
                 &ProjectLanguage::JavaScript,
-                &ProjectType::Library
+                &ProjectType::Library,
+                &[]
             ),
             InheritedTasksConfig {
                 tasks: BTreeMap::from_iter([("command".into(), task)]),
@@ -290,7 +368,8 @@ mod config_merging {
             workspace.tasks_config.get_inherited_config(
                 &PlatformType::System,
                 &ProjectLanguage::Other("dotnet".into()),
-                &ProjectType::Application
+                &ProjectType::Application,
+                &[]
             ),
             InheritedTasksConfig {
                 tasks: BTreeMap::from_iter([("command".into(), task)]),
@@ -303,7 +382,6 @@ mod config_merging {
 mod config_loading {
     use super::*;
     use moon::generate_project_graph;
-    use moon_test_utils::pretty_assertions::assert_eq;
 
     #[tokio::test]
     async fn inherits_when_lang_is_detected() {
@@ -383,6 +461,44 @@ mod config_loading {
         assert_eq!(
             project.tasks.get("system-via-swift").unwrap().platform,
             PlatformType::System
+        );
+    }
+
+    #[tokio::test]
+    async fn loads_tasks_for_each_tags() {
+        let sandbox = create_sandbox("config-inheritance/tags");
+        let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+        let graph = generate_project_graph(&mut workspace).await.unwrap();
+
+        assert_eq!(
+            graph
+                .get("none")
+                .unwrap()
+                .tasks
+                .keys()
+                .cloned()
+                .collect::<Vec<_>>(),
+            string_vec!["global"]
+        );
+        assert_eq!(
+            graph
+                .get("single")
+                .unwrap()
+                .tasks
+                .keys()
+                .cloned()
+                .collect::<Vec<_>>(),
+            string_vec!["bar", "global"]
+        );
+        assert_eq!(
+            graph
+                .get("multiple")
+                .unwrap()
+                .tasks
+                .keys()
+                .cloned()
+                .collect::<Vec<_>>(),
+            string_vec!["bar", "baz", "foo", "global"]
         );
     }
 }

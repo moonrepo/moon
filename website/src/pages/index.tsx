@@ -50,11 +50,11 @@ export default function Home() {
 					description={
 						<>
 							For repositories with multiple projects, any number of languages, and team members
-							constantly pushing changes, our task runner{' '}
+							constantly pushing changes,{' '}
 							<Link href="/moon" size="lg">
 								moon
 							</Link>{' '}
-							will help simplify the experience of working in and maintaining your codebase.
+							will help simplify the experience of working in and maintaining a complex monorepo.
 						</>
 					}
 					cta={{

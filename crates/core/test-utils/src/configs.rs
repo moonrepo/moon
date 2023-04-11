@@ -158,6 +158,7 @@ pub fn get_tasks_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Inherit
             ("buildC".to_owned(), "build-c".to_owned()),
             ("chain".to_owned(), "chain".to_owned()),
             ("cycle".to_owned(), "cycle".to_owned()),
+            ("inheritTags".to_owned(), "inherit-tags".to_owned()),
             ("inputA".to_owned(), "input-a".to_owned()),
             ("inputB".to_owned(), "input-b".to_owned()),
             ("inputC".to_owned(), "input-c".to_owned()),

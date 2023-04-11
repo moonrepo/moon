@@ -16,6 +16,7 @@ use moon_utils::{glob, string_vec};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::env;
+use std::fs;
 use std::path::PathBuf;
 
 async fn tasks_sandbox() -> (Sandbox, ProjectGraph) {
@@ -145,6 +146,56 @@ mod task_inheritance {
                 .unwrap()
                 .files,
             string_vec!["file.js"]
+        );
+    }
+
+    #[tokio::test]
+    async fn inherits_tag_based_tasks() {
+        let (_sandbox, project_graph) = tasks_sandbox_with_setup(|sandbox| {
+            fs::create_dir_all(sandbox.path().join(".moon/tasks")).unwrap();
+
+            fs::write(
+                sandbox.path().join(".moon/tasks/tag-will-inherit.yml"),
+                r#"
+tasks:
+    fromTagCommand:
+        command: 'from-tag'
+"#,
+            )
+            .unwrap();
+
+            fs::write(
+                sandbox.path().join(".moon/tasks/tag-wont-inherit.yml"),
+                r#"
+tasks:
+    otherTagCommand:
+        command: 'other-tag'
+"#,
+            )
+            .unwrap();
+        })
+        .await;
+
+        let project = project_graph.get("inheritTags").unwrap();
+
+        assert_eq!(
+            project.get_task("nonTagCommand").unwrap().command,
+            "non-tag".to_string()
+        );
+        assert_eq!(
+            project.get_task("fromTagCommand").unwrap().command,
+            "from-tag".to_string()
+        );
+        assert_eq!(
+            project.tasks.keys().cloned().collect::<Vec<_>>(),
+            string_vec![
+                "fromTagCommand",
+                "nonTagCommand",
+                "standard",
+                "withArgs",
+                "withInputs",
+                "withOutputs"
+            ]
         );
     }
 

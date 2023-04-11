@@ -1,0 +1,80 @@
+---
+slug: moon-v1.2
+title: moon v1.2 - Tag based task inheritance
+authors: [milesj]
+tags: [tags, tasks]
+# image: ./img/moon/v1.1.png
+---
+
+???
+
+<!--truncate-->
+
+## Task inheritance based on tags
+
+In v0.23 we introduced [scoped task inheritance](/blog/v0.23#improved-task-inheritance-model) by
+project type/language, and in v1.0 we introduced [project tagging](/blog/moon-v1.0#project-tagging),
+but what if we combined both of these features? In this release, you can now define workspace-level
+tasks _by tag_ that'll be inherited by all projects with that tag.
+
+To demonstrate this, say you have a monorepo composed of multiple [Astro](https://astro.build)
+applications, each duplicating the same Astro tasks. Instead of duplicating, define an `astro` tag
+in each project's [`moon.yml`](/docs/config/project#tags).
+
+```yaml title="<project>/moon.yml"
+language: 'typescript'
+type: 'application'
+tags: ['astro']
+```
+
+And then create a new tasks configuration at `.moon/tasks/tag-astro.yml` with the following
+contents:
+
+```yaml title=".moon/tasks/tag-astro.yml"
+fileGroups:
+	astro:
+		- 'public/**/*'
+		- 'src/**/*'
+		- 'astro.config.*'
+		- 'tsconfig.json'
+
+tasks:
+	astro:
+		command: 'astro'
+		local: true
+
+	# Development server
+	dev:
+		command: 'astro dev'
+		local: true
+
+	# Production build
+	build:
+		command: 'astro build'
+		inputs: ['@group(astro)']
+		outputs: ['dist']
+
+	# Check .astro files
+	check:
+		command: 'astro check'
+		inputs: ['@group(astro)']
+		deps: ['typecheck']
+
+	# Preview production build locally
+	preview:
+		command: 'astro preview'
+		deps: ['build']
+		local: true
+```
+
+Each of these Astro applications will now inherit all 5 tasks and the file group automatically! This
+helps to greatly reduce maintenance overhead and help enforce consistency across projects. Jump to
+the official [task inheritance docs](/docs/concepts/task#inheritance) for more information on tag
+based inheritance.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.2.0) for a full list of
+changes.
+
+- ???

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added task inheritance based on tags in the form of `.moon/tasks/tag-<name>.yml`.
+
 ## 1.1.1
 
 #### 🐞 Fixes

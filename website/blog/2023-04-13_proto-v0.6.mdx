@@ -1,0 +1,71 @@
+---
+slug: proto-v0.6
+title: proto v0.6 - Unused cleaning and improved global binaries
+authors: [milesj]
+tags: [proto, globals, clean, errors]
+image: ./img/proto/v0.6.png
+---
+
+import Image from '@site/src/components/Image';
+
+With this release, we're expanding on our global binary support and providing quality of life
+improvements.
+
+<!--truncate-->
+
+## Cleaning stale and unused tools
+
+Is your `~/.proto` installation growing out of control? Are there old versions of tools that you
+don't use anymore? Or versions you never used? Unsure if you're using a tool at all or still need
+it?
+
+To help avoid these questions and problems, we're introducing a new command that will uninstall
+stale and unused tools, [`proto clean`](/docs/proto/commands/clean). When ran, the command will
+launch an interactive session and scan the file system for old tools, prompting you to remove them.
+
+```shell
+$ proto clean
+```
+
+By default the command will uninstall tools that haven't been used in over 30 days, but this can be
+customized with the `--days` option.
+
+:::info
+
+Tools installed before v0.6 will most likely be considered stale, as we weren't tracking install and
+last used timestamps. However, everything will work as intended after running a tool or simply
+moving forward from this point.
+
+:::
+
+## Global binary improvements
+
+In our [previous release](./proto-v0.5), we announced the
+[`proto install-global`](/docs/proto/commands/install-global) command for installing global
+dependencies that are unique per tool. Thanks to the community, this command has been updated to
+support installing multiple globals at once!
+
+```shell
+$ proto install-global node typescript webpack-cli
+```
+
+On top of this, we're also introducing another command that was requested by the community,
+[`proto list-global`](/docs/proto/commands/list-global), that can be used to list all currently
+installed globals.
+
+```shell
+$ proto list-global node
+tsc - ~/.proto/tools/node/globals/lib/node_modules/typescript/bin/tsc
+tsserver - ~/.proto/tools/node/globals/lib/node_modules/typescript/bin/tsserver
+```
+
+## Better error messages
+
+We've spent most of the past week working on a new internal architecture called
+[Starbase](https://github.com/moonrepo/starbase), which will be the new foundation for proto and
+moon moving forward. One of the major benefits of this new architecture is a rewritten error system
+that provides more context and better error messages.
+
+Here's an example of this, albeit with a contrived situation:
+
+<Image src={require('./img/proto/v0.6-errors.png')} width="90%" />

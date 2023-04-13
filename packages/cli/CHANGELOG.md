@@ -6,6 +6,10 @@
 
 - Added task inheritance based on tags in the form of `.moon/tasks/tag-<name>.yml`.
 
+#### ⚙️ Internal
+
+- Upgraded to proto v0.6.
+
 ## 1.1.1
 
 #### 🐞 Fixes
@@ -24,6 +28,7 @@
 
 #### ⚙️ Internal
 
+- Upgraded to proto v0.5.
 - Support pnpm v8's new lockfile format.
 - Better handling for task's that execute the `moon` binary.
 

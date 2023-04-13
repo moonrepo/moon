@@ -1,0 +1,17 @@
+---
+title: list-global
+---
+
+The `proto list-global <tool>` (or `proto lsg`) command will list installed global dependencies (and
+their canonical file location) by scanning the file system at the tool's global bins directory.
+
+```shell
+$ proto list-global go
+gopls - ~/go/bin/gopls
+mockery - ~/go/bin/mockery
+reflex - ~/go/bin/reflex
+```
+
+### Arguments
+
+- `<tool>` - Type of tool.

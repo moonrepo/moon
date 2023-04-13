@@ -6,12 +6,31 @@ tags: [proto, globals, clean, errors]
 image: ./img/proto/v0.6.png
 ---
 
+import Button from '@site/src/ui/Button';
 import Image from '@site/src/components/Image';
 
 With this release, we're expanding on our global binary support and providing quality of life
 improvements.
 
 <!--truncate-->
+
+## RFC: Plugins system
+
+Since proto's inception, plugins have been top of mind, but runtime based plugins in Rust are
+_difficult_. The only viable solution to this problem is WASM, but most developers have never used
+WASM before, nor are they familiar with WASM tooling (myself included).
+
+However, we're at a point in proto's life-cycle where the core is rather stable, and it's time to
+start investigating plugin support. To this end, we've introduced a small RFC outlining how plugins
+will be used, enabled, and implemented. It's not very in-depth as we want to avoid implementation
+details, but from a consumers perspective, we want to ensure that it makes sense.
+
+We'd very much appreciate it if you could take a look at the RFC and provide feedback. If you have
+any experience in Rust runtime plugins, we'd love to hear your thoughts as well.
+
+<div class="flex justify-center">
+  <Button label="View RFC" href="https://github.com/moonrepo/proto/issues/73" size="lg" />
+</div>
 
 ## Cleaning stale and unused tools
 

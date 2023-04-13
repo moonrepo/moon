@@ -2719,6 +2719,7 @@ name = "moon_enforcer"
 version = "0.1.0"
 dependencies = [
  "moon_project",
+ "starbase_styles",
  "thiserror",
 ]
 
@@ -2729,6 +2730,7 @@ dependencies = [
  "regex",
  "serde_json",
  "serde_yaml",
+ "starbase_styles",
  "thiserror",
  "wax",
 ]
@@ -3067,6 +3069,7 @@ version = "0.1.0"
 dependencies = [
  "moon_utils",
  "serde",
+ "starbase_styles",
  "thiserror",
 ]
 
@@ -3095,8 +3098,6 @@ version = "0.1.0"
 dependencies = [
  "console",
  "dialoguer",
- "lazy_static",
- "regex",
  "starbase_styles",
 ]
 
@@ -3129,6 +3130,7 @@ dependencies = [
  "moon_utils",
  "proto_cli",
  "rustc-hash",
+ "starbase_styles",
  "thiserror",
 ]
 

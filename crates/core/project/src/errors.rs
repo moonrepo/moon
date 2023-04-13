@@ -2,27 +2,29 @@ use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_error::MoonError;
 use moon_target::TargetError;
 use moon_task::TaskError;
+use starbase_styles::{Style, Stylize};
 use std::path::PathBuf;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ProjectError {
     #[error(
-        "Failed to validate <file>{0}/{}</file> configuration file.\n\n{1}",
-        CONFIG_PROJECT_FILENAME
+        "Failed to validate {}/{} configuration file.\n\n{1}",
+        .0.style(Style::File),
+        CONFIG_PROJECT_FILENAME.style(Style::File)
     )]
     InvalidConfigFile(String, String),
 
-    #[error("No project exists at path <file>{0}</file>.")]
+    #[error("No project exists at path {}.", .0.style(Style::File))]
     MissingProjectAtSource(String),
 
-    #[error("No project could be located starting from path <path>{0}</path>.")]
+    #[error("No project could be located starting from path {}.", .0.style(Style::Path))]
     MissingProjectFromPath(PathBuf),
 
-    #[error("No project has been configured with the ID <id>{0}</id>.")]
+    #[error("No project has been configured with the ID {}.", .0.style(Style::Id))]
     UnconfiguredID(String),
 
-    #[error("Task <id>{0}</id> has not been configured for project <id>{1}</id>.")]
+    #[error("Task {} has not been configured for project {}.", .0.style(Style::Id), .1.style(Style::Id))]
     UnconfiguredTask(String, String),
 
     #[error(transparent)]

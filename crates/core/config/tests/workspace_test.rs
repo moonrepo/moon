@@ -74,7 +74,7 @@ mod extends {
     }
 
     #[test]
-    #[should_panic(expected = "Invalid <id>extends</id> field, must be a string.")]
+    #[should_panic(expected = "Invalid \"extends\" field, must be a string.")]
     // #[should_panic(
     //     expected = "invalid type: found unsigned int `123`, expected a string for key \"workspace.extends\""
     // )]

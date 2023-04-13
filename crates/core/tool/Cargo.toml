@@ -11,4 +11,5 @@ moon_utils = { path = "../utils" }
 async-trait = { workspace = true }
 proto_cli = { workspace = true }
 rustc-hash = { workspace = true }
+starbase_styles = { workspace = true }
 thiserror = { workspace = true }

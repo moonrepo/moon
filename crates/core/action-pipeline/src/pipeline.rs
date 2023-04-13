@@ -13,7 +13,7 @@ use moon_error::MoonError;
 use moon_logger::{debug, error, trace};
 use moon_notifier::WebhooksSubscriber;
 use moon_project_graph::ProjectGraph;
-use moon_terminal::{label_to_the_moon, replace_style_tokens, ExtendedTerm};
+use moon_terminal::{label_to_the_moon, ExtendedTerm};
 use moon_utils::{is_ci, is_test_env, time};
 use moon_workspace::Workspace;
 use starbase_styles::color;
@@ -269,10 +269,7 @@ impl Pipeline {
             ))?;
 
             if let Some(error) = &result.error {
-                term.write_line(&format!(
-                    "     {}",
-                    color::muted_light(replace_style_tokens(error))
-                ))?;
+                term.write_line(&format!("     {}", color::muted_light(error)))?;
             }
         }
 

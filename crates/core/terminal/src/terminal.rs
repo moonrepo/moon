@@ -1,4 +1,4 @@
-use crate::helpers::{replace_style_tokens, safe_exit};
+use crate::helpers::safe_exit;
 use console::{measure_text_width, style, Attribute, Style, Term};
 use starbase_styles::color::{self, Color};
 use std::fmt::Display;
@@ -91,7 +91,8 @@ impl ExtendedTerm for Term {
     fn render_error(&self, error: Box<dyn std::error::Error>) -> ! {
         let label = self.format_label(Label::Failure, "Error");
         let label_width = measure_text_width(&label);
-        let message = replace_style_tokens(error.to_string().trim());
+        let message = error.to_string();
+        let message = message.trim();
         let message_width = measure_text_width(&message);
         let available_space = self.size().1 as usize - label_width - 3; // padding
 

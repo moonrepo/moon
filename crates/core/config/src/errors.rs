@@ -1,6 +1,7 @@
 use figment::{Error as FigmentError, Figment};
 use moon_error::MoonError;
 use serde_json::Value;
+use starbase_styles::{color, Style, Stylize};
 use std::borrow::Cow;
 use std::path::PathBuf;
 use thiserror::Error;
@@ -8,25 +9,25 @@ use validator::{ValidationError, ValidationErrors, ValidationErrorsKind};
 
 #[derive(Error, Debug)]
 pub enum ConfigError {
-    #[error("Failed to download extended configuration from <url>{0}</url>.")]
+    #[error("Failed to download extended configuration from {}.", .0.style(Style::Url))]
     FailedDownload(String),
 
     #[error("Failed validation.")]
     FailedValidation(Vec<FigmentError>),
 
-    #[error("Invalid <id>extends</id> field, must be a string.")]
+    #[error("Invalid \"extends\" field, must be a string.")]
     InvalidExtendsField,
 
-    #[error("Failed to parse YAML document <path>{0}</path>: {1}")]
+    #[error("Failed to parse YAML document {}: {1}", .0.style(Style::Path))]
     InvalidYaml(PathBuf, String),
 
-    #[error("Cannot extend configuration file <file>{0}</file> as it does not exist.")]
+    #[error("Cannot extend configuration file {} as it does not exist.", .0.style(Style::File))]
     MissingFile(String),
 
-    #[error("Unable to extend <file>{0}<file>, only YAML documents are supported.")]
+    #[error("Unable to extend {}, only YAML documents are supported.", .0.style(Style::File))]
     UnsupportedExtendsDocument(String),
 
-    #[error("Cannot extend configuration file <file>{0}</file>, only HTTPS URLs are supported.")]
+    #[error("Cannot extend configuration file {}, only HTTPS URLs are supported.", .0.style(Style::File))]
     UnsupportedHttps(String),
 
     #[error(transparent)]
@@ -48,7 +49,7 @@ pub fn create_validation_error<P: AsRef<str>, M: AsRef<str>>(
 }
 
 pub fn format_error_line<T: AsRef<str>>(msg: T) -> String {
-    format!("  <accent>▪</accent> {}", msg.as_ref())
+    format!("  {} {}", color::muted("▪"), msg.as_ref())
 }
 
 pub fn format_figment_errors(errors: Vec<FigmentError>) -> String {

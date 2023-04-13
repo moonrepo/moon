@@ -9,7 +9,7 @@ use moon_utils::{fs, get_workspace_root, is_ci};
 use proto::{
     async_trait,
     node::{NodeDependencyManager, NodeDependencyManagerType},
-    Describable, Executable, Installable, Proto, Shimable, Tool as ProtoTool,
+    Executable, Installable, Proto, Shimable, Tool as ProtoTool,
 };
 use rustc_hash::FxHashMap;
 use std::env;
@@ -58,7 +58,6 @@ impl YarnTool {
 
         if !yarn_bin.exists() {
             debug!(
-                target: self.tool.get_log_target(),
                 "Updating yarn version with {}",
                 color::shell(format!("yarn set version {version}"))
             );
@@ -112,7 +111,7 @@ impl Tool for YarnTool {
         };
 
         if self.tool.is_setup(&version).await? {
-            debug!(target: self.tool.get_log_target(), "yarn has already been setup");
+            debug!("yarn has already been setup");
 
             return Ok(count);
         }
@@ -120,7 +119,6 @@ impl Tool for YarnTool {
         // When offline and the tool doesn't exist, fallback to the global binary
         if proto::is_offline() {
             debug!(
-                target: self.tool.get_log_target(),
                 "No internet connection and yarn has not been setup, falling back to global binary in PATH"
             );
 

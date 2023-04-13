@@ -93,7 +93,7 @@ impl ExtendedTerm for Term {
         let label_width = measure_text_width(&label);
         let message = error.to_string();
         let message = message.trim();
-        let message_width = measure_text_width(&message);
+        let message_width = measure_text_width(message);
         let available_space = self.size().1 as usize - label_width - 3; // padding
 
         let contents = if message.contains('\n') || message_width > available_space {

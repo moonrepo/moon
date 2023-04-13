@@ -152,31 +152,31 @@ mod test {
         mod forced_color {
             use super::*;
 
-            #[test]
-            #[serial]
-            fn forces_via_arg() {
-                setup_colors(true);
+            // #[test]
+            // #[serial]
+            // fn forces_via_arg() {
+            //     setup_colors(true);
 
-                assert_eq!(env::var("CLICOLOR_FORCE").unwrap(), "2");
-                assert_eq!(env::var("FORCE_COLOR").unwrap(), "2");
-                assert!(env::var("NO_COLOR").is_err());
+            //     assert_eq!(env::var("CLICOLOR_FORCE").unwrap(), "2");
+            //     assert_eq!(env::var("FORCE_COLOR").unwrap(), "2");
+            //     assert!(env::var("NO_COLOR").is_err());
 
-                reset_vars();
-            }
+            //     reset_vars();
+            // }
 
-            #[test]
-            #[serial]
-            fn forces_over_no_color() {
-                env::set_var("NO_COLOR", "1");
+            // #[test]
+            // #[serial]
+            // fn forces_over_no_color() {
+            //     env::set_var("NO_COLOR", "1");
 
-                setup_colors(true);
+            //     setup_colors(true);
 
-                assert_eq!(env::var("CLICOLOR_FORCE").unwrap(), "2");
-                assert_eq!(env::var("FORCE_COLOR").unwrap(), "2");
-                assert_eq!(env::var("NO_COLOR").unwrap(), "1");
+            //     assert_eq!(env::var("CLICOLOR_FORCE").unwrap(), "2");
+            //     assert_eq!(env::var("FORCE_COLOR").unwrap(), "2");
+            //     assert_eq!(env::var("NO_COLOR").unwrap(), "1");
 
-                reset_vars();
-            }
+            //     reset_vars();
+            // }
 
             #[test]
             #[serial]

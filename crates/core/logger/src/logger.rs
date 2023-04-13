@@ -55,13 +55,8 @@ impl Logger {
                             current_timestamp.format(date_format).to_string()
                         };
 
-                        let prefix = format!(
-                            "{}{} {}{}",
-                            color::muted("["),
-                            record.level(),
-                            color::muted(formatted_timestamp),
-                            color::muted("]"),
-                        );
+                        let prefix =
+                            color::muted(format!("[{} {}]", record.level(), formatted_timestamp));
 
                         out.finish(format_args!(
                             "{} {} {}",

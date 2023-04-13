@@ -1,9 +1,9 @@
 use crate::helpers::AnyError;
 use console::Term;
 use moon::{build_project_graph, load_workspace};
-use moon_logger::color;
 use moon_target::Target;
 use moon_terminal::{ExtendedTerm, Label};
+use starbase_styles::color;
 
 pub async fn task(id: String, json: bool) -> Result<(), AnyError> {
     let target = Target::parse(&id)?;
@@ -73,7 +73,7 @@ pub async fn task(id: String, json: bool) -> Result<(), AnyError> {
     if !task.deps.is_empty() {
         term.write_line("")?;
         term.render_label(Label::Default, "Depends on")?;
-        term.render_list(task.deps.iter().map(color::target).collect::<Vec<_>>())?;
+        term.render_list(task.deps.iter().map(color::label).collect::<Vec<_>>())?;
     }
 
     if !task.input_paths.is_empty() || !task.input_globs.is_empty() {

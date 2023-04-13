@@ -1,6 +1,6 @@
 use crate::node_tool::NodeTool;
 use moon_config::YarnConfig;
-use moon_logger::{color, debug};
+use moon_logger::debug;
 use moon_node_lang::{yarn, LockfileDependencyVersions, YARN};
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
@@ -12,6 +12,7 @@ use proto::{
     Executable, Installable, Proto, Shimable, Tool as ProtoTool,
 };
 use rustc_hash::FxHashMap;
+use starbase_styles::color;
 use std::env;
 use std::path::{Path, PathBuf};
 

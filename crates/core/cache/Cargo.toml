@@ -12,6 +12,7 @@ moon_platform_runtime = { path = "../platform-runtime" }
 moon_utils = { path = "../utils" }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
+starbase_styles = { workspace = true }
 
 [dev-dependencies]
 moon_test_utils = { path = "../test-utils" }

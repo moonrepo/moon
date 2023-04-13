@@ -1,6 +1,6 @@
 use lazy_static::lazy_static;
-use moon_logger::color;
 use regex::{Captures, Regex};
+use starbase_styles::color;
 use std::path::Path;
 
 lazy_static! {
@@ -33,7 +33,7 @@ pub fn replace_style_tokens<T: AsRef<str>>(value: T) -> String {
             "path" => color::path(Path::new(inner)),
             "shell" => color::shell(inner),
             "symbol" => color::symbol(inner),
-            "target" => color::target(inner),
+            "label" | "target" => color::label(inner),
             "url" => color::url(inner),
             _ => String::from(inner),
         }

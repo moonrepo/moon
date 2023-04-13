@@ -6,7 +6,7 @@ use moon::{build_dep_graph, generate_project_graph, load_workspace};
 use moon_action_context::ActionContext;
 use moon_action_pipeline::Pipeline;
 use moon_dep_graph::{DepGraph, DepGraphError};
-use moon_logger::{color, debug};
+use moon_logger::debug;
 use moon_project::ProjectError;
 use moon_project_graph::ProjectGraph;
 use moon_target::Target;
@@ -14,6 +14,7 @@ use moon_task::TouchedFilePaths;
 use moon_terminal::safe_exit;
 use moon_workspace::{Workspace, WorkspaceError};
 use rustc_hash::FxHashSet;
+use starbase_styles::color;
 
 type TargetList = Vec<Target>;
 
@@ -37,7 +38,7 @@ fn print_targets(targets: &TargetList) {
         "{}",
         targets_to_print
             .iter()
-            .map(|t| format!("  {}", color::target(&t.id)))
+            .map(|t| format!("  {}", color::label(&t.id)))
             .join("\n")
     );
 }
@@ -88,7 +89,7 @@ fn gather_runnable_targets(
                 debug!(
                     target: LOG_TARGET,
                     "Not running target {} because it either has no `outputs` or `runInCI` is false",
-                    color::target(&task.target.id),
+                    color::label(&task.target.id),
                 );
             }
         }

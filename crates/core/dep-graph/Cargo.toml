@@ -21,6 +21,7 @@ moon_target = { path = "../target" }
 moon_task = { path = "../task" }
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }
+starbase_styles = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]

@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-moon_logger = { path = "../logger" }
 console = { workspace = true }
 dialoguer = { version = "0.10.3", default-features = false }
 lazy_static = { workspace = true }
 regex = { workspace = true }
+starbase_styles = { workspace = true }

@@ -1,8 +1,9 @@
 use crate::errors::ProjectGraphError;
 use moon_config::ProjectsSourcesMap;
-use moon_logger::{color, debug, warn};
+use moon_logger::{debug, warn};
 use moon_utils::{fs, glob, path, regex};
 use moon_vcs::BoxedVcs;
+use starbase_styles::color;
 use std::path::{Path, MAIN_SEPARATOR_STR};
 
 /// Infer a project name from a source path, by using the name of

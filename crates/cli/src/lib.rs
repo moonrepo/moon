@@ -28,9 +28,10 @@ use app::{App, Commands, DockerCommands, MigrateCommands, NodeCommands, QueryCom
 use clap::Parser;
 use console::Term;
 use enums::{CacheMode, LogLevel};
-use moon_logger::{color, debug, LevelFilter, Logger};
+use moon_logger::{debug, LevelFilter, Logger};
 use moon_terminal::ExtendedTerm;
 use query::QueryHashDiffOptions;
+use starbase_styles::color;
 use std::env;
 use std::path::PathBuf;
 

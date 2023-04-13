@@ -1,10 +1,10 @@
-use crate::color;
 use chrono::prelude::*;
 use chrono::Local;
 use console::strip_ansi_codes;
 use fern::log_file;
 use fern::Dispatch;
 use log::LevelFilter;
+use starbase_styles::color;
 use std::env;
 use std::fs;
 use std::io;
@@ -58,7 +58,7 @@ impl Logger {
                         let prefix = format!(
                             "{}{} {}{}",
                             color::muted("["),
-                            color::log_level(record.level()),
+                            record.level(),
                             color::muted(formatted_timestamp),
                             color::muted("]"),
                         );

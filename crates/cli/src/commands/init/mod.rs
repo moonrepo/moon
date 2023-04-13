@@ -11,12 +11,12 @@ use moon_config::{
 use moon_constants::{
     CONFIG_DIRNAME, CONFIG_TASKS_FILENAME, CONFIG_TOOLCHAIN_FILENAME, CONFIG_WORKSPACE_FILENAME,
 };
-use moon_logger::color;
 use moon_node_lang::NPM;
 use moon_terminal::{create_theme, safe_exit};
 use moon_utils::{fs, path};
 use moon_vcs::detect_vcs;
 use node::init_node;
+use starbase_styles::color;
 use std::collections::{BTreeMap, VecDeque};
 use std::env;
 use std::fs::OpenOptions;

@@ -28,6 +28,7 @@ petgraph = {  workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+starbase_styles = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]

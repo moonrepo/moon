@@ -8,7 +8,7 @@ use moon_config::TaskOutputStyle;
 use moon_emitter::{Emitter, Event, EventFlow};
 use moon_error::MoonError;
 use moon_hasher::HashSet;
-use moon_logger::{color, debug, warn};
+use moon_logger::{debug, warn};
 use moon_platform_runtime::Runtime;
 use moon_project::Project;
 use moon_target::{Target, TargetError, TargetProjectScope};
@@ -21,6 +21,7 @@ use moon_utils::{
 };
 use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
+use starbase_styles::color;
 
 const LOG_TARGET: &str = "moon:runner";
 
@@ -233,7 +234,7 @@ impl<'a> Runner<'a> {
         debug!(
             target: LOG_TARGET,
             "Creating {} command (in working directory {})",
-            color::target(&task.target),
+            color::label(&task.target),
             color::path(working_dir)
         );
 
@@ -582,7 +583,7 @@ impl<'a> Runner<'a> {
                         warn!(
                             target: LOG_TARGET,
                             "Target {} failed, running again with attempt {}",
-                            color::target(&self.task.target),
+                            color::label(&self.task.target),
                             attempt_index
                         );
                     }
@@ -616,7 +617,7 @@ impl<'a> Runner<'a> {
             debug!(
                 target: LOG_TARGET,
                 "Target {} is a no operation, skipping",
-                color::target(&self.task.target),
+                color::label(&self.task.target),
             );
 
             self.print_target_label(Checkpoint::RunPassed, &Attempt::new(0), 0)?;

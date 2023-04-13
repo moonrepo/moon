@@ -1,8 +1,9 @@
 use crate::helpers::AnyError;
 use moon_error::MoonError;
-use moon_logger::{color, debug};
+use moon_logger::debug;
 use moon_utils::fs;
 use moon_workspace::Workspace;
+use starbase_styles::color;
 
 const LOG_TARGET: &str = "moon:query:hash";
 

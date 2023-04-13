@@ -2469,6 +2469,7 @@ dependencies = [
  "proto_cli",
  "rustc-hash",
  "serde",
+ "starbase_styles",
  "thiserror",
  "tokio",
 ]
@@ -2486,6 +2487,7 @@ dependencies = [
  "moon_utils",
  "rand",
  "rustc-hash",
+ "starbase_styles",
  "tar",
  "thiserror",
  "zip",
@@ -2512,6 +2514,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "serial_test",
+ "starbase_styles",
 ]
 
 [[package]]
@@ -2572,6 +2575,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "serial_test",
+ "starbase_styles",
  "strum",
  "tera",
  "tiny_http",
@@ -2597,6 +2601,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_yaml",
+ "starbase_styles",
  "strum",
  "thiserror",
  "tokio",
@@ -2620,6 +2625,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "serde_json",
+ "starbase_styles",
 ]
 
 [[package]]
@@ -2682,6 +2688,7 @@ dependencies = [
  "moon_workspace",
  "petgraph",
  "rustc-hash",
+ "starbase_styles",
  "thiserror",
  "tokio",
 ]
@@ -2738,6 +2745,7 @@ dependencies = [
  "moon_test_utils",
  "moon_utils",
  "serde_json",
+ "starbase_styles",
  "tera",
  "thiserror",
 ]
@@ -2791,9 +2799,9 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "console",
- "dirs",
  "fern",
  "log",
+ "starbase_styles",
 ]
 
 [[package]]
@@ -2813,6 +2821,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_yaml",
+ "starbase_styles",
  "thiserror",
  "yarn-lock-parser",
 ]
@@ -2845,6 +2854,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "serde_json",
+ "starbase_styles",
  "tokio",
 ]
 
@@ -2861,6 +2871,7 @@ dependencies = [
  "moon_utils",
  "proto_cli",
  "rustc-hash",
+ "starbase_styles",
 ]
 
 [[package]]
@@ -2877,6 +2888,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "starbase_styles",
  "tokio",
  "uuid",
 ]
@@ -2945,6 +2957,7 @@ dependencies = [
  "moon_utils",
  "rustc-hash",
  "serde",
+ "starbase_styles",
  "strum",
  "thiserror",
 ]
@@ -2974,6 +2987,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "serde_json",
+ "starbase_styles",
  "thiserror",
  "tokio",
 ]
@@ -3019,6 +3033,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "serde_json",
+ "starbase_styles",
  "thiserror",
  "tokio",
 ]
@@ -3069,6 +3084,7 @@ dependencies = [
  "once_cell",
  "rustc-hash",
  "serde",
+ "starbase_styles",
  "strum",
  "thiserror",
 ]
@@ -3080,8 +3096,8 @@ dependencies = [
  "console",
  "dialoguer",
  "lazy_static",
- "moon_logger",
  "regex",
+ "starbase_styles",
 ]
 
 [[package]]
@@ -3128,6 +3144,7 @@ dependencies = [
  "moon_utils",
  "serde",
  "serde_json",
+ "starbase_styles",
 ]
 
 [[package]]
@@ -3145,6 +3162,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "serde_json",
+ "starbase_styles",
 ]
 
 [[package]]
@@ -3174,6 +3192,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "shell-words",
+ "starbase_styles",
  "tokio",
  "wax",
 ]
@@ -3212,6 +3231,7 @@ dependencies = [
  "moonbase",
  "proto_cli",
  "reqwest",
+ "starbase_styles",
  "thiserror",
 ]
 
@@ -3226,6 +3246,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "starbase_styles",
  "thiserror",
  "tokio",
  "tokio-util",

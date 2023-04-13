@@ -1,11 +1,12 @@
 use moon_config::{TaskCommandArgs, TaskConfig, TasksConfigsMap};
-use moon_logger::{color, debug, warn};
+use moon_logger::{debug, warn};
 use moon_node_lang::package_json::{PackageJson, ScriptsSet};
 use moon_target::Target;
 use moon_task::{PlatformType, TaskError, TaskID};
 use moon_utils::regex::{UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
 use moon_utils::{lazy_static, process, regex, string_vec};
 use rustc_hash::FxHashMap;
+use starbase_styles::color;
 use std::collections::BTreeMap;
 
 const LOG_TARGET: &str = "moon:node-platform:tasks";
@@ -213,7 +214,7 @@ pub fn create_task(
     debug!(
         target: LOG_TARGET,
         "Creating task {} {}",
-        color::target(target_id),
+        color::label(target_id),
         color::muted_light(format!("(for script {})", color::symbol(script_name)))
     );
 

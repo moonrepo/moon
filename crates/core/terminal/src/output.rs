@@ -1,5 +1,5 @@
 use console::style;
-use moon_logger::color;
+use starbase_styles::color;
 
 const STEP_CHAR: &str = "▪";
 const PASS_COLORS: [u8; 4] = [57, 63, 69, 75];

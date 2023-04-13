@@ -13,3 +13,4 @@ moon_tool = { path = "../../core/tool" }
 moon_utils = { path = "../../core/utils" }
 proto_cli = { workspace = true }
 rustc-hash = { workspace = true }
+starbase_styles = { workspace = true }

@@ -1,7 +1,6 @@
 use crate::helpers::{replace_style_tokens, safe_exit};
 use console::{measure_text_width, style, Attribute, Style, Term};
-use moon_logger::color;
-use moon_logger::color::Color;
+use starbase_styles::color::{self, Color};
 use std::fmt::Display;
 use std::io;
 

@@ -15,6 +15,7 @@ moon_utils = { path = "../utils" }
 moon_vcs = { path = "../vcs" }
 proto_cli = { workspace = true }
 reqwest = { workspace = true }
+starbase_styles = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]

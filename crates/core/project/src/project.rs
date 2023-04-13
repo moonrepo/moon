@@ -5,12 +5,13 @@ use moon_config::{
     ProjectID, ProjectLanguage, ProjectType, TaskID,
 };
 use moon_constants::CONFIG_PROJECT_FILENAME;
-use moon_logger::{color, debug, trace, Logable};
+use moon_logger::{debug, trace, Logable};
 use moon_target::Target;
 use moon_task::{FileGroup, Task, TouchedFilePaths};
 use moon_utils::path;
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
+use starbase_styles::color;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use strum::Display;

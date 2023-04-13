@@ -1,10 +1,10 @@
 use console::{set_colors_enabled, set_colors_enabled_stderr};
 use indicatif::{ProgressBar, ProgressStyle};
 use moon_launchpad::check_version;
-use moon_logger::color::{self, no_color, supports_color};
 use moon_logger::debug;
 use moon_terminal::{create_theme, get_checkpoint_prefix, Checkpoint};
 use moon_utils::is_test_env;
+use starbase_styles::color::{self, no_color, supports_color};
 use std::env;
 use std::time::Duration;
 

@@ -244,11 +244,13 @@ const sidebars = {
 			items: [
 				'proto/commands/alias',
 				'proto/commands/bin',
+				'proto/commands/clean',
 				'proto/commands/completions',
 				'proto/commands/global',
 				'proto/commands/install',
 				'proto/commands/install-global',
 				'proto/commands/list',
+				'proto/commands/list-global',
 				'proto/commands/list-remote',
 				'proto/commands/local',
 				'proto/commands/run',

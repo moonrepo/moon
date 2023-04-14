@@ -12,6 +12,7 @@ moon_utils = { path = "../utils" }
 convert_case = "0.6.0"
 serde_json = { workspace = true }
 starbase_styles = { workspace = true }
+starbase_utils = { workspace = true }
 tera = { version = "1.18.1", features = ["preserve_order"] }
 thiserror = { workspace = true }
 

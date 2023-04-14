@@ -7,8 +7,8 @@ use moon_error::MoonError;
 use moon_logger::info;
 use moon_node_lang::package_json::{DepsSet, PackageJson};
 use moon_node_platform::create_tasks_from_scripts;
-use moon_utils::yaml;
 use rustc_hash::FxHashMap;
+use starbase_utils::yaml;
 
 const LOG_TARGET: &str = "moon:migrate:from-package-json";
 

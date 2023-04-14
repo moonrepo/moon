@@ -7,7 +7,7 @@ pub mod regex;
 pub mod semver;
 pub mod shell;
 pub mod time;
-pub mod yaml;
+// pub mod yaml;
 
 pub use async_trait::async_trait;
 pub use lazy_static::lazy_static;

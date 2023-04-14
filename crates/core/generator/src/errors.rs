@@ -2,12 +2,16 @@ use moon_config::ConfigError;
 use moon_constants as constants;
 use moon_error::MoonError;
 use starbase_styles::{Style, Stylize};
+use starbase_utils::yaml::YamlError;
 use std::path::PathBuf;
 use tera::Error as TeraError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum GeneratorError {
+    #[error(transparent)]
+    Yaml(#[from] YamlError),
+
     #[error("A template with the name {} already exists at {}.", .0.style(Style::Id), .1.style(Style::Path))]
     ExistingTemplate(String, PathBuf),
 

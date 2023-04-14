@@ -6,8 +6,9 @@ use moon_config::{
 };
 use moon_constants::CONFIG_TEMPLATE_FILENAME;
 use moon_logger::{debug, trace};
-use moon_utils::{fs, json, lazy_static, path, regex, yaml};
+use moon_utils::{fs, json, lazy_static, path, regex};
 use starbase_styles::color;
+use starbase_utils::yaml;
 use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
 
@@ -310,10 +311,10 @@ impl Template {
                     json::write(&file.dest_path, &json::merge(&prev, &next), true)?;
                 }
                 Some("yaml") => {
-                    let prev: yaml::YamlValue = yaml::read(&file.dest_path)?;
-                    let next: yaml::YamlValue = yaml::read(&file.source_path)?;
+                    let prev: yaml::YamlValue = yaml::read_file(&file.dest_path)?;
+                    let next: yaml::YamlValue = yaml::read_file(&file.source_path)?;
 
-                    yaml::write(&file.dest_path, &yaml::merge(&prev, &next))?;
+                    yaml::write_file(&file.dest_path, &yaml::merge(&prev, &next))?;
                 }
                 _ => {}
             }

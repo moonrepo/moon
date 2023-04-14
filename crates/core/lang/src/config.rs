@@ -16,7 +16,7 @@ macro_rules! config_cache {
                 color::path(&path),
             );
 
-            let mut cfg: $struct = $reader(&path)?;
+            let mut cfg: $struct = $reader(&path).map_err(|e| MoonError::Generic(e.to_string()))?;
             cfg.path = path.to_path_buf();
 
             Ok(cfg)

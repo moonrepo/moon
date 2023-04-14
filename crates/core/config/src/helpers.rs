@@ -1,10 +1,7 @@
 use crate::errors::ConfigError;
 use moon_logger::warn;
-use moon_utils::{
-    fs::temp,
-    path, time,
-    yaml::{self, YamlValue},
-};
+use moon_utils::{fs::temp, path, time};
+use starbase_utils::yaml::{self, YamlValue};
 use std::path::{Path, PathBuf};
 use std::{
     collections::{BTreeMap, VecDeque},
@@ -69,7 +66,7 @@ pub fn gather_extended_sources<T: AsRef<Path>>(
             // Parse the YAML document and attempt to extract the `extends` field.
             // We can't use serde here as the shape of the document may be invalid
             // or incomplete.
-            let doc: YamlValue = yaml::read(&config_path)
+            let doc: YamlValue = yaml::read_file(&config_path)
                 .map_err(|e| ConfigError::InvalidYaml(config_path.clone(), e.to_string()))?;
 
             if let Some(extends_field) = doc.get("extends") {

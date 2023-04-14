@@ -6,10 +6,11 @@ use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_logger::{debug, trace};
 use moon_platform_runtime::Runtime;
-use moon_utils::{fs, json, time};
+use moon_utils::{fs, time};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use starbase_styles::color;
+use starbase_utils::json;
 use std::path::{Path, PathBuf, MAIN_SEPARATOR_STR};
 
 pub struct CacheEngine {
@@ -145,7 +146,7 @@ impl CacheEngine {
             color::path(&path)
         );
 
-        json::write(&path, &contents, true)?;
+        json::write_file(&path, &contents, true)?;
 
         Ok(())
     }
@@ -155,7 +156,7 @@ impl CacheEngine {
 
         trace!(target: LOG_TARGET, "Writing report {}", color::path(&path));
 
-        json::write(path, &data, true)?;
+        json::write_file(path, &data, true)?;
 
         Ok(())
     }

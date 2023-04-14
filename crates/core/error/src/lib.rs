@@ -60,6 +60,12 @@ pub enum MoonError {
 
     #[error("{0}")]
     Unknown(#[source] IoError),
+
+    #[error(transparent)]
+    StarJson(#[from] starbase_utils::json::JsonError),
+
+    #[error(transparent)]
+    StarYaml(#[from] starbase_utils::yaml::YamlError),
 }
 
 pub fn map_io_to_fs_error(error: IoError, path: PathBuf) -> MoonError {

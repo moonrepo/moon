@@ -3,9 +3,10 @@ use crate::helpers::get_cache_mode;
 use moon_archive::{untar_with_diff, TarArchiver, TreeDiffer};
 use moon_error::MoonError;
 use moon_logger::trace;
-use moon_utils::{fs, glob, json};
+use moon_utils::{fs, glob};
 use serde::{Deserialize, Serialize};
 use starbase_styles::color;
+use starbase_utils::json;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Default, Deserialize, Eq, PartialEq, Serialize)]

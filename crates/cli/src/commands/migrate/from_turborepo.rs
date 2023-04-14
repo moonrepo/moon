@@ -5,10 +5,10 @@ use moon_config::{InheritedTasksConfig, PlatformType, ProjectConfig, TaskCommand
 use moon_constants as constants;
 use moon_logger::{info, warn};
 use moon_terminal::safe_exit;
-use moon_utils::{fs, json};
+use moon_utils::fs;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
-use starbase_utils::yaml;
+use starbase_utils::{json, yaml};
 use std::path::PathBuf;
 
 const LOG_TARGET: &str = "moon:migrate:from-turborepo";
@@ -145,7 +145,7 @@ pub async fn from_turborepo(skip_touched_files_check: bool) -> Result<(), AnyErr
     };
 
     let project_graph = generate_project_graph(&mut workspace).await?;
-    let turbo_json: TurboJson = json::read(&turbo_file)?;
+    let turbo_json: TurboJson = json::read_file(&turbo_file)?;
     let mut node_tasks_config = InheritedTasksConfig::default();
     let mut has_modified_global_tasks = false;
 

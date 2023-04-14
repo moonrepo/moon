@@ -3,11 +3,9 @@
 use cached::proc_macro::cached;
 use moon_error::{map_json_to_error, MoonError};
 use moon_lang::config_cache;
-use moon_utils::{
-    json::{self, read as read_json, JsonMap, JsonValue},
-    path::standardize_separators,
-};
+use moon_utils::path::standardize_separators;
 use serde::{Deserialize, Deserializer, Serialize};
+use starbase_utils::json::{self, read_file as read_json, JsonMap, JsonValue};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
@@ -168,7 +166,7 @@ impl TsConfigJson {
 pub fn load_to_value<T: AsRef<Path>>(path: T, extend: bool) -> Result<JsonValue, MoonError> {
     let path = path.as_ref();
     let mut merged_file = JsonValue::Object(JsonMap::new());
-    let last_file: JsonValue = json::read(path)?;
+    let last_file: JsonValue = json::read_file(path)?;
 
     if extend {
         let extends_root = path.parent().unwrap_or_else(|| Path::new(""));
@@ -792,7 +790,7 @@ impl<'de> Deserialize<'de> for Target {
 // file again and parse it with `json`, then stringify it with `json`.
 #[track_caller]
 fn write_preserved_json(path: &Path, tsconfig: &TsConfigJson) -> Result<(), MoonError> {
-    let mut data: JsonValue = json::read(path)?;
+    let mut data: JsonValue = json::read_file(path)?;
 
     // We only need to set fields that we modify within moon,
     // otherwise it's a ton of overhead and maintenance!

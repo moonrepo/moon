@@ -2,7 +2,7 @@ use crate::errors::ArchiveError;
 use moon_error::MoonError;
 use moon_utils::glob;
 use rustc_hash::FxHashMap;
-use starbase_utils::fs;
+use starbase_utils::{fs, glob};
 use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
 
@@ -32,9 +32,7 @@ impl TreeDiffer {
 
         for path in paths {
             if glob::is_glob(path) {
-                for file in glob::walk_files(dest_root, [path])
-                    .map_err(|e| MoonError::Generic(e.to_string()))?
-                {
+                for file in glob::walk_files(dest_root, [path.as_str()])? {
                     track(file);
                 }
             } else {

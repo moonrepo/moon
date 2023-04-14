@@ -1,10 +1,11 @@
 use crate::errors::FileGroupError;
 use common_path::common_path_all;
 use moon_logger::{map_list, trace};
-use moon_utils::{glob, path};
+use moon_utils::path;
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use starbase_styles::color;
+use starbase_utils::glob;
 use std::path::{Path, PathBuf};
 
 const LOG_TARGET: &str = "moon:task:file-group";
@@ -180,7 +181,7 @@ impl FileGroup {
         if !globs.is_empty() {
             let walk_paths = self
                 .walk_cache
-                .get_or_try_init(|| glob::walk(workspace_root, &globs))?;
+                .get_or_try_init(|| glob::walk(workspace_root, globs.iter().map(|g| g.as_str())))?;
 
             // Glob results are absolute paths!
             for path in walk_paths {

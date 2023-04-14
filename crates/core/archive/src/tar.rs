@@ -8,7 +8,7 @@ use moon_logger::{debug, trace};
 use moon_utils::{glob, path};
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
-use starbase_utils::fs;
+use starbase_utils::{fs, glob};
 use std::path::{Path, PathBuf};
 use tar::{Archive, Builder};
 

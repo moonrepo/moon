@@ -322,11 +322,9 @@ fn retries_on_failure_till_count() {
         cmd.arg("run").arg("node:retryCount");
     });
 
-    assert.debug();
-
     let output = assert.output();
 
-    assert!(predicate::str::contains("Process ~/.proto/tools/node/18.0.0").eval(&output));
+    assert!(predicate::str::contains("failed with a 1 exit code").eval(&output));
 }
 
 #[test]
@@ -336,6 +334,8 @@ fn can_run_many_targets() {
     let assert = sandbox.run_moon(|cmd| {
         cmd.arg("run").arg("node:cjs").arg("node:mjs");
     });
+
+    assert.debug();
 
     let output = assert.output();
 

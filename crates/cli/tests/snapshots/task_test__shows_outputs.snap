@@ -1,18 +1,18 @@
 ---
 source: crates/cli/tests/task_test.rs
-expression: assert.output()
+expression: assert.output_standardized()
 ---
 
- TASKS:TEST 
+ TASKS:LINT 
 
-Task: test
+Task: lint
 Project: tasks
 Platform: node
-Type: test
+Type: build
 
  PROCESS 
 
-Command: jest --cache --color
+Command: eslint --cache --report-unused-disable-directives
 Working directory: <WORKSPACE>/tasks
 Runs dependencies: Concurrently
 Runs in CI: Yes
@@ -20,7 +20,11 @@ Runs in CI: Yes
  INPUTS 
 
  - .moon/*.yml
- - tasks/tests/**/*
+ - tasks/**/*
+
+ OUTPUTS 
+
+ - tasks/cache
 
 
 

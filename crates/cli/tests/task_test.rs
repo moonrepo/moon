@@ -38,11 +38,7 @@ fn shows_inputs() {
         cmd.arg("task").arg("tasks:test");
     });
 
-    if cfg!(windows) {
-        assert_snapshot!("shows_inputs_windows", assert.output());
-    } else {
-        assert_snapshot!("shows_inputs_unix", assert.output());
-    }
+    assert_snapshot!(assert.output_standardized());
 }
 
 #[test]
@@ -60,9 +56,5 @@ fn shows_outputs() {
         cmd.arg("task").arg("tasks:lint");
     });
 
-    if cfg!(windows) {
-        assert_snapshot!("shows_outputs_windows", assert.output());
-    } else {
-        assert_snapshot!("shows_outputs_unix", assert.output());
-    }
+    assert_snapshot!(assert.output_standardized());
 }

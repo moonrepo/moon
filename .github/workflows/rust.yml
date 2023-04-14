@@ -23,20 +23,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        name: Setup toolchain
+      - uses: dtolnay/rust-toolchain@1.68.1
         with:
-          toolchain: 1.68.1
-          profile: minimal
           components: rustfmt
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: format
-      - uses: actions-rs/cargo@v1
-        name: Check formatting
-        with:
-          command: fmt
-          args: --all --check
+      - name: Check formatting
+        run: cargo fmt --all --check
   lint:
     name: Lint
     runs-on: ${{ matrix.os }}
@@ -46,11 +40,8 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        name: Setup toolchain
+      - uses: dtolnay/rust-toolchain@1.68.1
         with:
-          toolchain: 1.68.1
-          profile: minimal
           components: clippy
       - uses: Swatinem/rust-cache@v2
         with:
@@ -69,11 +60,8 @@ jobs:
       - uses: actions/checkout@v3
       - run: Get-PSDrive
         if: ${{ runner.os == 'Windows' }}
-      - uses: actions-rs/toolchain@v1
-        name: Setup toolchain
+      - uses: dtolnay/rust-toolchain@1.68.1
         with:
-          toolchain: 1.68.1
-          profile: minimal
           components: llvm-tools-preview
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2

@@ -15,7 +15,7 @@ on:
       - rust-toolchain.toml
 env:
   RUST_BACKTRACE: 1
-  WITH_COVERAGE: 'true' # ${{ contains(github.head_ref, 'develop-') || endsWith(github.ref, 'master') }}
+  WITH_COVERAGE: ${{ contains(github.head_ref, 'develop-') || endsWith(github.ref, 'master') }}
 jobs:
   format:
     name: Format

@@ -1,11 +1,12 @@
 use moon_config::{NodeConfig, NodePackageManager, NodeVersionManager};
 use moon_lang::has_vendor_installed_dependencies;
-use moon_logger::{color, debug, warn};
+use moon_logger::{debug, warn};
 use moon_node_lang::{PackageJson, NODE, NODENV, NPM, NVM};
 use moon_node_tool::NodeTool;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::ToolError;
 use moon_utils::{fs, is_ci, is_test_env};
+use starbase_styles::color;
 use std::path::Path;
 
 const LOG_TARGET: &str = "moon:node-platform:install-deps";

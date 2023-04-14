@@ -1,5 +1,5 @@
 use crate::errors::TokenError;
-use moon_logger::{color, warn};
+use moon_logger::warn;
 use moon_project::Project;
 use moon_task::Task;
 use moon_utils::regex::{
@@ -7,6 +7,7 @@ use moon_utils::regex::{
     TOKEN_VAR_PATTERN,
 };
 use moon_utils::{glob, path, time};
+use starbase_styles::color;
 use std::path::{Path, PathBuf};
 
 type PathsGlobsResolved = (Vec<PathBuf>, Vec<String>);

@@ -4,11 +4,12 @@ use crate::types::TouchedFilePaths;
 use moon_config::{
     FileGlob, FilePath, InputValue, PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy,
 };
-use moon_logger::{color, debug, trace, Logable};
+use moon_logger::{debug, trace, Logable};
 use moon_target::{Target, TargetError};
 use moon_utils::glob;
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
+use starbase_styles::color;
 use std::env;
 use std::path::PathBuf;
 use strum::Display;
@@ -103,7 +104,7 @@ impl Task {
         debug!(
             target: &log_target,
             "Creating task {} with command {}",
-            color::target(&target.id),
+            color::label(&target.id),
             color::shell(&command)
         );
 

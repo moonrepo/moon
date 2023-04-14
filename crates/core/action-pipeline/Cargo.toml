@@ -36,6 +36,7 @@ num_cpus = "1.15.0"
 proto_cli = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
+starbase_styles = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 

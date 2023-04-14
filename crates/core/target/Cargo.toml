@@ -6,4 +6,5 @@ edition = "2021"
 [dependencies]
 moon_utils = { path = "../utils" }
 serde = { workspace = true }
+starbase_styles = { workspace = true }
 thiserror = { workspace = true }

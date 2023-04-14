@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/task_test.rs
-expression: assert.output()
+expression: assert.output_standardized()
 ---
 
  TASKS:LINT 

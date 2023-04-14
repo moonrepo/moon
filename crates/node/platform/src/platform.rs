@@ -8,7 +8,7 @@ use moon_config::{
 };
 use moon_error::MoonError;
 use moon_hasher::{DepsHasher, HashSet};
-use moon_logger::{color, debug, warn};
+use moon_logger::{debug, warn};
 use moon_node_lang::node::{get_package_manager_workspaces, parse_package_name};
 use moon_node_lang::{PackageJson, NPM};
 use moon_node_tool::NodeTool;
@@ -20,6 +20,7 @@ use moon_typescript_platform::TypeScriptTargetHasher;
 use moon_utils::{async_trait, glob::GlobSet, process::Command};
 use proto::Proto;
 use rustc_hash::FxHashMap;
+use starbase_styles::color;
 use std::path::PathBuf;
 use std::{collections::BTreeMap, path::Path};
 

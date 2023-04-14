@@ -1,6 +1,7 @@
 use regex::Error as RegexError;
 use serde_json::Error as JsonError;
 use serde_yaml::Error as YamlError;
+use starbase_styles::{Style, Stylize};
 use std::io::{Error as IoError, ErrorKind as IoErrorKind};
 use std::path::PathBuf;
 use thiserror::Error;
@@ -15,40 +16,40 @@ pub enum MoonError {
     #[error("{0}")]
     Generic(String),
 
-    #[error("File system failure for <path>{0}</path>: {1}")]
+    #[error("File system failure for {}: {1}", .0.style(Style::Path))]
     FileSystem(PathBuf, #[source] IoError),
 
-    #[error("Glob failure for <file>{0}</file>: {1}")]
+    #[error("Glob failure for {}: {1}", .0.style(Style::File))]
     Glob(String, #[source] GlobError<'static>),
 
-    #[error("Failed to create a hard link from <path>{0}</path> to <path>{1}</path>.")]
+    #[error("Failed to create a hard link from {} to {}.", .0.style(Style::Path), .1.style(Style::Path))]
     HardLink(PathBuf, PathBuf),
 
-    #[error("Failed to parse <path>{0}</path>: {1}")]
+    #[error("Failed to parse {}: {1}", .0.style(Style::Path))]
     Json(PathBuf, #[source] JsonError),
 
     #[error("Network failure: {0}")]
     Network(#[source] IoError),
 
-    #[error("Network failure for <path>{0}</path>: {1}")]
+    #[error("Network failure for {}: {1}", .0.style(Style::Path))]
     NetworkWithHandle(PathBuf, #[source] IoError),
 
-    #[error("Path <path>{0}</path> contains invalid UTF-8 characters.")]
+    #[error("Path {} contains invalid UTF-8 characters.", .0.style(Style::Path))]
     PathInvalidUTF8(PathBuf),
 
-    #[error("Process failure for <shell>{0}</shell>: {1}")]
+    #[error("Process failure for {}: {1}", .0.style(Style::Shell))]
     Process(String, #[source] IoError),
 
-    #[error("Process <shell>{0}</shell> failed with a <symbol>{1}</symbol> exit code.")]
+    #[error("Process {} failed with a {} exit code.", .0.style(Style::Shell), .1.style(Style::Symbol))]
     ProcessNonZero(String, i32),
 
-    #[error("Process <shell>{0}</shell> failed with a <symbol>{1}</symbol> exit code.\n<muted>{2}</muted>")]
+    #[error("Process {} failed with a {} exit code.\n{}", .0.style(Style::Shell), .1.style(Style::Symbol), .2.style(Style::MutedLight))]
     ProcessNonZeroWithOutput(String, i32, String),
 
     #[error("Platform {0} is not supported. Has it been configured or enabled?")]
     UnsupportedPlatform(String),
 
-    #[error("Failed to parse <path>{0}</path>: {1}")]
+    #[error("Failed to parse {}: {1}", .0.style(Style::Path))]
     Yaml(PathBuf, #[source] YamlError),
 
     #[error(transparent)]

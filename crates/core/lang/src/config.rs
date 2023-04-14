@@ -7,7 +7,8 @@ macro_rules! config_cache {
     };
     ($struct:ident, $file:expr, $reader:ident, $writer:ident) => {
         fn load_config_internal(path: &Path) -> Result<$struct, MoonError> {
-            use moon_logger::{color, trace};
+            use moon_logger::trace;
+            use starbase_styles::color;
 
             trace!(
                 target: "moon:lang:config",
@@ -79,7 +80,8 @@ macro_rules! config_cache {
                 F: FnOnce(&mut $struct) -> Result<bool, MoonError>
             {
                 use cached::Cached;
-                use moon_logger::{color, trace};
+                use moon_logger::trace;
+                use starbase_styles::color;
 
                 let mut path = path.as_ref().to_path_buf();
                 let name = name.as_ref();
@@ -127,7 +129,8 @@ macro_rules! config_cache {
             #[track_caller]
             pub fn write(value: $struct) -> Result<(), MoonError> {
                 use cached::Cached;
-                use moon_logger::{color, trace};
+                use moon_logger::trace;
+                use starbase_styles::color;
 
                 let mut cache = LOAD_CONFIG.lock()
                     .map_err(|_| MoonError::Generic(format!("Unable to acquire lock on {:?}.", &value.path)))?;

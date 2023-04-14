@@ -1,6 +1,6 @@
 use console::{style, Style};
 use dialoguer::theme::ColorfulTheme;
-use moon_logger::color::Color;
+use starbase_styles::color::Color;
 
 pub fn create_theme() -> ColorfulTheme {
     ColorfulTheme {

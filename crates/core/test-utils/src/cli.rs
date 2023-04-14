@@ -10,6 +10,7 @@ pub fn create_moon_command<T: AsRef<Path>>(path: T) -> assert_cmd::Command {
     cmd.env("RUST_BACKTRACE", "1");
     // Let our code know we're running tests
     cmd.env("MOON_TEST", "true");
+    cmd.env("STARBASE_TEST", "true");
     // Hide install output as it disrupts testing snapshots
     cmd.env("MOON_TEST_HIDE_INSTALL_OUTPUT", "true");
     // Standardize file system paths for testing snapshots
@@ -36,11 +37,11 @@ pub fn get_assert_stderr_output(assert: &Assert) -> String {
     // but this breaks snapshots, and as such, we need to manually
     // filter out log lines and env vars!
     for line in stderr.split('\n') {
-        if !line.starts_with("[error")
-            && !line.starts_with("[ warn")
-            && !line.starts_with("[ info")
-            && !line.starts_with("[debug")
-            && !line.starts_with("[trace")
+        if !line.starts_with("[ERROR")
+            && !line.starts_with("[WARN")
+            && !line.starts_with("[INFO")
+            && !line.starts_with("[DEBUG")
+            && !line.starts_with("[TRACE")
             && !line.starts_with("  MOON_")
             && !line.starts_with("  NODE_")
             && !line.starts_with("  PROTO_")

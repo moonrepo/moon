@@ -1,7 +1,7 @@
 use crate::dep_graph::{DepGraph, DepGraphType, IndicesType};
 use crate::errors::DepGraphError;
 use moon_action::ActionNode;
-use moon_logger::{color, debug, map_list, trace};
+use moon_logger::{debug, map_list, trace};
 use moon_platform::{PlatformManager, Runtime};
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
@@ -10,6 +10,7 @@ use moon_task::{Task, TouchedFilePaths};
 use petgraph::graph::NodeIndex;
 use petgraph::Graph;
 use rustc_hash::{FxHashMap, FxHashSet};
+use starbase_styles::color;
 use std::mem;
 
 const LOG_TARGET: &str = "moon:dep-graph";
@@ -162,7 +163,7 @@ impl<'ws> DepGraphBuilder<'ws> {
         trace!(
             target: LOG_TARGET,
             "Adding dependents to run for target {}",
-            color::target(&target.id),
+            color::label(&target.id),
         );
 
         let (project_id, task_id) = target.ids()?;
@@ -251,7 +252,7 @@ impl<'ws> DepGraphBuilder<'ws> {
                 trace!(
                     target: LOG_TARGET,
                     "Target {} not affected based on touched files, skipping",
-                    color::target(&target.id),
+                    color::label(&target.id),
                 );
 
                 return Ok(None);
@@ -278,7 +279,7 @@ impl<'ws> DepGraphBuilder<'ws> {
                 target: LOG_TARGET,
                 "Adding dependencies {} for target {}",
                 map_list(&task.deps, |f| color::symbol(f)),
-                color::target(target),
+                color::label(target),
             );
 
             // We don't pass touched files to dependencies, because if the parent

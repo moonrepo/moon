@@ -38,7 +38,7 @@ fn shows_inputs() {
         cmd.arg("task").arg("tasks:test");
     });
 
-    assert_snapshot!(assert.output());
+    assert_snapshot!(assert.output_standardized());
 }
 
 #[test]
@@ -56,5 +56,5 @@ fn shows_outputs() {
         cmd.arg("task").arg("tasks:lint");
     });
 
-    assert_snapshot!(assert.output());
+    assert_snapshot!(assert.output_standardized());
 }

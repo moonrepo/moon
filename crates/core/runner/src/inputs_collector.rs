@@ -1,10 +1,11 @@
 use crate::RunnerError;
 use moon_config::{HasherConfig, HasherWalkStrategy, CONFIG_PROJECT_FILENAME};
-use moon_logger::{color, warn, Logable};
+use moon_logger::{warn, Logable};
 use moon_task::Task;
 use moon_utils::{glob, is_ci, path};
 use moon_vcs::BoxedVcs;
 use rustc_hash::FxHashSet;
+use starbase_styles::color;
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},

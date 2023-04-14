@@ -2,12 +2,13 @@ use crate::errors::PipelineError;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_emitter::Emitter;
-use moon_logger::{color, debug};
+use moon_logger::debug;
 use moon_platform::Runtime;
 use moon_project::Project;
 use moon_runner::Runner;
 use moon_target::Target;
 use moon_workspace::Workspace;
+use starbase_styles::color;
 use std::env;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -33,7 +34,7 @@ pub async fn run_target(
     debug!(
         target: LOG_TARGET,
         "Running target {}",
-        color::target(&task.target)
+        color::label(&task.target)
     );
 
     // If the VCS root does not exist (like in a Docker container),
@@ -51,7 +52,7 @@ pub async fn run_target(
         debug!(
             target: LOG_TARGET,
             "Cache disabled for target {}",
-            color::target(&task.target),
+            color::label(&task.target),
         );
 
         // We must give this task a fake hash for it to be considered complete

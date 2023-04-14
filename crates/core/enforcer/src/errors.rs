@@ -1,11 +1,12 @@
 use moon_project::ProjectType;
+use starbase_styles::{Style, Stylize};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum EnforcerError {
-    #[error("Invalid project relationship. Project <id>{0}</id> of type {1} cannot depend on project <id>{2}</id> of type {3}; can only depend on libraries.")]
+    #[error("Invalid project relationship. Project {} of type {1} cannot depend on project {} of type {3}; can only depend on libraries.", .0.style(Style::Id), .2.style(Style::Id))]
     InvalidTypeRelationship(String, ProjectType, String, ProjectType),
 
-    #[error("Invalid tag relationship. Project <id>{0}</id> with tag {1} cannot depend on project <id>{2}</id>. The tag {1} requires a dependency to have one of the following tags: {3}.")]
+    #[error("Invalid tag relationship. Project {} with tag {1} cannot depend on project {}. The tag {1} requires a dependency to have one of the following tags: {3}.", .0.style(Style::Id), .2.style(Style::Id))]
     InvalidTagRelationship(String, String, String, String),
 }

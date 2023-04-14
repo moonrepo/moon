@@ -25,6 +25,7 @@ proto_cli = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+starbase_styles = { workspace = true }
 tokio = { workspace = true }
 
 [dev-dependencies]

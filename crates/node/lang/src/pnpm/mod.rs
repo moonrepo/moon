@@ -8,10 +8,10 @@ use cached::proc_macro::cached;
 use dependency_path::PnpmDependencyPath;
 use moon_error::MoonError;
 use moon_lang::{config_cache, LockfileDependencyVersions};
-use moon_utils::yaml::read as read_yaml;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
+use starbase_utils::yaml::read_file as read_yaml;
 use std::path::{Path, PathBuf};
 
 config_cache!(PnpmLock, PNPM.lockfile, read_yaml);

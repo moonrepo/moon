@@ -5,9 +5,10 @@ use moon_config::{InheritedTasksConfig, PlatformType, ProjectConfig, TaskCommand
 use moon_constants as constants;
 use moon_logger::{info, warn};
 use moon_terminal::safe_exit;
-use moon_utils::{fs, json, yaml};
+use moon_utils::{fs, json};
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
+use starbase_utils::yaml;
 use std::path::PathBuf;
 
 const LOG_TARGET: &str = "moon:migrate:from-turborepo";

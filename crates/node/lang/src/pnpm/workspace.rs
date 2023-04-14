@@ -2,8 +2,8 @@ use crate::PNPM;
 use cached::proc_macro::cached;
 use moon_error::MoonError;
 use moon_lang::config_cache;
-use moon_utils::yaml::read as read_yaml;
 use serde::{Deserialize, Serialize};
+use starbase_utils::yaml::read_file as read_yaml;
 use std::path::{Path, PathBuf};
 
 config_cache!(PnpmWorkspace, PNPM.config_files[2], read_yaml);

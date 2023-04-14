@@ -2576,6 +2576,7 @@ dependencies = [
  "serde_yaml",
  "serial_test",
  "starbase_styles",
+ "starbase_utils",
  "strum",
  "tera",
  "tiny_http",
@@ -2602,6 +2603,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "starbase_styles",
+ "starbase_utils",
  "strum",
  "thiserror",
  "tokio",
@@ -2748,6 +2750,7 @@ dependencies = [
  "moon_utils",
  "serde_json",
  "starbase_styles",
+ "starbase_utils",
  "tera",
  "thiserror",
 ]
@@ -2824,6 +2827,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "starbase_styles",
+ "starbase_utils",
  "thiserror",
  "yarn-lock-parser",
 ]
@@ -3192,7 +3196,6 @@ dependencies = [
  "semver",
  "serde",
  "serde_json",
- "serde_yaml",
  "shell-words",
  "starbase_styles",
  "tokio",
@@ -4562,6 +4565,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "92acc8843be98afe41caf1925e383fd2dc2b385a893bc6973eaa3597d0ff92eb"
 dependencies = [
  "dirs",
+ "ec4rs",
  "json_comments",
  "miette",
  "once_cell",
@@ -4569,6 +4573,7 @@ dependencies = [
  "relative-path",
  "serde",
  "serde_json",
+ "serde_yaml",
  "starbase_styles",
  "thiserror",
  "toml",

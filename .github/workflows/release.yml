@@ -72,21 +72,16 @@ jobs:
     runs-on: ${{ matrix.host }}
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@1.68.1
         if: ${{ !matrix.docker-target }}
         with:
-          override: true
-          profile: minimal
           target: ${{ matrix.target }}
-          toolchain: stable
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: moon
       - name: Generate lockfile
-        uses: actions-rs/cargo@v1
         if: ${{ !matrix.docker-target }}
-        with:
-          command: generate-lockfile
+        run: cargo generate-lockfile
       - name: Setup toolchain
         if: ${{ matrix.setup }}
         run: ${{ matrix.setup }}

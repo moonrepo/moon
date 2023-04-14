@@ -33,20 +33,16 @@ jobs:
           submodules: false
           ref: ${{ steps.sha.outputs.result }}
           # ref: ${{ github.event.pull_request.head.sha }}
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: 1.68.1
-          profile: minimal
+      - uses: dtolnay/rust-toolchain@1.68.1
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: benchmark
       - name: Run benchmarks
-        uses: actions-rs/cargo@v1
-        with:
-          command: bench
-          # args: --workspace --bench ${{ matrix.bench }} -- --save-baseline base-sha
-          args: |
-            --workspace --bench dep_graph_benchmark --bench emitter_benchmark --bench project_graph_benchmark --bench pipeline_benchmark --bench tar_benchmark -- --save-baseline head-sha
+        # args: --workspace --bench ${{ matrix.bench }} -- --save-baseline base-sha
+        run:
+          cargo bench --workspace --bench dep_graph_benchmark --bench emitter_benchmark --bench
+          project_graph_benchmark --bench pipeline_benchmark --bench tar_benchmark --
+          --save-baseline head-sha
 
       # Run on base branch to get a baseline
       - name: Checkout base branch
@@ -55,19 +51,15 @@ jobs:
           clean: false
           ref: ${{ github.event.pull_request.base.sha }}
       - name: Run benchmarks
-        uses: actions-rs/cargo@v1
-        with:
-          command: bench
-          # args: --workspace --bench ${{ matrix.bench }} -- --save-baseline base-sha
-          args: |
-            --workspace --bench dep_graph_benchmark --bench emitter_benchmark --bench project_graph_benchmark --bench pipeline_benchmark --bench tar_benchmark -- --save-baseline base-sha
+        # args: --workspace --bench ${{ matrix.bench }} -- --save-baseline base-sha
+        run:
+          cargo bench --workspace --bench dep_graph_benchmark --bench emitter_benchmark --bench
+          project_graph_benchmark --bench pipeline_benchmark --bench tar_benchmark --
+          --save-baseline base-sha
 
       # Compare diffs
       - name: Install critcmp
-        uses: actions-rs/cargo@v1
-        with:
-          command: install
-          args: critcmp
+        run: cargo install critcmp
 
       - name: Compare benchmarks
         id: bench_comparison

@@ -29,20 +29,14 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           cache: yarn
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: 1.68.1
-          profile: minimal
+      - uses: dtolnay/rust-toolchain@1.68.1
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: moon
       - uses: moonrepo/tool-version-action@v1
         with:
           node: ${{ matrix.node-version }}
-      - uses: actions-rs/cargo@v1
-        with:
-          command: run
-          args: -- --color --log trace ci --base ${{ github.base_ref || 'master' }}
+      - run: cargo run -- --color --log trace ci --base ${{ github.base_ref || 'master' }}
         env:
           MOONBASE_SECRET_KEY: ${{ secrets.MOONBASE_SECRET_KEY }}
           MOONBASE_ACCESS_KEY: ${{ secrets.MOONBASE_ACCESS_KEY }}

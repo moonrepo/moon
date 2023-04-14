@@ -15,7 +15,6 @@ on:
       - rust-toolchain.toml
 env:
   RUST_BACKTRACE: 1
-  # Windows fails to compile right now...
   WITH_COVERAGE: ${{ contains(github.head_ref, 'develop-') || endsWith(github.ref, 'master') }}
 jobs:
   format:
@@ -23,20 +22,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        name: Setup toolchain
+      - uses: dtolnay/rust-toolchain@1.68.1
         with:
-          toolchain: 1.68.1
-          profile: minimal
           components: rustfmt
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: format
-      - uses: actions-rs/cargo@v1
-        name: Check formatting
-        with:
-          command: fmt
-          args: --all --check
+      - name: Check formatting
+        run: cargo fmt --all --check
   lint:
     name: Lint
     runs-on: ${{ matrix.os }}
@@ -46,11 +39,8 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        name: Setup toolchain
+      - uses: dtolnay/rust-toolchain@1.68.1
         with:
-          toolchain: 1.68.1
-          profile: minimal
           components: clippy
       - uses: Swatinem/rust-cache@v2
         with:
@@ -63,21 +53,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [buildjet-4vcpu-ubuntu-2204, macos-latest, self-hosted-windows-4xl]
+        os: [buildjet-4vcpu-ubuntu-2204, macos-latest, self-hosted-windows-t2-2xl]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
-      - run: Get-PSDrive
-        if: ${{ runner.os == 'Windows' }}
-      - uses: actions-rs/toolchain@v1
-        name: Setup toolchain
+      - uses: dtolnay/rust-toolchain@1.68.1
         with:
-          toolchain: 1.68.1
-          profile: minimal
           components: llvm-tools-preview
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
-        if: ${{ runner.os != 'Windows' }}
         with:
           shared-key: test
       - name: Install cargo-make
@@ -86,25 +70,25 @@ jobs:
         uses: taiki-e/install-action@nextest
       - name: Install llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
-        if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
+        if: ${{ env.WITH_COVERAGE == 'true' }}
       - name: Run tests with coverage
-        if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
+        if: ${{ env.WITH_COVERAGE == 'true' }}
         run: cargo make test-coverage
         env:
           NEXTEST_PROFILE: ci
       - name: Run tests
-        if: ${{ runner.os == 'Windows' || env.WITH_COVERAGE == 'false' }}
+        if: ${{ env.WITH_COVERAGE == 'false' }}
         run: cargo make test
         env:
           NEXTEST_PROFILE: ci
       - name: Generate code coverage
-        if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
+        if: ${{ env.WITH_COVERAGE == 'true' }}
         run: cargo make generate-report
       - run: Get-PSDrive
         if: ${{ runner.os == 'Windows' }}
       - name: Upload coverage report
         uses: actions/upload-artifact@v3
-        if: ${{ runner.os != 'Windows' && env.WITH_COVERAGE == 'true' }}
+        if: ${{ env.WITH_COVERAGE == 'true' }}
         with:
           name: coverage-${{ runner.os }}
           path: ./report.txt
@@ -124,6 +108,6 @@ jobs:
       - uses: codecov/codecov-action@v3
         name: Upload to Codecov
         with:
-          files: ./coverage/coverage-Linux/report.txt,./coverage/coverage-macOS/report.txt
+          files: ./coverage/coverage-Linux/report.txt,./coverage/coverage-macOS/report.txt,./coverage/coverage-Windows/report.txt
           flags: rust
           verbose: true

@@ -1,0 +1,26 @@
+---
+source: crates/cli/tests/task_test.rs
+expression: assert.output()
+---
+
+ TASKS:TEST
+
+Task: test
+Project: tasks
+Platform: node
+Type: test
+
+ PROCESS
+
+Command: jest --cache --color
+Working directory: <WORKSPACE>\tasks
+Runs dependencies: Concurrently
+Runs in CI: Yes
+
+ INPUTS
+
+ - .moon/*.yml
+ - tasks/tests/**/*
+
+
+

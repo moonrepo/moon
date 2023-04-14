@@ -322,6 +322,8 @@ fn retries_on_failure_till_count() {
         cmd.arg("run").arg("node:retryCount");
     });
 
+    assert.debug();
+
     let output = assert.output();
 
     assert!(predicate::str::contains("Process ~/.proto/tools/node/18.0.0").eval(&output));

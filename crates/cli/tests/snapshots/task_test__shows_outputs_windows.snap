@@ -1,0 +1,30 @@
+---
+source: crates/cli/tests/task_test.rs
+expression: assert.output()
+---
+
+ TASKS:LINT
+
+Task: lint
+Project: tasks
+Platform: node
+Type: build
+
+ PROCESS
+
+Command: eslint --cache --report-unused-disable-directives
+Working directory: <WORKSPACE>\tasks
+Runs dependencies: Concurrently
+Runs in CI: Yes
+
+ INPUTS
+
+ - .moon/*.yml
+ - tasks/**/*
+
+ OUTPUTS
+
+ - tasks\cache
+
+
+

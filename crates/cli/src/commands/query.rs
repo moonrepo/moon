@@ -9,8 +9,8 @@ pub use crate::queries::touched_files::{
 };
 use is_terminal::IsTerminal;
 use moon::load_workspace;
-use moon_logger::color;
 use rustc_hash::FxHashMap;
+use starbase_styles::color;
 use std::io;
 use std::io::prelude::*;
 

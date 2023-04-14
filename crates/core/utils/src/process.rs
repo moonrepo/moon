@@ -1,7 +1,8 @@
 use crate::{get_workspace_root, is_ci, is_test_env, path, shell};
 use moon_error::{map_io_to_process_error, MoonError};
-use moon_logger::{color, logging_enabled, pad_str, trace, Alignment};
+use moon_logger::{logging_enabled, pad_str, trace, Alignment};
 use rustc_hash::FxHashMap;
+use starbase_styles::color;
 use std::env;
 use std::ffi::{OsStr, OsString};
 use std::path::{Path, PathBuf};

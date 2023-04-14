@@ -1,10 +1,11 @@
 use ci_env::{get_environment, CiEnvironment};
 use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_error::MoonError;
-use moon_logger::{color, error, trace};
+use moon_logger::{error, trace};
 use moon_utils::time::{chrono::prelude::*, now_timestamp};
 use moon_workspace::Workspace;
 use serde::{Deserialize, Serialize};
+use starbase_styles::color;
 use tokio::task::JoinHandle;
 use uuid::Uuid;
 

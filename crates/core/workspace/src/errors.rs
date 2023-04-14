@@ -3,14 +3,15 @@ use moon_error::MoonError;
 use moon_vcs::VcsError;
 use moonbase::MoonbaseError;
 use proto::ProtoError;
+use starbase_styles::{Style, Stylize};
 use std::path::PathBuf;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum WorkspaceError {
     #[error(
-        "Unable to determine workspace root. Please create a <file>{}</file> configuration folder.",
-        constants::CONFIG_DIRNAME
+        "Unable to determine workspace root. Please create a {} configuration folder.",
+        constants::CONFIG_DIRNAME.style(Style::File)
     )]
     MissingConfigDir,
 
@@ -21,27 +22,27 @@ pub enum WorkspaceError {
     MissingWorkingDir,
 
     #[error(
-        "Unable to locate <file>{}/{}</file> configuration file.",
-        constants::CONFIG_DIRNAME,
-        constants::CONFIG_WORKSPACE_FILENAME
+        "Unable to locate {}/{} configuration file.",
+        constants::CONFIG_DIRNAME.style(Style::File),
+        constants::CONFIG_WORKSPACE_FILENAME.style(Style::File)
     )]
     MissingWorkspaceConfigFile,
 
     #[error(
-        "Failed to validate <file>{}/{}</file> configuration file.\n\n{0}",
-        constants::CONFIG_DIRNAME,
-        constants::CONFIG_TOOLCHAIN_FILENAME
+        "Failed to validate {}/{} configuration file.\n\n{0}",
+        constants::CONFIG_DIRNAME.style(Style::File),
+        constants::CONFIG_TOOLCHAIN_FILENAME.style(Style::File)
     )]
     InvalidToolchainConfigFile(String),
 
     #[error(
-        "Failed to validate <file>{}/{}</file> configuration file.\n\n{0}",
+        "Failed to validate {}/{} configuration file.\n\n{0}",
         constants::CONFIG_DIRNAME,
         constants::CONFIG_WORKSPACE_FILENAME
     )]
     InvalidWorkspaceConfigFile(String),
 
-    #[error("Failed to validate <file>{0}</file> configuration file.\n\n{1}")]
+    #[error("Failed to validate {} configuration file.\n\n{1}", .0.style(Style::Path))]
     InvalidTasksConfigFile(PathBuf, String),
 
     #[error("Invalid moon version, unable to proceed. Found {0}, expected {1}.")]

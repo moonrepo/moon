@@ -1,6 +1,6 @@
 use moon_config::TypeScriptConfig;
 use moon_error::MoonError;
-use moon_logger::{color, debug};
+use moon_logger::debug;
 use moon_project::{Project, ProjectError};
 use moon_typescript_lang::{
     tsconfig::{CompilerOptionsPaths, TsConfigExtends},
@@ -8,6 +8,7 @@ use moon_typescript_lang::{
 };
 use moon_utils::{get_cache_dir, json, path, string_vec};
 use rustc_hash::FxHashSet;
+use starbase_styles::color;
 use std::path::Path;
 
 const LOG_TARGET: &str = "moon:typescript-platform:sync-project";

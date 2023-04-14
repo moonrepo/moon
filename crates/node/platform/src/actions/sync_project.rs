@@ -1,10 +1,11 @@
 use moon_config::{DependencyScope, NodeConfig, NodeVersionFormat, TypeScriptConfig};
-use moon_logger::{color, debug};
+use moon_logger::debug;
 use moon_node_lang::{PackageJson, NPM};
 use moon_project::{Project, ProjectError};
 use moon_typescript_lang::tsconfig::CompilerOptionsPaths;
 use moon_utils::{path, semver};
 use rustc_hash::{FxHashMap, FxHashSet};
+use starbase_styles::color;
 use std::collections::BTreeMap;
 use std::path::Path;
 

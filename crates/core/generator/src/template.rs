@@ -5,8 +5,9 @@ use moon_config::{
     TemplateFrontmatterConfig,
 };
 use moon_constants::CONFIG_TEMPLATE_FILENAME;
-use moon_logger::{color, debug, trace};
+use moon_logger::{debug, trace};
 use moon_utils::{fs, json, lazy_static, path, regex, yaml};
+use starbase_styles::color;
 use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
 

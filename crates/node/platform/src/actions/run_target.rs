@@ -2,7 +2,7 @@ use crate::target_hasher::NodeTargetHasher;
 use moon_action_context::{ActionContext, ProfileType};
 use moon_config::{HasherConfig, HasherOptimization, NodeConfig, NodePackageManager};
 use moon_error::MoonError;
-use moon_logger::{color, trace};
+use moon_logger::trace;
 use moon_node_lang::{
     node::{self, BinFile},
     PackageJson,
@@ -15,6 +15,7 @@ use moon_utils::{get_cache_dir, process::Command};
 use moon_utils::{path, string_vec};
 use proto::Installable;
 use rustc_hash::FxHashMap;
+use starbase_styles::color;
 use std::path::Path;
 
 const LOG_TARGET: &str = "moon:node-platform:run-target";
@@ -42,7 +43,7 @@ fn create_node_options(
                 trace!(
                     target: LOG_TARGET,
                     "Writing CPU profile for {} to {}",
-                    color::target(&task.target),
+                    color::label(&task.target),
                     color::path(&prof_dir)
                 );
 
@@ -58,7 +59,7 @@ fn create_node_options(
                 trace!(
                     target: LOG_TARGET,
                     "Writing heap profile for {} to {}",
-                    color::target(&task.target),
+                    color::label(&task.target),
                     color::path(&prof_dir)
                 );
 

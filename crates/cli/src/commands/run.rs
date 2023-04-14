@@ -4,11 +4,12 @@ use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOption
 use moon::{build_dep_graph, generate_project_graph, load_workspace};
 use moon_action_context::{ActionContext, ProfileType};
 use moon_action_pipeline::Pipeline;
-use moon_logger::{color, map_list};
+use moon_logger::map_list;
 use moon_project_graph::ProjectGraph;
 use moon_utils::is_ci;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
+use starbase_styles::color;
 use std::env;
 use std::string::ToString;
 
@@ -76,7 +77,7 @@ pub async fn run_target(
     )?;
 
     if primary_targets.is_empty() {
-        let targets_list = map_list(target_ids, |id| color::target(id));
+        let targets_list = map_list(target_ids, |id| color::label(id));
 
         if should_run_affected {
             let status_list = if options.status.is_empty() {

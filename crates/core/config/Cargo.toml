@@ -25,6 +25,7 @@ schemars = "0.8.12"
 serde = { workspace = true }
 serde_json = { workspace = true, features = ["preserve_order"] }
 serde_yaml = { workspace = true }
+starbase_styles = { workspace = true }
 strum = { workspace = true }
 thiserror = { workspace = true }
 validator = { version = "0.16.0", features = ["derive"] }

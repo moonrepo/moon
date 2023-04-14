@@ -2,8 +2,9 @@ use crate::errors::GeneratorError;
 use crate::template::Template;
 use moon_config::{load_template_config_template, GeneratorConfig};
 use moon_constants::CONFIG_TEMPLATE_FILENAME;
-use moon_logger::{color, debug, map_list, trace};
+use moon_logger::{debug, map_list, trace};
 use moon_utils::{fs, path, regex::clean_id};
+use starbase_styles::color;
 use std::path::{Path, PathBuf};
 
 const LOG_TARGET: &str = "moon:generator";

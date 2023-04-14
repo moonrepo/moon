@@ -134,7 +134,7 @@ mod extends {
     // #[should_panic(
     //     expected = "invalid type: found unsigned int `123`, expected a string for key \"inheritedTasks.extends\""
     // )]
-    #[should_panic(expected = "Invalid <id>extends</id> field, must be a string.")]
+    #[should_panic(expected = "Invalid \"extends\" field, must be a string.")]
     fn invalid_type() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(super::CONFIG_TASKS_FILENAME, "extends: 123")?;

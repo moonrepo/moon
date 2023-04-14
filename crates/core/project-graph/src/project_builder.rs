@@ -10,7 +10,7 @@ use moon_config::{
 use moon_enforcer::{enforce_project_type_relationships, enforce_tag_relationships};
 use moon_error::MoonError;
 use moon_hasher::{convert_paths_to_strings, to_hash};
-use moon_logger::{color, debug, map_list, trace, warn, Logable};
+use moon_logger::{debug, map_list, trace, warn, Logable};
 use moon_platform_detector::{detect_project_language, detect_task_platform};
 use moon_project::{Project, ProjectDependency, ProjectDependencySource, ProjectError};
 use moon_target::{Target, TargetError, TargetProjectScope};
@@ -22,6 +22,7 @@ use moon_workspace::Workspace;
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::Direction;
 use rustc_hash::{FxHashMap, FxHashSet};
+use starbase_styles::color;
 use std::collections::BTreeMap;
 use std::env;
 use std::mem;

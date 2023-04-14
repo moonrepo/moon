@@ -5,10 +5,11 @@ use moon::load_workspace;
 use moon_config::{TemplateVariable, TemplateVariableEnumValue};
 use moon_error::MoonError;
 use moon_generator::{FileState, Generator, GeneratorError, Template, TemplateContext};
-use moon_logger::{color, debug, map_list, trace, warn};
+use moon_logger::{debug, map_list, trace, warn};
 use moon_terminal::create_theme;
 use moon_utils::path;
 use rustc_hash::FxHashMap;
+use starbase_styles::color;
 use std::env;
 use std::fmt::Display;
 use std::path::PathBuf;
@@ -334,7 +335,8 @@ pub async fn generate(name: String, options: GenerateOptions) -> Result<(), AnyE
     term.write_line("")?;
     term.write_line(&format!(
         "{} {}",
-        color::style(&template.config.title).bold(),
+        // color::style(&template.config.title).bold(),
+        &template.config.title,
         if options.dry_run {
             color::muted("(dry run)")
         } else {

@@ -5,12 +5,13 @@ use moon_config::{
     InheritedTasksManager, ToolchainConfig, WorkspaceConfig,
 };
 use moon_constants as constants;
-use moon_logger::{color, debug, trace};
+use moon_logger::{debug, trace};
 use moon_platform::{BoxedPlatform, PlatformManager};
 use moon_utils::{fs, glob, path, semver};
 use moon_vcs::{BoxedVcs, VcsLoader};
 use moonbase::Moonbase;
 use proto::{get_root, ToolsConfig, TOOLS_CONFIG_NAME};
+use starbase_styles::color;
 use std::env;
 use std::path::{Path, PathBuf};
 

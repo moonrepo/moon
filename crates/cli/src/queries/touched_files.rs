@@ -1,10 +1,11 @@
 use crate::enums::TouchedStatus;
-use moon_logger::{color, debug, map_list, trace};
+use moon_logger::{debug, map_list, trace};
 use moon_task::TouchedFilePaths;
 use moon_utils::path;
 use moon_workspace::{Workspace, WorkspaceError};
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
+use starbase_styles::color;
 use std::path::PathBuf;
 
 const LOG_TARGET: &str = "moon:query:touched-files";

@@ -13,3 +13,4 @@ cached = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true, features = ["preserve_order"] }
+starbase_styles = { workspace = true }

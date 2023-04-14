@@ -10,12 +10,13 @@ use moon_action_context::ActionContext;
 use moon_dep_graph::DepGraph;
 use moon_emitter::{Emitter, Event};
 use moon_error::MoonError;
-use moon_logger::{color, debug, error, trace};
+use moon_logger::{debug, error, trace};
 use moon_notifier::WebhooksSubscriber;
 use moon_project_graph::ProjectGraph;
-use moon_terminal::{label_to_the_moon, replace_style_tokens, ExtendedTerm};
+use moon_terminal::{label_to_the_moon, ExtendedTerm};
 use moon_utils::{is_ci, is_test_env, time};
 use moon_workspace::Workspace;
+use starbase_styles::color;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::{RwLock, Semaphore};
@@ -262,15 +263,13 @@ impl Pipeline {
             term.write_line(&format!(
                 "{} {} {}",
                 status,
-                color::style(&result.label).bold(),
+                // color::create_style(&result.label).bold().to_string(),
+                &result.label,
                 color::muted(format!("({})", meta.join(", ")))
             ))?;
 
             if let Some(error) = &result.error {
-                term.write_line(&format!(
-                    "     {}",
-                    color::muted_light(replace_style_tokens(error))
-                ))?;
+                term.write_line(&format!("     {}", color::muted_light(error)))?;
             }
         }
 

@@ -8,9 +8,7 @@ use moon_platform_runtime::Version;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
 use moon_utils::process::Command;
-use proto::{
-    async_trait, node::NodeLanguage, Describable, Executable, Installable, Proto, Tool as ProtoTool,
-};
+use proto::{async_trait, node::NodeLanguage, Executable, Installable, Proto, Tool as ProtoTool};
 use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
 
@@ -164,12 +162,11 @@ impl Tool for NodeTool {
         // Don't abort early, as we need to setup package managers below
         if let Some(version) = &self.config.version {
             if self.tool.is_setup(version).await? {
-                debug!(target: self.tool.get_log_target(), "Node.js has already been setup");
+                debug!("Node.js has already been setup");
 
                 // When offline and the tool doesn't exist, fallback to the global binary
             } else if proto::is_offline() {
                 debug!(
-                    target: self.tool.get_log_target(),
                     "No internet connection and Node.js has not been setup, falling back to global binary in PATH"
                 );
 

@@ -9,7 +9,7 @@ use moon_utils::{fs, is_ci};
 use proto::{
     async_trait,
     node::{NodeDependencyManager, NodeDependencyManagerType},
-    Describable, Executable, Installable, Proto, Shimable, Tool as ProtoTool,
+    Executable, Installable, Proto, Shimable, Tool as ProtoTool,
 };
 use rustc_hash::FxHashMap;
 use std::env;
@@ -64,7 +64,7 @@ impl Tool for NpmTool {
         };
 
         if self.tool.is_setup(&version).await? {
-            debug!(target: self.tool.get_log_target(), "npm has already been setup");
+            debug!("npm has already been setup");
 
             return Ok(count);
         }
@@ -72,7 +72,6 @@ impl Tool for NpmTool {
         // When offline and the tool doesn't exist, fallback to the global binary
         if proto::is_offline() {
             debug!(
-                target: self.tool.get_log_target(),
                 "No internet connection and npm has not been setup, falling back to global binary in PATH"
             );
 

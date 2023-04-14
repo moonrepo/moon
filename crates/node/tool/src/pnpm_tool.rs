@@ -9,7 +9,7 @@ use moon_utils::{fs, is_ci, semver};
 use proto::{
     async_trait,
     node::{NodeDependencyManager, NodeDependencyManagerType},
-    Describable, Executable, Installable, Proto, Shimable, Tool as ProtoTool,
+    Executable, Installable, Proto, Shimable, Tool as ProtoTool,
 };
 use rustc_hash::FxHashMap;
 use std::env;
@@ -66,7 +66,7 @@ impl Tool for PnpmTool {
         };
 
         if self.tool.is_setup(&version).await? {
-            debug!(target: self.tool.get_log_target(), "pnpm has already been setup");
+            debug!("pnpm has already been setup");
 
             return Ok(count);
         }
@@ -74,7 +74,6 @@ impl Tool for PnpmTool {
         // When offline and the tool doesn't exist, fallback to the global binary
         if proto::is_offline() {
             debug!(
-                target: self.tool.get_log_target(),
                 "No internet connection and pnpm has not been setup, falling back to global binary in PATH"
             );
 

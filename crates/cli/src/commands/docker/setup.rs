@@ -4,7 +4,7 @@ use crate::helpers::AnyError;
 use moon::{build_dep_graph, generate_project_graph, load_workspace_with_toolchain};
 use moon_action_pipeline::Pipeline;
 use moon_terminal::safe_exit;
-use moon_utils::json;
+use starbase_utils::json;
 
 pub async fn setup() -> Result<(), AnyError> {
     let mut workspace = load_workspace_with_toolchain().await?;
@@ -15,7 +15,7 @@ pub async fn setup() -> Result<(), AnyError> {
         safe_exit(1);
     }
 
-    let manifest: DockerManifest = json::read(manifest_path)?;
+    let manifest: DockerManifest = json::read_file(manifest_path)?;
     let project_graph = generate_project_graph(&mut workspace).await?;
     let mut dep_builder = build_dep_graph(&workspace, &project_graph);
 

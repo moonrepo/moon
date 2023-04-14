@@ -1,9 +1,10 @@
 use moon_error::MoonError;
 use moon_logger::trace;
-use moon_utils::{fs, json};
+use moon_utils::fs;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use starbase_styles::color;
+use starbase_utils::json;
 use std::path::PathBuf;
 
 pub struct Runfile {
@@ -21,7 +22,7 @@ impl Runfile {
 
         // Always write a runfile, regardless of MOON_CACHE,
         // since consumers expect this to exist at runtime
-        json::write(&path, data, true)?;
+        json::write_file(&path, data, true)?;
 
         Ok(Runfile { path })
     }

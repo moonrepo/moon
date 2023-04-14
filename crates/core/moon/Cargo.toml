@@ -13,3 +13,4 @@ moon_project_graph = { path = "../project-graph" }
 moon_system_platform = { path = "../../system/platform" }
 moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
+starbase_utils = { workspace = true }

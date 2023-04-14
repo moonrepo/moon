@@ -18,7 +18,7 @@ macro_rules! cache_item {
                             color::path(&path)
                         );
 
-                        item = json::read(&path)?;
+                        item = json::read_file(&path)?;
                     } else {
                         trace!(
                             target: log_target,
@@ -43,7 +43,7 @@ macro_rules! cache_item {
                         color::path(&self.path)
                     );
 
-                    json::write(&self.path, &self, false)?;
+                    json::write_file(&self.path, &self, false)?;
                 }
 
                 Ok(())

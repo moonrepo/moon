@@ -2416,6 +2416,7 @@ dependencies = [
  "moon_system_platform",
  "moon_utils",
  "moon_workspace",
+ "starbase_utils",
 ]
 
 [[package]]
@@ -2515,6 +2516,7 @@ dependencies = [
  "serde",
  "serial_test",
  "starbase_styles",
+ "starbase_utils",
 ]
 
 [[package]]
@@ -2628,6 +2630,7 @@ dependencies = [
  "serde",
  "serde_json",
  "starbase_styles",
+ "starbase_utils",
 ]
 
 [[package]]
@@ -2733,6 +2736,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "starbase_styles",
+ "starbase_utils",
  "thiserror",
  "wax",
 ]
@@ -3151,6 +3155,7 @@ dependencies = [
  "serde",
  "serde_json",
  "starbase_styles",
+ "starbase_utils",
 ]
 
 [[package]]
@@ -3169,6 +3174,7 @@ dependencies = [
  "serde",
  "serde_json",
  "starbase_styles",
+ "starbase_utils",
 ]
 
 [[package]]
@@ -3183,7 +3189,6 @@ dependencies = [
  "dunce",
  "ec4rs",
  "humantime",
- "json_comments",
  "lazy_static",
  "md5",
  "moon_constants",
@@ -3195,7 +3200,6 @@ dependencies = [
  "rustc-hash",
  "semver",
  "serde",
- "serde_json",
  "shell-words",
  "starbase_styles",
  "tokio",

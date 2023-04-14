@@ -7,8 +7,9 @@ use moon_node_lang::{PackageJson, NODE};
 use moon_node_tool::NodeTool;
 use moon_project_graph::ProjectGraph;
 use moon_terminal::safe_exit;
-use moon_utils::{fs, json};
+use moon_utils::fs;
 use rustc_hash::FxHashSet;
+use starbase_utils::json;
 use std::path::Path;
 
 pub async fn prune_node(
@@ -56,7 +57,7 @@ pub async fn prune() -> Result<(), AnyError> {
     }
 
     let project_graph = generate_project_graph(&mut workspace).await?;
-    let manifest: DockerManifest = json::read(manifest_path)?;
+    let manifest: DockerManifest = json::read_file(manifest_path)?;
     let mut platforms = FxHashSet::<PlatformType>::default();
 
     for project_id in &manifest.focused_projects {

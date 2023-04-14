@@ -10,13 +10,11 @@ moon_logger = { path = "../logger" }
 async-trait = { workspace = true }
 cached = { workspace = true }
 chrono = { version = "0.4.24", features = ["serde"] }
-# chrono-humanize = "0.2.2"
 clean-path = "0.2.1"
 dirs = "5.0.0"
 dunce = "1.0.3"
 ec4rs = "1.0.2"
 humantime = "2.1.0"
-json_comments = "0.2.1"
 lazy_static = { workspace = true }
 md5 = "0.7.0"
 pathdiff = "0.2.1"
@@ -24,8 +22,6 @@ regex = { workspace = true }
 rustc-hash = { workspace = true }
 semver = "1.0.17"
 serde = { workspace = true }
-serde_json = { workspace = true, features = ["preserve_order"] }
-# serde_yaml = { workspace = true }
 shell-words = "1.1.0"
 starbase_styles = { workspace = true }
 tokio = { workspace = true }

@@ -4,8 +4,8 @@ use crate::NPM;
 use cached::proc_macro::cached;
 use moon_error::MoonError;
 use moon_lang::config_cache;
-use moon_utils::json::{self, read as read_json, JsonValue};
 use serde::{Deserialize, Serialize};
+use starbase_utils::json::{self, read_file as read_json, JsonValue};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
@@ -240,7 +240,7 @@ pub enum PackageWorkspaces {
 // file again and parse it with `json`, then stringify it with `json`.
 #[track_caller]
 fn write_preserved_json(path: &Path, package: &PackageJson) -> Result<(), MoonError> {
-    let mut data: JsonValue = json::read(path)?;
+    let mut data: JsonValue = json::read_file(path)?;
 
     // We only need to set fields that we modify within moon,
     // otherwise it's a ton of overhead and maintenance!

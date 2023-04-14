@@ -6,9 +6,10 @@ use moon_typescript_lang::{
     tsconfig::{CompilerOptionsPaths, TsConfigExtends},
     TsConfigJson,
 };
-use moon_utils::{get_cache_dir, json, path, string_vec};
+use moon_utils::{get_cache_dir, path, string_vec};
 use rustc_hash::FxHashSet;
 use starbase_styles::color;
+use starbase_utils::json;
 use std::path::Path;
 
 const LOG_TARGET: &str = "moon:typescript-platform:sync-project";
@@ -39,7 +40,7 @@ pub fn create_missing_tsconfig(
         ..TsConfigJson::default()
     };
 
-    json::write(&tsconfig_path, &json, true)?;
+    json::write_file(&tsconfig_path, &json, true)?;
 
     Ok(true)
 }

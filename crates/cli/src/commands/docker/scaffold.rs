@@ -6,10 +6,11 @@ use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_platform_detector::detect_language_files;
 use moon_project_graph::{ProjectGraph, ProjectGraphError};
-use moon_utils::{fs, glob, json, path};
+use moon_utils::{fs, glob, path};
 use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
+use starbase_utils::json;
 use std::path::Path;
 use strum::IntoEnumIterator;
 
@@ -126,7 +127,7 @@ fn scaffold_sources(
     docker_root: &Path,
     project_ids: &[String],
     include: &[String],
-) -> Result<(), ProjectGraphError> {
+) -> Result<(), AnyError> {
     let docker_sources_root = docker_root.join("sources");
     let mut manifest = DockerManifest {
         focused_projects: FxHashSet::default(),
@@ -162,10 +163,10 @@ fn scaffold_sources(
         copy_files(&files, &workspace.root, &docker_sources_root)?;
     }
 
-    json::write(docker_sources_root.join(MANIFEST_NAME), &manifest, true)?;
+    json::write_file(docker_sources_root.join(MANIFEST_NAME), &manifest, true)?;
 
     // Sync to the workspace scaffold for staged builds
-    json::write(
+    json::write_file(
         docker_root.join("workspace").join(MANIFEST_NAME),
         &manifest,
         true,

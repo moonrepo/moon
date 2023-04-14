@@ -2,9 +2,9 @@ use crate::DENO_DEPS;
 use cached::proc_macro::cached;
 use moon_error::MoonError;
 use moon_lang::{config_cache, LockfileDependencyVersions};
-use moon_utils::json::read as read_json;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
+use starbase_utils::json::read_file as read_json;
 use std::path::{Path, PathBuf};
 
 config_cache!(DenoLock, DENO_DEPS.lockfile, read_json);

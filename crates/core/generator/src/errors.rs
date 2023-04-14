@@ -2,13 +2,16 @@ use moon_config::ConfigError;
 use moon_constants as constants;
 use moon_error::MoonError;
 use starbase_styles::{Style, Stylize};
-use starbase_utils::yaml::YamlError;
+use starbase_utils::{json::JsonError, yaml::YamlError};
 use std::path::PathBuf;
 use tera::Error as TeraError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum GeneratorError {
+    #[error(transparent)]
+    Json(#[from] JsonError),
+
     #[error(transparent)]
     Yaml(#[from] YamlError),
 

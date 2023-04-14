@@ -6,9 +6,9 @@ use moon_config::{
 };
 use moon_constants::CONFIG_TEMPLATE_FILENAME;
 use moon_logger::{debug, trace};
-use moon_utils::{fs, json, lazy_static, path, regex};
+use moon_utils::{fs, lazy_static, path, regex};
 use starbase_styles::color;
-use starbase_utils::yaml;
+use starbase_utils::{json, yaml};
 use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
 
@@ -305,10 +305,10 @@ impl Template {
         if matches!(file.state, FileState::Merge) {
             match file.is_mergeable() {
                 Some("json") => {
-                    let prev: json::JsonValue = json::read(&file.dest_path)?;
-                    let next: json::JsonValue = json::read(&file.source_path)?;
+                    let prev: json::JsonValue = json::read_file(&file.dest_path)?;
+                    let next: json::JsonValue = json::read_file(&file.source_path)?;
 
-                    json::write(&file.dest_path, &json::merge(&prev, &next), true)?;
+                    json::write_file(&file.dest_path, &json::merge(&prev, &next), true)?;
                 }
                 Some("yaml") => {
                     let prev: yaml::YamlValue = yaml::read_file(&file.dest_path)?;

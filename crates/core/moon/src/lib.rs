@@ -4,8 +4,9 @@ use moon_error::MoonError;
 use moon_node_platform::NodePlatform;
 use moon_project_graph::{ProjectGraph, ProjectGraphBuilder, ProjectGraphError};
 use moon_system_platform::SystemPlatform;
-use moon_utils::{is_ci, is_test_env, json};
+use moon_utils::{is_ci, is_test_env};
 use moon_workspace::{Workspace, WorkspaceError};
+use starbase_utils::json;
 use std::env;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -116,7 +117,8 @@ pub async fn generate_project_graph(
     let mut builder = build_project_graph(workspace).await?;
 
     if builder.is_cached && cache_path.exists() {
-        let graph: ProjectGraph = json::read(&cache_path)?;
+        let graph: ProjectGraph = json::read_file(&cache_path)
+            .map_err(|e| ProjectGraphError::Moon(MoonError::StarJson(e)))?;
 
         return Ok(graph);
     }
@@ -126,7 +128,8 @@ pub async fn generate_project_graph(
     let graph = builder.build()?;
 
     if !builder.hash.is_empty() {
-        json::write(&cache_path, &graph, false)?;
+        json::write_file(&cache_path, &graph, false)
+            .map_err(|e| ProjectGraphError::Moon(MoonError::StarJson(e)))?;
     }
 
     Ok(graph)

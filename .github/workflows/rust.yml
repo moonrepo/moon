@@ -67,7 +67,6 @@ jobs:
         if: ${{ runner.os != 'Windows' }}
         with:
           shared-key: test
-        if: ${{ env.WITH_COVERAGE == 'true' }}
       - name: Run tests with coverage
         if: ${{ env.WITH_COVERAGE == 'true' }}
         run: cargo make test-coverage

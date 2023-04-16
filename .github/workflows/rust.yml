@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@1.68.1
+      - uses: moonrepo/setup-rust@v0
         with:
           components: rustfmt
       - uses: Swatinem/rust-cache@v2
@@ -39,7 +39,7 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@1.68.1
+      - uses: moonrepo/setup-rust@v0
         with:
           components: clippy
       - uses: Swatinem/rust-cache@v2
@@ -57,7 +57,7 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@1.68.1
+      - uses: moonrepo/setup-rust@v0
         with:
           components: llvm-tools-preview
       - name: Cache cargo

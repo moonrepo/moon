@@ -98,7 +98,7 @@ pub async fn install_deps(
             };
             let rc_path = working_dir.join(rc_name);
 
-            fs::write_file(&rc_path, node_version).map_err(|e| MoonError::StarFs(e))?;
+            fs::write_file(&rc_path, node_version).map_err(MoonError::StarFs)?;
 
             debug!(
                 target: LOG_TARGET,

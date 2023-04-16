@@ -4,9 +4,9 @@ use bytes::Buf;
 use itertools::Itertools;
 use moon_launchpad::check_version;
 use moon_logger::error;
-use moon_utils::{path::get_home_dir, semver::Version};
+use moon_utils::semver::Version;
 use proto::ProtoError;
-use starbase_utils::fs;
+use starbase_utils::{dirs, fs};
 use std::{
     env::{self, consts},
     fs::File,
@@ -61,7 +61,7 @@ pub async fn upgrade() -> Result<(), AnyError> {
     };
 
     let current_bin_path = env::current_exe()?;
-    let bin_dir = get_home_dir()
+    let bin_dir = dirs::home_dir()
         .expect("Invalid home directory.")
         .join(".moon")
         .join("bin");

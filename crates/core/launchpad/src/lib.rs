@@ -1,10 +1,10 @@
 use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_logger::debug;
+use moon_utils::is_test_env;
 use moon_utils::semver::Version;
-use moon_utils::{is_test_env, path};
 use serde::{Deserialize, Serialize};
-use starbase_utils::fs;
+use starbase_utils::{dirs, fs};
 use std::env;
 use std::error::Error;
 use std::fs::OpenOptions;
@@ -28,7 +28,7 @@ pub struct CheckState {
 }
 
 fn load_or_create_anonymous_uid() -> Result<String, MoonError> {
-    let moon_home_dir = path::get_home_dir()
+    let moon_home_dir = dirs::home_dir()
         .expect("Invalid home directory.")
         .join(CONFIG_DIRNAME);
     let id_path = moon_home_dir.join("id");

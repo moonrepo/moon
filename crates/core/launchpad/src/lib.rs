@@ -2,8 +2,9 @@ use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_logger::debug;
 use moon_utils::semver::Version;
-use moon_utils::{fs, is_test_env, path};
+use moon_utils::{is_test_env, path};
 use serde::{Deserialize, Serialize};
+use starbase_utils::fs;
 use std::env;
 use std::error::Error;
 use std::fs::OpenOptions;
@@ -33,13 +34,13 @@ fn load_or_create_anonymous_uid() -> Result<String, MoonError> {
     let id_path = moon_home_dir.join("id");
 
     if id_path.exists() {
-        return fs::read(id_path);
+        return Ok(fs::read_file(id_path)?);
     }
 
     let id = Uuid::new_v4().to_string();
 
     fs::create_dir_all(&moon_home_dir)?;
-    fs::write(id_path, &id)?;
+    fs::write_file(id_path, &id)?;
 
     Ok(id)
 }
@@ -71,7 +72,7 @@ pub async fn check_version(
     let now = SystemTime::now();
 
     // Only check once every 12 hours
-    if let Ok(file) = fs::read(&check_state_path) {
+    if let Ok(file) = fs::read_file(&check_state_path) {
         let check_state: Result<CheckState, _> = serde_json::from_str(&file);
 
         if let Ok(state) = check_state {

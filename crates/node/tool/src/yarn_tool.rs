@@ -5,7 +5,7 @@ use moon_node_lang::{yarn, LockfileDependencyVersions, YARN};
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
 use moon_utils::process::Command;
-use moon_utils::{fs, get_workspace_root, is_ci};
+use moon_utils::{get_workspace_root, is_ci};
 use proto::{
     async_trait,
     node::{NodeDependencyManager, NodeDependencyManagerType},
@@ -13,6 +13,7 @@ use proto::{
 };
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
+use starbase_utils::fs;
 use std::env;
 use std::path::{Path, PathBuf};
 

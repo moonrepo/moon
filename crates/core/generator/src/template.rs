@@ -6,9 +6,9 @@ use moon_config::{
 };
 use moon_constants::CONFIG_TEMPLATE_FILENAME;
 use moon_logger::{debug, trace};
-use moon_utils::{fs, lazy_static, path, regex};
+use moon_utils::{lazy_static, path, regex};
 use starbase_styles::color;
-use starbase_utils::{json, yaml};
+use starbase_utils::{fs, json, yaml};
 use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
 
@@ -319,7 +319,7 @@ impl Template {
                 _ => {}
             }
         } else {
-            fs::write(&file.dest_path, &file.content)?;
+            fs::write_file(&file.dest_path, &file.content)?;
         }
 
         Ok(())

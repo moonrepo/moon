@@ -1,15 +1,14 @@
 use crate::errors::ArchiveError;
-use crate::helpers::{ensure_dir, prepend_name};
+use crate::helpers::prepend_name;
 use crate::tree_differ::TreeDiffer;
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 use flate2::Compression;
-use moon_error::map_io_to_fs_error;
 use moon_logger::{debug, trace};
-use moon_utils::{fs, glob, path};
+use moon_utils::{glob, path};
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
-use std::fs::File;
+use starbase_utils::fs;
 use std::path::{Path, PathBuf};
 use tar::{Archive, Builder};
 
@@ -71,8 +70,7 @@ impl<'l> TarArchiver<'l> {
         );
 
         // Create .tar
-        let tar = File::create(self.output_file)
-            .map_err(|e| map_io_to_fs_error(e, self.output_file.to_owned()))?;
+        let tar = fs::create_file(self.output_file)?;
 
         // Compress to .tar.gz
         let tar_gz = GzEncoder::new(tar, Compression::fast());
@@ -94,8 +92,7 @@ impl<'l> TarArchiver<'l> {
             if source.is_file() {
                 trace!(target: LOG_TARGET, "Packing file {}", color::path(source));
 
-                let mut fh =
-                    File::open(source).map_err(|e| map_io_to_fs_error(e, source.to_path_buf()))?;
+                let mut fh = fs::open_file(source)?;
 
                 archive.append_file(prepend_name(file, self.prefix), &mut fh)?;
             } else {
@@ -117,8 +114,7 @@ impl<'l> TarArchiver<'l> {
             );
 
             for file in glob::walk_files(self.input_root, [glob])? {
-                let mut fh =
-                    File::open(&file).map_err(|e| map_io_to_fs_error(e, file.to_path_buf()))?;
+                let mut fh = fs::open_file(&file)?;
                 let file_name = path::to_string(file.strip_prefix(self.input_root).unwrap())?;
 
                 archive.append_file(
@@ -177,11 +173,10 @@ pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(
         color::path(output_dir),
     );
 
-    ensure_dir(output_dir)?;
+    fs::create_dir_all(output_dir)?;
 
     // Open .tar.gz file
-    let tar_gz =
-        File::open(input_file).map_err(|e| map_io_to_fs_error(e, input_file.to_path_buf()))?;
+    let tar_gz = fs::open_file(input_file)?;
 
     // Decompress to .tar
     let tar = GzDecoder::new(tar_gz);
@@ -204,7 +199,7 @@ pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(
 
         // Create parent dirs
         if let Some(parent_dir) = output_path.parent() {
-            ensure_dir(parent_dir)?;
+            fs::create_dir_all(parent_dir)?;
         }
 
         entry.unpack(&output_path)?;
@@ -230,11 +225,10 @@ pub fn untar_with_diff<I: AsRef<Path>, O: AsRef<Path>>(
         color::path(output_dir),
     );
 
-    ensure_dir(output_dir)?;
+    fs::create_dir_all(output_dir)?;
 
     // Open .tar.gz file
-    let tar_gz =
-        File::open(input_file).map_err(|e| map_io_to_fs_error(e, input_file.to_path_buf()))?;
+    let tar_gz = fs::open_file(input_file)?;
 
     // Decompress to .tar
     let tar = GzDecoder::new(tar_gz);
@@ -257,7 +251,7 @@ pub fn untar_with_diff<I: AsRef<Path>, O: AsRef<Path>>(
 
         // Create parent dirs
         if let Some(parent_dir) = output_path.parent() {
-            ensure_dir(parent_dir)?;
+            fs::create_dir_all(parent_dir)?;
         }
 
         // Unpack the file if different than destination

@@ -8,9 +8,9 @@ use moon_node_lang::package_json::{PackageJson, PackageWorkspaces};
 use moon_node_lang::{NODENV, NPM, NVM, PNPM, YARN};
 use moon_project_graph::detect_projects_with_globs;
 use moon_terminal::label_header;
-use moon_utils::fs;
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
+use starbase_utils::fs;
 use std::collections::BTreeMap;
 use std::path::Path;
 use tera::{Context, Error, Tera};
@@ -24,14 +24,16 @@ pub fn render_template(context: Context) -> Result<String, Error> {
 fn detect_node_version(dest_dir: &Path) -> Result<(String, String), AnyError> {
     if is_using_version_manager(dest_dir, &NVM) {
         return Ok((
-            fs::read(dest_dir.join(NVM.version_file))?.trim().to_owned(),
+            fs::read_file(dest_dir.join(NVM.version_file))?
+                .trim()
+                .to_owned(),
             NVM.binary.to_owned(),
         ));
     }
 
     if is_using_version_manager(dest_dir, &NODENV) {
         return Ok((
-            fs::read(dest_dir.join(NODENV.version_file))?
+            fs::read_file(dest_dir.join(NODENV.version_file))?
                 .trim()
                 .to_owned(),
             NODENV.binary.to_owned(),

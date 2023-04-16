@@ -4,8 +4,9 @@ use bytes::Buf;
 use itertools::Itertools;
 use moon_launchpad::check_version;
 use moon_logger::error;
-use moon_utils::{fs, path::get_home_dir, semver::Version};
+use moon_utils::{path::get_home_dir, semver::Version};
 use proto::ProtoError;
+use starbase_utils::fs;
 use std::{
     env::{self, consts},
     fs::File,

@@ -1,12 +1,14 @@
 use moon_config::{NodeConfig, NodePackageManager, NodeVersionManager};
+use moon_error::MoonError;
 use moon_lang::has_vendor_installed_dependencies;
 use moon_logger::{debug, warn};
 use moon_node_lang::{PackageJson, NODE, NODENV, NPM, NVM};
 use moon_node_tool::NodeTool;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::ToolError;
-use moon_utils::{fs, is_ci, is_test_env};
+use moon_utils::{is_ci, is_test_env};
 use starbase_styles::color;
+use starbase_utils::fs;
 use std::path::Path;
 
 const LOG_TARGET: &str = "moon:node-platform:install-deps";
@@ -96,7 +98,7 @@ pub async fn install_deps(
             };
             let rc_path = working_dir.join(rc_name);
 
-            fs::write(&rc_path, node_version)?;
+            fs::write_file(&rc_path, node_version).map_err(|e| MoonError::StarFs(e))?;
 
             debug!(
                 target: LOG_TARGET,

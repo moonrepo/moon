@@ -1,11 +1,10 @@
 use crate::errors::ArchiveError;
-use crate::helpers::{ensure_dir, prepend_name};
-// use crate::tree_differ::TreeDiffer;
-use moon_error::map_io_to_fs_error;
+use crate::helpers::prepend_name;
 use moon_logger::{debug, map_list, trace};
 use moon_utils::path::to_string;
 use starbase_styles::color;
-use std::fs::{self, File};
+use starbase_utils::fs;
+use std::fs::File;
 use std::io;
 use std::io::prelude::*;
 use std::path::Path;
@@ -37,7 +36,7 @@ fn zip_contents<P: AsRef<str>>(
         trace!(target: LOG_TARGET, "Zipping file {}", color::path(path));
 
         archive.start_file(prepend_name(&name, prefix), options)?;
-        archive.write_all(&fs::read(path)?)?;
+        archive.write_all(fs::read_file(path)?.as_bytes())?;
 
         return Ok(());
     }
@@ -46,7 +45,7 @@ fn zip_contents<P: AsRef<str>>(
         archive.add_directory(name, options)?;
 
         for entry in fs::read_dir(path)? {
-            let path = entry?.path();
+            let path = entry.path();
 
             zip_contents(archive, &path, root, prefix)?;
         }
@@ -76,8 +75,7 @@ pub fn zip<I: AsRef<Path>, O: AsRef<Path>>(
     );
 
     // Create .zip
-    let zip =
-        File::create(output_file).map_err(|e| map_io_to_fs_error(e, output_file.to_path_buf()))?;
+    let zip = fs::create_file(output_file)?;
 
     // Add the files to the archive
     let mut archive = ZipWriter::new(zip);
@@ -110,11 +108,10 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
         color::path(output_dir),
     );
 
-    ensure_dir(output_dir)?;
+    fs::create_dir_all(output_dir)?;
 
     // Open .zip file
-    let zip =
-        File::open(input_file).map_err(|e| map_io_to_fs_error(e, input_file.to_path_buf()))?;
+    let zip = fs::open_file(input_file)?;
 
     // Unpack the archive into the output dir
     let mut archive = ZipArchive::new(zip)?;
@@ -135,34 +132,23 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
         }
 
         let output_path = output_dir.join(&path);
-        let handle_error = |e: io::Error| map_io_to_fs_error(e, output_path.to_path_buf());
 
         // Create parent dirs
         if let Some(parent_dir) = &output_path.parent() {
-            ensure_dir(parent_dir)?;
+            fs::create_dir_all(parent_dir)?;
         }
 
         // If a folder, create the dir
         if file.is_dir() {
-            ensure_dir(&output_path)?;
+            fs::create_dir_all(&output_path)?;
         }
 
         // If a file, copy it to the output dir
         if file.is_file() {
-            let mut out = File::create(&output_path).map_err(handle_error)?;
+            let mut out = fs::create_file(&output_path)?;
 
-            io::copy(&mut file, &mut out).map_err(handle_error)?;
-
-            // Update permissions when on a nix machine
-            #[cfg(unix)]
-            {
-                use std::os::unix::fs::PermissionsExt;
-
-                if let Some(mode) = file.unix_mode() {
-                    fs::set_permissions(&output_path, fs::Permissions::from_mode(mode))
-                        .map_err(handle_error)?;
-                }
-            }
+            io::copy(&mut file, &mut out)?;
+            fs::update_perms(&output_path, file.unix_mode())?;
         }
     }
 

@@ -1,6 +1,7 @@
 use crate::{InheritedTasksConfig, PlatformType, ProjectLanguage, ProjectType};
-use moon_utils::{fs, string_vec};
+use moon_utils::string_vec;
 use rustc_hash::FxHashMap;
+use starbase_utils::fs;
 use std::path::Path;
 
 #[derive(Debug, Default)]

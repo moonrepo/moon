@@ -5,7 +5,7 @@ use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_error::MoonError;
 use moon_logger::{debug, error, map_list, trace, warn};
 use moon_platform::Runtime;
-use moon_utils::{async_trait, fs};
+use moon_utils::async_trait;
 use moon_workspace::Workspace;
 use moonbase::{
     graphql::{
@@ -16,6 +16,7 @@ use moonbase::{
 };
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
+use starbase_utils::fs;
 use std::env;
 use tokio::task::JoinHandle;
 

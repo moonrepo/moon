@@ -6,10 +6,11 @@ use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_platform_detector::detect_language_files;
 use moon_project_graph::{ProjectGraph, ProjectGraphError};
-use moon_utils::{fs, glob, path};
+use moon_utils::{glob, path};
 use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
+use starbase_utils::fs;
 use starbase_utils::json;
 use std::path::Path;
 use strum::IntoEnumIterator;
@@ -42,7 +43,7 @@ fn scaffold_workspace(
     workspace: &Workspace,
     project_graph: &ProjectGraph,
     docker_root: &Path,
-) -> Result<(), ProjectGraphError> {
+) -> Result<(), AnyError> {
     let docker_workspace_root = docker_root.join("workspace");
 
     fs::create_dir_all(&docker_workspace_root)?;

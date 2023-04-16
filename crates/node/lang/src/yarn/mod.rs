@@ -1,8 +1,8 @@
 use cached::proc_macro::cached;
 use moon_error::MoonError;
 use moon_lang::LockfileDependencyVersions;
-use moon_utils::fs;
 use rustc_hash::FxHashMap;
+use starbase_utils::fs;
 use std::path::PathBuf;
 use yarn_lock_parser::{parse_str, Entry};
 
@@ -10,7 +10,7 @@ use yarn_lock_parser::{parse_str, Entry};
 pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVersions, MoonError> {
     let mut deps: LockfileDependencyVersions = FxHashMap::default();
 
-    let yarn_lock_text = fs::read(path)?;
+    let yarn_lock_text = fs::read_file(path)?;
     let entries: Vec<Entry> = parse_str(&yarn_lock_text)
         .map_err(|e| MoonError::Generic(format!("Failed to parse lockfile: {e}")))?;
 

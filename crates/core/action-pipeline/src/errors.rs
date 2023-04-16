@@ -5,6 +5,7 @@ use moon_runner::RunnerError;
 use moon_target::TargetError;
 use moon_tool::ToolError;
 use moon_workspace::WorkspaceError;
+use starbase_utils::fs::FsError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -17,6 +18,9 @@ pub enum PipelineError {
 
     #[error(transparent)]
     DepGraph(#[from] DepGraphError),
+
+    #[error(transparent)]
+    Fs(#[from] FsError),
 
     #[error(transparent)]
     Moon(#[from] MoonError),

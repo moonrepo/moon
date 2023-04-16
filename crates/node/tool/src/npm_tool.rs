@@ -4,14 +4,15 @@ use moon_logger::debug;
 use moon_node_lang::{npm, LockfileDependencyVersions, NPM};
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
+use moon_utils::is_ci;
 use moon_utils::process::Command;
-use moon_utils::{fs, is_ci};
 use proto::{
     async_trait,
     node::{NodeDependencyManager, NodeDependencyManagerType},
     Executable, Installable, Proto, Shimable, Tool as ProtoTool,
 };
 use rustc_hash::FxHashMap;
+use starbase_utils::fs;
 use std::env;
 use std::path::{Path, PathBuf};
 

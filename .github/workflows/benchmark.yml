@@ -33,7 +33,7 @@ jobs:
           submodules: false
           ref: ${{ steps.sha.outputs.result }}
           # ref: ${{ github.event.pull_request.head.sha }}
-      - uses: dtolnay/rust-toolchain@1.68.1
+      - uses: moonrepo/setup-rust@v0
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: benchmark

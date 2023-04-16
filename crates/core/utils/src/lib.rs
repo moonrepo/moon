@@ -1,6 +1,5 @@
 pub mod fs;
 pub mod glob;
-// pub mod json;
 pub mod path;
 pub mod process;
 pub mod regex;
@@ -40,7 +39,7 @@ pub fn get_workspace_root() -> PathBuf {
         return root;
     }
 
-    match fs::find_upwards(
+    match starbase_utils::fs::find_upwards(
         constants::CONFIG_DIRNAME,
         env::current_dir().expect("Invalid working directory."),
     ) {

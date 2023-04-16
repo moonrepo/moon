@@ -3,8 +3,9 @@ use crate::template::Template;
 use moon_config::{load_template_config_template, GeneratorConfig};
 use moon_constants::CONFIG_TEMPLATE_FILENAME;
 use moon_logger::{debug, map_list, trace};
-use moon_utils::{fs, path, regex::clean_id};
+use moon_utils::{path, regex::clean_id};
 use starbase_styles::color;
+use starbase_utils::fs;
 use std::path::{Path, PathBuf};
 
 const LOG_TARGET: &str = "moon:generator";
@@ -47,7 +48,7 @@ impl Generator {
 
         fs::create_dir_all(&root)?;
 
-        fs::write(
+        fs::write_file(
             root.join(CONFIG_TEMPLATE_FILENAME),
             load_template_config_template(),
         )?;

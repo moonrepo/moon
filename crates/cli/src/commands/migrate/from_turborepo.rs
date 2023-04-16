@@ -5,9 +5,9 @@ use moon_config::{InheritedTasksConfig, PlatformType, ProjectConfig, TaskCommand
 use moon_constants as constants;
 use moon_logger::{info, warn};
 use moon_terminal::safe_exit;
-use moon_utils::fs;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
+use starbase_utils::fs;
 use starbase_utils::{json, yaml};
 use std::path::PathBuf;
 

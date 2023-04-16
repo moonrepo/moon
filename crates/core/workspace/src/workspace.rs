@@ -7,11 +7,12 @@ use moon_config::{
 use moon_constants as constants;
 use moon_logger::{debug, trace};
 use moon_platform::{BoxedPlatform, PlatformManager};
-use moon_utils::{fs, glob, path, semver};
+use moon_utils::{glob, semver};
 use moon_vcs::{BoxedVcs, VcsLoader};
 use moonbase::Moonbase;
 use proto::{get_root, ToolsConfig, TOOLS_CONFIG_NAME};
 use starbase_styles::color;
+use starbase_utils::{dirs, fs};
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -40,7 +41,7 @@ fn find_workspace_root<P: AsRef<Path>>(current_dir: P) -> Result<PathBuf, Worksp
     };
 
     // Avoid finding the ~/.moon directory
-    let home_dir = path::get_home_dir().ok_or(WorkspaceError::MissingHomeDir)?;
+    let home_dir = dirs::home_dir().ok_or(WorkspaceError::MissingHomeDir)?;
 
     if home_dir == possible_root {
         return Err(WorkspaceError::MissingConfigDir);

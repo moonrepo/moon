@@ -2,6 +2,7 @@ use figment::{Error as FigmentError, Figment};
 use moon_error::MoonError;
 use serde_json::Value;
 use starbase_styles::{color, Style, Stylize};
+use starbase_utils::fs::FsError;
 use std::borrow::Cow;
 use std::path::PathBuf;
 use thiserror::Error;
@@ -32,6 +33,9 @@ pub enum ConfigError {
 
     #[error(transparent)]
     Figment(#[from] FigmentError),
+
+    #[error(transparent)]
+    Fs(#[from] FsError),
 
     #[error(transparent)]
     Moon(#[from] MoonError),

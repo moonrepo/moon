@@ -3,10 +3,10 @@ use crate::helpers::get_cache_mode;
 use moon_archive::{untar_with_diff, TarArchiver, TreeDiffer};
 use moon_error::MoonError;
 use moon_logger::trace;
-use moon_utils::{fs, glob};
+use moon_utils::glob;
 use serde::{Deserialize, Serialize};
 use starbase_styles::color;
-use starbase_utils::json;
+use starbase_utils::{fs, json};
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
@@ -94,7 +94,8 @@ impl RunTargetState {
     ) -> Result<bool, MoonError> {
         if get_cache_mode().is_readable() && archive_file.exists() {
             let outputs = prepare_outputs_list(outputs, project_source);
-            let mut differ = TreeDiffer::load(workspace_root, &outputs)?;
+            let mut differ = TreeDiffer::load(workspace_root, &outputs)
+                .map_err(|e| MoonError::Generic(e.to_string()))?;
 
             untar_with_diff(&mut differ, archive_file, workspace_root, None)
                 .map_err(|e| MoonError::Generic(e.to_string()))?;
@@ -129,13 +130,13 @@ impl RunTargetState {
         let (stdout_path, stderr_path) = self.get_output_logs();
 
         let stdout = if stdout_path.exists() {
-            fs::read(stdout_path)?
+            fs::read_file(stdout_path)?
         } else {
             String::new()
         };
 
         let stderr = if stderr_path.exists() {
-            fs::read(stderr_path)?
+            fs::read_file(stderr_path)?
         } else {
             String::new()
         };
@@ -147,8 +148,8 @@ impl RunTargetState {
     pub fn save_output_logs(&self, stdout: String, stderr: String) -> Result<(), MoonError> {
         let (stdout_path, stderr_path) = self.get_output_logs();
 
-        fs::write(stdout_path, stdout)?;
-        fs::write(stderr_path, stderr)?;
+        fs::write_file(stdout_path, stdout)?;
+        fs::write_file(stderr_path, stderr)?;
 
         Ok(())
     }

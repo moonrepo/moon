@@ -2471,6 +2471,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "starbase_styles",
+ "starbase_utils",
  "thiserror",
  "tokio",
 ]
@@ -2489,6 +2490,7 @@ dependencies = [
  "rand",
  "rustc-hash",
  "starbase_styles",
+ "starbase_utils",
  "tar",
  "thiserror",
  "zip",
@@ -2799,6 +2801,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "starbase_utils",
  "uuid",
 ]
 
@@ -2865,6 +2868,7 @@ dependencies = [
  "serde",
  "serde_json",
  "starbase_styles",
+ "starbase_utils",
  "tokio",
 ]
 
@@ -2882,6 +2886,7 @@ dependencies = [
  "proto_cli",
  "rustc-hash",
  "starbase_styles",
+ "starbase_utils",
 ]
 
 [[package]]
@@ -2998,6 +3003,7 @@ dependencies = [
  "serde",
  "serde_json",
  "starbase_styles",
+ "starbase_utils",
  "thiserror",
  "tokio",
 ]
@@ -3202,6 +3208,7 @@ dependencies = [
  "serde",
  "shell-words",
  "starbase_styles",
+ "starbase_utils",
  "tokio",
  "wax",
 ]
@@ -3219,6 +3226,7 @@ dependencies = [
  "moon_utils",
  "regex",
  "rustc-hash",
+ "starbase_utils",
  "thiserror",
  "tokio",
  "url",
@@ -3241,6 +3249,7 @@ dependencies = [
  "proto_cli",
  "reqwest",
  "starbase_styles",
+ "starbase_utils",
  "thiserror",
 ]
 

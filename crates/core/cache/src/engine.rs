@@ -6,11 +6,11 @@ use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_logger::{debug, trace};
 use moon_platform_runtime::Runtime;
-use moon_utils::{fs, time};
+use moon_utils::time;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use starbase_styles::color;
-use starbase_utils::json;
+use starbase_utils::{fs, json};
 use std::path::{Path, PathBuf, MAIN_SEPARATOR_STR};
 
 pub struct CacheEngine {
@@ -50,7 +50,7 @@ impl CacheEngine {
 
         // Create a cache directory tag
         if !cache_tag.exists() {
-            fs::write(
+            fs::write_file(
                 cache_tag,
                 r#"Signature: 8a477f597d28d172789f06886806bc55
 # This file is a cache directory tag created by moon.
@@ -102,10 +102,7 @@ impl CacheEngine {
         ToolState::load(self.get_state_path(format!("tool{}-{}.json", runtime, runtime.version())))
     }
 
-    pub fn clean_stale_cache(
-        &self,
-        lifetime: &str,
-    ) -> Result<fs::RemoveDirContentsResult, MoonError> {
+    pub fn clean_stale_cache(&self, lifetime: &str) -> Result<(usize, u64), MoonError> {
         let duration = time::parse_duration(lifetime)
             .map_err(|e| MoonError::Generic(format!("Invalid lifetime: {e}")))?;
 
@@ -115,14 +112,11 @@ impl CacheEngine {
             lifetime
         );
 
-        let (hashes_deleted, hashes_bytes) =
-            fs::remove_dir_stale_contents(&self.hashes_dir, duration)?;
+        let hashes_dir = fs::remove_dir_stale_contents(&self.hashes_dir, duration)?;
+        let outputs_dir = fs::remove_dir_stale_contents(&self.outputs_dir, duration)?;
 
-        let (outputs_deleted, outputs_bytes) =
-            fs::remove_dir_stale_contents(&self.outputs_dir, duration)?;
-
-        let deleted = hashes_deleted + outputs_deleted;
-        let bytes = hashes_bytes + outputs_bytes;
+        let deleted = hashes_dir.files_deleted + outputs_dir.files_deleted;
+        let bytes = hashes_dir.bytes_saved + outputs_dir.bytes_saved;
 
         trace!(
             target: LOG_TARGET,

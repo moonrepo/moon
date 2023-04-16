@@ -13,10 +13,11 @@ use moon_constants::{
 };
 use moon_node_lang::NPM;
 use moon_terminal::{create_theme, safe_exit};
-use moon_utils::{fs, path};
+use moon_utils::path;
 use moon_vcs::detect_vcs;
 use node::init_node;
 use starbase_styles::color;
+use starbase_utils::fs;
 use std::collections::{BTreeMap, VecDeque};
 use std::env;
 use std::fs::OpenOptions;
@@ -181,7 +182,7 @@ pub async fn init(
     toolchain_configs.push_front(render_toolchain_template(&context)?);
 
     // Create config files
-    fs::write(
+    fs::write_file(
         moon_dir.join(CONFIG_TOOLCHAIN_FILENAME),
         toolchain_configs
             .into_iter()
@@ -190,13 +191,13 @@ pub async fn init(
             .join("\n\n"),
     )?;
 
-    fs::write(
+    fs::write_file(
         moon_dir.join(CONFIG_WORKSPACE_FILENAME),
         render_workspace_template(&context)?,
     )?;
 
     if !options.minimal {
-        fs::write(
+        fs::write_file(
             moon_dir.join(CONFIG_TASKS_FILENAME),
             Tera::one_off(load_tasks_config_template(), &context, false)?,
         )?;

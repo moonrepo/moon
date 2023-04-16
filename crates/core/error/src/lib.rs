@@ -62,6 +62,9 @@ pub enum MoonError {
     Unknown(#[source] IoError),
 
     #[error(transparent)]
+    StarFs(#[from] starbase_utils::fs::FsError),
+
+    #[error(transparent)]
     StarJson(#[from] starbase_utils::json::JsonError),
 
     #[error(transparent)]

@@ -1,11 +1,10 @@
+use crate::errors::ArchiveError;
 use moon_error::MoonError;
-use moon_utils::{fs, glob};
+use moon_utils::glob;
 use rustc_hash::FxHashMap;
+use starbase_utils::fs;
+use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
-use std::{
-    fs::File,
-    io::{BufReader, Read},
-};
 
 pub struct TreeDiffer {
     /// A mapping of all files in the destination directory
@@ -17,7 +16,7 @@ impl TreeDiffer {
     /// Load the tree at the defined destination root and scan the file system
     /// using the defined lists of paths, either files or folders. If a folder,
     /// recursively scan all files and create an internal manifest to track diffing.
-    pub fn load(dest_root: &Path, paths: &[String]) -> Result<Self, MoonError> {
+    pub fn load(dest_root: &Path, paths: &[String]) -> Result<Self, ArchiveError> {
         let mut files = FxHashMap::default();
 
         let mut track = |file: PathBuf| {
@@ -59,7 +58,7 @@ impl TreeDiffer {
         &self,
         source: &mut S,
         dest: &mut D,
-    ) -> Result<bool, MoonError> {
+    ) -> Result<bool, ArchiveError> {
         let mut areader = BufReader::new(source);
         let mut breader = BufReader::new(dest);
         let mut abuf = [0; 512];
@@ -97,7 +96,7 @@ impl TreeDiffer {
         source_size: u64,
         source: &mut T,
         dest_path: &Path,
-    ) -> Result<bool, MoonError> {
+    ) -> Result<bool, ArchiveError> {
         // If the destination doesn't exist, always use the source
         if !dest_path.exists() || !self.files.contains_key(dest_path) {
             return Ok(true);
@@ -113,7 +112,7 @@ impl TreeDiffer {
         }
 
         // If the file sizes are the same, compare byte ranges to determine a difference
-        let mut dest = File::open(dest_path)?;
+        let mut dest = fs::open_file(dest_path)?;
 
         Ok(!self.are_files_equal(source, &mut dest)?)
     }

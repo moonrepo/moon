@@ -3,7 +3,8 @@ use moon_cli::{run_cli, BIN_NAME};
 use moon_constants::CONFIG_DIRNAME;
 use moon_node_lang::NODE;
 use moon_terminal::safe_exit;
-use moon_utils::{is_test_env, path};
+use moon_utils::is_test_env;
+use starbase_utils::dirs;
 use std::env;
 use std::path::{Path, PathBuf};
 use tokio::process::Command;
@@ -62,7 +63,7 @@ fn is_globally_installed() -> bool {
 
     // Global installs happen *outside* of moon's toolchain,
     // so we simply assume they are using their environment.
-    let home_dir = path::get_home_dir().unwrap_or_else(|| PathBuf::from("."));
+    let home_dir = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
     let lookups = get_global_lookups(&home_dir);
 
     // If our executable path starts with the global dir,

@@ -1,9 +1,9 @@
 use crate::helpers::AnyError;
 use moon_error::MoonError;
 use moon_logger::debug;
-use moon_utils::fs;
 use moon_workspace::Workspace;
 use starbase_styles::color;
+use starbase_utils::fs;
 
 const LOG_TARGET: &str = "moon:query:hash";
 
@@ -26,7 +26,7 @@ pub async fn query_hash(workspace: &Workspace, hash: &str) -> Result<(String, St
                 color::hash(hash)
             );
 
-            return Ok((name, fs::read(path)?));
+            return Ok((name, fs::read_file(path)?));
         }
     }
 

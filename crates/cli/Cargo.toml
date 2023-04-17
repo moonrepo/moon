@@ -52,7 +52,6 @@ diff = "0.1.13"
 indicatif = "0.17.3"
 itertools = "0.10.5"
 is-terminal = "0.4.5"
-lazy_static = { workspace = true }
 mimalloc = { version = "0.1.36", default-features = false }
 open = "4.0.2"
 petgraph = { workspace = true }

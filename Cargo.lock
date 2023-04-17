@@ -2595,7 +2595,6 @@ dependencies = [
  "indicatif",
  "is-terminal",
  "itertools",
- "lazy_static",
  "mimalloc",
  "moon",
  "moon_action_context",
@@ -2812,6 +2811,7 @@ dependencies = [
  "moon_logger",
  "moon_test_utils",
  "moon_utils",
+ "once_cell",
  "serde_json",
  "starbase_styles",
  "starbase_utils",
@@ -2885,7 +2885,7 @@ dependencies = [
  "moon_logger",
  "moon_test_utils",
  "moon_utils",
- "regex",
+ "once_cell",
  "reqwest",
  "rustc-hash",
  "serde",
@@ -2921,6 +2921,7 @@ dependencies = [
  "moon_typescript_lang",
  "moon_typescript_platform",
  "moon_utils",
+ "once_cell",
  "proto_cli",
  "rustc-hash",
  "serde",
@@ -3006,6 +3007,7 @@ dependencies = [
  "moon_ruby_lang",
  "moon_rust_lang",
  "moon_utils",
+ "once_cell",
 ]
 
 [[package]]
@@ -3253,12 +3255,12 @@ dependencies = [
  "dunce",
  "ec4rs",
  "humantime",
- "lazy_static",
  "md5",
  "moon_constants",
  "moon_error",
  "moon_logger",
  "moon_test_utils",
+ "once_cell",
  "pathdiff",
  "regex",
  "rustc-hash",
@@ -5826,9 +5828,9 @@ checksum = "09041cd90cf85f7f8b2df60c646f853b7f535ce68f85244eb6731cf89fa498ec"
 
 [[package]]
 name = "yarn-lock-parser"
-version = "0.4.1"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "17535eec16ab62b85dc1494388af1d46d254d4cb0cd2de9c028d5956fc014d01"
+checksum = "9c356c6556939593eb1edb9b34fe079431512fdf9f7cf4441de304627177b2c3"
 dependencies = [
  "nom",
  "thiserror",

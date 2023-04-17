@@ -21,6 +21,7 @@ moon_tool = { path = "../../core/tool" }
 moon_typescript_lang = { path = "../../typescript/lang" }
 moon_typescript_platform = { path = "../../typescript/platform" }
 moon_utils = { path = "../../core/utils" }
+once_cell = { workspace = true }
 proto_cli = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }

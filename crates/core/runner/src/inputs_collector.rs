@@ -109,6 +109,8 @@ pub async fn collect_and_hash_inputs(
         }
     }
 
+    dbg!(&task.input_globs);
+
     if !task.input_globs.is_empty() {
         // Collect inputs by walking and globbing the file system
         if use_globs {
@@ -146,6 +148,8 @@ pub async fn collect_and_hash_inputs(
         }
     }
 
+    dbg!(&files_to_hash);
+
     // 2: Convert to workspace relative paths and filter out invalid inputs
 
     let mut files_to_hash = convert_paths_to_strings(
@@ -156,6 +160,8 @@ pub async fn collect_and_hash_inputs(
     )?;
 
     files_to_hash.retain(|f| is_valid_input_source(task, &globset, f));
+
+    dbg!(&files_to_hash);
 
     // 3: Extract hashes
 
@@ -174,6 +180,8 @@ pub async fn collect_and_hash_inputs(
         .into_iter()
         .map(|(k, v)| (path::standardize_separators(k), v))
         .collect::<BTreeMap<_, _>>();
+
+    dbg!(&hashed_inputs);
 
     Ok(hashed_inputs)
 }

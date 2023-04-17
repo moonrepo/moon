@@ -587,7 +587,6 @@ pub struct App {
     #[arg(
         long,
         global = true,
-        env = "MOON_COLOR",
         help = "Force colored output for moon"
     )]
     pub color: bool,

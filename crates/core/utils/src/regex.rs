@@ -1,41 +1,60 @@
-use lazy_static::lazy_static;
 use moon_error::MoonError;
+use once_cell::sync::Lazy;
 
 pub use regex::{Captures, Regex};
 
-lazy_static! {
-    // Capture group for IDs/names/etc
-    static ref ID_GROUP: &'static str = "([A-Za-z]{1}[0-9A-Za-z/\\._-]*)";
-    static ref ID_CLEAN: Regex = Regex::new("[^0-9A-Za-z/\\._-]+").unwrap();
+// Capture group for IDs/names/etc
+pub static ID_GROUP: &str = "([A-Za-z]{1}[0-9A-Za-z/\\._-]*)";
 
-    pub static ref ID_PATTERN: Regex = Regex::new(&format!("^{}$", *ID_GROUP)).unwrap();
-    pub static ref TARGET_PATTERN: Regex = Regex::new(
-        // Only target projects support `@` because of Node.js,
-        // we don't want to support it in regular IDs!
-        "^(?P<project>(?:[A-Za-z@]{1}[0-9A-Za-z/\\._-]*|\\^|~))?:(?P<task>[A-Za-z]{1}[0-9A-Za-z/\\._-]*)$").unwrap();
+pub static ID_CLEAN: Lazy<regex::Regex> =
+    Lazy::new(|| create_regex("[^0-9A-Za-z/\\._-]+").unwrap());
 
-    // Input values
-    pub static ref ENV_VAR: Regex = Regex::new("^\\$[A-Z0-9_]+$").unwrap();
-    pub static ref ENV_VAR_SUBSTITUTE: Regex = Regex::new("\\$\\{([A-Z0-9_]+)\\}").unwrap();
+pub static ID_PATTERN: Lazy<regex::Regex> =
+    Lazy::new(|| create_regex(format!("^{}$", ID_GROUP)).unwrap());
 
-    // Token function: `@func(arg)`
-    static ref TOKEN_GROUP: &'static str = "([0-9A-Za-z_-]+)";
+pub static TARGET_PATTERN: Lazy<regex::Regex> = Lazy::new(|| {
+    // Only target projects support `@` because of Node.js,
+    // we don't want to support it in regular IDs!
+    create_regex( "^(?P<project>(?:[A-Za-z@]{1}[0-9A-Za-z/\\._-]*|\\^|~))?:(?P<task>[A-Za-z]{1}[0-9A-Za-z/\\._-]*)$").unwrap()
+});
 
-    pub static ref TOKEN_FUNC_PATTERN: Regex = Regex::new(&format!("^@([a-z]+)\\({}\\)$", *TOKEN_GROUP)).unwrap();
-    pub static ref TOKEN_FUNC_ANYWHERE_PATTERN: Regex = Regex::new(&format!("@([a-z]+)\\({}\\)", *TOKEN_GROUP)).unwrap();
-    pub static ref TOKEN_VAR_PATTERN: Regex = Regex::new("\\$(language|projectRoot|projectSource|projectType|project|target|taskPlatform|taskType|task|workspaceRoot|timestamp|datetime|date|time)").unwrap();
+// Input values
+pub static ENV_VAR: Lazy<regex::Regex> = Lazy::new(|| create_regex("^\\$[A-Z0-9_]+$").unwrap());
 
-    // Task commands (these are not exhaustive)
-    pub static ref UNIX_SYSTEM_COMMAND: regex::Regex =
-                Regex::new("^(bash|cat|cd|chmod|cp|docker|echo|find|git|grep|make|mkdir|mv|pwd|rm|rsync|svn)$").unwrap();
+pub static ENV_VAR_SUBSTITUTE: Lazy<regex::Regex> =
+    Lazy::new(|| create_regex("\\$\\{([A-Z0-9_]+)\\}").unwrap());
 
-    pub static ref WINDOWS_SYSTEM_COMMAND: regex::Regex =
-                Regex::new("^(cd|cmd|copy|del|dir|echo|erase|find|git|mkdir|move|rd|rename|replace|rmdir|svn|xcopy)$").unwrap();
-}
+// Token function: `@func(arg)`
+pub static TOKEN_GROUP: &str = "([0-9A-Za-z_-]+)";
+
+pub static TOKEN_FUNC_PATTERN: Lazy<regex::Regex> =
+    Lazy::new(|| create_regex(format!("^@([a-z]+)\\({}\\)$", TOKEN_GROUP)).unwrap());
+
+pub static TOKEN_FUNC_ANYWHERE_PATTERN: Lazy<regex::Regex> =
+    Lazy::new(|| create_regex(format!("@([a-z]+)\\({}\\)", TOKEN_GROUP)).unwrap());
+
+pub static TOKEN_VAR_PATTERN: Lazy<regex::Regex> = Lazy::new(|| {
+    create_regex("\\$(language|projectRoot|projectSource|projectType|project|target|taskPlatform|taskType|task|workspaceRoot|timestamp|datetime|date|time)").unwrap()
+});
+
+// Task commands (these are not exhaustive)
+pub static UNIX_SYSTEM_COMMAND: Lazy<regex::Regex> = Lazy::new(|| {
+    create_regex(
+        "^(bash|cat|cd|chmod|cp|docker|echo|find|git|grep|make|mkdir|mv|pwd|rm|rsync|svn)$",
+    )
+    .unwrap()
+});
+
+pub static WINDOWS_SYSTEM_COMMAND: Lazy<regex::Regex> = Lazy::new(|| {
+    create_regex(
+        "^(cd|cmd|copy|del|dir|echo|erase|find|git|mkdir|move|rd|rename|replace|rmdir|svn|xcopy)$",
+    )
+    .unwrap()
+});
 
 #[inline]
-pub fn create_regex(value: &str) -> Result<Regex, MoonError> {
-    Regex::new(value).map_err(MoonError::Regex)
+pub fn create_regex<V: AsRef<str>>(value: V) -> Result<Regex, MoonError> {
+    Regex::new(value.as_ref()).map_err(MoonError::Regex)
 }
 
 #[inline]

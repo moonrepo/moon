@@ -15,3 +15,4 @@ moon_php_lang = { path = "../../php/lang" }
 moon_python_lang = { path = "../../python/lang" }
 moon_ruby_lang = { path = "../../ruby/lang" }
 moon_rust_lang = { path = "../../rust/lang" }
+once_cell = { workspace = true }

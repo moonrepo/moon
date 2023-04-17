@@ -15,8 +15,8 @@ dirs = "5.0.0"
 dunce = "1.0.3"
 ec4rs = "1.0.2"
 humantime = "2.1.0"
-lazy_static = { workspace = true }
 md5 = "0.7.0"
+once_cell = { workspace = true }
 pathdiff = "0.2.1"
 regex = { workspace = true }
 rustc-hash = { workspace = true }

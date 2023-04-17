@@ -584,12 +584,7 @@ pub struct App {
     )]
     pub cache: CacheMode,
 
-    #[arg(
-        long,
-        global = true,
-        env = "MOON_COLOR",
-        help = "Force colored output for moon"
-    )]
+    #[arg(long, global = true, help = "Force colored output for moon")]
     pub color: bool,
 
     #[arg(

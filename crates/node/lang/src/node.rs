@@ -3,18 +3,15 @@ use crate::pnpm::workspace::PnpmWorkspace;
 use crate::NODE;
 use cached::proc_macro::cached;
 use moon_error::{map_io_to_fs_error, MoonError};
-use moon_utils::{lazy_static, path};
-use regex::Regex;
+use moon_utils::{path, regex};
+use once_cell::sync::Lazy;
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-lazy_static! {
-    pub static ref BIN_PATH_PATTERN: Regex = Regex::new(
-        "(?:(?:\\.+(?:\\\\|/)))+(?:(?:[.a-zA-Z0-9-_@+]+)(?:\\\\|/))+[a-zA-Z0-9-_]+(\\.((c|m)?js|exe))?"
-    )
-    .unwrap();
-}
+static BIN_PATH_PATTERN: Lazy<regex::Regex> = Lazy::new(|| {
+    regex::create_regex("(?:(?:\\.+(?:\\\\|/)))+(?:(?:[.a-zA-Z0-9-_@+]+)(?:\\\\|/))+[a-zA-Z0-9-_]+(\\.((c|m)?js|exe))?").unwrap()
+});
 
 // https://nodejs.org/api/modules.html#loading-from-the-global-folders
 #[inline]

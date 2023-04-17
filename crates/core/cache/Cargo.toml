@@ -17,4 +17,4 @@ starbase_utils = { workspace = true }
 
 [dev-dependencies]
 moon_test_utils = { path = "../test-utils" }
-serial_test = "1.0.0"
+serial_test = "2.0.0"

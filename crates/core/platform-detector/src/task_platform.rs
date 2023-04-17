@@ -1,12 +1,12 @@
 use moon_config::{PlatformType, ProjectLanguage};
-use moon_utils::regex::{UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
-use moon_utils::{lazy_static, regex::Regex};
+use moon_utils::regex::{self, UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
+use once_cell::sync::Lazy;
 
-lazy_static! {
-    pub static ref DENO_COMMANDS: Regex = Regex::new("^(deno)$").unwrap();
-    pub static ref NODE_COMMANDS: Regex =
-        Regex::new("^(node|nodejs|npm|npx|yarn|yarnpkg|pnpm|pnpx|corepack)$").unwrap();
-}
+static DENO_COMMANDS: Lazy<regex::Regex> = Lazy::new(|| regex::create_regex("^(deno)$").unwrap());
+
+static NODE_COMMANDS: Lazy<regex::Regex> = Lazy::new(|| {
+    regex::create_regex("^(node|nodejs|npm|npx|yarn|yarnpkg|pnpm|pnpx|corepack)$").unwrap()
+});
 
 pub fn detect_task_platform(command: &str, language: &ProjectLanguage) -> PlatformType {
     if DENO_COMMANDS.is_match(command) {

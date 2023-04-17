@@ -6,15 +6,15 @@ use moon_config::{
 };
 use moon_constants::CONFIG_TEMPLATE_FILENAME;
 use moon_logger::{debug, trace};
-use moon_utils::{lazy_static, path, regex};
+use moon_utils::{path, regex};
+use once_cell::sync::Lazy;
 use starbase_styles::color;
 use starbase_utils::{fs, json, yaml};
 use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
 
-lazy_static! {
-    pub static ref PATH_VAR: regex::Regex = regex::create_regex(r#"\[([A-Za-z0-9_]+)\]"#).unwrap();
-}
+static PATH_VAR: Lazy<regex::Regex> =
+    Lazy::new(|| regex::create_regex(r#"\[([A-Za-z0-9_]+)\]"#).unwrap());
 
 const LOG_TARGET: &str = "moon:generator:template";
 

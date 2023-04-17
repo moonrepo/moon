@@ -44,17 +44,16 @@ bytes = "1.4.0"
 ci_env = { workspace = true }
 clap = { workspace = true }
 clap_complete = { workspace = true }
-clap_lex = "0.3.3"
+clap_lex = "0.4.1"
 console = { workspace = true }
 # console-subscriber = "0.1.8"
-dialoguer = { version = "0.10.3", default-features = false }
+dialoguer = { version = "0.10.4", default-features = false }
 diff = "0.1.13"
 indicatif = "0.17.3"
 itertools = "0.10.5"
 is-terminal = "0.4.5"
-lazy_static = { workspace = true }
-mimalloc = { version = "0.1.34", default-features = false }
-open = "4.0.1"
+mimalloc = { version = "0.1.36", default-features = false }
+open = "4.0.2"
 petgraph = { workspace = true }
 proto_cli = { workspace = true }
 reqwest = { workspace = true }
@@ -75,4 +74,4 @@ moon_cache = { path = "../core/cache" }
 moon_notifier = { path = "../core/notifier" }
 moon_test_utils = { path = "../core/test-utils" }
 httpmock = "0.6.7"
-serial_test = "1.0.0"
+serial_test = "2.0.0"

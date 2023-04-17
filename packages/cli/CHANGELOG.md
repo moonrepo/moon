@@ -6,9 +6,15 @@
 
 - Added task inheritance based on tags in the form of `.moon/tasks/tag-<name>.yml`.
 
+#### 🐞 Fixes
+
+- Fixed an issue where setting `MOON_COLOR` would fail validation.
+
 #### ⚙️ Internal
 
 - Upgraded to proto v0.6.
+- Improvements to file system operations.
+- Minor improvements to performance.
 
 ## 1.1.1
 

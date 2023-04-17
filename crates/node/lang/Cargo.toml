@@ -10,7 +10,7 @@ moon_logger = { path = "../../core/logger" }
 moon_utils = { path = "../../core/utils" }
 cached = { workspace = true }
 content_inspector = "0.2.4"
-regex = { workspace = true }
+once_cell = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true, features = ["preserve_order"] }
@@ -18,7 +18,7 @@ serde_yaml = { workspace = true }
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true }
 thiserror = { workspace = true }
-yarn-lock-parser = "0.4.1"
+yarn-lock-parser = "0.5.0"
 
 [dev-dependencies]
 moon_test_utils = { path = "../../core/test-utils" }

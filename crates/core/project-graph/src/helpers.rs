@@ -1,10 +1,11 @@
 use crate::errors::ProjectGraphError;
 use moon_config::ProjectsSourcesMap;
+use moon_error::MoonError;
 use moon_logger::{debug, warn};
-use moon_utils::{glob, path, regex};
+use moon_utils::{path, regex};
 use moon_vcs::BoxedVcs;
 use starbase_styles::color;
-use starbase_utils::fs;
+use starbase_utils::{fs, glob};
 use std::path::{Path, MAIN_SEPARATOR_STR};
 
 /// Infer a project name from a source path, by using the name of
@@ -48,7 +49,7 @@ pub fn detect_projects_with_globs(
     }
 
     // Glob for all other projects
-    for project_root in glob::walk(workspace_root, globs)? {
+    for project_root in glob::walk(workspace_root, globs).map_err(MoonError::StarGlob)? {
         if project_root.is_dir() {
             let project_source =
                 path::to_string(project_root.strip_prefix(workspace_root).unwrap())?;

@@ -3110,6 +3110,7 @@ dependencies = [
  "serde",
  "serde_json",
  "starbase_styles",
+ "starbase_utils",
  "thiserror",
  "tokio",
 ]
@@ -3186,11 +3187,11 @@ dependencies = [
  "dirs",
  "insta",
  "moon_config",
- "moon_utils",
  "predicates",
  "pretty_assertions",
  "rustc-hash",
  "serde_yaml",
+ "starbase_utils",
  "tokio",
 ]
 

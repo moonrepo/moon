@@ -6,12 +6,11 @@ use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_platform_detector::detect_language_files;
 use moon_project_graph::{ProjectGraph, ProjectGraphError};
-use moon_utils::{glob, path};
+use moon_utils::path;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
-use starbase_utils::fs;
-use starbase_utils::json;
+use starbase_utils::{fs, glob, json};
 use std::path::Path;
 use strum::IntoEnumIterator;
 

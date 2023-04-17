@@ -13,6 +13,9 @@ pub enum ArchiveError {
     Glob(#[from] GlobError),
 
     #[error(transparent)]
+    Io(#[from] std::io::Error),
+
+    #[error(transparent)]
     Moon(#[from] MoonError),
 
     #[error(transparent)]

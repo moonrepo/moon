@@ -26,7 +26,6 @@ shell-words = "1.1.0"
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true }
 tokio = { workspace = true }
-# wax = "0.5.0"
 
 [dev-dependencies]
 moon_test_utils = { path = "../test-utils" }

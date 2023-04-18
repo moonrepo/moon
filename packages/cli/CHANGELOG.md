@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where `$projectAlias` token was not substituting correctly.
+
 ## 1.2.0
 
 #### 🚀 Updates

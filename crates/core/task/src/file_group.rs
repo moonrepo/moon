@@ -181,7 +181,7 @@ impl FileGroup {
         if !globs.is_empty() {
             let walk_paths = self
                 .walk_cache
-                .get_or_try_init(|| glob::walk(workspace_root, globs.iter().map(|g| g.as_str())))?;
+                .get_or_try_init(|| glob::walk(workspace_root, &globs))?;
 
             // Glob results are absolute paths!
             for path in walk_paths {

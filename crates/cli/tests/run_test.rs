@@ -538,11 +538,9 @@ mod hashing {
         let sandbox = cases_sandbox();
         sandbox.enable_git();
 
-        let assert = sandbox.run_moon(|cmd| {
+        sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("outputs:noOutput");
         });
-
-        assert.debug();
 
         let hash_vcs = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
 
@@ -552,11 +550,9 @@ mod hashing {
         });
         sandbox.enable_git();
 
-        let assert = sandbox.run_moon(|cmd| {
+        sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("outputs:noOutput");
         });
-
-        assert.debug();
 
         let hash_glob = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
 

@@ -3076,6 +3076,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_query"
+version = "0.1.0"
+dependencies = [
+ "moon_config",
+ "nom",
+]
+
+[[package]]
 name = "moon_ruby_lang"
 version = "0.1.0"
 dependencies = [

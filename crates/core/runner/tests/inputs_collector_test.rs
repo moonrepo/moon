@@ -54,6 +54,9 @@ async fn filters_using_input_globs() {
     assert_eq!(
         files.keys().collect::<Vec<_>>(),
         [
+            ".moon/tasks.yml",
+            ".moon/toolchain.yml",
+            ".moon/workspace.yml",
             "outputs-filtering/out/1",
             "outputs-filtering/out/3",
             "outputs-filtering/out/5"
@@ -71,7 +74,8 @@ async fn filters_using_input_globs() {
     .await
     .unwrap();
 
-    assert!(files.keys().collect::<Vec<_>>().is_empty());
+    // .moon/*.yml files
+    assert!(files.keys().collect::<Vec<_>>().len() == 3);
 
     // Out glob
     let files = collect_and_hash_inputs(
@@ -84,7 +88,8 @@ async fn filters_using_input_globs() {
     .await
     .unwrap();
 
-    assert!(files.keys().collect::<Vec<_>>().is_empty());
+    // .moon/*.yml files
+    assert!(files.keys().collect::<Vec<_>>().len() == 3);
 }
 
 #[tokio::test]
@@ -116,6 +121,9 @@ async fn filters_using_input_globs_in_glob_mode() {
     assert_eq!(
         files.keys().collect::<Vec<_>>(),
         [
+            ".moon/tasks.yml",
+            ".moon/toolchain.yml",
+            ".moon/workspace.yml",
             "outputs-filtering/out/1",
             "outputs-filtering/out/3",
             "outputs-filtering/out/5"
@@ -133,7 +141,8 @@ async fn filters_using_input_globs_in_glob_mode() {
     .await
     .unwrap();
 
-    assert!(files.keys().collect::<Vec<_>>().is_empty());
+    // .moon/*.yml files
+    assert!(files.keys().collect::<Vec<_>>().len() == 3);
 
     // Out glob
     let files = collect_and_hash_inputs(
@@ -146,7 +155,8 @@ async fn filters_using_input_globs_in_glob_mode() {
     .await
     .unwrap();
 
-    assert!(files.keys().collect::<Vec<_>>().is_empty());
+    // .moon/*.yml files
+    assert!(files.keys().collect::<Vec<_>>().len() == 3);
 }
 
 #[tokio::test]
@@ -175,7 +185,13 @@ async fn filters_using_input_files() {
 
     assert_eq!(
         files.keys().collect::<Vec<_>>(),
-        ["outputs-filtering/out/1", "outputs-filtering/out/3"]
+        [
+            ".moon/tasks.yml",
+            ".moon/toolchain.yml",
+            ".moon/workspace.yml",
+            "outputs-filtering/out/1",
+            "outputs-filtering/out/3"
+        ]
     );
 
     // Out file
@@ -189,7 +205,8 @@ async fn filters_using_input_files() {
     .await
     .unwrap();
 
-    assert!(files.keys().collect::<Vec<_>>().is_empty());
+    // .moon/*.yml files
+    assert!(files.keys().collect::<Vec<_>>().len() == 3);
 
     // Out glob
     let files = collect_and_hash_inputs(
@@ -202,7 +219,8 @@ async fn filters_using_input_files() {
     .await
     .unwrap();
 
-    assert!(files.keys().collect::<Vec<_>>().is_empty());
+    // .moon/*.yml files
+    assert!(files.keys().collect::<Vec<_>>().len() == 3);
 }
 
 #[tokio::test]
@@ -233,7 +251,13 @@ async fn filters_using_input_files_in_glob_mode() {
 
     assert_eq!(
         files.keys().collect::<Vec<_>>(),
-        ["outputs-filtering/out/1", "outputs-filtering/out/3"]
+        [
+            ".moon/tasks.yml",
+            ".moon/toolchain.yml",
+            ".moon/workspace.yml",
+            "outputs-filtering/out/1",
+            "outputs-filtering/out/3"
+        ]
     );
 
     // Out file
@@ -247,7 +271,8 @@ async fn filters_using_input_files_in_glob_mode() {
     .await
     .unwrap();
 
-    assert!(files.keys().collect::<Vec<_>>().is_empty());
+    // .moon/*.yml files
+    assert!(files.keys().collect::<Vec<_>>().len() == 3);
 
     // Out glob
     let files = collect_and_hash_inputs(
@@ -260,5 +285,6 @@ async fn filters_using_input_files_in_glob_mode() {
     .await
     .unwrap();
 
-    assert!(files.keys().collect::<Vec<_>>().is_empty());
+    // .moon/*.yml files
+    assert!(files.keys().collect::<Vec<_>>().len() == 3);
 }

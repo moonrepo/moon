@@ -276,7 +276,7 @@ mod globs {
     use super::*;
 
     #[tokio::test]
-    async fn ignores_dot_folders() {
+    async fn ignores_moon_dot_folder() {
         let workspace_config = WorkspaceConfig {
             projects: WorkspaceProjects::Globs(string_vec!["*"]),
             ..WorkspaceConfig::default()
@@ -292,9 +292,10 @@ mod globs {
         let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
         let graph = generate_project_graph(&mut workspace).await.unwrap();
 
-        assert_eq!(graph.sources.len(), 20);
-        assert!(!graph.sources.contains_key(".foo"));
+        assert_eq!(graph.sources.len(), 21);
+        assert!(graph.sources.contains_key(".foo"));
         assert!(!graph.sources.contains_key(".git"));
+        assert!(!graph.sources.contains_key(".moon"));
         assert!(!graph.sources.contains_key("node_modules"));
     }
 

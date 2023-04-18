@@ -450,6 +450,7 @@ mod resolve_args {
         let mut project = create_project(&workspace_root);
         project.language = ProjectLanguage::JavaScript;
         project.type_of = ProjectType::Tool;
+        project.aliases = string_vec!["some-alias", "another-alias"];
 
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
 
@@ -462,6 +463,11 @@ mod resolve_args {
         );
 
         assert_eq!(resolver.resolve_var("$project", &task).unwrap(), "project");
+
+        assert_eq!(
+            resolver.resolve_var("$projectAlias", &task).unwrap(),
+            "some-alias"
+        );
 
         assert_eq!(
             resolver.resolve_var("$projectRoot", &task).unwrap(),

@@ -34,9 +34,6 @@ jobs:
           ref: ${{ steps.sha.outputs.result }}
           # ref: ${{ github.event.pull_request.head.sha }}
       - uses: moonrepo/setup-rust@v0
-      - uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: benchmark
       - name: Run benchmarks
         # args: --workspace --bench ${{ matrix.bench }} -- --save-baseline base-sha
         run:

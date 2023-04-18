@@ -75,19 +75,13 @@ jobs:
       - uses: moonrepo/setup-rust@v0
         if: ${{ !matrix.docker-target }}
         with:
-          target: ${{ matrix.target }}
-      - uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: moon
+          targets: ${{ matrix.target }}
       - name: Generate lockfile
         if: ${{ !matrix.docker-target }}
         run: cargo generate-lockfile
       - name: Setup toolchain
         if: ${{ matrix.setup }}
         run: ${{ matrix.setup }}
-      - name: Add target
-        if: ${{ !matrix.docker-target }}
-        run: rustup target add ${{ matrix.target }}
       - name: Build binary
         if: ${{ !matrix.docker-target }}
         run: bash ./scripts/release/buildBinary.sh
@@ -155,9 +149,6 @@ jobs:
           cache: yarn
           check-latest: true
           node-version: 16
-      - uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: moon
       - name: Setup toolchain
         if: ${{ matrix.setup }}
         run: ${{ matrix.setup }}

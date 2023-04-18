@@ -25,9 +25,6 @@ jobs:
       - uses: moonrepo/setup-rust@v0
         with:
           components: rustfmt
-      - uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: format
       - name: Check formatting
         run: cargo fmt --all --check
   lint:
@@ -43,9 +40,6 @@ jobs:
         with:
           bins: make
           components: clippy
-      - uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: lint
       - name: Run linter
         run: cargo make lint
   test:
@@ -61,12 +55,6 @@ jobs:
         with:
           bins: make, nextest, llvm-cov
           components: llvm-tools-preview
-      - name: Cache cargo
-        uses: Swatinem/rust-cache@v2
-        # https://github.com/Swatinem/rust-cache#known-issues
-        if: ${{ runner.os != 'Windows' }}
-        with:
-          shared-key: test
       - name: Run tests with coverage
         if: ${{ env.WITH_COVERAGE == 'true' }}
         run: cargo make test-coverage

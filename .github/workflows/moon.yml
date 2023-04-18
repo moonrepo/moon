@@ -30,9 +30,6 @@ jobs:
         with:
           cache: yarn
       - uses: moonrepo/setup-rust@v0
-      - uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: moon
       - uses: moonrepo/tool-version-action@v1
         with:
           node: ${{ matrix.node-version }}

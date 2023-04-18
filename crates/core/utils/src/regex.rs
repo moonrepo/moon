@@ -34,7 +34,7 @@ pub static TOKEN_FUNC_ANYWHERE_PATTERN: Lazy<regex::Regex> =
     Lazy::new(|| create_regex(format!("@([a-z]+)\\({}\\)", TOKEN_GROUP)).unwrap());
 
 pub static TOKEN_VAR_PATTERN: Lazy<regex::Regex> = Lazy::new(|| {
-    create_regex("\\$(language|projectRoot|projectSource|projectType|project|target|taskPlatform|taskType|task|workspaceRoot|timestamp|datetime|date|time)").unwrap()
+    create_regex("\\$(language|projectAlias|projectRoot|projectSource|projectType|project|target|taskPlatform|taskType|task|workspaceRoot|timestamp|datetime|date|time)").unwrap()
 });
 
 // Task commands (these are not exhaustive)

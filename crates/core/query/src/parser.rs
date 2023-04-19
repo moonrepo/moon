@@ -40,7 +40,7 @@ pub enum AstNode {
     },
 }
 
-fn build_ast_node(pair: Pair<Rule>) -> Result<Option<AstNode>, Error<Rule>> {
+fn parse_ast_node(pair: Pair<Rule>) -> Result<Option<AstNode>, Box<Error<Rule>>> {
     Ok(match pair.as_rule() {
         Rule::comparison => {
             let mut inner = pair.into_inner();
@@ -69,7 +69,7 @@ fn build_ast_node(pair: Pair<Rule>) -> Result<Option<AstNode>, Error<Rule>> {
             })
         }
         Rule::expr_group => Some(AstNode::Group {
-            nodes: build_ast(pair.into_inner())?,
+            nodes: parse_ast(pair.into_inner())?,
         }),
         Rule::and => Some(AstNode::Op {
             op: LogicalOperator::And,
@@ -82,11 +82,11 @@ fn build_ast_node(pair: Pair<Rule>) -> Result<Option<AstNode>, Error<Rule>> {
     })
 }
 
-fn build_ast(pairs: Pairs<Rule>) -> Result<Vec<AstNode>, Error<Rule>> {
+fn parse_ast(pairs: Pairs<Rule>) -> Result<Vec<AstNode>, Box<Error<Rule>>> {
     let mut ast = vec![];
 
     for pair in pairs {
-        if let Some(node) = build_ast_node(pair)? {
+        if let Some(node) = parse_ast_node(pair)? {
             ast.push(node);
         }
     }
@@ -94,8 +94,8 @@ fn build_ast(pairs: Pairs<Rule>) -> Result<Vec<AstNode>, Error<Rule>> {
     Ok(ast)
 }
 
-pub fn parse(input: &str) -> Result<Vec<AstNode>, Error<Rule>> {
-    Ok(build_ast(MqlParser::parse(Rule::query, input)?)?)
+pub fn parse(input: &str) -> Result<Vec<AstNode>, Box<Error<Rule>>> {
+    parse_ast(MqlParser::parse(Rule::query, input)?)
 }
 
 pub enum Field {
@@ -180,7 +180,5 @@ fn build_criteria(ast: Vec<AstNode>) -> Result<QueryCriteria, QueryError> {
 }
 
 pub fn build(input: &str) -> Result<QueryCriteria, QueryError> {
-    let ast = parse(input).map_err(|e| QueryError::ParseFailure(e.to_string()))?;
-
-    Ok(build_criteria(ast)?)
+    build_criteria(parse(input).map_err(|e| QueryError::ParseFailure(e.to_string()))?)
 }

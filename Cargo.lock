@@ -3080,8 +3080,10 @@ name = "moon_query"
 version = "0.1.0"
 dependencies = [
  "moon_config",
+ "moon_error",
  "pest",
  "pest_derive",
+ "thiserror",
 ]
 
 [[package]]

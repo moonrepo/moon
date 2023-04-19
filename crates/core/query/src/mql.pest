@@ -16,9 +16,10 @@ cmp_op   = _{ eq | neq }
 
 // Expression
 
-comparison = { key ~ cmp_op ~ (value | value_list) }
-// expression = { comparison ~ (logic_op ~ comparison)* }
+comparison =  { key ~ cmp_op ~ (value | value_list) }
+expr       = _{ comparison ~ (logic_op ~ (comparison | expr_group))* }
+expr_group =  { "(" ~ expr ~ ")" }
 
 query = _{
-    SOI ~ (comparison ~ (logic_op ~ comparison)*) ~ EOI
+    SOI ~ expr ~ EOI
 }

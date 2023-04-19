@@ -5,5 +5,7 @@ edition = "2021"
 
 [dependencies]
 moon_config = { path = "../config" }
+moon_error = { path = "../error" }
 pest = "2.5.7"
 pest_derive = "2.5.7"
+thiserror = { workspace = true }

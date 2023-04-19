@@ -1,12 +1,30 @@
 use moon_query::{parse, AstNode, ComparisonOperator, LogicalOperator};
 
-mod mql {
+mod mql_parse {
     use super::*;
 
     #[test]
     #[should_panic]
     fn errors_no_logic_op() {
         parse("k1=v1 k2=v2").unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn errors_invalid_eq() {
+        parse("k1==v2").unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn errors_invalid_op() {
+        parse("k1=v1 & k2=v2").unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn errors_double_logic_op() {
+        parse("k1=v1 && && k2=v2").unwrap();
     }
 
     #[test]
@@ -67,7 +85,7 @@ mod mql {
                     op: ComparisonOperator::Equal,
                     value: vec!["v1".into()],
                 },
-                AstNode::LogicalOp {
+                AstNode::Op {
                     op: LogicalOperator::And,
                 },
                 AstNode::Comparison {
@@ -75,7 +93,7 @@ mod mql {
                     op: ComparisonOperator::NotEqual,
                     value: vec!["v2".into()],
                 },
-                AstNode::LogicalOp {
+                AstNode::Op {
                     op: LogicalOperator::And,
                 },
                 AstNode::Comparison {
@@ -97,7 +115,7 @@ mod mql {
                     op: ComparisonOperator::Equal,
                     value: vec!["v1".into()],
                 },
-                AstNode::LogicalOp {
+                AstNode::Op {
                     op: LogicalOperator::Or,
                 },
                 AstNode::Comparison {
@@ -105,7 +123,7 @@ mod mql {
                     op: ComparisonOperator::NotEqual,
                     value: vec!["v2".into()],
                 },
-                AstNode::LogicalOp {
+                AstNode::Op {
                     op: LogicalOperator::Or,
                 },
                 AstNode::Comparison {
@@ -139,7 +157,7 @@ mod mql {
                     op: ComparisonOperator::Equal,
                     value: vec!["v1".into()],
                 },
-                AstNode::LogicalOp {
+                AstNode::Op {
                     op: LogicalOperator::And,
                 },
                 AstNode::Comparison {
@@ -147,6 +165,148 @@ mod mql {
                     op: ComparisonOperator::NotEqual,
                     value: vec!["v2".into()],
                 }
+            ],
+        );
+    }
+
+    #[test]
+    fn group() {
+        assert_eq!(
+            parse("k1=v1 && (k2 != v2 OR k3  =  v3)").unwrap(),
+            vec![
+                AstNode::Comparison {
+                    field: "k1".into(),
+                    op: ComparisonOperator::Equal,
+                    value: vec!["v1".into()],
+                },
+                AstNode::Op {
+                    op: LogicalOperator::And,
+                },
+                AstNode::Group {
+                    nodes: vec![
+                        AstNode::Comparison {
+                            field: "k2".into(),
+                            op: ComparisonOperator::NotEqual,
+                            value: vec!["v2".into()],
+                        },
+                        AstNode::Op {
+                            op: LogicalOperator::Or,
+                        },
+                        AstNode::Comparison {
+                            field: "k3".into(),
+                            op: ComparisonOperator::Equal,
+                            value: vec!["v3".into()],
+                        }
+                    ]
+                }
+            ],
+        );
+    }
+
+    #[test]
+    fn multi_group() {
+        assert_eq!(
+            parse("k1=v1 && (k2!=v2 OR k3=v3) AND (k4=v4 || k5!=[v5,v15])").unwrap(),
+            vec![
+                AstNode::Comparison {
+                    field: "k1".into(),
+                    op: ComparisonOperator::Equal,
+                    value: vec!["v1".into()],
+                },
+                AstNode::Op {
+                    op: LogicalOperator::And,
+                },
+                AstNode::Group {
+                    nodes: vec![
+                        AstNode::Comparison {
+                            field: "k2".into(),
+                            op: ComparisonOperator::NotEqual,
+                            value: vec!["v2".into()],
+                        },
+                        AstNode::Op {
+                            op: LogicalOperator::Or,
+                        },
+                        AstNode::Comparison {
+                            field: "k3".into(),
+                            op: ComparisonOperator::Equal,
+                            value: vec!["v3".into()],
+                        }
+                    ]
+                },
+                AstNode::Op {
+                    op: LogicalOperator::And,
+                },
+                AstNode::Group {
+                    nodes: vec![
+                        AstNode::Comparison {
+                            field: "k4".into(),
+                            op: ComparisonOperator::Equal,
+                            value: vec!["v4".into()],
+                        },
+                        AstNode::Op {
+                            op: LogicalOperator::Or,
+                        },
+                        AstNode::Comparison {
+                            field: "k5".into(),
+                            op: ComparisonOperator::NotEqual,
+                            value: vec!["v5".into(), "v15".into()],
+                        }
+                    ]
+                },
+            ],
+        );
+    }
+
+    #[test]
+    fn nested_group() {
+        assert_eq!(
+            parse("k1=v1 && (k2!=v2 OR k3=v3 || (k4=v4 AND k5!=[v5,v15]))").unwrap(),
+            vec![
+                AstNode::Comparison {
+                    field: "k1".into(),
+                    op: ComparisonOperator::Equal,
+                    value: vec!["v1".into()],
+                },
+                AstNode::Op {
+                    op: LogicalOperator::And,
+                },
+                AstNode::Group {
+                    nodes: vec![
+                        AstNode::Comparison {
+                            field: "k2".into(),
+                            op: ComparisonOperator::NotEqual,
+                            value: vec!["v2".into()],
+                        },
+                        AstNode::Op {
+                            op: LogicalOperator::Or,
+                        },
+                        AstNode::Comparison {
+                            field: "k3".into(),
+                            op: ComparisonOperator::Equal,
+                            value: vec!["v3".into()],
+                        },
+                        AstNode::Op {
+                            op: LogicalOperator::Or,
+                        },
+                        AstNode::Group {
+                            nodes: vec![
+                                AstNode::Comparison {
+                                    field: "k4".into(),
+                                    op: ComparisonOperator::Equal,
+                                    value: vec!["v4".into()],
+                                },
+                                AstNode::Op {
+                                    op: LogicalOperator::And,
+                                },
+                                AstNode::Comparison {
+                                    field: "k5".into(),
+                                    op: ComparisonOperator::NotEqual,
+                                    value: vec!["v5".into(), "v15".into()],
+                                }
+                            ]
+                        },
+                    ]
+                },
             ],
         );
     }

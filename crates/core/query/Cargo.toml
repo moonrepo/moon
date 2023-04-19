@@ -5,4 +5,5 @@ edition = "2021"
 
 [dependencies]
 moon_config = { path = "../config" }
-nom = "7.1.3"
+pest = "2.5.7"
+pest_derive = "2.5.7"

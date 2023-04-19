@@ -1,0 +1,24 @@
+WHITESPACE = _{ " " }
+
+key        = @{ ASCII_ALPHANUMERIC+ }
+value      = @{ ASCII_ALPHANUMERIC+ | "-" | "_" }
+value_list =  { "[" ~ value ~ ("," ~ value)* ~ "]" }
+
+// Operators
+
+and = { "&&" | "AND" }
+or  = { "||" | "OR" }
+eq  = { "=" }
+neq = { "!=" }
+
+logic_op = _{ and | or }
+cmp_op   = _{ eq | neq }
+
+// Expression
+
+comparison = { key ~ cmp_op ~ (value | value_list) }
+// expression = { comparison ~ (logic_op ~ comparison)* }
+
+query = _{
+    SOI ~ (comparison ~ (logic_op ~ comparison)*) ~ EOI
+}

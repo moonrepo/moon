@@ -156,47 +156,54 @@ impl Pipeline {
             }
 
             // Wait for all actions in this batch to complete
+            let mut abort_error = None;
+
             for handle in action_handles {
-                match handle.await {
-                    Ok(Ok(result)) => {
-                        if result.has_failed() {
-                            failed_count += 1;
-                        } else if result.was_cached() {
-                            cached_count += 1;
-                        } else {
-                            passed_count += 1;
-                        }
-
-                        if result.should_abort() {
-                            error!(
-                                target: &batch_target_name,
-                                "Encountered a critical error, aborting the action pipeline"
-                            );
-                        }
-
-                        if self.bail && result.has_failed() || result.should_abort() {
-                            let abort_error =
-                                result.error.unwrap_or_else(|| "Unknown error!".into());
-
-                            local_emitter
-                                .emit(Event::PipelineAborted {
-                                    error: abort_error.clone(),
-                                })
-                                .await?;
-
-                            return Err(PipelineError::Aborted(abort_error));
-                        }
-
-                        results.push(result);
+                if abort_error.is_some() {
+                    if !handle.is_finished() {
+                        handle.abort();
                     }
-                    Ok(Err(error)) => {
-                        return Err(PipelineError::Aborted(error.to_string()));
-                    }
-                    _ => {
-                        // What to do here?
-                        return Err(PipelineError::Aborted("Unknown error!".to_owned()));
-                    }
-                };
+                } else {
+                    match handle.await {
+                        Ok(Ok(result)) => {
+                            if result.has_failed() {
+                                failed_count += 1;
+                            } else if result.was_cached() {
+                                cached_count += 1;
+                            } else {
+                                passed_count += 1;
+                            }
+
+                            if self.bail && result.has_failed() || result.should_abort() {
+                                abort_error =
+                                    Some(result.error.unwrap_or_else(|| "Unknown error!".into()));
+                            } else {
+                                results.push(result);
+                            }
+                        }
+                        Ok(Err(error)) => {
+                            abort_error = Some(error.to_string());
+                        }
+                        _ => {
+                            abort_error = Some("Unknown error!".into());
+                        }
+                    };
+                }
+            }
+
+            if let Some(abort_error) = abort_error {
+                error!(
+                    target: &batch_target_name,
+                    "Encountered a critical error, aborting the action pipeline"
+                );
+
+                local_emitter
+                    .emit(Event::PipelineAborted {
+                        error: abort_error.clone(),
+                    })
+                    .await?;
+
+                return Err(PipelineError::Aborted(abort_error));
             }
         }
 

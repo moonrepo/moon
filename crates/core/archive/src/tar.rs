@@ -5,10 +5,10 @@ use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 use flate2::Compression;
 use moon_logger::{debug, trace};
-use moon_utils::{glob, path};
+use moon_utils::path;
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
-use starbase_utils::fs;
+use starbase_utils::{fs, glob};
 use std::path::{Path, PathBuf};
 use tar::{Archive, Builder};
 
@@ -113,7 +113,7 @@ impl<'l> TarArchiver<'l> {
                 color::path(self.input_root.join(glob))
             );
 
-            for file in glob::walk_files(self.input_root, [glob])? {
+            for file in glob::walk_files(self.input_root, &[glob])? {
                 let mut fh = fs::open_file(&file)?;
                 let file_name = path::to_string(file.strip_prefix(self.input_root).unwrap())?;
 

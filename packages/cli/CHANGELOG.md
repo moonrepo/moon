@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- Improved accuracy of our globbing utilities, especially around dotfiles/dotfolders.
+
 ## 1.2.2
 
 #### 🚀 Updates

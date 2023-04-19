@@ -17,10 +17,11 @@ use moon_project::{Project, ProjectError};
 use moon_task::Task;
 use moon_tool::{Tool, ToolError, ToolManager};
 use moon_typescript_platform::TypeScriptTargetHasher;
-use moon_utils::{async_trait, glob::GlobSet, process::Command};
+use moon_utils::{async_trait, process::Command};
 use proto::Proto;
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
+use starbase_utils::glob::GlobSet;
 use std::path::PathBuf;
 use std::{collections::BTreeMap, path::Path};
 
@@ -101,7 +102,7 @@ impl Platform for NodePlatform {
         }
 
         if let Some(globs) = get_package_manager_workspaces(self.workspace_root.to_owned())? {
-            in_workspace = GlobSet::new(globs, vec![])?.matches(&project.source);
+            in_workspace = GlobSet::new(&globs)?.matches(&project.source);
         }
 
         if !in_workspace {

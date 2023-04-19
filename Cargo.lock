@@ -3110,6 +3110,7 @@ dependencies = [
  "serde",
  "serde_json",
  "starbase_styles",
+ "starbase_utils",
  "thiserror",
  "tokio",
 ]
@@ -3162,6 +3163,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "starbase_styles",
+ "starbase_utils",
  "strum",
  "thiserror",
 ]
@@ -3185,11 +3187,11 @@ dependencies = [
  "dirs",
  "insta",
  "moon_config",
- "moon_utils",
  "predicates",
  "pretty_assertions",
  "rustc-hash",
  "serde_yaml",
+ "starbase_utils",
  "tokio",
 ]
 
@@ -3270,7 +3272,6 @@ dependencies = [
  "starbase_styles",
  "starbase_utils",
  "tokio",
- "wax",
 ]
 
 [[package]]
@@ -4650,9 +4651,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.2.4"
+version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d04ada6cc7146054a47ad72c0d0de1fc8fde0dd0fc9a1eb19d073b6c0162000"
+checksum = "0232ffe3ce0953647348c2577d41e8dca9b289b0ecdef257f4f5212dacbd3c3a"
 dependencies = [
  "dirs",
  "ec4rs",
@@ -4668,6 +4669,7 @@ dependencies = [
  "thiserror",
  "toml",
  "tracing",
+ "wax",
 ]
 
 [[package]]

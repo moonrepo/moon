@@ -1,4 +1,5 @@
 use crate::errors::TokenError;
+use moon_error::MoonError;
 use moon_logger::warn;
 use moon_project::Project;
 use moon_task::Task;
@@ -6,8 +7,9 @@ use moon_utils::regex::{
     matches_token_func, matches_token_var, TOKEN_FUNC_ANYWHERE_PATTERN, TOKEN_FUNC_PATTERN,
     TOKEN_VAR_PATTERN,
 };
-use moon_utils::{glob, path, time};
+use moon_utils::{path, time};
 use starbase_styles::color;
+use starbase_utils::glob;
 use std::path::{Path, PathBuf};
 
 type PathsGlobsResolved = (Vec<PathBuf>, Vec<String>);
@@ -174,7 +176,7 @@ impl<'task> TokenResolver<'task> {
                 }
 
                 if is_glob {
-                    globs.push(glob::normalize(resolved)?);
+                    globs.push(glob::normalize(resolved).map_err(MoonError::StarGlob)?);
                 } else {
                     paths.push(resolved);
                 }

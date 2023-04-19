@@ -17,12 +17,13 @@ use moon_target::{Target, TargetError, TargetProjectScope};
 use moon_task::{Task, TaskError, TaskFlag};
 use moon_utils::path::expand_to_workspace_relative;
 use moon_utils::regex::{ENV_VAR, ENV_VAR_SUBSTITUTE};
-use moon_utils::{glob, path, time};
+use moon_utils::{path, time};
 use moon_workspace::Workspace;
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::Direction;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_styles::color;
+use starbase_utils::glob;
 use std::collections::BTreeMap;
 use std::env;
 use std::mem;
@@ -264,7 +265,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             };
 
             if is_glob {
-                return Ok(glob::normalize(arg)?);
+                return Ok(glob::normalize(arg).map_err(MoonError::StarGlob)?);
             }
 
             Ok(arg)

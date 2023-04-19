@@ -5,6 +5,7 @@ use moon_task::TaskError;
 use moon_tool::ToolError;
 use moon_workspace::{VcsError, WorkspaceError};
 use starbase_styles::{Style, Stylize};
+use starbase_utils::glob::GlobError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -14,6 +15,9 @@ pub enum RunnerError {
 
     #[error(transparent)]
     Moon(#[from] MoonError),
+
+    #[error(transparent)]
+    Glob(#[from] GlobError),
 
     #[error(transparent)]
     Project(#[from] ProjectError),

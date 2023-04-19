@@ -3091,6 +3091,7 @@ dependencies = [
  "serde",
  "serde_json",
  "starbase_styles",
+ "starbase_utils",
  "thiserror",
  "tokio",
 ]
@@ -3143,6 +3144,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "starbase_styles",
+ "starbase_utils",
  "strum",
  "thiserror",
 ]
@@ -3166,11 +3168,11 @@ dependencies = [
  "dirs",
  "insta",
  "moon_config",
- "moon_utils",
  "predicates",
  "pretty_assertions",
  "rustc-hash",
  "serde_yaml",
+ "starbase_utils",
  "tokio",
 ]
 
@@ -3251,7 +3253,6 @@ dependencies = [
  "starbase_styles",
  "starbase_utils",
  "tokio",
- "wax",
 ]
 
 [[package]]
@@ -4668,6 +4669,7 @@ dependencies = [
  "thiserror",
  "toml",
  "tracing",
+ "wax",
 ]
 
 [[package]]

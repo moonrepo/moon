@@ -5,14 +5,15 @@ use moon_config::{
     InheritedTasksManager, ToolchainConfig, WorkspaceConfig,
 };
 use moon_constants as constants;
+use moon_error::MoonError;
 use moon_logger::{debug, trace};
 use moon_platform::{BoxedPlatform, PlatformManager};
-use moon_utils::{glob, semver};
+use moon_utils::semver;
 use moon_vcs::{BoxedVcs, VcsLoader};
 use moonbase::Moonbase;
 use proto::{get_root, ToolsConfig, TOOLS_CONFIG_NAME};
 use starbase_styles::color;
-use starbase_utils::{dirs, fs};
+use starbase_utils::{dirs, fs, glob};
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -94,7 +95,9 @@ fn load_tasks_config(root_dir: &Path) -> Result<InheritedTasksManager, Workspace
     for config_path in glob::walk_files(
         root_dir.join(constants::CONFIG_DIRNAME).join("tasks"),
         ["*.yml"],
-    )? {
+    )
+    .map_err(MoonError::StarGlob)?
+    {
         trace!(target: LOG_TARGET, "Found {}", color::path(&config_path));
 
         manager.add_config(&config_path, do_load(&config_path)?);

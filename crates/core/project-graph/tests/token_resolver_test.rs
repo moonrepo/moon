@@ -4,8 +4,8 @@ use moon_project_graph::{TokenContext, TokenResolver};
 use moon_target::Target;
 use moon_task::{FileGroup, Task};
 use moon_test_utils::{get_fixtures_path, predicates::prelude::*};
-use moon_utils::{glob, string_vec};
 use rustc_hash::FxHashMap;
+use starbase_utils::{glob, string_vec};
 use std::path::{Path, PathBuf};
 
 pub fn create_file_groups() -> FxHashMap<String, FileGroup> {

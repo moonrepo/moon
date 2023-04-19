@@ -4,12 +4,13 @@ use crate::types::TouchedFilePaths;
 use moon_config::{
     FileGlob, FilePath, InputValue, PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy,
 };
+use moon_error::MoonError;
 use moon_logger::{debug, trace, Logable};
 use moon_target::{Target, TargetError};
-use moon_utils::glob;
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
 use starbase_styles::color;
+use starbase_utils::glob;
 use std::env;
 use std::path::PathBuf;
 use strum::Display;
@@ -191,7 +192,10 @@ impl Task {
 
     /// Create a globset of all input globs to match with.
     pub fn create_globset(&self) -> Result<glob::GlobSet, TaskError> {
-        Ok(glob::GlobSet::new(&self.input_globs, &self.output_globs)?)
+        Ok(
+            glob::GlobSet::new_split(&self.input_globs, &self.output_globs)
+                .map_err(MoonError::StarGlob)?,
+        )
     }
 
     /// Determine the type of task after inheritance and expansion.

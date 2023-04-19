@@ -12,8 +12,8 @@ use moon_target::Target;
 use moon_test_utils::{
     create_sandbox, create_sandbox_with_config, get_tasks_fixture_configs, Sandbox,
 };
-use moon_utils::{glob, string_vec};
 use rustc_hash::{FxHashMap, FxHashSet};
+use starbase_utils::{glob, string_vec};
 use std::collections::BTreeMap;
 use std::env;
 use std::fs;

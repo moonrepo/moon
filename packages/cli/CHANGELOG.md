@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where running tasks were not killed, resulting in background zombie processes.
+
 ## 1.2.1
 
 #### 🐞 Fixes

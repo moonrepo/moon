@@ -5,6 +5,7 @@
 #### 🐞 Fixes
 
 - Fixed an issue where running tasks were not killed, resulting in background zombie processes.
+- Updated dependency deduping to not run if the manager version is unknown.
 
 ## 1.2.1
 

@@ -180,6 +180,10 @@ impl DependencyManager<NodeTool> for YarnTool {
         working_dir: &Path,
         log: bool,
     ) -> Result<(), ToolError> {
+        if self.config.version.is_none() {
+            return Ok(());
+        }
+
         // Yarn v1 doesnt dedupe natively, so use:
         // npx yarn-deduplicate yarn.lock
         if self.is_v1() {

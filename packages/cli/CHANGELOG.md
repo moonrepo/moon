@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Added `node_modules/.bin/moon` as another lookup location for the `moon` binary when running
+  globally.
+
 #### 🐞 Fixes
 
 - Fixed an issue where running tasks were not killed, resulting in background zombie processes.

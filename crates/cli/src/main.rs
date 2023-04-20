@@ -1,7 +1,10 @@
 use mimalloc::MiMalloc;
 use moon_cli::{run_cli, BIN_NAME};
 use moon_constants::CONFIG_DIRNAME;
-use moon_node_lang::NODE;
+use moon_node_lang::{
+    node::{extract_canonical_node_module_bin, BinFile},
+    NODE,
+};
 use moon_terminal::safe_exit;
 use moon_utils::is_test_env;
 use starbase_utils::dirs;
@@ -41,6 +44,19 @@ fn get_global_lookups(home_dir: &Path) -> Vec<PathBuf> {
         home_dir.join("AppData\\Roaming\\npm"),
         home_dir.join("AppData\\Local\\pnpm"),
         home_dir.join("AppData\\Yarn\\config"),
+    ]
+}
+
+fn get_local_lookups(workspace_root: &Path) -> Vec<PathBuf> {
+    vec![
+        workspace_root
+            .join(NODE.vendor_dir.unwrap())
+            .join("@moonrepo/cli")
+            .join(BIN_NAME),
+        workspace_root
+            .join(NODE.vendor_dir.unwrap())
+            .join(".bin")
+            .join(BIN_NAME),
     ]
 }
 
@@ -123,23 +139,23 @@ async fn main() {
             // If so, find the workspace root so we can locate the
             // locally installed `moon` binary in node modules
             if let Some(workspace_root) = find_workspace_root(&current_dir) {
-                let moon_bin = workspace_root
-                    .join(NODE.vendor_dir.unwrap())
-                    .join("@moonrepo")
-                    .join("cli")
-                    .join(BIN_NAME);
+                for lookup in get_local_lookups(&workspace_root) {
+                    // The binary exists! So let's run that one to ensure
+                    // we're running the version pinned in `package.json`,
+                    // instead of this global one!
+                    if lookup.exists() {
+                        if let Ok(BinFile::Binary(moon_bin)) =
+                            extract_canonical_node_module_bin(lookup)
+                        {
+                            set_executed_with(&moon_bin);
 
-                // The binary exists! So let's run that one to ensure
-                // we're running the version pinned in `package.json`,
-                // instead of this global one!
-                if moon_bin.exists() {
-                    set_executed_with(&moon_bin);
+                            run_bin(&moon_bin, &current_dir)
+                                .await
+                                .expect("Failed to run moon binary!");
 
-                    run_bin(&moon_bin, &current_dir)
-                        .await
-                        .expect("Failed to run moon binary!");
-
-                    return;
+                            return;
+                        }
+                    }
                 }
             }
         }

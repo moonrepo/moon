@@ -3,16 +3,16 @@ name = "moon"
 type = "cli"
 
 [platform.linux]
-download_file = "moon-{arch}-unknown-linux-{libc}"
+download-file = "moon-{arch}-unknown-linux-{libc}"
 
 [platform.macos]
-download_file = "moon-{arch}-apple-darwin"
+download-file = "moon-{arch}-apple-darwin"
 
 [platform.windows]
-download_file = "moon-{arch}-pc-windows-msvc.exe"
+download-file = "moon-{arch}-pc-windows-msvc.exe"
 
 [install]
-download_url = "https://github.com/moonrepo/moon/releases/download/v{version}/{download_file}"
+download-url = "https://github.com/moonrepo/moon/releases/download/v{version}/{download_file}"
 
 [resolve]
-git_url = "https://github.com/moonrepo/moon"
+git-url = "https://github.com/moonrepo/moon"

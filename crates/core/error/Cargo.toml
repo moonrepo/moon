@@ -5,8 +5,8 @@ edition = "2021"
 
 [dependencies]
 regex = { workspace = true }
-serde_json = { workspace = true, default-features = false }
-serde_yaml = { workspace = true, default-features = false }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true }
 thiserror = { workspace = true }

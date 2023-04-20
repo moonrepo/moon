@@ -11,6 +11,9 @@ pub enum QueryError {
     #[error("Unknown value \"{1}\" for field \"{0}\".")]
     UnknownFieldValue(String, String),
 
+    #[error("Like operators (~ and !~) are not supported for field \"{0}\".")]
+    UnsupportedLikeOperator(String),
+
     #[error("Failed to parse query:\n{0}")]
     ParseFailure(String),
 }

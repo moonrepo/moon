@@ -76,6 +76,30 @@ mod mql_parse {
     }
 
     #[test]
+    fn comp_like() {
+        assert_eq!(
+            parse("key~value").unwrap(),
+            vec![AstNode::Comparison {
+                field: "key".into(),
+                op: ComparisonOperator::Like,
+                value: vec!["value".into()],
+            }],
+        );
+    }
+
+    #[test]
+    fn comp_nlike() {
+        assert_eq!(
+            parse("key!~value").unwrap(),
+            vec![AstNode::Comparison {
+                field: "key".into(),
+                op: ComparisonOperator::NotLike,
+                value: vec!["value".into()],
+            }],
+        );
+    }
+
+    #[test]
     fn multi_and_comp() {
         assert_eq!(
             parse("k1=v1 && k2!=v2 AND k3=[1,2,3]").unwrap(),
@@ -308,6 +332,42 @@ mod mql_parse {
                     ]
                 },
             ],
+        );
+    }
+
+    #[test]
+    fn like_glob_patterns() {
+        assert_eq!(
+            parse("key~value{foo,bar}").unwrap(),
+            vec![AstNode::Comparison {
+                field: "key".into(),
+                op: ComparisonOperator::Like,
+                value: vec!["value{foo,bar}".into()],
+            }],
+        );
+        assert_eq!(
+            parse("key !~ value[a-z]?").unwrap(),
+            vec![AstNode::Comparison {
+                field: "key".into(),
+                op: ComparisonOperator::NotLike,
+                value: vec!["value[a-z]?".into()],
+            }],
+        );
+        assert_eq!(
+            parse("key~value.*").unwrap(),
+            vec![AstNode::Comparison {
+                field: "key".into(),
+                op: ComparisonOperator::Like,
+                value: vec!["value.*".into()],
+            }],
+        );
+        assert_eq!(
+            parse("key!~value/**/*").unwrap(),
+            vec![AstNode::Comparison {
+                field: "key".into(),
+                op: ComparisonOperator::NotLike,
+                value: vec!["value/**/*".into()],
+            }],
         );
     }
 }

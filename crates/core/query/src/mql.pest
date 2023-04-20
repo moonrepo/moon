@@ -1,22 +1,29 @@
 WHITESPACE = _{ " " }
 
 key        = @{ ASCII_ALPHANUMERIC+ }
-value      = @{ ASCII_ALPHANUMERIC+ | "-" | "_" }
+value      = @{ (ASCII_ALPHANUMERIC | "-" | "_")+ }
+value_glob = @{ (ASCII_ALPHANUMERIC | "-" | "_" | "*" | "!" | "." | "," | "/" | "{" | "}" | "[" | "]" | "?")+ }
 value_list =  { "[" ~ value ~ ("," ~ value)* ~ "]" }
 
 // Operators
 
-and = { "&&" | "AND" }
-or  = { "||" | "OR" }
-eq  = { "=" }
-neq = { "!=" }
+and   = { "&&" | "AND" }
+or    = { "||" | "OR" }
+eq    = { "=" }
+neq   = { "!=" }
+like  = { "~" }
+nlike = { "!~" }
 
 logic_op = _{ and | or }
 cmp_op   = _{ eq | neq }
+like_op  = _{ like | nlike }
 
 // Expression
 
-comparison =  { key ~ cmp_op ~ (value | value_list) }
+comparison_literal  = _{ key ~ cmp_op ~ (value_list | value) }
+comparison_wildcard = _{ key ~ like_op ~ value_glob }
+comparison          =  { comparison_wildcard | comparison_literal }
+
 expr       = _{ comparison ~ (logic_op ~ (comparison | expr_group))* }
 expr_group =  { "(" ~ expr ~ ")" }
 

@@ -23,6 +23,8 @@ pub enum LogicalOperator {
 pub enum ComparisonOperator {
     Equal,    // =
     NotEqual, // !=
+    Like,     // ~
+    NotLike,  // !~
 }
 
 #[derive(Debug, PartialEq)]
@@ -56,10 +58,13 @@ fn parse_ast_node(pair: Pair<Rule>) -> Result<Option<AstNode>, Box<Error<Rule>>>
                 op: match op.as_rule() {
                     Rule::eq => ComparisonOperator::Equal,
                     Rule::neq => ComparisonOperator::NotEqual,
+                    Rule::like => ComparisonOperator::Like,
+                    Rule::nlike => ComparisonOperator::NotLike,
                     _ => unreachable!(),
                 },
                 value: match value.as_rule() {
                     Rule::value => vec![value.as_str().to_string()],
+                    Rule::value_glob => vec![value.as_str().to_string()],
                     Rule::value_list => value
                         .into_inner()
                         .map(|pair| pair.as_str().to_string())
@@ -134,6 +139,14 @@ fn build_criteria_values<T: FromStr>(
     Ok(result)
 }
 
+fn fail_on_like(field: &str, op: &ComparisonOperator) -> Result<(), QueryError> {
+    if matches!(op, ComparisonOperator::Like | ComparisonOperator::NotLike) {
+        return Err(QueryError::UnsupportedLikeOperator(field.to_owned()));
+    }
+
+    Ok(())
+}
+
 fn build_criteria(ast: Vec<AstNode>) -> Result<QueryCriteria, QueryError> {
     let mut criteria = QueryCriteria {
         op: None,
@@ -146,12 +159,14 @@ fn build_criteria(ast: Vec<AstNode>) -> Result<QueryCriteria, QueryError> {
             AstNode::Comparison { field, op, value } => {
                 let field = match field.as_str() {
                     "language" => {
+                        fail_on_like(&field, &op)?;
                         Field::Language(build_criteria_values::<ProjectLanguage>(&field, value)?)
                     }
                     "project" => Field::Project(value),
                     "projectAlias" => Field::ProjectAlias(value),
                     "projectSource" => Field::ProjectSource(value),
                     "projectType" => {
+                        fail_on_like(&field, &op)?;
                         Field::ProjectType(build_criteria_values::<ProjectType>(&field, value)?)
                     }
                     _ => {

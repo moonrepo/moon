@@ -37,16 +37,16 @@ impl YarnTool {
         })
     }
 
-    pub fn is_v1(&self) -> bool {
+    pub fn is_berry(&self) -> bool {
         self.config
             .version
             .as_ref()
-            .map(|v| v.starts_with('1'))
+            .map(|v| !v.starts_with('1'))
             .unwrap_or(false)
     }
 
     pub async fn set_version(&mut self, node: &NodeTool) -> Result<(), ToolError> {
-        if self.is_v1() {
+        if !self.is_berry() {
             return Ok(());
         }
 
@@ -186,7 +186,14 @@ impl DependencyManager<NodeTool> for YarnTool {
 
         // Yarn v1 doesnt dedupe natively, so use:
         // npx yarn-deduplicate yarn.lock
-        if self.is_v1() {
+        if self.is_berry() {
+            self.create_command(node)?
+                .arg("dedupe")
+                .cwd(working_dir)
+                .log_running_command(log)
+                .exec_capture_output()
+                .await?;
+        } else {
             // Will error if the lockfile does not exist!
             if working_dir.join(self.get_lock_filename()).exists() {
                 node.exec_package(
@@ -196,13 +203,6 @@ impl DependencyManager<NodeTool> for YarnTool {
                 )
                 .await?;
             }
-        } else {
-            self.create_command(node)?
-                .arg("dedupe")
-                .cwd(working_dir)
-                .log_running_command(log)
-                .exec_capture_output()
-                .await?;
         }
 
         Ok(())
@@ -235,17 +235,17 @@ impl DependencyManager<NodeTool> for YarnTool {
     ) -> Result<(), ToolError> {
         let mut args = vec!["install"];
 
-        if self.is_v1() {
+        if !self.is_berry() {
             args.push("--ignore-engines");
         }
 
         if is_ci() {
-            if self.is_v1() {
+            if self.is_berry() {
+                args.push("--immutable");
+            } else {
                 args.push("--check-files");
                 args.push("--frozen-lockfile");
                 args.push("--non-interactive");
-            } else {
-                args.push("--immutable");
             }
         }
 
@@ -270,9 +270,7 @@ impl DependencyManager<NodeTool> for YarnTool {
     ) -> Result<(), ToolError> {
         let mut cmd = self.create_command(node)?;
 
-        if self.is_v1() {
-            cmd.arg("install");
-        } else {
+        if self.is_berry() {
             cmd.args(["workspaces", "focus"]);
             cmd.args(packages);
 
@@ -284,6 +282,8 @@ impl DependencyManager<NodeTool> for YarnTool {
                     "yarn plugin import workspace-tools".into(),
                 ));
             }
+        } else {
+            cmd.arg("install");
         };
 
         if production_only {

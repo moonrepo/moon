@@ -1,13 +1,12 @@
-use std::str::FromStr;
-
 use crate::errors::QueryError;
-use moon_config::{ProjectLanguage, ProjectType};
+use moon_config::{PlatformType, ProjectLanguage, ProjectType, TaskType};
 use pest::{
     error::Error,
     iterators::{Pair, Pairs},
     Parser,
 };
 use pest_derive::Parser;
+use std::str::FromStr;
 
 #[derive(Parser)]
 #[grammar = "mql.pest"]
@@ -109,6 +108,10 @@ pub enum Field {
     ProjectAlias(Vec<String>),
     ProjectSource(Vec<String>),
     ProjectType(Vec<ProjectType>),
+    Tag(Vec<String>),
+    Task(Vec<String>),
+    TaskPlatform(Vec<PlatformType>),
+    TaskType(Vec<TaskType>),
 }
 
 pub struct QueryField {
@@ -122,10 +125,15 @@ pub struct QueryCriteria {
     pub criteria: Vec<QueryCriteria>,
 }
 
-fn build_criteria_values<T: FromStr>(
+fn build_criteria_enum<T: FromStr>(
     field: &str,
+    op: &ComparisonOperator,
     values: Vec<String>,
 ) -> Result<Vec<T>, QueryError> {
+    if matches!(op, ComparisonOperator::Like | ComparisonOperator::NotLike) {
+        return Err(QueryError::UnsupportedLikeOperator(field.to_owned()));
+    }
+
     let mut result = vec![];
 
     for value in values {
@@ -137,14 +145,6 @@ fn build_criteria_values<T: FromStr>(
     }
 
     Ok(result)
-}
-
-fn fail_on_like(field: &str, op: &ComparisonOperator) -> Result<(), QueryError> {
-    if matches!(op, ComparisonOperator::Like | ComparisonOperator::NotLike) {
-        return Err(QueryError::UnsupportedLikeOperator(field.to_owned()));
-    }
-
-    Ok(())
 }
 
 fn build_criteria(ast: Vec<AstNode>) -> Result<QueryCriteria, QueryError> {
@@ -159,15 +159,21 @@ fn build_criteria(ast: Vec<AstNode>) -> Result<QueryCriteria, QueryError> {
             AstNode::Comparison { field, op, value } => {
                 let field = match field.as_str() {
                     "language" => {
-                        fail_on_like(&field, &op)?;
-                        Field::Language(build_criteria_values::<ProjectLanguage>(&field, value)?)
+                        Field::Language(build_criteria_enum::<ProjectLanguage>(&field, &op, value)?)
                     }
                     "project" => Field::Project(value),
                     "projectAlias" => Field::ProjectAlias(value),
                     "projectSource" => Field::ProjectSource(value),
                     "projectType" => {
-                        fail_on_like(&field, &op)?;
-                        Field::ProjectType(build_criteria_values::<ProjectType>(&field, value)?)
+                        Field::ProjectType(build_criteria_enum::<ProjectType>(&field, &op, value)?)
+                    }
+                    "tag" => Field::Tag(value),
+                    "task" => Field::Task(value),
+                    "taskPlatform" => Field::TaskPlatform(build_criteria_enum::<PlatformType>(
+                        &field, &op, value,
+                    )?),
+                    "taskType" => {
+                        Field::TaskType(build_criteria_enum::<TaskType>(&field, &op, value)?)
                     }
                     _ => {
                         return Err(QueryError::UnknownField(field));

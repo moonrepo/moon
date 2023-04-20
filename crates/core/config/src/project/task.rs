@@ -8,6 +8,7 @@ use moon_utils::regex::ENV_VAR;
 use rustc_hash::FxHashMap;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use strum::{Display, EnumString};
 use validator::{Validate, ValidationError};
 
 // These structs utilize optional fields so that we can handle merging effectively,
@@ -44,6 +45,20 @@ fn validate_outputs(list: &[String]) -> Result<(), ValidationError> {
     }
 
     Ok(())
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Display, Eq, EnumString, PartialEq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum TaskType {
+    #[strum(serialize = "build")]
+    Build,
+
+    #[strum(serialize = "run")]
+    Run,
+
+    #[default]
+    #[strum(serialize = "test")]
+    Test,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]

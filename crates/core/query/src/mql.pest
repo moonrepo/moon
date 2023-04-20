@@ -18,7 +18,7 @@ logic_op = _{ and | or }
 cmp_op   = _{ eq | neq }
 like_op  = _{ like | nlike }
 
-// Expression
+// Expressions
 
 comparison_literal  = _{ key ~ cmp_op ~ (value_list | value) }
 comparison_wildcard = _{ key ~ like_op ~ value_glob }

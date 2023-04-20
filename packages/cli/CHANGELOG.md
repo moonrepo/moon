@@ -2,9 +2,16 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Added `node_modules/.bin/moon` as another lookup location for the `moon` binary when running
+  globally.
+
 #### 🐞 Fixes
 
 - Fixed an issue where running tasks were not killed, resulting in background zombie processes.
+- Fixed a few version comparisons between Yarn legacy and berry.
+- Updated dependency deduping to not run if the manager version is unknown.
 
 ## 1.2.1
 

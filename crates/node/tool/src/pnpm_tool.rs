@@ -134,11 +134,12 @@ impl DependencyManager<NodeTool> for PnpmTool {
         working_dir: &Path,
         log: bool,
     ) -> Result<(), ToolError> {
+        if self.config.version.is_none() {
+            return Ok(());
+        }
+
         if working_dir.join(self.get_lock_filename()).exists() {
-            let version = match self.config.version.as_ref() {
-                Some(v) => v,
-                None => "0.0.0",
-            };
+            let version = self.config.version.as_ref().unwrap();
 
             // https://github.com/pnpm/pnpm/releases/tag/v7.26.0
             if semver::satisfies_range(version, ">=7.26.0") {

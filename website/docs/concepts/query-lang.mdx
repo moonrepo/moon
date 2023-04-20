@@ -1,0 +1,148 @@
+---
+title: Query language
+toc_max_heading_level: 4
+tags: [query, lang, mql]
+---
+
+moon supports an integrated query language, known as MQL, that can be used to filter and select
+projects from the project graph, using an SQL-like syntax.
+
+## Syntax
+
+### Comparisons
+
+A comparison (also known as an assignment) is an expression that defines a piece of criteria, and is
+a building block of a query. This criteria maps a [field](#field) to a value, with an explicit
+comparison operator.
+
+#### Equals, Not equals
+
+The equals (`=`) and not equals (`!=`) comparison operators can be used for _exact_ value matching.
+
+```
+projectType=library && language!=javascript
+```
+
+You can also define a list of values using square bracket syntax, that will match against one of the
+values.
+
+```
+language=[javascript, typescript]
+```
+
+#### Like, Not like
+
+The like (`~`) and not like (`!~`) comparison operators can be used for _wildcard_ value matching,
+using [glob syntax](./file-pattern#globs).
+
+```
+projectSource~packages/* && tag!~*-app
+```
+
+> Like comparisons can only be used on non-enum fields.
+
+### Conditions
+
+The `&&` and `||` logical operators can be used to combine multiple comparisons into a condition.
+The `&&` operator is used to combine comparisons into a logical AND, and the `||` operator is used
+for logical OR.
+
+```
+taskPlatform=system || taskPlatform=node
+```
+
+For readability concerns, you can also use `AND` or `OR`.
+
+```
+taskPlatform=system OR taskPlatform=node
+```
+
+> Mixing both operators in the same condition is not supported.
+
+### Grouping
+
+For advanced queries and complex conditions, you can group comparisons using parentheses to create
+logical groupings. Groups can also be nested within other groups.
+
+```
+language=javascript && (taskType=test || taskType=build)
+```
+
+## Fields
+
+The following fields can be used as criteria, and are related to [task tokens](./token#variables).
+
+### `language`
+
+Programming language the project is written in, as defined in
+[`moon.yml`](../config/project#language).
+
+```
+language=rust
+```
+
+### `project`
+
+ID/name of the project, as defined in [`.moon/workspace.yml`](../config/workspace).
+
+```
+project=server
+```
+
+### `projectAlias`
+
+Alias of the project. Requires aliasing to be enabled with
+[`node.aliasPackageNames`](../config/toolchain#aliaspackagenames).
+
+```
+projectAlias~@scope/*
+```
+
+### `projectSource`
+
+Relative file path from the workspace root to the project root, as defined in
+[`.moon/workspace.yml`](../config/workspace).
+
+```
+projectSource~packages/*
+```
+
+### `projectType`
+
+The type of project, as defined in [`moon.yml`](../config/project#type).
+
+```
+projectType=application
+```
+
+### `tag`
+
+A tag within the project, as defined in [`moon.yml`](../config/project#tags).
+
+```
+tag~react-*
+```
+
+### `task`
+
+ID/name of a task within the project.
+
+```
+task=[build,test]
+```
+
+### `taskPlatform`
+
+The platform a task will run against, as defined in [`moon.yml`](../config/project#platform-1).
+
+```
+taskPlatform=node
+```
+
+### `taskType`
+
+The [type of task](./task#types), based on its configured settings.
+
+```
+taskType=build
+```

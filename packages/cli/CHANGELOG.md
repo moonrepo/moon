@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Introducing MQL, a custom query language for running advanced commands and functionality.
+
 #### ⚙️ Internal
 
 - Updated Rust to v1.69.

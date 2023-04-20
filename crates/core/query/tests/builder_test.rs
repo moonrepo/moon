@@ -176,6 +176,52 @@ mod mql_build {
                 }
             );
         }
+
+        // #[test]
+        // fn depth_2_siblings() {
+        //     assert_eq!(
+        //         build("language=javascript && ((taskType=test && task~lint*) || (taskType=build && task~build*))")
+        //             .unwrap(),
+        //         QueryCriteria {
+        //             op: Some(LogicalOperator::And),
+        //             fields: vec![QueryField {
+        //                 field: Field::Language(vec![ProjectLanguage::JavaScript]),
+        //                 op: ComparisonOperator::Equal,
+        //             },],
+        //             criteria: vec![QueryCriteria {
+        //                 op: Some(LogicalOperator::Or),
+        //                 fields: vec![],
+        //                 criteria: vec![QueryCriteria {
+        //                     op: Some(LogicalOperator::And),
+        //                     fields: vec![
+        //                         QueryField {
+        //                             field: Field::TaskType(vec![TaskType::Test]),
+        //                             op: ComparisonOperator::Equal,
+        //                         },
+        //                         QueryField {
+        //                             field: Field::Task(string_vec!["lint*"]),
+        //                             op: ComparisonOperator::Like,
+        //                         },
+        //                     ],
+        //                     criteria: vec![],
+        //                 }, QueryCriteria {
+        //                     op: Some(LogicalOperator::And),
+        //                     fields: vec![
+        //                         QueryField {
+        //                             field: Field::TaskType(vec![TaskType::Build]),
+        //                             op: ComparisonOperator::Equal,
+        //                         },
+        //                         QueryField {
+        //                             field: Field::Task(string_vec!["build*"]),
+        //                             op: ComparisonOperator::Like,
+        //                         },
+        //                     ],
+        //                     criteria: vec![],
+        //                 }],
+        //             }],
+        //         }
+        //     );
+        // }
     }
 
     mod language {
@@ -285,6 +331,21 @@ mod mql_build {
                     fields: vec![QueryField {
                         field: Field::ProjectAlias(string_vec!["foo*"]),
                         op: ComparisonOperator::NotLike,
+                    }],
+                    criteria: vec![],
+                }
+            );
+        }
+
+        #[test]
+        fn alias_like_scope() {
+            assert_eq!(
+                build("projectAlias~@scope/*").unwrap(),
+                QueryCriteria {
+                    op: Some(LogicalOperator::And),
+                    fields: vec![QueryField {
+                        field: Field::ProjectAlias(string_vec!["@scope/*"]),
+                        op: ComparisonOperator::Like,
                     }],
                     criteria: vec![],
                 }

@@ -48,6 +48,7 @@ const sidebars = {
 				'concepts/cache',
 				'concepts/file-group',
 				'concepts/file-pattern',
+				'concepts/query-lang',
 				'concepts/project',
 				'concepts/target',
 				'concepts/task',

@@ -5,6 +5,12 @@ mod mql_parse {
 
     #[test]
     #[should_panic]
+    fn errors_if_empty() {
+        parse("").unwrap();
+    }
+
+    #[test]
+    #[should_panic]
     fn errors_no_logic_op() {
         parse("k1=v1 k2=v2").unwrap();
     }

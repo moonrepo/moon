@@ -9,3 +9,6 @@ moon_error = { path = "../error" }
 pest = "2.5.7"
 pest_derive = "2.5.7"
 thiserror = { workspace = true }
+
+[dev-dependencies]
+moon_utils = { path = "../utils" }

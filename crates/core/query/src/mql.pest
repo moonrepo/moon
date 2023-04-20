@@ -1,7 +1,7 @@
 WHITESPACE = _{ " " }
 
 key        = @{ ASCII_ALPHANUMERIC+ }
-value      = @{ (ASCII_ALPHANUMERIC | "-" | "_")+ }
+value      = @{ (ASCII_ALPHANUMERIC | "-" | "_" | "/")+ }
 value_glob = @{ (ASCII_ALPHANUMERIC | "-" | "_" | "*" | "!" | "." | "," | "/" | "{" | "}" | "[" | "]" | "?")+ }
 value_list =  { "[" ~ value ~ ("," ~ value)* ~ "]" }
 

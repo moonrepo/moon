@@ -2,10 +2,6 @@
 
 ## Unreleased
 
-#### 🐞 Fixes
-
-- Fixed an issue where running tasks were not killed, resulting in background zombie processes.
-
 #### ⚙️ Internal
 
 - Updated Rust to v1.69.

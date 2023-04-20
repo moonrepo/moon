@@ -3,6 +3,7 @@ use crate::parser::{parse, AstNode, ComparisonOperator, LogicalOperator};
 use moon_config::{PlatformType, ProjectLanguage, ProjectType, TaskType};
 use std::str::FromStr;
 
+#[derive(Debug, PartialEq)]
 pub enum Field {
     Language(Vec<ProjectLanguage>),
     Project(Vec<String>),
@@ -15,11 +16,13 @@ pub enum Field {
     TaskType(Vec<TaskType>),
 }
 
+#[derive(Debug, PartialEq)]
 pub struct QueryField {
     pub field: Field,
     pub op: ComparisonOperator,
 }
 
+#[derive(Debug, Default, PartialEq)]
 pub struct QueryCriteria {
     pub op: Option<LogicalOperator>,
     pub fields: Vec<QueryField>,
@@ -98,9 +101,17 @@ fn build_criteria(ast: Vec<AstNode>) -> Result<QueryCriteria, QueryError> {
         }
     }
 
+    if criteria.op.is_none() {
+        criteria.op = Some(LogicalOperator::And);
+    }
+
     Ok(criteria)
 }
 
 pub fn build(input: &str) -> Result<QueryCriteria, QueryError> {
+    if input.is_empty() {
+        return Err(QueryError::EmptyInput);
+    }
+
     build_criteria(parse(input).map_err(|e| QueryError::ParseFailure(e.to_string()))?)
 }

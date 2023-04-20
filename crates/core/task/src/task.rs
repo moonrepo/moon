@@ -3,6 +3,7 @@ use crate::task_options::TaskOptions;
 use crate::types::TouchedFilePaths;
 use moon_config::{
     FileGlob, FilePath, InputValue, PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy,
+    TaskType,
 };
 use moon_error::MoonError;
 use moon_logger::{debug, trace, Logable};
@@ -21,20 +22,6 @@ type EnvVars = FxHashMap<String, String>;
 #[serde(rename_all = "kebab-case")]
 pub enum TaskFlag {
     NoInputs,
-}
-
-#[derive(Clone, Debug, Default, Deserialize, Display, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum TaskType {
-    #[strum(serialize = "build")]
-    Build,
-
-    #[strum(serialize = "run")]
-    Run,
-
-    #[default]
-    #[strum(serialize = "test")]
-    Test,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]

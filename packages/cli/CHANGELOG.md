@@ -2,9 +2,9 @@
 
 ## Unreleased
 
-#### 🐞 Fixes
+#### 🚀 Updates
 
-- Fixed an issue where running tasks were not killed, resulting in background zombie processes.
+- Introducing MQL, a custom query language for running advanced commands and functionality.
 
 #### ⚙️ Internal
 

@@ -22,7 +22,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::Path;
 use std::str::FromStr;
-use strum::Display;
+use strum::{Display, EnumString};
 use validator::{Validate, ValidationError};
 
 fn deserialize_language<'de, D>(deserializer: D) -> Result<ProjectLanguage, D::Error>
@@ -90,7 +90,17 @@ fn validate_channel(value: &str) -> Result<(), ValidationError> {
 }
 
 #[derive(
-    Clone, Copy, Debug, Default, Deserialize, Display, Eq, JsonSchema, PartialEq, Serialize,
+    Clone,
+    Copy,
+    Debug,
+    Default,
+    Deserialize,
+    Display,
+    EnumString,
+    Eq,
+    JsonSchema,
+    PartialEq,
+    Serialize,
 )]
 #[serde(rename_all = "lowercase")]
 pub enum ProjectType {

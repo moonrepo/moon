@@ -3,7 +3,7 @@ use moon_utils::regex::clean_id;
 use schemars::JsonSchema;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::{fmt, str::FromStr};
-use strum::{Display, EnumIter};
+use strum::{Display, EnumIter, EnumString};
 
 #[derive(Clone, Debug, Default, EnumIter, Eq, JsonSchema, PartialEq)]
 #[serde(rename_all = "lowercase")]
@@ -97,6 +97,7 @@ impl fmt::Display for ProjectLanguage {
     Display,
     Eq,
     EnumIter,
+    EnumString,
     Hash,
     JsonSchema,
     PartialEq,

@@ -8,6 +8,7 @@
 
 #### ⚙️ Internal
 
+- Updated Rust to v1.69.
 - Improved accuracy of our globbing utilities, especially around dotfiles/dotfolders.
 
 ## 1.2.1

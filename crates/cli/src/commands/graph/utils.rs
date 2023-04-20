@@ -109,7 +109,7 @@ pub fn respond_to_request(
                 js_url,
             };
             let info = tera
-                .render_str(INDEX_HTML, &Context::from_serialize(&context)?)
+                .render_str(INDEX_HTML, &Context::from_serialize(context)?)
                 .unwrap();
             let mut response = Response::from_data(info);
             response

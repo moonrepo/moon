@@ -348,6 +348,7 @@ impl<'a> Runner<'a> {
                     .join("runfile.json"),
             )?,
         );
+        env_vars.insert("PROTO_SKIP_USED_AT".to_owned(), "true".to_owned());
 
         Ok(env_vars)
     }

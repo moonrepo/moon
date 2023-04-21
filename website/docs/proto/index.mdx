@@ -7,12 +7,13 @@ import ToolsGrid from '@site/src/components/Products/Proto/ToolsGrid';
 
 <HeaderLabel text="3 min" />
 
-proto is a toolchain manager.
+proto is a pluggable toolchain manager.
 
 If you're unfamiliar with the concept of a toolchain, a toolchain is a collection of tools that are
 downloaded, installed, and managed by version through a single interface. In the context of proto's
-toolchain, a tool is either a programming language, or a dependency/package manager for a language.
-It's the next step in the version manager evolution.
+toolchain, a tool is either a programming language, or a dependency/package manager for a language,
+or a custom implementation provided by a plugin. It's the next step in the version manager
+evolution.
 
 ## Why proto?
 
@@ -36,6 +37,7 @@ proto powers [moon](/moon)'s toolchain, enabling a single source of truth for bo
   always used.
 - Checksum verification, ensuring a tool came from a trusted source.
 - Detects and infers from a language's ecosystem for maximum compatibility.
+- [Pluggable architecture](./proto/plugins), allowing for custom tooling.
 
 ## How does it work?
 
@@ -69,7 +71,8 @@ the [`proto setup`](./proto/commands/setup) command.
 
 ## Supported tools
 
-The following tools are [currently supported](./proto/tools) in proto.
+The following tools are [currently supported](./proto/tools) in proto. Additional tools can be
+supported through [plugins](./proto/plugins).
 
 <ToolsGrid />
 
@@ -93,6 +96,5 @@ are currently:
 ## Roadmap
 
 - Linux ARM/musl support.
-- Custom version aliasing.
 - Build from source for existing languages.
 - New languages.

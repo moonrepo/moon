@@ -2,7 +2,8 @@
 title: Supported tools
 ---
 
-The following tools are supported in proto's toolchain.
+The following tools are supported in proto's toolchain. Additional tools can be supported through
+[plugins](./plugins).
 
 ## Bun
 
@@ -126,7 +127,7 @@ However, `rustup` supports this as well through the
 [`rust-toolchain.toml`](https://rust-lang.github.io/rustup/overrides.html#the-toolchain-file) file.
 We suggest using this file.
 
-```text title="rust-toolchain.toml"
+```toml title="rust-toolchain.toml"
 [toolchain]
 profile = "default"
 channel = "1.68.0"

@@ -1,0 +1,96 @@
+---
+slug: proto-v0.7
+title: proto v0.7 - First step towards plugins
+authors: [milesj]
+tags: [proto, plugins]
+image: ./img/proto/v0.7.png
+---
+
+With this release, we're very excited to announce our initial support for plugins in proto!
+
+<!--truncate-->
+
+## Initial plugins architecture
+
+Last week we posted an [RFC for a new plugins architecture](./proto-v0.6#rfc-plugins-system) for
+proto. We believe plugins will unlock an array of capabilities for proto, will enable the community
+to add their own custom integrations, and the ability for tools to be managed within proto's
+toolchain.
+
+We were very excited for this RFC, and couldn't wait, so we spent the last week prototyping
+implementations. We got the basics of downloading, installing, and enabling a plugin at _runtime_
+working incredibly fast. However, implementing the entire RFC in 1 release would have taken too
+long, and we wanted to avoid dropping such a large feature in a single release. Because of this,
+we've only implemented [TOML schema plugins](/docs/proto/plugins#toml-schema-plugin) in this
+release, and will implement WASM plugins in a future release.
+
+## TOML schema plugins
+
+You may be asking yourself, aren't plugins typically code? For the most part, yes, but after
+building a "version manager" for multiple languages, we've come to the realization that many tools
+can simply be supported through a basic configuration file.
+
+At minimum, tools require the following pieces to be managed:
+
+- Where and how to download the tool
+- How to install/unpack the tool
+- How to resolve available versions to install
+- How to execute the tool's binary
+
+All 4 of these pieces can be solved with a configuration file, and as such, we opted to support a
+[TOML schema based plugin](/docs/proto/plugins#toml-schema-plugin) as an alternative to a code based
+plugin. The other benefits of a schema is that it's _easy to write, read, and maintain_, doesn't
+require any code, and doesn't force you into a specific programming language.
+
+To demonstate how this plugin works, here's an example of a [moon](/moon) TOML schema.
+
+```toml title="moon-schema.toml"
+name = "moon"
+type = "cli"
+
+[platform.linux]
+download-file = "moon-{arch}-unknown-linux-{libc}"
+
+[platform.macos]
+download-file = "moon-{arch}-apple-darwin"
+
+[platform.windows]
+download-file = "moon-{arch}-pc-windows-msvc.exe"
+
+[install]
+download-url = "https://github.com/moonrepo/moon/releases/download/v{version}/{download_file}"
+
+[resolve]
+git-url = "https://github.com/moonrepo/moon"
+```
+
+Very simple right? With this, you can now configure moon as a plugin within proto.
+
+```toml title=".prototools"
+moon = "1.2.0"
+
+[plugins]
+moon = "schema:./path/to/moon-schema.toml"
+```
+
+And ultimately manage every version of moon through proto! Because moon is now a plugin, every
+command in proto that accepts a `<tool>` argument, will now accept `moon` as a valid tool.
+
+```shell
+$ proto install moon 1.2.0
+$ proto list-remote moon
+$ proto use
+```
+
+Learn more about [TOML schema plugins in the official docs](/docs/proto/plugins#toml-schema-plugin)!
+
+## Cleaning improvements
+
+Last week we introduced the [`proto clean`](/docs/proto/commands/clean) command that will
+automatically delete stale and unused tools from the toolchain. This week we've implemented a few
+improvements to the cleaning process:
+
+- Added a `--yes` option to [`proto clean`](/docs/proto/commands/clean), allowing prompts to be
+  bypassed.
+- Added a `auto-clean` setting to `~/.proto/config.toml`, enabling automatic cleaning when
+  [`proto use`](/docs/proto/commands/use) is ran.

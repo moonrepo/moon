@@ -33,12 +33,12 @@ a plugin to a locator string. The map key is the plugin name _in kebab-case_, wh
 binary/tool name in proto, and also the name for configuration and cache purposes. The map value is
 a locator string that defines a protocol and source location, and supports the following formats:
 
-- `schema:<location>` - A [TOML schema plugin](./plugins#toml-schema-plugin). The location is either
-  an `https://` URL, or a file path relative from the parent configuration (with leading dot).
+- `schema:<location>` - A [TOML plugin](./plugins#toml-plugin). The location is either an `https://`
+  URL, or a file path relative from the parent configuration (with leading dot).
 
 ```toml title=".prototools"
 [plugins]
-my-tool = "schema:https://raw.githubusercontent.com/moonrepo/moon/master/moon-schema.toml"
+my-tool = "schema:https://raw.githubusercontent.com/my/tool/master/proto-schema.toml"
 ```
 
 Once configured, you can run a plugin as if it was a built-in tool:

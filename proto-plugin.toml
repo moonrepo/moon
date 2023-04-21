@@ -1,0 +1,20 @@
+# A TOML plugin for proto:
+# https://moonrepo.dev/docs/proto/plugins#toml-plugin
+
+name = "moon"
+type = "cli"
+
+[platform.linux]
+download-file = "moon-{arch}-unknown-linux-{libc}"
+
+[platform.macos]
+download-file = "moon-{arch}-apple-darwin"
+
+[platform.windows]
+download-file = "moon-{arch}-pc-windows-msvc.exe"
+
+[install]
+download-url = "https://github.com/moonrepo/moon/releases/download/v{version}/{download_file}"
+
+[resolve]
+git-url = "https://github.com/moonrepo/moon"

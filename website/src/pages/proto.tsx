@@ -1,7 +1,12 @@
 /* eslint-disable sort-keys */
 
 import React from 'react';
-import { faLeaf, faScrewdriverWrench, faSolarSystem } from '@fortawesome/pro-duotone-svg-icons';
+import {
+	faPuzzle,
+	faRadar,
+	faScrewdriverWrench,
+	faSolarSystem,
+} from '@fortawesome/pro-duotone-svg-icons';
 import { faBolt } from '@fortawesome/pro-regular-svg-icons';
 import Features, { Feature } from '@site/src/components/Products/Features';
 import Hero from '@site/src/components/Products/Proto/Hero';
@@ -25,14 +30,20 @@ const toolchainFeatures: Feature[] = [
 		description: 'Manage multiple languages and dependency managers through a single interface.',
 	},
 	{
-		title: 'Ecosystem aware',
-		icon: faLeaf,
-		description: "Detects and infers from a language's ecosystem for maximum compatibility.",
+		title: 'Version detection',
+		icon: faRadar,
+		description:
+			"Detects a version at runtime from a language's ecosystem for maximum compatibility.",
 	},
 	{
 		title: 'Granular configuration',
 		icon: faScrewdriverWrench,
 		description: 'Configure tools and their versions per directory, or per project.',
+	},
+	{
+		title: 'Pluggable architecture',
+		icon: faPuzzle,
+		description: 'Extend the toolchain with custom plugins, enabling new and non-standard tools.',
 	},
 ];
 
@@ -48,7 +59,7 @@ export default function ProductProto() {
 				<div className="bg-gradient-to-b from-slate-600 via-pink-900 to-white">
 					<Features
 						header="Toolchain"
-						description="All in one"
+						description="One tool to rule them all"
 						features={toolchainFeatures}
 						tier={2}
 					/>

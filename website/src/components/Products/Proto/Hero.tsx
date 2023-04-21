@@ -21,7 +21,8 @@ export default function Hero() {
 					/>
 
 					<p className="mt-1 mb-0 text-base text-white sm:text-lg sm:max-w-xl sm:mx-auto md:text-xl md:mx-0 md:w-[80%]">
-						A lightspeed toolchain manager for languages and their dependency managers.
+						A lightspeed and pluggable toolchain manager for languages and their dependency
+						managers.
 					</p>
 
 					<p className="mt-1 text-white opacity-50 text-sm md:text-base md:pr-4">

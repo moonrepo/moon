@@ -8,6 +8,7 @@ moon_config = { path = "../config" }
 moon_error = { path = "../error" }
 pest = "2.5.7"
 pest_derive = "2.5.7"
+starbase_utils = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]

@@ -3069,6 +3069,7 @@ dependencies = [
  "moon_utils",
  "pest",
  "pest_derive",
+ "starbase_utils",
  "thiserror",
 ]
 

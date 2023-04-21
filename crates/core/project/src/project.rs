@@ -5,8 +5,9 @@ use moon_config::{
     ProjectID, ProjectLanguage, ProjectType, TaskID,
 };
 use moon_constants::CONFIG_PROJECT_FILENAME;
+use moon_error::MoonError;
 use moon_logger::{debug, trace, Logable};
-use moon_query::{Field, LogicalOperator, QueryCriteria, QueryField};
+use moon_query::{Field, LogicalOperator, QueryCriteria};
 use moon_target::Target;
 use moon_task::{FileGroup, Task, TouchedFilePaths};
 use moon_utils::path;
@@ -420,49 +421,73 @@ impl Project {
     }
 
     /// Return true if this project matches the given query criteria.
-    pub fn matches_criteria(&self, query: &QueryCriteria) -> bool {
-        let mut matches = false;
+    pub fn matches_criteria(&self, query: &QueryCriteria) -> Result<bool, MoonError> {
+        let match_all = matches!(query.op.clone().unwrap_or_default(), LogicalOperator::And);
+        let mut matched_any = false;
 
         // Verify that all field criteria matches first
         if !query.fields.is_empty() {
-            let handler = |field: &QueryField| match &field.field {
-                Field::Language(langs) => field.matches(&langs, &self.language),
-                Field::Project(ids) => field.matches(&ids, &self.id),
-                Field::ProjectAlias(aliases) => field.matches_list(&aliases, &self.aliases),
-                Field::ProjectSource(sources) => field.matches(&sources, &self.source),
-                Field::ProjectType(types) => field.matches(&types, &self.type_of),
-                Field::Tag(tags) => field.matches_list(&tags, &self.config.tags),
-                Field::Task(ids) => self
-                    .tasks
-                    .values()
-                    .any(|task| field.matches(&ids, &task.id)),
-                Field::TaskPlatform(platforms) => self
-                    .tasks
-                    .values()
-                    .any(|task| field.matches(&platforms, &task.platform)),
-                Field::TaskType(types) => self
-                    .tasks
-                    .values()
-                    .any(|task| field.matches(&types, &task.type_of)),
-            };
+            for field in &query.fields {
+                let result = match &field.field {
+                    Field::Language(langs) => field.matches_enum(&langs, &self.language),
+                    Field::Project(ids) => field.matches(&ids, &self.id),
+                    Field::ProjectAlias(aliases) => field.matches_list(&aliases, &self.aliases),
+                    Field::ProjectSource(sources) => field.matches(&sources, &self.source),
+                    Field::ProjectType(types) => field.matches_enum(&types, &self.type_of),
+                    Field::Tag(tags) => field.matches_list(&tags, &self.config.tags),
+                    Field::Task(ids) => Ok(self
+                        .tasks
+                        .values()
+                        .any(|task| field.matches(&ids, &task.id).unwrap_or_default())),
+                    Field::TaskPlatform(platforms) => Ok(self.tasks.values().any(|task| {
+                        field
+                            .matches_enum(&platforms, &task.platform)
+                            .unwrap_or_default()
+                    })),
+                    Field::TaskType(types) => Ok(self.tasks.values().any(|task| {
+                        field
+                            .matches_enum(&types, &task.type_of)
+                            .unwrap_or_default()
+                    })),
+                };
+                let matches = result.map_err(MoonError::StarGlob)?;
 
-            matches = if matches!(query.op.clone().unwrap_or_default(), LogicalOperator::And) {
-                query.fields.iter().all(handler)
-            } else {
-                query.fields.iter().any(handler)
-            };
+                if matches {
+                    matched_any = true;
 
-            // Short-circuit
-            if !matches {
-                return false;
+                    if match_all {
+                        continue;
+                    } else {
+                        break;
+                    }
+                } else if match_all {
+                    return Ok(false);
+                }
             }
         }
 
         // Then verify nested criteria
         if !query.criteria.is_empty() {
-            matches = query.criteria.iter().all(|q| self.matches_criteria(q));
+            for criteria in &query.criteria {
+                if self.matches_criteria(criteria)? {
+                    matched_any = true;
+
+                    if match_all {
+                        continue;
+                    } else {
+                        break;
+                    }
+                } else if match_all {
+                    return Ok(false);
+                }
+            }
         }
 
-        matches
+        // No matches using the OR condition
+        if !matched_any {
+            return Ok(false);
+        }
+
+        Ok(true)
     }
 }

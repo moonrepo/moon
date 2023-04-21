@@ -56,13 +56,15 @@ impl ProjectGraph {
 
     /// Return all projects that match the query criteria.
     pub fn query(&self, query: &QueryCriteria) -> Result<Vec<&Project>, ProjectError> {
-        Ok(self
-            .graph
-            .raw_nodes()
-            .iter()
-            .map(|n| &n.weight)
-            .filter(|project| project.matches_criteria(query))
-            .collect())
+        let mut filtered_projects = vec![];
+
+        for project in self.get_all()? {
+            if project.matches_criteria(query)? {
+                filtered_projects.push(project);
+            }
+        }
+
+        Ok(filtered_projects)
     }
 
     /// Return a project with the associated ID. If the project does not

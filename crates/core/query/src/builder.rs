@@ -1,6 +1,7 @@
 use crate::errors::QueryError;
 use crate::parser::{parse, AstNode, ComparisonOperator, LogicalOperator};
 use moon_config::{PlatformType, ProjectLanguage, ProjectType, TaskType};
+use starbase_utils::glob::{GlobError, GlobSet};
 use std::cmp::PartialEq;
 use std::str::FromStr;
 
@@ -24,27 +25,36 @@ pub struct QueryField {
 }
 
 impl QueryField {
-    pub fn matches<T: PartialEq>(&self, haystack: &[T], needle: &T) -> bool {
-        match self.op {
+    pub fn matches(&self, haystack: &[String], needle: &String) -> Result<bool, GlobError> {
+        Ok(match self.op {
             ComparisonOperator::Equal => haystack.contains(needle),
             ComparisonOperator::NotEqual => !haystack.contains(needle),
-            _ => false,
-        }
+            ComparisonOperator::Like => GlobSet::new(haystack)?.is_match(needle),
+            ComparisonOperator::NotLike => !GlobSet::new(haystack)?.is_match(needle),
+        })
     }
 
-    pub fn matches_list<T: PartialEq>(&self, haystack: &[T], needles: &[T]) -> bool {
+    pub fn matches_list(&self, haystack: &[String], needles: &[String]) -> Result<bool, GlobError> {
         for needle in needles {
-            if match self.op {
-                ComparisonOperator::Equal => haystack.contains(needle),
-                ComparisonOperator::NotEqual => !haystack.contains(needle),
-                // Like and NotLike are not supported for lists
-                _ => false,
-            } {
-                return true;
+            if self.matches(haystack, needle)? {
+                return Ok(true);
             }
         }
 
-        false
+        Ok(false)
+    }
+
+    pub fn matches_enum<T: PartialEq>(
+        &self,
+        haystack: &[T],
+        needle: &T,
+    ) -> Result<bool, GlobError> {
+        Ok(match self.op {
+            ComparisonOperator::Equal => haystack.contains(needle),
+            ComparisonOperator::NotEqual => !haystack.contains(needle),
+            // Like and NotLike are not supported for enums
+            _ => false,
+        })
     }
 }
 

@@ -4,11 +4,12 @@ title: Plugins
 
 proto supports a pluggable architecture as a means for consumers to integrate and manage custom
 tools (languages, CLIs, etc) within proto's toolchain. It's not possible for proto to support
-_everything_ in core directly, so plugins are a way for the community to extend the toolchain with
-custom tools.
+_everything_ in core directly, so plugins are a way for the community to extend the toolchain to
+their needs.
 
 To ease the plugin development process, proto supports 2 types of plugins, a TOML schema based
-plugin, and a WASM based plugin (coming soon!).
+plugin, and a WASM based plugin (coming soon!). Both of these plugins can be
+[configured in `.prototools` and `~/.proto/config.toml` files](./config#plugins).
 
 ## TOML schema plugin
 

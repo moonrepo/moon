@@ -20,10 +20,11 @@ pub struct RunOptions {
     pub dependents: bool,
     pub force: bool,
     pub interactive: bool,
-    pub status: Vec<TouchedStatus>,
     pub passthrough: Vec<String>,
     pub profile: Option<ProfileType>,
+    pub query: Option<String>,
     pub remote: bool,
+    pub status: Vec<TouchedStatus>,
     pub update_cache: bool,
 }
 

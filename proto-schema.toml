@@ -1,4 +1,3 @@
-bin = "moon"
 name = "moon"
 type = "cli"
 

@@ -1,6 +1,7 @@
 use crate::errors::QueryError;
 use crate::parser::{parse, AstNode, ComparisonOperator, LogicalOperator};
 use moon_config::{PlatformType, ProjectLanguage, ProjectType, TaskType};
+use std::cmp::PartialEq;
 use std::str::FromStr;
 
 #[derive(Debug, PartialEq)]
@@ -20,6 +21,31 @@ pub enum Field {
 pub struct QueryField {
     pub field: Field,
     pub op: ComparisonOperator,
+}
+
+impl QueryField {
+    pub fn matches<T: PartialEq>(&self, haystack: &[T], needle: &T) -> bool {
+        match self.op {
+            ComparisonOperator::Equal => haystack.contains(needle),
+            ComparisonOperator::NotEqual => !haystack.contains(needle),
+            _ => false,
+        }
+    }
+
+    pub fn matches_list<T: PartialEq>(&self, haystack: &[T], needles: &[T]) -> bool {
+        for needle in needles {
+            if match self.op {
+                ComparisonOperator::Equal => haystack.contains(needle),
+                ComparisonOperator::NotEqual => !haystack.contains(needle),
+                // Like and NotLike are not supported for lists
+                _ => false,
+            } {
+                return true;
+            }
+        }
+
+        false
+    }
 }
 
 #[derive(Debug, Default, PartialEq)]

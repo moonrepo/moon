@@ -1,5 +1,6 @@
 use moon_config::{ProjectID, ProjectsAliasesMap, ProjectsSourcesMap};
 use moon_project::{Project, ProjectError};
+use moon_query::QueryCriteria;
 use moon_utils::{get_workspace_root, path};
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
@@ -51,6 +52,17 @@ impl ProjectGraph {
         let mut nodes: Vec<ProjectID> = self.sources.keys().cloned().collect();
         nodes.sort();
         nodes
+    }
+
+    /// Return all projects that match the query criteria.
+    pub fn query(&self, query: &QueryCriteria) -> Result<Vec<&Project>, ProjectError> {
+        Ok(self
+            .graph
+            .raw_nodes()
+            .iter()
+            .map(|n| &n.weight)
+            .filter(|project| project.matches_criteria(query))
+            .collect())
     }
 
     /// Return a project with the associated ID. If the project does not

@@ -9,15 +9,17 @@ use pest_derive::Parser;
 #[grammar = "mql.pest"]
 struct MqlParser;
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub enum LogicalOperator {
+    #[default]
     And, // &&
-    Or,  // ||
+    Or, // ||
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Default, PartialEq)]
 pub enum ComparisonOperator {
-    Equal,    // =
+    #[default]
+    Equal, // =
     NotEqual, // !=
     Like,     // ~
     NotLike,  // !~

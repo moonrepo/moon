@@ -6,6 +6,7 @@ use moon_config::{
 };
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_logger::{debug, trace, Logable};
+use moon_query::{Field, LogicalOperator, QueryCriteria, QueryField};
 use moon_target::Target;
 use moon_task::{FileGroup, Task, TouchedFilePaths};
 use moon_utils::path;
@@ -416,5 +417,52 @@ impl Project {
         }
 
         false
+    }
+
+    /// Return true if this project matches the given query criteria.
+    pub fn matches_criteria(&self, query: &QueryCriteria) -> bool {
+        let mut matches = false;
+
+        // Verify that all field criteria matches first
+        if !query.fields.is_empty() {
+            let handler = |field: &QueryField| match &field.field {
+                Field::Language(langs) => field.matches(&langs, &self.language),
+                Field::Project(ids) => field.matches(&ids, &self.id),
+                Field::ProjectAlias(aliases) => field.matches_list(&aliases, &self.aliases),
+                Field::ProjectSource(sources) => field.matches(&sources, &self.source),
+                Field::ProjectType(types) => field.matches(&types, &self.type_of),
+                Field::Tag(tags) => field.matches_list(&tags, &self.config.tags),
+                Field::Task(ids) => self
+                    .tasks
+                    .values()
+                    .any(|task| field.matches(&ids, &task.id)),
+                Field::TaskPlatform(platforms) => self
+                    .tasks
+                    .values()
+                    .any(|task| field.matches(&platforms, &task.platform)),
+                Field::TaskType(types) => self
+                    .tasks
+                    .values()
+                    .any(|task| field.matches(&types, &task.type_of)),
+            };
+
+            matches = if matches!(query.op.clone().unwrap_or_default(), LogicalOperator::And) {
+                query.fields.iter().all(handler)
+            } else {
+                query.fields.iter().any(handler)
+            };
+
+            // Short-circuit
+            if !matches {
+                return false;
+            }
+        }
+
+        // Then verify nested criteria
+        if !query.criteria.is_empty() {
+            matches = query.criteria.iter().all(|q| self.matches_criteria(q));
+        }
+
+        matches
     }
 }

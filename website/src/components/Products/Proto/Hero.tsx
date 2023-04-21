@@ -21,7 +21,8 @@ export default function Hero() {
 					/>
 
 					<p className="mt-1 mb-0 text-base text-white sm:text-lg sm:max-w-xl sm:mx-auto md:text-xl md:mx-0 md:w-[80%]">
-						A lightspeed toolchain manager for languages and their dependency managers.
+						A lightspeed and pluggable toolchain manager for languages and their dependency
+						managers.
 					</p>
 
 					<p className="mt-1 text-white opacity-50 text-sm md:text-base md:pr-4">
@@ -45,7 +46,7 @@ export default function Hero() {
 								href="/docs/proto"
 								className="w-full flex items-center justify-center px-2 py-1 sm:px-3 sm:py-2 text-base font-bold rounded-md text-white hover:text-white bg-white/5 hover:scale-110 md:text-lg group transition-transform"
 							>
-								v0.5.0
+								v0.7.0
 							</Link>
 						</div>
 					</div>

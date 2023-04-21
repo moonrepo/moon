@@ -177,3 +177,7 @@ ul ul {
 svg {
 	display: block;
 }
+
+pre .table {
+	display: inline;
+}

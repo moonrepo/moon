@@ -10,7 +10,6 @@ projects:
 
 generator:
   templates:
-    - './templates'
     - './tests/fixtures/generator/templates'
 
 runner:

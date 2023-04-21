@@ -7,16 +7,16 @@ tools (languages, CLIs, etc) within proto's toolchain. It's not possible for pro
 _everything_ in core directly, so plugins are a way for the community to extend the toolchain to
 their needs.
 
-To ease the plugin development process, proto supports 2 types of plugins, a TOML schema based
-plugin, and a WASM based plugin (coming soon!). Both of these plugins can be
+To ease the plugin development process, proto supports 2 types of plugins, a TOML based plugin, and
+a WASM based plugin (coming soon!). Both of these plugins can be
 [configured in `.prototools` and `~/.proto/config.toml` files](./config#plugins).
 
-## TOML schema plugin
+## TOML plugin
 
-The TOML schema plugin is by design, very simple. It's a TOML file that describes the tool, how it
-should be installed, and how it should be invoked. Since this is a static configuration file, it
-does not support any logic or complex behavior, and is merely for simple and common use cases, like
-CLIs.
+The TOML plugin is by design, very simple. It's a TOML file that describes a schema for the tool,
+how it should be installed, and how it should be invoked. Since this is a static configuration file,
+it does not support any logic or complex behavior, and is merely for simple and common use cases,
+like CLIs.
 
 Let's start by creating a new schema plugin, and defining the `name` and `type` fields. The type can
 either be `language`, `dependency-manager`, or `cli`. For this example, we'll create a plugin for

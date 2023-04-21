@@ -21,10 +21,10 @@ We were very excited for this RFC, and couldn't wait, so we spent the last week 
 implementations. We got the basics of downloading, installing, and enabling a plugin at _runtime_
 working incredibly fast. However, implementing the entire RFC in 1 release would have taken too
 long, and we wanted to avoid dropping such a large feature in a single release. Because of this,
-we've only implemented [TOML schema plugins](/docs/proto/plugins#toml-schema-plugin) in this
-release, and will implement WASM plugins in a future release.
+we've only implemented [TOML plugins](/docs/proto/plugins#toml-plugin) in this release, and will
+implement WASM plugins in a future release.
 
-## TOML schema plugins
+### TOML plugins
 
 You may be asking yourself, aren't plugins typically code? For the most part, yes, but after
 building a "version manager" for multiple languages, we've come to the realization that many tools
@@ -38,7 +38,7 @@ At minimum, tools require the following pieces to be managed:
 - How to execute the tool's binary
 
 All 4 of these pieces can be solved with a configuration file, and as such, we opted to support a
-[TOML schema based plugin](/docs/proto/plugins#toml-schema-plugin) as an alternative to a code based
+[TOML schema based plugin](/docs/proto/plugins#toml-plugin) as an alternative to a code based
 plugin. The other benefits of a schema is that it's _easy to write, read, and maintain_, doesn't
 require any code, and doesn't force you into a specific programming language.
 
@@ -82,7 +82,7 @@ $ proto list-remote moon
 $ proto use
 ```
 
-Learn more about [TOML schema plugins in the official docs](/docs/proto/plugins#toml-schema-plugin)!
+Learn more about [TOML plugins in the official docs](/docs/proto/plugins#toml-plugin)!
 
 ## Cleaning improvements
 

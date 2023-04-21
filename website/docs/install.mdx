@@ -45,6 +45,26 @@ irm https://moonrepo.dev/install/moon.ps1 | iex
 This will install moon to `~\.moon\bin` and prepend to the `PATH` environment variable for the
 current session. To persist across sessions, update `PATH` manually.
 
+### proto
+
+moon can be installed and managed in [proto's toolchain](/proto) using a TOML plugin. This will
+install moon to `~/.proto/tools/moon` and make the binary available at `~/.proto/bin`.
+
+```toml title=".prototools"
+[plugins]
+moon = "schema:https://raw.githubusercontent.com/moonrepo/moon/master/proto-plugin.toml"
+```
+
+```shell
+proto install moon
+```
+
+Furthermore, the version of moon can be pinned on a per-project basis using the `.prototools` file.
+
+```toml title=".prototools"
+moon = "1.3.0"
+```
+
 ### Node.js
 
 moon is also packaged and shipped as a single binary through the
@@ -63,7 +83,7 @@ rename the file after downloading, and apply the executable bit (`chmod +x`) on 
 ## Upgrading
 
 moon can be upgraded with the [`moon upgrade`](./commands/upgrade) command. However, this will only
-upgrade moon if installed with the official scripts (moon exists in `~/.moon`).
+upgrade moon if it was installed in `~/.moon/bin`.
 
 ```shell
 moon upgrade

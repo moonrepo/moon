@@ -14,7 +14,8 @@ plugin, and a WASM based plugin (coming soon!).
 
 The TOML schema plugin is by design, very simple. It's a TOML file that describes the tool, how it
 should be installed, and how it should be invoked. Since this is a static configuration file, it
-does not support any logic or dynamic behavior, and is merely for simple and common use cases.
+does not support any logic or complex behavior, and is merely for simple and common use cases, like
+CLIs.
 
 Let's start by creating a new schema plugin, and defining the `name` and `type` fields. The type can
 either be `language`, `dependency-manager`, or `cli`. For this example, we'll create a plugin for
@@ -123,7 +124,60 @@ globals-dir = ["$PROTOSTAR_HOME/bin", "$HOME/.protostar/bin"]
 global-args = ["install", "--force", "{dependency}"]
 ```
 
-### Resolving and detecting versions
+### Resolving versions
+
+Now that the tool can be downloaded and installed, we must configure how to resolve available
+versions. Resolving is configured through the `[resolve]` section, which supports 2 patterns to
+resolve with: Git tags, or a JSON manifest.
+
+#### Git tags
+
+To resolve a list of available versions using Git tags, the following settings are available:
+
+- `git-url` - The remote URL to fetch tags from.
+- `git-tag-pattern` - A regular expression to filter and match with. Defaults to
+  `^v?((\d+)\.(\d+)\.(\d+))`. The capture group `1` will be extracted as the version.
+
+```toml title="protostar.toml"
+# ...
+
+[resolve]
+git-url = "https://github.com/moonrepo/protostar"
+git-tag-pattern = "^@protostar/cli@((\d+)\.(\d+)\.(\d+))"
+```
+
+#### JSON manifest
+
+To resolve a list of available versions using a JSON manifest, the following settings are available:
+
+- `manifest-url` - A URL that returns a JSON response of all versions. This response _must be_ an
+  array of strings, or an array of objects.
+- `manifest-version-key` - If the response is an array of objects, this is the key to extract the
+  version from. If the response is an array of strings, this setting can be omitted. Defaults to
+  `version`.
+
+```toml title="protostar.toml"
+# ...
+
+[resolve]
+manifest-url = "https://someregistry.com/protostar/versions.json"
+manifest-version-key = "latest_version"
+```
+
+### Detecting versions
+
+And lastly, we can configure how to [detect a version](./detection) contextually at runtime, using
+the `[detect]` setting. At this time, we only support 1 setting:
+
+- `version-files` - A list of version files to extract from. The contents of these files can _only_
+  be the version string itself.
+
+```toml title="protostar.toml"
+# ...
+
+[detect]
+version-files = [".protostar-version", ".protostarrc"]
+```
 
 ## WASM plugin
 

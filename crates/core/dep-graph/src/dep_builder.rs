@@ -5,7 +5,7 @@ use moon_logger::{debug, map_list, trace};
 use moon_platform::{PlatformManager, Runtime};
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
-use moon_query::QueryCriteria;
+use moon_query::build as build_query;
 use moon_target::{Target, TargetError, TargetProjectScope};
 use moon_task::{Task, TouchedFilePaths};
 use petgraph::graph::NodeIndex;
@@ -26,7 +26,7 @@ pub struct DepGraphBuilder<'ws> {
     indices: IndicesType,
     platforms: &'ws PlatformManager,
     project_graph: &'ws ProjectGraph,
-    query: Option<QueryCriteria>,
+    queried_projects: Vec<&'ws Project>,
     runtimes: FxHashMap<String, RuntimePair>,
 }
 
@@ -39,7 +39,7 @@ impl<'ws> DepGraphBuilder<'ws> {
             indices: FxHashMap::default(),
             platforms,
             project_graph,
-            query: None,
+            queried_projects: vec![],
             runtimes: FxHashMap::default(),
         }
     }
@@ -48,8 +48,18 @@ impl<'ws> DepGraphBuilder<'ws> {
         DepGraph::new(mem::take(&mut self.graph), mem::take(&mut self.indices))
     }
 
-    pub fn set_query(&mut self, query: QueryCriteria) {
-        self.query = Some(query);
+    pub fn set_query(&mut self, input: &str) -> Result<(), DepGraphError> {
+        debug!(
+            target: LOG_TARGET,
+            "Applying query to dependency graph: {}",
+            color::shell(input),
+        );
+
+        let query = build_query(input)?;
+
+        self.queried_projects = self.project_graph.query(&query)?;
+
+        Ok(())
     }
 
     pub fn get_index_from_node(&self, node: &ActionNode) -> Option<&NodeIndex> {
@@ -200,10 +210,12 @@ impl<'ws> DepGraphBuilder<'ws> {
         match &target.project {
             // :task
             TargetProjectScope::All => {
-                let projects = if let Some(query) = &self.query {
-                    self.project_graph.query(query)?
+                let mut projects = vec![];
+
+                if self.queried_projects.is_empty() {
+                    projects.extend(self.project_graph.get_all()?);
                 } else {
-                    self.project_graph.get_all()?
+                    projects.extend(&self.queried_projects);
                 };
 
                 for project in projects {

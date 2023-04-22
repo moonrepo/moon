@@ -6,7 +6,6 @@ use moon_action_context::{ActionContext, ProfileType};
 use moon_action_pipeline::Pipeline;
 use moon_logger::map_list;
 use moon_project_graph::ProjectGraph;
-use moon_query::build as build_query;
 use moon_utils::is_ci;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
@@ -69,7 +68,7 @@ pub async fn run_target(
     let mut dep_builder = build_dep_graph(&workspace, &project_graph);
 
     if let Some(query_input) = &options.query {
-        dep_builder.set_query(build_query(query_input)?);
+        dep_builder.set_query(query_input)?;
     }
 
     // Run targets, optionally based on affected files
@@ -97,6 +96,10 @@ pub async fn run_target(
             );
         } else {
             println!("No tasks found for target(s) {targets_list}");
+        }
+
+        if let Some(query_input) = &options.query {
+            println!("Using query {}", color::shell(query_input));
         }
 
         return Ok(());

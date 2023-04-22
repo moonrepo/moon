@@ -2,7 +2,7 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum QueryError {
-    #[error("Encountered an empty query. Did you forget to add a query?")]
+    #[error("Encountered an empty query. Did you forget to add criteria?")]
     EmptyInput,
 
     #[error("Cannot use both AND (&&) and OR (||) logical operators in the same group. Wrap in parentheses to create sub-groups.")]

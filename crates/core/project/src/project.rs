@@ -7,7 +7,7 @@ use moon_config::{
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_error::MoonError;
 use moon_logger::{debug, trace, Logable};
-use moon_query::{Field, LogicalOperator, QueryCriteria};
+use moon_query::{Condition, Criteria, Field, LogicalOperator, Queryable};
 use moon_target::Target;
 use moon_task::{FileGroup, Task, TouchedFilePaths};
 use moon_utils::path;
@@ -419,67 +419,57 @@ impl Project {
 
         false
     }
+}
 
+impl Queryable for Project {
     /// Return true if this project matches the given query criteria.
-    pub fn matches_criteria(&self, query: &QueryCriteria) -> Result<bool, MoonError> {
-        let match_all = matches!(query.op.clone().unwrap_or_default(), LogicalOperator::And);
+    fn matches_criteria(&self, query: &Criteria) -> Result<bool, MoonError> {
+        let match_all = matches!(query.op, LogicalOperator::And);
         let mut matched_any = false;
 
-        // Verify that all field criteria matches first
-        if !query.fields.is_empty() {
-            for field in &query.fields {
-                let result = match &field.field {
-                    Field::Language(langs) => field.matches_enum(&langs, &self.language),
-                    Field::Project(ids) => field.matches(&ids, &self.id),
-                    Field::ProjectAlias(aliases) => field.matches_list(&aliases, &self.aliases),
-                    Field::ProjectSource(sources) => field.matches(&sources, &self.source),
-                    Field::ProjectType(types) => field.matches_enum(&types, &self.type_of),
-                    Field::Tag(tags) => field.matches_list(&tags, &self.config.tags),
-                    Field::Task(ids) => Ok(self
-                        .tasks
-                        .values()
-                        .any(|task| field.matches(&ids, &task.id).unwrap_or_default())),
-                    Field::TaskPlatform(platforms) => Ok(self.tasks.values().any(|task| {
-                        field
-                            .matches_enum(&platforms, &task.platform)
-                            .unwrap_or_default()
-                    })),
-                    Field::TaskType(types) => Ok(self.tasks.values().any(|task| {
-                        field
-                            .matches_enum(&types, &task.type_of)
-                            .unwrap_or_default()
-                    })),
-                };
-                let matches = result.map_err(MoonError::StarGlob)?;
+        for condition in &query.conditions {
+            let matches = match condition {
+                Condition::Field { field, .. } => {
+                    let result = match field {
+                        Field::Language(langs) => condition.matches_enum(langs, &self.language),
+                        Field::Project(ids) => condition.matches(ids, &self.id),
+                        Field::ProjectAlias(aliases) => {
+                            condition.matches_list(aliases, &self.aliases)
+                        }
+                        Field::ProjectSource(sources) => condition.matches(sources, &self.source),
+                        Field::ProjectType(types) => condition.matches_enum(types, &self.type_of),
+                        Field::Tag(tags) => condition.matches_list(tags, &self.config.tags),
+                        Field::Task(ids) => Ok(self
+                            .tasks
+                            .values()
+                            .any(|task| condition.matches(ids, &task.id).unwrap_or_default())),
+                        Field::TaskPlatform(platforms) => Ok(self.tasks.values().any(|task| {
+                            condition
+                                .matches_enum(platforms, &task.platform)
+                                .unwrap_or_default()
+                        })),
+                        Field::TaskType(types) => Ok(self.tasks.values().any(|task| {
+                            condition
+                                .matches_enum(types, &task.type_of)
+                                .unwrap_or_default()
+                        })),
+                    };
 
-                if matches {
-                    matched_any = true;
-
-                    if match_all {
-                        continue;
-                    } else {
-                        break;
-                    }
-                } else if match_all {
-                    return Ok(false);
+                    result.map_err(MoonError::StarGlob)?
                 }
-            }
-        }
+                Condition::Criteria { criteria } => self.matches_criteria(criteria)?,
+            };
 
-        // Then verify nested criteria
-        if !query.criteria.is_empty() {
-            for criteria in &query.criteria {
-                if self.matches_criteria(criteria)? {
-                    matched_any = true;
+            if matches {
+                matched_any = true;
 
-                    if match_all {
-                        continue;
-                    } else {
-                        break;
-                    }
-                } else if match_all {
-                    return Ok(false);
+                if match_all {
+                    continue;
+                } else {
+                    break;
                 }
+            } else if match_all {
+                return Ok(false);
             }
         }
 

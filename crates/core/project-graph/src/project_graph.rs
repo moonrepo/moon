@@ -1,7 +1,7 @@
 use moon_config::{ProjectID, ProjectsAliasesMap, ProjectsSourcesMap};
 use moon_logger::debug;
 use moon_project::{Project, ProjectError};
-use moon_query::QueryCriteria;
+use moon_query::{Criteria, Queryable};
 use moon_utils::{get_workspace_root, path};
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
@@ -57,7 +57,7 @@ impl ProjectGraph {
     }
 
     /// Return all projects that match the query criteria.
-    pub fn query(&self, query: &QueryCriteria) -> Result<Vec<&Project>, ProjectError> {
+    pub fn query(&self, query: &Criteria) -> Result<Vec<&Project>, ProjectError> {
         debug!(target: LOG_TARGET, "Filtering projects using query");
 
         let mut filtered_projects = vec![];

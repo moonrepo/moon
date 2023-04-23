@@ -17,6 +17,6 @@ pub enum QueryError {
     #[error("Like operators (~ and !~) are not supported for field \"{0}\".")]
     UnsupportedLikeOperator(String),
 
-    #[error("Failed to parse query:\n{0}")]
+    #[error("Failed to parse query:\n\n{0}")]
     ParseFailure(String),
 }

@@ -1,14 +1,43 @@
 ---
 slug: moon-v1.3
-title: moon v1.3 - Advanced query language and a proto plugin
+title: moon v1.3 - Run advanced targets and an official proto plugin
 authors: [milesj]
 tags: [query, lang, proto, schema, toml]
 # image: ./img/moon/v1.3.png
 ---
 
-TODO
+After many months of design and development, we're finally introducing MQL, our own unique query
+language!
 
 <!--truncate-->
+
+## Run targets based on a query
+
+Our [`moon run`](/docs/commands/run) command is pretty powerful. It allows you to run targets in
+one, many, or all projects. It also supports running multiple targets in parallel. However, it
+wasn't powerful enough, as it couldn't run the following scenarios:
+
+- Run a target in projects of a specific language.
+- Run a target in libraries or applications.
+- Run a target based on project file system path.
+- Run a target in projects with a matching tag.
+- Run a target in projects that match a keyword.
+- Or a combination of these.
+- And many more!
+
+Supporting all of these scenarios through CLI arguments just feels like bad design, and would result
+in a poor developer experience. There had to be a better way to support this! So we set out to solve
+this problem, and after much thought, we're stoked to introduce
+[MQL, a unique query language](/docs/concepts/query-lang).
+
+With MQL, you can now run scenarios like "I want to build all Node.js libraries", or "I want to lint
+and test all Rust projects". Simply pass an unscoped target and a query to the `run` command:
+
+```shell
+$ moon run :build --query "taskPlatform=node && projectType=library"
+
+$ moon run :lint :test --query "language=rust"
+```
 
 ## Plugin support for proto
 

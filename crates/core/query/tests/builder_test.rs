@@ -1,5 +1,5 @@
 use moon_config::{PlatformType, ProjectLanguage, ProjectType, TaskType};
-use moon_query::{build, ComparisonOperator, Field, LogicalOperator, QueryCriteria, QueryField};
+use moon_query::{build, ComparisonOperator, Condition, Criteria, Field, LogicalOperator};
 use moon_utils::string_vec;
 
 mod mql_build {
@@ -21,20 +21,19 @@ mod mql_build {
     fn handles_and() {
         assert_eq!(
             build("language=javascript AND language!=typescript").unwrap(),
-            QueryCriteria {
-                op: Some(LogicalOperator::And),
-                fields: vec![
-                    QueryField {
+            Criteria {
+                op: LogicalOperator::And,
+                conditions: vec![
+                    Condition::Field {
                         field: Field::Language(vec![ProjectLanguage::JavaScript]),
                         op: ComparisonOperator::Equal,
                     },
-                    QueryField {
+                    Condition::Field {
                         field: Field::Language(vec![ProjectLanguage::TypeScript]),
                         op: ComparisonOperator::NotEqual,
                     }
                 ],
-                criteria: vec![],
-            }
+            },
         );
     }
 
@@ -42,19 +41,18 @@ mod mql_build {
     fn handles_or() {
         assert_eq!(
             build("language=javascript || language!=typescript").unwrap(),
-            QueryCriteria {
-                op: Some(LogicalOperator::Or),
-                fields: vec![
-                    QueryField {
+            Criteria {
+                op: LogicalOperator::Or,
+                conditions: vec![
+                    Condition::Field {
                         field: Field::Language(vec![ProjectLanguage::JavaScript]),
                         op: ComparisonOperator::Equal,
                     },
-                    QueryField {
+                    Condition::Field {
                         field: Field::Language(vec![ProjectLanguage::TypeScript]),
                         op: ComparisonOperator::NotEqual,
                     }
                 ],
-                criteria: vec![],
             }
         );
     }
@@ -72,30 +70,33 @@ mod mql_build {
         fn depth_1() {
             assert_eq!(
                 build("language=javascript AND (task=foo || task!=bar OR task~baz)").unwrap(),
-                QueryCriteria {
-                    op: Some(LogicalOperator::And),
-                    fields: vec![QueryField {
-                        field: Field::Language(vec![ProjectLanguage::JavaScript]),
-                        op: ComparisonOperator::Equal,
-                    },],
-                    criteria: vec![QueryCriteria {
-                        op: Some(LogicalOperator::Or),
-                        fields: vec![
-                            QueryField {
-                                field: Field::Task(string_vec!["foo"]),
-                                op: ComparisonOperator::Equal,
-                            },
-                            QueryField {
-                                field: Field::Task(string_vec!["bar"]),
-                                op: ComparisonOperator::NotEqual,
-                            },
-                            QueryField {
-                                field: Field::Task(string_vec!["baz"]),
-                                op: ComparisonOperator::Like,
+                Criteria {
+                    op: LogicalOperator::And,
+                    conditions: vec![
+                        Condition::Field {
+                            field: Field::Language(vec![ProjectLanguage::JavaScript]),
+                            op: ComparisonOperator::Equal,
+                        },
+                        Condition::Criteria {
+                            criteria: Criteria {
+                                op: LogicalOperator::Or,
+                                conditions: vec![
+                                    Condition::Field {
+                                        field: Field::Task(string_vec!["foo"]),
+                                        op: ComparisonOperator::Equal,
+                                    },
+                                    Condition::Field {
+                                        field: Field::Task(string_vec!["bar"]),
+                                        op: ComparisonOperator::NotEqual,
+                                    },
+                                    Condition::Field {
+                                        field: Field::Task(string_vec!["baz"]),
+                                        op: ComparisonOperator::Like,
+                                    }
+                                ],
                             }
-                        ],
-                        criteria: vec![],
-                    }],
+                        }
+                    ],
                 }
             );
         }
@@ -104,39 +105,36 @@ mod mql_build {
         fn depth_1_siblings() {
             assert_eq!(
                 build("language=javascript AND (task=foo || task!=bar) && (taskType=build AND taskType=run)").unwrap(),
-                QueryCriteria {
-                    op: Some(LogicalOperator::And),
-                    fields: vec![QueryField {
+                Criteria {
+                    op: LogicalOperator::And,
+                    conditions: vec![Condition::Field {
                         field: Field::Language(vec![ProjectLanguage::JavaScript]),
                         op: ComparisonOperator::Equal,
-                    }],
-                    criteria: vec![QueryCriteria {
-                        op: Some(LogicalOperator::Or),
-                        fields: vec![
-                            QueryField {
+                    }, Condition::Criteria { criteria: Criteria {
+                        op: LogicalOperator::Or,
+                        conditions: vec![
+                            Condition::Field {
                                 field: Field::Task(string_vec!["foo"]),
                                 op: ComparisonOperator::Equal,
                             },
-                            QueryField {
+                            Condition::Field {
                                 field: Field::Task(string_vec!["bar"]),
                                 op: ComparisonOperator::NotEqual,
                             },
                         ],
-                        criteria: vec![],
-                    }, QueryCriteria {
-                        op: Some(LogicalOperator::And),
-                        fields: vec![
-                            QueryField {
+                    } }, Condition::Criteria { criteria: Criteria {
+                        op: LogicalOperator::And,
+                        conditions: vec![
+                            Condition::Field {
                                 field: Field::TaskType(vec![TaskType::Build]),
                                 op: ComparisonOperator::Equal,
                             },
-                            QueryField {
+                            Condition::Field {
                                 field: Field::TaskType(vec![TaskType::Run]),
                                 op: ComparisonOperator::Equal,
                             },
                         ],
-                        criteria: vec![],
-                    }],
+                    } }],
                 }
             );
         }
@@ -146,33 +144,40 @@ mod mql_build {
             assert_eq!(
                 build("language=javascript AND (task=foo || (taskType=build AND taskType=run))")
                     .unwrap(),
-                QueryCriteria {
-                    op: Some(LogicalOperator::And),
-                    fields: vec![QueryField {
-                        field: Field::Language(vec![ProjectLanguage::JavaScript]),
-                        op: ComparisonOperator::Equal,
-                    },],
-                    criteria: vec![QueryCriteria {
-                        op: Some(LogicalOperator::Or),
-                        fields: vec![QueryField {
-                            field: Field::Task(string_vec!["foo"]),
+                Criteria {
+                    op: LogicalOperator::And,
+                    conditions: vec![
+                        Condition::Field {
+                            field: Field::Language(vec![ProjectLanguage::JavaScript]),
                             op: ComparisonOperator::Equal,
-                        },],
-                        criteria: vec![QueryCriteria {
-                            op: Some(LogicalOperator::And),
-                            fields: vec![
-                                QueryField {
-                                    field: Field::TaskType(vec![TaskType::Build]),
-                                    op: ComparisonOperator::Equal,
-                                },
-                                QueryField {
-                                    field: Field::TaskType(vec![TaskType::Run]),
-                                    op: ComparisonOperator::Equal,
-                                },
-                            ],
-                            criteria: vec![],
-                        }],
-                    }],
+                        },
+                        Condition::Criteria {
+                            criteria: Criteria {
+                                op: LogicalOperator::Or,
+                                conditions: vec![
+                                    Condition::Field {
+                                        field: Field::Task(string_vec!["foo"]),
+                                        op: ComparisonOperator::Equal,
+                                    },
+                                    Condition::Criteria {
+                                        criteria: Criteria {
+                                            op: LogicalOperator::And,
+                                            conditions: vec![
+                                                Condition::Field {
+                                                    field: Field::TaskType(vec![TaskType::Build]),
+                                                    op: ComparisonOperator::Equal,
+                                                },
+                                                Condition::Field {
+                                                    field: Field::TaskType(vec![TaskType::Run]),
+                                                    op: ComparisonOperator::Equal,
+                                                },
+                                            ],
+                                        }
+                                    }
+                                ],
+                            }
+                        }
+                    ],
                 }
             );
         }
@@ -231,13 +236,12 @@ mod mql_build {
         fn valid_value() {
             assert_eq!(
                 build("language=javascript").unwrap(),
-                QueryCriteria {
-                    op: Some(LogicalOperator::And),
-                    fields: vec![QueryField {
+                Criteria {
+                    op: LogicalOperator::And,
+                    conditions: vec![Condition::Field {
                         field: Field::Language(vec![ProjectLanguage::JavaScript]),
                         op: ComparisonOperator::Equal,
                     }],
-                    criteria: vec![],
                 }
             );
         }
@@ -246,13 +250,12 @@ mod mql_build {
         fn other_value() {
             assert_eq!(
                 build("language!=other").unwrap(),
-                QueryCriteria {
-                    op: Some(LogicalOperator::And),
-                    fields: vec![QueryField {
+                Criteria {
+                    op: LogicalOperator::And,
+                    conditions: vec![Condition::Field {
                         field: Field::Language(vec![ProjectLanguage::Other("other".into())]),
                         op: ComparisonOperator::NotEqual,
                     }],
-                    criteria: vec![],
                 }
             );
         }
@@ -277,13 +280,12 @@ mod mql_build {
         fn name_eq() {
             assert_eq!(
                 build("project!=foo").unwrap(),
-                QueryCriteria {
-                    op: Some(LogicalOperator::And),
-                    fields: vec![QueryField {
+                Criteria {
+                    op: LogicalOperator::And,
+                    conditions: vec![Condition::Field {
                         field: Field::Project(string_vec!["foo"]),
                         op: ComparisonOperator::NotEqual,
                     }],
-                    criteria: vec![],
                 }
             );
         }
@@ -292,13 +294,12 @@ mod mql_build {
         fn name_like() {
             assert_eq!(
                 build("project~foo*").unwrap(),
-                QueryCriteria {
-                    op: Some(LogicalOperator::And),
-                    fields: vec![QueryField {
+                Criteria {
+                    op: LogicalOperator::And,
+                    conditions: vec![Condition::Field {
                         field: Field::Project(string_vec!["foo*"]),
                         op: ComparisonOperator::Like,
                     }],
-                    criteria: vec![],
                 }
             );
         }
@@ -311,13 +312,12 @@ mod mql_build {
         fn alias_eq() {
             assert_eq!(
                 build("projectAlias=foo").unwrap(),
-                QueryCriteria {
-                    op: Some(LogicalOperator::And),
-                    fields: vec![QueryField {
+                Criteria {
+                    op: LogicalOperator::And,
+                    conditions: vec![Condition::Field {
                         field: Field::ProjectAlias(string_vec!["foo"]),
                         op: ComparisonOperator::Equal,
                     }],
-                    criteria: vec![],
                 }
             );
         }
@@ -326,13 +326,12 @@ mod mql_build {
         fn alias_like() {
             assert_eq!(
                 build("projectAlias!~foo*").unwrap(),
-                QueryCriteria {
-                    op: Some(LogicalOperator::And),
-                    fields: vec![QueryField {
+                Criteria {
+                    op: LogicalOperator::And,
+                    conditions: vec![Condition::Field {
                         field: Field::ProjectAlias(string_vec!["foo*"]),
                         op: ComparisonOperator::NotLike,
                     }],
-                    criteria: vec![],
                 }
             );
         }
@@ -341,13 +340,12 @@ mod mql_build {
         fn alias_like_scope() {
             assert_eq!(
                 build("projectAlias~@scope/*").unwrap(),
-                QueryCriteria {
-                    op: Some(LogicalOperator::And),
-                    fields: vec![QueryField {
+                Criteria {
+                    op: LogicalOperator::And,
+                    conditions: vec![Condition::Field {
                         field: Field::ProjectAlias(string_vec!["@scope/*"]),
                         op: ComparisonOperator::Like,
                     }],
-                    criteria: vec![],
                 }
             );
         }
@@ -360,13 +358,12 @@ mod mql_build {
         fn source_eq() {
             assert_eq!(
                 build("projectSource!=packages/foo").unwrap(),
-                QueryCriteria {
-                    op: Some(LogicalOperator::And),
-                    fields: vec![QueryField {
+                Criteria {
+                    op: LogicalOperator::And,
+                    conditions: vec![Condition::Field {
                         field: Field::ProjectSource(string_vec!["packages/foo"]),
                         op: ComparisonOperator::NotEqual,
                     }],
-                    criteria: vec![],
                 }
             );
         }
@@ -375,13 +372,12 @@ mod mql_build {
         fn source_like() {
             assert_eq!(
                 build("projectSource!~packages/*").unwrap(),
-                QueryCriteria {
-                    op: Some(LogicalOperator::And),
-                    fields: vec![QueryField {
+                Criteria {
+                    op: LogicalOperator::And,
+                    conditions: vec![Condition::Field {
                         field: Field::ProjectSource(string_vec!["packages/*"]),
                         op: ComparisonOperator::NotLike,
                     }],
-                    criteria: vec![],
                 }
             );
         }
@@ -394,13 +390,12 @@ mod mql_build {
         fn valid_value() {
             assert_eq!(
                 build("projectType=library").unwrap(),
-                QueryCriteria {
-                    op: Some(LogicalOperator::And),
-                    fields: vec![QueryField {
+                Criteria {
+                    op: LogicalOperator::And,
+                    conditions: vec![Condition::Field {
                         field: Field::ProjectType(vec![ProjectType::Library]),
                         op: ComparisonOperator::Equal,
                     }],
-                    criteria: vec![],
                 }
             );
         }
@@ -409,13 +404,12 @@ mod mql_build {
         fn valid_value_list() {
             assert_eq!(
                 build("projectType!=[tool, library]").unwrap(),
-                QueryCriteria {
-                    op: Some(LogicalOperator::And),
-                    fields: vec![QueryField {
+                Criteria {
+                    op: LogicalOperator::And,
+                    conditions: vec![Condition::Field {
                         field: Field::ProjectType(vec![ProjectType::Tool, ProjectType::Library]),
                         op: ComparisonOperator::NotEqual,
                     }],
-                    criteria: vec![],
                 }
             );
         }
@@ -446,13 +440,12 @@ mod mql_build {
         fn tag_eq() {
             assert_eq!(
                 build("tag=lib").unwrap(),
-                QueryCriteria {
-                    op: Some(LogicalOperator::And),
-                    fields: vec![QueryField {
+                Criteria {
+                    op: LogicalOperator::And,
+                    conditions: vec![Condition::Field {
                         field: Field::Tag(string_vec!["lib"]),
                         op: ComparisonOperator::Equal,
                     }],
-                    criteria: vec![],
                 }
             );
         }
@@ -461,13 +454,12 @@ mod mql_build {
         fn tag_neq_list() {
             assert_eq!(
                 build("tag!=[foo,bar]").unwrap(),
-                QueryCriteria {
-                    op: Some(LogicalOperator::And),
-                    fields: vec![QueryField {
+                Criteria {
+                    op: LogicalOperator::And,
+                    conditions: vec![Condition::Field {
                         field: Field::Tag(string_vec!["foo", "bar"]),
                         op: ComparisonOperator::NotEqual,
                     }],
-                    criteria: vec![],
                 }
             );
         }
@@ -476,13 +468,12 @@ mod mql_build {
         fn tag_like() {
             assert_eq!(
                 build("tag~app-*").unwrap(),
-                QueryCriteria {
-                    op: Some(LogicalOperator::And),
-                    fields: vec![QueryField {
+                Criteria {
+                    op: LogicalOperator::And,
+                    conditions: vec![Condition::Field {
                         field: Field::Tag(string_vec!["app-*"]),
                         op: ComparisonOperator::Like,
                     }],
-                    criteria: vec![],
                 }
             );
         }
@@ -495,13 +486,12 @@ mod mql_build {
         fn task_eq() {
             assert_eq!(
                 build("task!=foo").unwrap(),
-                QueryCriteria {
-                    op: Some(LogicalOperator::And),
-                    fields: vec![QueryField {
+                Criteria {
+                    op: LogicalOperator::And,
+                    conditions: vec![Condition::Field {
                         field: Field::Task(string_vec!["foo"]),
                         op: ComparisonOperator::NotEqual,
                     }],
-                    criteria: vec![],
                 }
             );
         }
@@ -510,13 +500,12 @@ mod mql_build {
         fn task_like() {
             assert_eq!(
                 build("task~foo*").unwrap(),
-                QueryCriteria {
-                    op: Some(LogicalOperator::And),
-                    fields: vec![QueryField {
+                Criteria {
+                    op: LogicalOperator::And,
+                    conditions: vec![Condition::Field {
                         field: Field::Task(string_vec!["foo*"]),
                         op: ComparisonOperator::Like,
                     }],
-                    criteria: vec![],
                 }
             );
         }
@@ -529,13 +518,12 @@ mod mql_build {
         fn valid_value() {
             assert_eq!(
                 build("taskPlatform=node").unwrap(),
-                QueryCriteria {
-                    op: Some(LogicalOperator::And),
-                    fields: vec![QueryField {
+                Criteria {
+                    op: LogicalOperator::And,
+                    conditions: vec![Condition::Field {
                         field: Field::TaskPlatform(vec![PlatformType::Node]),
                         op: ComparisonOperator::Equal,
                     }],
-                    criteria: vec![],
                 }
             );
         }
@@ -544,13 +532,12 @@ mod mql_build {
         fn valid_value_list() {
             assert_eq!(
                 build("taskPlatform!=[node, system]").unwrap(),
-                QueryCriteria {
-                    op: Some(LogicalOperator::And),
-                    fields: vec![QueryField {
+                Criteria {
+                    op: LogicalOperator::And,
+                    conditions: vec![Condition::Field {
                         field: Field::TaskPlatform(vec![PlatformType::Node, PlatformType::System]),
                         op: ComparisonOperator::NotEqual,
                     }],
-                    criteria: vec![],
                 }
             );
         }
@@ -581,13 +568,12 @@ mod mql_build {
         fn valid_value() {
             assert_eq!(
                 build("taskType=build").unwrap(),
-                QueryCriteria {
-                    op: Some(LogicalOperator::And),
-                    fields: vec![QueryField {
+                Criteria {
+                    op: LogicalOperator::And,
+                    conditions: vec![Condition::Field {
                         field: Field::TaskType(vec![TaskType::Build]),
                         op: ComparisonOperator::Equal,
                     }],
-                    criteria: vec![],
                 }
             );
         }

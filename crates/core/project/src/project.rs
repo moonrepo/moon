@@ -5,7 +5,9 @@ use moon_config::{
     ProjectID, ProjectLanguage, ProjectType, TaskID,
 };
 use moon_constants::CONFIG_PROJECT_FILENAME;
+use moon_error::MoonError;
 use moon_logger::{debug, trace, Logable};
+use moon_query::{Condition, Criteria, Field, LogicalOperator, Queryable};
 use moon_target::Target;
 use moon_task::{FileGroup, Task, TouchedFilePaths};
 use moon_utils::path;
@@ -416,5 +418,66 @@ impl Project {
         }
 
         false
+    }
+}
+
+impl Queryable for Project {
+    /// Return true if this project matches the given query criteria.
+    fn matches_criteria(&self, query: &Criteria) -> Result<bool, MoonError> {
+        let match_all = matches!(query.op, LogicalOperator::And);
+        let mut matched_any = false;
+
+        for condition in &query.conditions {
+            let matches = match condition {
+                Condition::Field { field, .. } => {
+                    let result = match field {
+                        Field::Language(langs) => condition.matches_enum(langs, &self.language),
+                        Field::Project(ids) => condition.matches(ids, &self.id),
+                        Field::ProjectAlias(aliases) => {
+                            condition.matches_list(aliases, &self.aliases)
+                        }
+                        Field::ProjectSource(sources) => condition.matches(sources, &self.source),
+                        Field::ProjectType(types) => condition.matches_enum(types, &self.type_of),
+                        Field::Tag(tags) => condition.matches_list(tags, &self.config.tags),
+                        Field::Task(ids) => Ok(self
+                            .tasks
+                            .values()
+                            .any(|task| condition.matches(ids, &task.id).unwrap_or_default())),
+                        Field::TaskPlatform(platforms) => Ok(self.tasks.values().any(|task| {
+                            condition
+                                .matches_enum(platforms, &task.platform)
+                                .unwrap_or_default()
+                        })),
+                        Field::TaskType(types) => Ok(self.tasks.values().any(|task| {
+                            condition
+                                .matches_enum(types, &task.type_of)
+                                .unwrap_or_default()
+                        })),
+                    };
+
+                    result.map_err(MoonError::StarGlob)?
+                }
+                Condition::Criteria { criteria } => self.matches_criteria(criteria)?,
+            };
+
+            if matches {
+                matched_any = true;
+
+                if match_all {
+                    continue;
+                } else {
+                    break;
+                }
+            } else if match_all {
+                return Ok(false);
+            }
+        }
+
+        // No matches using the OR condition
+        if !matched_any {
+            return Ok(false);
+        }
+
+        Ok(true)
     }
 }

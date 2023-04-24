@@ -214,6 +214,12 @@ const tasksRows: Comparison[] = [
 		},
 	},
 	{
+		feature: 'Run tasks based on a query/filter',
+		support: {
+			moon: '`moon run :task --query "..."`',
+		},
+	},
+	{
 		feature: 'Can define tasks globally',
 		support: {
 			moon: [SUPPORTED, 'with `.moon/tasks.yml`'],

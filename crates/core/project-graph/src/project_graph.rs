@@ -1,5 +1,7 @@
 use moon_config::{ProjectID, ProjectsAliasesMap, ProjectsSourcesMap};
+use moon_logger::debug;
 use moon_project::{Project, ProjectError};
+use moon_query::{Criteria, Queryable};
 use moon_utils::{get_workspace_root, path};
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
@@ -7,6 +9,7 @@ use petgraph::visit::EdgeRef;
 use petgraph::Direction;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
+use starbase_styles::color;
 use std::path::{Path, PathBuf};
 
 pub type GraphType = DiGraph<Project, ()>;
@@ -51,6 +54,34 @@ impl ProjectGraph {
         let mut nodes: Vec<ProjectID> = self.sources.keys().cloned().collect();
         nodes.sort();
         nodes
+    }
+
+    /// Return all projects that match the query criteria.
+    pub fn query(&self, query: &Criteria) -> Result<Vec<&Project>, ProjectError> {
+        debug!(target: LOG_TARGET, "Filtering projects using query");
+
+        let mut filtered_projects = vec![];
+
+        for project in self.get_all()? {
+            if project.matches_criteria(query)? {
+                debug!(
+                    target: LOG_TARGET,
+                    "{} did match the criteria",
+                    color::id(&project.id)
+                );
+
+                filtered_projects.push(project);
+            } else {
+                debug!(
+                    target: LOG_TARGET,
+                    "{} did {} match the criteria",
+                    color::id(&project.id),
+                    color::failure("NOT"),
+                );
+            }
+        }
+
+        Ok(filtered_projects)
     }
 
     /// Return a project with the associated ID. If the project does not

@@ -1,5 +1,6 @@
 use moon_error::MoonError;
 use moon_project::ProjectError;
+use moon_query::QueryError;
 use moon_target::TargetError;
 use moon_task::TaskError;
 use starbase_styles::{Style, Stylize};
@@ -18,6 +19,9 @@ pub enum DepGraphError {
 
     #[error(transparent)]
     Project(#[from] ProjectError),
+
+    #[error(transparent)]
+    Query(#[from] QueryError),
 
     #[error(transparent)]
     Task(#[from] TaskError),

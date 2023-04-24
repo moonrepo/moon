@@ -455,6 +455,9 @@ pub enum Commands {
         #[arg(long, short = 'i', help = "Run the target interactively")]
         interactive: bool,
 
+        #[arg(long, help = "Focus target(s) based on the result of a query")]
+        query: Option<String>,
+
         #[arg(
             long,
             short = 'u',

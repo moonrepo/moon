@@ -1,0 +1,8 @@
+language: typescript
+type: library
+
+tags: [two, three, five]
+
+tasks:
+  lint:
+    command: lint

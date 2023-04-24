@@ -53,6 +53,30 @@ moon run :task1 :task2
 moon run projecta:task1 projectb:task2
 ```
 
+#### Run a task in applications, libraries, or tools
+
+```shell
+moon run :task --query "projectType=application"
+```
+
+#### Run a task in projects of a specific language
+
+```shell
+moon run :task --query "language=typescript"
+```
+
+#### Run a task in projects matching a keyword
+
+```shell
+moon run :task --query "project~react-*"
+```
+
+#### Run a task in projects based on file path
+
+```shell
+moon run :task --query "projectSource~packages/*"
+```
+
 ## Task configuration
 
 Learn more about [available options](./config/project#tasks).

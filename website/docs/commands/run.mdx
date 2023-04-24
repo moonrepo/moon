@@ -10,15 +10,18 @@ cache each task, improving speed and development times... over time.
 # Run `lint` in project `app`
 $ moon run app:lint
 
-# Run `lint` in project `app` and `server`
-$ moon run app:lint server:lint
+# Run `dev` in project `client` and `server`
+$ moon run client:dev server:dev
 
-# Run `lint` in all projects
-$ moon run :lint
+# Run `test` in all projects
+$ moon run :test
 
-# Run `lint` in closest project (`client`)
+# Run `format` in closest project (`client`)
 $ cd apps/client
-$ moon run lint
+$ moon run format
+
+# Run `build` in projects matching the query
+$ moon run :build --query "language=javascript && projectType=library"
 ```
 
 > View the official [Run a task](../run-task) article for more information!
@@ -36,6 +39,8 @@ $ moon run lint
 - `-i`, `--interactive` - Run the target in an interactive mode.
 - `--profile <type>` - Record and [generate a profile](../guides/profile) for ran tasks.
   - Types: `cpu`, `heap`
+- `--query` - Filter projects to run targets against using
+  [a query statement](../concepts/query-lang).
 - `-u`, `--updateCache` - Bypass cache and force update any existing items.
 
 #### Affected

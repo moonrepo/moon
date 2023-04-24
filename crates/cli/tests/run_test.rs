@@ -1669,3 +1669,112 @@ mod interactive {
             .stdout(predicate::str::contains("Question?"));
     }
 }
+
+mod query {
+    use super::*;
+
+    #[test]
+    fn errors_if_no_matching_projects() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg(":noop")
+                .arg("--query")
+                .arg("projectSource=fake");
+        });
+
+        assert.success().stdout(predicate::str::contains(
+            "No tasks found for target(s) :noop\nUsing query projectSource=fake",
+        ));
+    }
+
+    #[test]
+    fn errors_for_invalid_query() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg(":noop")
+                .arg("--query")
+                .arg("invalid=value");
+        });
+
+        assert
+            .failure()
+            .stderr(predicate::str::contains("Unknown query field \"invalid\"."));
+    }
+
+    #[test]
+    fn can_run_target_via_query() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg(":standard")
+                .arg("--query")
+                .arg("projectSource~deps-*");
+        });
+
+        let output = assert.output();
+
+        assert!(predicate::str::contains("depsA:standard").eval(&output));
+        assert!(predicate::str::contains("depsB:standard").eval(&output));
+        assert!(predicate::str::contains("depsC:standard").eval(&output));
+    }
+
+    #[test]
+    fn can_run_multiple_targets_via_query() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg(":standard")
+                .arg(":dependencyOrder")
+                .arg("--query")
+                .arg("projectSource~deps-*");
+        });
+
+        let output = assert.output();
+
+        assert!(predicate::str::contains("depsA:standard").eval(&output));
+        assert!(predicate::str::contains("depsB:standard").eval(&output));
+        assert!(predicate::str::contains("depsC:standard").eval(&output));
+        assert!(predicate::str::contains("depsA:dependencyOrder").eval(&output));
+        assert!(predicate::str::contains("depsB:dependencyOrder").eval(&output));
+        assert!(predicate::str::contains("depsC:dependencyOrder").eval(&output));
+    }
+
+    #[test]
+    fn runs_with_affected() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        sandbox.create_file("files/other.txt", "");
+        sandbox.create_file("noop/other.txt", "");
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg(":noop").arg("--affected");
+        });
+
+        let output = assert.output();
+
+        assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run")
+                .arg(":noop")
+                .arg("--affected")
+                .arg("--query")
+                .arg("project=files");
+        });
+
+        let output = assert.output();
+
+        assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+    }
+}

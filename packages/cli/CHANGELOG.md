@@ -8,6 +8,10 @@
 - Added a `--query` option to the `moon run` command, allowing for advanced targeting.
 - Updated config loading to be strict and error on unknown fields for non-root fields.
 
+#### 🐞 Fixes
+
+- Fixed an issue where proto would fail to parse `manifest.json`.
+
 #### ⚙️ Internal
 
 - Updated Rust to v1.69.

@@ -95,11 +95,38 @@ $ moon run app:build -- --force
 
 > The `--` delimiter and any arguments _must_ be defined last on the command line.
 
+## Advanced run targeting
+
+By this point you should have a basic understanding of how to run tasks, but with moon, we want to
+provide support for advanced workflows and development scenarios. For example, running a target in
+all projects:
+
+```shell
+$ moon run :build
+```
+
+Or perhaps running a target based on a query:
+
+```shell
+$ moon run :build --query "language=[javascript, typescript]"
+```
+
+Jump to the official [`moon run` documentation](./commands/run) for more examples!
+
 ## Next steps
 
 <NextSteps
   links={[
     { icon: 'moon', label: 'Migrate to moon', url: './migrate-to-moon' },
     { icon: 'task', label: 'Learn about tasks', url: './concepts/task' },
+    {
+      icon: 'run-task',
+      label: (
+        <>
+          Learn about <code>moon run</code>
+        </>
+      ),
+      url: './commands/run',
+    },
   ]}
 />

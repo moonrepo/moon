@@ -18,7 +18,7 @@ pub enum DependencyScope {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
-#[schemars(default)]
+#[schemars(default, deny_unknown_fields)]
 pub struct DependencyConfig {
     pub id: String,
     pub scope: DependencyScope,

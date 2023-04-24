@@ -72,7 +72,7 @@ pub enum TaskCommandArgs {
 // for structs nested within collections. Primarily hash maps.
 #[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct TaskConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub command: Option<TaskCommandArgs>,

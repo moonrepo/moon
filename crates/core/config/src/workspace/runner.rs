@@ -29,7 +29,7 @@ fn validate_archivable_targets(list: &[String]) -> Result<(), ValidationError> {
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
-#[serde(default, rename_all = "camelCase")]
+#[serde(default, deny_unknown_fields, rename_all = "camelCase")]
 pub struct RunnerConfig {
     #[serde(skip_serializing_if = "is_default")]
     #[validate(custom = "validate_archivable_targets")]

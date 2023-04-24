@@ -100,7 +100,7 @@ pub struct YarnConfig {
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
-#[serde(default, rename_all = "camelCase")]
+#[serde(default, deny_unknown_fields, rename_all = "camelCase")]
 pub struct NodeConfig {
     #[serde(skip_serializing_if = "is_default_true")]
     pub add_engines_constraint: bool,

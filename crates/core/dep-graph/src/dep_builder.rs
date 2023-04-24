@@ -26,7 +26,7 @@ pub struct DepGraphBuilder<'ws> {
     indices: IndicesType,
     platforms: &'ws PlatformManager,
     project_graph: &'ws ProjectGraph,
-    queried_projects: Vec<&'ws Project>,
+    queried_projects: Option<Vec<&'ws Project>>,
     runtimes: FxHashMap<String, RuntimePair>,
 }
 
@@ -39,7 +39,7 @@ impl<'ws> DepGraphBuilder<'ws> {
             indices: FxHashMap::default(),
             platforms,
             project_graph,
-            queried_projects: vec![],
+            queried_projects: None,
             runtimes: FxHashMap::default(),
         }
     }
@@ -57,7 +57,7 @@ impl<'ws> DepGraphBuilder<'ws> {
 
         let query = build_query(input)?;
 
-        self.queried_projects = self.project_graph.query(&query)?;
+        self.queried_projects = Some(self.project_graph.query(&query)?);
 
         Ok(())
     }
@@ -212,10 +212,10 @@ impl<'ws> DepGraphBuilder<'ws> {
             TargetProjectScope::All => {
                 let mut projects = vec![];
 
-                if self.queried_projects.is_empty() {
-                    projects.extend(self.project_graph.get_all()?);
+                if let Some(queried_projects) = &self.queried_projects {
+                    projects.extend(queried_projects);
                 } else {
-                    projects.extend(&self.queried_projects);
+                    projects.extend(self.project_graph.get_all()?);
                 };
 
                 for project in projects {

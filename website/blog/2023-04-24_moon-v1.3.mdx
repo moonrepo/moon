@@ -1,9 +1,9 @@
 ---
 slug: moon-v1.3
-title: moon v1.3 - Run advanced targets and an official proto plugin
+title: moon v1.3 - Advanced run targeting and an official proto plugin
 authors: [milesj]
-tags: [query, lang, proto, schema, toml]
-# image: ./img/moon/v1.3.png
+tags: [query, lang, proto, schema, toml, target]
+image: ./img/moon/v1.3.png
 ---
 
 After many months of design and development, we're finally introducing MQL, our own unique query
@@ -22,6 +22,7 @@ wasn't powerful enough, as it couldn't run the following types of scenarios:
 - Run a target based on project file system path.
 - Run a target in projects with a matching tag.
 - Run a target in projects that match a keyword.
+- Run a target in projects based on AND or OR conditions.
 - Or a combination of these.
 - And many more!
 
@@ -81,3 +82,4 @@ changes.
 
 - Upgraded to proto v0.7.
 - Improved accuracy of our globbing utilities, especially around dotfiles/dotfolders.
+- Updated config loading to be strict and error on unknown fields for non-root fields.

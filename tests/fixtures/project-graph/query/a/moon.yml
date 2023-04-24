@@ -10,5 +10,5 @@ tasks:
     local: true
   build:
     command: build
-    output: [dist]
+    outputs: [dist]
     platform: node

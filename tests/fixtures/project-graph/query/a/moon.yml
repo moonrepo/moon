@@ -1,0 +1,14 @@
+language: javascript
+type: application
+
+tags: [one]
+
+tasks:
+  dev:
+    command: dev
+    platform: node
+    local: true
+  build:
+    command: build
+    output: [dist]
+    platform: node

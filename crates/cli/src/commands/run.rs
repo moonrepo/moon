@@ -20,10 +20,11 @@ pub struct RunOptions {
     pub dependents: bool,
     pub force: bool,
     pub interactive: bool,
-    pub status: Vec<TouchedStatus>,
     pub passthrough: Vec<String>,
     pub profile: Option<ProfileType>,
+    pub query: Option<String>,
     pub remote: bool,
+    pub status: Vec<TouchedStatus>,
     pub update_cache: bool,
 }
 
@@ -66,6 +67,10 @@ pub async fn run_target(
     // Generate a dependency graph for all the targets that need to be ran
     let mut dep_builder = build_dep_graph(&workspace, &project_graph);
 
+    if let Some(query_input) = &options.query {
+        dep_builder.set_query(query_input)?;
+    }
+
     // Run targets, optionally based on affected files
     let primary_targets = dep_builder.run_targets_by_id(
         target_ids,
@@ -91,6 +96,10 @@ pub async fn run_target(
             );
         } else {
             println!("No tasks found for target(s) {targets_list}");
+        }
+
+        if let Some(query_input) = &options.query {
+            println!("Using query {}", color::shell(query_input));
         }
 
         return Ok(());

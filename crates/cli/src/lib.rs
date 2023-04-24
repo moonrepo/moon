@@ -271,16 +271,17 @@ pub async fn run_cli() {
             }
         },
         Commands::Run {
-            targets,
             affected,
             dependents,
             force,
             interactive,
-            update_cache,
-            status,
             passthrough,
             profile,
+            query,
             remote,
+            status,
+            targets,
+            update_cache,
         } => {
             run(
                 &targets,
@@ -290,10 +291,11 @@ pub async fn run_cli() {
                     dependents,
                     force,
                     interactive,
-                    status,
                     passthrough,
                     profile,
+                    query,
                     remote,
+                    status,
                     update_cache,
                 },
             )

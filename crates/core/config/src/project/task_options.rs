@@ -70,7 +70,7 @@ pub enum TaskOutputStyle {
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
-#[serde(default, rename_all = "camelCase")]
+#[serde(default, deny_unknown_fields, rename_all = "camelCase")]
 pub struct TaskOptionsConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_affected_files")]

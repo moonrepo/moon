@@ -9,7 +9,7 @@ use validator::Validate;
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct ProjectWorkspaceInheritedTasksConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub exclude: Option<Vec<TaskID>>,
@@ -23,7 +23,7 @@ pub struct ProjectWorkspaceInheritedTasksConfig {
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
-#[serde(default, rename_all = "camelCase")]
+#[serde(default, deny_unknown_fields, rename_all = "camelCase")]
 pub struct ProjectWorkspaceConfig {
     #[serde(skip_serializing_if = "is_default")]
     #[validate]

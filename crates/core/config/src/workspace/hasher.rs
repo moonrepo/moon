@@ -21,7 +21,7 @@ pub enum HasherWalkStrategy {
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
-#[serde(default, rename_all = "camelCase")]
+#[serde(default, deny_unknown_fields, rename_all = "camelCase")]
 pub struct HasherConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub batch_size: Option<u16>,

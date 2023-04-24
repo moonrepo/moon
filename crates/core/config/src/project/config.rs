@@ -119,6 +119,7 @@ pub enum ProjectType {
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
+#[serde(deny_unknown_fields)]
 pub struct ProjectMetadataConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,

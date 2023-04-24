@@ -1,0 +1,8 @@
+language: rust
+type: tool
+
+tags: [three, one]
+
+tasks:
+  test:
+    command: test

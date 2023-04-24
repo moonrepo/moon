@@ -1,6 +1,6 @@
 use moon::{generate_project_graph, load_workspace_from};
 use moon_config::{WorkspaceConfig, WorkspaceProjects};
-use moon_project::{ProjectDependency, ProjectDependencySource};
+use moon_project::{Project, ProjectDependency, ProjectDependencySource};
 use moon_project_graph::ProjectGraph;
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, get_project_graph_aliases_fixture_configs, Sandbox,
@@ -143,6 +143,21 @@ where
     );
 
     setup(&sandbox);
+
+    let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+    let graph = generate_project_graph(&mut workspace).await.unwrap();
+
+    (graph, sandbox)
+}
+
+async fn get_queries_graph() -> (ProjectGraph, Sandbox) {
+    let workspace_config = WorkspaceConfig {
+        projects: WorkspaceProjects::Globs(vec!["*".into()]),
+        ..WorkspaceConfig::default()
+    };
+
+    let sandbox =
+        create_sandbox_with_config("project-graph/query", Some(&workspace_config), None, None);
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
     let graph = generate_project_graph(&mut workspace).await.unwrap();
@@ -774,5 +789,248 @@ mod tag_constraints {
             );
         })
         .await;
+    }
+}
+
+mod query {
+    use super::*;
+    use moon_config::{PlatformType, ProjectLanguage, ProjectType, TaskType};
+    use moon_query::{ComparisonOperator, Condition, Criteria, Field, LogicalOperator};
+
+    fn get_ids(projects: &[&Project]) -> Vec<String> {
+        let mut ids = projects.iter().map(|p| p.id.clone()).collect::<Vec<_>>();
+        ids.sort();
+        ids
+    }
+
+    #[tokio::test]
+    async fn by_language() {
+        let (graph, _sandbox) = get_queries_graph().await;
+
+        let projects = graph
+            .query(&Criteria {
+                conditions: vec![Condition::Field {
+                    field: Field::Language(vec![
+                        ProjectLanguage::TypeScript,
+                        ProjectLanguage::Rust,
+                    ]),
+                    op: ComparisonOperator::NotEqual,
+                }],
+                ..Criteria::default()
+            })
+            .unwrap();
+
+        assert_eq!(get_ids(&projects), vec!["a", "d"]);
+    }
+
+    #[tokio::test]
+    async fn by_project() {
+        let (graph, _sandbox) = get_queries_graph().await;
+
+        let projects = graph
+            .query(&Criteria {
+                conditions: vec![Condition::Field {
+                    field: Field::Project(vec!["{b,d}".into()]),
+                    op: ComparisonOperator::Like,
+                }],
+                ..Criteria::default()
+            })
+            .unwrap();
+
+        assert_eq!(get_ids(&projects), vec!["b", "d"]);
+    }
+
+    #[tokio::test]
+    async fn by_project_type() {
+        let (graph, _sandbox) = get_queries_graph().await;
+
+        let projects = graph
+            .query(&Criteria {
+                conditions: vec![Condition::Field {
+                    field: Field::ProjectType(vec![ProjectType::Library]),
+                    op: ComparisonOperator::NotEqual,
+                }],
+                ..Criteria::default()
+            })
+            .unwrap();
+
+        assert_eq!(get_ids(&projects), vec!["a", "c"]);
+    }
+
+    #[tokio::test]
+    async fn by_project_source() {
+        let (graph, _sandbox) = get_queries_graph().await;
+
+        let projects = graph
+            .query(&Criteria {
+                conditions: vec![Condition::Field {
+                    field: Field::ProjectSource(vec!["a".into()]),
+                    op: ComparisonOperator::Like,
+                }],
+                ..Criteria::default()
+            })
+            .unwrap();
+
+        assert_eq!(get_ids(&projects), vec!["a"]);
+    }
+
+    #[tokio::test]
+    async fn by_tag() {
+        let (graph, _sandbox) = get_queries_graph().await;
+
+        let projects = graph
+            .query(&Criteria {
+                conditions: vec![Condition::Field {
+                    field: Field::Tag(vec!["three".into(), "five".into()]),
+                    op: ComparisonOperator::Equal,
+                }],
+                ..Criteria::default()
+            })
+            .unwrap();
+
+        assert_eq!(get_ids(&projects), vec!["b", "c"]);
+    }
+
+    #[tokio::test]
+    async fn by_task() {
+        let (graph, _sandbox) = get_queries_graph().await;
+
+        let projects = graph
+            .query(&Criteria {
+                conditions: vec![Condition::Field {
+                    field: Field::Task(vec!["test".into(), "build".into()]),
+                    op: ComparisonOperator::Equal,
+                }],
+                ..Criteria::default()
+            })
+            .unwrap();
+
+        assert_eq!(get_ids(&projects), vec!["a", "c", "d"]);
+    }
+
+    #[tokio::test]
+    async fn by_task_platform() {
+        let (graph, _sandbox) = get_queries_graph().await;
+
+        let projects = graph
+            .query(&Criteria {
+                conditions: vec![Condition::Field {
+                    field: Field::TaskPlatform(vec![PlatformType::Node]),
+                    op: ComparisonOperator::Equal,
+                }],
+                ..Criteria::default()
+            })
+            .unwrap();
+
+        assert_eq!(get_ids(&projects), vec!["a", "b"]);
+
+        let projects = graph
+            .query(&Criteria {
+                conditions: vec![Condition::Field {
+                    field: Field::TaskPlatform(vec![PlatformType::System]),
+                    op: ComparisonOperator::Equal,
+                }],
+                ..Criteria::default()
+            })
+            .unwrap();
+
+        assert_eq!(get_ids(&projects), vec!["c"]);
+    }
+
+    #[tokio::test]
+    async fn by_task_type() {
+        let (graph, _sandbox) = get_queries_graph().await;
+
+        let projects = graph
+            .query(&Criteria {
+                conditions: vec![Condition::Field {
+                    field: Field::TaskType(vec![TaskType::Run]),
+                    op: ComparisonOperator::Equal,
+                }],
+                ..Criteria::default()
+            })
+            .unwrap();
+
+        assert_eq!(get_ids(&projects), vec!["a"]);
+    }
+
+    #[tokio::test]
+    async fn with_and_conditions() {
+        let (graph, _sandbox) = get_queries_graph().await;
+
+        let projects = graph
+            .query(&Criteria {
+                op: LogicalOperator::And,
+                conditions: vec![
+                    Condition::Field {
+                        field: Field::Task(vec!["build".into()]),
+                        op: ComparisonOperator::Equal,
+                    },
+                    Condition::Field {
+                        field: Field::TaskPlatform(vec![PlatformType::Deno]),
+                        op: ComparisonOperator::Equal,
+                    },
+                ],
+            })
+            .unwrap();
+
+        assert_eq!(get_ids(&projects), vec!["d"]);
+    }
+
+    #[tokio::test]
+    async fn with_or_conditions() {
+        let (graph, _sandbox) = get_queries_graph().await;
+
+        let projects = graph
+            .query(&Criteria {
+                op: LogicalOperator::Or,
+                conditions: vec![
+                    Condition::Field {
+                        field: Field::Language(vec![ProjectLanguage::JavaScript]),
+                        op: ComparisonOperator::Equal,
+                    },
+                    Condition::Field {
+                        field: Field::Language(vec![ProjectLanguage::TypeScript]),
+                        op: ComparisonOperator::Equal,
+                    },
+                ],
+            })
+            .unwrap();
+
+        assert_eq!(get_ids(&projects), vec!["a", "b"]);
+    }
+
+    #[tokio::test]
+    async fn with_nested_conditions() {
+        let (graph, _sandbox) = get_queries_graph().await;
+
+        let projects = graph
+            .query(&Criteria {
+                op: LogicalOperator::And,
+                conditions: vec![
+                    Condition::Field {
+                        field: Field::ProjectType(vec![ProjectType::Library]),
+                        op: ComparisonOperator::Equal,
+                    },
+                    Condition::Criteria {
+                        criteria: Criteria {
+                            op: LogicalOperator::Or,
+                            conditions: vec![
+                                Condition::Field {
+                                    field: Field::TaskType(vec![TaskType::Build]),
+                                    op: ComparisonOperator::Equal,
+                                },
+                                Condition::Field {
+                                    field: Field::Tag(vec!["three".into()]),
+                                    op: ComparisonOperator::Equal,
+                                },
+                            ],
+                        },
+                    },
+                ],
+            })
+            .unwrap();
+
+        assert_eq!(get_ids(&projects), vec!["b", "d"]);
     }
 }

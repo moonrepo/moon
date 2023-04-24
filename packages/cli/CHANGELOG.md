@@ -4,7 +4,9 @@
 
 #### 🚀 Updates
 
-- Introducing MQL, a custom query language for running advanced commands and functionality.
+- Introducing MQL, a custom query language for running advanced filters on the project graph.
+- Added a `--query` option to the `moon run` command, allowing for advanced targeting.
+- Updated config loading to be strict and error on unknown fields for non-root fields.
 
 #### ⚙️ Internal
 

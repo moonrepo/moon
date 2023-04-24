@@ -11,7 +11,7 @@ fn validate_node_version(value: &str) -> Result<(), ValidationError> {
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct ProjectToolchainNodeConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_node_version")]
@@ -20,7 +20,7 @@ pub struct ProjectToolchainNodeConfig {
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
-#[serde(default, rename_all = "camelCase")]
+#[serde(default, deny_unknown_fields, rename_all = "camelCase")]
 pub struct ProjectToolchainTypeScriptConfig {
     #[serde(skip_serializing_if = "is_default")]
     pub disabled: bool,
@@ -37,7 +37,7 @@ pub struct ProjectToolchainTypeScriptConfig {
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
-#[serde(default, rename_all = "camelCase")]
+#[serde(default, deny_unknown_fields, rename_all = "camelCase")]
 pub struct ProjectToolchainConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate]

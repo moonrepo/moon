@@ -3,7 +3,7 @@ use moon_logger::{debug, warn};
 use moon_node_lang::package_json::{PackageJson, ScriptsSet};
 use moon_target::Target;
 use moon_task::{PlatformType, TaskError, TaskID};
-use moon_utils::regex::{UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
+use moon_utils::regex::{ID_CLEAN, UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
 use moon_utils::{process, regex, string_vec};
 use once_cell::sync::Lazy;
 use rustc_hash::FxHashMap;
@@ -63,9 +63,6 @@ static INVALID_PIPE: Lazy<regex::Regex> = Lazy::new(|| regex::create_regex(r#"\s
 static INVALID_OPERATOR: Lazy<regex::Regex> =
     Lazy::new(|| regex::create_regex(r#"\s(\|\||;;)\s"#).unwrap());
 
-static TASK_ID_CHARS: Lazy<regex::Regex> =
-    Lazy::new(|| regex::create_regex(r#"[^a-zA-Z0-9-_]+"#).unwrap());
-
 fn is_bash_script(arg: &str) -> bool {
     arg.ends_with(".sh")
 }
@@ -121,7 +118,7 @@ fn clean_output_path(target_id: &str, output: &str) -> Result<String, TaskError>
 }
 
 fn clean_script_name(name: &str) -> String {
-    TASK_ID_CHARS.replace_all(name, "-").to_string()
+    ID_CLEAN.replace_all(name, "-").to_string()
 }
 
 fn detect_platform_type(command: &str) -> PlatformType {

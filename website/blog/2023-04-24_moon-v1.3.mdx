@@ -15,7 +15,7 @@ language!
 
 Our [`moon run`](/docs/commands/run) command is pretty powerful. It allows you to run targets in
 one, many, or all projects. It also supports running multiple targets in parallel. However, it
-wasn't powerful enough, as it couldn't run the following scenarios:
+wasn't powerful enough, as it couldn't run the following types of scenarios:
 
 - Run a target in projects of a specific language.
 - Run a target in libraries or applications.
@@ -28,7 +28,7 @@ wasn't powerful enough, as it couldn't run the following scenarios:
 Supporting all of these scenarios through CLI arguments just feels like bad design, and would result
 in a poor developer experience. There had to be a better way to support this! So we set out to solve
 this problem, and after much thought, we're stoked to introduce
-[MQL, a unique query language](/docs/concepts/query-lang).
+[MQL, a query language unique to moon](/docs/concepts/query-lang).
 
 With MQL, you can now run scenarios like "I want to build all Node.js libraries", or "I want to lint
 and test all Rust projects". Simply pass an unscoped target and a query to the `run` command:
@@ -38,6 +38,9 @@ $ moon run :build --query "taskPlatform=node && projectType=library"
 
 $ moon run :lint :test --query "language=rust"
 ```
+
+This is only the first iteration of MQL and it's already quite powerful. Expect additional fields,
+features, and functionality in the future!
 
 ## Plugin support for proto
 

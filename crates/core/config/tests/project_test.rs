@@ -589,7 +589,6 @@ project:
                 super::CONFIG_PROJECT_FILENAME,
                 r#"
 project:
-    type: 'library'
     name: ''
     description: ''
     owner: ''

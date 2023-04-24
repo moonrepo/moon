@@ -1,6 +1,5 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 173
 expression: assert.output_standardized()
 ---
 
@@ -8,7 +7,7 @@ expression: assert.output_standardized()
 
 Failed to validate base/moon.yml configuration file.
 
-  ▪ missing field `description` for key "project.project" in base/moon.yml YAML Extended file
+  ▪ unknown field: found `type`, expected `one of `name`, `description`, `owner`, `maintainers`, `channel`` for key "project.project.type" in base/moon.yml YAML Extended file
 
 
 

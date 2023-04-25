@@ -8,6 +8,10 @@
   - Would attempt to include deleted files from `git status`, which would log a warning.
   - Would attempt to hash directories for root-level projects, which would log a warning.
 
+#### ⚙️ Internal
+
+- Upgraded to proto v0.7.2.
+
 ## 1.3.0
 
 #### 🚀 Updates
@@ -23,6 +27,7 @@
 #### ⚙️ Internal
 
 - Updated Rust to v1.69.
+- Upgraded to proto v0.7.
 - Improved accuracy of our globbing utilities, especially around dotfiles/dotfolders.
 
 ## 1.2.2

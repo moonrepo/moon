@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue during input hashing that would attempt to include deleted files from `git status`,
+  which would log a warning.
+
 ## 1.3.0
 
 #### 🚀 Updates

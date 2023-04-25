@@ -142,7 +142,13 @@ pub async fn collect_and_hash_inputs(
     // Also run this LAST as it should take highest precedence!
     if !is_ci() {
         for local_file in vcs.get_touched_files().await?.all {
-            files_to_hash.insert(workspace_root.join(local_file));
+            let local_file = workspace_root.join(local_file);
+
+            // Deleted files are listed in `git status` but are
+            // not valid inputs, so avoid hashing them!
+            if local_file.exists() {
+                files_to_hash.insert(local_file);
+            }
         }
     }
 

@@ -112,7 +112,7 @@ pub async fn collect_and_hash_inputs(
     if !task.input_globs.is_empty() {
         // Collect inputs by walking and globbing the file system
         if use_globs {
-            files_to_hash.extend(glob::walk(workspace_root, &task.input_globs)?);
+            files_to_hash.extend(glob::walk_files(workspace_root, &task.input_globs)?);
 
             // Collect inputs by querying VCS
         } else {
@@ -133,7 +133,7 @@ pub async fn collect_and_hash_inputs(
                 .collect::<Vec<_>>();
 
             if !workspace_globs.is_empty() {
-                files_to_hash.extend(glob::walk(workspace_root, workspace_globs)?);
+                files_to_hash.extend(glob::walk_files(workspace_root, workspace_globs)?);
             }
         }
     }

@@ -1,14 +1,7 @@
-use miette::Diagnostic;
-use starbase_styles::{Style, Stylize};
-use thiserror::Error;
+use moon_common::{Diagnostic, Error, Style, Stylize};
 
-#[derive(Error, Debug, Diagnostic)]
+#[derive(Error, Debug)]
 pub enum TargetError {
-    #[error(
-        "Target {} requires fully-qualified scope and task identifiers, found {}.", .0.style(Style::Label), .1.style(Style::Label)
-    )]
-    IdOnly(String, String),
-
     #[error(
         "Invalid target {}, must be in the format of \"scope:task\".", .0.style(Style::Label)
     )]
@@ -28,3 +21,5 @@ pub enum TargetError {
     #[error("Self scope (~:) is not supported in run contexts.")]
     NoSelfInRunContext,
 }
+
+impl Diagnostic for TargetError {}

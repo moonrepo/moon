@@ -8,7 +8,7 @@ use moon_action_context::ActionContext;
 use moon_emitter::{Emitter, Event};
 use moon_logger::trace;
 use moon_project_graph::ProjectGraph;
-use moon_target::Target;
+use moon_target2::Target;
 use moon_workspace::Workspace;
 use starbase_styles::color;
 use std::sync::Arc;
@@ -150,7 +150,7 @@ pub async fn process_action(
         // Run a task within a project
         ActionNode::RunTarget(runtime, target_id) => {
             let target = Target::parse(target_id)?;
-            let project = local_project_graph.get(target.project_id.as_ref().unwrap())?;
+            let project = local_project_graph.get(target.scope_id.as_ref().unwrap())?;
 
             local_emitter
                 .emit(Event::TargetRunning { target: &target })

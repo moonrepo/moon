@@ -3,7 +3,7 @@ use crate::{
     helpers::AnyError,
 };
 use moon::{build_dep_graph, generate_project_graph, load_workspace};
-use moon_target::Target;
+use moon_target2::Target;
 
 pub async fn dep_graph(target_id: Option<String>, dot: bool, json: bool) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;

@@ -6,7 +6,7 @@ use moon_logger::debug;
 use moon_platform::Runtime;
 use moon_project::Project;
 use moon_runner::Runner;
-use moon_target::Target;
+use moon_target2::Target;
 use moon_workspace::Workspace;
 use starbase_styles::color;
 use std::env;

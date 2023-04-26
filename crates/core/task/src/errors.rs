@@ -1,5 +1,5 @@
 use moon_error::MoonError;
-use moon_target::TargetError;
+use moon_target2::TargetError;
 use moon_utils::process::ArgsParseError;
 use starbase_styles::{Style, Stylize};
 use starbase_utils::glob::GlobError;

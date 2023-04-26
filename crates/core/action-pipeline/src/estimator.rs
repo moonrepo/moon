@@ -1,5 +1,5 @@
 use moon_action::{Action, ActionNode, ActionStatus};
-use moon_target::Target;
+use moon_target2::Target;
 use rustc_hash::FxHashMap;
 use serde::Serialize;
 use std::time::Duration;

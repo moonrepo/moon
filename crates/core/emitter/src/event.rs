@@ -3,7 +3,7 @@ use moon_action_context::ActionContext;
 use moon_cache::RunTargetState;
 use moon_platform_runtime::Runtime;
 use moon_project::Project;
-use moon_target::Target;
+use moon_target2::Target;
 use moon_task::Task;
 use serde::Serialize;
 use std::{path::PathBuf, time::Duration};

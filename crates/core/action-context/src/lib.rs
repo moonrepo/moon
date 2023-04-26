@@ -1,5 +1,5 @@
 use clap::ValueEnum;
-use moon_target::Target;
+use moon_target2::Target;
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;

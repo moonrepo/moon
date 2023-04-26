@@ -1,6 +1,6 @@
 use moon_error::MoonError;
 use moon_project::ProjectError;
-use moon_target::TargetError;
+use moon_target2::TargetError;
 use moon_task::TaskError;
 use moon_tool::ToolError;
 use moon_workspace::{VcsError, WorkspaceError};

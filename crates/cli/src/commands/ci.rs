@@ -9,7 +9,7 @@ use moon_dep_graph::{DepGraph, DepGraphError};
 use moon_logger::debug;
 use moon_project::ProjectError;
 use moon_project_graph::ProjectGraph;
-use moon_target::Target;
+use moon_target2::Target;
 use moon_task::TouchedFilePaths;
 use moon_terminal::safe_exit;
 use moon_workspace::{Workspace, WorkspaceError};

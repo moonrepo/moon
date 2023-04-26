@@ -7,7 +7,7 @@ use moon_config::{
 };
 use moon_error::MoonError;
 use moon_logger::{debug, trace, Logable};
-use moon_target::{Target, TargetError};
+use moon_target2::{Target, TargetError};
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
 use starbase_styles::color;

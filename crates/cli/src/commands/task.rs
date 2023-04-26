@@ -1,14 +1,14 @@
 use crate::helpers::AnyError;
 use console::Term;
 use moon::{build_project_graph, load_workspace};
-use moon_target::Target;
+use moon_target2::Target;
 use moon_terminal::{ExtendedTerm, Label};
 use starbase_styles::color;
 
 pub async fn task(id: String, json: bool) -> Result<(), AnyError> {
     let target = Target::parse(&id)?;
 
-    let Some(project_id) = target.project_id else {
+    let Some(project_id) = target.scope_id else {
       return Err("A project ID is required.".into());
     };
 

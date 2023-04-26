@@ -8,7 +8,7 @@ use starbase_styles::color;
 pub async fn task(id: String, json: bool) -> Result<(), AnyError> {
     let target = Target::parse(&id)?;
 
-    let Some(project_id) = target.project_id else {
+    let Some(project_id) = target.scope_id else {
       return Err("A project ID is required.".into());
     };
 

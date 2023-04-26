@@ -280,9 +280,9 @@ runner:
 
 <HeadingApiLink to="/api/types/interface/RunnerConfig#archivableTargets" />
 
-Defines a list of [targets](../concepts/target), with or without a project scope, that will be
-cached and archived within the runner. Tasks that produce [outputs](./project#outputs) are
-automatically archived, and do not need to be defined here. Defaults to an empty list.
+Defines a list of [targets](../concepts/target), with or without scope, that will be cached and
+archived within the runner. Tasks that produce [outputs](./project#outputs) are automatically
+archived, and do not need to be defined here. Defaults to an empty list.
 
 ```yaml title=".moon/workspace.yml" {2-4}
 runner:

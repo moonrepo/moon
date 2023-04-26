@@ -2,8 +2,8 @@
 title: Targets
 ---
 
-A target is an identifier that pairs a [project](./project) to one of its [tasks](./task), in the
-format of `project_name_or_alias:task_name`.
+A target is a compound identifier that pairs a [scope](#scope) to a [task](./task), separated by a
+`:`, in the format of `scope:task`.
 
 Targets are used by terminal commands...
 
@@ -21,23 +21,26 @@ tasks:
       - 'designSystem:build'
 ```
 
-## Project scopes
+## Scopes
 
-While a target typically pairs project and task names, we also support advanced targets through a
-concept known as project scopes. Scopes allow us to easily define targets with external or many
-sources, but _are not available in all contexts_.
+### Project
+
+The most common scope is the project scope, which requires the name of a project, as defined in
+[`.moon/workspace.yml`](../config/workspace). This will run a specific task from that project.
+
+```shell
+# Run `lint` in project `app`
+$ moon run app:lint
+```
 
 ### All projects
 
 > Only available on the command line when running targets.
 
 For situations where you want to run a specific target in _all_ projects, for example `lint`ing, you
-can utilize the all projects scope by omitting the project from the target: `:lint`.
+can utilize the all projects scope by omitting the project name from the target: `:lint`.
 
 ```shell
-# Run `lint` in project `app`
-$ moon run app:lint
-
 # Run `lint` in all projects
 $ moon run :lint
 ```
@@ -78,7 +81,7 @@ tasks:
 When referring to another task within the current project, you can utilize the `~` scope, or emit
 the `~:` prefix altogether, which will be expanded to the current project's name. This is useful for
 situations where the name is unknown, for example, when configuring
-[`.moon/tasks.yml`](../config/tasks). Or if you just want a shortcut!
+[`.moon/tasks.yml`](../config/tasks), or if you just want a shortcut!
 
 ```yaml title=".moon/tasks.yml"
 # Configured as

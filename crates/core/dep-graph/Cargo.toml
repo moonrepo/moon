@@ -18,7 +18,7 @@ moon_platform = { path = "../platform" }
 moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
 moon_query = { path = "../query" }
-moon_target = { path = "../target" }
+moon_target = { path = "../../../nextgen/target" }
 moon_task = { path = "../task" }
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }

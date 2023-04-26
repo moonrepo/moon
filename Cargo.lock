@@ -2636,6 +2636,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_common"
+version = "0.1.0"
+dependencies = [
+ "miette",
+ "once_cell",
+ "regex",
+ "starbase_styles",
+ "thiserror",
+]
+
+[[package]]
 name = "moon_config"
 version = "0.1.0"
 dependencies = [
@@ -2905,7 +2916,6 @@ dependencies = [
  "moon_platform",
  "moon_project",
  "moon_project_graph",
- "moon_target",
  "moon_task",
  "moon_terminal",
  "moon_test_utils",
@@ -3149,9 +3159,10 @@ dependencies = [
 name = "moon_target"
 version = "0.1.0"
 dependencies = [
- "moon_utils",
+ "moon_common",
+ "once_cell",
+ "regex",
  "serde",
- "starbase_styles",
  "thiserror",
 ]
 

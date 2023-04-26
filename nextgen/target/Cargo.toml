@@ -4,7 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-moon_utils = { path = "../utils" }
+moon_common = { path = "../common" }
+once_cell = { workspace = true }
+regex = { workspace = true }
 serde = { workspace = true }
-starbase_styles = { workspace = true }
 thiserror = { workspace = true }

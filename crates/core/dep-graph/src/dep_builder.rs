@@ -6,7 +6,7 @@ use moon_platform::{PlatformManager, Runtime};
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
 use moon_query::build as build_query;
-use moon_target::{Target, TargetError, TargetProjectScope};
+use moon_target::{Target, TargetError, TargetScope};
 use moon_task::{Task, TouchedFilePaths};
 use petgraph::graph::NodeIndex;
 use petgraph::Graph;
@@ -183,15 +183,16 @@ impl<'ws> DepGraphBuilder<'ws> {
             color::label(&target.id),
         );
 
-        let (project_id, task_id) = target.ids()?;
-        let project = self.project_graph.get(&project_id)?;
-        let dependents = self.project_graph.get_dependents_of(project)?;
+        if let TargetScope::Project(project_id) = &target.scope {
+            let project = self.project_graph.get(project_id)?;
+            let dependents = self.project_graph.get_dependents_of(project)?;
 
-        for dependent_id in dependents {
-            let dep_project = self.project_graph.get(&dependent_id)?;
+            for dependent_id in dependents {
+                let dep_project = self.project_graph.get(&dependent_id)?;
 
-            if let Some(dep_task) = dep_project.tasks.get(&task_id) {
-                self.run_target(&dep_task.target, None)?;
+                if let Some(dep_task) = dep_project.tasks.get(target.task_id.as_str()) {
+                    self.run_target(&dep_task.target, None)?;
+                }
             }
         }
 
@@ -207,9 +208,9 @@ impl<'ws> DepGraphBuilder<'ws> {
         let mut inserted_targets = FxHashSet::default();
         let mut inserted_indexes = FxHashSet::default();
 
-        match &target.project {
+        match &target.scope {
             // :task
-            TargetProjectScope::All => {
+            TargetScope::All => {
                 let mut projects = vec![];
 
                 if let Some(queried_projects) = &self.queried_projects {
@@ -219,7 +220,7 @@ impl<'ws> DepGraphBuilder<'ws> {
                 };
 
                 for project in projects {
-                    if project.tasks.contains_key(&target.task_id) {
+                    if project.tasks.contains_key(target.task_id.as_str()) {
                         let all_target = Target::new(&project.id, &target.task_id)?;
 
                         if let Some(index) =
@@ -232,11 +233,11 @@ impl<'ws> DepGraphBuilder<'ws> {
                 }
             }
             // ^:task
-            TargetProjectScope::Deps => {
-                target.fail_with(TargetError::NoProjectDepsInRunContext)?;
+            TargetScope::Deps => {
+                return Err(DepGraphError::Target(TargetError::NoDepsInRunContext));
             }
             // project:task
-            TargetProjectScope::Id(project_id) => {
+            TargetScope::Project(project_id) => {
                 let project = self.project_graph.get(project_id)?;
                 let task = project.get_task(&target.task_id)?;
 
@@ -247,9 +248,11 @@ impl<'ws> DepGraphBuilder<'ws> {
                     inserted_indexes.insert(index);
                 }
             }
+            // #tag:task
+            TargetScope::Tag(_) => todo!(),
             // ~:task
-            TargetProjectScope::OwnSelf => {
-                target.fail_with(TargetError::NoProjectSelfInRunContext)?;
+            TargetScope::OwnSelf => {
+                return Err(DepGraphError::Target(TargetError::NoSelfInRunContext));
             }
         };
 

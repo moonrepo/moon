@@ -15,7 +15,7 @@ pub static ID_PATTERN: Lazy<regex::Regex> =
 pub static TARGET_PATTERN: Lazy<regex::Regex> = Lazy::new(|| {
     // Only target projects support `@` because of Node.js,
     // we don't want to support it in regular IDs!
-    create_regex( "^(?P<project>(?:[A-Za-z@]{1}[0-9A-Za-z/\\._-]*|\\^|~))?:(?P<task>[A-Za-z]{1}[0-9A-Za-z/\\._-]*)$").unwrap()
+    create_regex("^(?P<project>(?:[A-Za-z@]{1}[0-9A-Za-z/\\._-]*|\\^|~))?:(?P<task>[A-Za-z]{1}[0-9A-Za-z/\\._-]*)$").unwrap()
 });
 
 // Input values

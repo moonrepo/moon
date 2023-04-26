@@ -13,7 +13,7 @@ use moon_hasher::{convert_paths_to_strings, to_hash};
 use moon_logger::{debug, map_list, trace, warn, Logable};
 use moon_platform_detector::{detect_project_language, detect_task_platform};
 use moon_project::{Project, ProjectDependency, ProjectDependencySource, ProjectError};
-use moon_target::{Target, TargetError, TargetProjectScope};
+use moon_target::{Target, TargetError, TargetScope};
 use moon_task::{Task, TaskError, TaskFlag};
 use moon_utils::path::expand_to_workspace_relative;
 use moon_utils::regex::{ENV_VAR, ENV_VAR_SUBSTITUTE};
@@ -324,34 +324,38 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         };
 
         for target in &task.deps {
-            match &target.project {
+            match &target.scope {
                 // ^:task
-                TargetProjectScope::Deps => {
+                TargetScope::Deps => {
                     for dep_id in project.get_dependency_ids() {
                         let dep_index = self.indices.get(dep_id).unwrap();
                         let dep_project = self.graph.node_weight(*dep_index).unwrap();
 
-                        if let Some(dep_task) = dep_project.tasks.get(&target.task_id) {
+                        if let Some(dep_task) = dep_project.tasks.get(target.task_id.as_str()) {
                             push_target(dep_task.target.clone());
                         }
                     }
                 }
                 // ~:task
-                TargetProjectScope::OwnSelf => {
+                TargetScope::OwnSelf => {
                     if target.task_id != task.id {
                         push_target(Target::new(&project.id, &target.task_id)?);
                     }
                 }
                 // project:task
-                TargetProjectScope::Id(project_id) => {
+                TargetScope::Project(project_id) => {
                     if project_id == &project.id && target.task_id == task.id {
                         // Avoid circular references
                     } else {
                         push_target(target.clone());
                     }
                 }
+                // #tag:task
+                TargetScope::Tag(_) => todo!(),
                 _ => {
-                    target.fail_with(TargetError::NoProjectAllInTaskDeps(target.id.clone()))?;
+                    return Err(ProjectGraphError::Target(TargetError::NoAllInTaskDeps(
+                        target.id.clone(),
+                    )));
                 }
             };
         }

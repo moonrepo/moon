@@ -11,7 +11,7 @@ use moon_hasher::HashSet;
 use moon_logger::{debug, warn};
 use moon_platform_runtime::Runtime;
 use moon_project::Project;
-use moon_target::{Target, TargetError, TargetProjectScope};
+use moon_target::{Target, TargetError, TargetScope};
 use moon_task::{Task, TaskError, TaskOptionAffectedFiles};
 use moon_terminal::{label_checkpoint, Checkpoint};
 use moon_utils::{
@@ -379,21 +379,22 @@ impl<'a> Runner<'a> {
         for target in &self.workspace.config.runner.archivable_targets {
             let target = Target::parse(target)?;
 
-            match &target.project {
-                TargetProjectScope::All => {
+            match &target.scope {
+                TargetScope::All => {
                     if task.target.task_id == target.task_id {
                         return Ok(true);
                     }
                 }
-                TargetProjectScope::Id(project_id) => {
-                    if let Some(owner_id) = &task.target.project_id {
+                TargetScope::Project(project_id) => {
+                    if let Some(owner_id) = &task.target.scope_id {
                         if owner_id == project_id && task.target.task_id == target.task_id {
                             return Ok(true);
                         }
                     }
                 }
-                TargetProjectScope::Deps => return Err(TargetError::NoProjectDepsInRunContext),
-                TargetProjectScope::OwnSelf => return Err(TargetError::NoProjectSelfInRunContext),
+                TargetScope::Tag(_) => todo!(),
+                TargetScope::Deps => return Err(TargetError::NoDepsInRunContext),
+                TargetScope::OwnSelf => return Err(TargetError::NoSelfInRunContext),
             };
         }
 

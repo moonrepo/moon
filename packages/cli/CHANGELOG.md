@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where a `pnpm-lock.yaml` with no packages would fail to parse.
+
 ## 1.3.1
 
 #### 🐞 Fixes

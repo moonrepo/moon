@@ -6,6 +6,7 @@ interface VersionLabelProps {
 	updated?: string;
 	version: string;
 }
+
 export default function VersionLabel({ header, updated, version }: VersionLabelProps) {
 	return (
 		<Label

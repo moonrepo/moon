@@ -2,6 +2,8 @@
 title: Tasks
 ---
 
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
 Tasks are commands that are ran in the context of a [project](./project). Underneath the hood, a
 task is simply a binary or system command that is ran as a child process.
 
@@ -60,6 +62,7 @@ order, from widest scope to narrowest scope:
 - `.moon/tasks/<language>-<type>.yml` - Projects with matching [`language`][language] and
   [`type`][type] settings.
 - `.moon/tasks/tag-<name>.yml` - Projects with a matching [`tag`][tags].
+  <VersionLabel version="1.2.0" />
 
 As mentioned above, all of these files are shallow merged into a single "global tasks" configuration
 that is unique per-project. Merging **does not** utilize the [merge strategies](#merge-strategies)
@@ -79,7 +82,7 @@ TypeScript) based projects have a special lookup order using
 - `.moon/tasks/<language>.yml`
 - `.moon/tasks/<platform>-<type>.yml`
 - `.moon/tasks/<language>-<type>.yml`
-- `.moon/tasks/tag-<name>.yml`
+- `.moon/tasks/tag-<name>.yml` <VersionLabel version="1.2.0" />
 
 For example, `node.yml` would be inherited for Node.js projects, `bun-library.yml` for Bun
 libraries, and `deno-application.yml` for Deno applications. While `javascript.yml`,

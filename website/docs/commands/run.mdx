@@ -2,6 +2,8 @@
 title: run
 ---
 
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
 The `moon run` (or `moon r`) command will run one or many [targets](../concepts/target) (a task
 within a project) and all of its dependencies in topological order. Each run will incrementally
 cache each task, improving speed and development times... over time.
@@ -40,7 +42,7 @@ $ moon run :build --query "language=javascript && projectType=library"
 - `--profile <type>` - Record and [generate a profile](../guides/profile) for ran tasks.
   - Types: `cpu`, `heap`
 - `--query` - Filter projects to run targets against using
-  [a query statement](../concepts/query-lang).
+  [a query statement](../concepts/query-lang). <VersionLabel version="1.3.0" />
 - `-u`, `--updateCache` - Bypass cache and force update any existing items.
 
 #### Affected

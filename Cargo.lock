@@ -3156,6 +3156,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_target2"
+version = "0.1.0"
+dependencies = [
+ "miette",
+ "once_cell",
+ "regex",
+ "serde",
+ "starbase_styles",
+ "thiserror",
+]
+
+[[package]]
 name = "moon_task"
 version = "0.1.0"
 dependencies = [

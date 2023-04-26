@@ -2,12 +2,14 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use starbase_styles::{Style, Stylize};
 use std::{
-    borrow::Borrow,
     fmt::{self, Display},
+    ops::Deref,
+    str::FromStr,
 };
 use thiserror::Error;
 
-pub static ID_CHARS: &str = "[A-Za-z]{1}[0-9A-Za-z/\\._-]*";
+pub static ID_CHARS: &str = r"[A-Za-z]{1}[0-9A-Za-z/\._-]*";
+
 pub static ID_PATTERN: Lazy<Regex> =
     Lazy::new(|| Regex::new(&format!("^({})$", ID_CHARS)).unwrap());
 
@@ -15,7 +17,7 @@ pub static ID_PATTERN: Lazy<Regex> =
 #[error("Invalid identifier {}. May only contain alpha-numeric characters, dashes (-), slashes (/), underscores (_), and dots (.).", .0.style(Style::Id))]
 pub struct IdError(String);
 
-#[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd)]
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Id(String);
 
 impl Id {
@@ -31,6 +33,10 @@ impl Id {
 
     pub fn raw<S: AsRef<str>>(id: S) -> Id {
         Id(id.as_ref().to_owned())
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
     }
 }
 
@@ -58,24 +64,13 @@ impl AsRef<Id> for Id {
     }
 }
 
-impl Borrow<String> for Id {
-    fn borrow(&self) -> &String {
+impl Deref for Id {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
-
-// impl Borrow<Id> for Id {
-//     fn borrow(&self) -> &Id {
-//         self
-//     }
-// }
-
-impl PartialEq for Id {
-    fn eq(&self, other: &Self) -> bool {
-        self.0 == other.0
-    }
-}
-
 impl PartialEq<&str> for Id {
     fn eq(&self, other: &&str) -> bool {
         &self.0 == other
@@ -85,5 +80,13 @@ impl PartialEq<&str> for Id {
 impl PartialEq<String> for Id {
     fn eq(&self, other: &String) -> bool {
         &self.0 == other
+    }
+}
+
+impl FromStr for Id {
+    type Err = IdError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Id::new(s)
     }
 }

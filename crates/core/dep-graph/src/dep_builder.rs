@@ -190,7 +190,7 @@ impl<'ws> DepGraphBuilder<'ws> {
             for dependent_id in dependents {
                 let dep_project = self.project_graph.get(&dependent_id)?;
 
-                if let Some(dep_task) = dep_project.tasks.get(&target.task_id) {
+                if let Some(dep_task) = dep_project.tasks.get(target.task_id.as_str()) {
                     self.run_target(&dep_task.target, None)?;
                 }
             }
@@ -220,7 +220,7 @@ impl<'ws> DepGraphBuilder<'ws> {
                 };
 
                 for project in projects {
-                    if project.tasks.contains_key(&target.task_id) {
+                    if project.tasks.contains_key(target.task_id.as_str()) {
                         let all_target = Target::new(&project.id, &target.task_id)?;
 
                         if let Some(index) =

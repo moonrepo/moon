@@ -1,3 +1,4 @@
+use moon_common::Id;
 use moon_target::{Target, TargetScope};
 
 #[test]
@@ -42,7 +43,7 @@ fn format_self_scope() {
 #[test]
 fn format_project_scope() {
     assert_eq!(
-        Target::format(TargetScope::Project("foo".into()), "build").unwrap(),
+        Target::format(TargetScope::Project(Id::raw("foo")), "build").unwrap(),
         "foo:build"
     );
 }
@@ -50,7 +51,7 @@ fn format_project_scope() {
 #[test]
 fn format_tag_scope() {
     assert_eq!(
-        Target::format(TargetScope::Tag("foo".into()), "build").unwrap(),
+        Target::format(TargetScope::Tag(Id::raw("foo")), "build").unwrap(),
         "#foo:build"
     );
 }
@@ -58,7 +59,7 @@ fn format_tag_scope() {
 #[test]
 fn format_with_slashes() {
     assert_eq!(
-        Target::format(TargetScope::Project("foo/sub".into()), "build/esm").unwrap(),
+        Target::format(TargetScope::Project(Id::raw("foo/sub")), "build/esm").unwrap(),
         "foo/sub:build/esm"
     );
 }
@@ -66,7 +67,7 @@ fn format_with_slashes() {
 #[test]
 fn format_node_package() {
     assert_eq!(
-        Target::format(TargetScope::Project("@scope/foo".into()), "build").unwrap(),
+        Target::format(TargetScope::Project(Id::raw("@scope/foo")), "build").unwrap(),
         "@scope/foo:build"
     );
 }
@@ -77,10 +78,9 @@ fn parse_ids() {
         Target::parse("foo:build").unwrap(),
         Target {
             id: String::from("foo:build"),
-            scope: TargetScope::Project("foo".to_owned()),
-            scope_id: Some("foo".to_owned()),
-            task_id: "build".to_owned(),
-            // task: TargetTask::Id("build".to_owned())
+            scope: TargetScope::Project(Id::raw("foo")),
+            scope_id: Some(Id::raw("foo")),
+            task_id: Id::raw("build"),
         }
     );
 }
@@ -93,8 +93,7 @@ fn parse_deps_scope() {
             id: String::from("^:build"),
             scope: TargetScope::Deps,
             scope_id: None,
-            task_id: "build".to_owned(),
-            // task: TargetTask::Id("build".to_owned())
+            task_id: Id::raw("build"),
         }
     );
 }
@@ -119,8 +118,7 @@ fn parse_self_scope() {
             id: String::from("~:build"),
             scope: TargetScope::OwnSelf,
             scope_id: None,
-            task_id: "build".to_owned(),
-            // task: TargetTask::Id("build".to_owned())
+            task_id: Id::raw("build"),
         }
     );
 }
@@ -145,8 +143,7 @@ fn parse_all_scopes() {
             id: String::from(":build"),
             scope: TargetScope::All,
             scope_id: None,
-            task_id: "build".to_owned(),
-            // task: TargetTask::Id("build".to_owned())
+            task_id: Id::raw("build"),
         }
     );
 }
@@ -169,10 +166,9 @@ fn parse_node_package() {
         Target::parse("@scope/foo:build").unwrap(),
         Target {
             id: String::from("@scope/foo:build"),
-            scope: TargetScope::Project("@scope/foo".to_owned()),
-            scope_id: Some("@scope/foo".to_owned()),
-            task_id: "build".to_owned(),
-            // task: TargetTask::Id("build".to_owned())
+            scope: TargetScope::Project(Id::raw("@scope/foo")),
+            scope_id: Some(Id::raw("@scope/foo")),
+            task_id: Id::raw("build"),
         }
     );
 }
@@ -183,10 +179,9 @@ fn parse_slashes() {
         Target::parse("foo/sub:build/esm").unwrap(),
         Target {
             id: String::from("foo/sub:build/esm"),
-            scope: TargetScope::Project("foo/sub".to_owned()),
-            scope_id: Some("foo/sub".to_owned()),
-            task_id: "build/esm".to_owned(),
-            // task: TargetTask::Id("build".to_owned())
+            scope: TargetScope::Project(Id::raw("foo/sub")),
+            scope_id: Some(Id::raw("foo/sub")),
+            task_id: Id::raw("build/esm"),
         }
     );
 }

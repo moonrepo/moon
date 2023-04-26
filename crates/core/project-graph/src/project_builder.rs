@@ -331,7 +331,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                         let dep_index = self.indices.get(dep_id).unwrap();
                         let dep_project = self.graph.node_weight(*dep_index).unwrap();
 
-                        if let Some(dep_task) = dep_project.tasks.get(&target.task_id) {
+                        if let Some(dep_task) = dep_project.tasks.get(target.task_id.as_str()) {
                             push_target(dep_task.target.clone());
                         }
                     }

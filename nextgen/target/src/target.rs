@@ -96,7 +96,7 @@ impl Target {
             None => TargetScope::All,
         };
 
-        let task_id = Id::raw(matches.name("task").unwrap().as_str().to_owned());
+        let task_id = Id::raw(matches.name("task").unwrap().as_str());
 
         Ok(Target {
             id: target_id.to_owned(),
@@ -125,7 +125,7 @@ impl Default for Target {
             id: "~:unknown".into(),
             scope: TargetScope::OwnSelf,
             scope_id: None,
-            task_id: Id::raw("unknown".to_owned()),
+            task_id: Id::raw("unknown"),
         }
     }
 }

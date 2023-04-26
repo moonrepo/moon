@@ -5,5 +5,7 @@ edition = "2021"
 
 [dependencies]
 miette = { workspace = true }
+once_cell = { workspace = true }
+regex = { workspace = true }
 starbase_styles = { workspace = true }
 thiserror = { workspace = true }

@@ -1,12 +1,13 @@
+use moon_common::Id;
 use std::fmt::{self, Display};
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, PartialOrd)]
 pub enum TargetScope {
-    All,             // :task
-    Deps,            // ^:task
-    OwnSelf,         // ~:task
-    Project(String), // project:task
-    Tag(String),     // #tag:task
+    All,         // :task
+    Deps,        // ^:task
+    OwnSelf,     // ~:task
+    Project(Id), // project:task
+    Tag(Id),     // #tag:task
 }
 
 impl Display for TargetScope {

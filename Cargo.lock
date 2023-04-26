@@ -2640,6 +2640,8 @@ name = "moon_common"
 version = "0.1.0"
 dependencies = [
  "miette",
+ "once_cell",
+ "regex",
  "starbase_styles",
  "thiserror",
 ]
@@ -2914,7 +2916,6 @@ dependencies = [
  "moon_platform",
  "moon_project",
  "moon_project_graph",
- "moon_target",
  "moon_task",
  "moon_terminal",
  "moon_test_utils",
@@ -3162,6 +3163,7 @@ dependencies = [
  "once_cell",
  "regex",
  "serde",
+ "thiserror",
 ]
 
 [[package]]

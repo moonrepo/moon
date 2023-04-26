@@ -1,5 +1,6 @@
 use crate::errors::TargetError;
 use crate::target_scope::TargetScope;
+use moon_common::{Id, ID_CHARS};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -11,7 +12,11 @@ use std::{
 // The project scope supports `@` because of Node.js packages,
 // but we don't want to support it in regular IDs!
 pub static TARGET_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new("^(?P<scope>(?:[A-Za-z@#]{1}[0-9A-Za-z/\\._-]*|\\^|~))?:(?P<task>[A-Za-z]{1}[0-9A-Za-z/\\._-]*)$").unwrap()
+    Regex::new(&format!(
+        "^(?P<scope>(?:[A-Za-z@#]{{1}}{chars}|\\^|~))?:(?P<task>{chars})$",
+        chars = ID_CHARS
+    ))
+    .unwrap()
 });
 
 #[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
@@ -19,8 +24,8 @@ pub static TARGET_PATTERN: Lazy<Regex> = Lazy::new(|| {
 pub struct Target {
     pub id: String,
     pub scope: TargetScope,
-    pub scope_id: Option<String>,
-    pub task_id: String,
+    pub scope_id: Option<Id>,
+    pub task_id: Id,
 }
 
 impl Target {
@@ -31,13 +36,13 @@ impl Target {
     {
         let project_id = project_id.as_ref();
         let task_id = task_id.as_ref();
-        let scope = TargetScope::Project(project_id.to_owned());
+        let scope = TargetScope::Project(Id::new(project_id)?);
 
         Ok(Target {
             id: Target::format(&scope, task_id)?,
             scope,
-            scope_id: Some(project_id.to_owned()),
-            task_id: task_id.to_owned(),
+            scope_id: Some(Id::raw(project_id)),
+            task_id: Id::new(task_id)?,
         })
     }
 
@@ -51,7 +56,7 @@ impl Target {
             id: Target::format(TargetScope::OwnSelf, task_id)?,
             scope: TargetScope::OwnSelf,
             scope_id: None,
-            task_id: task_id.to_owned(),
+            task_id: Id::new(task_id)?,
         })
     }
 
@@ -80,18 +85,18 @@ impl Target {
                 "~" => TargetScope::OwnSelf,
                 id => {
                     if let Some(tag) = id.strip_prefix('#') {
-                        scope_id = Some(tag.to_owned());
-                        TargetScope::Tag(tag.to_owned())
+                        scope_id = Some(Id::raw(tag));
+                        TargetScope::Tag(Id::raw(tag))
                     } else {
-                        scope_id = Some(id.to_owned());
-                        TargetScope::Project(id.to_owned())
+                        scope_id = Some(Id::raw(id));
+                        TargetScope::Project(Id::raw(id))
                     }
                 }
             },
             None => TargetScope::All,
         };
 
-        let task_id = matches.name("task").unwrap().as_str().to_owned();
+        let task_id = Id::raw(matches.name("task").unwrap().as_str().to_owned());
 
         Ok(Target {
             id: target_id.to_owned(),
@@ -120,7 +125,7 @@ impl Default for Target {
             id: "~:unknown".into(),
             scope: TargetScope::OwnSelf,
             scope_id: None,
-            task_id: "unknown".into(),
+            task_id: Id::raw("unknown".to_owned()),
         }
     }
 }

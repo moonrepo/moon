@@ -1,4 +1,4 @@
-use moon_common::{Diagnostic, Error, Style, Stylize};
+use moon_common::{Diagnostic, Error, IdError, Style, Stylize};
 
 #[derive(Error, Debug)]
 pub enum TargetError {
@@ -20,6 +20,9 @@ pub enum TargetError {
 
     #[error("Self scope (~:) is not supported in run contexts.")]
     NoSelfInRunContext,
+
+    #[error(transparent)]
+    IdError(#[from] IdError),
 }
 
 impl Diagnostic for TargetError {}

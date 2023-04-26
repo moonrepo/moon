@@ -7,9 +7,6 @@ pub enum TargetError {
     )]
     InvalidFormat(String),
 
-    #[error("Target \":\" encountered. Wildcard scope and task not supported.")]
-    TooWild,
-
     #[error(
         "All scope (:) is not supported in task deps, for target {}.", .0.style(Style::Label)
     )]
@@ -20,6 +17,9 @@ pub enum TargetError {
 
     #[error("Self scope (~:) is not supported in run contexts.")]
     NoSelfInRunContext,
+
+    #[error("Target \":\" encountered. Wildcard scope and task not supported.")]
+    TooWild,
 
     #[error(transparent)]
     IdError(#[from] IdError),

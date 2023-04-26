@@ -8,10 +8,10 @@ use std::{
 };
 use thiserror::Error;
 
-pub static ID_CHARS: &str = r"[A-Za-z]{1}[0-9A-Za-z/\._-]*";
+pub static ID_CHARS: &str = r"[0-9A-Za-z/\._-]*";
 
 pub static ID_PATTERN: Lazy<Regex> =
-    Lazy::new(|| Regex::new(&format!("^({})$", ID_CHARS)).unwrap());
+    Lazy::new(|| Regex::new(&format!("^([A-Za-z]{{1}}{})$", ID_CHARS)).unwrap());
 
 #[derive(Error, Debug)]
 #[error("Invalid identifier {}. May only contain alpha-numeric characters, dashes (-), slashes (/), underscores (_), and dots (.).", .0.style(Style::Id))]
@@ -71,6 +71,7 @@ impl Deref for Id {
         &self.0
     }
 }
+
 impl PartialEq<&str> for Id {
     fn eq(&self, other: &&str) -> bool {
         &self.0 == other

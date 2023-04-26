@@ -13,7 +13,7 @@ use std::{
 // but we don't want to support it in regular IDs!
 pub static TARGET_PATTERN: Lazy<Regex> = Lazy::new(|| {
     Regex::new(&format!(
-        "^(?P<scope>(?:[A-Za-z@#]{{1}}{chars}|\\^|~))?:(?P<task>{chars})$",
+        r"^(?P<scope>(?:[A-Za-z@#]{{1}}{chars}|\^|~))?:(?P<task>{chars})$",
         chars = ID_CHARS
     ))
     .unwrap()

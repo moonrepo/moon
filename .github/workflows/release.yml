@@ -148,7 +148,6 @@ jobs:
         with:
           cache: yarn
           check-latest: true
-          node-version: 16
       - name: Setup toolchain
         if: ${{ matrix.setup }}
         run: ${{ matrix.setup }}
@@ -190,7 +189,6 @@ jobs:
         with:
           cache: yarn
           check-latest: true
-          node-version: 16
       - name: Install dependencies
         run: yarn install --immutable
       - uses: actions/download-artifact@v3
@@ -228,7 +226,6 @@ jobs:
         with:
           cache: yarn
           check-latest: true
-          node-version: 16
       - name: Install dependencies
         run: yarn install --immutable
       - name: Build packages

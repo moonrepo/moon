@@ -184,7 +184,7 @@ impl<'ws> DepGraphBuilder<'ws> {
         );
 
         if let TargetScope::Project(project_id) = &target.scope {
-            let project = self.project_graph.get(&project_id)?;
+            let project = self.project_graph.get(project_id)?;
             let dependents = self.project_graph.get_dependents_of(project)?;
 
             for dependent_id in dependents {

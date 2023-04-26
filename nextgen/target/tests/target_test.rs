@@ -2,14 +2,20 @@ use moon_target2::{Target, TargetScope};
 
 #[test]
 #[should_panic(expected = "InvalidFormat(\"foo$:build\")")]
-fn invalid_chars() {
+fn errors_on_invalid_chars() {
     Target::parse("foo$:build").unwrap();
 }
 
 #[test]
 #[should_panic(expected = "InvalidFormat(\"foo:@build\")")]
-fn invalid_task_no_at() {
+fn errors_on_invalid_task_no_at() {
     Target::parse("foo:@build").unwrap();
+}
+
+#[test]
+#[should_panic(expected = "TooWild")]
+fn errors_on_too_wild() {
+    Target::parse(":").unwrap();
 }
 
 #[test]
@@ -156,12 +162,6 @@ fn parse_all_scopes() {
 //         }
 //     );
 // }
-
-#[test]
-#[should_panic(expected = "TooWild")]
-fn parse_too_wild() {
-    Target::parse(":").unwrap();
-}
 
 #[test]
 fn parse_node_package() {

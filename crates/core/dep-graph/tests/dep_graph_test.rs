@@ -4,7 +4,7 @@ use moon_config::{
 };
 use moon_dep_graph::BatchedTopoSort;
 use moon_project_graph::ProjectGraph;
-use moon_target::Target;
+use moon_target2::Target;
 use moon_test_utils::{assert_snapshot, create_sandbox_with_config, Sandbox};
 use moon_utils::string_vec;
 use moon_workspace::Workspace;
@@ -317,7 +317,7 @@ mod run_target {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "Target(NoProjectDepsInRunContext)")]
+    #[should_panic(expected = "Target(NoDepsInRunContext)")]
     async fn errors_for_target_deps_scope() {
         let (workspace, projects, _sandbox) = create_project_graph().await;
 
@@ -328,7 +328,7 @@ mod run_target {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "Target(NoProjectSelfInRunContext)")]
+    #[should_panic(expected = "Target(NoSelfInRunContext)")]
     async fn errors_for_target_self_scope() {
         let (workspace, projects, _sandbox) = create_project_graph().await;
 

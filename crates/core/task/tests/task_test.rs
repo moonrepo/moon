@@ -2,7 +2,7 @@ use moon_config::{
     TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskOptionEnvFileConfig, TaskOptionsConfig,
     TaskOutputStyle,
 };
-use moon_target::Target;
+use moon_target2::Target;
 use moon_task::{Task, TaskFlag, TaskOptions};
 use moon_test_utils::create_sandbox;
 use moon_utils::string_vec;

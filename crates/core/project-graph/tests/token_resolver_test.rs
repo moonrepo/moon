@@ -1,7 +1,7 @@
 use moon_config::{InheritedTasksManager, PlatformType, ProjectLanguage, ProjectType, TaskConfig};
 use moon_project::Project;
 use moon_project_graph::{TokenContext, TokenResolver};
-use moon_target::Target;
+use moon_target2::Target;
 use moon_task::{FileGroup, Task};
 use moon_test_utils::{get_fixtures_path, predicates::prelude::*};
 use rustc_hash::FxHashMap;

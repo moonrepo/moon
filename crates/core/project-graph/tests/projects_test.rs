@@ -8,7 +8,7 @@ use moon_config::{
 };
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
-use moon_target::Target;
+use moon_target2::Target;
 use moon_test_utils::{
     create_sandbox, create_sandbox_with_config, get_tasks_fixture_configs, Sandbox,
 };
@@ -925,7 +925,7 @@ mod task_expansion {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Target(NoProjectAllInTaskDeps(\":build\"))")]
+        #[should_panic(expected = "Target(NoAllInTaskDeps(\":build\"))")]
         async fn errors_for_all_scope() {
             tasks_sandbox_with_setup(|sandbox| {
                 sandbox.create_file(

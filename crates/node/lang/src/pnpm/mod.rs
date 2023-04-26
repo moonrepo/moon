@@ -52,7 +52,7 @@ pub struct PnpmLockResolution {
 pub struct PnpmLock {
     pub lockfile_version: Value,
     pub importers: Option<FxHashMap<String, Value>>,
-    pub packages: FxHashMap<String, PnpmLockPackage>,
+    pub packages: Option<FxHashMap<String, PnpmLockPackage>>,
 
     #[serde(skip)]
     pub path: PathBuf,
@@ -63,22 +63,24 @@ pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVer
     let mut deps: LockfileDependencyVersions = FxHashMap::default();
 
     if let Some(lockfile) = PnpmLock::read(path)? {
-        for (package_name, details) in lockfile.packages {
-            let parsed_dependency = PnpmDependencyPath::parse(&package_name);
-            let entry = deps
-                .entry(parsed_dependency.name.unwrap_or_default())
-                .or_default();
+        if let Some(packages) = lockfile.packages {
+            for (package_name, details) in packages {
+                let parsed_dependency = PnpmDependencyPath::parse(&package_name);
+                let entry = deps
+                    .entry(parsed_dependency.name.unwrap_or_default())
+                    .or_default();
 
-            if let Some(ver) = details.resolution.integrity {
-                entry.push(ver.clone());
-            }
+                if let Some(ver) = details.resolution.integrity {
+                    entry.push(ver.clone());
+                }
 
-            if let Some(ver) = details.resolution.tarball {
-                entry.push(ver.clone());
-            }
+                if let Some(ver) = details.resolution.tarball {
+                    entry.push(ver.clone());
+                }
 
-            if let Some(ver) = details.resolution.commit {
-                entry.push(ver.clone());
+                if let Some(ver) = details.resolution.commit {
+                    entry.push(ver.clone());
+                }
             }
         }
     }
@@ -153,7 +155,7 @@ packages:
             PnpmLock {
                 lockfile_version: Value::Number(Number::from(5.4)),
                 importers: Some(FxHashMap::from_iter([(".".into(), Value::Mapping(Mapping::new()))])),
-                packages: FxHashMap::from_iter([(
+                packages: Some(FxHashMap::from_iter([(
                     "/@ampproject/remapping/2.2.0".into(),
                     PnpmLockPackage {
                         dev: Some(true),
@@ -213,7 +215,7 @@ packages:
                         PnpmLockResolution { commit: None,integrity: Some( "sha512-1ILtAj+z6bh1vTvaDlcT8501vmkzkVZMk2aiexJy+XWTZ+sb9B7IWedvWadIhOwwL97fiW4eMmN6SrbaHjn12A==".to_owned()), tarball: None },
                         ..PnpmLockPackage::default()
                     }
-                )]),
+                )])),
                 ..PnpmLock::default()
             }
         );
@@ -244,5 +246,10 @@ packages:
         .unwrap();
 
         let _: PnpmLock = serde_yaml::from_str(&content).unwrap();
+    }
+
+    #[test]
+    fn parses_empty_lockfile() {
+        let _: PnpmLock = serde_yaml::from_str("lockfileVersion: '6.0'").unwrap();
     }
 }

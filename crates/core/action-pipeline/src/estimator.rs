@@ -76,11 +76,14 @@ impl Estimator {
                 ActionNode::RunTarget(_, target) => {
                     let task_id = Target::parse(target).unwrap().task_id;
 
-                    if let Some(task) = tasks.get_mut(&task_id) {
+                    if let Some(task) = tasks.get_mut(task_id.as_str()) {
                         task.count += 1;
                         task.total += task_duration;
                     } else {
-                        tasks.insert(task_id, TaskEstimate::new(task_duration.to_owned()));
+                        tasks.insert(
+                            task_id.to_string(),
+                            TaskEstimate::new(task_duration.to_owned()),
+                        );
                     }
                 }
                 _ => {}

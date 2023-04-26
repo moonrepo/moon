@@ -19,7 +19,7 @@ moon_logger = { path = "../logger" }
 moon_platform_detector = { path = "../platform-detector" }
 moon_project = { path = "../project" }
 moon_query = { path = "../query" }
-moon_target = { path = "../target" }
+moon_target = { path = "../../../nextgen/target" }
 moon_task = { path = "../task" }
 moon_utils = { path = "../utils" }
 moon_vcs = { path = "../vcs" }

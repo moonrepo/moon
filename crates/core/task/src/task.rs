@@ -103,7 +103,7 @@ impl Task {
             env: cloned_config.env.unwrap_or_default(),
             flags: FxHashSet::default(),
             global_inputs: cloned_config.global_inputs,
-            id: target.task_id.clone(),
+            id: target.task_id.to_string(),
             inputs: cloned_config.inputs.unwrap_or_default(),
             input_vars: FxHashSet::default(),
             input_globs: FxHashSet::default(),

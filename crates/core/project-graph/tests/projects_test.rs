@@ -925,7 +925,7 @@ mod task_expansion {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Target(NoProjectAllInTaskDeps(\":build\"))")]
+        #[should_panic(expected = "Target(NoAllInTaskDeps(\":build\"))")]
         async fn errors_for_all_scope() {
             tasks_sandbox_with_setup(|sandbox| {
                 sandbox.create_file(

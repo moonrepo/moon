@@ -1110,7 +1110,7 @@ mod outputs {
             });
 
             assert!(predicates::str::contains(
-                "Project dependencies scope (^:) is not supported in run contexts."
+                "Dependencies scope (^:) is not supported in run contexts."
             )
             .eval(&assert.output()));
         }
@@ -1127,10 +1127,10 @@ mod outputs {
                 cmd.arg("run").arg("outputs:noOutput");
             });
 
-            assert!(predicates::str::contains(
-                "Project self scope (~:) is not supported in run contexts."
-            )
-            .eval(&assert.output()));
+            assert!(
+                predicates::str::contains("Self scope (~:) is not supported in run contexts.")
+                    .eval(&assert.output())
+            );
         }
     }
 }

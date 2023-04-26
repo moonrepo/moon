@@ -8,7 +8,7 @@ use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_error::MoonError;
 use moon_logger::{debug, trace, Logable};
 use moon_query::{Condition, Criteria, Field, LogicalOperator, Queryable};
-use moon_target2::Target;
+use moon_target::Target;
 use moon_task::{FileGroup, Task, TouchedFilePaths};
 use moon_utils::path;
 use rustc_hash::{FxHashMap, FxHashSet};

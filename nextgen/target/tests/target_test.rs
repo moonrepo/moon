@@ -1,4 +1,4 @@
-use moon_target2::{Target, TargetScope};
+use moon_target::{Target, TargetScope};
 
 #[test]
 #[should_panic(expected = "InvalidFormat(\"foo$:build\")")]

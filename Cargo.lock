@@ -2481,7 +2481,7 @@ name = "moon_action_context"
 version = "0.1.0"
 dependencies = [
  "clap 4.2.4",
- "moon_target2",
+ "moon_target",
  "rustc-hash",
  "serde",
 ]
@@ -2507,7 +2507,7 @@ dependencies = [
  "moon_project",
  "moon_project_graph",
  "moon_runner",
- "moon_target2",
+ "moon_target",
  "moon_terminal",
  "moon_test_utils",
  "moon_tool",
@@ -2609,7 +2609,7 @@ dependencies = [
  "moon_project_graph",
  "moon_query",
  "moon_system_platform",
- "moon_target2",
+ "moon_target",
  "moon_task",
  "moon_terminal",
  "moon_test_utils",
@@ -2737,7 +2737,7 @@ dependencies = [
  "moon_project",
  "moon_project_graph",
  "moon_query",
- "moon_target2",
+ "moon_target",
  "moon_task",
  "moon_test_utils",
  "moon_utils",
@@ -2761,7 +2761,7 @@ dependencies = [
  "moon_error",
  "moon_platform_runtime",
  "moon_project",
- "moon_target2",
+ "moon_target",
  "moon_task",
  "moon_test_utils",
  "moon_utils",
@@ -2905,7 +2905,7 @@ dependencies = [
  "moon_platform",
  "moon_project",
  "moon_project_graph",
- "moon_target2",
+ "moon_target",
  "moon_task",
  "moon_terminal",
  "moon_test_utils",
@@ -3019,7 +3019,7 @@ dependencies = [
  "moon_error",
  "moon_logger",
  "moon_query",
- "moon_target2",
+ "moon_target",
  "moon_task",
  "moon_test_utils",
  "moon_utils",
@@ -3046,7 +3046,7 @@ dependencies = [
  "moon_platform_detector",
  "moon_project",
  "moon_query",
- "moon_target2",
+ "moon_target",
  "moon_task",
  "moon_test_utils",
  "moon_utils",
@@ -3105,7 +3105,7 @@ dependencies = [
  "moon_logger",
  "moon_platform_runtime",
  "moon_project",
- "moon_target2",
+ "moon_target",
  "moon_task",
  "moon_terminal",
  "moon_test_utils",
@@ -3146,7 +3146,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_target2"
+name = "moon_target"
 version = "0.1.0"
 dependencies = [
  "miette",
@@ -3165,7 +3165,7 @@ dependencies = [
  "moon_config",
  "moon_error",
  "moon_logger",
- "moon_target2",
+ "moon_target",
  "moon_test_utils",
  "moon_utils",
  "once_cell",

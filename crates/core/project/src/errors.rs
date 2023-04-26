@@ -1,6 +1,6 @@
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_error::MoonError;
-use moon_target2::TargetError;
+use moon_target::TargetError;
 use moon_task::TaskError;
 use starbase_styles::{Style, Stylize};
 use std::path::PathBuf;

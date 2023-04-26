@@ -1,7 +1,7 @@
 use moon_error::MoonError;
 use moon_project::ProjectError;
 use moon_query::QueryError;
-use moon_target2::TargetError;
+use moon_target::TargetError;
 use moon_task::TaskError;
 use starbase_styles::{Style, Stylize};
 use thiserror::Error;

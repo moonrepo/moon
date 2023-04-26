@@ -11,7 +11,7 @@ use moon_hasher::HashSet;
 use moon_logger::{debug, warn};
 use moon_platform_runtime::Runtime;
 use moon_project::Project;
-use moon_target2::{Target, TargetError, TargetScope};
+use moon_target::{Target, TargetError, TargetScope};
 use moon_task::{Task, TaskError, TaskOptionAffectedFiles};
 use moon_terminal::{label_checkpoint, Checkpoint};
 use moon_utils::{

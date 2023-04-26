@@ -1,7 +1,7 @@
 use crate::helpers::AnyError;
 use console::Term;
 use moon::{build_project_graph, load_workspace};
-use moon_target2::Target;
+use moon_target::Target;
 use moon_terminal::{ExtendedTerm, Label};
 use starbase_styles::color;
 

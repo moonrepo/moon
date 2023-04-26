@@ -1,7 +1,7 @@
 use moon_config::{TaskCommandArgs, TaskConfig, TasksConfigsMap};
 use moon_logger::{debug, warn};
 use moon_node_lang::package_json::{PackageJson, ScriptsSet};
-use moon_target2::{Target, TargetScope};
+use moon_target::{Target, TargetScope};
 use moon_task::{PlatformType, TaskError, TaskID};
 use moon_utils::regex::{ID_CLEAN, UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
 use moon_utils::{process, regex, string_vec};

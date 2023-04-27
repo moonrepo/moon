@@ -1,5 +1,6 @@
 ---
 title: Plugins
+toc_max_heading_level: 4
 ---
 
 proto supports a pluggable architecture as a means for consumers to integrate and manage custom
@@ -7,11 +8,22 @@ tools (languages, CLIs, etc) within proto's toolchain. It's not possible for pro
 _everything_ in core directly, so plugins are a way for the community to extend the toolchain to
 their needs.
 
-To ease the plugin development process, proto supports 2 types of plugins, a TOML based plugin, and
-a WASM based plugin (coming soon!). Both of these plugins can be
-[configured in `.prototools` and `~/.proto/config.toml` files](./config#plugins).
+## Enabling plugins
 
-## TOML plugin
+Plugins can be enabled by configuring them in
+[`.prototools` or `~/.proto/config.toml`](./config#plugins) files.
+
+```toml title=".prototools"
+[plugins]
+my-tool = "schema:https://raw.githubusercontent.com/my/tool/master/proto-plugin.toml"
+```
+
+## Creating a plugin
+
+To ease the plugin development process, proto supports 2 types of plugins, a TOML based plugin, and
+a WASM based plugin.
+
+### TOML plugin
 
 The TOML plugin is by design, very simple. It's a TOML file that describes a schema for the tool,
 how it should be installed, and how it should be invoked. Since this is a static configuration file,
@@ -27,7 +39,7 @@ name = "Protostar"
 type = "cli"
 ```
 
-### Platform variations
+#### Platform variations
 
 Native tools are often platform specific, and proto supports this by allowing you to define
 variations based on operating system using the `[platform]` section. For non-native tools, this
@@ -80,7 +92,7 @@ are available:
   customized with [`install.arch`](#downloading-and-installing).
 - `{libc}` - For Linux machines, this is the current libc implementation, either `gnu` or `musl`.
 
-### Downloading and installing
+#### Downloading and installing
 
 A schema plugin _only_ supports downloading pre-built tools, typically as an archive, and does _not_
 support building from source. The `[install]` section can be used to configure how the tool should
@@ -125,13 +137,13 @@ globals-dir = ["$PROTOSTAR_HOME/bin", "$HOME/.protostar/bin"]
 global-args = ["install", "--force", "{dependency}"]
 ```
 
-### Resolving versions
+#### Resolving versions
 
 Now that the tool can be downloaded and installed, we must configure how to resolve available
 versions. Resolving is configured through the `[resolve]` section, which supports 2 patterns to
 resolve with: Git tags, or a JSON manifest.
 
-#### Git tags
+###### Git tags
 
 To resolve a list of available versions using Git tags, the following settings are available:
 
@@ -147,7 +159,7 @@ git-url = "https://github.com/moonrepo/protostar"
 git-tag-pattern = "^@protostar/cli@((\d+)\.(\d+)\.(\d+))"
 ```
 
-#### JSON manifest
+###### JSON manifest
 
 To resolve a list of available versions using a JSON manifest, the following settings are available:
 
@@ -165,7 +177,7 @@ manifest-url = "https://someregistry.com/protostar/versions.json"
 manifest-version-key = "latest_version"
 ```
 
-### Detecting versions
+#### Detecting versions
 
 And lastly, we can configure how to [detect a version](./detection) contextually at runtime, using
 the `[detect]` setting. At this time, we only support 1 setting:
@@ -180,6 +192,6 @@ the `[detect]` setting. At this time, we only support 1 setting:
 version-files = [".protostar-version", ".protostarrc"]
 ```
 
-## WASM plugin
+### WASM plugin
 
 Coming soon!

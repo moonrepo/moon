@@ -6,6 +6,7 @@ on:
       - .cargo/config.toml
       - .github/workflows/rust.yml
       - crates/**
+      - nextgen/**
       - tests/**
       - Cargo.lock
       - Cargo.toml

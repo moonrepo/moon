@@ -21,6 +21,7 @@ RUN cargo install cargo-chef --version ^0.1
 FROM base-gnu AS plan-gnu
 COPY Cargo* .
 COPY crates crates
+COPY nextgen nextgen
 RUN cargo chef prepare --recipe-path recipe.json
 
 FROM base-gnu AS build-gnu
@@ -29,6 +30,7 @@ COPY --from=plan-gnu /app/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 COPY Cargo* .
 COPY crates crates
+COPY nextgen nextgen
 RUN cargo build --bin moon --release
 RUN target/release/moon --version
 RUN set -ex; \
@@ -68,6 +70,7 @@ RUN rustup update && rustup target add x86_64-unknown-linux-musl
 FROM base-musl-amd64 AS plan-musl-amd64
 COPY Cargo* .
 COPY crates crates
+COPY nextgen nextgen
 RUN cargo chef prepare --recipe-path recipe.json
 
 FROM base-musl-amd64 AS build-musl-amd64
@@ -76,6 +79,7 @@ COPY --from=plan-musl-amd64 /app/recipe.json recipe.json
 RUN cargo chef cook --release --target x86_64-unknown-linux-musl --recipe-path recipe.json
 COPY Cargo* .
 COPY crates crates
+COPY nextgen nextgen
 RUN cargo build --bin moon --release --target x86_64-unknown-linux-musl
 RUN target/x86_64-unknown-linux-musl/release/moon --version
 RUN mkdir -p /out && cp --parents target/*/release/moon /out/
@@ -115,6 +119,7 @@ RUN rustup update && rustup target add aarch64-unknown-linux-musl
 FROM base-musl-arm64 AS plan-musl-arm64
 COPY Cargo* .
 COPY crates crates
+COPY nextgen nextgen
 RUN cargo chef prepare --recipe-path recipe.json
 
 FROM base-musl-arm64 AS build-musl-arm64
@@ -123,6 +128,7 @@ COPY --from=plan-musl-arm64 /app/recipe.json recipe.json
 RUN cargo chef cook --release --target aarch64-unknown-linux-musl --recipe-path recipe.json
 COPY Cargo* .
 COPY crates crates
+COPY nextgen nextgen
 RUN cargo build --bin moon --release --target aarch64-unknown-linux-musl
 RUN target/aarch64-unknown-linux-musl/release/moon --version
 RUN mkdir -p /out && cp --parents target/*/release/moon /out/

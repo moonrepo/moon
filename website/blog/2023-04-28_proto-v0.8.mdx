@@ -1,6 +1,6 @@
 ---
 slug: proto-v0.8
-title: proto v0.8 - ???
+title: proto v0.8 - Version detection and installation improvements
 authors: [milesj]
 tags: [proto, detect]
 # image: ./img/proto/v0.7.png
@@ -10,9 +10,24 @@ In this release, we're dropping some quality of life workflow improvements.
 
 <!--truncate-->
 
-##
+## Built-in detection for `proto use`
 
-## Better version detection
+The [`proto use`](/docs/proto/commands/use) command is extremely useful for bootstrapping your
+development environment with all necessary tooling, but it had a hard requirement on the
+[`.prototools`](/docs/proto/config) configuration file. But what if you're already using non-proto
+version files, like `.nvmrc` or `.dvmrc`? Or maybe manifest settings, like `packageManager` or
+`engines` in `package.json`?
+
+Great questions, and we agree! As such, we've updated `proto use` to _also_ detect a version from
+the environment for the current working directory. We suggest using `.prototools`, but feel free to
+configure your environments as you so choose!
+
+```shell
+# Install all the things!
+$ proto use
+```
+
+## Smarter version detection
 
 One of proto's best features is its [contextual version detection](/docs/proto/detection), but it
 did have 1 shortcoming. When we detected a partial version, like `1.2`, we'd resolve to a fully

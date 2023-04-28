@@ -11,9 +11,7 @@ async-trait = { workspace = true }
 cached = { workspace = true }
 chrono = { version = "0.4.24", features = ["serde"] }
 clean-path = "0.2.1"
-dirs = "5.0.0"
-dunce = "1.0.3"
-ec4rs = "1.0.2"
+dunce = "1.0.4"
 humantime = "2.1.0"
 md5 = "0.7.0"
 once_cell = { workspace = true }

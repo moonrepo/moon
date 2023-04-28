@@ -1,6 +1,6 @@
 use crate::sandbox::{debug_sandbox_files, Sandbox};
 use assert_cmd::assert::Assert;
-use dirs::home_dir;
+use starbase_utils::dirs::home_dir;
 use std::path::Path;
 
 pub fn create_moon_command<T: AsRef<Path>>(path: T) -> assert_cmd::Command {

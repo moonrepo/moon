@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use starbase_styles::color;
 use starbase_utils::{fs, glob, json};
 use std::path::{Path, PathBuf};
+use std::{thread, time};
 
 #[derive(Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(default, rename_all = "camelCase")]
@@ -92,18 +93,21 @@ impl RunTargetState {
         outputs: &[String],
     ) -> Result<bool, MoonError> {
         if get_cache_mode().is_readable() && archive_file.exists() {
-            let archive_file = archive_file.to_path_buf();
+            let tarball_file = archive_file.to_path_buf();
             let workspace_root = workspace_root.to_path_buf();
             let cache_logs = self.get_output_logs();
             let outputs = prepare_outputs_list(outputs, project_source);
 
+            // Run in a separate thread so that if the current thread aborts,
+            // we don't stop hydration partially though, resulting in a
+            // corrupted cache.
             tokio::spawn(async move {
                 let mut differ = TreeDiffer::load(&workspace_root, &outputs)
                     .map_err(|e| MoonError::Generic(e.to_string()))?;
                 let stdout_log = workspace_root.join("stdout.log");
                 let stderr_log = workspace_root.join("stderr.log");
 
-                match untar_with_diff(&mut differ, archive_file, &workspace_root, None) {
+                match untar_with_diff(&mut differ, tarball_file, &workspace_root, None) {
                     Ok(_) => {
                         if stdout_log.exists() {
                             fs::rename(&stdout_log, cache_logs.0)?;
@@ -132,6 +136,17 @@ impl RunTargetState {
 
                 Ok::<(), MoonError>(())
             });
+
+            // Attempt to emulate how long it would take to unpack the archive
+            // based on its filesize. We do this so that subsequent tasks that
+            // depend on this output aren't interacting with it before it's
+            // entirely unpacked.
+            if let Ok(meta) = fs::metadata(archive_file) {
+                let size = meta.len();
+                let millis = (size / 1000000) * 10;
+
+                thread::sleep(time::Duration::from_millis(millis));
+            }
 
             return Ok(true);
         }

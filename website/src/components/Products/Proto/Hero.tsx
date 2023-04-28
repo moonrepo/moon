@@ -1,4 +1,6 @@
-import React from 'react';
+/* eslint-disable promise/prefer-await-to-then */
+
+import React, { useEffect, useState } from 'react';
 import Link from '@docusaurus/Link';
 import { faStarShooting } from '@fortawesome/pro-duotone-svg-icons';
 import LogoIcon from '../../../../static/brand/proto/icon.svg';
@@ -11,6 +13,16 @@ import HeroIcon from '../HeroIcon';
 import HeroTerminal from './HeroTerminal';
 
 export default function Hero() {
+	const [version, setVersion] = useState('?.?.?');
+
+	useEffect(() => {
+		void fetch('https://raw.githubusercontent.com/moonrepo/proto/master/version')
+			.then((res) => res.text())
+			.then((text) => void setVersion(text.trim()))
+			// eslint-disable-next-line no-console
+			.catch(console.error);
+	}, []);
+
 	return (
 		<div className="bg-gradient-to-b from-slate-900 to-slate-600 star-pattern">
 			<div className="max-w-7xl mx-auto py-10 px-4 pb-6 sm:py-12 sm:px-6 md:py-14 lg:py-16 lg:px-8 xl:py-20 flex flex-col md:flex-row">
@@ -46,7 +58,7 @@ export default function Hero() {
 								href="/docs/proto"
 								className="w-full flex items-center justify-center px-2 py-1 sm:px-3 sm:py-2 text-base font-bold rounded-md text-white hover:text-white bg-white/5 hover:scale-110 md:text-lg group transition-transform"
 							>
-								v0.7.2
+								v{version}
 							</Link>
 						</div>
 					</div>

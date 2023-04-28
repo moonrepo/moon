@@ -1,0 +1,46 @@
+---
+slug: proto-v0.8
+title: proto v0.8 - Version detection and installation improvements
+authors: [milesj]
+tags: [proto, detect]
+image: ./img/proto/v0.8.png
+---
+
+In this release, we're dropping some quality of life workflow improvements.
+
+<!--truncate-->
+
+## Built-in detection for `proto use`
+
+The [`proto use`](/docs/proto/commands/use) command is extremely useful for bootstrapping your
+development environment with all necessary tooling, but it had a hard requirement on the
+[`.prototools`](/docs/proto/config) configuration file. But what if you're already using non-proto
+version files, like `.nvmrc` or `.dvmrc`? Or maybe manifest settings, like `packageManager` or
+`engines` in `package.json`?
+
+Great questions, and we agree! As such, we've updated `proto use` to _also_ detect a version from
+the environment for the current working directory. We suggest using `.prototools`, but feel free to
+configure your environments as you so choose!
+
+```shell
+# Install all the things!
+$ proto use
+```
+
+## Smarter version detection
+
+One of proto's best features is its [contextual version detection](/docs/proto/detection), but it
+did have 1 shortcoming. When we detected a partial version, like `1.2`, we'd resolve to a fully
+qualified version with the latest patch version (e.g. `1.2.3`). While this worked in most cases,
+everytime a new patch was released upstream (e.g. `1.2.4`), proto would error and require a manual
+install of this new version. This was pretty annoying as `1.2.3` and `1.2.4` are likely to be
+compatible, and both satisfy the `1.2` version constraint.
+
+To mitigate this scenario, we've updated the version detection to scan the locally installed
+versions _first_ when encountering a partial version. This solves the problem above by allowing
+`1.2.3` to satisfy the requirement, instead of forcing an install of `1.2.4`.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.8.0) for a full list
+of changes.

@@ -3911,10 +3911,11 @@ dependencies = [
 
 [[package]]
 name = "proto_bun"
-version = "0.6.2"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "edcfc4a67fed96b8d7c136b30bfc8e1a5ca217cf7b7aeb7fa3885404a6e40033"
+checksum = "a2a3a6b089838929fc74ae31cdd97fab3a6ff2565b23ed3be394ec48a5ccc333"
 dependencies = [
+ "once_cell",
  "proto_core",
  "serde",
  "serde_json",
@@ -3924,9 +3925,9 @@ dependencies = [
 
 [[package]]
 name = "proto_cli"
-version = "0.7.2"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "844cbcba7d06e3f10fc9e8dffe6974ce03ff643dbc66d422856e8d366638bbc5"
+checksum = "3edf8e6f183937cb950c4d59aee95a1310367d165d778473fe5a2a05787d5c6c"
 dependencies = [
  "async-recursion",
  "clap 4.2.4",
@@ -3957,9 +3958,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.7.2"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c51cfd80ee29a2279adeca2ce00ef4a972b7c2ff12916f15369a0d55247c2d12"
+checksum = "4bbf35c2468dc19d9791b98530ba65b353db8295a39160736ab61ff93e5909c2"
 dependencies = [
  "async-trait",
  "cached",
@@ -3989,10 +3990,11 @@ dependencies = [
 
 [[package]]
 name = "proto_deno"
-version = "0.6.2"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c83945b637853d35b9fe8577f899fb1ead8af2530113cd78f86c99370ac2e35"
+checksum = "6b5861bc652e5d621eb39cd8d288ccc6b11c47a8fa4c8d83ada5a8f2489e818d"
 dependencies = [
+ "once_cell",
  "proto_core",
  "serde",
  "serde_json",
@@ -4001,10 +4003,11 @@ dependencies = [
 
 [[package]]
 name = "proto_go"
-version = "0.6.2"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad4597fc4585548af70034ea02a4ed5ac7f0bd437cf262c1ed23c02cf94c88d7"
+checksum = "e6f70a4abe4eb22aabd7ced12a9f92e2cea81b201939bd79dfd63636fbfe6419"
 dependencies = [
+ "once_cell",
  "proto_core",
  "serde",
  "serde_json",
@@ -4014,11 +4017,12 @@ dependencies = [
 
 [[package]]
 name = "proto_node"
-version = "0.6.2"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b1d0cf981f51ab5414708c722c751a8456558d9bf0a3cd403f54f79261143e7"
+checksum = "62aaa100ba0a5bd248420a6f8c5f91fc5e6c9fbda52aefbec5a31213e702616e"
 dependencies = [
  "clean-path",
+ "once_cell",
  "proto_core",
  "rustc-hash",
  "serde",
@@ -4029,10 +4033,11 @@ dependencies = [
 
 [[package]]
 name = "proto_rust"
-version = "0.4.2"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "258042c85a5c2efb396c396ebbc1bdc8bb01c716543d1def8508906c8be082a8"
+checksum = "6ff51ba2519e452104defb9da8a5eaf69400b996bb909f0d594fe2181907873b"
 dependencies = [
+ "once_cell",
  "proto_core",
  "tokio",
  "tracing",
@@ -4040,10 +4045,11 @@ dependencies = [
 
 [[package]]
 name = "proto_schema_plugin"
-version = "0.2.2"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ad7ec51bf708b961758cb653db3232b6ae062e3b13975264002899eefa59baa"
+checksum = "1c6799eab579863f8ef780c376f5b42b3feff114a49b744d7a79ceeddf217a34"
 dependencies = [
+ "once_cell",
  "proto_core",
  "regex",
  "rustc-hash",

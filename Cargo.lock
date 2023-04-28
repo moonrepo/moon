@@ -2570,6 +2570,7 @@ dependencies = [
  "serial_test",
  "starbase_styles",
  "starbase_utils",
+ "tokio",
 ]
 
 [[package]]

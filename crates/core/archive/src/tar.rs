@@ -235,6 +235,7 @@ pub fn untar_with_diff<I: AsRef<Path>, O: AsRef<Path>>(
 
     // Unpack the archive into the output dir
     let mut archive = Archive::new(tar);
+    archive.set_overwrite(true);
 
     for entry_result in archive.entries()? {
         let mut entry = entry_result?;

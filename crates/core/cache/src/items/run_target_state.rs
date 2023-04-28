@@ -2,11 +2,12 @@ use crate::cache_item;
 use crate::helpers::get_cache_mode;
 use moon_archive::{untar_with_diff, TarArchiver, TreeDiffer};
 use moon_error::MoonError;
-use moon_logger::trace;
+use moon_logger::{map_list, trace, warn};
 use serde::{Deserialize, Serialize};
 use starbase_styles::color;
 use starbase_utils::{fs, glob, json};
 use std::path::{Path, PathBuf};
+use std::{thread, time};
 
 #[derive(Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(default, rename_all = "camelCase")]
@@ -92,23 +93,59 @@ impl RunTargetState {
         outputs: &[String],
     ) -> Result<bool, MoonError> {
         if get_cache_mode().is_readable() && archive_file.exists() {
-            let outputs = prepare_outputs_list(outputs, project_source);
-            let mut differ = TreeDiffer::load(workspace_root, &outputs)
-                .map_err(|e| MoonError::Generic(e.to_string()))?;
-
-            untar_with_diff(&mut differ, archive_file, workspace_root, None)
-                .map_err(|e| MoonError::Generic(e.to_string()))?;
-
+            let tarball_file = archive_file.to_path_buf();
+            let workspace_root = workspace_root.to_path_buf();
             let cache_logs = self.get_output_logs();
-            let stdout_log = workspace_root.join("stdout.log");
-            let stderr_log = workspace_root.join("stderr.log");
+            let outputs = prepare_outputs_list(outputs, project_source);
 
-            if stdout_log.exists() {
-                fs::rename(&stdout_log, cache_logs.0)?;
-            }
+            // Run in a separate thread so that if the current thread aborts,
+            // we don't stop hydration partially though, resulting in a
+            // corrupted cache.
+            tokio::spawn(async move {
+                let mut differ = TreeDiffer::load(&workspace_root, &outputs)
+                    .map_err(|e| MoonError::Generic(e.to_string()))?;
+                let stdout_log = workspace_root.join("stdout.log");
+                let stderr_log = workspace_root.join("stderr.log");
 
-            if stderr_log.exists() {
-                fs::rename(&stderr_log, cache_logs.1)?;
+                match untar_with_diff(&mut differ, tarball_file, &workspace_root, None) {
+                    Ok(_) => {
+                        if stdout_log.exists() {
+                            fs::rename(&stdout_log, cache_logs.0)?;
+                        }
+
+                        if stderr_log.exists() {
+                            fs::rename(&stderr_log, cache_logs.1)?;
+                        }
+                    }
+                    Err(e) => {
+                        warn!(
+                            "Failed to hydrate outputs ({}) from cache: {}",
+                            map_list(&outputs, |f| color::file(f)),
+                            color::muted_light(e.to_string())
+                        );
+
+                        // Delete target outputs to ensure a clean slate
+                        for output in outputs {
+                            fs::remove(workspace_root.join(output))?;
+                        }
+
+                        fs::remove(stdout_log)?;
+                        fs::remove(stderr_log)?;
+                    }
+                }
+
+                Ok::<(), MoonError>(())
+            });
+
+            // Attempt to emulate how long it would take to unpack the archive
+            // based on its filesize. We do this so that subsequent tasks that
+            // depend on this output aren't interacting with it before it's
+            // entirely unpacked.
+            if let Ok(meta) = fs::metadata(archive_file) {
+                let size = meta.len();
+                let millis = (size / 1000000) * 10;
+
+                thread::sleep(time::Duration::from_millis(millis));
             }
 
             return Ok(true);

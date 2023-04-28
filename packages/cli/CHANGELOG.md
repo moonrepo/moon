@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- Upgraded to proto v0.8.
+
 ## 1.3.2
 
 #### 🐞 Fixes

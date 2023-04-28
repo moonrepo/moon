@@ -50,7 +50,7 @@ pub fn normalize_separators<T: AsRef<str>>(path: T) -> String {
 pub fn replace_home_dir<T: AsRef<str>>(value: T) -> String {
     let value = value.as_ref();
 
-    if let Some(home_dir) = dirs::home_dir() {
+    if let Some(home_dir) = starbase_utils::dirs::home_dir() {
         let home_dir_str = home_dir.to_str().unwrap_or_default();
 
         // Replace both forward and backward slashes

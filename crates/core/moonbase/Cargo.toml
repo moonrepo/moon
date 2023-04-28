@@ -14,4 +14,4 @@ serde_json = { workspace = true }
 starbase_styles = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
-tokio-util = "0.7.7"
+tokio-util = "0.7.8"

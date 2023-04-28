@@ -14,7 +14,7 @@ harness = false
 moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
 moon_utils = { path = "../utils" }
-flate2 = "1.0.25"
+flate2 = "1.0.26"
 rustc-hash = { workspace = true }
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true }

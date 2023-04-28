@@ -5,5 +5,5 @@ edition = "2021"
 
 [dependencies]
 console = { workspace = true }
-dialoguer = { version = "0.10.3", default-features = false }
+dialoguer = { version = "0.10.4", default-features = false }
 starbase_styles = { workspace = true }

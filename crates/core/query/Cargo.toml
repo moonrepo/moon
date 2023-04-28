@@ -6,8 +6,8 @@ edition = "2021"
 [dependencies]
 moon_config = { path = "../config" }
 moon_error = { path = "../error" }
-pest = "2.5.7"
-pest_derive = "2.5.7"
+pest = "2.6.0"
+pest_derive = "2.6.0"
 starbase_utils = { workspace = true }
 thiserror = { workspace = true }
 

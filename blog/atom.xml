@@ -2,11 +2,39 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moonrepo Blog</title>
-    <updated>2023-04-24T00:00:00.000Z</updated>
+    <updated>2023-04-28T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moonrepo Blog</subtitle>
     <icon>https://moonrepo.dev/img/favicon.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[proto v0.8 - Version detection and installation improvements]]></title>
+        <id>https://moonrepo.dev/blog/proto-v0.8</id>
+        <link href="https://moonrepo.dev/blog/proto-v0.8"/>
+        <updated>2023-04-28T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[In this release, we're dropping some quality of life workflow improvements.]]></summary>
+        <content type="html"><![CDATA[<p>In this release, we're dropping some quality of life workflow improvements.</p><h2 class="anchor anchorWithStickyNavbar_JmGV" id="built-in-detection-for-proto-use">Built-in detection for <code>proto use</code><a href="#built-in-detection-for-proto-use" class="hash-link" aria-label="Direct link to built-in-detection-for-proto-use" title="Direct link to built-in-detection-for-proto-use">​</a></h2><p>The <a href="/docs/proto/commands/use"><code>proto use</code></a> command is extremely useful for bootstrapping your
+development environment with all necessary tooling, but it had a hard requirement on the
+<a href="/docs/proto/config"><code>.prototools</code></a> configuration file. But what if you're already using non-proto
+version files, like <code>.nvmrc</code> or <code>.dvmrc</code>? Or maybe manifest settings, like <code>packageManager</code> or
+<code>engines</code> in <code>package.json</code>?</p><p>Great questions, and we agree! As such, we've updated <code>proto use</code> to <em>also</em> detect a version from
+the environment for the current working directory. We suggest using <code>.prototools</code>, but feel free to
+configure your environments as you so choose!</p><div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_D5yF"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># Install all the things!</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto use</span><br></span></code></pre><div class="buttonGroup_aaMX"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_z5j7" aria-hidden="true"><svg class="copyButtonIcon_FoOz" viewBox="0 0 24 24"><path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg class="copyButtonSuccessIcon_L0B6" viewBox="0 0 24 24"><path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div><h2 class="anchor anchorWithStickyNavbar_JmGV" id="smarter-version-detection">Smarter version detection<a href="#smarter-version-detection" class="hash-link" aria-label="Direct link to Smarter version detection" title="Direct link to Smarter version detection">​</a></h2><p>One of proto's best features is its <a href="/docs/proto/detection">contextual version detection</a>, but it
+did have 1 shortcoming. When we detected a partial version, like <code>1.2</code>, we'd resolve to a fully
+qualified version with the latest patch version (e.g. <code>1.2.3</code>). While this worked in most cases,
+everytime a new patch was released upstream (e.g. <code>1.2.4</code>), proto would error and require a manual
+install of this new version. This was pretty annoying as <code>1.2.3</code> and <code>1.2.4</code> are likely to be
+compatible, and both satisfy the <code>1.2</code> version constraint.</p><p>To mitigate this scenario, we've updated the version detection to scan the locally installed
+versions <em>first</em> when encountering a partial version. This solves the problem above by allowing
+<code>1.2.3</code> to satisfy the requirement, instead of forcing an install of <code>1.2.4</code>.</p><h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2><p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.8.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list
+of changes.</p>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="proto" term="proto"/>
+        <category label="detect" term="detect"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[moon v1.3 - Advanced run targeting and an official proto plugin]]></title>
         <id>https://moonrepo.dev/blog/moon-v1.3</id>

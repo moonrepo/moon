@@ -249,7 +249,22 @@ impl<'ws> DepGraphBuilder<'ws> {
                 }
             }
             // #tag:task
-            TargetScope::Tag(_) => todo!(),
+            TargetScope::Tag(tag) => {
+                let projects = self
+                    .project_graph
+                    .query(build_query(format!("tag={}", tag))?)?;
+
+                for project in projects {
+                    let tag_target = Target::new(&project.id, &target.task_id)?;
+
+                    if let Some(index) =
+                        self.run_target_by_project(&tag_target, project, touched_files)?
+                    {
+                        inserted_targets.insert(tag_target);
+                        inserted_indexes.insert(index);
+                    }
+                }
+            }
             // ~:task
             TargetScope::OwnSelf => {
                 return Err(DepGraphError::Target(TargetError::NoSelfInRunContext));

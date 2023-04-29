@@ -11,6 +11,7 @@ use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use starbase_styles::color;
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, RwLock};
 
 pub type GraphType = DiGraph<Project, ()>;
 pub type IndicesType = FxHashMap<ProjectID, NodeIndex>;
@@ -32,6 +33,9 @@ pub struct ProjectGraph {
     /// Mapping of project IDs to a relative file system location.
     /// Is the `projects` setting in `.moon/workspace.yml`.
     pub sources: ProjectsSourcesMap,
+
+    #[serde(skip)]
+    query_cache: Arc<RwLock<FxHashMap<String, Vec<String>>>>,
 }
 
 impl ProjectGraph {
@@ -46,6 +50,7 @@ impl ProjectGraph {
             graph,
             indices,
             sources,
+            query_cache: Arc::new(RwLock::new(FxHashMap::default())),
         }
     }
 
@@ -57,10 +62,24 @@ impl ProjectGraph {
     }
 
     /// Return all projects that match the query criteria.
-    pub fn query(&self, query: &Criteria) -> Result<Vec<&Project>, ProjectError> {
-        debug!(target: LOG_TARGET, "Filtering projects using query");
+    pub fn query<Q: AsRef<Criteria>>(&self, query: Q) -> Result<Vec<&Project>, ProjectError> {
+        let query = query.as_ref();
+        let query_input = query.input.as_ref().unwrap();
+
+        {
+            if let Some(project_ids) = self.query_cache.read().unwrap().get(query_input) {
+                return Ok(project_ids.iter().map(|id| self.get(id).unwrap()).collect());
+            }
+        }
+
+        debug!(
+            target: LOG_TARGET,
+            "Filtering projects using query {}",
+            color::shell(query_input)
+        );
 
         let mut filtered_projects = vec![];
+        let mut project_ids = vec![];
 
         for project in self.get_all()? {
             if project.matches_criteria(query)? {
@@ -70,6 +89,7 @@ impl ProjectGraph {
                     color::id(&project.id)
                 );
 
+                project_ids.push(project.id.clone());
                 filtered_projects.push(project);
             } else {
                 debug!(
@@ -79,6 +99,13 @@ impl ProjectGraph {
                     color::failure("NOT"),
                 );
             }
+        }
+
+        {
+            self.query_cache
+                .write()
+                .unwrap()
+                .insert(query_input.to_owned(), project_ids);
         }
 
         Ok(filtered_projects)

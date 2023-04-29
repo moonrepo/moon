@@ -939,6 +939,22 @@ mod task_expansion {
             })
             .await;
         }
+
+        #[tokio::test]
+        #[should_panic(expected = "Target(NoTagInTaskDeps(\"#tag:build\"))")]
+        async fn errors_for_tag_scope() {
+            tasks_sandbox_with_setup(|sandbox| {
+                sandbox.create_file(
+                    "scope-all/moon.yml",
+                    r#"tasks:
+                build:
+                  command: webpack
+                  deps:
+                    - #tag:build"#,
+                );
+            })
+            .await;
+        }
     }
 
     mod expand_env {

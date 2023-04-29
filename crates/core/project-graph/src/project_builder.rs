@@ -325,6 +325,12 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         for target in &task.deps {
             match &target.scope {
+                // :task
+                TargetScope::All => {
+                    return Err(ProjectGraphError::Target(TargetError::NoAllInTaskDeps(
+                        target.id.clone(),
+                    )));
+                }
                 // ^:task
                 TargetScope::Deps => {
                     for dep_id in project.get_dependency_ids() {
@@ -351,9 +357,8 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                     }
                 }
                 // #tag:task
-                TargetScope::Tag(_) => todo!(),
-                _ => {
-                    return Err(ProjectGraphError::Target(TargetError::NoAllInTaskDeps(
+                TargetScope::Tag(_) => {
+                    return Err(ProjectGraphError::Target(TargetError::NoTagInTaskDeps(
                         target.id.clone(),
                     )));
                 }

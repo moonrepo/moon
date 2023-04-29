@@ -73,6 +73,13 @@ impl Condition {
 pub struct Criteria {
     pub op: LogicalOperator,
     pub conditions: Vec<Condition>,
+    pub input: Option<String>,
+}
+
+impl AsRef<Criteria> for Criteria {
+    fn as_ref(&self) -> &Criteria {
+        self
+    }
 }
 
 fn build_criteria_enum<T: FromStr>(
@@ -149,6 +156,7 @@ fn build_criteria(ast: Vec<AstNode>) -> Result<Criteria, QueryError> {
     Ok(Criteria {
         op: op.unwrap_or_default(),
         conditions,
+        input: None,
     })
 }
 
@@ -159,5 +167,10 @@ pub fn build_query<I: AsRef<str>>(input: I) -> Result<Criteria, QueryError> {
         return Err(QueryError::EmptyInput);
     }
 
-    build_criteria(parse_query(input).map_err(|e| QueryError::ParseFailure(e.to_string()))?)
+    let mut criteria =
+        build_criteria(parse_query(input).map_err(|e| QueryError::ParseFailure(e.to_string()))?)?;
+
+    criteria.input = Some(input.to_owned());
+
+    Ok(criteria)
 }

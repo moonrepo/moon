@@ -950,7 +950,7 @@ mod task_expansion {
                 build:
                   command: webpack
                   deps:
-                    - #tag:build"#,
+                    - '#tag:build'"#,
                 );
             })
             .await;

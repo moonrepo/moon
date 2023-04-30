@@ -36,7 +36,7 @@ fn runs_tasks_in_project() {
 
     let output = assert.output();
 
-    assert!(predicate::str::contains("base:base").eval(&output));
+    assert!(predicate::str::contains("base:standard").eval(&output));
     assert!(predicate::str::contains("base:runFromProject").eval(&output));
     assert!(predicate::str::contains("base:runFromWorkspace").eval(&output));
     assert!(!predicate::str::contains("base:localOnly").eval(&output));
@@ -53,7 +53,7 @@ fn runs_tasks_in_project_using_cwd() {
 
     let output = assert.output();
 
-    assert!(predicate::str::contains("base:base").eval(&output));
+    assert!(predicate::str::contains("base:standard").eval(&output));
     assert!(predicate::str::contains("base:runFromProject").eval(&output));
     assert!(predicate::str::contains("base:runFromWorkspace").eval(&output));
     assert!(!predicate::str::contains("base:localOnly").eval(&output));
@@ -69,7 +69,7 @@ fn runs_tasks_from_multiple_project() {
 
     let output = assert.output();
 
-    assert!(predicate::str::contains("base:base").eval(&output));
+    assert!(predicate::str::contains("base:standard").eval(&output));
     assert!(predicate::str::contains("base:runFromProject").eval(&output));
     assert!(predicate::str::contains("base:runFromWorkspace").eval(&output));
     assert!(!predicate::str::contains("base:localOnly").eval(&output));

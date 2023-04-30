@@ -11,7 +11,7 @@ fn generate_dep_graph(workspace: &Workspace, project_graph: &ProjectGraph) -> De
     let mut dep_graph = build_dep_graph(workspace, project_graph);
 
     dep_graph
-        .run_target(Target::parse("base:base").unwrap(), None)
+        .run_target(Target::parse("base:standard").unwrap(), None)
         .unwrap();
 
     dep_graph

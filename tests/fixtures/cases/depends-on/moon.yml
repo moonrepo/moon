@@ -5,6 +5,8 @@ dependsOn:
   - depsB
   - depsC
 
+tags: [standard]
+
 tasks:
   standard:
     command: noop

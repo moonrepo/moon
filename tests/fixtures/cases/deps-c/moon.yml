@@ -1,5 +1,7 @@
 language: javascript
 
+tags: [standard]
+
 tasks:
   standard:
     command: noop

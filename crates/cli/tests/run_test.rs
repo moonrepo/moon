@@ -92,13 +92,12 @@ fn creates_run_report() {
     sandbox.enable_git();
 
     sandbox.run_moon(|cmd| {
-        cmd.arg("run").arg("base:base");
+        cmd.arg("run").arg("base:standard");
     });
 
     assert!(sandbox.path().join(".moon/cache/runReport.json").exists());
 }
 
-#[cfg(not(windows))]
 mod general {
     use super::*;
 
@@ -474,6 +473,24 @@ mod target_scopes {
         assert!(predicate::str::contains("base:runFromProject").eval(&output));
         assert!(predicate::str::contains("noop:noop").eval(&output));
         assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
+    }
+
+    #[test]
+    fn runs_in_projects_with_tag() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("#standard:standard");
+        });
+        let output = assert.output();
+
+        assert!(predicate::str::contains("base:standard").eval(&output));
+        assert!(predicate::str::contains("dependsOn:standard").eval(&output));
+        assert!(predicate::str::contains("depsA:standard").eval(&output));
+        assert!(predicate::str::contains("depsB:standard").eval(&output));
+        assert!(predicate::str::contains("depsC:standard").eval(&output));
+        assert!(predicate::str::contains("Tasks: 5 completed").eval(&output));
     }
 }
 
@@ -1226,7 +1243,6 @@ mod output_styles {
         assert_snapshot!(assert.output());
     }
 
-    #[cfg(not(windows))] // Different path output in snapshot
     #[test]
     fn buffer_on_failure_when_failure() {
         let sandbox = cases_sandbox();
@@ -1236,7 +1252,7 @@ mod output_styles {
             cmd.arg("run").arg("outputStyles:bufferFailureFailPrimary");
         });
 
-        assert_snapshot!(assert.output());
+        assert_snapshot!(assert.output_standardized());
     }
 
     #[test]

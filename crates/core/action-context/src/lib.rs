@@ -40,12 +40,12 @@ impl ActionContext {
 
         let target = target.as_ref();
 
-        // project:task == project:task
+        // scope:task == scope:task
         if self.primary_targets.contains(target) {
             return true;
         }
 
-        // :task == project:task
+        // :task == scope:task
         for initial_target in &self.initial_targets {
             if target.is_all_task(initial_target) {
                 return true;

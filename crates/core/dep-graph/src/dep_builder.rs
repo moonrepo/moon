@@ -247,13 +247,15 @@ impl<'ws> DepGraphBuilder<'ws> {
                     .query(build_query(format!("tag={}", tag))?)?;
 
                 for project in projects {
-                    let tag_target = Target::new(&project.id, &target.task_id)?;
+                    if project.tasks.contains_key(target.task_id.as_str()) {
+                        let tag_target = Target::new(&project.id, &target.task_id)?;
 
-                    if let Some(index) =
-                        self.run_target_by_project(&tag_target, project, touched_files)?
-                    {
-                        inserted_targets.insert(tag_target);
-                        inserted_indexes.insert(index);
+                        if let Some(index) =
+                            self.run_target_by_project(&tag_target, project, touched_files)?
+                        {
+                            inserted_targets.insert(tag_target);
+                            inserted_indexes.insert(index);
+                        }
                     }
                 }
             }

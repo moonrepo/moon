@@ -442,7 +442,7 @@ pub enum Commands {
         rename_all = "camelCase"
     )]
     Run {
-        #[arg(required = true, help = "List of targets (project:task) to run")]
+        #[arg(required = true, help = "List of targets (scope:task) to run")]
         targets: Vec<String>,
 
         #[arg(

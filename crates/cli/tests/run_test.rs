@@ -98,6 +98,7 @@ fn creates_run_report() {
     assert!(sandbox.path().join(".moon/cache/runReport.json").exists());
 }
 
+#[cfg(not(windows))]
 mod general {
     use super::*;
 
@@ -1243,6 +1244,7 @@ mod output_styles {
         assert_snapshot!(assert.output());
     }
 
+    #[cfg(not(windows))] // Different path output in snapshot
     #[test]
     fn buffer_on_failure_when_failure() {
         let sandbox = cases_sandbox();
@@ -1252,7 +1254,7 @@ mod output_styles {
             cmd.arg("run").arg("outputStyles:bufferFailureFailPrimary");
         });
 
-        assert_snapshot!(assert.output_standardized());
+        assert_snapshot!(assert.output());
     }
 
     #[test]

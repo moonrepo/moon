@@ -794,7 +794,7 @@ mod tag_constraints {
 
 mod query {
     use super::*;
-    use moon_query::build;
+    use moon_query::build_query;
 
     fn get_ids(projects: &[&Project]) -> Vec<String> {
         let mut ids = projects.iter().map(|p| p.id.clone()).collect::<Vec<_>>();
@@ -807,7 +807,7 @@ mod query {
         let (graph, _sandbox) = get_queries_graph().await;
 
         let projects = graph
-            .query(build("language!=[typescript,rust]").unwrap())
+            .query(build_query("language!=[typescript,rust]").unwrap())
             .unwrap();
 
         assert_eq!(get_ids(&projects), vec!["a", "d"]);
@@ -817,7 +817,7 @@ mod query {
     async fn by_project() {
         let (graph, _sandbox) = get_queries_graph().await;
 
-        let projects = graph.query(build("project~{b,d}").unwrap()).unwrap();
+        let projects = graph.query(build_query("project~{b,d}").unwrap()).unwrap();
 
         assert_eq!(get_ids(&projects), vec!["b", "d"]);
     }
@@ -827,7 +827,7 @@ mod query {
         let (graph, _sandbox) = get_queries_graph().await;
 
         let projects = graph
-            .query(build("projectType!=[library]").unwrap())
+            .query(build_query("projectType!=[library]").unwrap())
             .unwrap();
 
         assert_eq!(get_ids(&projects), vec!["a", "c"]);
@@ -837,7 +837,9 @@ mod query {
     async fn by_project_source() {
         let (graph, _sandbox) = get_queries_graph().await;
 
-        let projects = graph.query(build("projectSource~a").unwrap()).unwrap();
+        let projects = graph
+            .query(build_query("projectSource~a").unwrap())
+            .unwrap();
 
         assert_eq!(get_ids(&projects), vec!["a"]);
     }
@@ -846,7 +848,9 @@ mod query {
     async fn by_tag() {
         let (graph, _sandbox) = get_queries_graph().await;
 
-        let projects = graph.query(build("tag=[three,five]").unwrap()).unwrap();
+        let projects = graph
+            .query(build_query("tag=[three,five]").unwrap())
+            .unwrap();
 
         assert_eq!(get_ids(&projects), vec!["b", "c"]);
     }
@@ -855,7 +859,9 @@ mod query {
     async fn by_task() {
         let (graph, _sandbox) = get_queries_graph().await;
 
-        let projects = graph.query(build("task=[test,build]").unwrap()).unwrap();
+        let projects = graph
+            .query(build_query("task=[test,build]").unwrap())
+            .unwrap();
 
         assert_eq!(get_ids(&projects), vec!["a", "c", "d"]);
     }
@@ -864,11 +870,15 @@ mod query {
     async fn by_task_platform() {
         let (graph, _sandbox) = get_queries_graph().await;
 
-        let projects = graph.query(build("taskPlatform=[node]").unwrap()).unwrap();
+        let projects = graph
+            .query(build_query("taskPlatform=[node]").unwrap())
+            .unwrap();
 
         assert_eq!(get_ids(&projects), vec!["a", "b"]);
 
-        let projects = graph.query(build("taskPlatform=system").unwrap()).unwrap();
+        let projects = graph
+            .query(build_query("taskPlatform=system").unwrap())
+            .unwrap();
 
         assert_eq!(get_ids(&projects), vec!["c"]);
     }
@@ -877,7 +887,7 @@ mod query {
     async fn by_task_type() {
         let (graph, _sandbox) = get_queries_graph().await;
 
-        let projects = graph.query(build("taskType=run").unwrap()).unwrap();
+        let projects = graph.query(build_query("taskType=run").unwrap()).unwrap();
 
         assert_eq!(get_ids(&projects), vec!["a"]);
     }
@@ -887,7 +897,7 @@ mod query {
         let (graph, _sandbox) = get_queries_graph().await;
 
         let projects = graph
-            .query(build("task=build && taskPlatform=deno").unwrap())
+            .query(build_query("task=build && taskPlatform=deno").unwrap())
             .unwrap();
 
         assert_eq!(get_ids(&projects), vec!["d"]);
@@ -898,7 +908,7 @@ mod query {
         let (graph, _sandbox) = get_queries_graph().await;
 
         let projects = graph
-            .query(build("language=javascript || language=typescript").unwrap())
+            .query(build_query("language=javascript || language=typescript").unwrap())
             .unwrap();
 
         assert_eq!(get_ids(&projects), vec!["a", "b"]);
@@ -909,7 +919,7 @@ mod query {
         let (graph, _sandbox) = get_queries_graph().await;
 
         let projects = graph
-            .query(build("projectType=library && (taskType=build || tag=three)").unwrap())
+            .query(build_query("projectType=library && (taskType=build || tag=three)").unwrap())
             .unwrap();
 
         assert_eq!(get_ids(&projects), vec!["b", "d"]);

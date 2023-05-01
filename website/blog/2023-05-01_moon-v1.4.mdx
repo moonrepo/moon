@@ -6,10 +6,25 @@ tags: [query, lang]
 # image: ./img/moon/v1.3.png
 ---
 
-After many months of design and development, we're finally introducing MQL, our own unique query
-language!
+???
 
 <!--truncate-->
+
+## Run targets by tag with `#tag:task`
+
+We love our community, as you all continuously suggest new and awesome features that haven't crossed
+our minds. One such feature was the ability to run tasks for all projects with a tag,
+[suggested by @theoephraim](https://github.com/moonrepo/moon/issues/803), which is now possible with
+the new [tag scope](/docs/concepts/target#by-tag), `#tag:task`.
+
+As an example, we can easily lint all projects that have the `frontend` tag.
+
+```shell
+$ moon run '#frontend:lint'
+```
+
+> Because `#` is special syntax and denotes a comment, the target will need to be quoted to work
+> correctly!
 
 ## Updated `moon query` commands to support MQL
 

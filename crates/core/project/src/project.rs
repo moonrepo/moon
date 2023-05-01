@@ -5,9 +5,8 @@ use moon_config::{
     ProjectID, ProjectLanguage, ProjectType, TaskID,
 };
 use moon_constants::CONFIG_PROJECT_FILENAME;
-use moon_error::MoonError;
 use moon_logger::{debug, trace, Logable};
-use moon_query::{Condition, Criteria, Field, LogicalOperator, Queryable};
+use moon_query::{Condition, Criteria, Field, LogicalOperator, QueryError, Queryable};
 use moon_target::Target;
 use moon_task::{FileGroup, Task, TouchedFilePaths};
 use moon_utils::path;
@@ -423,7 +422,7 @@ impl Project {
 
 impl Queryable for Project {
     /// Return true if this project matches the given query criteria.
-    fn matches_criteria(&self, query: &Criteria) -> Result<bool, MoonError> {
+    fn matches_criteria(&self, query: &Criteria) -> Result<bool, QueryError> {
         let match_all = matches!(query.op, LogicalOperator::And);
         let mut matched_any = false;
 
@@ -459,7 +458,7 @@ impl Queryable for Project {
                         })),
                     };
 
-                    result.map_err(MoonError::StarGlob)?
+                    result?
                 }
                 Condition::Criteria { criteria } => self.matches_criteria(criteria)?,
             };

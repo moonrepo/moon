@@ -15,13 +15,14 @@ fn change_branch(sandbox: &Sandbox) {
 
 fn touch_file(sandbox: &Sandbox) {
     sandbox.create_file("advanced/file", "contents");
+    sandbox.create_file("no-config/file", "contents");
 
     // CI uses `git diff` while local uses `git status`
     if is_ci() {
         change_branch(sandbox);
 
         sandbox.run_git(|cmd| {
-            cmd.args(["add", "advanced/file"]);
+            cmd.args(["add", "advanced/file", "no-config/file"]);
         });
 
         sandbox.run_git(|cmd| {
@@ -309,7 +310,7 @@ mod projects {
         let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
         let ids: Vec<String> = json.projects.iter().map(|p| p.id.clone()).collect();
 
-        assert_eq!(ids, string_vec!["advanced"]);
+        assert_eq!(ids, string_vec!["advanced", "noConfig"]);
         assert!(json.options.affected);
     }
 
@@ -344,7 +345,7 @@ mod projects {
 
         assert_eq!(
             assert.output(),
-            "advanced | advanced | application | typescript\n\n"
+            "advanced | advanced | application | typescript\nnoConfig | no-config | unknown | unknown\n\n"
         );
     }
 
@@ -381,7 +382,7 @@ mod projects {
         let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
         let ids: Vec<String> = json.projects.iter().map(|p| p.id.clone()).collect();
 
-        assert_eq!(ids, string_vec!["advanced"]);
+        assert_eq!(ids, string_vec!["advanced", "noConfig"]);
         assert!(json.options.affected);
     }
 
@@ -547,6 +548,64 @@ mod projects {
 
         assert_eq!(ids, string_vec!["advanced", "foo"]);
         assert_eq!(json.options.type_of.unwrap(), "app".to_string());
+    }
+
+    mod mql {
+        use super::*;
+
+        #[test]
+        fn can_filter_with_query() {
+            let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
+
+            let sandbox = create_sandbox_with_config(
+                "projects",
+                Some(&workspace_config),
+                Some(&toolchain_config),
+                Some(&tasks_config),
+            );
+
+            let assert = sandbox.run_moon(|cmd| {
+                cmd.arg("query")
+                    .arg("projects")
+                    .arg("project~ba{r,z}")
+                    .arg("--json");
+            });
+
+            let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
+            let ids: Vec<String> = json.projects.iter().map(|p| p.id.clone()).collect();
+
+            assert_eq!(ids, string_vec!["bar", "baz"]);
+            assert_eq!(json.options.query.unwrap(), "project~ba{r,z}".to_string());
+        }
+
+        #[test]
+        fn can_filter_by_affected_with_query() {
+            let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
+
+            let sandbox = create_sandbox_with_config(
+                "projects",
+                Some(&workspace_config),
+                Some(&toolchain_config),
+                Some(&tasks_config),
+            );
+            sandbox.enable_git();
+
+            touch_file(&sandbox);
+
+            let assert = sandbox.run_moon(|cmd| {
+                cmd.arg("query")
+                    .arg("projects")
+                    .arg("project~*Config")
+                    .arg("--json")
+                    .arg("--affected");
+            });
+
+            let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
+            let ids: Vec<String> = json.projects.iter().map(|p| p.id.clone()).collect();
+
+            assert_eq!(ids, string_vec!["noConfig"]);
+            assert!(json.options.affected);
+        }
     }
 }
 

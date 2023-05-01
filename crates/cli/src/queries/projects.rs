@@ -29,6 +29,7 @@ pub struct QueryProjectsOptions {
     pub id: Option<String>,
     pub json: bool,
     pub language: Option<String>,
+    pub query: Option<String>,
     pub source: Option<String>,
     pub tags: Option<String>,
     pub tasks: Option<String>,
@@ -106,6 +107,30 @@ pub async fn query_projects(
 ) -> Result<Vec<Project>, AnyError> {
     debug!(target: LOG_TARGET, "Querying for projects");
 
+    let project_graph = generate_project_graph(workspace).await?;
+    let touched_files = if options.affected {
+        load_touched_files(workspace).await?
+    } else {
+        FxHashSet::default()
+    };
+
+    // When a MQL input is provided, it takes full precedence over option args
+    if let Some(query) = &options.query {
+        let projects = project_graph
+            .query(&moon_query::build_query(query)?)?
+            .into_iter()
+            .filter_map(|project| {
+                if options.affected && !project.is_affected(&touched_files) {
+                    return None;
+                }
+
+                Some(project.to_owned())
+            })
+            .collect::<Vec<_>>();
+
+        return Ok(projects);
+    }
+
     let alias_regex = convert_to_regex("alias", &options.alias)?;
     let id_regex = convert_to_regex("id", &options.id)?;
     let language_regex = convert_to_regex("language", &options.language)?;
@@ -113,27 +138,16 @@ pub async fn query_projects(
     let tags_regex = convert_to_regex("tags", &options.tags)?;
     let tasks_regex = convert_to_regex("tasks", &options.tasks)?;
     let type_regex = convert_to_regex("type", &options.type_of)?;
-    let touched_files = if options.affected {
-        Some(load_touched_files(workspace).await?)
-    } else {
-        None
-    };
-
-    let project_graph = generate_project_graph(workspace).await?;
     let mut projects = vec![];
 
     for project in project_graph.get_all()? {
+        if options.affected && !project.is_affected(&touched_files) {
+            continue;
+        }
+
         if let Some(regex) = &id_regex {
             if !regex.is_match(&project.id) {
                 continue;
-            }
-        }
-
-        if options.affected {
-            if let Some(touched) = &touched_files {
-                if !project.is_affected(touched) {
-                    continue;
-                }
             }
         }
 

@@ -4,14 +4,16 @@ sidebar_label: tasks
 ---
 
 Use the `moon query tasks` sub-command to query task information for all projects in the project
-graph. The tasks list can be filtered by passing [options](#options).
+graph. The tasks list can be filtered by passing a [query statement](../../concepts/query-lang) as
+an argument, or by using [options](#options) arguments.
 
 ```shell
 # Find all tasks grouped by project
 $ moon query tasks
 
-# Find all tasks for projects with an id that matches "react"
+# Find all tasks from projects with an id that matches "react"
 $ moon query tasks --id react
+$ moon query tasks "task~react"
 ```
 
 By default, this will output a list of projects, and tasks within the project being indented (with a
@@ -35,14 +37,22 @@ passing the `--json` flag. The output has the following structure:
 }
 ```
 
+### Arguments
+
+- `[query]` - An optional [query statement](../../concepts/query-lang) to filter projects with. When
+  provided, all [filter options](#filters) are ignored.
+
 ### Options
 
-All values are case-insensitive regex patterns.
+- `--affected` - Filter projects that have been affected by touched files.
+- `--json` - Display the projects in JSON format.
+
+#### Filters
+
+All option values are case-insensitive regex patterns.
 
 - `--alias <regex>` - Filter projects that match this alias.
-- `--affected` - Filter projects that have been affected by touched files.
 - `--id <regex>` - Filter projects that match this ID/name.
-- `--json` - Display the projects in JSON format.
 - `--language <regex>` - Filter projects of this programming language.
 - `--source <regex>` - Filter projects that match this source path.
 - `--tasks <regex>` - Filter projects that have the following tasks.

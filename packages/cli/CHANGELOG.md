@@ -5,10 +5,12 @@
 #### 🚀 Updates
 
 - Deprecated `node.aliasPackageNames` setting. Aliases will always be loaded now.
+- Updated `moon query projects` and `moon query tasks` to support MQL for filtering results.
 
 #### ⚙️ Internal
 
 - Upgraded to proto v0.8.
+- Rewrote ID handling for future features.
 
 ## 1.3.2
 

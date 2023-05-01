@@ -22,8 +22,7 @@ fn touch_file(sandbox: &Sandbox) {
         change_branch(sandbox);
 
         sandbox.run_git(|cmd| {
-            cmd.args(["add", "advanced/file"]);
-            cmd.args(["add", "no-config/file"]);
+            cmd.args(["add", "advanced/file", "no-config/file"]);
         });
 
         sandbox.run_git(|cmd| {

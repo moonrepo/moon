@@ -5,7 +5,7 @@ use moon_logger::{debug, map_list, trace};
 use moon_platform::{PlatformManager, Runtime};
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
-use moon_query::build as build_query;
+use moon_query::build_query;
 use moon_target::{Target, TargetError, TargetScope};
 use moon_task::{Task, TouchedFilePaths};
 use petgraph::graph::NodeIndex;

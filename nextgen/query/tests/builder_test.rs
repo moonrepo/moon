@@ -1,6 +1,6 @@
 use moon_config::{PlatformType, ProjectLanguage, ProjectType, TaskType};
-use moon_query::{build, ComparisonOperator, Condition, Criteria, Field, LogicalOperator};
-use moon_utils::string_vec;
+use moon_query::{build_query, ComparisonOperator, Condition, Criteria, Field, LogicalOperator};
+use starbase_utils::string_vec;
 
 mod mql_build {
     use super::*;
@@ -8,19 +8,19 @@ mod mql_build {
     #[test]
     #[should_panic(expected = "EmptyInput")]
     fn errors_if_empty() {
-        build("").unwrap();
+        build_query("").unwrap();
     }
 
     #[test]
     #[should_panic(expected = "UnknownField(\"key\")")]
     fn errors_unknown_field() {
-        build("key=value").unwrap();
+        build_query("key=value").unwrap();
     }
 
     #[test]
     fn handles_and() {
         assert_eq!(
-            build("language=javascript AND language!=typescript").unwrap(),
+            build_query("language=javascript AND language!=typescript").unwrap(),
             Criteria {
                 op: LogicalOperator::And,
                 conditions: vec![
@@ -40,7 +40,7 @@ mod mql_build {
     #[test]
     fn handles_or() {
         assert_eq!(
-            build("language=javascript || language!=typescript").unwrap(),
+            build_query("language=javascript || language!=typescript").unwrap(),
             Criteria {
                 op: LogicalOperator::Or,
                 conditions: vec![
@@ -60,7 +60,7 @@ mod mql_build {
     #[test]
     #[should_panic(expected = "LogicalOperatorMismatch")]
     fn errors_when_mixing_ops() {
-        build("language=javascript || language!=typescript && language=ruby").unwrap();
+        build_query("language=javascript || language!=typescript && language=ruby").unwrap();
     }
 
     mod nested {
@@ -69,7 +69,7 @@ mod mql_build {
         #[test]
         fn depth_1() {
             assert_eq!(
-                build("language=javascript AND (task=foo || task!=bar OR task~baz)").unwrap(),
+                build_query("language=javascript AND (task=foo || task!=bar OR task~baz)").unwrap(),
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![
@@ -104,7 +104,7 @@ mod mql_build {
         #[test]
         fn depth_1_siblings() {
             assert_eq!(
-                build("language=javascript AND (task=foo || task!=bar) && (taskType=build AND taskType=run)").unwrap(),
+                build_query("language=javascript AND (task=foo || task!=bar) && (taskType=build AND taskType=run)").unwrap(),
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
@@ -142,8 +142,10 @@ mod mql_build {
         #[test]
         fn depth_2() {
             assert_eq!(
-                build("language=javascript AND (task=foo || (taskType=build AND taskType=run))")
-                    .unwrap(),
+                build_query(
+                    "language=javascript AND (task=foo || (taskType=build AND taskType=run))"
+                )
+                .unwrap(),
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![
@@ -235,7 +237,7 @@ mod mql_build {
         #[test]
         fn valid_value() {
             assert_eq!(
-                build("language=javascript").unwrap(),
+                build_query("language=javascript").unwrap(),
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
@@ -249,7 +251,7 @@ mod mql_build {
         #[test]
         fn other_value() {
             assert_eq!(
-                build("language!=other").unwrap(),
+                build_query("language!=other").unwrap(),
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
@@ -263,13 +265,13 @@ mod mql_build {
         #[test]
         #[should_panic(expected = "UnsupportedLikeOperator(\"language\")")]
         fn errors_for_like() {
-            build("language~javascript").unwrap();
+            build_query("language~javascript").unwrap();
         }
 
         #[test]
         #[should_panic(expected = "UnsupportedLikeOperator(\"language\")")]
         fn errors_for_not_like() {
-            build("language!~javascript").unwrap();
+            build_query("language!~javascript").unwrap();
         }
     }
 
@@ -279,7 +281,7 @@ mod mql_build {
         #[test]
         fn name_eq() {
             assert_eq!(
-                build("project!=foo").unwrap(),
+                build_query("project!=foo").unwrap(),
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
@@ -293,7 +295,7 @@ mod mql_build {
         #[test]
         fn name_like() {
             assert_eq!(
-                build("project~foo*").unwrap(),
+                build_query("project~foo*").unwrap(),
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
@@ -311,7 +313,7 @@ mod mql_build {
         #[test]
         fn alias_eq() {
             assert_eq!(
-                build("projectAlias=foo").unwrap(),
+                build_query("projectAlias=foo").unwrap(),
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
@@ -325,7 +327,7 @@ mod mql_build {
         #[test]
         fn alias_like() {
             assert_eq!(
-                build("projectAlias!~foo*").unwrap(),
+                build_query("projectAlias!~foo*").unwrap(),
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
@@ -339,7 +341,7 @@ mod mql_build {
         #[test]
         fn alias_like_scope() {
             assert_eq!(
-                build("projectAlias~@scope/*").unwrap(),
+                build_query("projectAlias~@scope/*").unwrap(),
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
@@ -357,7 +359,7 @@ mod mql_build {
         #[test]
         fn source_eq() {
             assert_eq!(
-                build("projectSource!=packages/foo").unwrap(),
+                build_query("projectSource!=packages/foo").unwrap(),
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
@@ -371,7 +373,7 @@ mod mql_build {
         #[test]
         fn source_like() {
             assert_eq!(
-                build("projectSource!~packages/*").unwrap(),
+                build_query("projectSource!~packages/*").unwrap(),
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
@@ -389,7 +391,7 @@ mod mql_build {
         #[test]
         fn valid_value() {
             assert_eq!(
-                build("projectType=library").unwrap(),
+                build_query("projectType=library").unwrap(),
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
@@ -403,7 +405,7 @@ mod mql_build {
         #[test]
         fn valid_value_list() {
             assert_eq!(
-                build("projectType!=[tool, library]").unwrap(),
+                build_query("projectType!=[tool, library]").unwrap(),
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
@@ -417,19 +419,19 @@ mod mql_build {
         #[test]
         #[should_panic(expected = "UnknownFieldValue(\"projectType\", \"app\")")]
         fn invalid_value() {
-            build("projectType=app").unwrap();
+            build_query("projectType=app").unwrap();
         }
 
         #[test]
         #[should_panic(expected = "UnsupportedLikeOperator(\"projectType\")")]
         fn errors_for_like() {
-            build("projectType~library").unwrap();
+            build_query("projectType~library").unwrap();
         }
 
         #[test]
         #[should_panic(expected = "UnsupportedLikeOperator(\"projectType\")")]
         fn errors_for_not_like() {
-            build("projectType!~tool").unwrap();
+            build_query("projectType!~tool").unwrap();
         }
     }
 
@@ -439,7 +441,7 @@ mod mql_build {
         #[test]
         fn tag_eq() {
             assert_eq!(
-                build("tag=lib").unwrap(),
+                build_query("tag=lib").unwrap(),
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
@@ -453,7 +455,7 @@ mod mql_build {
         #[test]
         fn tag_neq_list() {
             assert_eq!(
-                build("tag!=[foo,bar]").unwrap(),
+                build_query("tag!=[foo,bar]").unwrap(),
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
@@ -467,7 +469,7 @@ mod mql_build {
         #[test]
         fn tag_like() {
             assert_eq!(
-                build("tag~app-*").unwrap(),
+                build_query("tag~app-*").unwrap(),
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
@@ -485,7 +487,7 @@ mod mql_build {
         #[test]
         fn task_eq() {
             assert_eq!(
-                build("task!=foo").unwrap(),
+                build_query("task!=foo").unwrap(),
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
@@ -499,7 +501,7 @@ mod mql_build {
         #[test]
         fn task_like() {
             assert_eq!(
-                build("task~foo*").unwrap(),
+                build_query("task~foo*").unwrap(),
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
@@ -517,7 +519,7 @@ mod mql_build {
         #[test]
         fn valid_value() {
             assert_eq!(
-                build("taskPlatform=node").unwrap(),
+                build_query("taskPlatform=node").unwrap(),
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
@@ -531,7 +533,7 @@ mod mql_build {
         #[test]
         fn valid_value_list() {
             assert_eq!(
-                build("taskPlatform!=[node, system]").unwrap(),
+                build_query("taskPlatform!=[node, system]").unwrap(),
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
@@ -545,19 +547,19 @@ mod mql_build {
         #[test]
         #[should_panic(expected = "UnknownFieldValue(\"taskPlatform\", \"kotlin\")")]
         fn invalid_value() {
-            build("taskPlatform=kotlin").unwrap();
+            build_query("taskPlatform=kotlin").unwrap();
         }
 
         #[test]
         #[should_panic(expected = "UnsupportedLikeOperator(\"taskPlatform\")")]
         fn errors_for_like() {
-            build("taskPlatform~node").unwrap();
+            build_query("taskPlatform~node").unwrap();
         }
 
         #[test]
         #[should_panic(expected = "UnsupportedLikeOperator(\"taskPlatform\")")]
         fn errors_for_not_like() {
-            build("taskPlatform!~node").unwrap();
+            build_query("taskPlatform!~node").unwrap();
         }
     }
 
@@ -567,7 +569,7 @@ mod mql_build {
         #[test]
         fn valid_value() {
             assert_eq!(
-                build("taskType=build").unwrap(),
+                build_query("taskType=build").unwrap(),
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
@@ -581,19 +583,19 @@ mod mql_build {
         #[test]
         #[should_panic(expected = "UnknownFieldValue(\"taskType\", \"kotlin\")")]
         fn invalid_value() {
-            build("taskType=kotlin").unwrap();
+            build_query("taskType=kotlin").unwrap();
         }
 
         #[test]
         #[should_panic(expected = "UnsupportedLikeOperator(\"taskType\")")]
         fn errors_for_like() {
-            build("taskType~node").unwrap();
+            build_query("taskType~node").unwrap();
         }
 
         #[test]
         #[should_panic(expected = "UnsupportedLikeOperator(\"taskType\")")]
         fn errors_for_not_like() {
-            build("taskType!~node").unwrap();
+            build_query("taskType!~node").unwrap();
         }
     }
 }

@@ -1704,7 +1704,7 @@ mod query {
 
         assert
             .failure()
-            .stderr(predicate::str::contains("Unknown query field \"invalid\"."));
+            .stderr(predicate::str::contains("Unknown query field invalid."));
     }
 
     #[test]

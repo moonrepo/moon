@@ -1,5 +1,5 @@
 use crate::errors::QueryError;
-use crate::parser::{parse, AstNode, ComparisonOperator, LogicalOperator};
+use crate::parser::{parse_query, AstNode, ComparisonOperator, LogicalOperator};
 use moon_config::{PlatformType, ProjectLanguage, ProjectType, TaskType};
 use starbase_utils::glob::{GlobError, GlobSet};
 use std::cmp::PartialEq;
@@ -152,10 +152,12 @@ fn build_criteria(ast: Vec<AstNode>) -> Result<Criteria, QueryError> {
     })
 }
 
-pub fn build(input: &str) -> Result<Criteria, QueryError> {
+pub fn build_query<I: AsRef<str>>(input: I) -> Result<Criteria, QueryError> {
+    let input = input.as_ref();
+
     if input.is_empty() {
         return Err(QueryError::EmptyInput);
     }
 
-    build_criteria(parse(input).map_err(|e| QueryError::ParseFailure(e.to_string()))?)
+    build_criteria(parse_query(input).map_err(|e| QueryError::ParseFailure(e.to_string()))?)
 }

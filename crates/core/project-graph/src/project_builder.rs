@@ -115,7 +115,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         // Collect all aliases for the current project ID
         for (alias, project_id) in &self.aliases {
             if project_id == id {
-                project.aliases.push(alias.to_owned());
+                project.alias = Some(alias.to_owned());
             }
         }
 

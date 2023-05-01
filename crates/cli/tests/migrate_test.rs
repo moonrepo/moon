@@ -1,4 +1,4 @@
-use moon_config::{NodeProjectAliasFormat, WorkspaceConfig, WorkspaceProjects};
+use moon_config::{WorkspaceConfig, WorkspaceProjects};
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, get_default_toolchain, predicates::str::contains,
     Sandbox,
@@ -12,10 +12,7 @@ fn migrate_sandbox() -> Sandbox {
         ..WorkspaceConfig::default()
     };
 
-    let mut toolchain_config = get_default_toolchain();
-
-    toolchain_config.node.as_mut().unwrap().alias_package_names =
-        Some(NodeProjectAliasFormat::NameAndScope);
+    let toolchain_config = get_default_toolchain();
 
     create_sandbox_with_config(
         "migrate",

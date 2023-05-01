@@ -1,7 +1,6 @@
 use moon_config::{
-    InheritedTasksConfig, NodeConfig, NodePackageManager, NodeProjectAliasFormat, NpmConfig,
-    PnpmConfig, TaskCommandArgs, TaskConfig, ToolchainConfig, TypeScriptConfig, WorkspaceConfig,
-    WorkspaceProjects, YarnConfig,
+    InheritedTasksConfig, NodeConfig, NodePackageManager, NpmConfig, PnpmConfig, TaskCommandArgs,
+    TaskConfig, ToolchainConfig, TypeScriptConfig, WorkspaceConfig, WorkspaceProjects, YarnConfig,
 };
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
@@ -134,7 +133,6 @@ pub fn get_project_graph_aliases_fixture_configs(
         node: Some(NodeConfig {
             version: Some("18.0.0".into()),
             add_engines_constraint: false,
-            alias_package_names: Some(NodeProjectAliasFormat::NameAndScope),
             dedupe_on_lockfile_change: false,
             npm: NpmConfig {
                 version: Some("8.19.0".into()),

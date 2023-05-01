@@ -21,21 +21,43 @@ tasks:
       - 'designSystem:build'
 ```
 
-## Scopes
+## Common scopes
 
-### Project
+These scopes are available for both running targets and configuring them.
+
+### By project
 
 The most common scope is the project scope, which requires the name of a project, as defined in
-[`.moon/workspace.yml`](../config/workspace). This will run a specific task from that project.
+[`.moon/workspace.yml`](../config/workspace). When paired with a task name, it will run a specific
+task from that project.
 
 ```shell
 # Run `lint` in project `app`
 $ moon run app:lint
 ```
 
-### All projects
+## Run scopes
 
-> Only available on the command line when running targets.
+These scopes are only available on the command line when running targets.
+
+### By tag
+
+Another way to target projects is with the tag scope, which requires the name of a tag prefixed with
+`#`, and will run a specific task in all projects with that tag.
+
+```shell
+# Run `lint` in projects with the tag `frontend`
+$ moon run '#frontend:lint'
+```
+
+:::caution
+
+Because `#` is a special character in the terminal (is considered a comment), you'll need to wrap
+the target in quotes, or escape it like so `\#`.
+
+:::
+
+### All projects
 
 For situations where you want to run a specific target in _all_ projects, for example `lint`ing, you
 can utilize the all projects scope by omitting the project name from the target: `:lint`.
@@ -45,9 +67,11 @@ can utilize the all projects scope by omitting the project name from the target:
 $ moon run :lint
 ```
 
-### Dependencies `^`
+## Config scopes
 
-> Only available when configuring a task.
+These scopes are only available when configuring a task.
+
+### Dependencies `^`
 
 When you want to include a reference for each project [that's depended on](./project#dependencies),
 you can utilize the `^` scope. This will be expanded to _all_ depended on projects. If you do not
@@ -75,8 +99,6 @@ tasks:
 ```
 
 ### Self `~`
-
-> Only available when configuring a task.
 
 When referring to another task within the current project, you can utilize the `~` scope, or emit
 the `~:` prefix altogether, which will be expanded to the current project's name. This is useful for

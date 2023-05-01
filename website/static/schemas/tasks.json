@@ -133,7 +133,8 @@
         "platform": {
           "$ref": "#/definitions/PlatformType"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "TaskMergeStrategy": {
       "type": "string",
@@ -277,8 +278,15 @@
             "boolean",
             "null"
           ]
+        },
+        "shell": {
+          "type": [
+            "boolean",
+            "null"
+          ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "TaskOutputStyle": {
       "type": "string",

@@ -4,12 +4,15 @@
 
 #### 🚀 Updates
 
-- Deprecated `node.aliasPackageNames` setting. Aliases will always be loaded now.
+- Added a new target scope for tags, `#tag:task`, which will run a task for all projects with the
+  given tag.
 - Updated `moon query projects` and `moon query tasks` to support MQL for filtering results.
+- Deprecated `node.aliasPackageNames` setting. Aliases will always be loaded now.
 
 #### ⚙️ Internal
 
 - Upgraded to proto v0.8.
+- Updated JSON schemas with missing fields.
 - Rewrote ID handling for future features.
 
 ## 1.3.2

@@ -93,7 +93,8 @@
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "DependencyScope": {
       "type": "string",
@@ -189,7 +190,8 @@
             "null"
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "ProjectToolchainConfig": {
       "type": "object",
@@ -214,7 +216,8 @@
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "ProjectToolchainNodeConfig": {
       "type": "object",
@@ -225,7 +228,8 @@
             "null"
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "ProjectToolchainTypeScriptConfig": {
       "type": "object",
@@ -251,7 +255,8 @@
             "null"
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "ProjectType": {
       "type": "string",
@@ -268,7 +273,8 @@
         "inheritedTasks": {
           "$ref": "#/definitions/ProjectWorkspaceInheritedTasksConfig"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "ProjectWorkspaceInheritedTasksConfig": {
       "type": "object",
@@ -300,7 +306,8 @@
             "type": "string"
           }
         }
-      }
+      },
+      "additionalProperties": false
     },
     "TaskCommandArgs": {
       "anyOf": [
@@ -383,7 +390,8 @@
         "platform": {
           "$ref": "#/definitions/PlatformType"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "TaskMergeStrategy": {
       "type": "string",
@@ -527,8 +535,15 @@
             "boolean",
             "null"
           ]
+        },
+        "shell": {
+          "type": [
+            "boolean",
+            "null"
+          ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "TaskOutputStyle": {
       "type": "string",

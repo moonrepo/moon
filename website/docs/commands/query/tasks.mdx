@@ -3,6 +3,8 @@ title: query tasks
 sidebar_label: tasks
 ---
 
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
 Use the `moon query tasks` sub-command to query task information for all projects in the project
 graph. The tasks list can be filtered by passing a [query statement](../../concepts/query-lang) as
 an argument, or by using [options](#options) arguments.
@@ -40,7 +42,7 @@ passing the `--json` flag. The output has the following structure:
 ### Arguments
 
 - `[query]` - An optional [query statement](../../concepts/query-lang) to filter projects with. When
-  provided, all [filter options](#filters) are ignored.
+  provided, all [filter options](#filters) are ignored. <VersionLabel version="1.4.0" />
 
 ### Options
 

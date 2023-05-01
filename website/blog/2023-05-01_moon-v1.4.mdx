@@ -54,11 +54,13 @@ enabled with the `node.aliasPackageNames` setting.
 
 In an effort to streamline moon adoption for Node.js codebases, we're deprecating that setting, and
 instead will now always inherit the `package.json` name as an alias. For example, if you're package
-name was `@company/utils`, you could now run a target like so:
+name was `@company/utils`, you can now run a target like so:
 
 ```shell
 $ moon run @company/utils:build
 ```
+
+> This setting is now a no-op and can be removed from your configuration.
 
 ## Other changes
 

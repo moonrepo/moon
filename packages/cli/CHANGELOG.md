@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Deprecated `node.aliasPackageNames` setting. Aliases will always be loaded now.
+
 #### ⚙️ Internal
 
 - Upgraded to proto v0.8.

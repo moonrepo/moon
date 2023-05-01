@@ -450,7 +450,7 @@ mod resolve_args {
         let mut project = create_project(&workspace_root);
         project.language = ProjectLanguage::JavaScript;
         project.type_of = ProjectType::Tool;
-        project.aliases = string_vec!["some-alias", "another-alias"];
+        project.alias = Some("some-alias".into());
 
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
 

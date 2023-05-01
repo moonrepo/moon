@@ -2,14 +2,13 @@ use crate::actions;
 use crate::infer_tasks_from_scripts;
 use moon_action_context::ActionContext;
 use moon_config::{
-    DependencyConfig, DependencyScope, HasherConfig, NodeConfig, NodeProjectAliasFormat,
-    PlatformType, ProjectConfig, ProjectID, ProjectsAliasesMap, ProjectsSourcesMap,
-    TasksConfigsMap, TypeScriptConfig,
+    DependencyConfig, DependencyScope, HasherConfig, NodeConfig, PlatformType, ProjectConfig,
+    ProjectID, ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap, TypeScriptConfig,
 };
 use moon_error::MoonError;
 use moon_hasher::{DepsHasher, HashSet};
 use moon_logger::{debug, warn};
-use moon_node_lang::node::{get_package_manager_workspaces, parse_package_name};
+use moon_node_lang::node::get_package_manager_workspaces;
 use moon_node_lang::{PackageJson, NPM};
 use moon_node_tool::NodeTool;
 use moon_platform::{Platform, Runtime, Version};
@@ -122,14 +121,6 @@ impl Platform for NodePlatform {
         projects_map: &ProjectsSourcesMap,
         aliases_map: &mut ProjectsAliasesMap,
     ) -> Result<(), MoonError> {
-        let mut map_aliases = false;
-        let mut alias_format = NodeProjectAliasFormat::NameAndScope;
-
-        if let Some(custom_format) = &self.config.alias_package_names {
-            map_aliases = true;
-            alias_format = custom_format.clone();
-        }
-
         debug!(
             target: LOG_TARGET,
             "Loading names (aliases) from project {}'s",
@@ -140,65 +131,38 @@ impl Platform for NodePlatform {
             if let Some(package_json) = PackageJson::read(self.workspace_root.join(project_source))?
             {
                 if let Some(package_name) = package_json.name {
-                    // Always track package names internally so that we can discover implicit dependencies
+                    let alias = package_name.clone();
+
                     self.package_names
                         .insert(package_name.clone(), project_id.to_owned());
 
-                    // However, consumers using aliases is opt-in, so account for that
-                    if !map_aliases {
-                        continue;
-                    }
-
-                    let mut aliases = vec![];
-
-                    // We need to support both formats regardless of what the setting is.
-                    // The setting just allows consumers to use a shorthand in addition
-                    // to the full original name!
-                    match alias_format {
-                        NodeProjectAliasFormat::NameAndScope => {
-                            aliases.push(package_name.clone());
-                        }
-                        NodeProjectAliasFormat::NameOnly => {
-                            let name_only = parse_package_name(&package_name).1;
-
-                            if name_only == package_name {
-                                aliases.push(name_only);
-                            } else {
-                                aliases.push(name_only);
-                                aliases.push(package_name.clone());
-                            }
-                        }
-                    };
-
-                    for alias in aliases {
-                        if let Some(existing_source) = projects_map.get(&alias) {
-                            if existing_source != project_source {
-                                warn!(
-                                    target: LOG_TARGET,
-                                    "A project already exists with the ID {} ({}), skipping alias of the same name ({})",
-                                    color::id(alias),
-                                    color::file(existing_source),
-                                    color::file(project_source)
-                                );
-
-                                continue;
-                            }
-                        }
-
-                        if let Some(existing_id) = aliases_map.get(&alias) {
+                    if let Some(existing_source) = projects_map.get(&alias) {
+                        if existing_source != project_source {
                             warn!(
                                 target: LOG_TARGET,
-                                "A project already exists with the alias {} (for ID {}), skipping conflicting alias (from {})",
+                                "A project already exists with the ID {} ({}), skipping alias of the same name ({})",
                                 color::id(alias),
-                                color::id(existing_id),
+                                color::file(existing_source),
                                 color::file(project_source)
                             );
 
                             continue;
                         }
-
-                        aliases_map.insert(alias, project_id.to_owned());
                     }
+
+                    if let Some(existing_id) = aliases_map.get(&alias) {
+                        warn!(
+                            target: LOG_TARGET,
+                            "A project already exists with the alias {} (for ID {}), skipping conflicting alias (from {})",
+                            color::id(alias),
+                            color::id(existing_id),
+                            color::file(project_source)
+                        );
+
+                        continue;
+                    }
+
+                    aliases_map.insert(alias, project_id.to_owned());
                 }
             }
         }

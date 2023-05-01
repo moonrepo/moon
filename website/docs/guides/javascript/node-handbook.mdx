@@ -78,7 +78,7 @@ node:
 
 > Versions can also be defined with [`.prototools`](../../proto/config).
 
-### Using `package.json` names and scripts
+### Using `package.json` scripts
 
 If you're looking to prototype moon, or reduce the migration effort to moon tasks, you can configure
 moon to inherit `package.json` scripts, and internally convert them to moon tasks. This can be
@@ -89,18 +89,6 @@ setting.
 node:
 	inferTasksFromScripts: true
 ```
-
-Furthermore, if you'd like to reference projects by their package name (both in configuration and on
-the command line), instead of the moon project name, enable the
-[`node.aliasPackageNames`](../../config/toolchain#aliaspackagenames) setting.
-
-```yaml title=".moon/toolchain.yml"
-node:
-	aliasPackageNames: 'name-and-scope'
-```
-
-> These are not enabled by default as we want to encourage the
-> [use of moon tasks](../../faq#can-we-use-packagejson-scripts).
 
 ## Repository structure
 

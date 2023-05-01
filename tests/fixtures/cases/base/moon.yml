@@ -1,5 +1,7 @@
+tags: [standard]
+
 tasks:
-  base:
+  standard:
     command: noop
   runFromProject:
     command: echo 'from project'

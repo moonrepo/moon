@@ -5,7 +5,7 @@ use moon_logger::{debug, map_list, trace};
 use moon_platform::{PlatformManager, Runtime};
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
-use moon_query::build_query;
+use moon_query::{build_query, Criteria};
 use moon_target::{Target, TargetError, TargetScope};
 use moon_task::{Task, TouchedFilePaths};
 use petgraph::graph::NodeIndex;
@@ -22,11 +22,11 @@ type RuntimePair = (Runtime, Runtime);
 /// project or task's dependency chain. This is also known as a "task graph" (not to
 /// be confused with our tasks) or a "dependency graph".
 pub struct DepGraphBuilder<'ws> {
+    all_query: Option<Criteria>,
     graph: DepGraphType,
     indices: IndicesType,
     platforms: &'ws PlatformManager,
     project_graph: &'ws ProjectGraph,
-    queried_projects: Option<Vec<&'ws Project>>,
     runtimes: FxHashMap<String, RuntimePair>,
 }
 
@@ -35,11 +35,11 @@ impl<'ws> DepGraphBuilder<'ws> {
         debug!(target: LOG_TARGET, "Creating dependency graph");
 
         DepGraphBuilder {
+            all_query: None,
             graph: Graph::new(),
             indices: FxHashMap::default(),
             platforms,
             project_graph,
-            queried_projects: None,
             runtimes: FxHashMap::default(),
         }
     }
@@ -49,15 +49,7 @@ impl<'ws> DepGraphBuilder<'ws> {
     }
 
     pub fn set_query(&mut self, input: &str) -> Result<(), DepGraphError> {
-        debug!(
-            target: LOG_TARGET,
-            "Applying query to dependency graph: {}",
-            color::shell(input),
-        );
-
-        let query = build_query(input)?;
-
-        self.queried_projects = Some(self.project_graph.query(&query)?);
+        self.all_query = Some(build_query(input)?);
 
         Ok(())
     }
@@ -213,8 +205,8 @@ impl<'ws> DepGraphBuilder<'ws> {
             TargetScope::All => {
                 let mut projects = vec![];
 
-                if let Some(queried_projects) = &self.queried_projects {
-                    projects.extend(queried_projects);
+                if let Some(all_query) = &self.all_query {
+                    projects.extend(self.project_graph.query(all_query)?);
                 } else {
                     projects.extend(self.project_graph.get_all()?);
                 };
@@ -249,7 +241,24 @@ impl<'ws> DepGraphBuilder<'ws> {
                 }
             }
             // #tag:task
-            TargetScope::Tag(_) => todo!(),
+            TargetScope::Tag(tag) => {
+                let projects = self
+                    .project_graph
+                    .query(build_query(format!("tag={}", tag))?)?;
+
+                for project in projects {
+                    if project.tasks.contains_key(target.task_id.as_str()) {
+                        let tag_target = Target::new(&project.id, &target.task_id)?;
+
+                        if let Some(index) =
+                            self.run_target_by_project(&tag_target, project, touched_files)?
+                        {
+                            inserted_targets.insert(tag_target);
+                            inserted_indexes.insert(index);
+                        }
+                    }
+                }
+            }
             // ~:task
             TargetScope::OwnSelf => {
                 return Err(DepGraphError::Target(TargetError::NoSelfInRunContext));

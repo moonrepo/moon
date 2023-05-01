@@ -18,6 +18,9 @@ $ moon run client:dev server:dev
 # Run `test` in all projects
 $ moon run :test
 
+# Run `test` in all projects with tag `frontend`
+$ moon run '#frontend:test'
+
 # Run `format` in closest project (`client`)
 $ cd apps/client
 $ moon run format
@@ -26,7 +29,8 @@ $ moon run format
 $ moon run :build --query "language=javascript && projectType=library"
 ```
 
-> View the official [Run a task](../run-task) article for more information!
+> View the official [Run a task](../run-task) and [Cheat sheet](../cheat-sheet#tasks) articles for
+> more information!
 
 ### Arguments
 

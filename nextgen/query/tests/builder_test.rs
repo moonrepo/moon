@@ -33,6 +33,7 @@ mod mql_build {
                         op: ComparisonOperator::NotEqual,
                     }
                 ],
+                input: Some("language=javascript AND language!=typescript".into())
             },
         );
     }
@@ -53,6 +54,7 @@ mod mql_build {
                         op: ComparisonOperator::NotEqual,
                     }
                 ],
+                input: Some("language=javascript || language!=typescript".into())
             }
         );
     }
@@ -94,9 +96,13 @@ mod mql_build {
                                         op: ComparisonOperator::Like,
                                     }
                                 ],
+                                input: None,
                             }
                         }
                     ],
+                    input: Some(
+                        "language=javascript AND (task=foo || task!=bar OR task~baz)".into()
+                    )
                 }
             );
         }
@@ -122,6 +128,7 @@ mod mql_build {
                                 op: ComparisonOperator::NotEqual,
                             },
                         ],
+                        input: None,
                     } }, Condition::Criteria { criteria: Criteria {
                         op: LogicalOperator::And,
                         conditions: vec![
@@ -134,7 +141,9 @@ mod mql_build {
                                 op: ComparisonOperator::Equal,
                             },
                         ],
+                        input: None
                     } }],
+                    input: Some("language=javascript AND (task=foo || task!=bar) && (taskType=build AND taskType=run)".into())
                 }
             );
         }
@@ -174,12 +183,18 @@ mod mql_build {
                                                     op: ComparisonOperator::Equal,
                                                 },
                                             ],
+                                            input: None,
                                         }
                                     }
                                 ],
+                                input: None,
                             }
                         }
                     ],
+                    input: Some(
+                        "language=javascript AND (task=foo || (taskType=build AND taskType=run))"
+                            .into()
+                    )
                 }
             );
         }
@@ -244,6 +259,7 @@ mod mql_build {
                         field: Field::Language(vec![ProjectLanguage::JavaScript]),
                         op: ComparisonOperator::Equal,
                     }],
+                    input: Some("language=javascript".into())
                 }
             );
         }
@@ -258,6 +274,7 @@ mod mql_build {
                         field: Field::Language(vec![ProjectLanguage::Other("other".into())]),
                         op: ComparisonOperator::NotEqual,
                     }],
+                    input: Some("language!=other".into())
                 }
             );
         }
@@ -288,6 +305,7 @@ mod mql_build {
                         field: Field::Project(string_vec!["foo"]),
                         op: ComparisonOperator::NotEqual,
                     }],
+                    input: Some("project!=foo".into())
                 }
             );
         }
@@ -302,6 +320,7 @@ mod mql_build {
                         field: Field::Project(string_vec!["foo*"]),
                         op: ComparisonOperator::Like,
                     }],
+                    input: Some("project~foo*".into())
                 }
             );
         }
@@ -320,6 +339,7 @@ mod mql_build {
                         field: Field::ProjectAlias(string_vec!["foo"]),
                         op: ComparisonOperator::Equal,
                     }],
+                    input: Some("projectAlias=foo".into())
                 }
             );
         }
@@ -334,6 +354,7 @@ mod mql_build {
                         field: Field::ProjectAlias(string_vec!["foo*"]),
                         op: ComparisonOperator::NotLike,
                     }],
+                    input: Some("projectAlias!~foo*".into())
                 }
             );
         }
@@ -348,6 +369,7 @@ mod mql_build {
                         field: Field::ProjectAlias(string_vec!["@scope/*"]),
                         op: ComparisonOperator::Like,
                     }],
+                    input: Some("projectAlias~@scope/*".into())
                 }
             );
         }
@@ -366,6 +388,7 @@ mod mql_build {
                         field: Field::ProjectSource(string_vec!["packages/foo"]),
                         op: ComparisonOperator::NotEqual,
                     }],
+                    input: Some("projectSource!=packages/foo".into())
                 }
             );
         }
@@ -380,6 +403,7 @@ mod mql_build {
                         field: Field::ProjectSource(string_vec!["packages/*"]),
                         op: ComparisonOperator::NotLike,
                     }],
+                    input: Some("projectSource!~packages/*".into())
                 }
             );
         }
@@ -398,6 +422,7 @@ mod mql_build {
                         field: Field::ProjectType(vec![ProjectType::Library]),
                         op: ComparisonOperator::Equal,
                     }],
+                    input: Some("projectType=library".into())
                 }
             );
         }
@@ -412,6 +437,7 @@ mod mql_build {
                         field: Field::ProjectType(vec![ProjectType::Tool, ProjectType::Library]),
                         op: ComparisonOperator::NotEqual,
                     }],
+                    input: Some("projectType!=[tool, library]".into())
                 }
             );
         }
@@ -448,6 +474,7 @@ mod mql_build {
                         field: Field::Tag(string_vec!["lib"]),
                         op: ComparisonOperator::Equal,
                     }],
+                    input: Some("tag=lib".into())
                 }
             );
         }
@@ -462,6 +489,7 @@ mod mql_build {
                         field: Field::Tag(string_vec!["foo", "bar"]),
                         op: ComparisonOperator::NotEqual,
                     }],
+                    input: Some("tag!=[foo,bar]".into())
                 }
             );
         }
@@ -476,6 +504,7 @@ mod mql_build {
                         field: Field::Tag(string_vec!["app-*"]),
                         op: ComparisonOperator::Like,
                     }],
+                    input: Some("tag~app-*".into())
                 }
             );
         }
@@ -494,6 +523,7 @@ mod mql_build {
                         field: Field::Task(string_vec!["foo"]),
                         op: ComparisonOperator::NotEqual,
                     }],
+                    input: Some("task!=foo".into())
                 }
             );
         }
@@ -508,6 +538,7 @@ mod mql_build {
                         field: Field::Task(string_vec!["foo*"]),
                         op: ComparisonOperator::Like,
                     }],
+                    input: Some("task~foo*".into())
                 }
             );
         }
@@ -526,6 +557,7 @@ mod mql_build {
                         field: Field::TaskPlatform(vec![PlatformType::Node]),
                         op: ComparisonOperator::Equal,
                     }],
+                    input: Some("taskPlatform=node".into())
                 }
             );
         }
@@ -540,6 +572,7 @@ mod mql_build {
                         field: Field::TaskPlatform(vec![PlatformType::Node, PlatformType::System]),
                         op: ComparisonOperator::NotEqual,
                     }],
+                    input: Some("taskPlatform!=[node, system]".into())
                 }
             );
         }
@@ -576,6 +609,7 @@ mod mql_build {
                         field: Field::TaskType(vec![TaskType::Build]),
                         op: ComparisonOperator::Equal,
                     }],
+                    input: Some("taskType=build".into())
                 }
             );
         }

@@ -2,6 +2,8 @@
 title: Targets
 ---
 
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
 A target is a compound identifier that pairs a [scope](#scope) to a [task](./task), separated by a
 `:`, in the format of `scope:task`.
 
@@ -40,7 +42,7 @@ $ moon run app:lint
 
 These scopes are only available on the command line when running targets.
 
-### By tag
+### By tag<VersionLabel version="1.4.0" />
 
 Another way to target projects is with the tag scope, which requires the name of a tag prefixed with
 `#`, and will run a specific task in all projects with that tag.

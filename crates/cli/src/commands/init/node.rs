@@ -182,17 +182,6 @@ pub async fn init_node(
         detect_projects(dest_dir, options, parent_context, theme)?;
     }
 
-    let alias_names = if options.yes || options.minimal {
-        false
-    } else {
-        Confirm::with_theme(theme)
-            .with_prompt(format!(
-                "Use {} names as moon project aliases?",
-                color::file(NPM.manifest)
-            ))
-            .interact()?
-    };
-
     let infer_tasks = if options.yes || options.minimal {
         false
     } else {
@@ -210,7 +199,6 @@ pub async fn init_node(
     context.insert("node_version_manager", &node_version.1);
     context.insert("package_manager", &package_manager.0);
     context.insert("package_manager_version", &package_manager.1);
-    context.insert("alias_names", &alias_names);
     context.insert("infer_tasks", &infer_tasks);
     context.insert("minimal", &options.minimal);
 
@@ -229,7 +217,6 @@ mod tests {
         context.insert("node_version_manager", &"");
         context.insert("package_manager", &"npm");
         context.insert("package_manager_version", &"8.0.0");
-        context.insert("alias_names", &false);
         context.insert("infer_tasks", &false);
 
         assert_snapshot!(render_template(context).unwrap());
@@ -242,7 +229,6 @@ mod tests {
         context.insert("node_version_manager", &"");
         context.insert("package_manager", &"npm");
         context.insert("package_manager_version", &"8.0.0");
-        context.insert("alias_names", &false);
         context.insert("infer_tasks", &false);
         context.insert("minimal", &true);
 
@@ -256,7 +242,6 @@ mod tests {
         context.insert("node_version_manager", &"nvm");
         context.insert("package_manager", &"npm");
         context.insert("package_manager_version", &"8.0.0");
-        context.insert("alias_names", &false);
         context.insert("infer_tasks", &false);
 
         assert_snapshot!(render_template(context).unwrap());
@@ -269,7 +254,6 @@ mod tests {
         context.insert("node_version_manager", &"nodenv");
         context.insert("package_manager", &"npm");
         context.insert("package_manager_version", &"8.0.0");
-        context.insert("alias_names", &false);
         context.insert("infer_tasks", &false);
 
         assert_snapshot!(render_template(context).unwrap());
@@ -282,7 +266,6 @@ mod tests {
         context.insert("node_version_manager", &"");
         context.insert("package_manager", &"npm");
         context.insert("package_manager_version", &"9.0.0");
-        context.insert("alias_names", &false);
         context.insert("infer_tasks", &false);
 
         assert_snapshot!(render_template(context).unwrap());
@@ -295,7 +278,6 @@ mod tests {
         context.insert("node_version_manager", &"");
         context.insert("package_manager", &"pnpm");
         context.insert("package_manager_version", &"7.14.0");
-        context.insert("alias_names", &false);
         context.insert("infer_tasks", &false);
 
         assert_snapshot!(render_template(context).unwrap());
@@ -308,20 +290,18 @@ mod tests {
         context.insert("node_version_manager", &"");
         context.insert("package_manager", &"yarn");
         context.insert("package_manager_version", &"3.2.0");
-        context.insert("alias_names", &false);
         context.insert("infer_tasks", &false);
 
         assert_snapshot!(render_template(context).unwrap());
     }
 
     #[test]
-    fn renders_alias_and_tasks() {
+    fn renders_tasks() {
         let mut context = Context::new();
         context.insert("node_version", &"16.0.0");
         context.insert("node_version_manager", &"");
         context.insert("package_manager", &"npm");
         context.insert("package_manager_version", &"8.0.0");
-        context.insert("alias_names", &true);
         context.insert("infer_tasks", &true);
 
         assert_snapshot!(render_template(context).unwrap());

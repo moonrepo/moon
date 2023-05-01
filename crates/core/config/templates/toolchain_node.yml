@@ -33,13 +33,6 @@ node:
   # Add `node.version` as a constraint in the root `package.json` `engines`.
   addEnginesConstraint: true
 
-  # Use the `package.json` name as an alias for the respective moon project.
-{%- if alias_names %}
-  aliasPackageNames: 'name-and-scope'
-{%- else %}
-  # aliasPackageNames: 'name-and-scope'
-{%- endif %}
-
   # Dedupe dependencies after the lockfile has changed.
   dedupeOnLockfileChange: true
 

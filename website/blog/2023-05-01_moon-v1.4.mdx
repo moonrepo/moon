@@ -1,12 +1,12 @@
 ---
 slug: moon-v1.4
-title: moon v1.4 - ???
+title: moon v1.4 - New tag target scope, MQL support for query commands, and more!
 authors: [milesj]
-tags: [query, lang]
-# image: ./img/moon/v1.3.png
+tags: [query, lang, tag, alias]
+image: ./img/moon/v1.4.png
 ---
 
-???
+With this release, we're bringing further improvements to tags and MQL.
 
 <!--truncate-->
 
@@ -43,6 +43,21 @@ $ moon query projects "task=[lint,build]"
 
 # Find all tasks with an id that starts with "dev"
 $ moon query tasks "task~dev-*"
+```
+
+## Deprecated `node.aliasPackageNames` setting
+
+moon project's support the [concept of aliasing](/docs/concepts/project#aliases), where
+language/ecosystem specific names are used alongside moon's. For example, the `name` field from
+`package.json`. However, aliasing was off by default for Node.js projects and had to be explicitly
+enabled with the `node.aliasPackageNames` setting.
+
+In an effort to streamline moon adoption for Node.js codebases, we're deprecating that setting, and
+instead will now always inherit the `package.json` name as an alias. For example, if you're package
+name was `@company/utils`, you could now run a target like so:
+
+```shell
+$ moon run @company/utils:build
 ```
 
 ## Other changes

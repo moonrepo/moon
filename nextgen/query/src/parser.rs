@@ -81,7 +81,7 @@ fn parse_ast_node(pair: Pair<Rule>) -> Result<Option<AstNode>, Box<Error<Rule>>>
             op: LogicalOperator::Or,
         }),
         Rule::WHITESPACE | Rule::EOI => None,
-        _ => unreachable!(),
+        _ => None,
     })
 }
 
@@ -97,6 +97,6 @@ fn parse_ast(pairs: Pairs<Rule>) -> Result<Vec<AstNode>, Box<Error<Rule>>> {
     Ok(ast)
 }
 
-pub fn parse(input: &str) -> Result<Vec<AstNode>, Box<Error<Rule>>> {
+pub fn parse_query(input: &str) -> Result<Vec<AstNode>, Box<Error<Rule>>> {
     parse_ast(MqlParser::parse(Rule::query, input)?)
 }

@@ -4,12 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-moon_config = { path = "../config" }
-moon_error = { path = "../error" }
+moon_common = { path = "../common" }
+moon_config = { path = "../../crates/core/config" }
 pest = "2.6.0"
 pest_derive = "2.6.0"
 starbase_utils = { workspace = true }
 thiserror = { workspace = true }
-
-[dev-dependencies]
-moon_utils = { path = "../utils" }

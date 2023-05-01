@@ -1,5 +1,6 @@
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_error::MoonError;
+use moon_query::QueryError;
 use moon_target::TargetError;
 use moon_task::TaskError;
 use starbase_styles::{Style, Stylize};
@@ -29,6 +30,9 @@ pub enum ProjectError {
 
     #[error(transparent)]
     Moon(#[from] MoonError),
+
+    #[error(transparent)]
+    Query(#[from] QueryError),
 
     #[error(transparent)]
     Target(#[from] TargetError),

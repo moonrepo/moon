@@ -117,13 +117,11 @@ pub async fn query_projects(
     // When a MQL input is provided, it takes full precedence over option args
     if let Some(query) = &options.query {
         let projects = project_graph
-            .query(&moon_query::build(query)?)?
+            .query(&moon_query::build_query(query)?)?
             .into_iter()
             .filter_map(|project| {
-                if options.affected {
-                    if !project.is_affected(&touched_files) {
-                        return None;
-                    }
+                if options.affected && !project.is_affected(&touched_files) {
+                    return None;
                 }
 
                 Some(project.to_owned())
@@ -143,10 +141,8 @@ pub async fn query_projects(
     let mut projects = vec![];
 
     for project in project_graph.get_all()? {
-        if options.affected {
-            if !project.is_affected(&touched_files) {
-                continue;
-            }
+        if options.affected && !project.is_affected(&touched_files) {
+            continue;
         }
 
         if let Some(regex) = &id_regex {

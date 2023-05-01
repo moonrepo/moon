@@ -1,4 +1,4 @@
-use moon_query::{parse, AstNode, ComparisonOperator, LogicalOperator};
+use moon_query::{parse_query, AstNode, ComparisonOperator, LogicalOperator};
 
 mod mql_parse {
     use super::*;
@@ -6,37 +6,37 @@ mod mql_parse {
     #[test]
     #[should_panic]
     fn errors_if_empty() {
-        parse("").unwrap();
+        parse_query("").unwrap();
     }
 
     #[test]
     #[should_panic]
     fn errors_no_logic_op() {
-        parse("k1=v1 k2=v2").unwrap();
+        parse_query("k1=v1 k2=v2").unwrap();
     }
 
     #[test]
     #[should_panic]
     fn errors_invalid_eq() {
-        parse("k1==v2").unwrap();
+        parse_query("k1==v2").unwrap();
     }
 
     #[test]
     #[should_panic]
     fn errors_invalid_op() {
-        parse("k1=v1 & k2=v2").unwrap();
+        parse_query("k1=v1 & k2=v2").unwrap();
     }
 
     #[test]
     #[should_panic]
     fn errors_double_logic_op() {
-        parse("k1=v1 && && k2=v2").unwrap();
+        parse_query("k1=v1 && && k2=v2").unwrap();
     }
 
     #[test]
     fn comp_eq() {
         assert_eq!(
-            parse("key=value").unwrap(),
+            parse_query("key=value").unwrap(),
             vec![AstNode::Comparison {
                 field: "key".into(),
                 op: ComparisonOperator::Equal,
@@ -48,7 +48,7 @@ mod mql_parse {
     #[test]
     fn comp_eq_list() {
         assert_eq!(
-            parse("key=[v1, v2, v3]").unwrap(),
+            parse_query("key=[v1, v2, v3]").unwrap(),
             vec![AstNode::Comparison {
                 field: "key".into(),
                 op: ComparisonOperator::Equal,
@@ -60,7 +60,7 @@ mod mql_parse {
     #[test]
     fn comp_neq() {
         assert_eq!(
-            parse("key!=value").unwrap(),
+            parse_query("key!=value").unwrap(),
             vec![AstNode::Comparison {
                 field: "key".into(),
                 op: ComparisonOperator::NotEqual,
@@ -72,7 +72,7 @@ mod mql_parse {
     #[test]
     fn comp_neq_list() {
         assert_eq!(
-            parse("key!=[v1,v2,v3]").unwrap(),
+            parse_query("key!=[v1,v2,v3]").unwrap(),
             vec![AstNode::Comparison {
                 field: "key".into(),
                 op: ComparisonOperator::NotEqual,
@@ -84,7 +84,7 @@ mod mql_parse {
     #[test]
     fn comp_like() {
         assert_eq!(
-            parse("key~value").unwrap(),
+            parse_query("key~value").unwrap(),
             vec![AstNode::Comparison {
                 field: "key".into(),
                 op: ComparisonOperator::Like,
@@ -96,7 +96,7 @@ mod mql_parse {
     #[test]
     fn comp_nlike() {
         assert_eq!(
-            parse("key!~value").unwrap(),
+            parse_query("key!~value").unwrap(),
             vec![AstNode::Comparison {
                 field: "key".into(),
                 op: ComparisonOperator::NotLike,
@@ -108,7 +108,7 @@ mod mql_parse {
     #[test]
     fn multi_and_comp() {
         assert_eq!(
-            parse("k1=v1 && k2!=v2 AND k3=[1,2,3]").unwrap(),
+            parse_query("k1=v1 && k2!=v2 AND k3=[1,2,3]").unwrap(),
             vec![
                 AstNode::Comparison {
                     field: "k1".into(),
@@ -138,7 +138,7 @@ mod mql_parse {
     #[test]
     fn multi_or_comp() {
         assert_eq!(
-            parse("k1=v1 || k2!=v2 OR k3=[1,2,3]").unwrap(),
+            parse_query("k1=v1 || k2!=v2 OR k3=[1,2,3]").unwrap(),
             vec![
                 AstNode::Comparison {
                     field: "k1".into(),
@@ -168,7 +168,7 @@ mod mql_parse {
     #[test]
     fn cmp_op_space() {
         assert_eq!(
-            parse("key =  value").unwrap(),
+            parse_query("key =  value").unwrap(),
             vec![AstNode::Comparison {
                 field: "key".into(),
                 op: ComparisonOperator::Equal,
@@ -180,7 +180,7 @@ mod mql_parse {
     #[test]
     fn lgc_op_space() {
         assert_eq!(
-            parse("k1=v1&&      k2!=v2").unwrap(),
+            parse_query("k1=v1&&      k2!=v2").unwrap(),
             vec![
                 AstNode::Comparison {
                     field: "k1".into(),
@@ -202,7 +202,7 @@ mod mql_parse {
     #[test]
     fn group() {
         assert_eq!(
-            parse("k1=v1 && (k2 != v2 OR k3  =  v3)").unwrap(),
+            parse_query("k1=v1 && (k2 != v2 OR k3  =  v3)").unwrap(),
             vec![
                 AstNode::Comparison {
                     field: "k1".into(),
@@ -236,7 +236,7 @@ mod mql_parse {
     #[test]
     fn multi_group() {
         assert_eq!(
-            parse("k1=v1 && (k2!=v2 OR k3=v3) AND (k4=v4 || k5!=[v5,v15])").unwrap(),
+            parse_query("k1=v1 && (k2!=v2 OR k3=v3) AND (k4=v4 || k5!=[v5,v15])").unwrap(),
             vec![
                 AstNode::Comparison {
                     field: "k1".into(),
@@ -290,7 +290,7 @@ mod mql_parse {
     #[test]
     fn nested_group() {
         assert_eq!(
-            parse("k1=v1 && (k2!=v2 OR k3=v3 || (k4=v4 AND k5!=[v5,v15]))").unwrap(),
+            parse_query("k1=v1 && (k2!=v2 OR k3=v3 || (k4=v4 AND k5!=[v5,v15]))").unwrap(),
             vec![
                 AstNode::Comparison {
                     field: "k1".into(),
@@ -344,7 +344,7 @@ mod mql_parse {
     #[test]
     fn like_glob_patterns() {
         assert_eq!(
-            parse("key~value{foo,bar}").unwrap(),
+            parse_query("key~value{foo,bar}").unwrap(),
             vec![AstNode::Comparison {
                 field: "key".into(),
                 op: ComparisonOperator::Like,
@@ -352,7 +352,7 @@ mod mql_parse {
             }],
         );
         assert_eq!(
-            parse("key !~ value[a-z]?").unwrap(),
+            parse_query("key !~ value[a-z]?").unwrap(),
             vec![AstNode::Comparison {
                 field: "key".into(),
                 op: ComparisonOperator::NotLike,
@@ -360,7 +360,7 @@ mod mql_parse {
             }],
         );
         assert_eq!(
-            parse("key~value.*").unwrap(),
+            parse_query("key~value.*").unwrap(),
             vec![AstNode::Comparison {
                 field: "key".into(),
                 op: ComparisonOperator::Like,
@@ -368,7 +368,7 @@ mod mql_parse {
             }],
         );
         assert_eq!(
-            parse("key!~value/**/*").unwrap(),
+            parse_query("key!~value/**/*").unwrap(),
             vec![AstNode::Comparison {
                 field: "key".into(),
                 op: ComparisonOperator::NotLike,

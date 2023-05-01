@@ -28,15 +28,8 @@ pub async fn project(id: String, json: bool) -> Result<(), AnyError> {
     term.render_label(Label::Brand, &project.id)?;
     term.render_entry("Project", color::id(&project.id))?;
 
-    if !project.aliases.is_empty() {
-        term.render_entry(
-            if project.aliases.len() == 1 {
-                "Alias"
-            } else {
-                "Aliases"
-            },
-            map_list(&project.aliases, |alias| color::id(alias)),
-        )?;
+    if let Some(alias) = &project.alias {
+        term.render_entry("Alias", color::id(alias))?;
     }
 
     term.render_entry("Source", color::file(&project.source))?;

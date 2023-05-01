@@ -6,6 +6,7 @@ expression: assert.output()
  ROOT 
 
 Project: root
+Alias: test-cases
 Source: .
 Language: typescript
 Type: unknown

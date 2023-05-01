@@ -264,11 +264,7 @@ impl<'task> TokenResolver<'task> {
             // Project
             "language" => project.language.to_string(),
             "project" => project.id.to_string(),
-            "projectAlias" => project
-                .aliases
-                .first()
-                .map(|a| a.to_string())
-                .unwrap_or_default(),
+            "projectAlias" => project.alias.clone().unwrap_or_default(),
             "projectRoot" => path::to_string(&project.root)?,
             "projectSource" => project.source.to_string(),
             "projectType" => project.type_of.to_string(),

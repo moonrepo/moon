@@ -271,9 +271,9 @@ impl ProjectDependency {
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct Project {
-    /// Unique aliases of the project, alongside its official ID.
+    /// Unique alias of the project, alongside its official ID.
     /// This is typically reserved for language specific semantics, like `name` from `package.json`.
-    pub aliases: Vec<String>,
+    pub alias: Option<String>,
 
     /// Project configuration loaded from "moon.yml", if it exists.
     pub config: ProjectConfig,
@@ -381,7 +381,7 @@ impl Project {
         let tasks = create_tasks_from_config(&log_target, id, &config, &global_tasks)?;
 
         Ok(Project {
-            aliases: vec![],
+            alias: None,
             dependencies,
             file_groups,
             id: id.to_owned(),
@@ -434,7 +434,11 @@ impl Queryable for Project {
                         Field::Language(langs) => condition.matches_enum(langs, &self.language),
                         Field::Project(ids) => condition.matches(ids, &self.id),
                         Field::ProjectAlias(aliases) => {
-                            condition.matches_list(aliases, &self.aliases)
+                            if let Some(alias) = &self.alias {
+                                condition.matches(aliases, alias)
+                            } else {
+                                Ok(false)
+                            }
                         }
                         Field::ProjectSource(sources) => condition.matches(sources, &self.source),
                         Field::ProjectType(types) => condition.matches_enum(types, &self.type_of),

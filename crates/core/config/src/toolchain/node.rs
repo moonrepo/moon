@@ -105,6 +105,7 @@ pub struct NodeConfig {
     #[serde(skip_serializing_if = "is_default_true")]
     pub add_engines_constraint: bool,
 
+    #[deprecated]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub alias_package_names: Option<NodeProjectAliasFormat>,
 
@@ -148,6 +149,7 @@ pub struct NodeConfig {
 
 impl Default for NodeConfig {
     fn default() -> Self {
+        #[allow(deprecated)]
         NodeConfig {
             add_engines_constraint: true,
             alias_package_names: None,

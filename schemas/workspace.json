@@ -8,6 +8,9 @@
       "description": "JSON schema URI",
       "type": "string"
     },
+    "constraints": {
+      "$ref": "#/definitions/ConstraintsConfig"
+    },
     "extends": {
       "type": [
         "string",
@@ -29,6 +32,9 @@
     "runner": {
       "$ref": "#/definitions/RunnerConfig"
     },
+    "telemetry": {
+      "type": "boolean"
+    },
     "vcs": {
       "$ref": "#/definitions/VcsConfig"
     },
@@ -40,6 +46,24 @@
     }
   },
   "definitions": {
+    "ConstraintsConfig": {
+      "type": "object",
+      "properties": {
+        "enforceProjectTypeRelationships": {
+          "type": "boolean"
+        },
+        "tagRelationships": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
     "GeneratorConfig": {
       "type": "object",
       "properties": {
@@ -52,11 +76,20 @@
             "type": "string"
           }
         }
-      }
+      },
+      "additionalProperties": false
     },
     "HasherConfig": {
       "type": "object",
       "properties": {
+        "batchSize": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint16",
+          "minimum": 0.0
+        },
         "optimization": {
           "$ref": "#/definitions/HasherOptimization"
         },
@@ -66,7 +99,8 @@
         "warnOnMissingInputs": {
           "type": "boolean"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "HasherOptimization": {
       "type": "string",
@@ -91,7 +125,8 @@
             "null"
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "RunnerConfig": {
       "type": "object",
@@ -112,7 +147,8 @@
         "logRunningCommand": {
           "type": "boolean"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "VcsConfig": {
       "type": "object",
@@ -134,7 +170,8 @@
             "type": "string"
           }
         }
-      }
+      },
+      "additionalProperties": false
     },
     "VcsManager": {
       "type": "string",

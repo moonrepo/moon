@@ -1,0 +1,38 @@
+---
+slug: moon-v1.4
+title: moon v1.4 - ???
+authors: [milesj]
+tags: [query, lang]
+# image: ./img/moon/v1.3.png
+---
+
+After many months of design and development, we're finally introducing MQL, our own unique query
+language!
+
+<!--truncate-->
+
+## Updated `moon query` commands to support MQL
+
+Last week we announced [MQL](./moon-v1.3#run-targets-based-on-a-query), a custom query language for
+applying filters to moon's project graph, primarily through the [`moon run`](/docs/commands/run)
+command. We plan to slowly integrate MQL throughout moon as it provides an easy to use API, and an
+overall better developer experience.
+
+As such, we've updated both [`moon query projects`](/docs/commands/query/projects) and
+[`moon query tasks`](/docs/commands/query/tasks) to support MQL statements as an optional first
+argument. Totally makes sense that query commands would support MQL!
+
+```shell
+# Find all projects with a `lint` or `build` task
+$ moon query projects "task=[lint,build]"
+
+# Find all tasks with an id that starts with "dev"
+$ moon query tasks "task~dev-*"
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.4.0) for a full list of
+changes.
+
+- Upgraded to proto v0.8.

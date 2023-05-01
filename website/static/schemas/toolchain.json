@@ -56,7 +56,8 @@
         "lockfile": {
           "type": "boolean"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "NodeConfig": {
       "type": "object",
@@ -65,6 +66,7 @@
           "type": "boolean"
         },
         "aliasPackageNames": {
+          "deprecated": true,
           "anyOf": [
             {
               "$ref": "#/definitions/NodeProjectAliasFormat"
@@ -134,7 +136,8 @@
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "NodePackageManager": {
       "type": "string",
@@ -221,7 +224,8 @@
         "syncProjectReferencesToPaths": {
           "type": "boolean"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "YarnConfig": {
       "type": "object",

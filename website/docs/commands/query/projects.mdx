@@ -3,6 +3,8 @@ title: query projects
 sidebar_label: projects
 ---
 
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
 Use the `moon query projects` sub-command to query information about all projects in the project
 graph. The project list can be filtered by passing a [query statement](../../concepts/query-lang) as
 an argument, or by using [options](#options) arguments.
@@ -53,7 +55,7 @@ $ moon query touched-files | moon query projects --affected
 ### Arguments
 
 - `[query]` - An optional [query statement](../../concepts/query-lang) to filter projects with. When
-  provided, all [filter options](#filters) are ignored.
+  provided, all [filter options](#filters) are ignored. <VersionLabel version="1.4.0" />
 
 ### Options
 

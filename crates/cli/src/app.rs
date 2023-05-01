@@ -152,6 +152,9 @@ pub enum QueryCommands {
         rename_all = "camelCase"
     )]
     Tasks {
+        #[arg(help = "Filter projects using a query (takes precedence over options)")]
+        query: Option<String>,
+
         #[arg(long, help = "Filter projects that match this alias")]
         alias: Option<String>,
 

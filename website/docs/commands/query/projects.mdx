@@ -4,7 +4,8 @@ sidebar_label: projects
 ---
 
 Use the `moon query projects` sub-command to query information about all projects in the project
-graph. The project list can be filtered by passing [options](#options).
+graph. The project list can be filtered by passing a [query statement](../../concepts/query-lang) as
+an argument, or by using [options](#options) arguments.
 
 ```shell
 # Find all projects
@@ -12,9 +13,11 @@ $ moon query projects
 
 # Find all projects with an id that matches "react"
 $ moon query projects --id react
+$ moon query projects "project~react"
 
 # Find all projects with a `lint` or `build` task
-$ moon query projects --tasks 'lint|build'
+$ moon query projects --tasks "lint|build"
+$ moon query projects "task=[lint,build]"
 ```
 
 By default, this will output a list of projects in the format of
@@ -47,14 +50,22 @@ $ moon query projects --affected
 $ moon query touched-files | moon query projects --affected
 ```
 
+### Arguments
+
+- `[query]` - An optional [query statement](../../concepts/query-lang) to filter projects with. When
+  provided, all [filter options](#filters) are ignored.
+
 ### Options
 
-All values are case-insensitive regex patterns.
+- `--affected` - Filter projects that have been affected by touched files.
+- `--json` - Display the projects in JSON format.
+
+#### Filters
+
+All option values are case-insensitive regex patterns.
 
 - `--alias <regex>` - Filter projects that match this alias.
-- `--affected` - Filter projects that have been affected by touched files.
 - `--id <regex>` - Filter projects that match this ID/name.
-- `--json` - Display the projects in JSON format.
 - `--language <regex>` - Filter projects of this programming language.
 - `--source <regex>` - Filter projects that match this source path.
 - `--tags <regex>` - Filter projects that have the following tags.

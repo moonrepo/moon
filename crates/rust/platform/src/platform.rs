@@ -1,18 +1,12 @@
-use crate::manifest_hasher::RustManifestHasher;
 use crate::target_hasher::RustTargetHasher;
 use moon_action_context::ActionContext;
-use moon_config::{
-    DependencyConfig, HasherConfig, HasherOptimization, PlatformType, ProjectConfig,
-    ProjectsAliasesMap, RustConfig,
-};
-use moon_error::MoonError;
+use moon_config::{HasherConfig, HasherOptimization, PlatformType, ProjectConfig, RustConfig};
 use moon_hasher::HashSet;
-use moon_lang::LockfileDependencyVersions;
 use moon_platform::{Platform, Runtime, Version};
 use moon_project::{Project, ProjectError};
 use moon_rust_lang::{
     cargo_lock::load_lockfile_dependencies,
-    cargo_toml::{CargoTomlCache, CargoTomlExt, Dependency, DependencyDetail, DepsSet},
+    cargo_toml::{CargoTomlCache, Dependency},
     CARGO,
 };
 use moon_rust_tool::RustTool;
@@ -21,7 +15,6 @@ use moon_tool::{Tool, ToolError, ToolManager};
 use moon_utils::{async_trait, process::Command};
 use proto::{rust::RustLanguage, Executable, Proto};
 use rustc_hash::FxHashMap;
-use starbase_utils::{fs, glob::GlobSet};
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
@@ -35,6 +28,7 @@ pub struct RustPlatform {
 
     toolchain: ToolManager<RustTool>,
 
+    #[allow(dead_code)]
     workspace_root: PathBuf,
 }
 
@@ -68,36 +62,6 @@ impl Platform for RustPlatform {
         }
 
         false
-    }
-
-    // PROJECT GRAPH
-
-    fn is_project_in_dependency_workspace(&self, project: &Project) -> Result<bool, MoonError> {
-        let mut in_workspace = false;
-
-        // Root package is always considered within the workspace
-        if project.root == self.workspace_root {
-            return Ok(true);
-        }
-
-        if let Some(cargo_toml) = CargoTomlCache::read(&self.workspace_root)? {
-            if let Some(workspace) = cargo_toml.workspace {
-                in_workspace = GlobSet::new_split(&workspace.members, &workspace.exclude)?
-                    .matches(&project.source);
-            }
-        }
-
-        Ok(in_workspace)
-    }
-
-    fn load_project_implicit_dependencies(
-        &self,
-        _project: &Project,
-        _aliases_map: &ProjectsAliasesMap,
-    ) -> Result<Vec<DependencyConfig>, MoonError> {
-        let implicit_deps = vec![];
-
-        Ok(implicit_deps)
     }
 
     // TOOLCHAIN
@@ -189,56 +153,58 @@ impl Platform for RustPlatform {
 
     async fn hash_manifest_deps(
         &self,
-        manifest_path: &Path,
-        hashset: &mut HashSet,
+        _manifest_path: &Path,
+        _hashset: &mut HashSet,
         _hasher_config: &HasherConfig,
     ) -> Result<(), ToolError> {
-        let mut hasher = RustManifestHasher::default();
-        let root_cargo_toml = CargoTomlCache::read(&self.workspace_root)?;
+        // NOTE: Since Cargo has no way to install dependencies, we don't actually need this!
 
-        let mut hash_deps = |deps: DepsSet| {
-            for (key, value) in deps {
-                let dep = match value {
-                    Dependency::Simple(version) => DependencyDetail {
-                        version: Some(version),
-                        ..DependencyDetail::default()
-                    },
-                    Dependency::Inherited(data) => {
-                        let mut detail = DependencyDetail {
-                            features: data.features,
-                            optional: data.optional,
-                            ..DependencyDetail::default()
-                        };
+        // let mut hasher = RustManifestHasher::default();
+        // let root_cargo_toml = CargoTomlCache::read(&self.workspace_root)?;
 
-                        if let Some(root) = &root_cargo_toml {
-                            if let Some(root_dep) = root.get_detailed_workspace_dependency(&key) {
-                                detail.version = root_dep.version;
-                                detail.features.extend(root_dep.features);
-                            }
-                        }
+        // let mut hash_deps = |deps: DepsSet| {
+        //     for (key, value) in deps {
+        //         let dep = match value {
+        //             Dependency::Simple(version) => DependencyDetail {
+        //                 version: Some(version),
+        //                 ..DependencyDetail::default()
+        //             },
+        //             Dependency::Inherited(data) => {
+        //                 let mut detail = DependencyDetail {
+        //                     features: data.features,
+        //                     optional: data.optional,
+        //                     ..DependencyDetail::default()
+        //                 };
 
-                        detail
-                    }
-                    Dependency::Detailed(detail) => detail,
-                };
+        //                 if let Some(root) = &root_cargo_toml {
+        //                     if let Some(root_dep) = root.get_detailed_workspace_dependency(&key) {
+        //                         detail.version = root_dep.version;
+        //                         detail.features.extend(root_dep.features);
+        //                     }
+        //                 }
 
-                hasher.dependencies.insert(key, dep);
-            }
-        };
+        //                 detail
+        //             }
+        //             Dependency::Detailed(detail) => detail,
+        //         };
 
-        if let Some(cargo_toml) = CargoTomlCache::read(manifest_path)? {
-            hash_deps(cargo_toml.build_dependencies);
-            hash_deps(cargo_toml.dev_dependencies);
-            hash_deps(cargo_toml.dependencies);
+        //         hasher.dependencies.insert(key, dep);
+        //     }
+        // };
 
-            if let Some(package) = cargo_toml.package {
-                hasher.name = package.name;
-            } else if cargo_toml.workspace.is_some() {
-                hasher.name = "workspace".into();
-            }
-        }
+        // if let Some(cargo_toml) = CargoTomlCache::read(manifest_path)? {
+        //     hash_deps(cargo_toml.build_dependencies);
+        //     hash_deps(cargo_toml.dev_dependencies);
+        //     hash_deps(cargo_toml.dependencies);
 
-        hashset.hash(hasher);
+        //     if let Some(package) = cargo_toml.package {
+        //         hasher.name = package.name;
+        //     } else if cargo_toml.workspace.is_some() {
+        //         hasher.name = "workspace".into();
+        //     }
+        // }
+
+        // hashset.hash(hasher);
 
         Ok(())
     }
@@ -250,39 +216,55 @@ impl Platform for RustPlatform {
         hashset: &mut HashSet,
         hasher_config: &HasherConfig,
     ) -> Result<(), ToolError> {
-        let mut hasher = RustTargetHasher::new(None);
-        let mut resolved_dependencies: LockfileDependencyVersions = FxHashMap::default();
+        let lockfile_path = project.root.join(CARGO.lockfile);
 
-        if matches!(hasher_config.optimization, HasherOptimization::Accuracy) {
-            if let Some(lockfile_path) = fs::find_upwards(CARGO.lockfile, &project.root) {
-                resolved_dependencies.extend(load_lockfile_dependencies(lockfile_path)?);
-            }
+        // Not running in the Cargo workspace root, not sure how to handle!
+        if !lockfile_path.exists() {
+            return Ok(());
         }
 
-        let mut copy_deps = |deps: BTreeMap<String, Dependency>| {
-            for (name, dep) in deps {
-                if let Some(resolved_versions) = resolved_dependencies.get(&name) {
-                    hasher
-                        .locked_dependencies
-                        .insert(name.to_owned(), resolved_versions.to_owned());
-                } else {
-                    let version = match dep {
-                        Dependency::Simple(version) => version,
-                        Dependency::Inherited(_) => "workspace".into(),
-                        Dependency::Detailed(detail) => detail.version.unwrap_or_default(),
-                    };
+        // No Cargo.toml either, just skip hashing
+        let Some(cargo_toml) = CargoTomlCache::read(&project.root)? else {
+            return Ok(());
+        };
 
-                    hasher
-                        .locked_dependencies
-                        .insert(name.to_owned(), vec![version]);
+        let resolved_dependencies = load_lockfile_dependencies(lockfile_path)?;
+        let mut hasher = RustTargetHasher::new(None);
+
+        let mut hash_deps = |deps: BTreeMap<String, Dependency>| {
+            for (name, dep) in deps {
+                if matches!(hasher_config.optimization, HasherOptimization::Accuracy) {
+                    if let Some(resolved_versions) = resolved_dependencies.get(&name) {
+                        hasher
+                            .locked_dependencies
+                            .insert(name.to_owned(), resolved_versions.to_owned());
+                    }
+
+                    return;
                 }
+
+                let version = match dep {
+                    Dependency::Simple(version) => version,
+                    Dependency::Inherited(_) => "workspace".into(),
+                    Dependency::Detailed(detail) => detail.version.unwrap_or_default(),
+                };
+
+                hasher
+                    .locked_dependencies
+                    .insert(name.to_owned(), vec![version]);
             }
         };
 
-        if let Some(cargo_toml) = CargoTomlCache::read(&project.root)? {
-            copy_deps(cargo_toml.build_dependencies);
-            copy_deps(cargo_toml.dev_dependencies);
-            copy_deps(cargo_toml.dependencies);
+        // When in a Cargo workspace, inherit all dependencies from the lockfile.
+        // This is much faster than scanning for all nested Cargo.toml files!
+        if cargo_toml.workspace.is_some() {
+            hasher.locked_dependencies = BTreeMap::from_iter(resolved_dependencies);
+
+        // Otherwise for non-workspaces, inherit the dependencies from the root Cargo.toml
+        } else {
+            hash_deps(cargo_toml.build_dependencies);
+            hash_deps(cargo_toml.dev_dependencies);
+            hash_deps(cargo_toml.dependencies);
         }
 
         hashset.hash(hasher);

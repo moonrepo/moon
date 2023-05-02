@@ -585,6 +585,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3a4f925191b4367301851c6d99b09890311d74b0d43f274c0b34c86d308a3663"
 
 [[package]]
+name = "cargo-lock"
+version = "9.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e11c675378efb449ed3ce8de78d75d0d80542fc98487c26aba28eb3b82feac72"
+dependencies = [
+ "semver",
+ "serde",
+ "toml",
+ "url",
+]
+
+[[package]]
+name = "cargo_toml"
+version = "0.15.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f83bc2e401ed041b7057345ebc488c005efa0341d5541ce7004d30458d0090b"
+dependencies = [
+ "serde",
+ "toml",
+]
+
+[[package]]
 name = "cast"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3139,7 +3161,15 @@ dependencies = [
 name = "moon_rust_lang"
 version = "0.1.0"
 dependencies = [
+ "cached",
+ "cargo-lock",
+ "cargo_toml",
+ "moon_error",
  "moon_lang",
+ "moon_logger",
+ "serde",
+ "starbase_styles",
+ "starbase_utils",
 ]
 
 [[package]]
@@ -4413,6 +4443,9 @@ name = "semver"
 version = "1.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bebd363326d05ec3e2f532ab7660680f3b02130d780c299bca73469d521bc0ed"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "serde"

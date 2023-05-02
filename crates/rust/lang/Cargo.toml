@@ -4,4 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+moon_error = { path = "../../core/error" }
 moon_lang = { path = "../../core/lang" }
+moon_logger = { path = "../../core/logger" }
+cached = { workspace = true }
+cargo-lock = "9.0.0"
+cargo_toml = "0.15.2"
+serde = { workspace = true }
+starbase_styles = { workspace = true }
+starbase_utils = { workspace = true, features = ["toml"] }

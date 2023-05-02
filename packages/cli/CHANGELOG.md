@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added Rust tier 2 language support!
+
 ## 1.4.0
 
 #### 🚀 Updates

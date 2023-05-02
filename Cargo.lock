@@ -3167,6 +3167,7 @@ dependencies = [
  "moon_error",
  "moon_lang",
  "moon_logger",
+ "rustc-hash",
  "serde",
  "starbase_styles",
 ]
@@ -3180,6 +3181,7 @@ dependencies = [
  "moon_config",
  "moon_error",
  "moon_hasher",
+ "moon_lang",
  "moon_logger",
  "moon_platform",
  "moon_project",

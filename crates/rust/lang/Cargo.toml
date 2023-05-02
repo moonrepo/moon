@@ -10,5 +10,6 @@ moon_logger = { path = "../../core/logger" }
 cached = { workspace = true }
 cargo-lock = "9.0.0"
 cargo_toml = "0.15.2"
+rustc-hash = { workspace = true }
 serde = { workspace = true }
 starbase_styles = { workspace = true }

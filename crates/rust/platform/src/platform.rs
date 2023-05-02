@@ -3,32 +3,31 @@ use crate::target_hasher::RustTargetHasher;
 use moon_action_context::ActionContext;
 use moon_config::{
     DependencyConfig, HasherConfig, HasherOptimization, PlatformType, ProjectConfig,
-    ProjectsAliasesMap, RustConfig, TypeScriptConfig,
+    ProjectsAliasesMap, RustConfig,
 };
 use moon_error::MoonError;
 use moon_hasher::HashSet;
-use moon_logger::debug;
+use moon_lang::LockfileDependencyVersions;
 use moon_platform::{Platform, Runtime, Version};
 use moon_project::{Project, ProjectError};
 use moon_rust_lang::{
+    cargo_lock::load_lockfile_dependencies,
     cargo_toml::{CargoTomlCache, CargoTomlExt, Dependency, DependencyDetail, DepsSet},
     CARGO,
 };
 use moon_rust_tool::RustTool;
 use moon_task::Task;
-use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{Tool, ToolError, ToolManager};
 use moon_utils::{async_trait, process::Command};
-use proto::{get_sha256_hash_of_file, Proto};
+use proto::{rust::RustLanguage, Executable, Proto};
 use rustc_hash::FxHashMap;
-use starbase_styles::color;
-use starbase_utils::glob::GlobSet;
+use starbase_utils::{fs, glob::GlobSet};
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
 };
 
-const LOG_TARGET: &str = "moon:rust-platform";
+// const LOG_TARGET: &str = "moon:rust-platform";
 
 #[derive(Debug)]
 pub struct RustPlatform {
@@ -83,17 +82,9 @@ impl Platform for RustPlatform {
 
         if let Some(cargo_toml) = CargoTomlCache::read(&self.workspace_root)? {
             if let Some(workspace) = cargo_toml.workspace {
-                in_workspace = GlobSet::new(&workspace.members)?.matches(&project.source);
+                in_workspace = GlobSet::new_split(&workspace.members, &workspace.exclude)?
+                    .matches(&project.source);
             }
-        }
-
-        if !in_workspace {
-            debug!(
-                target: LOG_TARGET,
-                "Project {} not within root {} workspaces, will be handled externally",
-                color::id(&project.id),
-                color::file(CARGO.manifest)
-            );
         }
 
         Ok(in_workspace)
@@ -259,38 +250,42 @@ impl Platform for RustPlatform {
         hashset: &mut HashSet,
         hasher_config: &HasherConfig,
     ) -> Result<(), ToolError> {
-        // let mut rust_hasher = RustTargetHasher::new(None);
+        let mut hasher = RustTargetHasher::new(None);
+        let mut resolved_dependencies: LockfileDependencyVersions = FxHashMap::default();
 
-        // if matches!(hasher_config.optimization, HasherOptimization::Accuracy)
-        //     && self.config.lockfile
-        // {
-        //     let resolved_dependencies =
-        //         load_lockfile_dependencies(project.root.join(DENO_DEPS.lockfile))?;
+        if matches!(hasher_config.optimization, HasherOptimization::Accuracy) {
+            if let Some(lockfile_path) = fs::find_upwards(CARGO.lockfile, &project.root) {
+                resolved_dependencies.extend(load_lockfile_dependencies(lockfile_path)?);
+            }
+        }
 
-        //     rust_hasher.hash_deps(BTreeMap::from_iter(resolved_dependencies));
-        // };
+        let mut copy_deps = |deps: BTreeMap<String, Dependency>| {
+            for (name, dep) in deps {
+                if let Some(resolved_versions) = resolved_dependencies.get(&name) {
+                    hasher
+                        .locked_dependencies
+                        .insert(name.to_owned(), resolved_versions.to_owned());
+                } else {
+                    let version = match dep {
+                        Dependency::Simple(version) => version,
+                        Dependency::Inherited(_) => "workspace".into(),
+                        Dependency::Detailed(detail) => detail.version.unwrap_or_default(),
+                    };
 
-        // hashset.hash(rust_hasher);
+                    hasher
+                        .locked_dependencies
+                        .insert(name.to_owned(), vec![version]);
+                }
+            }
+        };
 
-        // if let Ok(Some(rust_json)) = RustJson::read(&project.root) {
-        //     if let Some(compiler_options) = &rust_json.compiler_options {
-        //         let mut ts_hasher = TypeScriptTargetHasher::default();
-        //         ts_hasher.hash_compiler_options(compiler_options);
+        if let Some(cargo_toml) = CargoTomlCache::read(&project.root)? {
+            copy_deps(cargo_toml.build_dependencies);
+            copy_deps(cargo_toml.dev_dependencies);
+            copy_deps(cargo_toml.dependencies);
+        }
 
-        //         hashset.hash(ts_hasher);
-        //     }
-        // }
-
-        // // Do we need this if we're using compiler options from rust.json?
-        // if let Some(typescript_config) = &self.typescript_config {
-        //     let ts_hasher = TypeScriptTargetHasher::generate(
-        //         typescript_config,
-        //         &self.workspace_root,
-        //         &project.root,
-        //     )?;
-
-        //     hashset.hash(ts_hasher);
-        // }
+        hashset.hash(hasher);
 
         Ok(())
     }
@@ -304,6 +299,23 @@ impl Platform for RustPlatform {
         working_dir: &Path,
     ) -> Result<Command, ToolError> {
         let mut command = Command::new(&task.command);
+
+        // Binary may be installed to ~/.cargo/bin
+        if task.command != "cargo" && !task.command.starts_with("rust") {
+            let globals_dir = RustLanguage::new(Proto::new()?).get_globals_bin_dir()?;
+            let global_bin_path = globals_dir.join(&task.command);
+            let cargo_bin_path = globals_dir.join(format!("cargo-{}", &task.command));
+
+            // Truly global and doesn't run through cargo
+            if global_bin_path.exists() {
+                command = Command::new(&global_bin_path);
+
+            // Must run through cargo
+            } else if cargo_bin_path.exists() {
+                command = Command::new("cargo");
+                command.arg(&task.command);
+            }
+        }
 
         command.args(&task.args).envs(&task.env).cwd(working_dir);
 

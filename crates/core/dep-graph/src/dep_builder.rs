@@ -106,6 +106,12 @@ impl<'ws> DepGraphBuilder<'ws> {
         if let Ok(platform) = self.platforms.get(project.language.clone()) {
             if !platform.is_project_in_dependency_workspace(project)? {
                 installs_in_project = true;
+
+                debug!(
+                    target: LOG_TARGET,
+                    "Project {} not within dependency workspaces, will be handled externally",
+                    color::id(&project.id),
+                );
             }
         }
 

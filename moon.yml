@@ -1,0 +1,14 @@
+language: 'rust'
+type: 'application'
+
+env:
+  CARGO_TERM_COLOR: 'always'
+
+tasks:
+  check:
+    command: 'cargo check'
+    inputs:
+      - 'crates/**/src/*'
+      - 'nextgen/**/src/*'
+    options:
+      runInCI: false

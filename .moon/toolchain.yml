@@ -1,5 +1,7 @@
 $schema: '../website/static/schemas/toolchain.json'
 
+rust: {}
+
 node:
   version: '20.0.0'
   packageManager: 'yarn'

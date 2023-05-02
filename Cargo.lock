@@ -2486,6 +2486,7 @@ dependencies = [
  "moon_error",
  "moon_node_platform",
  "moon_project_graph",
+ "moon_rust_platform",
  "moon_system_platform",
  "moon_utils",
  "moon_workspace",

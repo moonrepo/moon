@@ -1,14 +1,11 @@
 use crate::target_hasher::RustTargetHasher;
 use moon_action_context::ActionContext;
-use moon_config::{HasherConfig, HasherOptimization, PlatformType, ProjectConfig, RustConfig};
+use moon_config::{HasherConfig, PlatformType, ProjectConfig, RustConfig};
+use moon_error::MoonError;
 use moon_hasher::HashSet;
 use moon_platform::{Platform, Runtime, Version};
 use moon_project::{Project, ProjectError};
-use moon_rust_lang::{
-    cargo_lock::load_lockfile_dependencies,
-    cargo_toml::{CargoTomlCache, Dependency},
-    CARGO,
-};
+use moon_rust_lang::{cargo_lock::load_lockfile_dependencies, CARGO};
 use moon_rust_tool::RustTool;
 use moon_task::Task;
 use moon_tool::{Tool, ToolError, ToolManager};
@@ -62,6 +59,12 @@ impl Platform for RustPlatform {
         }
 
         false
+    }
+
+    // PROJECT GRAPH
+
+    fn is_project_in_dependency_workspace(&self, _project: &Project) -> Result<bool, MoonError> {
+        Ok(true)
     }
 
     // TOOLCHAIN
@@ -214,7 +217,7 @@ impl Platform for RustPlatform {
         project: &Project,
         _runtime: &Runtime,
         hashset: &mut HashSet,
-        hasher_config: &HasherConfig,
+        _hasher_config: &HasherConfig,
     ) -> Result<(), ToolError> {
         let lockfile_path = project.root.join(CARGO.lockfile);
 
@@ -223,49 +226,12 @@ impl Platform for RustPlatform {
             return Ok(());
         }
 
-        // No Cargo.toml either, just skip hashing
-        let Some(cargo_toml) = CargoTomlCache::read(&project.root)? else {
-            return Ok(());
-        };
-
-        let resolved_dependencies = load_lockfile_dependencies(lockfile_path)?;
         let mut hasher = RustTargetHasher::new(None);
 
-        let mut hash_deps = |deps: BTreeMap<String, Dependency>| {
-            for (name, dep) in deps {
-                if matches!(hasher_config.optimization, HasherOptimization::Accuracy) {
-                    if let Some(resolved_versions) = resolved_dependencies.get(&name) {
-                        hasher
-                            .locked_dependencies
-                            .insert(name.to_owned(), resolved_versions.to_owned());
-                    }
-
-                    return;
-                }
-
-                let version = match dep {
-                    Dependency::Simple(version) => version,
-                    Dependency::Inherited(_) => "workspace".into(),
-                    Dependency::Detailed(detail) => detail.version.unwrap_or_default(),
-                };
-
-                hasher
-                    .locked_dependencies
-                    .insert(name.to_owned(), vec![version]);
-            }
-        };
-
-        // When in a Cargo workspace, inherit all dependencies from the lockfile.
-        // This is much faster than scanning for all nested Cargo.toml files!
-        if cargo_toml.workspace.is_some() {
-            hasher.locked_dependencies = BTreeMap::from_iter(resolved_dependencies);
-
-        // Otherwise for non-workspaces, inherit the dependencies from the root Cargo.toml
-        } else {
-            hash_deps(cargo_toml.build_dependencies);
-            hash_deps(cargo_toml.dev_dependencies);
-            hash_deps(cargo_toml.dependencies);
-        }
+        // Use the resolved dependencies from the lockfile directly,
+        // since it also takes into account features and workspace members.
+        hasher.locked_dependencies =
+            BTreeMap::from_iter(load_lockfile_dependencies(lockfile_path)?);
 
         hashset.hash(hasher);
 

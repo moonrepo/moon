@@ -36,7 +36,7 @@ impl fmt::Display for Runtime {
         match self {
             Runtime::Deno(_) => write!(f, "Deno"),
             Runtime::Node(_) => write!(f, "Node"),
-            Runtime::Rust(_) => write!(f, "Deno"),
+            Runtime::Rust(_) => write!(f, "Rust"),
             Runtime::System => write!(f, "System"),
         }
     }

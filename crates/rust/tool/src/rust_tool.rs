@@ -17,19 +17,19 @@ impl RustTool {
         config: &RustConfig,
         version: &Version,
     ) -> Result<RustTool, ToolError> {
-        let mut deno = RustTool {
+        let mut rust = RustTool {
             config: config.to_owned(),
             global: true,
         };
 
         if version.is_global() {
-            deno.global = true;
-            // node.config.version = None;
+            rust.global = true;
+            // rust.config.version = None;
         } else {
-            // node.config.version = Some(version.number.to_owned());
+            // rust.config.version = Some(version.number.to_owned());
         };
 
-        Ok(deno)
+        Ok(rust)
     }
 }
 
@@ -40,6 +40,6 @@ impl Tool for RustTool {
     }
 
     fn get_bin_path(&self) -> Result<PathBuf, ToolError> {
-        Ok(PathBuf::from("rust"))
+        Ok(PathBuf::from("cargo"))
     }
 }

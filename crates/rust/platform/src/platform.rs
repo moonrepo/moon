@@ -1,3 +1,4 @@
+use crate::manifest_hasher::RustManifestHasher;
 use crate::target_hasher::RustTargetHasher;
 use moon_action_context::ActionContext;
 use moon_config::{
@@ -5,7 +6,7 @@ use moon_config::{
     ProjectsAliasesMap, RustConfig, TypeScriptConfig,
 };
 use moon_error::MoonError;
-use moon_hasher::{DepsHasher, HashSet};
+use moon_hasher::HashSet;
 use moon_logger::debug;
 use moon_platform::{Platform, Runtime, Version};
 use moon_project::{Project, ProjectError};
@@ -201,36 +202,40 @@ impl Platform for RustPlatform {
         hashset: &mut HashSet,
         _hasher_config: &HasherConfig,
     ) -> Result<(), ToolError> {
-        let mut hasher = DepsHasher::new("cargo".into());
+        let mut hasher = RustManifestHasher::default();
         let root_cargo_toml = CargoTomlCache::read(&self.workspace_root)?;
 
         let mut hash_deps = |deps: DepsSet| {
             for (key, value) in deps {
                 let dep = match value {
-                    Dependency::Simple(version) => version,
-                    Dependency::Detailed(detail) => serde_json::to_string(&detail).unwrap(),
-                    Dependency::Inherited(dep) => match (&root_cargo_toml, dep.workspace) {
-                        (Some(root), true) => {
-                            let mut detail =
-                                root.get_detailed_workspace_dependency(&key)
-                                    .expect(&format!(
-                                        "Missing root Cargo.toml workspace dependency \"{key}\"."
-                                    ));
-
-                            detail.optional = dep.optional;
-                            detail.features.extend(dep.features);
-
-                            serde_json::to_string(&detail).unwrap()
-                        }
-                        _ => serde_json::to_string(&dep).unwrap(),
+                    Dependency::Simple(version) => DependencyDetail {
+                        version: Some(version),
+                        ..DependencyDetail::default()
                     },
+                    Dependency::Inherited(data) => {
+                        let mut detail = DependencyDetail {
+                            features: data.features,
+                            optional: data.optional,
+                            ..DependencyDetail::default()
+                        };
+
+                        if let Some(root) = &root_cargo_toml {
+                            if let Some(root_dep) = root.get_detailed_workspace_dependency(&key) {
+                                detail.version = root_dep.version;
+                                detail.features.extend(root_dep.features);
+                            }
+                        }
+
+                        detail
+                    }
+                    Dependency::Detailed(detail) => detail,
                 };
 
-                hasher.hash_dep(key, dep);
+                hasher.dependencies.insert(key, dep);
             }
         };
 
-        if let Ok(Some(cargo_toml)) = CargoTomlCache::read(manifest_path) {
+        if let Some(cargo_toml) = CargoTomlCache::read(manifest_path)? {
             hash_deps(cargo_toml.build_dependencies);
             hash_deps(cargo_toml.dev_dependencies);
             hash_deps(cargo_toml.dependencies);

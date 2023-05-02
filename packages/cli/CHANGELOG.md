@@ -5,6 +5,8 @@
 #### 🚀 Updates
 
 - Added Rust tier 2 language support!
+  - Added `rust` setting to `.moon/toolchain.yml`.
+  - Added `rust` as a supported `platform` variant.
 
 ## 1.4.0
 

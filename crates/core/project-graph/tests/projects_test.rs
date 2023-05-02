@@ -1778,7 +1778,7 @@ mod detection {
                     .get_task("command")
                     .unwrap()
                     .platform,
-                PlatformType::System
+                PlatformType::Rust
             );
             assert_eq!(
                 project_graph
@@ -1787,7 +1787,7 @@ mod detection {
                     .get_task("command")
                     .unwrap()
                     .platform,
-                PlatformType::System
+                PlatformType::Rust
             );
         }
 

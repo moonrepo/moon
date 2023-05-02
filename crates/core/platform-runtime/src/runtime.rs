@@ -8,6 +8,7 @@ use std::fmt::{self, Debug};
 pub enum Runtime {
     Deno(Version),
     Node(Version),
+    Rust(Version),
     System,
 }
 
@@ -16,6 +17,7 @@ impl Runtime {
         match self {
             Runtime::Deno(version) => format!("Deno {version}"),
             Runtime::Node(version) => format!("Node.js {version}"),
+            Runtime::Rust(version) => format!("Rust {version}"),
             Runtime::System => "system".into(),
         }
     }
@@ -34,6 +36,7 @@ impl fmt::Display for Runtime {
         match self {
             Runtime::Deno(_) => write!(f, "Deno"),
             Runtime::Node(_) => write!(f, "Node"),
+            Runtime::Rust(_) => write!(f, "Deno"),
             Runtime::System => write!(f, "System"),
         }
     }
@@ -44,6 +47,7 @@ impl From<&Runtime> for PlatformType {
         match value {
             Runtime::Deno(_) => PlatformType::Deno,
             Runtime::Node(_) => PlatformType::Node,
+            Runtime::Rust(_) => PlatformType::Rust,
             Runtime::System => PlatformType::System,
         }
     }

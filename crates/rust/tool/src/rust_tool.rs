@@ -1,4 +1,4 @@
-use moon_config::DenoConfig;
+use moon_config::RustConfig;
 use moon_platform_runtime::Version;
 use moon_tool::{Tool, ToolError};
 use proto::{async_trait, Proto};
@@ -6,7 +6,7 @@ use std::path::PathBuf;
 
 #[derive(Debug)]
 pub struct RustTool {
-    pub config: DenoConfig,
+    pub config: RustConfig,
 
     pub global: bool,
 }
@@ -14,7 +14,7 @@ pub struct RustTool {
 impl RustTool {
     pub fn new(
         _proto: &Proto,
-        config: &DenoConfig,
+        config: &RustConfig,
         version: &Version,
     ) -> Result<RustTool, ToolError> {
         let mut deno = RustTool {

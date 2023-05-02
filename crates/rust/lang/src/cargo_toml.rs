@@ -12,3 +12,28 @@ fn read_manifest(path: &Path) -> Result<CargoToml, MoonError> {
 }
 
 config_cache_container!(CargoTomlCache, CargoToml, CARGO.manifest, read_manifest);
+
+pub trait CargoTomlExt {
+    fn get_detailed_workspace_dependency(&self, name: &str) -> Option<DependencyDetail>;
+}
+
+impl CargoTomlExt for CargoToml {
+    fn get_detailed_workspace_dependency(&self, name: &str) -> Option<DependencyDetail> {
+        let Some(workspace) = &self.workspace else {
+            return None;
+        };
+
+        workspace.dependencies.get(name).map(|dep| match dep {
+            Dependency::Simple(version) => DependencyDetail {
+                version: Some(version.to_owned()),
+                ..DependencyDetail::default()
+            },
+            Dependency::Inherited(data) => DependencyDetail {
+                features: data.features.clone(),
+                optional: data.optional,
+                ..DependencyDetail::default()
+            },
+            Dependency::Detailed(detail) => detail.to_owned(),
+        })
+    }
+}

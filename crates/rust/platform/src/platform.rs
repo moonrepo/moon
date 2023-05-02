@@ -10,7 +10,7 @@ use moon_logger::debug;
 use moon_platform::{Platform, Runtime, Version};
 use moon_project::{Project, ProjectError};
 use moon_rust_lang::{
-    cargo_toml::{CargoTomlCache, DepsSet},
+    cargo_toml::{CargoTomlCache, CargoTomlExt, Dependency, DependencyDetail, DepsSet},
     CARGO,
 };
 use moon_rust_tool::RustTool;
@@ -20,6 +20,8 @@ use moon_tool::{Tool, ToolError, ToolManager};
 use moon_utils::{async_trait, process::Command};
 use proto::{get_sha256_hash_of_file, Proto};
 use rustc_hash::FxHashMap;
+use starbase_styles::color;
+use starbase_utils::glob::GlobSet;
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
@@ -69,6 +71,32 @@ impl Platform for RustPlatform {
     }
 
     // PROJECT GRAPH
+
+    fn is_project_in_dependency_workspace(&self, project: &Project) -> Result<bool, MoonError> {
+        let mut in_workspace = false;
+
+        // Root package is always considered within the workspace
+        if project.root == self.workspace_root {
+            return Ok(true);
+        }
+
+        if let Some(cargo_toml) = CargoTomlCache::read(&self.workspace_root)? {
+            if let Some(workspace) = cargo_toml.workspace {
+                in_workspace = GlobSet::new(&workspace.members)?.matches(&project.source);
+            }
+        }
+
+        if !in_workspace {
+            debug!(
+                target: LOG_TARGET,
+                "Project {} not within root {} workspaces, will be handled externally",
+                color::id(&project.id),
+                color::file(CARGO.manifest)
+            );
+        }
+
+        Ok(in_workspace)
+    }
 
     fn load_project_implicit_dependencies(
         &self,
@@ -152,8 +180,8 @@ impl Platform for RustPlatform {
     async fn install_deps(
         &self,
         _context: &ActionContext,
-        runtime: &Runtime,
-        working_dir: &Path,
+        _runtime: &Runtime,
+        _working_dir: &Path,
     ) -> Result<(), ToolError> {
         Ok(())
     }
@@ -161,8 +189,8 @@ impl Platform for RustPlatform {
     async fn sync_project(
         &self,
         _context: &ActionContext,
-        project: &Project,
-        dependencies: &FxHashMap<String, &Project>,
+        _project: &Project,
+        _dependencies: &FxHashMap<String, &Project>,
     ) -> Result<bool, ProjectError> {
         Ok(false)
     }
@@ -174,10 +202,31 @@ impl Platform for RustPlatform {
         _hasher_config: &HasherConfig,
     ) -> Result<(), ToolError> {
         let mut hasher = DepsHasher::new("cargo".into());
+        let root_cargo_toml = CargoTomlCache::read(&self.workspace_root)?;
 
         let mut hash_deps = |deps: DepsSet| {
             for (key, value) in deps {
-                hasher.hash_dep(key, serde_json::to_string(&value).unwrap());
+                let dep = match value {
+                    Dependency::Simple(version) => version,
+                    Dependency::Detailed(detail) => serde_json::to_string(&detail).unwrap(),
+                    Dependency::Inherited(dep) => match (&root_cargo_toml, dep.workspace) {
+                        (Some(root), true) => {
+                            let mut detail =
+                                root.get_detailed_workspace_dependency(&key)
+                                    .expect(&format!(
+                                        "Missing root Cargo.toml workspace dependency \"{key}\"."
+                                    ));
+
+                            detail.optional = dep.optional;
+                            detail.features.extend(dep.features);
+
+                            serde_json::to_string(&detail).unwrap()
+                        }
+                        _ => serde_json::to_string(&dep).unwrap(),
+                    },
+                };
+
+                hasher.hash_dep(key, dep);
             }
         };
 

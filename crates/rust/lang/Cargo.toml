@@ -13,3 +13,6 @@ cargo_toml = "0.15.2"
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 starbase_styles = { workspace = true }
+
+[dev-dependencies]
+moon_test_utils = { path = "../../core/test-utils" }

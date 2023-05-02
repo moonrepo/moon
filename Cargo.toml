@@ -19,6 +19,7 @@ members = [
 	# Next-gen
 	"nextgen/*"
 ]
+exclude = ["tests/fixtures"]
 default-members = ["crates/cli"]
 
 [workspace.dependencies]

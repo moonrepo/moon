@@ -38,6 +38,7 @@ packages/*/moon.exe
 # moon tests/fixtures
 tests/fixtures/*/.moon/cache
 tests/fixtures/*/.yarn
+tests/fixtures/rust/*/target/
 
 # Debug and profiling cruft
 *.profraw

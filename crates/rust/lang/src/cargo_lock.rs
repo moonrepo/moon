@@ -12,13 +12,6 @@ fn read_lockfile(path: &Path) -> Result<CargoLock, MoonError> {
 
 config_cache_container!(CargoLockCache, CargoLock, CARGO.lockfile, read_lockfile);
 
-// trait CargoLockExt {
-//     async fn get_resolved_dependencies(
-//         &self,
-//         project_root: &Path,
-//     ) -> Result<LockfileDependencyVersions, MoonError>;
-// }
-
 #[cached(result)]
 pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVersions, MoonError> {
     let mut deps: LockfileDependencyVersions = FxHashMap::default();

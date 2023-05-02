@@ -111,6 +111,9 @@ pub enum PlatformType {
     #[strum(serialize = "node")]
     Node,
 
+    #[strum(serialize = "rust")]
+    Rust,
+
     #[strum(serialize = "system")]
     System,
 
@@ -136,12 +139,12 @@ impl From<ProjectLanguage> for PlatformType {
             ProjectLanguage::Bash | ProjectLanguage::Batch => PlatformType::System,
             // Deno and Bun are not covered here!
             ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => PlatformType::Node,
+            ProjectLanguage::Rust => PlatformType::Rust,
             // TODO: Move to these to their own platform once it's been implemented!
             ProjectLanguage::Go
             | ProjectLanguage::Php
             | ProjectLanguage::Python
             | ProjectLanguage::Ruby
-            | ProjectLanguage::Rust
             | ProjectLanguage::Other(_) => PlatformType::System,
         }
     }

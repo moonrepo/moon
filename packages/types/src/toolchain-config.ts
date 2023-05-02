@@ -37,6 +37,10 @@ export interface NodeConfig {
 	yarn: YarnConfig | null;
 }
 
+export interface RustConfig {
+	syncToolchainConfig: boolean;
+}
+
 export interface TypeScriptConfig {
 	createMissingConfig: boolean;
 	projectConfigFileName: string;
@@ -51,5 +55,6 @@ export interface ToolchainConfig {
 	extends: string | null;
 	deno: DenoConfig | null;
 	node: NodeConfig | null;
+	rust: RustConfig | null;
 	typescript: TypeScriptConfig | null;
 }

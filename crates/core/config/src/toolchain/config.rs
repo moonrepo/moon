@@ -4,6 +4,7 @@ use crate::errors::map_validation_errors_to_figment_errors;
 use crate::helpers::{gather_extended_sources, warn_for_unknown_fields};
 use crate::toolchain::deno::DenoConfig;
 use crate::toolchain::node::{NodeConfig, NodePackageManager, PnpmConfig, YarnConfig};
+use crate::toolchain::rust::RustConfig;
 use crate::toolchain::typescript::TypeScriptConfig;
 use crate::validators::{is_default, validate_extends};
 use crate::ConfigError;
@@ -35,6 +36,10 @@ pub struct ToolchainConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate]
     pub node: Option<NodeConfig>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[validate]
+    pub rust: Option<RustConfig>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate]

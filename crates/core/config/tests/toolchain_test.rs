@@ -36,6 +36,7 @@ fn loads_defaults() {
                 extends: None,
                 deno: None,
                 node: None,
+                rust: None,
                 typescript: None,
                 schema: String::new(),
                 unknown: BTreeMap::new()

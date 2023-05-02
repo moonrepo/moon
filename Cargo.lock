@@ -3143,6 +3143,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_rust_tool"
+version = "0.1.0"
+dependencies = [
+ "moon_config",
+ "moon_platform_runtime",
+ "moon_tool",
+ "proto_cli",
+ "rustc-hash",
+]
+
+[[package]]
 name = "moon_system_platform"
 version = "0.1.0"
 dependencies = [

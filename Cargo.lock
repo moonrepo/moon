@@ -3169,7 +3169,33 @@ dependencies = [
  "moon_logger",
  "serde",
  "starbase_styles",
- "starbase_utils",
+]
+
+[[package]]
+name = "moon_rust_platform"
+version = "0.1.0"
+dependencies = [
+ "moon",
+ "moon_action_context",
+ "moon_config",
+ "moon_error",
+ "moon_hasher",
+ "moon_logger",
+ "moon_platform",
+ "moon_project",
+ "moon_project_graph",
+ "moon_rust_lang",
+ "moon_rust_tool",
+ "moon_task",
+ "moon_terminal",
+ "moon_test_utils",
+ "moon_tool",
+ "moon_utils",
+ "proto_cli",
+ "rustc-hash",
+ "serde",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]

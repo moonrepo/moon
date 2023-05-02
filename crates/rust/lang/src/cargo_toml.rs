@@ -3,7 +3,12 @@ use cached::proc_macro::cached;
 use cargo_toml::Manifest as CargoToml;
 use moon_error::MoonError;
 use moon_lang::config_cache_container;
-use starbase_utils::toml::read_file as read_toml;
 use std::path::{Path, PathBuf};
 
-config_cache_container!(CargoTomlCache, CargoToml, CARGO.manifest, read_toml);
+pub use cargo_toml::*;
+
+fn read_manifest(path: &Path) -> Result<CargoToml, MoonError> {
+    CargoToml::from_path(path).map_err(|e| MoonError::Generic(e.to_string()))
+}
+
+config_cache_container!(CargoTomlCache, CargoToml, CARGO.manifest, read_manifest);

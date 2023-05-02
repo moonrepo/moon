@@ -12,4 +12,3 @@ cargo-lock = "9.0.0"
 cargo_toml = "0.15.2"
 serde = { workspace = true }
 starbase_styles = { workspace = true }
-starbase_utils = { workspace = true, features = ["toml"] }

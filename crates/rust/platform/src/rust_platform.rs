@@ -1,11 +1,13 @@
 use crate::target_hasher::RustTargetHasher;
 use moon_action_context::ActionContext;
-use moon_config::{HasherConfig, PlatformType, ProjectConfig, RustConfig};
+use moon_config::{
+    HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, RustConfig,
+};
 use moon_error::MoonError;
 use moon_hasher::HashSet;
 use moon_platform::{Platform, Runtime, Version};
 use moon_project::{Project, ProjectError};
-use moon_rust_lang::{cargo_lock::load_lockfile_dependencies, CARGO};
+use moon_rust_lang::{cargo_lock::load_lockfile_dependencies, cargo_toml::CargoTomlCache, CARGO};
 use moon_rust_tool::RustTool;
 use moon_task::Task;
 use moon_tool::{Tool, ToolError, ToolManager};
@@ -65,6 +67,33 @@ impl Platform for RustPlatform {
 
     fn is_project_in_dependency_workspace(&self, _project: &Project) -> Result<bool, MoonError> {
         Ok(true)
+    }
+
+    fn load_project_graph_aliases(
+        &mut self,
+        projects_map: &ProjectsSourcesMap,
+        aliases_map: &mut ProjectsAliasesMap,
+    ) -> Result<(), MoonError> {
+        // Extract the alias from the Cargo project relative to the lockfile
+        for (id, source) in projects_map {
+            let project_root = self.workspace_root.join(source);
+
+            if !project_root.join(CARGO.lockfile).exists() {
+                continue;
+            }
+
+            if let Some(cargo_toml) = CargoTomlCache::read(project_root)? {
+                if let Some(package) = cargo_toml.package {
+                    if &package.name != id {
+                        aliases_map.insert(package.name, id.to_owned());
+                    }
+                }
+            }
+
+            break;
+        }
+
+        Ok(())
     }
 
     // TOOLCHAIN

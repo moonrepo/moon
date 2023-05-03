@@ -107,9 +107,11 @@ impl ToolchainConfig {
 
         // Inherit settings if configuring in proto
         if config.deno.is_none() && proto_tools.tools.get("deno").is_some() {
-            config.deno = Some(DenoConfig {
-                ..DenoConfig::default()
-            });
+            config.deno = Some(DenoConfig::default());
+        }
+
+        if config.rust.is_none() && proto_tools.tools.get("rust").is_some() {
+            config.rust = Some(RustConfig::default());
         }
 
         if let Some(node_config) = &mut config.node {

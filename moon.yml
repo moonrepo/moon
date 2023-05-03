@@ -4,11 +4,45 @@ type: 'application'
 env:
   CARGO_TERM_COLOR: 'always'
 
+fileGroups:
+  sources:
+    - 'crates/*/src/**/*'
+    - 'crates/*/Cargo.toml'
+    - 'Cargo.toml'
+  tests:
+    - 'crates/*/benches/**/*'
+    - 'crates/*/tests/**/*'
+
+_taskOptions: &options
+  options:
+    runInCI: false
+
 tasks:
-  check:
-    command: 'cargo check'
+  build:
+    <<: *options
+    command: 'cargo build'
     inputs:
-      - 'crates/**/src/*'
-      - 'nextgen/**/src/*'
-    options:
-      runInCI: false
+      - '@globs(sources)'
+  check:
+    <<: *options
+    command: 'cargo check --workspace'
+    inputs:
+      - '@globs(sources)'
+  format:
+    <<: *options
+    command: 'cargo fmt --all --check'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+  lint:
+    <<: *options
+    command: 'cargo clippy --workspace'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+  test:
+    <<: *options
+    command: 'cargo nextest run --workspace'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'

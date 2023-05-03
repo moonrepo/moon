@@ -129,6 +129,7 @@ pub struct ToolchainConfig {
 - [ ] Created config template file
 - [ ] Updated `ToolchainConfig` struct
 - [ ] Ran `cargo make json-schemas` and updated the JSON schemas
+- [ ] Add `.prototools` support in `crates/core/config/src/toolchain/config.rs`
 
 ### Add variant to `PlatformType` enum in `moon_config`
 

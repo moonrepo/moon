@@ -230,6 +230,17 @@ const sidebars = {
 				},
 			],
 		},
+		{
+			type: 'html',
+			value: '<hr />',
+			defaultStyle: true,
+		},
+		{
+			type: 'category',
+			label: 'Rust',
+			collapsed: false,
+			items: ['guides/rust/handbook'],
+		},
 	],
 
 	proto: [

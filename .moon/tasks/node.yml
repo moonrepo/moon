@@ -1,4 +1,4 @@
-$schema: '../website/static/schemas/tasks.json'
+$schema: '../../website/static/schemas/tasks.json'
 
 implicitDeps:
   - '^:build'

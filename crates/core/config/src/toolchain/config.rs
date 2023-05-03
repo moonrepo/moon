@@ -4,6 +4,7 @@ use crate::errors::map_validation_errors_to_figment_errors;
 use crate::helpers::{gather_extended_sources, warn_for_unknown_fields};
 use crate::toolchain::deno::DenoConfig;
 use crate::toolchain::node::{NodeConfig, NodePackageManager, PnpmConfig, YarnConfig};
+use crate::toolchain::rust::RustConfig;
 use crate::toolchain::typescript::TypeScriptConfig;
 use crate::validators::{is_default, validate_extends};
 use crate::ConfigError;
@@ -35,6 +36,10 @@ pub struct ToolchainConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate]
     pub node: Option<NodeConfig>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[validate]
+    pub rust: Option<RustConfig>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate]
@@ -102,9 +107,11 @@ impl ToolchainConfig {
 
         // Inherit settings if configuring in proto
         if config.deno.is_none() && proto_tools.tools.get("deno").is_some() {
-            config.deno = Some(DenoConfig {
-                ..DenoConfig::default()
-            });
+            config.deno = Some(DenoConfig::default());
+        }
+
+        if config.rust.is_none() && proto_tools.tools.get("rust").is_some() {
+            config.rust = Some(RustConfig::default());
         }
 
         if let Some(node_config) = &mut config.node {

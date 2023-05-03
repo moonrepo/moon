@@ -24,25 +24,34 @@ pub enum ActionNode {
 impl ActionNode {
     pub fn label(&self) -> String {
         match self {
-            ActionNode::InstallDeps(platform) => match platform {
-                Runtime::Deno(version) | Runtime::Node(version) => {
+            ActionNode::InstallDeps(platform) => {
+                let version = platform.version();
+
+                if version.is_latest() {
+                    format!("Install{platform}Deps")
+                } else {
                     format!("Install{platform}Deps({version})")
                 }
-                _ => format!("Install{platform}Deps"),
-            },
-            ActionNode::InstallProjectDeps(platform, id) => match platform {
-                Runtime::Deno(version) | Runtime::Node(version) => {
+            }
+            ActionNode::InstallProjectDeps(platform, id) => {
+                let version = platform.version();
+
+                if version.is_latest() {
+                    format!("Install{platform}DepsInProject({id})")
+                } else {
                     format!("Install{platform}DepsInProject({version}, {id})")
                 }
-                _ => format!("Install{platform}DepsInProject({id})"),
-            },
+            }
             ActionNode::RunTarget(_, id) => format!("RunTarget({id})"),
-            ActionNode::SetupTool(platform) => match platform {
-                Runtime::Deno(version) | Runtime::Node(version) => {
+            ActionNode::SetupTool(platform) => {
+                let version = platform.version();
+
+                if version.is_latest() {
+                    format!("Setup{platform}Tool")
+                } else {
                     format!("Setup{platform}Tool({version})")
                 }
-                _ => format!("Setup{platform}Tool"),
-            },
+            }
             ActionNode::SyncProject(platform, id) => format!("Sync{platform}Project({id})"),
         }
     }

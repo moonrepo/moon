@@ -315,6 +315,22 @@ node:
 This is a special setting that ensure other Node.js processes outside of our toolchain are utilizing
 the same version, which is a very common practice when managing dependencies.
 
+## `rust`
+
+<HeadingApiLink to="/api/types/interface/ToolchainConfig#rust" />
+
+Enables and configures [Rust](../guides/rust/handbook).
+
+```yaml title=".moon/toolchain.yml" {1}
+rust: {}
+```
+
+:::info
+
+At this time there are no settings, but configuring an empty object will enable Rust support.
+
+:::
+
 ## `typescript`
 
 <HeadingApiLink to="/api/types/interface/ToolchainConfig#typescript" />

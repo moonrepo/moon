@@ -3,6 +3,7 @@ use moon_dep_graph::DepGraphBuilder;
 use moon_error::MoonError;
 use moon_node_platform::NodePlatform;
 use moon_project_graph::{ProjectGraph, ProjectGraphBuilder, ProjectGraphError};
+use moon_rust_platform::RustPlatform;
 use moon_system_platform::SystemPlatform;
 use moon_utils::{is_ci, is_test_env};
 use moon_workspace::{Workspace, WorkspaceError};
@@ -74,6 +75,10 @@ pub async fn load_workspace_from(path: &Path) -> Result<Workspace, WorkspaceErro
             &workspace.toolchain_config.typescript,
             &workspace.root,
         )));
+    }
+
+    if let Some(rust_config) = &workspace.toolchain_config.rust {
+        workspace.register_platform(Box::new(RustPlatform::new(rust_config, &workspace.root)));
     }
 
     // Should be last since it's the most common

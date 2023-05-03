@@ -82,7 +82,10 @@ pub async fn prune() -> Result<(), AnyError> {
                 )
                 .await?;
             }
-            PlatformType::Deno | PlatformType::System | PlatformType::Unknown => {}
+            PlatformType::Deno
+            | PlatformType::Rust
+            | PlatformType::System
+            | PlatformType::Unknown => {}
         }
     }
 

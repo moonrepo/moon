@@ -807,7 +807,7 @@ mod query {
         let (graph, _sandbox) = get_queries_graph().await;
 
         let projects = graph
-            .query(build_query("language!=[typescript,rust]").unwrap())
+            .query(build_query("language!=[typescript,python]").unwrap())
             .unwrap();
 
         assert_eq!(get_ids(&projects), vec!["a", "d"]);

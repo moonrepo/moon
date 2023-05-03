@@ -42,6 +42,10 @@ impl Version {
         self.number == "global" && self.path_executable
     }
 
+    pub fn is_latest(&self) -> bool {
+        self.number == "latest"
+    }
+
     pub fn is_override(&self) -> bool {
         self.project_override
     }

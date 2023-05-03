@@ -1,5 +1,5 @@
 mod manifest_hasher;
-mod platform;
+mod rust_platform;
 mod target_hasher;
 
-pub use platform::*;
+pub use rust_platform::*;

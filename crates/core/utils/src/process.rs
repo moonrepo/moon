@@ -64,9 +64,9 @@ pub fn format_running_command(
 
 #[derive(Debug)]
 pub struct Command {
-    args: Vec<OsString>,
+    pub args: Vec<OsString>,
 
-    bin: String,
+    pub bin: String,
 
     cwd: Option<PathBuf>,
 

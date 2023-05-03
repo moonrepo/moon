@@ -204,6 +204,10 @@ Crate must exist at `crates/<language>/platform`. Feel free to copy an existing 
 update the implementation.
 
 - [ ] Implemented `Platform` trait
+- [ ] Implemented manifest hashing
+- [ ] Implemented target hashing
+- [ ] Implemented action handlers
+- [ ] Implemented project graph bridge
 
 ## Tier 3
 

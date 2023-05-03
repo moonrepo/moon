@@ -12,7 +12,7 @@ pub struct DepsHasher {
 
     dependencies: DepsMap,
 
-    pub name: String,
+    name: String,
 }
 
 impl DepsHasher {

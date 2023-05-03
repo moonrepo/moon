@@ -252,16 +252,22 @@ impl Platform for RustPlatform {
         if task.command != "cargo" && !task.command.starts_with("rust") {
             let globals_dir = RustLanguage::new(Proto::new()?).get_globals_bin_dir()?;
             let global_bin_path = globals_dir.join(&task.command);
-            let cargo_bin_path = globals_dir.join(format!("cargo-{}", &task.command));
 
-            // Truly global and doesn't run through cargo
-            if global_bin_path.exists() {
-                command = Command::new(&global_bin_path);
+            let cargo_bin = if task.command.starts_with("cargo-") {
+                &task.command[6..]
+            } else {
+                &task.command
+            };
+            let cargo_bin_path = globals_dir.join(format!("cargo-{}", cargo_bin));
 
             // Must run through cargo
-            } else if cargo_bin_path.exists() {
+            if cargo_bin_path.exists() {
                 command = Command::new("cargo");
-                command.arg(&task.command);
+                command.arg(cargo_bin);
+
+                // Truly global and doesn't run through cargo
+            } else if global_bin_path.exists() {
+                command = Command::new(&global_bin_path);
             }
         }
 

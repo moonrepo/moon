@@ -4,6 +4,9 @@ use once_cell::sync::Lazy;
 
 static DENO_COMMANDS: Lazy<regex::Regex> = Lazy::new(|| regex::create_regex("^(deno)$").unwrap());
 
+static RUST_COMMANDS: Lazy<regex::Regex> =
+    Lazy::new(|| regex::create_regex("^(rust-|rustc|rustdoc|rustfmt|rustup|cargo)").unwrap());
+
 static NODE_COMMANDS: Lazy<regex::Regex> = Lazy::new(|| {
     regex::create_regex("^(node|nodejs|npm|npx|yarn|yarnpkg|pnpm|pnpx|corepack)$").unwrap()
 });
@@ -15,6 +18,10 @@ pub fn detect_task_platform(command: &str, language: &ProjectLanguage) -> Platfo
 
     if NODE_COMMANDS.is_match(command) {
         return PlatformType::Node;
+    }
+
+    if RUST_COMMANDS.is_match(command) {
+        return PlatformType::Rust;
     }
 
     if UNIX_SYSTEM_COMMAND.is_match(command) || WINDOWS_SYSTEM_COMMAND.is_match(command) {

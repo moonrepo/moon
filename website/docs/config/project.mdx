@@ -286,6 +286,8 @@ For interoperability reasons, the following command names have special handling.
   - Will execute with `deno` binary.
 - When `platform` is "node":
   - `node`, `npm`, `pnpm`, `yarn` - Uses the binaries from the toolchain.
+- When `platform` is "rust":
+  - Will execute with `cargo` binary.
 
 ### `args`
 
@@ -483,8 +485,9 @@ The `platform` field defines the platform (language runtime) the command runs on
 its executable, and which tool to execute it with. By default moon will set to a value based on the
 project's [`language`](#language) or default [`platform`](#platform).
 
-- `deno` - Command is executed with Deno.
+- `deno` - Command is executed with Deno, or is a Deno binary located in `~/.deno/bin`.
 - `node` - Command is a binary within `node_modules` and will be executed with Node.js.
+- `rust` - Command is executed with Cargo, or is a Cargo binary located in `~/.cargo/bin`.
 - `system` - Command is expected to exist within the system's environment / user's shell.
 - `unknown` - When not configured or inferred.
 

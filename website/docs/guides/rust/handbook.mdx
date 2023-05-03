@@ -1,0 +1,215 @@
+---
+title: Rust handbook
+sidebar_label: Handbook
+toc_max_heading_level: 6
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+Utilizing Rust in a monorepo is a trivial task, thanks to Cargo, and also moon. With this handbook,
+we'll help guide you through this process.
+
+:::info
+
+This guide is a living document and will continue to be updated over time!
+
+:::
+
+## moon setup
+
+For this part of the handbook, we'll be focusing on [moon](/moon), our task runner. To start,
+languages in moon act like plugins, where their functionality and support _is not_ enabled unless
+explicitly configured. We follow this approach to avoid unnecessary overhead.
+
+### Enabling the language
+
+To enable Rust, define the [`rust`](../../config/toolchain#rust) setting in
+[`.moon/toolchain.yml`](../../config/toolchain), even if an empty object.
+
+```yaml title=".moon/toolchain.yml"
+# Enable Rust
+rust: {}
+
+# Enable Rust and override default settings
+rust:
+	syncToolchainConfig: true
+```
+
+Or by pinning a `rust` version in [`.prototools`](../../proto/config) in the workspace root.
+
+```toml title=".prototools"
+rust = "1.69.0"
+```
+
+This will enable the Rust platform and provide the following automations around its ecosystem:
+
+- Manifests and lockfiles are parsed for accurate dependency versions for hashing purposes.
+- Cargo binaries (in `~/.cargo/bin`) are properly located and executed.
+- For non-workspaces, will inherit `package.name` from `Cargo.toml` as a project alias.
+- And more to come!
+
+## Repository structure
+
+Rust/Cargo repositories come in two flavors: a single crate with one `Cargo.toml`, or multiple
+crates with many `Cargo.toml`s using
+[Cargo workspaces](https://doc.rust-lang.org/book/ch14-03-cargo-workspaces.html). The latter is
+highly preferred as it enables Cargo incremental caching.
+
+Regardless of which flavor your repository uses, in moon, both flavors are a single
+[moon project](../../concepts/project). This means that all Rust crates are grouped together into a
+single moon project, and the [`moon.yml`](../../config/project) file is located at the root relative
+to `Cargo.lock` and the `target` folder.
+
+An example of this layout is demonstrated below:
+
+<Tabs
+  groupId="repo-layout"
+  defaultValue="workspaces"
+  values={[
+    { label: 'Workspaces', value: 'workspaces' },
+    { label: 'Non-workspaces', value: 'project' },
+  ]}
+>
+<TabItem value="workspaces">
+
+```
+/
+├── .moon/
+├── crates/
+│   ├── client/
+|   │   ├── ...
+│   │   └── Cargo.toml
+│   ├── server/
+|   │   ├── ...
+│   │   └── Cargo.toml
+│   └── utils/
+|       ├── ...
+│       └── Cargo.toml
+├── target/
+├── Cargo.lock
+├── Cargo.toml
+└── moon.yml
+```
+
+</TabItem>
+<TabItem value="project">
+
+```
+/
+├── .moon/
+├── src/
+│   └── lib.rs
+├── tests/
+│   └── ...
+├── target/
+├── Cargo.lock
+├── Cargo.toml
+└── moon.yml
+```
+
+</TabItem>
+</Tabs>
+
+## Example `moon.yml`
+
+The following configuration represents a base that covers most Rust projects.
+
+<Tabs
+  groupId="repo-layout"
+  defaultValue="workspaces"
+  values={[
+    { label: 'Workspaces', value: 'workspaces' },
+    { label: 'Non-workspaces', value: 'project' },
+  ]}
+>
+<TabItem value="workspaces">
+
+```yaml title="<project>/moon.yml"
+language: 'rust'
+type: 'application'
+
+env:
+	CARGO_TERM_COLOR: 'always'
+
+fileGroups:
+	sources:
+		- 'crates/*/src/**/*'
+		- 'crates/*/Cargo.toml'
+		- 'Cargo.toml'
+	tests:
+		- 'crates/*/benches/**/*'
+		- 'crates/*/tests/**/*'
+
+tasks:
+	build:
+		command: 'cargo build'
+		inputs:
+			- '@globs(sources)'
+	check:
+		command: 'cargo check --workspace'
+		inputs:
+			- '@globs(sources)'
+	format:
+		command: 'cargo fmt --all --check'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+	lint:
+		command: 'cargo clippy --workspace'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+	test:
+		command: 'cargo test --workspace'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+```
+
+</TabItem>
+<TabItem value="project">
+
+```yaml title="<project>/moon.yml"
+language: 'rust'
+type: 'application'
+
+env:
+	CARGO_TERM_COLOR: 'always'
+
+fileGroups:
+	sources:
+		- 'src/**/*'
+		- 'Cargo.toml'
+	tests:
+		- 'benches/**/*'
+		- 'tests/**/*'
+
+tasks:
+	build:
+		command: 'cargo build'
+		inputs:
+			- '@globs(sources)'
+	check:
+		command: 'cargo check'
+		inputs:
+			- '@globs(sources)'
+	format:
+		command: 'cargo fmt --check'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+	lint:
+		command: 'cargo clippy'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+	test:
+		command: 'cargo test'
+		inputs:
+			- '@globs(sources)'
+			- '@globs(tests)'
+```
+
+</TabItem>
+</Tabs>

@@ -36,6 +36,7 @@ fn loads_defaults() {
                 extends: None,
                 deno: None,
                 node: None,
+                rust: None,
                 typescript: None,
                 schema: String::new(),
                 unknown: BTreeMap::new()
@@ -61,6 +62,22 @@ mod proto_tools {
             let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
 
             assert!(config.deno.is_some());
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn enables_rust() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(super::CONFIG_TOOLCHAIN_FILENAME, "{}")?;
+
+            let mut proto = ToolsConfig::default();
+            proto.tools.insert("rust".to_owned(), "1.69.0".to_owned());
+
+            let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
+
+            assert!(config.rust.is_some());
 
             Ok(())
         });

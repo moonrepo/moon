@@ -7,7 +7,7 @@ use moon_node_lang::{NODENV, NPM, NVM, PNPM, YARN};
 use moon_php_lang::{COMPOSER, PHPBREW, PHPENV};
 use moon_python_lang::{PIP, PIPENV, PYENV};
 use moon_ruby_lang::{BUNDLER, RBENV, RVM};
-use moon_rust_lang::{CARGO, RUSTUP};
+use moon_rust_lang::{CARGO, RUSTUP, RUSTUP_LEGACY};
 use std::path::Path;
 
 pub fn detect_project_language(root: &Path) -> ProjectLanguage {
@@ -45,7 +45,10 @@ pub fn detect_project_language(root: &Path) -> ProjectLanguage {
     }
 
     // Rust
-    if is_using_dependency_manager(root, &CARGO, true) || is_using_version_manager(root, &RUSTUP) {
+    if is_using_dependency_manager(root, &CARGO, true)
+        || is_using_version_manager(root, &RUSTUP)
+        || is_using_version_manager(root, &RUSTUP_LEGACY)
+    {
         return ProjectLanguage::Rust;
     }
 

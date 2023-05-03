@@ -1,0 +1,8 @@
+[package]
+name = "path-deps"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+inherited-dep = { path = "../inherited-dep" }
+normal-dep = { path = "../normal-dep" }

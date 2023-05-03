@@ -1,0 +1,7 @@
+[workspace]
+resolver = "2"
+members = ["crates/*"]
+exclude = ["crates/excluded-member"]
+
+[workspace.dependencies]
+cd_env = "0.1.1"

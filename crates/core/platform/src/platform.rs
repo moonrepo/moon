@@ -1,8 +1,8 @@
 use async_trait::async_trait;
 use moon_action_context::ActionContext;
 use moon_config::{
-    DependencyConfig, HasherConfig, PlatformType, ProjectConfig, ProjectLanguage,
-    ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap,
+    DependencyConfig, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap,
+    ProjectsSourcesMap, TasksConfigsMap,
 };
 use moon_error::MoonError;
 use moon_hasher::HashSet;
@@ -33,17 +33,6 @@ pub trait Platform: Debug + Send + Sync {
     /// workspace (not to be confused with moon's workspace).
     fn is_project_in_dependency_workspace(&self, project: &Project) -> Result<bool, MoonError> {
         Ok(false)
-    }
-
-    /// Determine the language of project at the provided path by locating
-    /// and inspecting manifest or config files.
-    fn is_project_language(&self, project_root: &Path) -> Option<ProjectLanguage> {
-        None
-    }
-
-    /// Determine if the command of a task applies to the current platform.
-    fn is_task_command(&self, command: &str) -> bool {
-        false
     }
 
     /// During project graph creation, load project aliases for the resolved

@@ -129,6 +129,7 @@ pub struct ToolchainConfig {
 - [ ] Created config template file
 - [ ] Updated `ToolchainConfig` struct
 - [ ] Ran `cargo make json-schemas` and updated the JSON schemas
+- [ ] Add `.prototools` support in `crates/core/config/src/toolchain/config.rs`
 
 ### Add variant to `PlatformType` enum in `moon_config`
 
@@ -204,6 +205,10 @@ Crate must exist at `crates/<language>/platform`. Feel free to copy an existing 
 update the implementation.
 
 - [ ] Implemented `Platform` trait
+- [ ] Implemented manifest hashing
+- [ ] Implemented target hashing
+- [ ] Implemented action handlers
+- [ ] Implemented project graph bridge
 
 ## Tier 3
 

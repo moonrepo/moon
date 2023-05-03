@@ -104,15 +104,6 @@ impl Platform for NodePlatform {
             in_workspace = GlobSet::new(&globs)?.matches(&project.source);
         }
 
-        if !in_workspace {
-            debug!(
-                target: LOG_TARGET,
-                "Project {} not within root {} workspaces, will be handled externally",
-                color::id(&project.id),
-                color::file(NPM.manifest)
-            );
-        }
-
         Ok(in_workspace)
     }
 

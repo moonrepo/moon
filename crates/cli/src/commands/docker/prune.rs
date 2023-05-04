@@ -6,6 +6,8 @@ use moon_config::PlatformType;
 use moon_node_lang::{PackageJson, NODE};
 use moon_node_tool::NodeTool;
 use moon_project_graph::ProjectGraph;
+use moon_rust_lang::{CARGO, RUST};
+use moon_rust_tool::RustTool;
 use moon_terminal::safe_exit;
 use rustc_hash::FxHashSet;
 use starbase_utils::fs;
@@ -47,6 +49,19 @@ pub async fn prune_node(
     Ok(())
 }
 
+// This assumes that the project was built in --release mode. Is this correct?
+pub async fn prune_rust(_rust: &RustTool, workspace_root: &Path) -> Result<(), AnyError> {
+    let target_dir = workspace_root.join(RUST.vendor_dir.unwrap());
+    let lockfile_path = workspace_root.join(CARGO.lockfile);
+
+    // Only delete target if relative to `Cargo.lock`
+    if target_dir.exists() && lockfile_path.exists() {
+        fs::remove_dir_all(target_dir)?;
+    }
+
+    Ok(())
+}
+
 pub async fn prune() -> Result<(), AnyError> {
     let mut workspace = load_workspace_with_toolchain().await?;
     let manifest_path = workspace.root.join(MANIFEST_NAME);
@@ -82,10 +97,18 @@ pub async fn prune() -> Result<(), AnyError> {
                 )
                 .await?;
             }
-            PlatformType::Deno
-            | PlatformType::Rust
-            | PlatformType::System
-            | PlatformType::Unknown => {}
+            PlatformType::Rust => {
+                prune_rust(
+                    platform
+                        .get_tool()?
+                        .as_any()
+                        .downcast_ref::<RustTool>()
+                        .unwrap(),
+                    &workspace.root,
+                )
+                .await?;
+            }
+            PlatformType::Deno | PlatformType::System | PlatformType::Unknown => {}
         }
     }
 

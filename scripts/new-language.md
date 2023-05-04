@@ -5,8 +5,6 @@ so. Ideally these are done sequentially, as separate PRs, that correlate to our 
 support paradigm.
 
 - INIT SCRIPT
-- BIN COMMAND
-- DOCKER PRUNE
 
 ## Tier 1
 
@@ -291,3 +289,18 @@ project-level toolchain overrides.
 
 When applicable, the run target command should handle the `--profile` option and the CPU/heap
 variants.
+
+### Update `bin` command
+
+The `moon bin` command uses a hard-coded tool list, and is not based on the `PlatformType` or
+`ProjectLanguage` enums. Because of this, tools will need to be handled manually.
+
+- [ ] Updated `crates/cli/src/commands/bin.rs`
+
+### Update `docker prune` and `docker scaffold` commands
+
+By default these commands will do their best to handle languages/platforms, but each tool is
+different and may require custom logic.
+
+- [ ] Updated `crates/cli/src/commands/docker/scaffold.rs` (mainly `scaffold_workspace` function)
+- [ ] Updated `crates/cli/src/commands/docker/prune.rs` (added another prune function)

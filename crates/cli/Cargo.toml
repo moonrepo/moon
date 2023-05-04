@@ -32,6 +32,8 @@ moon_platform_detector = { path = "../core/platform-detector" }
 moon_project = { path = "../core/project" }
 moon_project_graph = { path = "../core/project-graph" }
 moon_query = { path = "../../nextgen/query" }
+moon_rust_lang = { path = "../rust/lang" }
+moon_rust_tool = { path = "../rust/tool" }
 moon_system_platform = { path = "../system/platform" }
 moon_target = { path = "../../nextgen/target" }
 moon_task = { path = "../core/task" }

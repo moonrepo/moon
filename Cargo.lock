@@ -2635,6 +2635,8 @@ dependencies = [
  "moon_project",
  "moon_project_graph",
  "moon_query",
+ "moon_rust_lang",
+ "moon_rust_tool",
  "moon_system_platform",
  "moon_target",
  "moon_task",

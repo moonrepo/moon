@@ -195,9 +195,17 @@ impl Platform for RustPlatform {
     async fn install_deps(
         &self,
         _context: &ActionContext,
-        _runtime: &Runtime,
-        _working_dir: &Path,
+        runtime: &Runtime,
+        working_dir: &Path,
     ) -> Result<(), ToolError> {
+        let lockfile_path = working_dir.join(CARGO.lockfile);
+
+        if !lockfile_path.exists() {
+            let tool = self.toolchain.get_for_version(runtime.version())?;
+
+            tool.exec_cargo(&["generate-lockfile"], working_dir).await?;
+        }
+
         Ok(())
     }
 

@@ -9,5 +9,6 @@ moon_logger = { path = "../../core/logger" }
 moon_platform_runtime = { path = "../../core/platform-runtime" }
 moon_terminal = { path = "../../core/terminal" }
 moon_tool = { path = "../../core/tool" }
+moon_utils = { path = "../../core/utils" }
 proto_cli = { workspace = true }
 rustc-hash = { workspace = true }

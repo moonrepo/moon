@@ -3,9 +3,10 @@ use moon_logger::debug;
 use moon_platform_runtime::Version;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{Tool, ToolError};
+use moon_utils::process::Command;
 use proto::{async_trait, rust::RustLanguage, Installable, Proto, Tool as ProtoTool};
 use rustc_hash::FxHashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
 pub struct RustTool {
@@ -36,6 +37,16 @@ impl RustTool {
         };
 
         Ok(rust)
+    }
+
+    pub async fn exec_cargo(&self, args: &[&str], working_dir: &Path) -> Result<(), ToolError> {
+        Command::new("cargo")
+            .args(args)
+            .cwd(working_dir)
+            .exec_stream_output()
+            .await?;
+
+        Ok(())
     }
 }
 

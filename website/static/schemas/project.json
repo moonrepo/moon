@@ -207,6 +207,16 @@
             }
           ]
         },
+        "rust": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ProjectToolchainRustConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "typescript": {
           "anyOf": [
             {
@@ -221,6 +231,18 @@
       "additionalProperties": false
     },
     "ProjectToolchainNodeConfig": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "ProjectToolchainRustConfig": {
       "type": "object",
       "properties": {
         "version": {

@@ -294,4 +294,20 @@ mod target_command {
         );
         assert_eq!(command.args, &["migrate", "-u"]);
     }
+
+    #[tokio::test]
+    #[should_panic(expected = "MissingBinary(\"Cargo binary\", \"nextest\")")]
+    async fn errors_for_missing_cargo_bin() {
+        let sandbox = create_sandbox("rust/project");
+
+        let mut task = create_task();
+        task.command = "nextest".into();
+        task.args = string_vec!["run", "-w"];
+
+        env::set_var("CARGO_HOME", sandbox.path());
+
+        create_target_command(task).await;
+
+        env::remove_var("CARGO_HOME");
+    }
 }

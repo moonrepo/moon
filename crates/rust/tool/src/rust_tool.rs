@@ -55,33 +55,34 @@ impl Tool for RustTool {
     ) -> Result<u8, ToolError> {
         let mut installed = 0;
 
-        // Don't abort early, as we need to setup package managers below
-        if let Some(version) = &self.config.version {
-            if self.tool.is_setup(version).await? {
-                debug!("Rust has already been setup");
+        let Some(version) = &self.config.version else  {
+            return Ok(installed);
+        };
 
-                // When offline and the tool doesn't exist, fallback to the global binary
-            } else if proto::is_offline() {
-                debug!(
+        if self.tool.is_setup(version).await? {
+            debug!("Rust has already been setup");
+
+            // When offline and the tool doesn't exist, fallback to the global binary
+        } else if proto::is_offline() {
+            debug!(
                     "No internet connection and Rust has not been setup, falling back to global binary in PATH"
                 );
 
-                self.global = true;
+            self.global = true;
 
-                // Otherwise try and install the tool
-            } else {
-                let setup = match last_versions.get("rust") {
-                    Some(last) => version != last,
-                    None => true,
-                };
+            // Otherwise try and install the tool
+        } else {
+            let setup = match last_versions.get("rust") {
+                Some(last) => version != last,
+                None => true,
+            };
 
-                if setup || !self.tool.get_install_dir()?.exists() {
-                    print_checkpoint(format!("installing rust v{version}"), Checkpoint::Setup);
+            if setup || !self.tool.get_install_dir()?.exists() {
+                print_checkpoint(format!("installing rust v{version}"), Checkpoint::Setup);
 
-                    if self.tool.setup(version).await? {
-                        last_versions.insert("rust".into(), version.to_string());
-                        installed += 1;
-                    }
+                if self.tool.setup(version).await? {
+                    last_versions.insert("rust".into(), version.to_string());
+                    installed += 1;
                 }
             }
         }

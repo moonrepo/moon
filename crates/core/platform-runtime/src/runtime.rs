@@ -27,7 +27,7 @@ impl Runtime {
             Runtime::Deno(version) | Runtime::Node(version) | Runtime::Rust(version) => {
                 version.to_owned()
             }
-            _ => Version::new("latest"),
+            Runtime::System => Version::new("latest"),
         }
     }
 }

@@ -15,7 +15,7 @@ fileGroups:
 
 _taskOptions: &options
   options:
-    runInCI: true
+    runInCI: false
 
 tasks:
   build:

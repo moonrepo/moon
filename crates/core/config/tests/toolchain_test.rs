@@ -262,6 +262,23 @@ node:
     }
 
     #[test]
+    fn sets_rust_version_if_empty() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(super::CONFIG_TOOLCHAIN_FILENAME, "rust: {}")?;
+
+            let mut proto = ToolsConfig::default();
+            proto.tools.insert("rust".to_owned(), "1.69.0".to_owned());
+
+            let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
+
+            assert!(config.rust.is_some());
+            assert_eq!(config.rust.unwrap().version.unwrap(), "1.69.0");
+
+            Ok(())
+        });
+    }
+
+    #[test]
     fn doesnt_override_node_version() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(
@@ -351,6 +368,26 @@ node:
 
             assert!(config.node.is_some());
             assert_eq!(config.node.unwrap().yarn.unwrap().version.unwrap(), "3.0.0");
+
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn doesnt_override_rust_version() {
+        figment::Jail::expect_with(|jail| {
+            jail.create_file(
+                super::CONFIG_TOOLCHAIN_FILENAME,
+                "rust:\n  version: '1.69.0'",
+            )?;
+
+            let mut proto = ToolsConfig::default();
+            proto.tools.insert("rust".to_owned(), "1.70.0".to_owned());
+
+            let config = super::load_jailed_config_with_proto(jail.directory(), proto)?;
+
+            assert!(config.rust.is_some());
+            assert_eq!(config.rust.unwrap().version.unwrap(), "1.69.0");
 
             Ok(())
         });

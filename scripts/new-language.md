@@ -244,7 +244,15 @@ pub struct KotlinConfig {
 }
 ```
 
+Furthermore, when applicable, also add version support from `.prototools`.
+
+```toml
+kotlin = "1.2.3"
+```
+
 - [ ] Updated config struct: `crates/core/config/src/toolchain/<lang>.rs`
+- [ ] Supported proto version in `crates/core/config/src/toolchain/config.rs`
+- [ ] Added tests: `crates/core/config/tests/toolchain_test.rs`
 - [ ] Ran `cargo make json-schemas` and updated the JSON schemas
 
 ### Integrate proto tool into moon tool crate

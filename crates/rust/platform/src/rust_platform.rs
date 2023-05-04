@@ -179,24 +179,14 @@ impl Platform for RustPlatform {
         &self,
         _context: &ActionContext,
         _runtime: &Runtime,
-        _working_dir: &Path,
+        working_dir: &Path,
     ) -> Result<(), ToolError> {
-        Ok(())
-    }
-
-    async fn sync_project(
-        &self,
-        _context: &ActionContext,
-        _project: &Project,
-        _dependencies: &FxHashMap<String, &Project>,
-    ) -> Result<bool, ProjectError> {
-        let mut mutated_files = false;
-        let legacy_toolchain_path = self.workspace_root.join(RUSTUP_LEGACY.version_file);
-        let toolchain_path = self.workspace_root.join(RUSTUP.version_file);
+        let legacy_toolchain_path = working_dir.join(RUSTUP_LEGACY.version_file);
+        let toolchain_path = working_dir.join(RUSTUP.version_file);
 
         // Convert rust-toolchain to rust-toolchain.toml
         if legacy_toolchain_path.exists() {
-            let handle_error = |error: FsError| ProjectError::Moon(MoonError::StarFs(error));
+            let handle_error = |error: FsError| ToolError::Moon(MoonError::StarFs(error));
             let legacy_contents = fs::read_file(&legacy_toolchain_path).map_err(handle_error)?;
 
             if legacy_contents.contains("[toolchain]") {
@@ -209,8 +199,6 @@ impl Platform for RustPlatform {
                     ToolchainToml::new_with_channel(&legacy_contents),
                 )?;
             }
-
-            mutated_files = true;
         }
 
         // Sync version into `toolchain.channel`
@@ -218,7 +206,7 @@ impl Platform for RustPlatform {
             let version = self.config.version.clone().unwrap();
 
             if toolchain_path.exists() {
-                let result = ToolchainTomlCache::sync(toolchain_path, |cfg| {
+                ToolchainTomlCache::sync(toolchain_path, |cfg| {
                     if cfg.toolchain.channel != self.config.version {
                         cfg.toolchain.channel = Some(version);
 
@@ -227,21 +215,24 @@ impl Platform for RustPlatform {
 
                     Ok(false)
                 })?;
-
-                if result {
-                    mutated_files = true;
-                }
             } else {
                 ToolchainTomlCache::write(
                     toolchain_path,
                     ToolchainToml::new_with_channel(&version),
                 )?;
-
-                mutated_files = true;
             }
         }
 
-        Ok(mutated_files)
+        Ok(())
+    }
+
+    async fn sync_project(
+        &self,
+        _context: &ActionContext,
+        _project: &Project,
+        _dependencies: &FxHashMap<String, &Project>,
+    ) -> Result<bool, ProjectError> {
+        Ok(false)
     }
 
     async fn hash_manifest_deps(

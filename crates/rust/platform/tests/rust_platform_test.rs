@@ -6,7 +6,6 @@ use moon_rust_platform::RustPlatform;
 use moon_task::Task;
 use moon_test_utils::create_sandbox;
 use moon_utils::{process::Command, string_vec};
-use rustc_hash::FxHashMap;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
@@ -37,7 +36,7 @@ async fn create_target_command(task: Task) -> Command {
         .unwrap()
 }
 
-mod sync_project {
+mod install_deps {
     use super::*;
 
     const TOOLCHAIN: &str = "[toolchain]\nchannel = \"1.69.0\"\n";
@@ -50,16 +49,15 @@ mod sync_project {
         let mut platform = create_platform();
         platform.workspace_root = sandbox.path().to_path_buf();
 
-        let result = platform
-            .sync_project(
+        platform
+            .install_deps(
                 &ActionContext::default(),
-                &Project::default(),
-                &FxHashMap::default(),
+                &Runtime::Rust(Version::new_global()),
+                sandbox.path(),
             )
             .await
             .unwrap();
 
-        assert!(result);
         assert!(!sandbox.path().join("rust-toolchain").exists());
         assert!(sandbox.path().join("rust-toolchain.toml").exists());
 
@@ -77,16 +75,15 @@ mod sync_project {
         let mut platform = create_platform();
         platform.workspace_root = sandbox.path().to_path_buf();
 
-        let result = platform
-            .sync_project(
+        platform
+            .install_deps(
                 &ActionContext::default(),
-                &Project::default(),
-                &FxHashMap::default(),
+                &Runtime::Rust(Version::new_global()),
+                sandbox.path(),
             )
             .await
             .unwrap();
 
-        assert!(result);
         assert!(!sandbox.path().join("rust-toolchain").exists());
         assert!(sandbox.path().join("rust-toolchain.toml").exists());
 
@@ -111,16 +108,15 @@ mod sync_project {
             };
             platform.workspace_root = sandbox.path().to_path_buf();
 
-            let result = platform
-                .sync_project(
+            platform
+                .install_deps(
                     &ActionContext::default(),
-                    &Project::default(),
-                    &FxHashMap::default(),
+                    &Runtime::Rust(Version::new_global()),
+                    sandbox.path(),
                 )
                 .await
                 .unwrap();
 
-            assert!(!result);
             assert_eq!(
                 fs::read_to_string(sandbox.path().join("rust-toolchain.toml")).unwrap(),
                 TOOLCHAIN,
@@ -139,16 +135,15 @@ mod sync_project {
             };
             platform.workspace_root = sandbox.path().to_path_buf();
 
-            let result = platform
-                .sync_project(
+            platform
+                .install_deps(
                     &ActionContext::default(),
-                    &Project::default(),
-                    &FxHashMap::default(),
+                    &Runtime::Rust(Version::new_global()),
+                    sandbox.path(),
                 )
                 .await
                 .unwrap();
 
-            assert!(!result);
             assert_eq!(
                 fs::read_to_string(sandbox.path().join("rust-toolchain.toml")).unwrap(),
                 TOOLCHAIN,
@@ -167,16 +162,15 @@ mod sync_project {
             };
             platform.workspace_root = sandbox.path().to_path_buf();
 
-            let result = platform
-                .sync_project(
+            platform
+                .install_deps(
                     &ActionContext::default(),
-                    &Project::default(),
-                    &FxHashMap::default(),
+                    &Runtime::Rust(Version::new_global()),
+                    sandbox.path(),
                 )
                 .await
                 .unwrap();
 
-            assert!(result);
             assert_eq!(
                 fs::read_to_string(sandbox.path().join("rust-toolchain.toml")).unwrap(),
                 "[toolchain]\nchannel = \"1.70.0\"\n",
@@ -194,16 +188,15 @@ mod sync_project {
             };
             platform.workspace_root = sandbox.path().to_path_buf();
 
-            let result = platform
-                .sync_project(
+            platform
+                .install_deps(
                     &ActionContext::default(),
-                    &Project::default(),
-                    &FxHashMap::default(),
+                    &Runtime::Rust(Version::new_global()),
+                    sandbox.path(),
                 )
                 .await
                 .unwrap();
 
-            assert!(result);
             assert_eq!(
                 fs::read_to_string(sandbox.path().join("rust-toolchain.toml")).unwrap(),
                 "[toolchain]\nchannel = \"1.70.0\"\n",

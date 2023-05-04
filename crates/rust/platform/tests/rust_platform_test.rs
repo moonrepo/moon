@@ -6,7 +6,9 @@ use moon_rust_platform::RustPlatform;
 use moon_task::Task;
 use moon_test_utils::create_sandbox;
 use moon_utils::{process::Command, string_vec};
+use rustc_hash::FxHashMap;
 use std::env;
+use std::fs;
 use std::path::PathBuf;
 
 fn create_platform() -> RustPlatform {
@@ -33,6 +35,165 @@ async fn create_target_command(task: Task) -> Command {
         )
         .await
         .unwrap()
+}
+
+mod sync_project {
+    use super::*;
+
+    const TOOLCHAIN: &str = "[toolchain]\nchannel = \"1.69.0\"\n";
+
+    #[tokio::test]
+    async fn converts_legacy_file() {
+        let sandbox = create_sandbox("rust/project");
+        sandbox.create_file("rust-toolchain", "1.69.0");
+
+        let mut project = Project::default();
+        project.root = sandbox.path().to_path_buf();
+
+        let result = create_platform()
+            .sync_project(&ActionContext::default(), &project, &FxHashMap::default())
+            .await
+            .unwrap();
+
+        assert!(result);
+        assert!(!sandbox.path().join("rust-toolchain").exists());
+        assert!(sandbox.path().join("rust-toolchain.toml").exists());
+
+        assert_eq!(
+            fs::read_to_string(sandbox.path().join("rust-toolchain.toml")).unwrap(),
+            TOOLCHAIN,
+        );
+    }
+
+    #[tokio::test]
+    async fn renames_legacy_file() {
+        let sandbox = create_sandbox("rust/project");
+        sandbox.create_file("rust-toolchain", TOOLCHAIN);
+
+        let mut project = Project::default();
+        project.root = sandbox.path().to_path_buf();
+
+        let result = create_platform()
+            .sync_project(&ActionContext::default(), &project, &FxHashMap::default())
+            .await
+            .unwrap();
+
+        assert!(result);
+        assert!(!sandbox.path().join("rust-toolchain").exists());
+        assert!(sandbox.path().join("rust-toolchain.toml").exists());
+
+        assert_eq!(
+            fs::read_to_string(sandbox.path().join("rust-toolchain.toml")).unwrap(),
+            TOOLCHAIN,
+        );
+    }
+
+    mod sync_toolchain_version {
+        use super::*;
+
+        #[tokio::test]
+        async fn does_nothing_if_not_enabled() {
+            let sandbox = create_sandbox("rust/project");
+            sandbox.create_file("rust-toolchain.toml", TOOLCHAIN);
+
+            let mut platform = create_platform();
+            platform.config = RustConfig {
+                sync_toolchain_config: false,
+                version: Some("1.70.0".into()),
+            };
+
+            let mut project = Project::default();
+            project.root = sandbox.path().to_path_buf();
+
+            let result = platform
+                .sync_project(&ActionContext::default(), &project, &FxHashMap::default())
+                .await
+                .unwrap();
+
+            assert!(!result);
+            assert_eq!(
+                fs::read_to_string(sandbox.path().join("rust-toolchain.toml")).unwrap(),
+                TOOLCHAIN,
+            );
+        }
+
+        #[tokio::test]
+        async fn does_nothing_if_version_not_set() {
+            let sandbox = create_sandbox("rust/project");
+            sandbox.create_file("rust-toolchain.toml", TOOLCHAIN);
+
+            let mut platform = create_platform();
+            platform.config = RustConfig {
+                sync_toolchain_config: true,
+                version: None,
+            };
+
+            let mut project = Project::default();
+            project.root = sandbox.path().to_path_buf();
+
+            let result = platform
+                .sync_project(&ActionContext::default(), &project, &FxHashMap::default())
+                .await
+                .unwrap();
+
+            assert!(!result);
+            assert_eq!(
+                fs::read_to_string(sandbox.path().join("rust-toolchain.toml")).unwrap(),
+                TOOLCHAIN,
+            );
+        }
+
+        #[tokio::test]
+        async fn syncs_file() {
+            let sandbox = create_sandbox("rust/project");
+            sandbox.create_file("rust-toolchain.toml", TOOLCHAIN);
+
+            let mut platform = create_platform();
+            platform.config = RustConfig {
+                sync_toolchain_config: true,
+                version: Some("1.70.0".into()),
+            };
+
+            let mut project = Project::default();
+            project.root = sandbox.path().to_path_buf();
+
+            let result = platform
+                .sync_project(&ActionContext::default(), &project, &FxHashMap::default())
+                .await
+                .unwrap();
+
+            assert!(result);
+            assert_eq!(
+                fs::read_to_string(sandbox.path().join("rust-toolchain.toml")).unwrap(),
+                "[toolchain]\nchannel = \"1.70.0\"\n",
+            );
+        }
+
+        #[tokio::test]
+        async fn creates_file() {
+            let sandbox = create_sandbox("rust/project");
+
+            let mut platform = create_platform();
+            platform.config = RustConfig {
+                sync_toolchain_config: true,
+                version: Some("1.70.0".into()),
+            };
+
+            let mut project = Project::default();
+            project.root = sandbox.path().to_path_buf();
+
+            let result = platform
+                .sync_project(&ActionContext::default(), &project, &FxHashMap::default())
+                .await
+                .unwrap();
+
+            assert!(result);
+            assert_eq!(
+                fs::read_to_string(sandbox.path().join("rust-toolchain.toml")).unwrap(),
+                "[toolchain]\nchannel = \"1.70.0\"\n",
+            );
+        }
+    }
 }
 
 mod target_command {
@@ -132,5 +293,21 @@ mod target_command {
             sandbox.path().join("bin").join("sea-orm").to_str().unwrap()
         );
         assert_eq!(command.args, &["migrate", "-u"]);
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "MissingBinary(\"Cargo binary\", \"nextest\")")]
+    async fn errors_for_missing_cargo_bin() {
+        let sandbox = create_sandbox("rust/project");
+
+        let mut task = create_task();
+        task.command = "nextest".into();
+        task.args = string_vec!["run", "-w"];
+
+        env::set_var("CARGO_HOME", sandbox.path());
+
+        create_target_command(task).await;
+
+        env::remove_var("CARGO_HOME");
     }
 }

@@ -70,8 +70,8 @@ impl Platform for NodePlatform {
             }
         }
 
-        if let Some(node_version) = &self.config.version {
-            return Runtime::Node(Version::new(node_version));
+        if let Some(version) = &self.config.version {
+            return Runtime::Node(Version::new(version));
         }
 
         // Global

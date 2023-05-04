@@ -50,6 +50,36 @@ This will enable the Rust platform and provide the following automations around 
 - For non-workspaces, will inherit `package.name` from `Cargo.toml` as a project alias.
 - And more to come!
 
+### Utilizing the toolchain
+
+When a language is enabled, moon by default will assume that the language's binary is available
+within the current environment (typically on `PATH`). This has the downside of requiring all
+developers and machines to manually install the correct version of the language, _and to stay in
+sync_.
+
+Instead, you can utilize [moon's toolchain](../../concepts/toolchain), which will download and
+install the language in the background, and ensure every task is executed using the exact version
+across all machines.
+
+Enabling the toolchain is as simple as defining the
+[`rust.version`](../../config/toolchain#version-2) setting.
+
+```yaml title=".moon/toolchain.yml"
+# Enable Rust toolchain with an explicit version
+rust:
+	version: '18.0.0'
+```
+
+> Versions can also be defined with [`.prototools`](../../proto/config).
+
+:::caution
+
+moon requires `rustup` to exist in the environment, and will use this to install the necessary Rust
+toolchains. This requires Rust to be manually installed on the machine, as moon does not
+auto-install the language, just the toolchains.
+
+:::
+
 ## Repository structure
 
 Rust/Cargo repositories come in two flavors: a single crate with one `Cargo.toml`, or multiple

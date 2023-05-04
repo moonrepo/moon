@@ -216,6 +216,18 @@ update the implementation.
 - [ ] Implemented action handlers
 - [ ] Implemented project graph bridge
 
+### Update docs
+
+At this point we should start updating docs, primarily these sections:
+
+- Any configs
+- Language handbook
+
+### Create a pull request
+
+Once everything is good, create a pull request and include it in the next release. Ideally tiers are
+released separately!
+
 ## Tier 3
 
 ### Add tool to proto

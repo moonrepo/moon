@@ -283,4 +283,11 @@ Refer to the Node.js implementation for examples (it can mostly be copied).
 Different projects may have different version requirements, so we need to support this through
 project-level toolchain overrides.
 
+- [ ] Updated `crates/core/config/src/project/toolchain.rs`
+- [ ] Updated `get_runtime_from_config` in platform crate
+- [ ] Updated `packages/types/src/project-config.ts`
+
 ### Integrate `--profile` option
+
+When applicable, the run target command should handle the `--profile` option and the CPU/heap
+variants.

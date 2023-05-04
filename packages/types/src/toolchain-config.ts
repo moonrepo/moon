@@ -39,6 +39,7 @@ export interface NodeConfig {
 
 export interface RustConfig {
 	syncToolchainConfig: boolean;
+	version: string | null;
 }
 
 export interface TypeScriptConfig {

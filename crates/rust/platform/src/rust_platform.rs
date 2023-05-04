@@ -55,7 +55,15 @@ impl Platform for RustPlatform {
         PlatformType::Rust
     }
 
-    fn get_runtime_from_config(&self, _project_config: Option<&ProjectConfig>) -> Runtime {
+    fn get_runtime_from_config(&self, project_config: Option<&ProjectConfig>) -> Runtime {
+        if let Some(config) = &project_config {
+            if let Some(rust_config) = &config.toolchain.rust {
+                if let Some(version) = &rust_config.version {
+                    return Runtime::Rust(Version::new_override(version));
+                }
+            }
+        }
+
         if let Some(version) = &self.config.version {
             return Runtime::Rust(Version::new(version));
         }

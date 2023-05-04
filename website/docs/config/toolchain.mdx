@@ -7,6 +7,7 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 The `.moon/toolchain.yml` file configures the toolchain and the workspace development environment.
 This file is _optional_.
@@ -36,6 +37,8 @@ Settings will be merged recursively for blocks, with values defined in the local
 taking precedence over those defined in the extended configuration.
 
 :::
+
+## JavaScript
 
 ## `deno`
 
@@ -315,22 +318,6 @@ node:
 This is a special setting that ensure other Node.js processes outside of our toolchain are utilizing
 the same version, which is a very common practice when managing dependencies.
 
-## `rust`
-
-<HeadingApiLink to="/api/types/interface/ToolchainConfig#rust" />
-
-Enables and configures [Rust](../guides/rust/handbook).
-
-```yaml title=".moon/toolchain.yml" {1}
-rust: {}
-```
-
-:::info
-
-At this time there are no settings, but configuring an empty object will enable Rust support.
-
-:::
-
 ## `typescript`
 
 <HeadingApiLink to="/api/types/interface/ToolchainConfig#typescript" />
@@ -492,3 +479,49 @@ in a `src` folder, or the root of the package.
 
 > This setting runs _after_ [`syncProjectReferences`](#syncprojectreferences) and will inherit any
 > synced references from that setting.
+
+## Rust
+
+## `rust`<VersionLabel version="1.5.0" />
+
+<HeadingApiLink to="/api/types/interface/ToolchainConfig#rust" />
+
+Enables and configures [Rust](../guides/rust/handbook).
+
+### `version`
+
+<HeadingApiLink to="/api/types/interface/RustConfig#version" />
+
+Defines the explicit Rust version/channel to use. We require an explicit and semantic major, minor,
+and patch version, to ensure the same environment is used across every machine.
+
+```yaml title=".moon/toolchain.yml" {2}
+rust:
+  version: '1.69.0'
+```
+
+> Version can also be defined with [`.prototools`](../proto/config).
+
+### `syncToolchainConfig`
+
+<HeadingApiLink to="/api/types/interface/RustConfig#syncToolchainConfig" />
+
+Will automatically sync the currently configured [Rust `version`](#version-2) to the
+`toolchain.channel` field in `rust-toolchain.toml`, relative to the root `Cargo.lock`. If the file
+does not exist, it will be created.
+
+This is a special setting that ensure other Rust/Cargo processes outside of our toolchain are
+utilizing the same version, which is a very common practice.
+
+```yaml title=".moon/toolchain.yml" {2,3}
+rust:
+  version: '1.69.0'
+  syncToolchainConfig: true
+```
+
+To demonstrate this, the settings above would sync the following file:
+
+```toml title="rust-toolchain.toml"
+[toolchain]
+channel = "1.69.0"
+```

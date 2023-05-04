@@ -71,6 +71,9 @@ pub enum MoonError {
     StarJson(#[from] starbase_utils::json::JsonError),
 
     #[error(transparent)]
+    StarToml(#[from] starbase_utils::toml::TomlError),
+
+    #[error(transparent)]
     StarYaml(#[from] starbase_utils::yaml::YamlError),
 }
 

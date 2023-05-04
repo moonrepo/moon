@@ -1,6 +1,8 @@
 $schema: '../website/static/schemas/toolchain.json'
 
-rust: {}
+rust:
+  version: '1.69.0'
+  syncToolchainConfig: true
 
 node:
   version: '20.0.0'

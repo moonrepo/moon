@@ -1,5 +1,5 @@
 import type { Nullable, Platform } from './common';
-import type { NodeConfig, TypeScriptConfig } from './toolchain-config';
+import type { NodeConfig, RustConfig, TypeScriptConfig } from './toolchain-config';
 
 export type DependencyScope = 'development' | 'peer' | 'production';
 
@@ -66,6 +66,8 @@ export interface ProjectMetadataConfig {
 
 export type ProjectToolchainNodeConfig = Nullable<Pick<NodeConfig, 'version'>>;
 
+export type ProjectToolchainRustConfig = Nullable<Pick<RustConfig, 'version'>>;
+
 export interface ProjectToolchainTypeScriptConfig
 	extends Nullable<
 		Pick<
@@ -78,6 +80,7 @@ export interface ProjectToolchainTypeScriptConfig
 
 export interface ProjectToolchainConfig {
 	node: ProjectToolchainNodeConfig | null;
+	rust: ProjectToolchainRustConfig | null;
 	typescript: ProjectToolchainTypeScriptConfig | null;
 }
 

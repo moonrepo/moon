@@ -5,30 +5,38 @@ use moon_config::{
 };
 use moon_error::MoonError;
 use moon_hasher::HashSet;
+use moon_logger::debug;
 use moon_platform::{Platform, Runtime, Version};
 use moon_project::{Project, ProjectError};
-use moon_rust_lang::{cargo_lock::load_lockfile_dependencies, cargo_toml::CargoTomlCache, CARGO};
+use moon_rust_lang::{
+    cargo_lock::load_lockfile_dependencies,
+    cargo_toml::CargoTomlCache,
+    toolchain_toml::{ToolchainToml, ToolchainTomlCache},
+    CARGO, RUSTUP, RUSTUP_LEGACY,
+};
 use moon_rust_tool::RustTool;
 use moon_task::Task;
 use moon_tool::{Tool, ToolError, ToolManager};
 use moon_utils::{async_trait, process::Command};
 use proto::{rust::RustLanguage, Executable, Proto};
 use rustc_hash::FxHashMap;
+use starbase_styles::color;
+use starbase_utils::fs::{self, FsError};
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
 };
 
-// const LOG_TARGET: &str = "moon:rust-platform";
+const LOG_TARGET: &str = "moon:rust-platform";
 
 #[derive(Debug)]
 pub struct RustPlatform {
-    config: RustConfig,
+    pub config: RustConfig,
 
     toolchain: ToolManager<RustTool>,
 
     #[allow(dead_code)]
-    workspace_root: PathBuf,
+    pub workspace_root: PathBuf,
 }
 
 impl RustPlatform {
@@ -47,7 +55,19 @@ impl Platform for RustPlatform {
         PlatformType::Rust
     }
 
-    fn get_runtime_from_config(&self, _project_config: Option<&ProjectConfig>) -> Runtime {
+    fn get_runtime_from_config(&self, project_config: Option<&ProjectConfig>) -> Runtime {
+        if let Some(config) = &project_config {
+            if let Some(rust_config) = &config.toolchain.rust {
+                if let Some(version) = &rust_config.version {
+                    return Runtime::Rust(Version::new_override(version));
+                }
+            }
+        }
+
+        if let Some(version) = &self.config.version {
+            return Runtime::Rust(Version::new(version));
+        }
+
         Runtime::Rust(Version::new_global())
     }
 
@@ -66,6 +86,7 @@ impl Platform for RustPlatform {
     // PROJECT GRAPH
 
     fn is_project_in_dependency_workspace(&self, _project: &Project) -> Result<bool, MoonError> {
+        // Always assume Cargo is running from the root
         Ok(true)
     }
 
@@ -85,6 +106,13 @@ impl Platform for RustPlatform {
             if let Some(cargo_toml) = CargoTomlCache::read(project_root)? {
                 if let Some(package) = cargo_toml.package {
                     if &package.name != id {
+                        debug!(
+                            target: LOG_TARGET,
+                            "Inheriting alias {} for project {}",
+                            color::label(&package.name),
+                            color::id(id)
+                        );
+
                         aliases_map.insert(package.name, id.to_owned());
                     }
                 }
@@ -99,7 +127,7 @@ impl Platform for RustPlatform {
     // TOOLCHAIN
 
     fn is_toolchain_enabled(&self) -> Result<bool, ToolError> {
-        Ok(false)
+        Ok(self.config.version.is_some())
     }
 
     fn get_tool(&self) -> Result<Box<&dyn Tool>, ToolError> {
@@ -119,12 +147,11 @@ impl Platform for RustPlatform {
     }
 
     async fn setup_toolchain(&mut self) -> Result<(), ToolError> {
-        // let version = match &self.config.version {
-        //     Some(v) => Version::new(v),
-        //     None => Version::new_global(),
-        // };
+        let version = match &self.config.version {
+            Some(v) => Version::new(v),
+            None => Version::new_global(),
+        };
 
-        let version = Version::new_global();
         let mut last_versions = FxHashMap::default();
 
         if !self.toolchain.has(&version) {
@@ -168,19 +195,95 @@ impl Platform for RustPlatform {
     async fn install_deps(
         &self,
         _context: &ActionContext,
-        _runtime: &Runtime,
-        _working_dir: &Path,
+        runtime: &Runtime,
+        working_dir: &Path,
     ) -> Result<(), ToolError> {
+        let lockfile_path = working_dir.join(CARGO.lockfile);
+
+        if !lockfile_path.exists() {
+            let tool = self.toolchain.get_for_version(runtime.version())?;
+
+            tool.exec_cargo(&["generate-lockfile"], working_dir).await?;
+        }
+
         Ok(())
     }
 
     async fn sync_project(
         &self,
         _context: &ActionContext,
-        _project: &Project,
+        project: &Project,
         _dependencies: &FxHashMap<String, &Project>,
     ) -> Result<bool, ProjectError> {
-        Ok(false)
+        let mut mutated_files = false;
+        let legacy_toolchain_path = project.root.join(RUSTUP_LEGACY.version_file);
+        let toolchain_path = project.root.join(RUSTUP.version_file);
+
+        // Convert rust-toolchain to rust-toolchain.toml
+        if legacy_toolchain_path.exists() {
+            debug!(
+                target: LOG_TARGET,
+                "Found legacy {} configuration file, converting to {}",
+                color::file(RUSTUP_LEGACY.version_file),
+                color::file(RUSTUP.version_file),
+            );
+
+            let handle_error = |error: FsError| ProjectError::Moon(MoonError::StarFs(error));
+            let legacy_contents = fs::read_file(&legacy_toolchain_path).map_err(handle_error)?;
+
+            if legacy_contents.contains("[toolchain]") {
+                fs::rename(&legacy_toolchain_path, &toolchain_path).map_err(handle_error)?;
+            } else {
+                fs::remove_file(&legacy_toolchain_path).map_err(handle_error)?;
+
+                ToolchainTomlCache::write(
+                    &toolchain_path,
+                    ToolchainToml::new_with_channel(&legacy_contents),
+                )?;
+            }
+
+            mutated_files = true;
+        }
+
+        // Sync version into `toolchain.channel`
+        if self.config.sync_toolchain_config && self.config.version.is_some() {
+            let version = self.config.version.clone().unwrap();
+
+            if toolchain_path.exists() {
+                ToolchainTomlCache::sync(toolchain_path, |cfg| {
+                    if cfg.toolchain.channel != self.config.version {
+                        debug!(
+                            target: LOG_TARGET,
+                            "Syncing {} configuration file with version {}",
+                            color::file(RUSTUP.version_file),
+                            color::symbol(&version),
+                        );
+
+                        cfg.toolchain.channel = Some(version);
+                        mutated_files = true;
+
+                        return Ok(true);
+                    }
+
+                    Ok(false)
+                })?;
+            } else {
+                debug!(
+                    target: LOG_TARGET,
+                    "Creating {} configuration file",
+                    color::file(RUSTUP.version_file),
+                );
+
+                ToolchainTomlCache::write(
+                    toolchain_path,
+                    ToolchainToml::new_with_channel(&version),
+                )?;
+
+                mutated_files = true;
+            }
+        }
+
+        Ok(mutated_files)
     }
 
     async fn hash_manifest_deps(
@@ -297,6 +400,13 @@ impl Platform for RustPlatform {
                 // Truly global and doesn't run through cargo
             } else if global_bin_path.exists() {
                 command = Command::new(&global_bin_path);
+
+                // Not found so error!
+            } else {
+                return Err(ToolError::MissingBinary(
+                    "Cargo binary".into(),
+                    cargo_bin.to_owned(),
+                ));
             }
         }
 

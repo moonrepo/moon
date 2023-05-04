@@ -92,6 +92,14 @@ fn apply_node_versions(node_config: &mut NodeConfig, proto_tools: &ToolsConfig) 
     }
 }
 
+fn apply_rust_versions(rust_config: &mut RustConfig, proto_tools: &ToolsConfig) {
+    if let Some(rust_version) = proto_tools.tools.get("rust") {
+        if rust_config.version.is_none() {
+            rust_config.version = Some(rust_version.to_owned());
+        }
+    }
+}
+
 impl ToolchainConfig {
     pub fn load(path: PathBuf, proto_tools: &ToolsConfig) -> Result<ToolchainConfig, ConfigError> {
         let profile_name = "toolchain";
@@ -110,8 +118,14 @@ impl ToolchainConfig {
             config.deno = Some(DenoConfig::default());
         }
 
-        if config.rust.is_none() && proto_tools.tools.get("rust").is_some() {
-            config.rust = Some(RustConfig::default());
+        if let Some(rust_config) = &mut config.rust {
+            apply_rust_versions(rust_config, proto_tools);
+        } else if proto_tools.tools.contains_key("rust") {
+            let mut rust_config = RustConfig::default();
+
+            apply_rust_versions(&mut rust_config, proto_tools);
+
+            config.rust = Some(rust_config);
         }
 
         if let Some(node_config) = &mut config.node {

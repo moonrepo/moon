@@ -9,12 +9,25 @@ fn validate_node_version(value: &str) -> Result<(), ValidationError> {
     validate_semver_version("toolchain.node.version", value)
 }
 
+fn validate_rust_version(value: &str) -> Result<(), ValidationError> {
+    validate_semver_version("toolchain.rust.version", value)
+}
+
 #[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default)]
 #[serde(default, deny_unknown_fields)]
 pub struct ProjectToolchainNodeConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_node_version")]
+    pub version: Option<String>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
+#[schemars(default)]
+#[serde(default, deny_unknown_fields)]
+pub struct ProjectToolchainRustConfig {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[validate(custom = "validate_rust_version")]
     pub version: Option<String>,
 }
 
@@ -42,6 +55,10 @@ pub struct ProjectToolchainConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate]
     pub node: Option<ProjectToolchainNodeConfig>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[validate]
+    pub rust: Option<ProjectToolchainRustConfig>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub typescript: Option<ProjectToolchainTypeScriptConfig>,

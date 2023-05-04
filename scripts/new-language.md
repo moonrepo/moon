@@ -5,8 +5,6 @@ so. Ideally these are done sequentially, as separate PRs, that correlate to our 
 support paradigm.
 
 - INIT SCRIPT
-- BIN COMMAND
-- DOCKER PRUNE
 
 ## Tier 1
 
@@ -185,6 +183,14 @@ Every language will have a "tool" crate that implements the moon `Tool` trait (a
 proto `Tool` trait). This trait defines a handful of methods for how to install and execute the
 toon.
 
+```rust
+#[derive(Debug)]
+pub struct KotlinTool {
+    pub config: KotlinConfig,
+    pub global: bool,
+}
+```
+
 This is required _even when not using_ the toolchain, as we fallback to a global binary available on
 `PATH`.
 
@@ -210,10 +216,111 @@ update the implementation.
 - [ ] Implemented action handlers
 - [ ] Implemented project graph bridge
 
+### Update docs
+
+At this point we should start updating docs, primarily these sections:
+
+- Any configs
+- Language handbook
+
+### Create a pull request
+
+Once everything is good, create a pull request and include it in the next release. Ideally tiers are
+released separately!
+
 ## Tier 3
 
 ### Add tool to proto
 
-### Support `version` in `moon_config`
+Tier 3 requires a tool to be added to proto: https://github.com/moonrepo/proto
+
+We import and use the Rust crates directly instead of relying on `proto` existing in the
+environment.
+
+### Support `version` in `moon_config` for language
+
+The toolchain requires an explicit version to function correctly, so the config struct pertaining to
+the language must have a `version` field. This field must be `Option<String>`, which allows for the
+toolchain to be disabled.
+
+```rust
+#[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
+#[schemars(default)]
+#[serde(default, rename_all = "camelCase")]
+pub struct KotlinConfig {
+	// ...
+
+	#[serde(skip_serializing_if = "Option::is_none")]
+	#[validate(custom = "validate_kotlin_version")]
+	pub version: Option<String>,
+}
+```
+
+Furthermore, when applicable, also add version support from `.prototools`.
+
+```toml
+kotlin = "1.2.3"
+```
+
+- [ ] Updated config struct: `crates/core/config/src/toolchain/<lang>.rs`
+- [ ] Supported proto version in `crates/core/config/src/toolchain/config.rs`
+- [ ] Added tests: `crates/core/config/tests/toolchain_test.rs`
+- [ ] Ran `cargo make json-schemas` and updated the JSON schemas
+
+### Integrate proto tool into moon tool crate
+
+Once the proto crate and configuration is ready, we can update the moon specific tool with proto's.
+
+```rust
+#[derive(Debug)]
+pub struct KotlinTool {
+    pub config: KotlinConfig,
+    pub global: bool,
+    pub tool: KotlinLanguage,
+}
+```
+
+- [ ] Inherited `version` from applicable config
+- [ ] Implemented `setup` and `teardown` methods
+- [ ] Handled global binary
+
+### Integrate moon tool into platform crate
+
+When the moon tool has been integrated with proto's, we can update the platform crate to use the
+`ToolManager` instance, and implement all necessary methods.
+
+Refer to the Node.js implementation for examples (it can mostly be copied).
+
+- [ ] Enabled `is_toolchain_enabled` method
+- [ ] Updated `get_runtime_from_config` with `version` field
+- [ ] Updated `setup_toolchain`, `setup_tool`, and `teardown_toolchain` methods
+- [ ] Updated `create_run_target_command` to use the tool instance
 
 ### Support project-level config overrides
+
+Different projects may have different version requirements, so we need to support this through
+project-level toolchain overrides.
+
+- [ ] Updated `crates/core/config/src/project/toolchain.rs`
+- [ ] Updated `get_runtime_from_config` in platform crate
+- [ ] Updated `packages/types/src/project-config.ts`
+
+### Integrate `--profile` option
+
+When applicable, the run target command should handle the `--profile` option and the CPU/heap
+variants.
+
+### Update `bin` command
+
+The `moon bin` command uses a hard-coded tool list, and is not based on the `PlatformType` or
+`ProjectLanguage` enums. Because of this, tools will need to be handled manually.
+
+- [ ] Updated `crates/cli/src/commands/bin.rs`
+
+### Update `docker prune` and `docker scaffold` commands
+
+By default these commands will do their best to handle languages/platforms, but each tool is
+different and may require custom logic.
+
+- [ ] Updated `crates/cli/src/commands/docker/scaffold.rs` (mainly `scaffold_workspace` function)
+- [ ] Updated `crates/cli/src/commands/docker/prune.rs` (added another prune function)

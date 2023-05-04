@@ -158,10 +158,10 @@ macro_rules! config_cache_container {
     ($container:ident, $struct:ident, $file:expr, $reader:ident) => {
         config_cache_container!($container, $struct, $file, $reader, noop_write);
     };
-    ($container:ident, $struct:ident, $file:expr, $reader:ident, $writer:ident) => {
-        config_cache_container!($container, $struct, $file, $reader, noop_write, cache_container);
+    ($container:ident, $struct:ident, $file:expr, $reader:ident, $writer:path) => {
+        config_cache_container!($container, $struct, $file, $reader, $writer, cache_container);
     };
-    ($container:ident, $struct:ident, $file:expr, $reader:ident, $writer:ident, $namespace:ident) => {
+    ($container:ident, $struct:ident, $file:expr, $reader:ident, $writer:path, $namespace:ident) => {
         mod $namespace {
             use super::*;
 
@@ -185,10 +185,10 @@ macro_rules! config_cache_container {
             pub fn load_config(path: PathBuf) -> Result<$struct, MoonError> {
                 load_config_internal(&path)
             }
+        }
 
-            pub fn noop_write(_path: &Path, _file: &$struct) -> Result<(), MoonError> {
-                Ok(()) // Do nothing
-            }
+        pub fn noop_write(_path: &Path, _file: &$struct) -> Result<(), MoonError> {
+            Ok(()) // Do nothing
         }
 
         pub struct $container;
@@ -222,7 +222,6 @@ macro_rules! config_cache_container {
 
             /// If the file exists, load it from the file system, mutate it,
             /// write it back to the file system and to the cache.
-            #[track_caller]
             pub fn sync<P, F>(path: P, func: F) -> Result<bool, MoonError>
             where
                 P: AsRef<Path>,
@@ -231,7 +230,6 @@ macro_rules! config_cache_container {
                 $container::sync_with_name(path, $file, func)
             }
 
-            #[track_caller]
             pub fn sync_with_name<P, N, F>(path: P, name: N, func: F) -> Result<bool, MoonError>
             where
                 P: AsRef<Path>,
@@ -273,7 +271,7 @@ macro_rules! config_cache_container {
                     );
 
                     // Write to the file system
-                    $namespace::$writer(&path, &cfg)?;
+                    $writer(&path, &cfg)?;
 
                     // And store in the cache
                     cache.cache_set(path, cfg);
@@ -301,7 +299,7 @@ macro_rules! config_cache_container {
                 );
 
                 // Write to the file system
-                $namespace::$writer(path, &value)?;
+                $writer(path, &value)?;
 
                 // And store in the cache
                 cache.cache_set(path.to_path_buf(), value);

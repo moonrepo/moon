@@ -3987,9 +3987,9 @@ dependencies = [
 
 [[package]]
 name = "proto_bun"
-version = "0.7.0"
+version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a2a3a6b089838929fc74ae31cdd97fab3a6ff2565b23ed3be394ec48a5ccc333"
+checksum = "67343906269830e408d1aca81c171e7d4ec8043c111d9d662151208119894f77"
 dependencies = [
  "once_cell",
  "proto_core",
@@ -4001,9 +4001,9 @@ dependencies = [
 
 [[package]]
 name = "proto_cli"
-version = "0.8.0"
+version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3edf8e6f183937cb950c4d59aee95a1310367d165d778473fe5a2a05787d5c6c"
+checksum = "dcede2123bb5bd149fece57fdc8459f2b0649b60e685886950d87665f3692bec"
 dependencies = [
  "async-recursion",
  "clap 4.2.5",
@@ -4014,6 +4014,7 @@ dependencies = [
  "futures",
  "human-sort",
  "indicatif",
+ "miette",
  "proto_bun",
  "proto_core",
  "proto_deno",
@@ -4034,9 +4035,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.8.0"
+version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4bbf35c2468dc19d9791b98530ba65b353db8295a39160736ab61ff93e5909c2"
+checksum = "0c9cba5368940e9b7135e2fc7c002ac88ce0a4117309f4852f148ab9f3969e05"
 dependencies = [
  "async-trait",
  "cached",
@@ -4066,9 +4067,9 @@ dependencies = [
 
 [[package]]
 name = "proto_deno"
-version = "0.7.0"
+version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6b5861bc652e5d621eb39cd8d288ccc6b11c47a8fa4c8d83ada5a8f2489e818d"
+checksum = "bc3892b50169e4e09bab1ca244a33c6995618b9c3fce999437de4721433b69ed"
 dependencies = [
  "once_cell",
  "proto_core",
@@ -4079,9 +4080,9 @@ dependencies = [
 
 [[package]]
 name = "proto_go"
-version = "0.7.0"
+version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e6f70a4abe4eb22aabd7ced12a9f92e2cea81b201939bd79dfd63636fbfe6419"
+checksum = "ca98f538962e8f5209b218a3b611c6b430f6a612cd4b4f16cc64049be8d29f21"
 dependencies = [
  "once_cell",
  "proto_core",
@@ -4093,9 +4094,9 @@ dependencies = [
 
 [[package]]
 name = "proto_node"
-version = "0.7.0"
+version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "62aaa100ba0a5bd248420a6f8c5f91fc5e6c9fbda52aefbec5a31213e702616e"
+checksum = "5f597b9db0f8fd63d8d68a286bd277d437fa9935ef58f5bc7200640888d38a06"
 dependencies = [
  "clean-path",
  "once_cell",
@@ -4109,9 +4110,9 @@ dependencies = [
 
 [[package]]
 name = "proto_rust"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6ff51ba2519e452104defb9da8a5eaf69400b996bb909f0d594fe2181907873b"
+checksum = "37d0f2e534f3103d3555476e61d982390acec6c63d9926859620bdb1a20c7332"
 dependencies = [
  "once_cell",
  "proto_core",
@@ -4121,9 +4122,9 @@ dependencies = [
 
 [[package]]
 name = "proto_schema_plugin"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c6799eab579863f8ef780c376f5b42b3feff114a49b744d7a79ceeddf217a34"
+checksum = "71f8bbe038dd2603d12e1409f74e9501a800f8d978673663fd15bdc71c3ea03f"
 dependencies = [
  "once_cell",
  "proto_core",
@@ -4721,9 +4722,9 @@ checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 
 [[package]]
 name = "starbase"
-version = "0.1.7"
+version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae79fc2fc2ccafc34a31c0baafb7b72a350123515b11fb94009a11e1db96ce58"
+checksum = "6da03fdf363435eb9592be9d0b3480b7abf3f7596d967252f325a8d2b76b681c"
 dependencies = [
  "async-trait",
  "chrono",
@@ -4743,9 +4744,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_events"
-version = "0.1.3"
+version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad2ea6cdbcc303a301030ac7363d0a4d02c2e139e022fb02381fc3639ce3f070"
+checksum = "0348d87681884c2fd9b61ee6090641b8d0897b240b1d3f40a7af8a47d624daf6"
 dependencies = [
  "async-trait",
  "miette",
@@ -4755,9 +4756,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_macros"
-version = "0.1.4"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d15b6d87f7040a99cb5ded63d86c4b6df0c8791ba33e264e2a38fe17cbc24452"
+checksum = "ae0e103df0a7f0f44e5508fc0941d6c26d3d0b42d6d47159418b591ede5c9c32"
 dependencies = [
  "darling",
  "proc-macro2",
@@ -4767,9 +4768,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_styles"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c72e33ca2582fcc3ea280f3e3140184defae500dc8c352684373ee0aba92ecc3"
+checksum = "149a8ab5fdf8feb16d12901069865afde6307ad7de41e898310cdc5eef8f9391"
 dependencies = [
  "dirs",
  "miette",

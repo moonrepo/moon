@@ -5,6 +5,7 @@ use moon_config::{
 };
 use moon_error::MoonError;
 use moon_hasher::HashSet;
+use moon_logger::debug;
 use moon_platform::{Platform, Runtime, Version};
 use moon_project::{Project, ProjectError};
 use moon_rust_lang::{
@@ -19,13 +20,14 @@ use moon_tool::{Tool, ToolError, ToolManager};
 use moon_utils::{async_trait, process::Command};
 use proto::{rust::RustLanguage, Executable, Proto};
 use rustc_hash::FxHashMap;
+use starbase_styles::color;
 use starbase_utils::fs::{self, FsError};
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
 };
 
-// const LOG_TARGET: &str = "moon:rust-platform";
+const LOG_TARGET: &str = "moon:rust-platform";
 
 #[derive(Debug)]
 pub struct RustPlatform {
@@ -96,6 +98,13 @@ impl Platform for RustPlatform {
             if let Some(cargo_toml) = CargoTomlCache::read(project_root)? {
                 if let Some(package) = cargo_toml.package {
                     if &package.name != id {
+                        debug!(
+                            target: LOG_TARGET,
+                            "Inheriting alias {} for project {}",
+                            color::label(&package.name),
+                            color::id(id)
+                        );
+
                         aliases_map.insert(package.name, id.to_owned());
                     }
                 }
@@ -186,6 +195,13 @@ impl Platform for RustPlatform {
 
         // Convert rust-toolchain to rust-toolchain.toml
         if legacy_toolchain_path.exists() {
+            debug!(
+                target: LOG_TARGET,
+                "Found legacy {} configuration file, converting to {}",
+                color::file(RUSTUP_LEGACY.version_file),
+                color::file(RUSTUP.version_file),
+            );
+
             let handle_error = |error: FsError| ToolError::Moon(MoonError::StarFs(error));
             let legacy_contents = fs::read_file(&legacy_toolchain_path).map_err(handle_error)?;
 
@@ -208,6 +224,13 @@ impl Platform for RustPlatform {
             if toolchain_path.exists() {
                 ToolchainTomlCache::sync(toolchain_path, |cfg| {
                     if cfg.toolchain.channel != self.config.version {
+                        debug!(
+                            target: LOG_TARGET,
+                            "Syncing {} configuration file with version {}",
+                            color::file(RUSTUP.version_file),
+                            color::symbol(&version),
+                        );
+
                         cfg.toolchain.channel = Some(version);
 
                         return Ok(true);
@@ -216,6 +239,12 @@ impl Platform for RustPlatform {
                     Ok(false)
                 })?;
             } else {
+                debug!(
+                    target: LOG_TARGET,
+                    "Creating {} configuration file",
+                    color::file(RUSTUP.version_file),
+                );
+
                 ToolchainTomlCache::write(
                     toolchain_path,
                     ToolchainToml::new_with_channel(&version),

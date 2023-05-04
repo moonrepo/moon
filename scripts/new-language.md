@@ -214,6 +214,35 @@ update the implementation.
 
 ### Add tool to proto
 
-### Support `version` in `moon_config`
+Tier 3 requires a tool to be added to proto: https://github.com/moonrepo/proto
+
+We import and use the Rust crates directly instead of relying on `proto` existing in the
+environment.
+
+### Support `version` in `moon_config` for language
+
+The toolchain requires an explicit version to function correctly, so the config struct pertaining to
+the language must have a `version` field. This field must be `Option<String>`, which allows for the
+toolchain to be disabled.
+
+```rust
+#[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
+#[schemars(default)]
+#[serde(default, rename_all = "camelCase")]
+pub struct KotlinConfig {
+	// ...
+
+	#[serde(skip_serializing_if = "Option::is_none")]
+	#[validate(custom = "validate_kotlin_version")]
+	pub version: Option<String>,
+}
+```
+
+- [ ] Updated config struct: `crates/core/config/src/toolchain/<lang>.rs`
+- [ ] Ran `cargo make json-schemas` and updated the JSON schemas
+
+### Integrate proto tool into moon tool crate
+
+### Integrate moon tool into platform crate
 
 ### Support project-level config overrides

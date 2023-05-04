@@ -212,6 +212,12 @@
       "properties": {
         "syncToolchainConfig": {
           "type": "boolean"
+        },
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "additionalProperties": false

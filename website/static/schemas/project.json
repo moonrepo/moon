@@ -109,6 +109,7 @@
       "enum": [
         "deno",
         "node",
+        "rust",
         "system",
         "unknown"
       ]

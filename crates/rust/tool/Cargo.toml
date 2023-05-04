@@ -5,7 +5,9 @@ edition = "2021"
 
 [dependencies]
 moon_config = { path = "../../core/config" }
+moon_logger = { path = "../../core/logger" }
 moon_platform_runtime = { path = "../../core/platform-runtime" }
+moon_terminal = { path = "../../core/terminal" }
 moon_tool = { path = "../../core/tool" }
 proto_cli = { workspace = true }
 rustc-hash = { workspace = true }

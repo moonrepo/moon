@@ -185,6 +185,14 @@ Every language will have a "tool" crate that implements the moon `Tool` trait (a
 proto `Tool` trait). This trait defines a handful of methods for how to install and execute the
 toon.
 
+```rust
+#[derive(Debug)]
+pub struct KotlinTool {
+    pub config: KotlinConfig,
+    pub global: bool,
+}
+```
+
 This is required _even when not using_ the toolchain, as we fallback to a global binary available on
 `PATH`.
 
@@ -243,7 +251,27 @@ pub struct KotlinConfig {
 
 ### Integrate proto tool into moon tool crate
 
+Once the proto crate and configuration is ready, we can update the moon specific tool with proto's.
+
+```rust
+#[derive(Debug)]
+pub struct KotlinTool {
+    pub config: KotlinConfig,
+    pub global: bool,
+    pub tool: KotlinLanguage,
+}
+```
+
+- [ ] Inherited `version` from applicable config
+- [ ] Implemented `setup` and `teardown` methods
+- [ ] Handled global binary
+
 ### Integrate moon tool into platform crate
+
+When the moon tool has been integrated with proto's, we can update the platform crate to use the
+`ToolManager` instance, and implement all necessary methods.
+
+Refer to the Node.js implementation for examples (it can mostly be copied).
 
 - [ ] Enabled `is_toolchain_enabled` method
 - [ ] Updated `get_runtime_from_config` with `version` field

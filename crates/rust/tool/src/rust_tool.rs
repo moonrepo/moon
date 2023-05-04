@@ -24,7 +24,7 @@ impl RustTool {
     ) -> Result<RustTool, ToolError> {
         let mut rust = RustTool {
             config: config.to_owned(),
-            global: true,
+            global: false,
             tool: RustLanguage::new(proto),
         };
 

@@ -11,7 +11,7 @@ use moon_rust_lang::{
     cargo_lock::load_lockfile_dependencies,
     cargo_toml::CargoTomlCache,
     toolchain_toml::{ToolchainToml, ToolchainTomlCache},
-    CARGO, RUSTUP,
+    CARGO, RUSTUP, RUSTUP_LEGACY,
 };
 use moon_rust_tool::RustTool;
 use moon_task::Task;
@@ -19,6 +19,7 @@ use moon_tool::{Tool, ToolError, ToolManager};
 use moon_utils::{async_trait, process::Command};
 use proto::{rust::RustLanguage, Executable, Proto};
 use rustc_hash::FxHashMap;
+use starbase_utils::fs::{self, FsError};
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
@@ -28,12 +29,12 @@ use std::{
 
 #[derive(Debug)]
 pub struct RustPlatform {
-    config: RustConfig,
+    pub config: RustConfig,
 
     toolchain: ToolManager<RustTool>,
 
     #[allow(dead_code)]
-    workspace_root: PathBuf,
+    pub workspace_root: PathBuf,
 }
 
 impl RustPlatform {
@@ -75,6 +76,7 @@ impl Platform for RustPlatform {
     // PROJECT GRAPH
 
     fn is_project_in_dependency_workspace(&self, _project: &Project) -> Result<bool, MoonError> {
+        // Always assume Cargo is running from the root
         Ok(true)
     }
 
@@ -189,28 +191,50 @@ impl Platform for RustPlatform {
         _dependencies: &FxHashMap<String, &Project>,
     ) -> Result<bool, ProjectError> {
         let mut mutated_files = false;
+        let legacy_toolchain_path = self.workspace_root.join(RUSTUP_LEGACY.version_file);
+        let toolchain_path = self.workspace_root.join(RUSTUP.version_file);
 
+        // Convert rust-toolchain to rust-toolchain.toml
+        if legacy_toolchain_path.exists() {
+            let handle_error = |error: FsError| ProjectError::Moon(MoonError::StarFs(error));
+            let legacy_contents = fs::read_file(&legacy_toolchain_path).map_err(handle_error)?;
+
+            if legacy_contents.contains("[toolchain]") {
+                fs::rename(&legacy_toolchain_path, &toolchain_path).map_err(handle_error)?;
+            } else {
+                fs::remove_file(&legacy_toolchain_path).map_err(handle_error)?;
+
+                ToolchainTomlCache::write(
+                    &toolchain_path,
+                    ToolchainToml::new_with_channel(&legacy_contents),
+                )?;
+            }
+
+            mutated_files = true;
+        }
+
+        // Sync version into `toolchain.channel`
         if self.config.sync_toolchain_config && self.config.version.is_some() {
-            let toolchain_path = self.workspace_root.join(RUSTUP.version_file);
             let version = self.config.version.clone().unwrap();
 
             if toolchain_path.exists() {
-                mutated_files = ToolchainTomlCache::sync(toolchain_path, |cfg| {
-                    if cfg.channel != self.config.version {
-                        cfg.channel = Some(version);
+                let result = ToolchainTomlCache::sync(toolchain_path, |cfg| {
+                    if cfg.toolchain.channel != self.config.version {
+                        cfg.toolchain.channel = Some(version);
 
                         return Ok(true);
                     }
 
                     Ok(false)
                 })?;
+
+                if result {
+                    mutated_files = true;
+                }
             } else {
                 ToolchainTomlCache::write(
                     toolchain_path,
-                    ToolchainToml {
-                        channel: Some(version),
-                        ..ToolchainToml::default()
-                    },
+                    ToolchainToml::new_with_channel(&version),
                 )?;
 
                 mutated_files = true;

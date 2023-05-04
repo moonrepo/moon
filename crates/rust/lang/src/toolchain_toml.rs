@@ -16,7 +16,7 @@ pub enum ToolchainProfile {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-pub struct ToolchainToml {
+pub struct ToolchainSection {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub channel: Option<String>,
 
@@ -31,6 +31,22 @@ pub struct ToolchainToml {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub targets: Option<Vec<String>>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+pub struct ToolchainToml {
+    pub toolchain: ToolchainSection,
+}
+
+impl ToolchainToml {
+    pub fn new_with_channel(channel: &str) -> ToolchainToml {
+        ToolchainToml {
+            toolchain: ToolchainSection {
+                channel: Some(channel.to_owned()),
+                ..ToolchainSection::default()
+            },
+        }
+    }
 }
 
 pub fn write_toml(path: &Path, toml: &ToolchainToml) -> Result<(), TomlError> {

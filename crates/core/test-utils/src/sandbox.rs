@@ -158,6 +158,31 @@ pub fn create_sandbox_with_config<T: AsRef<str>>(
     sandbox
 }
 
+pub fn create_sandbox_with_factory<
+    T: AsRef<str>,
+    F: FnOnce(&mut WorkspaceConfig, &mut ToolchainConfig, &mut InheritedTasksConfig),
+>(
+    fixture: T,
+    factory: F,
+) -> Sandbox {
+    let mut workspace_config = WorkspaceConfig::default();
+    let mut toolchain_config = ToolchainConfig::default();
+    let mut tasks_config = InheritedTasksConfig::default();
+
+    factory(
+        &mut workspace_config,
+        &mut toolchain_config,
+        &mut tasks_config,
+    );
+
+    create_sandbox_with_config(
+        fixture,
+        Some(&workspace_config),
+        Some(&toolchain_config),
+        Some(&tasks_config),
+    )
+}
+
 pub fn debug_sandbox_files(dir: &Path) {
     for entry in std::fs::read_dir(dir).unwrap() {
         let path = entry.unwrap().path();

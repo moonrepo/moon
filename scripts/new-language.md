@@ -245,4 +245,11 @@ pub struct KotlinConfig {
 
 ### Integrate moon tool into platform crate
 
+- [ ] Enabled `is_toolchain_enabled` method
+- [ ] Updated `get_runtime_from_config` with `version` field
+- [ ] Updated `setup_toolchain`, `setup_tool`, and `teardown_toolchain` methods
+- [ ] Updated `create_run_target_command` to use the tool instance
+
 ### Support project-level config overrides
+
+### Integrate `--profile` option

@@ -7,7 +7,12 @@ use moon_error::MoonError;
 use moon_hasher::HashSet;
 use moon_platform::{Platform, Runtime, Version};
 use moon_project::{Project, ProjectError};
-use moon_rust_lang::{cargo_lock::load_lockfile_dependencies, cargo_toml::CargoTomlCache, CARGO};
+use moon_rust_lang::{
+    cargo_lock::load_lockfile_dependencies,
+    cargo_toml::CargoTomlCache,
+    toolchain_toml::{ToolchainToml, ToolchainTomlCache},
+    CARGO, RUSTUP,
+};
 use moon_rust_tool::RustTool;
 use moon_task::Task;
 use moon_tool::{Tool, ToolError, ToolManager};
@@ -48,6 +53,10 @@ impl Platform for RustPlatform {
     }
 
     fn get_runtime_from_config(&self, _project_config: Option<&ProjectConfig>) -> Runtime {
+        if let Some(version) = &self.config.version {
+            return Runtime::Rust(Version::new(version));
+        }
+
         Runtime::Rust(Version::new_global())
     }
 
@@ -99,7 +108,7 @@ impl Platform for RustPlatform {
     // TOOLCHAIN
 
     fn is_toolchain_enabled(&self) -> Result<bool, ToolError> {
-        Ok(false)
+        Ok(self.config.version.is_some())
     }
 
     fn get_tool(&self) -> Result<Box<&dyn Tool>, ToolError> {
@@ -119,12 +128,11 @@ impl Platform for RustPlatform {
     }
 
     async fn setup_toolchain(&mut self) -> Result<(), ToolError> {
-        // let version = match &self.config.version {
-        //     Some(v) => Version::new(v),
-        //     None => Version::new_global(),
-        // };
+        let version = match &self.config.version {
+            Some(v) => Version::new(v),
+            None => Version::new_global(),
+        };
 
-        let version = Version::new_global();
         let mut last_versions = FxHashMap::default();
 
         if !self.toolchain.has(&version) {
@@ -180,7 +188,36 @@ impl Platform for RustPlatform {
         _project: &Project,
         _dependencies: &FxHashMap<String, &Project>,
     ) -> Result<bool, ProjectError> {
-        Ok(false)
+        let mut mutated_files = false;
+
+        if self.config.sync_toolchain_config && self.config.version.is_some() {
+            let toolchain_path = self.workspace_root.join(RUSTUP.version_file);
+            let version = self.config.version.clone().unwrap();
+
+            if toolchain_path.exists() {
+                mutated_files = ToolchainTomlCache::sync(toolchain_path, |cfg| {
+                    if cfg.channel != self.config.version {
+                        cfg.channel = Some(version);
+
+                        return Ok(true);
+                    }
+
+                    Ok(false)
+                })?;
+            } else {
+                ToolchainTomlCache::write(
+                    toolchain_path,
+                    ToolchainToml {
+                        channel: Some(version),
+                        ..ToolchainToml::default()
+                    },
+                )?;
+
+                mutated_files = true;
+            }
+        }
+
+        Ok(mutated_files)
     }
 
     async fn hash_manifest_deps(
@@ -297,6 +334,13 @@ impl Platform for RustPlatform {
                 // Truly global and doesn't run through cargo
             } else if global_bin_path.exists() {
                 command = Command::new(&global_bin_path);
+
+                // Not found so error!
+            } else {
+                return Err(ToolError::MissingBinary(
+                    "Cargo binary".into(),
+                    cargo_bin.to_owned(),
+                ));
             }
         }
 

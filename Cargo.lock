@@ -3172,6 +3172,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "starbase_styles",
+ "starbase_utils",
 ]
 
 [[package]]

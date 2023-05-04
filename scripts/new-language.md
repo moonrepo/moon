@@ -280,4 +280,7 @@ Refer to the Node.js implementation for examples (it can mostly be copied).
 
 ### Support project-level config overrides
 
+Different projects may have different version requirements, so we need to support this through
+project-level toolchain overrides.
+
 ### Integrate `--profile` option

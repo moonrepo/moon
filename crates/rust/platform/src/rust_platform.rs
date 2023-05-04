@@ -188,10 +188,20 @@ impl Platform for RustPlatform {
         &self,
         _context: &ActionContext,
         _runtime: &Runtime,
-        working_dir: &Path,
+        _working_dir: &Path,
     ) -> Result<(), ToolError> {
-        let legacy_toolchain_path = working_dir.join(RUSTUP_LEGACY.version_file);
-        let toolchain_path = working_dir.join(RUSTUP.version_file);
+        Ok(())
+    }
+
+    async fn sync_project(
+        &self,
+        _context: &ActionContext,
+        project: &Project,
+        _dependencies: &FxHashMap<String, &Project>,
+    ) -> Result<bool, ProjectError> {
+        let mut mutated_files = false;
+        let legacy_toolchain_path = project.root.join(RUSTUP_LEGACY.version_file);
+        let toolchain_path = project.root.join(RUSTUP.version_file);
 
         // Convert rust-toolchain to rust-toolchain.toml
         if legacy_toolchain_path.exists() {
@@ -202,7 +212,7 @@ impl Platform for RustPlatform {
                 color::file(RUSTUP.version_file),
             );
 
-            let handle_error = |error: FsError| ToolError::Moon(MoonError::StarFs(error));
+            let handle_error = |error: FsError| ProjectError::Moon(MoonError::StarFs(error));
             let legacy_contents = fs::read_file(&legacy_toolchain_path).map_err(handle_error)?;
 
             if legacy_contents.contains("[toolchain]") {
@@ -215,6 +225,8 @@ impl Platform for RustPlatform {
                     ToolchainToml::new_with_channel(&legacy_contents),
                 )?;
             }
+
+            mutated_files = true;
         }
 
         // Sync version into `toolchain.channel`
@@ -232,6 +244,7 @@ impl Platform for RustPlatform {
                         );
 
                         cfg.toolchain.channel = Some(version);
+                        mutated_files = true;
 
                         return Ok(true);
                     }
@@ -249,19 +262,12 @@ impl Platform for RustPlatform {
                     toolchain_path,
                     ToolchainToml::new_with_channel(&version),
                 )?;
+
+                mutated_files = true;
             }
         }
 
-        Ok(())
-    }
-
-    async fn sync_project(
-        &self,
-        _context: &ActionContext,
-        _project: &Project,
-        _dependencies: &FxHashMap<String, &Project>,
-    ) -> Result<bool, ProjectError> {
-        Ok(false)
+        Ok(mutated_files)
     }
 
     async fn hash_manifest_deps(

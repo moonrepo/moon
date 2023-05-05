@@ -60,6 +60,10 @@ pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVer
                 let resolved_name = name_parts.last().unwrap_or_default();
 
                 add_dep(resolved_name, &dep.version, &dep.integrity);
+
+                // other
+            } else if !name.is_empty() {
+                add_dep(&name, &dep.version, &dep.integrity);
             }
         }
 
@@ -163,11 +167,120 @@ mod tests {
                 (
                     "@babel/helper-function-name".to_owned(),
                     string_vec!["sha512-fJgWlZt7nxGksJS9a0XdSaI4XvpExnNIgRP+rVefWh5U7BL8pPuir6SJUmFKRfjWQ51OtWSzwOxhaH/EBWWc0A=="]
-
                 ),
                 (
                     "rollup-plugin-polyfill-node".to_owned(),
                     string_vec!["sha512-5GMywXiLiuQP6ZzED/LO/Q0HyDi2W6b8VN+Zd3oB0opIjyRs494Me2ZMaqKWDNbGiW4jvvzl6L2n4zRgxS9cSQ=="]
+                ),
+            ])
+        );
+
+        temp.close().unwrap();
+    }
+
+    #[test]
+    fn parses_v3_lockfile() {
+        let temp = create_temp_dir();
+
+        temp.child("package-lock.json")
+            .write_str(
+                r#"
+{
+    "name": "moon-examples",
+    "version": "1.2.3",
+    "lockfileVersion": 3,
+    "requires": true,
+    "packages": {
+        "node_modules/tap/node_modules/yaml": {
+            "version": "1.10.2",
+            "dev": true,
+            "inBundle": true,
+            "license": "ISC",
+            "engines": {
+                "node": ">= 6"
+            }
+        },
+        "node_modules/yaml": {
+            "version": "2.2.2",
+            "resolved": "https://registry.npmjs.org/yaml/-/yaml-2.2.2.tgz",
+            "integrity": "sha512-CBKFWExMn46Foo4cldiChEzn7S7SRV+wqiluAb6xmueD/fGyRHIhX8m14vVGgeFWjN540nKCNVj6P21eQjgTuA==",
+            "dev": true,
+            "engines": {
+                "node": ">= 14"
+            }
+        },
+        "workspaces/libnpmdiff": {
+            "version": "5.0.17",
+            "license": "ISC",
+            "dependencies": {
+                "@npmcli/arborist": "^6.2.9",
+                "@npmcli/disparity-colors": "^3.0.0",
+                "@npmcli/installed-package-contents": "^2.0.2",
+                "binary-extensions": "^2.2.0",
+                "diff": "^5.1.0",
+                "minimatch": "^9.0.0",
+                "npm-package-arg": "^10.1.0",
+                "pacote": "^15.0.8",
+                "tar": "^6.1.13"
+            },
+            "devDependencies": {
+                "@npmcli/eslint-config": "^4.0.0",
+                "@npmcli/template-oss": "4.14.1",
+                "tap": "^16.3.4"
+            },
+            "engines": {
+                "node": "^14.17.0 || ^16.13.0 || >=18.0.0"
+            }
+        }
+    }
+}"#,
+            )
+            .unwrap();
+
+        // TODO: waiting on fix
+        // https://github.com/robertohuertasm/package-lock-json-parser/issues/3
+
+        // let lockfile: PackageLockJson = read_file(&temp.path().join("package-lock.json")).unwrap();
+
+        // assert_eq!(
+        //     lockfile,
+        //     PackageLockJson {
+        //         name: "moon-examples".into(),
+        //         version: "1.2.3".into(),
+        //         lockfile_version: 3,
+        //         packages: Some(HashMap::from_iter([
+        //             (
+        //                 "node_modules/tap/node_modules/yaml".to_owned(),
+        //                 V2Dependency {
+        //                     version: "1.10.2".into(),
+        //                     ..V2Dependency::default()
+        //                 }
+        //             ),
+        //             (
+        //                 "node_modules/yaml".to_owned(),
+        //                 V2Dependency {
+        //                     version: "2.2.2".into(),
+        //                     ..V2Dependency::default()
+        //                 }
+        //             ),
+        //             (
+        //                 "workspaces/libnpmdiff".to_owned(),
+        //                 V2Dependency {
+        //                     version: "5.0.17".into(),
+        //                     ..V2Dependency::default()
+        //                 }
+        //             )
+        //         ])),
+        //         ..PackageLockJson::default()
+        //     }
+        // );
+
+        assert_eq!(
+            load_lockfile_dependencies(temp.path().join("package-lock.json")).unwrap(),
+            FxHashMap::from_iter([
+                (
+                    "yaml".to_owned(),
+                    string_vec!["sha512-CBKFWExMn46Foo4cldiChEzn7S7SRV+wqiluAb6xmueD/fGyRHIhX8m14vVGgeFWjN540nKCNVj6P21eQjgTuA=="]
                 ),
             ])
         );

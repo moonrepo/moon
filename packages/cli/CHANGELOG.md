@@ -60,6 +60,11 @@
 
 - Reworked `moon init --yes` to not enable all tools, and instead enable based on file detection.
 - Cleaned up `moon init` templates. Will no longer scaffold `.moon/tasks.yml`.
+- Added support for npm lockfile v3 format.
+
+#### 📚 Documentation
+
+- Started on a Rust handbook guide.
 
 ## 1.4.0
 

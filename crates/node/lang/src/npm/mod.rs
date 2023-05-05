@@ -8,7 +8,7 @@ use starbase_utils::fs;
 use std::path::{Path, PathBuf};
 
 fn read_file(path: &Path) -> Result<PackageLockJson, MoonError> {
-    Ok(parse(fs::read_file(path)?).map_err(|e| MoonError::Generic(e.to_string()))?)
+    parse(fs::read_file(path)?).map_err(|e| MoonError::Generic(e.to_string()))
 }
 
 config_cache_container!(
@@ -82,6 +82,7 @@ pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVer
 }
 
 #[cfg(test)]
+#[allow(clippy::disallowed_types)]
 mod tests {
     use super::*;
     use moon_test_utils::{assert_fs::prelude::*, create_temp_dir, pretty_assertions::assert_eq};

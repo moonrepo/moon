@@ -9,10 +9,13 @@ use moon_tool::Tool;
 #[derive(ValueEnum, Clone, Debug)]
 #[value(rename_all = "lowercase")]
 pub enum BinTool {
+    // JavaScript
     Node,
     Npm,
     Pnpm,
     Yarn,
+    // Rust
+    Rust,
 }
 
 enum BinExitCodes {
@@ -71,6 +74,11 @@ pub async fn bin(tool_type: BinTool) -> Result<(), AnyError> {
                 },
                 _ => {}
             };
+        }
+        BinTool::Rust => {
+            let rust = workspace.platforms.get(PlatformType::Rust)?.get_tool()?;
+
+            is_installed(*rust);
         }
     };
 

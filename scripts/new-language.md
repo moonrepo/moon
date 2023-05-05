@@ -324,3 +324,23 @@ different and may require custom logic.
 
 - [ ] Updated `crates/cli/src/commands/docker/scaffold.rs` (mainly `scaffold_workspace` function)
 - [ ] Updated `crates/cli/src/commands/docker/prune.rs` (added another prune function)
+
+### Add runner tests
+
+The biggest thing to test besides the tool and platform, is that running tasks for the language work
+correctly. There are many cases to test for: error handling, exit codes, stdout, stderr, etc. Refer
+to Node.js for a complete example.
+
+- [ ] Added `crates/cli/tests/run_<lang>_test.rs`
+
+### Update docs
+
+At this point we should start updating docs, primarily these sections:
+
+- Any configs
+- Language handbook
+
+### Create a pull request
+
+Once everything is good, create a pull request and include it in the next release. Ideally tiers are
+released separately!

@@ -4,9 +4,17 @@
 
 #### 🚀 Updates
 
-- Added Rust tier 2 language support!
-  - Added `rust` setting to `.moon/toolchain.yml`.
+- Added Rust tier 2 and 3 language support!
   - Added `rust` as a supported `platform` variant.
+  - Added `rust` setting to `.moon/toolchain.yml`.
+  - Added `toolchain.rust` setting to `moon.yml`.
+  - Added support for `rust` setting in `.prototools`.
+  - Updated `moon init` and `moon bin` commands to support Rust.
+  - Updated `moon docker prune` command to delete the `target` directory.
+
+#### ⚙️ Internal
+
+- Reworked `moon init --yes` to not enable all tools, and instead enable based on file detection.
 
 ## 1.4.0
 

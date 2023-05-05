@@ -115,7 +115,11 @@ impl Task {
             output_paths: FxHashSet::default(),
             platform: cloned_config.platform,
             target,
-            type_of: TaskType::Test,
+            type_of: if is_local {
+                TaskType::Run
+            } else {
+                TaskType::Test
+            },
         };
 
         if config
@@ -187,12 +191,8 @@ impl Task {
 
     /// Determine the type of task after inheritance and expansion.
     pub fn determine_type(&mut self) {
-        if !self.options.run_in_ci {
-            self.type_of = TaskType::Run;
-        } else if !self.outputs.is_empty() {
+        if !self.outputs.is_empty() {
             self.type_of = TaskType::Build;
-        } else {
-            self.type_of = TaskType::Test;
         }
     }
 

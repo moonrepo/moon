@@ -36,6 +36,10 @@ pub fn load_toolchain_node_config_template() -> &'static str {
     include_str!("../templates/toolchain_node.yml")
 }
 
+pub fn load_toolchain_rust_config_template() -> &'static str {
+    include_str!("../templates/toolchain_rust.yml")
+}
+
 pub fn load_toolchain_typescript_config_template() -> &'static str {
     include_str!("../templates/toolchain_typescript.yml")
 }

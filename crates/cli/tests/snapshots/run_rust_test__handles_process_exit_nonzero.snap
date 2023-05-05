@@ -1,0 +1,13 @@
+---
+source: crates/cli/tests/run_rust_test.rs
+expression: assert.output()
+---
+▪▪▪▪ rust:exitNonZero
+stdout
+▪▪▪▪ rust:exitNonZero (100ms)
+stderr
+
+ ERROR  Process cargo failed with a 1 exit code.
+
+
+

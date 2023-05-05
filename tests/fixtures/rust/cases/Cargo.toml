@@ -1,0 +1,19 @@
+[package]
+name = "rust-cases"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "args"
+
+[[bin]]
+name = "exit_nonzero"
+
+[[bin]]
+name = "exit_zero"
+
+[[bin]]
+name = "panic"
+
+[[bin]]
+name = "standard"

@@ -1,0 +1,14 @@
+---
+source: crates/cli/tests/run_rust_test.rs
+expression: assert.output()
+---
+▪▪▪▪ rust:exit_zero
+stdout
+▪▪▪▪ rust:exit_zero (100ms)
+
+Tasks: 1 completed
+ Time: 100ms
+
+stderr
+
+

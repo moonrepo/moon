@@ -1,0 +1,12 @@
+---
+source: crates/cli/src/commands/init/rust.rs
+expression: render_template(context).unwrap()
+---
+# Configures Rust within the toolchain.
+rust:
+  # The toolchain to use. Must be a semantic version that includes major, minor, and patch.
+  version: '1.70.0'
+
+  # Sync the configured version above as a channel to the root `rust-toolchain.toml` config.
+  syncToolchainConfig: false
+

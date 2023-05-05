@@ -1,0 +1,29 @@
+language: rust
+
+tasks:
+  envVars:
+    command: 'cargo run --quiet --bin env_vars'
+    env:
+      MOON_FOO: abc
+      MOON_BAR: '123'
+      MOON_BAZ: 'true'
+  envVarsMoon:
+    command: 'cargo run --quiet --bin env_vars_moon'
+  exitNonZero:
+    command: 'cargo run --quiet --bin exit_nonzero'
+  exitZero:
+    command: 'cargo run --quiet --bin exit_zero'
+  panic:
+    command: 'cargo run --quiet --bin panic'
+  retryCount:
+    command: 'cargo run --quiet --bin exit_nonzero'
+    options:
+      retryCount: 3
+  runFromProject:
+    command: 'cargo run --quiet --bin cwd'
+  runFromWorkspace:
+    command: 'cargo run --quiet --bin cwd'
+    options:
+      runFromWorkspaceRoot: true
+  standard:
+    command: 'cargo run --quiet --bin standard'

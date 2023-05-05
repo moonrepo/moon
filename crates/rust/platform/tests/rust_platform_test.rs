@@ -47,8 +47,10 @@ mod sync_project {
         let sandbox = create_sandbox("rust/project");
         sandbox.create_file("rust-toolchain", "1.69.0");
 
-        let mut project = Project::default();
-        project.root = sandbox.path().to_path_buf();
+        let project = Project {
+            root: sandbox.path().to_path_buf(),
+            ..Project::default()
+        };
 
         let result = create_platform()
             .sync_project(&ActionContext::default(), &project, &FxHashMap::default())
@@ -70,8 +72,10 @@ mod sync_project {
         let sandbox = create_sandbox("rust/project");
         sandbox.create_file("rust-toolchain", TOOLCHAIN);
 
-        let mut project = Project::default();
-        project.root = sandbox.path().to_path_buf();
+        let project = Project {
+            root: sandbox.path().to_path_buf(),
+            ..Project::default()
+        };
 
         let result = create_platform()
             .sync_project(&ActionContext::default(), &project, &FxHashMap::default())
@@ -102,8 +106,10 @@ mod sync_project {
                 version: Some("1.70.0".into()),
             };
 
-            let mut project = Project::default();
-            project.root = sandbox.path().to_path_buf();
+            let project = Project {
+                root: sandbox.path().to_path_buf(),
+                ..Project::default()
+            };
 
             let result = platform
                 .sync_project(&ActionContext::default(), &project, &FxHashMap::default())
@@ -128,8 +134,10 @@ mod sync_project {
                 version: None,
             };
 
-            let mut project = Project::default();
-            project.root = sandbox.path().to_path_buf();
+            let project = Project {
+                root: sandbox.path().to_path_buf(),
+                ..Project::default()
+            };
 
             let result = platform
                 .sync_project(&ActionContext::default(), &project, &FxHashMap::default())
@@ -154,8 +162,10 @@ mod sync_project {
                 version: Some("1.70.0".into()),
             };
 
-            let mut project = Project::default();
-            project.root = sandbox.path().to_path_buf();
+            let project = Project {
+                root: sandbox.path().to_path_buf(),
+                ..Project::default()
+            };
 
             let result = platform
                 .sync_project(&ActionContext::default(), &project, &FxHashMap::default())
@@ -179,8 +189,10 @@ mod sync_project {
                 version: Some("1.70.0".into()),
             };
 
-            let mut project = Project::default();
-            project.root = sandbox.path().to_path_buf();
+            let project = Project {
+                root: sandbox.path().to_path_buf(),
+                ..Project::default()
+            };
 
             let result = platform
                 .sync_project(&ActionContext::default(), &project, &FxHashMap::default())

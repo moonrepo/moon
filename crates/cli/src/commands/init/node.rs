@@ -40,7 +40,7 @@ fn detect_node_version(dest_dir: &Path) -> Result<(String, String), AnyError> {
         ));
     }
 
-    Ok(("18.0.0".into(), String::new()))
+    Ok(("20.0.0".into(), String::new()))
 }
 
 /// Verify the package manager to use. If a `package.json` exists,

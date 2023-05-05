@@ -1,0 +1,13 @@
+---
+source: crates/cli/tests/run_rust_test.rs
+expression: assert.output()
+---
+▪▪▪▪ rust:runFromWorkspace
+<WORKSPACE>
+▪▪▪▪ rust:runFromWorkspace (100ms)
+
+Tasks: 1 completed
+ Time: 100ms
+
+
+

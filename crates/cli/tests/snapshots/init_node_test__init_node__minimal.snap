@@ -9,8 +9,5 @@ $schema: 'https://moonrepo.dev/schemas/toolchain.json'
 # extends: './shared/toolchain.yml'
 
 node:
-  version: '18.0.0'
+  version: '20.0.0'
   packageManager: 'npm'
-
-typescript:
-  syncProjectReferences: true

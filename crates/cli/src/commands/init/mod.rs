@@ -1,4 +1,5 @@
 mod node;
+mod rust;
 mod typescript;
 
 use crate::helpers::AnyError;
@@ -12,10 +13,12 @@ use moon_constants::{
     CONFIG_DIRNAME, CONFIG_TASKS_FILENAME, CONFIG_TOOLCHAIN_FILENAME, CONFIG_WORKSPACE_FILENAME,
 };
 use moon_node_lang::NPM;
+use moon_rust_lang::CARGO;
 use moon_terminal::{create_theme, safe_exit};
 use moon_utils::path;
 use moon_vcs::detect_vcs;
 use node::init_node;
+use rust::init_rust;
 use starbase_styles::color;
 use starbase_utils::fs;
 use std::collections::{BTreeMap, VecDeque};
@@ -30,6 +33,7 @@ use typescript::init_typescript;
 #[value(rename_all = "lowercase")]
 pub enum InitTool {
     Node,
+    Rust,
     TypeScript,
 }
 
@@ -108,6 +112,7 @@ pub async fn init_tool(
 
     let tool_config = match tool {
         InitTool::Node => init_node(dest_dir, options, theme, None).await?,
+        InitTool::Rust => init_rust(dest_dir, options, theme, None).await?,
         InitTool::TypeScript => init_typescript(dest_dir, options, theme).await?,
     };
 
@@ -160,23 +165,34 @@ pub async fn init(
     // Initialize all tools
     let mut toolchain_configs = VecDeque::new();
 
-    if options.yes
-        || dest_dir.join(NPM.manifest).exists()
-        || Confirm::with_theme(&theme)
-            .with_prompt("Initialize Node.js?")
-            .interact()?
+    if dest_dir.join(NPM.manifest).exists()
+        || !options.yes
+            && Confirm::with_theme(&theme)
+                .with_prompt("Initialize Node.js?")
+                .interact()?
     {
         toolchain_configs
             .push_back(init_node(&dest_dir, &options, &theme, Some(&mut context)).await?);
 
-        if options.yes
-            || dest_dir.join("tsconfig.json").exists()
-            || Confirm::with_theme(&theme)
-                .with_prompt("Initialize TypeScript?")
-                .interact()?
+        if dest_dir.join("tsconfig.json").exists()
+            || !options.yes
+                && Confirm::with_theme(&theme)
+                    .with_prompt("Initialize TypeScript?")
+                    .interact()?
         {
             toolchain_configs.push_back(init_typescript(&dest_dir, &options, &theme).await?);
         }
+    }
+
+    // For other languages, avoid enabling them by default
+    if dest_dir.join(CARGO.manifest).exists()
+        || !options.yes
+            && Confirm::with_theme(&theme)
+                .with_prompt("Initialize Rust?")
+                .interact()?
+    {
+        toolchain_configs
+            .push_back(init_rust(&dest_dir, &options, &theme, Some(&mut context)).await?);
     }
 
     toolchain_configs.push_front(render_toolchain_template(&context)?);

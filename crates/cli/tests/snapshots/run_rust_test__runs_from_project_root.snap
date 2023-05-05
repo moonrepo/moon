@@ -2,13 +2,12 @@
 source: crates/cli/tests/run_rust_test.rs
 expression: assert.output()
 ---
-▪▪▪▪ rust:exitZero
-stdout
-▪▪▪▪ rust:exitZero (100ms)
+▪▪▪▪ rust:runFromProject
+<WORKSPACE>
+▪▪▪▪ rust:runFromProject (100ms)
 
 Tasks: 1 completed
  Time: 100ms
 
-stderr
 
 

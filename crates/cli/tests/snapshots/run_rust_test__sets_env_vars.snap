@@ -2,13 +2,14 @@
 source: crates/cli/tests/run_rust_test.rs
 expression: assert.output()
 ---
-▪▪▪▪ rust:exitZero
-stdout
-▪▪▪▪ rust:exitZero (100ms)
+▪▪▪▪ rust:envVars
+MOON_FOO=abc
+MOON_BAR=123
+MOON_BAZ=true
+▪▪▪▪ rust:envVars (100ms)
 
 Tasks: 1 completed
  Time: 100ms
 
-stderr
 
 

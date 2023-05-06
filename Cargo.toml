@@ -26,7 +26,7 @@ default-members = ["crates/cli"]
 async-trait = "0.1.68"
 cached = "0.43.0"
 ci_env = "0.2.0"
-clap = { version = "4.2.5", features = ["derive", "env", "wrap_help"] }
+clap = { version = "4.2.7", features = ["derive", "env", "wrap_help"] }
 clap_complete = "4.2.1"
 console = "0.15.5"
 criterion = { version = "0.4.0", features = ["async_tokio"] }
@@ -38,11 +38,11 @@ regex = "1.8.1"
 # We don't use openssl but its required for musl builds
 reqwest = { version = "0.11.17", default-features = false, features = ["rustls-tls", "native-tls-vendored"] }
 rustc-hash = "1.1.0"
-serde = { version = "1.0.160", features = ["derive"] }
+serde = { version = "1.0.162", features = ["derive"] }
 serde_json = "1.0.96"
 serde_yaml = "0.9.21"
-starbase_styles = "0.1.5"
-starbase_utils = { version = "0.2.7", default-features = false, features = ["editor-config", "glob", "json", "toml", "yaml"] }
+starbase_styles = "0.1.6"
+starbase_utils = { version = "0.2.8", default-features = false, features = ["editor-config", "glob", "json", "toml", "yaml"] }
 strum = { version = "0.24.1", features = ["derive"] }
 thiserror = "1.0.40"
 tokio = { version = "1.28.0", default-features = false, features = ["tracing"] }

@@ -7,7 +7,7 @@ pub enum QueryError {
     #[error("Encountered an empty query. Did you forget to add criteria?")]
     EmptyInput,
 
-    #[error("Cannot use both AND (&&) and OR (||) logical operators in the same group. Wrap in parentheses to create sub-groups.")]
+    #[error("Cannot use both {} (&&) and {} (||) logical operators in the same group. Wrap in parentheses to create sub-groups.", "AND".style(Style::Symbol), "OR".style(Style::Symbol))]
     LogicalOperatorMismatch,
 
     #[error("Unknown query field {}.", .0.style(Style::Id))]

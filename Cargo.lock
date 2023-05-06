@@ -745,9 +745,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.2.5"
+version = "4.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a1f23fa97e1d1641371b51f35535cb26959b8e27ab50d167a8b996b5bada819"
+checksum = "34d21f9bf1b425d2968943631ec91202fe5e837264063503708b83013f8fc938"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -756,9 +756,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.2.5"
+version = "4.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0fdc5d93c358224b4d6867ef1356d740de2303e9892edc06c5340daeccd96bab"
+checksum = "914c8c79fb560f238ef6429439a30023c862f7a28e688c58f7203f12b29970bd"
 dependencies = [
  "anstream",
  "anstyle",
@@ -774,7 +774,7 @@ version = "4.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1a19591b2ab0e3c04b588a0e04ddde7b9eaa423646d1b4a8092879216bf47473"
 dependencies = [
- "clap 4.2.5",
+ "clap 4.2.7",
 ]
 
 [[package]]
@@ -2506,7 +2506,7 @@ dependencies = [
 name = "moon_action_context"
 version = "0.1.0"
 dependencies = [
- "clap 4.2.5",
+ "clap 4.2.7",
  "moon_target",
  "rustc-hash",
  "serde",
@@ -2602,7 +2602,7 @@ version = "1.4.0"
 dependencies = [
  "bytes",
  "ci_env",
- "clap 4.2.5",
+ "clap 4.2.7",
  "clap_complete",
  "clap_lex 0.4.1",
  "console",
@@ -4009,7 +4009,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dcede2123bb5bd149fece57fdc8459f2b0649b60e685886950d87665f3692bec"
 dependencies = [
  "async-recursion",
- "clap 4.2.5",
+ "clap 4.2.7",
  "clap_complete",
  "convert_case",
  "dialoguer",
@@ -4488,18 +4488,18 @@ dependencies = [
 
 [[package]]
 name = "serde"
-version = "1.0.160"
+version = "1.0.162"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb2f3770c8bce3bcda7e149193a069a0f4365bda1fa5cd88e03bca26afc1216c"
+checksum = "71b2f6e1ab5c2b98c05f0f35b236b22e8df7ead6ffbf51d7808da7f8817e7ab6"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.160"
+version = "1.0.162"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "291a097c63d8497e00160b166a967a4a79c64f3facdd01cbd7502231688d77df"
+checksum = "a2a0814352fd64b58489904a44ea8d90cb1a91dcb6b4f5ebabc32c8318e93cb6"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4783,9 +4783,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.2.7"
+version = "0.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "57fc4f01babc6d55cffc199436320b1b0f6648d06cca9ec4df095b5a7158f097"
+checksum = "83f45178a79938c733ba751aa2ffb0d50b8e740ce26f92e408126f50445ff004"
 dependencies = [
  "dirs",
  "ec4rs",

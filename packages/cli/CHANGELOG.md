@@ -12,6 +12,10 @@
   - Updated `moon init` and `moon bin` commands to support Rust.
   - Updated `moon docker prune` command to delete the `target` directory.
 
+#### 🐞 Fixes
+
+- Fixed an issue where task type was `run` when it should be `test`.
+
 #### ⚙️ Internal
 
 - Reworked `moon init --yes` to not enable all tools, and instead enable based on file detection.

@@ -1,0 +1,55 @@
+---
+slug: moon-v1.5
+title: moon v1.5 - Rust tier 2 and 3 support
+authors: [milesj]
+tags: [rust, lang, tier]
+image: ./img/moon/v1.5.png
+---
+
+With this release, we're announcing not just tier 2, but also tier 3 support for the Rust language.
+
+<!--truncate-->
+
+???
+
+## New `rust` configurations
+
+Languages in
+[moon are enabled through configuration](/docs/how-it-works/languages#enabling-a-language) blocks in
+[`.moon/toolchain.yml`](/docs/config/toolchain), and Rust is no different. We now support a
+[`rust`](/docs/config/toolchain#rust) toolchain setting, which must be defined to use Rust
+([view all available settings](/docs/config/toolchain#rust)).
+
+```yaml title=".moon/toolchain.yml"
+rust:
+	version: '1.69.0'
+```
+
+When the `rust` setting is defined, it will enable the language and
+[deep platform integration](/docs/how-it-works/languages#tier-2--platform), and when the `version`
+field is defined, it will further enable
+[toolchain support](/docs/how-it-works/languages#tier-3--toolchain). Both of these features provide
+heavy automation, improving the overall developer experience.
+
+This is fantastic, but what if another Rust project in the monorepo requires a different toolchain
+channel/version? If so, they can use the new [`toolchain.rust`](/docs/config/project#rust) setting
+in [`moon.yml`](/docs/config/project) to define project-level overrides.
+
+```yaml title="<project>/moon.yml"
+toolchain:
+	rust:
+		version: '1.58.0'
+```
+
+## New `rust` task platform
+
+## Updated `moon init` commands
+
+## Updated `moon docker` commands
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.5.0) for a full list of
+changes.
+
+- ???

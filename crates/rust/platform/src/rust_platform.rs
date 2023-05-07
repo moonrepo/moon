@@ -208,7 +208,7 @@ impl Platform for RustPlatform {
             tool.exec_cargo(["generate-lockfile"], working_dir).await?;
         }
 
-        if !self.config.cargo_bins.is_empty() {
+        if !self.config.bins.is_empty() {
             print_checkpoint("cargo binstall", Checkpoint::Setup);
 
             // Install cargo-binstall if it does not exist
@@ -232,12 +232,12 @@ impl Platform for RustPlatform {
             debug!(
                 target: LOG_TARGET,
                 "Installing Cargo binaries: {}",
-                map_list(&self.config.cargo_bins, |b| color::label(b))
+                map_list(&self.config.bins, |b| color::label(b))
             );
 
             let mut args = string_vec!["binstall", "--no-confirm", "--log-level", "info"];
 
-            for bin in &self.config.cargo_bins {
+            for bin in &self.config.bins {
                 args.push(bin.to_owned());
             }
 
@@ -330,9 +330,9 @@ impl Platform for RustPlatform {
         hashset: &mut HashSet,
         _hasher_config: &HasherConfig,
     ) -> Result<(), ToolError> {
-        if !self.config.cargo_bins.is_empty() {
+        if !self.config.bins.is_empty() {
             hashset.hash(RustBinsHasher {
-                bins: self.config.cargo_bins.clone(),
+                bins: self.config.bins.clone(),
             });
         }
 

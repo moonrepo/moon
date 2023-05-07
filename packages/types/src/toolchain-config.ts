@@ -38,7 +38,7 @@ export interface NodeConfig {
 }
 
 export interface RustConfig {
-	cargoBins: string[] | null;
+	bins: string[] | null;
 	syncToolchainConfig: boolean;
 	version: string | null;
 }

@@ -16,8 +16,8 @@ fn migrate_sandbox() -> Sandbox {
 
     create_sandbox_with_config(
         "migrate",
-        Some(&workspace_config),
-        Some(&toolchain_config),
+        Some(workspace_config),
+        Some(toolchain_config),
         None,
     )
 }

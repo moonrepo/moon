@@ -9,9 +9,9 @@ fn unknown_task() {
 
     let sandbox = create_sandbox_with_config(
         "projects",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     );
 
     let assert = sandbox.run_moon(|cmd| {
@@ -29,9 +29,9 @@ fn shows_inputs() {
 
     let sandbox = create_sandbox_with_config(
         "projects",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     );
 
     let assert = sandbox.run_moon(|cmd| {
@@ -47,9 +47,9 @@ fn shows_outputs() {
 
     let sandbox = create_sandbox_with_config(
         "projects",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     );
 
     let assert = sandbox.run_moon(|cmd| {

@@ -11,9 +11,9 @@ fn sandbox(uri: String) -> Sandbox {
 
     let sandbox = create_sandbox_with_config(
         "node",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     );
 
     sandbox.enable_git();

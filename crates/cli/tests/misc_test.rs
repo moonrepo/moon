@@ -8,7 +8,7 @@ fn fails_on_version_constraint() {
 
     workspace_config.version_constraint = Some(">=1000.0.0".into());
 
-    let sandbox = create_sandbox_with_config("cases", Some(&workspace_config), None, None);
+    let sandbox = create_sandbox_with_config("cases", Some(workspace_config), None, None);
 
     let assert = sandbox.run_moon(|cmd| {
         cmd.arg("sync");

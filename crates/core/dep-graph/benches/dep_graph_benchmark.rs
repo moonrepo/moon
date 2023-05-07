@@ -8,9 +8,9 @@ pub fn build_benchmark(c: &mut Criterion) {
 
     let sandbox = create_sandbox_with_config(
         "cases",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     );
 
     c.bench_function("dep_graph_build", |b| {

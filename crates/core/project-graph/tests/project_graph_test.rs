@@ -27,9 +27,9 @@ async fn get_aliases_graph() -> (ProjectGraph, Sandbox) {
 
     let sandbox = create_sandbox_with_config(
         "project-graph/aliases",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     );
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
@@ -51,7 +51,7 @@ async fn get_dependencies_graph(enable_git: bool) -> (ProjectGraph, Sandbox) {
 
     let sandbox = create_sandbox_with_config(
         "project-graph/dependencies",
-        Some(&workspace_config),
+        Some(workspace_config),
         None,
         None,
     );
@@ -79,7 +79,7 @@ async fn get_dependents_graph() -> (ProjectGraph, Sandbox) {
 
     let sandbox = create_sandbox_with_config(
         "project-graph/dependents",
-        Some(&workspace_config),
+        Some(workspace_config),
         None,
         None,
     );
@@ -109,7 +109,7 @@ where
 
     let sandbox = create_sandbox_with_config(
         "project-graph/tag-constraints",
-        Some(&workspace_config),
+        Some(workspace_config),
         None,
         None,
     );
@@ -137,7 +137,7 @@ where
 
     let sandbox = create_sandbox_with_config(
         "project-graph/type-constraints",
-        Some(&workspace_config),
+        Some(workspace_config),
         None,
         None,
     );
@@ -157,7 +157,7 @@ async fn get_queries_graph() -> (ProjectGraph, Sandbox) {
     };
 
     let sandbox =
-        create_sandbox_with_config("project-graph/query", Some(&workspace_config), None, None);
+        create_sandbox_with_config("project-graph/query", Some(workspace_config), None, None);
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
     let graph = generate_project_graph(&mut workspace).await.unwrap();
@@ -178,7 +178,7 @@ async fn can_use_map_and_globs_setting() {
         ..WorkspaceConfig::default()
     };
 
-    let sandbox = create_sandbox_with_config("projects", Some(&workspace_config), None, None);
+    let sandbox = create_sandbox_with_config("projects", Some(workspace_config), None, None);
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
     let graph = generate_project_graph(&mut workspace).await.unwrap();
@@ -216,7 +216,7 @@ async fn can_generate_with_deps_cycles() {
     };
 
     let sandbox =
-        create_sandbox_with_config("project-graph/cycle", Some(&workspace_config), None, None);
+        create_sandbox_with_config("project-graph/cycle", Some(workspace_config), None, None);
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
     let graph = generate_project_graph(&mut workspace).await.unwrap();
@@ -299,7 +299,7 @@ mod globs {
 
         // Use git so we can test against the .git folder
         let sandbox =
-            create_sandbox_with_config("project-graph/langs", Some(&workspace_config), None, None);
+            create_sandbox_with_config("project-graph/langs", Some(workspace_config), None, None);
         sandbox.enable_git();
         sandbox.create_file(".foo/moon.yml", "{}");
         sandbox.create_file("node_modules/moon/package.json", "{}");
@@ -323,7 +323,7 @@ mod globs {
 
         // Use git so we can test against the .git folder
         let sandbox =
-            create_sandbox_with_config("project-graph/langs", Some(&workspace_config), None, None);
+            create_sandbox_with_config("project-graph/langs", Some(workspace_config), None, None);
         sandbox.enable_git();
         sandbox.create_file(".gitignore", "*-config");
 
@@ -347,7 +347,7 @@ mod globs {
         };
 
         let sandbox =
-            create_sandbox_with_config("project-graph/ids", Some(&workspace_config), None, None);
+            create_sandbox_with_config("project-graph/ids", Some(workspace_config), None, None);
 
         let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
         let graph = generate_project_graph(&mut workspace).await.unwrap();
@@ -435,7 +435,7 @@ mod to_dot {
 
         let sandbox = create_sandbox_with_config(
             "project-graph/dependencies",
-            Some(&workspace_config),
+            Some(workspace_config),
             None,
             None,
         );

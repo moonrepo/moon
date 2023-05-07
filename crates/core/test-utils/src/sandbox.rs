@@ -125,9 +125,9 @@ pub fn create_sandbox<T: AsRef<str>>(fixture: T) -> Sandbox {
 
 pub fn create_sandbox_with_config<T: AsRef<str>>(
     fixture: T,
-    workspace_config: Option<&WorkspaceConfig>,
-    toolchain_config: Option<&ToolchainConfig>,
-    tasks_config: Option<&InheritedTasksConfig>,
+    workspace_config: Option<WorkspaceConfig>,
+    toolchain_config: Option<ToolchainConfig>,
+    tasks_config: Option<InheritedTasksConfig>,
 ) -> Sandbox {
     let sandbox = create_sandbox(fixture);
 
@@ -177,9 +177,9 @@ pub fn create_sandbox_with_factory<
 
     create_sandbox_with_config(
         fixture,
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     )
 }
 

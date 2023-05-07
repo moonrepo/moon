@@ -48,9 +48,9 @@ where
 
     let sandbox = create_sandbox_with_config(
         "tasks",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     );
 
     box_callback(&sandbox);
@@ -371,9 +371,9 @@ tasks:
 
             let sandbox = create_sandbox_with_config(
                 "task-inheritance",
-                Some(&workspace_config),
+                Some(workspace_config),
                 None,
-                Some(&tasks_config),
+                Some(tasks_config),
             );
 
             let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
@@ -1432,9 +1432,9 @@ mod detection {
 
         let sandbox = create_sandbox_with_config(
             "project-graph/langs",
-            Some(&workspace_config),
+            Some(workspace_config),
             None,
-            Some(&tasks_config),
+            Some(tasks_config),
         );
 
         let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();

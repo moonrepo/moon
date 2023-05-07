@@ -13,9 +13,9 @@ fn cases_sandbox() -> Sandbox {
 
     create_sandbox_with_config(
         "cases",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     )
 }
 
@@ -29,9 +29,9 @@ where
 
     create_sandbox_with_config(
         "cases",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     )
 }
 

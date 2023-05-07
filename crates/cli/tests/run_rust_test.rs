@@ -20,8 +20,8 @@ fn rust_sandbox() -> Sandbox {
 
     let sandbox = create_sandbox_with_config(
         "rust/cases",
-        Some(&workspace_config),
-        Some(&toolchain_config),
+        Some(workspace_config),
+        Some(toolchain_config),
         None,
     );
     sandbox.enable_git();

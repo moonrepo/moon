@@ -7,9 +7,9 @@ pub fn get_benchmark(c: &mut Criterion) {
 
     let sandbox = create_sandbox_with_config(
         "cases",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     );
 
     c.bench_function("project_graph_get", |b| {
@@ -30,9 +30,9 @@ pub fn get_all_benchmark(c: &mut Criterion) {
 
     let sandbox = create_sandbox_with_config(
         "cases",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     );
 
     c.bench_function("project_graph_get_all", |b| {

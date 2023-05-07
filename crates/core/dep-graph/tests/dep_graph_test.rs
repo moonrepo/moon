@@ -47,9 +47,9 @@ async fn create_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
 
     let sandbox = create_sandbox_with_config(
         "projects",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     );
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
@@ -95,9 +95,9 @@ async fn create_tasks_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
 
     let sandbox = create_sandbox_with_config(
         "tasks",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     );
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
@@ -380,10 +380,10 @@ mod run_target_if_touched {
 
         let mut graph = build_dep_graph(&workspace, &projects);
         graph
-            .run_target(&Target::new("inputA", "a").unwrap(), Some(&touched_files))
+            .run_target(&Target::new("inputA", "a").unwrap(), Some(touched_files))
             .unwrap();
         graph
-            .run_target(&Target::new("inputB", "b").unwrap(), Some(&touched_files))
+            .run_target(&Target::new("inputB", "b").unwrap(), Some(touched_files))
             .unwrap();
         let graph = graph.build();
 
@@ -401,13 +401,13 @@ mod run_target_if_touched {
 
         let mut graph = build_dep_graph(&workspace, &projects);
         graph
-            .run_target(&Target::new("inputA", "a").unwrap(), Some(&touched_files))
+            .run_target(&Target::new("inputA", "a").unwrap(), Some(touched_files))
             .unwrap();
         graph
-            .run_target(&Target::new("inputB", "b2").unwrap(), Some(&touched_files))
+            .run_target(&Target::new("inputB", "b2").unwrap(), Some(touched_files))
             .unwrap();
         graph
-            .run_target(&Target::new("inputC", "c").unwrap(), Some(&touched_files))
+            .run_target(&Target::new("inputC", "c").unwrap(), Some(touched_files))
             .unwrap();
         let graph = graph.build();
 

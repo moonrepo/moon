@@ -23,7 +23,7 @@ fn extract_verman_files(verman: &VersionManager, files: &mut Vec<String>) {
 }
 
 pub fn detect_language_files(language: &ProjectLanguage) -> Vec<String> {
-    let mut files = vec![".prototools".to_owned()];
+    let mut files = vec![];
 
     match language {
         ProjectLanguage::Go => {

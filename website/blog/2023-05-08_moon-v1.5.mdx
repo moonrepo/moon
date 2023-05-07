@@ -17,7 +17,7 @@ With this release, we're announcing not just tier 2, but also tier 3 support for
 Languages in
 [moon are enabled through configuration](/docs/how-it-works/languages#enabling-a-language) blocks in
 [`.moon/toolchain.yml`](/docs/config/toolchain), and Rust is no different. We now support a
-[`rust`](/docs/config/toolchain#rust) toolchain setting, which must be defined to use Rust
+[`rust`](/docs/config/toolchain#rust) toolchain setting
 ([view all available settings](/docs/config/toolchain#rust)).
 
 ```yaml title=".moon/toolchain.yml"
@@ -43,9 +43,38 @@ toolchain:
 
 ## New `rust` task platform
 
-## Updated `moon init` commands
+## Updated `moon init` command
+
+As part of this release, we've also updated the [`moon init`](/docs/commands/init) command to
+support initializing Rust. By default, the command will prompt you on whether to install Rust or
+not, otherwise, when `--yes` is passed, the language will be installed if a `Cargo.toml` file is
+detected in the destination directory.
+
+If you already have a moon workspace, you can pass `--tool rust` to install Rust into the workspace.
+
+```shell
+$ moon init --tool rust
+```
 
 ## Updated `moon docker` commands
+
+And lastly, we also want to provide a great [`Dockerfile` experience](/docs/guides/docker) when
+using Rust. The [`moon docker scaffold`](/docs/commands/docker/scaffold) command has been updated to
+copy `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`, and other Rust/Cargo related files. When
+using Cargo workspaces, nested `Cargo.toml` files are also scaffolded.
+
+```docker
+RUN moon docker scaffold rust-app
+```
+
+Furthermore, we've also updated the [`moon docker prune`](/docs/commands/docker/scaffold) command to
+remove the entire `target` directory, greatly reducing the size of the image. Pruning makes the
+assumption that it's being ran _after_ a release profile has been built.
+
+```docker
+RUN moon run rust-app:build-release
+RUN moon docker prune
+```
 
 ## Other changes
 

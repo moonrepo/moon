@@ -1,9 +1,10 @@
 use moon_cli::commands::docker::DockerManifest;
+use moon_config::{WorkspaceConfig, WorkspaceProjects};
 use moon_test_utils::{
     create_sandbox_with_config, get_cases_fixture_configs, get_node_depman_fixture_configs,
     get_node_fixture_configs, get_projects_fixture_configs, predicates::prelude::*,
 };
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::{fs, path::Path};
 
 fn write_manifest(path: &Path, id: &str) {
@@ -177,6 +178,32 @@ mod scaffold_workspace {
         let docker = sandbox.path().join(".moon/docker/workspace");
 
         assert!(docker.join("yarn.lock").exists());
+    }
+
+    #[test]
+    fn copies_cargo_files() {
+        let workspace_config = WorkspaceConfig {
+            projects: WorkspaceProjects::Sources(FxHashMap::from_iter([(
+                "rust".into(),
+                ".".into(),
+            )])),
+            ..WorkspaceConfig::default()
+        };
+
+        let sandbox =
+            create_sandbox_with_config("rust/workspaces", Some(&workspace_config), None, None);
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("docker").arg("scaffold").arg("rust");
+        });
+
+        let docker = sandbox.path().join(".moon/docker/workspace");
+
+        assert!(docker.join("dockerManifest.json").exists());
+        assert!(docker.join("Cargo.toml").exists());
+        assert!(docker.join("Cargo.lock").exists());
+        assert!(docker.join("crates/bin-crate/Cargo.toml").exists());
+        assert!(docker.join("crates/path-deps/Cargo.toml").exists());
     }
 }
 

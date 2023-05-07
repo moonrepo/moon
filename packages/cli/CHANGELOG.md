@@ -20,6 +20,7 @@
 #### ⚙️ Internal
 
 - Reworked `moon init --yes` to not enable all tools, and instead enable based on file detection.
+- Cleaned up `moon init` templates.
 
 ## 1.4.0
 

@@ -210,7 +210,7 @@
     "RustConfig": {
       "type": "object",
       "properties": {
-        "cargoBins": {
+        "bins": {
           "type": "array",
           "items": {
             "type": "string"

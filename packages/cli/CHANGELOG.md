@@ -20,7 +20,7 @@
 #### ⚙️ Internal
 
 - Reworked `moon init --yes` to not enable all tools, and instead enable based on file detection.
-- Cleaned up `moon init` templates.
+- Cleaned up `moon init` templates. Will no longer scaffold `.moon/tasks.yml`.
 
 ## 1.4.0
 

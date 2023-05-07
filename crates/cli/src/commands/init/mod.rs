@@ -6,12 +6,8 @@ use crate::helpers::AnyError;
 use clap::ValueEnum;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
-use moon_config::{
-    load_tasks_config_template, load_toolchain_config_template, load_workspace_config_template,
-};
-use moon_constants::{
-    CONFIG_DIRNAME, CONFIG_TASKS_FILENAME, CONFIG_TOOLCHAIN_FILENAME, CONFIG_WORKSPACE_FILENAME,
-};
+use moon_config::{load_toolchain_config_template, load_workspace_config_template};
+use moon_constants::{CONFIG_DIRNAME, CONFIG_TOOLCHAIN_FILENAME, CONFIG_WORKSPACE_FILENAME};
 use moon_node_lang::NPM;
 use moon_rust_lang::CARGO;
 use moon_terminal::{create_theme, safe_exit};
@@ -211,13 +207,6 @@ pub async fn init(
         moon_dir.join(CONFIG_WORKSPACE_FILENAME),
         render_workspace_template(&context)?,
     )?;
-
-    if !options.minimal {
-        fs::write_file(
-            moon_dir.join(CONFIG_TASKS_FILENAME),
-            Tera::one_off(load_tasks_config_template(), &context, false)?,
-        )?;
-    }
 
     // Append to ignore file
     let mut file = OpenOptions::new()

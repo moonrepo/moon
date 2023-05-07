@@ -2,6 +2,7 @@
 source: crates/cli/tests/run_rust_test.rs
 expression: assert.output()
 ---
+▪▪▪▪ cargo generate-lockfile
 ▪▪▪▪ rust:exitNonZero
 stdout
 ▪▪▪▪ rust:exitNonZero (100ms)

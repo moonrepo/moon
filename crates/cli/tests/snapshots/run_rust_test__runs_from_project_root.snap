@@ -2,6 +2,7 @@
 source: crates/cli/tests/run_rust_test.rs
 expression: assert.output()
 ---
+▪▪▪▪ cargo generate-lockfile
 ▪▪▪▪ rust:runFromProject
 <WORKSPACE>
 ▪▪▪▪ rust:runFromProject (100ms)

@@ -6,7 +6,10 @@ use moon_tool::{Tool, ToolError};
 use moon_utils::process::Command;
 use proto::{async_trait, rust::RustLanguage, Installable, Proto, Tool as ProtoTool};
 use rustc_hash::FxHashMap;
-use std::path::{Path, PathBuf};
+use std::{
+    ffi::OsStr,
+    path::{Path, PathBuf},
+};
 
 #[derive(Debug)]
 pub struct RustTool {
@@ -39,7 +42,11 @@ impl RustTool {
         Ok(rust)
     }
 
-    pub async fn exec_cargo(&self, args: &[&str], working_dir: &Path) -> Result<(), ToolError> {
+    pub async fn exec_cargo<I, S>(&self, args: I, working_dir: &Path) -> Result<(), ToolError>
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<OsStr>,
+    {
         Command::new("cargo")
             .args(args)
             .cwd(working_dir)

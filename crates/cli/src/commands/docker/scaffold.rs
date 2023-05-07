@@ -62,8 +62,6 @@ fn scaffold_workspace(
                     if let Some(cargo_toml) = CargoTomlCache::read(source)? {
                         let manifests = cargo_toml.get_member_manifest_paths(source)?;
 
-                        dbg!(&manifests, &source, &dest);
-
                         for manifest in manifests {
                             files.push(path::to_string(manifest.strip_prefix(source).unwrap())?);
                         }

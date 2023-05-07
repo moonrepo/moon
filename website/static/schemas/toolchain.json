@@ -210,6 +210,12 @@
     "RustConfig": {
       "type": "object",
       "properties": {
+        "cargoBins": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "syncToolchainConfig": {
           "type": "boolean"
         },

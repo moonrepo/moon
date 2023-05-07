@@ -6,11 +6,23 @@ tags: [rust, lang, tier]
 image: ./img/moon/v1.5.png
 ---
 
+import Button from '@site/src/ui/Button';
+
 With this release, we're announcing not just tier 2, but also tier 3 support for the Rust language.
 
 <!--truncate-->
 
-???
+As big fans of Rust (moon is written in it), we're stoked to finally add full language support, and
+to integrate our first non-JavaScript language! This release is rather massive, and required a ton
+of internal work, most of which we'll skip over.
+
+Instead we'll only talk about the key features that you, the consumers, will actually care about. To
+start, we've started working on a Rust handbook, that outlines how to enable Rust, what kind of
+integrations we support, and a handful of common questions.
+
+<div class="flex justify-center">
+  <Button label="View Rust handbook" href="/docs/guides/rust/handbook" size="lg" />
+</div>
 
 ## New `rust` configurations
 
@@ -42,6 +54,32 @@ toolchain:
 ```
 
 ## New `rust` task platform
+
+The main benefit of Rust language support is that tasks can be ran within the context of our
+[Rust platform integration](/docs/how-it-works/languages#tier-2--platform). This can easily be done
+by setting the project's [`language`](/docs/config/project#language) to "rust" in
+[`moon.yml`](/docs/config/project).
+
+This will set the [`platform`](/docs/config/project#platform-1) of all tasks within the project to
+"rust", unless they have been explicitly configured to something else.
+
+```yaml title="<project>/moon.yml"
+language: 'rust'
+type: 'application'
+```
+
+If you're mixing languages within a single project, and can't use the `language` setting above, you
+can define `platform` on the task directly.
+
+```yaml title="<project>/moon.yml"
+tasks:
+	build:
+		command: 'cargo build'
+		platform: 'rust'
+```
+
+> We also attempt to detect this automatially by comparing command names and checking for the
+> existence of files like `Cargo.toml`.
 
 ## Updated `moon init` command
 

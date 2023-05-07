@@ -21,7 +21,7 @@ fn system_sandbox() -> Sandbox {
     };
 
     let sandbox =
-        create_sandbox_with_config("system", Some(&workspace_config), None, Some(&tasks_config));
+        create_sandbox_with_config("system", Some(workspace_config), None, Some(tasks_config));
 
     sandbox.enable_git();
     sandbox

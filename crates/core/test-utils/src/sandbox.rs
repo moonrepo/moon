@@ -125,30 +125,20 @@ pub fn create_sandbox<T: AsRef<str>>(fixture: T) -> Sandbox {
 
 pub fn create_sandbox_with_config<T: AsRef<str>>(
     fixture: T,
-    workspace_config: Option<&WorkspaceConfig>,
-    toolchain_config: Option<&ToolchainConfig>,
-    tasks_config: Option<&InheritedTasksConfig>,
+    workspace_config: Option<WorkspaceConfig>,
+    toolchain_config: Option<ToolchainConfig>,
+    tasks_config: Option<InheritedTasksConfig>,
 ) -> Sandbox {
     let sandbox = create_sandbox(fixture);
 
     sandbox.create_file(
         ".moon/workspace.yml",
-        serde_yaml::to_string(
-            &workspace_config
-                .map(|c| c.to_owned())
-                .unwrap_or_else(WorkspaceConfig::default),
-        )
-        .unwrap(),
+        serde_yaml::to_string(&workspace_config.unwrap_or_default()).unwrap(),
     );
 
     sandbox.create_file(
         ".moon/toolchain.yml",
-        serde_yaml::to_string(
-            &toolchain_config
-                .map(|c| c.to_owned())
-                .unwrap_or_else(ToolchainConfig::default),
-        )
-        .unwrap(),
+        serde_yaml::to_string(&toolchain_config.unwrap_or_default()).unwrap(),
     );
 
     if let Some(config) = tasks_config {
@@ -177,9 +167,9 @@ pub fn create_sandbox_with_factory<
 
     create_sandbox_with_config(
         fixture,
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     )
 }
 

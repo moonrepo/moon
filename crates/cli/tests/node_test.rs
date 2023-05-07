@@ -15,9 +15,9 @@ mod run_script {
 
         let sandbox = create_sandbox_with_config(
             "node-npm/workspaces",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -37,9 +37,9 @@ mod run_script {
 
         let sandbox = create_sandbox_with_config(
             "node-npm/workspaces",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -59,9 +59,9 @@ mod run_script {
 
         let sandbox = create_sandbox_with_config(
             "node-npm/workspaces",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -79,9 +79,9 @@ mod run_script {
 
         let sandbox = create_sandbox_with_config(
             "node-npm/workspaces",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -102,9 +102,9 @@ mod run_script {
 
         let sandbox = create_sandbox_with_config(
             "node-pnpm/workspaces",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -122,9 +122,9 @@ mod run_script {
 
         let sandbox = create_sandbox_with_config(
             "node-yarn/workspaces",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -142,9 +142,9 @@ mod run_script {
 
         let sandbox = create_sandbox_with_config(
             "node-yarn1/workspaces",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {

@@ -252,6 +252,29 @@ mod target_command {
     }
 
     #[tokio::test]
+    async fn uses_cargo_with_version_override() {
+        let mut task = create_task();
+        task.command = "cargo".into();
+        task.args = string_vec!["build", "-w"];
+
+        let platform = create_platform();
+
+        let command = platform
+            .create_run_target_command(
+                &ActionContext::default(),
+                &Project::default(),
+                &task,
+                &Runtime::Rust(Version::new_override("1.60.0")),
+                &PathBuf::from("cwd"),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(command.bin, "cargo");
+        assert_eq!(command.args, &["+1.60.0", "build", "-w"]);
+    }
+
+    #[tokio::test]
     async fn uses_cargo_bin() {
         let sandbox = create_sandbox("rust/project");
         sandbox.create_file("bin/cargo-nextest", "");

@@ -16,7 +16,7 @@ fn syncs_all_projects() {
 
     let sandbox = create_sandbox_with_config(
         "project-graph/dependencies",
-        Some(&workspace_config),
+        Some(workspace_config),
         None,
         None,
     );

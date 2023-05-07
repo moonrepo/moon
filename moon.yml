@@ -16,33 +16,32 @@ fileGroups:
 _taskOptions: &options
   options:
     runInCI: false
-
-tasks:
-  build:
-    <<: *options
-    command: 'cargo build'
-    inputs:
-      - '@globs(sources)'
-  check:
-    <<: *options
-    command: 'cargo check --workspace'
-    inputs:
-      - '@globs(sources)'
-  format:
-    <<: *options
-    command: 'cargo fmt --all --check'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-  lint:
-    <<: *options
-    command: 'cargo clippy --workspace'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-  test:
-    <<: *options
-    command: 'cargo nextest run --workspace'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
+# tasks:
+#   build:
+#     <<: *options
+#     command: 'cargo build'
+#     inputs:
+#       - '@globs(sources)'
+#   check:
+#     <<: *options
+#     command: 'cargo check --workspace'
+#     inputs:
+#       - '@globs(sources)'
+#   format:
+#     <<: *options
+#     command: 'cargo fmt --all --check'
+#     inputs:
+#       - '@globs(sources)'
+#       - '@globs(tests)'
+#   lint:
+#     <<: *options
+#     command: 'cargo clippy --workspace'
+#     inputs:
+#       - '@globs(sources)'
+#       - '@globs(tests)'
+#   test:
+#     <<: *options
+#     command: 'cargo nextest run --workspace'
+#     inputs:
+#       - '@globs(sources)'
+#       - '@globs(tests)'

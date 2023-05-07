@@ -9,9 +9,9 @@ fn unknown_project() {
 
     let sandbox = create_sandbox_with_config(
         "projects",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     );
 
     let assert = sandbox.run_moon(|cmd| {
@@ -29,9 +29,9 @@ fn empty_config() {
 
     let sandbox = create_sandbox_with_config(
         "projects",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     );
 
     let assert = sandbox.run_moon(|cmd| {
@@ -47,9 +47,9 @@ fn no_config() {
 
     let sandbox = create_sandbox_with_config(
         "projects",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     );
 
     let assert = sandbox.run_moon(|cmd| {
@@ -66,9 +66,9 @@ fn basic_config() {
 
     let sandbox = create_sandbox_with_config(
         "projects",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     );
 
     let assert = sandbox.run_moon(|cmd| {
@@ -85,9 +85,9 @@ fn advanced_config() {
 
     let sandbox = create_sandbox_with_config(
         "projects",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     );
 
     let assert = sandbox.run_moon(|cmd| {
@@ -104,9 +104,9 @@ fn depends_on_paths() {
 
     let sandbox = create_sandbox_with_config(
         "projects",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     );
 
     let assert = sandbox.run_moon(|cmd| {
@@ -122,9 +122,9 @@ fn with_tasks() {
 
     let sandbox = create_sandbox_with_config(
         "projects",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     );
 
     let assert = sandbox.run_moon(|cmd| {
@@ -140,9 +140,9 @@ fn root_level() {
 
     let sandbox = create_sandbox_with_config(
         "cases",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     );
 
     let assert = sandbox.run_moon(|cmd| {

@@ -1,0 +1,122 @@
+---
+slug: moon-v1.5
+title: moon v1.5 - Rust tier 2 and 3 support
+authors: [milesj]
+tags: [rust, lang, tier]
+image: ./img/moon/v1.5.png
+---
+
+import Button from '@site/src/ui/Button';
+
+With this release, we're announcing not just tier 2, but also tier 3 support for the Rust language.
+
+<!--truncate-->
+
+As big fans of Rust (moon is written in it), we're stoked to finally add full language support, and
+to integrate our first non-JavaScript language! This release is rather massive, and required a ton
+of internal work, most of which we'll skip over.
+
+Instead we'll only talk about the key features that you, the consumers, will actually care about. To
+start, we've started working on a Rust handbook, that outlines how to enable Rust, what kind of
+integrations we support, and a handful of common questions.
+
+<div class="flex justify-center">
+  <Button label="View Rust handbook" href="/docs/guides/rust/handbook" size="lg" />
+</div>
+
+## New `rust` configurations
+
+Languages in
+[moon are enabled through configuration](/docs/how-it-works/languages#enabling-a-language) blocks in
+[`.moon/toolchain.yml`](/docs/config/toolchain), and Rust is no different. We now support a
+[`rust`](/docs/config/toolchain#rust) toolchain setting
+([view all available settings](/docs/config/toolchain#rust)).
+
+```yaml title=".moon/toolchain.yml"
+rust:
+	version: '1.69.0'
+```
+
+When the `rust` setting is defined, it will enable the language and
+[deep platform integration](/docs/how-it-works/languages#tier-2--platform), and when the `version`
+field is defined, it will further enable
+[toolchain support](/docs/how-it-works/languages#tier-3--toolchain). Both of these features provide
+heavy automation, improving the overall developer experience.
+
+This is fantastic, but what if another Rust project in the monorepo requires a different toolchain
+channel/version? If so, they can use the new [`toolchain.rust`](/docs/config/project#rust) setting
+in [`moon.yml`](/docs/config/project) to define project-level overrides.
+
+```yaml title="<project>/moon.yml"
+toolchain:
+	rust:
+		version: '1.58.0'
+```
+
+## New `rust` task platform
+
+The main benefit of Rust language support is that tasks can be ran within the context of our
+[Rust platform integration](/docs/how-it-works/languages#tier-2--platform). This can easily be done
+by setting the project's [`language`](/docs/config/project#language) to "rust" in
+[`moon.yml`](/docs/config/project).
+
+This will set the [`platform`](/docs/config/project#platform-1) of all tasks within the project to
+"rust", unless they have been explicitly configured to something else.
+
+```yaml title="<project>/moon.yml"
+language: 'rust'
+type: 'application'
+```
+
+If you're mixing languages within a single project, and can't use the `language` setting above, you
+can define `platform` on the task directly.
+
+```yaml title="<project>/moon.yml"
+tasks:
+	build:
+		command: 'cargo build'
+		platform: 'rust'
+```
+
+> We also attempt to detect this automatially by comparing command names and checking for the
+> existence of files like `Cargo.toml`.
+
+## Updated `moon init` command
+
+As part of this release, we've also updated the [`moon init`](/docs/commands/init) command to
+support initializing Rust. By default, the command will prompt you on whether to install Rust or
+not, otherwise, when `--yes` is passed, the language will be installed if a `Cargo.toml` file is
+detected in the destination directory.
+
+If you already have a moon workspace, you can pass `--tool rust` to install Rust into the workspace.
+
+```shell
+$ moon init --tool rust
+```
+
+## Updated `moon docker` commands
+
+And lastly, we also want to provide a great [`Dockerfile` experience](/docs/guides/docker) when
+using Rust. The [`moon docker scaffold`](/docs/commands/docker/scaffold) command has been updated to
+copy `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`, and other Rust/Cargo related files. When
+using Cargo workspaces, nested `Cargo.toml` files are also scaffolded.
+
+```docker
+RUN moon docker scaffold rust-app
+```
+
+Furthermore, we've also updated the [`moon docker prune`](/docs/commands/docker/scaffold) command to
+remove the entire `target` directory, greatly reducing the size of the image. Pruning makes the
+assumption that it's being ran _after_ a release profile has been built.
+
+```docker
+RUN moon run rust-app:build-release
+RUN moon docker prune
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.5.0) for a full list of
+changes.
+
+- ???

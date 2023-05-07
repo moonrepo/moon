@@ -1,9 +1,10 @@
 use moon_cli::commands::docker::DockerManifest;
+use moon_config::{WorkspaceConfig, WorkspaceProjects};
 use moon_test_utils::{
     create_sandbox_with_config, get_cases_fixture_configs, get_node_depman_fixture_configs,
     get_node_fixture_configs, get_projects_fixture_configs, predicates::prelude::*,
 };
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::{fs, path::Path};
 
 fn write_manifest(path: &Path, id: &str) {
@@ -27,9 +28,9 @@ mod scaffold_workspace {
 
         let sandbox = create_sandbox_with_config(
             "node",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         sandbox.run_moon(|cmd| {
@@ -51,9 +52,9 @@ mod scaffold_workspace {
 
         let sandbox = create_sandbox_with_config(
             "node",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         // Test inherited configs
@@ -78,9 +79,9 @@ mod scaffold_workspace {
 
         let sandbox = create_sandbox_with_config(
             "node",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         sandbox.run_moon(|cmd| {
@@ -100,9 +101,9 @@ mod scaffold_workspace {
 
         let sandbox = create_sandbox_with_config(
             "node-npm/workspaces",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         sandbox.run_moon(|cmd| {
@@ -121,9 +122,9 @@ mod scaffold_workspace {
 
         let sandbox = create_sandbox_with_config(
             "node-pnpm/workspaces",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         sandbox.run_moon(|cmd| {
@@ -143,9 +144,9 @@ mod scaffold_workspace {
 
         let sandbox = create_sandbox_with_config(
             "node-yarn/workspaces",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         sandbox.run_moon(|cmd| {
@@ -165,9 +166,9 @@ mod scaffold_workspace {
 
         let sandbox = create_sandbox_with_config(
             "node-yarn1/workspaces",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         sandbox.run_moon(|cmd| {
@@ -177,6 +178,32 @@ mod scaffold_workspace {
         let docker = sandbox.path().join(".moon/docker/workspace");
 
         assert!(docker.join("yarn.lock").exists());
+    }
+
+    #[test]
+    fn copies_cargo_files() {
+        let workspace_config = WorkspaceConfig {
+            projects: WorkspaceProjects::Sources(FxHashMap::from_iter([(
+                "rust".into(),
+                ".".into(),
+            )])),
+            ..WorkspaceConfig::default()
+        };
+
+        let sandbox =
+            create_sandbox_with_config("rust/workspaces", Some(workspace_config), None, None);
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("docker").arg("scaffold").arg("rust");
+        });
+
+        let docker = sandbox.path().join(".moon/docker/workspace");
+
+        assert!(docker.join("dockerManifest.json").exists());
+        assert!(docker.join("Cargo.toml").exists());
+        assert!(docker.join("Cargo.lock").exists());
+        assert!(docker.join("crates/bin-crate/Cargo.toml").exists());
+        assert!(docker.join("crates/path-deps/Cargo.toml").exists());
     }
 }
 
@@ -189,9 +216,9 @@ mod scaffold_sources {
 
         let sandbox = create_sandbox_with_config(
             "projects",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         sandbox.run_moon(|cmd| {
@@ -216,9 +243,9 @@ mod scaffold_sources {
 
         let sandbox = create_sandbox_with_config(
             "projects",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         sandbox.run_moon(|cmd| {
@@ -241,9 +268,9 @@ mod scaffold_sources {
 
         let sandbox = create_sandbox_with_config(
             "cases",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         sandbox.run_moon(|cmd| {
@@ -277,9 +304,9 @@ mod prune {
 
         let sandbox = create_sandbox_with_config(
             "node",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -303,9 +330,9 @@ mod prune_node {
 
         let sandbox = create_sandbox_with_config(
             "node-npm/workspaces",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         write_manifest(sandbox.path(), "other");
@@ -335,9 +362,9 @@ mod prune_node {
 
         let sandbox = create_sandbox_with_config(
             "node-pnpm/workspaces",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         write_manifest(sandbox.path(), "other");
@@ -365,9 +392,9 @@ mod prune_node {
 
         let sandbox = create_sandbox_with_config(
             "node-yarn/workspaces",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         write_manifest(sandbox.path(), "other");
@@ -395,9 +422,9 @@ mod prune_node {
 
         let sandbox = create_sandbox_with_config(
             "node-yarn1/workspaces",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         write_manifest(sandbox.path(), "other");
@@ -430,9 +457,9 @@ mod setup {
 
         let sandbox = create_sandbox_with_config(
             "node",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -456,9 +483,9 @@ mod setup_node {
 
         let sandbox = create_sandbox_with_config(
             "node-npm/workspaces",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         write_manifest(sandbox.path(), "other");
@@ -478,9 +505,9 @@ mod setup_node {
 
         let sandbox = create_sandbox_with_config(
             "node-pnpm/workspaces",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         write_manifest(sandbox.path(), "other");
@@ -500,9 +527,9 @@ mod setup_node {
 
         let sandbox = create_sandbox_with_config(
             "node-yarn/workspaces",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         write_manifest(sandbox.path(), "other");
@@ -522,9 +549,9 @@ mod setup_node {
 
         let sandbox = create_sandbox_with_config(
             "node-yarn1/workspaces",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         write_manifest(sandbox.path(), "other");

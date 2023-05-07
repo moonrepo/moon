@@ -10,6 +10,7 @@
   - Added `toolchain.rust` setting to `moon.yml`.
   - Added support for `rust` setting in `.prototools`.
   - Updated `moon init` and `moon bin` commands to support Rust.
+  - Updated `moon docker scaffold` command to scaffold Cargo files.
   - Updated `moon docker prune` command to delete the `target` directory.
 
 #### 🐞 Fixes

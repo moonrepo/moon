@@ -245,6 +245,52 @@ tasks:
 </TabItem>
 </Tabs>
 
+## Cargo integration
+
+You can't use Rust without Cargo -- well you could but why would you do that? With moon, we're doing
+our best to integrate with Cargo as much as possible. Here's a few of the benefits we currently
+provide.
+
+### Global binaries
+
+Cargo supports global binaries through the
+[`cargo install`](https://doc.rust-lang.org/cargo/commands/cargo-install.html) command, which
+installs a crate to `~/.cargo/bin`, or makes it available through the `cargo <crate>` command. These
+are extremely beneficial for development, but they do require every developer to manually install
+the crate (and appropriate version) to their machine.
+
+With moon, this is no longer an issue with the [`rust.bins`](../../config/toolchain#bins) setting.
+This setting requires a list of crates (with optional versions) to install, and moon will install
+them as part of the task runner `InstallRustDeps` action. Furthermore, binaries will be installed
+with [`cargo-binstall`](https://crates.io/crates/cargo-binstall) in an effort to reduce build and
+compilation times.
+
+```yaml title=".moon/toolchain.yml" {2-4}
+rust:
+  bins:
+    - 'cargo-make@0.35.0'
+    - 'cargo-nextest'
+```
+
+At this point, tasks can be configured to run this binary as a command. The `cargo` prefix is
+optional, as we'll inject it when necessary.
+
+```yaml title="<project>/moon.yml"
+tasks:
+  test:
+    command: 'nextest run --workspace'
+    platform: 'rust'
+```
+
+### Lockfile handling
+
+To expand our integration even further, we also take `Cargo.lock` into account, and apply the
+following automations when a target is being ran:
+
+- If the lockfile does not exist, we generate one with
+  [`cargo generate-lockfile`](https://doc.rust-lang.org/cargo/commands/cargo-generate-lockfile.html).
+- We parse and extract the resolved checksums and versions for more accurate hashing.
+
 ## FAQ
 
 ### Should we cache the `target` directory as an output?
@@ -270,7 +316,7 @@ tasks:
 ### How can we improve CI times?
 
 Rust is known for slow build times and CI is no exception. With that being said, there are a few
-patterns to solve this, both on the moon side and outside of it.
+patterns to help alleviate this, both on the moon side and outside of it.
 
 To start, you can cache Rust builds in CI. This is a non-moon solution to the `target` directory
 problem above.
@@ -280,9 +326,9 @@ problem above.
 2. A more integrated solution is [sccache](https://crates.io/crates/sccache), which stores build
    artifacts in a cloud storage provider.
 
-For moon, if you're looking to persist target results across CI runs, you can utilize the
+For moon, if you're looking to persist task results across CI runs, you can utilize the
 [`runner.archivableTargets`](../../config/workspace#archivabletargets) setting. This is useful for
-caching `cargo check`, `cargo clippy`, and other Cargo tasks that _do not_ produce outputs.
+caching `cargo check`, `cargo clippy`, and other Cargo tasks that _do not_ produce direct outputs.
 
 ```yaml title=".moon/workspace.yml"
 runner:

@@ -238,9 +238,9 @@ mod projects {
 
         let sandbox = create_sandbox_with_config(
             "projects",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -256,9 +256,9 @@ mod projects {
 
         let sandbox = create_sandbox_with_config(
             "projects",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -292,9 +292,9 @@ mod projects {
 
         let sandbox = create_sandbox_with_config(
             "projects",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
         sandbox.enable_git();
 
@@ -320,9 +320,9 @@ mod projects {
 
         let sandbox = create_sandbox_with_config(
             "projects",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
         sandbox.enable_git();
 
@@ -355,9 +355,9 @@ mod projects {
 
         let sandbox = create_sandbox_with_config(
             "projects",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
         sandbox.enable_git();
 
@@ -392,9 +392,9 @@ mod projects {
 
         let sandbox = create_sandbox_with_config(
             "projects",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -417,9 +417,9 @@ mod projects {
 
         let sandbox = create_sandbox_with_config(
             "projects",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -442,9 +442,9 @@ mod projects {
 
         let sandbox = create_sandbox_with_config(
             "projects",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -481,9 +481,9 @@ mod projects {
 
         let sandbox = create_sandbox_with_config(
             "projects",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -506,9 +506,9 @@ mod projects {
 
         let sandbox = create_sandbox_with_config(
             "projects",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -531,9 +531,9 @@ mod projects {
 
         let sandbox = create_sandbox_with_config(
             "projects",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -559,9 +559,9 @@ mod projects {
 
             let sandbox = create_sandbox_with_config(
                 "projects",
-                Some(&workspace_config),
-                Some(&toolchain_config),
-                Some(&tasks_config),
+                Some(workspace_config),
+                Some(toolchain_config),
+                Some(tasks_config),
             );
 
             let assert = sandbox.run_moon(|cmd| {
@@ -584,9 +584,9 @@ mod projects {
 
             let sandbox = create_sandbox_with_config(
                 "projects",
-                Some(&workspace_config),
-                Some(&toolchain_config),
-                Some(&tasks_config),
+                Some(workspace_config),
+                Some(toolchain_config),
+                Some(tasks_config),
             );
             sandbox.enable_git();
 
@@ -618,9 +618,9 @@ mod tasks {
 
         let sandbox = create_sandbox_with_config(
             "projects",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -636,9 +636,9 @@ mod tasks {
 
         let sandbox = create_sandbox_with_config(
             "projects",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -684,9 +684,9 @@ mod touched_files {
 
         let sandbox = create_sandbox_with_config(
             "cases",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
         sandbox.enable_git();
 
@@ -712,9 +712,9 @@ mod touched_files {
 
         let sandbox = create_sandbox_with_config(
             "cases",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
         sandbox.enable_git();
 

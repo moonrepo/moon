@@ -3,8 +3,9 @@
 $schema: '../website/static/schemas/workspace.json'
 
 projects:
-  sources:
-    moon: '.'
+  # sources:
+  #   moon: '.'
+  sources: {}
   globs:
     - 'packages/*'
     - '!packages/cli'

@@ -199,19 +199,16 @@ impl Platform for RustPlatform {
         runtime: &Runtime,
         working_dir: &Path,
     ) -> Result<(), ToolError> {
+        let tool = self.toolchain.get_for_version(runtime.version())?;
         let lockfile_path = working_dir.join(CARGO.lockfile);
 
         if !lockfile_path.exists() {
-            let tool = self.toolchain.get_for_version(runtime.version())?;
-
             print_checkpoint("cargo generate-lockfile", Checkpoint::Setup);
 
             tool.exec_cargo(["generate-lockfile"], working_dir).await?;
         }
 
         if !self.config.cargo_bins.is_empty() {
-            let tool = self.toolchain.get_for_version(runtime.version())?;
-
             print_checkpoint("cargo binstall", Checkpoint::Setup);
 
             // Install cargo-binstall if it does not exist
@@ -235,7 +232,7 @@ impl Platform for RustPlatform {
             debug!(
                 target: LOG_TARGET,
                 "Installing Cargo binaries: {}",
-                map_list(&self.config.cargo_bins, |b| color::shell(b))
+                map_list(&self.config.cargo_bins, |b| color::label(b))
             );
 
             let mut args = string_vec!["binstall", "--no-confirm", "--log-level", "info"];

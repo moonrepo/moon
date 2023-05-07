@@ -87,6 +87,8 @@ Defines the explicit Node.js version to use. We require an explicit and semantic
 patch version, to ensure the same environment is used across every machine. Ranges are _not_
 supported.
 
+If this field is _not defined_, the global `node` binary will be used.
+
 ```yaml title=".moon/toolchain.yml" {2}
 node:
   version: '16.13.0'
@@ -120,6 +122,8 @@ latest version of the active package manager will be used (when applicable).
 
 The `version` setting defines the explicit package manager version to use. We require an explicit
 major, minor, and patch version, to ensure the same environment is used across every machine.
+
+If this field is _not defined_, the global `npm`, `pnpm`, and `yarn` binaries will be used.
 
 ```yaml title=".moon/toolchain.yml" {4}
 node:
@@ -492,8 +496,10 @@ Enables and configures [Rust](../guides/rust/handbook).
 
 <HeadingApiLink to="/api/types/interface/RustConfig#version" />
 
-Defines the explicit Rust version/channel to use. We require an explicit and semantic major, minor,
-and patch version, to ensure the same environment is used across every machine.
+Defines the explicit Rust toolchain version/channel to use. We require an explicit and semantic
+major, minor, and patch version, to ensure the same environment is used across every machine.
+
+If this field is _not defined_, the global `cargo`, `rustc`, and other binaries will be used.
 
 ```yaml title=".moon/toolchain.yml" {2}
 rust:
@@ -510,7 +516,7 @@ Will automatically sync the currently configured [Rust `version`](#version-2) to
 `toolchain.channel` field in `rust-toolchain.toml`, relative to the root `Cargo.lock`. If the file
 does not exist, it will be created.
 
-This is a special setting that ensure other Rust/Cargo processes outside of our toolchain are
+This is a special setting that ensures other Rust/Cargo processes outside of our toolchain are
 utilizing the same version, which is a very common practice.
 
 ```yaml title=".moon/toolchain.yml" {2,3}

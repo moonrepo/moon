@@ -502,6 +502,30 @@ rust:
 
 > Version can also be defined with [`.prototools`](../proto/config).
 
+### `cargoBins`
+
+<HeadingApiLink to="/api/types/interface/RustConfig#cargoBins" />
+
+A list of crates/binaries (with optional versions) to install into Cargo (`~/.cargo/bin`), and make
+them available to the `cargo` command. Binaries will be installed with
+[`cargo-binstall`](https://crates.io/crates/cargo-binstall) in an effort to reduce build and
+compilation times.
+
+```yaml title=".moon/toolchain.yml" {2}
+rust:
+  cargoBins:
+    - 'make@0.35.0'
+    - 'nextest'
+```
+
+Binaries that have been installed into Cargo can be referenced from task commands:
+
+```yaml title="moon.yml"
+tasks:
+  test:
+    command: 'nextest run --workspace'
+```
+
 ### `syncToolchainConfig`
 
 <HeadingApiLink to="/api/types/interface/RustConfig#syncToolchainConfig" />

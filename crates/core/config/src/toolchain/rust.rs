@@ -12,6 +12,9 @@ fn validate_rust_version(value: &str) -> Result<(), ValidationError> {
 #[serde(default, deny_unknown_fields, rename_all = "camelCase")]
 pub struct RustConfig {
     #[serde(skip_serializing_if = "is_default")]
+    pub cargo_bins: Vec<String>,
+
+    #[serde(skip_serializing_if = "is_default")]
     pub sync_toolchain_config: bool,
 
     #[serde(skip_serializing_if = "Option::is_none")]

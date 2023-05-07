@@ -1,11 +1,11 @@
-use crate::target_hasher::RustTargetHasher;
+use crate::{bins_hasher::RustBinsHasher, target_hasher::RustTargetHasher};
 use moon_action_context::ActionContext;
 use moon_config::{
     HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, RustConfig,
 };
 use moon_error::MoonError;
 use moon_hasher::HashSet;
-use moon_logger::debug;
+use moon_logger::{debug, map_list};
 use moon_platform::{Platform, Runtime, Version};
 use moon_project::{Project, ProjectError};
 use moon_rust_lang::{
@@ -16,8 +16,9 @@ use moon_rust_lang::{
 };
 use moon_rust_tool::RustTool;
 use moon_task::Task;
+use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{Tool, ToolError, ToolManager};
-use moon_utils::{async_trait, process::Command};
+use moon_utils::{async_trait, process::Command, string_vec};
 use proto::{rust::RustLanguage, Executable, Proto};
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
@@ -198,12 +199,53 @@ impl Platform for RustPlatform {
         runtime: &Runtime,
         working_dir: &Path,
     ) -> Result<(), ToolError> {
+        let tool = self.toolchain.get_for_version(runtime.version())?;
         let lockfile_path = working_dir.join(CARGO.lockfile);
 
         if !lockfile_path.exists() {
-            let tool = self.toolchain.get_for_version(runtime.version())?;
+            print_checkpoint("cargo generate-lockfile", Checkpoint::Setup);
 
-            tool.exec_cargo(&["generate-lockfile"], working_dir).await?;
+            tool.exec_cargo(["generate-lockfile"], working_dir).await?;
+        }
+
+        if !self.config.cargo_bins.is_empty() {
+            print_checkpoint("cargo binstall", Checkpoint::Setup);
+
+            // Install cargo-binstall if it does not exist
+            if !tool
+                .tool
+                .get_globals_bin_dir()?
+                .join("cargo-binstall")
+                .exists()
+            {
+                debug!(
+                    target: LOG_TARGET,
+                    "{} does not exist, installing",
+                    color::shell("cargo-binstall")
+                );
+
+                tool.exec_cargo(["install", "cargo-binstall"], working_dir)
+                    .await?;
+            }
+
+            // Then attempt to install binaries
+            debug!(
+                target: LOG_TARGET,
+                "Installing Cargo binaries: {}",
+                map_list(&self.config.cargo_bins, |b| color::label(b))
+            );
+
+            let mut args = string_vec!["binstall", "--no-confirm", "--log-level", "info"];
+
+            for bin in &self.config.cargo_bins {
+                args.push(if bin.starts_with("cargo-") {
+                    bin.to_owned()
+                } else {
+                    format!("cargo-{bin}")
+                });
+            }
+
+            tool.exec_cargo(args, working_dir).await?;
         }
 
         Ok(())
@@ -289,10 +331,17 @@ impl Platform for RustPlatform {
     async fn hash_manifest_deps(
         &self,
         _manifest_path: &Path,
-        _hashset: &mut HashSet,
+        hashset: &mut HashSet,
         _hasher_config: &HasherConfig,
     ) -> Result<(), ToolError> {
+        if !self.config.cargo_bins.is_empty() {
+            hashset.hash(RustBinsHasher {
+                bins: self.config.cargo_bins.clone(),
+            });
+        }
+
         // NOTE: Since Cargo has no way to install dependencies, we don't actually need this!
+        // However, will leave it around incase a new cargo command is added in the future.
 
         // let mut hasher = RustManifestHasher::default();
         // let root_cargo_toml = CargoTomlCache::read(&self.workspace_root)?;

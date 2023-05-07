@@ -104,6 +104,7 @@ mod sync_project {
             platform.config = RustConfig {
                 sync_toolchain_config: false,
                 version: Some("1.70.0".into()),
+                ..RustConfig::default()
             };
 
             let project = Project {
@@ -132,6 +133,7 @@ mod sync_project {
             platform.config = RustConfig {
                 sync_toolchain_config: true,
                 version: None,
+                ..RustConfig::default()
             };
 
             let project = Project {
@@ -160,6 +162,7 @@ mod sync_project {
             platform.config = RustConfig {
                 sync_toolchain_config: true,
                 version: Some("1.70.0".into()),
+                ..RustConfig::default()
             };
 
             let project = Project {
@@ -187,6 +190,7 @@ mod sync_project {
             platform.config = RustConfig {
                 sync_toolchain_config: true,
                 version: Some("1.70.0".into()),
+                ..RustConfig::default()
             };
 
             let project = Project {

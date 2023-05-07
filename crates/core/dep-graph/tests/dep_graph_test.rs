@@ -380,10 +380,10 @@ mod run_target_if_touched {
 
         let mut graph = build_dep_graph(&workspace, &projects);
         graph
-            .run_target(&Target::new("inputA", "a").unwrap(), Some(touched_files))
+            .run_target(&Target::new("inputA", "a").unwrap(), Some(&touched_files))
             .unwrap();
         graph
-            .run_target(&Target::new("inputB", "b").unwrap(), Some(touched_files))
+            .run_target(&Target::new("inputB", "b").unwrap(), Some(&touched_files))
             .unwrap();
         let graph = graph.build();
 
@@ -401,13 +401,13 @@ mod run_target_if_touched {
 
         let mut graph = build_dep_graph(&workspace, &projects);
         graph
-            .run_target(&Target::new("inputA", "a").unwrap(), Some(touched_files))
+            .run_target(&Target::new("inputA", "a").unwrap(), Some(&touched_files))
             .unwrap();
         graph
-            .run_target(&Target::new("inputB", "b2").unwrap(), Some(touched_files))
+            .run_target(&Target::new("inputB", "b2").unwrap(), Some(&touched_files))
             .unwrap();
         graph
-            .run_target(&Target::new("inputC", "c").unwrap(), Some(touched_files))
+            .run_target(&Target::new("inputC", "c").unwrap(), Some(&touched_files))
             .unwrap();
         let graph = graph.build();
 

@@ -18,7 +18,7 @@ use moon_rust_tool::RustTool;
 use moon_task::Task;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{Tool, ToolError, ToolManager};
-use moon_utils::{async_trait, process::Command};
+use moon_utils::{async_trait, process::Command, string_vec};
 use proto::{rust::RustLanguage, Executable, Proto};
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
@@ -206,7 +206,7 @@ impl Platform for RustPlatform {
 
             print_checkpoint("cargo generate-lockfile", Checkpoint::Setup);
 
-            tool.exec_cargo(&["generate-lockfile"], working_dir).await?;
+            tool.exec_cargo(["generate-lockfile"], working_dir).await?;
         }
 
         if !self.config.cargo_bins.is_empty() {
@@ -227,7 +227,7 @@ impl Platform for RustPlatform {
                     color::shell("cargo-binstall")
                 );
 
-                tool.exec_cargo(&["install", "cargo-binstall"], working_dir)
+                tool.exec_cargo(["install", "cargo-binstall"], working_dir)
                     .await?;
             }
 
@@ -238,13 +238,17 @@ impl Platform for RustPlatform {
                 map_list(&self.config.cargo_bins, |b| color::shell(b))
             );
 
-            let mut args = vec!["binstall", "--no-confirm", "--log-level", "info"];
+            let mut args = string_vec!["binstall", "--no-confirm", "--log-level", "info"];
 
             for bin in &self.config.cargo_bins {
-                args.push(bin.as_str());
+                args.push(if bin.starts_with("cargo-") {
+                    bin.to_owned()
+                } else {
+                    format!("cargo-{bin}")
+                });
             }
 
-            tool.exec_cargo(&args, working_dir).await?;
+            tool.exec_cargo(args, working_dir).await?;
         }
 
         Ok(())

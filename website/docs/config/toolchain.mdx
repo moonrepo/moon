@@ -517,16 +517,16 @@ them available to the `cargo` command. Binaries will be installed with
 [`cargo-binstall`](https://crates.io/crates/cargo-binstall) in an effort to reduce build and
 compilation times.
 
-```yaml title=".moon/toolchain.yml" {2}
+```yaml title=".moon/toolchain.yml" {2,3}
 rust:
   cargoBins:
-    - 'make@0.35.0'
-    - 'nextest'
+    - 'cargo-make@0.35.0'
+    - 'cargo-nextest'
 ```
 
 Binaries that have been installed into Cargo can be referenced from task commands:
 
-```yaml title="moon.yml"
+```yaml title="<project>/moon.yml"
 tasks:
   test:
     command: 'nextest run --workspace'

@@ -245,6 +245,43 @@ tasks:
 </TabItem>
 </Tabs>
 
+## Cargo integration
+
+You can't use Rust without Cargo -- well you could but why would you do that? With moon, we're doing
+our best to integrate with Cargo as much as possible. Here's a few of the benefits we currently
+provide.
+
+### Global binaries
+
+Cargo supports global binaries through the
+[`cargo install`](https://doc.rust-lang.org/cargo/commands/cargo-install.html) command, which
+installs a crate to `~/.cargo/bin`, or makes it available through the `cargo <crate>` command. These
+are extremely beneficial for development, but they do require every developer to manually install
+the crate (and appropriate version) to their machine.
+
+With moon, this is no longer an issue with the [`rust.cargoBins`](../../config/toolchain#cargobins)
+setting. This setting requires a list of crates (with optional versions) to install, and moon will
+install them as part of the task runner `InstallRustDeps` action. Furthermore, binaries will be
+installed with [`cargo-binstall`](https://crates.io/crates/cargo-binstall) in an effort to reduce
+build and compilation times.
+
+```yaml title=".moon/toolchain.yml" {2,3}
+rust:
+  cargoBins:
+    - 'cargo-make@0.35.0'
+    - 'cargo-nextest'
+```
+
+At this point, tasks can be configured to run this binary as a command. The `cargo` prefix is
+optional, as we'll inject it when necessary.
+
+```yaml title="<project>/moon.yml"
+tasks:
+  test:
+    command: 'nextest run --workspace'
+    platform: 'rust'
+```
+
 ## FAQ
 
 ### Should we cache the `target` directory as an output?

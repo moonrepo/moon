@@ -238,11 +238,7 @@ impl Platform for RustPlatform {
             let mut args = string_vec!["binstall", "--no-confirm", "--log-level", "info"];
 
             for bin in &self.config.cargo_bins {
-                args.push(if bin.starts_with("cargo-") {
-                    bin.to_owned()
-                } else {
-                    format!("cargo-{bin}")
-                });
+                args.push(bin.to_owned());
             }
 
             tool.exec_cargo(args, working_dir).await?;

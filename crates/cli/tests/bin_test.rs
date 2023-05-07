@@ -7,9 +7,9 @@ use moon_test_utils::{
 //     let (workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
 //     let sandbox = create_sandbox_with_config(
 //         "cases",
-//         Some(&workspace_config),
-//         Some(&toolchain_config),
-//         Some(&tasks_config),
+//         Some(workspace_config),
+//         Some(toolchain_config),
+//         Some(tasks_config),
 //     );
 
 //     let assert = sandbox.run_moon(|cmd| {
@@ -27,9 +27,9 @@ fn invalid_tool() {
     let (workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
     let sandbox = create_sandbox_with_config(
         "cases",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     );
 
     let assert = sandbox.run_moon(|cmd| {
@@ -52,9 +52,9 @@ fn invalid_tool() {
 //     let (workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
 //     let sandbox = create_sandbox_with_config(
 //         "cases",
-//         Some(&workspace_config),
-//         Some(&toolchain_config),
-//         Some(&tasks_config),
+//         Some(workspace_config),
+//         Some(toolchain_config),
+//         Some(tasks_config),
 //     );
 
 //     let assert = sandbox.run_moon(|cmd| {

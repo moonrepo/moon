@@ -777,6 +777,22 @@ toolchain:
     version: '12.12.0'
 ```
 
+### `rust`
+
+<HeadingApiLink to="/api/types/interface/ProjectToolchainConfig#rust" />
+
+Configures Rust for this project and overrides the top-level [`rust`](./toolchain#rust) setting.
+
+#### `version`
+
+Defines the explicit Rust version/channel to use when _running tasks_ for this project.
+
+```yaml title="moon.yml" {2,3}
+toolchain:
+  rust:
+    version: '1.68.0'
+```
+
 ### `typescript`
 
 <HeadingApiLink to="/api/types/interface/ProjectToolchainConfig#typescript" />

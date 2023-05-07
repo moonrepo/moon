@@ -6,6 +6,7 @@ use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_platform_detector::detect_language_files;
 use moon_project_graph::{ProjectGraph, ProjectGraphError};
+use moon_rust_lang::cargo_toml::{CargoTomlCache, CargoTomlExt};
 use moon_utils::path;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
@@ -26,7 +27,7 @@ fn copy_files<T: AsRef<str>>(list: &[T], source: &Path, dest: &Path) -> Result<(
         let file = file.as_ref();
         let source_file = source.join(file);
 
-        if source_file.exists() {
+        if file != "." && source_file.exists() {
             if source_file.is_dir() {
                 fs::copy_dir_all(&source_file, &source_file, &dest.join(file))?;
             } else {
@@ -49,36 +50,52 @@ fn scaffold_workspace(
 
     // Copy manifest and config files for every type of language,
     // not just the one the project is configured as!
-    let mut files: Vec<String> = vec![];
+    let copy_from_dir = |source: &Path, dest: &Path| -> Result<(), MoonError> {
+        let mut files: Vec<String> = vec![".prototools".to_owned()];
 
-    for lang in ProjectLanguage::iter() {
-        files.extend(detect_language_files(&lang));
+        for lang in ProjectLanguage::iter() {
+            files.extend(detect_language_files(&lang));
 
-        // This is a special case as TS file names are configured
-        if matches!(lang, ProjectLanguage::TypeScript) {
-            if let Some(typescript_config) = &workspace.toolchain_config.typescript {
-                files.push(typescript_config.project_config_file_name.to_owned());
-                files.push(typescript_config.root_config_file_name.to_owned());
-                files.push(typescript_config.root_options_config_file_name.to_owned());
+            // These are special cases
+            match lang {
+                ProjectLanguage::Rust => {
+                    if let Some(cargo_toml) = CargoTomlCache::read(source)? {
+                        let manifests = cargo_toml.get_member_manifest_paths(source)?;
+
+                        for manifest in manifests {
+                            files.push(path::to_string(manifest.strip_prefix(source).unwrap())?);
+                        }
+                    }
+                }
+                ProjectLanguage::TypeScript => {
+                    if let Some(typescript_config) = &workspace.toolchain_config.typescript {
+                        files.push(typescript_config.project_config_file_name.to_owned());
+                        files.push(typescript_config.root_config_file_name.to_owned());
+                        files.push(typescript_config.root_options_config_file_name.to_owned());
+                    }
+                }
+                _ => {}
             }
         }
-    }
+
+        copy_files(&files, source, dest)
+    };
 
     // Copy each project and mimic the folder structure
     for project_source in project_graph.sources.values() {
+        if project_source == "." {
+            continue;
+        }
+
         let docker_project_root = docker_workspace_root.join(project_source);
 
         fs::create_dir_all(&docker_project_root)?;
 
-        copy_files(
-            &files,
-            &workspace.root.join(project_source),
-            &docker_project_root,
-        )?;
+        copy_from_dir(&workspace.root.join(project_source), &docker_project_root)?;
     }
 
     // Copy root lockfiles and configurations
-    copy_files(&files, &workspace.root, &docker_workspace_root)?;
+    copy_from_dir(&workspace.root, &docker_workspace_root)?;
 
     // Copy moon configuration
     let moon_configs = glob::walk(

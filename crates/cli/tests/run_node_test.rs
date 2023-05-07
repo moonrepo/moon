@@ -12,9 +12,9 @@ fn node_sandbox() -> Sandbox {
 
     let sandbox = create_sandbox_with_config(
         "node",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     );
 
     sandbox.enable_git();
@@ -33,9 +33,9 @@ where
 
     let sandbox = create_sandbox_with_config(
         "node",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     );
 
     sandbox.enable_git();
@@ -48,9 +48,9 @@ fn depman_sandbox(depman: &str) -> Sandbox {
 
     let sandbox = create_sandbox_with_config(
         format!("node-{depman}/workspaces"),
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     );
 
     sandbox.enable_git();
@@ -66,9 +66,9 @@ fn depman_non_workspaces_sandbox(depman: &str) -> Sandbox {
 
     let sandbox = create_sandbox_with_config(
         format!("node-{depman}/project"),
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     );
 
     sandbox.enable_git();
@@ -432,9 +432,9 @@ mod install_deps {
 
         let sandbox = create_sandbox_with_config(
             "node-non-workspaces",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         sandbox.enable_git();
@@ -1061,9 +1061,9 @@ mod aliases {
 
         let sandbox = create_sandbox_with_config(
             "project-graph/aliases",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {

@@ -208,7 +208,7 @@ impl Platform for RustPlatform {
             tool.exec_cargo(["generate-lockfile"], working_dir).await?;
         }
 
-        if !self.config.cargo_bins.is_empty() {
+        if !self.config.bins.is_empty() {
             print_checkpoint("cargo binstall", Checkpoint::Setup);
 
             // Install cargo-binstall if it does not exist
@@ -232,17 +232,13 @@ impl Platform for RustPlatform {
             debug!(
                 target: LOG_TARGET,
                 "Installing Cargo binaries: {}",
-                map_list(&self.config.cargo_bins, |b| color::label(b))
+                map_list(&self.config.bins, |b| color::label(b))
             );
 
             let mut args = string_vec!["binstall", "--no-confirm", "--log-level", "info"];
 
-            for bin in &self.config.cargo_bins {
-                args.push(if bin.starts_with("cargo-") {
-                    bin.to_owned()
-                } else {
-                    format!("cargo-{bin}")
-                });
+            for bin in &self.config.bins {
+                args.push(bin.to_owned());
             }
 
             tool.exec_cargo(args, working_dir).await?;
@@ -334,9 +330,9 @@ impl Platform for RustPlatform {
         hashset: &mut HashSet,
         _hasher_config: &HasherConfig,
     ) -> Result<(), ToolError> {
-        if !self.config.cargo_bins.is_empty() {
+        if !self.config.bins.is_empty() {
             hashset.hash(RustBinsHasher {
-                bins: self.config.cargo_bins.clone(),
+                bins: self.config.bins.clone(),
             });
         }
 
@@ -424,42 +420,60 @@ impl Platform for RustPlatform {
         _context: &ActionContext,
         _project: &Project,
         task: &Task,
-        _runtime: &Runtime,
+        runtime: &Runtime,
         working_dir: &Path,
     ) -> Result<Command, ToolError> {
         let mut command = Command::new(&task.command);
+        let mut args = vec![];
 
-        // Binary may be installed to ~/.cargo/bin
-        if task.command != "cargo" && !task.command.starts_with("rust") {
-            let globals_dir = RustLanguage::new(Proto::new()?).get_globals_bin_dir()?;
-            let global_bin_path = globals_dir.join(&task.command);
+        match task.command.as_str() {
+            // Do nothing and run as-is
+            "rls" | "rust-analyzer" | "rust-gdb" | "rust-gdbgui" | "rust-lldb" | "rustc"
+            | "rustdoc" | "rustfmt" | "rustup" => {}
+            // Handle toolchains for cargo commands
+            "cargo" => {
+                let version = runtime.version();
 
-            let cargo_bin = if task.command.starts_with("cargo-") {
-                &task.command[6..]
-            } else {
-                &task.command
-            };
-            let cargo_bin_path = globals_dir.join(format!("cargo-{}", cargo_bin));
+                if version.is_override() {
+                    args.push(format!("+{}", version.number));
+                }
+            }
+            // Binary may be installed to ~/.cargo/bin
+            _ => {
+                let globals_dir = RustLanguage::new(Proto::new()?).get_globals_bin_dir()?;
+                let global_bin_path = globals_dir.join(&task.command);
 
-            // Must run through cargo
-            if cargo_bin_path.exists() {
-                command = Command::new("cargo");
-                command.arg(cargo_bin);
+                let cargo_bin = if task.command.starts_with("cargo-") {
+                    &task.command[6..]
+                } else {
+                    &task.command
+                };
+                let cargo_bin_path = globals_dir.join(format!("cargo-{}", cargo_bin));
 
-                // Truly global and doesn't run through cargo
-            } else if global_bin_path.exists() {
-                command = Command::new(&global_bin_path);
+                // Must run through cargo
+                if cargo_bin_path.exists() {
+                    command = Command::new("cargo");
+                    args.push(cargo_bin.to_owned());
 
-                // Not found so error!
-            } else {
-                return Err(ToolError::MissingBinary(
-                    "Cargo binary".into(),
-                    cargo_bin.to_owned(),
-                ));
+                    // Truly global and doesn't run through cargo
+                } else if global_bin_path.exists() {
+                    command = Command::new(&global_bin_path);
+
+                    // Not found so error!
+                } else {
+                    return Err(ToolError::MissingBinary(
+                        "Cargo binary".into(),
+                        cargo_bin.to_owned(),
+                    ));
+                }
             }
         }
 
-        command.args(&task.args).envs(&task.env).cwd(working_dir);
+        command
+            .args(&args)
+            .args(&task.args)
+            .envs(&task.env)
+            .cwd(working_dir);
 
         Ok(command)
     }

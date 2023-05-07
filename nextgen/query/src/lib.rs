@@ -7,5 +7,5 @@ pub use errors::QueryError;
 pub use parser::*;
 
 pub trait Queryable {
-    fn matches_criteria(&self, query: &Criteria) -> Result<bool, QueryError>;
+    fn matches_criteria(&self, criteria: &Criteria) -> Result<bool, QueryError>;
 }

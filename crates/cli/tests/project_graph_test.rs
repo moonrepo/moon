@@ -20,9 +20,9 @@ fn many_projects() {
 
     let sandbox = create_sandbox_with_config(
         "projects",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     );
 
     let assert = sandbox.run_moon(|cmd| {
@@ -38,9 +38,9 @@ fn single_project_with_dependencies() {
 
     let sandbox = create_sandbox_with_config(
         "projects",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     );
 
     let assert = sandbox.run_moon(|cmd| {
@@ -56,9 +56,9 @@ fn single_project_no_dependencies() {
 
     let sandbox = create_sandbox_with_config(
         "projects",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     );
 
     let assert = sandbox.run_moon(|cmd| {
@@ -74,9 +74,9 @@ fn outputs_json() {
 
     let sandbox = create_sandbox_with_config(
         "projects",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     );
 
     let assert = sandbox.run_moon(|cmd| {
@@ -96,9 +96,9 @@ mod aliases {
 
         let sandbox = create_sandbox_with_config(
             "project-graph/aliases",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -115,9 +115,9 @@ mod aliases {
 
         let sandbox = create_sandbox_with_config(
             "project-graph/aliases",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {
@@ -134,9 +134,9 @@ mod aliases {
 
         let sandbox = create_sandbox_with_config(
             "project-graph/aliases",
-            Some(&workspace_config),
-            Some(&toolchain_config),
-            Some(&tasks_config),
+            Some(workspace_config),
+            Some(toolchain_config),
+            Some(tasks_config),
         );
 
         let assert = sandbox.run_moon(|cmd| {

@@ -21,9 +21,9 @@ fn sets_up_and_tears_down() {
 
     let sandbox = create_sandbox_with_config(
         "cases",
-        Some(&workspace_config),
-        Some(&toolchain_config),
-        Some(&tasks_config),
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
     );
 
     let setup = sandbox.run_moon(|cmd| {

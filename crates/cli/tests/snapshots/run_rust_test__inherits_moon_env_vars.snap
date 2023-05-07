@@ -2,6 +2,7 @@
 source: crates/cli/tests/run_rust_test.rs
 expression: assert.output()
 ---
+▪▪▪▪ cargo generate-lockfile
 ▪▪▪▪ rust:envVarsMoon
 MOON_CACHE=read-write
 MOON_CACHE_DIR=<WORKSPACE>/.moon/cache

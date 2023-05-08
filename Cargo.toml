@@ -46,3 +46,4 @@ starbase_utils = { version = "0.2.8", default-features = false, features = ["edi
 strum = { version = "0.24.1", features = ["derive"] }
 thiserror = "1.0.40"
 tokio = { version = "1.28.0", default-features = false, features = ["tracing"] }
+tracing = "0.1.37"

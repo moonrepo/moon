@@ -2671,6 +2671,7 @@ dependencies = [
  "miette",
  "once_cell",
  "regex",
+ "serde",
  "starbase_styles",
  "thiserror",
 ]
@@ -2830,6 +2831,18 @@ dependencies = [
  "starbase_utils",
  "thiserror",
  "wax",
+]
+
+[[package]]
+name = "moon_file_group"
+version = "0.1.0"
+dependencies = [
+ "moon_common",
+ "once_cell",
+ "serde",
+ "starbase_utils",
+ "thiserror",
+ "tracing",
 ]
 
 [[package]]
@@ -2996,6 +3009,13 @@ dependencies = [
  "starbase_styles",
  "tokio",
  "uuid",
+]
+
+[[package]]
+name = "moon_path"
+version = "0.1.0"
+dependencies = [
+ "serde",
 ]
 
 [[package]]

@@ -1,12 +1,12 @@
 [package]
-name = "moon_common"
+name = "moon_file_group"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-miette = { workspace = true }
+moon_common = { path = "../common" }
 once_cell = { workspace = true }
-regex = { workspace = true }
 serde = { workspace = true }
-starbase_styles = { workspace = true }
+starbase_utils = { workspace = true }
 thiserror = { workspace = true }
+tracing = { workspace = true }

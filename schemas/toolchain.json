@@ -34,6 +34,16 @@
         }
       ]
     },
+    "rust": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/RustConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "typescript": {
       "anyOf": [
         {
@@ -196,6 +206,27 @@
           ]
         }
       }
+    },
+    "RustConfig": {
+      "type": "object",
+      "properties": {
+        "bins": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "syncToolchainConfig": {
+          "type": "boolean"
+        },
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
     },
     "TypeScriptConfig": {
       "type": "object",

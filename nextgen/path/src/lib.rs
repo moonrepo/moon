@@ -29,7 +29,7 @@ where
     P: AsRef<str>,
 {
     let file = file.as_ref();
-    let project_source = project_source.as_ref();
+    let project_source = standardize_separators(project_source.as_ref());
 
     // Workspace relative negative glob
     if file.starts_with("/!") || file.starts_with("!/") {

@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 moon_common = { path = "../common" }
 moon_path = { path = "../path" }
+common-path = "1.0.0"
 once_cell = { workspace = true }
 serde = { workspace = true }
 starbase_utils = { workspace = true }

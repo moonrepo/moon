@@ -37,7 +37,7 @@ where
             .normalize();
     }
 
-    // Workspace relative file
+    // Workspace relative file/glob
     if let Some(path) = file.strip_prefix('/') {
         return WorkspaceRelativePathBuf::from(standardize_separators(path)).normalize();
     }
@@ -49,7 +49,7 @@ where
             .normalize();
     }
 
-    // Project relative file
+    // Project relative file/glob
     WorkspaceRelativePathBuf::from(project_source)
         .join(standardize_separators(file))
         .normalize()

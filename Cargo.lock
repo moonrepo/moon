@@ -2837,6 +2837,7 @@ dependencies = [
 name = "moon_file_group"
 version = "0.1.0"
 dependencies = [
+ "common-path",
  "moon_common",
  "moon_path",
  "once_cell",

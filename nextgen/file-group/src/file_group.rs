@@ -1,18 +1,18 @@
+use crate::errors::FileGroupError;
 use moon_common::Id;
+use moon_path::{expand_to_workspace_relative, ProjectRelativePathBuf, WorkspaceRelativePathBuf};
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use starbase_utils::glob;
 use std::path::PathBuf;
 use tracing::debug;
 
-use crate::FileGroupError;
-
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(default)]
 pub struct FileGroup {
-    pub files: Vec<String>,
+    pub files: Vec<ProjectRelativePathBuf>,
 
-    pub globs: Vec<String>,
+    pub globs: Vec<ProjectRelativePathBuf>,
 
     pub id: Id,
 
@@ -56,17 +56,31 @@ impl FileGroup {
             let pattern = pattern.as_ref();
 
             if glob::is_glob(pattern) {
-                self.globs.push(pattern.to_owned());
+                self.globs.push(ProjectRelativePathBuf::from(pattern));
             } else {
-                self.files.push(pattern.to_owned());
+                self.files.push(ProjectRelativePathBuf::from(pattern));
             }
         }
+    }
 
-        debug!(
-            id = %self.id,
-            files = self.files.join(", "),
-            globs = self.globs.join(", "),
-            "Updating file group with patterns",
-        );
+    /// Returns the file group as-is, with each file converted to a workspace relative path.
+    /// File paths and globs will be separated as they have different semantics.
+    pub fn all(
+        &self,
+        project_source: &str,
+    ) -> Result<(Vec<WorkspaceRelativePathBuf>, Vec<WorkspaceRelativePathBuf>), FileGroupError>
+    {
+        let mut files = vec![];
+        let mut globs = vec![];
+
+        for file in &self.files {
+            files.push(expand_to_workspace_relative(file, project_source));
+        }
+
+        for file in &self.globs {
+            globs.push(expand_to_workspace_relative(file, project_source));
+        }
+
+        Ok((files, globs))
     }
 }

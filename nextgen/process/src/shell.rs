@@ -1,5 +1,5 @@
 use cached::proc_macro::cached;
-use std::env;
+use std::{env, ffi::OsStr};
 
 #[cached]
 #[inline]
@@ -19,7 +19,9 @@ fn is_program_on_path(program_name: String) -> bool {
 }
 
 #[inline]
-pub fn is_windows_script(bin: &str) -> bool {
+pub fn is_windows_script<T: AsRef<OsStr>>(bin: T) -> bool {
+    let bin = bin.as_ref().to_string_lossy();
+
     bin.ends_with(".cmd")
         || bin.ends_with(".bat")
         || bin.ends_with(".ps1")

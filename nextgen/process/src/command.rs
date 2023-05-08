@@ -1,5 +1,5 @@
 use crate::shell;
-use moon_common::{color, is_ci, is_test_env};
+use moon_common::{color, is_test_env};
 use rustc_hash::FxHashMap;
 use std::{
     ffi::{OsStr, OsString},
@@ -10,26 +10,26 @@ use std::{
 pub struct Command {
     pub args: Vec<OsString>,
 
-    pub bin: String,
+    pub bin: OsString,
 
-    cwd: Option<PathBuf>,
+    pub cwd: Option<PathBuf>,
 
-    env: FxHashMap<OsString, OsString>,
+    pub env: FxHashMap<OsString, OsString>,
 
     /// Convert non-zero exits to errors
-    error_on_nonzero: bool,
+    pub error_on_nonzero: bool,
 
     /// Values to pass to stdin
-    input: Vec<OsString>,
+    pub input: Vec<OsString>,
 
     /// Prefix to prepend to all log lines
-    prefix: Option<String>,
+    pub prefix: Option<String>,
 
     /// Log the command to the terminal before running
-    print_command: bool,
+    pub print_command: bool,
 
     /// Shell to wrap executing commands in
-    shell: Option<shell::Shell>,
+    pub shell: Option<shell::Shell>,
 }
 
 impl Command {
@@ -37,7 +37,7 @@ impl Command {
         let bin = bin.as_ref();
 
         let mut command = Command {
-            bin: bin.to_string_lossy().to_string(),
+            bin: bin.to_os_string(),
             args: vec![],
             cwd: None,
             env: FxHashMap::default(),

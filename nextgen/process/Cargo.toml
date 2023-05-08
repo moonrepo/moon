@@ -8,3 +8,4 @@ moon_common = { path = "../common" }
 cached = { workspace = true }
 rustc-hash = { workspace = true }
 thiserror = { workspace = true }
+tokio = { workspace = true }

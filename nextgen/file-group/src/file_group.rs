@@ -1,4 +1,4 @@
-use crate::errors::FileGroupError;
+use crate::file_group_error::FileGroupError;
 use common_path::common_path_all;
 use moon_common::Id;
 use moon_path::{expand_to_workspace_relative, WorkspaceRelativePathBuf};
@@ -60,7 +60,7 @@ impl FileGroup {
 
         debug!(
             id = %self.id,
-            patterns = log_patterns.join(", "),
+            patterns = ?log_patterns,
             "Setting patterns to file group"
         );
 

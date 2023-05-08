@@ -1,5 +1,5 @@
-mod errors;
 mod file_group;
+mod file_group_error;
 
-pub use errors::*;
 pub use file_group::*;
+pub use file_group_error::*;

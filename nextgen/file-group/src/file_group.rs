@@ -38,6 +38,22 @@ impl FileGroup {
         })
     }
 
+    pub fn new_with_source<T, I, V>(
+        id: T,
+        project_source: &str,
+        patterns: I,
+    ) -> Result<FileGroup, FileGroupError>
+    where
+        T: AsRef<str>,
+        I: IntoIterator<Item = V>,
+        V: AsRef<str>,
+    {
+        let mut file_group = FileGroup::new(id)?;
+        file_group.set_patterns(project_source, patterns);
+
+        Ok(file_group)
+    }
+
     pub fn set_patterns<I, V>(&mut self, project_source: &str, patterns: I) -> &mut Self
     where
         I: IntoIterator<Item = V>,

@@ -310,27 +310,41 @@ impl<'task> TokenResolver<'task> {
         };
 
         let workspace_root = self.workspace_root;
-        let project_root = &self.project.root;
+        let project_source = &self.project.source;
 
         match token_type {
             TokenType::Dirs(token, group) => {
-                paths.extend(get_file_group(&token, &group)?.dirs(workspace_root, project_root)?);
+                for dir in get_file_group(&token, &group)?.dirs(workspace_root)? {
+                    paths.push(dir.to_logical_path("."));
+                }
             }
             TokenType::Files(token, group) => {
-                paths.extend(get_file_group(&token, &group)?.files(workspace_root, project_root)?);
+                for file in get_file_group(&token, &group)?.files(workspace_root)? {
+                    paths.push(file.to_logical_path("."));
+                }
             }
             TokenType::Globs(token, group) => {
-                globs.extend(get_file_group(&token, &group)?.globs(workspace_root, project_root)?);
+                for glob in get_file_group(&token, &group)?.globs()? {
+                    globs.push(glob.as_str().to_owned());
+                }
             }
             TokenType::Group(token, group) => {
-                let (all_paths, all_globs) =
-                    get_file_group(&token, &group)?.all(workspace_root, project_root)?;
+                let group = get_file_group(&token, &group)?;
 
-                paths.extend(all_paths);
-                globs.extend(all_globs);
+                for file in &group.files {
+                    paths.push(file.to_logical_path("."));
+                }
+
+                for glob in &group.globs {
+                    globs.push(glob.as_str().to_owned());
+                }
             }
             TokenType::Root(token, group) => {
-                paths.push(get_file_group(&token, &group)?.root(workspace_root, project_root)?);
+                paths.push(
+                    get_file_group(&token, &group)?
+                        .root(workspace_root, project_source)?
+                        .to_logical_path("."),
+                );
             }
             _ => {}
         }

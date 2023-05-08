@@ -1,8 +1,9 @@
 use moon_config::{InheritedTasksManager, PlatformType, ProjectLanguage, ProjectType, TaskConfig};
+use moon_file_group::FileGroup;
 use moon_project::Project;
 use moon_project_graph::{TokenContext, TokenResolver};
 use moon_target::Target;
-use moon_task::{FileGroup, Task};
+use moon_task::Task;
 use moon_test_utils::{get_fixtures_path, predicates::prelude::*};
 use rustc_hash::FxHashMap;
 use starbase_utils::{glob, string_vec};
@@ -13,36 +14,38 @@ pub fn create_file_groups() -> FxHashMap<String, FileGroup> {
 
     map.insert(
         "static".into(),
-        FileGroup::new(
+        FileGroup::new_with_source(
             "static",
-            string_vec![
+            "project",
+            [
                 "file.ts",
                 "dir",
                 "dir/other.tsx",
                 "dir/subdir",
                 "dir/subdir/another.ts",
             ],
-        ),
+        )
+        .unwrap(),
     );
 
     map.insert(
         "dirs_glob".into(),
-        FileGroup::new("dirs_glob", string_vec!["**/*"]),
+        FileGroup::new_with_source("dirs_glob", "project", ["**/*"]).unwrap(),
     );
 
     map.insert(
         "files_glob".into(),
-        FileGroup::new("files_glob", string_vec!["**/*.{ts,tsx}"]),
+        FileGroup::new_with_source("files_glob", "project", ["**/*.{ts,tsx}"]).unwrap(),
     );
 
     map.insert(
         "globs".into(),
-        FileGroup::new("globs", string_vec!["**/*.{ts,tsx}", "*.js"]),
+        FileGroup::new_with_source("globs", "project", ["**/*.{ts,tsx}", "*.js"]).unwrap(),
     );
 
     map.insert(
         "no_globs".into(),
-        FileGroup::new("no_globs", string_vec!["config.js"]),
+        FileGroup::new_with_source("no_globs", "project", ["config.js"]).unwrap(),
     );
 
     map

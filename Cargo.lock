@@ -2842,6 +2842,7 @@ dependencies = [
  "moon_path",
  "once_cell",
  "serde",
+ "starbase_sandbox",
  "starbase_utils",
  "thiserror",
  "tracing",
@@ -4793,6 +4794,22 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "starbase_sandbox"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "63b408d2da5e58a2a70153838cea5526c810cb5bffc7a6b206b82a79a707667a"
+dependencies = [
+ "assert_cmd",
+ "assert_fs",
+ "clean-path",
+ "insta",
+ "once_cell",
+ "predicates",
+ "pretty_assertions",
+ "starbase_utils",
 ]
 
 [[package]]

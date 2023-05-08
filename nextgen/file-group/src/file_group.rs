@@ -26,14 +26,14 @@ impl FileGroup {
     where
         T: AsRef<str>,
     {
-        let id = id.as_ref();
+        let id = Id::new(id)?;
 
-        debug!(id, "Creating file group");
+        debug!(id = %id, "Creating file group");
 
         Ok(FileGroup {
             files: vec![],
             globs: vec![],
-            id: Id::new(id)?,
+            id,
             walk_cache: OnceCell::new(),
         })
     }
@@ -54,6 +54,9 @@ impl FileGroup {
         Ok(file_group)
     }
 
+    /// Add patterns (file paths or globs) to the file group, while expanding to a
+    /// workspace relative path based on the provided project source.
+    /// This will overwrite any existing patterns!
     pub fn set_patterns<I, V>(&mut self, project_source: &str, patterns: I) -> &mut Self
     where
         I: IntoIterator<Item = V>,
@@ -162,7 +165,7 @@ impl FileGroup {
             let globs = &self.globs;
             let walk_paths = self
                 .walk_cache
-                .get_or_try_init(|| glob::walk(workspace_root, *&globs))?;
+                .get_or_try_init(|| glob::walk(workspace_root, globs))?;
 
             // Glob results are absolute paths!
             for path in walk_paths {

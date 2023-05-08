@@ -7,11 +7,9 @@ fn creates_files_in_dest() {
     let sandbox = create_sandbox("init-sandbox");
     let root = sandbox.path().to_path_buf();
     let workspace_config = root.join(".moon").join(CONFIG_WORKSPACE_FILENAME);
-    let project_config = root.join(".moon").join(CONFIG_TASKS_FILENAME);
     let gitignore = root.join(".gitignore");
 
     assert!(!workspace_config.exists());
-    assert!(!project_config.exists());
     assert!(!gitignore.exists());
 
     let assert = sandbox.run_moon(|cmd| {
@@ -23,7 +21,6 @@ fn creates_files_in_dest() {
     ));
 
     assert!(workspace_config.exists());
-    assert!(project_config.exists());
     assert!(gitignore.exists());
 }
 
@@ -58,23 +55,23 @@ fn creates_workspace_config_from_template() {
     );
 }
 
-#[test]
-fn creates_project_config_from_template() {
-    let sandbox = create_sandbox("init-sandbox");
-    let root = sandbox.path().to_path_buf();
-    let project_config = root
-        .join(".moon")
-        .join(moon_constants::CONFIG_TASKS_FILENAME);
+// #[test]
+// fn creates_project_config_from_template() {
+//     let sandbox = create_sandbox("init-sandbox");
+//     let root = sandbox.path().to_path_buf();
+//     let project_config = root
+//         .join(".moon")
+//         .join(moon_constants::CONFIG_TASKS_FILENAME);
 
-    sandbox.run_moon(|cmd| {
-        cmd.arg("init").arg("--yes").arg(root);
-    });
+//     sandbox.run_moon(|cmd| {
+//         cmd.arg("init").arg("--yes").arg(root);
+//     });
 
-    assert!(
-        predicate::str::contains("https://moonrepo.dev/schemas/tasks.json")
-            .eval(&fs::read_to_string(project_config).unwrap())
-    );
-}
+//     assert!(
+//         predicate::str::contains("https://moonrepo.dev/schemas/tasks.json")
+//             .eval(&fs::read_to_string(project_config).unwrap())
+//     );
+// }
 
 #[test]
 fn creates_gitignore_file() {

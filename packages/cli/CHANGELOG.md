@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- Reworked file groups to use workspace relative paths, instead of project relative.
+
 ## 1.5.0
 
 #### 🚀 Updates

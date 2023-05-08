@@ -5,10 +5,11 @@ use moon_config::{
     ProjectID, ProjectLanguage, ProjectType, TaskID,
 };
 use moon_constants::CONFIG_PROJECT_FILENAME;
+use moon_file_group::{FileGroup, FileGroupError};
 use moon_logger::{debug, trace, Logable};
 use moon_query::{Condition, Criteria, Field, LogicalOperator, QueryError, Queryable};
 use moon_target::Target;
-use moon_task::{FileGroup, Task, TouchedFilePaths};
+use moon_task::{Task, TouchedFilePaths};
 use moon_utils::path;
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
@@ -56,9 +57,10 @@ fn load_project_config(
 
 fn create_file_groups_from_config(
     log_target: &str,
+    source: &str,
     config: &ProjectConfig,
     global_tasks_config: &InheritedTasksConfig,
-) -> FileGroupsMap {
+) -> Result<FileGroupsMap, FileGroupError> {
     let mut file_groups = FxHashMap::<String, FileGroup>::default();
 
     debug!(target: log_target, "Creating file groups");
@@ -67,31 +69,29 @@ fn create_file_groups_from_config(
     for (group_id, files) in &global_tasks_config.file_groups {
         file_groups.insert(
             group_id.to_owned(),
-            FileGroup::new(group_id, files.to_owned()),
+            FileGroup::new_with_source(group_id, source, files)?,
         );
     }
 
     // Override global configs with local
     for (group_id, files) in &config.file_groups {
-        if file_groups.contains_key(group_id) {
+        if let Some(existing_group) = file_groups.get_mut(group_id) {
             debug!(
                 target: log_target,
                 "Merging file group {} with global config",
                 color::id(group_id)
             );
 
-            // Group already exists, so merge with it
-            file_groups
-                .get_mut(group_id)
-                .unwrap()
-                .merge(files.to_owned());
+            existing_group.set_patterns(source, files);
         } else {
-            // Insert a group
-            file_groups.insert(group_id.clone(), FileGroup::new(group_id, files.to_owned()));
+            file_groups.insert(
+                group_id.clone(),
+                FileGroup::new_with_source(group_id, source, files)?,
+            );
         }
     }
 
-    file_groups
+    Ok(file_groups)
 }
 
 fn create_dependencies_from_config(
@@ -375,7 +375,8 @@ impl Project {
             &config.type_of,
             &config.tags,
         );
-        let file_groups = create_file_groups_from_config(&log_target, &config, &global_tasks);
+        let file_groups =
+            create_file_groups_from_config(&log_target, &source, &config, &global_tasks)?;
         let dependencies = create_dependencies_from_config(&log_target, &config);
         let tasks = create_tasks_from_config(&log_target, id, &config, &global_tasks)?;
 

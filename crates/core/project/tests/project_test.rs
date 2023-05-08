@@ -2,8 +2,8 @@ use moon_config::{
     InheritedTasksConfig, InheritedTasksManager, ProjectConfig, ProjectDependsOn, ProjectLanguage,
     ProjectMetadataConfig, ProjectType,
 };
+use moon_file_group::FileGroup;
 use moon_project::Project;
-use moon_task::FileGroup;
 use moon_test_utils::get_fixtures_root;
 use moon_utils::{path, string_vec};
 use rustc_hash::FxHashMap;
@@ -11,7 +11,7 @@ use rustc_hash::FxHashMap;
 fn mock_file_groups() -> FxHashMap<String, FileGroup> {
     FxHashMap::from_iter([(
         "sources".into(),
-        FileGroup::new("sources", string_vec!["src/**/*"]),
+        FileGroup::new_with_source("sources", "", ["src/**/*"]).unwrap(),
     )])
 }
 
@@ -108,7 +108,7 @@ fn basic_config() {
     let mut file_groups = mock_file_groups();
     file_groups.insert(
         "tests".into(),
-        FileGroup::new("tests", string_vec!["**/*_test.rs"]),
+        FileGroup::new_with_source("tests", "basic", ["**/*_test.rs"]).unwrap(),
     );
 
     assert_eq!(

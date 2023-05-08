@@ -14,6 +14,7 @@ harness = false
 moon_config = { path = "../config" }
 moon_enforcer = { path = "../enforcer" }
 moon_error = { path = "../error" }
+moon_file_group = { path = "../../../nextgen/file-group" }
 moon_hasher = { path = "../hasher" }
 moon_logger = { path = "../logger" }
 moon_platform_detector = { path = "../platform-detector" }

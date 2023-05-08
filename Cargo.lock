@@ -3085,6 +3085,7 @@ version = "0.1.0"
 dependencies = [
  "cached",
  "moon_common",
+ "rustc-hash",
  "thiserror",
 ]
 

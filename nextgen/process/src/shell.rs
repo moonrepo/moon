@@ -18,6 +18,16 @@ fn is_program_on_path(program_name: String) -> bool {
     false
 }
 
+#[inline]
+pub fn is_windows_script(bin: &str) -> bool {
+    bin.ends_with(".cmd")
+        || bin.ends_with(".bat")
+        || bin.ends_with(".ps1")
+        || bin.ends_with(".CMD")
+        || bin.ends_with(".BAT")
+        || bin.ends_with(".PS1")
+}
+
 #[derive(Debug)]
 pub struct Shell {
     pub bin: String,
@@ -29,26 +39,21 @@ pub struct Shell {
 #[cfg(windows)]
 #[inline]
 pub fn create_shell(with_profile: bool) -> Shell {
-    let mut args: Vec<String> = vec!["-NonInteractive".into(), "-NoLogo".into()];
-
-    if !with_profile {
-        args.push("-NoProfile".into());
-    }
-
-    args.push("-Command".into());
-
-    // We'll pass the command args via stdin, so that paths with special
-    // characters and spaces resolve correctly.
-    // https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_pwsh?view=powershell-7.2#-command---c
-    args.push("-".into());
-
     Shell {
         bin: if is_program_on_path("pwsh.exe".into()) {
             "pwsh.exe".into()
         } else {
             "powershell.exe".into()
         },
-        args,
+        args: vec![
+            "-NonInteractive".into(),
+            "-NoLogo".into(),
+            "-Command".into(),
+            // We'll pass the command args via stdin, so that paths with special
+            // characters and spaces resolve correctly.
+            // https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_pwsh?view=powershell-7.2#-command---c
+            "-".into(),
+        ],
         pass_args_stdin: true,
     }
 }

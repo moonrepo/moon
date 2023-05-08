@@ -1,7 +1,7 @@
 use crate::errors::FileGroupError;
 use common_path::common_path_all;
 use moon_common::Id;
-use moon_path::{expand_to_workspace_relative, ProjectRelativePathBuf, WorkspaceRelativePathBuf};
+use moon_path::{expand_to_workspace_relative, WorkspaceRelativePathBuf};
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use starbase_utils::glob;
@@ -11,9 +11,9 @@ use tracing::debug;
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(default)]
 pub struct FileGroup {
-    pub files: Vec<ProjectRelativePathBuf>,
+    pub files: Vec<WorkspaceRelativePathBuf>,
 
-    pub globs: Vec<ProjectRelativePathBuf>,
+    pub globs: Vec<WorkspaceRelativePathBuf>,
 
     pub id: Id,
 
@@ -22,67 +22,49 @@ pub struct FileGroup {
 }
 
 impl FileGroup {
-    pub fn new<T, I, V>(id: T, patterns: I) -> Result<FileGroup, FileGroupError>
+    pub fn new<T>(id: T) -> Result<FileGroup, FileGroupError>
     where
         T: AsRef<str>,
-        I: IntoIterator<Item = V>,
-        V: AsRef<str>,
     {
         let id = id.as_ref();
 
         debug!(id, "Creating file group");
 
-        let mut group = FileGroup {
+        Ok(FileGroup {
             files: vec![],
             globs: vec![],
             id: Id::new(id)?,
             walk_cache: OnceCell::new(),
-        };
-
-        group.merge(patterns);
-
-        Ok(group)
+        })
     }
 
-    pub fn merge<I, V>(&mut self, patterns: I)
+    pub fn set_patterns<I, V>(&mut self, project_source: &str, patterns: I) -> &mut Self
     where
         I: IntoIterator<Item = V>,
         V: AsRef<str>,
     {
-        // Local files should always override global
-        self.files = vec![];
-        self.globs = vec![];
+        let mut log_patterns = vec![];
 
         for pattern in patterns {
             let pattern = pattern.as_ref();
+            let path = expand_to_workspace_relative(pattern, project_source);
+
+            log_patterns.push(path.as_str().to_owned());
 
             if glob::is_glob(pattern) {
-                self.globs.push(ProjectRelativePathBuf::from(pattern));
+                self.globs.push(path);
             } else {
-                self.files.push(ProjectRelativePathBuf::from(pattern));
+                self.files.push(path);
             }
         }
-    }
 
-    /// Returns the file group as-is, with each file converted to a workspace relative path.
-    /// File paths and globs will be separated as they have different semantics.
-    pub fn all(
-        &self,
-        project_source: &str,
-    ) -> Result<(Vec<WorkspaceRelativePathBuf>, Vec<WorkspaceRelativePathBuf>), FileGroupError>
-    {
-        let mut files = vec![];
-        let mut globs = vec![];
+        debug!(
+            id = %self.id,
+            patterns = log_patterns.join(", "),
+            "Setting patterns to file group"
+        );
 
-        for file in &self.files {
-            files.push(expand_to_workspace_relative(file, project_source));
-        }
-
-        for file in &self.globs {
-            globs.push(expand_to_workspace_relative(file, project_source));
-        }
-
-        Ok((files, globs))
+        self
     }
 
     /// Return the file group as an expanded list of directory paths.
@@ -90,9 +72,8 @@ impl FileGroup {
     pub fn dirs(
         &self,
         workspace_root: &Path,
-        project_source: &str,
     ) -> Result<Vec<WorkspaceRelativePathBuf>, FileGroupError> {
-        self.walk(true, workspace_root, project_source)
+        self.walk(true, workspace_root)
     }
 
     /// Return the file group as an expanded list of file paths.
@@ -100,28 +81,18 @@ impl FileGroup {
     pub fn files(
         &self,
         workspace_root: &Path,
-        project_source: &str,
     ) -> Result<Vec<WorkspaceRelativePathBuf>, FileGroupError> {
-        self.walk(false, workspace_root, project_source)
+        self.walk(false, workspace_root)
     }
 
     /// Return the file group as a list of file globs (as-is),
     /// relative to the project root.
-    pub fn globs(
-        &self,
-        project_source: &str,
-    ) -> Result<Vec<WorkspaceRelativePathBuf>, FileGroupError> {
+    pub fn globs(&self) -> Result<&Vec<WorkspaceRelativePathBuf>, FileGroupError> {
         if self.globs.is_empty() {
             return Err(FileGroupError::NoGlobs(self.id.to_string()));
         }
 
-        let mut globs = vec![];
-
-        for file in &self.globs {
-            globs.push(expand_to_workspace_relative(file, project_source));
-        }
-
-        Ok(globs)
+        Ok(&self.globs)
     }
 
     /// Return the file group reduced down to the lowest common directory.
@@ -131,7 +102,7 @@ impl FileGroup {
         workspace_root: &Path,
         project_source: &str,
     ) -> Result<WorkspaceRelativePathBuf, FileGroupError> {
-        let dirs = self.dirs(workspace_root, project_source)?;
+        let dirs = self.dirs(workspace_root)?;
 
         if !dirs.is_empty() {
             let paths = dirs
@@ -139,6 +110,7 @@ impl FileGroup {
                 .filter_map(|d| d.strip_prefix(project_source).ok())
                 .map(|d| Path::new(d.as_str()))
                 .collect::<Vec<&Path>>();
+
             let common_dir = common_path_all(paths);
 
             if let Some(dir) = common_dir {
@@ -155,12 +127,10 @@ impl FileGroup {
         &self,
         is_dir: bool,
         workspace_root: &Path,
-        project_source: &str,
     ) -> Result<Vec<WorkspaceRelativePathBuf>, FileGroupError> {
-        let (paths, globs) = self.all(project_source)?;
         let mut list = vec![];
 
-        for path in paths {
+        for path in &self.files {
             let allowed = if is_dir {
                 path.to_path(workspace_root).is_dir()
             } else {
@@ -168,14 +138,15 @@ impl FileGroup {
             };
 
             if allowed {
-                list.push(path);
+                list.push(path.to_owned());
             }
         }
 
-        if !globs.is_empty() {
+        if !self.globs.is_empty() {
+            let globs = &self.globs;
             let walk_paths = self
                 .walk_cache
-                .get_or_try_init(|| glob::walk(workspace_root, &globs))?;
+                .get_or_try_init(|| glob::walk(workspace_root, *&globs))?;
 
             // Glob results are absolute paths!
             for path in walk_paths {
@@ -197,5 +168,11 @@ impl FileGroup {
         }
 
         Ok(list)
+    }
+}
+
+impl PartialEq for FileGroup {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id && self.files == other.files && self.globs == other.globs
     }
 }

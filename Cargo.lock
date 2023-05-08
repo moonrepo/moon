@@ -3276,7 +3276,6 @@ dependencies = [
 name = "moon_task"
 version = "0.1.0"
 dependencies = [
- "common-path",
  "moon_config",
  "moon_error",
  "moon_logger",

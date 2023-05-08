@@ -315,12 +315,12 @@ impl<'task> TokenResolver<'task> {
         match token_type {
             TokenType::Dirs(token, group) => {
                 for dir in get_file_group(&token, &group)?.dirs(workspace_root)? {
-                    paths.push(dir.to_logical_path("."));
+                    paths.push(dir.to_logical_path(""));
                 }
             }
             TokenType::Files(token, group) => {
                 for file in get_file_group(&token, &group)?.files(workspace_root)? {
-                    paths.push(file.to_logical_path("."));
+                    paths.push(file.to_logical_path(""));
                 }
             }
             TokenType::Globs(token, group) => {
@@ -332,7 +332,7 @@ impl<'task> TokenResolver<'task> {
                 let group = get_file_group(&token, &group)?;
 
                 for file in &group.files {
-                    paths.push(file.to_logical_path("."));
+                    paths.push(file.to_logical_path(""));
                 }
 
                 for glob in &group.globs {
@@ -343,7 +343,7 @@ impl<'task> TokenResolver<'task> {
                 paths.push(
                     get_file_group(&token, &group)?
                         .root(workspace_root, project_source)?
-                        .to_logical_path("."),
+                        .to_logical_path(""),
                 );
             }
             _ => {}

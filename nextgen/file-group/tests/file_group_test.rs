@@ -22,6 +22,22 @@ fn sets_patterns() {
     );
 }
 
+#[test]
+fn overwrites_existing_patterns() {
+    let mut file_group = FileGroup::new_with_source("id", "project", ["a", "*"]).unwrap();
+
+    assert_eq!(file_group.files, vec![RelativePathBuf::from("project/a")]);
+    assert_eq!(file_group.globs, vec![RelativePathBuf::from("project/*")]);
+
+    file_group.set_patterns("project", ["b", "**/*"]);
+
+    assert_eq!(file_group.files, vec![RelativePathBuf::from("project/b")]);
+    assert_eq!(
+        file_group.globs,
+        vec![RelativePathBuf::from("project/**/*")]
+    );
+}
+
 mod dirs {
     use super::*;
 

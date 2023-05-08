@@ -62,6 +62,9 @@ impl FileGroup {
         I: IntoIterator<Item = V>,
         V: AsRef<str>,
     {
+        self.files = vec![];
+        self.globs = vec![];
+
         let mut log_patterns = vec![];
 
         for pattern in patterns {

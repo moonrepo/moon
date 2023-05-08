@@ -18,10 +18,10 @@ Tags: vue
  FILE GROUPS 
 
 sources:
- - src/**/*
- - types/**/*
+ - basic/src/**/*
+ - basic/types/**/*
 tests:
- - **/*_test.rs
+ - basic/**/*_test.rs
 
 
 

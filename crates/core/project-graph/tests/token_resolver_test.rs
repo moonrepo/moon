@@ -9,14 +9,14 @@ use rustc_hash::FxHashMap;
 use starbase_utils::{glob, string_vec};
 use std::path::{Path, PathBuf};
 
-pub fn create_file_groups() -> FxHashMap<String, FileGroup> {
+pub fn create_file_groups(source: &str) -> FxHashMap<String, FileGroup> {
     let mut map = FxHashMap::default();
 
     map.insert(
         "static".into(),
         FileGroup::new_with_source(
             "static",
-            "project",
+            source,
             [
                 "file.ts",
                 "dir",
@@ -30,22 +30,22 @@ pub fn create_file_groups() -> FxHashMap<String, FileGroup> {
 
     map.insert(
         "dirs_glob".into(),
-        FileGroup::new_with_source("dirs_glob", "project", ["**/*"]).unwrap(),
+        FileGroup::new_with_source("dirs_glob", source, ["**/*"]).unwrap(),
     );
 
     map.insert(
         "files_glob".into(),
-        FileGroup::new_with_source("files_glob", "project", ["**/*.{ts,tsx}"]).unwrap(),
+        FileGroup::new_with_source("files_glob", source, ["**/*.{ts,tsx}"]).unwrap(),
     );
 
     map.insert(
         "globs".into(),
-        FileGroup::new_with_source("globs", "project", ["**/*.{ts,tsx}", "*.js"]).unwrap(),
+        FileGroup::new_with_source("globs", source, ["**/*.{ts,tsx}", "*.js"]).unwrap(),
     );
 
     map.insert(
         "no_globs".into(),
-        FileGroup::new_with_source("no_globs", "project", ["config.js"]).unwrap(),
+        FileGroup::new_with_source("no_globs", source, ["config.js"]).unwrap(),
     );
 
     map
@@ -64,7 +64,7 @@ fn create_project(workspace_root: &Path) -> Project {
         |_| ProjectLanguage::Unknown,
     )
     .unwrap();
-    project.file_groups = create_file_groups();
+    project.file_groups = create_file_groups("files-and-dirs");
     project
 }
 

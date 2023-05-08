@@ -20,10 +20,10 @@ Channel: #batcave
  FILE GROUPS 
 
 sources:
- - src/**/*
- - types/**/*
+ - advanced/src/**/*
+ - advanced/types/**/*
 tests:
- - tests/**/*
+ - advanced/tests/**/*
 
 
 

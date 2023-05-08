@@ -3080,6 +3080,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_process"
+version = "0.1.0"
+dependencies = [
+ "cached",
+ "moon_common",
+ "thiserror",
+]
+
+[[package]]
 name = "moon_project"
 version = "0.1.0"
 dependencies = [

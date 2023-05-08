@@ -1,0 +1,9 @@
+[package]
+name = "moon_process"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_common = { path = "../common" }
+cached = { workspace = true }
+thiserror = { workspace = true }

@@ -338,7 +338,11 @@ impl Task {
     }
 
     pub fn should_run_in_ci(&self) -> bool {
-        self.is_build_type() || self.is_test_type() || self.options.run_in_ci
+        if !self.options.run_in_ci {
+            return false;
+        }
+
+        self.is_build_type() || self.is_test_type()
     }
 
     fn merge_env_vars(

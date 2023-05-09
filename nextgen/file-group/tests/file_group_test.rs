@@ -74,12 +74,15 @@ mod files {
         let file_group =
             FileGroup::new_with_source("id", "project", ["**/*.json", "docs.md"]).unwrap();
 
+        let mut results = file_group.files(&workspace_root).unwrap();
+        results.sort();
+
         assert_eq!(
-            file_group.files(&workspace_root).unwrap(),
+            results,
             vec![
+                RelativePathBuf::from("project/dir/subdir/nested.json"),
                 RelativePathBuf::from("project/docs.md"),
                 RelativePathBuf::from("project/project.json"),
-                RelativePathBuf::from("project/dir/subdir/nested.json")
             ]
         );
     }

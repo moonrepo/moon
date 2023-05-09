@@ -16,7 +16,7 @@ if [ "$version" == "latest" ]; then
 	version=$(curl -s https://raw.githubusercontent.com/moonrepo/proto/master/version)
 fi
 
-if [[ "$version" =~ ^0.[0-8] ]]; then
+if [[ "$version" =~ ^0\.[0-8] ]]; then
 	version_part="-v$version"
 fi
 

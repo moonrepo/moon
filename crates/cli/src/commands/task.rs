@@ -68,7 +68,7 @@ pub async fn task(id: String, json: bool) -> Result<(), AnyError> {
             "Serially"
         },
     )?;
-    term.render_entry_bool("Runs in CI", task.options.run_in_ci)?;
+    term.render_entry_bool("Runs in CI", task.should_run_in_ci())?;
 
     if !task.deps.is_empty() {
         term.write_line("")?;

@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 moon_common = { path = "../common" }
 cached = { workspace = true }
+once_cell = { workspace = true }
 rustc-hash = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }

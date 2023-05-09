@@ -132,7 +132,7 @@ impl<'cmd> AsyncCommand<'cmd> {
         let captured_stderr_clone = Arc::clone(&captured_stderr);
         let captured_stdout_clone = Arc::clone(&captured_stdout);
 
-        let prefix: Arc<String> = self.inspector.get_prefix().into();
+        let prefix = Arc::new(self.inspector.get_prefix());
         let stderr_prefix = Arc::clone(&prefix);
         let stdout_prefix = Arc::clone(&prefix);
 
@@ -221,8 +221,7 @@ impl<'cmd> AsyncCommand<'cmd> {
     }
 
     async fn write_input_to_child(&self, child: &mut Child) -> Result<(), ProcessError> {
-        let input = self.inspector.get_input_line().unwrap_or_default();
-        let input = input.to_string_lossy();
+        let input = self.inspector.get_command_line().input.join(" ");
 
         let mut stdin = child.stdin.take().unwrap_or_else(|| {
             panic!("Unable to write stdin: {input}");

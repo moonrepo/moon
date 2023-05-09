@@ -92,30 +92,16 @@ impl Command {
 
     pub fn create_async(&self) -> AsyncCommand {
         let inspector = self.inspect();
+        let command_line = inspector.get_command_line();
 
-        let mut command = if let Some(shell) = &self.shell {
-            let mut cmd = TokioCommand::new(&shell.bin);
-            cmd.args(&shell.args);
-
-            // Shells use -c to execute a command, which requires the entire
-            // command line to be executed to be a single argument!
-            if !shell.pass_args_stdin {
-                cmd.arg(inspector.get_command_line());
-            }
-
-            cmd
-        } else {
-            let mut cmd = TokioCommand::new(&self.bin);
-            cmd.args(&self.args);
-            cmd
-        };
+        let mut command = TokioCommand::new(&command_line.command[0]);
+        command.args(&command_line.command[1..]);
+        command.envs(&self.env);
+        command.kill_on_drop(true);
 
         if let Some(cwd) = &self.cwd {
             command.current_dir(cwd);
         }
-
-        command.kill_on_drop(true);
-        command.envs(&self.env);
 
         AsyncCommand {
             inner: command,
@@ -174,7 +160,7 @@ impl Command {
     }
 
     pub fn inspect(&self) -> CommandInspector {
-        CommandInspector::from(self)
+        CommandInspector::new(self)
     }
 
     pub fn set_print_command(&mut self, state: bool) -> &mut Command {
@@ -189,7 +175,7 @@ impl Command {
 
     pub fn set_prefix(&mut self, prefix: &str, width: Option<usize>) -> &mut Command {
         if is_test_env() {
-            self.prefix = Some(format!("[{prefix}]"));
+            self.prefix = Some(format!("{prefix} |"));
         } else {
             self.prefix = Some(format!(
                 "{} {} ",

@@ -1,66 +1,62 @@
 use crate::command::Command;
 use moon_common::color;
+use once_cell::sync::OnceCell;
 use rustc_hash::FxHashMap;
 use std::env;
-use std::ffi::{OsStr, OsString};
+use std::fmt::{self, Display};
 use std::path::PathBuf;
-use tracing::debug;
+use tracing::{debug, enabled};
+
+pub struct CommandLine {
+    pub command: Vec<String>,
+    pub input: Vec<String>,
+    pub main_command: String,
+}
+
+impl Display for CommandLine {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let command = self.command.join(" ");
+
+        write!(f, "{}", &command)?;
+
+        if !self.input.is_empty() {
+            let debug_input = env::var("MOON_DEBUG_PROCESS_INPUT").is_ok();
+            let input = self.input.join(" ");
+
+            if !command.ends_with("-") {
+                write!(f, " -")?;
+            }
+
+            write!(
+                f,
+                " {}",
+                if input.len() > 200 && !debug_input {
+                    "(truncated)".into()
+                } else {
+                    input.replace('\n', " ")
+                }
+            )?;
+        }
+
+        Ok(())
+    }
+}
 
 pub struct CommandInspector<'cmd> {
     command: &'cmd Command,
-
-    /// The entire command line as a list of arguments.
-    /// The first argument is always the program/command to run.
-    command_line: Vec<&'cmd OsString>,
-
-    /// The entire input line to pass as stdin to a running command.
-    input_line: Vec<&'cmd OsString>,
+    line_cache: OnceCell<CommandLine>,
 }
 
 impl<'cmd> CommandInspector<'cmd> {
-    pub fn from(command: &'cmd Command) -> CommandInspector {
-        let mut command_line: Vec<&'cmd OsString> = vec![&command.bin];
-        let mut input_line: Vec<&'cmd OsString> = vec![];
-
-        if !command.args.is_empty() {
-            command_line.extend(&command.args);
-        }
-
-        if command.input.is_empty() {
-            input_line.push(&command.bin);
-            input_line.extend(&command.args);
-        } else {
-            input_line.extend(&command.input);
-        }
-
-        CommandInspector {
+    pub fn new(command: &'cmd Command) -> Self {
+        Self {
             command,
-            command_line,
-            input_line,
+            line_cache: OnceCell::new(),
         }
     }
 
-    pub fn get_command_line(&self) -> OsString {
-        self.command_line
-            .iter()
-            .map(|a| a.to_os_string())
-            .collect::<Vec<_>>()
-            .join(OsStr::new(" "))
-    }
-
-    pub fn get_input_line(&self) -> Option<OsString> {
-        if !self.should_pass_stdin() {
-            return None;
-        }
-
-        let line = self
-            .input_line
-            .iter()
-            .map(|i| i.to_os_string())
-            .collect::<Vec<_>>()
-            .join(OsStr::new(" "));
-
-        Some(line)
+    pub fn get_command_line(&self) -> &CommandLine {
+        self.line_cache.get_or_init(|| self.create_command_line())
     }
 
     pub fn get_prefix(&self) -> String {
@@ -88,7 +84,7 @@ impl<'cmd> CommandInspector<'cmd> {
         let working_dir = self.command.cwd.as_ref().unwrap_or(&workspace_root);
 
         let target_dir = if working_dir == &workspace_root {
-            String::from("workspace")
+            "workspace".into()
         } else {
             format!(
                 ".{}{}",
@@ -109,25 +105,17 @@ impl<'cmd> CommandInspector<'cmd> {
 
     pub fn log_command(&self) {
         let command_line = self.get_command_line();
-        let input_line = self.get_input_line().unwrap_or_default();
-        let line = if self.should_pass_args_stdin() {
-            input_line.to_string_lossy()
-        } else {
-            command_line.to_string_lossy()
-        };
 
         if self.command.print_command {
-            println!("{}", self.format_command(&line));
+            println!("{}", self.format_command(&command_line.main_command));
         }
 
-        // TODO
         // Avoid all this overhead if we're not logging
-        // if !logging_enabled() {
-        //     return;
-        // }
+        if !enabled!(tracing::Level::DEBUG) {
+            return;
+        }
 
         let debug_env = env::var("MOON_DEBUG_PROCESS_ENV").is_ok();
-        let debug_input = env::var("MOON_DEBUG_PROCESS_INPUT").is_ok();
 
         let env_vars_field = self
             .command
@@ -149,38 +137,63 @@ impl<'cmd> CommandInspector<'cmd> {
             .as_ref()
             .map(|cwd| cwd.display().to_string());
 
-        let format_input = |line: &str, input: &str| {
-            format!(
-                "{}{}{}",
-                line,
-                if line.ends_with('-') { " " } else { " - " },
-                if input.len() > 200 && !debug_input {
-                    "(truncated)".into()
-                } else {
-                    input.replace('\n', " ")
-                }
-            )
-        };
-
-        let debug_line = if let Some(shell) = &self.command.shell {
-            let shell_line = format!("{} {}", shell.bin, shell.args.join(" "));
-
-            if shell.pass_args_stdin {
-                format_input(&shell_line, &line)
-            } else {
-                format!("{} {}", shell_line, line)
-            }
-        } else if !self.command.input.is_empty() {
-            format_input(&line, input_line.to_str().unwrap())
-        } else {
-            line.to_string()
-        };
-
         debug!(
             env_vars = ?env_vars_field,
             working_dir = working_dir_field,
             "Running command {}",
-            color::shell(debug_line)
+            color::shell(command_line.to_string())
         );
+    }
+
+    fn create_command_line(&self) -> CommandLine {
+        let mut command_line: Vec<String> = vec![];
+        let mut input_line: Vec<String> = vec![];
+        let mut main_line: Vec<String> = vec![];
+
+        let push_to_line = |line: &mut Vec<String>| {
+            line.push(self.command.bin.to_string_lossy().to_string());
+
+            for arg in &self.command.args {
+                line.push(arg.to_string_lossy().to_string());
+            }
+        };
+
+        // Extract the main command, without shell, for other purposes!
+        push_to_line(&mut main_line);
+
+        // If wrapped in a shell, the shell binary and arguments
+        // must be placed at the start of the line.
+        if let Some(shell) = &self.command.shell {
+            command_line.push(shell.bin.clone());
+            command_line.extend(shell.args.clone());
+
+            // If the main command should be passed via stdin,
+            // then append the input line instead of the command line.
+            if shell.pass_args_stdin {
+                push_to_line(&mut input_line);
+
+                // Otherwise append as regular arguments. They typically
+                // appear after a "-" argument (should come from shell).
+            } else {
+                push_to_line(&mut command_line);
+            }
+
+            // Otherwise we have a normal command and arguments.
+        } else {
+            push_to_line(&mut command_line);
+
+            // That also may have input.
+            if !self.command.input.is_empty() {
+                for input in &self.command.input {
+                    input_line.push(input.to_string_lossy().to_string());
+                }
+            }
+        }
+
+        CommandLine {
+            command: command_line,
+            input: input_line,
+            main_command: main_line.join(" "),
+        }
     }
 }

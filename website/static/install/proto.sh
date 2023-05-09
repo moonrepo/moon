@@ -9,22 +9,27 @@ set -e
 bin="proto"
 arch=$(uname -sm)
 version="${1:-latest}"
+version_part=""
 ext=".tar.xz"
 
 if [ "$version" == "latest" ]; then
 	version=$(curl -s https://raw.githubusercontent.com/moonrepo/proto/master/version)
 fi
 
+if [[ "$version" =~ ^0.[0-8] ]]; then
+	version_part="-v$version"
+fi
+
 if [ "$OS" = "Windows_NT" ]; then
-	target="proto_cli-v$version-x86_64-pc-windows-msvc"
+	target="proto_cli$version_part-x86_64-pc-windows-msvc"
 	bin="proto.exe"
 	ext=".zip"
 else
 	case "$arch" in
-	"Darwin x86_64") target="proto_cli-v$version-x86_64-apple-darwin" ;;
-	"Darwin arm64") target="proto_cli-v$version-aarch64-apple-darwin" ;;
-	# "Linux aarch64") target="proto_cli-v$version-aarch64-unknown-linux-gnu" ;;
-	"Linux x86_64") target="proto_cli-v$version-x86_64-unknown-linux-gnu" ;;
+	"Darwin x86_64") target="proto_cli$version_part-x86_64-apple-darwin" ;;
+	"Darwin arm64") target="proto_cli$version_part-aarch64-apple-darwin" ;;
+	# "Linux aarch64") target="proto_cli$version_part-aarch64-unknown-linux-gnu" ;;
+	"Linux x86_64") target="proto_cli$version_part-x86_64-unknown-linux-gnu" ;;
 	*)
 		echo "Unsupported system or architecture \"$arch\". Unable to install proto!"
 		exit 1

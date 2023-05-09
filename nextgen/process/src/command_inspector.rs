@@ -82,7 +82,7 @@ impl<'cmd> CommandInspector<'cmd> {
 
     pub fn format_command(&self, line: &str) -> String {
         let workspace_root = env::var("MOON_WORKSPACE_ROOT")
-            .map(|root| PathBuf::from(root))
+            .map(PathBuf::from)
             .unwrap_or_else(|_| env::current_dir().unwrap());
 
         let working_dir = self.command.cwd.as_ref().unwrap_or(&workspace_root);

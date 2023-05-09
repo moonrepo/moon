@@ -537,7 +537,7 @@ impl<'a> Runner<'a> {
             let mut attempt = Attempt::new(attempt_index);
 
             self.print_target_label(Checkpoint::RunStart, &attempt, attempt_total)?;
-            self.print_target_command(&command)?;
+            self.print_target_command(command)?;
             self.flush_output()?;
 
             let possible_output = if should_stream_output {

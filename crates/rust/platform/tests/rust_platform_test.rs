@@ -1,11 +1,12 @@
 use moon_action_context::ActionContext;
 use moon_config::{PlatformType, RustConfig};
 use moon_platform::{Platform, Runtime, Version};
+use moon_process::Command;
 use moon_project::Project;
 use moon_rust_platform::RustPlatform;
 use moon_task::Task;
 use moon_test_utils::create_sandbox;
-use moon_utils::{process::Command, string_vec};
+use moon_utils::string_vec;
 use rustc_hash::FxHashMap;
 use std::env;
 use std::fs;

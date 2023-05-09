@@ -5,7 +5,7 @@ use rustc_hash::FxHashMap;
 use shell_words::join;
 use std::env;
 use std::fmt::{self, Display};
-use std::path::{PathBuf, MAIN_SEPARATOR};
+use std::path::{Path, PathBuf, MAIN_SEPARATOR};
 use tracing::{debug, enabled};
 
 pub struct CommandLine {
@@ -80,14 +80,15 @@ impl<'cmd> CommandInspector<'cmd> {
             .unwrap_or(false)
     }
 
-    pub fn format_command(&self, line: &str) -> String {
-        let workspace_root = env::var("MOON_WORKSPACE_ROOT")
-            .map(PathBuf::from)
-            .unwrap_or_else(|_| env::current_dir().unwrap());
+    pub fn format_command(
+        &self,
+        line: &str,
+        workspace_root: &Path,
+        working_dir: Option<&Path>,
+    ) -> String {
+        let working_dir = working_dir.unwrap_or(&workspace_root);
 
-        let working_dir = self.command.cwd.as_ref().unwrap_or(&workspace_root);
-
-        let target_dir = if working_dir == &workspace_root {
+        let target_dir = if working_dir == workspace_root {
             "workspace".into()
         } else {
             format!(
@@ -111,7 +112,14 @@ impl<'cmd> CommandInspector<'cmd> {
         let command_line = self.get_command_line();
 
         if self.command.print_command {
-            println!("{}", self.format_command(&command_line.main_command));
+            let workspace_root = env::var("MOON_WORKSPACE_ROOT")
+                .map(PathBuf::from)
+                .unwrap_or_else(|_| env::current_dir().unwrap());
+
+            println!(
+                "{}",
+                self.format_command(&command_line.main_command, &workspace_root, None)
+            );
         }
 
         // Avoid all this overhead if we're not logging

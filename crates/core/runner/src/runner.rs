@@ -10,7 +10,7 @@ use moon_error::MoonError;
 use moon_hasher::HashSet;
 use moon_logger::{debug, warn};
 use moon_platform_runtime::Runtime;
-use moon_process::{output_to_error, output_to_string, Command, Output};
+use moon_process::{join_args, output_to_error, output_to_string, Command, Output};
 use moon_project::Project;
 use moon_target::{Target, TargetError, TargetScope};
 use moon_task::{Task, TaskError, TaskOptionAffectedFiles};
@@ -537,7 +537,7 @@ impl<'a> Runner<'a> {
             let mut attempt = Attempt::new(attempt_index);
 
             self.print_target_label(Checkpoint::RunStart, &attempt, attempt_total)?;
-            self.print_target_command(command)?;
+            self.print_target_command(context, command)?;
             self.flush_output()?;
 
             let possible_output = if should_stream_output {
@@ -729,11 +729,36 @@ impl<'a> Runner<'a> {
         Ok(())
     }
 
-    pub fn print_target_command(&self, command: &Command) -> Result<(), MoonError> {
-        if self.workspace.config.runner.log_running_command {
-            self.stdout
-                .write_line(&command.inspect().get_command_line().main_command)?;
+    pub fn print_target_command(
+        &self,
+        context: &ActionContext,
+        command: &Command,
+    ) -> Result<(), MoonError> {
+        if !self.workspace.config.runner.log_running_command {
+            return Ok(());
         }
+
+        let task = &self.task;
+        let mut args = vec![&task.command];
+        args.extend(&task.args);
+
+        if context.should_inherit_args(&task.target) {
+            args.extend(&context.passthrough_args);
+        }
+
+        let command_line = join_args(args);
+
+        let message = color::muted_light(command.inspect().format_command(
+            &command_line,
+            &self.workspace.root,
+            Some(if task.options.run_from_workspace_root {
+                &self.workspace.root
+            } else {
+                &self.project.root
+            }),
+        ));
+
+        self.stdout.write_line(&message)?;
 
         Ok(())
     }

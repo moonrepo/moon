@@ -11,6 +11,7 @@ moon_hasher = { path = "../../core/hasher" }
 moon_lang = { path = "../../core/lang" }
 moon_logger = { path = "../../core/logger" }
 moon_platform = { path = "../../core/platform" }
+moon_process = { path = "../../../nextgen/process" }
 moon_project = { path = "../../core/project" }
 moon_rust_lang = { path = "../lang" }
 moon_rust_tool = { path = "../tool" }

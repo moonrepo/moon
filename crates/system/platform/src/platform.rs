@@ -4,10 +4,11 @@ use moon_action_context::ActionContext;
 use moon_config::{HasherConfig, PlatformType, ProjectConfig};
 use moon_hasher::HashSet;
 use moon_platform::{Platform, Runtime, Version};
+use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
 use moon_tool::{Tool, ToolError};
-use moon_utils::{async_trait, process::Command};
+use moon_utils::async_trait;
 use std::path::Path;
 
 #[derive(Debug, Default)]
@@ -77,7 +78,7 @@ impl Platform for SystemPlatform {
 
         // cmd/pwsh requires an absolute path to batch files
         if cfg!(windows) {
-            use moon_utils::process::is_windows_script;
+            use moon_process::shell::is_windows_script;
 
             for arg in &task.args {
                 if is_windows_script(arg) {

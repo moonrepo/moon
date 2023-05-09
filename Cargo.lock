@@ -3088,6 +3088,7 @@ dependencies = [
  "rustc-hash",
  "thiserror",
  "tokio",
+ "tracing",
 ]
 
 [[package]]

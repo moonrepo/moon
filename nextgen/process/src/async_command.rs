@@ -14,12 +14,12 @@ pub struct AsyncCommand<'cmd> {
 
 impl<'cmd> AsyncCommand<'cmd> {
     pub async fn exec_capture_output(&mut self) -> Result<Output, ProcessError> {
-        // self.log_command_info();
+        self.inspector.log_command();
 
         let command = &mut self.inner;
         let output: Output;
 
-        if self.inspector.should_pass_stdin {
+        if self.inspector.should_pass_stdin() {
             let mut child = command
                 .stdin(Stdio::piped())
                 .stdout(Stdio::piped())
@@ -55,12 +55,12 @@ impl<'cmd> AsyncCommand<'cmd> {
     }
 
     pub async fn exec_stream_output(&mut self) -> Result<Output, ProcessError> {
-        // self.log_command_info();
+        self.inspector.log_command();
 
         let command = &mut self.inner;
         let mut child: Child;
 
-        if self.inspector.should_pass_stdin {
+        if self.inspector.should_pass_stdin() {
             child =
                 command
                     .stdin(Stdio::piped())
@@ -95,12 +95,12 @@ impl<'cmd> AsyncCommand<'cmd> {
     }
 
     pub async fn exec_stream_and_capture_output(&mut self) -> Result<Output, ProcessError> {
-        // self.log_command_info();
+        self.inspector.log_command();
 
         let command = &mut self.inner;
 
         let mut child = command
-            .stdin(if self.inspector.should_pass_stdin {
+            .stdin(if self.inspector.should_pass_stdin() {
                 Stdio::piped()
             } else {
                 Stdio::inherit()
@@ -113,7 +113,7 @@ impl<'cmd> AsyncCommand<'cmd> {
                 error,
             })?;
 
-        if self.inspector.should_pass_stdin {
+        if self.inspector.should_pass_stdin() {
             self.write_input_to_child(&mut child).await?;
         }
 
@@ -132,12 +132,7 @@ impl<'cmd> AsyncCommand<'cmd> {
         let captured_stderr_clone = Arc::clone(&captured_stderr);
         let captured_stdout_clone = Arc::clone(&captured_stdout);
 
-        let prefix: Arc<String> = self
-            .inspector
-            .prefix
-            .map(|p| p.to_owned())
-            .unwrap_or_default()
-            .into();
+        let prefix: Arc<String> = self.inspector.get_prefix().into();
         let stderr_prefix = Arc::clone(&prefix);
         let stdout_prefix = Arc::clone(&prefix);
 
@@ -218,7 +213,7 @@ impl<'cmd> AsyncCommand<'cmd> {
         output: &Output,
         with_message: bool,
     ) -> Result<(), ProcessError> {
-        if self.inspector.should_error_nonzero && !output.status.success() {
+        if self.inspector.should_error_nonzero() && !output.status.success() {
             return Err(output_to_error(self.get_bin_name(), output, with_message));
         }
 

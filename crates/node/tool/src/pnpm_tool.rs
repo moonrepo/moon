@@ -2,9 +2,9 @@ use crate::node_tool::NodeTool;
 use moon_config::PnpmConfig;
 use moon_logger::debug;
 use moon_node_lang::{pnpm, LockfileDependencyVersions, PNPM};
+use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
-use moon_utils::process::Command;
 use moon_utils::{is_ci, semver};
 use proto::{
     async_trait,
@@ -146,7 +146,8 @@ impl DependencyManager<NodeTool> for PnpmTool {
                 self.create_command(node)?
                     .arg("dedupe")
                     .cwd(working_dir)
-                    .log_running_command(log)
+                    .set_print_command(log)
+                    .create_async()
                     .exec_capture_output()
                     .await?;
             } else {
@@ -196,7 +197,9 @@ impl DependencyManager<NodeTool> for PnpmTool {
 
         let mut cmd = self.create_command(node)?;
 
-        cmd.args(args).cwd(working_dir).log_running_command(log);
+        cmd.args(args).cwd(working_dir).set_print_command(log);
+
+        let mut cmd = cmd.create_async();
 
         if env::var("MOON_TEST_HIDE_INSTALL_OUTPUT").is_ok() {
             cmd.exec_capture_output().await?;
@@ -231,7 +234,7 @@ impl DependencyManager<NodeTool> for PnpmTool {
             cmd.arg(format!("{package}..."));
         }
 
-        cmd.exec_stream_output().await?;
+        cmd.create_async().exec_stream_output().await?;
 
         Ok(())
     }

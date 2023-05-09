@@ -7,6 +7,7 @@
 $ErrorActionPreference = 'Stop'
 
 $Version = "latest"
+$Target = "proto_cli-x86_64-pc-windows-msvc"
 
 if ($Args.Length -eq 1) {
   $Version = $Args.Get(0)
@@ -17,7 +18,9 @@ if ($Version -eq "latest") {
   $Version = $Response.Content.Trim()
 }
 
-$Target = "proto_cli-v${Version}-x86_64-pc-windows-msvc"
+if ($Version -match '^0\.[0-8]') {
+  $Target = "proto_cli-v${Version}-x86_64-pc-windows-msvc"
+}
 
 $DownloadUrl = if ($Version -eq "latest") {
   "https://github.com/moonrepo/proto/releases/latest/download/${Target}.zip"

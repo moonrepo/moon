@@ -7,6 +7,7 @@
 $ErrorActionPreference = 'Stop'
 
 $Version = "latest"
+$Target = "proto_cli-x86_64-pc-windows-msvc"
 
 if ($Args.Length -eq 1) {
   $Version = $Args.Get(0)
@@ -15,9 +16,9 @@ if ($Args.Length -eq 1) {
 if ($Version -eq "latest") {
   $Response = Invoke-WebRequest -URI "https://raw.githubusercontent.com/moonrepo/proto/master/version"
   $Version = $Response.Content.Trim()
+} elseif ($Version -match '^0\.[0-8]') {
+  $Target = "proto_cli-v${Version}-x86_64-pc-windows-msvc"
 }
-
-$Target = "proto_cli-v${Version}-x86_64-pc-windows-msvc"
 
 $DownloadUrl = if ($Version -eq "latest") {
   "https://github.com/moonrepo/proto/releases/latest/download/${Target}.zip"

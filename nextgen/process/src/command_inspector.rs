@@ -10,6 +10,8 @@ pub struct CommandInspector<'cmd> {
     /// The entire input line to pass as stdin to a running command.
     input_line: Vec<&'cmd OsString>,
 
+    pub prefix: Option<&'cmd String>,
+
     /// Whether to error on non-zero status codes.
     pub should_error_nonzero: bool,
 
@@ -40,6 +42,7 @@ impl<'cmd> CommandInspector<'cmd> {
         CommandInspector {
             command_line,
             input_line,
+            prefix: command.prefix.as_ref(),
             should_error_nonzero: command.error_on_nonzero,
             should_pass_stdin: !command.input.is_empty()
                 || command

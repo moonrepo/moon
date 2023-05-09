@@ -20,6 +20,20 @@ pub enum ProcessError {
         output: String,
     },
 
+    #[error("Failed to execute {} and stream output.", .bin.style(Style::Shell))]
+    Stream {
+        bin: String,
+        #[source]
+        error: std::io::Error,
+    },
+
+    #[error("Failed to execute {} and stream and capture output.", .bin.style(Style::Shell))]
+    StreamCapture {
+        bin: String,
+        #[source]
+        error: std::io::Error,
+    },
+
     #[error("Failed to write stdin to {}.", .bin.style(Style::Shell))]
     WriteInput {
         bin: String,

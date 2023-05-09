@@ -1,4 +1,4 @@
-use crate::shell;
+use crate::{command_inspector::CommandInspector, shell};
 use moon_common::{color, is_test_env};
 use rustc_hash::FxHashMap;
 use std::{
@@ -137,6 +137,10 @@ impl Command {
         }
 
         self
+    }
+
+    pub fn inspect(&self) -> CommandInspector {
+        CommandInspector::from(self)
     }
 
     pub fn set_print_command(&mut self, state: bool) -> &mut Command {

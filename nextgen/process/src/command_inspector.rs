@@ -2,6 +2,7 @@ use crate::command::Command;
 use moon_common::color;
 use once_cell::sync::OnceCell;
 use rustc_hash::FxHashMap;
+use shell_words::join;
 use std::env;
 use std::fmt::{self, Display};
 use std::path::{PathBuf, MAIN_SEPARATOR};
@@ -15,13 +16,13 @@ pub struct CommandLine {
 
 impl Display for CommandLine {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let command = self.command.join(" ");
+        let command = join(&self.command);
 
         write!(f, "{}", &command)?;
 
         if !self.input.is_empty() {
             let debug_input = env::var("MOON_DEBUG_PROCESS_INPUT").is_ok();
-            let input = self.input.join(" ");
+            let input = join(&self.input);
 
             if !command.ends_with('-') {
                 write!(f, " -")?;
@@ -196,7 +197,7 @@ impl<'cmd> CommandInspector<'cmd> {
         CommandLine {
             command: command_line,
             input: input_line,
-            main_command: main_line.join(" "),
+            main_command: join(main_line),
         }
     }
 }

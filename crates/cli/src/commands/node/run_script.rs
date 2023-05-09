@@ -38,7 +38,7 @@ pub async fn run_script(name: String, project: Option<String>) -> Result<(), Any
         .into());
     }
 
-    command.exec_stream_output().await?;
+    command.create_async().exec_stream_output().await?;
 
     Ok(())
 }

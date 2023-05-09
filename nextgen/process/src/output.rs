@@ -1,5 +1,6 @@
 use crate::process_error::ProcessError;
-use std::process::Output;
+
+pub use std::process::Output;
 
 #[inline]
 pub fn output_to_string(data: &[u8]) -> String {

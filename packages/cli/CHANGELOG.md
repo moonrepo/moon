@@ -5,6 +5,7 @@
 #### 🐞 Fixes
 
 - Fixed an issue where tasks would run in CI even though `runInCI` was false.
+- Fixed an issue where npm, pnpm, and yarn shims were not being used from proto.
 
 ## 1.5.0
 

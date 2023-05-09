@@ -7,6 +7,7 @@ edition = "2021"
 moon_config = { path = "../config" }
 moon_constants = { path = "../constants" }
 moon_error = { path = "../error" }
+moon_file_group = { path = "../../../nextgen/file-group" }
 moon_logger = { path = "../logger" }
 moon_query = { path = "../../../nextgen/query" }
 moon_target = { path = "../../../nextgen/target" }

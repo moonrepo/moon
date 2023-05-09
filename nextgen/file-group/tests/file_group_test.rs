@@ -1,0 +1,191 @@
+use moon_file_group::FileGroup;
+use moon_path::RelativePathBuf;
+use starbase_sandbox::locate_fixture;
+
+#[test]
+fn sets_patterns() {
+    let file_group = FileGroup::new_with_source("id", "project", ["a", "*", "b", "**/*"]).unwrap();
+
+    assert_eq!(
+        file_group.files,
+        vec![
+            RelativePathBuf::from("project/a"),
+            RelativePathBuf::from("project/b")
+        ]
+    );
+    assert_eq!(
+        file_group.globs,
+        vec![
+            RelativePathBuf::from("project/*"),
+            RelativePathBuf::from("project/**/*")
+        ]
+    );
+}
+
+#[test]
+fn overwrites_existing_patterns() {
+    let mut file_group = FileGroup::new_with_source("id", "project", ["a", "*"]).unwrap();
+
+    assert_eq!(file_group.files, vec![RelativePathBuf::from("project/a")]);
+    assert_eq!(file_group.globs, vec![RelativePathBuf::from("project/*")]);
+
+    file_group.set_patterns("project", ["b", "**/*"]);
+
+    assert_eq!(file_group.files, vec![RelativePathBuf::from("project/b")]);
+    assert_eq!(
+        file_group.globs,
+        vec![RelativePathBuf::from("project/**/*")]
+    );
+}
+
+mod dirs {
+    use super::*;
+
+    #[test]
+    fn returns_all_dirs() {
+        let workspace_root = locate_fixture("file-group");
+        let file_group = FileGroup::new_with_source("id", "project", ["**/*"]).unwrap();
+
+        assert_eq!(
+            file_group.dirs(&workspace_root).unwrap(),
+            vec![
+                RelativePathBuf::from("project/dir"),
+                RelativePathBuf::from("project/dir/subdir")
+            ]
+        );
+    }
+
+    #[test]
+    fn doesnt_return_files() {
+        let workspace_root = locate_fixture("file-group");
+        let file_group = FileGroup::new_with_source("id", "project", ["**/*.json"]).unwrap();
+        let result: Vec<RelativePathBuf> = vec![];
+
+        assert_eq!(file_group.dirs(&workspace_root).unwrap(), result);
+    }
+}
+
+mod files {
+    use super::*;
+
+    #[test]
+    fn returns_project_files() {
+        let workspace_root = locate_fixture("file-group");
+        let file_group =
+            FileGroup::new_with_source("id", "project", ["**/*.json", "docs.md"]).unwrap();
+
+        let mut results = file_group.files(&workspace_root).unwrap();
+        results.sort();
+
+        assert_eq!(
+            results,
+            vec![
+                RelativePathBuf::from("project/dir/subdir/nested.json"),
+                RelativePathBuf::from("project/docs.md"),
+                RelativePathBuf::from("project/project.json"),
+            ]
+        );
+    }
+
+    #[test]
+    fn returns_workspace_files() {
+        let workspace_root = locate_fixture("file-group");
+        let file_group =
+            FileGroup::new_with_source("id", "project", ["/*.json", "/docs.md"]).unwrap();
+
+        assert_eq!(
+            file_group.files(&workspace_root).unwrap(),
+            vec![
+                RelativePathBuf::from("docs.md"),
+                RelativePathBuf::from("workspace.json"),
+            ]
+        );
+    }
+
+    #[test]
+    fn supports_negated_globs() {
+        let workspace_root = locate_fixture("file-group");
+        let file_group =
+            FileGroup::new_with_source("id", "project", ["**/*.json", "!dir/subdir/*", "docs.md"])
+                .unwrap();
+
+        assert_eq!(
+            file_group.files(&workspace_root).unwrap(),
+            vec![
+                RelativePathBuf::from("project/docs.md"),
+                RelativePathBuf::from("project/project.json"),
+            ]
+        );
+    }
+
+    #[test]
+    fn doesnt_return_dirs() {
+        let workspace_root = locate_fixture("file-group");
+        let file_group = FileGroup::new_with_source("id", "project", ["dir"]).unwrap();
+        let result: Vec<RelativePathBuf> = vec![];
+
+        assert_eq!(file_group.files(&workspace_root).unwrap(), result);
+    }
+}
+
+mod globs {
+    use super::*;
+
+    #[test]
+    #[should_panic(expected = "NoGlobs(\"id\")")]
+    fn errors_if_no_globs() {
+        let file_group =
+            FileGroup::new_with_source("id", "project", ["file.js", "docs.md"]).unwrap();
+
+        file_group.globs().unwrap();
+    }
+
+    #[test]
+    fn returns_only_globs() {
+        let file_group =
+            FileGroup::new_with_source("id", "project", ["**/*.json", "file.js", "docs.md"])
+                .unwrap();
+
+        assert_eq!(
+            file_group.globs().unwrap(),
+            &vec![RelativePathBuf::from("project/**/*.json")]
+        );
+    }
+}
+
+mod root {
+    use super::*;
+
+    #[test]
+    fn returns_lowest_dir() {
+        let workspace_root = locate_fixture("file-group");
+        let file_group = FileGroup::new_with_source("id", "project", ["**/*"]).unwrap();
+
+        assert_eq!(
+            file_group.root(&workspace_root, "project").unwrap(),
+            RelativePathBuf::from("project/dir")
+        );
+    }
+
+    #[test]
+    fn returns_root_when_many() {
+        let workspace_root = locate_fixture("file-group");
+        let file_group = FileGroup::new_with_source("id", "project", ["**/*"]).unwrap();
+
+        assert_eq!(
+            file_group.root(&workspace_root, ".").unwrap(),
+            RelativePathBuf::from(".")
+        );
+    }
+
+    #[test]
+    fn returns_root_when_no_dirs() {
+        let workspace_root = locate_fixture("file-group");
+        let file_group = FileGroup::new_with_source("id", "project", Vec::<String>::new()).unwrap();
+
+        assert_eq!(
+            file_group.root(&workspace_root, "project").unwrap(),
+            RelativePathBuf::from(".")
+        );
+    }
+}

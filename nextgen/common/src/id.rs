@@ -1,5 +1,6 @@
 use once_cell::sync::Lazy;
 use regex::Regex;
+use serde::{Deserialize, Serialize};
 use starbase_styles::{Style, Stylize};
 use std::{
     fmt::{self, Display},
@@ -17,7 +18,7 @@ pub static ID_PATTERN: Lazy<Regex> =
 #[error("Invalid identifier {}. May only contain alpha-numeric characters, dashes (-), slashes (/), underscores (_), and dots (.).", .0.style(Style::Id))]
 pub struct IdError(String);
 
-#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct Id(String);
 
 impl Id {

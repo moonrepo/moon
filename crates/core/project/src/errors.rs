@@ -1,5 +1,6 @@
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_error::MoonError;
+use moon_file_group::FileGroupError;
 use moon_query::QueryError;
 use moon_target::TargetError;
 use moon_task::TaskError;
@@ -27,6 +28,9 @@ pub enum ProjectError {
 
     #[error("Task {} has not been configured for project {}.", .0.style(Style::Id), .1.style(Style::Id))]
     UnconfiguredTask(String, String),
+
+    #[error(transparent)]
+    FileGroup(#[from] FileGroupError),
 
     #[error(transparent)]
     Moon(#[from] MoonError),

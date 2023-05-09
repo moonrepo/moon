@@ -19,10 +19,10 @@ Tags: react
  FILE GROUPS 
 
 sources:
- - src/**/*
- - types/**/*
+ - deps/foo/src/**/*
+ - deps/foo/types/**/*
 tests:
- - tests/**/*
+ - deps/foo/tests/**/*
 
 
 

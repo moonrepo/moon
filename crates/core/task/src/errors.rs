@@ -2,7 +2,6 @@ use moon_error::MoonError;
 use moon_target::TargetError;
 use moon_utils::process::ArgsParseError;
 use starbase_styles::{Style, Stylize};
-use starbase_utils::glob::GlobError;
 use std::path::PathBuf;
 use thiserror::Error;
 
@@ -28,23 +27,8 @@ pub enum TaskError {
     ArgsParse(#[from] ArgsParseError),
 
     #[error(transparent)]
-    FileGroup(#[from] FileGroupError),
-
-    #[error(transparent)]
     Moon(#[from] MoonError),
 
     #[error(transparent)]
     Target(#[from] TargetError),
-}
-
-#[derive(Error, Debug)]
-pub enum FileGroupError {
-    #[error("No globs defined in file group {}.", .0.style(Style::Id))]
-    NoGlobs(String), // file group
-
-    #[error(transparent)]
-    Glob(#[from] GlobError),
-
-    #[error(transparent)]
-    Moon(#[from] MoonError),
 }

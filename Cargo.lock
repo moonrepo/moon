@@ -2677,6 +2677,7 @@ dependencies = [
  "miette",
  "once_cell",
  "regex",
+ "serde",
  "starbase_styles",
  "thiserror",
 ]
@@ -2836,6 +2837,21 @@ dependencies = [
  "starbase_utils",
  "thiserror",
  "wax",
+]
+
+[[package]]
+name = "moon_file_group"
+version = "0.1.0"
+dependencies = [
+ "common-path",
+ "moon_common",
+ "moon_path",
+ "once_cell",
+ "serde",
+ "starbase_sandbox",
+ "starbase_utils",
+ "thiserror",
+ "tracing",
 ]
 
 [[package]]
@@ -3005,6 +3021,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_path"
+version = "0.1.0"
+dependencies = [
+ "relative-path",
+ "serde",
+]
+
+[[package]]
 name = "moon_php_lang"
 version = "0.1.0"
 dependencies = [
@@ -3062,6 +3086,7 @@ dependencies = [
  "moon_config",
  "moon_constants",
  "moon_error",
+ "moon_file_group",
  "moon_logger",
  "moon_query",
  "moon_target",
@@ -3086,6 +3111,7 @@ dependencies = [
  "moon_config",
  "moon_enforcer",
  "moon_error",
+ "moon_file_group",
  "moon_hasher",
  "moon_logger",
  "moon_platform_detector",
@@ -3258,7 +3284,6 @@ dependencies = [
 name = "moon_task"
 version = "0.1.0"
 dependencies = [
- "common-path",
  "moon_config",
  "moon_error",
  "moon_logger",
@@ -4268,6 +4293,9 @@ name = "relative-path"
 version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4bf2521270932c3c7bed1a59151222bd7643c79310f2916f01925e1e16255698"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "reqwest"
@@ -4779,6 +4807,22 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "starbase_sandbox"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "63b408d2da5e58a2a70153838cea5526c810cb5bffc7a6b206b82a79a707667a"
+dependencies = [
+ "assert_cmd",
+ "assert_fs",
+ "clean-path",
+ "insta",
+ "once_cell",
+ "predicates",
+ "pretty_assertions",
+ "starbase_utils",
 ]
 
 [[package]]

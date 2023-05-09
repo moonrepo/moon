@@ -18,10 +18,10 @@ test: jest --cache --color
  FILE GROUPS 
 
 sources:
- - src/**/*
- - types/**/*
+ - tasks/src/**/*
+ - tasks/types/**/*
 tests:
- - tests/**/*
+ - tasks/tests/**/*
 
 
 

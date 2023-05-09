@@ -101,7 +101,7 @@ mod task_inheritance {
                 .get("files_glob")
                 .unwrap()
                 .globs,
-            string_vec!["**/*.{ts,tsx}"]
+            string_vec!["no-tasks/**/*.{ts,tsx}"]
         );
 
         assert_eq!(
@@ -113,11 +113,11 @@ mod task_inheritance {
                 .unwrap()
                 .files,
             string_vec![
-                "file.ts",
-                "dir",
-                "dir/other.tsx",
-                "dir/subdir",
-                "dir/subdir/another.ts"
+                "no-tasks/file.ts",
+                "no-tasks/dir",
+                "no-tasks/dir/other.tsx",
+                "no-tasks/dir/subdir",
+                "no-tasks/dir/subdir/another.ts"
             ]
         );
     }
@@ -134,7 +134,7 @@ mod task_inheritance {
                 .get("files_glob")
                 .unwrap()
                 .globs,
-            string_vec!["**/*.{ts,tsx}"]
+            string_vec!["file-groups/**/*.{ts,tsx}"]
         );
 
         assert_eq!(
@@ -145,7 +145,7 @@ mod task_inheritance {
                 .get("static")
                 .unwrap()
                 .files,
-            string_vec!["file.js"]
+            string_vec!["file-groups/file.js"]
         );
     }
 

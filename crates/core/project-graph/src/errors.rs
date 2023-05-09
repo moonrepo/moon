@@ -1,8 +1,9 @@
 use moon_enforcer::EnforcerError;
 use moon_error::MoonError;
+use moon_file_group::FileGroupError;
 use moon_project::ProjectError;
 use moon_target::TargetError;
-use moon_task::{FileGroupError, TaskError};
+use moon_task::TaskError;
 use starbase_styles::{Style, Stylize};
 use thiserror::Error;
 

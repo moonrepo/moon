@@ -4,7 +4,7 @@ use once_cell::sync::OnceCell;
 use rustc_hash::FxHashMap;
 use std::env;
 use std::fmt::{self, Display};
-use std::path::PathBuf;
+use std::path::{PathBuf, MAIN_SEPARATOR};
 use tracing::{debug, enabled};
 
 pub struct CommandLine {
@@ -80,7 +80,10 @@ impl<'cmd> CommandInspector<'cmd> {
     }
 
     pub fn format_command(&self, line: &str) -> String {
-        let workspace_root = PathBuf::from("."); // TODO
+        let workspace_root = env::var("MOON_WORKSPACE_ROOT")
+            .and_then(|root| Ok(PathBuf::from(root)))
+            .unwrap_or_else(|_| env::current_dir().unwrap());
+
         let working_dir = self.command.cwd.as_ref().unwrap_or(&workspace_root);
 
         let target_dir = if working_dir == &workspace_root {
@@ -88,7 +91,7 @@ impl<'cmd> CommandInspector<'cmd> {
         } else {
             format!(
                 ".{}{}",
-                std::path::MAIN_SEPARATOR,
+                MAIN_SEPARATOR,
                 working_dir
                     .strip_prefix(&workspace_root)
                     .unwrap()

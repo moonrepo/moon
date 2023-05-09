@@ -8,6 +8,7 @@ moon_common = { path = "../common" }
 cached = { workspace = true }
 once_cell = { workspace = true }
 rustc-hash = { workspace = true }
+shell-words = "1.1.0"
 thiserror = { workspace = true }
 tracing = { workspace = true }
 tokio = { workspace = true }

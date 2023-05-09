@@ -3087,6 +3087,7 @@ dependencies = [
  "moon_common",
  "once_cell",
  "rustc-hash",
+ "shell-words",
  "thiserror",
  "tokio",
  "tracing",

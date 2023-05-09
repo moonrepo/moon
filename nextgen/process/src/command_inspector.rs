@@ -23,7 +23,7 @@ impl Display for CommandLine {
             let debug_input = env::var("MOON_DEBUG_PROCESS_INPUT").is_ok();
             let input = self.input.join(" ");
 
-            if !command.ends_with("-") {
+            if !command.ends_with('-') {
                 write!(f, " -")?;
             }
 
@@ -81,7 +81,7 @@ impl<'cmd> CommandInspector<'cmd> {
 
     pub fn format_command(&self, line: &str) -> String {
         let workspace_root = env::var("MOON_WORKSPACE_ROOT")
-            .and_then(|root| Ok(PathBuf::from(root)))
+            .map(|root| PathBuf::from(root))
             .unwrap_or_else(|_| env::current_dir().unwrap());
 
         let working_dir = self.command.cwd.as_ref().unwrap_or(&workspace_root);

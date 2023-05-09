@@ -54,7 +54,15 @@ impl<'cmd> CommandInspector<'cmd> {
         }
     }
 
-    pub fn get_input_line(&self) -> Option<String> {
+    pub fn get_command_line(&self) -> OsString {
+        self.command_line
+            .iter()
+            .map(|a| a.to_os_string())
+            .collect::<Vec<_>>()
+            .join(OsStr::new(" "))
+    }
+
+    pub fn get_input_line(&self) -> Option<OsString> {
         if !self.should_pass_stdin {
             return None;
         }
@@ -62,12 +70,9 @@ impl<'cmd> CommandInspector<'cmd> {
         let line = self
             .input_line
             .iter()
-            .map(|i| i.as_os_str())
+            .map(|i| i.to_os_string())
             .collect::<Vec<_>>()
-            .join(OsStr::new(" "))
-            .to_str()
-            .unwrap_or_default()
-            .to_string();
+            .join(OsStr::new(" "));
 
         Some(line)
     }

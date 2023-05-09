@@ -8,8 +8,8 @@ use tokio::process::{Child, Command};
 use tokio::task;
 
 pub struct AsyncCommand<'cmd> {
-    inner: Command,
-    inspector: CommandInspector<'cmd>,
+    pub inner: Command,
+    pub inspector: CommandInspector<'cmd>,
 }
 
 impl<'cmd> AsyncCommand<'cmd> {
@@ -227,6 +227,7 @@ impl<'cmd> AsyncCommand<'cmd> {
 
     async fn write_input_to_child(&self, child: &mut Child) -> Result<(), ProcessError> {
         let input = self.inspector.get_input_line().unwrap_or_default();
+        let input = input.to_string_lossy();
 
         let mut stdin = child.stdin.take().unwrap_or_else(|| {
             panic!("Unable to write stdin: {input}");

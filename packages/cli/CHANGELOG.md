@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where tasks would run in CI even though `runInCI` was false.
+
 ## 1.5.0
 
 #### 🚀 Updates

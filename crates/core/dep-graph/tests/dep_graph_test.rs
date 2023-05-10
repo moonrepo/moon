@@ -78,6 +78,7 @@ async fn create_tasks_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
             ("mergePrepend".to_owned(), "merge-prepend".to_owned()),
             ("mergeReplace".to_owned(), "merge-replace".to_owned()),
             ("noTasks".to_owned(), "no-tasks".to_owned()),
+            ("persistent".to_owned(), "persistent".to_owned()),
         ])),
         ..WorkspaceConfig::default()
     };
@@ -226,6 +227,56 @@ mod run_target {
                 vec![NodeIndex::new(8)],
                 vec![NodeIndex::new(2), NodeIndex::new(7)],
                 vec![NodeIndex::new(3), NodeIndex::new(4), NodeIndex::new(6)]
+            ]
+        );
+    }
+
+    #[tokio::test]
+    async fn moves_persistent_tasks_last() {
+        let (workspace, projects, _sandbox) = create_tasks_project_graph().await;
+
+        let mut graph = build_dep_graph(&workspace, &projects);
+        graph
+            .run_target(&Target::new("persistent", "dev").unwrap(), None)
+            .unwrap();
+        let graph = graph.build();
+
+        assert_snapshot!(graph.to_dot());
+
+        // These are the batches if the persistent target isn't moved to the end.
+        // Leaving this here as a reference to compare against!
+        // assert_eq!(
+        //     sort_batches(graph.sort_batched_topological().unwrap()),
+        //     vec![
+        //         vec![NodeIndex::new(0)],
+        //         vec![
+        //             NodeIndex::new(1),
+        //             NodeIndex::new(7),
+        //             NodeIndex::new(8),
+        //             NodeIndex::new(9)
+        //         ],
+        //         vec![NodeIndex::new(6), NodeIndex::new(11), NodeIndex::new(12)],
+        //         vec![NodeIndex::new(2), NodeIndex::new(10)],
+        //         vec![NodeIndex::new(5)],
+        //         vec![NodeIndex::new(4), NodeIndex::new(13)],
+        //         vec![NodeIndex::new(3)],
+        //     ]
+        // );
+
+        assert_eq!(
+            sort_batches(graph.sort_batched_topological().unwrap()),
+            vec![
+                vec![NodeIndex::new(0)],
+                vec![
+                    NodeIndex::new(1),
+                    NodeIndex::new(7),
+                    NodeIndex::new(8),
+                    NodeIndex::new(9)
+                ],
+                vec![NodeIndex::new(6), NodeIndex::new(11), NodeIndex::new(12)],
+                vec![NodeIndex::new(2), NodeIndex::new(10)],
+                vec![NodeIndex::new(4)],
+                vec![NodeIndex::new(3), NodeIndex::new(5), NodeIndex::new(13)],
             ]
         );
     }

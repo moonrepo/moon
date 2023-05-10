@@ -1,0 +1,21 @@
+language: javascript
+
+tasks:
+  local:
+    command: dev
+    deps: [buildA:build]
+    local: true
+  persistent:
+    command: dev
+    options:
+      persistent: true
+  devMiddleman:
+    command: boop
+    deps: [local]
+  dev:
+    command: noop
+    deps:
+      - devMiddleman
+      - persistent
+      - buildC:build
+    local: true

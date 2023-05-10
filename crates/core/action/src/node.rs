@@ -14,6 +14,9 @@ pub enum ActionNode {
     /// Run a target (project task).
     RunTarget(Runtime, String),
 
+    /// Run a target (project task) that never terminates.
+    RunPersistentTarget(Runtime, String),
+
     /// Setup a tool + version for the provided platform.
     SetupTool(Runtime),
 
@@ -43,6 +46,7 @@ impl ActionNode {
                 }
             }
             ActionNode::RunTarget(_, id) => format!("RunTarget({id})"),
+            ActionNode::RunPersistentTarget(_, id) => format!("RunPersistentTarget({id})"),
             ActionNode::SetupTool(platform) => {
                 let version = platform.version();
 

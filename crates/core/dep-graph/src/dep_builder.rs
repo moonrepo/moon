@@ -283,7 +283,12 @@ impl<'ws> DepGraphBuilder<'ws> {
         let target = target.as_ref();
         let task = project.get_task(&target.task_id)?;
         let (runtime, _) = self.get_runtimes_from_project(project, Some(task));
-        let node = ActionNode::RunTarget(runtime, target.id.to_owned());
+
+        let node = if task.options.persistent {
+            ActionNode::RunPersistentTarget(runtime, target.id.to_owned())
+        } else {
+            ActionNode::RunTarget(runtime, target.id.to_owned())
+        };
 
         if let Some(index) = self.get_index_from_node(&node) {
             return Ok(Some(*index));

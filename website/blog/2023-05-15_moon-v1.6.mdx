@@ -1,0 +1,87 @@
+---
+slug: moon-v1.6
+title: moon v1.6 - Persistent tasks
+authors: [milesj]
+tags: [tasks]
+# image: ./img/moon/v1.6.png
+---
+
+import Button from '@site/src/ui/Button';
+
+???
+
+<!--truncate-->
+
+## RFC: Task extending/variants
+
+Before we dive into this release, we want to briefly talk about a new RFC that we're looking for
+feedback on, [task extending/variants](https://github.com/moonrepo/moon/issues/849). This is a
+feature that has been top-of-mind since moon's inception, but we haven't had the foundation in place
+to support it, nor what the API should look like.
+
+The gist of the RFC is that we want to support tasks that extend other tasks with additional
+arguments. This is a common workflow with npm scripts:
+
+```json
+{
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "npm run lint --fix"
+  }
+}
+```
+
+As consumers of moon, we'd appreciate any feedback on the RFC before we move forward!
+
+<div class="flex justify-center">
+  <Button label="View RFC" href="https://github.com/moonrepo/moon/issues/849" size="lg" />
+</div>
+
+## Persistent tasks
+
+Tasks that never complete, like servers and watchers, are known as persistent tasks. Historically we
+had support for these kinds of tasks through the [`local`](/docs/config/project#local) setting in
+[`moon.yml`](/docs/config/project). This setting would modify the task for continuous execution by
+disabling caching, streaming output, and not running in CI.
+
+While this worked for the most part, there was one scenario that was still problematic, and that was
+running multiple persistent tasks in parallel. Depending on the task dependency chain, sometimes
+these tasks would _not_ run in parallel, some may never start (blocked on another tasks), or the
+order of nodes in the graph is non-ideal. A great example of this can be found in this
+[discussion thread](https://github.com/moonrepo/moon/discussions/830).
+
+To mitigate this problem, we're introducing a new task option,
+[`persistent`](/docs/config/project#persistent) (which is also enabled by the `local` setting). When
+a task is marked as persistent, it will always _run last and in parallel_ within the dependency
+graph, after all dependencies (from all other persistent tasks) have completed.
+
+```yaml title="moon.yml"
+tasks:
+  dev:
+    command: 'next dev'
+    local: true
+    # OR
+    options:
+      persistent: true
+```
+
+This is a perfect solution to running multiple development servers and tools in watch mode:
+
+```yaml title="moon.yml"
+tasks:
+  dev:
+    command: 'noop'
+    deps:
+      - 'frontend:dev'
+      - 'backend:dev'
+      - 'database:start'
+      - 'tailwind:watch'
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.6.0) for a full list of
+changes.
+
+- Reworked file groups to use workspace relative paths, instead of project relative.
+- Reworked processes to better handle command line arguments, shells, and piped stdin input.

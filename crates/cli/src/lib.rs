@@ -28,33 +28,20 @@ use app::{App, Commands, DockerCommands, MigrateCommands, NodeCommands, QueryCom
 use clap::Parser;
 use console::Term;
 use enums::{CacheMode, LogLevel};
-use moon_logger::{debug, LevelFilter, Logger};
+use moon_logger::debug;
 use moon_terminal::ExtendedTerm;
 use query::QueryHashDiffOptions;
+use starbase::{tracing::TracingOptions, App as Moon};
 use starbase_styles::color;
+use starbase_utils::string_vec;
 use std::env;
-use std::path::PathBuf;
 
 pub use app::BIN_NAME;
 
-fn setup_logging(level: &LogLevel, log_file: Option<PathBuf>) {
+fn setup_logging(level: &LogLevel) {
     if env::var("MOON_LOG").is_err() {
         env::set_var("MOON_LOG", level.to_string());
     }
-
-    // This is annoying, but clap requires applying the `ValueEnum`
-    // trait onto the enum, which we can't apply to the log package.
-    Logger::init(
-        match level {
-            LogLevel::Off => LevelFilter::Off,
-            LogLevel::Error => LevelFilter::Error,
-            LogLevel::Warn => LevelFilter::Warn,
-            LogLevel::Info => LevelFilter::Info,
-            LogLevel::Debug => LevelFilter::Debug,
-            LogLevel::Trace => LevelFilter::Trace,
-        },
-        log_file,
-    );
 
     let version = env!("CARGO_PKG_VERSION");
 
@@ -79,12 +66,22 @@ fn setup_caching(mode: &CacheMode) {
 }
 
 pub async fn run_cli() {
+    Moon::setup_diagnostics();
+
     // Create app and parse arguments
     let args = App::parse();
 
     setup_colors(args.color);
-    setup_logging(&args.log, args.log_file);
+    setup_logging(&args.log);
     setup_caching(&args.cache);
+
+    Moon::setup_tracing_with_options(TracingOptions {
+        filter_modules: string_vec!["moon", "proto", "starbase"],
+        log_env: "MOON_LOG".into(),
+        log_file: args.log_file,
+        test_env: "MOON_TEST".into(),
+        ..TracingOptions::default()
+    });
 
     // Check for new version
     let version_handle = if matches!(

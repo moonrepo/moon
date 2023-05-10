@@ -2662,12 +2662,14 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "serial_test",
+ "starbase",
  "starbase_styles",
  "starbase_utils",
  "strum",
  "tera",
  "tiny_http",
  "tokio",
+ "tracing",
 ]
 
 [[package]]

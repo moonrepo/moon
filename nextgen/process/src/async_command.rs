@@ -1,7 +1,6 @@
 use crate::command_inspector::CommandInspector;
 use crate::output_to_error;
 use crate::process_error::ProcessError;
-use shell_words::join;
 use std::process::{Output, Stdio};
 use std::sync::{Arc, RwLock};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -222,14 +221,14 @@ impl<'cmd> AsyncCommand<'cmd> {
     }
 
     async fn write_input_to_child(&self, child: &mut Child) -> Result<(), ProcessError> {
-        let input = join(&self.inspector.get_command_line().input);
+        let input = self.inspector.get_command_line().input.join(" ");
 
         let mut stdin = child.stdin.take().unwrap_or_else(|| {
             panic!("Unable to write stdin: {input}");
         });
 
         stdin
-            .write_all(input.as_bytes())
+            .write_all(input.trim().as_bytes())
             .await
             .map_err(|error| ProcessError::WriteInput {
                 bin: self.get_bin_name(),

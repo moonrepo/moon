@@ -80,7 +80,9 @@ impl Display for CommandLine {
 
         if !self.input.is_empty() {
             let debug_input = env::var("MOON_DEBUG_PROCESS_INPUT").is_ok();
-            let input = join(&self.input);
+
+            // Not args, so don't join like they are!
+            let input = self.input.join(" ");
 
             if !command.ends_with('-') {
                 write!(f, " -")?;
@@ -115,7 +117,9 @@ impl<'cmd> CommandInspector<'cmd> {
     }
 
     pub fn get_cache_key(&self) -> String {
-        format!("{}", self.get_command_line())
+        let line = self.get_command_line();
+
+        format!("{}{}", line.command.join(" "), line.input.join(" "))
     }
 
     pub fn get_command_line(&self) -> &CommandLine {

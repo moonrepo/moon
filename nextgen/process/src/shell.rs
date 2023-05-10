@@ -40,7 +40,7 @@ pub struct Shell {
 // https://thinkpowershell.com/decision-to-switch-to-powershell-core-pwsh/
 #[cfg(windows)]
 #[inline]
-pub fn create_shell(with_profile: bool) -> Shell {
+pub fn create_shell() -> Shell {
     Shell {
         bin: if is_program_on_path("pwsh.exe".into()) {
             "pwsh.exe".into()

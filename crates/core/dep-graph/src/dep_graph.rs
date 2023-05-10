@@ -52,6 +52,7 @@ impl DepGraph {
 
     pub fn sort_batched_topological(&self) -> Result<BatchedTopoSort, DepGraphError> {
         let mut batches: BatchedTopoSort = vec![];
+        // let mut persistent = vec![];
 
         // Count how many times an index is referenced across nodes and edges
         let mut node_counts = FxHashMap::<NodeIndex, u32>::default();
@@ -69,6 +70,10 @@ impl DepGraph {
 
         // Gather root nodes (count of 0)
         let mut root_nodes = FxHashSet::<NodeIndex>::default();
+
+        // let mut add_to_batch = |ix: &NodeIndex| {
+        //     let task = self.graph.node_weight(*ix).unwrap();
+        // };
 
         for (ix, count) in &node_counts {
             if *count == 0 {

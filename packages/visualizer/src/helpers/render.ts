@@ -5,7 +5,7 @@ import type { GraphInfo } from './types';
 cytoscape.use(dagre);
 
 function getActionType(label: string) {
-	if (label.startsWith('RunTarget')) {
+	if (label.startsWith('RunTarget') || label.startsWith('RunPersistentTarget')) {
 		return 'run-target';
 	}
 

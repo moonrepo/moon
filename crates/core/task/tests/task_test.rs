@@ -37,6 +37,7 @@ mod from_config {
                 merge_inputs: TaskMergeStrategy::Append,
                 merge_outputs: TaskMergeStrategy::Append,
                 output_style: None,
+                persistent: false,
                 retry_count: 0,
                 run_deps_in_parallel: true,
                 run_in_ci: true,

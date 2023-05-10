@@ -52,7 +52,6 @@ impl DepGraph {
 
     pub fn sort_batched_topological(&self) -> Result<BatchedTopoSort, DepGraphError> {
         let mut batches: BatchedTopoSort = vec![];
-        // let mut persistent = vec![];
 
         // Count how many times an index is referenced across nodes and edges
         let mut node_counts = FxHashMap::<NodeIndex, u32>::default();
@@ -71,10 +70,6 @@ impl DepGraph {
         // Gather root nodes (count of 0)
         let mut root_nodes = FxHashSet::<NodeIndex>::default();
 
-        // let mut add_to_batch = |ix: &NodeIndex| {
-        //     let task = self.graph.node_weight(*ix).unwrap();
-        // };
-
         for (ix, count) in &node_counts {
             if *count == 0 {
                 root_nodes.insert(*ix);
@@ -87,12 +82,9 @@ impl DepGraph {
         }
 
         while !root_nodes.is_empty() {
-            // Push this batch onto the list
-            batches.push(root_nodes.clone().into_iter().collect());
-
-            // Reset the root nodes and find new ones after decrementing
             let mut next_root_nodes = FxHashSet::<NodeIndex>::default();
 
+            // Decrement dependencies of the current batch nodes
             for ix in &root_nodes {
                 for dep_ix in self.graph.neighbors(*ix) {
                     let count = node_counts
@@ -100,16 +92,43 @@ impl DepGraph {
                         .and_modify(|e| *e -= 1)
                         .or_insert(0);
 
+                    // And create a new batch if the count is 0
                     if *count == 0 {
                         next_root_nodes.insert(dep_ix);
                     }
                 }
             }
 
+            // Push the previous batch onto the list
+            batches.push(root_nodes.into_iter().collect());
+
+            // And reset the current nodes
             root_nodes = next_root_nodes;
         }
 
-        Ok(batches.into_iter().rev().collect())
+        // Move persistent targets to the end
+        let mut sorted_batches: BatchedTopoSort = vec![];
+        let mut persistent: Vec<NodeIndex> = vec![];
+
+        for mut batch in batches.into_iter().rev().collect::<Vec<_>>() {
+            batch.retain(|ix| match self.graph.node_weight(*ix).unwrap() {
+                ActionNode::RunPersistentTarget(_, _) => {
+                    persistent.push(*ix);
+                    false
+                }
+                _ => true,
+            });
+
+            if !batch.is_empty() {
+                sorted_batches.push(batch);
+            }
+        }
+
+        if !persistent.is_empty() {
+            sorted_batches.push(persistent);
+        }
+
+        Ok(sorted_batches)
     }
 
     /// Get a labelled representation of the dep graph (which can be serialized easily).

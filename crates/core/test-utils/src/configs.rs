@@ -169,6 +169,7 @@ pub fn get_tasks_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Inherit
             ("mergePrepend".to_owned(), "merge-prepend".to_owned()),
             ("mergeReplace".to_owned(), "merge-replace".to_owned()),
             ("noTasks".to_owned(), "no-tasks".to_owned()),
+            ("persistent".to_owned(), "persistent".to_owned()),
             ("scopeAll".to_owned(), "scope-all".to_owned()),
             ("scopeDeps".to_owned(), "scope-deps".to_owned()),
             ("scopeSelf".to_owned(), "scope-self".to_owned()),

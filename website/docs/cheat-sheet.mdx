@@ -160,11 +160,10 @@ tasks:
 			- 'app:watch'
 			- 'backend:start'
 			- 'tailwind:watch'
+		local: true
 ```
 
-> All dependencies must resolve to the "same level" in the
-> [dependency graph](./how-it-works/dep-graph) for this to work. Run `moon dep-graph <target>` to
-> verify.
+> The `local` or `persistent` settings are required for this to work.
 
 ## Languages
 

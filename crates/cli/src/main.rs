@@ -7,6 +7,7 @@ use moon_node_lang::{
 };
 use moon_terminal::safe_exit;
 use moon_utils::is_test_env;
+use starbase::MainResult;
 use starbase_utils::dirs;
 use std::env;
 use std::path::{Path, PathBuf};
@@ -130,7 +131,7 @@ async fn run_bin(bin_path: &Path, current_dir: &Path) -> Result<(), std::io::Err
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> MainResult {
     // console_subscriber::init();
 
     // Detect if we've been installed globally
@@ -153,7 +154,7 @@ async fn main() {
                                 .await
                                 .expect("Failed to run moon binary!");
 
-                            return;
+                            return Ok(());
                         }
                     }
                 }
@@ -162,5 +163,7 @@ async fn main() {
     }
 
     // Otherwise just run the CLI
-    run_cli().await
+    run_cli().await?;
+
+    Ok(())
 }

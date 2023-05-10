@@ -1,4 +1,4 @@
-use crate::errors::TargetError;
+use crate::target_error::TargetError;
 use crate::target_scope::TargetScope;
 use moon_common::{Id, ID_CHARS};
 use once_cell::sync::Lazy;

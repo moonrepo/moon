@@ -38,8 +38,8 @@ pub fn get_assert_stderr_output(assert: &Assert) -> String {
     // filter out log lines and env vars!
     for line in stderr.split('\n') {
         if !line.starts_with("[ERROR")
-            && !line.starts_with("[WARN")
-            && !line.starts_with("[INFO")
+            && !line.starts_with("[ WARN")
+            && !line.starts_with("[ INFO")
             && !line.starts_with("[DEBUG")
             && !line.starts_with("[TRACE")
             && !line.starts_with("  MOON_")

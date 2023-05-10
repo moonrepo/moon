@@ -2,9 +2,14 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Started migrating to a newer logging implementation.
+
 #### ⚙️ Internal
 
 - Reworked file groups to use workspace relative paths, instead of project relative.
+- Reworked processes to better handle command line arguments, shells, and piped stdin input.
 
 ## 1.5.1
 

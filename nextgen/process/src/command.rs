@@ -174,16 +174,18 @@ impl Command {
     }
 
     pub fn set_prefix(&mut self, prefix: &str, width: Option<usize>) -> &mut Command {
+        let label = if let Some(width) = width {
+            format!("{: >width$}", prefix, width = width)
+        } else {
+            prefix.to_owned()
+        };
+
         if is_test_env() {
-            self.prefix = Some(format!("{prefix} |"));
+            self.prefix = Some(format!("{label} | "));
         } else {
             self.prefix = Some(format!(
                 "{} {} ",
-                color::log_target(if let Some(width) = width {
-                    format!("{: >width$}", prefix, width = width)
-                } else {
-                    prefix.to_owned()
-                }),
+                color::log_target(label),
                 color::muted("|")
             ));
         }

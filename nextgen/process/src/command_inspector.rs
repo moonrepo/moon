@@ -8,10 +8,68 @@ use std::fmt::{self, Display};
 use std::path::{Path, PathBuf, MAIN_SEPARATOR};
 use tracing::{debug, enabled};
 
+#[derive(Debug)]
 pub struct CommandLine {
     pub command: Vec<String>,
     pub input: Vec<String>,
     pub main_command: String,
+}
+
+impl CommandLine {
+    pub fn new(command: &Command) -> CommandLine {
+        let mut command_line: Vec<String> = vec![];
+        let mut input_line: Vec<String> = vec![];
+        let mut main_line: Vec<String> = vec![];
+
+        let push_to_line = |line: &mut Vec<String>| {
+            line.push(command.bin.to_string_lossy().to_string());
+
+            for arg in &command.args {
+                line.push(arg.to_string_lossy().to_string());
+            }
+        };
+
+        // Extract the main command, without shell, for other purposes!
+        push_to_line(&mut main_line);
+
+        // If wrapped in a shell, the shell binary and arguments
+        // must be placed at the start of the line.
+        if let Some(shell) = &command.shell {
+            command_line.push(shell.bin.clone());
+            command_line.extend(shell.args.clone());
+
+            // If the main command should be passed via stdin,
+            // then append the input line instead of the command line.
+            if shell.pass_args_stdin {
+                push_to_line(&mut input_line);
+
+                // Otherwise append as a *single* argument. This typically
+                // appears after a "-" argument (should come from shell).
+            } else {
+                let mut sub_line: Vec<String> = vec![];
+                push_to_line(&mut sub_line);
+
+                command_line.push(join(sub_line));
+            }
+
+            // Otherwise we have a normal command and arguments.
+        } else {
+            push_to_line(&mut command_line);
+
+            // That also may have input.
+            if !command.input.is_empty() {
+                for input in &command.input {
+                    input_line.push(input.to_string_lossy().to_string());
+                }
+            }
+        }
+
+        CommandLine {
+            command: command_line,
+            input: input_line,
+            main_command: join(main_line),
+        }
+    }
 }
 
 impl Display for CommandLine {
@@ -57,7 +115,8 @@ impl<'cmd> CommandInspector<'cmd> {
     }
 
     pub fn get_command_line(&self) -> &CommandLine {
-        self.line_cache.get_or_init(|| self.create_command_line())
+        self.line_cache
+            .get_or_init(|| CommandLine::new(self.command))
     }
 
     pub fn get_prefix(&self) -> String {
@@ -86,7 +145,7 @@ impl<'cmd> CommandInspector<'cmd> {
         workspace_root: &Path,
         working_dir: Option<&Path>,
     ) -> String {
-        let working_dir = working_dir.unwrap_or(&workspace_root);
+        let working_dir = working_dir.unwrap_or(workspace_root);
 
         let target_dir = if working_dir == workspace_root {
             "workspace".into()
@@ -95,7 +154,7 @@ impl<'cmd> CommandInspector<'cmd> {
                 ".{}{}",
                 MAIN_SEPARATOR,
                 working_dir
-                    .strip_prefix(&workspace_root)
+                    .strip_prefix(workspace_root)
                     .unwrap()
                     .to_string_lossy(),
             )
@@ -155,57 +214,5 @@ impl<'cmd> CommandInspector<'cmd> {
             "Running command {}",
             color::shell(command_line.to_string())
         );
-    }
-
-    fn create_command_line(&self) -> CommandLine {
-        let mut command_line: Vec<String> = vec![];
-        let mut input_line: Vec<String> = vec![];
-        let mut main_line: Vec<String> = vec![];
-
-        let push_to_line = |line: &mut Vec<String>| {
-            line.push(self.command.bin.to_string_lossy().to_string());
-
-            for arg in &self.command.args {
-                line.push(arg.to_string_lossy().to_string());
-            }
-        };
-
-        // Extract the main command, without shell, for other purposes!
-        push_to_line(&mut main_line);
-
-        // If wrapped in a shell, the shell binary and arguments
-        // must be placed at the start of the line.
-        if let Some(shell) = &self.command.shell {
-            command_line.push(shell.bin.clone());
-            command_line.extend(shell.args.clone());
-
-            // If the main command should be passed via stdin,
-            // then append the input line instead of the command line.
-            if shell.pass_args_stdin {
-                push_to_line(&mut input_line);
-
-                // Otherwise append as regular arguments. They typically
-                // appear after a "-" argument (should come from shell).
-            } else {
-                push_to_line(&mut command_line);
-            }
-
-            // Otherwise we have a normal command and arguments.
-        } else {
-            push_to_line(&mut command_line);
-
-            // That also may have input.
-            if !self.command.input.is_empty() {
-                for input in &self.command.input {
-                    input_line.push(input.to_string_lossy().to_string());
-                }
-            }
-        }
-
-        CommandLine {
-            command: command_line,
-            input: input_line,
-            main_command: join(main_line),
-        }
     }
 }

@@ -431,6 +431,7 @@ This is a convenience setting for local development that sets the following task
 
 - [`cache`](#cache) -> Turned off
 - [`outputStyle`](#outputstyle) -> Set to "stream"
+- [`persistent`](#persistent) -> Turned on
 - [`runInCI`](#runinci) -> Turned off
 
 ```yaml title="moon.yml" {5}
@@ -656,6 +657,28 @@ tasks:
     options:
       outputStyle: 'stream'
 ```
+
+#### `persistent`
+
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#persistent" />
+
+Marks the task as persistent (continuously running). Persistent tasks are a special case that are
+handled differently than non-persistent tasks in the dependency graph. When running a target, all
+persistent tasks are _ran last_ and _in parallel_, after all their dependencies have completed.
+
+This is extremely useful for running a server (or a watcher) in the background while other tasks are
+running.
+
+```yaml title="moon.yml" {5}
+tasks:
+  dev:
+    # ...
+    options:
+      persistent: true
+```
+
+> We suggest using the [`local`](#local) setting instead, which enables this setting, amongst other
+> useful settings.
 
 #### `retryCount`
 

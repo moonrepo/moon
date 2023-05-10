@@ -63,6 +63,7 @@ mod from_config {
             TaskOptions {
                 cache: false,
                 output_style: Some(TaskOutputStyle::Stream),
+                persistent: true,
                 run_in_ci: false,
                 ..TaskOptions::default()
             }
@@ -85,6 +86,7 @@ mod from_config {
             TaskOptions {
                 cache: false,
                 output_style: Some(TaskOutputStyle::Stream),
+                persistent: true,
                 run_in_ci: false,
                 ..TaskOptions::default()
             }
@@ -111,6 +113,34 @@ mod from_config {
             TaskOptions {
                 cache: false,
                 output_style: Some(TaskOutputStyle::Buffer),
+                persistent: true,
+                run_in_ci: false,
+                ..TaskOptions::default()
+            }
+        )
+    }
+
+    #[test]
+    fn can_override_local_persistent() {
+        let task = Task::from_config(
+            Target::new("foo", "test").unwrap(),
+            &TaskConfig {
+                local: true,
+                options: TaskOptionsConfig {
+                    persistent: Some(false),
+                    ..TaskOptionsConfig::default()
+                },
+                ..TaskConfig::default()
+            },
+        )
+        .unwrap();
+
+        assert_eq!(
+            task.options,
+            TaskOptions {
+                cache: false,
+                output_style: Some(TaskOutputStyle::Stream),
+                persistent: false,
                 run_in_ci: false,
                 ..TaskOptions::default()
             }

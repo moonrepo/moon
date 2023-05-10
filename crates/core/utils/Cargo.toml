@@ -20,7 +20,6 @@ regex = { workspace = true }
 rustc-hash = { workspace = true }
 semver = "1.0.17"
 serde = { workspace = true }
-shell-words = "1.1.0"
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true }
 tokio = { workspace = true }

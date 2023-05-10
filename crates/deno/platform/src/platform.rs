@@ -11,12 +11,13 @@ use moon_error::MoonError;
 use moon_hasher::{DepsHasher, HashSet};
 use moon_logger::debug;
 use moon_platform::{Platform, Runtime, Version};
+use moon_process::Command;
 use moon_project::{Project, ProjectError};
 use moon_task::Task;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{Tool, ToolError, ToolManager};
 use moon_typescript_platform::TypeScriptTargetHasher;
-use moon_utils::{async_trait, process::Command};
+use moon_utils::async_trait;
 use proto::{get_sha256_hash_of_file, Proto};
 use rustc_hash::FxHashMap;
 use std::{
@@ -183,6 +184,7 @@ impl Platform for DenoPlatform {
                 &self.config.deps_file,
             ])
             .cwd(working_dir)
+            .create_async()
             .exec_stream_output()
             .await?;
 

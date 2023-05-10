@@ -1,4 +1,5 @@
 use moon_error::MoonError;
+use moon_process::ProcessError;
 use moon_project::ProjectError;
 use moon_target::TargetError;
 use moon_task::TaskError;
@@ -18,6 +19,9 @@ pub enum RunnerError {
 
     #[error(transparent)]
     Glob(#[from] GlobError),
+
+    #[error(transparent)]
+    Process(#[from] ProcessError),
 
     #[error(transparent)]
     Project(#[from] ProjectError),

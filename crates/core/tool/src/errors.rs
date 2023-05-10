@@ -1,5 +1,6 @@
 use moon_error::MoonError;
 use moon_platform_runtime::Runtime;
+use moon_process::ProcessError;
 use proto::ProtoError;
 use starbase_styles::{Style, Stylize};
 use thiserror::Error;
@@ -20,6 +21,9 @@ pub enum ToolError {
 
     #[error(transparent)]
     Moon(#[from] MoonError),
+
+    #[error(transparent)]
+    Process(#[from] ProcessError),
 
     #[error(transparent)]
     Proto(#[from] ProtoError),

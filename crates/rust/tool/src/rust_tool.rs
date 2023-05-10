@@ -1,9 +1,9 @@
 use moon_config::RustConfig;
 use moon_logger::debug;
 use moon_platform_runtime::Version;
+use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{Tool, ToolError};
-use moon_utils::process::Command;
 use proto::{async_trait, rust::RustLanguage, Installable, Proto, Tool as ProtoTool};
 use rustc_hash::FxHashMap;
 use std::{
@@ -50,6 +50,7 @@ impl RustTool {
         Command::new("cargo")
             .args(args)
             .cwd(working_dir)
+            .create_async()
             .exec_stream_output()
             .await?;
 

@@ -2,10 +2,10 @@ use crate::node_tool::NodeTool;
 use moon_config::NpmConfig;
 use moon_logger::debug;
 use moon_node_lang::{npm, LockfileDependencyVersions, NPM};
+use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
 use moon_utils::is_ci;
-use moon_utils::process::Command;
 use proto::{
     async_trait,
     node::{NodeDependencyManager, NodeDependencyManagerType},
@@ -135,7 +135,8 @@ impl DependencyManager<NodeTool> for NpmTool {
         self.create_command(node)?
             .args(["dedupe"])
             .cwd(working_dir)
-            .log_running_command(log)
+            .set_print_command(log)
+            .create_async()
             .exec_capture_output()
             .await?;
 
@@ -185,7 +186,9 @@ impl DependencyManager<NodeTool> for NpmTool {
 
         let mut cmd = self.create_command(node)?;
 
-        cmd.args(args).cwd(working_dir).log_running_command(log);
+        cmd.args(args).cwd(working_dir).set_print_command(log);
+
+        let mut cmd = cmd.create_async();
 
         if env::var("MOON_TEST_HIDE_INSTALL_OUTPUT").is_ok() {
             cmd.exec_capture_output().await?;
@@ -213,7 +216,7 @@ impl DependencyManager<NodeTool> for NpmTool {
             cmd.args(["--workspace", package_name]);
         }
 
-        cmd.exec_stream_output().await?;
+        cmd.create_async().exec_stream_output().await?;
 
         Ok(())
     }

@@ -1,5 +1,6 @@
 use ignore::Error as IgnoreError;
 use moon_error::MoonError;
+use moon_process::ProcessError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -12,4 +13,7 @@ pub enum VcsError {
 
     #[error(transparent)]
     Moon(#[from] MoonError),
+
+    #[error(transparent)]
+    Process(#[from] ProcessError),
 }

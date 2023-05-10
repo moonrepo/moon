@@ -8,11 +8,11 @@ use moon_node_lang::{
     PackageJson,
 };
 use moon_node_tool::NodeTool;
+use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
 use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
-use moon_utils::{get_cache_dir, process::Command};
-use moon_utils::{path, string_vec};
+use moon_utils::{get_cache_dir, path, string_vec};
 use proto::Installable;
 use rustc_hash::FxHashMap;
 use starbase_styles::color;

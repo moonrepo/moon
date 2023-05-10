@@ -114,6 +114,10 @@ impl<'cmd> CommandInspector<'cmd> {
         }
     }
 
+    pub fn get_cache_key(&self) -> String {
+        format!("{}", self.get_command_line())
+    }
+
     pub fn get_command_line(&self) -> &CommandLine {
         self.line_cache
             .get_or_init(|| CommandLine::new(self.command))

@@ -2,8 +2,7 @@ use crate::vcs::{TouchedFiles, Vcs, VcsResult};
 use async_trait::async_trait;
 use cached::{CachedAsync, TimedCache};
 use moon_config::VcsConfig;
-use moon_error::MoonError;
-use moon_utils::process::{output_to_string, output_to_trimmed_string, Command};
+use moon_process::{output_to_string, output_to_trimmed_string, Command, ProcessError};
 use regex::Regex;
 use rustc_hash::FxHashSet;
 use starbase_utils::fs;
@@ -115,17 +114,18 @@ impl Svn {
         }
     }
 
-    async fn run_command(&self, mut command: Command, trim: bool) -> VcsResult<String> {
+    async fn run_command(&self, command: Command, trim: bool) -> VcsResult<String> {
+        let mut cmd = command.create_async();
         let mut cache = self.cache.write().await;
-        let (mut cache_key, _) = command.get_command_line();
+        let mut cache_key = cmd.inspector.get_cache_key();
 
         if trim {
             cache_key += " [trimmed]";
         }
 
-        let value: Result<_, MoonError> = cache
+        let value: Result<_, ProcessError> = cache
             .try_get_or_set_with(cache_key, || async {
-                let output = command.exec_capture_output().await?;
+                let output = cmd.exec_capture_output().await?;
 
                 Ok(if trim {
                     output_to_trimmed_string(&output.stdout)

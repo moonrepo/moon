@@ -110,7 +110,7 @@ impl DepGraph {
         let mut sorted_batches: BatchedTopoSort = vec![];
         let mut persistent: Vec<NodeIndex> = vec![];
 
-        for mut batch in batches.into_iter().rev().collect::<Vec<_>>() {
+        for mut batch in batches.into_iter().rev() {
             batch.retain(|ix| match self.graph.node_weight(*ix).unwrap() {
                 ActionNode::RunPersistentTarget(_, _) => {
                     persistent.push(*ix);

@@ -1375,15 +1375,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fern"
-version = "0.6.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9f0c14694cbd524c8720dd69b0e3179344f04ebb5f90f2e4a440c6ea3b2f1ee"
-dependencies = [
- "log",
-]
-
-[[package]]
 name = "figment"
 version = "0.10.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2925,9 +2916,7 @@ dependencies = [
 name = "moon_logger"
 version = "0.1.0"
 dependencies = [
- "chrono",
  "console",
- "fern",
  "log",
  "starbase_styles",
 ]

@@ -19,6 +19,8 @@ use moon_utils::{is_ci, is_test_env, path, time};
 use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
+use tokio::time::sleep;
+use tokio::{task, time::Duration};
 
 const LOG_TARGET: &str = "moon:runner";
 
@@ -511,6 +513,7 @@ impl<'a> Runner<'a> {
         let primary_longest_width = context.primary_targets.iter().map(|t| t.id.len()).max();
         let is_primary = context.primary_targets.contains(&self.task.target);
         let is_real_ci = is_ci() && !is_test_env();
+        let is_persistent = self.task.options.persistent;
         let output;
 
         // When a task is configured as local (no caching), or the interactive flag is passed,
@@ -532,6 +535,27 @@ impl<'a> Runner<'a> {
         } else {
             None
         };
+
+        // For long-running process, log a message every 30 seconds to indicate it's still running
+        let interval_target = self.task.target.clone();
+        let interval_handle = task::spawn(async move {
+            if is_persistent {
+                return;
+            }
+
+            let mut secs = 0;
+
+            loop {
+                sleep(Duration::from_secs(30)).await;
+                secs += 30;
+
+                println!(
+                    "{} {}",
+                    label_checkpoint(&interval_target, Checkpoint::RunStart),
+                    color::muted(format!("running for {}s", secs))
+                );
+            }
+        });
 
         loop {
             let mut attempt = Attempt::new(attempt_index);
@@ -578,6 +602,8 @@ impl<'a> Runner<'a> {
                         output = out;
                         break;
                     } else if attempt_index >= attempt_total {
+                        interval_handle.abort();
+
                         return Err(RunnerError::Process(output_to_error(
                             self.task.command.clone(),
                             &out,
@@ -599,10 +625,14 @@ impl<'a> Runner<'a> {
                     attempt.done(ActionStatus::Failed);
                     attempts.push(attempt);
 
+                    interval_handle.abort();
+
                     return Err(RunnerError::Process(error));
                 }
             }
         }
+
+        interval_handle.abort();
 
         // Write the cache with the result and output
         self.cache.exit_code = output.status.code().unwrap_or(0);

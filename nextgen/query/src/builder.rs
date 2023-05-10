@@ -1,5 +1,5 @@
-use crate::errors::QueryError;
 use crate::parser::{parse_query, AstNode, ComparisonOperator, LogicalOperator};
+use crate::query_error::QueryError;
 use moon_config::{PlatformType, ProjectLanguage, ProjectType, TaskType};
 use starbase_utils::glob::{GlobError, GlobSet};
 use std::cmp::PartialEq;

@@ -102,6 +102,9 @@ pub struct TaskOptionsConfig {
     pub output_style: Option<TaskOutputStyle>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub persistent: Option<bool>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub retry_count: Option<u8>,
 
     #[serde(skip_serializing_if = "Option::is_none")]

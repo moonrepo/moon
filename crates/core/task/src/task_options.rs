@@ -57,6 +57,8 @@ pub struct TaskOptions {
 
     pub output_style: Option<TaskOutputStyle>,
 
+    pub persistent: bool,
+
     pub retry_count: u8,
 
     pub run_deps_in_parallel: bool,
@@ -80,6 +82,7 @@ impl Default for TaskOptions {
             merge_inputs: TaskMergeStrategy::Append,
             merge_outputs: TaskMergeStrategy::Append,
             output_style: None,
+            persistent: false,
             retry_count: 0,
             run_deps_in_parallel: true,
             run_in_ci: true,
@@ -93,6 +96,10 @@ impl TaskOptions {
     pub fn merge(&mut self, config: &TaskOptionsConfig) {
         if let Some(affected_files) = &config.affected_files {
             self.affected_files = TaskOptionAffectedFiles::from_config(affected_files);
+        }
+
+        if let Some(cache) = &config.cache {
+            self.cache = *cache;
         }
 
         if let Some(env_file) = &config.env_file {
@@ -121,6 +128,10 @@ impl TaskOptions {
 
         if let Some(output_style) = &config.output_style {
             self.output_style = Some(output_style.clone());
+        }
+
+        if let Some(persistent) = &config.persistent {
+            self.persistent = *persistent;
         }
 
         if let Some(retry_count) = &config.retry_count {
@@ -162,6 +173,7 @@ impl TaskOptions {
             output_style: config
                 .output_style
                 .or_else(|| is_local.then_some(TaskOutputStyle::Stream)),
+            persistent: config.persistent.unwrap_or(is_local),
             retry_count: config.retry_count.unwrap_or_default(),
             run_deps_in_parallel: config.run_deps_in_parallel.unwrap_or(true),
             run_in_ci: config.run_in_ci.unwrap_or(!is_local),
@@ -180,6 +192,10 @@ impl TaskOptions {
             config.affected_files = Some(affected_files.to_config());
         }
 
+        if self.cache != default_options.cache {
+            config.cache = Some(self.cache);
+        }
+
         if let Some(env_file) = &self.env_file {
             config.env_file = Some(if env_file == ".env" {
                 TaskOptionEnvFileConfig::Enabled(true)
@@ -190,6 +206,10 @@ impl TaskOptions {
 
         if let Some(output_style) = &self.output_style {
             config.output_style = Some(output_style.clone());
+        }
+
+        if self.persistent != default_options.persistent {
+            config.persistent = Some(self.persistent);
         }
 
         if self.run_deps_in_parallel != default_options.run_deps_in_parallel {

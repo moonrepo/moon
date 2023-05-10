@@ -23,6 +23,7 @@ export interface TaskOptionsConfig {
 	mergeInputs: TaskMergeStrategy | null;
 	mergeOutputs: TaskMergeStrategy | null;
 	outputStyle: TaskOutputStyle | null;
+	persistent: boolean | null;
 	retryCount: number | null;
 	runDepsInParallel: boolean | null;
 	runInCI: boolean | null;

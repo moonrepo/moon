@@ -70,6 +70,7 @@ export interface RunReport {
 export type ActionNode =
 	| ActionNodeInstallDeps
 	| ActionNodeInstallProjectDeps
+	| ActionNodeRunPersistentTarget
 	| ActionNodeRunTarget
 	| ActionNodeSetupTool
 	| ActionNodeSyncProject;
@@ -86,6 +87,11 @@ export interface ActionNodeInstallProjectDeps {
 
 export interface ActionNodeRunTarget {
 	action: 'RunTarget';
+	params: [Runtime, string];
+}
+
+export interface ActionNodeRunPersistentTarget {
+	action: 'RunPersistentTarget';
 	params: [Runtime, string];
 }
 

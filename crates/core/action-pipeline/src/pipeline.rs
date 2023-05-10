@@ -293,7 +293,10 @@ impl Pipeline {
         let mut invalid_count = 0;
 
         for result in results {
-            if compact && !result.label.contains("RunTarget") {
+            if compact
+                && !result.label.contains("RunTarget")
+                && !result.label.contains("RunPersistentTarget")
+            {
                 continue;
             }
 

@@ -1,6 +1,5 @@
 ---
 source: crates/core/dep-graph/tests/dep_graph_test.rs
-assertion_line: 283
 expression: graph.to_dot()
 ---
 digraph {
@@ -24,9 +23,9 @@ digraph {
     5 -> 4 [ arrowhead=box, arrowtail=box]
     6 -> 0 [ arrowhead=box, arrowtail=box]
     6 -> 4 [ arrowhead=box, arrowtail=box]
-    6 -> 2 [ arrowhead=box, arrowtail=box]
     7 -> 0 [ arrowhead=box, arrowtail=box]
     6 -> 7 [ arrowhead=box, arrowtail=box]
+    6 -> 2 [ arrowhead=box, arrowtail=box]
     8 -> 1 [ arrowhead=box, arrowtail=box]
     8 -> 6 [ arrowhead=box, arrowtail=box]
     8 -> 3 [ arrowhead=box, arrowtail=box]

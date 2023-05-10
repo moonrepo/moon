@@ -148,7 +148,8 @@ pub async fn process_action(
         }
 
         // Run a task within a project
-        ActionNode::RunTarget(runtime, target_id) => {
+        ActionNode::RunTarget(runtime, target_id)
+        | ActionNode::RunPersistentTarget(runtime, target_id) => {
             let target = Target::parse(target_id)?;
             let project = local_project_graph.get(target.scope_id.as_ref().unwrap())?;
 

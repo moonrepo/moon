@@ -19,8 +19,10 @@ use moon_utils::{is_ci, is_test_env, path, time};
 use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
-use tokio::time::sleep;
-use tokio::{task, time::Duration};
+use tokio::{
+    task,
+    time::{sleep, Duration},
+};
 
 const LOG_TARGET: &str = "moon:runner";
 

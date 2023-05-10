@@ -1,8 +1,3 @@
-// pub mod color;
-mod logger;
-
-pub use logger::Logger;
-
 // Re-export so that consumers dont need to install these crates
 pub use console::{measure_text_width, pad_str, pad_str_with, strip_ansi_codes, Alignment};
 pub use log::{debug, error, info, max_level, trace, warn, LevelFilter};

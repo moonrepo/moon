@@ -24,14 +24,14 @@ use crate::commands::task::task;
 use crate::commands::teardown::teardown;
 use crate::commands::upgrade::upgrade;
 use crate::helpers::{check_for_new_version, setup_colors};
-use app::{App, Commands, DockerCommands, MigrateCommands, NodeCommands, QueryCommands};
+use app::{App as CLI, Commands, DockerCommands, MigrateCommands, NodeCommands, QueryCommands};
 use clap::Parser;
 use console::Term;
 use enums::{CacheMode, LogLevel};
 use moon_logger::debug;
 use moon_terminal::ExtendedTerm;
 use query::QueryHashDiffOptions;
-use starbase::{tracing::TracingOptions, App as Moon};
+use starbase::{tracing::TracingOptions, App, AppResult};
 use starbase_styles::color;
 use starbase_utils::string_vec;
 use std::env;
@@ -65,17 +65,17 @@ fn setup_caching(mode: &CacheMode) {
     }
 }
 
-pub async fn run_cli() {
-    Moon::setup_diagnostics();
+pub async fn run_cli() -> AppResult {
+    App::setup_diagnostics();
 
     // Create app and parse arguments
-    let args = App::parse();
+    let args = CLI::parse();
 
     setup_colors(args.color);
     setup_logging(&args.log);
     setup_caching(&args.cache);
 
-    Moon::setup_tracing_with_options(TracingOptions {
+    App::setup_tracing_with_options(TracingOptions {
         filter_modules: string_vec!["moon", "proto", "starbase"],
         log_env: "MOON_LOG".into(),
         log_file: args.log_file,
@@ -325,4 +325,6 @@ pub async fn run_cli() {
             Term::buffered_stderr().render_error(error);
         }
     }
+
+    Ok(())
 }

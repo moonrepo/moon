@@ -1,9 +1,10 @@
 use moon_config::{TaskCommandArgs, TaskConfig, TasksConfigsMap};
 use moon_logger::{debug, warn};
 use moon_node_lang::package_json::{PackageJson, ScriptsSet};
+use moon_process::split_args;
 use moon_task::{PlatformType, TaskError, TaskID};
 use moon_utils::regex::{ID_CLEAN, UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
-use moon_utils::{process, regex, string_vec};
+use moon_utils::{regex, string_vec};
 use once_cell::sync::Lazy;
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
@@ -152,7 +153,7 @@ pub fn create_task(
     context: TaskContext,
 ) -> Result<TaskConfig, TaskError> {
     let is_wrapping = matches!(context, TaskContext::WrapRunScript);
-    let script_args = process::split_args(script)?;
+    let script_args = split_args(script)?;
     let mut task_config = TaskConfig::default();
     let mut args = vec![];
     let mut outputs = vec![];

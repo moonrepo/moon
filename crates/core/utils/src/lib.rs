@@ -1,9 +1,7 @@
 pub mod fs;
 pub mod path;
-pub mod process;
 pub mod regex;
 pub mod semver;
-pub mod shell;
 pub mod time;
 
 pub use async_trait::async_trait;

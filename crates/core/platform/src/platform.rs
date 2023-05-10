@@ -7,10 +7,10 @@ use moon_config::{
 use moon_error::MoonError;
 use moon_hasher::HashSet;
 use moon_platform_runtime::{Runtime, Version};
+use moon_process::Command;
 use moon_project::{Project, ProjectError};
 use moon_task::Task;
 use moon_tool::{Tool, ToolError};
-use moon_utils::process::Command;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::fmt::Debug;

@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 moon_config = { path = "../config" }
 moon_error = { path = "../error" }
+moon_process = { path = "../../../nextgen/process" }
 moon_utils = { path = "../utils" }
 async-trait = { workspace = true }
 cached = { workspace = true, features = ["async"] }

@@ -10,15 +10,12 @@ use moon_error::MoonError;
 use moon_hasher::HashSet;
 use moon_logger::{debug, warn};
 use moon_platform_runtime::Runtime;
+use moon_process::{join_args, output_to_error, output_to_string, Command, Output};
 use moon_project::Project;
 use moon_target::{Target, TargetError, TargetScope};
 use moon_task::{Task, TaskError, TaskOptionAffectedFiles};
 use moon_terminal::{label_checkpoint, Checkpoint};
-use moon_utils::{
-    is_ci, is_test_env, path,
-    process::{self, format_running_command, output_to_string, Command, Output},
-    time,
-};
+use moon_utils::{is_ci, is_test_env, path, time};
 use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
@@ -249,11 +246,11 @@ impl<'a> Runner<'a> {
             .cwd(working_dir)
             .envs(self.create_env_vars().await?)
             // We need to handle non-zero's manually
-            .no_error_on_failure();
+            .set_error_on_nonzero(false);
 
         // Wrap in a shell
         if task.platform.is_system() && task.options.shell {
-            command.wrap_in_shell();
+            command.with_shell();
         }
 
         // Passthrough args
@@ -540,7 +537,7 @@ impl<'a> Runner<'a> {
             let mut attempt = Attempt::new(attempt_index);
 
             self.print_target_label(Checkpoint::RunStart, &attempt, attempt_total)?;
-            self.print_target_command(context)?;
+            self.print_target_command(context, command)?;
             self.flush_output()?;
 
             let possible_output = if should_stream_output {
@@ -549,12 +546,15 @@ impl<'a> Runner<'a> {
                 }
 
                 if is_interactive {
-                    command.exec_stream_output().await
+                    command.create_async().exec_stream_output().await
                 } else {
-                    command.exec_stream_and_capture_output().await
+                    command
+                        .create_async()
+                        .exec_stream_and_capture_output()
+                        .await
                 }
             } else {
-                command.exec_capture_output().await
+                command.create_async().exec_capture_output().await
             };
 
             match possible_output {
@@ -578,7 +578,11 @@ impl<'a> Runner<'a> {
                         output = out;
                         break;
                     } else if attempt_index >= attempt_total {
-                        return Err(RunnerError::Moon(command.output_to_error(&out, false)));
+                        return Err(RunnerError::Process(output_to_error(
+                            self.task.command.clone(),
+                            &out,
+                            false,
+                        )));
                     } else {
                         attempt_index += 1;
 
@@ -595,7 +599,7 @@ impl<'a> Runner<'a> {
                     attempt.done(ActionStatus::Failed);
                     attempts.push(attempt);
 
-                    return Err(RunnerError::Moon(error));
+                    return Err(RunnerError::Process(error));
                 }
             }
         }
@@ -725,34 +729,34 @@ impl<'a> Runner<'a> {
         Ok(())
     }
 
-    pub fn print_target_command(&self, context: &ActionContext) -> Result<(), MoonError> {
+    pub fn print_target_command(
+        &self,
+        context: &ActionContext,
+        command: &Command,
+    ) -> Result<(), MoonError> {
         if !self.workspace.config.runner.log_running_command {
             return Ok(());
         }
 
         let task = &self.task;
-        let mut args = vec![];
+        let mut args = vec![&task.command];
         args.extend(&task.args);
 
         if context.should_inherit_args(&task.target) {
             args.extend(&context.passthrough_args);
         }
 
-        let command_line = if args.is_empty() {
-            task.command.clone()
-        } else {
-            format!("{} {}", task.command, process::join_args(args))
-        };
+        let command_line = join_args(args);
 
-        let message = format_running_command(
+        let message = color::muted_light(command.inspect().format_command(
             &command_line,
+            &self.workspace.root,
             Some(if task.options.run_from_workspace_root {
                 &self.workspace.root
             } else {
                 &self.project.root
             }),
-            Some(&self.workspace.root),
-        );
+        ));
 
         self.stdout.write_line(&message)?;
 

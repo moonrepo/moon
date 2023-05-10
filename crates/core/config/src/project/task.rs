@@ -2,12 +2,11 @@ use crate::project::language_platform::PlatformType;
 use crate::project::task_options::TaskOptionsConfig;
 use crate::types::{FilePath, InputValue, TargetID};
 use crate::validators::{is_default, validate_child_or_root_path, validate_id, validate_target};
-use moon_utils::process::split_args;
-use moon_utils::process::ArgsParseError;
 use moon_utils::regex::ENV_VAR;
 use rustc_hash::FxHashMap;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use shell_words::{split as split_args, ParseError as ArgsParseError};
 use strum::{Display, EnumString};
 use validator::{Validate, ValidationError};
 

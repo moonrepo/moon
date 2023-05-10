@@ -1,7 +1,7 @@
 use crate::errors::ToolError;
 use async_trait::async_trait;
 use moon_lang::LockfileDependencyVersions;
-use moon_utils::process::Command;
+use moon_process::Command;
 use rustc_hash::FxHashMap;
 use std::any::Any;
 use std::fmt::Debug;

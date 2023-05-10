@@ -1,6 +1,5 @@
 use moon_error::MoonError;
 use moon_target::TargetError;
-use moon_utils::process::ArgsParseError;
 use starbase_styles::{Style, Stylize};
 use std::path::PathBuf;
 use thiserror::Error;
@@ -24,7 +23,7 @@ pub enum TaskError {
     MissingOutput(String, String),
 
     #[error(transparent)]
-    ArgsParse(#[from] ArgsParseError),
+    ArgsParse(#[from] shell_words::ParseError),
 
     #[error(transparent)]
     Moon(#[from] MoonError),

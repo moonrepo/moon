@@ -5,9 +5,9 @@ use moon_config::{NodeConfig, NodePackageManager};
 use moon_logger::debug;
 use moon_node_lang::node;
 use moon_platform_runtime::Version;
+use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
-use moon_utils::process::Command;
 use proto::{async_trait, node::NodeLanguage, Executable, Installable, Proto, Tool as ProtoTool};
 use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
@@ -81,6 +81,7 @@ impl NodeTool {
 
         cmd.args(exec_args)
             .cwd(working_dir)
+            .create_async()
             .exec_stream_output()
             .await?;
 

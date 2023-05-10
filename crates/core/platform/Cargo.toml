@@ -9,10 +9,10 @@ moon_config = { path = "../config" }
 moon_error = { path = "../error" }
 moon_hasher = { path = "../hasher" }
 moon_platform_runtime = { path = "../platform-runtime" }
+moon_process = { path = "../../../nextgen/process" }
 moon_project = { path = "../project" }
 moon_task = { path = "../task" }
 moon_tool = { path = "../tool" }
-moon_utils = { path = "../utils" }
 async-trait = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }

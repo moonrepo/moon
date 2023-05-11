@@ -7,6 +7,7 @@
 - Added support for persistent tasks.
   - Added `persistent` task option to `moon.yml` (is set via `local`).
   - Persistent tasks _run last_ in the dependency graph.
+- Updated long running processes to log a checkpoint indicating it's still running.
 - Started migrating to a newer logging implementation.
 
 #### ⚙️ Internal

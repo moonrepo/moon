@@ -3,8 +3,8 @@
 
 use moon::{generate_project_graph, load_workspace_from};
 use moon_config::{
-    InheritedTasksConfig, PlatformType, TaskCommandArgs, TaskConfig, TaskOptionsConfig,
-    WorkspaceConfig, WorkspaceProjects,
+    InheritedTasksConfig, NodeConfig, PlatformType, RustConfig, TaskCommandArgs, TaskConfig,
+    TaskOptionsConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
 };
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
@@ -336,6 +336,11 @@ tasks:
                 ..WorkspaceConfig::default()
             };
 
+            let toolchain_config = ToolchainConfig {
+                node: Some(NodeConfig::default()),
+                ..ToolchainConfig::default()
+            };
+
             let tasks_config = InheritedTasksConfig {
                 tasks: BTreeMap::from_iter([
                     (
@@ -372,7 +377,7 @@ tasks:
             let sandbox = create_sandbox_with_config(
                 "task-inheritance",
                 Some(workspace_config),
-                None,
+                Some(toolchain_config),
                 Some(tasks_config),
             );
 
@@ -1419,6 +1424,12 @@ mod detection {
             ..WorkspaceConfig::default()
         };
 
+        let toolchain_config = ToolchainConfig {
+            node: Some(NodeConfig::default()),
+            rust: Some(RustConfig::default()),
+            ..ToolchainConfig::default()
+        };
+
         let tasks_config = InheritedTasksConfig {
             tasks: BTreeMap::from_iter([(
                 "command".to_owned(),
@@ -1433,7 +1444,7 @@ mod detection {
         let sandbox = create_sandbox_with_config(
             "project-graph/langs",
             Some(workspace_config),
-            None,
+            Some(toolchain_config),
             Some(tasks_config),
         );
 

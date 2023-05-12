@@ -1,5 +1,5 @@
 use moon::{generate_project_graph, load_workspace_from};
-use moon_config::{WorkspaceConfig, WorkspaceProjects};
+use moon_config::{NodeConfig, RustConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects};
 use moon_project::{Project, ProjectDependency, ProjectDependencySource};
 use moon_project_graph::ProjectGraph;
 use moon_test_utils::{
@@ -156,8 +156,18 @@ async fn get_queries_graph() -> (ProjectGraph, Sandbox) {
         ..WorkspaceConfig::default()
     };
 
-    let sandbox =
-        create_sandbox_with_config("project-graph/query", Some(workspace_config), None, None);
+    let toolchain_config = ToolchainConfig {
+        node: Some(NodeConfig::default()),
+        rust: Some(RustConfig::default()),
+        ..ToolchainConfig::default()
+    };
+
+    let sandbox = create_sandbox_with_config(
+        "project-graph/query",
+        Some(workspace_config),
+        Some(toolchain_config),
+        None,
+    );
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
     let graph = generate_project_graph(&mut workspace).await.unwrap();

@@ -1,4 +1,4 @@
-use moon_config::{PlatformType, ProjectLanguage};
+use moon_config::{PlatformType, ProjectLanguage, ToolchainConfig};
 use moon_utils::regex::{self, UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
 use once_cell::sync::Lazy;
 
@@ -11,16 +11,20 @@ static NODE_COMMANDS: Lazy<regex::Regex> = Lazy::new(|| {
     regex::create_regex("^(node|nodejs|npm|npx|yarn|yarnpkg|pnpm|pnpx|corepack)$").unwrap()
 });
 
-pub fn detect_task_platform(command: &str, language: &ProjectLanguage) -> PlatformType {
-    if DENO_COMMANDS.is_match(command) {
+pub fn detect_task_platform(
+    command: &str,
+    language: &ProjectLanguage,
+    toolchain_config: &ToolchainConfig,
+) -> PlatformType {
+    if toolchain_config.deno.is_some() && DENO_COMMANDS.is_match(command) {
         return PlatformType::Deno;
     }
 
-    if NODE_COMMANDS.is_match(command) {
+    if toolchain_config.node.is_some() && NODE_COMMANDS.is_match(command) {
         return PlatformType::Node;
     }
 
-    if RUST_COMMANDS.is_match(command) {
+    if toolchain_config.rust.is_some() && RUST_COMMANDS.is_match(command) {
         return PlatformType::Rust;
     }
 

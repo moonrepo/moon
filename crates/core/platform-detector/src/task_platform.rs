@@ -11,21 +11,35 @@ static NODE_COMMANDS: Lazy<regex::Regex> = Lazy::new(|| {
     regex::create_regex("^(node|nodejs|npm|npx|yarn|yarnpkg|pnpm|pnpx|corepack)$").unwrap()
 });
 
+fn use_platform_if_enabled(
+    platform: PlatformType,
+    toolchain_config: &ToolchainConfig,
+) -> PlatformType {
+    match platform {
+        PlatformType::Deno if toolchain_config.deno.is_some() => return platform,
+        PlatformType::Node if toolchain_config.node.is_some() => return platform,
+        PlatformType::Rust if toolchain_config.rust.is_some() => return platform,
+        _ => {}
+    };
+
+    PlatformType::System
+}
+
 pub fn detect_task_platform(
     command: &str,
     language: &ProjectLanguage,
     toolchain_config: &ToolchainConfig,
 ) -> PlatformType {
-    if toolchain_config.deno.is_some() && DENO_COMMANDS.is_match(command) {
-        return PlatformType::Deno;
+    if DENO_COMMANDS.is_match(command) {
+        return use_platform_if_enabled(PlatformType::Deno, toolchain_config);
     }
 
-    if toolchain_config.node.is_some() && NODE_COMMANDS.is_match(command) {
-        return PlatformType::Node;
+    if NODE_COMMANDS.is_match(command) {
+        return use_platform_if_enabled(PlatformType::Node, toolchain_config);
     }
 
-    if toolchain_config.rust.is_some() && RUST_COMMANDS.is_match(command) {
-        return PlatformType::Rust;
+    if RUST_COMMANDS.is_match(command) {
+        return use_platform_if_enabled(PlatformType::Rust, toolchain_config);
     }
 
     if UNIX_SYSTEM_COMMAND.is_match(command) || WINDOWS_SYSTEM_COMMAND.is_match(command) {
@@ -39,5 +53,5 @@ pub fn detect_task_platform(
         return PlatformType::System;
     }
 
-    platform
+    use_platform_if_enabled(platform, toolchain_config)
 }

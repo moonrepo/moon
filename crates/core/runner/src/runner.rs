@@ -83,7 +83,13 @@ impl<'a> Runner<'a> {
                 if !self.workspace.root.join(output).exists() {
                     return Err(RunnerError::Task(TaskError::MissingOutput(
                         self.task.target.id.clone(),
-                        path::to_string(output.strip_prefix(&self.project.source).unwrap())?,
+                        path::to_string(
+                            if let Ok(stripped) = output.strip_prefix(&self.project.source) {
+                                stripped
+                            } else {
+                                output
+                            },
+                        )?,
                     )));
                 }
             }

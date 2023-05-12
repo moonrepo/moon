@@ -192,7 +192,11 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             // Detect the platform if its unknown
             if task.platform.is_unknown() {
                 task.platform = if project_platform.is_unknown() {
-                    detect_task_platform(&task.command, &project.language)
+                    detect_task_platform(
+                        &task.command,
+                        &project.language,
+                        &self.workspace.toolchain_config,
+                    )
                 } else {
                     project_platform
                 };

@@ -5,6 +5,7 @@ toc_max_heading_level: 6
 
 import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 The `moon.yml` configuration file _is not required_ but can be used to define additional metadata
 for a project, override inherited tasks, and more at the project-level. When used, this file must
@@ -658,7 +659,7 @@ tasks:
       outputStyle: 'stream'
 ```
 
-#### `persistent`
+#### `persistent`<VersionLabel version="1.6.0" />
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#persistent" />
 
@@ -699,7 +700,10 @@ tasks:
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#runDepsInParallel" />
 
-Whether to run the task's [`deps`](#deps) in parallel or serial (in order). Defaults to `true`.
+Whether to run the task's direct [`deps`](#deps) in parallel or serial (in order). Defaults to
+`true`.
+
+When disabled, this _does not_ run dependencies of dependencies in serial, only direct dependencies.
 
 ```yaml title="moon.yml" {8}
 tasks:

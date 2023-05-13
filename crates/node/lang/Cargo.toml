@@ -11,7 +11,7 @@ moon_utils = { path = "../../core/utils" }
 cached = { workspace = true }
 content_inspector = "0.2.4"
 once_cell = { workspace = true }
-package-lock-json-parser = "0.2.0"
+package-lock-json-parser = "0.3.0"
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true, features = ["preserve_order"] }

@@ -23,14 +23,14 @@ config_cache_container!(
 pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVersions, MoonError> {
     let mut deps: LockfileDependencyVersions = FxHashMap::default();
 
-    let mut add_dep = |name: &str, version: &str, integrity: &str| {
+    let mut add_dep = |name: &str, version: &str, integrity: Option<&String>| {
         if !name.is_empty() {
             let mut list = vec![];
 
-            if integrity.is_empty() {
-                list.push(version.to_owned());
+            if let Some(int) = integrity {
+                list.push(int.to_owned());
             } else {
-                list.push(integrity.to_owned());
+                list.push(version.to_owned());
             }
 
             deps.entry(name.to_owned())
@@ -52,18 +52,18 @@ pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVer
                 let name_parts = name.split("node_modules/");
                 let resolved_name = name_parts.last().unwrap_or_default();
 
-                add_dep(resolved_name, &dep.version, &dep.integrity);
+                add_dep(resolved_name, &dep.version, dep.integrity.as_ref());
 
                 // workspaces/libnpmdiff
             } else if name.starts_with("workspaces") {
                 let name_parts = name.split("workspaces/");
                 let resolved_name = name_parts.last().unwrap_or_default();
 
-                add_dep(resolved_name, &dep.version, &dep.integrity);
+                add_dep(resolved_name, &dep.version, dep.integrity.as_ref());
 
                 // other
             } else if !name.is_empty() {
-                add_dep(&name, &dep.version, &dep.integrity);
+                add_dep(&name, &dep.version, dep.integrity.as_ref());
             }
         }
 
@@ -73,7 +73,7 @@ pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVer
             // to the root of the lockfile. We'd need to recursively extract everything,
             // but for now, this will get us most of the way.
             for (name, dep) in lockfile.dependencies.unwrap_or_default() {
-                add_dep(&name, &dep.version, &dep.integrity);
+                add_dep(&name, &dep.version, dep.integrity.as_ref());
             }
         }
     }
@@ -136,12 +136,12 @@ mod tests {
                 dependencies: Some(HashMap::from_iter([(
                     "@babel/helper-function-name".to_owned(),
                     V1Dependency {
-                        integrity: "sha512-fJgWlZt7nxGksJS9a0XdSaI4XvpExnNIgRP+rVefWh5U7BL8pPuir6SJUmFKRfjWQ51OtWSzwOxhaH/EBWWc0A==".into(),
+                        integrity: Some("sha512-fJgWlZt7nxGksJS9a0XdSaI4XvpExnNIgRP+rVefWh5U7BL8pPuir6SJUmFKRfjWQ51OtWSzwOxhaH/EBWWc0A==".into()),
                         requires: Some(HashMap::from_iter([
                             ("@babel/template".to_owned(), "^7.18.6".to_owned()),
                             ("@babel/types".to_owned(), "^7.18.9".to_owned())
                         ])),
-                        resolved: "https://registry.npmjs.org/@babel/helper-function-name/-/helper-function-name-7.18.9.tgz".into(),
+                        resolved: Some("https://registry.npmjs.org/@babel/helper-function-name/-/helper-function-name-7.18.9.tgz".into()),
                         version: "7.18.9".into(),
                         ..V1Dependency::default()
                     }
@@ -149,11 +149,11 @@ mod tests {
                     "rollup-plugin-polyfill-node".to_owned(),
                     V1Dependency {
                         is_dev: true,
-                        integrity: "sha512-5GMywXiLiuQP6ZzED/LO/Q0HyDi2W6b8VN+Zd3oB0opIjyRs494Me2ZMaqKWDNbGiW4jvvzl6L2n4zRgxS9cSQ==".into(),
+                        integrity: Some("sha512-5GMywXiLiuQP6ZzED/LO/Q0HyDi2W6b8VN+Zd3oB0opIjyRs494Me2ZMaqKWDNbGiW4jvvzl6L2n4zRgxS9cSQ==".into()),
                         requires: Some(HashMap::from_iter([
                             ("@rollup/plugin-inject".to_owned(), "^4.0.0".to_owned())
                         ])),
-                        resolved: "https://registry.npmjs.org/rollup-plugin-polyfill-node/-/rollup-plugin-polyfill-node-0.10.2.tgz".into(),
+                        resolved: Some("https://registry.npmjs.org/rollup-plugin-polyfill-node/-/rollup-plugin-polyfill-node-0.10.2.tgz".into()),
                         version: "0.10.2".into(),
                         ..V1Dependency::default()
                     }
@@ -238,43 +238,7 @@ mod tests {
             )
             .unwrap();
 
-        // TODO: waiting on fix
-        // https://github.com/robertohuertasm/package-lock-json-parser/issues/3
-
-        // let lockfile: PackageLockJson = read_file(&temp.path().join("package-lock.json")).unwrap();
-
-        // assert_eq!(
-        //     lockfile,
-        //     PackageLockJson {
-        //         name: "moon-examples".into(),
-        //         version: "1.2.3".into(),
-        //         lockfile_version: 3,
-        //         packages: Some(HashMap::from_iter([
-        //             (
-        //                 "node_modules/tap/node_modules/yaml".to_owned(),
-        //                 V2Dependency {
-        //                     version: "1.10.2".into(),
-        //                     ..V2Dependency::default()
-        //                 }
-        //             ),
-        //             (
-        //                 "node_modules/yaml".to_owned(),
-        //                 V2Dependency {
-        //                     version: "2.2.2".into(),
-        //                     ..V2Dependency::default()
-        //                 }
-        //             ),
-        //             (
-        //                 "workspaces/libnpmdiff".to_owned(),
-        //                 V2Dependency {
-        //                     version: "5.0.17".into(),
-        //                     ..V2Dependency::default()
-        //                 }
-        //             )
-        //         ])),
-        //         ..PackageLockJson::default()
-        //     }
-        // );
+        let _: PackageLockJson = read_file(&temp.path().join("package-lock.json")).unwrap();
 
         assert_eq!(
             load_lockfile_dependencies(temp.path().join("package-lock.json")).unwrap(),
@@ -283,6 +247,10 @@ mod tests {
                     "yaml".to_owned(),
                     string_vec!["sha512-CBKFWExMn46Foo4cldiChEzn7S7SRV+wqiluAb6xmueD/fGyRHIhX8m14vVGgeFWjN540nKCNVj6P21eQjgTuA=="]
                 ),
+                (
+                    "libnpmdiff".to_owned(),
+                    string_vec!["5.0.17"]
+                )
             ])
         );
 

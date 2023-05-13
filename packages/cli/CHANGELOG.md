@@ -19,6 +19,7 @@
 - Added support for persistent tasks.
   - Added `persistent` task option to `moon.yml` (is also set via `local`).
   - Persistent tasks _run last_ in the dependency graph.
+- Added support for npm lockfile v3 format.
 - Updated long running processes to log a checkpoint indicating it's still running.
 - Updated task `platform` detection to only use the platform if the toolchain language is enabled.
 - Started migration to a newer/better logging implementation.
@@ -60,11 +61,6 @@
 
 - Reworked `moon init --yes` to not enable all tools, and instead enable based on file detection.
 - Cleaned up `moon init` templates. Will no longer scaffold `.moon/tasks.yml`.
-- Added support for npm lockfile v3 format.
-
-#### 📚 Documentation
-
-- Started on a Rust handbook guide.
 
 ## 1.4.0
 

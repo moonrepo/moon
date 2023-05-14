@@ -9,7 +9,7 @@
   - Persistent tasks _run last_ in the dependency graph.
 - Updated long running processes to log a checkpoint indicating it's still running.
 - Updated task `platform` detection to only use the platform if the toolchain language is enabled.
-- Started migrating to a newer logging implementation.
+- Started migration to a newer/better logging implementation.
 
 #### 🐞 Fixes
 

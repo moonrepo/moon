@@ -1,14 +1,15 @@
 ---
 slug: moon-v1.6
-title: moon v1.6 - Persistent tasks
+title: moon v1.6 - Persistent tasks and task extending RFC
 authors: [milesj]
-tags: [tasks]
-# image: ./img/moon/v1.6.png
+tags: [tasks, rfc, log]
+image: ./img/moon/v1.6.png
 ---
 
 import Button from '@site/src/ui/Button';
 
-???
+In this release, we're introducing a new feature called persistent tasks, and an RFC for extending
+tasks.
 
 <!--truncate-->
 
@@ -76,6 +77,31 @@ tasks:
       - 'backend:dev'
       - 'database:start'
       - 'tailwind:watch'
+```
+
+## Logging migration
+
+This is more of a heads up than anything, but we've started an internal Rust migration from the old
+[log](https://crates.io/crates/log) crate to the new [tracing](https://crates.io/crates/tracing)
+crate. Tracing provides is with far more information, metrics, and instrumentation, which we hope to
+take advantage of in the future.
+
+This will be an ongoing migration that will last for many releases, and during this time while we
+support both `log` and `tracing` in unison, the logs will be a bit noisy. We'll be working to clean
+up the logs as we gradually convert the codebase.
+
+And lastly, the move to `tracing` has also caused the log output to change. For example, in the log
+excerpt below, all messages with "log" after the date are the old `log` crate, while the others with
+distinct module names are the new `tracing` crate.
+
+```log
+[DEBUG 14:44:19] moon_process::command_inspector  Running command git status --porcelain --untracked-files -z  env_vars={} working_dir="~/Projects/moon"
+[DEBUG 14:44:19] log  Filtering based on touched status "all"  log.target="moon:query:touched-files" log.module_path="moon_cli::queries::touched_files" log.file="crates/cli/src/queries/touched_files.rs" log.line=85
+[DEBUG 14:44:19] log  Creating dependency graph  log.target="moon:dep-graph" log.module_path="moon_dep_graph::dep_builder" log.file="crates/core/dep-graph/src/dep_builder.rs" log.line=35
+[DEBUG 14:44:19] log  Running 32 actions across 5 batches  log.target="moon:action-pipeline" log.module_path="moon_action_pipeline::pipeline" log.file="crates/core/action-pipeline/src/pipeline.rs" log.line=93
+[DEBUG 14:44:19] log  Setting up Node.js 20.0.0 toolchain  log.target="moon:action:setup-tool" log.module_path="moon_action_pipeline::actions::setup_tool" log.file="crates/core/action-pipeline/src/actions/setup_tool.rs" log.line=26
+[DEBUG 14:44:19] proto_node::resolve  Resolving a semantic version for "20.0.0"
+[DEBUG 14:44:19] proto_core::resolver:load_versions_manifest  Loading versions manifest from local cache  cache_file=~/.proto/temp/3d16d1693e83828f98bae178f181d5a01103b7f222db27cdeaec9b4950e951d7.json
 ```
 
 ## Other changes

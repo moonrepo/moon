@@ -12,3 +12,6 @@ schematic = { version = "0.1.4", default-features = false, features = ["yaml", "
 semver = "1.0.17"
 serde = { workspace = true }
 strum = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }

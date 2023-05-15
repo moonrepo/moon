@@ -1,3 +1,6 @@
+mod language_platform;
+mod project;
+mod project_config;
 mod template;
 mod template_config;
 mod toolchain;
@@ -6,6 +9,9 @@ mod validate;
 mod workspace;
 mod workspace_config;
 
+pub use language_platform::*;
+pub use project::*;
+pub use project_config::*;
 pub use template::*;
 pub use template_config::*;
 pub use toolchain::*;

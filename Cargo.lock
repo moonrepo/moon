@@ -2782,6 +2782,7 @@ dependencies = [
  "schematic",
  "semver",
  "serde",
+ "serde_json",
  "strum",
 ]
 

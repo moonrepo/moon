@@ -1,7 +1,7 @@
 // .moon/toolchain.yml
 
 use crate::toolchain::{DenoConfig, NodeConfig, RustConfig, TypeScriptConfig};
-use schematic::Config;
+use schematic::{validate, Config};
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain
 #[derive(Config)]
@@ -12,8 +12,7 @@ pub struct ToolchainConfig {
     )]
     pub schema: String,
 
-    // TODO validate
-    #[setting(extend)]
+    #[setting(extend, validate = validate::extends_string)]
     pub extends: Option<String>,
 
     #[setting(nested)]

@@ -1,8 +1,7 @@
 // template.yml
 
-use crate::validate::validate_non_empty;
 use rustc_hash::FxHashMap;
-use schematic::{config_enum, Config, ConfigError, ConfigLoader};
+use schematic::{config_enum, validate, Config, ConfigError, ConfigLoader};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
@@ -24,8 +23,8 @@ config_enum!(
     }
 );
 
-#[derive(Config)]
-pub struct TemplateVariableEnumConfig {
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+pub struct TemplateVariableEnumSetting {
     pub default: String,
     pub multiple: bool,
     pub prompt: String,
@@ -36,7 +35,7 @@ config_enum!(
     #[serde(tag = "type")]
     pub enum TemplateVariable {
         Boolean(TemplateVariableSetting<bool>),
-        Enum(TemplateVariableEnumConfig),
+        Enum(TemplateVariableEnumSetting),
         Number(TemplateVariableSetting<i32>),
         // NumberList(TemplateVariableConfig<Vec<i32>>),
         String(TemplateVariableSetting<String>),
@@ -53,10 +52,10 @@ pub struct TemplateConfig {
     )]
     pub schema: String,
 
-    #[setting(validate = validate_non_empty)]
+    #[setting(validate = validate::not_empty)]
     pub description: String,
 
-    #[setting(validate = validate_non_empty)]
+    #[setting(validate = validate::not_empty)]
     pub title: String,
 
     pub variables: FxHashMap<String, TemplateVariable>,

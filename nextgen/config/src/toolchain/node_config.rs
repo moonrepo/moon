@@ -2,6 +2,7 @@ use crate::validate::validate_semver;
 use schematic::{config_enum, Config};
 
 config_enum!(
+    #[derive(Default)]
     pub enum NodeProjectAliasFormat {
         #[default]
         NameAndScope, // @scope/name
@@ -10,6 +11,7 @@ config_enum!(
 );
 
 config_enum!(
+    #[derive(Default)]
     pub enum NodeVersionFormat {
         File,         // file:..
         Link,         // link:..
@@ -41,6 +43,7 @@ impl NodeVersionFormat {
 }
 
 config_enum!(
+    #[derive(Default)]
     pub enum NodePackageManager {
         #[default]
         Npm,
@@ -50,6 +53,7 @@ config_enum!(
 );
 
 config_enum!(
+    #[derive(Default)]
     pub enum NodeVersionManager {
         Nodenv,
         #[default]

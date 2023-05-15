@@ -1,6 +1,34 @@
-use schematic::ValidateError;
+use rustc_hash::FxHashMap;
+use schematic::{Segment, ValidateError};
 use semver::Version;
 use std::path::Path;
+
+pub fn check_list<T, F>(list: &[T], validator: F) -> Result<(), ValidateError>
+where
+    F: Fn(&T) -> Result<(), ValidateError>,
+{
+    for (index, item) in list.iter().enumerate() {
+        validator(item).map_err(|error| {
+            ValidateError::with_segments(error.message, vec![Segment::Index(index)])
+        })?;
+    }
+
+    Ok(())
+}
+
+pub fn check_map<K, V, F>(map: &FxHashMap<K, V>, validator: F) -> Result<(), ValidateError>
+where
+    K: AsRef<str>,
+    F: Fn(&V) -> Result<(), ValidateError>,
+{
+    for (key, item) in map {
+        validator(item).map_err(|error| {
+            ValidateError::with_segments(error.message, vec![Segment::Key(key.as_ref().into())])
+        })?;
+    }
+
+    Ok(())
+}
 
 // Validate the value is a valid child relative file system path.
 // Will fail on absolute paths ("/"), and parent relative paths ("../").
@@ -22,8 +50,8 @@ pub fn validate_child_relative_path(value: &str) -> Result<(), ValidateError> {
 
 // Validate the value is a valid child relative file system path or root path.
 // Will fail on parent relative paths ("../") and absolute paths.
-pub fn validate_child_or_root_path(value: &str) -> Result<(), ValidateError> {
-    let path = Path::new(value);
+pub fn validate_child_or_root_path<T: AsRef<str>>(value: T) -> Result<(), ValidateError> {
+    let path = Path::new(value.as_ref());
 
     if (path.has_root() || path.is_absolute()) && !path.starts_with("/") {
         return Err(ValidateError::new(

@@ -1,10 +1,11 @@
-use std::path::Path;
+// .moon/workspace.yml
 
-use crate::validate::{validate_child_relative_path, validate_semver_requirement};
+use crate::validate::{check_map, validate_child_relative_path, validate_semver_requirement};
 use crate::workspace::*;
 use moon_common::Id;
 use rustc_hash::FxHashMap;
-use schematic::{config_enum, validate, Config, ConfigError, ConfigLoader, Segment, ValidateError};
+use schematic::{config_enum, validate, Config, ConfigError, ConfigLoader, ValidateError};
+use std::path::Path;
 
 type ProjectsMap = FxHashMap<Id, String>;
 
@@ -13,18 +14,12 @@ type ProjectsMap = FxHashMap<Id, String>;
 // paths ("/"), and parent relative paths ("../").
 fn validate_projects(projects: &WorkspaceProjects) -> Result<(), ValidateError> {
     let map = match projects {
-        WorkspaceProjects::Sources(sources) => Some(sources),
-        WorkspaceProjects::Both { sources, .. } => Some(sources),
-        _ => None,
+        WorkspaceProjects::Sources(sources) => sources,
+        WorkspaceProjects::Both { sources, .. } => sources,
+        _ => return Ok(()),
     };
 
-    if let Some(map) = map {
-        for (key, value) in map {
-            validate_child_relative_path(value).map_err(|error| {
-                ValidateError::with_segments(error.message, vec![Segment::Key(key.to_string())])
-            })?;
-        }
-    }
+    check_map(map, |value| validate_child_relative_path(value))?;
 
     Ok(())
 }

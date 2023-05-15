@@ -77,6 +77,7 @@ pub struct YarnConfig {
     pub version: Option<String>,
 }
 
+/// Docs: https://moonrepo.dev/docs/config/toolchain#node
 #[derive(Config)]
 pub struct NodeConfig {
     #[setting(default = true)]

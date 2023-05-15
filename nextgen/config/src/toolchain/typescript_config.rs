@@ -1,5 +1,6 @@
 use schematic::Config;
 
+/// Docs: https://moonrepo.dev/docs/config/toolchain#typescript
 #[derive(Config)]
 pub struct TypeScriptConfig {
     #[setting(default = true)]

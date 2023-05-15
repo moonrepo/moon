@@ -1,8 +1,17 @@
+// .moon/toolchain.yml
+
 use crate::toolchain::{DenoConfig, NodeConfig, RustConfig, TypeScriptConfig};
 use schematic::Config;
 
+/// Docs: https://moonrepo.dev/docs/config/toolchain
 #[derive(Config)]
 pub struct ToolchainConfig {
+    #[setting(
+        default = "https://moonrepo.dev/schemas/toolchain.json",
+        rename = "$schema"
+    )]
+    pub schema: String,
+
     // TODO validate
     #[setting(extend)]
     pub extends: Option<String>,
@@ -18,7 +27,4 @@ pub struct ToolchainConfig {
 
     #[setting(nested)]
     pub typescript: Option<TypeScriptConfig>,
-
-    #[setting(rename = "$schema")]
-    pub schema: String,
 }

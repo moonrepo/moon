@@ -2774,6 +2774,7 @@ dependencies = [
 name = "moon_config2"
 version = "0.1.0"
 dependencies = [
+ "rustc-hash",
  "schematic",
  "semver",
  "serde",
@@ -4572,8 +4573,8 @@ dependencies = [
  "reqwest",
  "schematic_macros",
  "serde",
- "serde_json",
  "serde_path_to_error",
+ "serde_yaml",
  "starbase_styles",
  "thiserror",
 ]

@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-schematic = "0.1.2"
+rustc-hash = { workspace = true }
+schematic = { version = "0.1.2", default-features = false, features = ["yaml"] }
 semver = "1.0.17"
 serde = { workspace = true }

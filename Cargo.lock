@@ -2775,10 +2775,14 @@ dependencies = [
 name = "moon_config2"
 version = "0.1.0"
 dependencies = [
+ "humantime",
+ "moon_common",
+ "moon_target",
  "rustc-hash",
  "schematic",
  "semver",
  "serde",
+ "strum",
 ]
 
 [[package]]

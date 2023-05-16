@@ -1,6 +1,6 @@
+use crate::validate::{validate_child_or_root_path, validate_child_relative_path};
 use schematic::ValidateError;
 use serde::{de, Deserialize, Deserializer, Serialize};
-use std::path::Path;
 
 // Not accurate at all but good enough...
 fn is_glob(value: &str) -> bool {
@@ -68,17 +68,7 @@ pub struct ProjectRelativePath<T: FromPathStr>(pub T);
 
 impl<T: FromPathStr> FromPathStr for ProjectRelativePath<T> {
     fn from_path_str(value: &str) -> Result<Self, ValidateError> {
-        let path = Path::new(value);
-
-        if path.has_root() || path.is_absolute() {
-            return Err(ValidateError::new("absolute paths are not supported"));
-        }
-
-        if value.starts_with("..") {
-            return Err(ValidateError::new(
-                "parent relative paths are not supported",
-            ));
-        }
+        validate_child_relative_path(value)?;
 
         if value.starts_with("/") {
             return Err(ValidateError::new(
@@ -100,5 +90,37 @@ impl<'de, T: FromPathStr> Deserialize<'de> for ProjectRelativePath<T> {
         let path = String::deserialize(deserializer)?;
 
         ProjectRelativePath::from_path_str(&path).map_err(|error| de::Error::custom(error.message))
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub enum RelativePath {
+    ProjectFile(FilePath),
+    ProjectGlob(GlobPath),
+    WorkspaceFile(FilePath),
+    WorkspaceGlob(GlobPath),
+}
+
+impl FromPathStr for RelativePath {
+    fn from_path_str(value: &str) -> Result<Self, ValidateError> {
+        validate_child_or_root_path(value)?;
+
+        Ok(match (value.starts_with('/'), is_glob(value)) {
+            (true, true) => RelativePath::WorkspaceGlob(GlobPath::from_path_str(&value[1..])?),
+            (true, false) => RelativePath::WorkspaceFile(FilePath::from_path_str(&value[1..])?),
+            (false, true) => RelativePath::ProjectGlob(GlobPath::from_path_str(&value)?),
+            (false, false) => RelativePath::ProjectFile(FilePath::from_path_str(&value)?),
+        })
+    }
+}
+
+impl<'de> Deserialize<'de> for RelativePath {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let value = String::deserialize(deserializer)?;
+
+        RelativePath::from_path_str(&value).map_err(|error| de::Error::custom(error.message))
     }
 }

@@ -1,19 +1,11 @@
-use crate::validate::{check_list, validate_child_or_root_path};
-use crate::{
-    language_platform::PlatformType,
-    project::{PartialTaskOptionsConfig, TaskOptionsConfig},
-};
+use crate::language_platform::PlatformType;
+use crate::project::{PartialTaskOptionsConfig, TaskOptionsConfig};
+use crate::relative_path::RelativePath;
 use moon_target::Target;
 use rustc_hash::FxHashMap;
-use schematic::{config_enum, Config, ValidateError};
+use schematic::{config_enum, Config};
 use shell_words::ParseError;
 use strum::Display;
-
-fn validate_inputs_outputs(list: &[String]) -> Result<(), ValidateError> {
-    check_list(list, |value| validate_child_or_root_path(value))?;
-
-    Ok(())
-}
 
 config_enum!(
     #[derive(Default, Display)]
@@ -49,15 +41,13 @@ pub struct TaskConfig {
     pub env: FxHashMap<String, String>,
 
     #[setting(skip)]
-    pub global_inputs: Vec<String>,
+    pub global_inputs: Vec<RelativePath>,
 
-    #[setting(validate = validate_inputs_outputs)]
-    pub inputs: Vec<String>,
+    pub inputs: Vec<RelativePath>,
 
     pub local: bool,
 
-    #[setting(validate = validate_inputs_outputs)]
-    pub outputs: Vec<String>,
+    pub outputs: Vec<RelativePath>,
 
     #[setting(nested)]
     pub options: TaskOptionsConfig,

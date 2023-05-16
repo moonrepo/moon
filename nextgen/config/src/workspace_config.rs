@@ -1,28 +1,15 @@
 // .moon/workspace.yml
 
-use crate::validate::{check_map, validate_child_relative_path, validate_semver_requirement};
+use crate::relative_path::{FilePath, GlobPath, ProjectRelativePath};
+use crate::validate::validate_semver_requirement;
 use crate::workspace::*;
 use moon_common::Id;
 use rustc_hash::FxHashMap;
-use schematic::{config_enum, validate, Config, ConfigError, ConfigLoader, ValidateError};
+use schematic::{config_enum, validate, Config, ConfigError, ConfigLoader};
 use std::path::Path;
 
-type ProjectsMap = FxHashMap<Id, String>;
-
-// Validate the `projects` field is a map of valid file system paths
-// that are relative from the workspace root. Will fail on absolute
-// paths ("/"), and parent relative paths ("../").
-fn validate_projects(projects: &WorkspaceProjects) -> Result<(), ValidateError> {
-    let map = match projects {
-        WorkspaceProjects::Sources(sources) => sources,
-        WorkspaceProjects::Both { sources, .. } => sources,
-        _ => return Ok(()),
-    };
-
-    check_map(map, |value| validate_child_relative_path(value))?;
-
-    Ok(())
-}
+type SourceGlob = ProjectRelativePath<GlobPath>;
+type SourceFile = ProjectRelativePath<FilePath>;
 
 config_enum!(
     #[serde(
@@ -31,11 +18,11 @@ config_enum!(
     )]
     pub enum WorkspaceProjects {
         Both {
-            globs: Vec<String>,
-            sources: ProjectsMap,
+            globs: Vec<SourceGlob>,
+            sources: FxHashMap<Id, SourceFile>,
         },
-        Globs(Vec<String>),
-        Sources(ProjectsMap),
+        Globs(Vec<SourceGlob>),
+        Sources(FxHashMap<Id, SourceFile>),
     }
 );
 
@@ -68,7 +55,6 @@ pub struct WorkspaceConfig {
     #[setting(nested)]
     pub notifier: NotifierConfig,
 
-    #[setting(validate = validate_projects)]
     pub projects: WorkspaceProjects,
 
     #[setting(nested)]

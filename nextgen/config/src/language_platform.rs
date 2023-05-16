@@ -28,9 +28,17 @@ impl<'de> Deserialize<'de> for LanguageType {
     where
         D: Deserializer<'de>,
     {
-        let lang = String::deserialize(deserializer)?;
+        match String::deserialize(deserializer) {
+            Ok(buffer) => LanguageType::from_str(&buffer).map_err(de::Error::custom),
+            Err(error) => {
+                // Not aware of another way to handle nulls/undefined
+                if error.to_string().contains("invalid type: null") {
+                    return Ok(LanguageType::default());
+                }
 
-        LanguageType::from_str(&lang).map_err(|error| de::Error::custom(error.to_string()))
+                Err(error)
+            }
+        }
     }
 }
 

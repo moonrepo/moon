@@ -3,11 +3,26 @@ use crate::project::TaskConfig;
 use crate::project_config::ProjectType;
 use crate::relative_path::RelativePath;
 use crate::FilePath;
-use moon_common::Id;
+use moon_common::{consts, Id};
 use moon_target::Target;
 use rustc_hash::FxHashMap;
-use schematic::{merge, validate, Config, ConfigError, ConfigLoader};
+use schematic::{merge, validate, Config, ConfigError, ConfigLoader, PartialConfig};
+use std::hash::Hash;
 use std::{collections::BTreeMap, path::Path};
+
+pub fn merge_fxhashmap<K, V>(
+    mut prev: FxHashMap<K, V>,
+    next: FxHashMap<K, V>,
+) -> Option<FxHashMap<K, V>>
+where
+    K: Eq + Hash,
+{
+    for (key, value) in next {
+        prev.insert(key, value);
+    }
+
+    Some(prev)
+}
 
 /// Docs: https://moonrepo.dev/docs/config/tasks
 #[derive(Debug, Default, Clone, Config)]
@@ -21,7 +36,7 @@ pub struct InheritedTasksConfig {
     #[setting(extend, validate = validate::extends_string)]
     pub extends: Option<String>,
 
-    // #[setting(merge = merge::merge_hashmap)]
+    #[setting(merge = merge_fxhashmap)]
     pub file_groups: FxHashMap<Id, Vec<RelativePath>>,
 
     #[setting(merge = merge::append_vec)]
@@ -35,26 +50,6 @@ pub struct InheritedTasksConfig {
 }
 
 impl InheritedTasksConfig {
-    // Figment does not merge maps/vec but replaces entirely,
-    // so we need to manually handle this here!
-    pub fn merge(&mut self, config: InheritedTasksConfig) {
-        if !config.file_groups.is_empty() {
-            self.file_groups.extend(config.file_groups);
-        }
-
-        if !config.implicit_deps.is_empty() {
-            self.implicit_deps.extend(config.implicit_deps);
-        }
-
-        if !config.implicit_inputs.is_empty() {
-            self.implicit_inputs.extend(config.implicit_inputs);
-        }
-
-        if !config.tasks.is_empty() {
-            self.tasks.extend(config.tasks);
-        }
-    }
-
     pub fn load<T: AsRef<Path>>(path: T) -> Result<InheritedTasksConfig, ConfigError> {
         let result = ConfigLoader::<InheritedTasksConfig>::yaml()
             .file(path.as_ref())?
@@ -66,14 +61,14 @@ impl InheritedTasksConfig {
 
 #[derive(Debug, Default)]
 pub struct InheritedTasksManager {
-    pub configs: FxHashMap<String, InheritedTasksConfig>,
+    pub configs: FxHashMap<String, PartialInheritedTasksConfig>,
 }
 
 impl InheritedTasksManager {
-    pub fn add_config(&mut self, path: &Path, config: InheritedTasksConfig) {
+    pub fn add_config(&mut self, path: &Path, config: PartialInheritedTasksConfig) {
         let name = path.file_name().unwrap_or_default().to_str().unwrap();
 
-        let name = if name == "tasks.yml" {
+        let name = if name == consts::CONFIG_TASKS_FILENAME {
             "*"
         } else if let Some(stripped_name) = name.strip_suffix(".yml") {
             stripped_name
@@ -122,23 +117,30 @@ impl InheritedTasksManager {
         project: &ProjectType,
         tags: &[Id],
     ) -> InheritedTasksConfig {
-        let mut config = InheritedTasksConfig::default();
+        let mut config = PartialInheritedTasksConfig::default();
 
         for lookup in self.get_lookup_order(platform, language, project, tags) {
             if let Some(managed_config) = self.configs.get(&lookup) {
                 let mut managed_config = managed_config.clone();
 
-                for task in managed_config.tasks.values_mut() {
-                    if lookup != "*" {
-                        // Automatically set this lookup as an input
-                        task.global_inputs
-                            .push(RelativePath::WorkspaceFile(FilePath(format!(
+                if lookup != "*" {
+                    if let Some(tasks) = &mut managed_config.tasks {
+                        for task in tasks.values_mut() {
+                            // Automatically set this lookup as an input
+                            let global_lookup = RelativePath::WorkspaceFile(FilePath(format!(
                                 ".moon/tasks/{lookup}.yml"
-                            ))));
+                            )));
 
-                        // Automatically set the platform
-                        if task.platform.is_unknown() {
-                            task.platform = platform.to_owned();
+                            if let Some(global_inputs) = &mut task.global_inputs {
+                                global_inputs.push(global_lookup);
+                            } else {
+                                task.global_inputs = Some(vec![global_lookup]);
+                            }
+
+                            // Automatically set the platform
+                            if task.platform.clone().unwrap_or_default().is_unknown() {
+                                task.platform = Some(platform.to_owned());
+                            }
                         }
                     }
                 }
@@ -147,6 +149,6 @@ impl InheritedTasksManager {
             }
         }
 
-        config
+        InheritedTasksConfig::from_partial(config)
     }
 }

@@ -31,16 +31,6 @@ config_enum!(
     }
 );
 
-impl TaskOptionEnvFile {
-    pub fn to_option(&self) -> Option<String> {
-        match self {
-            TaskOptionEnvFile::Enabled(true) => Some(".env".to_owned()),
-            TaskOptionEnvFile::Enabled(false) => None,
-            TaskOptionEnvFile::File(_) => Some("todo".to_owned()), // TODO
-        }
-    }
-}
-
 config_enum!(
     #[derive(Default)]
     pub enum TaskMergeStrategy {

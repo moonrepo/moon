@@ -22,3 +22,5 @@ pub use toolchain::*;
 pub use toolchain_config::*;
 pub use workspace::*;
 pub use workspace_config::*;
+
+pub use schematic::ConfigError;

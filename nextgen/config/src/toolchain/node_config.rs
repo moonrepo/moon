@@ -31,15 +31,15 @@ config_enum!(
 impl NodeVersionFormat {
     pub fn get_prefix(&self) -> String {
         match self {
-            NodeVersionFormat::File => String::from("file:"),
-            NodeVersionFormat::Link => String::from("link:"),
-            NodeVersionFormat::Star => String::from("*"),
-            NodeVersionFormat::Version => String::from(""),
-            NodeVersionFormat::VersionCaret => String::from("^"),
-            NodeVersionFormat::VersionTilde => String::from("~"),
-            NodeVersionFormat::Workspace => String::from("workspace:*"),
-            NodeVersionFormat::WorkspaceCaret => String::from("workspace:^"),
-            NodeVersionFormat::WorkspaceTilde => String::from("workspace:~"),
+            NodeVersionFormat::File => "file:".into(),
+            NodeVersionFormat::Link => "link:".into(),
+            NodeVersionFormat::Star => "*".into(),
+            NodeVersionFormat::Version => "".into(),
+            NodeVersionFormat::VersionCaret => "^".into(),
+            NodeVersionFormat::VersionTilde => "~".into(),
+            NodeVersionFormat::Workspace => "workspace:*".into(),
+            NodeVersionFormat::WorkspaceCaret => "workspace:^".into(),
+            NodeVersionFormat::WorkspaceTilde => "workspace:~".into(),
         }
     }
 }

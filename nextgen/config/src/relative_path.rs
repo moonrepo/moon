@@ -4,7 +4,7 @@ use serde::{de, Deserialize, Deserializer, Serialize};
 
 // Not accurate at all but good enough...
 fn is_glob(value: &str) -> bool {
-    value.contains("**") || value.contains("*") || value.contains("{") || value.contains("[")
+    value.contains("**") || value.contains('*') || value.contains('{') || value.contains('[')
 }
 
 pub trait FromPathStr: Sized {
@@ -70,7 +70,7 @@ impl<T: FromPathStr> FromPathStr for ProjectRelativePath<T> {
     fn from_path_str(value: &str) -> Result<Self, ValidateError> {
         validate_child_relative_path(value)?;
 
-        if value.starts_with("/") {
+        if value.starts_with('/') {
             return Err(ValidateError::new(
                 "workspace relative paths are not supported",
             ));
@@ -108,8 +108,8 @@ impl FromPathStr for RelativePath {
         Ok(match (value.starts_with('/'), is_glob(value)) {
             (true, true) => RelativePath::WorkspaceGlob(GlobPath::from_path_str(&value[1..])?),
             (true, false) => RelativePath::WorkspaceFile(FilePath::from_path_str(&value[1..])?),
-            (false, true) => RelativePath::ProjectGlob(GlobPath::from_path_str(&value)?),
-            (false, false) => RelativePath::ProjectFile(FilePath::from_path_str(&value)?),
+            (false, true) => RelativePath::ProjectGlob(GlobPath::from_path_str(value)?),
+            (false, false) => RelativePath::ProjectFile(FilePath::from_path_str(value)?),
         })
     }
 }

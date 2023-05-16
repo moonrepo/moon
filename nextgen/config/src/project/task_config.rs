@@ -50,7 +50,7 @@ config_enum!(
     }
 );
 
-#[derive(Config)]
+#[derive(Debug, Clone, Config)]
 pub struct TaskConfig {
     #[setting(validate = validate_command)]
     pub command: TaskCommandArgs,

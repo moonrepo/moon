@@ -63,7 +63,7 @@ config_enum!(
     }
 );
 
-#[derive(Config)]
+#[derive(Debug, Clone, Config)]
 pub struct TaskOptionsConfig {
     #[setting(validate = validate_affected_files)]
     pub affected_files: Option<TaskOptionAffectedFiles>,

@@ -1,8 +1,8 @@
 use crate::relative_path::{FilePath, ProjectRelativePath};
 use schematic::{validate, Config};
 
-fn default_templates() -> Vec<ProjectRelativePath<FilePath>> {
-    vec![ProjectRelativePath(FilePath("./templates".into()))]
+fn default_templates<C>(_ctx: &C) -> Option<Vec<ProjectRelativePath<FilePath>>> {
+    Some(vec![ProjectRelativePath(FilePath("./templates".into()))])
 }
 
 #[derive(Config)]

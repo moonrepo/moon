@@ -1,7 +1,11 @@
 use crate::relative_path::RelativePath;
 use schematic::{config_enum, Config, ValidateError};
 
-fn validate_affected_files(file: &TaskOptionAffectedFiles) -> Result<(), ValidateError> {
+fn validate_affected_files<D, C>(
+    file: &TaskOptionAffectedFiles,
+    _data: &D,
+    _ctx: &C,
+) -> Result<(), ValidateError> {
     if let TaskOptionAffectedFiles::Value(value) = file {
         if value != "args" && value != "env" {
             return Err(ValidateError::new("expected `args`, `env`, or a boolean"));

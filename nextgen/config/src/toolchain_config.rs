@@ -1,6 +1,6 @@
 // .moon/toolchain.yml
 
-use crate::toolchain::{DenoConfig, NodeConfig, RustConfig, TypeScriptConfig};
+use crate::toolchain::*;
 use schematic::{validate, Config};
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain

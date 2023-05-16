@@ -40,14 +40,18 @@ pub fn validate_child_or_root_path<T: AsRef<str>>(value: T) -> Result<(), Valida
     Ok(())
 }
 
-pub fn validate_semver(value: &str) -> Result<(), ValidateError> {
+pub fn validate_semver<D, C>(value: &str, _data: &D, _ctx: &C) -> Result<(), ValidateError> {
     Version::parse(value)
         .map_err(|error| ValidateError::new(format!("not a valid semantic version: {}", error)))?;
 
     Ok(())
 }
 
-pub fn validate_semver_requirement(value: &str) -> Result<(), ValidateError> {
+pub fn validate_semver_requirement<D, C>(
+    value: &str,
+    _data: &D,
+    _ctx: &C,
+) -> Result<(), ValidateError> {
     Version::parse(value).map_err(|error| {
         ValidateError::new(format!(
             "doesn't meet semantic version requirements: {}",

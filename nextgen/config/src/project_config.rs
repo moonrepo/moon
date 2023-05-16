@@ -5,29 +5,14 @@ use crate::project::*;
 use crate::relative_path::RelativePath;
 use moon_common::Id;
 use rustc_hash::FxHashMap;
-use schematic::{config_enum, Config, ConfigError, ConfigLoader, Segment, ValidateError};
+use schematic::{config_enum, Config, ConfigError, ConfigLoader, ValidateError};
 use std::collections::BTreeMap;
 use std::path::Path;
 use strum::Display;
 
-fn validate_channel(value: &str) -> Result<(), ValidateError> {
+fn validate_channel<D, C>(value: &str, _data: &D, _ctx: &C) -> Result<(), ValidateError> {
     if !value.is_empty() && !value.starts_with('#') {
         return Err(ValidateError::new("must start with a `#`"));
-    }
-
-    Ok(())
-}
-
-// TODO
-fn validate_tasks(map: &BTreeMap<String, TaskConfig>) -> Result<(), ValidateError> {
-    for (name, task) in map {
-        // Only fail for empty strings and not `None`
-        if task.command.is_some() && task.get_command().is_empty() {
-            return Err(ValidateError::with_segments(
-                "a command is required; use \"noop\" otherwise",
-                vec![Segment::Key(name.to_string())],
-            ));
-        }
     }
 
     Ok(())
@@ -100,9 +85,9 @@ pub struct ProjectConfig {
 
     pub tags: Vec<Id>,
 
-    // TODO
-    // #[setting(nested)]
-    // pub tasks: BTreeMap<Id, TaskConfig>,
+    #[setting(nested)]
+    pub tasks: BTreeMap<Id, TaskConfig>,
+
     #[setting(nested)]
     pub toolchain: ProjectToolchainConfig,
 

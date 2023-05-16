@@ -1,18 +1,11 @@
 use moon_target::Target;
-use schematic::{Config, ValidateError};
-
-fn validate_cache_lifetime(value: &str) -> Result<(), ValidateError> {
-    humantime::parse_duration(value)
-        .map_err(|error| ValidateError::new(format!("invalid lifetime duration: {error}")))?;
-
-    Ok(())
-}
+use schematic::Config;
 
 #[derive(Config)]
 pub struct RunnerConfig {
     pub archivable_targets: Vec<Target>,
 
-    #[setting(default_str = "7 days", validate = validate_cache_lifetime)]
+    #[setting(default_str = "7 days")]
     pub cache_lifetime: String,
 
     #[setting(default = true)]

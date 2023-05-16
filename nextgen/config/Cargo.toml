@@ -6,7 +6,6 @@ edition = "2021"
 [dependencies]
 moon_common = { path = "../common" }
 moon_target = { path = "../target" }
-humantime = "2.1.0"
 rustc-hash = { workspace = true }
 schematic = { version = "0.1.7", default-features = false, features = ["yaml", "valid_url"] }
 semver = "1.0.17"

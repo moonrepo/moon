@@ -1,4 +1,4 @@
-use crate::validate::validate_child_or_root_path;
+use crate::relative_path::RelativePath;
 use schematic::{config_enum, Config, ValidateError};
 
 fn validate_affected_files(file: &TaskOptionAffectedFiles) -> Result<(), ValidateError> {
@@ -6,14 +6,6 @@ fn validate_affected_files(file: &TaskOptionAffectedFiles) -> Result<(), Validat
         if value != "args" && value != "env" {
             return Err(ValidateError::new("expected `args`, `env`, or a boolean"));
         }
-    }
-
-    Ok(())
-}
-
-fn validate_env_file(file: &TaskOptionEnvFile) -> Result<(), ValidateError> {
-    if let TaskOptionEnvFile::File(path) = file {
-        validate_child_or_root_path(path)?;
     }
 
     Ok(())
@@ -31,7 +23,7 @@ config_enum!(
     #[serde(untagged, expecting = "expected a boolean or a file system path")]
     pub enum TaskOptionEnvFile {
         Enabled(bool),
-        File(String),
+        File(RelativePath),
     }
 );
 
@@ -40,7 +32,7 @@ impl TaskOptionEnvFile {
         match self {
             TaskOptionEnvFile::Enabled(true) => Some(".env".to_owned()),
             TaskOptionEnvFile::Enabled(false) => None,
-            TaskOptionEnvFile::File(path) => Some(path.to_owned()),
+            TaskOptionEnvFile::File(_) => Some("todo".to_owned()), // TODO
         }
     }
 }
@@ -75,7 +67,6 @@ pub struct TaskOptionsConfig {
     #[setting(default = true)]
     pub cache: bool,
 
-    #[setting(validate = validate_env_file)]
     pub env_file: Option<TaskOptionEnvFile>,
 
     pub merge_args: TaskMergeStrategy,
@@ -88,7 +79,7 @@ pub struct TaskOptionsConfig {
 
     pub merge_outputs: TaskMergeStrategy,
 
-    pub output_style: Option<TaskOutputStyle>,
+    pub output_style: TaskOutputStyle,
 
     pub persistent: bool,
 

@@ -20,7 +20,8 @@ config_enum!(
 
 #[derive(Config)]
 pub struct HasherConfig {
-    pub batch_size: Option<u16>,
+    #[setting(default = 2500)]
+    pub batch_size: u16,
 
     pub optimization: HasherOptimization,
 

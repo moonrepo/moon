@@ -1,4 +1,5 @@
 use moon_common::{Id, IdError};
+use schematic::config_enum;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::{fmt, str::FromStr};
 use strum::{Display, EnumIter, EnumString};
@@ -33,7 +34,7 @@ impl<'de> Deserialize<'de> for LanguageType {
             Err(error) => {
                 // Not aware of another way to handle nulls/undefined
                 if error.to_string().contains("invalid type: null") {
-                    return Ok(LanguageType::default());
+                    return Ok(LanguageType::Unknown);
                 }
 
                 Err(error)
@@ -93,39 +94,33 @@ impl fmt::Display for LanguageType {
     }
 }
 
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Default,
-    Deserialize,
-    Display,
-    Eq,
-    EnumIter,
-    EnumString,
-    Hash,
-    // JsonSchema,
-    PartialEq,
-    Serialize,
-)]
-#[serde(rename_all = "lowercase")]
-pub enum PlatformType {
-    #[strum(serialize = "deno")]
-    Deno,
+config_enum!(
+    #[derive(
+        Default,
+        Display,
+        EnumIter,
+        EnumString,
+        Hash,
+        // JsonSchema,
+    )]
+    pub enum PlatformType {
+        #[strum(serialize = "deno")]
+        Deno,
 
-    #[strum(serialize = "node")]
-    Node,
+        #[strum(serialize = "node")]
+        Node,
 
-    #[strum(serialize = "rust")]
-    Rust,
+        #[strum(serialize = "rust")]
+        Rust,
 
-    #[strum(serialize = "system")]
-    System,
+        #[strum(serialize = "system")]
+        System,
 
-    #[default]
-    #[strum(serialize = "unknown")]
-    Unknown,
-}
+        #[default]
+        #[strum(serialize = "unknown")]
+        Unknown,
+    }
+);
 
 impl PlatformType {
     pub fn is_system(&self) -> bool {

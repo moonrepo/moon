@@ -1,5 +1,7 @@
 use crate::validate::validate_semver;
-use schematic::{config_enum, Config};
+use crate::{inherit_tool, inherit_tool_required};
+use proto::ToolsConfig;
+use schematic::{config_enum, Config, ConfigError};
 
 config_enum!(
     #[derive(Default)]
@@ -117,4 +119,26 @@ pub struct NodeConfig {
 
     #[setting(nested)]
     pub yarn: Option<YarnConfig>,
+}
+
+impl NodeConfig {
+    inherit_tool_required!(NpmConfig, npm, "npm", inherit_proto_npm);
+    inherit_tool!(PnpmConfig, pnpm, "pnpm", inherit_proto_pnpm);
+    inherit_tool!(YarnConfig, yarn, "yarn", inherit_proto_yarn);
+
+    pub fn inherit_proto(&mut self, proto_tools: &ToolsConfig) -> Result<(), ConfigError> {
+        match &self.package_manager {
+            NodePackageManager::Npm => {
+                self.inherit_proto_npm(proto_tools)?;
+            }
+            NodePackageManager::Pnpm => {
+                self.inherit_proto_pnpm(proto_tools)?;
+            }
+            NodePackageManager::Yarn => {
+                self.inherit_proto_yarn(proto_tools)?;
+            }
+        };
+
+        Ok(())
+    }
 }

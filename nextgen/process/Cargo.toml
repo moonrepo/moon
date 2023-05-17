@@ -4,11 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+moon_args = { path = "../args" }
 moon_common = { path = "../common" }
 cached = { workspace = true }
 once_cell = { workspace = true }
 rustc-hash = { workspace = true }
-shell-words = "1.1.0"
 thiserror = { workspace = true }
 tracing = { workspace = true }
 tokio = { workspace = true }

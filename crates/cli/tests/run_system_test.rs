@@ -208,6 +208,30 @@ mod unix {
         assert!(predicate::str::contains("unix:baz | baz").eval(&output));
     }
 
+    #[test]
+    fn supports_multi_commands_ampersand() {
+        let sandbox = system_sandbox();
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("unix:multiAmpersand");
+        });
+
+        assert!(sandbox.path().join("unix/foo").exists());
+        assert!(sandbox.path().join("unix/bar").exists());
+    }
+
+    #[test]
+    fn supports_multi_commands_semicolon() {
+        let sandbox = system_sandbox();
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("unix:multiSemicolon");
+        });
+
+        assert!(sandbox.path().join("unix/foo").exists());
+        assert!(sandbox.path().join("unix/bar").exists());
+    }
+
     mod caching {
         use super::*;
         use moon_cache::RunTargetState;

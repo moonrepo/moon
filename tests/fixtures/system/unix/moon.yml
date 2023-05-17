@@ -79,6 +79,12 @@ tasks:
     platform: system
     options:
       affectedFiles: 'env'
+  multiAmpersand:
+    command: 'mkdir foo && mkdir bar'
+    platform: system
+  multiSemicolon:
+    command: 'mkdir foo; mkdir bar'
+    platform: system
 
   # Misc
   foo:

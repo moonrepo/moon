@@ -6,6 +6,6 @@ mod process_error;
 pub mod shell;
 
 pub use command::*;
+pub use moon_args as args;
 pub use output::*;
 pub use process_error::*;
-pub use shell_words::{join as join_args, split as split_args, ParseError as ArgsParseError};

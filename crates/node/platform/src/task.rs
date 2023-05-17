@@ -1,7 +1,7 @@
 use moon_config::{TaskCommandArgs, TaskConfig, TasksConfigsMap};
 use moon_logger::{debug, warn};
 use moon_node_lang::package_json::{PackageJson, ScriptsSet};
-use moon_process::split_args;
+use moon_process::args::split_args;
 use moon_task::{PlatformType, TaskError, TaskID};
 use moon_utils::regex::{ID_CLEAN, UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
 use moon_utils::{regex, string_vec};
@@ -153,13 +153,17 @@ pub fn create_task(
     context: TaskContext,
 ) -> Result<TaskConfig, TaskError> {
     let is_wrapping = matches!(context, TaskContext::WrapRunScript);
-    let script_args = split_args(script)?;
+    let script_args = split_args(script).unwrap();
     let mut task_config = TaskConfig::default();
     let mut args = vec![];
     let mut outputs = vec![];
     let mut env = FxHashMap::default();
 
     for (index, arg) in script_args.iter().enumerate() {
+        if arg == ";" {
+            continue;
+        }
+
         // Extract environment variables
         if ARG_ENV_VAR.is_match(arg) {
             let (key, val) = clean_env_var(arg);

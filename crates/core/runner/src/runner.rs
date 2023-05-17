@@ -10,7 +10,7 @@ use moon_error::MoonError;
 use moon_hasher::HashSet;
 use moon_logger::{debug, warn};
 use moon_platform_runtime::Runtime;
-use moon_process::{join_args, output_to_error, output_to_string, Command, Output};
+use moon_process::{args, output_to_error, output_to_string, Command, Output};
 use moon_project::Project;
 use moon_target::{Target, TargetError, TargetScope};
 use moon_task::{Task, TaskError, TaskOptionAffectedFiles};
@@ -784,7 +784,7 @@ impl<'a> Runner<'a> {
             args.extend(&context.passthrough_args);
         }
 
-        let command_line = join_args(args);
+        let command_line = args::join_args(args);
 
         let message = color::muted_light(command.inspect().format_command(
             &command_line,

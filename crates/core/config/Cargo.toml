@@ -13,6 +13,7 @@ path = "src/lib.rs"
 crate-type = ["rlib"]
 
 [dependencies]
+moon_args = { path = "../../../nextgen/args" }
 moon_constants = { path = "../constants" }
 moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
@@ -25,7 +26,6 @@ schemars = "0.8.12"
 serde = { workspace = true }
 serde_json = { workspace = true, features = ["preserve_order"] }
 serde_yaml = { workspace = true }
-shell-words = "1.1.0"
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true }
 strum = { workspace = true }

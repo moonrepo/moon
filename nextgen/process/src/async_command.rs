@@ -221,7 +221,7 @@ impl<'cmd> AsyncCommand<'cmd> {
     }
 
     async fn write_input_to_child(&self, child: &mut Child) -> Result<(), ProcessError> {
-        let input = self.inspector.get_command_line().input.join(" ");
+        let input = &self.inspector.get_command_line().input;
 
         let mut stdin = child.stdin.take().unwrap_or_else(|| {
             panic!("Unable to write stdin: {input}");

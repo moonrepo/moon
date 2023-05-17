@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed poor argument parsing of command line operators like `;`, `&&`, etc.
+
 ## 1.6.0
 
 #### 🚀 Updates

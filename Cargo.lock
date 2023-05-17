@@ -2603,6 +2603,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_args"
+version = "0.1.0"
+dependencies = [
+ "shell-words",
+ "thiserror",
+ "winsplit",
+]
+
+[[package]]
 name = "moon_bun_lang"
 version = "0.1.0"
 dependencies = [
@@ -2717,6 +2726,7 @@ dependencies = [
  "figment",
  "httpmock",
  "moon",
+ "moon_args",
  "moon_constants",
  "moon_error",
  "moon_logger",
@@ -2729,7 +2739,6 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_yaml",
- "shell-words",
  "starbase_styles",
  "starbase_utils",
  "strum",
@@ -3114,10 +3123,10 @@ name = "moon_process"
 version = "0.1.0"
 dependencies = [
  "cached",
+ "moon_args",
  "moon_common",
  "once_cell",
  "rustc-hash",
- "shell-words",
  "thiserror",
  "tokio",
  "tracing",
@@ -3341,7 +3350,6 @@ dependencies = [
  "once_cell",
  "rustc-hash",
  "serde",
- "shell-words",
  "starbase_styles",
  "starbase_utils",
  "strum",
@@ -6053,6 +6061,12 @@ dependencies = [
  "cfg-if",
  "windows-sys 0.48.0",
 ]
+
+[[package]]
+name = "winsplit"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3ab703352da6a72f35c39a533526393725640575bb211f61987a2748323ad956"
 
 [[package]]
 name = "xattr"

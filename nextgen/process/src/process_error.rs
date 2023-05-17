@@ -1,3 +1,4 @@
+use moon_args::ArgsSplitError;
 use moon_common::{Diagnostic, Style, Stylize};
 use thiserror::Error;
 
@@ -40,6 +41,9 @@ pub enum ProcessError {
         #[source]
         error: std::io::Error,
     },
+
+    #[error(transparent)]
+    ArgsSplit(#[from] ArgsSplitError),
 }
 
 impl Diagnostic for ProcessError {}

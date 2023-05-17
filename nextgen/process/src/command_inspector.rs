@@ -1,8 +1,8 @@
 use crate::command::Command;
+use moon_args::join_args;
 use moon_common::color;
 use once_cell::sync::OnceCell;
 use rustc_hash::FxHashMap;
-use shell_words::join;
 use std::env;
 use std::fmt::{self, Display};
 use std::path::{Path, PathBuf, MAIN_SEPARATOR};
@@ -11,7 +11,7 @@ use tracing::{debug, enabled};
 #[derive(Debug)]
 pub struct CommandLine {
     pub command: Vec<String>,
-    pub input: Vec<String>,
+    pub input: String,
     pub main_command: String,
 }
 
@@ -20,6 +20,7 @@ impl CommandLine {
         let mut command_line: Vec<String> = vec![];
         let mut input_line: Vec<String> = vec![];
         let mut main_line: Vec<String> = vec![];
+        // let mut join_input = false;
 
         let push_to_line = |line: &mut Vec<String>| {
             line.push(command.bin.to_string_lossy().to_string());
@@ -41,6 +42,7 @@ impl CommandLine {
             // If the main command should be passed via stdin,
             // then append the input line instead of the command line.
             if shell.pass_args_stdin {
+                // join_input = true;
                 push_to_line(&mut input_line);
 
                 // Otherwise append as a *single* argument. This typically
@@ -49,7 +51,7 @@ impl CommandLine {
                 let mut sub_line: Vec<String> = vec![];
                 push_to_line(&mut sub_line);
 
-                command_line.push(join(sub_line));
+                command_line.push(join_args(sub_line));
             }
 
             // Otherwise we have a normal command and arguments.
@@ -66,23 +68,26 @@ impl CommandLine {
 
         CommandLine {
             command: command_line,
-            input: input_line,
-            main_command: join(main_line),
+            // input: if join_input {
+            //     join_args(input_line)
+            // } else {
+            //     input_line.join("")
+            // },
+            input: input_line.join(" "),
+            main_command: join_args(main_line),
         }
     }
 }
 
 impl Display for CommandLine {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let command = join(&self.command);
+        let command = join_args(&self.command);
 
         write!(f, "{}", &command)?;
 
         if !self.input.is_empty() {
             let debug_input = env::var("MOON_DEBUG_PROCESS_INPUT").is_ok();
-
-            // Not args, so don't join like they are!
-            let input = self.input.join(" ");
+            let input = &self.input;
 
             if !command.ends_with('-') {
                 write!(f, " -")?;
@@ -119,7 +124,7 @@ impl<'cmd> CommandInspector<'cmd> {
     pub fn get_cache_key(&self) -> String {
         let line = self.get_command_line();
 
-        format!("{}{}", line.command.join(" "), line.input.join(" "))
+        format!("{}{}", line.command.join(" "), line.input)
     }
 
     pub fn get_command_line(&self) -> &CommandLine {

@@ -1,3 +1,4 @@
+use moon_config::ConfigError;
 use moon_error::MoonError;
 use moon_target::TargetError;
 use starbase_styles::{Style, Stylize};
@@ -23,7 +24,7 @@ pub enum TaskError {
     MissingOutput(String, String),
 
     #[error(transparent)]
-    ArgsParse(#[from] shell_words::ParseError),
+    Config(#[from] ConfigError),
 
     #[error(transparent)]
     Moon(#[from] MoonError),

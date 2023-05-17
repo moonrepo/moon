@@ -3,6 +3,9 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ProcessError {
+    #[error("Failed to split arguments {}. {error}", .args.style(Style::Shell))]
+    ArgsSplit { args: String, error: String },
+
     #[error("Failed to execute {} and capture output.", .bin.style(Style::Shell))]
     Capture {
         bin: String,

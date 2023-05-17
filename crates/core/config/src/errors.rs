@@ -32,6 +32,9 @@ pub enum ConfigError {
     UnsupportedHttps(String),
 
     #[error(transparent)]
+    ArgsParse(#[from] shell_words::ParseError),
+
+    #[error(transparent)]
     Figment(#[from] FigmentError),
 
     #[error(transparent)]

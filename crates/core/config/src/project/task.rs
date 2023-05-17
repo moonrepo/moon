@@ -2,11 +2,12 @@ use crate::project::language_platform::PlatformType;
 use crate::project::task_options::TaskOptionsConfig;
 use crate::types::{FilePath, InputValue, TargetID};
 use crate::validators::{is_default, validate_child_or_root_path, validate_id, validate_target};
+use crate::ConfigError;
 use moon_utils::regex::ENV_VAR;
 use rustc_hash::FxHashMap;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use shell_words::{split as split_args, ParseError as ArgsParseError};
+use shell_words::split as split_args;
 use strum::{Display, EnumString};
 use validator::{Validate, ValidationError};
 
@@ -130,7 +131,7 @@ impl TaskConfig {
         String::new()
     }
 
-    pub fn get_command_and_args(&self) -> Result<(Option<String>, Vec<String>), ArgsParseError> {
+    pub fn get_command_and_args(&self) -> Result<(Option<String>, Vec<String>), ConfigError> {
         let mut command = None;
         let mut args = vec![];
 
@@ -142,7 +143,7 @@ impl TaskConfig {
 
             if !cmd_list.is_empty() {
                 command = Some(cmd_list.remove(0));
-                args.extend(cmd_list.clone());
+                args.extend(cmd_list);
             }
         }
 
@@ -153,5 +154,30 @@ impl TaskConfig {
         }
 
         Ok((command, args))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use moon_utils::string_vec;
+
+    #[test]
+    fn splits_multi_command() {
+        let task = TaskConfig {
+            command: Some(TaskCommandArgs::String(
+                "mkdir -p dist/@codegen; cp -r src/@codegen dist".into(),
+            )),
+            ..TaskConfig::default()
+        };
+
+        assert_eq!(task.get_command(), "mkdir");
+        assert_eq!(
+            task.get_command_and_args().unwrap(),
+            (
+                Some("mkdir".to_owned()),
+                string_vec!["-p", "dist/@codegen;", "cp", "-r", "src/@codegen", "dist"]
+            )
+        );
     }
 }

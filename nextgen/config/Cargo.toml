@@ -8,7 +8,7 @@ moon_common = { path = "../common" }
 moon_target = { path = "../target" }
 proto_cli = { workspace = true }
 rustc-hash = { workspace = true }
-schematic = { version = "0.2.1", default-features = false, features = ["yaml", "valid_url"] }
+schematic = { version = "0.2.3", default-features = false, features = ["yaml", "valid_url"] }
 semver = "1.0.17"
 serde = { workspace = true }
 shell-words = { workspace = true }

@@ -6,7 +6,7 @@ use crate::FilePath;
 use moon_common::{consts, Id};
 use moon_target::Target;
 use rustc_hash::FxHashMap;
-use schematic::{merge, validate, Config, ConfigError, ConfigLoader, PartialConfig};
+use schematic::{color, merge, validate, Config, ConfigError, ConfigLoader, PartialConfig};
 use std::hash::Hash;
 use std::{collections::BTreeMap, path::Path};
 
@@ -50,9 +50,16 @@ pub struct InheritedTasksConfig {
 }
 
 impl InheritedTasksConfig {
-    pub fn load<T: AsRef<Path>>(path: T) -> Result<InheritedTasksConfig, ConfigError> {
+    pub fn load<T: AsRef<Path>, F: AsRef<Path>>(
+        workspace_root: T,
+        path: F,
+    ) -> Result<InheritedTasksConfig, ConfigError> {
+        let workspace_root = workspace_root.as_ref();
+        let path = path.as_ref();
+
         let result = ConfigLoader::<InheritedTasksConfig>::yaml()
-            .file(path.as_ref())?
+            .label(color::path(path))
+            .file(workspace_root.join(path))?
             .load()?;
 
         Ok(result.config)

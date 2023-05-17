@@ -5,7 +5,7 @@ use crate::project::*;
 use crate::relative_path::RelativePath;
 use moon_common::Id;
 use rustc_hash::FxHashMap;
-use schematic::{config_enum, Config, ConfigError, ConfigLoader, ValidateError};
+use schematic::{color, config_enum, Config, ConfigError, ConfigLoader, ValidateError};
 use std::collections::BTreeMap;
 use std::path::Path;
 use strum::Display;
@@ -99,9 +99,16 @@ pub struct ProjectConfig {
 }
 
 impl ProjectConfig {
-    pub fn load<T: AsRef<Path>>(path: T) -> Result<ProjectConfig, ConfigError> {
+    pub fn load<T: AsRef<Path>, F: AsRef<Path>>(
+        workspace_root: T,
+        path: F,
+    ) -> Result<ProjectConfig, ConfigError> {
+        let workspace_root = workspace_root.as_ref();
+        let path = path.as_ref();
+
         let result = ConfigLoader::<ProjectConfig>::yaml()
-            .file(path.as_ref())?
+            .label(color::path(path))
+            .file(workspace_root.join(path))?
             .load()?;
 
         Ok(result.config)

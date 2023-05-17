@@ -33,6 +33,7 @@ impl Default for WorkspaceProjects {
 }
 
 #[derive(Config)]
+#[config(file = ".moon/workspace.yml")]
 pub struct WorkspaceConfig {
     #[setting(
         default = "https://moonrepo.dev/schemas/workspace.json",

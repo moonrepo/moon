@@ -1,7 +1,7 @@
 // template.yml
 
 use rustc_hash::FxHashMap;
-use schematic::{config_enum, validate, Config, ConfigError, ConfigLoader};
+use schematic::{color, config_enum, validate, Config, ConfigError, ConfigLoader};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
@@ -64,6 +64,7 @@ pub struct TemplateConfig {
 impl TemplateConfig {
     pub fn load<T: AsRef<Path>>(path: T) -> Result<TemplateConfig, ConfigError> {
         let result = ConfigLoader::<TemplateConfig>::yaml()
+            .label(color::path(path.as_ref()))
             .file(path.as_ref())?
             .load()?;
 

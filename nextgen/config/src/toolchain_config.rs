@@ -8,6 +8,7 @@ use std::path::Path;
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain
 #[derive(Config)]
+#[config(file = ".moon/toolchain.yml")]
 pub struct ToolchainConfig {
     #[setting(
         default = "https://moonrepo.dev/schemas/toolchain.json",

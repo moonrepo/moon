@@ -784,7 +784,7 @@ impl<'a> Runner<'a> {
             args.extend(&context.passthrough_args);
         }
 
-        let command_line = args::join(args);
+        let command_line = args::join_args(args);
 
         let message = color::muted_light(command.inspect().format_command(
             &command_line,

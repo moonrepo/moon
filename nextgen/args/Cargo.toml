@@ -1,0 +1,9 @@
+[package]
+name = "moon_args"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+shell-words = "1.1.0"
+thiserror = { workspace = true }
+winsplit = "0.1.0"

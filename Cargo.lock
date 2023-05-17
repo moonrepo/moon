@@ -2603,6 +2603,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_args"
+version = "0.1.0"
+dependencies = [
+ "shell-words",
+ "thiserror",
+ "winsplit",
+]
+
+[[package]]
 name = "moon_bun_lang"
 version = "0.1.0"
 dependencies = [
@@ -2717,6 +2726,7 @@ dependencies = [
  "figment",
  "httpmock",
  "moon",
+ "moon_args",
  "moon_constants",
  "moon_error",
  "moon_logger",
@@ -2729,7 +2739,6 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_yaml",
- "shell-words",
  "starbase_styles",
  "starbase_utils",
  "strum",
@@ -3114,14 +3123,13 @@ name = "moon_process"
 version = "0.1.0"
 dependencies = [
  "cached",
+ "moon_args",
  "moon_common",
  "once_cell",
  "rustc-hash",
- "shell-words",
  "thiserror",
  "tokio",
  "tracing",
- "winsplit",
 ]
 
 [[package]]

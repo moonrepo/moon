@@ -1,5 +1,5 @@
-use crate::args;
 use crate::command::Command;
+use moon_args::join_args;
 use moon_common::color;
 use once_cell::sync::OnceCell;
 use rustc_hash::FxHashMap;
@@ -49,7 +49,7 @@ impl CommandLine {
                 let mut sub_line: Vec<String> = vec![];
                 push_to_line(&mut sub_line);
 
-                command_line.push(sub_line.join(" "));
+                command_line.push(join_args(sub_line));
             }
 
             // Otherwise we have a normal command and arguments.
@@ -68,14 +68,14 @@ impl CommandLine {
             command: command_line,
             // Not args, so don't join like they are!
             input: input_line.join(" "),
-            main_command: args::join(main_line),
+            main_command: join_args(main_line),
         }
     }
 }
 
 impl Display for CommandLine {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let command = args::join(&self.command);
+        let command = join_args(&self.command);
 
         write!(f, "{}", &command)?;
 

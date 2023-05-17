@@ -14,7 +14,6 @@ fn pad_semicolon(line: &str) -> String {
     line.replace("; ", " ; ")
 }
 
-#[cfg(not(windows))]
 pub fn split_args<T: AsRef<str>>(line: T) -> Result<Vec<String>, ArgsSplitError> {
     let line = pad_semicolon(line.as_ref());
 
@@ -24,12 +23,12 @@ pub fn split_args<T: AsRef<str>>(line: T) -> Result<Vec<String>, ArgsSplitError>
     })
 }
 
-#[cfg(windows)]
-pub fn split_args<T: AsRef<str>>(line: T) -> Result<Vec<String>, ArgsSplitError> {
-    let line = pad_semicolon(line.as_ref());
+// #[cfg(windows)]
+// pub fn split_args<T: AsRef<str>>(line: T) -> Result<Vec<String>, ArgsSplitError> {
+//     let line = pad_semicolon(line.as_ref());
 
-    Ok(winsplit::split(&line))
-}
+//     Ok(winsplit::split(&line))
+// }
 
 // Using `shell_words::join` here incorrectly quotes ";" and other
 // characters, breaking multi-commands.

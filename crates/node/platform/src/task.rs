@@ -160,6 +160,10 @@ pub fn create_task(
     let mut env = FxHashMap::default();
 
     for (index, arg) in script_args.iter().enumerate() {
+        if arg == ";" {
+            continue;
+        }
+
         // Extract environment variables
         if ARG_ENV_VAR.is_match(arg) {
             let (key, val) = clean_env_var(arg);

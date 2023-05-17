@@ -65,6 +65,23 @@ mod split_args {
             vec!["bin1", "arg", ";", "bin2", "arg"]
         );
     }
+
+    #[test]
+    fn operators() {
+        assert_eq!(
+            split_args("bin || true").unwrap(),
+            vec!["bin", "||", "true"]
+        );
+        assert_eq!(
+            split_args("bin > ./file").unwrap(),
+            vec!["bin", ">", "./file"]
+        );
+        assert_eq!(
+            split_args("bin >> ./file").unwrap(),
+            vec!["bin", ">>", "./file"]
+        );
+        assert_eq!(split_args("bin | bin2").unwrap(), vec!["bin", "|", "bin2"]);
+    }
 }
 
 mod join_args {
@@ -110,5 +127,13 @@ mod join_args {
             join_args(vec!["bin1", "arg", ";", "bin2", "arg"]),
             "bin1 arg ; bin2 arg"
         );
+    }
+
+    #[test]
+    fn operators() {
+        assert_eq!(join_args(vec!["bin", "||", "true"]), "bin || true");
+        assert_eq!(join_args(vec!["bin", ">", "./file"]), "bin > ./file");
+        assert_eq!(join_args(vec!["bin", ">>", "./file"]), "bin >> ./file");
+        assert_eq!(join_args(vec!["bin", "|", "bin2"]), "bin | bin2");
     }
 }

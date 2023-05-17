@@ -176,7 +176,15 @@ mod tests {
             task.get_command_and_args().unwrap(),
             (
                 Some("mkdir".to_owned()),
-                string_vec!["-p", "dist/@codegen;", "cp", "-r", "src/@codegen", "dist"]
+                string_vec![
+                    "-p",
+                    "dist/@codegen",
+                    ";",
+                    "cp",
+                    "-r",
+                    "src/@codegen",
+                    "dist"
+                ]
             )
         );
     }

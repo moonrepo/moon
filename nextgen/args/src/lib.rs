@@ -31,22 +31,31 @@ pub fn split_args<T: AsRef<str>>(line: T) -> Result<Vec<String>, ArgsSplitError>
     Ok(winsplit::split(&line))
 }
 
+// Using `shell_words::join` here incorrectly quotes ";" and other
+// characters, breaking multi-commands.
 pub fn join_args<I, S>(args: I) -> String
 where
     I: IntoIterator<Item = S>,
     S: AsRef<str>,
 {
-    let mut line = shell_words::join(args);
+    let mut line = args.into_iter().fold(String::new(), |mut line, arg| {
+        let arg = arg.as_ref();
 
-    // Using `join_args` here incorrectly quotes ";" and other
-    // characters, breaking multi-commands.
-    if line.contains(" ';' ") {
-        line = line.replace("';'", ";");
-    }
+        match arg {
+            "&" | "&&" | "|" | "||" | ";" | "!" | ">" | ">>" | "<" => {
+                line.push_str(arg);
+                line.push(' ');
+            }
+            _ => {
+                let quoted = shell_words::quote(arg);
+                line.push_str(quoted.as_ref());
+                line.push(' ');
+            }
+        };
 
-    if line.contains(" '&&' ") {
-        line = line.replace("'&&'", "&&");
-    }
+        line
+    });
 
+    line.pop();
     line
 }

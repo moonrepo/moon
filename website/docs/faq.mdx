@@ -120,9 +120,19 @@ it's not a perfect solution.
 
 ### How to run multiple commands within a task?
 
-A task in moon is a single command, representing its inputs and outputs, and as such, cannot run
-multiple commands with `&&` within a single task declaration. However, we do suggest the following
-alternatives:
+Only system tasks can run multiple commands via `&&` or `;` syntax. This is possible as we execute
+these commands within a shell, and not directly with the toolchain.
+
+```yaml title="moon.yml"
+tasks:
+	multiple:
+		command: 'mkdir test && cd test'
+		platform: 'system'
+```
+
+Non system-tasks cannot run multiple commands, as a task in moon is a represented as a single
+command, with inputs, outputs, and more, and is managed by the toolchain. However, we do suggest the
+following alternatives:
 
 - Create a task for each command, and link them as dependencies with
   [`deps`](./config/project#deps). This allows for each command to be incrementally cached (when

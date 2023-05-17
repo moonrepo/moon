@@ -20,7 +20,7 @@ impl CommandLine {
         let mut command_line: Vec<String> = vec![];
         let mut input_line: Vec<String> = vec![];
         let mut main_line: Vec<String> = vec![];
-        let mut join_input = false;
+        // let mut join_input = false;
 
         let push_to_line = |line: &mut Vec<String>| {
             line.push(command.bin.to_string_lossy().to_string());
@@ -42,7 +42,7 @@ impl CommandLine {
             // If the main command should be passed via stdin,
             // then append the input line instead of the command line.
             if shell.pass_args_stdin {
-                join_input = true;
+                // join_input = true;
                 push_to_line(&mut input_line);
 
                 // Otherwise append as a *single* argument. This typically
@@ -68,11 +68,12 @@ impl CommandLine {
 
         CommandLine {
             command: command_line,
-            input: if join_input {
-                join_args(input_line)
-            } else {
-                input_line.join("")
-            },
+            // input: if join_input {
+            //     join_args(input_line)
+            // } else {
+            //     input_line.join("")
+            // },
+            input: input_line.join(" "),
             main_command: join_args(main_line),
         }
     }

@@ -2,12 +2,13 @@
 
 use crate::toolchain::*;
 use crate::{inherit_tool, inherit_tool_without_version};
+use moon_common::consts;
 use proto::ToolsConfig;
 use schematic::{validate, Config, ConfigError, ConfigLoader};
 use std::path::Path;
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain
-#[derive(Config)]
+#[derive(Debug, Config)]
 #[config(file = ".moon/toolchain.yml")]
 pub struct ToolchainConfig {
     #[setting(
@@ -70,5 +71,18 @@ impl ToolchainConfig {
         result.config.inherit_proto(proto_tools)?;
 
         Ok(result.config)
+    }
+
+    pub fn load_from<T: AsRef<Path>>(
+        workspace_root: T,
+        proto_tools: &ToolsConfig,
+    ) -> Result<ToolchainConfig, ConfigError> {
+        Self::load(
+            workspace_root
+                .as_ref()
+                .join(consts::CONFIG_DIRNAME)
+                .join(consts::CONFIG_TOOLCHAIN_FILENAME),
+            proto_tools,
+        )
     }
 }

@@ -10,10 +10,11 @@ use schematic::{color, merge, validate, Config, ConfigError, ConfigLoader, Parti
 use std::hash::Hash;
 use std::{collections::BTreeMap, path::Path};
 
-pub fn merge_fxhashmap<K, V>(
+pub fn merge_fxhashmap<K, V, C>(
     mut prev: FxHashMap<K, V>,
     next: FxHashMap<K, V>,
-) -> Option<FxHashMap<K, V>>
+    _: &C,
+) -> Result<Option<FxHashMap<K, V>>, ConfigError>
 where
     K: Eq + Hash,
 {
@@ -21,7 +22,7 @@ where
         prev.insert(key, value);
     }
 
-    Some(prev)
+    Ok(Some(prev))
 }
 
 /// Docs: https://moonrepo.dev/docs/config/tasks
@@ -152,7 +153,7 @@ impl InheritedTasksManager {
                     }
                 }
 
-                config.merge(managed_config);
+                config.merge(&(), managed_config).unwrap();
             }
         }
 

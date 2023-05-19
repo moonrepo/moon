@@ -2,7 +2,7 @@ use crate::relative_path::FilePath;
 use schematic::Config;
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain#typescript
-#[derive(Config)]
+#[derive(Debug, Config)]
 pub struct TypeScriptConfig {
     #[setting(default = true)]
     pub create_missing_config: bool,

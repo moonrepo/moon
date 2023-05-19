@@ -1,5 +1,6 @@
 // template.yml
 
+use moon_common::consts;
 use rustc_hash::FxHashMap;
 use schematic::{color, config_enum, validate, Config, ConfigError, ConfigLoader};
 use serde::{Deserialize, Serialize};
@@ -26,7 +27,7 @@ config_enum!(
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct TemplateVariableEnumSetting {
     pub default: String,
-    pub multiple: bool,
+    pub multiple: Option<bool>,
     pub prompt: String,
     pub values: Vec<TemplateVariableEnumValue>,
 }
@@ -36,8 +37,8 @@ config_enum!(
     pub enum TemplateVariable {
         Boolean(TemplateVariableSetting<bool>),
         Enum(TemplateVariableEnumSetting),
-        Number(TemplateVariableSetting<i32>),
-        // NumberList(TemplateVariableConfig<Vec<i32>>),
+        Number(TemplateVariableSetting<usize>),
+        // NumberList(TemplateVariableConfig<Vec<usize>>),
         String(TemplateVariableSetting<String>),
         // StringList(TemplateVariableConfig<Vec<String>>),
     }
@@ -69,5 +70,9 @@ impl TemplateConfig {
             .load()?;
 
         Ok(result.config)
+    }
+
+    pub fn load_from<T: AsRef<Path>>(root: T) -> Result<TemplateConfig, ConfigError> {
+        Self::load(root.as_ref().join(consts::CONFIG_TEMPLATE_FILENAME))
     }
 }

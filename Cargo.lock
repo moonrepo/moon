@@ -2783,6 +2783,7 @@ dependencies = [
  "semver",
  "serde",
  "serde_json",
+ "starbase_sandbox",
  "strum",
 ]
 

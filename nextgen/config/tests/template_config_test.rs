@@ -9,6 +9,16 @@ mod template_config {
     use super::*;
 
     #[test]
+    #[should_panic(
+        expected = "unknown field `unknown`, expected one of `$schema`, `description`, `title`, `variables`"
+    )]
+    fn error_unknown_field() {
+        test_load_config(CONFIG_TEMPLATE_FILENAME, "unknown: 123", |path| {
+            TemplateConfig::load_from(path)
+        });
+    }
+
+    #[test]
     fn loads_defaults() {
         let config = test_load_config(
             CONFIG_TEMPLATE_FILENAME,
@@ -71,6 +81,24 @@ mod template_config {
             TemplateVariable, TemplateVariableEnumSetting, TemplateVariableEnumValue,
             TemplateVariableSetting,
         };
+
+        #[test]
+        #[should_panic(
+            expected = "unknown variant `array`, expected one of `boolean`, `enum`, `number`, `string`"
+        )]
+        fn error_unknown_variable_type() {
+            test_load_config(
+                CONFIG_TEMPLATE_FILENAME,
+                r"
+title: title
+description: description
+variables:
+  unknown:
+    type: array
+",
+                |path| TemplateConfig::load_from(path),
+            );
+        }
 
         #[test]
         fn loads_boolean() {

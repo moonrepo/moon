@@ -8,6 +8,6 @@ pub struct RustConfig {
 
     pub sync_toolchain_config: bool,
 
-    #[setting(validate = validate_semver)]
+    #[setting(env = "MOON_RUST_VERSION", validate = validate_semver)]
     pub version: Option<String>,
 }

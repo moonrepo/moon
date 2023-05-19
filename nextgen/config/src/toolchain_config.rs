@@ -11,7 +11,7 @@ use std::path::Path;
 #[config(file = ".moon/toolchain.yml")]
 pub struct ToolchainConfig {
     #[setting(
-        default = "https://moonrepo.dev/schemas/toolchain.json",
+        default_str = "https://moonrepo.dev/schemas/toolchain.json",
         rename = "$schema"
     )]
     pub schema: String,

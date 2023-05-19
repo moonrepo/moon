@@ -4,21 +4,32 @@ use crate::relative_path::RelativePath;
 use moon_target::Target;
 use rustc_hash::FxHashMap;
 use schematic::{config_enum, Config, ValidateError};
-use shell_words::ParseError;
 use strum::Display;
 
 fn validate_command<C>(
-    _cmd: &TaskCommandArgs,
-    task: &TaskConfig,
+    cmd: &TaskCommandArgs,
+    _task: &TaskConfig,
     _ctx: &C,
 ) -> Result<(), ValidateError> {
     // Only fail for empty strings and not `None`
-    if let Some(cmd) = task.get_command() {
-        if cmd.is_empty() {
-            return Err(ValidateError::new(
-                "a command is required; use \"noop\" otherwise",
-            ));
+    let empty = match cmd {
+        TaskCommandArgs::None => false,
+        TaskCommandArgs::String(cmd_string) => {
+            let mut parts = cmd_string.split(' ');
+
+            if let Some(part) = parts.next() {
+                part.is_empty()
+            } else {
+                true
+            }
         }
+        TaskCommandArgs::Sequence(cmd_args) => cmd_args.is_empty() || cmd_args[0].is_empty(),
+    };
+
+    if empty {
+        return Err(ValidateError::new(
+            "a command is required; use \"noop\" otherwise",
+        ));
     }
 
     Ok(())
@@ -61,6 +72,7 @@ pub struct TaskConfig {
 
     pub env: FxHashMap<String, String>,
 
+    // TODO
     #[setting(skip)]
     pub global_inputs: Vec<RelativePath>,
 
@@ -77,50 +89,4 @@ pub struct TaskConfig {
 
     #[setting(rename = "type")]
     pub type_of: TaskType,
-}
-
-impl TaskConfig {
-    pub fn get_command(&self) -> Option<String> {
-        match &self.command {
-            TaskCommandArgs::None => {}
-            TaskCommandArgs::String(cmd_string) => {
-                let mut parts = cmd_string.split(' ');
-
-                if let Some(part) = parts.next() {
-                    return Some(part.to_owned());
-                }
-            }
-            TaskCommandArgs::Sequence(cmd_args) => {
-                if !cmd_args.is_empty() {
-                    return Some(cmd_args[0].to_owned());
-                }
-            }
-        };
-
-        None
-    }
-
-    pub fn get_command_and_args(&self) -> Result<(Option<String>, Vec<String>), ParseError> {
-        let mut command = None;
-        let mut args = vec![];
-
-        let mut cmd_list = match &self.command {
-            TaskCommandArgs::None => vec![],
-            TaskCommandArgs::String(cmd_string) => shell_words::split(cmd_string)?,
-            TaskCommandArgs::Sequence(cmd_args) => cmd_args.clone(),
-        };
-
-        if !cmd_list.is_empty() {
-            command = Some(cmd_list.remove(0));
-            args.extend(cmd_list.clone());
-        }
-
-        match &self.args {
-            TaskCommandArgs::None => {}
-            TaskCommandArgs::String(args_string) => args.extend(shell_words::split(args_string)?),
-            TaskCommandArgs::Sequence(args_list) => args.extend(args_list.clone()),
-        }
-
-        Ok((command, args))
-    }
 }

@@ -65,7 +65,7 @@ config_enum!(
 #[derive(Config)]
 pub struct ProjectConfig {
     #[setting(
-        default = "https://moonrepo.dev/schemas/project.json",
+        default_str = "https://moonrepo.dev/schemas/project.json",
         rename = "$schema"
     )]
     pub schema: String,

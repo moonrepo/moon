@@ -29,7 +29,7 @@ where
 #[derive(Debug, Default, Clone, Config)]
 pub struct InheritedTasksConfig {
     #[setting(
-        default_str = "https://moonrepo.dev/schemas/tasks.json",
+        default = "https://moonrepo.dev/schemas/tasks.json",
         rename = "$schema"
     )]
     pub schema: String,

@@ -48,7 +48,7 @@ config_enum!(
 #[derive(Config)]
 pub struct TemplateConfig {
     #[setting(
-        default_str = "https://moonrepo.dev/schemas/template.json",
+        default = "https://moonrepo.dev/schemas/template.json",
         rename = "$schema"
     )]
     pub schema: String,

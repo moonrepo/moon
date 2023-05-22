@@ -4,7 +4,7 @@ use schematic::{Config, ConfigError, ConfigLoader};
 #[derive(Config)]
 pub struct TemplateFrontmatterConfig {
     #[setting(
-        default_str = "https://moonrepo.dev/schemas/template-frontmatter.json",
+        default = "https://moonrepo.dev/schemas/template-frontmatter.json",
         rename = "$schema"
     )]
     pub schema: String,

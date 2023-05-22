@@ -15,7 +15,7 @@ config_enum!(
 
 #[derive(Config)]
 pub struct VcsConfig {
-    #[setting(default_str = "master")]
+    #[setting(default = "master")]
     pub default_branch: String,
 
     pub manager: VcsManager,

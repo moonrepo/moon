@@ -5,7 +5,7 @@ use schematic::Config;
 pub struct RunnerConfig {
     pub archivable_targets: Vec<Target>,
 
-    #[setting(default_str = "7 days")]
+    #[setting(default = "7 days")]
     pub cache_lifetime: String,
 
     #[setting(default = true)]

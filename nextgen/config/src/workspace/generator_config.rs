@@ -9,7 +9,7 @@ fn default_templates<C>(_ctx: &C) -> Option<Vec<ProjectRelativePath<FilePath>>> 
 pub struct GeneratorConfig {
     #[setting(
         validate = validate::not_empty,
-        default_fn = default_templates
+        default = default_templates
     )]
     pub templates: Vec<ProjectRelativePath<FilePath>>,
 }

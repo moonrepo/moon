@@ -1,7 +1,6 @@
 use moon_cli::enums::TouchedStatus;
 use moon_cli::queries::projects::{QueryProjectsResult, QueryTasksResult};
 use moon_cli::queries::touched_files::QueryTouchedFilesResult;
-use moon_common::Id;
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, get_assert_stdout_output,
     get_cases_fixture_configs, get_projects_fixture_configs, predicates::prelude::*, Sandbox,
@@ -649,7 +648,7 @@ mod tasks {
         let json: QueryTasksResult = serde_json::from_str(&assert.output()).unwrap();
         let tasks = json
             .tasks
-            .get(&Id::raw("tasks"))
+            .get("tasks")
             .unwrap()
             .keys()
             .map(|k| k.to_owned())

@@ -438,27 +438,19 @@ mod config_loading {
         let project = graph.get("project").unwrap();
 
         assert_eq!(
-            project.tasks.get(&Id::raw("global")).unwrap().platform,
+            project.tasks.get("global").unwrap().platform,
             PlatformType::System
         );
         assert_eq!(
-            project.tasks.get(&Id::raw("node")).unwrap().platform,
+            project.tasks.get("node").unwrap().platform,
             PlatformType::Node
         );
         assert_eq!(
-            project
-                .tasks
-                .get(&Id::raw("node-detected"))
-                .unwrap()
-                .platform,
+            project.tasks.get("node-detected").unwrap().platform,
             PlatformType::Node
         );
         assert_eq!(
-            project
-                .tasks
-                .get(&Id::raw("system-via-node"))
-                .unwrap()
-                .platform,
+            project.tasks.get("system-via-node").unwrap().platform,
             PlatformType::System
         );
     }
@@ -472,23 +464,15 @@ mod config_loading {
         let project = graph.get("other").unwrap();
 
         assert_eq!(
-            project.tasks.get(&Id::raw("global")).unwrap().platform,
+            project.tasks.get("global").unwrap().platform,
             PlatformType::System
         );
         assert_eq!(
-            project
-                .tasks
-                .get(&Id::raw("swift-detected"))
-                .unwrap()
-                .platform,
+            project.tasks.get("swift-detected").unwrap().platform,
             PlatformType::System
         );
         assert_eq!(
-            project
-                .tasks
-                .get(&Id::raw("system-via-swift"))
-                .unwrap()
-                .platform,
+            project.tasks.get("system-via-swift").unwrap().platform,
             PlatformType::System
         );
     }

@@ -7,7 +7,8 @@ use clap::{Parser, Subcommand};
 use clap_complete::Shell;
 use moon_action_context::ProfileType;
 use moon_common::Id;
-use moon_config::{FileGlob, TargetID};
+use moon_config::FileGlob;
+use moon_target::Target;
 use std::path::PathBuf;
 
 pub const BIN_NAME: &str = if cfg!(windows) { "moon.exe" } else { "moon" };
@@ -339,7 +340,7 @@ pub enum Commands {
     )]
     Sync,
 
-    // moon task <id>
+    // moon task <target>
     #[command(
         name = "task",
         about = "Display information about a single task.",
@@ -347,7 +348,7 @@ pub enum Commands {
     )]
     Task {
         #[arg(help = "Target of task to display")]
-        id: TargetID,
+        target: Target,
 
         #[arg(long, help = "Print in JSON format")]
         json: bool,

@@ -1,6 +1,6 @@
 use crate::project::language_platform::PlatformType;
 use crate::project::task_options::TaskOptionsConfig;
-use crate::types::{FilePath, InputValue, TargetID};
+use crate::types::{FilePath, InputValue};
 use crate::validators::{is_default, validate_child_or_root_path, validate_id, validate_target};
 use crate::ConfigError;
 use moon_args::split_args;
@@ -82,7 +82,7 @@ pub struct TaskConfig {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[validate(custom = "validate_deps")]
-    pub deps: Option<Vec<TargetID>>,
+    pub deps: Option<Vec<String>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub env: Option<FxHashMap<String, String>>,

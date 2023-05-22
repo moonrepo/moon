@@ -348,7 +348,7 @@ tasks:
             let config: ProjectConfig = super::load_jailed_config()?; // jail.directory())?;
 
             assert_eq!(
-                config.tasks.get(&Id::raw("build")).unwrap(),
+                config.tasks.get("build").unwrap(),
                 &TaskConfig {
                     command: Some(TaskCommandArgs::String("webpack".to_owned())),
                     inputs: Some(string_vec!["src/**/*"]),
@@ -357,7 +357,7 @@ tasks:
             );
 
             assert_eq!(
-                config.tasks.get(&Id::raw("start")).unwrap(),
+                config.tasks.get("start").unwrap(),
                 &TaskConfig {
                     command: Some(TaskCommandArgs::String("webpack".to_owned())),
                     args: Some(TaskCommandArgs::String("serve".to_owned())),
@@ -392,7 +392,7 @@ tasks:
             let config: ProjectConfig = super::load_jailed_config()?;
 
             assert_eq!(
-                config.tasks.get(&Id::raw("build")).unwrap(),
+                config.tasks.get("build").unwrap(),
                 &TaskConfig {
                     command: Some(TaskCommandArgs::String("webpack".to_owned())),
                     inputs: Some(string_vec!["src/**/*"]),
@@ -401,7 +401,7 @@ tasks:
             );
 
             assert_eq!(
-                config.tasks.get(&Id::raw("start")).unwrap(),
+                config.tasks.get("start").unwrap(),
                 &TaskConfig {
                     command: Some(TaskCommandArgs::String("webpack".to_owned())),
                     args: Some(TaskCommandArgs::String("serve".to_owned())),
@@ -733,7 +733,7 @@ mod tags {
 
     #[test]
     #[should_panic(
-        expected = "Must be a valid ID (accepts A-Z, a-z, 0-9, . (periods), - (dashes), _ (underscores), /, and must start with a letter)"
+        expected = "Invalid identifier foo bar. May only contain alpha-numeric characters, dashes (-), slashes (/), underscores (_), and dots (.)"
     )]
     fn invalid_format() {
         figment::Jail::expect_with(|jail| {

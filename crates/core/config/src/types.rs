@@ -19,10 +19,4 @@ pub type ProjectsSourcesMap = FxHashMap<Id, String>;
 
 pub type ProjectsAliasesMap = FxHashMap<ProjectAlias, Id>;
 
-// pub type ProjectID = String;
-
-// pub type TaskID = String;
-
 pub type TasksConfigsMap = BTreeMap<Id, TaskConfig>;
-
-pub type TargetID = String; // project_id:task_id

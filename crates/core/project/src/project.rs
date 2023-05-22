@@ -75,9 +75,7 @@ fn create_file_groups_from_config(
 
     // Override global configs with local
     for (group_id, files) in &config.file_groups {
-        let group_id = Id::raw(group_id); // TODO
-
-        if let Some(existing_group) = file_groups.get_mut(&group_id) {
+        if let Some(existing_group) = file_groups.get_mut(group_id) {
             debug!(
                 target: log_target,
                 "Merging file group {} with global config",
@@ -87,7 +85,7 @@ fn create_file_groups_from_config(
             existing_group.set_patterns(source, files);
         } else {
             file_groups.insert(
-                group_id.clone(),
+                group_id.to_owned(),
                 FileGroup::new_with_source(group_id, source, files)?,
             );
         }
@@ -108,15 +106,15 @@ fn create_dependencies_from_config(
         match dep_cfg {
             ProjectDependsOn::String(id) => {
                 deps.insert(
-                    Id::raw(id),
+                    id.to_owned(),
                     ProjectDependency {
-                        id: Id::raw(id),
+                        id: id.to_owned(),
                         ..ProjectDependency::default()
                     },
                 );
             }
             ProjectDependsOn::Object(cfg) => {
-                deps.insert(Id::raw(&cfg.id), ProjectDependency::from_config(cfg));
+                deps.insert(cfg.id.to_owned(), ProjectDependency::from_config(cfg));
             }
         }
     }
@@ -141,13 +139,12 @@ fn create_tasks_from_config(
     let mut rename: FxHashMap<Id, Id> = FxHashMap::default();
 
     if let Some(rename_config) = &project_config.workspace.inherited_tasks.rename {
-        for (k, v) in rename_config {
-            rename.insert(Id::raw(k), Id::raw(v));
-        }
+        rename.extend(rename_config.clone());
     }
 
     if let Some(include_config) = &project_config.workspace.inherited_tasks.include {
         include_all = false;
+        include.extend(include_config.clone());
 
         for i in include_config {
             include.insert(Id::raw(i));
@@ -155,15 +152,11 @@ fn create_tasks_from_config(
     }
 
     if let Some(exclude_config) = &project_config.workspace.inherited_tasks.exclude {
-        for i in exclude_config {
-            exclude.insert(Id::raw(i));
-        }
+        exclude.extend(exclude_config.clone());
     }
 
     // Add global tasks first while taking inheritance config into account
     for (task_id, task_config) in &global_tasks_config.tasks {
-        let task_id = Id::raw(task_id); // TODO
-
         // None = Include all
         // [] = Include none
         // ["a"] = Include "a"
@@ -175,7 +168,7 @@ fn create_tasks_from_config(
                 );
 
                 break;
-            } else if !include.contains(&task_id) {
+            } else if !include.contains(task_id) {
                 trace!(
                     target: log_target,
                     "Not inheriting global task {}, not explicitly included",
@@ -188,7 +181,7 @@ fn create_tasks_from_config(
 
         // None, [] = Exclude none
         // ["a"] = Exclude "a"
-        if !exclude.is_empty() && exclude.contains(&task_id) {
+        if !exclude.is_empty() && exclude.contains(task_id) {
             trace!(
                 target: log_target,
                 "Not inheriting global task {}, explicitly excluded",
@@ -198,7 +191,7 @@ fn create_tasks_from_config(
             continue;
         }
 
-        let task_name = if let Some(renamed_task_id) = rename.get(&task_id) {
+        let task_name = if let Some(renamed_task_id) = rename.get(task_id) {
             trace!(
                 target: log_target,
                 "Renaming global task {} to {}",
@@ -206,12 +199,12 @@ fn create_tasks_from_config(
                 color::id(renamed_task_id)
             );
 
-            renamed_task_id.to_owned()
+            renamed_task_id
         } else {
             trace!(
                 target: log_target,
                 "Inheriting global task {}",
-                color::id(&task_id)
+                color::id(task_id)
             );
 
             task_id
@@ -225,9 +218,7 @@ fn create_tasks_from_config(
 
     // Add local tasks second
     for (task_id, task_config) in &project_config.tasks {
-        let task_id = Id::raw(task_id); // TODO
-
-        if let Some(existing_task) = tasks.get_mut(&task_id) {
+        if let Some(existing_task) = tasks.get_mut(task_id) {
             debug!(
                 target: log_target,
                 "Merging task {} with global config",
@@ -239,7 +230,7 @@ fn create_tasks_from_config(
         } else {
             // Insert a new task
             tasks.insert(
-                task_id.clone(),
+                task_id.to_owned(),
                 Task::from_config(Target::new(project_id, task_id)?, task_config)?,
             );
         }

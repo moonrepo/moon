@@ -2,7 +2,6 @@
 // as we need to test task inheritance, task expansion, etc...
 
 use moon::{generate_project_graph, load_workspace_from};
-use moon_common::Id;
 use moon_config::{
     InheritedTasksConfig, NodeConfig, PlatformType, RustConfig, TaskCommandArgs, TaskConfig,
     TaskOptionsConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
@@ -99,7 +98,7 @@ mod task_inheritance {
                 .get("noTasks")
                 .unwrap()
                 .file_groups
-                .get(&Id::raw("files_glob"))
+                .get("files_glob")
                 .unwrap()
                 .globs,
             string_vec!["no-tasks/**/*.{ts,tsx}"]
@@ -110,7 +109,7 @@ mod task_inheritance {
                 .get("noTasks")
                 .unwrap()
                 .file_groups
-                .get(&Id::raw("static"))
+                .get("static")
                 .unwrap()
                 .files,
             string_vec![
@@ -132,7 +131,7 @@ mod task_inheritance {
                 .get("fileGroups")
                 .unwrap()
                 .file_groups
-                .get(&Id::raw("files_glob"))
+                .get("files_glob")
                 .unwrap()
                 .globs,
             string_vec!["file-groups/**/*.{ts,tsx}"]
@@ -143,7 +142,7 @@ mod task_inheritance {
                 .get("fileGroups")
                 .unwrap()
                 .file_groups
-                .get(&Id::raw("static"))
+                .get("static")
                 .unwrap()
                 .files,
             string_vec!["file-groups/file.js"]

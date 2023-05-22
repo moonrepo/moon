@@ -129,7 +129,7 @@ impl Platform for NodePlatform {
                     self.package_names
                         .insert(package_name.clone(), project_id.to_owned());
 
-                    if let Some(existing_source) = projects_map.get(&Id::raw(&alias)) {
+                    if let Some(existing_source) = projects_map.get(&alias) {
                         if existing_source != project_source {
                             warn!(
                                 target: LOG_TARGET,

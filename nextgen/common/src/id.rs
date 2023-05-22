@@ -4,6 +4,7 @@ use schemars::JsonSchema;
 use serde::{de, Deserialize, Deserializer, Serialize};
 use starbase_styles::{Style, Stylize};
 use std::{
+    borrow::Borrow,
     fmt::{self, Display},
     ops::Deref,
     str::FromStr,
@@ -12,8 +13,9 @@ use thiserror::Error;
 
 pub static ID_CHARS: &str = r"[0-9A-Za-z/\._-]*";
 
+// The @ is to support npm package scopes!
 pub static ID_PATTERN: Lazy<Regex> =
-    Lazy::new(|| Regex::new(&format!("^([A-Za-z]{{1}}{})$", ID_CHARS)).unwrap());
+    Lazy::new(|| Regex::new(&format!("^([A-Za-z@]{{1}}{})$", ID_CHARS)).unwrap());
 
 #[derive(Error, Debug)]
 #[error("Invalid identifier {}. May only contain alpha-numeric characters, dashes (-), slashes (/), underscores (_), and dots (.).", .0.style(Style::Id))]
@@ -86,11 +88,21 @@ impl PartialEq<String> for Id {
     }
 }
 
-impl From<&str> for Id {
-    fn from(s: &str) -> Self {
-        Id::new(s).unwrap()
+// Allows strings to be used for collection keys
+
+impl Borrow<String> for Id {
+    fn borrow(&self) -> &String {
+        &self.0
     }
 }
+
+impl Borrow<str> for Id {
+    fn borrow(&self) -> &str {
+        &self.0
+    }
+}
+
+// Parsing values
 
 impl FromStr for Id {
     type Err = IdError;
@@ -107,5 +119,13 @@ impl<'de> Deserialize<'de> for Id {
     {
         Id::new(String::deserialize(deserializer)?)
             .map_err(|error| de::Error::custom(error.to_string()))
+    }
+}
+
+// This is only used by tests!
+
+impl From<&str> for Id {
+    fn from(s: &str) -> Self {
+        Id::new(s).unwrap()
     }
 }

@@ -9,8 +9,7 @@ use std::{
     fmt::{self, Display},
 };
 
-// The project scope supports `@` because of Node.js packages,
-// but we don't want to support it in regular IDs!
+// The @ is to support npm package scopes!
 pub static TARGET_PATTERN: Lazy<Regex> = Lazy::new(|| {
     Regex::new(&format!(
         r"^(?P<scope>(?:[A-Za-z@#]{{1}}{chars}|\^|~))?:(?P<task>{chars})$",
@@ -164,14 +163,6 @@ impl Ord for Target {
     }
 }
 
-// This is only used by tests!
-
-impl From<&str> for Target {
-    fn from(value: &str) -> Self {
-        Target::parse(value).unwrap()
-    }
-}
-
 // These traits are for converting targets within configuration
 // into the `Target` object instead of strings.
 
@@ -187,5 +178,13 @@ impl TryFrom<String> for Target {
 impl Into<String> for Target {
     fn into(self) -> String {
         self.id
+    }
+}
+
+// This is only used by tests!
+
+impl From<&str> for Target {
+    fn from(value: &str) -> Self {
+        Target::parse(value).unwrap()
     }
 }

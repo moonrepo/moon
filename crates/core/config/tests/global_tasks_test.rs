@@ -1,5 +1,4 @@
 use httpmock::prelude::*;
-use moon_common::Id;
 use moon_config::{ConfigError, InheritedTasksConfig, TaskCommandArgs};
 use moon_constants::CONFIG_TASKS_FILENAME;
 use moon_test_utils::get_fixtures_path;
@@ -514,7 +513,7 @@ tasks:
             let config: InheritedTasksConfig = super::load_jailed_config(jail.directory())?;
 
             assert_eq!(
-                config.tasks.get(&Id::raw("build")).unwrap(),
+                config.tasks.get("build").unwrap(),
                 &TaskConfig {
                     command: Some(TaskCommandArgs::String("webpack".to_owned())),
                     inputs: Some(string_vec!["src/**/*"]),
@@ -523,7 +522,7 @@ tasks:
             );
 
             assert_eq!(
-                config.tasks.get(&Id::raw("start")).unwrap(),
+                config.tasks.get("start").unwrap(),
                 &TaskConfig {
                     command: Some(TaskCommandArgs::String("webpack".to_owned())),
                     args: Some(TaskCommandArgs::String("serve".to_owned())),
@@ -558,7 +557,7 @@ tasks:
             let config: InheritedTasksConfig = super::load_jailed_config(jail.directory())?;
 
             assert_eq!(
-                config.tasks.get(&Id::raw("build")).unwrap(),
+                config.tasks.get("build").unwrap(),
                 &TaskConfig {
                     command: Some(TaskCommandArgs::String("webpack".to_owned())),
                     inputs: Some(string_vec!["src/**/*"]),
@@ -567,7 +566,7 @@ tasks:
             );
 
             assert_eq!(
-                config.tasks.get(&Id::raw("start")).unwrap(),
+                config.tasks.get("start").unwrap(),
                 &TaskConfig {
                     command: Some(TaskCommandArgs::String("webpack".to_owned())),
                     args: Some(TaskCommandArgs::String("serve".to_owned())),

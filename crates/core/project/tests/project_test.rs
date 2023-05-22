@@ -120,7 +120,7 @@ fn basic_config() {
                 depends_on: vec![ProjectDependsOn::String("noConfig".into())],
                 file_groups: FxHashMap::from_iter([("tests".into(), string_vec!["**/*_test.rs"])]),
                 language: ProjectLanguage::JavaScript,
-                tags: string_vec!["vue"],
+                tags: vec![Id::raw("vue")],
                 ..ProjectConfig::default()
             },
             log_target: "moon:project:basic".into(),
@@ -156,7 +156,7 @@ fn advanced_config() {
                     maintainers: Some(string_vec!["Bruce Wayne"]),
                     channel: Some("#batcave".into()),
                 }),
-                tags: string_vec!["react"],
+                tags: vec![Id::raw("react")],
                 type_of: ProjectType::Application,
                 language: ProjectLanguage::TypeScript,
                 ..ProjectConfig::default()

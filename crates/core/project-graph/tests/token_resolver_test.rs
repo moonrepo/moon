@@ -1,3 +1,4 @@
+use moon_common::Id;
 use moon_config::{InheritedTasksManager, PlatformType, ProjectLanguage, ProjectType, TaskConfig};
 use moon_file_group::FileGroup;
 use moon_project::Project;
@@ -9,7 +10,7 @@ use rustc_hash::FxHashMap;
 use starbase_utils::{glob, string_vec};
 use std::path::{Path, PathBuf};
 
-pub fn create_file_groups(source: &str) -> FxHashMap<String, FileGroup> {
+pub fn create_file_groups(source: &str) -> FxHashMap<Id, FileGroup> {
     let mut map = FxHashMap::default();
 
     map.insert(
@@ -57,7 +58,7 @@ fn get_workspace_root() -> PathBuf {
 
 fn create_project(workspace_root: &Path) -> Project {
     let mut project = Project::new(
-        "project",
+        &Id::raw("project"),
         "files-and-dirs",
         workspace_root,
         &InheritedTasksManager::default(),

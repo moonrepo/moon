@@ -364,7 +364,7 @@ impl Project {
             target: &log_target,
             "Loading project from {} (id = {}, path = {})",
             color::path(&root),
-            color::id(&id),
+            color::id(id),
             color::file(&source),
         );
 
@@ -389,7 +389,7 @@ impl Project {
         let file_groups =
             create_file_groups_from_config(&log_target, &source, &config, &global_tasks)?;
         let dependencies = create_dependencies_from_config(&log_target, &config);
-        let tasks = create_tasks_from_config(&log_target, &id, &config, &global_tasks)?;
+        let tasks = create_tasks_from_config(&log_target, id, &config, &global_tasks)?;
 
         Ok(Project {
             alias: None,
@@ -413,9 +413,11 @@ impl Project {
     }
 
     /// Return a task with the defined ID.
-    pub fn get_task(&self, task_id: &Id) -> Result<&Task, ProjectError> {
+    pub fn get_task(&self, task_id: &str) -> Result<&Task, ProjectError> {
+        let task_id = Id::raw(task_id);
+
         self.tasks
-            .get(task_id)
+            .get(&task_id)
             .ok_or_else(|| ProjectError::UnconfiguredTask(task_id.to_string(), self.id.to_string()))
     }
 

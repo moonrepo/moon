@@ -436,7 +436,7 @@ mod cache_projects_state {
                 globs: string_vec!["**/*"],
                 last_glob_time: 0,
                 last_hash: String::new(),
-                projects: FxHashMap::from_iter([("foo".to_owned(), "bar".to_owned())]),
+                projects: FxHashMap::from_iter([("foo".into(), "bar".to_owned())]),
                 path: dir.path().join(".moon/cache/states/projects.json")
             }
         );
@@ -462,7 +462,7 @@ mod cache_projects_state {
                 globs: string_vec!["**/*"],
                 last_glob_time: 0,
                 last_hash: String::new(),
-                projects: FxHashMap::from_iter([("foo".to_owned(), "bar".to_owned())]),
+                projects: FxHashMap::from_iter([("foo".into(), "bar".to_owned())]),
                 path: dir.path().join(".moon/cache/states/projects.json")
             }
         );
@@ -500,7 +500,7 @@ mod cache_projects_state {
         let cache = CacheEngine::load(dir.path()).unwrap();
         let mut item = cache.cache_projects_state().unwrap();
 
-        item.projects.insert("foo".to_owned(), "bar".to_owned());
+        item.projects.insert("foo".into(), "bar".to_owned());
 
         run_with_env("", || item.save()).unwrap();
 

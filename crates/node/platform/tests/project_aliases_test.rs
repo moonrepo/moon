@@ -29,21 +29,15 @@ async fn loads_node_aliases_name_scopes() {
     assert_eq!(
         graph.aliases,
         FxHashMap::from_iter([
+            ("project-graph-aliases-explicit".into(), "explicit".into()),
             (
-                "project-graph-aliases-explicit".to_owned(),
-                "explicit".to_owned()
+                "project-graph-aliases-explicit-and-implicit".into(),
+                "explicitAndImplicit".into()
             ),
-            (
-                "project-graph-aliases-explicit-and-implicit".to_owned(),
-                "explicitAndImplicit".to_owned()
-            ),
-            (
-                "project-graph-aliases-implicit".to_owned(),
-                "implicit".to_owned()
-            ),
-            ("project-graph-aliases-node".to_owned(), "node".to_owned()),
-            ("pkg-bar".to_owned(), "nodeNameOnly".to_owned()),
-            ("@scope/pkg-foo".to_owned(), "nodeNameScope".to_owned())
+            ("project-graph-aliases-implicit".into(), "implicit".into()),
+            ("project-graph-aliases-node".into(), "node".into()),
+            ("pkg-bar".into(), "nodeNameOnly".into()),
+            ("@scope/pkg-foo".into(), "nodeNameScope".into())
         ])
     );
 }

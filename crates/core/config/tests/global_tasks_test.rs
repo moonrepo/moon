@@ -1,4 +1,5 @@
 use httpmock::prelude::*;
+use moon_common::Id;
 use moon_config::{ConfigError, InheritedTasksConfig, TaskCommandArgs};
 use moon_constants::CONFIG_TASKS_FILENAME;
 use moon_test_utils::get_fixtures_path;
@@ -34,10 +35,7 @@ fileGroups:
         assert_eq!(
             config,
             InheritedTasksConfig {
-                file_groups: FxHashMap::from_iter([(
-                    String::from("sources"),
-                    string_vec!["src/**/*"]
-                )]),
+                file_groups: FxHashMap::from_iter([("sources".into(), string_vec!["src/**/*"])]),
                 ..InheritedTasksConfig::default()
             }
         );
@@ -86,6 +84,7 @@ implicitDeps:
 
 mod extends {
     use super::*;
+    use moon_common::Id;
     use moon_config::{TaskConfig, TaskOptionsConfig};
     use moon_test_utils::pretty_assertions::assert_eq;
     use std::fs;
@@ -99,26 +98,26 @@ mod extends {
             config,
             InheritedTasksConfig {
                 file_groups: FxHashMap::from_iter([
-                    ("tests".to_owned(), string_vec!["tests/**/*"]),
-                    ("sources".to_owned(), string_vec!["sources/**/*"]), // NOT src/**/*
+                    ("tests".into(), string_vec!["tests/**/*"]),
+                    ("sources".into(), string_vec!["sources/**/*"]), // NOT src/**/*
                 ]),
                 tasks: BTreeMap::from([
                     (
-                        "lint".to_owned(),
+                        "lint".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::String("eslint".to_owned())),
                             ..TaskConfig::default()
                         },
                     ),
                     (
-                        "format".to_owned(),
+                        "format".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::String("prettier".to_owned())),
                             ..TaskConfig::default()
                         },
                     ),
                     (
-                        "test".to_owned(),
+                        "test".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::String("noop".to_owned())),
                             ..TaskConfig::default()
@@ -208,17 +207,17 @@ mod extends {
         });
     }
 
-    fn create_merged_tasks() -> BTreeMap<String, TaskConfig> {
+    fn create_merged_tasks() -> BTreeMap<Id, TaskConfig> {
         BTreeMap::from([
             (
-                "onlyCommand".to_owned(),
+                "onlyCommand".into(),
                 TaskConfig {
                     command: Some(TaskCommandArgs::String("a".to_owned())),
                     ..TaskConfig::default()
                 },
             ),
             (
-                "stringArgs".to_owned(),
+                "stringArgs".into(),
                 TaskConfig {
                     command: Some(TaskCommandArgs::String("b".to_owned())),
                     args: Some(TaskCommandArgs::String("string args".to_owned())),
@@ -226,7 +225,7 @@ mod extends {
                 },
             ),
             (
-                "arrayArgs".to_owned(),
+                "arrayArgs".into(),
                 TaskConfig {
                     command: Some(TaskCommandArgs::String("c".to_owned())),
                     args: Some(TaskCommandArgs::Sequence(string_vec!["array", "args"])),
@@ -234,7 +233,7 @@ mod extends {
                 },
             ),
             (
-                "inputs".to_owned(),
+                "inputs".into(),
                 TaskConfig {
                     command: Some(TaskCommandArgs::String("d".to_owned())),
                     inputs: Some(string_vec!["src/**/*"]),
@@ -242,7 +241,7 @@ mod extends {
                 },
             ),
             (
-                "options".to_owned(),
+                "options".into(),
                 TaskConfig {
                     command: Some(TaskCommandArgs::String("e".to_owned())),
                     options: TaskOptionsConfig {
@@ -286,9 +285,9 @@ fileGroups:
             assert_eq!(
                 config.file_groups,
                 FxHashMap::from_iter([
-                    ("sources".to_owned(), string_vec!["sources/**/*"]), // NOT src/**/*
-                    ("tests".to_owned(), string_vec!["tests/**/*"]),
-                    ("configs".to_owned(), string_vec!["*.js"])
+                    ("sources".into(), string_vec!["sources/**/*"]), // NOT src/**/*
+                    ("tests".into(), string_vec!["tests/**/*"]),
+                    ("configs".into(), string_vec!["*.js"])
                 ])
             );
 
@@ -341,9 +340,9 @@ fileGroups:
             assert_eq!(
                 config.file_groups,
                 FxHashMap::from_iter([
-                    ("sources".to_owned(), string_vec!["sources/**/*"]), // NOT src/**/*
-                    ("tests".to_owned(), string_vec!["tests/**/*"]),
-                    ("configs".to_owned(), string_vec!["*.js"])
+                    ("sources".into(), string_vec!["sources/**/*"]), // NOT src/**/*
+                    ("tests".into(), string_vec!["tests/**/*"]),
+                    ("configs".into(), string_vec!["*.js"])
                 ])
             );
 
@@ -515,7 +514,7 @@ tasks:
             let config: InheritedTasksConfig = super::load_jailed_config(jail.directory())?;
 
             assert_eq!(
-                config.tasks.get("build").unwrap(),
+                config.tasks.get(&Id::raw("build")).unwrap(),
                 &TaskConfig {
                     command: Some(TaskCommandArgs::String("webpack".to_owned())),
                     inputs: Some(string_vec!["src/**/*"]),
@@ -524,7 +523,7 @@ tasks:
             );
 
             assert_eq!(
-                config.tasks.get("start").unwrap(),
+                config.tasks.get(&Id::raw("start")).unwrap(),
                 &TaskConfig {
                     command: Some(TaskCommandArgs::String("webpack".to_owned())),
                     args: Some(TaskCommandArgs::String("serve".to_owned())),
@@ -559,7 +558,7 @@ tasks:
             let config: InheritedTasksConfig = super::load_jailed_config(jail.directory())?;
 
             assert_eq!(
-                config.tasks.get("build").unwrap(),
+                config.tasks.get(&Id::raw("build")).unwrap(),
                 &TaskConfig {
                     command: Some(TaskCommandArgs::String("webpack".to_owned())),
                     inputs: Some(string_vec!["src/**/*"]),
@@ -568,7 +567,7 @@ tasks:
             );
 
             assert_eq!(
-                config.tasks.get("start").unwrap(),
+                config.tasks.get(&Id::raw("start")).unwrap(),
                 &TaskConfig {
                     command: Some(TaskCommandArgs::String("webpack".to_owned())),
                     args: Some(TaskCommandArgs::String("serve".to_owned())),

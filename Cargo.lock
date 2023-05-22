@@ -3471,6 +3471,7 @@ dependencies = [
 name = "moon_typescript_platform"
 version = "0.1.0"
 dependencies = [
+ "moon_common",
  "moon_config",
  "moon_error",
  "moon_hasher",

@@ -1,4 +1,5 @@
 use moon::load_workspace_from;
+use moon_common::Id;
 use moon_config::{
     InheritedTasksConfig, InheritedTasksManager, PlatformType, ProjectLanguage, ProjectType,
     TaskCommandArgs, TaskConfig,
@@ -25,7 +26,7 @@ fn mock_task(command: &str, platform: PlatformType) -> TaskConfig {
 fn mock_tasks_config(command: &str) -> InheritedTasksConfig {
     let mut config = InheritedTasksConfig::default();
     config.tasks.insert(
-        command.to_owned(),
+        command.into(),
         TaskConfig {
             command: Some(TaskCommandArgs::String(command.to_owned())),
             ..TaskConfig::default()
@@ -37,7 +38,7 @@ fn mock_tasks_config(command: &str) -> InheritedTasksConfig {
 fn mock_tasks_config_for_tag(case: &str) -> InheritedTasksConfig {
     let mut config = InheritedTasksConfig::default();
     config.tasks.insert(
-        "tag".to_owned(),
+        "tag".into(),
         TaskConfig {
             command: Some(TaskCommandArgs::String(case.to_owned())),
             ..TaskConfig::default()
@@ -389,9 +390,17 @@ mod config_loading {
         let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
         let graph = generate_project_graph(&mut workspace).await.unwrap();
 
-        graph.get("explicit").unwrap().get_task("command").unwrap();
+        graph
+            .get("explicit")
+            .unwrap()
+            .get_task(&Id::raw("command"))
+            .unwrap();
 
-        let task = graph.get("explicit").unwrap().get_task("command").unwrap();
+        let task = graph
+            .get("explicit")
+            .unwrap()
+            .get_task(&Id::raw("command"))
+            .unwrap();
 
         assert_eq!(task.command, "node");
         assert_eq!(task.inputs, string_vec!["**/*"]);
@@ -400,7 +409,11 @@ mod config_loading {
             string_vec!["/.moon/tasks/node.yml", "/.moon/*.yml"]
         );
 
-        let task = graph.get("detected").unwrap().get_task("command").unwrap();
+        let task = graph
+            .get("detected")
+            .unwrap()
+            .get_task(&Id::raw("command"))
+            .unwrap();
 
         assert_eq!(task.command, "node");
         assert_eq!(task.inputs, string_vec!["**/*"]);
@@ -425,19 +438,27 @@ mod config_loading {
         let project = graph.get("project").unwrap();
 
         assert_eq!(
-            project.tasks.get("global").unwrap().platform,
+            project.tasks.get(&Id::raw("global")).unwrap().platform,
             PlatformType::System
         );
         assert_eq!(
-            project.tasks.get("node").unwrap().platform,
+            project.tasks.get(&Id::raw("node")).unwrap().platform,
             PlatformType::Node
         );
         assert_eq!(
-            project.tasks.get("node-detected").unwrap().platform,
+            project
+                .tasks
+                .get(&Id::raw("node-detected"))
+                .unwrap()
+                .platform,
             PlatformType::Node
         );
         assert_eq!(
-            project.tasks.get("system-via-node").unwrap().platform,
+            project
+                .tasks
+                .get(&Id::raw("system-via-node"))
+                .unwrap()
+                .platform,
             PlatformType::System
         );
     }
@@ -451,15 +472,23 @@ mod config_loading {
         let project = graph.get("other").unwrap();
 
         assert_eq!(
-            project.tasks.get("global").unwrap().platform,
+            project.tasks.get(&Id::raw("global")).unwrap().platform,
             PlatformType::System
         );
         assert_eq!(
-            project.tasks.get("swift-detected").unwrap().platform,
+            project
+                .tasks
+                .get(&Id::raw("swift-detected"))
+                .unwrap()
+                .platform,
             PlatformType::System
         );
         assert_eq!(
-            project.tasks.get("system-via-swift").unwrap().platform,
+            project
+                .tasks
+                .get(&Id::raw("system-via-swift"))
+                .unwrap()
+                .platform,
             PlatformType::System
         );
     }

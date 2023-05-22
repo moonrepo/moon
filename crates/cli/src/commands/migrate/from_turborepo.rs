@@ -38,12 +38,12 @@ pub fn extract_project_task_ids(key: &str) -> (Option<Id>, Id) {
         let mut parts = key.split('#');
 
         return (
-            Some(Id::raw(parts.next().unwrap().to_string())),
-            Id::raw(parts.next().unwrap().to_string()),
+            Some(Id::raw(parts.next().unwrap())),
+            Id::raw(parts.next().unwrap()),
         );
     }
 
-    (None, Id::raw(key.to_owned()))
+    (None, Id::raw(key))
 }
 
 pub fn convert_globals(turbo: &TurboJson, tasks_config: &mut InheritedTasksConfig) -> bool {

@@ -1,10 +1,10 @@
 use crate::errors::ProjectError;
+use moon_common::{consts, Id};
 use moon_config::{
     format_error_line, format_figment_errors, ConfigError, DependencyConfig, DependencyScope,
     FilePath, InheritedTasksConfig, InheritedTasksManager, ProjectConfig, ProjectDependsOn,
-    ProjectID, ProjectLanguage, ProjectType, TaskID,
+    ProjectLanguage, ProjectType,
 };
-use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_file_group::{FileGroup, FileGroupError};
 use moon_logger::{debug, trace, Logable};
 use moon_query::{Condition, Criteria, Field, LogicalOperator, QueryError, Queryable};
@@ -18,11 +18,11 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use strum::Display;
 
-type FileGroupsMap = FxHashMap<String, FileGroup>;
+type FileGroupsMap = FxHashMap<Id, FileGroup>;
 
-type ProjectDependenciesMap = FxHashMap<ProjectID, ProjectDependency>;
+type ProjectDependenciesMap = FxHashMap<Id, ProjectDependency>;
 
-type TasksMap = BTreeMap<TaskID, Task>;
+type TasksMap = BTreeMap<Id, Task>;
 
 // moon.yml
 fn load_project_config(
@@ -30,12 +30,12 @@ fn load_project_config(
     project_root: &Path,
     project_source: &str,
 ) -> Result<ProjectConfig, ProjectError> {
-    let config_path = project_root.join(CONFIG_PROJECT_FILENAME);
+    let config_path = project_root.join(consts::CONFIG_PROJECT_FILENAME);
 
     trace!(
         target: log_target,
         "Attempting to find {} in {}",
-        color::file(CONFIG_PROJECT_FILENAME),
+        color::file(consts::CONFIG_PROJECT_FILENAME),
         color::path(project_root),
     );
 
@@ -61,21 +61,23 @@ fn create_file_groups_from_config(
     config: &ProjectConfig,
     global_tasks_config: &InheritedTasksConfig,
 ) -> Result<FileGroupsMap, FileGroupError> {
-    let mut file_groups = FxHashMap::<String, FileGroup>::default();
+    let mut file_groups = FxHashMap::<Id, FileGroup>::default();
 
     debug!(target: log_target, "Creating file groups");
 
     // Add global file groups first
     for (group_id, files) in &global_tasks_config.file_groups {
         file_groups.insert(
-            group_id.to_owned(),
+            Id::raw(group_id),
             FileGroup::new_with_source(group_id, source, files)?,
         );
     }
 
     // Override global configs with local
     for (group_id, files) in &config.file_groups {
-        if let Some(existing_group) = file_groups.get_mut(group_id) {
+        let group_id = Id::raw(group_id); // TODO
+
+        if let Some(existing_group) = file_groups.get_mut(&group_id) {
             debug!(
                 target: log_target,
                 "Merging file group {} with global config",
@@ -106,15 +108,15 @@ fn create_dependencies_from_config(
         match dep_cfg {
             ProjectDependsOn::String(id) => {
                 deps.insert(
-                    id.clone(),
+                    Id::raw(id),
                     ProjectDependency {
-                        id: id.clone(),
+                        id: Id::raw(id),
                         ..ProjectDependency::default()
                     },
                 );
             }
             ProjectDependsOn::Object(cfg) => {
-                deps.insert(cfg.id.clone(), ProjectDependency::from_config(cfg));
+                deps.insert(Id::raw(&cfg.id), ProjectDependency::from_config(cfg));
             }
         }
     }
@@ -124,35 +126,44 @@ fn create_dependencies_from_config(
 
 fn create_tasks_from_config(
     log_target: &str,
-    project_id: &str,
+    project_id: &Id,
     project_config: &ProjectConfig,
     global_tasks_config: &InheritedTasksConfig,
 ) -> Result<TasksMap, ProjectError> {
-    let mut tasks = BTreeMap::<String, Task>::new();
+    let mut tasks = BTreeMap::<Id, Task>::new();
 
     debug!(target: log_target, "Creating tasks");
 
     // Gather inheritance configs
     let mut include_all = true;
-    let mut include: FxHashSet<TaskID> = FxHashSet::default();
-    let mut exclude: FxHashSet<TaskID> = FxHashSet::default();
-    let mut rename: FxHashMap<TaskID, TaskID> = FxHashMap::default();
+    let mut include: FxHashSet<Id> = FxHashSet::default();
+    let mut exclude: FxHashSet<Id> = FxHashSet::default();
+    let mut rename: FxHashMap<Id, Id> = FxHashMap::default();
 
     if let Some(rename_config) = &project_config.workspace.inherited_tasks.rename {
-        rename.extend(rename_config.clone());
+        for (k, v) in rename_config {
+            rename.insert(Id::raw(k), Id::raw(v));
+        }
     }
 
     if let Some(include_config) = &project_config.workspace.inherited_tasks.include {
         include_all = false;
-        include.extend(include_config.clone());
+
+        for i in include_config {
+            include.insert(Id::raw(i));
+        }
     }
 
     if let Some(exclude_config) = &project_config.workspace.inherited_tasks.exclude {
-        exclude.extend(exclude_config.clone());
+        for i in exclude_config {
+            exclude.insert(Id::raw(i));
+        }
     }
 
     // Add global tasks first while taking inheritance config into account
     for (task_id, task_config) in &global_tasks_config.tasks {
+        let task_id = Id::raw(task_id); // TODO
+
         // None = Include all
         // [] = Include none
         // ["a"] = Include "a"
@@ -164,7 +175,7 @@ fn create_tasks_from_config(
                 );
 
                 break;
-            } else if !include.contains(task_id) {
+            } else if !include.contains(&task_id) {
                 trace!(
                     target: log_target,
                     "Not inheriting global task {}, not explicitly included",
@@ -177,7 +188,7 @@ fn create_tasks_from_config(
 
         // None, [] = Exclude none
         // ["a"] = Exclude "a"
-        if !exclude.is_empty() && exclude.contains(task_id) {
+        if !exclude.is_empty() && exclude.contains(&task_id) {
             trace!(
                 target: log_target,
                 "Not inheriting global task {}, explicitly excluded",
@@ -187,9 +198,7 @@ fn create_tasks_from_config(
             continue;
         }
 
-        let task_name = if rename.contains_key(task_id) {
-            let renamed_task_id = rename.get(task_id).unwrap();
-
+        let task_name = if let Some(renamed_task_id) = rename.get(&task_id) {
             trace!(
                 target: log_target,
                 "Renaming global task {} to {}",
@@ -197,12 +206,12 @@ fn create_tasks_from_config(
                 color::id(renamed_task_id)
             );
 
-            renamed_task_id
+            renamed_task_id.to_owned()
         } else {
             trace!(
                 target: log_target,
                 "Inheriting global task {}",
-                color::id(task_id)
+                color::id(&task_id)
             );
 
             task_id
@@ -216,7 +225,9 @@ fn create_tasks_from_config(
 
     // Add local tasks second
     for (task_id, task_config) in &project_config.tasks {
-        if let Some(existing_task) = tasks.get_mut(task_id) {
+        let task_id = Id::raw(task_id); // TODO
+
+        if let Some(existing_task) = tasks.get_mut(&task_id) {
             debug!(
                 target: log_target,
                 "Merging task {} with global config",
@@ -250,7 +261,7 @@ pub enum ProjectDependencySource {
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 pub struct ProjectDependency {
-    pub id: ProjectID,
+    pub id: Id,
     pub scope: DependencyScope,
     pub source: ProjectDependencySource,
     pub via: Option<String>,
@@ -259,7 +270,7 @@ pub struct ProjectDependency {
 impl ProjectDependency {
     pub fn from_config(config: &DependencyConfig) -> ProjectDependency {
         ProjectDependency {
-            id: config.id.clone(),
+            id: Id::raw(&config.id),
             scope: config.scope.clone(),
             via: config.via.clone(),
             ..ProjectDependency::default()
@@ -284,7 +295,7 @@ pub struct Project {
     pub file_groups: FileGroupsMap,
 
     /// Unique ID for the project. Is the LHS of the `projects` setting.
-    pub id: ProjectID,
+    pub id: Id,
 
     /// Task configuration that was inherited from the global scope.
     pub inherited_config: InheritedTasksConfig,
@@ -340,6 +351,7 @@ impl Project {
     {
         let log_target = format!("moon:project:{id}");
         let source = path::normalize_separators(source);
+        let id = Id::new(id)?;
 
         // For the root-level project, the "." dot actually causes
         // a ton of unwanted issues, so just use workspace root directly.
@@ -353,7 +365,7 @@ impl Project {
             target: &log_target,
             "Loading project from {} (id = {}, path = {})",
             color::path(&root),
-            color::id(id),
+            color::id(&id),
             color::file(&source),
         );
 
@@ -378,13 +390,13 @@ impl Project {
         let file_groups =
             create_file_groups_from_config(&log_target, &source, &config, &global_tasks)?;
         let dependencies = create_dependencies_from_config(&log_target, &config);
-        let tasks = create_tasks_from_config(&log_target, id, &config, &global_tasks)?;
+        let tasks = create_tasks_from_config(&log_target, &id, &config, &global_tasks)?;
 
         Ok(Project {
             alias: None,
             dependencies,
             file_groups,
-            id: id.to_owned(),
+            id,
             language,
             log_target,
             root,
@@ -397,15 +409,15 @@ impl Project {
     }
 
     /// Return a list of project IDs this project depends on.
-    pub fn get_dependency_ids(&self) -> Vec<&ProjectID> {
+    pub fn get_dependency_ids(&self) -> Vec<&Id> {
         self.dependencies.keys().collect::<Vec<_>>()
     }
 
     /// Return a task with the defined ID.
-    pub fn get_task(&self, task_id: &str) -> Result<&Task, ProjectError> {
+    pub fn get_task(&self, task_id: &Id) -> Result<&Task, ProjectError> {
         self.tasks
             .get(task_id)
-            .ok_or_else(|| ProjectError::UnconfiguredTask(task_id.to_owned(), self.id.to_owned()))
+            .ok_or_else(|| ProjectError::UnconfiguredTask(task_id.to_string(), self.id.to_string()))
     }
 
     /// Return true if this project is affected based on touched files.

@@ -1,6 +1,7 @@
 use crate::errors::TaskError;
 use crate::task_options::TaskOptions;
 use crate::types::TouchedFilePaths;
+use moon_common::Id;
 use moon_config::{
     FileGlob, FilePath, InputValue, PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy,
     TaskType,
@@ -39,7 +40,7 @@ pub struct Task {
 
     pub global_inputs: Vec<InputValue>,
 
-    pub id: String,
+    pub id: Id,
 
     pub inputs: Vec<InputValue>,
 
@@ -103,7 +104,7 @@ impl Task {
             env: cloned_config.env.unwrap_or_default(),
             flags: FxHashSet::default(),
             global_inputs: cloned_config.global_inputs,
-            id: target.task_id.to_string(),
+            id: Id::new(&target.task_id)?,
             inputs: cloned_config.inputs.unwrap_or_default(),
             input_vars: FxHashSet::default(),
             input_globs: FxHashSet::default(),

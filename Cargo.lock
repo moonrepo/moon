@@ -3176,8 +3176,8 @@ dependencies = [
 name = "moon_project"
 version = "0.1.0"
 dependencies = [
+ "moon_common",
  "moon_config",
- "moon_constants",
  "moon_error",
  "moon_file_group",
  "moon_logger",
@@ -3381,6 +3381,7 @@ dependencies = [
 name = "moon_task"
 version = "0.1.0"
 dependencies = [
+ "moon_common",
  "moon_config",
  "moon_error",
  "moon_logger",

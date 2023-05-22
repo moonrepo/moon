@@ -28,9 +28,9 @@ pub fn enforce_project_type_relationships(
 
     if !valid {
         return Err(EnforcerError::InvalidTypeRelationship(
-            source.id.clone(),
+            source.id.to_string(),
             source.type_of,
-            dependency.id.clone(),
+            dependency.id.to_string(),
             dependency.type_of,
         ));
     }
@@ -72,9 +72,9 @@ pub fn enforce_tag_relationships(
     allowed.push(source_tag.to_owned());
 
     Err(EnforcerError::InvalidTagRelationship(
-        source.id.clone(),
+        source.id.to_string(),
         source_tag.clone(),
-        dependency.id.clone(),
+        dependency.id.to_string(),
         allowed.join(", "),
     ))
 }

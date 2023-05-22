@@ -1,3 +1,4 @@
+use moon_common::Id;
 use moon_config::{
     InheritedTasksConfig, InheritedTasksManager, ProjectConfig, ProjectDependsOn, ProjectLanguage,
     ProjectMetadataConfig, ProjectType,
@@ -8,7 +9,7 @@ use moon_test_utils::get_fixtures_root;
 use moon_utils::{path, string_vec};
 use rustc_hash::FxHashMap;
 
-fn mock_file_groups(source: &str) -> FxHashMap<String, FileGroup> {
+fn mock_file_groups(source: &str) -> FxHashMap<Id, FileGroup> {
     FxHashMap::from_iter([(
         "sources".into(),
         FileGroup::new_with_source("sources", source, ["src/**/*"]).unwrap(),

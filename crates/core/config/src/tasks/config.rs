@@ -11,6 +11,7 @@ use figment::{
     providers::{Format, YamlExtended},
     Figment,
 };
+use moon_common::Id;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -32,18 +33,8 @@ fn validate_deps(list: &[String]) -> Result<(), ValidationError> {
     Ok(())
 }
 
-fn validate_file_groups(map: &FileGroups) -> Result<(), ValidationError> {
-    for key in map.keys() {
-        validate_id(format!("fileGroups.{key}"), key)?;
-    }
-
-    Ok(())
-}
-
-fn validate_tasks(map: &BTreeMap<String, TaskConfig>) -> Result<(), ValidationError> {
+fn validate_tasks(map: &BTreeMap<Id, TaskConfig>) -> Result<(), ValidationError> {
     for (name, task) in map {
-        validate_id(format!("tasks.{name}"), name)?;
-
         // Fail for both `None` and empty strings
         if task.get_command().is_empty() {
             return Err(create_validation_error(
@@ -67,7 +58,6 @@ pub struct InheritedTasksConfig {
     pub extends: Option<String>,
 
     #[serde(skip_serializing_if = "is_default")]
-    #[validate(custom = "validate_file_groups")]
     pub file_groups: FileGroups,
 
     #[serde(skip_serializing_if = "is_default")]
@@ -80,7 +70,7 @@ pub struct InheritedTasksConfig {
     #[serde(skip_serializing_if = "is_default")]
     #[validate(custom = "validate_tasks")]
     #[validate]
-    pub tasks: BTreeMap<String, TaskConfig>,
+    pub tasks: BTreeMap<Id, TaskConfig>,
 
     /// JSON schema URI
     #[serde(rename = "$schema", skip_serializing_if = "is_default")]

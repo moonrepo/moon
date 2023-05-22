@@ -14,6 +14,7 @@ crate-type = ["rlib"]
 
 [dependencies]
 moon_args = { path = "../../../nextgen/args" }
+moon_common = { path = "../../../nextgen/common" }
 moon_constants = { path = "../constants" }
 moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }

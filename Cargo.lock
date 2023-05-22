@@ -2553,7 +2553,9 @@ dependencies = [
 name = "moon_action"
 version = "0.1.0"
 dependencies = [
+ "moon_common",
  "moon_platform_runtime",
+ "moon_target",
  "moon_utils",
  "serde",
 ]
@@ -2647,6 +2649,7 @@ name = "moon_cache"
 version = "0.1.0"
 dependencies = [
  "moon_archive",
+ "moon_common",
  "moon_constants",
  "moon_error",
  "moon_logger",
@@ -2683,6 +2686,7 @@ dependencies = [
  "moon_action_pipeline",
  "moon_archive",
  "moon_cache",
+ "moon_common",
  "moon_config",
  "moon_constants",
  "moon_dep_graph",
@@ -2738,6 +2742,7 @@ dependencies = [
  "miette",
  "once_cell",
  "regex",
+ "schemars",
  "serde",
  "starbase_styles",
  "thiserror",
@@ -2751,6 +2756,7 @@ dependencies = [
  "httpmock",
  "moon",
  "moon_args",
+ "moon_common",
  "moon_constants",
  "moon_error",
  "moon_logger",
@@ -2814,6 +2820,7 @@ version = "0.1.0"
 dependencies = [
  "moon",
  "moon_action_context",
+ "moon_common",
  "moon_config",
  "moon_deno_lang",
  "moon_deno_tool",
@@ -2856,6 +2863,7 @@ dependencies = [
  "criterion",
  "moon",
  "moon_action",
+ "moon_common",
  "moon_config",
  "moon_error",
  "moon_logger",
@@ -2900,6 +2908,7 @@ dependencies = [
 name = "moon_enforcer"
 version = "0.1.0"
 dependencies = [
+ "moon_common",
  "moon_project",
  "starbase_styles",
  "thiserror",
@@ -3034,6 +3043,7 @@ version = "0.1.0"
 dependencies = [
  "moon",
  "moon_action_context",
+ "moon_common",
  "moon_config",
  "moon_error",
  "moon_hasher",
@@ -3120,6 +3130,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "moon_action_context",
+ "moon_common",
  "moon_config",
  "moon_error",
  "moon_hasher",
@@ -3176,8 +3187,8 @@ dependencies = [
 name = "moon_project"
 version = "0.1.0"
 dependencies = [
+ "moon_common",
  "moon_config",
- "moon_constants",
  "moon_error",
  "moon_file_group",
  "moon_logger",
@@ -3201,6 +3212,7 @@ dependencies = [
  "dotenvy",
  "moon",
  "moon_cache",
+ "moon_common",
  "moon_config",
  "moon_enforcer",
  "moon_error",
@@ -3261,6 +3273,7 @@ dependencies = [
  "moon_action",
  "moon_action_context",
  "moon_cache",
+ "moon_common",
  "moon_config",
  "moon_emitter",
  "moon_error",
@@ -3309,6 +3322,7 @@ version = "0.1.0"
 dependencies = [
  "moon",
  "moon_action_context",
+ "moon_common",
  "moon_config",
  "moon_error",
  "moon_hasher",
@@ -3381,6 +3395,7 @@ dependencies = [
 name = "moon_task"
 version = "0.1.0"
 dependencies = [
+ "moon_common",
  "moon_config",
  "moon_error",
  "moon_logger",
@@ -3457,6 +3472,7 @@ dependencies = [
 name = "moon_typescript_platform"
 version = "0.1.0"
 dependencies = [
+ "moon_common",
  "moon_config",
  "moon_error",
  "moon_hasher",

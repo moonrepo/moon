@@ -1,4 +1,5 @@
 use moon::{generate_project_graph, load_workspace_from};
+use moon_common::Id;
 use moon_config::{NodeConfig, RustConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects};
 use moon_project::{Project, ProjectDependency, ProjectDependencySource};
 use moon_project_graph::ProjectGraph;
@@ -102,9 +103,12 @@ where
     workspace_config.constraints.tag_relationships = FxHashMap::from_iter([
         (
             "warrior".into(),
-            string_vec!["barbarian", "paladin", "druid"],
+            vec![Id::raw("barbarian"), Id::raw("paladin"), Id::raw("druid")],
         ),
-        ("mage".into(), string_vec!["wizard", "sorcerer", "druid"]),
+        (
+            "mage".into(),
+            vec![Id::raw("wizard"), Id::raw("sorcerer"), Id::raw("druid")],
+        ),
     ]);
 
     let sandbox = create_sandbox_with_config(
@@ -197,19 +201,19 @@ async fn can_use_map_and_globs_setting() {
         graph.sources,
         FxHashMap::from_iter(if cfg!(windows) {
             [
-                ("noConfig".to_owned(), "no-config".to_owned()),
-                ("bar".to_owned(), "deps\\bar".to_owned()),
-                ("basic".to_owned(), "basic".to_owned()),
-                ("baz".to_owned(), "deps\\baz".to_owned()),
-                ("foo".to_owned(), "deps\\foo".to_owned()),
+                ("noConfig".into(), "no-config".to_owned()),
+                ("bar".into(), "deps\\bar".to_owned()),
+                ("basic".into(), "basic".to_owned()),
+                ("baz".into(), "deps\\baz".to_owned()),
+                ("foo".into(), "deps\\foo".to_owned()),
             ]
         } else {
             [
-                ("noConfig".to_owned(), "no-config".to_owned()),
-                ("bar".to_owned(), "deps/bar".to_owned()),
-                ("basic".to_owned(), "basic".to_owned()),
-                ("baz".to_owned(), "deps/baz".to_owned()),
-                ("foo".to_owned(), "deps/foo".to_owned()),
+                ("noConfig".into(), "no-config".to_owned()),
+                ("bar".into(), "deps/bar".to_owned()),
+                ("basic".into(), "basic".to_owned()),
+                ("baz".into(), "deps/baz".to_owned()),
+                ("foo".into(), "deps/foo".to_owned()),
             ]
         })
     );
@@ -233,14 +237,17 @@ async fn can_generate_with_deps_cycles() {
 
     assert_eq!(
         graph.sources,
-        FxHashMap::from_iter([
-            ("a".to_owned(), "a".to_owned()),
-            ("b".to_owned(), "b".to_owned()),
-        ])
+        FxHashMap::from_iter([("a".into(), "a".to_owned()), ("b".into(), "b".to_owned()),])
     );
 
-    assert_eq!(graph.get("a").unwrap().get_dependency_ids(), vec!["b"]);
-    assert_eq!(graph.get("b").unwrap().get_dependency_ids(), vec!["a"]);
+    assert_eq!(
+        graph.get("a").unwrap().get_dependency_ids(),
+        vec![&Id::raw("b")]
+    );
+    assert_eq!(
+        graph.get("b").unwrap().get_dependency_ids(),
+        vec![&Id::raw("a")]
+    );
 }
 
 mod caching {
@@ -267,10 +274,10 @@ mod caching {
         assert_eq!(
             state.projects,
             FxHashMap::from_iter([
-                ("a".to_string(), "a".to_string()),
-                ("b".to_string(), "b".to_string()),
-                ("c".to_string(), "c".to_string()),
-                ("d".to_string(), "d".to_string()),
+                ("a".into(), "a".to_string()),
+                ("b".into(), "b".to_string()),
+                ("c".into(), "c".to_string()),
+                ("d".into(), "d".to_string()),
             ])
         );
 
@@ -318,10 +325,10 @@ mod globs {
         let graph = generate_project_graph(&mut workspace).await.unwrap();
 
         assert_eq!(graph.sources.len(), 21);
-        assert!(graph.sources.contains_key(".foo"));
-        assert!(!graph.sources.contains_key(".git"));
-        assert!(!graph.sources.contains_key(".moon"));
-        assert!(!graph.sources.contains_key("node_modules"));
+        assert!(graph.sources.contains_key(&Id::raw(".foo")));
+        assert!(!graph.sources.contains_key(&Id::raw(".git")));
+        assert!(!graph.sources.contains_key(&Id::raw(".moon")));
+        assert!(!graph.sources.contains_key(&Id::raw("node_modules")));
     }
 
     #[tokio::test]
@@ -341,12 +348,12 @@ mod globs {
         let graph = generate_project_graph(&mut workspace).await.unwrap();
 
         assert_eq!(graph.sources.len(), 12);
-        assert!(graph.sources.contains_key("deno"));
-        assert!(!graph.sources.contains_key("deno-config"));
-        assert!(graph.sources.contains_key("python"));
-        assert!(!graph.sources.contains_key("python-config"));
-        assert!(graph.sources.contains_key("ts"));
-        assert!(!graph.sources.contains_key("ts-config"));
+        assert!(graph.sources.contains_key(&Id::raw("deno")));
+        assert!(!graph.sources.contains_key(&Id::raw("deno-config")));
+        assert!(graph.sources.contains_key(&Id::raw("python")));
+        assert!(!graph.sources.contains_key(&Id::raw("python-config")));
+        assert!(graph.sources.contains_key(&Id::raw("ts")));
+        assert!(!graph.sources.contains_key(&Id::raw("ts-config")));
     }
 
     #[tokio::test]
@@ -365,12 +372,12 @@ mod globs {
         assert_eq!(
             graph.sources,
             FxHashMap::from_iter([
-                ("camelCase".to_owned(), "camelCase".to_owned()),
-                ("Capital".to_owned(), "Capital".to_owned()),
-                ("kebab-case".to_owned(), "kebab-case".to_owned()),
-                ("PascalCase".to_owned(), "PascalCase".to_owned()),
-                ("snake_case".to_owned(), "snake_case".to_owned()),
-                ("With_nums-123".to_owned(), "With_nums-123".to_owned())
+                ("camelCase".into(), "camelCase".to_owned()),
+                ("Capital".into(), "Capital".to_owned()),
+                ("kebab-case".into(), "kebab-case".to_owned()),
+                ("PascalCase".into(), "PascalCase".to_owned()),
+                ("snake_case".into(), "snake_case".to_owned()),
+                ("With_nums-123".into(), "With_nums-123".to_owned())
             ])
         );
     }
@@ -474,7 +481,7 @@ mod implicit_explicit_deps {
             project.dependencies,
             FxHashMap::from_iter([
                 (
-                    "nodeNameScope".to_string(),
+                    "nodeNameScope".into(),
                     ProjectDependency {
                         id: "nodeNameScope".into(),
                         scope: moon_config::DependencyScope::Development,
@@ -483,7 +490,7 @@ mod implicit_explicit_deps {
                     }
                 ),
                 (
-                    "node".to_string(),
+                    "node".into(),
                     ProjectDependency {
                         id: "node".into(),
                         scope: moon_config::DependencyScope::Production,
@@ -505,7 +512,7 @@ mod implicit_explicit_deps {
             project.dependencies,
             FxHashMap::from_iter([
                 (
-                    "nodeNameScope".to_string(),
+                    "nodeNameScope".into(),
                     ProjectDependency {
                         id: "nodeNameScope".into(),
                         scope: moon_config::DependencyScope::Production,
@@ -514,7 +521,7 @@ mod implicit_explicit_deps {
                     }
                 ),
                 (
-                    "node".to_string(),
+                    "node".into(),
                     ProjectDependency {
                         id: "node".into(),
                         scope: moon_config::DependencyScope::Development,
@@ -536,7 +543,7 @@ mod implicit_explicit_deps {
             project.dependencies,
             FxHashMap::from_iter([
                 (
-                    "nodeNameScope".to_string(),
+                    "nodeNameScope".into(),
                     ProjectDependency {
                         id: "nodeNameScope".into(),
                         scope: moon_config::DependencyScope::Production,
@@ -545,7 +552,7 @@ mod implicit_explicit_deps {
                     }
                 ),
                 (
-                    "node".to_string(),
+                    "node".into(),
                     ProjectDependency {
                         id: "node".into(),
                         scope: moon_config::DependencyScope::Development,
@@ -554,7 +561,7 @@ mod implicit_explicit_deps {
                     }
                 ),
                 (
-                    "nodeNameOnly".to_string(),
+                    "nodeNameOnly".into(),
                     ProjectDependency {
                         id: "nodeNameOnly".into(),
                         scope: moon_config::DependencyScope::Peer,
@@ -807,7 +814,10 @@ mod query {
     use moon_query::build_query;
 
     fn get_ids(projects: &[&Project]) -> Vec<String> {
-        let mut ids = projects.iter().map(|p| p.id.clone()).collect::<Vec<_>>();
+        let mut ids = projects
+            .iter()
+            .map(|p| p.id.to_string())
+            .collect::<Vec<_>>();
         ids.sort();
         ids
     }

@@ -1,3 +1,4 @@
+use moon_common::IdError;
 use moon_enforcer::EnforcerError;
 use moon_error::MoonError;
 use moon_file_group::FileGroupError;
@@ -11,6 +12,9 @@ use thiserror::Error;
 pub enum ProjectGraphError {
     #[error(transparent)]
     Enforcer(#[from] EnforcerError),
+
+    #[error(transparent)]
+    Id(#[from] IdError),
 
     #[error(transparent)]
     Moon(#[from] MoonError),

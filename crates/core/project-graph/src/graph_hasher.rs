@@ -1,3 +1,4 @@
+use moon_common::Id;
 use moon_config::{ProjectsAliasesMap, ProjectsSourcesMap};
 use moon_hasher::{hash_btree, Digest, Hasher, Sha256};
 use moon_utils::{is_docker_container, path};
@@ -7,11 +8,11 @@ use std::{collections::BTreeMap, env};
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GraphHasher {
-    aliases: BTreeMap<String, String>,
+    aliases: BTreeMap<String, Id>,
 
     configs: BTreeMap<String, String>,
 
-    sources: BTreeMap<String, String>,
+    sources: BTreeMap<Id, String>,
 
     // The project graph stores absolute file paths, which breaks moon when
     // running tasks inside and outside of a container at the same time.

@@ -1,4 +1,5 @@
-use moon_constants::CONFIG_PROJECT_FILENAME;
+use moon_common::consts::CONFIG_PROJECT_FILENAME;
+use moon_common::IdError;
 use moon_error::MoonError;
 use moon_file_group::FileGroupError;
 use moon_query::QueryError;
@@ -31,6 +32,9 @@ pub enum ProjectError {
 
     #[error(transparent)]
     FileGroup(#[from] FileGroupError),
+
+    #[error(transparent)]
+    Id(#[from] IdError),
 
     #[error(transparent)]
     Moon(#[from] MoonError),

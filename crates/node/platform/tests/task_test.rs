@@ -456,7 +456,7 @@ mod infer_tasks_from_scripts {
             tasks,
             BTreeMap::from([
                 (
-                    "build-app".to_owned(),
+                    "build-app".into(),
                     TaskConfig {
                         command: Some(TaskCommandArgs::Sequence(string_vec![
                             "moon",
@@ -470,7 +470,7 @@ mod infer_tasks_from_scripts {
                     }
                 ),
                 (
-                    "dev".to_owned(),
+                    "dev".into(),
                     TaskConfig {
                         command: Some(TaskCommandArgs::Sequence(string_vec![
                             "moon",
@@ -484,7 +484,7 @@ mod infer_tasks_from_scripts {
                     }
                 ),
                 (
-                    "test".to_owned(),
+                    "test".into(),
                     TaskConfig {
                         command: Some(TaskCommandArgs::Sequence(string_vec![
                             "moon",
@@ -497,7 +497,7 @@ mod infer_tasks_from_scripts {
                     }
                 ),
                 (
-                    "lint".to_owned(),
+                    "lint".into(),
                     TaskConfig {
                         command: Some(TaskCommandArgs::Sequence(string_vec![
                             "moon",
@@ -510,7 +510,7 @@ mod infer_tasks_from_scripts {
                     }
                 ),
                 (
-                    "typecheck".to_owned(),
+                    "typecheck".into(),
                     TaskConfig {
                         command: Some(TaskCommandArgs::Sequence(string_vec![
                             "moon",
@@ -570,7 +570,7 @@ mod create_tasks_from_scripts {
         let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
 
         assert_eq!(
-            tasks.keys().cloned().collect::<Vec<String>>(),
+            tasks.keys().map(|t| t.to_string()).collect::<Vec<String>>(),
             string_vec![
                 "base",
                 "foo-bar",
@@ -602,7 +602,7 @@ mod create_tasks_from_scripts {
             tasks,
             BTreeMap::from([
                 (
-                    "test".to_owned(),
+                    "test".into(),
                     TaskConfig {
                         command: Some(TaskCommandArgs::Sequence(string_vec!["jest", "."])),
                         platform: PlatformType::Node,
@@ -610,7 +610,7 @@ mod create_tasks_from_scripts {
                     }
                 ),
                 (
-                    "lint".to_owned(),
+                    "lint".into(),
                     TaskConfig {
                         command: Some(TaskCommandArgs::Sequence(string_vec![
                             "eslint", "src/**/*", "."
@@ -620,7 +620,7 @@ mod create_tasks_from_scripts {
                     }
                 ),
                 (
-                    "typecheck".to_owned(),
+                    "typecheck".into(),
                     TaskConfig {
                         command: Some(TaskCommandArgs::Sequence(string_vec!["tsc", "--build"])),
                         platform: PlatformType::Node,
@@ -654,7 +654,7 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
-                        "pretest".to_owned(),
+                        "pretest".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "do",
@@ -665,7 +665,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "posttest".to_owned(),
+                        "posttest".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["do", "another"])),
                             deps: Some(string_vec!["~:test"]),
@@ -674,7 +674,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test".to_owned(),
+                        "test".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["jest", "."])),
                             deps: Some(string_vec!["~:pretest"]),
@@ -704,7 +704,7 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
-                        "pretest-dep1".to_owned(),
+                        "pretest-dep1".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "do",
@@ -715,7 +715,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "pretest".to_owned(),
+                        "pretest".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["do", "another"])),
                             deps: Some(string_vec!["~:pretest-dep1"]),
@@ -724,7 +724,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test".to_owned(),
+                        "test".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["jest", "."])),
                             deps: Some(string_vec!["~:pretest"]),
@@ -754,7 +754,7 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
-                        "posttest-dep1".to_owned(),
+                        "posttest-dep1".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "do",
@@ -765,7 +765,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "posttest".to_owned(),
+                        "posttest".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["do", "another"])),
                             deps: Some(string_vec!["~:posttest-dep1", "~:test"]),
@@ -774,7 +774,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test".to_owned(),
+                        "test".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["jest", "."])),
                             platform: PlatformType::Node,
@@ -803,7 +803,7 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
-                        "prerelease".to_owned(),
+                        "prerelease".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "webpack", "build"
@@ -813,7 +813,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "release".to_owned(),
+                        "release".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["npm", "publish"])),
                             deps: Some(string_vec!["~:prerelease"]),
@@ -847,7 +847,7 @@ mod create_tasks_from_scripts {
             assert_eq!(
                 tasks,
                 BTreeMap::from([(
-                    "lint".to_owned(),
+                    "lint".into(),
                     TaskConfig {
                         command: Some(TaskCommandArgs::Sequence(string_vec!["eslint", "."])),
                         platform: PlatformType::Node,
@@ -885,7 +885,7 @@ mod create_tasks_from_scripts {
                     tasks,
                     BTreeMap::from([
                         (
-                            "lint".to_owned(),
+                            "lint".into(),
                             TaskConfig {
                                 command: Some(TaskCommandArgs::Sequence(string_vec![
                                     "eslint", "."
@@ -895,7 +895,7 @@ mod create_tasks_from_scripts {
                             }
                         ),
                         (
-                            "lint-fix".to_owned(),
+                            "lint-fix".into(),
                             TaskConfig {
                                 command: Some(TaskCommandArgs::Sequence(string_vec![
                                     "moon",
@@ -938,7 +938,7 @@ mod create_tasks_from_scripts {
                     tasks,
                     BTreeMap::from([
                         (
-                            "lint".to_owned(),
+                            "lint".into(),
                             TaskConfig {
                                 command: Some(TaskCommandArgs::Sequence(string_vec![
                                     "eslint", "."
@@ -948,7 +948,7 @@ mod create_tasks_from_scripts {
                             }
                         ),
                         (
-                            "lint-fix".to_owned(),
+                            "lint-fix".into(),
                             TaskConfig {
                                 command: Some(TaskCommandArgs::Sequence(string_vec![
                                     "moon",
@@ -995,7 +995,7 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
-                        "build".to_owned(),
+                        "build".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "webpack", "build"
@@ -1005,7 +1005,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "build-dev".to_owned(),
+                        "build-dev".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
@@ -1023,7 +1023,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "build-prod".to_owned(),
+                        "build-prod".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
@@ -1039,7 +1039,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "build-staging".to_owned(),
+                        "build-staging".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
@@ -1104,7 +1104,7 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
-                        "build".to_owned(),
+                        "build".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["babel", "."])),
                             platform: PlatformType::Node,
@@ -1112,7 +1112,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint".to_owned(),
+                        "lint".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["eslint", "."])),
                             platform: PlatformType::Node,
@@ -1120,7 +1120,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test".to_owned(),
+                        "test".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["jest", "."])),
                             platform: PlatformType::Node,
@@ -1186,7 +1186,7 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
-                        "bootstrap".to_owned(),
+                        "bootstrap".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "make",
@@ -1197,7 +1197,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "build".to_owned(),
+                        "build".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["make", "build"])),
                             platform: PlatformType::System,
@@ -1205,7 +1205,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "codesandbox-build".to_owned(),
+                        "codesandbox-build".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "make",
@@ -1216,7 +1216,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "fix".to_owned(),
+                        "fix".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["make", "fix"])),
                             platform: PlatformType::System,
@@ -1224,7 +1224,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint".to_owned(),
+                        "lint".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["make", "lint"])),
                             platform: PlatformType::System,
@@ -1232,7 +1232,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test".to_owned(),
+                        "test".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["make", "test"])),
                             platform: PlatformType::System,
@@ -1240,7 +1240,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test-esm".to_owned(),
+                        "test-esm".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "node",
@@ -1251,7 +1251,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test-runtime-bundlers".to_owned(),
+                        "test-runtime-bundlers".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "node",
@@ -1262,7 +1262,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test-runtime-generate-absolute-runtime".to_owned(),
+                        "test-runtime-generate-absolute-runtime".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "node",
@@ -1273,7 +1273,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test-runtime-node".to_owned(),
+                        "test-runtime-node".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "node",
@@ -1321,7 +1321,7 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
-                        "build".to_owned(),
+                        "build".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
@@ -1335,7 +1335,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "check-dep1".to_owned(),
+                        "check-dep1".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
@@ -1347,7 +1347,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "check-dep2".to_owned(),
+                        "check-dep2".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
@@ -1360,7 +1360,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "check".to_owned(),
+                        "check".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
@@ -1373,7 +1373,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "clean".to_owned(),
+                        "clean".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
@@ -1387,7 +1387,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "commit-dep1".to_owned(),
+                        "commit-dep1".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "yarn", "install"
@@ -1397,7 +1397,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "commit".to_owned(),
+                        "commit".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "git",
@@ -1410,7 +1410,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "coverage".to_owned(),
+                        "coverage".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
@@ -1424,7 +1424,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "create-config".to_owned(),
+                        "create-config".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::String("create-config".to_owned())),
                             platform: PlatformType::Node,
@@ -1432,7 +1432,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "format".to_owned(),
+                        "format".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::String("prettier".to_owned())),
                             platform: PlatformType::Node,
@@ -1440,7 +1440,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint".to_owned(),
+                        "lint".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::String("eslint".to_owned())),
                             platform: PlatformType::Node,
@@ -1448,7 +1448,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "packup".to_owned(),
+                        "packup".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
@@ -1469,7 +1469,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "packemon".to_owned(),
+                        "packemon".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "node",
@@ -1480,7 +1480,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "prerelease-dep1".to_owned(),
+                        "prerelease-dep1".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
@@ -1492,7 +1492,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "prerelease-dep2".to_owned(),
+                        "prerelease-dep2".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
@@ -1505,7 +1505,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "prerelease-dep3".to_owned(),
+                        "prerelease-dep3".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
@@ -1518,7 +1518,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "prerelease".to_owned(),
+                        "prerelease".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
@@ -1531,7 +1531,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "release".to_owned(),
+                        "release".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "run-script",
@@ -1543,7 +1543,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "setup".to_owned(),
+                        "setup".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "yarn",
@@ -1561,7 +1561,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test".to_owned(),
+                        "test".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::String("jest".to_owned())),
                             platform: PlatformType::Node,
@@ -1569,7 +1569,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "type".to_owned(),
+                        "type".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "typescript",
@@ -1580,7 +1580,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "validate".to_owned(),
+                        "validate".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
@@ -1643,7 +1643,7 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([
                     (
-                        "lint".to_owned(),
+                        "lint".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "run-p", "lint:*"
@@ -1653,7 +1653,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint-actionlint".to_owned(),
+                        "lint-actionlint".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::String("node-actionlint".to_owned())),
                             platform: PlatformType::Node,
@@ -1661,7 +1661,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint-changelog".to_owned(),
+                        "lint-changelog".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "node",
@@ -1672,7 +1672,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint-deps".to_owned(),
+                        "lint-deps".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "node",
@@ -1683,7 +1683,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint-eslint".to_owned(),
+                        "lint-eslint".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "cross-env",
@@ -1701,7 +1701,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint-prettier".to_owned(),
+                        "lint-prettier".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "prettier", ".", "!test*", "--check"
@@ -1711,7 +1711,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint-spellcheck".to_owned(),
+                        "lint-spellcheck".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "cspell",
@@ -1725,7 +1725,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "lint-typecheck".to_owned(),
+                        "lint-typecheck".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::String("tsc".to_owned())),
                             platform: PlatformType::Node,
@@ -1733,7 +1733,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "fix-eslint".to_owned(),
+                        "fix-eslint".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
@@ -1747,7 +1747,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "fix-prettier".to_owned(),
+                        "fix-prettier".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
@@ -1761,7 +1761,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "build".to_owned(),
+                        "build".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "node",
@@ -1772,7 +1772,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "build-website".to_owned(),
+                        "build-website".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "node",
@@ -1783,7 +1783,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "perf".to_owned(),
+                        "perf".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "cross-env",
@@ -1800,7 +1800,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "perf-benchmark".to_owned(),
+                        "perf-benchmark".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
@@ -1814,7 +1814,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "perf-inspect".to_owned(),
+                        "perf-inspect".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "cross-env",
@@ -1832,7 +1832,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "perf-inspect-dep1".to_owned(),
+                        "perf-inspect-dep1".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
@@ -1844,7 +1844,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "perf-dep1".to_owned(),
+                        "perf-dep1".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
@@ -1856,7 +1856,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test".to_owned(),
+                        "test".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::String("jest".to_owned())),
                             platform: PlatformType::Node,
@@ -1864,7 +1864,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test-dev-package".to_owned(),
+                        "test-dev-package".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "cross-env",
@@ -1879,7 +1879,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test-dist".to_owned(),
+                        "test-dist".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "cross-env",
@@ -1894,7 +1894,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test-dist-lint".to_owned(),
+                        "test-dist-lint".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "eslint",
@@ -1909,7 +1909,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test-dist-standalone".to_owned(),
+                        "test-dist-standalone".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "cross-env",
@@ -1924,7 +1924,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "test-integration".to_owned(),
+                        "test-integration".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "jest",
@@ -1935,7 +1935,7 @@ mod create_tasks_from_scripts {
                         }
                     ),
                     (
-                        "vendors-bundle".to_owned(),
+                        "vendors-bundle".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "node",

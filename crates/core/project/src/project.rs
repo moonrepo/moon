@@ -1,10 +1,10 @@
 use crate::errors::ProjectError;
+use moon_common::{consts, Id};
 use moon_config::{
     format_error_line, format_figment_errors, ConfigError, DependencyConfig, DependencyScope,
     FilePath, InheritedTasksConfig, InheritedTasksManager, ProjectConfig, ProjectDependsOn,
-    ProjectID, ProjectLanguage, ProjectType, TaskID,
+    ProjectLanguage, ProjectType,
 };
-use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_file_group::{FileGroup, FileGroupError};
 use moon_logger::{debug, trace, Logable};
 use moon_query::{Condition, Criteria, Field, LogicalOperator, QueryError, Queryable};
@@ -18,11 +18,11 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use strum::Display;
 
-type FileGroupsMap = FxHashMap<String, FileGroup>;
+type FileGroupsMap = FxHashMap<Id, FileGroup>;
 
-type ProjectDependenciesMap = FxHashMap<ProjectID, ProjectDependency>;
+type ProjectDependenciesMap = FxHashMap<Id, ProjectDependency>;
 
-type TasksMap = BTreeMap<TaskID, Task>;
+type TasksMap = BTreeMap<Id, Task>;
 
 // moon.yml
 fn load_project_config(
@@ -30,12 +30,12 @@ fn load_project_config(
     project_root: &Path,
     project_source: &str,
 ) -> Result<ProjectConfig, ProjectError> {
-    let config_path = project_root.join(CONFIG_PROJECT_FILENAME);
+    let config_path = project_root.join(consts::CONFIG_PROJECT_FILENAME);
 
     trace!(
         target: log_target,
         "Attempting to find {} in {}",
-        color::file(CONFIG_PROJECT_FILENAME),
+        color::file(consts::CONFIG_PROJECT_FILENAME),
         color::path(project_root),
     );
 
@@ -61,14 +61,14 @@ fn create_file_groups_from_config(
     config: &ProjectConfig,
     global_tasks_config: &InheritedTasksConfig,
 ) -> Result<FileGroupsMap, FileGroupError> {
-    let mut file_groups = FxHashMap::<String, FileGroup>::default();
+    let mut file_groups = FxHashMap::<Id, FileGroup>::default();
 
     debug!(target: log_target, "Creating file groups");
 
     // Add global file groups first
     for (group_id, files) in &global_tasks_config.file_groups {
         file_groups.insert(
-            group_id.to_owned(),
+            Id::raw(group_id),
             FileGroup::new_with_source(group_id, source, files)?,
         );
     }
@@ -85,7 +85,7 @@ fn create_file_groups_from_config(
             existing_group.set_patterns(source, files);
         } else {
             file_groups.insert(
-                group_id.clone(),
+                group_id.to_owned(),
                 FileGroup::new_with_source(group_id, source, files)?,
             );
         }
@@ -106,15 +106,15 @@ fn create_dependencies_from_config(
         match dep_cfg {
             ProjectDependsOn::String(id) => {
                 deps.insert(
-                    id.clone(),
+                    id.to_owned(),
                     ProjectDependency {
-                        id: id.clone(),
+                        id: id.to_owned(),
                         ..ProjectDependency::default()
                     },
                 );
             }
             ProjectDependsOn::Object(cfg) => {
-                deps.insert(cfg.id.clone(), ProjectDependency::from_config(cfg));
+                deps.insert(cfg.id.to_owned(), ProjectDependency::from_config(cfg));
             }
         }
     }
@@ -124,19 +124,19 @@ fn create_dependencies_from_config(
 
 fn create_tasks_from_config(
     log_target: &str,
-    project_id: &str,
+    project_id: &Id,
     project_config: &ProjectConfig,
     global_tasks_config: &InheritedTasksConfig,
 ) -> Result<TasksMap, ProjectError> {
-    let mut tasks = BTreeMap::<String, Task>::new();
+    let mut tasks = BTreeMap::<Id, Task>::new();
 
     debug!(target: log_target, "Creating tasks");
 
     // Gather inheritance configs
     let mut include_all = true;
-    let mut include: FxHashSet<TaskID> = FxHashSet::default();
-    let mut exclude: FxHashSet<TaskID> = FxHashSet::default();
-    let mut rename: FxHashMap<TaskID, TaskID> = FxHashMap::default();
+    let mut include: FxHashSet<Id> = FxHashSet::default();
+    let mut exclude: FxHashSet<Id> = FxHashSet::default();
+    let mut rename: FxHashMap<Id, Id> = FxHashMap::default();
 
     if let Some(rename_config) = &project_config.workspace.inherited_tasks.rename {
         rename.extend(rename_config.clone());
@@ -145,6 +145,10 @@ fn create_tasks_from_config(
     if let Some(include_config) = &project_config.workspace.inherited_tasks.include {
         include_all = false;
         include.extend(include_config.clone());
+
+        for i in include_config {
+            include.insert(Id::raw(i));
+        }
     }
 
     if let Some(exclude_config) = &project_config.workspace.inherited_tasks.exclude {
@@ -187,9 +191,7 @@ fn create_tasks_from_config(
             continue;
         }
 
-        let task_name = if rename.contains_key(task_id) {
-            let renamed_task_id = rename.get(task_id).unwrap();
-
+        let task_name = if let Some(renamed_task_id) = rename.get(task_id) {
             trace!(
                 target: log_target,
                 "Renaming global task {} to {}",
@@ -228,7 +230,7 @@ fn create_tasks_from_config(
         } else {
             // Insert a new task
             tasks.insert(
-                task_id.clone(),
+                task_id.to_owned(),
                 Task::from_config(Target::new(project_id, task_id)?, task_config)?,
             );
         }
@@ -250,7 +252,7 @@ pub enum ProjectDependencySource {
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 pub struct ProjectDependency {
-    pub id: ProjectID,
+    pub id: Id,
     pub scope: DependencyScope,
     pub source: ProjectDependencySource,
     pub via: Option<String>,
@@ -259,7 +261,7 @@ pub struct ProjectDependency {
 impl ProjectDependency {
     pub fn from_config(config: &DependencyConfig) -> ProjectDependency {
         ProjectDependency {
-            id: config.id.clone(),
+            id: Id::raw(&config.id),
             scope: config.scope.clone(),
             via: config.via.clone(),
             ..ProjectDependency::default()
@@ -284,7 +286,7 @@ pub struct Project {
     pub file_groups: FileGroupsMap,
 
     /// Unique ID for the project. Is the LHS of the `projects` setting.
-    pub id: ProjectID,
+    pub id: Id,
 
     /// Task configuration that was inherited from the global scope.
     pub inherited_config: InheritedTasksConfig,
@@ -329,7 +331,7 @@ impl Logable for Project {
 
 impl Project {
     pub fn new<F>(
-        id: &str,
+        id: &Id,
         source: &str,
         workspace_root: &Path,
         inherited_tasks: &InheritedTasksManager,
@@ -397,15 +399,17 @@ impl Project {
     }
 
     /// Return a list of project IDs this project depends on.
-    pub fn get_dependency_ids(&self) -> Vec<&ProjectID> {
+    pub fn get_dependency_ids(&self) -> Vec<&Id> {
         self.dependencies.keys().collect::<Vec<_>>()
     }
 
     /// Return a task with the defined ID.
     pub fn get_task(&self, task_id: &str) -> Result<&Task, ProjectError> {
+        let task_id = Id::raw(task_id);
+
         self.tasks
-            .get(task_id)
-            .ok_or_else(|| ProjectError::UnconfiguredTask(task_id.to_owned(), self.id.to_owned()))
+            .get(&task_id)
+            .ok_or_else(|| ProjectError::UnconfiguredTask(task_id.to_string(), self.id.to_string()))
     }
 
     /// Return true if this project is affected based on touched files.
@@ -442,7 +446,15 @@ impl Queryable for Project {
                         }
                         Field::ProjectSource(sources) => condition.matches(sources, &self.source),
                         Field::ProjectType(types) => condition.matches_enum(types, &self.type_of),
-                        Field::Tag(tags) => condition.matches_list(tags, &self.config.tags),
+                        Field::Tag(tags) => condition.matches_list(
+                            tags,
+                            &self
+                                .config
+                                .tags
+                                .iter()
+                                .map(|t| t.to_string())
+                                .collect::<Vec<_>>(),
+                        ),
                         Field::Task(ids) => Ok(self
                             .tasks
                             .values()

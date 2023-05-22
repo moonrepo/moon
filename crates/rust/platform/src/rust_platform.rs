@@ -1,5 +1,6 @@
 use crate::{bins_hasher::RustBinsHasher, target_hasher::RustTargetHasher};
 use moon_action_context::ActionContext;
+use moon_common::Id;
 use moon_config::{
     HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, RustConfig,
 };
@@ -107,7 +108,7 @@ impl Platform for RustPlatform {
 
             if let Some(cargo_toml) = CargoTomlCache::read(project_root)? {
                 if let Some(package) = cargo_toml.package {
-                    if &package.name != id {
+                    if package.name != id.as_str() {
                         debug!(
                             target: LOG_TARGET,
                             "Inheriting alias {} for project {}",
@@ -252,7 +253,7 @@ impl Platform for RustPlatform {
         &self,
         _context: &ActionContext,
         project: &Project,
-        _dependencies: &FxHashMap<String, &Project>,
+        _dependencies: &FxHashMap<Id, &Project>,
     ) -> Result<bool, ProjectError> {
         let mut mutated_files = false;
         let legacy_toolchain_path = project.root.join(RUSTUP_LEGACY.version_file);

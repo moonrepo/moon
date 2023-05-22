@@ -1,3 +1,4 @@
+use moon_common::Id;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use strum::Display;
@@ -20,7 +21,7 @@ pub enum DependencyScope {
 #[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
 #[schemars(default, deny_unknown_fields)]
 pub struct DependencyConfig {
-    pub id: String,
+    pub id: Id,
     pub scope: DependencyScope,
 
     // This field isn't configured by users, but is used by platforms!
@@ -31,7 +32,7 @@ pub struct DependencyConfig {
 impl DependencyConfig {
     pub fn new(id: &str) -> Self {
         DependencyConfig {
-            id: id.to_owned(),
+            id: Id::raw(id),
             scope: DependencyScope::Production,
             via: None,
         }

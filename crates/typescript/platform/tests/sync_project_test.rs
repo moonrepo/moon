@@ -1,3 +1,4 @@
+use moon_common::Id;
 use moon_config::{InheritedTasksManager, ProjectLanguage};
 use moon_project::Project;
 use moon_test_utils::{create_sandbox_with_config, get_node_fixture_configs};
@@ -20,7 +21,7 @@ mod missing_tsconfig {
         );
 
         let project = Project::new(
-            "deps-a",
+            &Id::raw("deps-a"),
             "deps-a",
             sandbox.path(),
             &InheritedTasksManager::default(),
@@ -64,7 +65,7 @@ mod missing_tsconfig {
         );
 
         let project = Project::new(
-            "deps-a",
+            &Id::raw("deps-a"),
             "deps-a",
             sandbox.path(),
             &InheritedTasksManager::default(),
@@ -108,7 +109,7 @@ mod missing_tsconfig {
         );
 
         let project = Project::new(
-            "deps-b",
+            &Id::raw("deps-b"),
             "deps-b",
             sandbox.path(),
             &InheritedTasksManager::default(),

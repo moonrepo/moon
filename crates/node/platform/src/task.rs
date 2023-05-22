@@ -1,8 +1,9 @@
+use moon_common::Id;
 use moon_config::{TaskCommandArgs, TaskConfig, TasksConfigsMap};
 use moon_logger::{debug, warn};
 use moon_node_lang::package_json::{PackageJson, ScriptsSet};
 use moon_process::args::split_args;
-use moon_task::{PlatformType, TaskError, TaskID};
+use moon_task::{PlatformType, TaskError};
 use moon_utils::regex::{ID_CLEAN, UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
 use moon_utils::{regex, string_vec};
 use once_cell::sync::Lazy;
@@ -239,7 +240,7 @@ pub struct ScriptParser<'a> {
     life_cycles: ScriptsMap,
 
     /// Script names -> task IDs.
-    names_to_ids: FxHashMap<String, String>,
+    names_to_ids: FxHashMap<String, Id>,
 
     /// Scripts that started with "post".
     post: ScriptsMap,
@@ -292,7 +293,7 @@ impl<'a> ScriptParser<'a> {
             let target_id = format!("{}:{}", self.project_id, task_id);
 
             self.tasks.insert(
-                task_id,
+                Id::new(&task_id)?,
                 create_task(&target_id, name, script, TaskContext::WrapRunScript)?,
             );
         }
@@ -454,7 +455,7 @@ impl<'a> ScriptParser<'a> {
         &mut self,
         name: K,
         value: V,
-    ) -> Result<Option<TaskID>, TaskError> {
+    ) -> Result<Option<Id>, TaskError> {
         let name = name.as_ref();
         let value = value.as_ref();
 
@@ -471,10 +472,10 @@ impl<'a> ScriptParser<'a> {
         &mut self,
         name: K,
         value: V,
-    ) -> Result<TaskID, TaskError> {
+    ) -> Result<Id, TaskError> {
         let name = name.as_ref();
         let value = value.as_ref();
-        let task_id = clean_script_name(name);
+        let task_id = Id::new(clean_script_name(name))?;
         let target_id = format!("{}:{}", self.project_id, task_id);
 
         self.names_to_ids.insert(name.to_owned(), task_id.clone());
@@ -492,10 +493,10 @@ impl<'a> ScriptParser<'a> {
         &mut self,
         name: T,
         value: &str,
-    ) -> Result<Option<TaskID>, TaskError> {
+    ) -> Result<Option<Id>, TaskError> {
         let name = name.as_ref();
         let scripts: Vec<_> = value.split("&&").map(|v| v.trim()).collect();
-        let mut previous_task_id = String::new();
+        let mut previous_task_id = Id::raw("");
 
         // Scripts need to be chained as deps instead of ran in parallel
         for (index, script) in scripts.iter().enumerate() {
@@ -529,7 +530,7 @@ impl<'a> ScriptParser<'a> {
         &mut self,
         name: T,
         value: &str,
-    ) -> Result<Option<TaskID>, TaskError> {
+    ) -> Result<Option<Id>, TaskError> {
         let name = name.as_ref();
 
         let caps = PM_RUN_COMMAND.captures(value).unwrap();
@@ -548,7 +549,7 @@ impl<'a> ScriptParser<'a> {
         Ok(None)
     }
 
-    fn apply_pre_post_hooks(&mut self, script_name: &str, task_id: &str) -> Result<(), TaskError> {
+    fn apply_pre_post_hooks(&mut self, script_name: &str, task_id: &Id) -> Result<(), TaskError> {
         // Convert pre hooks as `deps`
         if self.pre.contains_key(script_name) {
             let pre = self.pre.remove(script_name).unwrap();

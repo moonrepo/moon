@@ -4,6 +4,7 @@ use moon_utils::path;
 use rustc_hash::FxHashSet;
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
+use std::fmt::Display;
 use std::path::{Path, PathBuf};
 
 pub fn to_hash(hasher: &impl Hasher) -> String {
@@ -14,16 +15,16 @@ pub fn to_hash(hasher: &impl Hasher) -> String {
     format!("{:x}", sha.finalize())
 }
 
-pub fn hash_btree(tree: &BTreeMap<String, String>, sha: &mut Sha256) {
+pub fn hash_btree<K: Display, V: Display>(tree: &BTreeMap<K, V>, sha: &mut Sha256) {
     for (k, v) in tree {
-        sha.update(k.as_bytes());
-        sha.update(v.as_bytes());
+        sha.update(k.to_string().as_bytes());
+        sha.update(v.to_string().as_bytes());
     }
 }
 
-pub fn hash_vec(list: &Vec<String>, sha: &mut Sha256) {
+pub fn hash_vec<T: Display>(list: &Vec<T>, sha: &mut Sha256) {
     for v in list {
-        sha.update(v.as_bytes());
+        sha.update(v.to_string().as_bytes());
     }
 }
 

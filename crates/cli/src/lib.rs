@@ -304,7 +304,7 @@ pub async fn run_cli() -> AppResult {
         }
         Commands::Setup => setup().await,
         Commands::Sync => sync().await,
-        Commands::Task { id, json } => task(id, json).await,
+        Commands::Task { target, json } => task(target, json).await,
         Commands::Teardown => teardown().await,
         Commands::Upgrade => upgrade().await,
     };

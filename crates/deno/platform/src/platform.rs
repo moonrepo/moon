@@ -1,6 +1,7 @@
 use crate::actions;
 use crate::target_hasher::DenoTargetHasher;
 use moon_action_context::ActionContext;
+use moon_common::Id;
 use moon_config::{
     DenoConfig, DependencyConfig, HasherConfig, HasherOptimization, PlatformType, ProjectConfig,
     ProjectsAliasesMap, TypeScriptConfig,
@@ -195,7 +196,7 @@ impl Platform for DenoPlatform {
         &self,
         _context: &ActionContext,
         project: &Project,
-        dependencies: &FxHashMap<String, &Project>,
+        dependencies: &FxHashMap<Id, &Project>,
     ) -> Result<bool, ProjectError> {
         let modified = actions::sync_project(
             project,

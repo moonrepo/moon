@@ -1,6 +1,7 @@
 use crate::dep_graph::{DepGraph, DepGraphType, IndicesType};
 use crate::errors::DepGraphError;
 use moon_action::ActionNode;
+use moon_common::Id;
 use moon_logger::{debug, map_list, trace};
 use moon_platform::{PlatformManager, Runtime};
 use moon_project::Project;
@@ -68,7 +69,7 @@ impl<'ws> DepGraphBuilder<'ws> {
     ) -> (Runtime, Runtime) {
         let key = match task {
             Some(task) => task.target.id.clone(),
-            None => project.id.clone(),
+            None => project.id.to_string(),
         };
 
         if let Some(pair) = self.runtimes.get(&key) {
@@ -125,7 +126,7 @@ impl<'ws> DepGraphBuilder<'ws> {
         })
     }
 
-    pub fn install_project_deps(&mut self, runtime: &Runtime, project_id: &str) -> NodeIndex {
+    pub fn install_project_deps(&mut self, runtime: &Runtime, project_id: &Id) -> NodeIndex {
         let node = ActionNode::InstallProjectDeps(runtime.clone(), project_id.to_owned());
 
         if let Some(index) = self.get_index_from_node(&node) {
@@ -188,7 +189,7 @@ impl<'ws> DepGraphBuilder<'ws> {
             for dependent_id in dependents {
                 let dep_project = self.project_graph.get(&dependent_id)?;
 
-                if let Some(dep_task) = dep_project.tasks.get(target.task_id.as_str()) {
+                if let Some(dep_task) = dep_project.tasks.get(&target.task_id) {
                     self.run_target(&dep_task.target, None)?;
                 }
             }
@@ -218,7 +219,7 @@ impl<'ws> DepGraphBuilder<'ws> {
                 };
 
                 for project in projects {
-                    if project.tasks.contains_key(target.task_id.as_str()) {
+                    if project.tasks.contains_key(&target.task_id) {
                         let all_target = Target::new(&project.id, &target.task_id)?;
 
                         if let Some(index) =
@@ -253,7 +254,7 @@ impl<'ws> DepGraphBuilder<'ws> {
                     .query(build_query(format!("tag={}", tag))?)?;
 
                 for project in projects {
-                    if project.tasks.contains_key(target.task_id.as_str()) {
+                    if project.tasks.contains_key(&target.task_id) {
                         let tag_target = Target::new(&project.id, &target.task_id)?;
 
                         if let Some(index) =
@@ -425,7 +426,7 @@ impl<'ws> DepGraphBuilder<'ws> {
 
     pub fn sync_project(&mut self, project: &Project) -> Result<NodeIndex, DepGraphError> {
         let (runtime, _) = self.get_runtimes_from_project(project, None);
-        let node = ActionNode::SyncProject(runtime.clone(), project.id.to_owned());
+        let node = ActionNode::SyncProject(runtime.clone(), project.id.clone());
 
         if let Some(index) = self.get_index_from_node(&node) {
             return Ok(*index);

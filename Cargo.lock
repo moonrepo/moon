@@ -2553,6 +2553,7 @@ dependencies = [
 name = "moon_action"
 version = "0.1.0"
 dependencies = [
+ "moon_common",
  "moon_platform_runtime",
  "moon_utils",
  "serde",
@@ -2817,6 +2818,7 @@ version = "0.1.0"
 dependencies = [
  "moon",
  "moon_action_context",
+ "moon_common",
  "moon_config",
  "moon_deno_lang",
  "moon_deno_tool",
@@ -2859,6 +2861,7 @@ dependencies = [
  "criterion",
  "moon",
  "moon_action",
+ "moon_common",
  "moon_config",
  "moon_error",
  "moon_logger",
@@ -3038,6 +3041,7 @@ version = "0.1.0"
 dependencies = [
  "moon",
  "moon_action_context",
+ "moon_common",
  "moon_config",
  "moon_error",
  "moon_hasher",
@@ -3124,6 +3128,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "moon_action_context",
+ "moon_common",
  "moon_config",
  "moon_error",
  "moon_hasher",
@@ -3266,6 +3271,7 @@ dependencies = [
  "moon_action",
  "moon_action_context",
  "moon_cache",
+ "moon_common",
  "moon_config",
  "moon_emitter",
  "moon_error",
@@ -3314,6 +3320,7 @@ version = "0.1.0"
 dependencies = [
  "moon",
  "moon_action_context",
+ "moon_common",
  "moon_config",
  "moon_error",
  "moon_hasher",

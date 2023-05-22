@@ -1,3 +1,4 @@
+use moon_common::Id;
 use moon_platform_runtime::Runtime;
 use serde::Serialize;
 use std::hash::{Hash, Hasher};
@@ -9,7 +10,7 @@ pub enum ActionNode {
     InstallDeps(Runtime),
 
     /// Install tool dependencies in the project root.
-    InstallProjectDeps(Runtime, String),
+    InstallProjectDeps(Runtime, Id),
 
     /// Run a target (project task).
     RunTarget(Runtime, String),
@@ -21,7 +22,7 @@ pub enum ActionNode {
     SetupTool(Runtime),
 
     /// Sync a project with language specific semantics.
-    SyncProject(Runtime, String),
+    SyncProject(Runtime, Id),
 }
 
 impl ActionNode {

@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+moon_common = { path = "../../../nextgen/common" }
 moon_platform_runtime = { path = "../platform-runtime" }
 moon_utils = { path = "../utils" }
 serde = { workspace = true }

@@ -22,9 +22,9 @@ pub fn hash_btree<K: Display, V: Display>(tree: &BTreeMap<K, V>, sha: &mut Sha25
     }
 }
 
-pub fn hash_vec(list: &Vec<String>, sha: &mut Sha256) {
+pub fn hash_vec<T: Display>(list: &Vec<T>, sha: &mut Sha256) {
     for v in list {
-        sha.update(v.as_bytes());
+        sha.update(v.to_string().as_bytes());
     }
 }
 

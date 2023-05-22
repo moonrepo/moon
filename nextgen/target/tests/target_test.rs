@@ -123,6 +123,19 @@ fn parse_self_scope() {
     );
 }
 
+#[test]
+fn parse_self_when_no_colon() {
+    assert_eq!(
+        Target::parse("build").unwrap(),
+        Target {
+            id: String::from("~:build"),
+            scope: TargetScope::OwnSelf,
+            scope_id: None,
+            task_id: Id::raw("build"),
+        }
+    );
+}
+
 // #[test]
 // fn parse_self_scope_all_tasks() {
 //     assert_eq!(

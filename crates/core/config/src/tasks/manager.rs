@@ -1,4 +1,5 @@
 use crate::{InheritedTasksConfig, PlatformType, ProjectLanguage, ProjectType};
+use moon_common::Id;
 use moon_utils::string_vec;
 use rustc_hash::FxHashMap;
 use starbase_utils::fs;
@@ -28,7 +29,7 @@ impl InheritedTasksManager {
         platform: &PlatformType,
         language: &ProjectLanguage,
         type_of: &ProjectType,
-        tags: &[String],
+        tags: &[Id],
     ) -> Vec<String> {
         let mut lookup = string_vec!["*"];
 
@@ -59,7 +60,7 @@ impl InheritedTasksManager {
         platform: &PlatformType,
         language: &ProjectLanguage,
         type_of: &ProjectType,
-        tags: &[String],
+        tags: &[Id],
     ) -> InheritedTasksConfig {
         let mut config = InheritedTasksConfig::default();
 

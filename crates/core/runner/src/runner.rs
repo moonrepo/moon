@@ -324,7 +324,7 @@ impl<'a> Runner<'a> {
             "MOON_CACHE_DIR".to_owned(),
             path::to_string(&self.workspace.cache.dir)?,
         );
-        env_vars.insert("MOON_PROJECT_ID".to_owned(), self.project.id.clone());
+        env_vars.insert("MOON_PROJECT_ID".to_owned(), self.project.id.to_string());
         env_vars.insert(
             "MOON_PROJECT_ROOT".to_owned(),
             path::to_string(&self.project.root)?,
@@ -333,7 +333,7 @@ impl<'a> Runner<'a> {
             "MOON_PROJECT_SOURCE".to_owned(),
             self.project.source.clone(),
         );
-        env_vars.insert("MOON_TARGET".to_owned(), self.task.target.id.clone());
+        env_vars.insert("MOON_TARGET".to_owned(), self.task.target.id.to_string());
         env_vars.insert(
             "MOON_TOOLCHAIN_DIR".to_owned(),
             path::to_string(&self.workspace.toolchain_root)?,

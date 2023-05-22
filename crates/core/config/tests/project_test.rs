@@ -47,10 +47,7 @@ fileGroups:
         assert_eq!(
             config,
             ProjectConfig {
-                file_groups: FxHashMap::from_iter([(
-                    String::from("sources"),
-                    string_vec!["src/**/*"]
-                )]),
+                file_groups: FxHashMap::from_iter([("sources".into(), string_vec!["src/**/*"])]),
                 ..ProjectConfig::default()
             }
         );
@@ -105,9 +102,9 @@ mod depends_on {
             assert_eq!(
                 cfg.depends_on,
                 vec![
-                    ProjectDependsOn::String("a".to_owned()),
-                    ProjectDependsOn::String("b".to_owned()),
-                    ProjectDependsOn::String("c".to_owned())
+                    ProjectDependsOn::String("a".into()),
+                    ProjectDependsOn::String("b".into()),
+                    ProjectDependsOn::String("c".into())
                 ]
             );
 
@@ -133,12 +130,12 @@ mod depends_on {
                 cfg.depends_on,
                 vec![
                     ProjectDependsOn::Object(DependencyConfig {
-                        id: "a".to_owned(),
+                        id: "a".into(),
                         scope: DependencyScope::Development,
                         via: None,
                     }),
                     ProjectDependsOn::Object(DependencyConfig {
-                        id: "b".to_owned(),
+                        id: "b".into(),
                         scope: DependencyScope::Production,
                         via: None,
                     })
@@ -165,9 +162,9 @@ mod depends_on {
             assert_eq!(
                 cfg.depends_on,
                 vec![
-                    ProjectDependsOn::String("a".to_owned()),
+                    ProjectDependsOn::String("a".into()),
                     ProjectDependsOn::Object(DependencyConfig {
-                        id: "b".to_owned(),
+                        id: "b".into(),
                         scope: DependencyScope::Production,
                         via: None,
                     })
@@ -215,6 +212,8 @@ fileGroups:
 }
 
 mod tasks {
+    use moon_common::Id;
+
     use super::*;
 
     // TODO: https://github.com/SergioBenitez/Figment/issues/41
@@ -237,7 +236,7 @@ tasks:
                 config,
                 ProjectConfig {
                     tasks: BTreeMap::from([(
-                        String::from("lint"),
+                        "lint".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::String("eslint".to_owned())),
                             args: Some(TaskCommandArgs::Sequence(vec![".".to_owned()])),
@@ -439,12 +438,12 @@ tasks:
 
             let config: ProjectConfig = super::load_jailed_config()?;
 
-            assert!(config.tasks.contains_key("normal"));
-            assert!(config.tasks.contains_key("kebab-case"));
-            assert!(config.tasks.contains_key("camelCase"));
-            assert!(config.tasks.contains_key("snake_case"));
-            assert!(config.tasks.contains_key("dot.case"));
-            assert!(config.tasks.contains_key("slash/case"));
+            assert!(config.tasks.contains_key(&Id::raw("normal")));
+            assert!(config.tasks.contains_key(&Id::raw("kebab-case")));
+            assert!(config.tasks.contains_key(&Id::raw("camelCase")));
+            assert!(config.tasks.contains_key(&Id::raw("snake_case")));
+            assert!(config.tasks.contains_key(&Id::raw("dot.case")));
+            assert!(config.tasks.contains_key(&Id::raw("slash/case")));
 
             Ok(())
         });
@@ -734,7 +733,7 @@ mod tags {
 
     #[test]
     #[should_panic(
-        expected = "Must be a valid ID (accepts A-Z, a-z, 0-9, . (periods), - (dashes), _ (underscores), /, and must start with a letter)"
+        expected = "Invalid identifier foo bar. May only contain alpha-numeric characters, dashes (-), slashes (/), underscores (_), and dots (.)"
     )]
     fn invalid_format() {
         figment::Jail::expect_with(|jail| {

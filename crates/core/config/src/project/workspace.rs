@@ -1,7 +1,7 @@
 // These configs are project-level settings that override those from the workspace!
 
-use crate::types::TaskID;
 use crate::validators::is_default;
+use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -12,13 +12,13 @@ use validator::Validate;
 #[serde(default, deny_unknown_fields)]
 pub struct ProjectWorkspaceInheritedTasksConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub exclude: Option<Vec<TaskID>>,
+    pub exclude: Option<Vec<Id>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub include: Option<Vec<TaskID>>,
+    pub include: Option<Vec<Id>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub rename: Option<FxHashMap<TaskID, TaskID>>,
+    pub rename: Option<FxHashMap<Id, Id>>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]

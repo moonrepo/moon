@@ -1,4 +1,5 @@
 use crate::validators::{is_default, is_default_true};
+use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -12,7 +13,7 @@ pub struct ConstraintsConfig {
     pub enforce_project_type_relationships: bool,
 
     #[serde(skip_serializing_if = "is_default")]
-    pub tag_relationships: FxHashMap<String, Vec<String>>,
+    pub tag_relationships: FxHashMap<Id, Vec<Id>>,
 }
 
 impl Default for ConstraintsConfig {

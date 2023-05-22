@@ -1,3 +1,4 @@
+use moon_common::Id;
 use moon_config::{
     InheritedTasksConfig, InheritedTasksManager, ProjectConfig, ProjectDependsOn, ProjectLanguage,
     ProjectMetadataConfig, ProjectType,
@@ -8,7 +9,7 @@ use moon_test_utils::get_fixtures_root;
 use moon_utils::{path, string_vec};
 use rustc_hash::FxHashMap;
 
-fn mock_file_groups(source: &str) -> FxHashMap<String, FileGroup> {
+fn mock_file_groups(source: &str) -> FxHashMap<Id, FileGroup> {
     FxHashMap::from_iter([(
         "sources".into(),
         FileGroup::new_with_source("sources", source, ["src/**/*"]).unwrap(),
@@ -31,7 +32,7 @@ fn mock_tasks_config() -> InheritedTasksManager {
 #[should_panic(expected = "MissingProjectAtSource")]
 fn doesnt_exist() {
     Project::new(
-        "missing",
+        &Id::raw("missing"),
         "projects/missing",
         &get_fixtures_root(),
         &mock_tasks_config(),
@@ -44,7 +45,7 @@ fn doesnt_exist() {
 fn no_config() {
     let workspace_root = get_fixtures_root();
     let project = Project::new(
-        "no-config",
+        &Id::raw("no-config"),
         "projects/no-config",
         &workspace_root,
         &mock_tasks_config(),
@@ -69,7 +70,7 @@ fn no_config() {
 fn empty_config() {
     let workspace_root = get_fixtures_root();
     let project = Project::new(
-        "empty-config",
+        &Id::raw("empty-config"),
         "projects/empty-config",
         &workspace_root,
         &mock_tasks_config(),
@@ -95,7 +96,7 @@ fn empty_config() {
 fn basic_config() {
     let workspace_root = get_fixtures_root();
     let project = Project::new(
-        "basic",
+        &Id::raw("basic"),
         "projects/basic",
         &workspace_root,
         &mock_tasks_config(),
@@ -116,10 +117,10 @@ fn basic_config() {
         Project {
             id: "basic".into(),
             config: ProjectConfig {
-                depends_on: vec![ProjectDependsOn::String("noConfig".to_owned())],
+                depends_on: vec![ProjectDependsOn::String("noConfig".into())],
                 file_groups: FxHashMap::from_iter([("tests".into(), string_vec!["**/*_test.rs"])]),
                 language: ProjectLanguage::JavaScript,
-                tags: string_vec!["vue"],
+                tags: vec![Id::raw("vue")],
                 ..ProjectConfig::default()
             },
             log_target: "moon:project:basic".into(),
@@ -135,7 +136,7 @@ fn basic_config() {
 fn advanced_config() {
     let workspace_root = get_fixtures_root();
     let project = Project::new(
-        "advanced",
+        &Id::raw("advanced"),
         "projects/advanced",
         &workspace_root,
         &mock_tasks_config(),
@@ -155,7 +156,7 @@ fn advanced_config() {
                     maintainers: Some(string_vec!["Bruce Wayne"]),
                     channel: Some("#batcave".into()),
                 }),
-                tags: string_vec!["react"],
+                tags: vec![Id::raw("react")],
                 type_of: ProjectType::Application,
                 language: ProjectLanguage::TypeScript,
                 ..ProjectConfig::default()

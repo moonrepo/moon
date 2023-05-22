@@ -3,12 +3,9 @@ use crate::{
     helpers::AnyError,
 };
 use moon::{build_project_graph, load_workspace};
+use moon_common::Id;
 
-pub async fn project_graph(
-    project_id: Option<String>,
-    dot: bool,
-    json: bool,
-) -> Result<(), AnyError> {
+pub async fn project_graph(project_id: Option<Id>, dot: bool, json: bool) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;
     let mut project_build = build_project_graph(&mut workspace).await?;
 

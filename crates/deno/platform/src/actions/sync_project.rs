@@ -1,3 +1,4 @@
+use moon_common::Id;
 use moon_config::{DenoConfig, TypeScriptConfig};
 use moon_project::{Project, ProjectError};
 use moon_typescript_lang::tsconfig::CompilerOptionsPaths;
@@ -9,7 +10,7 @@ use std::path::Path;
 
 pub async fn sync_project(
     project: &Project,
-    _dependencies: &FxHashMap<String, &Project>,
+    _dependencies: &FxHashMap<Id, &Project>,
     workspace_root: &Path,
     _deno_config: &DenoConfig,
     typescript_config: &Option<TypeScriptConfig>,

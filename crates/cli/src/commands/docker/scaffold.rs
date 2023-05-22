@@ -1,7 +1,8 @@
 use super::MANIFEST_NAME;
 use crate::helpers::AnyError;
 use moon::{generate_project_graph, load_workspace};
-use moon_config::{ProjectID, ProjectLanguage};
+use moon_common::Id;
+use moon_config::ProjectLanguage;
 use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_platform_detector::detect_language_files;
@@ -18,8 +19,8 @@ use strum::IntoEnumIterator;
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DockerManifest {
-    pub focused_projects: FxHashSet<ProjectID>,
-    pub unfocused_projects: FxHashSet<ProjectID>,
+    pub focused_projects: FxHashSet<Id>,
+    pub unfocused_projects: FxHashSet<Id>,
 }
 
 fn copy_files<T: AsRef<str>>(list: &[T], source: &Path, dest: &Path) -> Result<(), MoonError> {
@@ -116,7 +117,7 @@ fn scaffold_sources_project(
     workspace: &Workspace,
     project_graph: &ProjectGraph,
     docker_sources_root: &Path,
-    project_id: &str,
+    project_id: &Id,
     manifest: &mut DockerManifest,
 ) -> Result<(), ProjectGraphError> {
     let project = project_graph.get(project_id)?;
@@ -142,7 +143,7 @@ fn scaffold_sources(
     workspace: &Workspace,
     project_graph: &ProjectGraph,
     docker_root: &Path,
-    project_ids: &[String],
+    project_ids: &[Id],
     include: &[String],
 ) -> Result<(), AnyError> {
     let docker_sources_root = docker_root.join("sources");
@@ -192,7 +193,7 @@ fn scaffold_sources(
     Ok(())
 }
 
-pub async fn scaffold(project_ids: &[String], include: &[String]) -> Result<(), AnyError> {
+pub async fn scaffold(project_ids: &[Id], include: &[String]) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;
     let docker_root = workspace.root.join(CONFIG_DIRNAME).join("docker");
 

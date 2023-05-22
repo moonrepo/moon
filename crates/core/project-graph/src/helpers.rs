@@ -1,4 +1,5 @@
 use crate::errors::ProjectGraphError;
+use moon_common::Id;
 use moon_config::{ProjectsSourcesMap, CONFIG_DIRNAME};
 use moon_error::MoonError;
 use moon_logger::{debug, warn};
@@ -39,11 +40,11 @@ pub fn detect_projects_with_globs(
         let root_id = fs::file_name(workspace_root);
 
         projects.insert(
-            regex::clean_id(if root_id.is_empty() {
+            Id::raw(regex::clean_id(if root_id.is_empty() {
                 "root"
             } else {
-                root_id.as_ref()
-            }),
+                root_id.as_str()
+            })),
             root_source,
         );
     }
@@ -71,7 +72,7 @@ pub fn detect_projects_with_globs(
             }
 
             let (id, source) = infer_project_name_and_source(&project_source);
-            let id = regex::clean_id(&id);
+            let id = Id::raw(regex::clean_id(&id));
 
             if let Some(existing_source) = projects.get(&id) {
                 warn!(

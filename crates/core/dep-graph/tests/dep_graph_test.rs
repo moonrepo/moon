@@ -39,8 +39,8 @@ async fn create_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
     };
     let tasks_config = InheritedTasksConfig {
         file_groups: FxHashMap::from_iter([
-            ("sources".to_owned(), string_vec!["src/**/*", "types/**/*"]),
-            ("tests".to_owned(), string_vec!["tests/**/*"]),
+            ("sources".into(), string_vec!["src/**/*", "types/**/*"]),
+            ("tests".into(), string_vec!["tests/**/*"]),
         ]),
         ..InheritedTasksConfig::default()
     };
@@ -90,7 +90,7 @@ async fn create_tasks_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
         ..ToolchainConfig::default()
     };
     let tasks_config = InheritedTasksConfig {
-        file_groups: FxHashMap::from_iter([("sources".to_owned(), vec!["src/**/*".to_owned()])]),
+        file_groups: FxHashMap::from_iter([("sources".into(), vec!["src/**/*".to_owned()])]),
         ..InheritedTasksConfig::default()
     };
 

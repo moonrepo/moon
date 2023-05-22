@@ -65,7 +65,7 @@ pub fn get_cases_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Inherit
 
     let tasks_config = InheritedTasksConfig {
         tasks: BTreeMap::from_iter([(
-            "noop".to_owned(),
+            "noop".into(),
             TaskConfig {
                 command: Some(TaskCommandArgs::String("noop".into())),
                 ..TaskConfig::default()
@@ -206,14 +206,14 @@ pub fn get_tasks_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Inherit
         ]),
         tasks: BTreeMap::from_iter([
             (
-                "standard".to_owned(),
+                "standard".into(),
                 TaskConfig {
                     command: Some(TaskCommandArgs::String("cmd".into())),
                     ..TaskConfig::default()
                 },
             ),
             (
-                "withArgs".to_owned(),
+                "withArgs".into(),
                 TaskConfig {
                     command: Some(TaskCommandArgs::String("cmd".into())),
                     args: Some(TaskCommandArgs::Sequence(vec![
@@ -225,7 +225,7 @@ pub fn get_tasks_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Inherit
                 },
             ),
             (
-                "withInputs".to_owned(),
+                "withInputs".into(),
                 TaskConfig {
                     command: Some(TaskCommandArgs::String("cmd".into())),
                     inputs: Some(vec!["rel/file.*".into(), "/root.*".into()]),
@@ -233,7 +233,7 @@ pub fn get_tasks_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Inherit
                 },
             ),
             (
-                "withOutputs".to_owned(),
+                "withOutputs".into(),
                 TaskConfig {
                     command: Some(TaskCommandArgs::String("cmd".into())),
                     inputs: Some(vec!["lib".into(), "/build".into()]),
@@ -278,7 +278,7 @@ pub fn get_node_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Inherite
     let tasks_config = InheritedTasksConfig {
         tasks: BTreeMap::from_iter([
             (
-                "version".to_owned(),
+                "version".into(),
                 TaskConfig {
                     command: Some(TaskCommandArgs::String("node".into())),
                     args: Some(TaskCommandArgs::String("--version".into())),
@@ -286,7 +286,7 @@ pub fn get_node_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Inherite
                 },
             ),
             (
-                "noop".to_owned(),
+                "noop".into(),
                 TaskConfig {
                     command: Some(TaskCommandArgs::String("noop".into())),
                     ..TaskConfig::default()

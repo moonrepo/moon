@@ -11,7 +11,7 @@ fn write_manifest(path: &Path, id: &str) {
     fs::write(
         path.join("dockerManifest.json"),
         serde_json::to_string(&DockerManifest {
-            focused_projects: FxHashSet::from_iter([id.to_owned()]),
+            focused_projects: FxHashSet::from_iter([id.into()]),
             unfocused_projects: FxHashSet::default(),
         })
         .unwrap(),

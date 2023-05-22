@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use moon_action_context::ActionContext;
+use moon_common::Id;
 use moon_config::{
     DependencyConfig, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap,
     ProjectsSourcesMap, TasksConfigsMap,
@@ -121,7 +122,7 @@ pub trait Platform: Debug + Send + Sync {
         &self,
         context: &ActionContext,
         project: &Project,
-        dependencies: &FxHashMap<String, &Project>,
+        dependencies: &FxHashMap<Id, &Project>,
     ) -> Result<bool, ProjectError> {
         Ok(false)
     }

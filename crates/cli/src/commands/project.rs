@@ -2,12 +2,13 @@ use crate::helpers::AnyError;
 use console::Term;
 use itertools::Itertools;
 use moon::{build_project_graph, load_workspace};
+use moon_common::Id;
 use moon_logger::map_list;
 use moon_terminal::{ExtendedTerm, Label};
 use moon_utils::is_test_env;
 use starbase_styles::color;
 
-pub async fn project(id: String, json: bool) -> Result<(), AnyError> {
+pub async fn project(id: Id, json: bool) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;
     let mut project_builder = build_project_graph(&mut workspace).await?;
     project_builder.load(&id)?;

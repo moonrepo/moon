@@ -9,12 +9,13 @@ use crate::project::language_platform::{PlatformType, ProjectLanguage};
 use crate::project::task::TaskConfig;
 use crate::project::toolchain::ProjectToolchainConfig;
 use crate::project::workspace::ProjectWorkspaceConfig;
-use crate::types::{FileGroups, ProjectID};
-use crate::validators::{is_default, validate_id};
+use crate::types::FileGroups;
+use crate::validators::is_default;
 use figment::{
     providers::{Format, Serialized, YamlExtended},
     Figment,
 };
+use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schemars::JsonSchema;
 use serde::de::Deserializer;
@@ -42,28 +43,8 @@ where
     }
 }
 
-fn validate_file_groups(map: &FileGroups) -> Result<(), ValidationError> {
-    for key in map.keys() {
-        validate_id(format!("fileGroups.{key}"), key)?;
-    }
-
-    Ok(())
-}
-
-fn validate_tags(list: &[String]) -> Result<(), ValidationError> {
-    for (index, item) in list.iter().enumerate() {
-        let key = format!("tags[{index}]");
-
-        validate_id(key, item)?;
-    }
-
-    Ok(())
-}
-
-fn validate_tasks(map: &BTreeMap<String, TaskConfig>) -> Result<(), ValidationError> {
+fn validate_tasks(map: &BTreeMap<Id, TaskConfig>) -> Result<(), ValidationError> {
     for (name, task) in map {
-        validate_id(format!("tasks.{name}"), name)?;
-
         // Only fail for empty strings and not `None`
         if task.command.is_some() && task.get_command().is_empty() {
             return Err(create_validation_error(
@@ -143,7 +124,7 @@ pub struct ProjectMetadataConfig {
     expecting = "expected a project name or dependency config object"
 )]
 pub enum ProjectDependsOn {
-    String(ProjectID),
+    String(Id),
     Object(DependencyConfig),
 }
 
@@ -159,7 +140,6 @@ pub struct ProjectConfig {
     pub env: Option<FxHashMap<String, String>>,
 
     #[serde(skip_serializing_if = "is_default")]
-    #[validate(custom = "validate_file_groups")]
     pub file_groups: FileGroups,
 
     #[serde(
@@ -176,13 +156,12 @@ pub struct ProjectConfig {
     pub project: Option<ProjectMetadataConfig>,
 
     #[serde(skip_serializing_if = "is_default")]
-    #[validate(custom = "validate_tags")]
-    pub tags: Vec<String>,
+    pub tags: Vec<Id>,
 
     #[serde(skip_serializing_if = "is_default")]
     #[validate(custom = "validate_tasks")]
     #[validate]
-    pub tasks: BTreeMap<String, TaskConfig>,
+    pub tasks: BTreeMap<Id, TaskConfig>,
 
     #[serde(skip_serializing_if = "is_default")]
     #[validate]

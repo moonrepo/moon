@@ -7,6 +7,7 @@ edition = "2021"
 miette = { workspace = true }
 once_cell = { workspace = true }
 regex = { workspace = true }
+schemars = "0.8.12"
 serde = { workspace = true }
 starbase_styles = { workspace = true }
 thiserror = { workspace = true }

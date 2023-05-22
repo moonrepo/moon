@@ -344,7 +344,7 @@ tasks:
             let tasks_config = InheritedTasksConfig {
                 tasks: BTreeMap::from_iter([
                     (
-                        "a".to_owned(),
+                        "a".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::String("a".into())),
                             inputs: Some(string_vec!["a"]),
@@ -353,7 +353,7 @@ tasks:
                         },
                     ),
                     (
-                        "b".to_owned(),
+                        "b".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::String("b".into())),
                             inputs: Some(string_vec!["b"]),
@@ -362,7 +362,7 @@ tasks:
                         },
                     ),
                     (
-                        "c".to_owned(),
+                        "c".into(),
                         TaskConfig {
                             command: Some(TaskCommandArgs::String("c".into())),
                             inputs: Some(string_vec!["c"]),
@@ -391,7 +391,7 @@ tasks:
             let mut ids = project
                 .tasks
                 .keys()
-                .map(|k| k.to_owned())
+                .map(|k| k.to_string())
                 .collect::<Vec<String>>();
             ids.sort();
             ids
@@ -1432,7 +1432,7 @@ mod detection {
 
         let tasks_config = InheritedTasksConfig {
             tasks: BTreeMap::from_iter([(
-                "command".to_owned(),
+                "command".into(),
                 TaskConfig {
                     command: Some(TaskCommandArgs::String("command".into())),
                     ..TaskConfig::default()

@@ -1,4 +1,3 @@
-use moon_config::ProjectID;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
@@ -9,7 +8,7 @@ pub struct GraphNodeDto {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GraphEdgeDto {
-    pub id: ProjectID,
+    pub id: String,
     pub source: usize,
     pub target: usize,
 }

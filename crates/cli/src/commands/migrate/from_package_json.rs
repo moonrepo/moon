@@ -1,6 +1,7 @@
 use super::check_dirty_repo;
 use crate::helpers::AnyError;
 use moon::{generate_project_graph, load_workspace};
+use moon_common::Id;
 use moon_config::{DependencyConfig, DependencyScope, ProjectDependsOn};
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_error::MoonError;
@@ -13,7 +14,7 @@ use starbase_utils::yaml;
 const LOG_TARGET: &str = "moon:migrate:from-package-json";
 
 pub async fn from_package_json(
-    project_id: String,
+    project_id: Id,
     skip_touched_files_check: bool,
 ) -> Result<(), AnyError> {
     let mut workspace = load_workspace().await?;
@@ -26,7 +27,7 @@ pub async fn from_package_json(
 
     // Create a mapping of `package.json` names to project IDs
     let project_graph = generate_project_graph(&mut workspace).await?;
-    let mut package_map: FxHashMap<String, String> = FxHashMap::default();
+    let mut package_map: FxHashMap<String, Id> = FxHashMap::default();
 
     for project in project_graph.get_all()? {
         if let Some(package_json) = PackageJson::read(&project.root)? {

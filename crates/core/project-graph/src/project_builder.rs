@@ -3,6 +3,7 @@ use crate::graph_hasher::GraphHasher;
 use crate::helpers::detect_projects_with_globs;
 use crate::project_graph::{GraphType, IndicesType, ProjectGraph, LOG_TARGET};
 use crate::token_resolver::{TokenContext, TokenResolver};
+use moon_common::Id;
 use moon_config::{
     ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceProjects, CONFIG_DIRNAME,
     CONFIG_PROJECT_FILENAME,
@@ -39,7 +40,7 @@ pub struct ProjectGraphBuilder<'ws> {
 
     // Project and its dependencies being created.
     // We use this to prevent circular dependencies.
-    created: FxHashSet<String>,
+    created: FxHashSet<Id>,
 
     pub is_cached: bool,
     pub hash: String,
@@ -91,7 +92,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             .sources
             .keys()
             .map(|k| k.to_owned())
-            .collect::<Vec<String>>();
+            .collect::<Vec<Id>>();
 
         for id in ids {
             self.internal_load(&id)?;
@@ -103,7 +104,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
     /// Create a project with the provided ID and file path source. Based on the project's
     /// configured language, detect and infer implicit dependencies and tasks for the
     /// matching platform. Do *not* expand tasks until after dependents have been created.
-    fn create_project(&self, id: &str, source: &str) -> Result<Project, ProjectGraphError> {
+    fn create_project(&self, id: &Id, source: &str) -> Result<Project, ProjectGraphError> {
         let mut project = Project::new(
             id,
             source,
@@ -341,7 +342,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                         let dep_index = self.indices.get(dep_id).unwrap();
                         let dep_project = self.graph.node_weight(*dep_index).unwrap();
 
-                        if let Some(dep_task) = dep_project.tasks.get(target.task_id.as_str()) {
+                        if let Some(dep_task) = dep_project.tasks.get(&target.task_id) {
                             push_target(dep_task.target.clone());
                         }
                     }
@@ -513,13 +514,13 @@ impl<'ws> ProjectGraphBuilder<'ws> {
     }
 
     fn internal_load(&mut self, alias_or_id: &str) -> Result<NodeIndex, ProjectGraphError> {
-        let id = match self.aliases.get(alias_or_id) {
+        let id = Id::raw(match self.aliases.get(alias_or_id) {
             Some(project_id) => project_id,
             None => alias_or_id,
-        };
+        });
 
         // Already loaded, abort early
-        if let Some(index) = self.indices.get(id) {
+        if let Some(index) = self.indices.get(&id) {
             trace!(
                 target: LOG_TARGET,
                 "Project {} already exists in the project graph",
@@ -532,13 +533,12 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         trace!(
             target: LOG_TARGET,
             "Project {} does not exist in the project graph, attempting to load",
-            color::id(id),
+            color::id(&id),
         );
 
         // Create the current project
-        let id = id.to_owned();
         let Some(source) = self.sources.get(&id) else {
-            return Err(ProjectGraphError::Project(ProjectError::UnconfiguredID(id)));
+            return Err(ProjectGraphError::Project(ProjectError::UnconfiguredID(id.to_string())));
         };
 
         let mut project = self.create_project(&id, source)?;
@@ -581,20 +581,22 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
     async fn preload(&mut self) -> Result<(), ProjectGraphError> {
         let mut globs = vec![];
-        let mut sources = FxHashMap::default();
-        let mut aliases = FxHashMap::default();
+        let mut sources: ProjectsSourcesMap = FxHashMap::default();
+        let mut aliases: ProjectsAliasesMap = FxHashMap::default();
         let mut cache = self.workspace.cache.cache_projects_state()?;
 
-        let mut add_sources = |map: &FxHashMap<String, String>| {
+        let mut add_sources = |map: &FxHashMap<String, String>| -> Result<(), ProjectGraphError> {
             for (id, source) in map {
-                sources.insert(id.to_owned(), path::normalize_separators(source));
+                sources.insert(Id::new(id)?, path::normalize_separators(source));
             }
+
+            Ok(())
         };
 
         // Load project sources
         match &self.workspace.config.projects {
             WorkspaceProjects::Sources(map) => {
-                add_sources(map);
+                add_sources(map)?;
             }
             WorkspaceProjects::Globs(list) => {
                 globs.extend(list.clone());
@@ -604,7 +606,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                 sources: map,
             } => {
                 globs.extend(list.clone());
-                add_sources(map);
+                add_sources(map)?;
             }
         };
 

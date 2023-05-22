@@ -11,6 +11,7 @@ name = "project_graph_benchmark"
 harness = false
 
 [dependencies]
+moon_common = { path = "../../../nextgen/common" }
 moon_config = { path = "../config" }
 moon_enforcer = { path = "../enforcer" }
 moon_error = { path = "../error" }

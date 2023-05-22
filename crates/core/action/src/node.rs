@@ -1,5 +1,6 @@
 use moon_common::Id;
 use moon_platform_runtime::Runtime;
+use moon_target::Target;
 use serde::Serialize;
 use std::hash::{Hash, Hasher};
 
@@ -13,10 +14,10 @@ pub enum ActionNode {
     InstallProjectDeps(Runtime, Id),
 
     /// Run a target (project task).
-    RunTarget(Runtime, String),
+    RunTarget(Runtime, Target),
 
     /// Run a target (project task) that never terminates.
-    RunPersistentTarget(Runtime, String),
+    RunPersistentTarget(Runtime, Target),
 
     /// Setup a tool + version for the provided platform.
     SetupTool(Runtime),

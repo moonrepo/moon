@@ -2555,6 +2555,7 @@ version = "0.1.0"
 dependencies = [
  "moon_common",
  "moon_platform_runtime",
+ "moon_target",
  "moon_utils",
  "serde",
 ]

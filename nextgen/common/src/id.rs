@@ -105,8 +105,7 @@ impl<'de> Deserialize<'de> for Id {
     where
         D: Deserializer<'de>,
     {
-        let value = String::deserialize(deserializer)?;
-
-        Id::new(&value).map_err(|error| de::Error::custom(error.to_string()))
+        Id::new(String::deserialize(deserializer)?)
+            .map_err(|error| de::Error::custom(error.to_string()))
     }
 }

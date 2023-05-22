@@ -164,6 +164,14 @@ impl Ord for Target {
     }
 }
 
+// This is only used by tests!
+
+impl From<&str> for Target {
+    fn from(value: &str) -> Self {
+        Target::parse(value).unwrap()
+    }
+}
+
 // These traits are for converting targets within configuration
 // into the `Target` object instead of strings.
 

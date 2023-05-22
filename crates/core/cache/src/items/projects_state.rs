@@ -1,5 +1,6 @@
 use crate::cache_item;
 use crate::helpers::get_cache_mode;
+use moon_common::Id;
 use moon_error::MoonError;
 use moon_logger::trace;
 use rustc_hash::FxHashMap;
@@ -17,7 +18,7 @@ pub struct ProjectsState {
 
     pub last_glob_time: u128,
 
-    pub projects: FxHashMap<String, String>,
+    pub projects: FxHashMap<Id, String>,
 
     #[serde(skip)]
     pub path: PathBuf,

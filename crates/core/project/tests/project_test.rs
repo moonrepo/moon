@@ -32,7 +32,7 @@ fn mock_tasks_config() -> InheritedTasksManager {
 #[should_panic(expected = "MissingProjectAtSource")]
 fn doesnt_exist() {
     Project::new(
-        "missing",
+        &Id::raw("missing"),
         "projects/missing",
         &get_fixtures_root(),
         &mock_tasks_config(),
@@ -45,7 +45,7 @@ fn doesnt_exist() {
 fn no_config() {
     let workspace_root = get_fixtures_root();
     let project = Project::new(
-        "no-config",
+        &Id::raw("no-config"),
         "projects/no-config",
         &workspace_root,
         &mock_tasks_config(),
@@ -70,7 +70,7 @@ fn no_config() {
 fn empty_config() {
     let workspace_root = get_fixtures_root();
     let project = Project::new(
-        "empty-config",
+        &Id::raw("empty-config"),
         "projects/empty-config",
         &workspace_root,
         &mock_tasks_config(),
@@ -96,7 +96,7 @@ fn empty_config() {
 fn basic_config() {
     let workspace_root = get_fixtures_root();
     let project = Project::new(
-        "basic",
+        &Id::raw("basic"),
         "projects/basic",
         &workspace_root,
         &mock_tasks_config(),
@@ -136,7 +136,7 @@ fn basic_config() {
 fn advanced_config() {
     let workspace_root = get_fixtures_root();
     let project = Project::new(
-        "advanced",
+        &Id::raw("advanced"),
         "projects/advanced",
         &workspace_root,
         &mock_tasks_config(),

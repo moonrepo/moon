@@ -3,7 +3,7 @@ use crate::infer_tasks_from_scripts;
 use moon_action_context::ActionContext;
 use moon_config::{
     DependencyConfig, DependencyScope, HasherConfig, NodeConfig, PlatformType, ProjectConfig,
-    ProjectID, ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap, TypeScriptConfig,
+    ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap, TypeScriptConfig,
 };
 use moon_error::MoonError;
 use moon_hasher::{DepsHasher, HashSet};

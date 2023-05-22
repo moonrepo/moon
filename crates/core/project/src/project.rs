@@ -340,7 +340,7 @@ impl Logable for Project {
 
 impl Project {
     pub fn new<F>(
-        id: &str,
+        id: &Id,
         source: &str,
         workspace_root: &Path,
         inherited_tasks: &InheritedTasksManager,
@@ -351,7 +351,6 @@ impl Project {
     {
         let log_target = format!("moon:project:{id}");
         let source = path::normalize_separators(source);
-        let id = Id::new(id)?;
 
         // For the root-level project, the "." dot actually causes
         // a ton of unwanted issues, so just use workspace root directly.
@@ -396,7 +395,7 @@ impl Project {
             alias: None,
             dependencies,
             file_groups,
-            id,
+            id: id.to_owned(),
             language,
             log_target,
             root,

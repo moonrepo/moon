@@ -2647,6 +2647,7 @@ name = "moon_cache"
 version = "0.1.0"
 dependencies = [
  "moon_archive",
+ "moon_common",
  "moon_constants",
  "moon_error",
  "moon_logger",

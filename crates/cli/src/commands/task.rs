@@ -5,11 +5,9 @@ use moon_target::Target;
 use moon_terminal::{ExtendedTerm, Label};
 use starbase_styles::color;
 
-pub async fn task(id: String, json: bool) -> Result<(), AnyError> {
-    let target = Target::parse(&id)?;
-
+pub async fn task(target: Target, json: bool) -> Result<(), AnyError> {
     let Some(project_id) = target.scope_id else {
-      return Err("A project ID is required.".into());
+        return Err("A project ID is required.".into());
     };
 
     let mut workspace = load_workspace().await?;

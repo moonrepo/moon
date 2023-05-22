@@ -266,7 +266,7 @@ mod projects {
         });
 
         let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
-        let mut ids: Vec<String> = json.projects.iter().map(|p| p.id.clone()).collect();
+        let mut ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
         ids.sort();
 
@@ -308,7 +308,7 @@ mod projects {
         });
 
         let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
-        let ids: Vec<String> = json.projects.iter().map(|p| p.id.clone()).collect();
+        let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
         assert_eq!(ids, string_vec!["advanced", "noConfig"]);
         assert!(json.options.affected);
@@ -380,7 +380,7 @@ mod projects {
         });
 
         let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
-        let ids: Vec<String> = json.projects.iter().map(|p| p.id.clone()).collect();
+        let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
         assert_eq!(ids, string_vec!["advanced", "noConfig"]);
         assert!(json.options.affected);
@@ -405,7 +405,7 @@ mod projects {
         });
 
         let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
-        let ids: Vec<String> = json.projects.iter().map(|p| p.id.clone()).collect();
+        let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
         assert_eq!(ids, string_vec!["bar", "baz"]);
         assert_eq!(json.options.id.unwrap(), "ba(r|z)".to_string());
@@ -430,7 +430,7 @@ mod projects {
         });
 
         let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
-        let ids: Vec<String> = json.projects.iter().map(|p| p.id.clone()).collect();
+        let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
         assert_eq!(ids, string_vec!["emptyConfig", "noConfig"]);
         assert_eq!(json.options.source.unwrap(), "config$".to_string());
@@ -455,7 +455,7 @@ mod projects {
         });
 
         let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
-        let ids: Vec<String> = json.projects.iter().map(|p| p.id.clone()).collect();
+        let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
         assert_eq!(ids, string_vec!["advanced", "foo"]);
         assert_eq!(json.options.tags.unwrap(), "react".to_string());
@@ -469,7 +469,7 @@ mod projects {
         });
 
         let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
-        let ids: Vec<String> = json.projects.iter().map(|p| p.id.clone()).collect();
+        let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
         assert_eq!(ids, string_vec!["advanced", "basic", "foo"]);
         assert_eq!(json.options.tags.unwrap(), "react|vue".to_string());
@@ -494,7 +494,7 @@ mod projects {
         });
 
         let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
-        let ids: Vec<String> = json.projects.iter().map(|p| p.id.clone()).collect();
+        let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
         assert_eq!(ids, string_vec!["tasks"]);
         assert_eq!(json.options.tasks.unwrap(), "lint".to_string());
@@ -519,7 +519,7 @@ mod projects {
         });
 
         let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
-        let ids: Vec<String> = json.projects.iter().map(|p| p.id.clone()).collect();
+        let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
         assert_eq!(ids, string_vec!["basic", "foo"]);
         assert_eq!(json.options.language.unwrap(), "java|bash".to_string());
@@ -544,7 +544,7 @@ mod projects {
         });
 
         let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
-        let ids: Vec<String> = json.projects.iter().map(|p| p.id.clone()).collect();
+        let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
         assert_eq!(ids, string_vec!["advanced", "foo"]);
         assert_eq!(json.options.type_of.unwrap(), "app".to_string());
@@ -572,7 +572,7 @@ mod projects {
             });
 
             let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
-            let ids: Vec<String> = json.projects.iter().map(|p| p.id.clone()).collect();
+            let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
             assert_eq!(ids, string_vec!["bar", "baz"]);
             assert_eq!(json.options.query.unwrap(), "project~ba{r,z}".to_string());
@@ -601,7 +601,7 @@ mod projects {
             });
 
             let json: QueryProjectsResult = serde_json::from_str(&assert.output()).unwrap();
-            let ids: Vec<String> = json.projects.iter().map(|p| p.id.clone()).collect();
+            let ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
 
             assert_eq!(ids, string_vec!["noConfig"]);
             assert!(json.options.affected);

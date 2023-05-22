@@ -1,9 +1,10 @@
 use crate::actions;
 use crate::infer_tasks_from_scripts;
 use moon_action_context::ActionContext;
+use moon_common::Id;
 use moon_config::{
     DependencyConfig, DependencyScope, HasherConfig, NodeConfig, PlatformType, ProjectConfig,
-    ProjectID, ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap, TypeScriptConfig,
+    ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap, TypeScriptConfig,
 };
 use moon_error::MoonError;
 use moon_hasher::{DepsHasher, HashSet};
@@ -31,7 +32,7 @@ const LOG_TARGET: &str = "moon:node-platform";
 pub struct NodePlatform {
     config: NodeConfig,
 
-    package_names: FxHashMap<String, ProjectID>,
+    package_names: FxHashMap<String, Id>,
 
     toolchain: ToolManager<NodeTool>,
 
@@ -133,7 +134,7 @@ impl Platform for NodePlatform {
                             warn!(
                                 target: LOG_TARGET,
                                 "A project already exists with the ID {} ({}), skipping alias of the same name ({})",
-                                color::id(alias),
+                                color::id(&alias),
                                 color::file(existing_source),
                                 color::file(project_source)
                             );
@@ -323,7 +324,7 @@ impl Platform for NodePlatform {
         &self,
         _context: &ActionContext,
         project: &Project,
-        dependencies: &FxHashMap<String, &Project>,
+        dependencies: &FxHashMap<Id, &Project>,
     ) -> Result<bool, ProjectError> {
         let modified = actions::sync_project(
             project,

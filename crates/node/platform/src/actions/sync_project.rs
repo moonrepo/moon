@@ -1,3 +1,4 @@
+use moon_common::Id;
 use moon_config::{DependencyScope, NodeConfig, NodeVersionFormat, TypeScriptConfig};
 use moon_logger::debug;
 use moon_node_lang::{PackageJson, NPM};
@@ -13,7 +14,7 @@ const LOG_TARGET: &str = "moon:node-platform:sync-project";
 
 pub async fn sync_project(
     project: &Project,
-    dependencies: &FxHashMap<String, &Project>,
+    dependencies: &FxHashMap<Id, &Project>,
     workspace_root: &Path,
     node_config: &NodeConfig,
     typescript_config: &Option<TypeScriptConfig>,

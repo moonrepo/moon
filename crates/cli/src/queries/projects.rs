@@ -6,6 +6,7 @@ use crate::{
 };
 use is_terminal::IsTerminal;
 use moon::generate_project_graph;
+use moon_common::Id;
 use moon_error::MoonError;
 use moon_logger::{debug, trace};
 use moon_project::Project;
@@ -44,7 +45,7 @@ pub struct QueryProjectsResult {
 
 #[derive(Deserialize, Serialize)]
 pub struct QueryTasksResult {
-    pub tasks: FxHashMap<String, BTreeMap<String, Task>>,
+    pub tasks: FxHashMap<Id, BTreeMap<Id, Task>>,
     pub options: QueryProjectsOptions,
 }
 

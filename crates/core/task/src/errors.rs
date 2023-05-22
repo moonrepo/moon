@@ -1,3 +1,4 @@
+use moon_common::IdError;
 use moon_config::ConfigError;
 use moon_error::MoonError;
 use moon_target::TargetError;
@@ -25,6 +26,9 @@ pub enum TaskError {
 
     #[error(transparent)]
     Config(#[from] ConfigError),
+
+    #[error(transparent)]
+    Id(#[from] IdError),
 
     #[error(transparent)]
     Moon(#[from] MoonError),

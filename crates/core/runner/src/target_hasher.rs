@@ -1,4 +1,5 @@
 use crate::errors::RunnerError;
+use moon_common::Id;
 use moon_hasher::{hash_btree, hash_vec, Digest, Hasher, Sha256};
 use moon_target::Target;
 use moon_task::Task;
@@ -30,7 +31,7 @@ pub struct TargetHasher {
     outputs: Vec<String>,
 
     // `moon.yml` `dependsOn`
-    project_deps: Vec<String>,
+    project_deps: Vec<Id>,
 
     // Task `target`
     target: String,
@@ -70,7 +71,7 @@ impl TargetHasher {
     }
 
     /// Hash `dependsOn` from the owning project.
-    pub fn hash_project_deps(&mut self, deps: Vec<&String>) {
+    pub fn hash_project_deps(&mut self, deps: Vec<&Id>) {
         self.project_deps = deps.into_iter().map(|d| d.to_owned()).collect();
         self.project_deps.sort();
     }

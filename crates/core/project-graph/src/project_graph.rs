@@ -1,4 +1,5 @@
-use moon_config::{ProjectID, ProjectsAliasesMap, ProjectsSourcesMap};
+use moon_common::Id;
+use moon_config::{ProjectsAliasesMap, ProjectsSourcesMap};
 use moon_logger::debug;
 use moon_project::{Project, ProjectError};
 use moon_query::{Criteria, Queryable};
@@ -14,7 +15,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 
 pub type GraphType = DiGraph<Project, ()>;
-pub type IndicesType = FxHashMap<ProjectID, NodeIndex>;
+pub type IndicesType = FxHashMap<Id, NodeIndex>;
 
 pub const LOG_TARGET: &str = "moon:project-graph";
 
@@ -35,7 +36,7 @@ pub struct ProjectGraph {
     pub sources: ProjectsSourcesMap,
 
     #[serde(skip)]
-    query_cache: Arc<RwLock<FxHashMap<String, Vec<String>>>>,
+    query_cache: Arc<RwLock<FxHashMap<String, Vec<Id>>>>,
 }
 
 impl ProjectGraph {
@@ -55,8 +56,8 @@ impl ProjectGraph {
     }
 
     /// Return a list of all configured project IDs in ascending order.
-    pub fn ids(&self) -> Vec<ProjectID> {
-        let mut nodes: Vec<ProjectID> = self.sources.keys().cloned().collect();
+    pub fn ids(&self) -> Vec<Id> {
+        let mut nodes: Vec<Id> = self.sources.keys().cloned().collect();
         nodes.sort();
         nodes
     }
@@ -114,15 +115,15 @@ impl ProjectGraph {
     /// Return a project with the associated ID. If the project does not
     /// exist or has been misconfigured, return an error.
     pub fn get(&self, alias_or_id: &str) -> Result<&Project, ProjectError> {
-        let id = match self.aliases.get(alias_or_id) {
+        let id = Id::raw(match self.aliases.get(alias_or_id) {
             Some(project_id) => project_id,
             None => alias_or_id,
-        };
+        });
 
         let index = self
             .indices
-            .get(id)
-            .ok_or_else(|| ProjectError::UnconfiguredID(id.to_owned()))?;
+            .get(&id)
+            .ok_or_else(|| ProjectError::UnconfiguredID(id.to_string()))?;
 
         Ok(self.graph.node_weight(*index).unwrap())
     }
@@ -149,7 +150,7 @@ impl ProjectGraph {
 
         // Find the deepest matching path in case sub-projects are being used
         let mut remaining_length = 1000; // Start with a really fake number
-        let mut possible_id = String::new();
+        let mut possible_id = Id::raw("");
 
         for (id, source) in &self.sources {
             if !file.starts_with(source) {
@@ -180,7 +181,7 @@ impl ProjectGraph {
     }
 
     /// Return a list of direct project IDs that the defined project depends on.
-    pub fn get_dependencies_of(&self, project: &Project) -> Result<Vec<ProjectID>, ProjectError> {
+    pub fn get_dependencies_of(&self, project: &Project) -> Result<Vec<Id>, ProjectError> {
         let deps = self
             .graph
             .neighbors_directed(*self.indices.get(&project.id).unwrap(), Direction::Outgoing)
@@ -191,7 +192,7 @@ impl ProjectGraph {
     }
 
     /// Return a list of project IDs that require the defined project.
-    pub fn get_dependents_of(&self, project: &Project) -> Result<Vec<ProjectID>, ProjectError> {
+    pub fn get_dependents_of(&self, project: &Project) -> Result<Vec<Id>, ProjectError> {
         let deps = self
             .graph
             .neighbors_directed(*self.indices.get(&project.id).unwrap(), Direction::Incoming)
@@ -204,7 +205,7 @@ impl ProjectGraph {
     /// Get a labelled representation of the dep graph (which can be serialized easily).
     pub fn labeled_graph(&self) -> DiGraph<String, ()> {
         let graph = self.graph.clone();
-        graph.map(|_, n| n.id.clone(), |_, e| *e)
+        graph.map(|_, n| n.id.to_string(), |_, e| *e)
     }
 
     /// Format as a DOT string.

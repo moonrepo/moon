@@ -6,7 +6,8 @@ use crate::enums::{CacheMode, LogLevel, TouchedStatus};
 use clap::{Parser, Subcommand};
 use clap_complete::Shell;
 use moon_action_context::ProfileType;
-use moon_config::{FileGlob, ProjectID, TargetID};
+use moon_common::Id;
+use moon_config::{FileGlob, TargetID};
 use std::path::PathBuf;
 
 pub const BIN_NAME: &str = if cfg!(windows) { "moon.exe" } else { "moon" };
@@ -29,7 +30,7 @@ pub enum DockerCommands {
     )]
     Scaffold {
         #[arg(required = true, help = "List of project IDs to copy sources for")]
-        ids: Vec<ProjectID>,
+        ids: Vec<Id>,
 
         #[arg(long, help = "Additional file globs to include in sources")]
         include: Vec<FileGlob>,
@@ -50,7 +51,7 @@ pub enum MigrateCommands {
     )]
     FromPackageJson {
         #[arg(help = "ID of project to migrate")]
-        id: ProjectID,
+        id: Id,
     },
 
     #[command(
@@ -71,7 +72,7 @@ pub enum NodeCommands {
         name: String,
 
         #[arg(long, help = "ID of project to run in")]
-        project: Option<ProjectID>,
+        project: Option<Id>,
     },
 }
 
@@ -309,7 +310,7 @@ pub enum Commands {
     )]
     Project {
         #[arg(help = "ID of project to display")]
-        id: ProjectID,
+        id: Id,
 
         #[arg(long, help = "Print in JSON format")]
         json: bool,
@@ -323,7 +324,7 @@ pub enum Commands {
     )]
     ProjectGraph {
         #[arg(help = "ID of project to *only* graph")]
-        id: Option<ProjectID>,
+        id: Option<Id>,
 
         #[arg(long, help = "Print the graph in DOT format")]
         dot: bool,
@@ -400,7 +401,7 @@ pub enum Commands {
     Check {
         #[arg(help = "List of project IDs to explicitly check")]
         #[clap(group = "projects")]
-        ids: Vec<ProjectID>,
+        ids: Vec<Id>,
 
         #[arg(long, help = "Run check for all projects in the workspace")]
         #[clap(group = "projects")]

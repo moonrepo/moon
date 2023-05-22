@@ -1,6 +1,7 @@
 use super::check_dirty_repo;
 use crate::helpers::AnyError;
 use moon::{generate_project_graph, load_workspace};
+use moon_common::Id;
 use moon_config::{InheritedTasksConfig, PlatformType, ProjectConfig, TaskCommandArgs, TaskConfig};
 use moon_constants as constants;
 use moon_logger::{info, warn};
@@ -32,17 +33,17 @@ pub struct TurboJson {
     pub pipeline: FxHashMap<String, TurboTask>,
 }
 
-pub fn extract_project_task_ids(key: &str) -> (Option<String>, String) {
+pub fn extract_project_task_ids(key: &str) -> (Option<Id>, Id) {
     if key.contains('#') {
         let mut parts = key.split('#');
 
         return (
-            Some(parts.next().unwrap().to_string()),
-            parts.next().unwrap().to_string(),
+            Some(Id::raw(parts.next().unwrap().to_string())),
+            Id::raw(parts.next().unwrap().to_string()),
         );
     }
 
-    (None, key.to_owned())
+    (None, Id::raw(key.to_owned()))
 }
 
 pub fn convert_globals(turbo: &TurboJson, tasks_config: &mut InheritedTasksConfig) -> bool {
@@ -64,7 +65,7 @@ pub fn convert_globals(turbo: &TurboJson, tasks_config: &mut InheritedTasksConfi
     modified
 }
 
-pub fn convert_task(name: String, task: TurboTask) -> TaskConfig {
+pub fn convert_task(name: Id, task: TurboTask) -> TaskConfig {
     let mut config = TaskConfig::default();
     let mut inputs = vec![];
 

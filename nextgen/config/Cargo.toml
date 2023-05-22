@@ -1,0 +1,18 @@
+[package]
+name = "moon_config2"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_common = { path = "../common" }
+moon_target = { path = "../target" }
+proto_cli = { workspace = true }
+rustc-hash = { workspace = true }
+schematic = { version = "0.4.0", default-features = false, features = ["yaml", "valid_url"] }
+semver = "1.0.17"
+serde = { workspace = true }
+strum = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+starbase_sandbox = { workspace = true }

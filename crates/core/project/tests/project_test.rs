@@ -117,7 +117,7 @@ fn basic_config() {
         Project {
             id: "basic".into(),
             config: ProjectConfig {
-                depends_on: vec![ProjectDependsOn::String("noConfig".to_owned())],
+                depends_on: vec![ProjectDependsOn::String("noConfig".into())],
                 file_groups: FxHashMap::from_iter([("tests".into(), string_vec!["**/*_test.rs"])]),
                 language: ProjectLanguage::JavaScript,
                 tags: string_vec!["vue"],

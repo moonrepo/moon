@@ -1,5 +1,6 @@
 use once_cell::sync::Lazy;
 use regex::Regex;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use starbase_styles::{Style, Stylize};
 use std::{
@@ -18,7 +19,9 @@ pub static ID_PATTERN: Lazy<Regex> =
 #[error("Invalid identifier {}. May only contain alpha-numeric characters, dashes (-), slashes (/), underscores (_), and dots (.).", .0.style(Style::Id))]
 pub struct IdError(String);
 
-#[derive(Clone, Debug, Default, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(
+    Clone, Debug, Default, Deserialize, Eq, Hash, JsonSchema, Ord, PartialEq, PartialOrd, Serialize,
+)]
 pub struct Id(String);
 
 impl Id {
@@ -82,6 +85,12 @@ impl PartialEq<&str> for Id {
 impl PartialEq<String> for Id {
     fn eq(&self, other: &String) -> bool {
         &self.0 == other
+    }
+}
+
+impl From<&str> for Id {
+    fn from(s: &str) -> Self {
+        Id::new(s).unwrap()
     }
 }
 

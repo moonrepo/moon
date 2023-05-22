@@ -454,7 +454,15 @@ impl Queryable for Project {
                         }
                         Field::ProjectSource(sources) => condition.matches(sources, &self.source),
                         Field::ProjectType(types) => condition.matches_enum(types, &self.type_of),
-                        Field::Tag(tags) => condition.matches_list(tags, &self.config.tags),
+                        Field::Tag(tags) => condition.matches_list(
+                            tags,
+                            &self
+                                .config
+                                .tags
+                                .iter()
+                                .map(|t| t.to_string())
+                                .collect::<Vec<_>>(),
+                        ),
                         Field::Task(ids) => Ok(self
                             .tasks
                             .values()

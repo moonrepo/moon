@@ -1,6 +1,7 @@
 mod errors;
 
 pub use errors::*;
+use moon_common::Id;
 use moon_project::{Project, ProjectType};
 
 pub fn enforce_project_type_relationships(
@@ -40,9 +41,9 @@ pub fn enforce_project_type_relationships(
 
 pub fn enforce_tag_relationships(
     source: &Project,
-    source_tag: &String,
+    source_tag: &Id,
     dependency: &Project,
-    required_tags: &[String],
+    required_tags: &[Id],
 ) -> Result<(), EnforcerError> {
     // Source project isn't using the source tag
     if source_tag.is_empty()
@@ -73,8 +74,12 @@ pub fn enforce_tag_relationships(
 
     Err(EnforcerError::InvalidTagRelationship(
         source.id.to_string(),
-        source_tag.clone(),
+        source_tag.to_string(),
         dependency.id.to_string(),
-        allowed.join(", "),
+        allowed
+            .iter()
+            .map(|t| t.to_string())
+            .collect::<Vec<_>>()
+            .join(", "),
     ))
 }

@@ -1,4 +1,5 @@
 use crate::errors::TokenError;
+use moon_common::Id;
 use moon_error::MoonError;
 use moon_logger::warn;
 use moon_project::Project;
@@ -305,7 +306,7 @@ impl<'task> TokenResolver<'task> {
 
         let get_file_group = |token: &str, id: &str| {
             file_groups
-                .get(id)
+                .get(&Id::raw(id))
                 .ok_or_else(|| TokenError::UnknownFileGroup(token.to_owned(), id.to_owned()))
         };
 

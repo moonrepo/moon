@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+moon_common = { path = "../../../nextgen/common" }
 moon_project = { path = "../project" }
 starbase_styles = { workspace = true }
 thiserror = { workspace = true }

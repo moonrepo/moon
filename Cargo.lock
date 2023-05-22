@@ -2738,6 +2738,7 @@ dependencies = [
  "miette",
  "once_cell",
  "regex",
+ "schemars",
  "serde",
  "starbase_styles",
  "thiserror",
@@ -2751,6 +2752,7 @@ dependencies = [
  "httpmock",
  "moon",
  "moon_args",
+ "moon_common",
  "moon_constants",
  "moon_error",
  "moon_logger",
@@ -2900,6 +2902,7 @@ dependencies = [
 name = "moon_enforcer"
 version = "0.1.0"
 dependencies = [
+ "moon_common",
  "moon_project",
  "starbase_styles",
  "thiserror",
@@ -3201,6 +3204,7 @@ dependencies = [
  "dotenvy",
  "moon",
  "moon_cache",
+ "moon_common",
  "moon_config",
  "moon_enforcer",
  "moon_error",

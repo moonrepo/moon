@@ -1,7 +1,7 @@
 use once_cell::sync::Lazy;
 use regex::Regex;
 use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use serde::{de, Deserialize, Deserializer, Serialize};
 use starbase_styles::{Style, Stylize};
 use std::{
     fmt::{self, Display},
@@ -19,9 +19,7 @@ pub static ID_PATTERN: Lazy<Regex> =
 #[error("Invalid identifier {}. May only contain alpha-numeric characters, dashes (-), slashes (/), underscores (_), and dots (.).", .0.style(Style::Id))]
 pub struct IdError(String);
 
-#[derive(
-    Clone, Debug, Default, Deserialize, Eq, Hash, JsonSchema, Ord, PartialEq, PartialOrd, Serialize,
-)]
+#[derive(Clone, Debug, Default, Eq, Hash, JsonSchema, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct Id(String);
 
 impl Id {
@@ -99,5 +97,16 @@ impl FromStr for Id {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Id::new(s)
+    }
+}
+
+impl<'de> Deserialize<'de> for Id {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let value = String::deserialize(deserializer)?;
+
+        Id::new(&value).map_err(|error| de::Error::custom(error.to_string()))
     }
 }

@@ -2789,6 +2789,7 @@ dependencies = [
  "semver",
  "serde",
  "serde_json",
+ "serde_yaml",
  "starbase_sandbox",
  "strum",
 ]
@@ -4597,9 +4598,9 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.4.0"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "537808e6ed80f9396fc9db31dfa3ac909e13a84c25f705e880914f155e5ae32a"
+checksum = "60dfb5e73c7a786d1cc95c98990183aeca3ccbe96fd4c11bf56911cfb4be85af"
 dependencies = [
  "garde",
  "miette",
@@ -4614,9 +4615,9 @@ dependencies = [
 
 [[package]]
 name = "schematic_macros"
-version = "0.4.0"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d76c57d243d0c069673640ea2adb739c3c3859137cdbb417ae710f686c62925"
+checksum = "b6fa8016e729d2314413e8d89557607138f87eec7f03c5afff0011a70d48c16d"
 dependencies = [
  "darling 0.20.1",
  "proc-macro2",

@@ -1,8 +1,8 @@
 mod inherited_tasks_config;
 mod language_platform;
+mod portable_path;
 mod project;
 mod project_config;
-mod relative_path;
 mod template;
 mod template_config;
 mod toolchain;
@@ -13,9 +13,9 @@ mod workspace_config;
 
 pub use inherited_tasks_config::*;
 pub use language_platform::*;
+pub use portable_path::*;
 pub use project::*;
 pub use project_config::*;
-pub use relative_path::*;
 pub use template::*;
 pub use template_config::*;
 pub use toolchain::*;

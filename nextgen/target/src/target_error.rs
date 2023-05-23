@@ -3,7 +3,7 @@ use moon_common::{Diagnostic, Error, IdError, Style, Stylize};
 #[derive(Error, Debug)]
 pub enum TargetError {
     #[error(
-        "Invalid target {}, must be in the format of \"scope:task\".", .0.style(Style::Label)
+        "Invalid target {}, must be in the format of \"scope:task\", with acceptable identifier characters.", .0.style(Style::Label)
     )]
     InvalidFormat(String),
 

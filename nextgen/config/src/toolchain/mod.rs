@@ -18,7 +18,7 @@ macro_rules! inherit_tool {
                         config.version = Some(version.to_owned());
                     }
                 } else {
-                    let mut data = $config::default_values(&())?;
+                    let mut data = $config::default();
                     data.version = Some(version.to_owned());
 
                     self.$tool = Some(data);
@@ -50,7 +50,7 @@ macro_rules! inherit_tool_without_version {
     ($config:ident, $tool:ident, $key:expr, $method:ident) => {
         pub fn $method(&mut self, proto_tools: &ToolsConfig) -> Result<(), ConfigError> {
             if self.$tool.is_none() && proto_tools.tools.get($key).is_some() {
-                self.$tool = Some($config::default_values(&())?);
+                self.$tool = Some($config::default());
             }
 
             Ok(())

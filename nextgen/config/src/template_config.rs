@@ -63,16 +63,36 @@ pub struct TemplateConfig {
 }
 
 impl TemplateConfig {
-    pub fn load<T: AsRef<Path>>(path: T) -> Result<TemplateConfig, ConfigError> {
+    pub fn load<R: AsRef<Path>, P: AsRef<Path>>(
+        workspace_root: R,
+        path: P,
+    ) -> Result<TemplateConfig, ConfigError> {
+        let workspace_root = workspace_root.as_ref();
+        let path = path.as_ref();
+
         let result = ConfigLoader::<TemplateConfig>::yaml()
-            .label(color::path(path.as_ref()))
-            .file(path.as_ref())?
+            .label(color::path(
+                if let Ok(relative_path) = path.strip_prefix(workspace_root) {
+                    relative_path
+                } else {
+                    path
+                },
+            ))
+            .file(path)?
             .load()?;
 
         Ok(result.config)
     }
 
-    pub fn load_from<T: AsRef<Path>>(root: T) -> Result<TemplateConfig, ConfigError> {
-        Self::load(root.as_ref().join(consts::CONFIG_TEMPLATE_FILENAME))
+    pub fn load_from<R: AsRef<Path>, P: AsRef<Path>>(
+        workspace_root: R,
+        template_root: P,
+    ) -> Result<TemplateConfig, ConfigError> {
+        Self::load(
+            workspace_root,
+            template_root
+                .as_ref()
+                .join(consts::CONFIG_TEMPLATE_FILENAME),
+        )
     }
 }

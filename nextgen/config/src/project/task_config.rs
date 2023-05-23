@@ -1,9 +1,10 @@
 use crate::language_platform::PlatformType;
+use crate::portable_path::PortablePath;
 use crate::project::{PartialTaskOptionsConfig, TaskOptionsConfig};
-use crate::relative_path::RelativePath;
-use moon_target::Target;
+use crate::validate::validate_no_env_var_in_path;
+use moon_target::{Target, TargetScope};
 use rustc_hash::FxHashMap;
-use schematic::{config_enum, Config, ValidateError};
+use schematic::{config_enum, Config, ConfigError, ConfigLoader, Segment, ValidateError};
 use strum::Display;
 
 fn validate_command<C>(
@@ -30,6 +31,19 @@ fn validate_command<C>(
         return Err(ValidateError::new(
             "a command is required; use \"noop\" otherwise",
         ));
+    }
+
+    Ok(())
+}
+
+fn validate_deps<C>(deps: &[Target], _task: &TaskConfig, _ctx: &C) -> Result<(), ValidateError> {
+    for (i, dep) in deps.iter().enumerate() {
+        if matches!(dep.scope, TargetScope::All | TargetScope::Tag(_)) {
+            return Err(ValidateError::with_segment(
+                "target scope not supported as a task dependency",
+                Segment::Index(i),
+            ));
+        }
     }
 
     Ok(())
@@ -68,19 +82,21 @@ pub struct TaskConfig {
 
     pub args: TaskCommandArgs,
 
+    #[setting(validate = validate_deps)]
     pub deps: Vec<Target>,
 
     pub env: FxHashMap<String, String>,
 
     // TODO
     #[setting(skip)]
-    pub global_inputs: Vec<RelativePath>,
+    pub global_inputs: Vec<PortablePath>,
 
-    pub inputs: Vec<RelativePath>,
+    pub inputs: Vec<PortablePath>,
 
     pub local: bool,
 
-    pub outputs: Vec<RelativePath>,
+    #[setting(validate = validate_no_env_var_in_path)]
+    pub outputs: Vec<PortablePath>,
 
     #[setting(nested)]
     pub options: TaskOptionsConfig,
@@ -88,5 +104,15 @@ pub struct TaskConfig {
     pub platform: PlatformType,
 
     #[setting(rename = "type")]
-    pub type_of: TaskType,
+    pub type_of: Option<TaskType>,
+}
+
+impl TaskConfig {
+    pub fn parse<T: AsRef<str>>(code: T) -> Result<TaskConfig, ConfigError> {
+        let result = ConfigLoader::<TaskConfig>::yaml()
+            .code(code.as_ref())?
+            .load()?;
+
+        Ok(result.config)
+    }
 }

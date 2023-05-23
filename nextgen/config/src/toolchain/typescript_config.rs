@@ -1,4 +1,4 @@
-use crate::relative_path::FilePath;
+use crate::portable_path::FilePath;
 use schematic::Config;
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain#typescript

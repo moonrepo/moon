@@ -1,4 +1,4 @@
-use crate::relative_path::PortablePath;
+use crate::portable_path::PortablePath;
 use schematic::{config_enum, Config, ValidateError};
 
 fn validate_affected_files<D, C>(

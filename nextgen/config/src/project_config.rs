@@ -1,8 +1,8 @@
 // moon.yml
 
 use crate::language_platform::{LanguageType, PlatformType};
+use crate::portable_path::PortablePath;
 use crate::project::*;
-use crate::relative_path::PortablePath;
 use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::{color, config_enum, Config, ConfigError, ConfigLoader, ValidateError};
@@ -56,8 +56,8 @@ config_enum!(
         expecting = "expected a project name or dependency config object"
     )]
     pub enum ProjectDependsOn {
-        String(String),
-        Object { id: String, scope: DependencyScope },
+        String(Id),
+        Object { id: Id, scope: DependencyScope },
     }
 );
 

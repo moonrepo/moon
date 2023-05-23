@@ -1,7 +1,7 @@
 use crate::language_platform::{LanguageType, PlatformType};
+use crate::portable_path::PortablePath;
 use crate::project::TaskConfig;
 use crate::project_config::ProjectType;
-use crate::relative_path::PortablePath;
 use crate::FilePath;
 use moon_common::{consts, Id};
 use moon_target::Target;

@@ -1,9 +1,9 @@
 // .moon/workspace.yml
 
-use crate::relative_path::{FilePath, GlobPath, ProjectPortablePath};
+use crate::portable_path::{FilePath, GlobPath, ProjectPortablePath};
 use crate::validate::validate_semver_requirement;
 use crate::workspace::*;
-use moon_common::Id;
+use moon_common::{consts, Id};
 use rustc_hash::FxHashMap;
 use schematic::{config_enum, validate, Config, ConfigError, ConfigLoader};
 use std::path::Path;
@@ -78,5 +78,14 @@ impl WorkspaceConfig {
             .load()?;
 
         Ok(result.config)
+    }
+
+    pub fn load_from<P: AsRef<Path>>(workspace_root: P) -> Result<WorkspaceConfig, ConfigError> {
+        Self::load(
+            workspace_root
+                .as_ref()
+                .join(consts::CONFIG_DIRNAME)
+                .join(consts::CONFIG_WORKSPACE_FILENAME),
+        )
     }
 }

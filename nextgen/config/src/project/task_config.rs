@@ -1,6 +1,6 @@
 use crate::language_platform::PlatformType;
+use crate::portable_path::PortablePath;
 use crate::project::{PartialTaskOptionsConfig, TaskOptionsConfig};
-use crate::relative_path::PortablePath;
 use moon_target::Target;
 use rustc_hash::FxHashMap;
 use schematic::{config_enum, Config, ValidateError};

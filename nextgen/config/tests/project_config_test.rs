@@ -3,7 +3,7 @@ mod utils;
 use moon_common::{consts::CONFIG_PROJECT_FILENAME, Id};
 use moon_config2::{
     DependencyScope, FilePath, GlobPath, LanguageType, PlatformType, PortablePath, ProjectConfig,
-    ProjectDependsOn, ProjectType,
+    ProjectDependsOn, ProjectType, TaskCommandArgs,
 };
 use rustc_hash::FxHashMap;
 use utils::*;
@@ -29,6 +29,82 @@ mod project_config {
 
         assert_eq!(config.language, LanguageType::Unknown);
         assert_eq!(config.type_of, ProjectType::Unknown);
+    }
+
+    #[test]
+    fn can_use_references() {
+        let config = test_load_config(
+            CONFIG_PROJECT_FILENAME,
+            r"
+tasks:
+  build: &webpack
+    command: 'webpack'
+    inputs:
+      - 'src/**/*'
+  start:
+    <<: *webpack
+    args: 'serve'
+",
+            |path| ProjectConfig::load_from(path, "."),
+        );
+
+        let build = config.tasks.get("build").unwrap();
+
+        assert_eq!(build.command, TaskCommandArgs::String("webpack".to_owned()));
+        assert_eq!(build.args, TaskCommandArgs::None);
+        assert_eq!(
+            build.inputs,
+            vec![PortablePath::ProjectGlob(GlobPath("src/**/*".into()))]
+        );
+
+        let start = config.tasks.get("start").unwrap();
+
+        assert_eq!(start.command, TaskCommandArgs::String("webpack".to_owned()));
+        assert_eq!(start.args, TaskCommandArgs::String("serve".to_owned()));
+        assert_eq!(
+            start.inputs,
+            vec![PortablePath::ProjectGlob(GlobPath("src/**/*".into()))]
+        );
+    }
+
+    // TODO: fix this in schematic?
+    #[test]
+    #[should_panic(expected = "unknown field `_webpack`")]
+    fn can_use_references_from_root() {
+        let config = test_load_config(
+            CONFIG_PROJECT_FILENAME,
+            r"
+_webpack: &webpack
+    command: 'webpack'
+    inputs:
+      - 'src/**/*'
+
+tasks:
+  build: *webpack
+  start:
+    <<: *webpack
+    args: 'serve'
+",
+            |path| ProjectConfig::load_from(path, "."),
+        );
+
+        let build = config.tasks.get("build").unwrap();
+
+        assert_eq!(build.command, TaskCommandArgs::String("webpack".to_owned()));
+        assert_eq!(build.args, TaskCommandArgs::None);
+        assert_eq!(
+            build.inputs,
+            vec![PortablePath::ProjectGlob(GlobPath("src/**/*".into()))]
+        );
+
+        let start = config.tasks.get("start").unwrap();
+
+        assert_eq!(start.command, TaskCommandArgs::String("webpack".to_owned()));
+        assert_eq!(start.args, TaskCommandArgs::String("serve".to_owned()));
+        assert_eq!(
+            start.inputs,
+            vec![PortablePath::ProjectGlob(GlobPath("src/**/*".into()))]
+        );
     }
 
     mod depends_on {
@@ -318,6 +394,36 @@ tags:
 
     mod tasks {
         use super::*;
+
+        #[test]
+        fn supports_id_patterns() {
+            let config = test_load_config(
+                CONFIG_PROJECT_FILENAME,
+                r"
+tasks:
+  normal:
+    command: 'a'
+  kebab-case:
+    command: 'b'
+  camelCase:
+    command: 'c'
+  snake_case:
+    command: 'd'
+  dot.case:
+    command: 'e'
+  slash/case:
+    command: 'f'
+",
+                |path| ProjectConfig::load_from(path, "."),
+            );
+
+            assert!(config.tasks.contains_key("normal"));
+            assert!(config.tasks.contains_key("kebab-case"));
+            assert!(config.tasks.contains_key("camelCase"));
+            assert!(config.tasks.contains_key("snake_case"));
+            assert!(config.tasks.contains_key("dot.case"));
+            assert!(config.tasks.contains_key("slash/case"));
+        }
     }
 
     mod toolchain {

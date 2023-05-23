@@ -2,7 +2,7 @@ mod utils;
 
 use moon_config2::{FilePath, ToolchainConfig};
 use proto::ToolsConfig;
-// use std::env;
+use std::env;
 use utils::*;
 
 const FILENAME: &str = ".moon/toolchain.yml";
@@ -158,28 +158,28 @@ rust:
             );
         }
 
-        //         #[test]
-        //         fn inherits_version_from_env_var() {
-        //             env::set_var("MOON_RUST_VERSION", "1.70.0");
+        #[test]
+        fn inherits_version_from_env_var() {
+            env::set_var("MOON_RUST_VERSION", "1.70.0");
 
-        //             let config = test_load_config(
-        //                 FILENAME,
-        //                 r"
-        // rust:
-        //   version: 1.60.0
-        // ",
-        //                 |path| {
-        //                     let mut proto = ToolsConfig::default();
-        //                     proto.tools.insert("rust".into(), "1.65.0".into());
+            let config = test_load_config(
+                FILENAME,
+                r"
+        rust:
+          version: 1.60.0
+        ",
+                |path| {
+                    let mut proto = ToolsConfig::default();
+                    proto.tools.insert("rust".into(), "1.65.0".into());
 
-        //                     ToolchainConfig::load_from(path, &proto)
-        //                 },
-        //             );
+                    ToolchainConfig::load_from(path, &proto)
+                },
+            );
 
-        //             env::remove_var("MOON_RUST_VERSION");
+            env::remove_var("MOON_RUST_VERSION");
 
-        //             assert_eq!(config.rust.unwrap().version.unwrap(), "1.70.0");
-        //         }
+            assert_eq!(config.rust.unwrap().version.unwrap(), "1.70.0");
+        }
     }
 
     mod typescript {

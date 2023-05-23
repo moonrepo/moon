@@ -26,7 +26,7 @@ where
 }
 
 /// Docs: https://moonrepo.dev/docs/config/tasks
-#[derive(Debug, Default, Clone, Config)]
+#[derive(Debug, Clone, Config)]
 pub struct InheritedTasksConfig {
     #[setting(
         default = "https://moonrepo.dev/schemas/tasks.json",
@@ -124,7 +124,7 @@ impl InheritedTasksManager {
         language: &LanguageType,
         project: &ProjectType,
         tags: &[Id],
-    ) -> InheritedTasksConfig {
+    ) -> Result<InheritedTasksConfig, ConfigError> {
         let mut config = PartialInheritedTasksConfig::default();
 
         for lookup in self.get_lookup_order(platform, language, project, tags) {
@@ -153,10 +153,10 @@ impl InheritedTasksManager {
                     }
                 }
 
-                config.merge(&(), managed_config).unwrap();
+                config.merge(&(), managed_config)?;
             }
         }
 
-        InheritedTasksConfig::from_partial(config)
+        InheritedTasksConfig::from_partial(&(), config, false)
     }
 }

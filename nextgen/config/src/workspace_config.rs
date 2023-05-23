@@ -3,7 +3,7 @@
 use crate::portable_path::{Portable, ProjectFileGlob, ProjectFilePath};
 use crate::validate::validate_semver_requirement;
 use crate::workspace::*;
-use moon_common::{consts, Id};
+use moon_common::{color, consts, Id};
 use rustc_hash::FxHashMap;
 use schematic::{
     config_enum, validate, Config, ConfigError, ConfigLoader, Segment, SettingPath, ValidateError,
@@ -122,8 +122,14 @@ pub struct WorkspaceConfig {
 }
 
 impl WorkspaceConfig {
-    pub fn load<P: AsRef<Path>>(path: P) -> Result<WorkspaceConfig, ConfigError> {
+    pub fn load<R: AsRef<Path>, P: AsRef<Path>>(
+        workspace_root: R,
+        path: P,
+    ) -> Result<WorkspaceConfig, ConfigError> {
         let result = ConfigLoader::<WorkspaceConfig>::yaml()
+            .label(color::path(
+                path.as_ref().strip_prefix(workspace_root.as_ref()).unwrap(),
+            ))
             .file(path.as_ref())?
             .load()?;
 
@@ -131,9 +137,11 @@ impl WorkspaceConfig {
     }
 
     pub fn load_from<P: AsRef<Path>>(workspace_root: P) -> Result<WorkspaceConfig, ConfigError> {
+        let workspace_root = workspace_root.as_ref();
+
         Self::load(
+            workspace_root,
             workspace_root
-                .as_ref()
                 .join(consts::CONFIG_DIRNAME)
                 .join(consts::CONFIG_WORKSPACE_FILENAME),
         )

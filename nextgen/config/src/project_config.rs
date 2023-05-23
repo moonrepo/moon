@@ -3,7 +3,7 @@
 use crate::language_platform::{LanguageType, PlatformType};
 use crate::portable_path::PortablePath;
 use crate::project::*;
-use moon_common::Id;
+use moon_common::{consts, Id};
 use rustc_hash::FxHashMap;
 use schematic::{color, config_enum, Config, ConfigError, ConfigLoader, ValidateError};
 use std::collections::BTreeMap;
@@ -99,18 +99,32 @@ pub struct ProjectConfig {
 }
 
 impl ProjectConfig {
-    pub fn load<T: AsRef<Path>, F: AsRef<Path>>(
-        workspace_root: T,
-        path: F,
+    pub fn load<R: AsRef<Path>, P: AsRef<Path>>(
+        workspace_root: R,
+        path: P,
     ) -> Result<ProjectConfig, ConfigError> {
         let workspace_root = workspace_root.as_ref();
         let path = path.as_ref();
 
         let result = ConfigLoader::<ProjectConfig>::yaml()
-            .label(color::path(path))
+            .label(color::path(path.strip_prefix(workspace_root).unwrap()))
             .file(workspace_root.join(path))?
             .load()?;
 
         Ok(result.config)
+    }
+
+    pub fn load_from<R: AsRef<Path>, P: AsRef<str>>(
+        workspace_root: R,
+        project_source: P,
+    ) -> Result<ProjectConfig, ConfigError> {
+        let workspace_root = workspace_root.as_ref();
+
+        Self::load(
+            workspace_root,
+            workspace_root
+                .join(project_source.as_ref())
+                .join(consts::CONFIG_PROJECT_FILENAME),
+        )
     }
 }

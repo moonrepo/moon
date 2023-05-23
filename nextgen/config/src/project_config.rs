@@ -5,7 +5,7 @@ use crate::portable_path::PortablePath;
 use crate::project::*;
 use moon_common::{consts, Id};
 use rustc_hash::FxHashMap;
-use schematic::{color, config_enum, Config, ConfigError, ConfigLoader, ValidateError};
+use schematic::{color, config_enum, validate, Config, ConfigError, ConfigLoader, ValidateError};
 use std::collections::BTreeMap;
 use std::path::Path;
 use strum::Display;
@@ -40,6 +40,7 @@ config_enum!(
 pub struct ProjectMetadataConfig {
     pub name: Option<String>,
 
+    #[setting(validate = validate::not_empty)]
     pub description: String,
 
     pub owner: Option<String>,

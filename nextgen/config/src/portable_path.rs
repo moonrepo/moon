@@ -117,10 +117,11 @@ impl Portable for ProjectFilePath {
     }
 }
 
-// Represents either a workspace or project relative glob/path.
-// Workspace paths are prefixed with "/".
+// Represents either a workspace or project relative glob/path, or env var.
+// Workspace paths are prefixed with "/", and env vars with "$".
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub enum PortablePath {
+    EnvVar(String),
     ProjectFile(FilePath),
     ProjectGlob(GlobPath),
     WorkspaceFile(FilePath),
@@ -129,6 +130,10 @@ pub enum PortablePath {
 
 impl Portable for PortablePath {
     fn from_str(value: &str) -> Result<Self, ValidateError> {
+        if let Some(env_var) = value.strip_prefix('$') {
+            return Ok(PortablePath::EnvVar(env_var.to_owned()));
+        }
+
         validate_child_or_root_path(value)?;
 
         Ok(match (value.starts_with('/'), is_glob(value)) {
@@ -145,8 +150,7 @@ impl<'de> Deserialize<'de> for PortablePath {
     where
         D: Deserializer<'de>,
     {
-        let value = String::deserialize(deserializer)?;
-
-        PortablePath::from_str(&value).map_err(|error| de::Error::custom(error.message))
+        PortablePath::from_str(&String::deserialize(deserializer)?)
+            .map_err(|error| de::Error::custom(error.message))
     }
 }

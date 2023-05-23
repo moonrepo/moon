@@ -454,7 +454,7 @@ toolchain:
 
             let ts = config.toolchain.typescript.unwrap();
 
-            assert_eq!(ts.disabled, false);
+            assert!(!ts.disabled);
             assert_eq!(ts.route_out_dir_to_cache, Some(true));
         }
     }

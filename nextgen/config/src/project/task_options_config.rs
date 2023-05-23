@@ -1,27 +1,54 @@
 use crate::portable_path::PortablePath;
 use schematic::{config_enum, Config, ValidateError};
+use serde::{de, Deserialize, Deserializer, Serialize};
+use serde_yaml::Value;
 
-fn validate_affected_files<D, C>(
-    file: &TaskOptionAffectedFiles,
+fn validate_env_file<D, C>(
+    env_file: &TaskOptionEnvFile,
     _data: &D,
     _ctx: &C,
 ) -> Result<(), ValidateError> {
-    if let TaskOptionAffectedFiles::Value(value) = file {
-        if value != "args" && value != "env" {
-            return Err(ValidateError::new("expected `args`, `env`, or a boolean"));
-        }
+    if let TaskOptionEnvFile::File(file) = env_file {
+        match file {
+            PortablePath::EnvVar(_) => {
+                return Err(ValidateError::new(
+                    "environment variables are not supported",
+                ));
+            }
+            PortablePath::ProjectGlob(_) | PortablePath::WorkspaceGlob(_) => {
+                return Err(ValidateError::new("globs are not supported"));
+            }
+            _ => {}
+        };
     }
 
     Ok(())
 }
 
-config_enum!(
-    #[serde(untagged, expecting = "expected `args`, `env`, or a boolean")]
-    pub enum TaskOptionAffectedFiles {
-        Enabled(bool),
-        Value(String),
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(untagged, rename_all = "kebab-case")]
+pub enum TaskOptionAffectedFiles {
+    Args,
+    Env,
+    Enabled(bool),
+}
+
+impl<'de> Deserialize<'de> for TaskOptionAffectedFiles {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        match Value::deserialize(deserializer)? {
+            Value::Bool(value) => Ok(TaskOptionAffectedFiles::Enabled(value)),
+            Value::String(value) if value == "args" || value == "env" => Ok(if value == "args" {
+                TaskOptionAffectedFiles::Args
+            } else {
+                TaskOptionAffectedFiles::Env
+            }),
+            _ => Err(de::Error::custom("expected `args`, `env`, or a boolean")),
+        }
     }
-);
+}
 
 config_enum!(
     #[serde(untagged, expecting = "expected a boolean or a file system path")]
@@ -55,12 +82,12 @@ config_enum!(
 
 #[derive(Debug, Clone, Config)]
 pub struct TaskOptionsConfig {
-    #[setting(validate = validate_affected_files)]
     pub affected_files: Option<TaskOptionAffectedFiles>,
 
     #[setting(default = true)]
     pub cache: bool,
 
+    #[setting(validate = validate_env_file)]
     pub env_file: Option<TaskOptionEnvFile>,
 
     pub merge_args: TaskMergeStrategy,

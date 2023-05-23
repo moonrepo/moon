@@ -1,4 +1,5 @@
-use schematic::ValidateError;
+use crate::portable_path::PortablePath;
+use schematic::{Segment, ValidateError};
 use semver::Version;
 use std::path::Path;
 
@@ -58,6 +59,23 @@ pub fn validate_semver_requirement<D, C>(
             error
         ))
     })?;
+
+    Ok(())
+}
+
+pub fn validate_no_env_var_in_path<D, C>(
+    paths: &[PortablePath],
+    _data: &D,
+    _ctx: &C,
+) -> Result<(), ValidateError> {
+    for (i, path) in paths.iter().enumerate() {
+        if matches!(path, PortablePath::EnvVar(_)) {
+            return Err(ValidateError::with_segment(
+                "environment variables are not supported here",
+                Segment::Index(i),
+            ));
+        }
+    }
 
     Ok(())
 }

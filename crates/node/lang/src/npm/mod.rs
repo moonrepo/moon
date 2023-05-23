@@ -131,7 +131,7 @@ mod tests {
             lockfile,
             PackageLockJson {
                 name: "moon-examples".into(),
-                version: "1.2.3".into(),
+                version: Some("1.2.3".into()),
                 lockfile_version: 2,
                 dependencies: Some(HashMap::from_iter([(
                     "@babel/helper-function-name".to_owned(),

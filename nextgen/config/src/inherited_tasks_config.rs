@@ -74,7 +74,11 @@ pub struct InheritedTasksManager {
 
 impl InheritedTasksManager {
     pub fn add_config(&mut self, path: &Path, config: PartialInheritedTasksConfig) {
-        let name = path.file_name().unwrap_or_default().to_str().unwrap();
+        let name = path
+            .file_name()
+            .unwrap_or_default()
+            .to_str()
+            .unwrap_or_default();
 
         let name = if name == consts::CONFIG_TASKS_FILENAME {
             "*"

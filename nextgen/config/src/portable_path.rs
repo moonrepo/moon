@@ -53,7 +53,7 @@ macro_rules! path_type {
     };
 }
 
-// Represents a file glob pattern.
+// Represents any file glob pattern.
 path_type!(GlobPath);
 
 impl Portable for GlobPath {
@@ -62,7 +62,24 @@ impl Portable for GlobPath {
     }
 }
 
-// Represents a file system path.
+// Represents a project-relative file glob pattern.
+path_type!(ProjectFileGlob);
+
+impl Portable for ProjectFileGlob {
+    fn from_str(value: &str) -> Result<Self, ValidateError> {
+        validate_child_relative_path(value)?;
+
+        if value.starts_with('/') {
+            return Err(ValidateError::new(
+                "workspace relative paths are not supported",
+            ));
+        }
+
+        Ok(ProjectFileGlob(value.into()))
+    }
+}
+
+// Represents any file system path.
 path_type!(FilePath);
 
 impl Portable for FilePath {
@@ -77,13 +94,17 @@ impl Portable for FilePath {
     }
 }
 
-// Represents a valid child/project relative file system path.
-// Will fail on absolute paths ("/") and parent relative paths ("../").
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
-pub struct ProjectPortablePath<T: Portable>(pub T);
+// Represents a project-relative file system path.
+path_type!(ProjectFilePath);
 
-impl<T: Portable> Portable for ProjectPortablePath<T> {
+impl Portable for ProjectFilePath {
     fn from_str(value: &str) -> Result<Self, ValidateError> {
+        if is_glob(value) {
+            return Err(ValidateError::new(
+                "globs are not supported, expected a literal file path",
+            ));
+        }
+
         validate_child_relative_path(value)?;
 
         if value.starts_with('/') {
@@ -92,20 +113,7 @@ impl<T: Portable> Portable for ProjectPortablePath<T> {
             ));
         }
 
-        let value = T::from_str(value)?;
-
-        Ok(ProjectPortablePath(value))
-    }
-}
-
-impl<'de, T: Portable> Deserialize<'de> for ProjectPortablePath<T> {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let path = String::deserialize(deserializer)?;
-
-        ProjectPortablePath::from_str(&path).map_err(|error| de::Error::custom(error.message))
+        Ok(ProjectFilePath(value.into()))
     }
 }
 

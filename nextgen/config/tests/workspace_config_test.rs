@@ -1,6 +1,6 @@
 mod utils;
 
-use moon_config2::{FilePath, WorkspaceConfig};
+use moon_config2::{FilePath, WorkspaceConfig, WorkspaceProjects};
 use rustc_hash::FxHashMap;
 use utils::*;
 
@@ -25,6 +25,150 @@ mod workspace_config {
 
         assert!(config.telemetry);
         assert!(config.version_constraint.is_none());
+    }
+
+    mod projects {
+        use super::*;
+
+        #[test]
+        fn supports_sources() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+projects:
+  app: apps/app
+  foo-kebab: ./packages/foo
+  barCamel: packages/bar
+  baz_snake: ./packages/baz
+  qux.dot: packages/qux
+  wat/slash: ./packages/wat
+",
+                |path| WorkspaceConfig::load_from(path),
+            );
+
+            assert_eq!(
+                config.projects,
+                WorkspaceProjects::Sources(FxHashMap::from_iter([
+                    ("app".into(), "apps/app".into()),
+                    ("foo-kebab".into(), "./packages/foo".into()),
+                    ("barCamel".into(), "packages/bar".into()),
+                    ("baz_snake".into(), "./packages/baz".into()),
+                    ("qux.dot".into(), "packages/qux".into()),
+                    ("wat/slash".into(), "./packages/wat".into())
+                ])),
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "absolute paths are not supported")]
+        fn errors_on_absolute_sources() {
+            test_load_config(
+                FILENAME,
+                r"
+projects:
+  app: /apps/app
+",
+                |path| WorkspaceConfig::load_from(path),
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "parent relative paths are not supported")]
+        fn errors_on_parent_sources() {
+            test_load_config(
+                FILENAME,
+                r"
+projects:
+  app: ../apps/app
+",
+                |path| WorkspaceConfig::load_from(path),
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "globs are not supported, expected a literal file path")]
+        fn errors_on_glob_in_sources() {
+            test_load_config(
+                FILENAME,
+                r"
+projects:
+  app: apps/app/*
+",
+                |path| WorkspaceConfig::load_from(path),
+            );
+        }
+
+        #[test]
+        fn supports_globs() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+projects:
+  - apps/*
+  - packages/*
+  - internal
+",
+                |path| WorkspaceConfig::load_from(path),
+            );
+
+            assert_eq!(
+                config.projects,
+                WorkspaceProjects::Globs(vec![
+                    "apps/*".into(),
+                    "packages/*".into(),
+                    "internal".into(),
+                ]),
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "absolute paths are not supported")]
+        fn errors_on_absolute_globs() {
+            test_load_config(
+                FILENAME,
+                r"
+projects:
+  - /apps/*
+",
+                |path| WorkspaceConfig::load_from(path),
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "parent relative paths are not supported")]
+        fn errors_on_parent_globs() {
+            test_load_config(
+                FILENAME,
+                r"
+projects:
+  - ../apps/*
+",
+                |path| WorkspaceConfig::load_from(path),
+            );
+        }
+
+        #[test]
+        fn supports_globs_and_projects() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+projects:
+  sources:
+    app: app
+  globs:
+    - packages/*
+",
+                |path| WorkspaceConfig::load_from(path),
+            );
+
+            assert_eq!(
+                config.projects,
+                WorkspaceProjects::Both {
+                    globs: vec!["packages/*".into()],
+                    sources: FxHashMap::from_iter([("app".into(), "app".into())])
+                },
+            );
+        }
     }
 
     mod constraints {

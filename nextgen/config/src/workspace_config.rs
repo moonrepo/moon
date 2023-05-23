@@ -1,15 +1,64 @@
 // .moon/workspace.yml
 
-use crate::portable_path::{FilePath, GlobPath, ProjectPortablePath};
+use crate::portable_path::{Portable, ProjectFileGlob, ProjectFilePath};
 use crate::validate::validate_semver_requirement;
 use crate::workspace::*;
 use moon_common::{consts, Id};
 use rustc_hash::FxHashMap;
-use schematic::{config_enum, validate, Config, ConfigError, ConfigLoader};
+use schematic::{
+    config_enum, validate, Config, ConfigError, ConfigLoader, Segment, SettingPath, ValidateError,
+};
 use std::path::Path;
 
-type SourceGlob = ProjectPortablePath<GlobPath>;
-type SourceFile = ProjectPortablePath<FilePath>;
+// We can't use serde based types in the enum below to handle validation,
+// as serde fails to parse correctly. So we must manually validate here.
+fn validate_projects<D, C>(
+    projects: &WorkspaceProjects,
+    _data: &D,
+    _ctx: &C,
+) -> Result<(), ValidateError> {
+    match projects {
+        WorkspaceProjects::Both { globs, sources } => {
+            for (i, g) in globs.iter().enumerate() {
+                ProjectFileGlob::from_str(g).map_err(|mut error| {
+                    error.path = Some(SettingPath::new(vec![
+                        Segment::Key("globs".to_owned()),
+                        Segment::Index(i),
+                    ]));
+                    error
+                })?;
+            }
+
+            for (k, v) in sources {
+                ProjectFilePath::from_str(v).map_err(|mut error| {
+                    error.path = Some(SettingPath::new(vec![
+                        Segment::Key("sources".to_owned()),
+                        Segment::Key(k.to_string()),
+                    ]));
+                    error
+                })?;
+            }
+        }
+        WorkspaceProjects::Globs(globs) => {
+            for (i, g) in globs.iter().enumerate() {
+                ProjectFileGlob::from_str(g).map_err(|mut error| {
+                    error.path = Some(SettingPath::new(vec![Segment::Index(i)]));
+                    error
+                })?;
+            }
+        }
+        WorkspaceProjects::Sources(sources) => {
+            for (k, v) in sources {
+                ProjectFilePath::from_str(v).map_err(|mut error| {
+                    error.path = Some(SettingPath::new(vec![Segment::Key(k.to_string())]));
+                    error
+                })?;
+            }
+        }
+    };
+
+    Ok(())
+}
 
 config_enum!(
     #[serde(
@@ -18,11 +67,11 @@ config_enum!(
     )]
     pub enum WorkspaceProjects {
         Both {
-            globs: Vec<SourceGlob>,
-            sources: FxHashMap<Id, SourceFile>,
+            globs: Vec<String>,
+            sources: FxHashMap<Id, String>,
         },
-        Globs(Vec<SourceGlob>),
-        Sources(FxHashMap<Id, SourceFile>),
+        Globs(Vec<String>),
+        Sources(FxHashMap<Id, String>),
     }
 );
 
@@ -56,6 +105,7 @@ pub struct WorkspaceConfig {
     #[setting(nested)]
     pub notifier: NotifierConfig,
 
+    #[setting(validate = validate_projects)]
     pub projects: WorkspaceProjects,
 
     #[setting(nested)]

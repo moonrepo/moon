@@ -20,6 +20,6 @@ pub struct VcsConfig {
 
     pub manager: VcsManager,
 
-    #[setting(default = Vec::from(["origin".into(), "upstream".into()]))]
+    #[setting(default = vec!["origin".into(), "upstream".into()])]
     pub remote_candidates: Vec<String>,
 }

@@ -2,7 +2,7 @@
 
 use crate::toolchain::*;
 use crate::{inherit_tool, inherit_tool_without_version};
-use moon_common::consts;
+use moon_common::{color, consts};
 use proto::ToolsConfig;
 use schematic::{validate, Config, ConfigError, ConfigLoader};
 use std::path::Path;
@@ -60,11 +60,15 @@ impl ToolchainConfig {
         Ok(())
     }
 
-    pub fn load<P: AsRef<Path>>(
+    pub fn load<R: AsRef<Path>, P: AsRef<Path>>(
+        workspace_root: R,
         path: P,
         proto_tools: &ToolsConfig,
     ) -> Result<ToolchainConfig, ConfigError> {
         let mut result = ConfigLoader::<ToolchainConfig>::yaml()
+            .label(color::path(
+                path.as_ref().strip_prefix(workspace_root.as_ref()).unwrap(),
+            ))
             .file(path.as_ref())?
             .load()?;
 
@@ -73,13 +77,15 @@ impl ToolchainConfig {
         Ok(result.config)
     }
 
-    pub fn load_from<T: AsRef<Path>>(
-        workspace_root: T,
+    pub fn load_from<R: AsRef<Path>>(
+        workspace_root: R,
         proto_tools: &ToolsConfig,
     ) -> Result<ToolchainConfig, ConfigError> {
+        let workspace_root = workspace_root.as_ref();
+
         Self::load(
+            workspace_root,
             workspace_root
-                .as_ref()
                 .join(consts::CONFIG_DIRNAME)
                 .join(consts::CONFIG_TOOLCHAIN_FILENAME),
             proto_tools,

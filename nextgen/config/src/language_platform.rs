@@ -140,7 +140,7 @@ impl From<LanguageType> for PlatformType {
             // Deno and Bun are not covered here!
             LanguageType::JavaScript | LanguageType::TypeScript => PlatformType::Node,
             LanguageType::Rust => PlatformType::Rust,
-            // TODO: Move to these to their own platform once it's been implemented!
+            // TODO: Move these to their own platform once it's been implemented!
             LanguageType::Go
             | LanguageType::Php
             | LanguageType::Python

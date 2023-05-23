@@ -28,8 +28,6 @@ jobs:
         with:
           fetch-depth: 0
       - uses: actions/setup-node@v3
-        with:
-          cache: yarn
       - uses: moonrepo/setup-rust@v0
       - uses: moonrepo/tool-version-action@v1
         with:

@@ -1,11 +1,11 @@
 // moon.yml
 
 use crate::language_platform::{LanguageType, PlatformType};
+use crate::portable_path::PortablePath;
 use crate::project::*;
-use crate::relative_path::RelativePath;
-use moon_common::Id;
+use moon_common::{consts, Id};
 use rustc_hash::FxHashMap;
-use schematic::{color, config_enum, Config, ConfigError, ConfigLoader, ValidateError};
+use schematic::{color, config_enum, validate, Config, ConfigError, ConfigLoader, ValidateError};
 use std::collections::BTreeMap;
 use std::path::Path;
 use strum::Display;
@@ -40,6 +40,7 @@ config_enum!(
 pub struct ProjectMetadataConfig {
     pub name: Option<String>,
 
+    #[setting(validate = validate::not_empty)]
     pub description: String,
 
     pub owner: Option<String>,
@@ -56,8 +57,8 @@ config_enum!(
         expecting = "expected a project name or dependency config object"
     )]
     pub enum ProjectDependsOn {
-        String(String),
-        Object { id: String, scope: DependencyScope },
+        String(Id),
+        Object { id: Id, scope: DependencyScope },
     }
 );
 
@@ -74,7 +75,7 @@ pub struct ProjectConfig {
 
     pub env: FxHashMap<String, String>,
 
-    pub file_groups: FxHashMap<Id, Vec<RelativePath>>,
+    pub file_groups: FxHashMap<Id, Vec<PortablePath>>,
 
     pub language: LanguageType,
 
@@ -99,18 +100,32 @@ pub struct ProjectConfig {
 }
 
 impl ProjectConfig {
-    pub fn load<T: AsRef<Path>, F: AsRef<Path>>(
-        workspace_root: T,
-        path: F,
+    pub fn load<R: AsRef<Path>, P: AsRef<Path>>(
+        workspace_root: R,
+        path: P,
     ) -> Result<ProjectConfig, ConfigError> {
         let workspace_root = workspace_root.as_ref();
         let path = path.as_ref();
 
         let result = ConfigLoader::<ProjectConfig>::yaml()
-            .label(color::path(path))
+            .label(color::path(path.strip_prefix(workspace_root).unwrap()))
             .file(workspace_root.join(path))?
             .load()?;
 
         Ok(result.config)
+    }
+
+    pub fn load_from<R: AsRef<Path>, P: AsRef<str>>(
+        workspace_root: R,
+        project_source: P,
+    ) -> Result<ProjectConfig, ConfigError> {
+        let workspace_root = workspace_root.as_ref();
+
+        Self::load(
+            workspace_root,
+            workspace_root
+                .join(project_source.as_ref())
+                .join(consts::CONFIG_PROJECT_FILENAME),
+        )
     }
 }

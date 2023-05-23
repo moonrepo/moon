@@ -732,9 +732,7 @@ mod tags {
     }
 
     #[test]
-    #[should_panic(
-        expected = "Invalid identifier foo bar. May only contain alpha-numeric characters, dashes (-), slashes (/), underscores (_), and dots (.)"
-    )]
+    #[should_panic(expected = "Invalid format for foo bar")]
     fn invalid_format() {
         figment::Jail::expect_with(|jail| {
             jail.create_file(super::CONFIG_PROJECT_FILENAME, "tags: ['foo bar']")?;

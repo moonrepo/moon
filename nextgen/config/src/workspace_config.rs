@@ -1,6 +1,6 @@
 // .moon/workspace.yml
 
-use crate::relative_path::{FilePath, GlobPath, ProjectRelativePath};
+use crate::relative_path::{FilePath, GlobPath, ProjectPortablePath};
 use crate::validate::validate_semver_requirement;
 use crate::workspace::*;
 use moon_common::Id;
@@ -8,8 +8,8 @@ use rustc_hash::FxHashMap;
 use schematic::{config_enum, validate, Config, ConfigError, ConfigLoader};
 use std::path::Path;
 
-type SourceGlob = ProjectRelativePath<GlobPath>;
-type SourceFile = ProjectRelativePath<FilePath>;
+type SourceGlob = ProjectPortablePath<GlobPath>;
+type SourceFile = ProjectPortablePath<FilePath>;
 
 config_enum!(
     #[serde(

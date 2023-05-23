@@ -1,8 +1,8 @@
-use crate::relative_path::{FilePath, ProjectRelativePath};
+use crate::relative_path::{FilePath, ProjectPortablePath};
 use schematic::{validate, Config};
 
-fn default_templates<C>(_ctx: &C) -> Option<Vec<ProjectRelativePath<FilePath>>> {
-    Some(vec![ProjectRelativePath(FilePath("./templates".into()))])
+fn default_templates<C>(_ctx: &C) -> Option<Vec<ProjectPortablePath<FilePath>>> {
+    Some(vec![ProjectPortablePath(FilePath("./templates".into()))])
 }
 
 #[derive(Config)]
@@ -11,5 +11,5 @@ pub struct GeneratorConfig {
         validate = validate::not_empty,
         default = default_templates
     )]
-    pub templates: Vec<ProjectRelativePath<FilePath>>,
+    pub templates: Vec<ProjectPortablePath<FilePath>>,
 }

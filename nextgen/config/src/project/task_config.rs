@@ -1,6 +1,6 @@
 use crate::language_platform::PlatformType;
 use crate::project::{PartialTaskOptionsConfig, TaskOptionsConfig};
-use crate::relative_path::RelativePath;
+use crate::relative_path::PortablePath;
 use moon_target::Target;
 use rustc_hash::FxHashMap;
 use schematic::{config_enum, Config, ValidateError};
@@ -74,13 +74,13 @@ pub struct TaskConfig {
 
     // TODO
     #[setting(skip)]
-    pub global_inputs: Vec<RelativePath>,
+    pub global_inputs: Vec<PortablePath>,
 
-    pub inputs: Vec<RelativePath>,
+    pub inputs: Vec<PortablePath>,
 
     pub local: bool,
 
-    pub outputs: Vec<RelativePath>,
+    pub outputs: Vec<PortablePath>,
 
     #[setting(nested)]
     pub options: TaskOptionsConfig,

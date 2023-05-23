@@ -7,8 +7,8 @@ fn is_glob(value: &str) -> bool {
     value.contains("**") || value.contains('*') || value.contains('{') || value.contains('[')
 }
 
-pub trait FromPathStr: Sized {
-    fn from_path_str(path: &str) -> Result<Self, ValidateError>;
+pub trait Portable: Sized {
+    fn from_str(path: &str) -> Result<Self, ValidateError>;
 }
 
 macro_rules! path_type {
@@ -16,11 +16,27 @@ macro_rules! path_type {
         #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
         pub struct $name(pub String);
 
+        impl TryFrom<String> for $name {
+            type Error = ValidateError;
+
+            fn try_from(value: String) -> Result<Self, Self::Error> {
+                $name::from_str(&value)
+            }
+        }
+
+        impl TryFrom<&String> for $name {
+            type Error = ValidateError;
+
+            fn try_from(value: &String) -> Result<Self, Self::Error> {
+                $name::from_str(value)
+            }
+        }
+
         impl TryFrom<&str> for $name {
             type Error = ValidateError;
 
             fn try_from(value: &str) -> Result<Self, Self::Error> {
-                $name::from_path_str(value)
+                $name::from_str(value)
             }
         }
 
@@ -31,7 +47,7 @@ macro_rules! path_type {
             {
                 let value = String::deserialize(deserializer)?;
 
-                $name::from_path_str(&value).map_err(|error| de::Error::custom(error.message))
+                $name::from_str(&value).map_err(|error| de::Error::custom(error.message))
             }
         }
     };
@@ -40,8 +56,8 @@ macro_rules! path_type {
 // Represents a file glob pattern.
 path_type!(GlobPath);
 
-impl FromPathStr for GlobPath {
-    fn from_path_str(value: &str) -> Result<Self, ValidateError> {
+impl Portable for GlobPath {
+    fn from_str(value: &str) -> Result<Self, ValidateError> {
         Ok(GlobPath(value.into()))
     }
 }
@@ -49,8 +65,8 @@ impl FromPathStr for GlobPath {
 // Represents a file system path.
 path_type!(FilePath);
 
-impl FromPathStr for FilePath {
-    fn from_path_str(value: &str) -> Result<Self, ValidateError> {
+impl Portable for FilePath {
+    fn from_str(value: &str) -> Result<Self, ValidateError> {
         if is_glob(value) {
             return Err(ValidateError::new(
                 "globs are not supported, expected a literal file path",
@@ -64,10 +80,10 @@ impl FromPathStr for FilePath {
 // Represents a valid child/project relative file system path.
 // Will fail on absolute paths ("/") and parent relative paths ("../").
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
-pub struct ProjectRelativePath<T: FromPathStr>(pub T);
+pub struct ProjectPortablePath<T: Portable>(pub T);
 
-impl<T: FromPathStr> FromPathStr for ProjectRelativePath<T> {
-    fn from_path_str(value: &str) -> Result<Self, ValidateError> {
+impl<T: Portable> Portable for ProjectPortablePath<T> {
+    fn from_str(value: &str) -> Result<Self, ValidateError> {
         validate_child_relative_path(value)?;
 
         if value.starts_with('/') {
@@ -76,51 +92,53 @@ impl<T: FromPathStr> FromPathStr for ProjectRelativePath<T> {
             ));
         }
 
-        let value = T::from_path_str(value)?;
+        let value = T::from_str(value)?;
 
-        Ok(ProjectRelativePath(value))
+        Ok(ProjectPortablePath(value))
     }
 }
 
-impl<'de, T: FromPathStr> Deserialize<'de> for ProjectRelativePath<T> {
+impl<'de, T: Portable> Deserialize<'de> for ProjectPortablePath<T> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
         let path = String::deserialize(deserializer)?;
 
-        ProjectRelativePath::from_path_str(&path).map_err(|error| de::Error::custom(error.message))
+        ProjectPortablePath::from_str(&path).map_err(|error| de::Error::custom(error.message))
     }
 }
 
+// Represents either a workspace or project relative glob/path.
+// Workspace paths are prefixed with "/".
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
-pub enum RelativePath {
+pub enum PortablePath {
     ProjectFile(FilePath),
     ProjectGlob(GlobPath),
     WorkspaceFile(FilePath),
     WorkspaceGlob(GlobPath),
 }
 
-impl FromPathStr for RelativePath {
-    fn from_path_str(value: &str) -> Result<Self, ValidateError> {
+impl Portable for PortablePath {
+    fn from_str(value: &str) -> Result<Self, ValidateError> {
         validate_child_or_root_path(value)?;
 
         Ok(match (value.starts_with('/'), is_glob(value)) {
-            (true, true) => RelativePath::WorkspaceGlob(GlobPath::from_path_str(&value[1..])?),
-            (true, false) => RelativePath::WorkspaceFile(FilePath::from_path_str(&value[1..])?),
-            (false, true) => RelativePath::ProjectGlob(GlobPath::from_path_str(value)?),
-            (false, false) => RelativePath::ProjectFile(FilePath::from_path_str(value)?),
+            (true, true) => PortablePath::WorkspaceGlob(GlobPath::from_str(&value[1..])?),
+            (true, false) => PortablePath::WorkspaceFile(FilePath::from_str(&value[1..])?),
+            (false, true) => PortablePath::ProjectGlob(GlobPath::from_str(value)?),
+            (false, false) => PortablePath::ProjectFile(FilePath::from_str(value)?),
         })
     }
 }
 
-impl<'de> Deserialize<'de> for RelativePath {
+impl<'de> Deserialize<'de> for PortablePath {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
         let value = String::deserialize(deserializer)?;
 
-        RelativePath::from_path_str(&value).map_err(|error| de::Error::custom(error.message))
+        PortablePath::from_str(&value).map_err(|error| de::Error::custom(error.message))
     }
 }

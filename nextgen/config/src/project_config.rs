@@ -2,7 +2,7 @@
 
 use crate::language_platform::{LanguageType, PlatformType};
 use crate::project::*;
-use crate::relative_path::RelativePath;
+use crate::relative_path::PortablePath;
 use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::{color, config_enum, Config, ConfigError, ConfigLoader, ValidateError};
@@ -74,7 +74,7 @@ pub struct ProjectConfig {
 
     pub env: FxHashMap<String, String>,
 
-    pub file_groups: FxHashMap<Id, Vec<RelativePath>>,
+    pub file_groups: FxHashMap<Id, Vec<PortablePath>>,
 
     pub language: LanguageType,
 

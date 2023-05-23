@@ -1,7 +1,7 @@
 use crate::language_platform::{LanguageType, PlatformType};
 use crate::project::TaskConfig;
 use crate::project_config::ProjectType;
-use crate::relative_path::RelativePath;
+use crate::relative_path::PortablePath;
 use crate::FilePath;
 use moon_common::{consts, Id};
 use moon_target::Target;
@@ -38,13 +38,13 @@ pub struct InheritedTasksConfig {
     pub extends: Option<String>,
 
     #[setting(merge = merge_fxhashmap)]
-    pub file_groups: FxHashMap<Id, Vec<RelativePath>>,
+    pub file_groups: FxHashMap<Id, Vec<PortablePath>>,
 
     #[setting(merge = merge::append_vec)]
     pub implicit_deps: Vec<Target>,
 
     #[setting(merge = merge::append_vec)]
-    pub implicit_inputs: Vec<RelativePath>,
+    pub implicit_inputs: Vec<PortablePath>,
 
     #[setting(nested, merge = merge::merge_btreemap)]
     pub tasks: BTreeMap<Id, TaskConfig>,
@@ -135,7 +135,7 @@ impl InheritedTasksManager {
                     if let Some(tasks) = &mut managed_config.tasks {
                         for task in tasks.values_mut() {
                             // Automatically set this lookup as an input
-                            let global_lookup = RelativePath::WorkspaceFile(FilePath(format!(
+                            let global_lookup = PortablePath::WorkspaceFile(FilePath(format!(
                                 ".moon/tasks/{lookup}.yml"
                             )));
 

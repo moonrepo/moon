@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where colors were not being forced when passing `--color`.
+
 ## 1.6.1
 
 #### 🐞 Fixes

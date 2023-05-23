@@ -65,7 +65,7 @@ config_enum!(
 
 #[derive(Debug, Config)]
 pub struct NpmConfig {
-    #[setting(env = "MOON_YARN_VERSION", validate = validate_semver)]
+    #[setting(env = "MOON_NPM_VERSION", validate = validate_semver)]
     pub version: Option<String>,
 }
 
@@ -79,7 +79,7 @@ pub struct PnpmConfig {
 pub struct YarnConfig {
     pub plugins: Vec<String>,
 
-    #[setting(env = "MOON_NPM_VERSION", validate = validate_semver)]
+    #[setting(env = "MOON_YARN_VERSION", validate = validate_semver)]
     pub version: Option<String>,
 }
 

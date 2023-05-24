@@ -3570,8 +3570,8 @@ version = "0.1.0"
 dependencies = [
  "miette",
  "moon_cache",
- "moon_config",
- "moon_constants",
+ "moon_common",
+ "moon_config2",
  "moon_error",
  "moon_logger",
  "moon_platform",

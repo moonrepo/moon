@@ -51,19 +51,32 @@ pub struct InheritedTasksConfig {
 }
 
 impl InheritedTasksConfig {
-    pub fn load<T: AsRef<Path>, F: AsRef<Path>>(
+    // pub fn load<T: AsRef<Path>, F: AsRef<Path>>(
+    //     workspace_root: T,
+    //     path: F,
+    // ) -> Result<InheritedTasksConfig, ConfigError> {
+    //     let workspace_root = workspace_root.as_ref();
+    //     let path = path.as_ref();
+
+    //     let result = ConfigLoader::<InheritedTasksConfig>::yaml()
+    //         .label(color::path(path))
+    //         .file(workspace_root.join(path))?
+    //         .load()?;
+
+    //     Ok(result.config)
+    // }
+
+    pub fn load_partial<T: AsRef<Path>, F: AsRef<Path>>(
         workspace_root: T,
         path: F,
-    ) -> Result<InheritedTasksConfig, ConfigError> {
+    ) -> Result<PartialInheritedTasksConfig, ConfigError> {
         let workspace_root = workspace_root.as_ref();
         let path = path.as_ref();
 
-        let result = ConfigLoader::<InheritedTasksConfig>::yaml()
+        ConfigLoader::<InheritedTasksConfig>::yaml()
             .label(color::path(path))
             .file(workspace_root.join(path))?
-            .load()?;
-
-        Ok(result.config)
+            .load_partial(&())
     }
 }
 

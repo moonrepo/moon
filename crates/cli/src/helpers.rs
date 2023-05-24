@@ -44,8 +44,6 @@ fn setup_no_colors() {
 }
 
 pub fn setup_colors(force: bool) {
-    let supported_level = supports_color().to_string();
-
     // If being forced by --color or other env vars
     if force
         || env::var("MOON_COLOR").is_ok()
@@ -54,7 +52,7 @@ pub fn setup_colors(force: bool) {
     {
         let mut color_level = env::var("MOON_COLOR")
             .or_else(|_| env::var("FORCE_COLOR"))
-            .unwrap_or(supported_level);
+            .unwrap_or("3".to_owned());
 
         // https://nodejs.org/api/cli.html#force_color1-2-3
         if color_level.is_empty() || color_level == "true" {
@@ -80,7 +78,7 @@ pub fn setup_colors(force: bool) {
     if no_color() {
         setup_no_colors();
     } else {
-        env::set_var("CLICOLOR", supported_level);
+        env::set_var("CLICOLOR", supports_color().to_string());
     }
 }
 

@@ -1,7 +1,6 @@
 use crate::language_platform::PlatformType;
-use crate::portable_path::PortablePath;
 use crate::project::{PartialTaskOptionsConfig, TaskOptionsConfig};
-use crate::validate::validate_no_env_var_in_path;
+use crate::validate::validate_portable_paths;
 use moon_target::{Target, TargetScope};
 use rustc_hash::FxHashMap;
 use schematic::{config_enum, Config, ConfigError, ConfigLoader, Segment, ValidateError};
@@ -90,14 +89,15 @@ pub struct TaskConfig {
 
     // TODO
     #[setting(skip)]
-    pub global_inputs: Vec<PortablePath>,
+    pub global_inputs: Vec<String>, // Vec<PortablePath>,
 
-    pub inputs: Vec<PortablePath>,
+    #[setting(validate = validate_portable_paths)]
+    pub inputs: Vec<String>, // Vec<PortablePath>,
 
     pub local: bool,
 
-    #[setting(validate = validate_no_env_var_in_path)]
-    pub outputs: Vec<PortablePath>,
+    #[setting(validate = validate_portable_paths)]
+    pub outputs: Vec<String>, // Vec<PortablePath>,
 
     #[setting(nested)]
     pub options: TaskOptionsConfig,

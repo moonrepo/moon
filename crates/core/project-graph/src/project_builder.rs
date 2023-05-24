@@ -127,10 +127,11 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                 project
                     .dependencies
                     .entry(dep_config.id.clone())
-                    .or_insert_with(|| {
-                        let mut dep = ProjectDependency::from_config(&dep_config);
-                        dep.source = ProjectDependencySource::Implicit;
-                        dep
+                    .or_insert_with(|| ProjectDependency {
+                        id: dep_config.id.clone(),
+                        scope: dep_config.scope,
+                        source: ProjectDependencySource::Implicit,
+                        ..ProjectDependency::default()
                     });
             }
 
@@ -308,7 +309,8 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         task: &mut Task,
     ) -> Result<(), ProjectGraphError> {
         if !project.inherited_config.implicit_deps.is_empty() {
-            task.deps.extend(project.inherited_config.implicit_deps);
+            task.deps
+                .extend(project.inherited_config.implicit_deps.clone());
         }
 
         if task.deps.is_empty() {
@@ -409,8 +411,8 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         }
 
         // Inherit project-level
-        if let Some(project_env) = &project.config.env {
-            for (key, value) in project_env {
+        if !project.config.env.is_empty() {
+            for (key, value) in &project.config.env {
                 // Vars defined in task `env` take precedence
                 task.env
                     .entry(key.to_owned())

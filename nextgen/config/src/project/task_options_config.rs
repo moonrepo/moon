@@ -10,11 +10,11 @@ fn validate_env_file<D, C>(
 ) -> Result<(), ValidateError> {
     if let TaskOptionEnvFile::File(file) = env_file {
         match file {
-            PortablePath::EnvVar(_) => {
-                return Err(ValidateError::new(
-                    "environment variables are not supported",
-                ));
-            }
+            // PortablePath::EnvVar(_) => {
+            //     return Err(ValidateError::new(
+            //         "environment variables are not supported",
+            //     ));
+            // }
             PortablePath::ProjectGlob(_) | PortablePath::WorkspaceGlob(_) => {
                 return Err(ValidateError::new("globs are not supported"));
             }

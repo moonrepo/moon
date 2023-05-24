@@ -2,7 +2,7 @@ use crate::language_platform::{LanguageType, PlatformType};
 use crate::portable_path::PortablePath;
 use crate::project::TaskConfig;
 use crate::project_config::ProjectType;
-use crate::FilePath;
+use crate::validate::validate_portable_paths;
 use moon_common::{consts, Id};
 use moon_target::Target;
 use rustc_hash::FxHashMap;
@@ -44,8 +44,8 @@ pub struct InheritedTasksConfig {
     #[setting(merge = merge::append_vec)]
     pub implicit_deps: Vec<Target>,
 
-    #[setting(merge = merge::append_vec)]
-    pub implicit_inputs: Vec<PortablePath>,
+    #[setting(merge = merge::append_vec, validate = validate_portable_paths)]
+    pub implicit_inputs: Vec<String>, // Vec<PortablePath>,
 
     #[setting(nested, merge = merge::merge_btreemap)]
     pub tasks: BTreeMap<Id, TaskConfig>,
@@ -153,9 +153,10 @@ impl InheritedTasksManager {
                     if let Some(tasks) = &mut managed_config.tasks {
                         for task in tasks.values_mut() {
                             // Automatically set this lookup as an input
-                            let global_lookup = PortablePath::WorkspaceFile(FilePath(format!(
-                                ".moon/tasks/{lookup}.yml"
-                            )));
+                            // let global_lookup = PortablePath::WorkspaceFile(FilePath(format!(
+                            //     ".moon/tasks/{lookup}.yml"
+                            // )));
+                            let global_lookup = format!(".moon/tasks/{lookup}.yml");
 
                             if let Some(global_inputs) = &mut task.global_inputs {
                                 global_inputs.push(global_lookup);

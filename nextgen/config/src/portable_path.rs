@@ -22,6 +22,12 @@ macro_rules! path_type {
         #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
         pub struct $name(pub String);
 
+        impl $name {
+            pub fn as_str(&self) -> &str {
+                &self.0
+            }
+        }
+
         impl AsRef<str> for $name {
             fn as_ref(&self) -> &str {
                 &self.0
@@ -145,7 +151,6 @@ impl Portable for ProjectFilePath {
 // Workspace paths are prefixed with "/", and env vars with "$".
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub enum PortablePath {
-    EnvVar(String),
     ProjectFile(FilePath),
     ProjectGlob(GlobPath),
     WorkspaceFile(FilePath),
@@ -155,7 +160,6 @@ pub enum PortablePath {
 impl PortablePath {
     pub fn to_workspace_relative(&self, project_source: &str) -> WorkspaceRelativePathBuf {
         let path = match self {
-            PortablePath::EnvVar(_) => unimplemented!(),
             PortablePath::ProjectFile(file) => {
                 WorkspaceRelativePathBuf::from(project_source).join(standardize_separators(file))
             }
@@ -182,9 +186,9 @@ impl PortablePath {
 
 impl Portable for PortablePath {
     fn from_str(value: &str) -> Result<Self, ValidateError> {
-        if let Some(env_var) = value.strip_prefix('$') {
-            return Ok(PortablePath::EnvVar(env_var.to_owned()));
-        }
+        // if let Some(env_var) = value.strip_prefix('$') {
+        //     return Ok(PortablePath::EnvVar(env_var.to_owned()));
+        // }
 
         validate_child_or_root_path(value)?;
 
@@ -206,7 +210,7 @@ impl Portable for PortablePath {
 impl PartialEq<&str> for PortablePath {
     fn eq(&self, other: &&str) -> bool {
         match self {
-            PortablePath::EnvVar(var) => var == other,
+            // PortablePath::EnvVar(var) => var == other,
             PortablePath::ProjectFile(file) | PortablePath::WorkspaceFile(file) => file == other,
             PortablePath::ProjectGlob(glob) | PortablePath::WorkspaceGlob(glob) => glob == other,
         }

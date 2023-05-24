@@ -3,9 +3,7 @@ use crate::task_options::TaskOptions;
 use crate::types::TouchedFilePaths;
 use moon_args::{split_args, ArgsSplitError};
 use moon_common::Id;
-use moon_config2::{
-    PlatformType, PortablePath, TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskType,
-};
+use moon_config2::{PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskType};
 use moon_error::MoonError;
 use moon_logger::{debug, trace, Logable};
 use moon_target::Target;
@@ -38,11 +36,11 @@ pub struct Task {
 
     pub flags: FxHashSet<TaskFlag>,
 
-    pub global_inputs: Vec<PortablePath>,
+    pub global_inputs: Vec<String>,
 
     pub id: Id,
 
-    pub inputs: Vec<PortablePath>,
+    pub inputs: Vec<String>,
 
     // Relative from workspace root
     pub input_globs: FxHashSet<String>,
@@ -57,7 +55,7 @@ pub struct Task {
 
     pub options: TaskOptions,
 
-    pub outputs: Vec<PortablePath>,
+    pub outputs: Vec<String>,
 
     // Relative from workspace root
     pub output_globs: FxHashSet<String>,

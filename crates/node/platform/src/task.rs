@@ -1,5 +1,5 @@
 use moon_common::Id;
-use moon_config2::{FilePath, PortablePath, TaskCommandArgs, TaskConfig, TasksConfigsMap};
+use moon_config2::{TaskCommandArgs, TaskConfig, TasksConfigsMap};
 use moon_logger::{debug, warn};
 use moon_node_lang::package_json::{PackageJson, ScriptsSet};
 use moon_process::args::split_args;
@@ -170,9 +170,7 @@ pub fn create_task(
         // Detect possible outputs
         if ARG_OUTPUT_FLAG.is_match(arg) {
             if let Some(output) = script_args.get(index + 1) {
-                outputs.push(PortablePath::ProjectFile(FilePath(clean_output_path(
-                    target_id, output,
-                )?)));
+                outputs.push(clean_output_path(target_id, output)?);
             }
         }
 

@@ -1,0 +1,81 @@
+---
+slug: proto-v0.9
+title: proto v0.9 - New GitHub action, plugin unpacking, and more
+authors: [milesj]
+tags: [proto, action, github]
+image: ./img/proto/v0.9.png
+---
+
+This is a small release that provides many internal improvements.
+
+<!--truncate-->
+
+## New `moonrepo/setup-proto` GitHub action
+
+If you're using proto in GitHub Actions and would love to automate the workflow as much as possible,
+well look no further, as we're introducing the
+[moonrepo/setup-proto](https://github.com/moonrepo/setup-proto) action. Thanks to
+[Tom Davidson](https://github.com/tomdavidson) for the initial spike of work!
+
+This action will automatically install the `proto` binary globally, and cache the toolchain at
+`~/.proto` (be sure to run `proto use` to download and install tools).
+
+```yaml
+# ...
+jobs:
+  ci:
+    name: 'CI'
+    runs-on: 'ubuntu-latest'
+    steps:
+      - uses: 'actions/checkout@v3'
+      - uses: 'moonrepo/setup-proto@v0'
+      - run: 'proto use'
+```
+
+> If you're using moon, be sure to use
+> [moonrepo/setup-moon](https://github.com/moonrepo/setup-moon-action) instead.
+
+## Added `install.unpack` to TOML plugin
+
+Our [TOML plugins](./proto-v0.7#toml-plugins) have been quite popular, and the community has been
+using them to much success. However, the plugin assumed that all downloaded files are archives (tar,
+zip) and will attempt to unpack them based on file extension. This is not always the case, as some
+downloads are just raw executables.
+
+Because of this, unpacking would sometimes fail, or we'd be unable to extract the correct file
+extension. To work around this limitation, we're introducing a new setting, `install.unpack`, that
+controls whether the downloaded file should be unpacked or not. By default this setting is `true`.
+
+Here's an example using [moon](/moon).
+
+```toml
+# ...
+
+[platform.linux]
+download-file = "moon-{arch}-unknown-linux-{libc}"
+
+[platform.macos]
+download-file = "moon-{arch}-apple-darwin"
+
+[platform.windows]
+download-file = "moon-{arch}-pc-windows-msvc.exe"
+
+[install]
+download-url = "https://github.com/moonrepo/moon/releases/download/v{version}/{download_file}"
+unpack = false
+```
+
+## Initial support for `node-gyp`
+
+The [`node-gyp` binary](https://github.com/nodejs/node-gyp) is required for building Node.js native
+addons, and was previously not supported in proto. We will now create a `node-gyp` binary in
+`~/.proto/bin` when the `npm` tool is installed. Why npm? Because `node-gyp` comes packaged with npm
+instead of Node.js... for some reason.
+
+With that being said, this is currently experimental, as we haven't tested it thoroughly, and are
+unaware of all the possible edge cases. So keep that in mind!
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.9.0) for a full list
+of changes.

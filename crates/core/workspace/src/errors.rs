@@ -55,6 +55,9 @@ pub enum WorkspaceError {
     Config(#[from] ConfigError),
 
     #[error(transparent)]
+    Config(#[from] ConfigError),
+
+    #[error(transparent)]
     Moon(#[from] MoonError),
 
     #[diagnostic(transparent)]

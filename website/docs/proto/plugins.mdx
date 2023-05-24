@@ -104,6 +104,8 @@ be downloaded and installed into the toolchain. The following settings are avail
 - `checksum-url` - A secure URL to download the checksum file for verification. If the tool does not
   support checksum verification, this setting can be omitted.
 - `download-url` (required) - A secure URL to download the tool/archive.
+- `unpack` - Whether the downloaded file should be unpacked or not. For tools that download the
+  binary directly, this should be disabled.
 
 The URL settings support `{checksum_file}` and `{download_file}` tokens, which will be replaced with
 the values from the `[platform]` section.

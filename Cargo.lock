@@ -3298,7 +3298,7 @@ dependencies = [
  "moon_action_context",
  "moon_cache",
  "moon_common",
- "moon_config",
+ "moon_config2",
  "moon_emitter",
  "moon_error",
  "moon_hasher",

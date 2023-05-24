@@ -4,7 +4,7 @@ use console::Term;
 use moon_action::{ActionStatus, Attempt};
 use moon_action_context::ActionContext;
 use moon_cache::RunTargetState;
-use moon_config::TaskOutputStyle;
+use moon_config2::TaskOutputStyle;
 use moon_emitter::{Emitter, Event, EventFlow};
 use moon_error::MoonError;
 use moon_hasher::HashSet;
@@ -12,7 +12,7 @@ use moon_logger::{debug, warn};
 use moon_platform_runtime::Runtime;
 use moon_process::{args, output_to_error, output_to_string, Command, Output};
 use moon_project::Project;
-use moon_target::{Target, TargetError, TargetScope};
+use moon_target::{TargetError, TargetScope};
 use moon_task::{Task, TaskError, TaskOptionAffectedFiles};
 use moon_terminal::{label_checkpoint, Checkpoint};
 use moon_utils::{is_ci, is_test_env, path, time};
@@ -384,8 +384,6 @@ impl<'a> Runner<'a> {
         }
 
         for target in &self.workspace.config.runner.archivable_targets {
-            let target = Target::parse(target)?;
-
             match &target.scope {
                 TargetScope::All => {
                     if task.target.task_id == target.task_id {

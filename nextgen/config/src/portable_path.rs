@@ -235,3 +235,13 @@ impl PartialEq<&str> for PortablePath {
         }
     }
 }
+
+impl<'de> Deserialize<'de> for PortablePath {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        PortablePath::from_str(&String::deserialize(deserializer)?)
+            .map_err(|error| de::Error::custom(error.message))
+    }
+}

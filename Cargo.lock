@@ -3528,7 +3528,7 @@ dependencies = [
  "dunce",
  "humantime",
  "md5",
- "moon_constants",
+ "moon_common",
  "moon_error",
  "moon_logger",
  "moon_test_utils",

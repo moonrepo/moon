@@ -7,7 +7,7 @@ pub mod time;
 pub use async_trait::async_trait;
 
 use cached::proc_macro::cached;
-use moon_constants as constants;
+use moon_common::consts::CONFIG_DIRNAME;
 use std::env;
 use std::path::PathBuf;
 
@@ -36,7 +36,7 @@ pub fn get_workspace_root() -> PathBuf {
     }
 
     match starbase_utils::fs::find_upwards(
-        constants::CONFIG_DIRNAME,
+        CONFIG_DIRNAME,
         env::current_dir().expect("Invalid working directory."),
     ) {
         Some(dir) => dir.parent().unwrap().to_path_buf(),
@@ -46,9 +46,7 @@ pub fn get_workspace_root() -> PathBuf {
 
 #[inline]
 pub fn get_cache_dir() -> PathBuf {
-    get_workspace_root()
-        .join(constants::CONFIG_DIRNAME)
-        .join("cache")
+    get_workspace_root().join(CONFIG_DIRNAME).join("cache")
 }
 
 #[inline]

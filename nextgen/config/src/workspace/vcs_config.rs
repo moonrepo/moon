@@ -13,7 +13,7 @@ config_enum!(
     }
 );
 
-#[derive(Config)]
+#[derive(Clone, Config)]
 pub struct VcsConfig {
     #[setting(default = "master")]
     pub default_branch: String,

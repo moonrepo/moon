@@ -3551,7 +3551,7 @@ dependencies = [
  "cached",
  "ignore",
  "miette",
- "moon_config",
+ "moon_config2",
  "moon_error",
  "moon_process",
  "moon_test_utils",

@@ -2,7 +2,7 @@ use crate::helpers::LOG_TARGET;
 use crate::items::{DependenciesState, ProjectsState, RunTargetState, ToolState};
 use crate::runfiles::Runfile;
 use crate::{get_cache_mode, CacheMode};
-use moon_constants::CONFIG_DIRNAME;
+use moon_common::consts::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_logger::{debug, trace};
 use moon_platform_runtime::Runtime;

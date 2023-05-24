@@ -1,5 +1,5 @@
 use crate::node_tool::NodeTool;
-use moon_config::NpmConfig;
+use moon_config2::NpmConfig;
 use moon_logger::debug;
 use moon_node_lang::{npm, LockfileDependencyVersions, NPM};
 use moon_process::Command;

@@ -3,11 +3,9 @@ use crate::graph_hasher::GraphHasher;
 use crate::helpers::detect_projects_with_globs;
 use crate::project_graph::{GraphType, IndicesType, ProjectGraph, LOG_TARGET};
 use crate::token_resolver::{TokenContext, TokenResolver};
-use moon_common::Id;
-use moon_config::{
-    ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceProjects, CONFIG_DIRNAME,
-    CONFIG_PROJECT_FILENAME,
-};
+use moon_common::path::standardize_separators;
+use moon_common::{consts, Id};
+use moon_config2::{ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceProjects};
 use moon_enforcer::{enforce_project_type_relationships, enforce_tag_relationships};
 use moon_error::MoonError;
 use moon_hasher::{convert_paths_to_strings, to_hash};
@@ -310,9 +308,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         task: &mut Task,
     ) -> Result<(), ProjectGraphError> {
         if !project.inherited_config.implicit_deps.is_empty() {
-            task.deps.extend(Task::create_dep_targets(
-                &project.inherited_config.implicit_deps,
-            )?);
+            task.deps.extend(project.inherited_config.implicit_deps);
         }
 
         if task.deps.is_empty() {
@@ -585,9 +581,9 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         let mut aliases: ProjectsAliasesMap = FxHashMap::default();
         let mut cache = self.workspace.cache.cache_projects_state()?;
 
-        let mut add_sources = |map: &FxHashMap<String, String>| -> Result<(), ProjectGraphError> {
+        let mut add_sources = |map: &FxHashMap<Id, String>| -> Result<(), ProjectGraphError> {
             for (id, source) in map {
-                sources.insert(Id::new(id)?, path::normalize_separators(source));
+                sources.insert(id.to_owned(), standardize_separators(source));
             }
 
             Ok(())
@@ -692,12 +688,12 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         let project_configs = convert_paths_to_strings(
             &FxHashSet::from_iter(sources.values().map(|source| {
                 if source == "." {
-                    self.workspace.root.join(CONFIG_PROJECT_FILENAME)
+                    self.workspace.root.join(consts::CONFIG_PROJECT_FILENAME)
                 } else {
                     self.workspace
                         .root
                         .join(source)
-                        .join(CONFIG_PROJECT_FILENAME)
+                        .join(consts::CONFIG_PROJECT_FILENAME)
                 }
             })),
             &self.workspace.root,
@@ -706,7 +702,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         // Hash all workspace-level config files for the same reason!
         let workspace_configs = convert_paths_to_strings(
             &FxHashSet::from_iter(glob::walk(
-                self.workspace.root.join(CONFIG_DIRNAME),
+                self.workspace.root.join(consts::CONFIG_DIRNAME),
                 ["*.yml", "tasks/*.yml"],
             )?),
             &self.workspace.root,
@@ -720,7 +716,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         let config_hashes = self
             .workspace
             .vcs
-            .get_file_hashes(&configs, false, None)
+            .get_file_hashes(&configs, false, 100)
             .await
             .map_err(|e| MoonError::Generic(e.to_string()))?;
 

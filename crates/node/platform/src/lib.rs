@@ -6,7 +6,7 @@ pub mod task;
 pub use platform::NodePlatform;
 pub use target_hasher::NodeTargetHasher;
 
-use moon_config::TasksConfigsMap;
+use moon_config2::TasksConfigsMap;
 use moon_node_lang::PackageJson;
 use moon_task::TaskError;
 use task::ScriptParser;

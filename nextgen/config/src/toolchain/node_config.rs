@@ -63,19 +63,19 @@ config_enum!(
     }
 );
 
-#[derive(Debug, Config)]
+#[derive(Debug, Clone, Config)]
 pub struct NpmConfig {
     #[setting(env = "MOON_NPM_VERSION", validate = validate_semver)]
     pub version: Option<String>,
 }
 
-#[derive(Debug, Config)]
+#[derive(Debug, Clone, Config)]
 pub struct PnpmConfig {
     #[setting(env = "MOON_PNPM_VERSION", validate = validate_semver)]
     pub version: Option<String>,
 }
 
-#[derive(Debug, Config)]
+#[derive(Debug, Clone, Config)]
 pub struct YarnConfig {
     pub plugins: Vec<String>,
 
@@ -84,7 +84,7 @@ pub struct YarnConfig {
 }
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain#node
-#[derive(Debug, Config)]
+#[derive(Debug, Clone, Config)]
 pub struct NodeConfig {
     #[setting(default = true)]
     pub add_engines_constraint: bool,

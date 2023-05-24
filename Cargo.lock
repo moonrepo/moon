@@ -2834,7 +2834,7 @@ dependencies = [
  "moon",
  "moon_action_context",
  "moon_common",
- "moon_config",
+ "moon_config2",
  "moon_deno_lang",
  "moon_deno_tool",
  "moon_error",
@@ -2862,7 +2862,7 @@ dependencies = [
 name = "moon_deno_tool"
 version = "0.1.0"
 dependencies = [
- "moon_config",
+ "moon_config2",
  "moon_platform_runtime",
  "moon_tool",
  "proto_cli",
@@ -3063,7 +3063,7 @@ dependencies = [
  "moon",
  "moon_action_context",
  "moon_common",
- "moon_config",
+ "moon_config2",
  "moon_error",
  "moon_hasher",
  "moon_lang",
@@ -3074,6 +3074,7 @@ dependencies = [
  "moon_process",
  "moon_project",
  "moon_project_graph",
+ "moon_target",
  "moon_task",
  "moon_terminal",
  "moon_test_utils",
@@ -3095,7 +3096,7 @@ dependencies = [
 name = "moon_node_tool"
 version = "0.1.0"
 dependencies = [
- "moon_config",
+ "moon_config2",
  "moon_logger",
  "moon_node_lang",
  "moon_platform_runtime",
@@ -3150,7 +3151,7 @@ dependencies = [
  "async-trait",
  "moon_action_context",
  "moon_common",
- "moon_config",
+ "moon_config2",
  "moon_error",
  "moon_hasher",
  "moon_platform_runtime",
@@ -3167,7 +3168,7 @@ name = "moon_platform_detector"
 version = "0.1.0"
 dependencies = [
  "moon_bun_lang",
- "moon_config",
+ "moon_config2",
  "moon_deno_lang",
  "moon_go_lang",
  "moon_lang",
@@ -3184,7 +3185,7 @@ dependencies = [
 name = "moon_platform_runtime"
 version = "0.1.0"
 dependencies = [
- "moon_config",
+ "moon_config2",
  "serde",
 ]
 
@@ -3235,7 +3236,7 @@ dependencies = [
  "moon",
  "moon_cache",
  "moon_common",
- "moon_config",
+ "moon_config2",
  "moon_enforcer",
  "moon_error",
  "moon_file_group",
@@ -3347,7 +3348,7 @@ dependencies = [
  "moon",
  "moon_action_context",
  "moon_common",
- "moon_config",
+ "moon_config2",
  "moon_error",
  "moon_hasher",
  "moon_lang",
@@ -3376,7 +3377,7 @@ dependencies = [
 name = "moon_rust_tool"
 version = "0.1.0"
 dependencies = [
- "moon_config",
+ "moon_config2",
  "moon_logger",
  "moon_platform_runtime",
  "moon_process",
@@ -3392,7 +3393,7 @@ name = "moon_system_platform"
 version = "0.1.0"
 dependencies = [
  "moon_action_context",
- "moon_config",
+ "moon_config2",
  "moon_hasher",
  "moon_platform",
  "moon_process",
@@ -3502,7 +3503,7 @@ name = "moon_typescript_platform"
 version = "0.1.0"
 dependencies = [
  "moon_common",
- "moon_config",
+ "moon_config2",
  "moon_error",
  "moon_hasher",
  "moon_logger",

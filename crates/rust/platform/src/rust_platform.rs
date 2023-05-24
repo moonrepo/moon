@@ -1,7 +1,7 @@
 use crate::{bins_hasher::RustBinsHasher, target_hasher::RustTargetHasher};
 use moon_action_context::ActionContext;
 use moon_common::Id;
-use moon_config::{
+use moon_config2::{
     HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, RustConfig,
 };
 use moon_error::MoonError;

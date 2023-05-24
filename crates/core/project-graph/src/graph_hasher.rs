@@ -1,5 +1,5 @@
 use moon_common::Id;
-use moon_config::{ProjectsAliasesMap, ProjectsSourcesMap};
+use moon_config2::{ProjectsAliasesMap, ProjectsSourcesMap};
 use moon_hasher::{hash_btree, Digest, Hasher, Sha256};
 use moon_utils::{is_docker_container, path};
 use serde::{Deserialize, Serialize};

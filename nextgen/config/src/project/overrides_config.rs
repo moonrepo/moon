@@ -30,6 +30,15 @@ pub struct ProjectToolchainConfig {
     pub typescript: Option<ProjectToolchainTypeScriptConfig>,
 }
 
+impl ProjectToolchainConfig {
+    pub fn is_typescript_enabled(&self) -> bool {
+        self.typescript
+            .as_ref()
+            .map(|ts| !ts.disabled)
+            .unwrap_or(true)
+    }
+}
+
 #[derive(Clone, Config, Deserialize, Serialize)]
 pub struct ProjectWorkspaceInheritedTasksConfig {
     pub exclude: Vec<Id>,

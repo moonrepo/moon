@@ -1,5 +1,5 @@
 use crate::platform::Platform;
-use moon_config::PlatformType;
+use moon_config2::PlatformType;
 use moon_error::MoonError;
 use rustc_hash::FxHashMap;
 

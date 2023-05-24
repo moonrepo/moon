@@ -1,3 +1,4 @@
+use moon_common::Id;
 use schematic::{config_enum, Config};
 use strum::Display;
 
@@ -18,7 +19,7 @@ config_enum!(
 
 #[derive(Config)]
 pub struct DependencyConfig {
-    pub id: String,
+    pub id: Id,
     pub scope: DependencyScope,
 
     // This field isn't configured by users, but is used by platforms!
@@ -28,7 +29,7 @@ pub struct DependencyConfig {
 impl DependencyConfig {
     pub fn new(id: &str) -> Self {
         DependencyConfig {
-            id: id.to_owned(),
+            id: Id::raw(id),
             scope: DependencyScope::Production,
             via: None,
         }

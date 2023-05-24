@@ -1,5 +1,5 @@
 use moon_common::Id;
-use moon_config::{DependencyScope, NodeConfig, NodeVersionFormat, TypeScriptConfig};
+use moon_config2::{DependencyScope, NodeConfig, NodeVersionFormat, TypeScriptConfig};
 use moon_logger::debug;
 use moon_node_lang::{PackageJson, NPM};
 use moon_project::{Project, ProjectError};

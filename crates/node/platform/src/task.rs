@@ -1,8 +1,9 @@
 use moon_common::Id;
-use moon_config::{TaskCommandArgs, TaskConfig, TasksConfigsMap};
+use moon_config2::{FilePath, PortablePath, TaskCommandArgs, TaskConfig, TasksConfigsMap};
 use moon_logger::{debug, warn};
 use moon_node_lang::package_json::{PackageJson, ScriptsSet};
 use moon_process::args::split_args;
+use moon_target::Target;
 use moon_task::{PlatformType, TaskError};
 use moon_utils::regex::{ID_CLEAN, UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
 use moon_utils::{regex, string_vec};
@@ -133,14 +134,6 @@ fn detect_platform_type(command: &str) -> PlatformType {
     PlatformType::Node
 }
 
-fn add_task_dep(config: &mut TaskConfig, dep: String) {
-    if let Some(deps) = &mut config.deps {
-        deps.push(dep);
-    } else {
-        config.deps = Some(vec![dep]);
-    }
-}
-
 pub enum TaskContext {
     ConvertToTask,
     WrapRunScript,
@@ -177,7 +170,9 @@ pub fn create_task(
         // Detect possible outputs
         if ARG_OUTPUT_FLAG.is_match(arg) {
             if let Some(output) = script_args.get(index + 1) {
-                outputs.push(clean_output_path(target_id, output)?);
+                outputs.push(PortablePath::ProjectFile(FilePath(clean_output_path(
+                    target_id, output,
+                )?)));
             }
         }
 
@@ -188,12 +183,8 @@ pub fn create_task(
 
     if is_wrapping {
         task_config.platform = PlatformType::Node;
-        task_config.command = Some(TaskCommandArgs::Sequence(string_vec![
-            "moon",
-            "node",
-            "run-script",
-            script_name
-        ]));
+        task_config.command =
+            TaskCommandArgs::Sequence(string_vec!["moon", "node", "run-script", script_name]);
     } else {
         if let Some(command) = args.get(0) {
             if is_bash_script(command) {
@@ -208,19 +199,19 @@ pub fn create_task(
         }
 
         task_config.platform = detect_platform_type(&args[0]);
-        task_config.command = Some(if args.len() == 1 {
+        task_config.command = if args.len() == 1 {
             TaskCommandArgs::String(args.remove(0))
         } else {
             TaskCommandArgs::Sequence(args)
-        });
+        };
     }
 
     if !env.is_empty() {
-        task_config.env = Some(env);
+        task_config.env = env;
     }
 
     if !outputs.is_empty() {
-        task_config.outputs = Some(outputs);
+        task_config.outputs = outputs;
     }
 
     task_config.local = !should_run_in_ci(script_name, script);
@@ -510,7 +501,7 @@ impl<'a> ScriptParser<'a> {
             )? {
                 if !previous_task_id.is_empty() {
                     if let Some(task) = self.tasks.get_mut(&task_id) {
-                        add_task_dep(task, format!("~:{previous_task_id}"));
+                        task.deps.push(Target::new_self(previous_task_id)?);
                     }
                 }
 
@@ -556,7 +547,7 @@ impl<'a> ScriptParser<'a> {
 
             if let Some(pre_task_id) = self.parse_script(format!("pre{script_name}"), pre)? {
                 if let Some(task) = self.tasks.get_mut(task_id) {
-                    add_task_dep(task, format!("~:{pre_task_id}"));
+                    task.deps.push(Target::new_self(pre_task_id)?);
                 }
             }
         }
@@ -567,7 +558,7 @@ impl<'a> ScriptParser<'a> {
 
             if let Some(post_task_id) = self.parse_script(format!("post{script_name}"), post)? {
                 if let Some(task) = self.tasks.get_mut(&post_task_id) {
-                    add_task_dep(task, format!("~:{task_id}"));
+                    task.deps.push(Target::new_self(task_id)?);
                 }
             }
         }

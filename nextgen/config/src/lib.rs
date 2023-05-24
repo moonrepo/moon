@@ -7,6 +7,7 @@ mod template;
 mod template_config;
 mod toolchain;
 mod toolchain_config;
+mod types;
 mod validate;
 mod workspace;
 mod workspace_config;
@@ -16,14 +17,14 @@ pub use language_platform::*;
 pub use portable_path::*;
 pub use project::*;
 pub use project_config::*;
+pub use schematic::ConfigError;
 pub use template::*;
 pub use template_config::*;
 pub use toolchain::*;
 pub use toolchain_config::*;
+pub use types::*;
 pub use workspace::*;
 pub use workspace_config::*;
-
-pub use schematic::ConfigError;
 
 pub fn load_workspace_config_template() -> &'static str {
     include_str!("../templates/workspace.yml")

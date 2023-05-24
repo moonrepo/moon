@@ -2,7 +2,7 @@ use crate::validate::validate_semver;
 use schematic::Config;
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain#rust
-#[derive(Debug, Config)]
+#[derive(Debug, Clone, Config)]
 pub struct RustConfig {
     pub bins: Vec<String>,
 

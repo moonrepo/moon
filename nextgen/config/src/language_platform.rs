@@ -96,6 +96,7 @@ impl fmt::Display for LanguageType {
 
 config_enum!(
     #[derive(
+        Copy,
         Default,
         Display,
         EnumIter,

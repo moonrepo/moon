@@ -1,14 +1,14 @@
 use crate::errors::TaskError;
 use crate::task_options::TaskOptions;
 use crate::types::TouchedFilePaths;
+use moon_args::{split_args, ArgsSplitError};
 use moon_common::Id;
-use moon_config::{
-    FileGlob, FilePath, InputValue, PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy,
-    TaskType,
+use moon_config2::{
+    PlatformType, PortablePath, TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskType,
 };
 use moon_error::MoonError;
 use moon_logger::{debug, trace, Logable};
-use moon_target::{Target, TargetError};
+use moon_target::Target;
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
 use starbase_styles::color;
@@ -38,14 +38,14 @@ pub struct Task {
 
     pub flags: FxHashSet<TaskFlag>,
 
-    pub global_inputs: Vec<InputValue>,
+    pub global_inputs: Vec<PortablePath>,
 
     pub id: Id,
 
-    pub inputs: Vec<InputValue>,
+    pub inputs: Vec<PortablePath>,
 
     // Relative from workspace root
-    pub input_globs: FxHashSet<FileGlob>,
+    pub input_globs: FxHashSet<String>,
 
     // Relative from workspace root
     pub input_paths: FxHashSet<PathBuf>,
@@ -57,10 +57,10 @@ pub struct Task {
 
     pub options: TaskOptions,
 
-    pub outputs: Vec<FilePath>,
+    pub outputs: Vec<PortablePath>,
 
     // Relative from workspace root
-    pub output_globs: FxHashSet<FileGlob>,
+    pub output_globs: FxHashSet<String>,
 
     // Relative from workspace root
     pub output_paths: FxHashSet<PathBuf>,
@@ -84,7 +84,7 @@ impl Task {
         let cloned_config = config.clone();
         let cloned_options = cloned_config.options;
 
-        let (command, args) = config.get_command_and_args()?;
+        let (command, args) = get_command_and_args(&config)?;
         let command = command.unwrap_or_else(|| "noop".to_owned());
         let is_local =
             cloned_config.local || command == "dev" || command == "serve" || command == "start";
@@ -100,18 +100,18 @@ impl Task {
         let mut task = Task {
             args,
             command,
-            deps: Task::create_dep_targets(&cloned_config.deps.unwrap_or_default())?,
-            env: cloned_config.env.unwrap_or_default(),
+            deps: cloned_config.deps,
+            env: cloned_config.env,
             flags: FxHashSet::default(),
             global_inputs: cloned_config.global_inputs,
             id: Id::new(&target.task_id)?,
-            inputs: cloned_config.inputs.unwrap_or_default(),
+            inputs: cloned_config.inputs,
             input_vars: FxHashSet::default(),
             input_globs: FxHashSet::default(),
             input_paths: FxHashSet::default(),
             log_target,
             options: TaskOptions::from_config(cloned_options, is_local),
-            outputs: cloned_config.outputs.unwrap_or_default(),
+            outputs: cloned_config.outputs,
             output_globs: FxHashSet::default(),
             output_paths: FxHashSet::default(),
             platform: cloned_config.platform,
@@ -123,12 +123,7 @@ impl Task {
             },
         };
 
-        if config
-            .inputs
-            .as_ref()
-            .map(|i| i.is_empty())
-            .unwrap_or(false)
-        {
+        if config.inputs.is_empty() {
             task.flags.insert(TaskFlag::NoInputs);
         }
 
@@ -140,25 +135,25 @@ impl Task {
         command.extend(self.args.clone());
 
         let mut config = TaskConfig {
-            command: Some(TaskCommandArgs::Sequence(command)),
+            command: TaskCommandArgs::Sequence(command),
             options: self.options.to_config(),
             ..TaskConfig::default()
         };
 
         if !self.deps.is_empty() {
-            config.deps = Some(self.deps.iter().map(|d| d.id.clone()).collect());
+            config.deps = self.deps.clone();
         }
 
         if !self.env.is_empty() {
-            config.env = Some(self.env.clone());
+            config.env = self.env.clone();
         }
 
         if !self.inputs.is_empty() || (self.inputs.len() == 1 && self.inputs[0] == "**/*") {
-            config.inputs = Some(self.inputs.clone());
+            config.inputs = self.inputs.clone();
         }
 
         if !self.outputs.is_empty() {
-            config.outputs = Some(self.outputs.clone());
+            config.outputs = self.outputs.clone();
         }
 
         if !self.platform.is_unknown() {
@@ -166,20 +161,6 @@ impl Task {
         }
 
         config
-    }
-
-    pub fn create_dep_targets(deps: &[String]) -> Result<Vec<Target>, TargetError> {
-        let mut targets = vec![];
-
-        for dep in deps {
-            targets.push(if dep.contains(':') {
-                Target::parse(dep)?
-            } else {
-                Target::new_self(dep)?
-            });
-        }
-
-        Ok(targets)
     }
 
     /// Create a globset of all input globs to match with.
@@ -291,7 +272,7 @@ impl Task {
     }
 
     pub fn merge(&mut self, config: &TaskConfig) -> Result<(), TaskError> {
-        let (command, args) = config.get_command_and_args()?;
+        let (command, args) = get_command_and_args(&config)?;
 
         // Merge options first incase the merge strategy has changed
         self.options.merge(&config.options);
@@ -309,30 +290,26 @@ impl Task {
             self.args = self.merge_vec(&self.args, &args, &self.options.merge_args);
         }
 
-        if let Some(deps) = &config.deps {
-            self.deps = self.merge_vec::<Target>(
-                &self.deps,
-                &Task::create_dep_targets(deps)?,
-                &self.options.merge_deps,
-            );
+        if !config.deps.is_empty() {
+            self.deps =
+                self.merge_vec::<Target>(&self.deps, &config.deps, &self.options.merge_deps);
         }
 
-        if let Some(env) = &config.env {
-            self.env = self.merge_env_vars(&self.env, env, &self.options.merge_env);
+        if !config.env.is_empty() {
+            self.env = self.merge_env_vars(&self.env, &config.env, &self.options.merge_env);
         }
 
-        if let Some(inputs) = &config.inputs {
-            if inputs.is_empty() {
-                self.flags.insert(TaskFlag::NoInputs);
-                self.inputs = vec![];
-            } else {
-                self.flags.remove(&TaskFlag::NoInputs);
-                self.inputs = self.merge_vec(&self.inputs, inputs, &self.options.merge_inputs);
-            }
+        if config.inputs.is_empty() {
+            self.flags.insert(TaskFlag::NoInputs);
+            self.inputs = vec![];
+        } else {
+            self.flags.remove(&TaskFlag::NoInputs);
+            self.inputs = self.merge_vec(&self.inputs, &self.inputs, &self.options.merge_inputs);
         }
 
-        if let Some(outputs) = &config.outputs {
-            self.outputs = self.merge_vec(&self.outputs, outputs, &self.options.merge_outputs);
+        if !config.outputs.is_empty() {
+            self.outputs =
+                self.merge_vec(&self.outputs, &self.outputs, &self.options.merge_outputs);
         }
 
         Ok(())
@@ -393,4 +370,30 @@ impl Task {
 
         list
     }
+}
+
+fn get_command_and_args(
+    task: &TaskConfig,
+) -> Result<(Option<String>, Vec<String>), ArgsSplitError> {
+    let mut command = None;
+    let mut args = vec![];
+
+    let mut cmd_list = match &task.command {
+        TaskCommandArgs::None => vec![],
+        TaskCommandArgs::String(cmd_string) => split_args(cmd_string)?,
+        TaskCommandArgs::Sequence(cmd_args) => cmd_args.clone(),
+    };
+
+    if !cmd_list.is_empty() {
+        command = Some(cmd_list.remove(0));
+        args.extend(cmd_list);
+    }
+
+    match &task.args {
+        TaskCommandArgs::None => {}
+        TaskCommandArgs::String(args_string) => args.extend(split_args(args_string)?),
+        TaskCommandArgs::Sequence(args_list) => args.extend(args_list.clone()),
+    }
+
+    Ok((command, args))
 }

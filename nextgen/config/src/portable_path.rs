@@ -29,6 +29,12 @@ macro_rules! path_type {
             }
         }
 
+        impl PartialEq<&str> for $name {
+            fn eq(&self, other: &&str) -> bool {
+                &self.0 == other
+            }
+        }
+
         impl TryFrom<String> for $name {
             type Error = ValidateError;
 
@@ -165,5 +171,15 @@ impl<'de> Deserialize<'de> for PortablePath {
     {
         PortablePath::from_str(&String::deserialize(deserializer)?)
             .map_err(|error| de::Error::custom(error.message))
+    }
+}
+
+impl PartialEq<&str> for PortablePath {
+    fn eq(&self, other: &&str) -> bool {
+        match self {
+            PortablePath::EnvVar(var) => var == other,
+            PortablePath::ProjectFile(file) | PortablePath::WorkspaceFile(file) => file == other,
+            PortablePath::ProjectGlob(glob) | PortablePath::WorkspaceGlob(glob) => glob == other,
+        }
     }
 }

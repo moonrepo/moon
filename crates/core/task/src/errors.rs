@@ -1,6 +1,7 @@
 use miette::Diagnostic;
+use moon_args::ArgsSplitError;
 use moon_common::IdError;
-use moon_config::ConfigError;
+use moon_config2::ConfigError;
 use moon_error::MoonError;
 use moon_target::TargetError;
 use starbase_styles::{Style, Stylize};
@@ -24,6 +25,9 @@ pub enum TaskError {
 
     #[error("Target {} defines the output {}, but this output does not exist after being ran.", .0.style(Style::Label), .1.style(Style::File))]
     MissingOutput(String, String),
+
+    #[error(transparent)]
+    Args(#[from] ArgsSplitError),
 
     #[error(transparent)]
     Config(#[from] ConfigError),

@@ -307,10 +307,6 @@ outputs:
             let config = test_parse_config("{}", |code| TaskConfig::parse(code));
             let opts = config.options;
 
-            assert!(opts.cache);
-            assert!(opts.run_deps_in_parallel);
-            assert!(!opts.run_from_workspace_root);
-            assert!(opts.shell);
             assert_eq!(opts.affected_files, None);
             assert_eq!(opts.env_file, None);
         }
@@ -329,10 +325,10 @@ options:
             );
             let opts = config.options;
 
-            assert!(!opts.cache);
-            assert!(!opts.run_deps_in_parallel);
-            assert_eq!(opts.merge_deps, TaskMergeStrategy::Replace);
-            assert_eq!(opts.output_style, TaskOutputStyle::Stream);
+            assert_eq!(opts.cache, Some(false));
+            assert_eq!(opts.run_deps_in_parallel, Some(false));
+            assert_eq!(opts.merge_deps, Some(TaskMergeStrategy::Replace));
+            assert_eq!(opts.output_style, Some(TaskOutputStyle::Stream));
         }
 
         mod affected_files {

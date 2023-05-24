@@ -58,6 +58,16 @@ config_enum!(
     }
 );
 
+impl TaskOptionEnvFile {
+    pub fn to_option(&self) -> Option<String> {
+        match self {
+            TaskOptionEnvFile::Enabled(true) => Some(".env".to_owned()),
+            TaskOptionEnvFile::Enabled(false) => None,
+            TaskOptionEnvFile::File(_path) => Some("".into()), // TODO
+        }
+    }
+}
+
 config_enum!(
     #[derive(Default)]
     pub enum TaskMergeStrategy {
@@ -84,36 +94,33 @@ config_enum!(
 pub struct TaskOptionsConfig {
     pub affected_files: Option<TaskOptionAffectedFiles>,
 
-    #[setting(default = true)]
-    pub cache: bool,
+    pub cache: Option<bool>,
 
     #[setting(validate = validate_env_file)]
     pub env_file: Option<TaskOptionEnvFile>,
 
-    pub merge_args: TaskMergeStrategy,
+    pub merge_args: Option<TaskMergeStrategy>,
 
-    pub merge_deps: TaskMergeStrategy,
+    pub merge_deps: Option<TaskMergeStrategy>,
 
-    pub merge_env: TaskMergeStrategy,
+    pub merge_env: Option<TaskMergeStrategy>,
 
-    pub merge_inputs: TaskMergeStrategy,
+    pub merge_inputs: Option<TaskMergeStrategy>,
 
-    pub merge_outputs: TaskMergeStrategy,
+    pub merge_outputs: Option<TaskMergeStrategy>,
 
-    pub output_style: TaskOutputStyle,
+    pub output_style: Option<TaskOutputStyle>,
 
-    pub persistent: bool,
+    pub persistent: Option<bool>,
 
-    pub retry_count: u8,
+    pub retry_count: Option<u8>,
 
-    #[setting(default = true)]
-    pub run_deps_in_parallel: bool,
+    pub run_deps_in_parallel: Option<bool>,
 
-    #[setting(default = true, rename = "runInCI")]
-    pub run_in_ci: bool,
+    #[setting(rename = "runInCI")]
+    pub run_in_ci: Option<bool>,
 
-    pub run_from_workspace_root: bool,
+    pub run_from_workspace_root: Option<bool>,
 
-    #[setting(default = true)]
-    pub shell: bool,
+    pub shell: Option<bool>,
 }

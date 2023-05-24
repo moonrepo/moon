@@ -1,5 +1,5 @@
-use moon_config::{
-    TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskOptionEnvFileConfig, TaskOptionsConfig,
+use moon_config2::{
+    TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskOptionEnvFile, TaskOptionsConfig,
     TaskOutputStyle,
 };
 use moon_target::Target;
@@ -22,7 +22,7 @@ mod from_config {
         let task =
             Task::from_config(Target::new("foo", "test").unwrap(), &TaskConfig::default()).unwrap();
 
-        assert_eq!(task.inputs, string_vec![]);
+        assert!(task.inputs.is_empty());
         assert_eq!(task.log_target, "moon:project:foo:test");
         assert_eq!(task.target, Target::new("foo", "test").unwrap());
         assert_eq!(
@@ -75,7 +75,7 @@ mod from_config {
         let task = Task::from_config(
             Target::new("foo", "test").unwrap(),
             &TaskConfig {
-                command: Some(TaskCommandArgs::String("dev".to_owned())),
+                command: TaskCommandArgs::String("dev".to_owned()),
                 ..TaskConfig::default()
             },
         )
@@ -153,7 +153,7 @@ mod from_config {
             Target::new("foo", "test").unwrap(),
             &TaskConfig {
                 options: TaskOptionsConfig {
-                    env_file: Some(TaskOptionEnvFileConfig::Enabled(true)),
+                    env_file: Some(TaskOptionEnvFile::Enabled(true)),
                     ..TaskOptionsConfig::default()
                 },
                 ..TaskConfig::default()
@@ -175,8 +175,8 @@ mod from_config {
         let task = Task::from_config(
             Target::new("foo", "test").unwrap(),
             &TaskConfig {
-                command: Some(TaskCommandArgs::String("foo --bar".to_owned())),
-                args: Some(TaskCommandArgs::Sequence(string_vec!["--baz"])),
+                command: TaskCommandArgs::String("foo --bar".to_owned()),
+                args: TaskCommandArgs::Sequence(string_vec!["--baz"]),
                 ..TaskConfig::default()
             },
         )
@@ -191,8 +191,8 @@ mod from_config {
         let task = Task::from_config(
             Target::new("foo", "test").unwrap(),
             &TaskConfig {
-                command: Some(TaskCommandArgs::Sequence(string_vec!["foo", "--bar"])),
-                args: Some(TaskCommandArgs::String("--baz".to_owned())),
+                command: TaskCommandArgs::Sequence(string_vec!["foo", "--bar"]),
+                args: TaskCommandArgs::String("--baz".to_owned()),
                 ..TaskConfig::default()
             },
         )
@@ -207,7 +207,7 @@ mod from_config {
         let task = Task::from_config(
             Target::new("foo", "test").unwrap(),
             &TaskConfig {
-                inputs: Some(string_vec!["foo", "bar"]),
+                inputs: string_vec!["foo", "bar"],
                 ..TaskConfig::default()
             },
         )
@@ -221,13 +221,13 @@ mod from_config {
         let task = Task::from_config(
             Target::new("foo", "test").unwrap(),
             &TaskConfig {
-                inputs: Some(string_vec![]),
+                inputs: vec![],
                 ..TaskConfig::default()
             },
         )
         .unwrap();
 
-        assert_eq!(task.inputs, string_vec![]);
+        assert_eq!(task.inputs, vec![]);
     }
 
     #[test]
@@ -291,7 +291,6 @@ mod from_config {
 
 mod merge {
     use super::*;
-    use moon_config::TaskMergeStrategy;
 
     #[test]
     fn merges_command_string() {
@@ -302,8 +301,8 @@ mod merge {
         };
 
         task.merge(&TaskConfig {
-            command: Some(TaskCommandArgs::String("foo --bar".to_owned())),
-            args: Some(TaskCommandArgs::Sequence(string_vec!["--baz"])),
+            command: TaskCommandArgs::String("foo --bar".to_owned()),
+            args: TaskCommandArgs::Sequence(string_vec!["--baz"]),
             ..TaskConfig::default()
         })
         .unwrap();
@@ -321,8 +320,8 @@ mod merge {
         };
 
         task.merge(&TaskConfig {
-            command: Some(TaskCommandArgs::Sequence(string_vec!["foo", "--bar"])),
-            args: Some(TaskCommandArgs::String("--baz".to_owned())),
+            command: TaskCommandArgs::Sequence(string_vec!["foo", "--bar"]),
+            args: TaskCommandArgs::String("--baz".to_owned()),
             ..TaskConfig::default()
         })
         .unwrap();
@@ -340,8 +339,8 @@ mod merge {
         };
 
         task.merge(&TaskConfig {
-            command: Some(TaskCommandArgs::String("foo --after".to_owned())),
-            args: Some(TaskCommandArgs::String("--post".to_owned())),
+            command: TaskCommandArgs::String("foo --after".to_owned()),
+            args: TaskCommandArgs::String("--post".to_owned()),
             options: TaskOptionsConfig {
                 merge_args: Some(TaskMergeStrategy::Append),
                 ..TaskOptionsConfig::default()
@@ -362,8 +361,8 @@ mod merge {
         };
 
         task.merge(&TaskConfig {
-            command: Some(TaskCommandArgs::String("foo --before".to_owned())),
-            args: Some(TaskCommandArgs::String("--pre".to_owned())),
+            command: TaskCommandArgs::String("foo --before".to_owned()),
+            args: TaskCommandArgs::String("--pre".to_owned()),
             options: TaskOptionsConfig {
                 merge_args: Some(TaskMergeStrategy::Prepend),
                 ..TaskOptionsConfig::default()
@@ -384,8 +383,8 @@ mod merge {
         };
 
         task.merge(&TaskConfig {
-            command: Some(TaskCommandArgs::String("foo --new".to_owned())),
-            args: Some(TaskCommandArgs::String("--hot".to_owned())),
+            command: TaskCommandArgs::String("foo --new".to_owned()),
+            args: TaskCommandArgs::String("--hot".to_owned()),
             options: TaskOptionsConfig {
                 merge_args: Some(TaskMergeStrategy::Replace),
                 ..TaskOptionsConfig::default()
@@ -406,7 +405,7 @@ mod merge {
         };
 
         task.merge(&TaskConfig {
-            args: Some(TaskCommandArgs::String("--a".to_owned())),
+            args: TaskCommandArgs::String("--a".to_owned()),
             options: TaskOptionsConfig {
                 merge_args: Some(TaskMergeStrategy::Append),
                 ..TaskOptionsConfig::default()
@@ -419,7 +418,7 @@ mod merge {
         assert_eq!(task.args, string_vec!["--arg", "--a"]);
 
         task.merge(&TaskConfig {
-            args: Some(TaskCommandArgs::Sequence(string_vec!["--b"])),
+            args: TaskCommandArgs::Sequence(string_vec!["--b"]),
             options: TaskOptionsConfig {
                 merge_args: Some(TaskMergeStrategy::Prepend),
                 ..TaskOptionsConfig::default()
@@ -432,7 +431,7 @@ mod merge {
         assert_eq!(task.args, string_vec!["--b", "--arg", "--a"]);
 
         task.merge(&TaskConfig {
-            command: Some(TaskCommandArgs::String("foo --r".to_owned())),
+            command: TaskCommandArgs::String("foo --r".to_owned()),
             options: TaskOptionsConfig {
                 merge_args: Some(TaskMergeStrategy::Replace),
                 ..TaskOptionsConfig::default()
@@ -455,7 +454,7 @@ mod merge {
         };
 
         task.merge(&TaskConfig {
-            inputs: Some(vec![]),
+            inputs: vec![],
             options: TaskOptionsConfig {
                 merge_inputs: Some(TaskMergeStrategy::Replace),
                 ..TaskOptionsConfig::default()
@@ -477,7 +476,7 @@ mod merge {
         };
 
         task.merge(&TaskConfig {
-            inputs: Some(vec![]),
+            inputs: vec![],
             ..TaskConfig::default()
         })
         .unwrap();
@@ -495,7 +494,7 @@ mod merge {
         };
 
         task.merge(&TaskConfig {
-            inputs: Some(vec![]),
+            inputs: vec![],
             ..TaskConfig::default()
         })
         .unwrap();
@@ -513,7 +512,7 @@ mod merge {
         };
 
         task.merge(&TaskConfig {
-            inputs: Some(string_vec!["foo"]),
+            inputs: string_vec!["foo"],
             ..TaskConfig::default()
         })
         .unwrap();
@@ -676,7 +675,7 @@ mod is_affected {
         let project_source = PathBuf::from("files-and-dirs");
         let mut task = create_task(TaskConfig {
             options: TaskOptionsConfig {
-                env_file: Some(TaskOptionEnvFileConfig::Enabled(true)),
+                env_file: Some(TaskOptionEnvFile::Enabled(true)),
                 ..TaskOptionsConfig::default()
             },
             ..TaskConfig::default()

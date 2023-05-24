@@ -1,6 +1,7 @@
 use crate::validate::{validate_child_or_root_path, validate_child_relative_path};
 use schematic::ValidateError;
 use serde::{de, Deserialize, Deserializer, Serialize};
+use std::path::Path;
 
 // Not accurate at all but good enough...
 fn is_glob(value: &str) -> bool {
@@ -15,6 +16,18 @@ macro_rules! path_type {
     ($name:ident) => {
         #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
         pub struct $name(pub String);
+
+        impl AsRef<str> for $name {
+            fn as_ref(&self) -> &str {
+                &self.0
+            }
+        }
+
+        impl AsRef<Path> for $name {
+            fn as_ref(&self) -> &Path {
+                self.0.as_ref()
+            }
+        }
 
         impl TryFrom<String> for $name {
             type Error = ValidateError;

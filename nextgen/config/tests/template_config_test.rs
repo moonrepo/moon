@@ -14,7 +14,7 @@ mod template_config {
     )]
     fn error_unknown_field() {
         test_load_config(CONFIG_TEMPLATE_FILENAME, "unknown: 123", |path| {
-            TemplateConfig::load_from(path, path)
+            TemplateConfig::load_from(path)
         });
     }
 
@@ -23,7 +23,7 @@ mod template_config {
         let config = test_load_config(
             CONFIG_TEMPLATE_FILENAME,
             "title: title\ndescription: description",
-            |path| TemplateConfig::load_from(path, path),
+            |path| TemplateConfig::load_from(path),
         );
 
         assert_eq!(config.title, "title");
@@ -38,7 +38,7 @@ mod template_config {
         #[should_panic(expected = "invalid type: integer `123`, expected a string")]
         fn invalid_type() {
             test_load_config(CONFIG_TEMPLATE_FILENAME, "title: 123", |path| {
-                TemplateConfig::load_from(path, path)
+                TemplateConfig::load_from(path)
             });
         }
 
@@ -48,7 +48,7 @@ mod template_config {
             test_load_config(
                 CONFIG_TEMPLATE_FILENAME,
                 "title: ''\ndescription: 'asd'",
-                |path| TemplateConfig::load_from(path, path),
+                |path| TemplateConfig::load_from(path),
             );
         }
     }
@@ -60,7 +60,7 @@ mod template_config {
         #[should_panic(expected = "invalid type: integer `123`, expected a string")]
         fn invalid_type() {
             test_load_config(CONFIG_TEMPLATE_FILENAME, "description: 123", |path| {
-                TemplateConfig::load_from(path, path)
+                TemplateConfig::load_from(path)
             });
         }
 
@@ -70,7 +70,7 @@ mod template_config {
             test_load_config(
                 CONFIG_TEMPLATE_FILENAME,
                 "title: 'asd'\ndescription: ''",
-                |path| TemplateConfig::load_from(path, path),
+                |path| TemplateConfig::load_from(path),
             );
         }
     }
@@ -96,7 +96,7 @@ variables:
   unknown:
     type: array
 ",
-                |path| TemplateConfig::load_from(path, path),
+                |path| TemplateConfig::load_from(path),
             );
         }
 
@@ -114,7 +114,7 @@ variables:
     prompt: prompt
     required: true
 ",
-                |path| TemplateConfig::load_from(path, path),
+                |path| TemplateConfig::load_from(path),
             );
 
             assert_eq!(
@@ -140,7 +140,7 @@ variables:
     type: boolean
     default: 123
 ",
-                |path| TemplateConfig::load_from(path, path),
+                |path| TemplateConfig::load_from(path),
             );
         }
 
@@ -158,7 +158,7 @@ variables:
     prompt: prompt
     required: false
 ",
-                |path| TemplateConfig::load_from(path, path),
+                |path| TemplateConfig::load_from(path),
             );
 
             assert_eq!(
@@ -184,7 +184,7 @@ variables:
     type: number
     default: true
 ",
-                |path| TemplateConfig::load_from(path, path),
+                |path| TemplateConfig::load_from(path),
             );
         }
 
@@ -200,7 +200,7 @@ variables:
     type: string
     default: abc
 ",
-                |path| TemplateConfig::load_from(path, path),
+                |path| TemplateConfig::load_from(path),
             );
 
             assert_eq!(
@@ -226,7 +226,7 @@ variables:
     type: string
     default: 123
 ",
-                |path| TemplateConfig::load_from(path, path),
+                |path| TemplateConfig::load_from(path),
             );
         }
 
@@ -248,7 +248,7 @@ variables:
         value: c
     prompt: prompt
 ",
-                |path| TemplateConfig::load_from(path, path),
+                |path| TemplateConfig::load_from(path),
             );
 
             assert_eq!(
@@ -284,7 +284,7 @@ variables:
     values: [1, 2, 3]
     prompt: prompt
 ",
-                |path| TemplateConfig::load_from(path, path),
+                |path| TemplateConfig::load_from(path),
             );
         }
     }

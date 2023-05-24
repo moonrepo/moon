@@ -1,7 +1,7 @@
 use schematic::{Config, ConfigError, ConfigLoader};
 
 /// Docs: https://moonrepo.dev/docs/config/template#frontmatter
-#[derive(Config)]
+#[derive(Debug, Config, Eq, PartialEq)]
 pub struct TemplateFrontmatterConfig {
     #[setting(
         default = "https://moonrepo.dev/schemas/template-frontmatter.json",

@@ -1,4 +1,4 @@
-use moon_config::GeneratorConfig;
+use moon_config2::GeneratorConfig;
 use moon_generator::Generator;
 use moon_test_utils::create_sandbox;
 use moon_utils::string_vec;

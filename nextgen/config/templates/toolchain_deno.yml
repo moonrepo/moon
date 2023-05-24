@@ -1,0 +1,2 @@
+# Configures Deno within the toolchain.
+deno: {}

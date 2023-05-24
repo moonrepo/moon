@@ -1,6 +1,6 @@
 use miette::Diagnostic;
-use moon_config::ConfigError;
-use moon_constants as constants;
+use moon_common::consts;
+use moon_config2::ConfigError;
 use moon_error::MoonError;
 use starbase_styles::{Style, Stylize};
 use starbase_utils::{fs::FsError, json::JsonError, yaml::YamlError};
@@ -18,7 +18,7 @@ pub enum GeneratorError {
 
     #[error(
         "Failed to validate {} schema.\n\n{0}",
-        constants::CONFIG_WORKSPACE_FILENAME.style(Style::File)
+        consts::CONFIG_WORKSPACE_FILENAME.style(Style::File)
     )]
     InvalidConfigFile(String),
 

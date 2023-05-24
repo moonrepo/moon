@@ -1,5 +1,5 @@
 use moon::{build_dep_graph, generate_project_graph, load_workspace_from};
-use moon_config::{
+use moon_config2::{
     InheritedTasksConfig, NodeConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
 };
 use moon_dep_graph::BatchedTopoSort;

@@ -1,4 +1,4 @@
-use moon_config::{PlatformType, ProjectLanguage, ProjectType, TaskType};
+use moon_config2::{LanguageType, PlatformType, ProjectType, TaskType};
 use moon_query::{build_query, ComparisonOperator, Condition, Criteria, Field, LogicalOperator};
 use starbase_utils::string_vec;
 
@@ -25,11 +25,11 @@ mod mql_build {
                 op: LogicalOperator::And,
                 conditions: vec![
                     Condition::Field {
-                        field: Field::Language(vec![ProjectLanguage::JavaScript]),
+                        field: Field::Language(vec![LanguageType::JavaScript]),
                         op: ComparisonOperator::Equal,
                     },
                     Condition::Field {
-                        field: Field::Language(vec![ProjectLanguage::TypeScript]),
+                        field: Field::Language(vec![LanguageType::TypeScript]),
                         op: ComparisonOperator::NotEqual,
                     }
                 ],
@@ -46,11 +46,11 @@ mod mql_build {
                 op: LogicalOperator::Or,
                 conditions: vec![
                     Condition::Field {
-                        field: Field::Language(vec![ProjectLanguage::JavaScript]),
+                        field: Field::Language(vec![LanguageType::JavaScript]),
                         op: ComparisonOperator::Equal,
                     },
                     Condition::Field {
-                        field: Field::Language(vec![ProjectLanguage::TypeScript]),
+                        field: Field::Language(vec![LanguageType::TypeScript]),
                         op: ComparisonOperator::NotEqual,
                     }
                 ],
@@ -76,7 +76,7 @@ mod mql_build {
                     op: LogicalOperator::And,
                     conditions: vec![
                         Condition::Field {
-                            field: Field::Language(vec![ProjectLanguage::JavaScript]),
+                            field: Field::Language(vec![LanguageType::JavaScript]),
                             op: ComparisonOperator::Equal,
                         },
                         Condition::Criteria {
@@ -114,7 +114,7 @@ mod mql_build {
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
-                        field: Field::Language(vec![ProjectLanguage::JavaScript]),
+                        field: Field::Language(vec![LanguageType::JavaScript]),
                         op: ComparisonOperator::Equal,
                     }, Condition::Criteria { criteria: Criteria {
                         op: LogicalOperator::Or,
@@ -159,7 +159,7 @@ mod mql_build {
                     op: LogicalOperator::And,
                     conditions: vec![
                         Condition::Field {
-                            field: Field::Language(vec![ProjectLanguage::JavaScript]),
+                            field: Field::Language(vec![LanguageType::JavaScript]),
                             op: ComparisonOperator::Equal,
                         },
                         Condition::Criteria {
@@ -207,7 +207,7 @@ mod mql_build {
         //         QueryCriteria {
         //             op: Some(LogicalOperator::And),
         //             fields: vec![QueryField {
-        //                 field: Field::Language(vec![ProjectLanguage::JavaScript]),
+        //                 field: Field::Language(vec![LanguageType::JavaScript]),
         //                 op: ComparisonOperator::Equal,
         //             },],
         //             criteria: vec![QueryCriteria {
@@ -256,7 +256,7 @@ mod mql_build {
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
-                        field: Field::Language(vec![ProjectLanguage::JavaScript]),
+                        field: Field::Language(vec![LanguageType::JavaScript]),
                         op: ComparisonOperator::Equal,
                     }],
                     input: Some("language=javascript".into())
@@ -271,7 +271,7 @@ mod mql_build {
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
-                        field: Field::Language(vec![ProjectLanguage::Other("other".into())]),
+                        field: Field::Language(vec![LanguageType::Other("other".into())]),
                         op: ComparisonOperator::NotEqual,
                     }],
                     input: Some("language!=other".into())

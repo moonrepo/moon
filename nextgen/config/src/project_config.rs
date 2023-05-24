@@ -6,9 +6,10 @@ use crate::project::*;
 use moon_common::{consts, Id};
 use rustc_hash::FxHashMap;
 use schematic::{color, config_enum, validate, Config, ConfigError, ConfigLoader, ValidateError};
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::Path;
-use strum::Display;
+use strum::{Display, EnumString};
 
 fn validate_channel<D, C>(value: &str, _data: &D, _ctx: &C) -> Result<(), ValidateError> {
     if !value.is_empty() && !value.starts_with('#') {
@@ -19,7 +20,7 @@ fn validate_channel<D, C>(value: &str, _data: &D, _ctx: &C) -> Result<(), Valida
 }
 
 config_enum!(
-    #[derive(Default, Display)]
+    #[derive(Copy, Default, Display, EnumString)]
     pub enum ProjectType {
         #[strum(serialize = "application")]
         Application,
@@ -36,7 +37,7 @@ config_enum!(
     }
 );
 
-#[derive(Config)]
+#[derive(Clone, Config, Deserialize, Serialize)]
 pub struct ProjectMetadataConfig {
     pub name: Option<String>,
 
@@ -63,7 +64,7 @@ config_enum!(
 );
 
 /// Docs: https://moonrepo.dev/docs/config/project
-#[derive(Config)]
+#[derive(Clone, Config, Deserialize, Serialize)]
 pub struct ProjectConfig {
     #[setting(
         default = "https://moonrepo.dev/schemas/project.json",
@@ -107,10 +108,14 @@ impl ProjectConfig {
         let workspace_root = workspace_root.as_ref();
         let path = path.as_ref();
 
-        let result = ConfigLoader::<ProjectConfig>::yaml()
-            .label(color::path(path.strip_prefix(workspace_root).unwrap()))
-            .file(workspace_root.join(path))?
-            .load()?;
+        let mut loader = ConfigLoader::<ProjectConfig>::yaml();
+        loader.label(color::path(path.strip_prefix(workspace_root).unwrap()));
+
+        if path.exists() {
+            loader.file(path)?;
+        }
+
+        let result = loader.load()?;
 
         Ok(result.config)
     }

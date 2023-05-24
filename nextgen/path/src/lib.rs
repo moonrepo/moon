@@ -1,16 +1,5 @@
 pub use relative_path::{RelativePath, RelativePathBuf};
 
-// pub enum PathType {
-//     File(String),
-//     Glob(String),
-// }
-
-// pub enum Location<T> {
-//     Absolute(T),
-//     ProjectRelative(T),
-//     WorkspaceRelative(T),
-// }
-
 // Named types for better readability
 pub type ProjectRelativePath = RelativePath;
 pub type ProjectRelativePathBuf = RelativePathBuf;

@@ -1,9 +1,8 @@
 use crate::errors::ProjectError;
 use moon_common::{consts, Id};
-use moon_config::{
-    format_error_line, format_figment_errors, ConfigError, DependencyConfig, DependencyScope,
-    FilePath, InheritedTasksConfig, InheritedTasksManager, ProjectConfig, ProjectDependsOn,
-    ProjectLanguage, ProjectType,
+use moon_config2::{
+    DependencyScope, InheritedTasksConfig, InheritedTasksManager, LanguageType, ProjectConfig,
+    ProjectDependsOn, ProjectType,
 };
 use moon_file_group::{FileGroup, FileGroupError};
 use moon_logger::{debug, trace, Logable};
@@ -11,7 +10,7 @@ use moon_query::{Condition, Criteria, Field, LogicalOperator, QueryError, Querya
 use moon_target::Target;
 use moon_task::{Task, TouchedFilePaths};
 use moon_utils::path;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use starbase_styles::color;
 use std::collections::BTreeMap;
@@ -27,32 +26,17 @@ type TasksMap = BTreeMap<Id, Task>;
 // moon.yml
 fn load_project_config(
     log_target: &str,
-    project_root: &Path,
+    workspace_root: &Path,
     project_source: &str,
 ) -> Result<ProjectConfig, ProjectError> {
-    let config_path = project_root.join(consts::CONFIG_PROJECT_FILENAME);
-
     trace!(
         target: log_target,
         "Attempting to find {} in {}",
         color::file(consts::CONFIG_PROJECT_FILENAME),
-        color::path(project_root),
+        color::path(workspace_root.join(project_source)),
     );
 
-    if config_path.exists() {
-        return ProjectConfig::load(config_path).map_err(|e| {
-            ProjectError::InvalidConfigFile(
-                project_source.to_owned(),
-                if let ConfigError::FailedValidation(valids) = e {
-                    format_figment_errors(valids)
-                } else {
-                    format_error_line(e.to_string())
-                },
-            )
-        });
-    }
-
-    Ok(ProjectConfig::default())
+    Ok(ProjectConfig::load_from(workspace_root, project_source)?)
 }
 
 fn create_file_groups_from_config(
@@ -69,7 +53,10 @@ fn create_file_groups_from_config(
     for (group_id, files) in &global_tasks_config.file_groups {
         file_groups.insert(
             Id::raw(group_id),
-            FileGroup::new_with_source(group_id, source, files)?,
+            FileGroup::new_with_source(
+                group_id,
+                files.iter().map(|f| f.to_workspace_relative(source)),
+            )?,
         );
     }
 
@@ -82,11 +69,14 @@ fn create_file_groups_from_config(
                 color::id(group_id)
             );
 
-            existing_group.set_patterns(source, files);
+            existing_group.set_patterns(files.iter().map(|f| f.to_workspace_relative(source)));
         } else {
             file_groups.insert(
                 group_id.to_owned(),
-                FileGroup::new_with_source(group_id, source, files)?,
+                FileGroup::new_with_source(
+                    group_id,
+                    files.iter().map(|f| f.to_workspace_relative(source)),
+                )?,
             );
         }
     }
@@ -113,8 +103,15 @@ fn create_dependencies_from_config(
                     },
                 );
             }
-            ProjectDependsOn::Object(cfg) => {
-                deps.insert(cfg.id.to_owned(), ProjectDependency::from_config(cfg));
+            ProjectDependsOn::Object { id, scope } => {
+                deps.insert(
+                    id.to_owned(),
+                    ProjectDependency {
+                        id: id.to_owned(),
+                        scope: scope.to_owned(),
+                        ..ProjectDependency::default()
+                    },
+                );
             }
         }
     }
@@ -133,27 +130,10 @@ fn create_tasks_from_config(
     debug!(target: log_target, "Creating tasks");
 
     // Gather inheritance configs
-    let mut include_all = true;
-    let mut include: FxHashSet<Id> = FxHashSet::default();
-    let mut exclude: FxHashSet<Id> = FxHashSet::default();
-    let mut rename: FxHashMap<Id, Id> = FxHashMap::default();
-
-    if let Some(rename_config) = &project_config.workspace.inherited_tasks.rename {
-        rename.extend(rename_config.clone());
-    }
-
-    if let Some(include_config) = &project_config.workspace.inherited_tasks.include {
-        include_all = false;
-        include.extend(include_config.clone());
-
-        for i in include_config {
-            include.insert(Id::raw(i));
-        }
-    }
-
-    if let Some(exclude_config) = &project_config.workspace.inherited_tasks.exclude {
-        exclude.extend(exclude_config.clone());
-    }
+    let include = &project_config.workspace.inherited_tasks.include;
+    let include_all = include.is_empty();
+    let exclude = &project_config.workspace.inherited_tasks.exclude;
+    let rename = &project_config.workspace.inherited_tasks.rename;
 
     // Add global tasks first while taking inheritance config into account
     for (task_id, task_config) in &global_tasks_config.tasks {
@@ -258,18 +238,7 @@ pub struct ProjectDependency {
     pub via: Option<String>,
 }
 
-impl ProjectDependency {
-    pub fn from_config(config: &DependencyConfig) -> ProjectDependency {
-        ProjectDependency {
-            id: Id::raw(&config.id),
-            scope: config.scope.clone(),
-            via: config.via.clone(),
-            ..ProjectDependency::default()
-        }
-    }
-}
-
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Default, Deserialize, Serialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct Project {
     /// Unique alias of the project, alongside its official ID.
@@ -292,7 +261,7 @@ pub struct Project {
     pub inherited_config: InheritedTasksConfig,
 
     /// Primary programming language of the project.
-    pub language: ProjectLanguage,
+    pub language: LanguageType,
 
     /// Logging target label.
     #[serde(skip)]
@@ -302,7 +271,7 @@ pub struct Project {
     pub root: PathBuf,
 
     /// Relative path of the project from the workspace root. Is the RHS of the `projects` setting.
-    pub source: FilePath,
+    pub source: String,
 
     /// Tasks specific to the project. Inherits all tasks from the global config.
     pub tasks: TasksMap,
@@ -314,8 +283,8 @@ pub struct Project {
 
 impl PartialEq for Project {
     fn eq(&self, other: &Self) -> bool {
-        self.config == other.config
-            && self.file_groups == other.file_groups
+        // self.config == other.config
+        self.file_groups == other.file_groups
             && self.id == other.id
             && self.root == other.root
             && self.source == other.source
@@ -338,7 +307,7 @@ impl Project {
         detect_language: F,
     ) -> Result<Project, ProjectError>
     where
-        F: FnOnce(&Path) -> ProjectLanguage,
+        F: FnOnce(&Path) -> LanguageType,
     {
         let log_target = format!("moon:project:{id}");
         let source = path::normalize_separators(source);
@@ -363,8 +332,8 @@ impl Project {
             return Err(ProjectError::MissingProjectAtSource(source));
         }
 
-        let config = load_project_config(&log_target, &root, &source)?;
-        let language = if matches!(config.language, ProjectLanguage::Unknown) {
+        let config = load_project_config(&log_target, &workspace_root, &source)?;
+        let language = if matches!(config.language, LanguageType::Unknown) {
             detect_language(&root)
         } else {
             config.language.clone()
@@ -376,7 +345,7 @@ impl Project {
             &language,
             &config.type_of,
             &config.tags,
-        );
+        )?;
         let file_groups =
             create_file_groups_from_config(&log_target, &source, &config, &global_tasks)?;
         let dependencies = create_dependencies_from_config(&log_target, &config);

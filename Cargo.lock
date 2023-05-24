@@ -2753,6 +2753,7 @@ dependencies = [
  "miette",
  "once_cell",
  "regex",
+ "relative-path",
  "schemars",
  "serde",
  "starbase_styles",
@@ -2949,7 +2950,6 @@ dependencies = [
  "common-path",
  "miette",
  "moon_common",
- "moon_path",
  "once_cell",
  "serde",
  "starbase_sandbox",
@@ -3209,7 +3209,7 @@ version = "0.1.0"
 dependencies = [
  "miette",
  "moon_common",
- "moon_config",
+ "moon_config2",
  "moon_error",
  "moon_file_group",
  "moon_logger",
@@ -3273,7 +3273,7 @@ version = "0.1.0"
 dependencies = [
  "miette",
  "moon_common",
- "moon_config",
+ "moon_config2",
  "pest",
  "pest_derive",
  "starbase_utils",

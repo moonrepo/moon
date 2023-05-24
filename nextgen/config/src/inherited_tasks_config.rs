@@ -7,6 +7,7 @@ use moon_common::{consts, Id};
 use moon_target::Target;
 use rustc_hash::FxHashMap;
 use schematic::{color, merge, validate, Config, ConfigError, ConfigLoader, PartialConfig};
+use serde::{Deserialize, Serialize};
 use std::hash::Hash;
 use std::{collections::BTreeMap, path::Path};
 
@@ -26,7 +27,7 @@ where
 }
 
 /// Docs: https://moonrepo.dev/docs/config/tasks
-#[derive(Debug, Clone, Config)]
+#[derive(Clone, Config, Debug, Deserialize, Serialize)]
 pub struct InheritedTasksConfig {
     #[setting(
         default = "https://moonrepo.dev/schemas/tasks.json",

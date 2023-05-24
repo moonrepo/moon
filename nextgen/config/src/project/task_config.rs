@@ -5,7 +5,8 @@ use crate::validate::validate_no_env_var_in_path;
 use moon_target::{Target, TargetScope};
 use rustc_hash::FxHashMap;
 use schematic::{config_enum, Config, ConfigError, ConfigLoader, Segment, ValidateError};
-use strum::Display;
+use serde::{Deserialize, Serialize};
+use strum::{Display, EnumString};
 
 fn validate_command<C>(
     cmd: &TaskCommandArgs,
@@ -50,7 +51,7 @@ fn validate_deps<C>(deps: &[Target], _task: &TaskConfig, _ctx: &C) -> Result<(),
 }
 
 config_enum!(
-    #[derive(Default, Display)]
+    #[derive(Default, Display, EnumString)]
     pub enum TaskType {
         #[strum(serialize = "build")]
         Build,
@@ -75,7 +76,7 @@ config_enum!(
     }
 );
 
-#[derive(Debug, Clone, Config)]
+#[derive(Debug, Clone, Config, Deserialize, Serialize)]
 pub struct TaskConfig {
     #[setting(validate = validate_command)]
     pub command: TaskCommandArgs,

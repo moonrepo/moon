@@ -1,11 +1,16 @@
 use crate::validate::{validate_child_or_root_path, validate_child_relative_path};
+use moon_common::path::{standardize_separators, WorkspaceRelativePathBuf};
 use schematic::ValidateError;
 use serde::{de, Deserialize, Deserializer, Serialize};
 use std::path::Path;
 
 // Not accurate at all but good enough...
 fn is_glob(value: &str) -> bool {
-    value.contains("**") || value.contains('*') || value.contains('{') || value.contains('[')
+    value.contains("**")
+        || value.contains('*')
+        || value.contains('{')
+        || value.contains('[')
+        || value.starts_with('!')
 }
 
 pub trait Portable: Sized {
@@ -147,6 +152,34 @@ pub enum PortablePath {
     WorkspaceGlob(GlobPath),
 }
 
+impl PortablePath {
+    pub fn to_workspace_relative(&self, project_source: &str) -> WorkspaceRelativePathBuf {
+        let path = match self {
+            PortablePath::EnvVar(_) => unimplemented!(),
+            PortablePath::ProjectFile(file) => {
+                WorkspaceRelativePathBuf::from(project_source).join(standardize_separators(file))
+            }
+            PortablePath::ProjectGlob(glob) => {
+                if let Some(negated_glob) = glob.0.strip_prefix('!') {
+                    WorkspaceRelativePathBuf::from(format!("!{project_source}"))
+                        .join(standardize_separators(negated_glob))
+                } else {
+                    WorkspaceRelativePathBuf::from(project_source)
+                        .join(standardize_separators(glob))
+                }
+            }
+            PortablePath::WorkspaceFile(file) => {
+                WorkspaceRelativePathBuf::from(standardize_separators(file))
+            }
+            PortablePath::WorkspaceGlob(glob) => {
+                WorkspaceRelativePathBuf::from(standardize_separators(glob))
+            }
+        };
+
+        path.normalize()
+    }
+}
+
 impl Portable for PortablePath {
     fn from_str(value: &str) -> Result<Self, ValidateError> {
         if let Some(env_var) = value.strip_prefix('$') {
@@ -154,6 +187,12 @@ impl Portable for PortablePath {
         }
 
         validate_child_or_root_path(value)?;
+
+        if value.starts_with("/!") || value.starts_with("!/") {
+            return Ok(PortablePath::WorkspaceGlob(GlobPath::from_str(
+                format!("!{}", &value[2..]).as_str(),
+            )?));
+        }
 
         Ok(match (value.starts_with('/'), is_glob(value)) {
             (true, true) => PortablePath::WorkspaceGlob(GlobPath::from_str(&value[1..])?),
@@ -164,16 +203,6 @@ impl Portable for PortablePath {
     }
 }
 
-impl<'de> Deserialize<'de> for PortablePath {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        PortablePath::from_str(&String::deserialize(deserializer)?)
-            .map_err(|error| de::Error::custom(error.message))
-    }
-}
-
 impl PartialEq<&str> for PortablePath {
     fn eq(&self, other: &&str) -> bool {
         match self {
@@ -181,5 +210,15 @@ impl PartialEq<&str> for PortablePath {
             PortablePath::ProjectFile(file) | PortablePath::WorkspaceFile(file) => file == other,
             PortablePath::ProjectGlob(glob) | PortablePath::WorkspaceGlob(glob) => glob == other,
         }
+    }
+}
+
+impl<'de> Deserialize<'de> for PortablePath {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        PortablePath::from_str(&String::deserialize(deserializer)?)
+            .map_err(|error| de::Error::custom(error.message))
     }
 }

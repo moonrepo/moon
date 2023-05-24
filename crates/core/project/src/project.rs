@@ -49,16 +49,6 @@ fn create_file_groups_from_config(
 
     debug!(target: log_target, "Creating file groups");
 
-    // let convert_file_group_paths = |paths: &[String]| {
-    //     let mut files = vec![];
-
-    //     for path in paths {
-    //         files.push(PortablePath::from_str(path)?.to_workspace_relative(source));
-    //     }
-
-    //     Ok(files)
-    // };
-
     // Add global file groups first
     for (group_id, files) in &global_tasks_config.file_groups {
         file_groups.insert(

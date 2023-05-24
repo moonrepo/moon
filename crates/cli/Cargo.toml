@@ -18,7 +18,6 @@ moon_action_context = { path = "../core/action-context" }
 moon_action_pipeline = { path = "../core/action-pipeline" }
 moon_common = { path = "../../nextgen/common" }
 moon_config2 = { path = "../../nextgen/config" }
-moon_constants = { path = "../core/constants" }
 moon_dep_graph = { path = "../core/dep-graph" }
 moon_error = { path = "../core/error" }
 moon_generator = { path = "../core/generator" }

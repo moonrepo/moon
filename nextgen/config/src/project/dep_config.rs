@@ -21,17 +21,5 @@ config_enum!(
 pub struct DependencyConfig {
     pub id: Id,
     pub scope: DependencyScope,
-
-    // This field isn't configured by users, but is used by platforms!
     pub via: Option<String>,
-}
-
-impl DependencyConfig {
-    pub fn new(id: &str) -> Self {
-        DependencyConfig {
-            id: Id::raw(id),
-            scope: DependencyScope::Production,
-            via: None,
-        }
-    }
 }

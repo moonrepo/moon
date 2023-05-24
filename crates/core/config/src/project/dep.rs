@@ -23,8 +23,6 @@ pub enum DependencyScope {
 pub struct DependencyConfig {
     pub id: Id,
     pub scope: DependencyScope,
-
-    // This field isn't configured by users, but is used by platforms!
     #[schemars(skip)]
     pub via: Option<String>,
 }

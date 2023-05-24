@@ -1,10 +1,10 @@
 use super::check_dirty_repo;
 use moon::{generate_project_graph, load_workspace};
+use moon_common::consts;
 use moon_common::Id;
 use moon_config2::{
     InheritedTasksConfig, PlatformType, ProjectConfig, TaskCommandArgs, TaskConfig,
 };
-use moon_constants as constants;
 use moon_logger::{info, warn};
 use moon_target::{Target, TargetError};
 use moon_terminal::safe_exit;
@@ -197,7 +197,7 @@ pub async fn from_turborepo(skip_touched_files_check: bool) -> AppResult {
     }
 
     if has_modified_global_tasks {
-        let tasks_dir = workspace.root.join(constants::CONFIG_DIRNAME).join("tasks");
+        let tasks_dir = workspace.root.join(consts::CONFIG_DIRNAME).join("tasks");
 
         if !tasks_dir.exists() {
             fs::create_dir_all(&tasks_dir)?;
@@ -208,7 +208,7 @@ pub async fn from_turborepo(skip_touched_files_check: bool) -> AppResult {
 
     for (project_root, project_config) in modified_projects {
         yaml::write_with_config(
-            project_root.join(constants::CONFIG_PROJECT_FILENAME),
+            project_root.join(consts::CONFIG_PROJECT_FILENAME),
             &project_config,
         )?;
     }

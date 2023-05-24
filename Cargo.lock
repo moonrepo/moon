@@ -2698,7 +2698,6 @@ dependencies = [
  "moon_cache",
  "moon_common",
  "moon_config2",
- "moon_constants",
  "moon_dep_graph",
  "moon_error",
  "moon_generator",
@@ -3126,14 +3125,6 @@ dependencies = [
  "starbase_styles",
  "tokio",
  "uuid",
-]
-
-[[package]]
-name = "moon_path"
-version = "0.1.0"
-dependencies = [
- "relative-path",
- "serde",
 ]
 
 [[package]]

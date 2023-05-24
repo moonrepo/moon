@@ -5,7 +5,7 @@ use serde::{de, Deserialize, Deserializer, Serialize};
 use std::path::Path;
 
 // Not accurate at all but good enough...
-fn is_glob(value: &str) -> bool {
+pub fn is_glob(value: &str) -> bool {
     value.contains("**")
         || value.contains('*')
         || value.contains('{')
@@ -30,7 +30,7 @@ macro_rules! path_type {
 
         impl AsRef<str> for $name {
             fn as_ref(&self) -> &str {
-                &self.0
+                self.as_str()
             }
         }
 
@@ -75,9 +75,8 @@ macro_rules! path_type {
             where
                 D: Deserializer<'de>,
             {
-                let value = String::deserialize(deserializer)?;
-
-                $name::from_str(&value).map_err(|error| de::Error::custom(error.message))
+                $name::from_str(&String::deserialize(deserializer)?)
+                    .map_err(|error| de::Error::custom(error.message))
             }
         }
     };

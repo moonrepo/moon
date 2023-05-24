@@ -1,4 +1,4 @@
-use crate::portable_path::PortablePath;
+use crate::portable_path::is_glob;
 use schematic::{config_enum, Config, ValidateError};
 use serde::{de, Deserialize, Deserializer, Serialize};
 use serde_yaml::Value;
@@ -9,17 +9,9 @@ fn validate_env_file<D, C>(
     _ctx: &C,
 ) -> Result<(), ValidateError> {
     if let TaskOptionEnvFile::File(file) = env_file {
-        match file {
-            // PortablePath::EnvVar(_) => {
-            //     return Err(ValidateError::new(
-            //         "environment variables are not supported",
-            //     ));
-            // }
-            PortablePath::ProjectGlob(_) | PortablePath::WorkspaceGlob(_) => {
-                return Err(ValidateError::new("globs are not supported"));
-            }
-            _ => {}
-        };
+        if is_glob(file) {
+            return Err(ValidateError::new("globs are not supported"));
+        }
     }
 
     Ok(())
@@ -54,7 +46,7 @@ config_enum!(
     #[serde(untagged, expecting = "expected a boolean or a file system path")]
     pub enum TaskOptionEnvFile {
         Enabled(bool),
-        File(PortablePath),
+        File(String),
     }
 );
 
@@ -63,7 +55,7 @@ impl TaskOptionEnvFile {
         match self {
             TaskOptionEnvFile::Enabled(true) => Some(".env".to_owned()),
             TaskOptionEnvFile::Enabled(false) => None,
-            TaskOptionEnvFile::File(_path) => Some("".into()), // TODO
+            TaskOptionEnvFile::File(path) => Some(path.to_owned()),
         }
     }
 }

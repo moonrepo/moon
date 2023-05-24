@@ -1,6 +1,6 @@
 use moon_config2::{
-    Portable, PortablePath, TaskMergeStrategy, TaskOptionAffectedFiles, TaskOptionEnvFile,
-    TaskOptionsConfig, TaskOutputStyle,
+    TaskMergeStrategy, TaskOptionAffectedFiles, TaskOptionEnvFile, TaskOptionsConfig,
+    TaskOutputStyle,
 };
 use serde::{Deserialize, Serialize};
 
@@ -165,7 +165,7 @@ impl TaskOptions {
             config.env_file = Some(if env_file == ".env" {
                 TaskOptionEnvFile::Enabled(true)
             } else {
-                TaskOptionEnvFile::File(PortablePath::from_str(env_file).unwrap())
+                TaskOptionEnvFile::File(env_file.to_owned())
             });
         }
 

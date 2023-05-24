@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Added support for npm lockfile v3 format.
+
 #### 🐞 Fixes
 
 - Fixed an issue where colors were not being forced when passing `--color`.

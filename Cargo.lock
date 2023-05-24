@@ -3011,7 +3011,7 @@ dependencies = [
  "cd_env",
  "ci_env",
  "miette",
- "moon_constants",
+ "moon_common",
  "moon_error",
  "moon_logger",
  "moon_utils",

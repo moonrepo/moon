@@ -7,7 +7,6 @@ use clap::{Parser, Subcommand};
 use clap_complete::Shell;
 use moon_action_context::ProfileType;
 use moon_common::Id;
-use moon_config::FileGlob;
 use moon_target::Target;
 use std::path::PathBuf;
 
@@ -34,7 +33,7 @@ pub enum DockerCommands {
         ids: Vec<Id>,
 
         #[arg(long, help = "Additional file globs to include in sources")]
-        include: Vec<FileGlob>,
+        include: Vec<String>,
     },
 
     #[command(

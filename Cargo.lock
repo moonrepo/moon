@@ -2545,7 +2545,6 @@ dependencies = [
 name = "moon"
 version = "0.1.0"
 dependencies = [
- "moon_config",
  "moon_deno_platform",
  "moon_dep_graph",
  "moon_error",
@@ -2698,7 +2697,7 @@ dependencies = [
  "moon_archive",
  "moon_cache",
  "moon_common",
- "moon_config",
+ "moon_config2",
  "moon_constants",
  "moon_dep_graph",
  "moon_error",
@@ -2878,7 +2877,7 @@ dependencies = [
  "moon",
  "moon_action",
  "moon_common",
- "moon_config",
+ "moon_config2",
  "moon_error",
  "moon_logger",
  "moon_platform",

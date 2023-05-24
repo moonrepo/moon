@@ -1,9 +1,12 @@
 use super::check_dirty_repo;
 use moon::{generate_project_graph, load_workspace};
 use moon_common::Id;
-use moon_config::{InheritedTasksConfig, PlatformType, ProjectConfig, TaskCommandArgs, TaskConfig};
+use moon_config2::{
+    InheritedTasksConfig, PlatformType, ProjectConfig, TaskCommandArgs, TaskConfig,
+};
 use moon_constants as constants;
 use moon_logger::{info, warn};
+use moon_target::{Target, TargetError};
 use moon_terminal::safe_exit;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
@@ -65,31 +68,29 @@ pub fn convert_globals(turbo: &TurboJson, tasks_config: &mut InheritedTasksConfi
     modified
 }
 
-pub fn convert_task(name: Id, task: TurboTask) -> TaskConfig {
+pub fn convert_task(name: Id, task: TurboTask) -> Result<TaskConfig, TargetError> {
     let mut config = TaskConfig::default();
     let mut inputs = vec![];
 
-    config.command = Some(TaskCommandArgs::String(format!(
-        "moon node run-script {name}"
-    )));
+    config.command = TaskCommandArgs::String(format!("moon node run-script {name}"));
 
     if let Some(turbo_deps) = task.depends_on {
-        let mut deps = vec![];
+        let mut deps: Vec<Target> = vec![];
 
         for dep in turbo_deps {
             if dep.starts_with('^') {
-                deps.push(dep.replace('^', "^:").to_owned());
+                deps.push(Target::parse(&dep.replace('^', "^:"))?);
             } else if dep.contains('#') {
-                deps.push(dep.replace('#', ":").to_owned());
+                deps.push(Target::parse(&dep.replace('#', ":"))?);
             } else if dep.starts_with('$') {
                 inputs.push(dep);
             } else {
-                deps.push(dep);
+                deps.push(Target::parse(&dep)?);
             }
         }
 
         if !deps.is_empty() {
-            config.deps = Some(deps);
+            config.deps = deps;
         }
     }
 
@@ -115,19 +116,19 @@ pub fn convert_task(name: Id, task: TurboTask) -> TaskConfig {
         }
 
         if !outputs.is_empty() {
-            config.outputs = Some(outputs);
+            config.outputs = outputs;
         }
     }
 
     if !inputs.is_empty() {
-        config.inputs = Some(inputs);
+        config.inputs = inputs;
     }
 
     config.platform = PlatformType::Node;
     config.local = task.persistent.unwrap_or_default();
     config.options.cache = task.cache;
 
-    config
+    Ok(config)
 }
 
 pub async fn from_turborepo(skip_touched_files_check: bool) -> AppResult {
@@ -175,7 +176,7 @@ pub async fn from_turborepo(skip_touched_files_check: bool) -> AppResult {
         match extract_project_task_ids(&id) {
             (Some(project_id), task_id) => {
                 let project = project_graph.get(&project_id)?;
-                let task_config = convert_task(task_id.clone(), task);
+                let task_config = convert_task(task_id.clone(), task)?;
 
                 if let Some(config) = modified_projects.get_mut(&project.root) {
                     config.tasks.insert(task_id, task_config);
@@ -189,7 +190,7 @@ pub async fn from_turborepo(skip_touched_files_check: bool) -> AppResult {
             (None, task_id) => {
                 node_tasks_config
                     .tasks
-                    .insert(task_id.clone(), convert_task(task_id, task));
+                    .insert(task_id.clone(), convert_task(task_id, task)?);
                 has_modified_global_tasks = true;
             }
         }
@@ -272,10 +273,10 @@ mod tests {
 
         #[test]
         fn sets_command() {
-            let config = convert_task("foo".into(), TurboTask::default());
+            let config = convert_task("foo".into(), TurboTask::default()).unwrap();
 
             assert_eq!(
-                config.command.unwrap(),
+                config.command,
                 TaskCommandArgs::String("moon node run-script foo".into())
             );
         }
@@ -288,20 +289,25 @@ mod tests {
                     depends_on: Some(string_vec!["normal", "^parent", "project#normal", "$VAR"]),
                     ..TurboTask::default()
                 },
-            );
+            )
+            .unwrap();
 
             assert_eq!(
-                config.deps.unwrap(),
-                string_vec!["normal", "^:parent", "project:normal"]
+                config.deps,
+                vec![
+                    Target::new_self("normal").unwrap(),
+                    Target::parse("^:parent").unwrap(),
+                    Target::parse("project:normal").unwrap(),
+                ]
             );
-            assert_eq!(config.inputs.unwrap(), string_vec!["$VAR"]);
+            assert_eq!(config.inputs, string_vec!["$VAR"]);
         }
 
         #[test]
         fn doesnt_set_deps_if_empty() {
-            let config = convert_task("foo".into(), TurboTask::default());
+            let config = convert_task("foo".into(), TurboTask::default()).unwrap();
 
-            assert_eq!(config.deps, None);
+            assert_eq!(config.deps, Vec::<_>::new());
         }
 
         #[test]
@@ -312,9 +318,10 @@ mod tests {
                     env: Some(string_vec!["FOO", "BAR"]),
                     ..TurboTask::default()
                 },
-            );
+            )
+            .unwrap();
 
-            assert_eq!(config.inputs.unwrap(), string_vec!["$FOO", "$BAR"]);
+            assert_eq!(config.inputs, string_vec!["$FOO", "$BAR"]);
         }
 
         #[test]
@@ -325,10 +332,11 @@ mod tests {
                     inputs: Some(string_vec!["file.ts", "some/folder", "some/glob/**/*"]),
                     ..TurboTask::default()
                 },
-            );
+            )
+            .unwrap();
 
             assert_eq!(
-                config.inputs.unwrap(),
+                config.inputs,
                 string_vec!["file.ts", "some/folder", "some/glob/**/*"]
             );
         }
@@ -347,19 +355,20 @@ mod tests {
                     ]),
                     ..TurboTask::default()
                 },
-            );
+            )
+            .unwrap();
 
             assert_eq!(
-                config.outputs.unwrap(),
+                config.outputs,
                 string_vec!["dir", "dir/**/*", "dir/**/*", "dir/*", "dir/*/sub"]
             );
         }
 
         #[test]
         fn doesnt_set_outputs_if_empty() {
-            let config = convert_task("foo".into(), TurboTask::default());
+            let config = convert_task("foo".into(), TurboTask::default()).unwrap();
 
-            assert_eq!(config.outputs, None);
+            assert_eq!(config.outputs, Vec::<String>::new());
         }
 
         #[test]
@@ -370,7 +379,8 @@ mod tests {
                     persistent: Some(true),
                     ..TurboTask::default()
                 },
-            );
+            )
+            .unwrap();
 
             assert!(config.local);
         }
@@ -383,7 +393,8 @@ mod tests {
                     cache: Some(false),
                     ..TurboTask::default()
                 },
-            );
+            )
+            .unwrap();
 
             assert_eq!(config.options.cache, Some(false));
         }

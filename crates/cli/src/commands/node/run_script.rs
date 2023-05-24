@@ -1,6 +1,6 @@
 use moon::{build_project_graph, load_workspace_with_toolchain};
 use moon_common::Id;
-use moon_config::PlatformType;
+use moon_config2::PlatformType;
 use moon_error::MoonError;
 use moon_node_tool::NodeTool;
 use starbase::AppResult;

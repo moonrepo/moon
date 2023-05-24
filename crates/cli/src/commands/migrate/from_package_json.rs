@@ -1,7 +1,7 @@
 use super::check_dirty_repo;
 use moon::{generate_project_graph, load_workspace};
 use moon_common::Id;
-use moon_config::{DependencyConfig, DependencyScope, ProjectDependsOn};
+use moon_config2::{DependencyScope, ProjectDependsOn};
 use moon_constants::CONFIG_PROJECT_FILENAME;
 use moon_error::MoonError;
 use moon_logger::info;
@@ -46,11 +46,10 @@ pub async fn from_package_json(project_id: Id, skip_touched_files_check: bool) -
                     .push(if matches!(scope, DependencyScope::Production) {
                         ProjectDependsOn::String(dep_id.to_owned())
                     } else {
-                        ProjectDependsOn::Object(DependencyConfig {
+                        ProjectDependsOn::Object {
                             id: dep_id.to_owned(),
                             scope: scope.clone(),
-                            via: None,
-                        })
+                        }
                     });
             }
         }

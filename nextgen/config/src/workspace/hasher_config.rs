@@ -1,7 +1,7 @@
 use schematic::{derive_enum, Config, ConfigEnum};
 
 derive_enum!(
-    #[derive(ConfigEnum, Default)]
+    #[derive(ConfigEnum, Copy, Default)]
     pub enum HasherOptimization {
         #[default]
         Accuracy,
@@ -10,7 +10,7 @@ derive_enum!(
 );
 
 derive_enum!(
-    #[derive(ConfigEnum, Default)]
+    #[derive(ConfigEnum, Copy, Default)]
     pub enum HasherWalkStrategy {
         Glob,
         #[default]

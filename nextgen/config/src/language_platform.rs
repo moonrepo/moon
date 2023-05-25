@@ -1,18 +1,20 @@
-use moon_common::{Id, IdError};
+use moon_common::Id;
 use schematic::{derive_enum, ConfigEnum};
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
-use std::{fmt, str::FromStr};
+use std::str::FromStr;
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, ConfigEnum, Debug, Default, Eq, PartialEq)]
 pub enum LanguageType {
     Bash,
     Batch,
     Go,
+    #[variant(value = "javascript")]
     JavaScript,
     Php,
     Python,
     Ruby,
     Rust,
+    #[variant(value = "typescript")]
     TypeScript,
 
     // Not explicitly set or detected
@@ -20,27 +22,11 @@ pub enum LanguageType {
     Unknown,
 
     // An unsupported language
+    #[variant(fallback)]
     Other(Id),
 }
 
-impl LanguageType {
-    pub fn variants() -> Vec<LanguageType> {
-        vec![
-            Self::Bash,
-            Self::Batch,
-            Self::Go,
-            Self::JavaScript,
-            Self::Php,
-            Self::Python,
-            Self::Ruby,
-            Self::Rust,
-            Self::TypeScript,
-            Self::Unknown,
-            Self::Other(Id::raw("")),
-        ]
-    }
-}
-
+// TODO: remove?
 impl<'de> Deserialize<'de> for LanguageType {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -60,6 +46,7 @@ impl<'de> Deserialize<'de> for LanguageType {
     }
 }
 
+// TODO: remove?
 impl Serialize for LanguageType {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -69,56 +56,8 @@ impl Serialize for LanguageType {
     }
 }
 
-impl FromStr for LanguageType {
-    type Err = IdError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(match s.to_lowercase().as_ref() {
-            "bash" => LanguageType::Bash,
-            "batch" => LanguageType::Batch,
-            "go" => LanguageType::Go,
-            "javascript" => LanguageType::JavaScript,
-            "php" => LanguageType::Php,
-            "python" => LanguageType::Python,
-            "ruby" => LanguageType::Ruby,
-            "rust" => LanguageType::Rust,
-            "typescript" => LanguageType::TypeScript,
-            "unknown" => LanguageType::Unknown,
-            other => LanguageType::Other(Id::new(other)?),
-        })
-    }
-}
-
-impl fmt::Display for LanguageType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                LanguageType::Bash => "bash",
-                LanguageType::Batch => "batch",
-                LanguageType::Go => "go",
-                LanguageType::JavaScript => "javascript",
-                LanguageType::Php => "php",
-                LanguageType::Python => "python",
-                LanguageType::Ruby => "ruby",
-                LanguageType::Rust => "rust",
-                LanguageType::TypeScript => "typescript",
-                LanguageType::Unknown => "unknown",
-                LanguageType::Other(lang) => lang,
-            }
-        )
-    }
-}
-
 derive_enum!(
-    #[derive(
-        ConfigEnum,
-        Copy,
-        Default,
-        Hash,
-        // JsonSchema,
-    )]
+    #[derive(ConfigEnum, Copy, Default, Hash)]
     pub enum PlatformType {
         Deno,
         Node,

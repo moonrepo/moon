@@ -51,7 +51,7 @@ fn validate_deps<C>(deps: &[Target], _task: &TaskConfig, _ctx: &C) -> Result<(),
 }
 
 derive_enum!(
-    #[derive(ConfigEnum, Default)]
+    #[derive(ConfigEnum, Copy, Default)]
     pub enum TaskType {
         Build,
         Run,

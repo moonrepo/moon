@@ -61,7 +61,7 @@ impl TaskOptionEnvFile {
 }
 
 derive_enum!(
-    #[derive(ConfigEnum, Default)]
+    #[derive(ConfigEnum, Copy, Default)]
     pub enum TaskMergeStrategy {
         #[default]
         Append,
@@ -71,7 +71,7 @@ derive_enum!(
 );
 
 derive_enum!(
-    #[derive(ConfigEnum, Default)]
+    #[derive(ConfigEnum, Copy, Default)]
     pub enum TaskOutputStyle {
         #[default]
         Buffer,

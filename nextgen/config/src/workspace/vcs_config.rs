@@ -1,7 +1,7 @@
 use schematic::{derive_enum, Config, ConfigEnum};
 
 derive_enum!(
-    #[derive(ConfigEnum, Default)]
+    #[derive(ConfigEnum, Copy, Default)]
     pub enum VcsManager {
         #[default]
         Git,

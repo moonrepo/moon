@@ -4,7 +4,7 @@ use proto::ToolsConfig;
 use schematic::{derive_enum, Config, ConfigEnum, ConfigError};
 
 derive_enum!(
-    #[derive(ConfigEnum, Default)]
+    #[derive(ConfigEnum, Copy, Default)]
     pub enum NodeProjectAliasFormat {
         #[default]
         NameAndScope, // @scope/name
@@ -13,7 +13,7 @@ derive_enum!(
 );
 
 derive_enum!(
-    #[derive(ConfigEnum, Default)]
+    #[derive(ConfigEnum, Copy, Default)]
     pub enum NodeVersionFormat {
         File,         // file:..
         Link,         // link:..
@@ -45,7 +45,7 @@ impl NodeVersionFormat {
 }
 
 derive_enum!(
-    #[derive(ConfigEnum, Default)]
+    #[derive(ConfigEnum, Copy, Default)]
     pub enum NodePackageManager {
         #[default]
         Npm,
@@ -55,7 +55,7 @@ derive_enum!(
 );
 
 derive_enum!(
-    #[derive(ConfigEnum, Default)]
+    #[derive(ConfigEnum, Copy, Default)]
     pub enum NodeVersionManager {
         Nodenv,
         #[default]

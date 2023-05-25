@@ -1,6 +1,7 @@
 use super::InitOptions;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::{Confirm, Select};
+use miette::IntoDiagnostic;
 use moon_config::load_toolchain_node_config_template;
 use moon_lang::{is_using_dependency_manager, is_using_version_manager};
 use moon_node_lang::package_json::{PackageJson, PackageWorkspaces};
@@ -16,7 +17,7 @@ use std::path::Path;
 use tera::{Context, Tera};
 
 pub fn render_template(context: Context) -> AppResult<String> {
-    Tera::one_off(load_toolchain_node_config_template(), &context, false)
+    Tera::one_off(load_toolchain_node_config_template(), &context, false).into_diagnostic()
 }
 
 /// Detect the Node.js version from local configuration files,
@@ -90,7 +91,8 @@ fn detect_package_manager(
                 .with_prompt("Package manager?")
                 .items(&items)
                 .default(default_index)
-                .interact_opt()?
+                .interact_opt()
+                .into_diagnostic()?
                 .unwrap_or(default_index)
         };
 
@@ -130,7 +132,8 @@ fn detect_projects(
                     ))
                     .items(&items)
                     .default(default_index)
-                    .interact_opt()?
+                    .interact_opt()
+                    .into_diagnostic()?
                     .unwrap_or(default_index)
             };
 
@@ -191,7 +194,8 @@ pub async fn init_node(
                 color::file(NPM.manifest),
                 color::muted("(not recommended)")
             ))
-            .interact()?
+            .interact()
+            .into_diagnostic()?
     };
 
     let mut context = Context::new();

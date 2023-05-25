@@ -1,3 +1,4 @@
+use miette::Diagnostic;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use schemars::JsonSchema;
@@ -17,7 +18,7 @@ pub static ID_CHARS: &str = r"[0-9A-Za-z/\._-]*";
 pub static ID_PATTERN: Lazy<Regex> =
     Lazy::new(|| Regex::new(&format!("^([A-Za-z@]{{1}}{})$", ID_CHARS)).unwrap());
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Diagnostic)]
 #[error("Invalid format for {}, may only contain alpha-numeric characters, dashes (-), slashes (/), underscores (_), and dots (.).", .0.style(Style::Id))]
 pub struct IdError(String);
 

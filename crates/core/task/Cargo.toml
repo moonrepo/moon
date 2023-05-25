@@ -11,6 +11,7 @@ moon_logger = { path = "../logger" }
 moon_target = { path = "../../../nextgen/target" }
 moon_utils = { path = "../utils" }
 once_cell = { workspace = true }
+miette = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 starbase_styles = { workspace = true }

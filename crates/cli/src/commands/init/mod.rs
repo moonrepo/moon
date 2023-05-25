@@ -5,6 +5,7 @@ mod typescript;
 use clap::ValueEnum;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
+use miette::IntoDiagnostic;
 use moon_config::{load_toolchain_config_template, load_workspace_config_template};
 use moon_constants::{CONFIG_DIRNAME, CONFIG_TOOLCHAIN_FILENAME, CONFIG_WORKSPACE_FILENAME};
 use moon_node_lang::NPM;
@@ -22,7 +23,7 @@ use std::env;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
-use tera::{Context, Error, Tera};
+use tera::{Context, Tera};
 use typescript::init_typescript;
 
 #[derive(ValueEnum, Clone, Debug)]
@@ -34,11 +35,11 @@ pub enum InitTool {
 }
 
 fn render_toolchain_template(context: &Context) -> AppResult<String> {
-    Tera::one_off(load_toolchain_config_template(), context, false)
+    Tera::one_off(load_toolchain_config_template(), context, false).into_diagnostic()
 }
 
 fn render_workspace_template(context: &Context) -> AppResult<String> {
-    Tera::one_off(load_workspace_config_template(), context, false)
+    Tera::one_off(load_workspace_config_template(), context, false).into_diagnostic()
 }
 
 fn create_default_context() -> Context {
@@ -66,7 +67,8 @@ fn verify_dest_dir(
     if options.yes
         || Confirm::with_theme(theme)
             .with_prompt(format!("Initialize moon into {}?", color::path(dest_dir)))
-            .interact()?
+            .interact()
+            .into_diagnostic()?
     {
         let moon_dir = dest_dir.join(CONFIG_DIRNAME);
 
@@ -74,7 +76,8 @@ fn verify_dest_dir(
             && moon_dir.exists()
             && !Confirm::with_theme(theme)
                 .with_prompt("moon has already been initialized, overwrite it?")
-                .interact()?
+                .interact()
+                .into_diagnostic()?
         {
             return Ok(None);
         }
@@ -115,9 +118,10 @@ pub async fn init_tool(
     let mut file = OpenOptions::new()
         .create(false)
         .append(true)
-        .open(workspace_config_path)?;
+        .open(workspace_config_path)
+        .into_diagnostic()?;
 
-    writeln!(file, "\n\n{}", tool_config.trim())?;
+    writeln!(file, "\n\n{}", tool_config.trim()).into_diagnostic()?;
 
     println!("\nWorkspace config has successfully been updated");
 
@@ -161,7 +165,8 @@ pub async fn init(dest: String, tool: Option<InitTool>, options: InitOptions) ->
         || !options.yes
             && Confirm::with_theme(&theme)
                 .with_prompt("Initialize Node.js?")
-                .interact()?
+                .interact()
+                .into_diagnostic()?
     {
         toolchain_configs
             .push_back(init_node(&dest_dir, &options, &theme, Some(&mut context)).await?);
@@ -170,7 +175,8 @@ pub async fn init(dest: String, tool: Option<InitTool>, options: InitOptions) ->
             || !options.yes
                 && Confirm::with_theme(&theme)
                     .with_prompt("Initialize TypeScript?")
-                    .interact()?
+                    .interact()
+                    .into_diagnostic()?
         {
             toolchain_configs.push_back(init_typescript(&dest_dir, &options, &theme).await?);
         }
@@ -181,7 +187,8 @@ pub async fn init(dest: String, tool: Option<InitTool>, options: InitOptions) ->
         || !options.yes
             && Confirm::with_theme(&theme)
                 .with_prompt("Initialize Rust?")
-                .interact()?
+                .interact()
+                .into_diagnostic()?
     {
         toolchain_configs
             .push_back(init_rust(&dest_dir, &options, &theme, Some(&mut context)).await?);
@@ -208,7 +215,8 @@ pub async fn init(dest: String, tool: Option<InitTool>, options: InitOptions) ->
     let mut file = OpenOptions::new()
         .create(true)
         .append(true)
-        .open(dest_dir.join(".gitignore"))?;
+        .open(dest_dir.join(".gitignore"))
+        .into_diagnostic()?;
 
     writeln!(
         file,
@@ -216,7 +224,8 @@ pub async fn init(dest: String, tool: Option<InitTool>, options: InitOptions) ->
 # moon
 .moon/cache
 .moon/docker"#
-    )?;
+    )
+    .into_diagnostic()?;
 
     println!(
         "\nmoon has successfully been initialized in {}",

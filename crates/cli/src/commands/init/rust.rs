@@ -1,5 +1,6 @@
 use super::InitOptions;
 use dialoguer::theme::ColorfulTheme;
+use miette::IntoDiagnostic;
 use moon_config::load_toolchain_rust_config_template;
 use moon_rust_lang::toolchain_toml::ToolchainTomlCache;
 use moon_terminal::label_header;
@@ -8,7 +9,7 @@ use std::path::Path;
 use tera::{Context, Tera};
 
 pub fn render_template(context: Context) -> AppResult<String> {
-    Tera::one_off(load_toolchain_rust_config_template(), &context, false)
+    Tera::one_off(load_toolchain_rust_config_template(), &context, false).into_diagnostic()
 }
 
 fn detect_rust_version(dest_dir: &Path) -> AppResult<String> {

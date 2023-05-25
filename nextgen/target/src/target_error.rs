@@ -1,6 +1,8 @@
-use moon_common::{Diagnostic, Error, IdError, Style, Stylize};
+use miette::Diagnostic;
+use moon_common::{IdError, Style, Stylize};
+use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Diagnostic)]
 pub enum TargetError {
     #[error(
         "Invalid target {}, must be in the format of \"scope:task\", with acceptable identifier characters.", .0.style(Style::Label)
@@ -26,8 +28,7 @@ pub enum TargetError {
     #[error("Target \":\" encountered. Wildcard scope and task not supported.")]
     TooWild,
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     IdError(#[from] IdError),
 }
-
-impl Diagnostic for TargetError {}

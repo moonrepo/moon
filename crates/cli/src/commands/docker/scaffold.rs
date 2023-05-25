@@ -5,7 +5,7 @@ use moon_config::ProjectLanguage;
 use moon_constants::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_platform_detector::detect_language_files;
-use moon_project_graph::{ProjectGraph, ProjectGraphError};
+use moon_project_graph::ProjectGraph;
 use moon_rust_lang::cargo_toml::{CargoTomlCache, CargoTomlExt};
 use moon_utils::path;
 use moon_workspace::Workspace;

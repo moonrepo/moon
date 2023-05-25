@@ -27,6 +27,7 @@ moon_utils = { path = "../utils" }
 moon_vcs = { path = "../vcs" }
 moon_workspace = { path = "../workspace" }
 dotenvy = "0.15.7"
+miette = { workspace = true }
 petgraph = {  workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }

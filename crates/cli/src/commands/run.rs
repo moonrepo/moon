@@ -1,5 +1,6 @@
 use crate::enums::{CacheMode, TouchedStatus};
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
+use miette::miette;
 use moon::{build_dep_graph, generate_project_graph, load_workspace};
 use moon_action_context::{ActionContext, ProfileType};
 use moon_action_pipeline::Pipeline;
@@ -107,10 +108,9 @@ pub async fn run_target(
 
     // Interactive can only run against 1 task
     if options.interactive && primary_targets.len() > 1 {
-        return Err(
+        return Err(miette!(
             "Only 1 target can be ran as interactive. Requires a fully qualified project target."
-                .into(),
-        );
+        ));
     }
 
     // Run dependents for all primary targets

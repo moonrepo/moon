@@ -2586,6 +2586,7 @@ dependencies = [
  "ci_env",
  "console",
  "criterion",
+ "miette",
  "moon",
  "moon_action",
  "moon_action_context",
@@ -2641,6 +2642,7 @@ dependencies = [
 name = "moon_args"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "shell-words",
  "thiserror",
  "winsplit",
@@ -2872,6 +2874,7 @@ name = "moon_dep_graph"
 version = "0.1.0"
 dependencies = [
  "criterion",
+ "miette",
  "moon",
  "moon_action",
  "moon_common",
@@ -2919,6 +2922,7 @@ dependencies = [
 name = "moon_enforcer"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_common",
  "moon_project",
  "starbase_styles",
@@ -2929,6 +2933,7 @@ dependencies = [
 name = "moon_error"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "regex",
  "serde_json",
  "serde_yaml",
@@ -2943,6 +2948,7 @@ name = "moon_file_group"
 version = "0.1.0"
 dependencies = [
  "common-path",
+ "miette",
  "moon_common",
  "moon_path",
  "once_cell",
@@ -3186,6 +3192,7 @@ name = "moon_process"
 version = "0.1.0"
 dependencies = [
  "cached",
+ "miette",
  "moon_args",
  "moon_common",
  "once_cell",
@@ -3199,6 +3206,7 @@ dependencies = [
 name = "moon_project"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_common",
  "moon_config",
  "moon_error",
@@ -3222,6 +3230,7 @@ version = "0.1.0"
 dependencies = [
  "criterion",
  "dotenvy",
+ "miette",
  "moon",
  "moon_cache",
  "moon_common",
@@ -3261,6 +3270,7 @@ dependencies = [
 name = "moon_query"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_common",
  "moon_config",
  "pest",
@@ -3281,6 +3291,7 @@ name = "moon_runner"
 version = "0.1.0"
 dependencies = [
  "console",
+ "miette",
  "moon",
  "moon_action",
  "moon_action_context",
@@ -3396,6 +3407,7 @@ dependencies = [
 name = "moon_target"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_common",
  "once_cell",
  "regex",
@@ -3407,6 +3419,7 @@ dependencies = [
 name = "moon_task"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_common",
  "moon_config",
  "moon_error",
@@ -3429,6 +3442,7 @@ version = "0.1.0"
 dependencies = [
  "console",
  "dialoguer",
+ "miette",
  "starbase_styles",
 ]
 
@@ -3454,6 +3468,7 @@ name = "moon_tool"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "miette",
  "moon_error",
  "moon_lang",
  "moon_platform_runtime",
@@ -3533,6 +3548,7 @@ dependencies = [
  "async-trait",
  "cached",
  "ignore",
+ "miette",
  "moon_config",
  "moon_error",
  "moon_process",
@@ -3550,6 +3566,7 @@ dependencies = [
 name = "moon_workspace"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_cache",
  "moon_config",
  "moon_constants",
@@ -3572,6 +3589,7 @@ name = "moonbase"
 version = "0.1.0"
 dependencies = [
  "graphql_client",
+ "miette",
  "moon_error",
  "moon_logger",
  "moon_utils",

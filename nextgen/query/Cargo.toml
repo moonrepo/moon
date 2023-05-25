@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 moon_common = { path = "../common" }
 moon_config = { path = "../../crates/core/config" }
+miette = { workspace = true }
 pest = "2.6.0"
 pest_derive = "2.6.0"
 starbase_utils = { workspace = true }

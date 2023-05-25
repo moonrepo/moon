@@ -1,8 +1,8 @@
 use crate::helpers::safe_exit;
 use console::{measure_text_width, style, Attribute, Style, Term};
+use miette::IntoDiagnostic;
 use starbase_styles::color::{self, Color};
 use std::fmt::Display;
-use std::io;
 
 pub enum Label {
     Default,
@@ -11,7 +11,7 @@ pub enum Label {
     // Success,
 }
 
-pub type TermWriteResult = io::Result<()>;
+pub type TermWriteResult = miette::Result<()>;
 
 // Extend `Term` with our own methods
 
@@ -68,6 +68,7 @@ impl ExtendedTerm for Term {
         let label = color::muted_light(format!("{}:", style(key.as_ref()).bold()));
 
         self.write_line(&format!("{} {}", label, value.as_ref()))
+            .into_diagnostic()
     }
 
     fn render_entry_bool<K: AsRef<str>>(&self, key: K, value: bool) -> TermWriteResult {
@@ -81,7 +82,7 @@ impl ExtendedTerm for Term {
     ) -> TermWriteResult {
         let label = color::muted_light(format!("{}:", style(key.as_ref()).bold()));
 
-        self.write_line(&label)?;
+        self.write_line(&label).into_diagnostic()?;
         self.render_list(values)?;
 
         Ok(())
@@ -111,8 +112,9 @@ impl ExtendedTerm for Term {
     }
 
     fn render_label<V: AsRef<str>>(&self, kind: Label, message: V) -> TermWriteResult {
-        self.write_line(&self.format_label(kind, message.as_ref()))?;
-        self.write_line("")?;
+        self.write_line(&self.format_label(kind, message.as_ref()))
+            .into_diagnostic()?;
+        self.write_line("").into_diagnostic()?;
 
         Ok(())
     }
@@ -122,7 +124,8 @@ impl ExtendedTerm for Term {
         values.sort();
 
         for value in values {
-            self.write_line(&format!(" {} {}", color::muted("-"), value))?;
+            self.write_line(&format!(" {} {}", color::muted("-"), value))
+                .into_diagnostic()?;
         }
 
         Ok(())

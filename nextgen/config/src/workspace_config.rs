@@ -6,7 +6,7 @@ use crate::workspace::*;
 use moon_common::{color, consts, Id};
 use rustc_hash::FxHashMap;
 use schematic::{
-    config_enum, validate, Config, ConfigError, ConfigLoader, Segment, SettingPath, ValidateError,
+    derive_enum, validate, Config, ConfigError, ConfigLoader, Segment, SettingPath, ValidateError,
 };
 use std::path::Path;
 
@@ -60,7 +60,7 @@ fn validate_projects<D, C>(
     Ok(())
 }
 
-config_enum!(
+derive_enum!(
     #[serde(
         untagged,
         expecting = "expected a sequence of globs or a map of projects"

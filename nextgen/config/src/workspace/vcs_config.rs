@@ -1,14 +1,10 @@
-use schematic::{config_enum, Config};
-use strum::Display;
+use schematic::{derive_enum, Config, ConfigEnum};
 
-config_enum!(
-    #[derive(Default, Display)]
+derive_enum!(
+    #[derive(ConfigEnum, Default)]
     pub enum VcsManager {
-        #[strum(serialize = "git")]
         #[default]
         Git,
-
-        #[strum(serialize = "svn")]
         Svn,
     }
 );

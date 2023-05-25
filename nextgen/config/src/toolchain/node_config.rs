@@ -1,10 +1,10 @@
 use crate::validate::validate_semver;
 use crate::{inherit_tool, inherit_tool_required};
 use proto::ToolsConfig;
-use schematic::{config_enum, Config, ConfigError};
+use schematic::{derive_enum, Config, ConfigEnum, ConfigError};
 
-config_enum!(
-    #[derive(Default)]
+derive_enum!(
+    #[derive(ConfigEnum, Default)]
     pub enum NodeProjectAliasFormat {
         #[default]
         NameAndScope, // @scope/name
@@ -12,8 +12,8 @@ config_enum!(
     }
 );
 
-config_enum!(
-    #[derive(Default)]
+derive_enum!(
+    #[derive(ConfigEnum, Default)]
     pub enum NodeVersionFormat {
         File,         // file:..
         Link,         // link:..
@@ -44,8 +44,8 @@ impl NodeVersionFormat {
     }
 }
 
-config_enum!(
-    #[derive(Default)]
+derive_enum!(
+    #[derive(ConfigEnum, Default)]
     pub enum NodePackageManager {
         #[default]
         Npm,
@@ -54,8 +54,8 @@ config_enum!(
     }
 );
 
-config_enum!(
-    #[derive(Default)]
+derive_enum!(
+    #[derive(ConfigEnum, Default)]
     pub enum NodeVersionManager {
         Nodenv,
         #[default]

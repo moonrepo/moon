@@ -5,11 +5,12 @@ use crate::portable_path::PortablePath;
 use crate::project::*;
 use moon_common::{consts, Id};
 use rustc_hash::FxHashMap;
-use schematic::{color, config_enum, validate, Config, ConfigError, ConfigLoader, ValidateError};
+use schematic::{
+    color, derive_enum, validate, Config, ConfigEnum, ConfigError, ConfigLoader, ValidateError,
+};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::Path;
-use strum::{Display, EnumString};
 
 fn validate_channel<D, C>(value: &str, _data: &D, _ctx: &C) -> Result<(), ValidateError> {
     if !value.is_empty() && !value.starts_with('#') {
@@ -19,20 +20,13 @@ fn validate_channel<D, C>(value: &str, _data: &D, _ctx: &C) -> Result<(), Valida
     Ok(())
 }
 
-config_enum!(
-    #[derive(Copy, Default, Display, EnumString)]
+derive_enum!(
+    #[derive(ConfigEnum, Copy, Default)]
     pub enum ProjectType {
-        #[strum(serialize = "application")]
         Application,
-
-        #[strum(serialize = "library")]
         Library,
-
-        #[strum(serialize = "tool")]
         Tool,
-
         #[default]
-        #[strum(serialize = "unknown")]
         Unknown,
     }
 );
@@ -52,7 +46,7 @@ pub struct ProjectMetadataConfig {
     pub channel: Option<String>,
 }
 
-config_enum!(
+derive_enum!(
     #[serde(
         untagged,
         expecting = "expected a project name or dependency config object"

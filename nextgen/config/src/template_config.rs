@@ -2,7 +2,7 @@
 
 use moon_common::consts;
 use rustc_hash::FxHashMap;
-use schematic::{color, config_enum, validate, Config, ConfigError, ConfigLoader};
+use schematic::{color, derive_enum, validate, Config, ConfigError, ConfigLoader};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
@@ -13,7 +13,7 @@ pub struct TemplateVariableSetting<T> {
     pub required: Option<bool>,
 }
 
-config_enum!(
+derive_enum!(
     #[serde(
         untagged,
         expecting = "expected a value string or value object with label"
@@ -32,7 +32,7 @@ pub struct TemplateVariableEnumSetting {
     pub values: Vec<TemplateVariableEnumValue>,
 }
 
-config_enum!(
+derive_enum!(
     #[serde(tag = "type")]
     pub enum TemplateVariable {
         Boolean(TemplateVariableSetting<bool>),

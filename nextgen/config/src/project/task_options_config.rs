@@ -1,5 +1,5 @@
 use crate::portable_path::is_glob;
-use schematic::{config_enum, Config, ValidateError};
+use schematic::{derive_enum, Config, ConfigEnum, ValidateError};
 use serde::{de, Deserialize, Deserializer, Serialize};
 use serde_yaml::Value;
 
@@ -42,7 +42,7 @@ impl<'de> Deserialize<'de> for TaskOptionAffectedFiles {
     }
 }
 
-config_enum!(
+derive_enum!(
     #[serde(untagged, expecting = "expected a boolean or a file system path")]
     pub enum TaskOptionEnvFile {
         Enabled(bool),
@@ -60,8 +60,8 @@ impl TaskOptionEnvFile {
     }
 }
 
-config_enum!(
-    #[derive(Default)]
+derive_enum!(
+    #[derive(ConfigEnum, Default)]
     pub enum TaskMergeStrategy {
         #[default]
         Append,
@@ -70,8 +70,8 @@ config_enum!(
     }
 );
 
-config_enum!(
-    #[derive(Default)]
+derive_enum!(
+    #[derive(ConfigEnum, Default)]
     pub enum TaskOutputStyle {
         #[default]
         Buffer,

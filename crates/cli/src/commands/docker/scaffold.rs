@@ -14,7 +14,6 @@ use serde::{Deserialize, Serialize};
 use starbase::AppResult;
 use starbase_utils::{fs, glob, json};
 use std::path::Path;
-use strum::IntoEnumIterator;
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -54,7 +53,7 @@ fn scaffold_workspace(
     let copy_from_dir = |source: &Path, dest: &Path| -> AppResult {
         let mut files: Vec<String> = vec![".prototools".to_owned()];
 
-        for lang in LanguageType::iter() {
+        for lang in LanguageType::variants() {
             files.extend(detect_language_files(&lang));
 
             // These are special cases

@@ -3,9 +3,10 @@ use crate::project::{PartialTaskOptionsConfig, TaskOptionsConfig};
 use crate::validate::validate_portable_paths;
 use moon_target::{Target, TargetScope};
 use rustc_hash::FxHashMap;
-use schematic::{config_enum, Config, ConfigError, ConfigLoader, Segment, ValidateError};
+use schematic::{
+    derive_enum, Config, ConfigEnum, ConfigError, ConfigLoader, Segment, ValidateError,
+};
 use serde::{Deserialize, Serialize};
-use strum::{Display, EnumString};
 
 fn validate_command<C>(
     cmd: &TaskCommandArgs,
@@ -49,22 +50,17 @@ fn validate_deps<C>(deps: &[Target], _task: &TaskConfig, _ctx: &C) -> Result<(),
     Ok(())
 }
 
-config_enum!(
-    #[derive(Default, Display, EnumString)]
+derive_enum!(
+    #[derive(ConfigEnum, Default)]
     pub enum TaskType {
-        #[strum(serialize = "build")]
         Build,
-
-        #[strum(serialize = "run")]
         Run,
-
         #[default]
-        #[strum(serialize = "test")]
         Test,
     }
 );
 
-config_enum!(
+derive_enum!(
     #[derive(Default)]
     #[serde(untagged, expecting = "expected a string or a sequence of strings")]
     pub enum TaskCommandArgs {

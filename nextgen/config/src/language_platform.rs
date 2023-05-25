@@ -1,10 +1,9 @@
 use moon_common::{Id, IdError};
-use schematic::config_enum;
+use schematic::{derive_enum, ConfigEnum};
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::{fmt, str::FromStr};
-use strum::{Display, EnumIter, EnumString};
 
-#[derive(Clone, Debug, Default, EnumIter, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub enum LanguageType {
     Bash,
     Batch,
@@ -22,6 +21,24 @@ pub enum LanguageType {
 
     // An unsupported language
     Other(Id),
+}
+
+impl LanguageType {
+    pub fn variants() -> Vec<LanguageType> {
+        vec![
+            Self::Bash,
+            Self::Batch,
+            Self::Go,
+            Self::JavaScript,
+            Self::Php,
+            Self::Python,
+            Self::Ruby,
+            Self::Rust,
+            Self::TypeScript,
+            Self::Unknown,
+            Self::Other(Id::raw("")),
+        ]
+    }
 }
 
 impl<'de> Deserialize<'de> for LanguageType {
@@ -94,31 +111,20 @@ impl fmt::Display for LanguageType {
     }
 }
 
-config_enum!(
+derive_enum!(
     #[derive(
+        ConfigEnum,
         Copy,
         Default,
-        Display,
-        EnumIter,
-        EnumString,
         Hash,
         // JsonSchema,
     )]
     pub enum PlatformType {
-        #[strum(serialize = "deno")]
         Deno,
-
-        #[strum(serialize = "node")]
         Node,
-
-        #[strum(serialize = "rust")]
         Rust,
-
-        #[strum(serialize = "system")]
         System,
-
         #[default]
-        #[strum(serialize = "unknown")]
         Unknown,
     }
 );

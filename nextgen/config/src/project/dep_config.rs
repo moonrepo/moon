@@ -1,18 +1,12 @@
 use moon_common::Id;
-use schematic::{config_enum, Config};
-use strum::Display;
+use schematic::{derive_enum, Config, ConfigEnum};
 
-config_enum!(
-    #[derive(Default, Display)]
+derive_enum!(
+    #[derive(ConfigEnum, Default)]
     pub enum DependencyScope {
-        #[strum(serialize = "development")]
         Development,
-
-        #[strum(serialize = "peer")]
         Peer,
-
         #[default]
-        #[strum(serialize = "production")]
         Production,
     }
 );

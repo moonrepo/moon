@@ -5,6 +5,7 @@ use moon_utils::path;
 use moon_workspace::{Workspace, WorkspaceError};
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
+use starbase::AppResult;
 use starbase_styles::color;
 use std::path::PathBuf;
 
@@ -33,7 +34,7 @@ pub struct QueryTouchedFilesResult {
 pub async fn query_touched_files(
     workspace: &Workspace,
     options: &mut QueryTouchedFilesOptions,
-) -> Result<TouchedFilePaths, WorkspaceError> {
+) -> AppResult<TouchedFilePaths> {
     debug!(target: LOG_TARGET, "Querying for touched files");
 
     let vcs = &workspace.vcs;

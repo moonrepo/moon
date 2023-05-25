@@ -1,11 +1,12 @@
 use crate::app::BIN_NAME;
-use crate::helpers::{create_progress_bar, AnyError};
+use crate::helpers::create_progress_bar;
 use bytes::Buf;
 use itertools::Itertools;
 use moon_launchpad::check_version;
 use moon_logger::error;
 use moon_utils::semver::Version;
 use proto::ProtoError;
+use starbase::AppResult;
 use starbase_utils::{dirs, fs};
 use std::{
     env::{self, consts},
@@ -14,7 +15,7 @@ use std::{
     path::Component,
 };
 
-pub async fn upgrade() -> Result<(), AnyError> {
+pub async fn upgrade() -> AppResult {
     if proto::is_offline() {
         return Err("Upgrading moon requires an internet connection!".into());
     }

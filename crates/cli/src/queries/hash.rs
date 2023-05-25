@@ -1,13 +1,13 @@
-use crate::helpers::AnyError;
 use moon_error::MoonError;
 use moon_logger::debug;
 use moon_workspace::Workspace;
+use starbase::AppResult;
 use starbase_styles::color;
 use starbase_utils::fs;
 
 const LOG_TARGET: &str = "moon:query:hash";
 
-pub async fn query_hash(workspace: &Workspace, hash: &str) -> Result<(String, String), AnyError> {
+pub async fn query_hash(workspace: &Workspace, hash: &str) -> AppResult<(String, String)> {
     debug!(
         target: LOG_TARGET,
         "Querying for hash manifest with {}",

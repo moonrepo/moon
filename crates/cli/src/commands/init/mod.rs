@@ -2,7 +2,6 @@ mod node;
 mod rust;
 mod typescript;
 
-use crate::helpers::AnyError;
 use clap::ValueEnum;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
@@ -15,6 +14,7 @@ use moon_utils::path;
 use moon_vcs::detect_vcs;
 use node::init_node;
 use rust::init_rust;
+use starbase::AppResult;
 use starbase_styles::color;
 use starbase_utils::fs;
 use std::collections::{BTreeMap, VecDeque};
@@ -33,11 +33,11 @@ pub enum InitTool {
     TypeScript,
 }
 
-fn render_toolchain_template(context: &Context) -> Result<String, Error> {
+fn render_toolchain_template(context: &Context) -> AppResult<String> {
     Tera::one_off(load_toolchain_config_template(), context, false)
 }
 
-fn render_workspace_template(context: &Context) -> Result<String, Error> {
+fn render_workspace_template(context: &Context) -> AppResult<String> {
     Tera::one_off(load_workspace_config_template(), context, false)
 }
 
@@ -62,7 +62,7 @@ fn verify_dest_dir(
     dest_dir: &Path,
     options: &InitOptions,
     theme: &ColorfulTheme,
-) -> Result<Option<PathBuf>, AnyError> {
+) -> AppResult<Option<PathBuf>> {
     if options.yes
         || Confirm::with_theme(theme)
             .with_prompt(format!("Initialize moon into {}?", color::path(dest_dir)))
@@ -92,7 +92,7 @@ pub async fn init_tool(
     tool: &InitTool,
     options: &InitOptions,
     theme: &ColorfulTheme,
-) -> Result<(), AnyError> {
+) -> AppResult {
     let workspace_config_path = dest_dir
         .join(CONFIG_DIRNAME)
         .join(CONFIG_WORKSPACE_FILENAME);
@@ -124,11 +124,7 @@ pub async fn init_tool(
     Ok(())
 }
 
-pub async fn init(
-    dest: String,
-    tool: Option<InitTool>,
-    options: InitOptions,
-) -> Result<(), AnyError> {
+pub async fn init(dest: String, tool: Option<InitTool>, options: InitOptions) -> AppResult {
     let theme = create_theme();
     let working_dir = env::current_dir().expect("Failed to determine working directory.");
     let dest_path = PathBuf::from(&dest);

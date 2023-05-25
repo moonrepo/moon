@@ -1,14 +1,14 @@
 use super::InitOptions;
-use crate::helpers::AnyError;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
 use moon_config::load_toolchain_typescript_config_template;
 use moon_terminal::label_header;
 use moon_typescript_lang::TsConfigJson;
+use starbase::AppResult;
 use std::path::Path;
-use tera::{Context, Error, Tera};
+use tera::{Context, Tera};
 
-pub fn render_template(context: Context) -> Result<String, Error> {
+pub fn render_template(context: Context) -> AppResult<String> {
     Tera::one_off(load_toolchain_typescript_config_template(), &context, false)
 }
 
@@ -16,7 +16,7 @@ pub async fn init_typescript(
     dest_dir: &Path,
     options: &InitOptions,
     theme: &ColorfulTheme,
-) -> Result<String, AnyError> {
+) -> AppResult<String> {
     if !options.yes {
         println!("\n{}\n", label_header("TypeScript"));
     }

@@ -1,11 +1,11 @@
-use crate::helpers::AnyError;
 use console::Term;
 use moon::{build_project_graph, load_workspace};
 use moon_target::Target;
 use moon_terminal::{ExtendedTerm, Label};
+use starbase::AppResult;
 use starbase_styles::color;
 
-pub async fn task(target: Target, json: bool) -> Result<(), AnyError> {
+pub async fn task(target: Target, json: bool) -> AppResult {
     let Some(project_id) = target.scope_id else {
         return Err("A project ID is required.".into());
     };

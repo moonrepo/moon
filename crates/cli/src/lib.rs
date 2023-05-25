@@ -322,7 +322,8 @@ pub async fn run_cli() -> AppResult {
         if error_message.to_lowercase().contains("broken pipe") {
             std::process::exit(0);
         } else {
-            Term::buffered_stderr().render_error(error);
+            // Term::buffered_stderr().render_error(error);
+            return Err(error);
         }
     }
 

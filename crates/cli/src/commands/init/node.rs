@@ -1,5 +1,4 @@
 use super::InitOptions;
-use crate::helpers::AnyError;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::{Confirm, Select};
 use moon_config::load_toolchain_node_config_template;
@@ -9,19 +8,20 @@ use moon_node_lang::{NODENV, NPM, NVM, PNPM, YARN};
 use moon_project_graph::detect_projects_with_globs;
 use moon_terminal::label_header;
 use rustc_hash::FxHashMap;
+use starbase::AppResult;
 use starbase_styles::color;
 use starbase_utils::fs;
 use std::collections::BTreeMap;
 use std::path::Path;
-use tera::{Context, Error, Tera};
+use tera::{Context, Tera};
 
-pub fn render_template(context: Context) -> Result<String, Error> {
+pub fn render_template(context: Context) -> AppResult<String> {
     Tera::one_off(load_toolchain_node_config_template(), &context, false)
 }
 
 /// Detect the Node.js version from local configuration files,
 /// otherwise fallback to the configuration default.
-fn detect_node_version(dest_dir: &Path) -> Result<(String, String), AnyError> {
+fn detect_node_version(dest_dir: &Path) -> AppResult<(String, String)> {
     if is_using_version_manager(dest_dir, &NVM) {
         return Ok((
             fs::read_file(dest_dir.join(NVM.version_file))?
@@ -49,7 +49,7 @@ fn detect_package_manager(
     dest_dir: &Path,
     options: &InitOptions,
     theme: &ColorfulTheme,
-) -> Result<(String, String), AnyError> {
+) -> AppResult<(String, String)> {
     let mut pm_type = String::new();
     let mut pm_version = String::new();
 
@@ -107,7 +107,7 @@ fn detect_projects(
     options: &InitOptions,
     parent_context: &mut Context,
     theme: &ColorfulTheme,
-) -> Result<(), AnyError> {
+) -> AppResult {
     let mut projects = FxHashMap::default();
     let mut project_globs = vec![];
 
@@ -170,7 +170,7 @@ pub async fn init_node(
     options: &InitOptions,
     theme: &ColorfulTheme,
     parent_context: Option<&mut Context>,
-) -> Result<String, AnyError> {
+) -> AppResult<String> {
     if !options.yes {
         println!("\n{}\n", label_header("Node"));
     }

@@ -1,5 +1,4 @@
 use super::check_dirty_repo;
-use crate::helpers::AnyError;
 use moon::{generate_project_graph, load_workspace};
 use moon_common::Id;
 use moon_config::{InheritedTasksConfig, PlatformType, ProjectConfig, TaskCommandArgs, TaskConfig};
@@ -8,6 +7,7 @@ use moon_logger::{info, warn};
 use moon_terminal::safe_exit;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
+use starbase::AppResult;
 use starbase_utils::fs;
 use starbase_utils::{json, yaml};
 use std::path::PathBuf;
@@ -130,7 +130,7 @@ pub fn convert_task(name: Id, task: TurboTask) -> TaskConfig {
     config
 }
 
-pub async fn from_turborepo(skip_touched_files_check: bool) -> Result<(), AnyError> {
+pub async fn from_turborepo(skip_touched_files_check: bool) -> AppResult {
     let mut workspace = load_workspace().await?;
     let turbo_file = workspace.root.join("turbo.json");
 

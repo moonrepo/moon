@@ -1,5 +1,4 @@
 use super::MANIFEST_NAME;
-use crate::helpers::AnyError;
 use moon::{generate_project_graph, load_workspace};
 use moon_common::Id;
 use moon_config::ProjectLanguage;
@@ -12,6 +11,7 @@ use moon_utils::path;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
+use starbase::AppResult;
 use starbase_utils::{fs, glob, json};
 use std::path::Path;
 use strum::IntoEnumIterator;
@@ -23,7 +23,7 @@ pub struct DockerManifest {
     pub unfocused_projects: FxHashSet<Id>,
 }
 
-fn copy_files<T: AsRef<str>>(list: &[T], source: &Path, dest: &Path) -> Result<(), MoonError> {
+fn copy_files<T: AsRef<str>>(list: &[T], source: &Path, dest: &Path) -> AppResult {
     for file in list {
         let file = file.as_ref();
         let source_file = source.join(file);
@@ -44,7 +44,7 @@ fn scaffold_workspace(
     workspace: &Workspace,
     project_graph: &ProjectGraph,
     docker_root: &Path,
-) -> Result<(), AnyError> {
+) -> AppResult {
     let docker_workspace_root = docker_root.join("workspace");
 
     fs::create_dir_all(&docker_workspace_root)?;
@@ -119,7 +119,7 @@ fn scaffold_sources_project(
     docker_sources_root: &Path,
     project_id: &Id,
     manifest: &mut DockerManifest,
-) -> Result<(), ProjectGraphError> {
+) -> AppResult {
     let project = project_graph.get(project_id)?;
 
     manifest.focused_projects.insert(project_id.to_owned());
@@ -145,7 +145,7 @@ fn scaffold_sources(
     docker_root: &Path,
     project_ids: &[Id],
     include: &[String],
-) -> Result<(), AnyError> {
+) -> AppResult {
     let docker_sources_root = docker_root.join("sources");
     let mut manifest = DockerManifest {
         focused_projects: FxHashSet::default(),
@@ -193,7 +193,7 @@ fn scaffold_sources(
     Ok(())
 }
 
-pub async fn scaffold(project_ids: &[Id], include: &[String]) -> Result<(), AnyError> {
+pub async fn scaffold(project_ids: &[Id], include: &[String]) -> AppResult {
     let mut workspace = load_workspace().await?;
     let docker_root = workspace.root.join(CONFIG_DIRNAME).join("docker");
 

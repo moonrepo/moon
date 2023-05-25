@@ -1,4 +1,3 @@
-use crate::helpers::AnyError;
 pub use crate::queries::hash::query_hash;
 pub use crate::queries::hash_diff::{query_hash_diff, QueryHashDiffOptions};
 pub use crate::queries::projects::{
@@ -10,11 +9,12 @@ pub use crate::queries::touched_files::{
 use is_terminal::IsTerminal;
 use moon::load_workspace;
 use rustc_hash::FxHashMap;
+use starbase::AppResult;
 use starbase_styles::color;
 use std::io;
 use std::io::prelude::*;
 
-pub async fn hash(hash: &str, json: bool) -> Result<(), AnyError> {
+pub async fn hash(hash: &str, json: bool) -> AppResult {
     let workspace = load_workspace().await?;
     let result = query_hash(&workspace, hash).await?;
 
@@ -27,7 +27,7 @@ pub async fn hash(hash: &str, json: bool) -> Result<(), AnyError> {
     Ok(())
 }
 
-pub async fn hash_diff(options: &QueryHashDiffOptions) -> Result<(), AnyError> {
+pub async fn hash_diff(options: &QueryHashDiffOptions) -> AppResult {
     let mut workspace = load_workspace().await?;
     let mut result = query_hash_diff(&mut workspace, options).await?;
 
@@ -78,7 +78,7 @@ pub async fn hash_diff(options: &QueryHashDiffOptions) -> Result<(), AnyError> {
     Ok(())
 }
 
-pub async fn projects(options: &QueryProjectsOptions) -> Result<(), AnyError> {
+pub async fn projects(options: &QueryProjectsOptions) -> AppResult {
     let mut workspace = load_workspace().await?;
     let mut projects = query_projects(&mut workspace, options).await?;
 
@@ -109,7 +109,7 @@ pub async fn projects(options: &QueryProjectsOptions) -> Result<(), AnyError> {
     Ok(())
 }
 
-pub async fn touched_files(options: &mut QueryTouchedFilesOptions) -> Result<(), AnyError> {
+pub async fn touched_files(options: &mut QueryTouchedFilesOptions) -> AppResult {
     let workspace = load_workspace().await?;
     let files = query_touched_files(&workspace, options).await?;
 
@@ -138,7 +138,7 @@ pub async fn touched_files(options: &mut QueryTouchedFilesOptions) -> Result<(),
     Ok(())
 }
 
-pub async fn tasks(options: &QueryProjectsOptions) -> Result<(), AnyError> {
+pub async fn tasks(options: &QueryProjectsOptions) -> AppResult {
     let mut workspace = load_workspace().await?;
     let projects = query_projects(&mut workspace, options).await?;
 

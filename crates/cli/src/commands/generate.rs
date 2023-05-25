@@ -1,4 +1,3 @@
-use crate::helpers::AnyError;
 use console::Term;
 use dialoguer::{theme::Theme, Confirm, Input, MultiSelect, Select};
 use moon::load_workspace;
@@ -9,6 +8,7 @@ use moon_logger::{debug, map_list, trace, warn};
 use moon_terminal::create_theme;
 use moon_utils::path;
 use rustc_hash::FxHashMap;
+use starbase::AppResult;
 use starbase_styles::color;
 use std::env;
 use std::fmt::Display;
@@ -129,7 +129,7 @@ fn gather_variables(
     template: &Template,
     theme: &dyn Theme,
     options: &GenerateOptions,
-) -> Result<TemplateContext, GeneratorError> {
+) -> AppResult<TemplateContext> {
     let mut context = TemplateContext::new();
     let custom_vars = parse_var_args(&options.vars);
     let error_handler = |e| GeneratorError::Moon(MoonError::Io(e));
@@ -305,7 +305,7 @@ fn gather_variables(
     Ok(context)
 }
 
-pub async fn generate(name: String, options: GenerateOptions) -> Result<(), AnyError> {
+pub async fn generate(name: String, options: GenerateOptions) -> AppResult {
     let workspace = load_workspace().await?;
     let generator = Generator::load(&workspace.root, &workspace.config.generator)?;
     let theme = create_theme();

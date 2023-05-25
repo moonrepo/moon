@@ -1,6 +1,5 @@
 use super::MANIFEST_NAME;
 use crate::commands::docker::scaffold::DockerManifest;
-use crate::helpers::AnyError;
 use moon::{generate_project_graph, load_workspace_with_toolchain};
 use moon_config::PlatformType;
 use moon_node_lang::{PackageJson, NODE};
@@ -10,6 +9,7 @@ use moon_rust_lang::{CARGO, RUST};
 use moon_rust_tool::RustTool;
 use moon_terminal::safe_exit;
 use rustc_hash::FxHashSet;
+use starbase::AppResult;
 use starbase_utils::fs;
 use starbase_utils::json;
 use std::path::Path;
@@ -19,7 +19,7 @@ pub async fn prune_node(
     workspace_root: &Path,
     project_graph: &ProjectGraph,
     manifest: &DockerManifest,
-) -> Result<(), AnyError> {
+) -> AppResult {
     let mut package_names = vec![];
 
     for project_id in &manifest.focused_projects {
@@ -50,7 +50,7 @@ pub async fn prune_node(
 }
 
 // This assumes that the project was built in --release mode. Is this correct?
-pub async fn prune_rust(_rust: &RustTool, workspace_root: &Path) -> Result<(), AnyError> {
+pub async fn prune_rust(_rust: &RustTool, workspace_root: &Path) -> AppResult {
     let target_dir = workspace_root.join(RUST.vendor_dir.unwrap());
     let lockfile_path = workspace_root.join(CARGO.lockfile);
 
@@ -62,7 +62,7 @@ pub async fn prune_rust(_rust: &RustTool, workspace_root: &Path) -> Result<(), A
     Ok(())
 }
 
-pub async fn prune() -> Result<(), AnyError> {
+pub async fn prune() -> AppResult {
     let mut workspace = load_workspace_with_toolchain().await?;
     let manifest_path = workspace.root.join(MANIFEST_NAME);
 

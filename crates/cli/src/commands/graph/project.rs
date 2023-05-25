@@ -1,11 +1,8 @@
-use crate::{
-    commands::graph::utils::{project_graph_repr, respond_to_request, setup_server},
-    helpers::AnyError,
-};
+use crate::commands::graph::utils::{project_graph_repr, respond_to_request, setup_server};
 use moon::{build_project_graph, load_workspace};
 use moon_common::Id;
 
-pub async fn project_graph(project_id: Option<Id>, dot: bool, json: bool) -> Result<(), AnyError> {
+pub async fn project_graph(project_id: Option<Id>, dot: bool, json: bool) -> AppResult {
     let mut workspace = load_workspace().await?;
     let mut project_build = build_project_graph(&mut workspace).await?;
 

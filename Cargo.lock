@@ -2689,6 +2689,7 @@ dependencies = [
  "indicatif",
  "is-terminal",
  "itertools",
+ "miette",
  "mimalloc",
  "moon",
  "moon_action_context",
@@ -4988,9 +4989,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_sandbox"
-version = "0.1.2"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9f85eed7cbb86cf210030f9159c3b5dd37aa760070a3f21c410698415bf94a0"
+checksum = "2cdea800d59826627268386762973162e35e38b8db6dd8b738bf505f0ec71e30"
 dependencies = [
  "assert_cmd",
  "assert_fs",

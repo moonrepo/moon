@@ -1,4 +1,3 @@
-use crate::helpers::AnyError;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use ci_env::CiOutput;
 use itertools::Itertools;
@@ -14,6 +13,7 @@ use moon_task::TouchedFilePaths;
 use moon_terminal::safe_exit;
 use moon_workspace::{Workspace, WorkspaceError};
 use rustc_hash::FxHashSet;
+use starbase::AppResult;
 use starbase_styles::color;
 
 type TargetList = Vec<Target>;
@@ -48,7 +48,7 @@ async fn gather_touched_files(
     provider: &CiOutput,
     workspace: &Workspace,
     options: &CiOptions,
-) -> Result<TouchedFilePaths, WorkspaceError> {
+) -> AppResult<TouchedFilePaths> {
     print_header(provider, "Gathering touched files");
 
     let results = query_touched_files(
@@ -73,7 +73,7 @@ fn gather_runnable_targets(
     provider: &CiOutput,
     project_graph: &ProjectGraph,
     touched_files: &TouchedFilePaths,
-) -> Result<TargetList, ProjectError> {
+) -> AppResult<TargetList> {
     print_header(provider, "Gathering runnable targets");
 
     let mut targets = vec![];
@@ -151,7 +151,7 @@ fn generate_dep_graph(
     workspace: &Workspace,
     project_graph: &ProjectGraph,
     targets: &TargetList,
-) -> Result<DepGraph, DepGraphError> {
+) -> AppResult<DepGraph> {
     print_header(provider, "Generating dependency graph");
 
     let mut dep_builder = build_dep_graph(workspace, project_graph);
@@ -181,7 +181,7 @@ pub struct CiOptions {
     pub job_total: Option<usize>,
 }
 
-pub async fn ci(options: CiOptions) -> Result<(), AnyError> {
+pub async fn ci(options: CiOptions) -> AppResult {
     let mut workspace = load_workspace().await?;
     let ci_provider = ci_env::get_output().unwrap_or(CiOutput {
         close_log_group: "",

@@ -1,17 +1,17 @@
 use super::InitOptions;
-use crate::helpers::AnyError;
 use dialoguer::theme::ColorfulTheme;
 use moon_config::load_toolchain_rust_config_template;
 use moon_rust_lang::toolchain_toml::ToolchainTomlCache;
 use moon_terminal::label_header;
+use starbase::AppResult;
 use std::path::Path;
-use tera::{Context, Error, Tera};
+use tera::{Context, Tera};
 
-pub fn render_template(context: Context) -> Result<String, Error> {
+pub fn render_template(context: Context) -> AppResult<String> {
     Tera::one_off(load_toolchain_rust_config_template(), &context, false)
 }
 
-fn detect_rust_version(dest_dir: &Path) -> Result<String, AnyError> {
+fn detect_rust_version(dest_dir: &Path) -> AppResult<String> {
     if let Some(toolchain_toml) = ToolchainTomlCache::read(dest_dir)? {
         if let Some(version) = toolchain_toml.toolchain.channel {
             return Ok(version);
@@ -26,7 +26,7 @@ pub async fn init_rust(
     options: &InitOptions,
     _theme: &ColorfulTheme,
     _parent_context: Option<&mut Context>,
-) -> Result<String, AnyError> {
+) -> AppResult<String> {
     if !options.yes {
         println!("\n{}\n", label_header("Rust"));
     }

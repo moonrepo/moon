@@ -544,7 +544,7 @@ mod sync_depends_on {
     fn test_depends_on_format(format: NodeVersionFormat) {
         let sandbox = node_sandbox_with_config(|cfg| {
             cfg.sync_project_workspace_dependencies = true;
-            cfg.dependency_version_format = format.clone();
+            cfg.dependency_version_format = format;
         });
 
         sandbox.run_moon(|cmd| {

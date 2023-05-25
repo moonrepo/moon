@@ -2,10 +2,21 @@ use moon_config2::{TaskCommandArgs, TaskConfig};
 use moon_node_lang::PackageJson;
 use moon_node_platform::task::{create_task, should_run_in_ci, TaskContext};
 use moon_node_platform::{create_tasks_from_scripts, infer_tasks_from_scripts};
+use moon_target::Target;
 use moon_task::PlatformType;
 use moon_utils::string_vec;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
+
+fn create_target_deps<I, V>(list: I) -> Vec<Target>
+where
+    I: IntoIterator<Item = V>,
+    V: AsRef<str>,
+{
+    list.into_iter()
+        .map(|value| Target::parse(value.as_ref()).unwrap())
+        .collect()
+}
 
 mod should_run_in_ci {
     use super::*;
@@ -648,7 +659,7 @@ mod create_tasks_from_scripts {
                         "posttest".into(),
                         TaskConfig {
                             command: TaskCommandArgs::Sequence(string_vec!["do", "another"]),
-                            deps: string_vec!["~:test"],
+                            deps: create_target_deps(["~:test"]),
                             platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
@@ -657,7 +668,7 @@ mod create_tasks_from_scripts {
                         "test".into(),
                         TaskConfig {
                             command: TaskCommandArgs::Sequence(string_vec!["jest", "."]),
-                            deps: string_vec!["~:pretest"],
+                            deps: create_target_deps(["~:pretest"]),
                             platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
@@ -695,7 +706,7 @@ mod create_tasks_from_scripts {
                         "pretest".into(),
                         TaskConfig {
                             command: TaskCommandArgs::Sequence(string_vec!["do", "another"]),
-                            deps: string_vec!["~:pretest-dep1"],
+                            deps: create_target_deps(["~:pretest-dep1"]),
                             platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
@@ -704,7 +715,7 @@ mod create_tasks_from_scripts {
                         "test".into(),
                         TaskConfig {
                             command: TaskCommandArgs::Sequence(string_vec!["jest", "."]),
-                            deps: string_vec!["~:pretest"],
+                            deps: create_target_deps(["~:pretest"]),
                             platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
@@ -742,7 +753,7 @@ mod create_tasks_from_scripts {
                         "posttest".into(),
                         TaskConfig {
                             command: TaskCommandArgs::Sequence(string_vec!["do", "another"]),
-                            deps: string_vec!["~:posttest-dep1", "~:test"],
+                            deps: create_target_deps(["~:posttest-dep1", "~:test"]),
                             platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
@@ -788,7 +799,7 @@ mod create_tasks_from_scripts {
                         "release".into(),
                         TaskConfig {
                             command: TaskCommandArgs::Sequence(string_vec!["npm", "publish"]),
-                            deps: string_vec!["~:prerelease"],
+                            deps: create_target_deps(["~:prerelease"]),
                             platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
@@ -1317,7 +1328,7 @@ mod create_tasks_from_scripts {
                                 "run",
                                 "project:test",
                             ]),
-                            deps: string_vec!["~:check-dep1"],
+                            deps: create_target_deps(["~:check-dep1"]),
                             platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
@@ -1330,7 +1341,7 @@ mod create_tasks_from_scripts {
                                 "run",
                                 "project:lint",
                             ]),
-                            deps: string_vec!["~:check-dep2"],
+                            deps: create_target_deps(["~:check-dep2"]),
                             platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
@@ -1365,7 +1376,7 @@ mod create_tasks_from_scripts {
                                 "add",
                                 "yarn.lock"
                             ]),
-                            deps: string_vec!["~:commit-dep1"],
+                            deps: create_target_deps(["~:commit-dep1"]),
                             platform: PlatformType::System,
                             ..TaskConfig::default()
                         }
@@ -1460,7 +1471,7 @@ mod create_tasks_from_scripts {
                                 "run",
                                 "project:setup"
                             ]),
-                            deps: string_vec!["~:prerelease-dep1"],
+                            deps: create_target_deps(["~:prerelease-dep1"]),
                             platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
@@ -1473,7 +1484,7 @@ mod create_tasks_from_scripts {
                                 "run",
                                 "project:packup"
                             ]),
-                            deps: string_vec!["~:prerelease-dep2"],
+                            deps: create_target_deps(["~:prerelease-dep2"]),
                             platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
@@ -1486,7 +1497,7 @@ mod create_tasks_from_scripts {
                                 "run",
                                 "project:check"
                             ]),
-                            deps: string_vec!["~:prerelease-dep3"],
+                            deps: create_target_deps(["~:prerelease-dep3"]),
                             platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
@@ -1498,7 +1509,7 @@ mod create_tasks_from_scripts {
                                 "run-script",
                                 "lerna-release"
                             ]),
-                            deps: string_vec!["~:prerelease"],
+                            deps: create_target_deps(["~:prerelease"]),
                             platform: PlatformType::Node,
                             ..TaskConfig::default()
                         }
@@ -1749,7 +1760,7 @@ mod create_tasks_from_scripts {
                                 "node",
                                 "./dist/bin-prettier.js"
                             ]),
-                            deps: string_vec!["~:perf-dep1"],
+                            deps: create_target_deps(["~:perf-dep1"]),
                             env: FxHashMap::from_iter([(
                                 "NODE_ENV".to_owned(),
                                 "production".to_owned()
@@ -1781,7 +1792,7 @@ mod create_tasks_from_scripts {
                                 "--inspect-brk",
                                 "./dist/bin-prettier.js"
                             ]),
-                            deps: string_vec!["~:perf-inspect-dep1"],
+                            deps: create_target_deps(["~:perf-inspect-dep1"]),
                             env: FxHashMap::from_iter([(
                                 "NODE_ENV".to_owned(),
                                 "production".to_owned()

@@ -48,7 +48,7 @@ pub async fn from_package_json(project_id: Id, skip_touched_files_check: bool) -
                     } else {
                         ProjectDependsOn::Object {
                             id: dep_id.to_owned(),
-                            scope: scope.clone(),
+                            scope,
                         }
                     });
             }

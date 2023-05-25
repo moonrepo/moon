@@ -332,7 +332,7 @@ impl Project {
             return Err(ProjectError::MissingProjectAtSource(source));
         }
 
-        let config = load_project_config(&log_target, &workspace_root, &source)?;
+        let config = load_project_config(&log_target, workspace_root, &source)?;
         let language = if matches!(config.language, LanguageType::Unknown) {
             detect_language(&root)
         } else {

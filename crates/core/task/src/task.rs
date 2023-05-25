@@ -82,7 +82,7 @@ impl Task {
         let cloned_config = config.clone();
         let cloned_options = cloned_config.options;
 
-        let (command, args) = get_command_and_args(&config)?;
+        let (command, args) = get_command_and_args(config)?;
         let command = command.unwrap_or_else(|| "noop".to_owned());
         let is_local =
             cloned_config.local || command == "dev" || command == "serve" || command == "start";
@@ -270,7 +270,7 @@ impl Task {
     }
 
     pub fn merge(&mut self, config: &TaskConfig) -> Result<(), TaskError> {
-        let (command, args) = get_command_and_args(&config)?;
+        let (command, args) = get_command_and_args(config)?;
 
         // Merge options first incase the merge strategy has changed
         self.options.merge(&config.options);

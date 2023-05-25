@@ -75,27 +75,27 @@ impl TaskOptions {
         }
 
         if let Some(merge_args) = &config.merge_args {
-            self.merge_args = merge_args.clone();
+            self.merge_args = *merge_args;
         }
 
         if let Some(merge_deps) = &config.merge_deps {
-            self.merge_deps = merge_deps.clone();
+            self.merge_deps = *merge_deps;
         }
 
         if let Some(merge_env) = &config.merge_env {
-            self.merge_env = merge_env.clone();
+            self.merge_env = *merge_env;
         }
 
         if let Some(merge_inputs) = &config.merge_inputs {
-            self.merge_inputs = merge_inputs.clone();
+            self.merge_inputs = *merge_inputs;
         }
 
         if let Some(merge_outputs) = &config.merge_outputs {
-            self.merge_outputs = merge_outputs.clone();
+            self.merge_outputs = *merge_outputs;
         }
 
         if let Some(output_style) = &config.output_style {
-            self.output_style = Some(output_style.clone());
+            self.output_style = Some(*output_style);
         }
 
         if let Some(persistent) = &config.persistent {
@@ -170,7 +170,7 @@ impl TaskOptions {
         }
 
         if let Some(output_style) = &self.output_style {
-            config.output_style = Some(output_style.clone());
+            config.output_style = Some(*output_style);
         }
 
         if self.persistent != default_options.persistent {

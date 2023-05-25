@@ -1,5 +1,6 @@
 use moon_cache::CacheEngine;
-use moon_config2::{HasherWalkStrategy, WorkspaceConfig};
+use moon_config2::{HasherWalkStrategy, PartialRunnerConfig, PartialWorkspaceConfig};
+use moon_target::Target;
 use moon_test_utils::{
     assert_debug_snapshot, assert_snapshot, create_sandbox_with_config, get_cases_fixture_configs,
     predicates::{self, prelude::*},
@@ -21,7 +22,7 @@ fn cases_sandbox() -> Sandbox {
 
 fn cases_sandbox_with_config<C>(callback: C) -> Sandbox
 where
-    C: FnOnce(&mut WorkspaceConfig),
+    C: FnOnce(&mut PartialWorkspaceConfig),
 {
     let (mut workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
 
@@ -105,7 +106,10 @@ mod general {
     #[test]
     fn logs_command_for_project_root() {
         let sandbox = cases_sandbox_with_config(|cfg| {
-            cfg.runner.log_running_command = true;
+            cfg.runner = Some(PartialRunnerConfig {
+                log_running_command: Some(true),
+                ..PartialRunnerConfig::default()
+            });
         });
         sandbox.enable_git();
 
@@ -119,7 +123,10 @@ mod general {
     #[test]
     fn logs_command_for_workspace_root() {
         let sandbox = cases_sandbox_with_config(|cfg| {
-            cfg.runner.log_running_command = true;
+            cfg.runner = Some(PartialRunnerConfig {
+                log_running_command: Some(true),
+                ..PartialRunnerConfig::default()
+            });
         });
         sandbox.enable_git();
 
@@ -498,6 +505,8 @@ mod target_scopes {
 }
 
 mod hashing {
+    use moon_config2::PartialHasherConfig;
+
     use super::*;
 
     #[test]
@@ -566,7 +575,10 @@ mod hashing {
 
         // Run again with a different strategy
         let sandbox = cases_sandbox_with_config(|workspace_config| {
-            workspace_config.hasher.walk_strategy = HasherWalkStrategy::Glob;
+            workspace_config.hasher = Some(PartialHasherConfig {
+                walk_strategy: Some(HasherWalkStrategy::Glob),
+                ..PartialHasherConfig::default()
+            });
         });
         sandbox.enable_git();
 
@@ -1015,9 +1027,10 @@ mod outputs {
         #[test]
         fn archives_non_build_tasks_with_full_target() {
             let sandbox = cases_sandbox_with_config(|cfg| {
-                cfg.runner
-                    .archivable_targets
-                    .push("outputs:noOutput".into());
+                cfg.runner = Some(PartialRunnerConfig {
+                    archivable_targets: Some(vec![Target::parse("outputs:noOutput").unwrap()]),
+                    ..PartialRunnerConfig::default()
+                });
             });
 
             sandbox.enable_git();
@@ -1037,7 +1050,10 @@ mod outputs {
         #[test]
         fn archives_non_build_tasks_with_all_target() {
             let sandbox = cases_sandbox_with_config(|cfg| {
-                cfg.runner.archivable_targets.push(":noOutput".into());
+                cfg.runner = Some(PartialRunnerConfig {
+                    archivable_targets: Some(vec![Target::parse(":noOutput").unwrap()]),
+                    ..PartialRunnerConfig::default()
+                });
             });
 
             sandbox.enable_git();
@@ -1057,7 +1073,10 @@ mod outputs {
         #[test]
         fn doesnt_archive_non_build_tasks_for_nonmatch_target() {
             let sandbox = cases_sandbox_with_config(|cfg| {
-                cfg.runner.archivable_targets.push(":otherTarget".into());
+                cfg.runner = Some(PartialRunnerConfig {
+                    archivable_targets: Some(vec![Target::parse(":otherTarget").unwrap()]),
+                    ..PartialRunnerConfig::default()
+                });
             });
 
             sandbox.enable_git();
@@ -1077,7 +1096,10 @@ mod outputs {
         #[test]
         fn archives_std_output() {
             let sandbox = cases_sandbox_with_config(|cfg| {
-                cfg.runner.archivable_targets.push(":noOutput".into());
+                cfg.runner = Some(PartialRunnerConfig {
+                    archivable_targets: Some(vec![Target::parse(":noOutput").unwrap()]),
+                    ..PartialRunnerConfig::default()
+                });
             });
 
             sandbox.enable_git();
@@ -1100,7 +1122,10 @@ mod outputs {
         #[test]
         fn can_hydrate_archives() {
             let sandbox = cases_sandbox_with_config(|cfg| {
-                cfg.runner.archivable_targets.push(":noOutput".into());
+                cfg.runner = Some(PartialRunnerConfig {
+                    archivable_targets: Some(vec![Target::parse(":noOutput").unwrap()]),
+                    ..PartialRunnerConfig::default()
+                });
             });
 
             sandbox.enable_git();
@@ -1123,7 +1148,10 @@ mod outputs {
         #[test]
         fn errors_for_deps_target() {
             let sandbox = cases_sandbox_with_config(|cfg| {
-                cfg.runner.archivable_targets.push("^:otherTarget".into());
+                cfg.runner = Some(PartialRunnerConfig {
+                    archivable_targets: Some(vec![Target::parse("^:otherTarget").unwrap()]),
+                    ..PartialRunnerConfig::default()
+                });
             });
 
             sandbox.enable_git();
@@ -1141,7 +1169,10 @@ mod outputs {
         #[test]
         fn errors_for_self_target() {
             let sandbox = cases_sandbox_with_config(|cfg| {
-                cfg.runner.archivable_targets.push("~:otherTarget".into());
+                cfg.runner = Some(PartialRunnerConfig {
+                    archivable_targets: Some(vec![Target::parse("~:otherTarget").unwrap()]),
+                    ..PartialRunnerConfig::default()
+                });
             });
 
             sandbox.enable_git();

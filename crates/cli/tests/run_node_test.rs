@@ -1,4 +1,4 @@
-use moon_config2::{NodeConfig, NodeVersionFormat, NodeVersionManager, WorkspaceProjects};
+use moon_config2::{NodeVersionFormat, NodeVersionManager, PartialNodeConfig, WorkspaceProjects};
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, get_node_depman_fixture_configs,
     get_node_fixture_configs, get_typescript_fixture_configs, predicates::prelude::*, Sandbox,
@@ -23,7 +23,7 @@ fn node_sandbox() -> Sandbox {
 
 fn node_sandbox_with_config<C>(callback: C) -> Sandbox
 where
-    C: FnOnce(&mut NodeConfig),
+    C: FnOnce(&mut PartialNodeConfig),
 {
     let (workspace_config, mut toolchain_config, tasks_config) = get_node_fixture_configs();
 
@@ -61,8 +61,10 @@ fn depman_non_workspaces_sandbox(depman: &str) -> Sandbox {
     let (mut workspace_config, toolchain_config, tasks_config) =
         get_node_depman_fixture_configs(depman);
 
-    workspace_config.projects =
-        WorkspaceProjects::Sources(FxHashMap::from_iter([("root".into(), ".".into())]));
+    workspace_config.projects = Some(WorkspaceProjects::Sources(FxHashMap::from_iter([(
+        "root".into(),
+        ".".into(),
+    )])));
 
     let sandbox = create_sandbox_with_config(
         format!("node-{depman}/project"),
@@ -235,7 +237,7 @@ fn passes_args_through() {
 #[test]
 fn passes_args_to_the_node_bin() {
     let sandbox = node_sandbox_with_config(|cfg| {
-        cfg.bin_exec_args = string_vec!["--preserve-symlinks"];
+        cfg.bin_exec_args = Some(string_vec!["--preserve-symlinks"]);
     });
 
     let assert = sandbox.run_moon(|cmd| {
@@ -462,7 +464,7 @@ mod engines {
     #[test]
     fn adds_engines_constraint() {
         let sandbox = node_sandbox_with_config(|cfg| {
-            cfg.add_engines_constraint = true;
+            cfg.add_engines_constraint = Some(true);
         });
 
         sandbox.run_moon(|cmd| {
@@ -475,7 +477,7 @@ mod engines {
     #[test]
     fn doesnt_add_engines_constraint() {
         let sandbox = node_sandbox_with_config(|cfg| {
-            cfg.add_engines_constraint = false;
+            cfg.add_engines_constraint = Some(false);
         });
 
         sandbox.run_moon(|cmd| {
@@ -543,8 +545,8 @@ mod sync_depends_on {
 
     fn test_depends_on_format(format: NodeVersionFormat) {
         let sandbox = node_sandbox_with_config(|cfg| {
-            cfg.sync_project_workspace_dependencies = true;
-            cfg.dependency_version_format = format;
+            cfg.sync_project_workspace_dependencies = Some(true);
+            cfg.dependency_version_format = Some(format);
         });
 
         sandbox.run_moon(|cmd| {
@@ -606,7 +608,7 @@ mod sync_depends_on {
     #[test]
     fn syncs_depends_on_with_scopes() {
         let sandbox = node_sandbox_with_config(|cfg| {
-            cfg.sync_project_workspace_dependencies = true;
+            cfg.sync_project_workspace_dependencies = Some(true);
         });
 
         sandbox.run_moon(|cmd| {
@@ -1116,7 +1118,7 @@ mod workspace_overrides {
     #[test]
     fn can_override_version() {
         let sandbox = node_sandbox_with_config(|cfg| {
-            cfg.dedupe_on_lockfile_change = false;
+            cfg.dedupe_on_lockfile_change = Some(false);
         });
 
         let assert = sandbox.run_moon(|cmd| {

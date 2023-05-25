@@ -1,6 +1,8 @@
 use moon_test_utils::{assert_fs::prelude::*, create_temp_dir, get_fixtures_path};
-use moon_typescript_lang::*;
+use moon_typescript_lang::tsconfig::*;
 use moon_utils::string_vec;
+use starbase_utils::json::{self, JsonValue};
+use std::collections::BTreeMap;
 
 #[test]
 fn preserves_when_saving() {

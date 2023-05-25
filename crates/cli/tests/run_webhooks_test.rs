@@ -1,13 +1,13 @@
 use httpmock::prelude::*;
-use moon_config2::NotifierConfig;
+use moon_config2::PartialNotifierConfig;
 use moon_test_utils::{create_sandbox_with_config, get_node_fixture_configs, Sandbox};
 
 fn sandbox(uri: String) -> Sandbox {
     let (mut workspace_config, toolchain_config, tasks_config) = get_node_fixture_configs();
 
-    workspace_config.notifier = NotifierConfig {
+    workspace_config.notifier = Some(PartialNotifierConfig {
         webhook_url: Some(format!("{uri}/webhook")),
-    };
+    });
 
     let sandbox = create_sandbox_with_config(
         "node",

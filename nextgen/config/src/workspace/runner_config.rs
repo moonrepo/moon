@@ -1,7 +1,8 @@
 use moon_target::Target;
 use schematic::Config;
+use serde::Serialize;
 
-#[derive(Config)]
+#[derive(Config, Serialize)]
 pub struct RunnerConfig {
     pub archivable_targets: Vec<Target>,
 

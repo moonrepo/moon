@@ -1,4 +1,5 @@
-use moon_config::{
+use crate::create_portable_paths;
+use moon_config2::{
     InheritedTasksConfig, NodeConfig, NodePackageManager, NpmConfig, PnpmConfig, TaskCommandArgs,
     TaskConfig, ToolchainConfig, TypeScriptConfig, WorkspaceConfig, WorkspaceProjects, YarnConfig,
 };
@@ -33,30 +34,27 @@ pub fn get_default_toolchain() -> ToolchainConfig {
 pub fn get_cases_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, InheritedTasksConfig) {
     let workspace_config = WorkspaceConfig {
         projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
-            ("root".to_owned(), ".".to_owned()),
-            ("affected".to_owned(), "affected".to_owned()),
-            ("base".to_owned(), "base".to_owned()),
-            ("noop".to_owned(), "noop".to_owned()),
-            ("files".to_owned(), "files".to_owned()),
+            ("root".into(), ".".to_owned()),
+            ("affected".into(), "affected".to_owned()),
+            ("base".into(), "base".to_owned()),
+            ("noop".into(), "noop".to_owned()),
+            ("files".into(), "files".to_owned()),
             // Runner
-            ("interactive".to_owned(), "interactive".to_owned()),
-            ("passthroughArgs".to_owned(), "passthrough-args".to_owned()),
+            ("interactive".into(), "interactive".to_owned()),
+            ("passthroughArgs".into(), "passthrough-args".to_owned()),
             // Project/task deps
-            ("depsA".to_owned(), "deps-a".to_owned()),
-            ("depsB".to_owned(), "deps-b".to_owned()),
-            ("depsC".to_owned(), "deps-c".to_owned()),
-            ("dependsOn".to_owned(), "depends-on".to_owned()),
+            ("depsA".into(), "deps-a".to_owned()),
+            ("depsB".into(), "deps-b".to_owned()),
+            ("depsC".into(), "deps-c".to_owned()),
+            ("dependsOn".into(), "depends-on".to_owned()),
             // Target scopes
-            ("targetScopeA".to_owned(), "target-scope-a".to_owned()),
-            ("targetScopeB".to_owned(), "target-scope-b".to_owned()),
-            ("targetScopeC".to_owned(), "target-scope-c".to_owned()),
+            ("targetScopeA".into(), "target-scope-a".to_owned()),
+            ("targetScopeB".into(), "target-scope-b".to_owned()),
+            ("targetScopeC".into(), "target-scope-c".to_owned()),
             // Outputs
-            ("outputs".to_owned(), "outputs".to_owned()),
-            (
-                "outputsFiltering".to_owned(),
-                "outputs-filtering".to_owned(),
-            ),
-            ("outputStyles".to_owned(), "output-styles".to_owned()),
+            ("outputs".into(), "outputs".to_owned()),
+            ("outputsFiltering".into(), "outputs-filtering".to_owned()),
+            ("outputStyles".into(), "output-styles".to_owned()),
         ])),
         ..WorkspaceConfig::default()
     };
@@ -67,7 +65,7 @@ pub fn get_cases_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Inherit
         tasks: BTreeMap::from_iter([(
             "noop".into(),
             TaskConfig {
-                command: Some(TaskCommandArgs::String("noop".into())),
+                command: TaskCommandArgs::String("noop".into()),
                 ..TaskConfig::default()
             },
         )]),
@@ -80,16 +78,16 @@ pub fn get_cases_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Inherit
 pub fn get_projects_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, InheritedTasksConfig) {
     let workspace_config = WorkspaceConfig {
         projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
-            ("advanced".to_owned(), "advanced".to_owned()),
-            ("basic".to_owned(), "basic".to_owned()),
-            ("emptyConfig".to_owned(), "empty-config".to_owned()),
-            ("noConfig".to_owned(), "no-config".to_owned()),
-            ("tasks".to_owned(), "tasks".to_owned()),
-            ("platforms".to_owned(), "platforms".to_owned()),
+            ("advanced".into(), "advanced".to_owned()),
+            ("basic".into(), "basic".to_owned()),
+            ("emptyConfig".into(), "empty-config".to_owned()),
+            ("noConfig".into(), "no-config".to_owned()),
+            ("tasks".into(), "tasks".to_owned()),
+            ("platforms".into(), "platforms".to_owned()),
             // Deps
-            ("foo".to_owned(), "deps/foo".to_owned()),
-            ("bar".to_owned(), "deps/bar".to_owned()),
-            ("baz".to_owned(), "deps/baz".to_owned()),
+            ("foo".into(), "deps/foo".to_owned()),
+            ("bar".into(), "deps/bar".to_owned()),
+            ("baz".into(), "deps/baz".to_owned()),
         ])),
         ..WorkspaceConfig::default()
     };
@@ -100,9 +98,9 @@ pub fn get_projects_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Inhe
         file_groups: FxHashMap::from_iter([
             (
                 "sources".into(),
-                vec!["src/**/*".into(), "types/**/*".into()],
+                create_portable_paths(["src/**/*", "types/**/*"]),
             ),
-            ("tests".into(), vec!["tests/**/*".into()]),
+            ("tests".into(), create_portable_paths(["tests/**/*"])),
         ]),
         ..InheritedTasksConfig::default()
     };
@@ -114,17 +112,17 @@ pub fn get_project_graph_aliases_fixture_configs(
 ) -> (WorkspaceConfig, ToolchainConfig, InheritedTasksConfig) {
     let workspace_config = WorkspaceConfig {
         projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
-            ("explicit".to_owned(), "explicit".to_owned()),
+            ("explicit".into(), "explicit".to_owned()),
             (
-                "explicitAndImplicit".to_owned(),
+                "explicitAndImplicit".into(),
                 "explicit-and-implicit".to_owned(),
             ),
-            ("implicit".to_owned(), "implicit".to_owned()),
-            ("noLang".to_owned(), "no-lang".to_owned()),
+            ("implicit".into(), "implicit".to_owned()),
+            ("noLang".into(), "no-lang".to_owned()),
             // Node.js
-            ("node".to_owned(), "node".to_owned()),
-            ("nodeNameOnly".to_owned(), "node-name-only".to_owned()),
-            ("nodeNameScope".to_owned(), "node-name-scope".to_owned()),
+            ("node".into(), "node".to_owned()),
+            ("nodeNameOnly".into(), "node-name-only".to_owned()),
+            ("nodeNameScope".into(), "node-name-scope".to_owned()),
         ])),
         ..WorkspaceConfig::default()
     };
@@ -150,37 +148,34 @@ pub fn get_project_graph_aliases_fixture_configs(
 pub fn get_tasks_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, InheritedTasksConfig) {
     let workspace_config = WorkspaceConfig {
         projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
-            ("basic".to_owned(), "basic".to_owned()),
-            ("buildA".to_owned(), "build-a".to_owned()),
-            ("buildB".to_owned(), "build-b".to_owned()),
-            ("buildC".to_owned(), "build-c".to_owned()),
-            ("chain".to_owned(), "chain".to_owned()),
-            ("cycle".to_owned(), "cycle".to_owned()),
-            ("inheritTags".to_owned(), "inherit-tags".to_owned()),
-            ("inputA".to_owned(), "input-a".to_owned()),
-            ("inputB".to_owned(), "input-b".to_owned()),
-            ("inputC".to_owned(), "input-c".to_owned()),
-            ("inputs".to_owned(), "inputs".to_owned()),
+            ("basic".into(), "basic".to_owned()),
+            ("buildA".into(), "build-a".to_owned()),
+            ("buildB".into(), "build-b".to_owned()),
+            ("buildC".into(), "build-c".to_owned()),
+            ("chain".into(), "chain".to_owned()),
+            ("cycle".into(), "cycle".to_owned()),
+            ("inheritTags".into(), "inherit-tags".to_owned()),
+            ("inputA".into(), "input-a".to_owned()),
+            ("inputB".into(), "input-b".to_owned()),
+            ("inputC".into(), "input-c".to_owned()),
+            ("inputs".into(), "inputs".to_owned()),
             (
-                "mergeAllStrategies".to_owned(),
+                "mergeAllStrategies".into(),
                 "merge-all-strategies".to_owned(),
             ),
-            ("mergeAppend".to_owned(), "merge-append".to_owned()),
-            ("mergePrepend".to_owned(), "merge-prepend".to_owned()),
-            ("mergeReplace".to_owned(), "merge-replace".to_owned()),
-            ("noTasks".to_owned(), "no-tasks".to_owned()),
-            ("persistent".to_owned(), "persistent".to_owned()),
-            ("scopeAll".to_owned(), "scope-all".to_owned()),
-            ("scopeDeps".to_owned(), "scope-deps".to_owned()),
-            ("scopeSelf".to_owned(), "scope-self".to_owned()),
-            ("tokens".to_owned(), "tokens".to_owned()),
-            ("expandEnv".to_owned(), "expand-env".to_owned()),
-            (
-                "expandEnvProject".to_owned(),
-                "expand-env-project".to_owned(),
-            ),
-            ("expandOutputs".to_owned(), "expand-outputs".to_owned()),
-            ("fileGroups".to_owned(), "file-groups".to_owned()),
+            ("mergeAppend".into(), "merge-append".to_owned()),
+            ("mergePrepend".into(), "merge-prepend".to_owned()),
+            ("mergeReplace".into(), "merge-replace".to_owned()),
+            ("noTasks".into(), "no-tasks".to_owned()),
+            ("persistent".into(), "persistent".to_owned()),
+            ("scopeAll".into(), "scope-all".to_owned()),
+            ("scopeDeps".into(), "scope-deps".to_owned()),
+            ("scopeSelf".into(), "scope-self".to_owned()),
+            ("tokens".into(), "tokens".to_owned()),
+            ("expandEnv".into(), "expand-env".to_owned()),
+            ("expandEnvProject".into(), "expand-env-project".to_owned()),
+            ("expandOutputs".into(), "expand-outputs".to_owned()),
+            ("fileGroups".into(), "file-groups".to_owned()),
         ])),
         ..WorkspaceConfig::default()
     };
@@ -191,52 +186,58 @@ pub fn get_tasks_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Inherit
         file_groups: FxHashMap::from_iter([
             (
                 "static".into(),
-                vec![
-                    "file.ts".into(),
-                    "dir".into(),
-                    "dir/other.tsx".into(),
-                    "dir/subdir".into(),
-                    "dir/subdir/another.ts".into(),
-                ],
+                create_portable_paths([
+                    "file.ts",
+                    "dir",
+                    "dir/other.tsx",
+                    "dir/subdir",
+                    "dir/subdir/another.ts",
+                ]),
             ),
-            ("dirs_glob".into(), vec!["**/*".into()]),
-            ("files_glob".into(), vec!["**/*.{ts,tsx}".into()]),
-            ("globs".into(), vec!["**/*.{ts,tsx}".into(), "*.js".into()]),
-            ("no_globs".into(), vec!["config.js".into()]),
+            ("dirs_glob".into(), create_portable_paths(["**/*"])),
+            (
+                "files_glob".into(),
+                create_portable_paths(["**/*.{ts,tsx}"]),
+            ),
+            (
+                "globs".into(),
+                create_portable_paths(["**/*.{ts,tsx}", "*.js"]),
+            ),
+            ("no_globs".into(), create_portable_paths(["config.js"])),
         ]),
         tasks: BTreeMap::from_iter([
             (
                 "standard".into(),
                 TaskConfig {
-                    command: Some(TaskCommandArgs::String("cmd".into())),
+                    command: TaskCommandArgs::String("cmd".into()),
                     ..TaskConfig::default()
                 },
             ),
             (
                 "withArgs".into(),
                 TaskConfig {
-                    command: Some(TaskCommandArgs::String("cmd".into())),
-                    args: Some(TaskCommandArgs::Sequence(vec![
+                    command: TaskCommandArgs::String("cmd".into()),
+                    args: TaskCommandArgs::Sequence(vec![
                         "--foo".into(),
                         "--bar".into(),
                         "baz".into(),
-                    ])),
+                    ]),
                     ..TaskConfig::default()
                 },
             ),
             (
                 "withInputs".into(),
                 TaskConfig {
-                    command: Some(TaskCommandArgs::String("cmd".into())),
-                    inputs: Some(vec!["rel/file.*".into(), "/root.*".into()]),
+                    command: TaskCommandArgs::String("cmd".into()),
+                    inputs: vec!["rel/file.*".into(), "/root.*".into()],
                     ..TaskConfig::default()
                 },
             ),
             (
                 "withOutputs".into(),
                 TaskConfig {
-                    command: Some(TaskCommandArgs::String("cmd".into())),
-                    inputs: Some(vec!["lib".into(), "/build".into()]),
+                    command: TaskCommandArgs::String("cmd".into()),
+                    inputs: vec!["lib".into(), "/build".into()],
                     ..TaskConfig::default()
                 },
             ),
@@ -252,23 +253,23 @@ pub fn get_tasks_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Inherit
 pub fn get_node_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, InheritedTasksConfig) {
     let workspace_config = WorkspaceConfig {
         projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
-            ("node".to_owned(), "base".to_owned()),
-            ("lifecycles".to_owned(), "lifecycles".to_owned()),
+            ("node".into(), "base".to_owned()),
+            ("lifecycles".into(), "lifecycles".to_owned()),
             (
-                "postinstallRecursion".to_owned(),
+                "postinstallRecursion".into(),
                 "postinstall-recursion".to_owned(),
             ),
-            ("versionOverride".to_owned(), "version-override".to_owned()),
+            ("versionOverride".into(), "version-override".to_owned()),
             // Binaries
-            ("esbuild".to_owned(), "esbuild".to_owned()),
-            ("swc".to_owned(), "swc".to_owned()),
+            ("esbuild".into(), "esbuild".to_owned()),
+            ("swc".into(), "swc".to_owned()),
             // Project/task deps
-            ("depsA".to_owned(), "deps-a".to_owned()),
-            ("depsB".to_owned(), "deps-b".to_owned()),
-            ("depsC".to_owned(), "deps-c".to_owned()),
-            ("depsD".to_owned(), "deps-d".to_owned()),
-            ("dependsOn".to_owned(), "depends-on".to_owned()),
-            ("dependsOnScopes".to_owned(), "depends-on-scopes".to_owned()),
+            ("depsA".into(), "deps-a".to_owned()),
+            ("depsB".into(), "deps-b".to_owned()),
+            ("depsC".into(), "deps-c".to_owned()),
+            ("depsD".into(), "deps-d".to_owned()),
+            ("dependsOn".into(), "depends-on".to_owned()),
+            ("dependsOnScopes".into(), "depends-on-scopes".to_owned()),
         ])),
         ..WorkspaceConfig::default()
     };
@@ -280,15 +281,15 @@ pub fn get_node_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Inherite
             (
                 "version".into(),
                 TaskConfig {
-                    command: Some(TaskCommandArgs::String("node".into())),
-                    args: Some(TaskCommandArgs::String("--version".into())),
+                    command: TaskCommandArgs::String("node".into()),
+                    args: TaskCommandArgs::String("--version".into()),
                     ..TaskConfig::default()
                 },
             ),
             (
                 "noop".into(),
                 TaskConfig {
-                    command: Some(TaskCommandArgs::String("noop".into())),
+                    command: TaskCommandArgs::String("noop".into()),
                     ..TaskConfig::default()
                 },
             ),
@@ -305,9 +306,9 @@ pub fn get_node_depman_fixture_configs(
     let (mut workspace_config, mut toolchain_config, tasks_config) = get_node_fixture_configs();
 
     workspace_config.projects = WorkspaceProjects::Sources(FxHashMap::from_iter([
-        (depman.to_owned(), "base".to_owned()),
-        ("other".to_owned(), "other".to_owned()),
-        ("notInWorkspace".to_owned(), "not-in-workspace".to_owned()),
+        (depman.into(), "base".to_owned()),
+        ("other".into(), "other".to_owned()),
+        ("notInWorkspace".into(), "not-in-workspace".to_owned()),
     ]));
 
     if let Some(node_config) = &mut toolchain_config.node {
@@ -328,14 +329,14 @@ pub fn get_node_depman_fixture_configs(
                 node_config.package_manager = NodePackageManager::Yarn;
                 node_config.yarn = Some(YarnConfig {
                     version: Some("3.3.0".into()),
-                    plugins: Some(vec!["workspace-tools".into()]),
+                    plugins: vec!["workspace-tools".into()],
                 });
             }
             "yarn1" => {
                 node_config.package_manager = NodePackageManager::Yarn;
                 node_config.yarn = Some(YarnConfig {
                     version: Some("1.22.0".into()),
-                    plugins: None,
+                    plugins: vec![],
                 });
             }
             _ => {}

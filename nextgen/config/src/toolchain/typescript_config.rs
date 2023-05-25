@@ -1,7 +1,8 @@
 use schematic::Config;
+use serde::Serialize;
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain#typescript
-#[derive(Debug, Clone, Config)]
+#[derive(Debug, Clone, Config, Serialize)]
 pub struct TypeScriptConfig {
     #[setting(default = true)]
     pub create_missing_config: bool,

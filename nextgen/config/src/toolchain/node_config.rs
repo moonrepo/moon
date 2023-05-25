@@ -2,6 +2,7 @@ use crate::validate::validate_semver;
 use crate::{inherit_tool, inherit_tool_required};
 use proto::ToolsConfig;
 use schematic::{derive_enum, Config, ConfigEnum, ConfigError};
+use serde::Serialize;
 
 derive_enum!(
     #[derive(ConfigEnum, Copy, Default)]
@@ -63,19 +64,19 @@ derive_enum!(
     }
 );
 
-#[derive(Debug, Clone, Config)]
+#[derive(Debug, Clone, Config, Serialize)]
 pub struct NpmConfig {
     #[setting(env = "MOON_NPM_VERSION", validate = validate_semver)]
     pub version: Option<String>,
 }
 
-#[derive(Debug, Clone, Config)]
+#[derive(Debug, Clone, Config, Serialize)]
 pub struct PnpmConfig {
     #[setting(env = "MOON_PNPM_VERSION", validate = validate_semver)]
     pub version: Option<String>,
 }
 
-#[derive(Debug, Clone, Config)]
+#[derive(Debug, Clone, Config, Serialize)]
 pub struct YarnConfig {
     pub plugins: Vec<String>,
 
@@ -84,7 +85,7 @@ pub struct YarnConfig {
 }
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain#node
-#[derive(Debug, Clone, Config)]
+#[derive(Debug, Clone, Config, Serialize)]
 pub struct NodeConfig {
     #[setting(default = true)]
     pub add_engines_constraint: bool,

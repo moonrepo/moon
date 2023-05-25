@@ -5,11 +5,11 @@ use crate::{inherit_tool, inherit_tool_without_version};
 use moon_common::{color, consts};
 use proto::ToolsConfig;
 use schematic::{validate, Config, ConfigError, ConfigLoader};
+use serde::Serialize;
 use std::path::Path;
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain
-#[derive(Debug, Config)]
-#[config(file = ".moon/toolchain.yml")]
+#[derive(Debug, Config, Serialize)]
 pub struct ToolchainConfig {
     #[setting(
         default = "https://moonrepo.dev/schemas/toolchain.json",

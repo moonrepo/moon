@@ -12,6 +12,7 @@ pub use pretty_assertions;
 pub use sandbox::*;
 
 use clean_path::Clean;
+use moon_config2::{Portable, PortablePath};
 use std::path::PathBuf;
 
 pub fn get_fixtures_root() -> PathBuf {
@@ -31,4 +32,14 @@ pub fn get_fixtures_path<T: AsRef<str>>(name: T) -> PathBuf {
     }
 
     path
+}
+
+pub fn create_portable_paths<I, V>(list: I) -> Vec<PortablePath>
+where
+    I: IntoIterator<Item = V>,
+    V: AsRef<str>,
+{
+    list.into_iter()
+        .map(|path| PortablePath::from_str(path.as_ref()).unwrap())
+        .collect()
 }

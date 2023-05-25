@@ -42,7 +42,12 @@ impl ProjectToolchainConfig {
 #[derive(Clone, Config, Debug, Deserialize, Serialize)]
 pub struct ProjectWorkspaceInheritedTasksConfig {
     pub exclude: Vec<Id>,
-    pub include: Vec<Id>,
+
+    // None = Include all
+    // [] = Include none
+    // [...] = Specific includes
+    pub include: Option<Vec<Id>>,
+
     pub rename: FxHashMap<Id, Id>,
 }
 

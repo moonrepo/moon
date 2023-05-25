@@ -942,7 +942,7 @@ mod task_expansion {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Target(NoAllInTaskDeps(\":build\"))")]
+        #[should_panic(expected = "target scope not supported as a task dependency")]
         async fn errors_for_all_scope() {
             tasks_sandbox_with_setup(|sandbox| {
                 sandbox.create_file(
@@ -958,7 +958,7 @@ mod task_expansion {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Target(NoTagInTaskDeps(\"#tag:build\"))")]
+        #[should_panic(expected = "target scope not supported as a task dependency")]
         async fn errors_for_tag_scope() {
             tasks_sandbox_with_setup(|sandbox| {
                 sandbox.create_file(

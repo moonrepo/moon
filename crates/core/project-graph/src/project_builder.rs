@@ -12,7 +12,7 @@ use moon_hasher::{convert_paths_to_strings, to_hash};
 use moon_logger::{debug, map_list, trace, warn, Logable};
 use moon_platform_detector::{detect_project_language, detect_task_platform};
 use moon_project::{Project, ProjectDependency, ProjectDependencySource, ProjectError};
-use moon_target::{Target, TargetError, TargetScope};
+use moon_target::{Target, TargetScope};
 use moon_task::{Task, TaskError, TaskFlag};
 use moon_utils::path::expand_to_workspace_relative;
 use moon_utils::regex::{ENV_VAR, ENV_VAR_SUBSTITUTE};
@@ -131,7 +131,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                         id: dep_config.id.clone(),
                         scope: dep_config.scope,
                         source: ProjectDependencySource::Implicit,
-                        ..ProjectDependency::default()
+                        via: dep_config.via,
                     });
             }
 
@@ -329,11 +329,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         for target in &task.deps {
             match &target.scope {
                 // :task
-                TargetScope::All => {
-                    return Err(ProjectGraphError::Target(TargetError::NoAllInTaskDeps(
-                        target.id.clone(),
-                    )));
-                }
+                TargetScope::All => unreachable!(),
                 // ^:task
                 TargetScope::Deps => {
                     for dep_id in project.get_dependency_ids() {
@@ -360,11 +356,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                     }
                 }
                 // #tag:task
-                TargetScope::Tag(_) => {
-                    return Err(ProjectGraphError::Target(TargetError::NoTagInTaskDeps(
-                        target.id.clone(),
-                    )));
-                }
+                TargetScope::Tag(_) => unimplemented!(),
             };
         }
 

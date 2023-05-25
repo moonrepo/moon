@@ -1,4 +1,4 @@
-use moon_config::TypeScriptConfig;
+use moon_config2::TypeScriptConfig;
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, get_typescript_fixture_configs, Sandbox,
 };

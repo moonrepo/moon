@@ -1,4 +1,4 @@
-use moon_constants::{CONFIG_TASKS_FILENAME, CONFIG_WORKSPACE_FILENAME};
+use moon_common::consts::{CONFIG_TASKS_FILENAME, CONFIG_WORKSPACE_FILENAME};
 use moon_test_utils::{create_sandbox, predicates::prelude::*};
 use std::fs;
 

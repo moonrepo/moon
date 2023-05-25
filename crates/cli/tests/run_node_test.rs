@@ -1,4 +1,4 @@
-use moon_config::{NodeConfig, WorkspaceProjects};
+use moon_config2::{NodeConfig, NodeVersionFormat, NodeVersionManager, WorkspaceProjects};
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, get_node_depman_fixture_configs,
     get_node_fixture_configs, get_typescript_fixture_configs, predicates::prelude::*, Sandbox,
@@ -62,7 +62,7 @@ fn depman_non_workspaces_sandbox(depman: &str) -> Sandbox {
         get_node_depman_fixture_configs(depman);
 
     workspace_config.projects =
-        WorkspaceProjects::Sources(FxHashMap::from_iter([("root".to_owned(), ".".to_owned())]));
+        WorkspaceProjects::Sources(FxHashMap::from_iter([("root".into(), ".".into())]));
 
     let sandbox = create_sandbox_with_config(
         format!("node-{depman}/project"),
@@ -504,7 +504,7 @@ mod version_manager {
     #[test]
     fn adds_nvmrc_file() {
         let sandbox = node_sandbox_with_config(|cfg| {
-            cfg.sync_version_manager_config = Some(moon_config::NodeVersionManager::Nvm);
+            cfg.sync_version_manager_config = Some(NodeVersionManager::Nvm);
         });
 
         sandbox.run_moon(|cmd| {
@@ -522,7 +522,7 @@ mod version_manager {
     #[test]
     fn adds_nodenv_file() {
         let sandbox = node_sandbox_with_config(|cfg| {
-            cfg.sync_version_manager_config = Some(moon_config::NodeVersionManager::Nodenv);
+            cfg.sync_version_manager_config = Some(NodeVersionManager::Nodenv);
         });
 
         sandbox.run_moon(|cmd| {
@@ -540,7 +540,6 @@ mod version_manager {
 
 mod sync_depends_on {
     use super::*;
-    use moon_config::NodeVersionFormat;
 
     fn test_depends_on_format(format: NodeVersionFormat) {
         let sandbox = node_sandbox_with_config(|cfg| {

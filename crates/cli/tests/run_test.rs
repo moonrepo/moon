@@ -1,5 +1,5 @@
 use moon_cache::CacheEngine;
-use moon_config::{HasherWalkStrategy, WorkspaceConfig};
+use moon_config2::{HasherWalkStrategy, WorkspaceConfig};
 use moon_test_utils::{
     assert_debug_snapshot, assert_snapshot, create_sandbox_with_config, get_cases_fixture_configs,
     predicates::{self, prelude::*},

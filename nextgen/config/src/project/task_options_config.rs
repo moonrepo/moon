@@ -82,7 +82,7 @@ derive_enum!(
     }
 );
 
-#[derive(Debug, Clone, Config, Deserialize, Serialize)]
+#[derive(Clone, Config, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct TaskOptionsConfig {
     pub affected_files: Option<TaskOptionAffectedFiles>,
 

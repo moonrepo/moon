@@ -71,7 +71,7 @@ derive_enum!(
     }
 );
 
-#[derive(Debug, Clone, Config, Deserialize, Serialize)]
+#[derive(Clone, Config, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct TaskConfig {
     #[setting(validate = validate_command)]
     pub command: TaskCommandArgs,

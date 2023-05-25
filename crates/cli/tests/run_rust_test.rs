@@ -1,4 +1,4 @@
-use moon_config::{RustConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects};
+use moon_config2::{RustConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects};
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, predicates::prelude::*, Sandbox,
 };
@@ -6,10 +6,7 @@ use rustc_hash::FxHashMap;
 
 fn rust_sandbox() -> Sandbox {
     let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Sources(FxHashMap::from_iter([(
-            "rust".to_owned(),
-            ".".to_owned(),
-        )])),
+        projects: WorkspaceProjects::Sources(FxHashMap::from_iter([("rust".into(), ".".into())])),
         ..WorkspaceConfig::default()
     };
 

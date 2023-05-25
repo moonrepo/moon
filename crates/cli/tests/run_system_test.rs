@@ -1,4 +1,4 @@
-use moon_config::{InheritedTasksConfig, WorkspaceConfig, WorkspaceProjects};
+use moon_config2::{InheritedTasksConfig, WorkspaceConfig, WorkspaceProjects};
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, predicates::prelude::*, Sandbox,
 };
@@ -8,8 +8,8 @@ use rustc_hash::FxHashMap;
 fn system_sandbox() -> Sandbox {
     let workspace_config = WorkspaceConfig {
         projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
-            ("unix".to_owned(), "unix".to_owned()),
-            ("windows".to_owned(), "windows".to_owned()),
+            ("unix".into(), "unix".to_owned()),
+            ("windows".into(), "windows".to_owned()),
         ])),
         ..WorkspaceConfig::default()
     };

@@ -2,9 +2,9 @@
 // as we need to test task inheritance, task expansion, etc...
 
 use moon::{generate_project_graph, load_workspace_from};
-use moon_config::{
-    InheritedTasksConfig, NodeConfig, PlatformType, RustConfig, TaskCommandArgs, TaskConfig,
-    TaskOptionsConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
+use moon_config2::{
+    InheritedTasksConfig, LanguageType, NodeConfig, PlatformType, RustConfig, TaskCommandArgs,
+    TaskConfig, TaskOptionsConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
 };
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
@@ -211,14 +211,12 @@ tasks:
 
         fn stub_global_task_config() -> TaskConfig {
             TaskConfig {
-                args: Some(TaskCommandArgs::Sequence(string_vec!["--a"])),
-                command: Some(TaskCommandArgs::String("standard".to_owned())),
-                deps: Some(string_vec!["a:standard"]),
-                env: Some(stub_global_env_vars()),
-                local: false,
-                global_inputs: vec![],
-                inputs: Some(string_vec!["a.*"]),
-                outputs: Some(string_vec!["a.ts"]),
+                args: TaskCommandArgs::Sequence(string_vec!["--a"]),
+                command: TaskCommandArgs::String("standard".to_owned()),
+                deps: vec![Target::parse("a:standard").unwrap()],
+                env: stub_global_env_vars(),
+                inputs: string_vec!["a.*"],
+                outputs: string_vec!["a.ts"],
                 options: TaskOptionsConfig {
                     cache: Some(true),
                     retry_count: Some(1),
@@ -227,6 +225,7 @@ tasks:
                     ..TaskOptionsConfig::default()
                 },
                 platform: PlatformType::Node,
+                ..TaskConfig::default()
             }
         }
 
@@ -346,8 +345,8 @@ tasks:
                     (
                         "a".into(),
                         TaskConfig {
-                            command: Some(TaskCommandArgs::String("a".into())),
-                            inputs: Some(string_vec!["a"]),
+                            command: TaskCommandArgs::String("a".into()),
+                            inputs: string_vec!["a"],
                             platform: PlatformType::Unknown,
                             ..TaskConfig::default()
                         },
@@ -355,8 +354,8 @@ tasks:
                     (
                         "b".into(),
                         TaskConfig {
-                            command: Some(TaskCommandArgs::String("b".into())),
-                            inputs: Some(string_vec!["b"]),
+                            command: TaskCommandArgs::String("b".into()),
+                            inputs: string_vec!["b"],
                             platform: PlatformType::Node,
                             ..TaskConfig::default()
                         },
@@ -364,8 +363,8 @@ tasks:
                     (
                         "c".into(),
                         TaskConfig {
-                            command: Some(TaskCommandArgs::String("c".into())),
-                            inputs: Some(string_vec!["c"]),
+                            command: TaskCommandArgs::String("c".into()),
+                            inputs: string_vec!["c"],
                             platform: PlatformType::System,
                             ..TaskConfig::default()
                         },
@@ -764,7 +763,11 @@ mod task_expansion {
         #[tokio::test]
         async fn inherits_implicit_deps() {
             let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
-                tasks_config.implicit_deps = string_vec!["build", "~:build", "project:task",]
+                tasks_config.implicit_deps = vec![
+                    Target::parse("build").unwrap(),
+                    Target::parse("~:build").unwrap(),
+                    Target::parse("project:task").unwrap(),
+                ];
             })
             .await;
 
@@ -809,7 +812,7 @@ mod task_expansion {
         #[tokio::test]
         async fn resolves_implicit_deps_parent_depends_on() {
             let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
-                tasks_config.implicit_deps = string_vec!["^:build"]
+                tasks_config.implicit_deps = vec![Target::parse("^:build").unwrap()];
             })
             .await;
 
@@ -830,7 +833,7 @@ mod task_expansion {
         #[tokio::test]
         async fn avoids_implicit_deps_matching_target() {
             let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
-                tasks_config.implicit_deps = string_vec!["basic:build"]
+                tasks_config.implicit_deps = vec![Target::parse("basic:build").unwrap()];
             })
             .await;
 
@@ -1416,7 +1419,6 @@ mod task_expansion {
 
 mod detection {
     use super::*;
-    use moon_config::ProjectLanguage;
 
     async fn langs_sandbox() -> (Sandbox, ProjectGraph) {
         let workspace_config = WorkspaceConfig {
@@ -1434,7 +1436,7 @@ mod detection {
             tasks: BTreeMap::from_iter([(
                 "command".into(),
                 TaskConfig {
-                    command: Some(TaskCommandArgs::String("command".into())),
+                    command: TaskCommandArgs::String("command".into()),
                     ..TaskConfig::default()
                 },
             )]),
@@ -1460,7 +1462,7 @@ mod detection {
 
         assert_eq!(
             project_graph.get("bash").unwrap().language,
-            ProjectLanguage::Bash
+            LanguageType::Bash
         );
     }
 
@@ -1470,7 +1472,7 @@ mod detection {
 
         assert_eq!(
             project_graph.get("batch").unwrap().language,
-            ProjectLanguage::Batch
+            LanguageType::Batch
         );
     }
 
@@ -1480,7 +1482,7 @@ mod detection {
 
         assert_eq!(
             project_graph.get("deno").unwrap().language,
-            ProjectLanguage::JavaScript
+            LanguageType::JavaScript
         );
         assert_eq!(
             project_graph.get("deno").unwrap().config.platform.unwrap(),
@@ -1489,7 +1491,7 @@ mod detection {
 
         assert_eq!(
             project_graph.get("deno-config").unwrap().language,
-            ProjectLanguage::TypeScript
+            LanguageType::TypeScript
         );
     }
 
@@ -1497,13 +1499,10 @@ mod detection {
     async fn detects_go() {
         let (_sandbox, project_graph) = langs_sandbox().await;
 
-        assert_eq!(
-            project_graph.get("go").unwrap().language,
-            ProjectLanguage::Go
-        );
+        assert_eq!(project_graph.get("go").unwrap().language, LanguageType::Go);
         assert_eq!(
             project_graph.get("go-config").unwrap().language,
-            ProjectLanguage::Go
+            LanguageType::Go
         );
     }
 
@@ -1513,11 +1512,11 @@ mod detection {
 
         assert_eq!(
             project_graph.get("js").unwrap().language,
-            ProjectLanguage::JavaScript
+            LanguageType::JavaScript
         );
         assert_eq!(
             project_graph.get("js-config").unwrap().language,
-            ProjectLanguage::JavaScript
+            LanguageType::JavaScript
         );
     }
 
@@ -1527,11 +1526,11 @@ mod detection {
 
         assert_eq!(
             project_graph.get("php").unwrap().language,
-            ProjectLanguage::Php
+            LanguageType::Php
         );
         assert_eq!(
             project_graph.get("php-config").unwrap().language,
-            ProjectLanguage::Php
+            LanguageType::Php
         );
     }
 
@@ -1541,11 +1540,11 @@ mod detection {
 
         assert_eq!(
             project_graph.get("python").unwrap().language,
-            ProjectLanguage::Python
+            LanguageType::Python
         );
         assert_eq!(
             project_graph.get("python-config").unwrap().language,
-            ProjectLanguage::Python
+            LanguageType::Python
         );
     }
 
@@ -1555,11 +1554,11 @@ mod detection {
 
         assert_eq!(
             project_graph.get("ruby").unwrap().language,
-            ProjectLanguage::Ruby
+            LanguageType::Ruby
         );
         assert_eq!(
             project_graph.get("ruby-config").unwrap().language,
-            ProjectLanguage::Ruby
+            LanguageType::Ruby
         );
     }
 
@@ -1569,11 +1568,11 @@ mod detection {
 
         assert_eq!(
             project_graph.get("rust").unwrap().language,
-            ProjectLanguage::Rust
+            LanguageType::Rust
         );
         assert_eq!(
             project_graph.get("rust-config").unwrap().language,
-            ProjectLanguage::Rust
+            LanguageType::Rust
         );
     }
 
@@ -1583,11 +1582,11 @@ mod detection {
 
         assert_eq!(
             project_graph.get("ts").unwrap().language,
-            ProjectLanguage::TypeScript
+            LanguageType::TypeScript
         );
         assert_eq!(
             project_graph.get("ts-config").unwrap().language,
-            ProjectLanguage::TypeScript
+            LanguageType::TypeScript
         );
     }
 
@@ -1597,7 +1596,7 @@ mod detection {
 
         assert_eq!(
             project_graph.get("other").unwrap().language,
-            ProjectLanguage::Other("kotlin".into())
+            LanguageType::Other("kotlin".into())
         );
     }
 

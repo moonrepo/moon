@@ -185,7 +185,7 @@ mod set_content {
             .unwrap();
 
         assert!(!file.is_forced());
-        assert_eq!(file.config.unwrap().force, false);
+        assert!(!file.config.unwrap().force);
         assert_eq!(file.content, "Content".to_owned());
     }
 
@@ -196,7 +196,7 @@ mod set_content {
             .unwrap();
 
         assert!(file.is_skipped());
-        assert_eq!(file.config.unwrap().skip, true);
+        assert!(file.config.unwrap().skip);
         assert_eq!(file.content, "Content".to_owned());
     }
 }

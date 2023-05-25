@@ -156,7 +156,7 @@ impl InheritedTasksManager {
                             }
 
                             // Automatically set the platform
-                            if task.platform.clone().unwrap_or_default().is_unknown() {
+                            if task.platform.unwrap_or_default().is_unknown() {
                                 task.platform = Some(platform.to_owned());
                             }
                         }

@@ -1,25 +1,33 @@
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
-use moon_config::{
-    InheritedTasksConfig, InheritedTasksManager, ProjectConfig, ProjectDependsOn, ProjectLanguage,
-    ProjectMetadataConfig, ProjectType,
+use moon_config2::{
+    InheritedTasksManager, LanguageType, PartialInheritedTasksConfig, ProjectConfig,
+    ProjectDependsOn, ProjectMetadataConfig, ProjectType,
 };
 use moon_file_group::FileGroup;
 use moon_project::Project;
-use moon_test_utils::get_fixtures_root;
+use moon_test_utils::{create_portable_paths, get_fixtures_root};
 use moon_utils::{path, string_vec};
 use rustc_hash::FxHashMap;
 
 fn mock_file_groups(source: &str) -> FxHashMap<Id, FileGroup> {
     FxHashMap::from_iter([(
         "sources".into(),
-        FileGroup::new_with_source("sources", source, ["src/**/*"]).unwrap(),
+        FileGroup::new_with_source(
+            "sources",
+            [WorkspaceRelativePathBuf::from(format!("{source}/src/**/*"))],
+        )
+        .unwrap(),
     )])
 }
 
 fn mock_tasks_config() -> InheritedTasksManager {
-    let config = InheritedTasksConfig {
-        file_groups: FxHashMap::from_iter([("sources".into(), string_vec!["src/**/*"])]),
-        ..InheritedTasksConfig::default()
+    let config = PartialInheritedTasksConfig {
+        file_groups: Some(FxHashMap::from_iter([(
+            "sources".into(),
+            create_portable_paths(["src/**/*"]),
+        )])),
+        ..PartialInheritedTasksConfig::default()
     };
 
     let mut manager = InheritedTasksManager::default();
@@ -36,7 +44,7 @@ fn doesnt_exist() {
         "projects/missing",
         &get_fixtures_root(),
         &mock_tasks_config(),
-        |_| ProjectLanguage::Unknown,
+        |_| LanguageType::Unknown,
     )
     .unwrap();
 }
@@ -49,7 +57,7 @@ fn no_config() {
         "projects/no-config",
         &workspace_root,
         &mock_tasks_config(),
-        |_| ProjectLanguage::Unknown,
+        |_| LanguageType::Unknown,
     )
     .unwrap();
 
@@ -74,7 +82,7 @@ fn empty_config() {
         "projects/empty-config",
         &workspace_root,
         &mock_tasks_config(),
-        |_| ProjectLanguage::Unknown,
+        |_| LanguageType::Unknown,
     )
     .unwrap();
 
@@ -100,7 +108,7 @@ fn basic_config() {
         "projects/basic",
         &workspace_root,
         &mock_tasks_config(),
-        |_| ProjectLanguage::Unknown,
+        |_| LanguageType::Unknown,
     )
     .unwrap();
     let project_root = workspace_root.join(path::normalize_separators("projects/basic"));
@@ -109,7 +117,13 @@ fn basic_config() {
     let mut file_groups = mock_file_groups("projects/basic");
     file_groups.insert(
         "tests".into(),
-        FileGroup::new_with_source("tests", "projects/basic", ["**/*_test.rs"]).unwrap(),
+        FileGroup::new_with_source(
+            "tests",
+            [WorkspaceRelativePathBuf::from(
+                "projects/basic/**/*_test.rs",
+            )],
+        )
+        .unwrap(),
     );
 
     assert_eq!(
@@ -118,8 +132,11 @@ fn basic_config() {
             id: "basic".into(),
             config: ProjectConfig {
                 depends_on: vec![ProjectDependsOn::String("noConfig".into())],
-                file_groups: FxHashMap::from_iter([("tests".into(), string_vec!["**/*_test.rs"])]),
-                language: ProjectLanguage::JavaScript,
+                file_groups: FxHashMap::from_iter([(
+                    "tests".into(),
+                    create_portable_paths(["**/*_test.rs"])
+                )]),
+                language: LanguageType::JavaScript,
                 tags: vec![Id::raw("vue")],
                 ..ProjectConfig::default()
             },
@@ -140,7 +157,7 @@ fn advanced_config() {
         "projects/advanced",
         &workspace_root,
         &mock_tasks_config(),
-        |_| ProjectLanguage::Unknown,
+        |_| LanguageType::Unknown,
     )
     .unwrap();
 
@@ -153,12 +170,12 @@ fn advanced_config() {
                     name: Some("Advanced".into()),
                     description: "Advanced example.".into(),
                     owner: Some("Batman".into()),
-                    maintainers: Some(string_vec!["Bruce Wayne"]),
+                    maintainers: string_vec!["Bruce Wayne"],
                     channel: Some("#batcave".into()),
                 }),
                 tags: vec![Id::raw("react")],
                 type_of: ProjectType::Application,
-                language: ProjectLanguage::TypeScript,
+                language: LanguageType::TypeScript,
                 ..ProjectConfig::default()
             },
             log_target: "moon:project:advanced".into(),

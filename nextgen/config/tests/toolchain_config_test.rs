@@ -1,6 +1,6 @@
 mod utils;
 
-use moon_config2::{FilePath, ToolchainConfig};
+use moon_config2::ToolchainConfig;
 use proto::ToolsConfig;
 use std::env;
 use utils::*;
@@ -43,7 +43,7 @@ mod toolchain_config {
 
             let cfg = config.deno.unwrap();
 
-            assert_eq!(cfg.deps_file, FilePath("deps.ts".to_owned()));
+            assert_eq!(cfg.deps_file, "deps.ts".to_owned());
             assert!(!cfg.lockfile);
         }
 
@@ -61,7 +61,7 @@ deno:
 
             let cfg = config.deno.unwrap();
 
-            assert_eq!(cfg.deps_file, FilePath("dependencies.ts".to_owned()));
+            assert_eq!(cfg.deps_file, "dependencies.ts".to_owned());
             assert!(cfg.lockfile);
         }
 
@@ -476,10 +476,7 @@ rust:
 
             let cfg = config.typescript.unwrap();
 
-            assert_eq!(
-                cfg.project_config_file_name,
-                FilePath("tsconfig.json".to_owned())
-            );
+            assert_eq!(cfg.project_config_file_name, "tsconfig.json".to_owned());
             assert!(cfg.sync_project_references);
         }
 
@@ -497,10 +494,7 @@ typescript:
 
             let cfg = config.typescript.unwrap();
 
-            assert_eq!(
-                cfg.project_config_file_name,
-                FilePath("tsconf.json".to_owned())
-            );
+            assert_eq!(cfg.project_config_file_name, "tsconf.json".to_owned());
             assert!(!cfg.sync_project_references);
         }
 

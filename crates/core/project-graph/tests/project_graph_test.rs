@@ -1,6 +1,8 @@
 use moon::{generate_project_graph, load_workspace_from};
 use moon_common::Id;
-use moon_config::{NodeConfig, RustConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects};
+use moon_config2::{
+    DependencyScope, NodeConfig, RustConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
+};
 use moon_project::{Project, ProjectDependency, ProjectDependencySource};
 use moon_project_graph::ProjectGraph;
 use moon_test_utils::{
@@ -42,10 +44,10 @@ async fn get_aliases_graph() -> (ProjectGraph, Sandbox) {
 async fn get_dependencies_graph(enable_git: bool) -> (ProjectGraph, Sandbox) {
     let workspace_config = WorkspaceConfig {
         projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
-            ("a".to_owned(), "a".to_owned()),
-            ("b".to_owned(), "b".to_owned()),
-            ("c".to_owned(), "c".to_owned()),
-            ("d".to_owned(), "d".to_owned()),
+            ("a".into(), "a".to_owned()),
+            ("b".into(), "b".to_owned()),
+            ("c".into(), "c".to_owned()),
+            ("d".into(), "d".to_owned()),
         ])),
         ..WorkspaceConfig::default()
     };
@@ -70,10 +72,10 @@ async fn get_dependencies_graph(enable_git: bool) -> (ProjectGraph, Sandbox) {
 async fn get_dependents_graph() -> (ProjectGraph, Sandbox) {
     let workspace_config = WorkspaceConfig {
         projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
-            ("a".to_owned(), "a".to_owned()),
-            ("b".to_owned(), "b".to_owned()),
-            ("c".to_owned(), "c".to_owned()),
-            ("d".to_owned(), "d".to_owned()),
+            ("a".into(), "a".to_owned()),
+            ("b".into(), "b".to_owned()),
+            ("c".into(), "c".to_owned()),
+            ("d".into(), "d".to_owned()),
         ])),
         ..WorkspaceConfig::default()
     };
@@ -185,8 +187,8 @@ async fn can_use_map_and_globs_setting() {
         projects: WorkspaceProjects::Both {
             globs: string_vec!["deps/*"],
             sources: FxHashMap::from_iter([
-                ("basic".to_owned(), "basic".to_owned()),
-                ("noConfig".to_owned(), "no-config".to_owned()),
+                ("basic".into(), "basic".to_owned()),
+                ("noConfig".into(), "no-config".to_owned()),
             ]),
         },
         ..WorkspaceConfig::default()
@@ -223,8 +225,8 @@ async fn can_use_map_and_globs_setting() {
 async fn can_generate_with_deps_cycles() {
     let workspace_config = WorkspaceConfig {
         projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
-            ("a".to_owned(), "a".to_owned()),
-            ("b".to_owned(), "b".to_owned()),
+            ("a".into(), "a".to_owned()),
+            ("b".into(), "b".to_owned()),
         ])),
         ..WorkspaceConfig::default()
     };
@@ -442,10 +444,10 @@ mod to_dot {
     async fn renders_partial_tree() {
         let workspace_config = WorkspaceConfig {
             projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
-                ("a".to_owned(), "a".to_owned()),
-                ("b".to_owned(), "b".to_owned()),
-                ("c".to_owned(), "c".to_owned()),
-                ("d".to_owned(), "d".to_owned()),
+                ("a".into(), "a".to_owned()),
+                ("b".into(), "b".to_owned()),
+                ("c".into(), "c".to_owned()),
+                ("d".into(), "d".to_owned()),
             ])),
             ..WorkspaceConfig::default()
         };
@@ -484,7 +486,7 @@ mod implicit_explicit_deps {
                     "nodeNameScope".into(),
                     ProjectDependency {
                         id: "nodeNameScope".into(),
-                        scope: moon_config::DependencyScope::Development,
+                        scope: DependencyScope::Development,
                         source: ProjectDependencySource::Implicit,
                         via: Some("@scope/pkg-foo".to_string())
                     }
@@ -493,7 +495,7 @@ mod implicit_explicit_deps {
                     "node".into(),
                     ProjectDependency {
                         id: "node".into(),
-                        scope: moon_config::DependencyScope::Production,
+                        scope: DependencyScope::Production,
                         source: ProjectDependencySource::Implicit,
                         via: Some("project-graph-aliases-node".to_string())
                     }
@@ -515,7 +517,7 @@ mod implicit_explicit_deps {
                     "nodeNameScope".into(),
                     ProjectDependency {
                         id: "nodeNameScope".into(),
-                        scope: moon_config::DependencyScope::Production,
+                        scope: DependencyScope::Production,
                         source: ProjectDependencySource::Explicit,
                         via: None
                     }
@@ -524,7 +526,7 @@ mod implicit_explicit_deps {
                     "node".into(),
                     ProjectDependency {
                         id: "node".into(),
-                        scope: moon_config::DependencyScope::Development,
+                        scope: DependencyScope::Development,
                         source: ProjectDependencySource::Explicit,
                         via: None
                     }
@@ -546,7 +548,7 @@ mod implicit_explicit_deps {
                     "nodeNameScope".into(),
                     ProjectDependency {
                         id: "nodeNameScope".into(),
-                        scope: moon_config::DependencyScope::Production,
+                        scope: DependencyScope::Production,
                         source: ProjectDependencySource::Explicit,
                         via: None
                     }
@@ -555,7 +557,7 @@ mod implicit_explicit_deps {
                     "node".into(),
                     ProjectDependency {
                         id: "node".into(),
-                        scope: moon_config::DependencyScope::Development,
+                        scope: DependencyScope::Development,
                         source: ProjectDependencySource::Explicit,
                         via: None
                     }
@@ -564,7 +566,7 @@ mod implicit_explicit_deps {
                     "nodeNameOnly".into(),
                     ProjectDependency {
                         id: "nodeNameOnly".into(),
-                        scope: moon_config::DependencyScope::Peer,
+                        scope: DependencyScope::Peer,
                         source: ProjectDependencySource::Implicit,
                         via: Some("pkg-bar".to_string())
                     }

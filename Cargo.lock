@@ -3446,6 +3446,7 @@ dependencies = [
  "assert_fs",
  "clean-path",
  "insta",
+ "moon_common",
  "moon_config2",
  "predicates",
  "pretty_assertions",

@@ -52,19 +52,13 @@ tasks:
 
         assert_eq!(build.command, TaskCommandArgs::String("webpack".to_owned()));
         assert_eq!(build.args, TaskCommandArgs::None);
-        assert_eq!(
-            build.inputs,
-            vec![PortablePath::ProjectGlob(GlobPath("src/**/*".into()))]
-        );
+        assert_eq!(build.inputs, vec!["src/**/*"]);
 
         let start = config.tasks.get("start").unwrap();
 
         assert_eq!(start.command, TaskCommandArgs::String("webpack".to_owned()));
         assert_eq!(start.args, TaskCommandArgs::String("serve".to_owned()));
-        assert_eq!(
-            start.inputs,
-            vec![PortablePath::ProjectGlob(GlobPath("src/**/*".into()))]
-        );
+        assert_eq!(start.inputs, vec!["src/**/*"]);
     }
 
     // TODO: fix this in schematic?
@@ -92,19 +86,13 @@ tasks:
 
         assert_eq!(build.command, TaskCommandArgs::String("webpack".to_owned()));
         assert_eq!(build.args, TaskCommandArgs::None);
-        assert_eq!(
-            build.inputs,
-            vec![PortablePath::ProjectGlob(GlobPath("src/**/*".into()))]
-        );
+        assert_eq!(build.inputs, vec!["src/**/*".to_owned()]);
 
         let start = config.tasks.get("start").unwrap();
 
         assert_eq!(start.command, TaskCommandArgs::String("webpack".to_owned()));
         assert_eq!(start.args, TaskCommandArgs::String("serve".to_owned()));
-        assert_eq!(
-            start.inputs,
-            vec![PortablePath::ProjectGlob(GlobPath("src/**/*".into()))]
-        );
+        assert_eq!(start.inputs, vec!["src/**/*".to_owned()]);
     }
 
     mod depends_on {

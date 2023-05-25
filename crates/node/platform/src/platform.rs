@@ -183,7 +183,7 @@ impl Platform for NodePlatform {
                         if let Some(dep_project_id) = self.package_names.get(dep_name) {
                             implicit_deps.push(DependencyConfig {
                                 id: dep_project_id.to_owned(),
-                                scope: scope.clone(),
+                                scope: *scope,
                                 via: Some(dep_name.clone()),
                             });
                         }

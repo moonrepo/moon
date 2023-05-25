@@ -1,8 +1,7 @@
 mod utils;
 
 use moon_config2::{
-    FilePath, GlobPath, PlatformType, PortablePath, TaskCommandArgs, TaskConfig, TaskMergeStrategy,
-    TaskOutputStyle, TaskType,
+    PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskOutputStyle, TaskType,
 };
 use moon_target::Target;
 use utils::*;
@@ -182,15 +181,26 @@ inputs:
                 |code| TaskConfig::parse(code),
             );
 
+            // assert_eq!(
+            //     config.inputs,
+            //     vec![
+            //         PortablePath::WorkspaceFile(FilePath("ws/path".into())),
+            //         PortablePath::WorkspaceGlob(GlobPath("ws/glob/**/*".into())),
+            //         PortablePath::WorkspaceGlob(GlobPath("!ws/glob/**/*".into())),
+            //         PortablePath::ProjectFile(FilePath("proj/path".into())),
+            //         PortablePath::ProjectGlob(GlobPath("proj/glob/{a,b,c}".into())),
+            //         PortablePath::ProjectGlob(GlobPath("!proj/glob/{a,b,c}".into())),
+            //     ]
+            // );
             assert_eq!(
                 config.inputs,
                 vec![
-                    PortablePath::WorkspaceFile(FilePath("ws/path".into())),
-                    PortablePath::WorkspaceGlob(GlobPath("ws/glob/**/*".into())),
-                    PortablePath::WorkspaceGlob(GlobPath("!ws/glob/**/*".into())),
-                    PortablePath::ProjectFile(FilePath("proj/path".into())),
-                    PortablePath::ProjectGlob(GlobPath("proj/glob/{a,b,c}".into())),
-                    PortablePath::ProjectGlob(GlobPath("!proj/glob/{a,b,c}".into())),
+                    "ws/path".to_owned(),
+                    "ws/glob/**/*".to_owned(),
+                    "!ws/glob/**/*".to_owned(),
+                    "proj/path".to_owned(),
+                    "proj/glob/{a,b,c}".to_owned(),
+                    "!proj/glob/{a,b,c}".to_owned(),
                 ]
             );
         }
@@ -206,12 +216,16 @@ inputs:
                 |code| TaskConfig::parse(code),
             );
 
+            // assert_eq!(
+            //     config.inputs,
+            //     vec![
+            //         PortablePath::EnvVar("FOO_BAR".into()),
+            //         PortablePath::ProjectFile(FilePath("file/path".into())),
+            //     ]
+            // );
             assert_eq!(
                 config.inputs,
-                vec![
-                    PortablePath::EnvVar("FOO_BAR".into()),
-                    PortablePath::ProjectFile(FilePath("file/path".into())),
-                ]
+                vec!["FOO_BAR".to_owned(), "file/path".to_owned(),]
             );
         }
     }
@@ -234,15 +248,26 @@ outputs:
                 |code| TaskConfig::parse(code),
             );
 
+            // assert_eq!(
+            //     config.outputs,
+            //     vec![
+            //         PortablePath::WorkspaceFile(FilePath("ws/path".into())),
+            //         PortablePath::WorkspaceGlob(GlobPath("ws/glob/**/*".into())),
+            //         PortablePath::WorkspaceGlob(GlobPath("!ws/glob/**/*".into())),
+            //         PortablePath::ProjectFile(FilePath("proj/path".into())),
+            //         PortablePath::ProjectGlob(GlobPath("proj/glob/{a,b,c}".into())),
+            //         PortablePath::ProjectGlob(GlobPath("!proj/glob/{a,b,c}".into())),
+            //     ]
+            // );
             assert_eq!(
                 config.outputs,
                 vec![
-                    PortablePath::WorkspaceFile(FilePath("ws/path".into())),
-                    PortablePath::WorkspaceGlob(GlobPath("ws/glob/**/*".into())),
-                    PortablePath::WorkspaceGlob(GlobPath("!ws/glob/**/*".into())),
-                    PortablePath::ProjectFile(FilePath("proj/path".into())),
-                    PortablePath::ProjectGlob(GlobPath("proj/glob/{a,b,c}".into())),
-                    PortablePath::ProjectGlob(GlobPath("!proj/glob/{a,b,c}".into())),
+                    "ws/path".to_owned(),
+                    "ws/glob/**/*".to_owned(),
+                    "!ws/glob/**/*".to_owned(),
+                    "proj/path".to_owned(),
+                    "proj/glob/{a,b,c}".to_owned(),
+                    "!proj/glob/{a,b,c}".to_owned(),
                 ]
             );
         }
@@ -460,9 +485,7 @@ options:
 
                 assert_eq!(
                     config.options.env_file,
-                    Some(TaskOptionEnvFile::File(PortablePath::ProjectFile(
-                        FilePath(".env.file".into())
-                    )))
+                    Some(TaskOptionEnvFile::File(".env.file".to_owned()))
                 );
             }
 
@@ -478,9 +501,7 @@ options:
 
                 assert_eq!(
                     config.options.env_file,
-                    Some(TaskOptionEnvFile::File(PortablePath::WorkspaceFile(
-                        FilePath(".env.file".into())
-                    )))
+                    Some(TaskOptionEnvFile::File("/.env.file".to_owned()))
                 );
             }
 

@@ -31,7 +31,7 @@ derive_enum!(
     }
 );
 
-#[derive(Clone, Config, Deserialize, Serialize)]
+#[derive(Clone, Config, Debug, Deserialize, Serialize)]
 pub struct ProjectMetadataConfig {
     pub name: Option<String>,
 
@@ -58,7 +58,7 @@ derive_enum!(
 );
 
 /// Docs: https://moonrepo.dev/docs/config/project
-#[derive(Clone, Config, Deserialize, Serialize)]
+#[derive(Clone, Config, Debug, Deserialize, Serialize)]
 pub struct ProjectConfig {
     #[setting(
         default = "https://moonrepo.dev/schemas/project.json",

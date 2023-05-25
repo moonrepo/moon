@@ -238,7 +238,7 @@ pub struct ProjectDependency {
     pub via: Option<String>,
 }
 
-#[derive(Clone, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct Project {
     /// Unique alias of the project, alongside its official ID.

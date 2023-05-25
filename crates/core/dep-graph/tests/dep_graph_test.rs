@@ -5,8 +5,9 @@ use moon_config2::{
 use moon_dep_graph::BatchedTopoSort;
 use moon_project_graph::ProjectGraph;
 use moon_target::Target;
-use moon_test_utils::{assert_snapshot, create_sandbox_with_config, Sandbox};
-use moon_utils::string_vec;
+use moon_test_utils::{
+    assert_snapshot, create_portable_paths, create_sandbox_with_config, Sandbox,
+};
 use moon_workspace::Workspace;
 use petgraph::graph::NodeIndex;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -15,17 +16,17 @@ use std::path::PathBuf;
 async fn create_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
     let workspace_config = WorkspaceConfig {
         projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
-            ("advanced".to_owned(), "advanced".to_owned()),
-            ("basic".to_owned(), "basic".to_owned()),
-            ("emptyConfig".to_owned(), "empty-config".to_owned()),
-            ("noConfig".to_owned(), "no-config".to_owned()),
+            ("advanced".into(), "advanced".to_owned()),
+            ("basic".into(), "basic".to_owned()),
+            ("emptyConfig".into(), "empty-config".to_owned()),
+            ("noConfig".into(), "no-config".to_owned()),
             // Deps
-            ("foo".to_owned(), "deps/foo".to_owned()),
-            ("bar".to_owned(), "deps/bar".to_owned()),
-            ("baz".to_owned(), "deps/baz".to_owned()),
+            ("foo".into(), "deps/foo".to_owned()),
+            ("bar".into(), "deps/bar".to_owned()),
+            ("baz".into(), "deps/baz".to_owned()),
             // Tasks
-            ("tasks".to_owned(), "tasks".to_owned()),
-            ("platforms".to_owned(), "platforms".to_owned()),
+            ("tasks".into(), "tasks".to_owned()),
+            ("platforms".into(), "platforms".to_owned()),
         ])),
         ..WorkspaceConfig::default()
     };
@@ -39,8 +40,11 @@ async fn create_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
     };
     let tasks_config = InheritedTasksConfig {
         file_groups: FxHashMap::from_iter([
-            ("sources".into(), string_vec!["src/**/*", "types/**/*"]),
-            ("tests".into(), string_vec!["tests/**/*"]),
+            (
+                "sources".into(),
+                create_portable_paths(["src/**/*", "types/**/*"]),
+            ),
+            ("tests".into(), create_portable_paths(["tests/**/*"])),
         ]),
         ..InheritedTasksConfig::default()
     };
@@ -61,24 +65,24 @@ async fn create_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
 async fn create_tasks_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
     let workspace_config = WorkspaceConfig {
         projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
-            ("basic".to_owned(), "basic".to_owned()),
-            ("buildA".to_owned(), "build-a".to_owned()),
-            ("buildB".to_owned(), "build-b".to_owned()),
-            ("buildC".to_owned(), "build-c".to_owned()),
-            ("chain".to_owned(), "chain".to_owned()),
-            ("cycle".to_owned(), "cycle".to_owned()),
-            ("inputA".to_owned(), "input-a".to_owned()),
-            ("inputB".to_owned(), "input-b".to_owned()),
-            ("inputC".to_owned(), "input-c".to_owned()),
+            ("basic".into(), "basic".to_owned()),
+            ("buildA".into(), "build-a".to_owned()),
+            ("buildB".into(), "build-b".to_owned()),
+            ("buildC".into(), "build-c".to_owned()),
+            ("chain".into(), "chain".to_owned()),
+            ("cycle".into(), "cycle".to_owned()),
+            ("inputA".into(), "input-a".to_owned()),
+            ("inputB".into(), "input-b".to_owned()),
+            ("inputC".into(), "input-c".to_owned()),
             (
-                "mergeAllStrategies".to_owned(),
+                "mergeAllStrategies".into(),
                 "merge-all-strategies".to_owned(),
             ),
-            ("mergeAppend".to_owned(), "merge-append".to_owned()),
-            ("mergePrepend".to_owned(), "merge-prepend".to_owned()),
-            ("mergeReplace".to_owned(), "merge-replace".to_owned()),
-            ("noTasks".to_owned(), "no-tasks".to_owned()),
-            ("persistent".to_owned(), "persistent".to_owned()),
+            ("mergeAppend".into(), "merge-append".to_owned()),
+            ("mergePrepend".into(), "merge-prepend".to_owned()),
+            ("mergeReplace".into(), "merge-replace".to_owned()),
+            ("noTasks".into(), "no-tasks".to_owned()),
+            ("persistent".into(), "persistent".to_owned()),
         ])),
         ..WorkspaceConfig::default()
     };
@@ -90,7 +94,10 @@ async fn create_tasks_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
         ..ToolchainConfig::default()
     };
     let tasks_config = InheritedTasksConfig {
-        file_groups: FxHashMap::from_iter([("sources".into(), vec!["src/**/*".to_owned()])]),
+        file_groups: FxHashMap::from_iter([(
+            "sources".into(),
+            create_portable_paths(["src/**/*"]),
+        )]),
         ..InheritedTasksConfig::default()
     };
 

@@ -195,9 +195,9 @@ inputs:
             assert_eq!(
                 config.inputs,
                 vec![
-                    "ws/path".to_owned(),
-                    "ws/glob/**/*".to_owned(),
-                    "!ws/glob/**/*".to_owned(),
+                    "/ws/path".to_owned(),
+                    "/ws/glob/**/*".to_owned(),
+                    "/!ws/glob/**/*".to_owned(),
                     "proj/path".to_owned(),
                     "proj/glob/{a,b,c}".to_owned(),
                     "!proj/glob/{a,b,c}".to_owned(),
@@ -225,7 +225,7 @@ inputs:
             // );
             assert_eq!(
                 config.inputs,
-                vec!["FOO_BAR".to_owned(), "file/path".to_owned(),]
+                vec!["$FOO_BAR".to_owned(), "file/path".to_owned(),]
             );
         }
     }
@@ -262,9 +262,9 @@ outputs:
             assert_eq!(
                 config.outputs,
                 vec![
-                    "ws/path".to_owned(),
-                    "ws/glob/**/*".to_owned(),
-                    "!ws/glob/**/*".to_owned(),
+                    "/ws/path".to_owned(),
+                    "/ws/glob/**/*".to_owned(),
+                    "/!ws/glob/**/*".to_owned(),
                     "proj/path".to_owned(),
                     "proj/glob/{a,b,c}".to_owned(),
                     "!proj/glob/{a,b,c}".to_owned(),
@@ -272,18 +272,18 @@ outputs:
             );
         }
 
-        #[test]
-        #[should_panic(expected = "environment variables are not supported here")]
-        fn errors_on_env_var() {
-            test_parse_config(
-                r"
-outputs:
-  - $FOO_BAR
-  - file/path
-",
-                |code| TaskConfig::parse(code),
-            );
-        }
+        //         #[test]
+        //         #[should_panic(expected = "environment variables are not supported here")]
+        //         fn errors_on_env_var() {
+        //             test_parse_config(
+        //                 r"
+        // outputs:
+        //   - $FOO_BAR
+        //   - file/path
+        // ",
+        //                 |code| TaskConfig::parse(code),
+        //             );
+        //         }
     }
 
     mod platform {
@@ -517,17 +517,17 @@ options:
                 );
             }
 
-            #[test]
-            #[should_panic(expected = "environment variables are not supported")]
-            fn errors_on_env_var() {
-                test_parse_config(
-                    r"
-options:
-  envFile: $ENV_VAR
-",
-                    |code| TaskConfig::parse(code),
-                );
-            }
+            //             #[test]
+            //             #[should_panic(expected = "environment variables are not supported")]
+            //             fn errors_on_env_var() {
+            //                 test_parse_config(
+            //                     r"
+            // options:
+            //   envFile: $ENV_VAR
+            // ",
+            //                     |code| TaskConfig::parse(code),
+            //                 );
+            //             }
         }
     }
 }

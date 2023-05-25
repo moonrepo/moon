@@ -3,8 +3,9 @@ use crate::infer_tasks_from_scripts;
 use moon_action_context::ActionContext;
 use moon_common::Id;
 use moon_config2::{
-    DependencyConfig, DependencyScope, HasherConfig, NodeConfig, PlatformType, ProjectConfig,
-    ProjectsAliasesMap, ProjectsSourcesMap, TasksConfigsMap, TypeScriptConfig,
+    Config, DependencyConfig, DependencyScope, HasherConfig, NodeConfig, PlatformType,
+    ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, TaskConfig, TasksConfigsMap,
+    TypeScriptConfig,
 };
 use moon_error::MoonError;
 use moon_hasher::{DepsHasher, HashSet};
@@ -221,10 +222,15 @@ impl Platform for NodePlatform {
         );
 
         if let Some(package_json) = PackageJson::read(&project.root)? {
-            tasks.extend(
-                infer_tasks_from_scripts(&project.id, &package_json)
-                    .map_err(|e| MoonError::Generic(e.to_string()))?,
-            );
+            for (id, partial_task) in infer_tasks_from_scripts(&project.id, &package_json)
+                .map_err(|e| MoonError::Generic(e.to_string()))?
+            {
+                tasks.insert(
+                    id,
+                    TaskConfig::from_partial(&(), partial_task, false)
+                        .map_err(|e| MoonError::Generic(e.to_string()))?,
+                );
+            }
         }
 
         Ok(tasks)

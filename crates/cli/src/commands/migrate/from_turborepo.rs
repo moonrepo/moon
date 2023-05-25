@@ -2,8 +2,11 @@ use super::check_dirty_repo;
 use moon::{generate_project_graph, load_workspace};
 use moon_common::consts;
 use moon_common::Id;
+use moon_config2::PartialTaskOptionsConfig;
+use moon_config2::ProjectConfig;
 use moon_config2::{
-    InheritedTasksConfig, PlatformType, ProjectConfig, TaskCommandArgs, TaskConfig,
+    PartialInheritedTasksConfig, PartialProjectConfig, PartialTaskConfig, PlatformType,
+    TaskCommandArgs,
 };
 use moon_logger::{info, warn};
 use moon_target::{Target, TargetError};
@@ -13,6 +16,7 @@ use serde::{Deserialize, Serialize};
 use starbase::AppResult;
 use starbase_utils::fs;
 use starbase_utils::{json, yaml};
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 
 const LOG_TARGET: &str = "moon:migrate:from-turborepo";
@@ -49,17 +53,24 @@ pub fn extract_project_task_ids(key: &str) -> (Option<Id>, Id) {
     (None, Id::raw(key))
 }
 
-pub fn convert_globals(turbo: &TurboJson, tasks_config: &mut InheritedTasksConfig) -> bool {
+pub fn convert_globals(turbo: &TurboJson, tasks_config: &mut PartialInheritedTasksConfig) -> bool {
     let mut modified = false;
 
     if let Some(global_deps) = &turbo.global_dependencies {
-        tasks_config.implicit_inputs.extend(global_deps.to_owned());
+        tasks_config
+            .implicit_inputs
+            .get_or_insert(vec![])
+            .extend(global_deps.to_owned());
+
         modified = true;
     }
 
     if let Some(global_env) = &turbo.global_env {
         for env in global_env {
-            tasks_config.implicit_inputs.push(format!("${env}"));
+            tasks_config
+                .implicit_inputs
+                .get_or_insert(vec![])
+                .push(format!("${env}"));
         }
 
         modified = true;
@@ -68,11 +79,13 @@ pub fn convert_globals(turbo: &TurboJson, tasks_config: &mut InheritedTasksConfi
     modified
 }
 
-pub fn convert_task(name: Id, task: TurboTask) -> Result<TaskConfig, TargetError> {
-    let mut config = TaskConfig::default();
+pub fn convert_task(name: Id, task: TurboTask) -> Result<PartialTaskConfig, TargetError> {
+    let mut config = PartialTaskConfig::default();
     let mut inputs = vec![];
 
-    config.command = TaskCommandArgs::String(format!("moon node run-script {name}"));
+    config.command = Some(TaskCommandArgs::String(format!(
+        "moon node run-script {name}"
+    )));
 
     if let Some(turbo_deps) = task.depends_on {
         let mut deps: Vec<Target> = vec![];
@@ -90,7 +103,7 @@ pub fn convert_task(name: Id, task: TurboTask) -> Result<TaskConfig, TargetError
         }
 
         if !deps.is_empty() {
-            config.deps = deps;
+            config.deps = Some(deps);
         }
     }
 
@@ -124,9 +137,18 @@ pub fn convert_task(name: Id, task: TurboTask) -> Result<TaskConfig, TargetError
         config.inputs = Some(inputs);
     }
 
-    config.platform = PlatformType::Node;
-    config.local = task.persistent.unwrap_or_default();
-    config.options.cache = task.cache;
+    config.platform = Some(PlatformType::Node);
+
+    if task.persistent == Some(true) {
+        config.local = task.persistent;
+    }
+
+    if task.cache == Some(false) {
+        config
+            .options
+            .get_or_insert(PartialTaskOptionsConfig::default())
+            .cache = task.cache;
+    }
 
     Ok(config)
 }
@@ -148,7 +170,7 @@ pub async fn from_turborepo(skip_touched_files_check: bool) -> AppResult {
 
     let project_graph = generate_project_graph(&mut workspace).await?;
     let turbo_json: TurboJson = json::read_file(&turbo_file)?;
-    let mut node_tasks_config = InheritedTasksConfig::default();
+    let mut node_tasks_config = PartialInheritedTasksConfig::default();
     let mut has_modified_global_tasks = false;
 
     // Convert globals first
@@ -158,7 +180,7 @@ pub async fn from_turborepo(skip_touched_files_check: bool) -> AppResult {
 
     // Convert tasks second
     let mut has_warned_root_tasks = false;
-    let mut modified_projects: FxHashMap<&PathBuf, ProjectConfig> = FxHashMap::default();
+    let mut modified_projects: FxHashMap<&PathBuf, PartialProjectConfig> = FxHashMap::default();
 
     for (id, task) in turbo_json.pipeline {
         if id.starts_with("//#") {
@@ -178,18 +200,26 @@ pub async fn from_turborepo(skip_touched_files_check: bool) -> AppResult {
                 let project = project_graph.get(&project_id)?;
                 let task_config = convert_task(task_id.clone(), task)?;
 
-                if let Some(config) = modified_projects.get_mut(&project.root) {
-                    config.tasks.insert(task_id, task_config);
+                if let Some(project_config) = modified_projects.get_mut(&project.root) {
+                    project_config
+                        .tasks
+                        .get_or_insert(BTreeMap::new())
+                        .insert(task_id, task_config);
                 } else {
-                    let mut config = project.config.clone();
-                    config.tasks.insert(task_id, task_config);
+                    let mut project_config = ProjectConfig::load_partial(&project.root)?;
 
-                    modified_projects.insert(&project.root, config);
+                    project_config
+                        .tasks
+                        .get_or_insert(BTreeMap::new())
+                        .insert(task_id, task_config);
+
+                    modified_projects.insert(&project.root, project_config);
                 }
             }
             (None, task_id) => {
                 node_tasks_config
                     .tasks
+                    .get_or_insert(BTreeMap::new())
                     .insert(task_id.clone(), convert_task(task_id, task)?);
                 has_modified_global_tasks = true;
             }
@@ -230,9 +260,9 @@ mod tests {
 
         #[test]
         fn converst_deps() {
-            let mut config = InheritedTasksConfig {
-                implicit_inputs: string_vec!["existing.txt"],
-                ..InheritedTasksConfig::default()
+            let mut config = PartialInheritedTasksConfig {
+                implicit_inputs: Some(string_vec!["existing.txt"]),
+                ..PartialInheritedTasksConfig::default()
             };
 
             convert_globals(
@@ -245,15 +275,15 @@ mod tests {
 
             assert_eq!(
                 config.implicit_inputs,
-                string_vec!["existing.txt", "file.ts", "glob/**/*.js"]
+                Some(string_vec!["existing.txt", "file.ts", "glob/**/*.js"])
             );
         }
 
         #[test]
         fn converst_env() {
-            let mut config = InheritedTasksConfig {
-                implicit_inputs: string_vec!["$FOO"],
-                ..InheritedTasksConfig::default()
+            let mut config = PartialInheritedTasksConfig {
+                implicit_inputs: Some(string_vec!["$FOO"]),
+                ..PartialInheritedTasksConfig::default()
             };
 
             convert_globals(
@@ -264,7 +294,10 @@ mod tests {
                 &mut config,
             );
 
-            assert_eq!(config.implicit_inputs, string_vec!["$FOO", "$BAR", "$BAZ"]);
+            assert_eq!(
+                config.implicit_inputs,
+                Some(string_vec!["$FOO", "$BAR", "$BAZ"])
+            );
         }
     }
 
@@ -277,7 +310,7 @@ mod tests {
 
             assert_eq!(
                 config.command,
-                TaskCommandArgs::String("moon node run-script foo".into())
+                Some(TaskCommandArgs::String("moon node run-script foo".into()))
             );
         }
 
@@ -294,11 +327,11 @@ mod tests {
 
             assert_eq!(
                 config.deps,
-                vec![
+                Some(vec![
                     Target::new_self("normal").unwrap(),
                     Target::parse("^:parent").unwrap(),
                     Target::parse("project:normal").unwrap(),
-                ]
+                ])
             );
             assert_eq!(config.inputs.unwrap(), string_vec!["$VAR"]);
         }
@@ -307,7 +340,7 @@ mod tests {
         fn doesnt_set_deps_if_empty() {
             let config = convert_task("foo".into(), TurboTask::default()).unwrap();
 
-            assert_eq!(config.deps, Vec::<_>::new());
+            assert_eq!(config.deps, None);
         }
 
         #[test]
@@ -368,7 +401,7 @@ mod tests {
         fn doesnt_set_outputs_if_empty() {
             let config = convert_task("foo".into(), TurboTask::default()).unwrap();
 
-            assert_eq!(config.outputs.unwrap(), Vec::<String>::new());
+            assert_eq!(config.outputs, None);
         }
 
         #[test]
@@ -382,11 +415,11 @@ mod tests {
             )
             .unwrap();
 
-            assert!(config.local);
+            assert_eq!(config.local, Some(true));
         }
 
         #[test]
-        fn sets_cache() {
+        fn sets_cache_if_false() {
             let config = convert_task(
                 "foo".into(),
                 TurboTask {
@@ -396,7 +429,21 @@ mod tests {
             )
             .unwrap();
 
-            assert_eq!(config.options.cache, Some(false));
+            assert_eq!(config.options.unwrap().cache, Some(false));
+        }
+
+        #[test]
+        fn doesnt_set_cache_if_true() {
+            let config = convert_task(
+                "foo".into(),
+                TurboTask {
+                    cache: Some(true),
+                    ..TurboTask::default()
+                },
+            )
+            .unwrap();
+
+            assert_eq!(config.options, None);
         }
     }
 }

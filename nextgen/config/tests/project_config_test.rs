@@ -466,7 +466,10 @@ workspace:
             );
 
             assert_eq!(config.workspace.inherited_tasks.exclude, vec![Id::raw("a")]);
-            assert_eq!(config.workspace.inherited_tasks.include, vec![Id::raw("b")]);
+            assert_eq!(
+                config.workspace.inherited_tasks.include,
+                Some(vec![Id::raw("b")])
+            );
             assert_eq!(
                 config.workspace.inherited_tasks.rename,
                 FxHashMap::from_iter([(Id::raw("c"), Id::raw("d"))])

@@ -1,6 +1,5 @@
 use crate::portable_path::FilePath;
 use schematic::{validate, Config};
-use serde::Serialize;
 
 fn default_templates<C>(_ctx: &C) -> Option<Vec<FilePath>> {
     Some(vec![FilePath("./templates".into())])

@@ -1,5 +1,4 @@
 use schematic::{derive_enum, Config, ConfigEnum};
-use serde::Serialize;
 
 derive_enum!(
     #[derive(ConfigEnum, Copy, Default)]
@@ -19,7 +18,7 @@ derive_enum!(
     }
 );
 
-#[derive(Config, Serialize)]
+#[derive(Config)]
 pub struct HasherConfig {
     #[setting(default = 2500)]
     pub batch_size: u16,

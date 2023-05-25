@@ -1,5 +1,4 @@
 use schematic::{derive_enum, Config, ConfigEnum};
-use serde::Serialize;
 
 derive_enum!(
     #[derive(ConfigEnum, Copy, Default)]

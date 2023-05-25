@@ -1,6 +1,5 @@
 // use moon_common::is_test_env;
 use schematic::{validate, Config, ValidateError};
-use serde::Serialize;
 
 fn validate_webhook_url<T: AsRef<str>, D, C>(
     url: T,
@@ -14,7 +13,7 @@ fn validate_webhook_url<T: AsRef<str>, D, C>(
     Ok(())
 }
 
-#[derive(Config, Serialize)]
+#[derive(Config)]
 pub struct NotifierConfig {
     #[setting(validate = validate_webhook_url)]
     pub webhook_url: Option<String>,

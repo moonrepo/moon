@@ -1,39 +1,44 @@
 use crate::create_portable_paths;
 use moon_config2::{
-    InheritedTasksConfig, NodeConfig, NodePackageManager, NpmConfig, PnpmConfig, TaskCommandArgs,
-    TaskConfig, ToolchainConfig, TypeScriptConfig, WorkspaceConfig, WorkspaceProjects, YarnConfig,
+    NodePackageManager, PartialInheritedTasksConfig, PartialNodeConfig, PartialNpmConfig,
+    PartialPnpmConfig, PartialTaskConfig, PartialToolchainConfig, PartialTypeScriptConfig,
+    PartialWorkspaceConfig, PartialYarnConfig, TaskCommandArgs, WorkspaceProjects,
 };
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 
 // Turn everything off by default
-pub fn get_default_toolchain() -> ToolchainConfig {
-    ToolchainConfig {
-        node: Some(NodeConfig {
+pub fn get_default_toolchain() -> PartialToolchainConfig {
+    PartialToolchainConfig {
+        node: Some(PartialNodeConfig {
             version: Some("18.0.0".into()),
-            add_engines_constraint: false,
-            dedupe_on_lockfile_change: false,
-            infer_tasks_from_scripts: false,
-            sync_project_workspace_dependencies: false,
-            npm: NpmConfig {
+            add_engines_constraint: Some(false),
+            dedupe_on_lockfile_change: Some(false),
+            infer_tasks_from_scripts: Some(false),
+            sync_project_workspace_dependencies: Some(false),
+            npm: Some(PartialNpmConfig {
                 version: Some("8.19.0".into()),
-            },
-            ..NodeConfig::default()
+            }),
+            ..PartialNodeConfig::default()
         }),
-        typescript: Some(TypeScriptConfig {
-            create_missing_config: false,
-            route_out_dir_to_cache: false,
-            sync_project_references: false,
-            sync_project_references_to_paths: false,
-            ..TypeScriptConfig::default()
+        typescript: Some(PartialTypeScriptConfig {
+            create_missing_config: Some(false),
+            route_out_dir_to_cache: Some(false),
+            sync_project_references: Some(false),
+            sync_project_references_to_paths: Some(false),
+            ..PartialTypeScriptConfig::default()
         }),
-        ..ToolchainConfig::default()
+        ..PartialToolchainConfig::default()
     }
 }
 
-pub fn get_cases_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, InheritedTasksConfig) {
-    let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
+pub fn get_cases_fixture_configs() -> (
+    PartialWorkspaceConfig,
+    PartialToolchainConfig,
+    PartialInheritedTasksConfig,
+) {
+    let workspace_config = PartialWorkspaceConfig {
+        projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([
             ("root".into(), ".".to_owned()),
             ("affected".into(), "affected".to_owned()),
             ("base".into(), "base".to_owned()),
@@ -55,29 +60,33 @@ pub fn get_cases_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Inherit
             ("outputs".into(), "outputs".to_owned()),
             ("outputsFiltering".into(), "outputs-filtering".to_owned()),
             ("outputStyles".into(), "output-styles".to_owned()),
-        ])),
-        ..WorkspaceConfig::default()
+        ]))),
+        ..PartialWorkspaceConfig::default()
     };
 
     let toolchain_config = get_default_toolchain();
 
-    let tasks_config = InheritedTasksConfig {
-        tasks: BTreeMap::from_iter([(
+    let tasks_config = PartialInheritedTasksConfig {
+        tasks: Some(BTreeMap::from_iter([(
             "noop".into(),
-            TaskConfig {
-                command: TaskCommandArgs::String("noop".into()),
-                ..TaskConfig::default()
+            PartialTaskConfig {
+                command: Some(TaskCommandArgs::String("noop".into())),
+                ..PartialTaskConfig::default()
             },
-        )]),
-        ..InheritedTasksConfig::default()
+        )])),
+        ..PartialInheritedTasksConfig::default()
     };
 
     (workspace_config, toolchain_config, tasks_config)
 }
 
-pub fn get_projects_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, InheritedTasksConfig) {
-    let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
+pub fn get_projects_fixture_configs() -> (
+    PartialWorkspaceConfig,
+    PartialToolchainConfig,
+    PartialInheritedTasksConfig,
+) {
+    let workspace_config = PartialWorkspaceConfig {
+        projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([
             ("advanced".into(), "advanced".to_owned()),
             ("basic".into(), "basic".to_owned()),
             ("emptyConfig".into(), "empty-config".to_owned()),
@@ -88,30 +97,33 @@ pub fn get_projects_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Inhe
             ("foo".into(), "deps/foo".to_owned()),
             ("bar".into(), "deps/bar".to_owned()),
             ("baz".into(), "deps/baz".to_owned()),
-        ])),
-        ..WorkspaceConfig::default()
+        ]))),
+        ..PartialWorkspaceConfig::default()
     };
 
     let toolchain_config = get_default_toolchain();
 
-    let tasks_config = InheritedTasksConfig {
-        file_groups: FxHashMap::from_iter([
+    let tasks_config = PartialInheritedTasksConfig {
+        file_groups: Some(FxHashMap::from_iter([
             (
                 "sources".into(),
                 create_portable_paths(["src/**/*", "types/**/*"]),
             ),
             ("tests".into(), create_portable_paths(["tests/**/*"])),
-        ]),
-        ..InheritedTasksConfig::default()
+        ])),
+        ..PartialInheritedTasksConfig::default()
     };
 
     (workspace_config, toolchain_config, tasks_config)
 }
 
-pub fn get_project_graph_aliases_fixture_configs(
-) -> (WorkspaceConfig, ToolchainConfig, InheritedTasksConfig) {
-    let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
+pub fn get_project_graph_aliases_fixture_configs() -> (
+    PartialWorkspaceConfig,
+    PartialToolchainConfig,
+    PartialInheritedTasksConfig,
+) {
+    let workspace_config = PartialWorkspaceConfig {
+        projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([
             ("explicit".into(), "explicit".to_owned()),
             (
                 "explicitAndImplicit".into(),
@@ -123,31 +135,35 @@ pub fn get_project_graph_aliases_fixture_configs(
             ("node".into(), "node".to_owned()),
             ("nodeNameOnly".into(), "node-name-only".to_owned()),
             ("nodeNameScope".into(), "node-name-scope".to_owned()),
-        ])),
-        ..WorkspaceConfig::default()
+        ]))),
+        ..PartialWorkspaceConfig::default()
     };
 
-    let toolchain_config = ToolchainConfig {
-        node: Some(NodeConfig {
+    let toolchain_config = PartialToolchainConfig {
+        node: Some(PartialNodeConfig {
             version: Some("18.0.0".into()),
-            add_engines_constraint: false,
-            dedupe_on_lockfile_change: false,
-            npm: NpmConfig {
+            add_engines_constraint: Some(false),
+            dedupe_on_lockfile_change: Some(false),
+            npm: Some(PartialNpmConfig {
                 version: Some("8.19.0".into()),
-            },
-            ..NodeConfig::default()
+            }),
+            ..PartialNodeConfig::default()
         }),
-        ..ToolchainConfig::default()
+        ..PartialToolchainConfig::default()
     };
 
-    let tasks_config = InheritedTasksConfig::default();
+    let tasks_config = PartialInheritedTasksConfig::default();
 
     (workspace_config, toolchain_config, tasks_config)
 }
 
-pub fn get_tasks_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, InheritedTasksConfig) {
-    let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
+pub fn get_tasks_fixture_configs() -> (
+    PartialWorkspaceConfig,
+    PartialToolchainConfig,
+    PartialInheritedTasksConfig,
+) {
+    let workspace_config = PartialWorkspaceConfig {
+        projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([
             ("basic".into(), "basic".to_owned()),
             ("buildA".into(), "build-a".to_owned()),
             ("buildB".into(), "build-b".to_owned()),
@@ -176,14 +192,14 @@ pub fn get_tasks_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Inherit
             ("expandEnvProject".into(), "expand-env-project".to_owned()),
             ("expandOutputs".into(), "expand-outputs".to_owned()),
             ("fileGroups".into(), "file-groups".to_owned()),
-        ])),
-        ..WorkspaceConfig::default()
+        ]))),
+        ..PartialWorkspaceConfig::default()
     };
 
     let toolchain_config = get_default_toolchain();
 
-    let tasks_config = InheritedTasksConfig {
-        file_groups: FxHashMap::from_iter([
+    let tasks_config = PartialInheritedTasksConfig {
+        file_groups: Some(FxHashMap::from_iter([
             (
                 "static".into(),
                 create_portable_paths([
@@ -204,45 +220,45 @@ pub fn get_tasks_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Inherit
                 create_portable_paths(["**/*.{ts,tsx}", "*.js"]),
             ),
             ("no_globs".into(), create_portable_paths(["config.js"])),
-        ]),
-        tasks: BTreeMap::from_iter([
+        ])),
+        tasks: Some(BTreeMap::from_iter([
             (
                 "standard".into(),
-                TaskConfig {
-                    command: TaskCommandArgs::String("cmd".into()),
-                    ..TaskConfig::default()
+                PartialTaskConfig {
+                    command: Some(TaskCommandArgs::String("cmd".into())),
+                    ..PartialTaskConfig::default()
                 },
             ),
             (
                 "withArgs".into(),
-                TaskConfig {
-                    command: TaskCommandArgs::String("cmd".into()),
-                    args: TaskCommandArgs::Sequence(vec![
+                PartialTaskConfig {
+                    command: Some(TaskCommandArgs::String("cmd".into())),
+                    args: Some(TaskCommandArgs::Sequence(vec![
                         "--foo".into(),
                         "--bar".into(),
                         "baz".into(),
-                    ]),
-                    ..TaskConfig::default()
+                    ])),
+                    ..PartialTaskConfig::default()
                 },
             ),
             (
                 "withInputs".into(),
-                TaskConfig {
-                    command: TaskCommandArgs::String("cmd".into()),
-                    inputs: vec!["rel/file.*".into(), "/root.*".into()],
-                    ..TaskConfig::default()
+                PartialTaskConfig {
+                    command: Some(TaskCommandArgs::String("cmd".into())),
+                    inputs: Some(vec!["rel/file.*".into(), "/root.*".into()]),
+                    ..PartialTaskConfig::default()
                 },
             ),
             (
                 "withOutputs".into(),
-                TaskConfig {
-                    command: TaskCommandArgs::String("cmd".into()),
-                    inputs: vec!["lib".into(), "/build".into()],
-                    ..TaskConfig::default()
+                PartialTaskConfig {
+                    command: Some(TaskCommandArgs::String("cmd".into())),
+                    inputs: Some(vec!["lib".into(), "/build".into()]),
+                    ..PartialTaskConfig::default()
                 },
             ),
-        ]),
-        ..InheritedTasksConfig::default()
+        ])),
+        ..PartialInheritedTasksConfig::default()
     };
 
     (workspace_config, toolchain_config, tasks_config)
@@ -250,9 +266,13 @@ pub fn get_tasks_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Inherit
 
 // NODE.JS
 
-pub fn get_node_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, InheritedTasksConfig) {
-    let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
+pub fn get_node_fixture_configs() -> (
+    PartialWorkspaceConfig,
+    PartialToolchainConfig,
+    PartialInheritedTasksConfig,
+) {
+    let workspace_config = PartialWorkspaceConfig {
+        projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([
             ("node".into(), "base".to_owned()),
             ("lifecycles".into(), "lifecycles".to_owned()),
             (
@@ -270,31 +290,31 @@ pub fn get_node_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Inherite
             ("depsD".into(), "deps-d".to_owned()),
             ("dependsOn".into(), "depends-on".to_owned()),
             ("dependsOnScopes".into(), "depends-on-scopes".to_owned()),
-        ])),
-        ..WorkspaceConfig::default()
+        ]))),
+        ..PartialWorkspaceConfig::default()
     };
 
     let toolchain_config = get_default_toolchain();
 
-    let tasks_config = InheritedTasksConfig {
-        tasks: BTreeMap::from_iter([
+    let tasks_config = PartialInheritedTasksConfig {
+        tasks: Some(BTreeMap::from_iter([
             (
                 "version".into(),
-                TaskConfig {
-                    command: TaskCommandArgs::String("node".into()),
-                    args: TaskCommandArgs::String("--version".into()),
-                    ..TaskConfig::default()
+                PartialTaskConfig {
+                    command: Some(TaskCommandArgs::String("node".into())),
+                    args: Some(TaskCommandArgs::String("--version".into())),
+                    ..PartialTaskConfig::default()
                 },
             ),
             (
                 "noop".into(),
-                TaskConfig {
-                    command: TaskCommandArgs::String("noop".into()),
-                    ..TaskConfig::default()
+                PartialTaskConfig {
+                    command: Some(TaskCommandArgs::String("noop".into())),
+                    ..PartialTaskConfig::default()
                 },
             ),
-        ]),
-        ..InheritedTasksConfig::default()
+        ])),
+        ..PartialInheritedTasksConfig::default()
     };
 
     (workspace_config, toolchain_config, tasks_config)
@@ -302,41 +322,45 @@ pub fn get_node_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, Inherite
 
 pub fn get_node_depman_fixture_configs(
     depman: &str,
-) -> (WorkspaceConfig, ToolchainConfig, InheritedTasksConfig) {
+) -> (
+    PartialWorkspaceConfig,
+    PartialToolchainConfig,
+    PartialInheritedTasksConfig,
+) {
     let (mut workspace_config, mut toolchain_config, tasks_config) = get_node_fixture_configs();
 
-    workspace_config.projects = WorkspaceProjects::Sources(FxHashMap::from_iter([
+    workspace_config.projects = Some(WorkspaceProjects::Sources(FxHashMap::from_iter([
         (depman.into(), "base".to_owned()),
         ("other".into(), "other".to_owned()),
         ("notInWorkspace".into(), "not-in-workspace".to_owned()),
-    ]));
+    ])));
 
     if let Some(node_config) = &mut toolchain_config.node {
         match depman {
             "npm" => {
-                node_config.package_manager = NodePackageManager::Npm;
-                node_config.npm = NpmConfig {
+                node_config.package_manager = Some(NodePackageManager::Npm);
+                node_config.npm = Some(PartialNpmConfig {
                     version: Some("8.0.0".into()),
-                };
+                });
             }
             "pnpm" => {
-                node_config.package_manager = NodePackageManager::Pnpm;
-                node_config.pnpm = Some(PnpmConfig {
+                node_config.package_manager = Some(NodePackageManager::Pnpm);
+                node_config.pnpm = Some(PartialPnpmConfig {
                     version: Some("7.5.0".into()),
                 });
             }
             "yarn" => {
-                node_config.package_manager = NodePackageManager::Yarn;
-                node_config.yarn = Some(YarnConfig {
+                node_config.package_manager = Some(NodePackageManager::Yarn);
+                node_config.yarn = Some(PartialYarnConfig {
                     version: Some("3.3.0".into()),
-                    plugins: vec!["workspace-tools".into()],
+                    plugins: Some(vec!["workspace-tools".into()]),
                 });
             }
             "yarn1" => {
-                node_config.package_manager = NodePackageManager::Yarn;
-                node_config.yarn = Some(YarnConfig {
+                node_config.package_manager = Some(NodePackageManager::Yarn);
+                node_config.yarn = Some(PartialYarnConfig {
                     version: Some("1.22.0".into()),
-                    plugins: vec![],
+                    plugins: Some(vec![]),
                 });
             }
             _ => {}
@@ -346,18 +370,21 @@ pub fn get_node_depman_fixture_configs(
     (workspace_config, toolchain_config, tasks_config)
 }
 
-pub fn get_typescript_fixture_configs() -> (WorkspaceConfig, ToolchainConfig, InheritedTasksConfig)
-{
+pub fn get_typescript_fixture_configs() -> (
+    PartialWorkspaceConfig,
+    PartialToolchainConfig,
+    PartialInheritedTasksConfig,
+) {
     let (mut workspace_config, mut toolchain_config, tasks_config) = get_node_fixture_configs();
 
-    workspace_config.projects = WorkspaceProjects::Both {
+    workspace_config.projects = Some(WorkspaceProjects::Both {
         globs: vec!["*".into()],
         sources: FxHashMap::from_iter([("root".into(), ".".into())]),
-    };
+    });
 
     if let Some(ts_config) = &mut toolchain_config.typescript {
-        ts_config.create_missing_config = true;
-        ts_config.sync_project_references = true;
+        ts_config.create_missing_config = Some(true);
+        ts_config.sync_project_references = Some(true);
     }
 
     (workspace_config, toolchain_config, tasks_config)

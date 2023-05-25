@@ -2748,7 +2748,6 @@ dependencies = [
 name = "moon_deno_platform"
 version = "0.1.0"
 dependencies = [
- "moon",
  "moon_action_context",
  "moon_common",
  "moon_config2",
@@ -2760,10 +2759,8 @@ dependencies = [
  "moon_platform",
  "moon_process",
  "moon_project",
- "moon_project_graph",
  "moon_task",
  "moon_terminal",
- "moon_test_utils",
  "moon_tool",
  "moon_typescript_lang",
  "moon_typescript_platform",

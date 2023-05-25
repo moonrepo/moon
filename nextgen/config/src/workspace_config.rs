@@ -8,7 +8,6 @@ use rustc_hash::FxHashMap;
 use schematic::{
     derive_enum, validate, Config, ConfigError, ConfigLoader, Segment, SettingPath, ValidateError,
 };
-use serde::Serialize;
 use std::path::Path;
 
 // We can't use serde based types in the enum below to handle validation,
@@ -82,7 +81,7 @@ impl Default for WorkspaceProjects {
     }
 }
 
-#[derive(Config, Serialize)]
+#[derive(Config)]
 pub struct WorkspaceConfig {
     #[setting(
         default = "https://moonrepo.dev/schemas/workspace.json",

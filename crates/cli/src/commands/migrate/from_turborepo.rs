@@ -116,12 +116,12 @@ pub fn convert_task(name: Id, task: TurboTask) -> Result<TaskConfig, TargetError
         }
 
         if !outputs.is_empty() {
-            config.outputs = outputs;
+            config.outputs = Some(outputs);
         }
     }
 
     if !inputs.is_empty() {
-        config.inputs = inputs;
+        config.inputs = Some(inputs);
     }
 
     config.platform = PlatformType::Node;
@@ -300,7 +300,7 @@ mod tests {
                     Target::parse("project:normal").unwrap(),
                 ]
             );
-            assert_eq!(config.inputs, string_vec!["$VAR"]);
+            assert_eq!(config.inputs.unwrap(), string_vec!["$VAR"]);
         }
 
         #[test]
@@ -321,7 +321,7 @@ mod tests {
             )
             .unwrap();
 
-            assert_eq!(config.inputs, string_vec!["$FOO", "$BAR"]);
+            assert_eq!(config.inputs.unwrap(), string_vec!["$FOO", "$BAR"]);
         }
 
         #[test]
@@ -336,7 +336,7 @@ mod tests {
             .unwrap();
 
             assert_eq!(
-                config.inputs,
+                config.inputs.unwrap(),
                 string_vec!["file.ts", "some/folder", "some/glob/**/*"]
             );
         }
@@ -359,7 +359,7 @@ mod tests {
             .unwrap();
 
             assert_eq!(
-                config.outputs,
+                config.outputs.unwrap(),
                 string_vec!["dir", "dir/**/*", "dir/**/*", "dir/*", "dir/*/sub"]
             );
         }
@@ -368,7 +368,7 @@ mod tests {
         fn doesnt_set_outputs_if_empty() {
             let config = convert_task("foo".into(), TurboTask::default()).unwrap();
 
-            assert_eq!(config.outputs, Vec::<String>::new());
+            assert_eq!(config.outputs.unwrap(), Vec::<String>::new());
         }
 
         #[test]

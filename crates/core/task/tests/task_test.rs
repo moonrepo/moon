@@ -207,7 +207,7 @@ mod from_config {
         let task = Task::from_config(
             Target::new("foo", "test").unwrap(),
             &TaskConfig {
-                inputs: string_vec!["foo", "bar"],
+                inputs: Some(string_vec!["foo", "bar"]),
                 ..TaskConfig::default()
             },
         )
@@ -221,7 +221,7 @@ mod from_config {
         let task = Task::from_config(
             Target::new("foo", "test").unwrap(),
             &TaskConfig {
-                inputs: vec![],
+                inputs: Some(vec![]),
                 ..TaskConfig::default()
             },
         )
@@ -236,7 +236,7 @@ mod from_config {
             Target::new("foo", "test").unwrap(),
             &TaskConfig {
                 global_inputs: string_vec!["global"],
-                inputs: string_vec!["local"],
+                inputs: Some(string_vec!["local"]),
                 ..TaskConfig::default()
             },
         )
@@ -251,7 +251,7 @@ mod from_config {
         let task = Task::from_config(
             Target::new("foo", "test").unwrap(),
             &TaskConfig {
-                inputs: string_vec![],
+                inputs: Some(vec![]),
                 ..TaskConfig::default()
             },
         )
@@ -265,7 +265,7 @@ mod from_config {
         let task = Task::from_config(
             Target::new("foo", "test").unwrap(),
             &TaskConfig {
-                inputs: string_vec!["foo"],
+                inputs: Some(string_vec!["foo"]),
                 ..TaskConfig::default()
             },
         )
@@ -279,7 +279,7 @@ mod from_config {
         let task = Task::from_config(
             Target::new("foo", "test").unwrap(),
             &TaskConfig {
-                inputs: vec![],
+                inputs: None,
                 ..TaskConfig::default()
             },
         )
@@ -454,7 +454,7 @@ mod merge {
         };
 
         task.merge(&TaskConfig {
-            inputs: vec![],
+            inputs: Some(vec![]),
             options: TaskOptionsConfig {
                 merge_inputs: Some(TaskMergeStrategy::Replace),
                 ..TaskOptionsConfig::default()
@@ -476,7 +476,7 @@ mod merge {
         };
 
         task.merge(&TaskConfig {
-            inputs: vec![],
+            inputs: Some(vec![]),
             ..TaskConfig::default()
         })
         .unwrap();
@@ -494,7 +494,7 @@ mod merge {
         };
 
         task.merge(&TaskConfig {
-            inputs: vec![],
+            inputs: Some(vec![]),
             ..TaskConfig::default()
         })
         .unwrap();
@@ -512,7 +512,7 @@ mod merge {
         };
 
         task.merge(&TaskConfig {
-            inputs: string_vec!["foo"],
+            inputs: Some(string_vec!["foo"]),
             ..TaskConfig::default()
         })
         .unwrap();
@@ -531,7 +531,7 @@ mod merge {
         };
 
         task.merge(&TaskConfig {
-            inputs: vec![],
+            inputs: Some(vec![]),
             ..TaskConfig::default()
         })
         .unwrap();
@@ -546,7 +546,7 @@ mod is_affected {
     #[test]
     fn returns_true_if_var_truthy() {
         let mut task = create_task(TaskConfig {
-            inputs: string_vec!["$FOO"],
+            inputs: Some(string_vec!["$FOO"]),
             ..TaskConfig::default()
         });
 
@@ -562,7 +562,7 @@ mod is_affected {
     #[test]
     fn returns_false_if_var_missing() {
         let mut task = create_task(TaskConfig {
-            inputs: string_vec!["$BAR"],
+            inputs: Some(string_vec!["$BAR"]),
             ..TaskConfig::default()
         });
 
@@ -574,7 +574,7 @@ mod is_affected {
     #[test]
     fn returns_false_if_var_empty() {
         let mut task = create_task(TaskConfig {
-            inputs: string_vec!["$BAZ"],
+            inputs: Some(string_vec!["$BAZ"]),
             ..TaskConfig::default()
         });
 
@@ -591,7 +591,7 @@ mod is_affected {
     fn returns_true_if_matches_file() {
         let project_source = PathBuf::from("files-and-dirs");
         let mut task = create_task(TaskConfig {
-            inputs: string_vec!["file.ts"],
+            inputs: Some(string_vec!["file.ts"]),
             ..TaskConfig::default()
         });
 
@@ -607,7 +607,7 @@ mod is_affected {
     fn returns_true_if_matches_glob() {
         let project_source = PathBuf::from("files-and-dirs");
         let mut task = create_task(TaskConfig {
-            inputs: string_vec!["file.*"],
+            inputs: Some(string_vec!["file.*"]),
             ..TaskConfig::default()
         });
 
@@ -622,7 +622,7 @@ mod is_affected {
     #[test]
     fn returns_true_when_referencing_root_files() {
         let mut task = create_task(TaskConfig {
-            inputs: string_vec!["/package.json"],
+            inputs: Some(string_vec!["/package.json"]),
             ..TaskConfig::default()
         });
 
@@ -638,7 +638,7 @@ mod is_affected {
     fn returns_false_if_outside_project() {
         let project_source = PathBuf::from("files-and-dirs");
         let mut task = create_task(TaskConfig {
-            inputs: string_vec!["file.ts"],
+            inputs: Some(string_vec!["file.ts"]),
             ..TaskConfig::default()
         });
 
@@ -654,7 +654,7 @@ mod is_affected {
     fn returns_false_if_no_match() {
         let project_source = PathBuf::from("files-and-dirs");
         let mut task = create_task(TaskConfig {
-            inputs: string_vec!["file.ts", "src/*"],
+            inputs: Some(string_vec!["file.ts", "src/*"]),
             ..TaskConfig::default()
         });
 

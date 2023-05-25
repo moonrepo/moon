@@ -193,7 +193,7 @@ inputs:
             //     ]
             // );
             assert_eq!(
-                config.inputs,
+                config.inputs.unwrap(),
                 vec![
                     "/ws/path".to_owned(),
                     "/ws/glob/**/*".to_owned(),
@@ -224,7 +224,7 @@ inputs:
             //     ]
             // );
             assert_eq!(
-                config.inputs,
+                config.inputs.unwrap(),
                 vec!["$FOO_BAR".to_owned(), "file/path".to_owned(),]
             );
         }
@@ -260,7 +260,7 @@ outputs:
             //     ]
             // );
             assert_eq!(
-                config.outputs,
+                config.outputs.unwrap(),
                 vec![
                     "/ws/path".to_owned(),
                     "/ws/glob/**/*".to_owned(),

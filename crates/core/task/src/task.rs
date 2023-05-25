@@ -103,13 +103,13 @@ impl Task {
             flags: FxHashSet::default(),
             global_inputs: cloned_config.global_inputs,
             id: Id::new(&target.task_id)?,
-            inputs: cloned_config.inputs,
+            inputs: cloned_config.inputs.unwrap_or_default(),
             input_vars: FxHashSet::default(),
             input_globs: FxHashSet::default(),
             input_paths: FxHashSet::default(),
             log_target,
             options: TaskOptions::from_config(cloned_options, is_local),
-            outputs: cloned_config.outputs,
+            outputs: cloned_config.outputs.unwrap_or_default(),
             output_globs: FxHashSet::default(),
             output_paths: FxHashSet::default(),
             platform: cloned_config.platform,
@@ -121,7 +121,12 @@ impl Task {
             },
         };
 
-        if config.inputs.is_empty() {
+        if config
+            .inputs
+            .as_ref()
+            .map(|i| i.is_empty())
+            .unwrap_or(false)
+        {
             task.flags.insert(TaskFlag::NoInputs);
         }
 
@@ -147,11 +152,11 @@ impl Task {
         }
 
         if !self.inputs.is_empty() || (self.inputs.len() == 1 && self.inputs[0] == "**/*") {
-            config.inputs = self.inputs.clone();
+            config.inputs = Some(self.inputs.clone());
         }
 
         if !self.outputs.is_empty() {
-            config.outputs = self.outputs.clone();
+            config.outputs = Some(self.outputs.clone());
         }
 
         if !self.platform.is_unknown() {
@@ -297,17 +302,18 @@ impl Task {
             self.env = self.merge_env_vars(&self.env, &config.env, &self.options.merge_env);
         }
 
-        if config.inputs.is_empty() {
-            self.flags.insert(TaskFlag::NoInputs);
-            self.inputs = vec![];
-        } else {
-            self.flags.remove(&TaskFlag::NoInputs);
-            self.inputs = self.merge_vec(&self.inputs, &self.inputs, &self.options.merge_inputs);
+        if let Some(inputs) = &config.inputs {
+            if inputs.is_empty() {
+                self.flags.insert(TaskFlag::NoInputs);
+                self.inputs = vec![];
+            } else {
+                self.flags.remove(&TaskFlag::NoInputs);
+                self.inputs = self.merge_vec(&self.inputs, inputs, &self.options.merge_inputs);
+            }
         }
 
-        if !config.outputs.is_empty() {
-            self.outputs =
-                self.merge_vec(&self.outputs, &self.outputs, &self.options.merge_outputs);
+        if let Some(outputs) = &config.outputs {
+            self.outputs = self.merge_vec(&self.outputs, outputs, &self.options.merge_outputs);
         }
 
         Ok(())

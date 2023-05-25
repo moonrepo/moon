@@ -382,7 +382,7 @@ mod create_task {
                             candidate.0,
                             candidate.1
                         ]),
-                        outputs: string_vec![candidate.2],
+                        outputs: Some(string_vec![candidate.2]),
                         platform: PlatformType::Node,
                         ..TaskConfig::default()
                     }
@@ -460,7 +460,7 @@ mod infer_tasks_from_scripts {
                             "run-script",
                             "build:app"
                         ]),
-                        outputs: string_vec!["dist"],
+                        outputs: Some(string_vec!["dist"]),
                         platform: PlatformType::Node,
                         ..TaskConfig::default()
                     }

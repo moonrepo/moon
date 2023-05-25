@@ -209,7 +209,7 @@ pub fn create_task(
     }
 
     if !outputs.is_empty() {
-        task_config.outputs = outputs;
+        task_config.outputs = Some(outputs);
     }
 
     task_config.local = !should_run_in_ci(script_name, script);

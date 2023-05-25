@@ -1,4 +1,5 @@
 use crate::commands::graph::utils::{dep_graph_repr, respond_to_request, setup_server};
+use miette::IntoDiagnostic;
 use moon::{build_dep_graph, generate_project_graph, load_workspace};
 use moon_target::Target;
 use starbase::AppResult;
@@ -35,7 +36,7 @@ pub async fn dep_graph(target_id: Option<String>, dot: bool, json: bool) -> AppR
     let graph_info = dep_graph_repr(&dep_graph).await;
 
     if json {
-        println!("{}", serde_json::to_string(&graph_info)?);
+        println!("{}", serde_json::to_string(&graph_info).into_diagnostic()?);
 
         return Ok(());
     }

@@ -1,4 +1,5 @@
 use console::Term;
+use miette::{miette, IntoDiagnostic};
 use moon::{build_project_graph, load_workspace};
 use moon_target::Target;
 use moon_terminal::{ExtendedTerm, Label};
@@ -7,7 +8,7 @@ use starbase_styles::color;
 
 pub async fn task(target: Target, json: bool) -> AppResult {
     let Some(project_id) = target.scope_id else {
-        return Err("A project ID is required.".into());
+        return Err(miette!("A project ID is required."));
     };
 
     let mut workspace = load_workspace().await?;
@@ -19,21 +20,21 @@ pub async fn task(target: Target, json: bool) -> AppResult {
     let task = project.get_task(&target.task_id)?;
 
     if json {
-        println!("{}", serde_json::to_string_pretty(&task)?);
+        println!("{}", serde_json::to_string_pretty(&task).into_diagnostic()?);
 
         return Ok(());
     }
 
     let term = Term::buffered_stdout();
 
-    term.write_line("")?;
+    term.line("")?;
     term.render_label(Label::Brand, &target.id)?;
     term.render_entry("Task", color::id(&target.task_id))?;
     term.render_entry("Project", color::id(&project_id))?;
     term.render_entry("Platform", term.format(&task.platform))?;
     term.render_entry("Type", term.format(&task.type_of))?;
 
-    term.write_line("")?;
+    term.line("")?;
     term.render_label(Label::Default, "Process")?;
     term.render_entry(
         "Command",
@@ -69,20 +70,20 @@ pub async fn task(target: Target, json: bool) -> AppResult {
     term.render_entry_bool("Runs in CI", task.should_run_in_ci())?;
 
     if !task.deps.is_empty() {
-        term.write_line("")?;
+        term.line("")?;
         term.render_label(Label::Default, "Depends on")?;
         term.render_list(task.deps.iter().map(color::label).collect::<Vec<_>>())?;
     }
 
     if !task.input_paths.is_empty() || !task.input_globs.is_empty() {
-        term.write_line("")?;
+        term.line("")?;
         term.render_label(Label::Default, "Inputs")?;
         term.render_list(task.input_globs.iter().map(color::file).collect::<Vec<_>>())?;
         term.render_list(task.input_paths.iter().map(color::path).collect::<Vec<_>>())?;
     }
 
     if !task.output_paths.is_empty() || !task.output_globs.is_empty() {
-        term.write_line("")?;
+        term.line("")?;
         term.render_label(Label::Default, "Outputs")?;
         term.render_list(
             task.output_globs
@@ -98,8 +99,8 @@ pub async fn task(target: Target, json: bool) -> AppResult {
         )?;
     }
 
-    term.write_line("")?;
-    term.flush()?;
+    term.line("")?;
+    term.flush_lines()?;
 
     Ok(())
 }

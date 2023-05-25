@@ -59,7 +59,7 @@ pub async fn init_typescript(
     context.insert("sync_paths", &sync_paths);
     context.insert("minimal", &options.minimal);
 
-    Ok(render_template(context)?)
+    render_template(context)
 }
 
 #[cfg(test)]

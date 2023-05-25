@@ -1,5 +1,6 @@
 use console::Term;
 use itertools::Itertools;
+use miette::IntoDiagnostic;
 use moon::{build_project_graph, load_workspace};
 use moon_common::Id;
 use moon_logger::map_list;
@@ -18,14 +19,17 @@ pub async fn project(id: Id, json: bool) -> AppResult {
     let config = &project.config;
 
     if json {
-        println!("{}", serde_json::to_string_pretty(&project)?);
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&project).into_diagnostic()?
+        );
 
         return Ok(());
     }
 
     let term = Term::buffered_stdout();
 
-    term.write_line("")?;
+    term.line("")?;
     term.render_label(Label::Brand, &project.id)?;
     term.render_entry("Project", color::id(&project.id))?;
 
@@ -80,13 +84,13 @@ pub async fn project(id: Id, json: bool) -> AppResult {
     if !deps.is_empty() {
         deps.sort();
 
-        term.write_line("")?;
+        term.line("")?;
         term.render_label(Label::Default, "Depends on")?;
         term.render_list(deps)?;
     }
 
     if !project.tasks.is_empty() {
-        term.write_line("")?;
+        term.line("")?;
         term.render_label(Label::Default, "Tasks")?;
 
         for name in project.tasks.keys().sorted() {
@@ -100,7 +104,7 @@ pub async fn project(id: Id, json: bool) -> AppResult {
     }
 
     if !project.file_groups.is_empty() {
-        term.write_line("")?;
+        term.line("")?;
         term.render_label(Label::Default, "File groups")?;
 
         for group_name in project.file_groups.keys().sorted() {
@@ -119,8 +123,8 @@ pub async fn project(id: Id, json: bool) -> AppResult {
         }
     }
 
-    term.write_line("")?;
-    term.flush()?;
+    term.line("")?;
+    term.flush_lines()?;
 
     Ok(())
 }

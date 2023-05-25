@@ -5,11 +5,11 @@ use crate::run_report::RunReport;
 use crate::subscribers::local_cache::LocalCacheSubscriber;
 use crate::subscribers::moonbase::MoonbaseSubscriber;
 use console::Term;
+use miette::IntoDiagnostic;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_dep_graph::DepGraph;
 use moon_emitter::{Emitter, Event};
-use moon_error::MoonError;
 use moon_logger::{debug, error, trace};
 use moon_notifier::WebhooksSubscriber;
 use moon_project_graph::ProjectGraph;
@@ -70,7 +70,7 @@ impl Pipeline {
         &mut self,
         dep_graph: DepGraph,
         context: Option<ActionContext>,
-    ) -> Result<ActionResults, PipelineError> {
+    ) -> miette::Result<ActionResults> {
         let start = Instant::now();
         let context = Arc::new(RwLock::new(context.unwrap_or_default()));
         let emitter = Arc::new(RwLock::new(
@@ -151,7 +151,7 @@ impl Pipeline {
                         result
                     }));
                 } else {
-                    return Err(PipelineError::UnknownActionNode);
+                    return Err(PipelineError::UnknownActionNode.into());
                 }
             }
 
@@ -203,7 +203,7 @@ impl Pipeline {
                     })
                     .await?;
 
-                return Err(PipelineError::Aborted(abort_error));
+                return Err(PipelineError::Aborted(abort_error).into());
             }
         }
 
@@ -234,9 +234,9 @@ impl Pipeline {
         Ok(results)
     }
 
-    pub fn render_results(&self, results: &ActionResults) -> Result<bool, MoonError> {
+    pub fn render_results(&self, results: &ActionResults) -> miette::Result<bool> {
         let term = Term::buffered_stdout();
-        term.write_line("")?;
+        term.write_line("").into_diagnostic()?;
 
         let mut failed = false;
 
@@ -273,20 +273,22 @@ impl Pipeline {
                 // color::create_style(&result.label).bold().to_string(),
                 &result.label,
                 color::muted(format!("({})", meta.join(", ")))
-            ))?;
+            ))
+            .into_diagnostic()?;
 
             if let Some(error) = &result.error {
-                term.write_line(&format!("     {}", color::muted_light(error)))?;
+                term.write_line(&format!("     {}", color::muted_light(error)))
+                    .into_diagnostic()?;
             }
         }
 
-        term.write_line("")?;
-        term.flush()?;
+        term.write_line("").into_diagnostic()?;
+        term.flush().into_diagnostic()?;
 
         Ok(failed)
     }
 
-    pub fn render_stats(&self, results: &ActionResults, compact: bool) -> Result<(), MoonError> {
+    pub fn render_stats(&self, results: &ActionResults, compact: bool) -> miette::Result<()> {
         let mut cached_count = 0;
         let mut pass_count = 0;
         let mut fail_count = 0;
@@ -339,7 +341,7 @@ impl Pipeline {
         }
 
         let term = Term::buffered_stdout();
-        term.write_line("")?;
+        term.write_line("").into_diagnostic()?;
 
         let counts_message = counts_message.join(&color::muted(", "));
         let mut elapsed_time = time::elapsed(self.duration.unwrap());
@@ -356,8 +358,8 @@ impl Pipeline {
             term.render_entry("   Time", &elapsed_time)?;
         }
 
-        term.write_line("")?;
-        term.flush()?;
+        term.write_line("").into_diagnostic()?;
+        term.flush().into_diagnostic()?;
 
         Ok(())
     }
@@ -367,7 +369,7 @@ impl Pipeline {
         actions: &ActionResults,
         context: &ActionContext,
         estimate: Estimator,
-    ) -> Result<(), PipelineError> {
+    ) -> miette::Result<()> {
         if let Some(name) = &self.report_name {
             let workspace = self.workspace.read().await;
             let duration = self.duration.unwrap();

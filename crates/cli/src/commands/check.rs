@@ -27,7 +27,7 @@ pub async fn check(project_ids: &[Id], options: CheckOptions) -> AppResult {
     } else if project_ids.is_empty() {
         trace!(target: LOG_TARGET, "Loading from path");
 
-        projects.push(project_graph.get_from_path(env::current_dir()?)?);
+        projects.push(project_graph.get_from_path(env::current_dir().unwrap())?);
     } else {
         trace!(
             target: LOG_TARGET,

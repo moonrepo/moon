@@ -1,4 +1,5 @@
 use crate::commands::graph::utils::{project_graph_repr, respond_to_request, setup_server};
+use miette::IntoDiagnostic;
 use moon::{build_project_graph, load_workspace};
 use moon_common::Id;
 use starbase::AppResult;
@@ -24,7 +25,7 @@ pub async fn project_graph(project_id: Option<Id>, dot: bool, json: bool) -> App
     let graph_info = project_graph_repr(&project_graph).await;
 
     if json {
-        println!("{}", serde_json::to_string(&graph_info)?);
+        println!("{}", serde_json::to_string(&graph_info).into_diagnostic()?);
 
         return Ok(());
     }

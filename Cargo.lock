@@ -2964,6 +2964,7 @@ name = "moon_generator"
 version = "0.1.0"
 dependencies = [
  "convert_case",
+ "miette",
  "moon_config",
  "moon_constants",
  "moon_error",
@@ -3010,6 +3011,7 @@ version = "0.1.0"
 dependencies = [
  "cd_env",
  "ci_env",
+ "miette",
  "moon_constants",
  "moon_error",
  "moon_logger",

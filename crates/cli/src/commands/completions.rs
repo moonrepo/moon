@@ -1,11 +1,12 @@
 use crate::app::App;
 use clap::CommandFactory;
 use clap_complete::{generate, Shell};
+use miette::miette;
 use starbase::AppResult;
 
 pub async fn completions(shell: Option<Shell>) -> AppResult {
     let Some(shell) = shell.or_else(Shell::from_env) else {
-      return Err("Could not determine your shell!".into());
+      return Err(miette!("Could not determine your shell!"));
     };
 
     let mut app = App::command();

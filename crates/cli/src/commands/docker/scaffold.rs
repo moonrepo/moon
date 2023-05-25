@@ -51,7 +51,7 @@ fn scaffold_workspace(
 
     // Copy manifest and config files for every type of language,
     // not just the one the project is configured as!
-    let copy_from_dir = |source: &Path, dest: &Path| -> Result<(), MoonError> {
+    let copy_from_dir = |source: &Path, dest: &Path| -> AppResult {
         let mut files: Vec<String> = vec![".prototools".to_owned()];
 
         for lang in ProjectLanguage::iter() {

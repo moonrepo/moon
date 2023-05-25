@@ -38,7 +38,7 @@ pub async fn init_rust(
     context.insert("rust_version", &rust_version);
     context.insert("minimal", &options.minimal);
 
-    Ok(render_template(context)?)
+    render_template(context)
 }
 
 #[cfg(test)]

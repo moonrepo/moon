@@ -206,7 +206,7 @@ pub async fn init_node(
     context.insert("infer_tasks", &infer_tasks);
     context.insert("minimal", &options.minimal);
 
-    Ok(render_template(context)?)
+    render_template(context)
 }
 
 #[cfg(test)]

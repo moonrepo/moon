@@ -18,6 +18,8 @@ pub type TermWriteResult = miette::Result<()>;
 pub trait ExtendedTerm {
     fn format(&self, value: &impl Display) -> String;
     fn format_label<V: AsRef<str>>(&self, kind: Label, message: V) -> String;
+    fn line<V: AsRef<str>>(&self, message: V) -> TermWriteResult;
+    fn flush_lines(&self) -> TermWriteResult;
 
     // RENDERERS
 
@@ -64,11 +66,18 @@ impl ExtendedTerm for Term {
             .to_string()
     }
 
+    fn line<V: AsRef<str>>(&self, message: V) -> TermWriteResult {
+        self.write_line(message.as_ref()).into_diagnostic()
+    }
+
+    fn flush_lines(&self) -> TermWriteResult {
+        self.flush().into_diagnostic()
+    }
+
     fn render_entry<K: AsRef<str>, V: AsRef<str>>(&self, key: K, value: V) -> TermWriteResult {
         let label = color::muted_light(format!("{}:", style(key.as_ref()).bold()));
 
-        self.write_line(&format!("{} {}", label, value.as_ref()))
-            .into_diagnostic()
+        self.line(format!("{} {}", label, value.as_ref()))
     }
 
     fn render_entry_bool<K: AsRef<str>>(&self, key: K, value: bool) -> TermWriteResult {
@@ -82,7 +91,7 @@ impl ExtendedTerm for Term {
     ) -> TermWriteResult {
         let label = color::muted_light(format!("{}:", style(key.as_ref()).bold()));
 
-        self.write_line(&label).into_diagnostic()?;
+        self.line(label)?;
         self.render_list(values)?;
 
         Ok(())
@@ -112,9 +121,8 @@ impl ExtendedTerm for Term {
     }
 
     fn render_label<V: AsRef<str>>(&self, kind: Label, message: V) -> TermWriteResult {
-        self.write_line(&self.format_label(kind, message.as_ref()))
-            .into_diagnostic()?;
-        self.write_line("").into_diagnostic()?;
+        self.line(self.format_label(kind, message.as_ref()))?;
+        self.line("")?;
 
         Ok(())
     }
@@ -124,8 +132,7 @@ impl ExtendedTerm for Term {
         values.sort();
 
         for value in values {
-            self.write_line(&format!(" {} {}", color::muted("-"), value))
-                .into_diagnostic()?;
+            self.line(format!(" {} {}", color::muted("-"), value))?;
         }
 
         Ok(())

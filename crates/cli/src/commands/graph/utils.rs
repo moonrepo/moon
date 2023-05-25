@@ -1,4 +1,5 @@
 use super::dto::{GraphEdgeDto, GraphInfoDto, GraphNodeDto};
+use miette::IntoDiagnostic;
 use moon_dep_graph::DepGraph;
 use moon_project_graph::ProjectGraph;
 use petgraph::{graph::NodeIndex, Graph};
@@ -94,14 +95,14 @@ pub fn respond_to_request(
 ) -> AppResult {
     let response = match req.url() {
         "/graph-data" => {
-            let mut response = Response::from_data(serde_json::to_string(graph)?);
+            let mut response = Response::from_data(serde_json::to_string(graph).into_diagnostic()?);
             response.add_header(
                 Header::from_bytes(&b"Content-Type"[..], &b"application/json"[..]).unwrap(),
             );
             response
         }
         _ => {
-            let graph_data = serde_json::to_string(graph)?;
+            let graph_data = serde_json::to_string(graph).into_diagnostic()?;
             let js_url = get_js_url();
             let context = RenderContext {
                 page_title,
@@ -109,7 +110,10 @@ pub fn respond_to_request(
                 js_url,
             };
             let info = tera
-                .render_str(INDEX_HTML, &Context::from_serialize(context)?)
+                .render_str(
+                    INDEX_HTML,
+                    &Context::from_serialize(context).into_diagnostic()?,
+                )
                 .unwrap();
             let mut response = Response::from_data(info);
             response

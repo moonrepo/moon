@@ -161,12 +161,16 @@ impl PortablePath {
     pub fn to_workspace_relative(&self, project_source: &str) -> WorkspaceRelativePathBuf {
         let path = match self {
             PortablePath::ProjectFile(file) => {
-                WorkspaceRelativePathBuf::from(project_source).join(standardize_separators(file))
+                WorkspaceRelativePathBuf::from(standardize_separators(project_source))
+                    .join(standardize_separators(file))
             }
             PortablePath::ProjectGlob(glob) => {
                 if let Some(negated_glob) = glob.0.strip_prefix('!') {
-                    WorkspaceRelativePathBuf::from(format!("!{project_source}"))
-                        .join(standardize_separators(negated_glob))
+                    WorkspaceRelativePathBuf::from(format!(
+                        "!{}",
+                        standardize_separators(project_source)
+                    ))
+                    .join(standardize_separators(negated_glob))
                 } else {
                     WorkspaceRelativePathBuf::from(project_source)
                         .join(standardize_separators(glob))

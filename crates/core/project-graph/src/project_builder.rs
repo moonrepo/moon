@@ -328,8 +328,6 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         for target in &task.deps {
             match &target.scope {
-                // :task
-                TargetScope::All => unreachable!(),
                 // ^:task
                 TargetScope::Deps => {
                     for dep_id in project.get_dependency_ids() {
@@ -355,8 +353,9 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                         push_target(target.clone());
                     }
                 }
+                // :task
                 // #tag:task
-                TargetScope::Tag(_) => unimplemented!(),
+                _ => unreachable!(),
             };
         }
 
@@ -577,7 +576,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         let mut add_sources = |map: &FxHashMap<Id, String>| -> Result<(), ProjectGraphError> {
             for (id, source) in map {
-                sources.insert(id.to_owned(), standardize_separators(source));
+                sources.insert(id.to_owned(), path::normalize_separators(source));
             }
 
             Ok(())

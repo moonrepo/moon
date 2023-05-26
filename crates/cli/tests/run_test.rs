@@ -1,5 +1,7 @@
 use moon_cache::CacheEngine;
-use moon_config2::{HasherWalkStrategy, PartialRunnerConfig, PartialWorkspaceConfig};
+use moon_config2::{
+    HasherWalkStrategy, PartialHasherConfig, PartialRunnerConfig, PartialWorkspaceConfig,
+};
 use moon_target::Target;
 use moon_test_utils::{
     assert_debug_snapshot, assert_snapshot, create_sandbox_with_config, get_cases_fixture_configs,
@@ -512,8 +514,6 @@ mod target_scopes {
 }
 
 mod hashing {
-    use moon_config2::PartialHasherConfig;
-
     use super::*;
 
     #[test]

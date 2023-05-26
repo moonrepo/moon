@@ -1,16 +1,12 @@
 ---
 source: crates/cli/tests/generate_test.rs
-assertion_line: 193
-expression: get_path_safe_output(&assert)
+expression: assert.output_standardized()
 ---
 
 Variable testing 
 A template for testing all variable config combinations.
 
-
- ERROR 
-
-Failed to parse variable argument --number: invalid digit found in string
+Error:   × Failed to parse variable argument --number: invalid digit found in string
 
 
 

@@ -1,7 +1,6 @@
 ---
 source: crates/cli/tests/run_system_test.rs
-assertion_line: 150
-expression: get_assert_output(&assert)
+expression: assert.output()
 ---
 ▪▪▪▪ unix:retryCount
 stdout
@@ -19,8 +18,7 @@ stderr
 stderr
 stderr
 stderr
-
- ERROR  Process bash failed with a 1 exit code.
+Error:   × Process bash failed with a 1 exit code.
 
 
 

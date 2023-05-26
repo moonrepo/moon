@@ -1,10 +1,8 @@
 ---
 source: crates/cli/tests/run_test.rs
-assertion_line: 42
-expression: get_assert_output(&assert)
+expression: assert.output()
 ---
-
- ERROR  Task unknown has not been configured for project base.
+Error:   × Task unknown has not been configured for project base.
 
 
 

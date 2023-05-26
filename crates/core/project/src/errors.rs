@@ -37,9 +37,6 @@ pub enum ProjectError {
     Config(#[from] ConfigError),
 
     #[error(transparent)]
-    Config(#[from] ConfigError),
-
-    #[error(transparent)]
     FileGroup(#[from] FileGroupError),
 
     #[diagnostic(transparent)]

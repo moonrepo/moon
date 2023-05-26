@@ -225,23 +225,3 @@ impl<'de> Deserialize<'de> for PortablePath {
             .map_err(|error| de::Error::custom(error.message))
     }
 }
-
-impl PartialEq<&str> for PortablePath {
-    fn eq(&self, other: &&str) -> bool {
-        match self {
-            PortablePath::EnvVar(var) => var == other,
-            PortablePath::ProjectFile(file) | PortablePath::WorkspaceFile(file) => file == other,
-            PortablePath::ProjectGlob(glob) | PortablePath::WorkspaceGlob(glob) => glob == other,
-        }
-    }
-}
-
-impl<'de> Deserialize<'de> for PortablePath {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        PortablePath::from_str(&String::deserialize(deserializer)?)
-            .map_err(|error| de::Error::custom(error.message))
-    }
-}

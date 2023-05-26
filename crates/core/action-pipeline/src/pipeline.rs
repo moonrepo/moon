@@ -5,7 +5,6 @@ use crate::run_report::RunReport;
 use crate::subscribers::local_cache::LocalCacheSubscriber;
 use crate::subscribers::moonbase::MoonbaseSubscriber;
 use console::Term;
-use miette::IntoDiagnostic;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_dep_graph::DepGraph;
@@ -236,7 +235,7 @@ impl Pipeline {
 
     pub fn render_results(&self, results: &ActionResults) -> miette::Result<bool> {
         let term = Term::buffered_stdout();
-        term.write_line("").into_diagnostic()?;
+        term.line("")?;
 
         let mut failed = false;
 
@@ -267,23 +266,21 @@ impl Pipeline {
                 meta.push(time::elapsed(duration));
             }
 
-            term.write_line(&format!(
+            term.line(format!(
                 "{} {} {}",
                 status,
                 // color::create_style(&result.label).bold().to_string(),
                 &result.label,
                 color::muted(format!("({})", meta.join(", ")))
-            ))
-            .into_diagnostic()?;
+            ))?;
 
             if let Some(error) = &result.error {
-                term.write_line(&format!("     {}", color::muted_light(error)))
-                    .into_diagnostic()?;
+                term.line(format!("     {}", color::muted_light(error)))?;
             }
         }
 
-        term.write_line("").into_diagnostic()?;
-        term.flush().into_diagnostic()?;
+        term.line("")?;
+        term.flush_lines()?;
 
         Ok(failed)
     }
@@ -341,7 +338,7 @@ impl Pipeline {
         }
 
         let term = Term::buffered_stdout();
-        term.write_line("").into_diagnostic()?;
+        term.line("")?;
 
         let counts_message = counts_message.join(&color::muted(", "));
         let mut elapsed_time = time::elapsed(self.duration.unwrap());
@@ -358,8 +355,8 @@ impl Pipeline {
             term.render_entry("   Time", &elapsed_time)?;
         }
 
-        term.write_line("").into_diagnostic()?;
-        term.flush().into_diagnostic()?;
+        term.line("")?;
+        term.flush_lines()?;
 
         Ok(())
     }

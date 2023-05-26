@@ -1,5 +1,4 @@
 use clap::ValueEnum;
-use miette::IntoDiagnostic;
 use moon::load_workspace_with_toolchain;
 use moon_config::PlatformType;
 use moon_node_tool::NodeTool;
@@ -44,26 +43,19 @@ fn not_configured() -> ! {
 }
 
 pub async fn bin(tool_type: BinTool) -> AppResult {
-    let workspace = load_workspace_with_toolchain().await.into_diagnostic()?;
+    let workspace = load_workspace_with_toolchain().await?;
 
     match tool_type {
         BinTool::Node => {
-            let node = workspace
-                .platforms
-                .get(PlatformType::Node)
-                .into_diagnostic()?
-                .get_tool()
-                .into_diagnostic()?;
+            let node = workspace.platforms.get(PlatformType::Node)?.get_tool()?;
 
             is_installed(*node);
         }
         BinTool::Npm | BinTool::Pnpm | BinTool::Yarn => {
             let node = workspace
                 .platforms
-                .get(PlatformType::Node)
-                .into_diagnostic()?
-                .get_tool()
-                .into_diagnostic()?
+                .get(PlatformType::Node)?
+                .get_tool()?
                 .as_any();
             let node = node.downcast_ref::<NodeTool>().unwrap();
 
@@ -84,12 +76,7 @@ pub async fn bin(tool_type: BinTool) -> AppResult {
             };
         }
         BinTool::Rust => {
-            let rust = workspace
-                .platforms
-                .get(PlatformType::Rust)
-                .into_diagnostic()?
-                .get_tool()
-                .into_diagnostic()?;
+            let rust = workspace.platforms.get(PlatformType::Rust)?.get_tool()?;
 
             is_installed(*rust);
         }

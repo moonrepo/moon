@@ -2,7 +2,6 @@ use crate::queries::touched_files::{
     query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
 };
 use is_terminal::IsTerminal;
-use miette::IntoDiagnostic;
 use moon::generate_project_graph;
 use moon_common::Id;
 use moon_error::MoonError;
@@ -59,9 +58,7 @@ fn convert_to_regex(field: &str, value: &Option<String>) -> AppResult<Option<reg
             );
 
             // case-insensitive by default
-            Ok(Some(
-                regex::create_regex(format!("(?i){pattern}")).into_diagnostic()?,
-            ))
+            Ok(Some(regex::create_regex(format!("(?i){pattern}"))?))
         }
         None => Ok(None),
     }

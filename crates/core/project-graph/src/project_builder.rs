@@ -3,7 +3,6 @@ use crate::graph_hasher::GraphHasher;
 use crate::helpers::detect_projects_with_globs;
 use crate::project_graph::{GraphType, IndicesType, ProjectGraph, LOG_TARGET};
 use crate::token_resolver::{TokenContext, TokenResolver};
-use moon_common::path::standardize_separators;
 use moon_common::{consts, Id};
 use moon_config2::{ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceProjects};
 use moon_enforcer::{enforce_project_type_relationships, enforce_tag_relationships};

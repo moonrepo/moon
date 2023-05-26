@@ -151,7 +151,9 @@ mod configs {
             cmd.arg("run").arg("base:noop");
         });
 
-        assert_snapshot!(assert.output_standardized());
+        let output = assert.output();
+
+        assert!(predicate::str::contains("Invalid setting projects").eval(&output));
     }
 
     #[test]
@@ -164,7 +166,9 @@ mod configs {
             cmd.arg("run").arg("base:noop");
         });
 
-        assert_snapshot!(assert.output_standardized());
+        let output = assert.output();
+
+        assert!(predicate::str::contains("Invalid setting tasks").eval(&output));
     }
 
     #[test]
@@ -179,7 +183,7 @@ mod configs {
 
         let output = assert.output();
 
-        assert!(predicate::str::contains("unknown field: found `type`").eval(&output));
+        assert!(predicate::str::contains("Invalid setting project.type").eval(&output));
     }
 }
 
@@ -591,11 +595,11 @@ mod hashing {
         // Hashes change because `.moon/workspace.yml` is different from `walk_strategy`
         assert_eq!(
             hash_vcs,
-            "bfdab38f0e74d4509ac491cc3dd1fce4dc4e826be13a09c624901b5f3d4f2aca"
+            "9ffd42e4882528bb44ae0cb5e7f705fa5aa40b81792c6f2b1010a3d977c2a43d"
         );
         assert_eq!(
             hash_glob,
-            "42c40999f6942567978d11a83450608216e7f04442714f97aca96bc56ce2499a"
+            "c6cb49b5ba54547f1735be77ebca2fdd7489dc6e727085ccd6027563e2cfe126"
         );
     }
 }

@@ -149,6 +149,7 @@ impl Portable for ProjectFilePath {
 // Represents either a workspace or project relative glob/path, or env var.
 // Workspace paths are prefixed with "/", and env vars with "$".
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(untagged)]
 pub enum PortablePath {
     ProjectFile(FilePath),
     ProjectGlob(GlobPath),

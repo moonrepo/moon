@@ -1,6 +1,6 @@
 use crate::portable_path::*;
 use schematic::{Segment, ValidateError};
-use semver::Version;
+use semver::{Version, VersionReq};
 use std::path::Path;
 
 // Validate the value is a valid child relative file system path.
@@ -53,7 +53,7 @@ pub fn validate_semver_requirement<D, C>(
     _data: &D,
     _ctx: &C,
 ) -> Result<(), ValidateError> {
-    Version::parse(value).map_err(|error| {
+    VersionReq::parse(value).map_err(|error| {
         ValidateError::new(format!(
             "doesn't meet semantic version requirements: {}",
             error

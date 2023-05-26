@@ -1,4 +1,3 @@
-use crate::helpers::AnyError;
 pub use crate::queries::hash::query_hash;
 pub use crate::queries::hash_diff::{query_hash_diff, QueryHashDiffOptions};
 pub use crate::queries::projects::{
@@ -7,14 +6,17 @@ pub use crate::queries::projects::{
 pub use crate::queries::touched_files::{
     query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
 };
+use console::Term;
 use is_terminal::IsTerminal;
+use miette::IntoDiagnostic;
 use moon::load_workspace;
+use moon_terminal::ExtendedTerm;
 use rustc_hash::FxHashMap;
+use starbase::AppResult;
 use starbase_styles::color;
 use std::io;
-use std::io::prelude::*;
 
-pub async fn hash(hash: &str, json: bool) -> Result<(), AnyError> {
+pub async fn hash(hash: &str, json: bool) -> AppResult {
     let workspace = load_workspace().await?;
     let result = query_hash(&workspace, hash).await?;
 
@@ -27,12 +29,12 @@ pub async fn hash(hash: &str, json: bool) -> Result<(), AnyError> {
     Ok(())
 }
 
-pub async fn hash_diff(options: &QueryHashDiffOptions) -> Result<(), AnyError> {
+pub async fn hash_diff(options: &QueryHashDiffOptions) -> AppResult {
     let mut workspace = load_workspace().await?;
     let mut result = query_hash_diff(&mut workspace, options).await?;
 
     let is_tty = io::stdout().is_terminal();
-    let mut stdout = io::stdout().lock();
+    let term = Term::buffered_stdout();
 
     if options.json {
         for diff in diff::lines(&result.left, &result.right) {
@@ -43,49 +45,51 @@ pub async fn hash_diff(options: &QueryHashDiffOptions) -> Result<(), AnyError> {
             };
         }
 
-        writeln!(stdout, "{}", serde_json::to_string_pretty(&result)?)?;
+        term.line(serde_json::to_string_pretty(&result).into_diagnostic()?)?;
     } else {
-        writeln!(stdout, "Left:  {}", color::id(&result.left_hash))?;
-        writeln!(stdout, "Right: {}\n", color::id(&result.right_hash))?;
+        term.line(format!("Left:  {}", color::id(&result.left_hash)))?;
+        term.line(format!("Right: {}\n", color::id(&result.right_hash)))?;
 
         for diff in diff::lines(&result.left, &result.right) {
             match diff {
                 diff::Result::Left(l) => {
                     if is_tty {
-                        writeln!(stdout, "{}", color::success(l))?
+                        term.line(color::success(l))?
                     } else {
-                        writeln!(stdout, "+{}", l)?
+                        term.line(format!("+{}", l))?
                     }
                 }
                 diff::Result::Both(l, _) => {
                     if is_tty {
-                        writeln!(stdout, "{}", l)?
+                        term.line(l)?
                     } else {
-                        writeln!(stdout, " {}", l)?
+                        term.line(format!(" {}", l))?
                     }
                 }
                 diff::Result::Right(r) => {
                     if is_tty {
-                        writeln!(stdout, "{}", color::failure(r))?
+                        term.line(color::failure(r))?
                     } else {
-                        writeln!(stdout, "-{}", r)?
+                        term.line(format!("-{}", r))?
                     }
                 }
             };
         }
     }
 
+    term.flush_lines()?;
+
     Ok(())
 }
 
-pub async fn projects(options: &QueryProjectsOptions) -> Result<(), AnyError> {
+pub async fn projects(options: &QueryProjectsOptions) -> AppResult {
     let mut workspace = load_workspace().await?;
     let mut projects = query_projects(&mut workspace, options).await?;
 
     projects.sort_by(|a, d| a.id.cmp(&d.id));
 
     // Write to stdout directly to avoid broken pipe panics
-    let mut stdout = io::stdout().lock();
+    let term = Term::buffered_stdout();
 
     if options.json {
         let result = QueryProjectsResult {
@@ -93,28 +97,28 @@ pub async fn projects(options: &QueryProjectsOptions) -> Result<(), AnyError> {
             options: options.clone(),
         };
 
-        writeln!(stdout, "{}", serde_json::to_string_pretty(&result)?)?;
+        term.line(serde_json::to_string_pretty(&result).into_diagnostic()?)?;
     } else if !projects.is_empty() {
-        writeln!(
-            stdout,
-            "{}",
+        term.line(
             projects
                 .iter()
                 .map(|p| format!("{} | {} | {} | {}", p.id, p.source, p.type_of, p.language))
                 .collect::<Vec<_>>()
-                .join("\n")
+                .join("\n"),
         )?;
     }
+
+    term.flush_lines()?;
 
     Ok(())
 }
 
-pub async fn touched_files(options: &mut QueryTouchedFilesOptions) -> Result<(), AnyError> {
+pub async fn touched_files(options: &mut QueryTouchedFilesOptions) -> AppResult {
     let workspace = load_workspace().await?;
     let files = query_touched_files(&workspace, options).await?;
 
     // Write to stdout directly to avoid broken pipe panics
-    let mut stdout = io::stdout().lock();
+    let term = Term::buffered_stdout();
 
     if options.json {
         let result = QueryTouchedFilesResult {
@@ -122,28 +126,28 @@ pub async fn touched_files(options: &mut QueryTouchedFilesOptions) -> Result<(),
             options: options.to_owned(),
         };
 
-        writeln!(stdout, "{}", serde_json::to_string_pretty(&result)?)?;
+        term.line(serde_json::to_string_pretty(&result).into_diagnostic()?)?;
     } else if !files.is_empty() {
-        writeln!(
-            stdout,
-            "{}",
+        term.line(
             files
                 .iter()
                 .map(|f| f.to_string_lossy())
                 .collect::<Vec<_>>()
-                .join("\n")
+                .join("\n"),
         )?;
     }
+
+    term.flush_lines()?;
 
     Ok(())
 }
 
-pub async fn tasks(options: &QueryProjectsOptions) -> Result<(), AnyError> {
+pub async fn tasks(options: &QueryProjectsOptions) -> AppResult {
     let mut workspace = load_workspace().await?;
     let projects = query_projects(&mut workspace, options).await?;
 
     // Write to stdout directly to avoid broken pipe panics
-    let mut stdout = io::stdout().lock();
+    let term = Term::buffered_stdout();
 
     if options.json {
         let result = QueryTasksResult {
@@ -151,20 +155,22 @@ pub async fn tasks(options: &QueryProjectsOptions) -> Result<(), AnyError> {
             options: options.to_owned(),
         };
 
-        writeln!(stdout, "{}", serde_json::to_string_pretty(&result)?)?;
+        term.line(serde_json::to_string_pretty(&result).into_diagnostic()?)?;
     } else if !projects.is_empty() {
         for project in projects {
             if project.tasks.is_empty() {
                 continue;
             }
 
-            writeln!(stdout, "{}", &project.id)?;
+            term.line(&project.id)?;
 
             for (task_id, task) in &project.tasks {
-                writeln!(stdout, "\t:{} | {}", task_id, task.command)?;
+                term.line(format!("\t:{} | {}", task_id, task.command))?;
             }
         }
     }
+
+    term.flush_lines()?;
 
     Ok(())
 }

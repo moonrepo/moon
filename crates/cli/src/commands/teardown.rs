@@ -1,7 +1,8 @@
-use crate::helpers::{create_progress_bar, AnyError};
+use crate::helpers::create_progress_bar;
 use moon::load_workspace_with_toolchain;
+use starbase::AppResult;
 
-pub async fn teardown() -> Result<(), AnyError> {
+pub async fn teardown() -> AppResult {
     let done = create_progress_bar("Tearing down toolchain and uninstalling tools...");
 
     // We need to load and setup the toolchain for it to be "available"

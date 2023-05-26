@@ -1,7 +1,7 @@
 use super::InitOptions;
-use crate::helpers::AnyError;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::{Confirm, Select};
+use miette::IntoDiagnostic;
 use moon_config::load_toolchain_node_config_template;
 use moon_lang::{is_using_dependency_manager, is_using_version_manager};
 use moon_node_lang::package_json::{PackageJson, PackageWorkspaces};
@@ -9,19 +9,20 @@ use moon_node_lang::{NODENV, NPM, NVM, PNPM, YARN};
 use moon_project_graph::detect_projects_with_globs;
 use moon_terminal::label_header;
 use rustc_hash::FxHashMap;
+use starbase::AppResult;
 use starbase_styles::color;
 use starbase_utils::fs;
 use std::collections::BTreeMap;
 use std::path::Path;
-use tera::{Context, Error, Tera};
+use tera::{Context, Tera};
 
-pub fn render_template(context: Context) -> Result<String, Error> {
-    Tera::one_off(load_toolchain_node_config_template(), &context, false)
+pub fn render_template(context: Context) -> AppResult<String> {
+    Tera::one_off(load_toolchain_node_config_template(), &context, false).into_diagnostic()
 }
 
 /// Detect the Node.js version from local configuration files,
 /// otherwise fallback to the configuration default.
-fn detect_node_version(dest_dir: &Path) -> Result<(String, String), AnyError> {
+fn detect_node_version(dest_dir: &Path) -> AppResult<(String, String)> {
     if is_using_version_manager(dest_dir, &NVM) {
         return Ok((
             fs::read_file(dest_dir.join(NVM.version_file))?
@@ -49,7 +50,7 @@ fn detect_package_manager(
     dest_dir: &Path,
     options: &InitOptions,
     theme: &ColorfulTheme,
-) -> Result<(String, String), AnyError> {
+) -> AppResult<(String, String)> {
     let mut pm_type = String::new();
     let mut pm_version = String::new();
 
@@ -90,7 +91,8 @@ fn detect_package_manager(
                 .with_prompt("Package manager?")
                 .items(&items)
                 .default(default_index)
-                .interact_opt()?
+                .interact_opt()
+                .into_diagnostic()?
                 .unwrap_or(default_index)
         };
 
@@ -107,7 +109,7 @@ fn detect_projects(
     options: &InitOptions,
     parent_context: &mut Context,
     theme: &ColorfulTheme,
-) -> Result<(), AnyError> {
+) -> AppResult {
     let mut projects = FxHashMap::default();
     let mut project_globs = vec![];
 
@@ -130,7 +132,8 @@ fn detect_projects(
                     ))
                     .items(&items)
                     .default(default_index)
-                    .interact_opt()?
+                    .interact_opt()
+                    .into_diagnostic()?
                     .unwrap_or(default_index)
             };
 
@@ -170,7 +173,7 @@ pub async fn init_node(
     options: &InitOptions,
     theme: &ColorfulTheme,
     parent_context: Option<&mut Context>,
-) -> Result<String, AnyError> {
+) -> AppResult<String> {
     if !options.yes {
         println!("\n{}\n", label_header("Node"));
     }
@@ -191,7 +194,8 @@ pub async fn init_node(
                 color::file(NPM.manifest),
                 color::muted("(not recommended)")
             ))
-            .interact()?
+            .interact()
+            .into_diagnostic()?
     };
 
     let mut context = Context::new();
@@ -202,7 +206,7 @@ pub async fn init_node(
     context.insert("infer_tasks", &infer_tasks);
     context.insert("minimal", &options.minimal);
 
-    Ok(render_template(context)?)
+    render_template(context)
 }
 
 #[cfg(test)]

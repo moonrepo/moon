@@ -26,10 +26,8 @@ use crate::commands::upgrade::upgrade;
 use crate::helpers::{check_for_new_version, setup_colors};
 use app::{App as CLI, Commands, DockerCommands, MigrateCommands, NodeCommands, QueryCommands};
 use clap::Parser;
-use console::Term;
 use enums::{CacheMode, LogLevel};
 use moon_logger::debug;
-use moon_terminal::ExtendedTerm;
 use query::QueryHashDiffOptions;
 use starbase::{tracing::TracingOptions, App, AppResult};
 use starbase_styles::color;
@@ -314,15 +312,13 @@ pub async fn run_cli() -> AppResult {
     }
 
     if let Err(error) = result {
-        let error_message = error.to_string();
-
         // Rust crashes with a broken pipe error by default,
         // so we unfortunately need to work around it with this hack!
         // https://github.com/rust-lang/rust/issues/46016
-        if error_message.to_lowercase().contains("broken pipe") {
+        if error.to_string().to_lowercase().contains("broken pipe") {
             std::process::exit(0);
         } else {
-            Term::buffered_stderr().render_error(error);
+            return Err(error);
         }
     }
 

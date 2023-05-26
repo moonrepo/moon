@@ -1,3 +1,4 @@
+use miette::Diagnostic;
 use moon_constants as constants;
 use moon_error::MoonError;
 use moon_vcs::VcsError;
@@ -7,7 +8,7 @@ use starbase_styles::{Style, Stylize};
 use std::path::PathBuf;
 use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Diagnostic)]
 pub enum WorkspaceError {
     #[error(
         "Unable to determine workspace root. Please create a {} configuration folder.",
@@ -48,15 +49,19 @@ pub enum WorkspaceError {
     #[error("Invalid moon version, unable to proceed. Found {0}, expected {1}.")]
     InvalidMoonVersion(String, String),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     Moon(#[from] MoonError),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     Moonbase(#[from] MoonbaseError),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     Proto(#[from] ProtoError),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     Vcs(#[from] VcsError),
 }

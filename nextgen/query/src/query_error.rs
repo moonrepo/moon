@@ -1,8 +1,9 @@
-use moon_common::{Diagnostic, Style, Stylize};
+use miette::Diagnostic;
+use moon_common::{Style, Stylize};
 use starbase_utils::glob::GlobError;
 use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Diagnostic)]
 pub enum QueryError {
     #[error("Encountered an empty query. Did you forget to add criteria?")]
     EmptyInput,
@@ -22,8 +23,7 @@ pub enum QueryError {
     #[error("Failed to parse query:\n\n{}", .0.style(Style::MutedLight))]
     ParseFailure(String),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     Glob(#[from] GlobError),
 }
-
-impl Diagnostic for QueryError {}

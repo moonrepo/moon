@@ -2,8 +2,7 @@
 source: crates/cli/tests/task_test.rs
 expression: get_assert_stderr_output(&assert.inner)
 ---
-
- ERROR  Task unknown has not been configured for project tasks.
+Error:   × Task unknown has not been configured for project tasks.
 
 
 

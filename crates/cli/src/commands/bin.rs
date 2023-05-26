@@ -1,10 +1,10 @@
-use crate::helpers::AnyError;
 use clap::ValueEnum;
 use moon::load_workspace_with_toolchain;
 use moon_config::PlatformType;
 use moon_node_tool::NodeTool;
 use moon_terminal::safe_exit;
 use moon_tool::Tool;
+use starbase::AppResult;
 
 #[derive(ValueEnum, Clone, Debug)]
 #[value(rename_all = "lowercase")]
@@ -42,7 +42,7 @@ fn not_configured() -> ! {
     safe_exit(BinExitCodes::NotConfigured as i32);
 }
 
-pub async fn bin(tool_type: BinTool) -> Result<(), AnyError> {
+pub async fn bin(tool_type: BinTool) -> AppResult {
     let workspace = load_workspace_with_toolchain().await?;
 
     match tool_type {

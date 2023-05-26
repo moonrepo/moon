@@ -11,6 +11,7 @@ moon_utils = { path = "../utils" }
 async-trait = { workspace = true }
 cached = { workspace = true, features = ["async"] }
 ignore = "0.4.20"
+miette = { workspace = true }
 regex = { workspace = true }
 rustc-hash = { workspace = true }
 url = "2.3.1"

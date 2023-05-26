@@ -1,8 +1,9 @@
+use miette::Diagnostic;
 use moon_args::ArgsSplitError;
-use moon_common::{Diagnostic, Style, Stylize};
+use moon_common::{Style, Stylize};
 use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Diagnostic)]
 pub enum ProcessError {
     #[error("Failed to execute {} and capture output.", .bin.style(Style::Shell))]
     Capture {
@@ -42,8 +43,7 @@ pub enum ProcessError {
         error: std::io::Error,
     },
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     ArgsSplit(#[from] ArgsSplitError),
 }
-
-impl Diagnostic for ProcessError {}

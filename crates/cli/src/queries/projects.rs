@@ -1,8 +1,5 @@
-use crate::{
-    helpers::AnyError,
-    queries::touched_files::{
-        query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
-    },
+use crate::queries::touched_files::{
+    query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
 };
 use is_terminal::IsTerminal;
 use moon::generate_project_graph;
@@ -12,9 +9,10 @@ use moon_logger::{debug, trace};
 use moon_project::Project;
 use moon_task::{Task, TouchedFilePaths};
 use moon_utils::{is_ci, regex};
-use moon_workspace::{Workspace, WorkspaceError};
+use moon_workspace::Workspace;
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
+use starbase::AppResult;
 use std::{
     collections::BTreeMap,
     io::{stdin, Read},
@@ -49,7 +47,7 @@ pub struct QueryTasksResult {
     pub options: QueryProjectsOptions,
 }
 
-fn convert_to_regex(field: &str, value: &Option<String>) -> Result<Option<regex::Regex>, AnyError> {
+fn convert_to_regex(field: &str, value: &Option<String>) -> AppResult<Option<regex::Regex>> {
     match value {
         Some(pattern) => {
             trace!(
@@ -66,7 +64,7 @@ fn convert_to_regex(field: &str, value: &Option<String>) -> Result<Option<regex:
     }
 }
 
-async fn load_touched_files(workspace: &Workspace) -> Result<TouchedFilePaths, WorkspaceError> {
+async fn load_touched_files(workspace: &Workspace) -> AppResult<TouchedFilePaths> {
     let mut buffer = String::new();
 
     // Only read piped data when stdin is not a TTY,
@@ -105,7 +103,7 @@ async fn load_touched_files(workspace: &Workspace) -> Result<TouchedFilePaths, W
 pub async fn query_projects(
     workspace: &mut Workspace,
     options: &QueryProjectsOptions,
-) -> Result<Vec<Project>, AnyError> {
+) -> AppResult<Vec<Project>> {
     debug!(target: LOG_TARGET, "Querying for projects");
 
     let project_graph = generate_project_graph(workspace).await?;

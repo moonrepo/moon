@@ -1,12 +1,11 @@
+use miette::IntoDiagnostic;
 use moon_constants::CONFIG_DIRNAME;
-use moon_error::MoonError;
 use moon_logger::debug;
 use moon_utils::is_test_env;
 use moon_utils::semver::Version;
 use serde::{Deserialize, Serialize};
 use starbase_utils::{dirs, fs};
 use std::env;
-use std::error::Error;
 use std::fs::OpenOptions;
 use std::path::Path;
 use std::time::{Duration, SystemTime};
@@ -27,7 +26,7 @@ pub struct CheckState {
     pub last_alert: SystemTime,
 }
 
-fn load_or_create_anonymous_uid() -> Result<String, MoonError> {
+fn load_or_create_anonymous_uid() -> miette::Result<String> {
     let moon_home_dir = dirs::home_dir()
         .expect("Invalid home directory.")
         .join(CONFIG_DIRNAME);
@@ -56,7 +55,7 @@ fn create_anonymous_rid(workspace_root: &Path) -> String {
 pub async fn check_version(
     local_version_str: &str,
     bypass_cache: bool,
-) -> Result<Option<CurrentVersion>, Box<dyn Error + Send + Sync>> {
+) -> miette::Result<Option<CurrentVersion>> {
     let moon_dir = fs::find_upwards(
         CONFIG_DIRNAME,
         env::current_dir().expect("Invalid working directory."),
@@ -100,22 +99,25 @@ pub async fn check_version(
         .header("X-Moon-UID", load_or_create_anonymous_uid()?)
         .header("X-Moon-RID", create_anonymous_rid(&workspace_root))
         .send()
-        .await?
+        .await
+        .into_diagnostic()?
         .text()
-        .await?;
+        .await
+        .into_diagnostic()?;
 
-    let data: CurrentVersion = serde_json::from_str(&response)?;
-    let local_version = Version::parse(local_version_str)?;
-    let remote_version = Version::parse(data.current_version.as_str())?;
+    let data: CurrentVersion = serde_json::from_str(&response).into_diagnostic()?;
+    let local_version = Version::parse(local_version_str).into_diagnostic()?;
+    let remote_version = Version::parse(data.current_version.as_str()).into_diagnostic()?;
 
     fs::create_dir_all(check_state_path.parent().unwrap())?;
 
     let check_state = OpenOptions::new()
         .write(true)
         .create(true)
-        .open(&check_state_path)?;
+        .open(&check_state_path)
+        .into_diagnostic()?;
 
-    serde_json::to_writer(check_state, &CheckState { last_alert: now })?;
+    serde_json::to_writer(check_state, &CheckState { last_alert: now }).into_diagnostic()?;
 
     if remote_version > local_version {
         return Ok(Some(data));

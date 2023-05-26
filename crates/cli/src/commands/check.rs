@@ -1,9 +1,9 @@
 use crate::commands::run::{run_target, RunOptions};
-use crate::helpers::AnyError;
 use moon::{generate_project_graph, load_workspace};
 use moon_common::Id;
 use moon_logger::trace;
 use moon_project::Project;
+use starbase::AppResult;
 use std::env;
 
 pub struct CheckOptions {
@@ -14,7 +14,7 @@ pub struct CheckOptions {
 
 const LOG_TARGET: &str = "moon:check";
 
-pub async fn check(project_ids: &[Id], options: CheckOptions) -> Result<(), AnyError> {
+pub async fn check(project_ids: &[Id], options: CheckOptions) -> AppResult {
     let mut workspace = load_workspace().await?;
     let project_graph = generate_project_graph(&mut workspace).await?;
     let mut projects: Vec<&Project> = vec![];
@@ -27,7 +27,7 @@ pub async fn check(project_ids: &[Id], options: CheckOptions) -> Result<(), AnyE
     } else if project_ids.is_empty() {
         trace!(target: LOG_TARGET, "Loading from path");
 
-        projects.push(project_graph.get_from_path(env::current_dir()?)?);
+        projects.push(project_graph.get_from_path(env::current_dir().unwrap())?);
     } else {
         trace!(
             target: LOG_TARGET,

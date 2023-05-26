@@ -170,7 +170,9 @@ mod configs {
             cmd.arg("run").arg("base:noop");
         });
 
-        assert_snapshot!(assert.output_standardized());
+        let output = assert.output();
+
+        assert!(predicate::str::contains("unknown field: found `type`").eval(&output));
     }
 }
 
@@ -600,7 +602,10 @@ mod outputs {
 
         let output = assert.output();
 
-        assert!(predicate::str::contains("Target outputs:missingOutput defines the output unknown, but this output does not exist after being ran.").eval(&output));
+        assert!(predicate::str::contains(
+            "Target outputs:missingOutput defines the output unknown"
+        )
+        .eval(&output));
     }
 
     #[test]
@@ -1648,7 +1653,7 @@ mod interactive {
         });
 
         assert.failure().stderr(predicate::str::contains(
-            "Only 1 target can be ran as interactive. Requires a fully qualified project target.",
+            "Only 1 target can be ran as interactive",
         ));
     }
 

@@ -1,11 +1,12 @@
-use crate::helpers::{create_progress_bar, AnyError};
+use crate::helpers::create_progress_bar;
 use moon::load_workspace;
+use starbase::AppResult;
 
 pub struct CleanOptions {
     pub cache_lifetime: String,
 }
 
-pub async fn clean(options: CleanOptions) -> Result<(), AnyError> {
+pub async fn clean(options: CleanOptions) -> AppResult {
     let workspace = load_workspace().await?;
 
     let done = create_progress_bar(format!(

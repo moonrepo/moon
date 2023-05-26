@@ -16,9 +16,7 @@ pub use vcs::*;
 pub type BoxedVcs = Box<dyn Vcs + Send + Sync + 'static>;
 
 /// Detect the version control system being used and the current branch
-pub async fn detect_vcs(
-    dest_dir: &Path,
-) -> Result<(VcsManager, String), Box<dyn std::error::Error>> {
+pub async fn detect_vcs(dest_dir: &Path) -> Result<(VcsManager, String), VcsError> {
     if dest_dir.join(".git").exists() {
         return Ok((
             VcsManager::Git,

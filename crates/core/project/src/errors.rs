@@ -1,3 +1,4 @@
+use miette::Diagnostic;
 use moon_common::consts::CONFIG_PROJECT_FILENAME;
 use moon_common::IdError;
 use moon_error::MoonError;
@@ -9,7 +10,7 @@ use starbase_styles::{Style, Stylize};
 use std::path::PathBuf;
 use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Diagnostic)]
 pub enum ProjectError {
     #[error(
         "Failed to validate {}/{} configuration file.\n\n{1}",
@@ -30,21 +31,27 @@ pub enum ProjectError {
     #[error("Task {} has not been configured for project {}.", .0.style(Style::Id), .1.style(Style::Id))]
     UnconfiguredTask(String, String),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     FileGroup(#[from] FileGroupError),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     Id(#[from] IdError),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     Moon(#[from] MoonError),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     Query(#[from] QueryError),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     Target(#[from] TargetError),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     Task(#[from] TaskError),
 }

@@ -1,3 +1,4 @@
+use miette::Diagnostic;
 use moon_common::IdError;
 use moon_config::ConfigError;
 use moon_error::MoonError;
@@ -6,7 +7,7 @@ use starbase_styles::{Style, Stylize};
 use std::path::PathBuf;
 use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Diagnostic)]
 pub enum TaskError {
     #[error("Failed to parse env file {}: {1}", .0.style(Style::Path))]
     InvalidEnvFile(PathBuf, String),
@@ -27,12 +28,15 @@ pub enum TaskError {
     #[error(transparent)]
     Config(#[from] ConfigError),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     Id(#[from] IdError),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     Moon(#[from] MoonError),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     Target(#[from] TargetError),
 }

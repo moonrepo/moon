@@ -7,8 +7,7 @@ expression: assert.output()
 stdout
 ▪▪▪▪ rust:exitNonZero (100ms)
 stderr
-
- ERROR  Process cargo failed with a 1 exit code.
+Error:   × Process cargo failed with a 1 exit code.
 
 
 

@@ -249,7 +249,7 @@ fn gather_variables(
                             GeneratorError::FailedToParseArgVar(name.to_owned(), e.to_string())
                         })
                         .into_diagnostic()?,
-                    None => var.default,
+                    None => var.default as i32,
                 };
 
                 if options.defaults || var.prompt.is_none() {

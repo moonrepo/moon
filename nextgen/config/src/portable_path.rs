@@ -149,6 +149,7 @@ impl Portable for ProjectFilePath {
 // Represents either a workspace or project relative glob/path, or env var.
 // Workspace paths are prefixed with "/", and env vars with "$".
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(untagged)]
 pub enum PortablePath {
     ProjectFile(FilePath),
     ProjectGlob(GlobPath),
@@ -157,18 +158,21 @@ pub enum PortablePath {
 }
 
 impl PortablePath {
+    /// Expand the portable path to a workspace relative path. If the path is project relative,
+    /// prefix it with the provided project source. Furthermore, all paths must be standardized
+    /// on "/" for path separators, as it's a requirement for globs and `RelativePathBuf`.
     pub fn to_workspace_relative(&self, project_source: &str) -> WorkspaceRelativePathBuf {
+        let source = standardize_separators(project_source);
         let path = match self {
             PortablePath::ProjectFile(file) => {
-                WorkspaceRelativePathBuf::from(project_source).join(standardize_separators(file))
+                WorkspaceRelativePathBuf::from(source).join(standardize_separators(file))
             }
             PortablePath::ProjectGlob(glob) => {
                 if let Some(negated_glob) = glob.0.strip_prefix('!') {
-                    WorkspaceRelativePathBuf::from(format!("!{project_source}"))
+                    WorkspaceRelativePathBuf::from(format!("!{source}"))
                         .join(standardize_separators(negated_glob))
                 } else {
-                    WorkspaceRelativePathBuf::from(project_source)
-                        .join(standardize_separators(glob))
+                    WorkspaceRelativePathBuf::from(source).join(standardize_separators(glob))
                 }
             }
             PortablePath::WorkspaceFile(file) => {

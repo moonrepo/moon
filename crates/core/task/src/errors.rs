@@ -26,9 +26,11 @@ pub enum TaskError {
     #[error("Target {} defines the output {}, but this output does not exist after being ran.", .0.style(Style::Label), .1.style(Style::File))]
     MissingOutput(String, String),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     Args(#[from] ArgsSplitError),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     Config(#[from] ConfigError),
 

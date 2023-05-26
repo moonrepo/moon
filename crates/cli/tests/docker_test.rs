@@ -1,5 +1,5 @@
 use moon_cli::commands::docker::DockerManifest;
-use moon_config2::{WorkspaceConfig, WorkspaceProjects};
+use moon_config2::{PartialWorkspaceConfig, WorkspaceProjects};
 use moon_test_utils::{
     create_sandbox_with_config, get_cases_fixture_configs, get_node_depman_fixture_configs,
     get_node_fixture_configs, get_projects_fixture_configs, predicates::prelude::*,
@@ -182,12 +182,12 @@ mod scaffold_workspace {
 
     #[test]
     fn copies_cargo_files() {
-        let workspace_config = WorkspaceConfig {
-            projects: WorkspaceProjects::Sources(FxHashMap::from_iter([(
+        let workspace_config = PartialWorkspaceConfig {
+            projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([(
                 "rust".into(),
                 ".".into(),
-            )])),
-            ..WorkspaceConfig::default()
+            )]))),
+            ..PartialWorkspaceConfig::default()
         };
 
         let sandbox =

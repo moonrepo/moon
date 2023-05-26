@@ -127,4 +127,18 @@ impl ProjectConfig {
                 .join(consts::CONFIG_PROJECT_FILENAME),
         )
     }
+
+    pub fn load_partial<P: AsRef<Path>>(
+        project_root: P,
+    ) -> Result<PartialProjectConfig, ConfigError> {
+        let path = project_root.as_ref().join(consts::CONFIG_PROJECT_FILENAME);
+
+        let mut loader = ConfigLoader::<ProjectConfig>::yaml();
+
+        if path.exists() {
+            loader.file(path)?;
+        }
+
+        loader.load_partial(&())
+    }
 }

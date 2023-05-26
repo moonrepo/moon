@@ -1,5 +1,4 @@
 use schematic::{derive_enum, Config, ConfigEnum};
-use serde::Serialize;
 
 derive_enum!(
     #[derive(ConfigEnum, Copy, Default)]
@@ -10,7 +9,7 @@ derive_enum!(
     }
 );
 
-#[derive(Clone, Config, Serialize)]
+#[derive(Clone, Config)]
 pub struct VcsConfig {
     #[setting(default = "master")]
     pub default_branch: String,

@@ -173,7 +173,7 @@ mod in_token {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let task = create_task(Some(TaskConfig {
-            inputs: string_vec!["dir/**/*", "file.ts"],
+            inputs: Some(string_vec!["dir/**/*", "file.ts"]),
             ..TaskConfig::default()
         }));
 
@@ -187,7 +187,7 @@ mod in_token {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let task = create_task(Some(TaskConfig {
-            inputs: string_vec!["dir/**/*", "file.ts"],
+            inputs: Some(string_vec!["dir/**/*", "file.ts"]),
             ..TaskConfig::default()
         }));
 
@@ -204,7 +204,7 @@ mod out_token {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let task = create_task(Some(TaskConfig {
-            outputs: string_vec!["dir", "file.ts"],
+            outputs: Some(string_vec!["dir", "file.ts"]),
             ..TaskConfig::default()
         }));
 
@@ -218,7 +218,7 @@ mod out_token {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let task = create_task(Some(TaskConfig {
-            outputs: string_vec!["dir", "file.ts"],
+            outputs: Some(string_vec!["dir", "file.ts"]),
             ..TaskConfig::default()
         }));
 
@@ -232,7 +232,7 @@ mod out_token {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let task = create_task(Some(TaskConfig {
-            outputs: string_vec!["@group(name)"],
+            outputs: Some(string_vec!["@group(name)"]),
             ..TaskConfig::default()
         }));
 
@@ -394,7 +394,7 @@ mod resolve_args {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let mut task = create_task(Some(TaskConfig {
-            inputs: string_vec!["dir/**/*", "file.ts"],
+            inputs: Some(string_vec!["dir/**/*", "file.ts"]),
             ..TaskConfig::default()
         }));
 
@@ -412,7 +412,7 @@ mod resolve_args {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let mut task = create_task(Some(TaskConfig {
-            inputs: string_vec!["src/**/*", "file.ts"],
+            inputs: Some(string_vec!["src/**/*", "file.ts"]),
             ..TaskConfig::default()
         }));
 
@@ -433,7 +433,7 @@ mod resolve_args {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let mut task = create_task(Some(TaskConfig {
-            outputs: string_vec!["dir/", "file.ts"],
+            outputs: Some(string_vec!["dir/", "file.ts"]),
             ..TaskConfig::default()
         }));
 

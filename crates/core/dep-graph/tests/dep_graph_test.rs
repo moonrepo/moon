@@ -1,6 +1,7 @@
 use moon::{build_dep_graph, generate_project_graph, load_workspace_from};
 use moon_config2::{
-    InheritedTasksConfig, NodeConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
+    PartialInheritedTasksConfig, PartialNodeConfig, PartialToolchainConfig, PartialWorkspaceConfig,
+    WorkspaceProjects,
 };
 use moon_dep_graph::BatchedTopoSort;
 use moon_project_graph::ProjectGraph;
@@ -14,8 +15,8 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use std::path::PathBuf;
 
 async fn create_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
-    let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
+    let workspace_config = PartialWorkspaceConfig {
+        projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([
             ("advanced".into(), "advanced".to_owned()),
             ("basic".into(), "basic".to_owned()),
             ("emptyConfig".into(), "empty-config".to_owned()),
@@ -27,26 +28,26 @@ async fn create_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
             // Tasks
             ("tasks".into(), "tasks".to_owned()),
             ("platforms".into(), "platforms".to_owned()),
-        ])),
-        ..WorkspaceConfig::default()
+        ]))),
+        ..PartialWorkspaceConfig::default()
     };
-    let toolchain_config = ToolchainConfig {
-        node: Some(NodeConfig {
+    let toolchain_config = PartialToolchainConfig {
+        node: Some(PartialNodeConfig {
             version: Some("16.0.0".into()),
-            dedupe_on_lockfile_change: false,
-            ..NodeConfig::default()
+            dedupe_on_lockfile_change: Some(false),
+            ..PartialNodeConfig::default()
         }),
-        ..ToolchainConfig::default()
+        ..PartialToolchainConfig::default()
     };
-    let tasks_config = InheritedTasksConfig {
-        file_groups: FxHashMap::from_iter([
+    let tasks_config = PartialInheritedTasksConfig {
+        file_groups: Some(FxHashMap::from_iter([
             (
                 "sources".into(),
                 create_portable_paths(["src/**/*", "types/**/*"]),
             ),
             ("tests".into(), create_portable_paths(["tests/**/*"])),
-        ]),
-        ..InheritedTasksConfig::default()
+        ])),
+        ..PartialInheritedTasksConfig::default()
     };
 
     let sandbox = create_sandbox_with_config(
@@ -63,8 +64,8 @@ async fn create_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
 }
 
 async fn create_tasks_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
-    let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
+    let workspace_config = PartialWorkspaceConfig {
+        projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([
             ("basic".into(), "basic".to_owned()),
             ("buildA".into(), "build-a".to_owned()),
             ("buildB".into(), "build-b".to_owned()),
@@ -83,22 +84,22 @@ async fn create_tasks_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
             ("mergeReplace".into(), "merge-replace".to_owned()),
             ("noTasks".into(), "no-tasks".to_owned()),
             ("persistent".into(), "persistent".to_owned()),
-        ])),
-        ..WorkspaceConfig::default()
+        ]))),
+        ..PartialWorkspaceConfig::default()
     };
-    let toolchain_config = ToolchainConfig {
-        node: Some(NodeConfig {
+    let toolchain_config = PartialToolchainConfig {
+        node: Some(PartialNodeConfig {
             version: Some("16.0.0".into()),
-            ..NodeConfig::default()
+            ..PartialNodeConfig::default()
         }),
-        ..ToolchainConfig::default()
+        ..PartialToolchainConfig::default()
     };
-    let tasks_config = InheritedTasksConfig {
-        file_groups: FxHashMap::from_iter([(
+    let tasks_config = PartialInheritedTasksConfig {
+        file_groups: Some(FxHashMap::from_iter([(
             "sources".into(),
             create_portable_paths(["src/**/*"]),
-        )]),
-        ..InheritedTasksConfig::default()
+        )])),
+        ..PartialInheritedTasksConfig::default()
     };
 
     let sandbox = create_sandbox_with_config(

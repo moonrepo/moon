@@ -10,7 +10,7 @@ use moon_query::{Condition, Criteria, Field, LogicalOperator, QueryError, Querya
 use moon_target::Target;
 use moon_task::{Task, TouchedFilePaths};
 use moon_utils::path;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
 use starbase_styles::color;
 use std::collections::BTreeMap;
@@ -130,10 +130,15 @@ fn create_tasks_from_config(
     debug!(target: log_target, "Creating tasks");
 
     // Gather inheritance configs
-    let include = &project_config.workspace.inherited_tasks.include;
-    let include_all = include.is_empty();
+    let mut include_all = true;
+    let mut include = FxHashSet::default();
     let exclude = &project_config.workspace.inherited_tasks.exclude;
     let rename = &project_config.workspace.inherited_tasks.rename;
+
+    if let Some(include_config) = &project_config.workspace.inherited_tasks.include {
+        include_all = false;
+        include.extend(include_config);
+    }
 
     // Add global tasks first while taking inheritance config into account
     for (task_id, task_config) in &global_tasks_config.tasks {

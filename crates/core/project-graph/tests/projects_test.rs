@@ -3,8 +3,9 @@
 
 use moon::{generate_project_graph, load_workspace_from};
 use moon_config2::{
-    InheritedTasksConfig, LanguageType, NodeConfig, PlatformType, RustConfig, TaskCommandArgs,
-    TaskConfig, TaskOptionsConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
+    LanguageType, PartialInheritedTasksConfig, PartialNodeConfig, PartialRustConfig,
+    PartialTaskConfig, PartialTaskOptionsConfig, PartialToolchainConfig, PartialWorkspaceConfig,
+    PlatformType, TaskCommandArgs, WorkspaceProjects,
 };
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
@@ -25,7 +26,7 @@ async fn tasks_sandbox() -> (Sandbox, ProjectGraph) {
 
 async fn tasks_sandbox_with_config<C>(callback: C) -> (Sandbox, ProjectGraph)
 where
-    C: FnOnce(&mut WorkspaceConfig, &mut InheritedTasksConfig),
+    C: FnOnce(&mut PartialWorkspaceConfig, &mut PartialInheritedTasksConfig),
 {
     tasks_sandbox_internal(callback, |_| {}).await
 }
@@ -39,7 +40,7 @@ where
 
 async fn tasks_sandbox_internal<C, S>(cfg_callback: C, box_callback: S) -> (Sandbox, ProjectGraph)
 where
-    C: FnOnce(&mut WorkspaceConfig, &mut InheritedTasksConfig),
+    C: FnOnce(&mut PartialWorkspaceConfig, &mut PartialInheritedTasksConfig),
     S: FnOnce(&Sandbox),
 {
     let (mut workspace_config, toolchain_config, mut tasks_config) = get_tasks_fixture_configs();
@@ -209,23 +210,23 @@ tasks:
             ])
         }
 
-        fn stub_global_task_config() -> TaskConfig {
-            TaskConfig {
-                args: TaskCommandArgs::Sequence(string_vec!["--a"]),
-                command: TaskCommandArgs::String("standard".to_owned()),
-                deps: vec![Target::parse("a:standard").unwrap()],
-                env: stub_global_env_vars(),
-                inputs: string_vec!["a.*"],
-                outputs: string_vec!["a.ts"],
-                options: TaskOptionsConfig {
+        fn stub_global_task_config() -> PartialTaskConfig {
+            PartialTaskConfig {
+                args: Some(TaskCommandArgs::Sequence(string_vec!["--a"])),
+                command: Some(TaskCommandArgs::String("standard".to_owned())),
+                deps: Some(vec![Target::parse("a:standard").unwrap()]),
+                env: Some(stub_global_env_vars()),
+                inputs: Some(string_vec!["a.*"]),
+                outputs: Some(string_vec!["a.ts"]),
+                options: Some(PartialTaskOptionsConfig {
                     cache: Some(true),
                     retry_count: Some(1),
                     run_deps_in_parallel: Some(true),
                     run_in_ci: Some(true),
-                    ..TaskOptionsConfig::default()
-                },
-                platform: PlatformType::Node,
-                ..TaskConfig::default()
+                    ..PartialTaskOptionsConfig::default()
+                }),
+                platform: Some(PlatformType::Node),
+                ..PartialTaskConfig::default()
             }
         }
 
@@ -234,6 +235,8 @@ tasks:
             let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
                 tasks_config
                     .tasks
+                    .as_mut()
+                    .unwrap()
                     .insert("standard".into(), stub_global_task_config());
             })
             .await;
@@ -254,6 +257,8 @@ tasks:
             let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
                 tasks_config
                     .tasks
+                    .as_mut()
+                    .unwrap()
                     .insert("standard".into(), stub_global_task_config());
             })
             .await;
@@ -280,6 +285,8 @@ tasks:
             let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
                 tasks_config
                     .tasks
+                    .as_mut()
+                    .unwrap()
                     .insert("standard".into(), stub_global_task_config());
             })
             .await;
@@ -306,6 +313,8 @@ tasks:
             let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
                 tasks_config
                     .tasks
+                    .as_mut()
+                    .unwrap()
                     .insert("standard".into(), stub_global_task_config());
             })
             .await;
@@ -330,47 +339,47 @@ tasks:
         use std::collections::BTreeMap;
 
         async fn tasks_inheritance_sandbox() -> (Sandbox, ProjectGraph) {
-            let workspace_config = WorkspaceConfig {
-                projects: WorkspaceProjects::Globs(string_vec!["*"]),
-                ..WorkspaceConfig::default()
+            let workspace_config = PartialWorkspaceConfig {
+                projects: Some(WorkspaceProjects::Globs(string_vec!["*"])),
+                ..PartialWorkspaceConfig::default()
             };
 
-            let toolchain_config = ToolchainConfig {
-                node: Some(NodeConfig::default()),
-                ..ToolchainConfig::default()
+            let toolchain_config = PartialToolchainConfig {
+                node: Some(PartialNodeConfig::default()),
+                ..PartialToolchainConfig::default()
             };
 
-            let tasks_config = InheritedTasksConfig {
-                tasks: BTreeMap::from_iter([
+            let tasks_config = PartialInheritedTasksConfig {
+                tasks: Some(BTreeMap::from_iter([
                     (
                         "a".into(),
-                        TaskConfig {
-                            command: TaskCommandArgs::String("a".into()),
-                            inputs: string_vec!["a"],
-                            platform: PlatformType::Unknown,
-                            ..TaskConfig::default()
+                        PartialTaskConfig {
+                            command: Some(TaskCommandArgs::String("a".into())),
+                            inputs: Some(string_vec!["a"]),
+                            platform: Some(PlatformType::Unknown),
+                            ..PartialTaskConfig::default()
                         },
                     ),
                     (
                         "b".into(),
-                        TaskConfig {
-                            command: TaskCommandArgs::String("b".into()),
-                            inputs: string_vec!["b"],
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                        PartialTaskConfig {
+                            command: Some(TaskCommandArgs::String("b".into())),
+                            inputs: Some(string_vec!["b"]),
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         },
                     ),
                     (
                         "c".into(),
-                        TaskConfig {
-                            command: TaskCommandArgs::String("c".into()),
-                            inputs: string_vec!["c"],
-                            platform: PlatformType::System,
-                            ..TaskConfig::default()
+                        PartialTaskConfig {
+                            command: Some(TaskCommandArgs::String("c".into())),
+                            inputs: Some(string_vec!["c"]),
+                            platform: Some(PlatformType::System),
+                            ..PartialTaskConfig::default()
                         },
                     ),
-                ]),
-                ..InheritedTasksConfig::default()
+                ])),
+                ..PartialInheritedTasksConfig::default()
             };
 
             let sandbox = create_sandbox_with_config(
@@ -763,11 +772,11 @@ mod task_expansion {
         #[tokio::test]
         async fn inherits_implicit_deps() {
             let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
-                tasks_config.implicit_deps = vec![
+                tasks_config.implicit_deps = Some(vec![
                     Target::parse("build").unwrap(),
                     Target::parse("~:build").unwrap(),
                     Target::parse("project:task").unwrap(),
-                ];
+                ]);
             })
             .await;
 
@@ -812,7 +821,7 @@ mod task_expansion {
         #[tokio::test]
         async fn resolves_implicit_deps_parent_depends_on() {
             let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
-                tasks_config.implicit_deps = vec![Target::parse("^:build").unwrap()];
+                tasks_config.implicit_deps = Some(vec![Target::parse("^:build").unwrap()]);
             })
             .await;
 
@@ -833,7 +842,7 @@ mod task_expansion {
         #[tokio::test]
         async fn avoids_implicit_deps_matching_target() {
             let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
-                tasks_config.implicit_deps = vec![Target::parse("basic:build").unwrap()];
+                tasks_config.implicit_deps = Some(vec![Target::parse("basic:build").unwrap()]);
             })
             .await;
 
@@ -933,7 +942,7 @@ mod task_expansion {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Target(NoAllInTaskDeps(\":build\"))")]
+        #[should_panic(expected = "target scope not supported as a task dependency")]
         async fn errors_for_all_scope() {
             tasks_sandbox_with_setup(|sandbox| {
                 sandbox.create_file(
@@ -949,7 +958,7 @@ mod task_expansion {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Target(NoTagInTaskDeps(\"#tag:build\"))")]
+        #[should_panic(expected = "target scope not supported as a task dependency")]
         async fn errors_for_tag_scope() {
             tasks_sandbox_with_setup(|sandbox| {
                 sandbox.create_file(
@@ -1235,7 +1244,7 @@ mod task_expansion {
         #[tokio::test]
         async fn inherits_implicit_inputs() {
             let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
-                tasks_config.implicit_inputs = string_vec!["package.json"];
+                tasks_config.implicit_inputs = Some(string_vec!["package.json"]);
             })
             .await;
 
@@ -1253,7 +1262,7 @@ mod task_expansion {
         #[tokio::test]
         async fn inherits_implicit_inputs_env_vars() {
             let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
-                tasks_config.implicit_inputs = string_vec!["$FOO", "$BAR"]
+                tasks_config.implicit_inputs = Some(string_vec!["$FOO", "$BAR"]);
             })
             .await;
 
@@ -1421,26 +1430,26 @@ mod detection {
     use super::*;
 
     async fn langs_sandbox() -> (Sandbox, ProjectGraph) {
-        let workspace_config = WorkspaceConfig {
-            projects: WorkspaceProjects::Globs(string_vec!["*"]),
-            ..WorkspaceConfig::default()
+        let workspace_config = PartialWorkspaceConfig {
+            projects: Some(WorkspaceProjects::Globs(string_vec!["*"])),
+            ..PartialWorkspaceConfig::default()
         };
 
-        let toolchain_config = ToolchainConfig {
-            node: Some(NodeConfig::default()),
-            rust: Some(RustConfig::default()),
-            ..ToolchainConfig::default()
+        let toolchain_config = PartialToolchainConfig {
+            node: Some(PartialNodeConfig::default()),
+            rust: Some(PartialRustConfig::default()),
+            ..PartialToolchainConfig::default()
         };
 
-        let tasks_config = InheritedTasksConfig {
-            tasks: BTreeMap::from_iter([(
+        let tasks_config = PartialInheritedTasksConfig {
+            tasks: Some(BTreeMap::from_iter([(
                 "command".into(),
-                TaskConfig {
-                    command: TaskCommandArgs::String("command".into()),
-                    ..TaskConfig::default()
+                PartialTaskConfig {
+                    command: Some(TaskCommandArgs::String("command".into())),
+                    ..PartialTaskConfig::default()
                 },
-            )]),
-            ..InheritedTasksConfig::default()
+            )])),
+            ..PartialInheritedTasksConfig::default()
         };
 
         let sandbox = create_sandbox_with_config(

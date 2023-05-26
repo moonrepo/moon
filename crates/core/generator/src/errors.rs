@@ -25,6 +25,7 @@ pub enum GeneratorError {
     #[error("No template with the name {} could not be found at any of the configured template paths.", .0.style(Style::Id))]
     MissingTemplate(String),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     Config(#[from] ConfigError),
 

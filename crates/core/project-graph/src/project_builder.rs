@@ -3,7 +3,6 @@ use crate::graph_hasher::GraphHasher;
 use crate::helpers::detect_projects_with_globs;
 use crate::project_graph::{GraphType, IndicesType, ProjectGraph, LOG_TARGET};
 use crate::token_resolver::{TokenContext, TokenResolver};
-use moon_common::path::standardize_separators;
 use moon_common::{consts, Id};
 use moon_config2::{ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceProjects};
 use moon_enforcer::{enforce_project_type_relationships, enforce_tag_relationships};
@@ -12,7 +11,7 @@ use moon_hasher::{convert_paths_to_strings, to_hash};
 use moon_logger::{debug, map_list, trace, warn, Logable};
 use moon_platform_detector::{detect_project_language, detect_task_platform};
 use moon_project::{Project, ProjectDependency, ProjectDependencySource, ProjectError};
-use moon_target::{Target, TargetError, TargetScope};
+use moon_target::{Target, TargetScope};
 use moon_task::{Task, TaskError, TaskFlag};
 use moon_utils::path::expand_to_workspace_relative;
 use moon_utils::regex::{ENV_VAR, ENV_VAR_SUBSTITUTE};
@@ -131,7 +130,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                         id: dep_config.id.clone(),
                         scope: dep_config.scope,
                         source: ProjectDependencySource::Implicit,
-                        ..ProjectDependency::default()
+                        via: dep_config.via,
                     });
             }
 
@@ -328,12 +327,6 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         for target in &task.deps {
             match &target.scope {
-                // :task
-                TargetScope::All => {
-                    return Err(ProjectGraphError::Target(TargetError::NoAllInTaskDeps(
-                        target.id.clone(),
-                    )));
-                }
                 // ^:task
                 TargetScope::Deps => {
                     for dep_id in project.get_dependency_ids() {
@@ -359,12 +352,9 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                         push_target(target.clone());
                     }
                 }
+                // :task
                 // #tag:task
-                TargetScope::Tag(_) => {
-                    return Err(ProjectGraphError::Target(TargetError::NoTagInTaskDeps(
-                        target.id.clone(),
-                    )));
-                }
+                _ => unreachable!(),
             };
         }
 
@@ -585,7 +575,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         let mut add_sources = |map: &FxHashMap<Id, String>| -> Result<(), ProjectGraphError> {
             for (id, source) in map {
-                sources.insert(id.to_owned(), standardize_separators(source));
+                sources.insert(id.to_owned(), path::normalize_separators(source));
             }
 
             Ok(())

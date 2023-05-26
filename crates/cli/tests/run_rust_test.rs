@@ -1,18 +1,23 @@
-use moon_config2::{RustConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects};
+use moon_config2::{
+    PartialRustConfig, PartialToolchainConfig, PartialWorkspaceConfig, WorkspaceProjects,
+};
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, predicates::prelude::*, Sandbox,
 };
 use rustc_hash::FxHashMap;
 
 fn rust_sandbox() -> Sandbox {
-    let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Sources(FxHashMap::from_iter([("rust".into(), ".".into())])),
-        ..WorkspaceConfig::default()
+    let workspace_config = PartialWorkspaceConfig {
+        projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([(
+            "rust".into(),
+            ".".into(),
+        )]))),
+        ..PartialWorkspaceConfig::default()
     };
 
-    let toolchain_config = ToolchainConfig {
-        rust: Some(RustConfig::default()),
-        ..ToolchainConfig::default()
+    let toolchain_config = PartialToolchainConfig {
+        rust: Some(PartialRustConfig::default()),
+        ..PartialToolchainConfig::default()
     };
 
     let sandbox = create_sandbox_with_config(

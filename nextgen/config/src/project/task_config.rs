@@ -85,15 +85,18 @@ pub struct TaskConfig {
 
     // TODO
     #[setting(skip)]
-    pub global_inputs: Vec<String>, // Vec<PortablePath>,
+    pub global_inputs: Vec<String>,
 
+    // None = All inputs (**/*)
+    // [] = No inputs
+    // [...] = Specific inputs
     #[setting(validate = validate_portable_paths)]
-    pub inputs: Vec<String>, // Vec<PortablePath>,
+    pub inputs: Option<Vec<String>>,
 
     pub local: bool,
 
     #[setting(validate = validate_portable_paths)]
-    pub outputs: Vec<String>, // Vec<PortablePath>,
+    pub outputs: Option<Vec<String>>,
 
     #[setting(nested)]
     pub options: TaskOptionsConfig,

@@ -56,6 +56,7 @@ diff = "0.1.13"
 indicatif = "0.17.3"
 itertools = "0.10.5"
 is-terminal = "0.4.5"
+miette = { workspace = true }
 mimalloc = { version = "0.1.37", default-features = false }
 open = "4.1.0"
 petgraph = { workspace = true }
@@ -65,7 +66,7 @@ rustc-hash = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
-starbase = "0.1.9"
+starbase = "0.1.10"
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true }
 strum = { workspace = true }

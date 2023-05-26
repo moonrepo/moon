@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 moon_common = { path = "../common" }
+miette = { workspace = true }
 once_cell = { workspace = true }
 regex = { workspace = true }
 serde = { workspace = true }

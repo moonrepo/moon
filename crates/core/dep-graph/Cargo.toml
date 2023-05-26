@@ -21,6 +21,7 @@ moon_project_graph = { path = "../project-graph" }
 moon_query = { path = "../../../nextgen/query" }
 moon_target = { path = "../../../nextgen/target" }
 moon_task = { path = "../task" }
+miette = { workspace = true }
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }
 starbase_styles = { workspace = true }

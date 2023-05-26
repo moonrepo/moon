@@ -24,6 +24,7 @@ moon_utils = { path = "../utils" }
 moon_vcs = { path = "../vcs" }
 moon_workspace = { path = "../workspace" }
 console = { workspace = true }
+miette = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

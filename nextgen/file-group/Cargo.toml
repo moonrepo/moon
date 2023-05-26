@@ -7,6 +7,7 @@ edition = "2021"
 moon_common = { path = "../common" }
 moon_path = { path = "../path" }
 common-path = "1.0.0"
+miette = { workspace = true }
 once_cell = { workspace = true }
 serde = { workspace = true }
 starbase_utils = { workspace = true }

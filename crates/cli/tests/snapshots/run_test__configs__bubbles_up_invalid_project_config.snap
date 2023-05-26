@@ -2,12 +2,11 @@
 source: crates/cli/tests/run_test.rs
 expression: assert.output_standardized()
 ---
-
- ERROR 
-
-Failed to validate base/moon.yml configuration file.
-
-  ▪ unknown field: found `type`, expected `one of `name`, `description`, `owner`, `maintainers`, `channel`` for key "project.project.type" in base/moon.yml YAML Extended file
+Error:   × Failed to validate base/moon.yml configuration file.
+  │ 
+  │   ▪ unknown field: found `type`, expected `one of `name`, `description`,
+  │ `owner`, `maintainers`, `channel`` for key "project.project.type" in base/
+  │ moon.yml YAML Extended file
 
 
 

@@ -1,8 +1,8 @@
 use super::hash::query_hash;
-use crate::helpers::AnyError;
 use moon_logger::debug;
 use moon_workspace::Workspace;
 use serde::{Deserialize, Serialize};
+use starbase::AppResult;
 
 const LOG_TARGET: &str = "moon:query:hash-diff";
 
@@ -26,7 +26,7 @@ pub struct QueryHashDiffResult {
 pub async fn query_hash_diff(
     workspace: &mut Workspace,
     options: &QueryHashDiffOptions,
-) -> Result<QueryHashDiffResult, AnyError> {
+) -> AppResult<QueryHashDiffResult> {
     debug!(target: LOG_TARGET, "Diffing hashes");
 
     let (left_hash, left) = query_hash(workspace, &options.left).await?;

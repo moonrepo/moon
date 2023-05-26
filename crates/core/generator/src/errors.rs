@@ -1,3 +1,4 @@
+use miette::Diagnostic;
 use moon_config::ConfigError;
 use moon_constants as constants;
 use moon_error::MoonError;
@@ -7,7 +8,7 @@ use std::path::PathBuf;
 use tera::Error as TeraError;
 use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Diagnostic)]
 pub enum GeneratorError {
     #[error("A template with the name {} already exists at {}.", .0.style(Style::Id), .1.style(Style::Path))]
     ExistingTemplate(String, PathBuf),
@@ -27,18 +28,22 @@ pub enum GeneratorError {
     #[error(transparent)]
     Config(#[from] ConfigError),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     Moon(#[from] MoonError),
 
     #[error(transparent)]
     Tera(#[from] TeraError),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     Fs(#[from] FsError),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     Json(#[from] JsonError),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     Yaml(#[from] YamlError),
 }

@@ -1,3 +1,4 @@
+use miette::Diagnostic;
 use moon_common::IdError;
 use moon_enforcer::EnforcerError;
 use moon_error::MoonError;
@@ -8,31 +9,38 @@ use moon_task::TaskError;
 use starbase_styles::{Style, Stylize};
 use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Diagnostic)]
 pub enum ProjectGraphError {
+    #[diagnostic(transparent)]
     #[error(transparent)]
     Enforcer(#[from] EnforcerError),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     Id(#[from] IdError),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     Moon(#[from] MoonError),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     Project(#[from] ProjectError),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     Target(#[from] TargetError),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     Task(#[from] TaskError),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     Token(#[from] TokenError),
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Diagnostic)]
 pub enum TokenError {
     #[error(
         "Token {} received an invalid type for index \"{1}\", must be a number.", .0.style(Style::Symbol)
@@ -57,12 +65,15 @@ pub enum TokenError {
     #[error("Unknown token function {}.", .0.style(Style::Symbol))]
     UnknownTokenFunc(String), // token
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     FileGroup(#[from] FileGroupError),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     Moon(#[from] MoonError),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     Target(#[from] TargetError),
 }

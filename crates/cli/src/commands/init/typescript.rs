@@ -1,22 +1,23 @@
 use super::InitOptions;
-use crate::helpers::AnyError;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
+use miette::IntoDiagnostic;
 use moon_config::load_toolchain_typescript_config_template;
 use moon_terminal::label_header;
 use moon_typescript_lang::TsConfigJson;
+use starbase::AppResult;
 use std::path::Path;
-use tera::{Context, Error, Tera};
+use tera::{Context, Tera};
 
-pub fn render_template(context: Context) -> Result<String, Error> {
-    Tera::one_off(load_toolchain_typescript_config_template(), &context, false)
+pub fn render_template(context: Context) -> AppResult<String> {
+    Tera::one_off(load_toolchain_typescript_config_template(), &context, false).into_diagnostic()
 }
 
 pub async fn init_typescript(
     dest_dir: &Path,
     options: &InitOptions,
     theme: &ColorfulTheme,
-) -> Result<String, AnyError> {
+) -> AppResult<String> {
     if !options.yes {
         println!("\n{}\n", label_header("TypeScript"));
     }
@@ -31,7 +32,8 @@ pub async fn init_typescript(
             || options.minimal
             || Confirm::with_theme(theme)
                 .with_prompt("Use project references?")
-                .interact()?
+                .interact()
+                .into_diagnostic()?
     };
 
     let mut route_cache = false;
@@ -41,12 +43,14 @@ pub async fn init_typescript(
         route_cache = options.yes
             || Confirm::with_theme(theme)
                 .with_prompt("Route declaration output to moons cache?")
-                .interact()?;
+                .interact()
+                .into_diagnostic()?;
 
         sync_paths = options.yes
             || Confirm::with_theme(theme)
                 .with_prompt("Sync project references as path aliases?")
-                .interact()?;
+                .interact()
+                .into_diagnostic()?;
     }
 
     let mut context = Context::new();
@@ -55,7 +59,7 @@ pub async fn init_typescript(
     context.insert("sync_paths", &sync_paths);
     context.insert("minimal", &options.minimal);
 
-    Ok(render_template(context)?)
+    render_template(context)
 }
 
 #[cfg(test)]

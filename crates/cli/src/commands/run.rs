@@ -1,6 +1,6 @@
 use crate::enums::{CacheMode, TouchedStatus};
-use crate::helpers::AnyError;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
+use miette::miette;
 use moon::{build_dep_graph, generate_project_graph, load_workspace};
 use moon_action_context::{ActionContext, ProfileType};
 use moon_action_pipeline::Pipeline;
@@ -9,6 +9,7 @@ use moon_project_graph::ProjectGraph;
 use moon_utils::is_ci;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
+use starbase::AppResult;
 use starbase_styles::color;
 use std::env;
 use std::string::ToString;
@@ -41,7 +42,7 @@ pub async fn run_target(
     options: RunOptions,
     workspace: Workspace,
     project_graph: ProjectGraph,
-) -> Result<(), AnyError> {
+) -> AppResult {
     // Force cache to update using write-only mode
     if options.update_cache {
         env::set_var("MOON_CACHE", CacheMode::Write.to_string());
@@ -107,10 +108,9 @@ pub async fn run_target(
 
     // Interactive can only run against 1 task
     if options.interactive && primary_targets.len() > 1 {
-        return Err(
+        return Err(miette!(
             "Only 1 target can be ran as interactive. Requires a fully qualified project target."
-                .into(),
-        );
+        ));
     }
 
     // Run dependents for all primary targets
@@ -151,7 +151,7 @@ pub async fn run_target(
     Ok(())
 }
 
-pub async fn run(target_ids: &[String], options: RunOptions) -> Result<(), AnyError> {
+pub async fn run(target_ids: &[String], options: RunOptions) -> AppResult {
     let mut workspace = load_workspace().await?;
     let project_graph = generate_project_graph(&mut workspace).await?;
 

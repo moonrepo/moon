@@ -1,14 +1,15 @@
-use crate::helpers::AnyError;
 use console::Term;
 use dialoguer::{theme::Theme, Confirm, Input, MultiSelect, Select};
+use miette::IntoDiagnostic;
 use moon::load_workspace;
 use moon_config::{TemplateVariable, TemplateVariableEnumValue};
 use moon_error::MoonError;
 use moon_generator::{FileState, Generator, GeneratorError, Template, TemplateContext};
 use moon_logger::{debug, map_list, trace, warn};
-use moon_terminal::create_theme;
+use moon_terminal::{create_theme, ExtendedTerm};
 use moon_utils::path;
 use rustc_hash::FxHashMap;
+use starbase::AppResult;
 use starbase_styles::color;
 use std::env;
 use std::fmt::Display;
@@ -129,7 +130,7 @@ fn gather_variables(
     template: &Template,
     theme: &dyn Theme,
     options: &GenerateOptions,
-) -> Result<TemplateContext, GeneratorError> {
+) -> AppResult<TemplateContext> {
     let mut context = TemplateContext::new();
     let custom_vars = parse_var_args(&options.vars);
     let error_handler = |e| GeneratorError::Moon(MoonError::Io(e));
@@ -158,7 +159,8 @@ fn gather_variables(
                         .with_prompt(var.prompt.as_ref().unwrap())
                         .show_default(true)
                         .interact()
-                        .map_err(error_handler)?;
+                        .map_err(error_handler)
+                        .into_diagnostic()?;
 
                     log_var(name, &value, None);
 
@@ -212,7 +214,8 @@ fn gather_variables(
                                     .collect::<Vec<bool>>(),
                             )
                             .interact()
-                            .map_err(error_handler)?;
+                            .map_err(error_handler)
+                            .into_diagnostic()?;
                         let value = indexes
                             .iter()
                             .map(|i| values[*i].clone())
@@ -228,7 +231,8 @@ fn gather_variables(
                             .default(default_index)
                             .items(&labels)
                             .interact()
-                            .map_err(error_handler)?;
+                            .map_err(error_handler)
+                            .into_diagnostic()?;
 
                         log_var(name, &values[index], None);
 
@@ -239,9 +243,12 @@ fn gather_variables(
             TemplateVariable::Number(var) => {
                 let required = var.required.unwrap_or_default();
                 let default: i32 = match custom_vars.get(name) {
-                    Some(val) => val.parse::<i32>().map_err(|e| {
-                        GeneratorError::FailedToParseArgVar(name.to_owned(), e.to_string())
-                    })?,
+                    Some(val) => val
+                        .parse::<i32>()
+                        .map_err(|e| {
+                            GeneratorError::FailedToParseArgVar(name.to_owned(), e.to_string())
+                        })
+                        .into_diagnostic()?,
                     None => var.default,
                 };
 
@@ -263,7 +270,8 @@ fn gather_variables(
                             }
                         })
                         .interact_text()
-                        .map_err(error_handler)?;
+                        .map_err(error_handler)
+                        .into_diagnostic()?;
 
                     log_var(name, &value, None);
 
@@ -292,7 +300,8 @@ fn gather_variables(
                             }
                         })
                         .interact_text()
-                        .map_err(error_handler)?;
+                        .map_err(error_handler)
+                        .into_diagnostic()?;
 
                     log_var(name, &value, None);
 
@@ -305,11 +314,11 @@ fn gather_variables(
     Ok(context)
 }
 
-pub async fn generate(name: String, options: GenerateOptions) -> Result<(), AnyError> {
+pub async fn generate(name: String, options: GenerateOptions) -> AppResult {
     let workspace = load_workspace().await?;
     let generator = Generator::load(&workspace.root, &workspace.config.generator)?;
     let theme = create_theme();
-    let cwd = env::current_dir()?;
+    let cwd = env::current_dir().into_diagnostic()?;
 
     // This is a special case for creating a new template with the generator itself!
     if options.template {
@@ -332,8 +341,8 @@ pub async fn generate(name: String, options: GenerateOptions) -> Result<(), AnyE
     let mut template = generator.load_template(&name)?;
     let term = Term::buffered_stdout();
 
-    term.write_line("")?;
-    term.write_line(&format!(
+    term.line("")?;
+    term.line(format!(
         "{} {}",
         // color::style(&template.config.title).bold(),
         &template.config.title,
@@ -343,9 +352,9 @@ pub async fn generate(name: String, options: GenerateOptions) -> Result<(), AnyE
             "".into()
         }
     ))?;
-    term.write_line(&template.config.description)?;
-    term.write_line("")?;
-    term.flush()?;
+    term.line(&template.config.description)?;
+    term.line("")?;
+    term.flush_lines()?;
 
     // Determine the destination path
     let relative_dest = match &options.dest {
@@ -359,7 +368,8 @@ pub async fn generate(name: String, options: GenerateOptions) -> Result<(), AnyE
             Input::with_theme(&theme)
                 .with_prompt("Where to generate code to?")
                 .allow_empty(false)
-                .interact_text()?
+                .interact_text()
+                .into_diagnostic()?
         }
     };
     let dest = path::normalize(cwd.join(&relative_dest));
@@ -407,7 +417,8 @@ pub async fn generate(name: String, options: GenerateOptions) -> Result<(), AnyE
                     ))
                     .default(2)
                     .items(&operations)
-                    .interact()?;
+                    .interact()
+                    .into_diagnostic()?;
 
                 file.state = match index {
                     0 => FileState::Skip,
@@ -424,7 +435,8 @@ pub async fn generate(name: String, options: GenerateOptions) -> Result<(), AnyE
                     "File {} already exists, overwrite?",
                     color::path(&file.dest_path)
                 ))
-                .interact()?
+                .interact()
+                .into_diagnostic()?
             {
                 file.state = FileState::Replace;
             }
@@ -436,10 +448,10 @@ pub async fn generate(name: String, options: GenerateOptions) -> Result<(), AnyE
         generator.generate(&template)?;
     }
 
-    term.write_line("")?;
+    term.line("")?;
 
     for file in template.files {
-        term.write_line(&format!(
+        term.line(format!(
             "{} {} {}",
             match &file.state {
                 FileState::Create => color::success("created"),
@@ -460,8 +472,8 @@ pub async fn generate(name: String, options: GenerateOptions) -> Result<(), AnyE
         ))?;
     }
 
-    term.write_line("")?;
-    term.flush()?;
+    term.line("")?;
+    term.flush_lines()?;
 
     Ok(())
 }

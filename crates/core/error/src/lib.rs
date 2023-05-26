@@ -1,3 +1,4 @@
+use miette::Diagnostic;
 use regex::Error as RegexError;
 use serde_json::Error as JsonError;
 use serde_yaml::Error as YamlError;
@@ -11,7 +12,7 @@ use wax::GlobError;
 // file path that triggered the error. This file attemps to mitigate this by mapping
 // over IO errors and including additional information.
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Diagnostic)]
 pub enum MoonError {
     #[error("{0}")]
     Generic(String),
@@ -61,18 +62,23 @@ pub enum MoonError {
     #[error("{0}")]
     Unknown(#[source] IoError),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     StarFs(#[from] starbase_utils::fs::FsError),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     StarGlob(#[from] starbase_utils::glob::GlobError),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     StarJson(#[from] starbase_utils::json::JsonError),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     StarToml(#[from] starbase_utils::toml::TomlError),
 
+    #[diagnostic(transparent)]
     #[error(transparent)]
     StarYaml(#[from] starbase_utils::yaml::YamlError),
 }

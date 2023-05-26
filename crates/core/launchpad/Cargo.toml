@@ -10,6 +10,7 @@ moon_logger = { path = "../logger" }
 moon_utils = { path = "../utils" }
 cd_env = { version = "0.1.0" }
 ci_env = { workspace = true }
+miette = { workspace = true }
 proto_cli = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true }

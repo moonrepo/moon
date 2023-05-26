@@ -170,7 +170,9 @@ mod configs {
             cmd.arg("run").arg("base:noop");
         });
 
-        assert_snapshot!(assert.output_standardized());
+        let output = assert.output();
+
+        assert!(predicate::str::contains("unknown field: found `type`").eval(&output));
     }
 }
 

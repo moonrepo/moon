@@ -153,7 +153,10 @@ mod configs {
 
         let output = assert.output();
 
-        assert!(predicate::str::contains("Invalid setting projects").eval(&output));
+        assert!(predicate::str::contains(
+            "projects: expected a sequence of globs or a map of projects"
+        )
+        .eval(&output));
     }
 
     #[test]
@@ -168,7 +171,7 @@ mod configs {
 
         let output = assert.output();
 
-        assert!(predicate::str::contains("Invalid setting tasks").eval(&output));
+        assert!(predicate::str::contains("tasks: invalid type: integer `123`").eval(&output));
     }
 
     #[test]
@@ -183,7 +186,7 @@ mod configs {
 
         let output = assert.output();
 
-        assert!(predicate::str::contains("Invalid setting project.type").eval(&output));
+        assert!(predicate::str::contains("project.type: unknown field `type`").eval(&output));
     }
 }
 

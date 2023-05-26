@@ -21,20 +21,18 @@ fn validate_projects<D, C>(
         WorkspaceProjects::Both { globs, sources } => {
             for (i, g) in globs.iter().enumerate() {
                 ProjectFileGlob::from_str(g).map_err(|mut error| {
-                    error.path = Some(SettingPath::new(vec![
-                        Segment::Key("globs".to_owned()),
-                        Segment::Index(i),
-                    ]));
+                    error.path =
+                        SettingPath::new(vec![Segment::Key("globs".to_owned()), Segment::Index(i)]);
                     error
                 })?;
             }
 
             for (k, v) in sources {
                 ProjectFilePath::from_str(v).map_err(|mut error| {
-                    error.path = Some(SettingPath::new(vec![
+                    error.path = SettingPath::new(vec![
                         Segment::Key("sources".to_owned()),
                         Segment::Key(k.to_string()),
-                    ]));
+                    ]);
                     error
                 })?;
             }
@@ -42,7 +40,7 @@ fn validate_projects<D, C>(
         WorkspaceProjects::Globs(globs) => {
             for (i, g) in globs.iter().enumerate() {
                 ProjectFileGlob::from_str(g).map_err(|mut error| {
-                    error.path = Some(SettingPath::new(vec![Segment::Index(i)]));
+                    error.path = SettingPath::new(vec![Segment::Index(i)]);
                     error
                 })?;
             }
@@ -50,7 +48,7 @@ fn validate_projects<D, C>(
         WorkspaceProjects::Sources(sources) => {
             for (k, v) in sources {
                 ProjectFilePath::from_str(v).map_err(|mut error| {
-                    error.path = Some(SettingPath::new(vec![Segment::Key(k.to_string())]));
+                    error.path = SettingPath::new(vec![Segment::Key(k.to_string())]);
                     error
                 })?;
             }

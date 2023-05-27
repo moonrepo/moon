@@ -5,22 +5,34 @@
   "type": "object",
   "properties": {
     "$schema": {
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "dependsOn": {
-      "type": "array",
+      "type": [
+        "array",
+        "null"
+      ],
       "items": {
         "$ref": "#/definitions/ProjectDependsOn"
       }
     },
     "env": {
-      "type": "object",
+      "type": [
+        "object",
+        "null"
+      ],
       "additionalProperties": {
         "type": "string"
       }
     },
     "fileGroups": {
-      "type": "object",
+      "type": [
+        "object",
+        "null"
+      ],
       "additionalProperties": {
         "type": "array",
         "items": {
@@ -29,34 +41,82 @@
       }
     },
     "language": {
-      "$ref": "#/definitions/LanguageType"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/LanguageType"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "platform": {
-      "$ref": "#/definitions/PlatformType"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PlatformType"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "project": {
-      "$ref": "#/definitions/PartialProjectMetadataConfig"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialProjectMetadataConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "tags": {
-      "type": "array",
+      "type": [
+        "array",
+        "null"
+      ],
       "items": {
         "$ref": "#/definitions/Id"
       }
     },
     "tasks": {
-      "type": "object",
+      "type": [
+        "object",
+        "null"
+      ],
       "additionalProperties": {
         "$ref": "#/definitions/PartialTaskConfig"
       }
     },
     "toolchain": {
-      "$ref": "#/definitions/PartialProjectToolchainConfig"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialProjectToolchainConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "type": {
-      "$ref": "#/definitions/ProjectType"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ProjectType"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "workspace": {
-      "$ref": "#/definitions/PartialProjectWorkspaceConfig"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialProjectWorkspaceConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
     }
   },
   "additionalProperties": false,
@@ -113,22 +173,37 @@
       "type": "object",
       "properties": {
         "channel": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "description": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "maintainers": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string"
           }
         },
         "name": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "owner": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "additionalProperties": false
@@ -137,7 +212,10 @@
       "type": "object",
       "properties": {
         "version": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "additionalProperties": false
@@ -146,13 +224,34 @@
       "type": "object",
       "properties": {
         "node": {
-          "$ref": "#/definitions/PartialProjectToolchainCommonToolConfig"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PartialProjectToolchainCommonToolConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "rust": {
-          "$ref": "#/definitions/PartialProjectToolchainCommonToolConfig"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PartialProjectToolchainCommonToolConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "typescript": {
-          "$ref": "#/definitions/PartialProjectToolchainTypeScriptConfig"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PartialProjectToolchainTypeScriptConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
@@ -161,16 +260,28 @@
       "type": "object",
       "properties": {
         "disabled": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "routeOutDirToCache": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "syncProjectReferences": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "syncProjectReferencesToPaths": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         }
       },
       "additionalProperties": false
@@ -179,7 +290,14 @@
       "type": "object",
       "properties": {
         "inheritedTasks": {
-          "$ref": "#/definitions/PartialProjectWorkspaceInheritedTasksConfig"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PartialProjectWorkspaceInheritedTasksConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
@@ -188,19 +306,28 @@
       "type": "object",
       "properties": {
         "exclude": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "$ref": "#/definitions/Id"
           }
         },
         "include": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "$ref": "#/definitions/Id"
           }
         },
         "rename": {
-          "type": "object",
+          "type": [
+            "object",
+            "null"
+          ],
           "additionalProperties": {
             "$ref": "#/definitions/Id"
           }
@@ -212,46 +339,96 @@
       "type": "object",
       "properties": {
         "args": {
-          "$ref": "#/definitions/TaskCommandArgs"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskCommandArgs"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "command": {
-          "$ref": "#/definitions/TaskCommandArgs"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskCommandArgs"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "deps": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "$ref": "#/definitions/Target"
           }
         },
         "env": {
-          "type": "object",
+          "type": [
+            "object",
+            "null"
+          ],
           "additionalProperties": {
             "type": "string"
           }
         },
         "inputs": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string"
           }
         },
         "local": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "options": {
-          "$ref": "#/definitions/PartialTaskOptionsConfig"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PartialTaskOptionsConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "outputs": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string"
           }
         },
         "platform": {
-          "$ref": "#/definitions/PlatformType"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlatformType"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "type": {
-          "$ref": "#/definitions/TaskType"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskType"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
@@ -260,51 +437,128 @@
       "type": "object",
       "properties": {
         "affectedFiles": {
-          "$ref": "#/definitions/TaskOptionAffectedFiles"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskOptionAffectedFiles"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "cache": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "envFile": {
-          "$ref": "#/definitions/TaskOptionEnvFile"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskOptionEnvFile"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "mergeArgs": {
-          "$ref": "#/definitions/TaskMergeStrategy"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskMergeStrategy"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "mergeDeps": {
-          "$ref": "#/definitions/TaskMergeStrategy"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskMergeStrategy"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "mergeEnv": {
-          "$ref": "#/definitions/TaskMergeStrategy"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskMergeStrategy"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "mergeInputs": {
-          "$ref": "#/definitions/TaskMergeStrategy"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskMergeStrategy"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "mergeOutputs": {
-          "$ref": "#/definitions/TaskMergeStrategy"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskMergeStrategy"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "outputStyle": {
-          "$ref": "#/definitions/TaskOutputStyle"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskOutputStyle"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "persistent": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "retryCount": {
-          "type": "integer",
+          "type": [
+            "integer",
+            "null"
+          ],
           "format": "uint8",
           "minimum": 0.0
         },
         "runDepsInParallel": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "runFromWorkspaceRoot": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "runInCI": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "shell": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         }
       },
       "additionalProperties": false

@@ -5,22 +5,56 @@
   "type": "object",
   "properties": {
     "$schema": {
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "deno": {
-      "$ref": "#/definitions/PartialDenoConfig"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialDenoConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "extends": {
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "node": {
-      "$ref": "#/definitions/PartialNodeConfig"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialNodeConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "rust": {
-      "$ref": "#/definitions/PartialRustConfig"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialRustConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "typescript": {
-      "$ref": "#/definitions/PartialTypeScriptConfig"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialTypeScriptConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
     }
   },
   "additionalProperties": false,
@@ -66,10 +100,16 @@
       "type": "object",
       "properties": {
         "depsFile": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "lockfile": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         }
       },
       "additionalProperties": false
@@ -79,46 +119,113 @@
       "type": "object",
       "properties": {
         "addEnginesConstraint": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "aliasPackageNames": {
-          "$ref": "#/definitions/NodeProjectAliasFormat"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NodeProjectAliasFormat"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "binExecArgs": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string"
           }
         },
         "dedupeOnLockfileChange": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "dependencyVersionFormat": {
-          "$ref": "#/definitions/NodeVersionFormat"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NodeVersionFormat"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "inferTasksFromScripts": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "npm": {
-          "$ref": "#/definitions/PartialNpmConfig"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PartialNpmConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "packageManager": {
-          "$ref": "#/definitions/NodePackageManager"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NodePackageManager"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "pnpm": {
-          "$ref": "#/definitions/PartialPnpmConfig"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PartialPnpmConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "syncProjectWorkspaceDependencies": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "syncVersionManagerConfig": {
-          "$ref": "#/definitions/NodeVersionManager"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NodeVersionManager"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "version": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "yarn": {
-          "$ref": "#/definitions/PartialYarnConfig"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PartialYarnConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
@@ -127,7 +234,10 @@
       "type": "object",
       "properties": {
         "version": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "additionalProperties": false
@@ -136,7 +246,10 @@
       "type": "object",
       "properties": {
         "version": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "additionalProperties": false
@@ -146,16 +259,25 @@
       "type": "object",
       "properties": {
         "bins": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string"
           }
         },
         "syncToolchainConfig": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "version": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "additionalProperties": false
@@ -165,25 +287,46 @@
       "type": "object",
       "properties": {
         "createMissingConfig": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "projectConfigFileName": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "rootConfigFileName": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "rootOptionsConfigFileName": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "routeOutDirToCache": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "syncProjectReferences": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "syncProjectReferencesToPaths": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         }
       },
       "additionalProperties": false
@@ -192,13 +335,19 @@
       "type": "object",
       "properties": {
         "plugins": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string"
           }
         },
         "version": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "additionalProperties": false

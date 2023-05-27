@@ -5,37 +5,98 @@
   "type": "object",
   "properties": {
     "$schema": {
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "constraints": {
-      "$ref": "#/definitions/PartialConstraintsConfig"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialConstraintsConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "extends": {
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "generator": {
-      "$ref": "#/definitions/PartialGeneratorConfig"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialGeneratorConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "hasher": {
-      "$ref": "#/definitions/PartialHasherConfig"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialHasherConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "notifier": {
-      "$ref": "#/definitions/PartialNotifierConfig"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialNotifierConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "projects": {
-      "$ref": "#/definitions/WorkspaceProjects"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/WorkspaceProjects"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "runner": {
-      "$ref": "#/definitions/PartialRunnerConfig"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialRunnerConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "telemetry": {
-      "type": "boolean"
+      "type": [
+        "boolean",
+        "null"
+      ]
     },
     "vcs": {
-      "$ref": "#/definitions/PartialVcsConfig"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialVcsConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "versionConstraint": {
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     }
   },
   "additionalProperties": false,
@@ -64,10 +125,16 @@
       "type": "object",
       "properties": {
         "enforceProjectTypeRelationships": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "tagRelationships": {
-          "type": "object",
+          "type": [
+            "object",
+            "null"
+          ],
           "additionalProperties": {
             "type": "array",
             "items": {
@@ -82,7 +149,10 @@
       "type": "object",
       "properties": {
         "templates": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "$ref": "#/definitions/FilePath"
           }
@@ -94,18 +164,38 @@
       "type": "object",
       "properties": {
         "batchSize": {
-          "type": "integer",
+          "type": [
+            "integer",
+            "null"
+          ],
           "format": "uint16",
           "minimum": 0.0
         },
         "optimization": {
-          "$ref": "#/definitions/HasherOptimization"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/HasherOptimization"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "walkStrategy": {
-          "$ref": "#/definitions/HasherWalkStrategy"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/HasherWalkStrategy"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "warnOnMissingInputs": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         }
       },
       "additionalProperties": false
@@ -114,7 +204,10 @@
       "type": "object",
       "properties": {
         "webhookUrl": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "additionalProperties": false
@@ -123,19 +216,31 @@
       "type": "object",
       "properties": {
         "archivableTargets": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "$ref": "#/definitions/Target"
           }
         },
         "cacheLifetime": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "inheritColorsForPipedTasks": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "logRunningCommand": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         }
       },
       "additionalProperties": false
@@ -144,13 +249,26 @@
       "type": "object",
       "properties": {
         "defaultBranch": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "manager": {
-          "$ref": "#/definitions/VcsManager"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/VcsManager"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "remoteCandidates": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string"
           }

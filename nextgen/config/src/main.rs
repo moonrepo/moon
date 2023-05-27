@@ -2,25 +2,17 @@ use moon_config::{
     PartialInheritedTasksConfig, PartialProjectConfig, PartialTemplateConfig,
     PartialTemplateFrontmatterConfig, PartialToolchainConfig, PartialWorkspaceConfig,
 };
-use schemars::gen::SchemaSettings;
+use schemars::schema_for;
 use std::fs;
 
 fn main() {
-    let settings = SchemaSettings::draft07().with(|s| {
-        s.option_add_null_type = false;
-    });
-    let gen = settings.into_generator();
-
-    let project_schema = gen.clone().into_root_schema_for::<PartialProjectConfig>();
-    let tasks_schema = gen
-        .clone()
-        .into_root_schema_for::<PartialInheritedTasksConfig>();
-    let template_schema = gen.clone().into_root_schema_for::<PartialTemplateConfig>();
-    let template_frontmatter_schema = gen
-        .clone()
-        .into_root_schema_for::<PartialTemplateFrontmatterConfig>();
-    let toolchain_schema = gen.clone().into_root_schema_for::<PartialToolchainConfig>();
-    let workspace_schema = gen.into_root_schema_for::<PartialWorkspaceConfig>();
+    // Generate JSON schemas derived from our structs
+    let project_schema = schema_for!(PartialProjectConfig);
+    let tasks_schema = schema_for!(PartialInheritedTasksConfig);
+    let template_schema = schema_for!(PartialTemplateConfig);
+    let template_frontmatter_schema = schema_for!(PartialTemplateFrontmatterConfig);
+    let toolchain_schema = schema_for!(PartialToolchainConfig);
+    let workspace_schema = schema_for!(PartialWorkspaceConfig);
 
     fs::write(
         "website/static/schemas/project.json",

@@ -5,16 +5,28 @@
   "type": "object",
   "properties": {
     "$schema": {
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "description": {
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "title": {
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "variables": {
-      "type": "object",
+      "type": [
+        "object",
+        "null"
+      ],
       "additionalProperties": {
         "$ref": "#/definitions/TemplateVariable"
       }
@@ -35,10 +47,16 @@
               "type": "boolean"
             },
             "prompt": {
-              "type": "string"
+              "type": [
+                "string",
+                "null"
+              ]
             },
             "required": {
-              "type": "boolean"
+              "type": [
+                "boolean",
+                "null"
+              ]
             },
             "type": {
               "type": "string",
@@ -61,7 +79,10 @@
               "type": "string"
             },
             "multiple": {
-              "type": "boolean"
+              "type": [
+                "boolean",
+                "null"
+              ]
             },
             "prompt": {
               "type": "string"
@@ -93,10 +114,16 @@
               "minimum": 0.0
             },
             "prompt": {
-              "type": "string"
+              "type": [
+                "string",
+                "null"
+              ]
             },
             "required": {
-              "type": "boolean"
+              "type": [
+                "boolean",
+                "null"
+              ]
             },
             "type": {
               "type": "string",
@@ -117,10 +144,16 @@
               "type": "string"
             },
             "prompt": {
-              "type": "string"
+              "type": [
+                "string",
+                "null"
+              ]
             },
             "required": {
-              "type": "boolean"
+              "type": [
+                "boolean",
+                "null"
+              ]
             },
             "type": {
               "type": "string",

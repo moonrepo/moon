@@ -5,16 +5,28 @@
   "type": "object",
   "properties": {
     "$schema": {
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "force": {
-      "type": "boolean"
+      "type": [
+        "boolean",
+        "null"
+      ]
     },
     "skip": {
-      "type": "boolean"
+      "type": [
+        "boolean",
+        "null"
+      ]
     },
     "to": {
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     }
   },
   "additionalProperties": false

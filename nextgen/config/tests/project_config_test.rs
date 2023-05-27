@@ -1,7 +1,7 @@
 mod utils;
 
 use moon_common::{consts::CONFIG_PROJECT_FILENAME, Id};
-use moon_config2::{
+use moon_config::{
     DependencyScope, FilePath, GlobPath, LanguageType, PlatformType, PortablePath, ProjectConfig,
     ProjectDependsOn, ProjectType, TaskCommandArgs,
 };

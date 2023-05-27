@@ -2,7 +2,7 @@ use console::Term;
 use dialoguer::{theme::Theme, Confirm, Input, MultiSelect, Select};
 use miette::IntoDiagnostic;
 use moon::load_workspace;
-use moon_config2::{TemplateVariable, TemplateVariableEnumValue};
+use moon_config::{TemplateVariable, TemplateVariableEnumValue};
 use moon_error::MoonError;
 use moon_generator::{FileState, Generator, GeneratorError, Template, TemplateContext};
 use moon_logger::{debug, map_list, trace, warn};

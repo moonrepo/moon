@@ -1,7 +1,7 @@
 use crate::target_hasher::SystemTargetHasher;
 use crate::tool::SystemToolStub;
 use moon_action_context::ActionContext;
-use moon_config2::{HasherConfig, PlatformType, ProjectConfig};
+use moon_config::{HasherConfig, PlatformType, ProjectConfig};
 use moon_hasher::HashSet;
 use moon_platform::{Platform, Runtime, Version};
 use moon_process::Command;

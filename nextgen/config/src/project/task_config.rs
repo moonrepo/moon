@@ -1,12 +1,12 @@
 use crate::language_platform::PlatformType;
 use crate::project::{PartialTaskOptionsConfig, TaskOptionsConfig};
 use crate::validate::validate_portable_paths;
+use moon_common::cacheable;
 use moon_target::{Target, TargetScope};
 use rustc_hash::FxHashMap;
 use schematic::{
     derive_enum, Config, ConfigEnum, ConfigError, ConfigLoader, Segment, ValidateError,
 };
-use serde::{Deserialize, Serialize};
 
 fn validate_command<C>(
     cmd: &TaskCommandArgs,
@@ -71,41 +71,44 @@ derive_enum!(
     }
 );
 
-#[derive(Clone, Config, Debug, Deserialize, Eq, PartialEq, Serialize)]
-pub struct TaskConfig {
-    #[setting(validate = validate_command)]
-    pub command: TaskCommandArgs,
+cacheable!(
+    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    pub struct TaskConfig {
+        #[setting(validate = validate_command)]
+        pub command: TaskCommandArgs,
 
-    pub args: TaskCommandArgs,
+        pub args: TaskCommandArgs,
 
-    #[setting(validate = validate_deps)]
-    pub deps: Vec<Target>,
+        #[setting(validate = validate_deps)]
+        pub deps: Vec<Target>,
 
-    pub env: FxHashMap<String, String>,
+        pub env: FxHashMap<String, String>,
 
-    // TODO
-    #[setting(skip)]
-    pub global_inputs: Vec<String>,
+        // TODO
+        #[setting(skip)]
+        pub global_inputs: Vec<String>,
 
-    // None = All inputs (**/*)
-    // [] = No inputs
-    // [...] = Specific inputs
-    #[setting(validate = validate_portable_paths)]
-    pub inputs: Option<Vec<String>>,
+        // None = All inputs (**/*)
+        // [] = No inputs
+        // [...] = Specific inputs
+        #[setting(validate = validate_portable_paths)]
+        pub inputs: Option<Vec<String>>,
 
-    pub local: bool,
+        pub local: bool,
 
-    #[setting(validate = validate_portable_paths)]
-    pub outputs: Option<Vec<String>>,
+        #[setting(validate = validate_portable_paths)]
+        pub outputs: Option<Vec<String>>,
 
-    #[setting(nested)]
-    pub options: TaskOptionsConfig,
+        #[setting(nested)]
+        pub options: TaskOptionsConfig,
 
-    pub platform: PlatformType,
+        pub platform: PlatformType,
 
-    #[setting(rename = "type")]
-    pub type_of: Option<TaskType>,
-}
+        #[serde(rename = "type")]
+        #[setting(rename = "type")]
+        pub type_of: Option<TaskType>,
+    }
+);
 
 impl TaskConfig {
     pub fn parse<T: AsRef<str>>(code: T) -> Result<TaskConfig, ConfigError> {

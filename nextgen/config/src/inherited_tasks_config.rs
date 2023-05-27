@@ -3,11 +3,11 @@ use crate::portable_path::PortablePath;
 use crate::project::TaskConfig;
 use crate::project_config::ProjectType;
 use crate::validate::validate_portable_paths;
+use moon_common::cacheable;
 use moon_common::{consts, Id};
 use moon_target::Target;
 use rustc_hash::FxHashMap;
 use schematic::{color, merge, validate, Config, ConfigError, ConfigLoader, PartialConfig};
-use serde::{Deserialize, Serialize};
 use std::hash::Hash;
 use std::{collections::BTreeMap, path::Path};
 
@@ -26,30 +26,32 @@ where
     Ok(Some(prev))
 }
 
-/// Docs: https://moonrepo.dev/docs/config/tasks
-#[derive(Clone, Config, Debug, Deserialize, Serialize)]
-pub struct InheritedTasksConfig {
-    #[setting(
-        default = "https://moonrepo.dev/schemas/tasks.json",
-        rename = "$schema"
-    )]
-    pub schema: String,
+cacheable!(
+    /// Docs: https://moonrepo.dev/docs/config/tasks
+    #[derive(Clone, Config, Debug)]
+    pub struct InheritedTasksConfig {
+        #[setting(
+            default = "https://moonrepo.dev/schemas/tasks.json",
+            rename = "$schema"
+        )]
+        pub schema: String,
 
-    #[setting(extend, validate = validate::extends_string)]
-    pub extends: Option<String>,
+        #[setting(extend, validate = validate::extends_string)]
+        pub extends: Option<String>,
 
-    #[setting(merge = merge_fxhashmap)]
-    pub file_groups: FxHashMap<Id, Vec<PortablePath>>,
+        #[setting(merge = merge_fxhashmap)]
+        pub file_groups: FxHashMap<Id, Vec<PortablePath>>,
 
-    #[setting(merge = merge::append_vec)]
-    pub implicit_deps: Vec<Target>,
+        #[setting(merge = merge::append_vec)]
+        pub implicit_deps: Vec<Target>,
 
-    #[setting(merge = merge::append_vec, validate = validate_portable_paths)]
-    pub implicit_inputs: Vec<String>, // Vec<PortablePath>,
+        #[setting(merge = merge::append_vec, validate = validate_portable_paths)]
+        pub implicit_inputs: Vec<String>, // Vec<PortablePath>,
 
-    #[setting(nested, merge = merge::merge_btreemap)]
-    pub tasks: BTreeMap<Id, TaskConfig>,
-}
+        #[setting(nested, merge = merge::merge_btreemap)]
+        pub tasks: BTreeMap<Id, TaskConfig>,
+    }
+);
 
 impl InheritedTasksConfig {
     pub fn load_partial<T: AsRef<Path>, F: AsRef<Path>>(

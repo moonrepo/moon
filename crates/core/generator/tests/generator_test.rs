@@ -1,4 +1,4 @@
-use moon_config2::{FilePath, GeneratorConfig};
+use moon_config::{FilePath, GeneratorConfig};
 use moon_generator::Generator;
 use moon_test_utils::create_sandbox;
 

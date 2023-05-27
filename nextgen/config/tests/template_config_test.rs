@@ -1,7 +1,7 @@
 mod utils;
 
 use moon_common::consts::CONFIG_TEMPLATE_FILENAME;
-use moon_config2::TemplateConfig;
+use moon_config::TemplateConfig;
 use rustc_hash::FxHashMap;
 use utils::*;
 
@@ -77,7 +77,7 @@ mod template_config {
 
     mod variables {
         use super::*;
-        use moon_config2::{
+        use moon_config::{
             TemplateVariable, TemplateVariableEnumSetting, TemplateVariableEnumValue,
             TemplateVariableSetting,
         };

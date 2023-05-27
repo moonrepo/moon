@@ -1,5 +1,5 @@
 use moon_bun_lang::BUN_INSTALL;
-use moon_config2::LanguageType;
+use moon_config::LanguageType;
 use moon_deno_lang::{DENO_DEPS, DVM};
 use moon_go_lang::{G, GOENV, GOMOD, GVM};
 use moon_lang::{DependencyManager, VersionManager};

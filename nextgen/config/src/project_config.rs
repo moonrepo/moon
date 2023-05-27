@@ -3,12 +3,12 @@
 use crate::language_platform::{LanguageType, PlatformType};
 use crate::portable_path::PortablePath;
 use crate::project::*;
+use moon_common::cacheable;
 use moon_common::{consts, Id};
 use rustc_hash::FxHashMap;
 use schematic::{
     color, derive_enum, validate, Config, ConfigEnum, ConfigError, ConfigLoader, ValidateError,
 };
-use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::Path;
 
@@ -31,20 +31,22 @@ derive_enum!(
     }
 );
 
-#[derive(Clone, Config, Debug, Deserialize, Serialize)]
-pub struct ProjectMetadataConfig {
-    pub name: Option<String>,
+cacheable!(
+    #[derive(Clone, Config, Debug)]
+    pub struct ProjectMetadataConfig {
+        pub name: Option<String>,
 
-    #[setting(validate = validate::not_empty)]
-    pub description: String,
+        #[setting(validate = validate::not_empty)]
+        pub description: String,
 
-    pub owner: Option<String>,
+        pub owner: Option<String>,
 
-    pub maintainers: Vec<String>,
+        pub maintainers: Vec<String>,
 
-    #[setting(validate = validate_channel)]
-    pub channel: Option<String>,
-}
+        #[setting(validate = validate_channel)]
+        pub channel: Option<String>,
+    }
+);
 
 derive_enum!(
     #[serde(
@@ -57,42 +59,45 @@ derive_enum!(
     }
 );
 
-/// Docs: https://moonrepo.dev/docs/config/project
-#[derive(Clone, Config, Debug, Deserialize, Serialize)]
-pub struct ProjectConfig {
-    #[setting(
-        default = "https://moonrepo.dev/schemas/project.json",
-        rename = "$schema"
-    )]
-    pub schema: String,
+cacheable!(
+    /// Docs: https://moonrepo.dev/docs/config/project
+    #[derive(Clone, Config, Debug)]
+    pub struct ProjectConfig {
+        #[setting(
+            default = "https://moonrepo.dev/schemas/project.json",
+            rename = "$schema"
+        )]
+        pub schema: String,
 
-    pub depends_on: Vec<ProjectDependsOn>,
+        pub depends_on: Vec<ProjectDependsOn>,
 
-    pub env: FxHashMap<String, String>,
+        pub env: FxHashMap<String, String>,
 
-    pub file_groups: FxHashMap<Id, Vec<PortablePath>>,
+        pub file_groups: FxHashMap<Id, Vec<PortablePath>>,
 
-    pub language: LanguageType,
+        pub language: LanguageType,
 
-    pub platform: Option<PlatformType>,
+        pub platform: Option<PlatformType>,
 
-    #[setting(nested)]
-    pub project: Option<ProjectMetadataConfig>,
+        #[setting(nested)]
+        pub project: Option<ProjectMetadataConfig>,
 
-    pub tags: Vec<Id>,
+        pub tags: Vec<Id>,
 
-    #[setting(nested)]
-    pub tasks: BTreeMap<Id, TaskConfig>,
+        #[setting(nested)]
+        pub tasks: BTreeMap<Id, TaskConfig>,
 
-    #[setting(nested)]
-    pub toolchain: ProjectToolchainConfig,
+        #[setting(nested)]
+        pub toolchain: ProjectToolchainConfig,
 
-    #[setting(rename = "type")]
-    pub type_of: ProjectType,
+        #[serde(rename = "type")]
+        #[setting(rename = "type")]
+        pub type_of: ProjectType,
 
-    #[setting(nested)]
-    pub workspace: ProjectWorkspaceConfig,
-}
+        #[setting(nested)]
+        pub workspace: ProjectWorkspaceConfig,
+    }
+);
 
 impl ProjectConfig {
     pub fn load<R: AsRef<Path>, P: AsRef<Path>>(

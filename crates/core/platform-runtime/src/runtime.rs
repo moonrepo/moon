@@ -1,5 +1,5 @@
 use crate::version::Version;
-use moon_config2::PlatformType;
+use moon_config::PlatformType;
 use serde::Serialize;
 use std::fmt::{self, Debug};
 

@@ -1,5 +1,5 @@
 use httpmock::prelude::*;
-use moon_config2::PartialNotifierConfig;
+use moon_config::PartialNotifierConfig;
 use moon_test_utils::{create_sandbox_with_config, get_node_fixture_configs, Sandbox};
 
 fn sandbox(uri: String) -> Sandbox {

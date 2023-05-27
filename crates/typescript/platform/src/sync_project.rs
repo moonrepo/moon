@@ -1,4 +1,4 @@
-use moon_config2::TypeScriptConfig;
+use moon_config::TypeScriptConfig;
 use moon_error::MoonError;
 use moon_logger::debug;
 use moon_project::{Project, ProjectError};

@@ -1,7 +1,7 @@
 use crate::filters;
 use crate::GeneratorError;
 use moon_common::consts::CONFIG_TEMPLATE_FILENAME;
-use moon_config2::{ConfigError, TemplateConfig, TemplateFrontmatterConfig};
+use moon_config::{ConfigError, TemplateConfig, TemplateFrontmatterConfig};
 use moon_logger::{debug, trace};
 use moon_utils::{path, regex};
 use once_cell::sync::Lazy;

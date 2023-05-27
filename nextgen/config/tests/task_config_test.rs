@@ -1,6 +1,6 @@
 mod utils;
 
-use moon_config2::{
+use moon_config::{
     PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskOutputStyle, TaskType,
 };
 use moon_target::Target;
@@ -358,7 +358,7 @@ options:
 
         mod affected_files {
             use super::*;
-            use moon_config2::TaskOptionAffectedFiles;
+            use moon_config::TaskOptionAffectedFiles;
 
             #[test]
             fn can_use_true() {
@@ -439,7 +439,7 @@ options:
 
         mod env_file {
             use super::*;
-            use moon_config2::TaskOptionEnvFile;
+            use moon_config::TaskOptionEnvFile;
 
             #[test]
             fn can_use_true() {

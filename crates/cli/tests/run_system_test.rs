@@ -1,4 +1,4 @@
-use moon_config2::{PartialInheritedTasksConfig, PartialWorkspaceConfig, WorkspaceProjects};
+use moon_config::{PartialInheritedTasksConfig, PartialWorkspaceConfig, WorkspaceProjects};
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, predicates::prelude::*, Sandbox,
 };

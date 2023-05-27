@@ -1,4 +1,4 @@
-use moon_config2::{LanguageType, PlatformType, ProjectType, TaskType};
+use moon_config::{LanguageType, PlatformType, ProjectType, TaskType};
 use moon_query::{build_query, ComparisonOperator, Condition, Criteria, Field, LogicalOperator};
 use starbase_utils::string_vec;
 

@@ -2,7 +2,7 @@ use super::check_dirty_repo;
 use moon::{generate_project_graph, load_workspace};
 use moon_common::consts::CONFIG_PROJECT_FILENAME;
 use moon_common::Id;
-use moon_config2::{DependencyScope, ProjectConfig, ProjectDependsOn};
+use moon_config::{DependencyScope, ProjectConfig, ProjectDependsOn};
 use moon_error::MoonError;
 use moon_logger::info;
 use moon_node_lang::package_json::{DepsSet, PackageJson};

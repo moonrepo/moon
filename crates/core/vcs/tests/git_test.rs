@@ -1,4 +1,4 @@
-use moon_config2::{VcsConfig, VcsManager};
+use moon_config::{VcsConfig, VcsManager};
 use moon_test_utils::create_sandbox;
 use moon_utils::string_vec;
 use moon_vcs::{Git, Vcs};

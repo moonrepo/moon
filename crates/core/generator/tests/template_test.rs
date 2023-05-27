@@ -1,5 +1,5 @@
 use moon_common::consts::CONFIG_TEMPLATE_FILENAME;
-use moon_config2::TemplateFrontmatterConfig;
+use moon_config::TemplateFrontmatterConfig;
 use moon_generator::{Template, TemplateContext, TemplateFile};
 use moon_test_utils::get_fixtures_path;
 use std::path::PathBuf;

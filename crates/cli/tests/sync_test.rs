@@ -1,4 +1,4 @@
-use moon_config2::{PartialWorkspaceConfig, WorkspaceProjects};
+use moon_config::{PartialWorkspaceConfig, WorkspaceProjects};
 use moon_test_utils::{assert_snapshot, create_sandbox_with_config};
 use rustc_hash::FxHashMap;
 

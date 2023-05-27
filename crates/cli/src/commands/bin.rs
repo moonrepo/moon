@@ -1,6 +1,6 @@
 use clap::ValueEnum;
 use moon::load_workspace_with_toolchain;
-use moon_config2::PlatformType;
+use moon_config::PlatformType;
 use moon_node_tool::NodeTool;
 use moon_terminal::safe_exit;
 use moon_tool::Tool;

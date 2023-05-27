@@ -1,4 +1,4 @@
-use moon_config2::{LanguageType, PlatformType, ToolchainConfig};
+use moon_config::{LanguageType, PlatformType, ToolchainConfig};
 use moon_utils::regex::{self, UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
 use once_cell::sync::Lazy;
 

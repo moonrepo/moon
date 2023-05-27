@@ -1,5 +1,5 @@
 use moon_common::Id;
-use moon_config2::{InheritedTasksManager, LanguageType, PlatformType, ProjectType, TaskConfig};
+use moon_config::{InheritedTasksManager, LanguageType, PlatformType, ProjectType, TaskConfig};
 use moon_file_group::FileGroup;
 use moon_project::Project;
 use moon_project_graph::{TokenContext, TokenResolver};

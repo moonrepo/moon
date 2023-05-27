@@ -1,5 +1,5 @@
 use moon_bun_lang::BUN_INSTALL;
-use moon_config::ProjectLanguage;
+use moon_config2::LanguageType;
 use moon_deno_lang::{DENO_DEPS, DVM};
 use moon_go_lang::{G, GOENV, GOMOD, GVM};
 use moon_lang::{DependencyManager, VersionManager};
@@ -22,17 +22,17 @@ fn extract_verman_files(verman: &VersionManager, files: &mut Vec<String>) {
     files.push(verman.version_file.to_owned());
 }
 
-pub fn detect_language_files(language: &ProjectLanguage) -> Vec<String> {
+pub fn detect_language_files(language: &LanguageType) -> Vec<String> {
     let mut files = vec![];
 
     match language {
-        ProjectLanguage::Go => {
+        LanguageType::Go => {
             extract_depman_files(&GOMOD, &mut files);
             extract_verman_files(&G, &mut files);
             extract_verman_files(&GVM, &mut files);
             extract_verman_files(&GOENV, &mut files);
         }
-        ProjectLanguage::JavaScript | ProjectLanguage::TypeScript => {
+        LanguageType::JavaScript | LanguageType::TypeScript => {
             // Bun
             extract_depman_files(&BUN_INSTALL, &mut files);
 
@@ -51,30 +51,30 @@ pub fn detect_language_files(language: &ProjectLanguage) -> Vec<String> {
                 files.push(format!("postinstall.{ext}"));
             }
         }
-        ProjectLanguage::Php => {
+        LanguageType::Php => {
             extract_depman_files(&COMPOSER, &mut files);
             extract_verman_files(&PHPENV, &mut files);
             extract_verman_files(&PHPBREW, &mut files);
         }
-        ProjectLanguage::Python => {
+        LanguageType::Python => {
             extract_depman_files(&PIP, &mut files);
             extract_depman_files(&PIPENV, &mut files);
             extract_verman_files(&PYENV, &mut files);
         }
-        ProjectLanguage::Ruby => {
+        LanguageType::Ruby => {
             extract_depman_files(&BUNDLER, &mut files);
             extract_verman_files(&RVM, &mut files);
             extract_verman_files(&RBENV, &mut files);
         }
-        ProjectLanguage::Rust => {
+        LanguageType::Rust => {
             extract_depman_files(&CARGO, &mut files);
             extract_verman_files(&RUSTUP, &mut files);
             extract_verman_files(&RUSTUP_LEGACY, &mut files);
         }
-        ProjectLanguage::Bash
-        | ProjectLanguage::Batch
-        | ProjectLanguage::Unknown
-        | ProjectLanguage::Other(_) => {}
+        LanguageType::Bash
+        | LanguageType::Batch
+        | LanguageType::Unknown
+        | LanguageType::Other(_) => {}
     }
 
     files

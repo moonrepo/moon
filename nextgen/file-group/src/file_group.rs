@@ -1,7 +1,7 @@
 use crate::file_group_error::FileGroupError;
 use common_path::common_path_all;
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
-use moon_path::{expand_to_workspace_relative, WorkspaceRelativePathBuf};
 use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use starbase_utils::glob;
@@ -38,18 +38,13 @@ impl FileGroup {
         })
     }
 
-    pub fn new_with_source<T, I, V>(
-        id: T,
-        project_source: &str,
-        patterns: I,
-    ) -> Result<FileGroup, FileGroupError>
+    pub fn new_with_source<T, I>(id: T, patterns: I) -> Result<FileGroup, FileGroupError>
     where
         T: AsRef<str>,
-        I: IntoIterator<Item = V>,
-        V: AsRef<str>,
+        I: IntoIterator<Item = WorkspaceRelativePathBuf>,
     {
         let mut file_group = FileGroup::new(id)?;
-        file_group.set_patterns(project_source, patterns);
+        file_group.set_patterns(patterns);
 
         Ok(file_group)
     }
@@ -57,23 +52,19 @@ impl FileGroup {
     /// Add patterns (file paths or globs) to the file group, while expanding to a
     /// workspace relative path based on the provided project source.
     /// This will overwrite any existing patterns!
-    pub fn set_patterns<I, V>(&mut self, project_source: &str, patterns: I) -> &mut Self
+    pub fn set_patterns<I>(&mut self, patterns: I) -> &mut Self
     where
-        I: IntoIterator<Item = V>,
-        V: AsRef<str>,
+        I: IntoIterator<Item = WorkspaceRelativePathBuf>,
     {
         self.files = vec![];
         self.globs = vec![];
 
         let mut log_patterns = vec![];
 
-        for pattern in patterns {
-            let pattern = pattern.as_ref();
-            let path = expand_to_workspace_relative(pattern, project_source);
-
+        for path in patterns {
             log_patterns.push(path.as_str().to_owned());
 
-            if glob::is_glob(pattern) {
+            if glob::is_glob(&path) {
                 self.globs.push(path);
             } else {
                 self.files.push(path);

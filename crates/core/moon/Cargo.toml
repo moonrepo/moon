@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-moon_config = { path = "../config" }
 moon_deno_platform = { path = "../../deno/platform" }
 moon_dep_graph = { path = "../dep-graph" }
 moon_error = { path = "../error" }

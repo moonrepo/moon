@@ -1,5 +1,5 @@
 use moon_common::Id;
-use moon_config::{InheritedTasksManager, ProjectLanguage};
+use moon_config2::{InheritedTasksManager, LanguageType};
 use moon_project::Project;
 use moon_test_utils::{create_sandbox_with_config, get_node_fixture_configs};
 use moon_typescript_lang::tsconfig::TsConfigExtends;
@@ -25,7 +25,7 @@ mod missing_tsconfig {
             "deps-a",
             sandbox.path(),
             &InheritedTasksManager::default(),
-            |_| ProjectLanguage::Unknown,
+            |_| LanguageType::Unknown,
         )
         .unwrap();
 
@@ -69,7 +69,7 @@ mod missing_tsconfig {
             "deps-a",
             sandbox.path(),
             &InheritedTasksManager::default(),
-            |_| ProjectLanguage::Unknown,
+            |_| LanguageType::Unknown,
         )
         .unwrap();
 
@@ -113,7 +113,7 @@ mod missing_tsconfig {
             "deps-b",
             sandbox.path(),
             &InheritedTasksManager::default(),
-            |_| ProjectLanguage::Unknown,
+            |_| LanguageType::Unknown,
         )
         .unwrap();
 

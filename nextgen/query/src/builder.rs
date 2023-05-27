@@ -1,13 +1,13 @@
 use crate::parser::{parse_query, AstNode, ComparisonOperator, LogicalOperator};
 use crate::query_error::QueryError;
-use moon_config::{PlatformType, ProjectLanguage, ProjectType, TaskType};
+use moon_config2::{LanguageType, PlatformType, ProjectType, TaskType};
 use starbase_utils::glob::{GlobError, GlobSet};
 use std::cmp::PartialEq;
 use std::str::FromStr;
 
 #[derive(Debug, PartialEq)]
 pub enum Field {
-    Language(Vec<ProjectLanguage>),
+    Language(Vec<LanguageType>),
     Project(Vec<String>),
     ProjectAlias(Vec<String>),
     ProjectSource(Vec<String>),
@@ -113,7 +113,7 @@ fn build_criteria(ast: Vec<AstNode>) -> Result<Criteria, QueryError> {
             AstNode::Comparison { field, op, value } => {
                 let field = match field.as_str() {
                     "language" => {
-                        Field::Language(build_criteria_enum::<ProjectLanguage>(&field, &op, value)?)
+                        Field::Language(build_criteria_enum::<LanguageType>(&field, &op, value)?)
                     }
                     "project" => Field::Project(value),
                     "projectAlias" => Field::ProjectAlias(value),

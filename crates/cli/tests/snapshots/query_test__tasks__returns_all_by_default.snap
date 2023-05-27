@@ -1,12 +1,12 @@
 ---
 source: crates/cli/tests/query_test.rs
-expression: assert.output()
+expression: assert.output_standardized()
 ---
-tasks
-	:lint | eslint
-	:test | jest
 platforms
 	:node | node
 	:system | noop
+tasks
+	:lint | eslint
+	:test | jest
 
 

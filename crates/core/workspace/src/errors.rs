@@ -1,5 +1,6 @@
 use miette::Diagnostic;
-use moon_constants as constants;
+use moon_common::consts;
+use moon_config2::ConfigError;
 use moon_error::MoonError;
 use moon_vcs::VcsError;
 use moonbase::MoonbaseError;
@@ -12,7 +13,7 @@ use thiserror::Error;
 pub enum WorkspaceError {
     #[error(
         "Unable to determine workspace root. Please create a {} configuration folder.",
-        constants::CONFIG_DIRNAME.style(Style::File)
+        consts::CONFIG_DIRNAME.style(Style::File)
     )]
     MissingConfigDir,
 
@@ -24,22 +25,22 @@ pub enum WorkspaceError {
 
     #[error(
         "Unable to locate {}/{} configuration file.",
-        constants::CONFIG_DIRNAME.style(Style::File),
-        constants::CONFIG_WORKSPACE_FILENAME.style(Style::File)
+        consts::CONFIG_DIRNAME.style(Style::File),
+        consts::CONFIG_WORKSPACE_FILENAME.style(Style::File)
     )]
     MissingWorkspaceConfigFile,
 
     #[error(
         "Failed to validate {}/{} configuration file.\n\n{0}",
-        constants::CONFIG_DIRNAME.style(Style::File),
-        constants::CONFIG_TOOLCHAIN_FILENAME.style(Style::File)
+        consts::CONFIG_DIRNAME.style(Style::File),
+        consts::CONFIG_TOOLCHAIN_FILENAME.style(Style::File)
     )]
     InvalidToolchainConfigFile(String),
 
     #[error(
         "Failed to validate {}/{} configuration file.\n\n{0}",
-        constants::CONFIG_DIRNAME,
-        constants::CONFIG_WORKSPACE_FILENAME
+        consts::CONFIG_DIRNAME,
+        consts::CONFIG_WORKSPACE_FILENAME
     )]
     InvalidWorkspaceConfigFile(String),
 
@@ -48,6 +49,10 @@ pub enum WorkspaceError {
 
     #[error("Invalid moon version, unable to proceed. Found {0}, expected {1}.")]
     InvalidMoonVersion(String, String),
+
+    #[diagnostic(transparent)]
+    #[error(transparent)]
+    Config(#[from] ConfigError),
 
     #[diagnostic(transparent)]
     #[error(transparent)]

@@ -1,7 +1,6 @@
-use moon_config::GeneratorConfig;
+use moon_config2::{FilePath, GeneratorConfig};
 use moon_generator::Generator;
 use moon_test_utils::create_sandbox;
-use moon_utils::string_vec;
 
 mod create_template {
     use super::*;
@@ -43,7 +42,7 @@ mod create_template {
         let template = Generator::load(
             sandbox.path(),
             &GeneratorConfig {
-                templates: string_vec!["./scaffolding"],
+                templates: vec![FilePath("./scaffolding".to_owned())],
             },
         )
         .unwrap()

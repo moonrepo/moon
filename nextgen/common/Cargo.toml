@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 miette = { workspace = true }
 once_cell = { workspace = true }
+relative-path = { version = "1.8.0", features = ["serde"] }
 regex = { workspace = true }
 schemars = "0.8.12"
 serde = { workspace = true }

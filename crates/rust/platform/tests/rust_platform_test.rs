@@ -1,5 +1,5 @@
 use moon_action_context::ActionContext;
-use moon_config::{PlatformType, RustConfig};
+use moon_config2::{PlatformType, RustConfig};
 use moon_platform::{Platform, Runtime, Version};
 use moon_process::Command;
 use moon_project::Project;

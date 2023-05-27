@@ -1,36 +1,19 @@
-use schematic::{config_enum, Config};
-use strum::Display;
+use moon_common::Id;
+use schematic::{derive_enum, Config, ConfigEnum};
 
-config_enum!(
-    #[derive(Default, Display)]
+derive_enum!(
+    #[derive(ConfigEnum, Copy, Default)]
     pub enum DependencyScope {
-        #[strum(serialize = "development")]
         Development,
-
-        #[strum(serialize = "peer")]
         Peer,
-
         #[default]
-        #[strum(serialize = "production")]
         Production,
     }
 );
 
 #[derive(Config)]
 pub struct DependencyConfig {
-    pub id: String,
+    pub id: Id,
     pub scope: DependencyScope,
-
-    // This field isn't configured by users, but is used by platforms!
     pub via: Option<String>,
-}
-
-impl DependencyConfig {
-    pub fn new(id: &str) -> Self {
-        DependencyConfig {
-            id: id.to_owned(),
-            scope: DependencyScope::Production,
-            via: None,
-        }
-    }
 }

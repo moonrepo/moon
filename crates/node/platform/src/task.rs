@@ -1,8 +1,9 @@
 use moon_common::Id;
-use moon_config::{TaskCommandArgs, TaskConfig, TasksConfigsMap};
+use moon_config2::{PartialTaskConfig, TaskCommandArgs};
 use moon_logger::{debug, warn};
 use moon_node_lang::package_json::{PackageJson, ScriptsSet};
 use moon_process::args::split_args;
+use moon_target::Target;
 use moon_task::{PlatformType, TaskError};
 use moon_utils::regex::{ID_CLEAN, UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
 use moon_utils::{regex, string_vec};
@@ -133,14 +134,6 @@ fn detect_platform_type(command: &str) -> PlatformType {
     PlatformType::Node
 }
 
-fn add_task_dep(config: &mut TaskConfig, dep: String) {
-    if let Some(deps) = &mut config.deps {
-        deps.push(dep);
-    } else {
-        config.deps = Some(vec![dep]);
-    }
-}
-
 pub enum TaskContext {
     ConvertToTask,
     WrapRunScript,
@@ -152,10 +145,10 @@ pub fn create_task(
     script_name: &str,
     script: &str,
     context: TaskContext,
-) -> Result<TaskConfig, TaskError> {
+) -> Result<PartialTaskConfig, TaskError> {
     let is_wrapping = matches!(context, TaskContext::WrapRunScript);
     let script_args = split_args(script).unwrap();
-    let mut task_config = TaskConfig::default();
+    let mut task_config = PartialTaskConfig::default();
     let mut args = vec![];
     let mut outputs = vec![];
     let mut env = FxHashMap::default();
@@ -187,7 +180,7 @@ pub fn create_task(
     }
 
     if is_wrapping {
-        task_config.platform = PlatformType::Node;
+        task_config.platform = Some(PlatformType::Node);
         task_config.command = Some(TaskCommandArgs::Sequence(string_vec![
             "moon",
             "node",
@@ -207,7 +200,7 @@ pub fn create_task(
             args.insert(0, "noop".to_owned());
         }
 
-        task_config.platform = detect_platform_type(&args[0]);
+        task_config.platform = Some(detect_platform_type(&args[0]));
         task_config.command = Some(if args.len() == 1 {
             TaskCommandArgs::String(args.remove(0))
         } else {
@@ -223,7 +216,9 @@ pub fn create_task(
         task_config.outputs = Some(outputs);
     }
 
-    task_config.local = !should_run_in_ci(script_name, script);
+    if !should_run_in_ci(script_name, script) {
+        task_config.local = Some(true);
+    }
 
     debug!(
         target: LOG_TARGET,
@@ -255,7 +250,7 @@ pub struct ScriptParser<'a> {
     scripts: ScriptsMap,
 
     /// Tasks that have been parsed and converted from scripts.
-    pub tasks: TasksConfigsMap,
+    pub tasks: BTreeMap<Id, PartialTaskConfig>,
 
     /// Scripts that ran into issues while parsing.
     unresolved_scripts: ScriptsMap,
@@ -510,7 +505,9 @@ impl<'a> ScriptParser<'a> {
             )? {
                 if !previous_task_id.is_empty() {
                     if let Some(task) = self.tasks.get_mut(&task_id) {
-                        add_task_dep(task, format!("~:{previous_task_id}"));
+                        task.deps
+                            .get_or_insert(vec![])
+                            .push(Target::new_self(previous_task_id)?);
                     }
                 }
 
@@ -556,7 +553,9 @@ impl<'a> ScriptParser<'a> {
 
             if let Some(pre_task_id) = self.parse_script(format!("pre{script_name}"), pre)? {
                 if let Some(task) = self.tasks.get_mut(task_id) {
-                    add_task_dep(task, format!("~:{pre_task_id}"));
+                    task.deps
+                        .get_or_insert(vec![])
+                        .push(Target::new_self(pre_task_id)?);
                 }
             }
         }
@@ -567,7 +566,9 @@ impl<'a> ScriptParser<'a> {
 
             if let Some(post_task_id) = self.parse_script(format!("post{script_name}"), post)? {
                 if let Some(task) = self.tasks.get_mut(&post_task_id) {
-                    add_task_dep(task, format!("~:{task_id}"));
+                    task.deps
+                        .get_or_insert(vec![])
+                        .push(Target::new_self(task_id)?);
                 }
             }
         }

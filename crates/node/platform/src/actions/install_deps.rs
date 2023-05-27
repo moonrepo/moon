@@ -1,4 +1,4 @@
-use moon_config::{NodeConfig, NodePackageManager, NodeVersionManager};
+use moon_config2::{NodeConfig, NodePackageManager, NodeVersionManager};
 use moon_error::MoonError;
 use moon_lang::has_vendor_installed_dependencies;
 use moon_logger::{debug, warn};

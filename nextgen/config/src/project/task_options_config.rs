@@ -1,5 +1,5 @@
-use crate::portable_path::PortablePath;
-use schematic::{config_enum, Config, ValidateError};
+use crate::portable_path::is_glob;
+use schematic::{derive_enum, Config, ConfigEnum, ValidateError};
 use serde::{de, Deserialize, Deserializer, Serialize};
 use serde_yaml::Value;
 
@@ -9,17 +9,9 @@ fn validate_env_file<D, C>(
     _ctx: &C,
 ) -> Result<(), ValidateError> {
     if let TaskOptionEnvFile::File(file) = env_file {
-        match file {
-            PortablePath::EnvVar(_) => {
-                return Err(ValidateError::new(
-                    "environment variables are not supported",
-                ));
-            }
-            PortablePath::ProjectGlob(_) | PortablePath::WorkspaceGlob(_) => {
-                return Err(ValidateError::new("globs are not supported"));
-            }
-            _ => {}
-        };
+        if is_glob(file) {
+            return Err(ValidateError::new("globs are not supported"));
+        }
     }
 
     Ok(())
@@ -50,16 +42,26 @@ impl<'de> Deserialize<'de> for TaskOptionAffectedFiles {
     }
 }
 
-config_enum!(
+derive_enum!(
     #[serde(untagged, expecting = "expected a boolean or a file system path")]
     pub enum TaskOptionEnvFile {
         Enabled(bool),
-        File(PortablePath),
+        File(String),
     }
 );
 
-config_enum!(
-    #[derive(Default)]
+impl TaskOptionEnvFile {
+    pub fn to_option(&self) -> Option<String> {
+        match self {
+            TaskOptionEnvFile::Enabled(true) => Some(".env".to_owned()),
+            TaskOptionEnvFile::Enabled(false) => None,
+            TaskOptionEnvFile::File(path) => Some(path.to_owned()),
+        }
+    }
+}
+
+derive_enum!(
+    #[derive(ConfigEnum, Copy, Default)]
     pub enum TaskMergeStrategy {
         #[default]
         Append,
@@ -68,8 +70,8 @@ config_enum!(
     }
 );
 
-config_enum!(
-    #[derive(Default)]
+derive_enum!(
+    #[derive(ConfigEnum, Copy, Default)]
     pub enum TaskOutputStyle {
         #[default]
         Buffer,
@@ -80,40 +82,37 @@ config_enum!(
     }
 );
 
-#[derive(Debug, Clone, Config)]
+#[derive(Clone, Config, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct TaskOptionsConfig {
     pub affected_files: Option<TaskOptionAffectedFiles>,
 
-    #[setting(default = true)]
-    pub cache: bool,
+    pub cache: Option<bool>,
 
     #[setting(validate = validate_env_file)]
     pub env_file: Option<TaskOptionEnvFile>,
 
-    pub merge_args: TaskMergeStrategy,
+    pub merge_args: Option<TaskMergeStrategy>,
 
-    pub merge_deps: TaskMergeStrategy,
+    pub merge_deps: Option<TaskMergeStrategy>,
 
-    pub merge_env: TaskMergeStrategy,
+    pub merge_env: Option<TaskMergeStrategy>,
 
-    pub merge_inputs: TaskMergeStrategy,
+    pub merge_inputs: Option<TaskMergeStrategy>,
 
-    pub merge_outputs: TaskMergeStrategy,
+    pub merge_outputs: Option<TaskMergeStrategy>,
 
-    pub output_style: TaskOutputStyle,
+    pub output_style: Option<TaskOutputStyle>,
 
-    pub persistent: bool,
+    pub persistent: Option<bool>,
 
-    pub retry_count: u8,
+    pub retry_count: Option<u8>,
 
-    #[setting(default = true)]
-    pub run_deps_in_parallel: bool,
+    pub run_deps_in_parallel: Option<bool>,
 
-    #[setting(default = true, rename = "runInCI")]
-    pub run_in_ci: bool,
+    #[setting(rename = "runInCI")]
+    pub run_in_ci: Option<bool>,
 
-    pub run_from_workspace_root: bool,
+    pub run_from_workspace_root: Option<bool>,
 
-    #[setting(default = true)]
-    pub shell: bool,
+    pub shell: Option<bool>,
 }

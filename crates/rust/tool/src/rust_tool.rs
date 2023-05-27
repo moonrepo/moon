@@ -1,4 +1,4 @@
-use moon_config::RustConfig;
+use moon_config2::RustConfig;
 use moon_logger::debug;
 use moon_platform_runtime::Version;
 use moon_process::Command;

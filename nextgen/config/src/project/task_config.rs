@@ -1,11 +1,12 @@
 use crate::language_platform::PlatformType;
-use crate::portable_path::PortablePath;
 use crate::project::{PartialTaskOptionsConfig, TaskOptionsConfig};
-use crate::validate::validate_no_env_var_in_path;
+use crate::validate::validate_portable_paths;
 use moon_target::{Target, TargetScope};
 use rustc_hash::FxHashMap;
-use schematic::{config_enum, Config, ConfigError, ConfigLoader, Segment, ValidateError};
-use strum::Display;
+use schematic::{
+    derive_enum, Config, ConfigEnum, ConfigError, ConfigLoader, Segment, ValidateError,
+};
+use serde::{Deserialize, Serialize};
 
 fn validate_command<C>(
     cmd: &TaskCommandArgs,
@@ -49,22 +50,17 @@ fn validate_deps<C>(deps: &[Target], _task: &TaskConfig, _ctx: &C) -> Result<(),
     Ok(())
 }
 
-config_enum!(
-    #[derive(Default, Display)]
+derive_enum!(
+    #[derive(ConfigEnum, Copy, Default)]
     pub enum TaskType {
-        #[strum(serialize = "build")]
         Build,
-
-        #[strum(serialize = "run")]
         Run,
-
         #[default]
-        #[strum(serialize = "test")]
         Test,
     }
 );
 
-config_enum!(
+derive_enum!(
     #[derive(Default)]
     #[serde(untagged, expecting = "expected a string or a sequence of strings")]
     pub enum TaskCommandArgs {
@@ -75,7 +71,7 @@ config_enum!(
     }
 );
 
-#[derive(Debug, Clone, Config)]
+#[derive(Clone, Config, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct TaskConfig {
     #[setting(validate = validate_command)]
     pub command: TaskCommandArgs,
@@ -89,14 +85,18 @@ pub struct TaskConfig {
 
     // TODO
     #[setting(skip)]
-    pub global_inputs: Vec<PortablePath>,
+    pub global_inputs: Vec<String>,
 
-    pub inputs: Vec<PortablePath>,
+    // None = All inputs (**/*)
+    // [] = No inputs
+    // [...] = Specific inputs
+    #[setting(validate = validate_portable_paths)]
+    pub inputs: Option<Vec<String>>,
 
     pub local: bool,
 
-    #[setting(validate = validate_no_env_var_in_path)]
-    pub outputs: Vec<PortablePath>,
+    #[setting(validate = validate_portable_paths)]
+    pub outputs: Option<Vec<String>>,
 
     #[setting(nested)]
     pub options: TaskOptionsConfig,

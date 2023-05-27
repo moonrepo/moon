@@ -2,11 +2,12 @@ use crate::language_platform::{LanguageType, PlatformType};
 use crate::portable_path::PortablePath;
 use crate::project::TaskConfig;
 use crate::project_config::ProjectType;
-use crate::FilePath;
+use crate::validate::validate_portable_paths;
 use moon_common::{consts, Id};
 use moon_target::Target;
 use rustc_hash::FxHashMap;
 use schematic::{color, merge, validate, Config, ConfigError, ConfigLoader, PartialConfig};
+use serde::{Deserialize, Serialize};
 use std::hash::Hash;
 use std::{collections::BTreeMap, path::Path};
 
@@ -26,7 +27,7 @@ where
 }
 
 /// Docs: https://moonrepo.dev/docs/config/tasks
-#[derive(Debug, Clone, Config)]
+#[derive(Clone, Config, Debug, Deserialize, Serialize)]
 pub struct InheritedTasksConfig {
     #[setting(
         default = "https://moonrepo.dev/schemas/tasks.json",
@@ -43,27 +44,31 @@ pub struct InheritedTasksConfig {
     #[setting(merge = merge::append_vec)]
     pub implicit_deps: Vec<Target>,
 
-    #[setting(merge = merge::append_vec)]
-    pub implicit_inputs: Vec<PortablePath>,
+    #[setting(merge = merge::append_vec, validate = validate_portable_paths)]
+    pub implicit_inputs: Vec<String>, // Vec<PortablePath>,
 
     #[setting(nested, merge = merge::merge_btreemap)]
     pub tasks: BTreeMap<Id, TaskConfig>,
 }
 
 impl InheritedTasksConfig {
-    pub fn load<T: AsRef<Path>, F: AsRef<Path>>(
+    pub fn load_partial<T: AsRef<Path>, F: AsRef<Path>>(
         workspace_root: T,
         path: F,
-    ) -> Result<InheritedTasksConfig, ConfigError> {
+    ) -> Result<PartialInheritedTasksConfig, ConfigError> {
         let workspace_root = workspace_root.as_ref();
         let path = path.as_ref();
 
-        let result = ConfigLoader::<InheritedTasksConfig>::yaml()
-            .label(color::path(path))
-            .file(workspace_root.join(path))?
-            .load()?;
-
-        Ok(result.config)
+        ConfigLoader::<InheritedTasksConfig>::yaml()
+            .label(color::path(
+                if let Ok(rel_path) = path.strip_prefix(workspace_root) {
+                    rel_path
+                } else {
+                    path
+                },
+            ))
+            .file(path)?
+            .load_partial(&())
     }
 }
 
@@ -139,9 +144,10 @@ impl InheritedTasksManager {
                     if let Some(tasks) = &mut managed_config.tasks {
                         for task in tasks.values_mut() {
                             // Automatically set this lookup as an input
-                            let global_lookup = PortablePath::WorkspaceFile(FilePath(format!(
-                                ".moon/tasks/{lookup}.yml"
-                            )));
+                            // let global_lookup = PortablePath::WorkspaceFile(FilePath(format!(
+                            //     ".moon/tasks/{lookup}.yml"
+                            // )));
+                            let global_lookup = format!(".moon/tasks/{lookup}.yml");
 
                             if let Some(global_inputs) = &mut task.global_inputs {
                                 global_inputs.push(global_lookup);
@@ -150,7 +156,7 @@ impl InheritedTasksManager {
                             }
 
                             // Automatically set the platform
-                            if task.platform.clone().unwrap_or_default().is_unknown() {
+                            if task.platform.unwrap_or_default().is_unknown() {
                                 task.platform = Some(platform.to_owned());
                             }
                         }

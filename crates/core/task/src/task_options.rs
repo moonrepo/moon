@@ -1,40 +1,8 @@
-use moon_config::{
-    TaskMergeStrategy, TaskOptionAffectedFilesConfig, TaskOptionEnvFileConfig, TaskOptionsConfig,
+use moon_config2::{
+    TaskMergeStrategy, TaskOptionAffectedFiles, TaskOptionEnvFile, TaskOptionsConfig,
     TaskOutputStyle,
 };
 use serde::{Deserialize, Serialize};
-
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum TaskOptionAffectedFiles {
-    Args,
-    Env,
-    Both,
-}
-
-impl TaskOptionAffectedFiles {
-    pub fn from_config(config: &TaskOptionAffectedFilesConfig) -> Option<TaskOptionAffectedFiles> {
-        match config {
-            TaskOptionAffectedFilesConfig::Enabled(false) => None,
-            TaskOptionAffectedFilesConfig::Enabled(true) => Some(TaskOptionAffectedFiles::Both),
-            TaskOptionAffectedFilesConfig::Value(value) => {
-                if value == "args" {
-                    Some(TaskOptionAffectedFiles::Args)
-                } else {
-                    Some(TaskOptionAffectedFiles::Env)
-                }
-            }
-        }
-    }
-
-    pub fn to_config(&self) -> TaskOptionAffectedFilesConfig {
-        match self {
-            TaskOptionAffectedFiles::Args => TaskOptionAffectedFilesConfig::Value("args".into()),
-            TaskOptionAffectedFiles::Env => TaskOptionAffectedFilesConfig::Value("env".into()),
-            TaskOptionAffectedFiles::Both => TaskOptionAffectedFilesConfig::Enabled(true),
-        }
-    }
-}
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -95,7 +63,7 @@ impl Default for TaskOptions {
 impl TaskOptions {
     pub fn merge(&mut self, config: &TaskOptionsConfig) {
         if let Some(affected_files) = &config.affected_files {
-            self.affected_files = TaskOptionAffectedFiles::from_config(affected_files);
+            self.affected_files = Some(affected_files.to_owned());
         }
 
         if let Some(cache) = &config.cache {
@@ -107,27 +75,27 @@ impl TaskOptions {
         }
 
         if let Some(merge_args) = &config.merge_args {
-            self.merge_args = merge_args.clone();
+            self.merge_args = *merge_args;
         }
 
         if let Some(merge_deps) = &config.merge_deps {
-            self.merge_deps = merge_deps.clone();
+            self.merge_deps = *merge_deps;
         }
 
         if let Some(merge_env) = &config.merge_env {
-            self.merge_env = merge_env.clone();
+            self.merge_env = *merge_env;
         }
 
         if let Some(merge_inputs) = &config.merge_inputs {
-            self.merge_inputs = merge_inputs.clone();
+            self.merge_inputs = *merge_inputs;
         }
 
         if let Some(merge_outputs) = &config.merge_outputs {
-            self.merge_outputs = merge_outputs.clone();
+            self.merge_outputs = *merge_outputs;
         }
 
         if let Some(output_style) = &config.output_style {
-            self.output_style = Some(output_style.clone());
+            self.output_style = Some(*output_style);
         }
 
         if let Some(persistent) = &config.persistent {
@@ -157,10 +125,7 @@ impl TaskOptions {
 
     pub fn from_config(config: TaskOptionsConfig, is_local: bool) -> TaskOptions {
         TaskOptions {
-            affected_files: config
-                .affected_files
-                .map(|af| TaskOptionAffectedFiles::from_config(&af))
-                .unwrap_or_default(),
+            affected_files: config.affected_files,
             cache: config.cache.unwrap_or(!is_local),
             env_file: config
                 .env_file
@@ -189,7 +154,7 @@ impl TaskOptions {
         // Skip merge options until we need them
 
         if let Some(affected_files) = &self.affected_files {
-            config.affected_files = Some(affected_files.to_config());
+            config.affected_files = Some(affected_files.to_owned());
         }
 
         if self.cache != default_options.cache {
@@ -198,14 +163,14 @@ impl TaskOptions {
 
         if let Some(env_file) = &self.env_file {
             config.env_file = Some(if env_file == ".env" {
-                TaskOptionEnvFileConfig::Enabled(true)
+                TaskOptionEnvFile::Enabled(true)
             } else {
-                TaskOptionEnvFileConfig::File(env_file.clone())
+                TaskOptionEnvFile::File(env_file.to_owned())
             });
         }
 
         if let Some(output_style) = &self.output_style {
-            config.output_style = Some(output_style.clone());
+            config.output_style = Some(*output_style);
         }
 
         if self.persistent != default_options.persistent {

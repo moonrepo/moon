@@ -1,5 +1,5 @@
 use crate::node_tool::NodeTool;
-use moon_config::YarnConfig;
+use moon_config2::YarnConfig;
 use moon_logger::debug;
 use moon_node_lang::{yarn, LockfileDependencyVersions, YARN};
 use moon_process::Command;
@@ -70,14 +70,12 @@ impl YarnTool {
                 .exec_capture_output()
                 .await?;
 
-            if let Some(plugins) = &self.config.plugins {
-                for plugin in plugins {
-                    self.create_command(node)?
-                        .args(["plugin", "import", plugin])
-                        .create_async()
-                        .exec_capture_output()
-                        .await?;
-                }
+            for plugin in &self.config.plugins {
+                self.create_command(node)?
+                    .args(["plugin", "import", plugin])
+                    .create_async()
+                    .exec_capture_output()
+                    .await?;
             }
         }
 

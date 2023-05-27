@@ -1,19 +1,15 @@
-use schematic::{config_enum, Config};
-use strum::Display;
+use schematic::{derive_enum, Config, ConfigEnum};
 
-config_enum!(
-    #[derive(Default, Display)]
+derive_enum!(
+    #[derive(ConfigEnum, Copy, Default)]
     pub enum VcsManager {
-        #[strum(serialize = "git")]
         #[default]
         Git,
-
-        #[strum(serialize = "svn")]
         Svn,
     }
 );
 
-#[derive(Config)]
+#[derive(Clone, Config)]
 pub struct VcsConfig {
     #[setting(default = "master")]
     pub default_branch: String,

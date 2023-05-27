@@ -1,8 +1,8 @@
 use super::MANIFEST_NAME;
 use moon::{generate_project_graph, load_workspace};
+use moon_common::consts::CONFIG_DIRNAME;
 use moon_common::Id;
-use moon_config::ProjectLanguage;
-use moon_constants::CONFIG_DIRNAME;
+use moon_config2::LanguageType;
 use moon_error::MoonError;
 use moon_platform_detector::detect_language_files;
 use moon_project_graph::ProjectGraph;
@@ -14,7 +14,6 @@ use serde::{Deserialize, Serialize};
 use starbase::AppResult;
 use starbase_utils::{fs, glob, json};
 use std::path::Path;
-use strum::IntoEnumIterator;
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -54,12 +53,12 @@ fn scaffold_workspace(
     let copy_from_dir = |source: &Path, dest: &Path| -> AppResult {
         let mut files: Vec<String> = vec![".prototools".to_owned()];
 
-        for lang in ProjectLanguage::iter() {
+        for lang in LanguageType::variants() {
             files.extend(detect_language_files(&lang));
 
             // These are special cases
             match lang {
-                ProjectLanguage::Rust => {
+                LanguageType::Rust => {
                     if let Some(cargo_toml) = CargoTomlCache::read(source)? {
                         let manifests = cargo_toml.get_member_manifest_paths(source)?;
 
@@ -68,7 +67,7 @@ fn scaffold_workspace(
                         }
                     }
                 }
-                ProjectLanguage::TypeScript => {
+                LanguageType::TypeScript => {
                     if let Some(typescript_config) = &workspace.toolchain_config.typescript {
                         files.push(typescript_config.project_config_file_name.to_owned());
                         files.push(typescript_config.root_config_file_name.to_owned());

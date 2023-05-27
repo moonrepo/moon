@@ -1,5 +1,5 @@
 use miette::IntoDiagnostic;
-use moon_constants::CONFIG_DIRNAME;
+use moon_common::consts::CONFIG_DIRNAME;
 use moon_logger::debug;
 use moon_utils::is_test_env;
 use moon_utils::semver::Version;

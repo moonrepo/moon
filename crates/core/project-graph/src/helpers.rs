@@ -1,6 +1,6 @@
 use crate::errors::ProjectGraphError;
-use moon_common::Id;
-use moon_config::{ProjectsSourcesMap, CONFIG_DIRNAME};
+use moon_common::{consts, Id};
+use moon_config2::ProjectsSourcesMap;
 use moon_error::MoonError;
 use moon_logger::{debug, warn};
 use moon_utils::{path, regex};
@@ -55,7 +55,7 @@ pub fn detect_projects_with_globs(
             let project_source =
                 path::to_string(project_root.strip_prefix(workspace_root).unwrap())?;
 
-            if project_source == CONFIG_DIRNAME {
+            if project_source == consts::CONFIG_DIRNAME {
                 continue;
             }
 

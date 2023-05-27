@@ -43,7 +43,7 @@ pub trait Vcs {
         &self,
         files: &[String],
         allow_ignored: bool,
-        batch_size: Option<u16>,
+        batch_size: u16,
     ) -> VcsResult<BTreeMap<String, String>>;
 
     /// Get a list of all files in the provided directory, recursing through all sub-directories.

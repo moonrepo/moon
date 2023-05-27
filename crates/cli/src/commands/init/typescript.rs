@@ -2,7 +2,7 @@ use super::InitOptions;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
 use miette::IntoDiagnostic;
-use moon_config::load_toolchain_typescript_config_template;
+use moon_config2::load_toolchain_typescript_config_template;
 use moon_terminal::label_header;
 use moon_typescript_lang::TsConfigJson;
 use starbase::AppResult;

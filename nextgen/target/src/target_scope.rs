@@ -1,7 +1,8 @@
 use moon_common::Id;
+use schemars::JsonSchema;
 use std::fmt::{self, Display};
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Eq, Hash, JsonSchema, PartialEq, PartialOrd)]
 pub enum TargetScope {
     All,         // :task
     Deps,        // ^:task

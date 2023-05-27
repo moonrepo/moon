@@ -1,9 +1,10 @@
 use moon_common::Id;
+use schemars::JsonSchema;
 use schematic::{derive_enum, ConfigEnum};
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::str::FromStr;
 
-#[derive(Clone, ConfigEnum, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, ConfigEnum, Debug, Default, Eq, JsonSchema, PartialEq)]
 pub enum LanguageType {
     Bash,
     Batch,

@@ -38,6 +38,7 @@ regex = "1.8.1"
 # We don't use openssl but its required for musl builds
 reqwest = { version = "0.11.17", default-features = false, features = ["rustls-tls", "native-tls-vendored"] }
 rustc-hash = "1.1.0"
+schemars = "0.8.12"
 serde = { version = "1.0.162", features = ["derive"] }
 serde_json = "1.0.96"
 serde_yaml = "0.9.21"

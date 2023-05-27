@@ -3,6 +3,7 @@ use crate::target_scope::TargetScope;
 use moon_common::{Id, ID_CHARS};
 use once_cell::sync::Lazy;
 use regex::Regex;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::{
     cmp::Ordering,
@@ -18,7 +19,7 @@ pub static TARGET_PATTERN: Lazy<Regex> = Lazy::new(|| {
     .unwrap()
 });
 
-#[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Hash, JsonSchema, PartialEq, Serialize)]
 #[serde(try_from = "String", into = "String")]
 pub struct Target {
     pub id: String,

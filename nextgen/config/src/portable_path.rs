@@ -1,5 +1,6 @@
 use crate::validate::{validate_child_or_root_path, validate_child_relative_path};
 use moon_common::path::{standardize_separators, WorkspaceRelativePathBuf};
+use schemars::JsonSchema;
 use schematic::ValidateError;
 use serde::{de, Deserialize, Deserializer, Serialize};
 use std::path::Path;
@@ -19,7 +20,7 @@ pub trait Portable: Sized {
 
 macro_rules! path_type {
     ($name:ident) => {
-        #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
+        #[derive(Clone, Debug, Default, Eq, JsonSchema, PartialEq, Serialize)]
         pub struct $name(pub String);
 
         impl $name {
@@ -148,7 +149,7 @@ impl Portable for ProjectFilePath {
 
 // Represents either a workspace or project relative glob/path, or env var.
 // Workspace paths are prefixed with "/", and env vars with "$".
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Eq, JsonSchema, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum PortablePath {
     ProjectFile(FilePath),

@@ -1,5 +1,6 @@
 use crate::portable_path::is_glob;
 use moon_common::cacheable;
+use schemars::JsonSchema;
 use schematic::{derive_enum, Config, ConfigEnum, ValidateError};
 use serde::{de, Deserialize, Deserializer, Serialize};
 use serde_yaml::Value;
@@ -18,7 +19,7 @@ fn validate_env_file<D, C>(
     Ok(())
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Eq, JsonSchema, PartialEq, Serialize)]
 #[serde(untagged, rename_all = "kebab-case")]
 pub enum TaskOptionAffectedFiles {
     Args,

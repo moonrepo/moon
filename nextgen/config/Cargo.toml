@@ -3,17 +3,25 @@ name = "moon_config"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "moon_config"
+path = "src/main.rs"
+
+[lib]
+name = "moon_config"
+path = "src/lib.rs"
+
 [dependencies]
 moon_common = { path = "../common" }
 moon_target = { path = "../target" }
 proto_cli = { workspace = true }
 rustc-hash = { workspace = true }
-schemars = "0.8.12"
-schematic = { version = "0.5.4", default-features = false, features = ["json_schema", "yaml", "valid_url"] }
+schemars = { workspace = true }
+schematic = { version = "0.5.5", default-features = false, features = ["json_schema", "yaml", "valid_url"] }
 semver = "1.0.17"
 serde = { workspace = true }
+serde_json = { workspace = true }
 serde_yaml = { workspace = true }
 
 [dev-dependencies]
-serde_json = { workspace = true }
 starbase_sandbox = { workspace = true }

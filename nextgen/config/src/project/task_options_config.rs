@@ -112,7 +112,6 @@ cacheable!(
         pub run_deps_in_parallel: Option<bool>,
 
         #[serde(rename = "runInCI")]
-        #[setting(rename = "runInCI")]
         pub run_in_ci: Option<bool>,
 
         pub run_from_workspace_root: Option<bool>,

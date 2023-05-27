@@ -91,7 +91,6 @@ cacheable!(
         pub toolchain: ProjectToolchainConfig,
 
         #[serde(rename = "type")]
-        #[setting(rename = "type")]
         pub type_of: ProjectType,
 
         #[setting(nested)]

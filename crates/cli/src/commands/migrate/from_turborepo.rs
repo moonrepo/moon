@@ -2,9 +2,9 @@ use super::check_dirty_repo;
 use moon::{generate_project_graph, load_workspace};
 use moon_common::consts;
 use moon_common::Id;
-use moon_config2::PartialTaskOptionsConfig;
-use moon_config2::ProjectConfig;
-use moon_config2::{
+use moon_config::PartialTaskOptionsConfig;
+use moon_config::ProjectConfig;
+use moon_config::{
     PartialInheritedTasksConfig, PartialProjectConfig, PartialTaskConfig, PlatformType,
     TaskCommandArgs,
 };

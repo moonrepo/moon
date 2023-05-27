@@ -1,7 +1,7 @@
 use crate::errors::WorkspaceError;
 use moon_cache::CacheEngine;
 use moon_common::consts;
-use moon_config2::{InheritedTasksConfig, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
+use moon_config::{InheritedTasksConfig, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_error::MoonError;
 use moon_logger::{debug, trace};
 use moon_platform::{BoxedPlatform, PlatformManager};

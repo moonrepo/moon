@@ -7,7 +7,7 @@ use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
 use miette::IntoDiagnostic;
 use moon_common::consts::{CONFIG_DIRNAME, CONFIG_TOOLCHAIN_FILENAME, CONFIG_WORKSPACE_FILENAME};
-use moon_config2::{load_toolchain_config_template, load_workspace_config_template};
+use moon_config::{load_toolchain_config_template, load_workspace_config_template};
 use moon_node_lang::NPM;
 use moon_rust_lang::CARGO;
 use moon_terminal::{create_theme, safe_exit};

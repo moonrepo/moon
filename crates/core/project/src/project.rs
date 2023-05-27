@@ -1,6 +1,6 @@
 use crate::errors::ProjectError;
 use moon_common::{consts, Id};
-use moon_config2::{
+use moon_config::{
     DependencyScope, InheritedTasksConfig, InheritedTasksManager, LanguageType, ProjectConfig,
     ProjectDependsOn, ProjectType,
 };

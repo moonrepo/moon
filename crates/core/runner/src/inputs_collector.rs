@@ -1,6 +1,6 @@
 use crate::RunnerError;
 use moon_common::consts::CONFIG_PROJECT_FILENAME;
-use moon_config2::{HasherConfig, HasherWalkStrategy};
+use moon_config::{HasherConfig, HasherWalkStrategy};
 use moon_logger::{warn, Logable};
 use moon_task::Task;
 use moon_utils::{is_ci, path};

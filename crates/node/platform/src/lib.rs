@@ -7,7 +7,7 @@ pub use platform::NodePlatform;
 pub use target_hasher::NodeTargetHasher;
 
 use moon_common::Id;
-use moon_config2::PartialTaskConfig;
+use moon_config::PartialTaskConfig;
 use moon_node_lang::PackageJson;
 use moon_task::TaskError;
 use std::collections::BTreeMap;

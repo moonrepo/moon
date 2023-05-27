@@ -1,7 +1,7 @@
 use miette::Diagnostic;
 use moon_args::ArgsSplitError;
 use moon_common::IdError;
-use moon_config2::ConfigError;
+use moon_config::ConfigError;
 use moon_error::MoonError;
 use moon_target::TargetError;
 use starbase_styles::{Style, Stylize};

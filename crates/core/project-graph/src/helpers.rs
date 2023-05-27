@@ -1,6 +1,6 @@
 use crate::errors::ProjectGraphError;
 use moon_common::{consts, Id};
-use moon_config2::ProjectsSourcesMap;
+use moon_config::ProjectsSourcesMap;
 use moon_error::MoonError;
 use moon_logger::{debug, warn};
 use moon_utils::{path, regex};

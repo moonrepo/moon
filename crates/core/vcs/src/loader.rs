@@ -2,7 +2,7 @@ use crate::errors::VcsError;
 use crate::git::Git;
 use crate::svn::Svn;
 use crate::BoxedVcs;
-use moon_config2::{VcsManager, WorkspaceConfig};
+use moon_config::{VcsManager, WorkspaceConfig};
 use std::path::Path;
 
 pub struct VcsLoader {}

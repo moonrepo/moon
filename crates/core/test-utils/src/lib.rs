@@ -13,7 +13,7 @@ pub use sandbox::*;
 
 use clean_path::Clean;
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_config2::{Portable, PortablePath};
+use moon_config::{Portable, PortablePath};
 use std::path::PathBuf;
 
 pub fn get_fixtures_root() -> PathBuf {

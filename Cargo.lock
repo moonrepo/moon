@@ -2650,7 +2650,7 @@ dependencies = [
  "moon_archive",
  "moon_cache",
  "moon_common",
- "moon_config2",
+ "moon_config",
  "moon_dep_graph",
  "moon_error",
  "moon_generator",
@@ -2712,7 +2712,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_config2"
+name = "moon_config"
 version = "0.1.0"
 dependencies = [
  "moon_common",
@@ -2750,7 +2750,7 @@ version = "0.1.0"
 dependencies = [
  "moon_action_context",
  "moon_common",
- "moon_config2",
+ "moon_config",
  "moon_deno_lang",
  "moon_deno_tool",
  "moon_error",
@@ -2776,7 +2776,7 @@ dependencies = [
 name = "moon_deno_tool"
 version = "0.1.0"
 dependencies = [
- "moon_config2",
+ "moon_config",
  "moon_platform_runtime",
  "moon_tool",
  "proto_cli",
@@ -2792,7 +2792,7 @@ dependencies = [
  "moon",
  "moon_action",
  "moon_common",
- "moon_config2",
+ "moon_config",
  "moon_error",
  "moon_logger",
  "moon_platform",
@@ -2879,7 +2879,7 @@ dependencies = [
  "convert_case",
  "miette",
  "moon_common",
- "moon_config2",
+ "moon_config",
  "moon_error",
  "moon_logger",
  "moon_test_utils",
@@ -2977,7 +2977,7 @@ dependencies = [
  "moon",
  "moon_action_context",
  "moon_common",
- "moon_config2",
+ "moon_config",
  "moon_error",
  "moon_hasher",
  "moon_lang",
@@ -3010,7 +3010,7 @@ dependencies = [
 name = "moon_node_tool"
 version = "0.1.0"
 dependencies = [
- "moon_config2",
+ "moon_config",
  "moon_logger",
  "moon_node_lang",
  "moon_platform_runtime",
@@ -3057,7 +3057,7 @@ dependencies = [
  "async-trait",
  "moon_action_context",
  "moon_common",
- "moon_config2",
+ "moon_config",
  "moon_error",
  "moon_hasher",
  "moon_platform_runtime",
@@ -3074,7 +3074,7 @@ name = "moon_platform_detector"
 version = "0.1.0"
 dependencies = [
  "moon_bun_lang",
- "moon_config2",
+ "moon_config",
  "moon_deno_lang",
  "moon_go_lang",
  "moon_lang",
@@ -3091,7 +3091,7 @@ dependencies = [
 name = "moon_platform_runtime"
 version = "0.1.0"
 dependencies = [
- "moon_config2",
+ "moon_config",
  "serde",
 ]
 
@@ -3116,7 +3116,7 @@ version = "0.1.0"
 dependencies = [
  "miette",
  "moon_common",
- "moon_config2",
+ "moon_config",
  "moon_error",
  "moon_file_group",
  "moon_logger",
@@ -3142,7 +3142,7 @@ dependencies = [
  "moon",
  "moon_cache",
  "moon_common",
- "moon_config2",
+ "moon_config",
  "moon_enforcer",
  "moon_error",
  "moon_file_group",
@@ -3180,7 +3180,7 @@ version = "0.1.0"
 dependencies = [
  "miette",
  "moon_common",
- "moon_config2",
+ "moon_config",
  "pest",
  "pest_derive",
  "starbase_utils",
@@ -3205,7 +3205,7 @@ dependencies = [
  "moon_action_context",
  "moon_cache",
  "moon_common",
- "moon_config2",
+ "moon_config",
  "moon_emitter",
  "moon_error",
  "moon_hasher",
@@ -3254,7 +3254,7 @@ dependencies = [
  "moon",
  "moon_action_context",
  "moon_common",
- "moon_config2",
+ "moon_config",
  "moon_error",
  "moon_hasher",
  "moon_lang",
@@ -3283,7 +3283,7 @@ dependencies = [
 name = "moon_rust_tool"
 version = "0.1.0"
 dependencies = [
- "moon_config2",
+ "moon_config",
  "moon_logger",
  "moon_platform_runtime",
  "moon_process",
@@ -3299,7 +3299,7 @@ name = "moon_system_platform"
 version = "0.1.0"
 dependencies = [
  "moon_action_context",
- "moon_config2",
+ "moon_config",
  "moon_hasher",
  "moon_platform",
  "moon_process",
@@ -3330,7 +3330,7 @@ dependencies = [
  "miette",
  "moon_args",
  "moon_common",
- "moon_config2",
+ "moon_config",
  "moon_error",
  "moon_logger",
  "moon_target",
@@ -3364,7 +3364,7 @@ dependencies = [
  "clean-path",
  "insta",
  "moon_common",
- "moon_config2",
+ "moon_config",
  "predicates",
  "pretty_assertions",
  "rustc-hash",
@@ -3410,7 +3410,7 @@ name = "moon_typescript_platform"
 version = "0.1.0"
 dependencies = [
  "moon_common",
- "moon_config2",
+ "moon_config",
  "moon_error",
  "moon_hasher",
  "moon_logger",
@@ -3459,7 +3459,7 @@ dependencies = [
  "cached",
  "ignore",
  "miette",
- "moon_config2",
+ "moon_config",
  "moon_error",
  "moon_process",
  "moon_test_utils",
@@ -3479,7 +3479,7 @@ dependencies = [
  "miette",
  "moon_cache",
  "moon_common",
- "moon_config2",
+ "moon_config",
  "moon_error",
  "moon_logger",
  "moon_platform",

@@ -4,7 +4,7 @@ mod loader;
 mod svn;
 mod vcs;
 
-use moon_config2::{VcsConfig, VcsManager};
+use moon_config::{VcsConfig, VcsManager};
 use std::path::Path;
 
 pub use errors::VcsError;

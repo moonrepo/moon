@@ -1,6 +1,6 @@
 use miette::Diagnostic;
 use moon_common::consts;
-use moon_config2::ConfigError;
+use moon_config::ConfigError;
 use moon_error::MoonError;
 use moon_vcs::VcsError;
 use moonbase::MoonbaseError;

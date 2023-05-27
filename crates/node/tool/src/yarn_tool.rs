@@ -1,5 +1,5 @@
 use crate::node_tool::NodeTool;
-use moon_config2::YarnConfig;
+use moon_config::YarnConfig;
 use moon_logger::debug;
 use moon_node_lang::{yarn, LockfileDependencyVersions, YARN};
 use moon_process::Command;

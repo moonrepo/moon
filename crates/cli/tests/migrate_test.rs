@@ -1,4 +1,4 @@
-use moon_config2::{PartialWorkspaceConfig, WorkspaceProjects};
+use moon_config::{PartialWorkspaceConfig, WorkspaceProjects};
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, get_default_toolchain, predicates::str::contains,
     Sandbox,
@@ -100,7 +100,7 @@ mod from_package_json {
 mod from_turborepo {
     use super::*;
     use moon_cli::commands::migrate::{TurboJson, TurboTask};
-    use moon_config2::InheritedTasksConfig;
+    use moon_config::InheritedTasksConfig;
     use rustc_hash::FxHashMap;
 
     #[test]

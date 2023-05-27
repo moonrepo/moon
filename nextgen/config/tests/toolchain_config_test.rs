@@ -1,6 +1,6 @@
 mod utils;
 
-use moon_config2::ToolchainConfig;
+use moon_config::ToolchainConfig;
 use proto::ToolsConfig;
 use std::env;
 use utils::*;

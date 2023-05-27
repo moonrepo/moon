@@ -1,5 +1,5 @@
 use crate::create_portable_paths;
-use moon_config2::{
+use moon_config::{
     NodePackageManager, PartialInheritedTasksConfig, PartialNodeConfig, PartialNpmConfig,
     PartialPnpmConfig, PartialTaskConfig, PartialToolchainConfig, PartialTypeScriptConfig,
     PartialWorkspaceConfig, PartialYarnConfig, TaskCommandArgs, WorkspaceProjects,

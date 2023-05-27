@@ -1,5 +1,5 @@
 use crate::node_tool::NodeTool;
-use moon_config2::PnpmConfig;
+use moon_config::PnpmConfig;
 use moon_logger::debug;
 use moon_node_lang::{pnpm, LockfileDependencyVersions, PNPM};
 use moon_process::Command;

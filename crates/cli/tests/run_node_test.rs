@@ -1,4 +1,4 @@
-use moon_config2::{NodeVersionFormat, NodeVersionManager, PartialNodeConfig, WorkspaceProjects};
+use moon_config::{NodeVersionFormat, NodeVersionManager, PartialNodeConfig, WorkspaceProjects};
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, get_node_depman_fixture_configs,
     get_node_fixture_configs, get_typescript_fixture_configs, predicates::prelude::*, Sandbox,

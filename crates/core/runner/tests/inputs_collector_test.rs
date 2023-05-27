@@ -1,5 +1,5 @@
 use moon::{generate_project_graph, load_workspace_from};
-use moon_config2::HasherWalkStrategy;
+use moon_config::HasherWalkStrategy;
 use moon_runner::inputs_collector::collect_and_hash_inputs;
 use moon_test_utils::{create_sandbox_with_config, get_cases_fixture_configs, Sandbox};
 use moon_vcs::VcsLoader;

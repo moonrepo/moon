@@ -1,5 +1,5 @@
 use moon_cache::CacheEngine;
-use moon_config2::{
+use moon_config::{
     HasherWalkStrategy, PartialHasherConfig, PartialRunnerConfig, PartialWorkspaceConfig,
 };
 use moon_target::Target;

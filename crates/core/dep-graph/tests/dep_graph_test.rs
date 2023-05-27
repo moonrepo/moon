@@ -1,5 +1,5 @@
 use moon::{build_dep_graph, generate_project_graph, load_workspace_from};
-use moon_config2::{
+use moon_config::{
     PartialInheritedTasksConfig, PartialNodeConfig, PartialToolchainConfig, PartialWorkspaceConfig,
     WorkspaceProjects,
 };

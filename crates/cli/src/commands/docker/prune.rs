@@ -1,7 +1,7 @@
 use super::MANIFEST_NAME;
 use crate::commands::docker::scaffold::DockerManifest;
 use moon::{generate_project_graph, load_workspace_with_toolchain};
-use moon_config2::PlatformType;
+use moon_config::PlatformType;
 use moon_node_lang::{PackageJson, NODE};
 use moon_node_tool::NodeTool;
 use moon_project_graph::ProjectGraph;

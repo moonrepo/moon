@@ -2,7 +2,7 @@ use crate::actions;
 use crate::infer_tasks_from_scripts;
 use moon_action_context::ActionContext;
 use moon_common::Id;
-use moon_config2::{
+use moon_config::{
     Config, DependencyConfig, DependencyScope, HasherConfig, NodeConfig, PlatformType,
     ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, TaskConfig, TasksConfigsMap,
     TypeScriptConfig,

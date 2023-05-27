@@ -1,7 +1,7 @@
 use crate::errors::GeneratorError;
 use crate::template::Template;
 use moon_common::consts::CONFIG_TEMPLATE_FILENAME;
-use moon_config2::{load_template_config_template, GeneratorConfig};
+use moon_config::{load_template_config_template, GeneratorConfig};
 use moon_logger::{debug, map_list, trace};
 use moon_utils::{path, regex::clean_id};
 use starbase_styles::color;

@@ -2,13 +2,12 @@ use crate::errors::TaskError;
 use crate::task_options::TaskOptions;
 use crate::types::TouchedFilePaths;
 use moon_args::{split_args, ArgsSplitError};
-use moon_common::Id;
-use moon_config2::{PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskType};
+use moon_common::{cacheable, cacheable_enum, Id};
+use moon_config::{PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskType};
 use moon_error::MoonError;
 use moon_logger::{debug, trace, Logable};
 use moon_target::Target;
 use rustc_hash::{FxHashMap, FxHashSet};
-use serde::{Deserialize, Serialize};
 use starbase_styles::color;
 use starbase_utils::glob;
 use std::env;
@@ -17,59 +16,61 @@ use strum::Display;
 
 type EnvVars = FxHashMap<String, String>;
 
-#[derive(Clone, Debug, Deserialize, Display, Eq, Hash, PartialEq, Serialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum TaskFlag {
-    NoInputs,
-}
+cacheable_enum!(
+    #[derive(Clone, Debug, Display, Eq, Hash, PartialEq)]
+    pub enum TaskFlag {
+        NoInputs,
+    }
+);
 
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(default, rename_all = "camelCase")]
-pub struct Task {
-    pub args: Vec<String>,
+cacheable!(
+    #[derive(Clone, Debug, Default, Eq, PartialEq)]
+    pub struct Task {
+        pub args: Vec<String>,
 
-    pub command: String,
+        pub command: String,
 
-    pub deps: Vec<Target>,
+        pub deps: Vec<Target>,
 
-    pub env: EnvVars,
+        pub env: EnvVars,
 
-    pub flags: FxHashSet<TaskFlag>,
+        pub flags: FxHashSet<TaskFlag>,
 
-    pub global_inputs: Vec<String>,
+        pub global_inputs: Vec<String>,
 
-    pub id: Id,
+        pub id: Id,
 
-    pub inputs: Vec<String>,
+        pub inputs: Vec<String>,
 
-    // Relative from workspace root
-    pub input_globs: FxHashSet<String>,
+        // Relative from workspace root
+        pub input_globs: FxHashSet<String>,
 
-    // Relative from workspace root
-    pub input_paths: FxHashSet<PathBuf>,
+        // Relative from workspace root
+        pub input_paths: FxHashSet<PathBuf>,
 
-    pub input_vars: FxHashSet<String>,
+        pub input_vars: FxHashSet<String>,
 
-    #[serde(skip)]
-    pub log_target: String,
+        #[serde(skip)]
+        pub log_target: String,
 
-    pub options: TaskOptions,
+        pub options: TaskOptions,
 
-    pub outputs: Vec<String>,
+        pub outputs: Vec<String>,
 
-    // Relative from workspace root
-    pub output_globs: FxHashSet<String>,
+        // Relative from workspace root
+        pub output_globs: FxHashSet<String>,
 
-    // Relative from workspace root
-    pub output_paths: FxHashSet<PathBuf>,
+        // Relative from workspace root
+        pub output_paths: FxHashSet<PathBuf>,
 
-    pub platform: PlatformType,
+        pub platform: PlatformType,
 
-    pub target: Target,
+        pub target: Target,
 
-    #[serde(rename = "type")]
-    pub type_of: TaskType,
-}
+        #[serde(rename = "type")]
+        pub type_of: TaskType,
+    }
+);
 
 impl Logable for Task {
     fn get_log_target(&self) -> &str {

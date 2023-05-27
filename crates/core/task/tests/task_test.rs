@@ -1,4 +1,4 @@
-use moon_config2::{
+use moon_config::{
     TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskOptionEnvFile, TaskOptionsConfig,
     TaskOutputStyle,
 };

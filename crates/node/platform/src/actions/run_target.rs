@@ -1,6 +1,6 @@
 use crate::target_hasher::NodeTargetHasher;
 use moon_action_context::{ActionContext, ProfileType};
-use moon_config2::{HasherConfig, HasherOptimization, NodeConfig, NodePackageManager};
+use moon_config::{HasherConfig, HasherOptimization, NodeConfig, NodePackageManager};
 use moon_error::MoonError;
 use moon_logger::trace;
 use moon_node_lang::{

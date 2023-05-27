@@ -1,4 +1,4 @@
-use moon_config2::TypeScriptConfig;
+use moon_config::TypeScriptConfig;
 use moon_error::MoonError;
 use moon_hasher::{hash_btree, Hasher, Sha256};
 use moon_typescript_lang::tsconfig::{CompilerOptions, TsConfigJson};

@@ -1,5 +1,5 @@
 use moon_common::Id;
-use moon_config2::{PartialTaskConfig, TaskCommandArgs};
+use moon_config::{PartialTaskConfig, TaskCommandArgs};
 use moon_logger::{debug, warn};
 use moon_node_lang::package_json::{PackageJson, ScriptsSet};
 use moon_process::args::split_args;

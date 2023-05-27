@@ -8,7 +8,7 @@ moon_action = { path = "../action" }
 moon_action_context = { path = "../action-context" }
 moon_cache = { path = "../cache" }
 moon_common = { path = "../../../nextgen/common" }
-moon_config2 = { path = "../../../nextgen/config" }
+moon_config = { path = "../../../nextgen/config" }
 moon_emitter = { path = "../emitter" }
 moon_error = { path = "../error" }
 moon_hasher = { path = "../hasher" }

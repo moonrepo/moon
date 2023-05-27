@@ -1,6 +1,6 @@
 use moon::{generate_project_graph, load_workspace_from};
 use moon_common::Id;
-use moon_config2::{
+use moon_config::{
     DependencyScope, PartialConstraintsConfig, PartialNodeConfig, PartialRustConfig,
     PartialToolchainConfig, PartialWorkspaceConfig, WorkspaceProjects,
 };

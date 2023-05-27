@@ -1,4 +1,4 @@
-use moon_config2::{
+use moon_config::{
     PartialRustConfig, PartialToolchainConfig, PartialWorkspaceConfig, WorkspaceProjects,
 };
 use moon_test_utils::{

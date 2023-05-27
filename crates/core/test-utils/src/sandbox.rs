@@ -3,7 +3,7 @@ use crate::get_fixtures_path;
 use assert_cmd::Command;
 use assert_fs::prelude::*;
 pub use assert_fs::TempDir;
-use moon_config2::{PartialInheritedTasksConfig, PartialToolchainConfig, PartialWorkspaceConfig};
+use moon_config::{PartialInheritedTasksConfig, PartialToolchainConfig, PartialWorkspaceConfig};
 use starbase_utils::glob;
 use std::fs;
 use std::path::Path;

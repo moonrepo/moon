@@ -1,5 +1,5 @@
 use moon_common::Id;
-use moon_config2::{ProjectsAliasesMap, ProjectsSourcesMap};
+use moon_config::{ProjectsAliasesMap, ProjectsSourcesMap};
 use moon_logger::debug;
 use moon_project::{Project, ProjectError};
 use moon_query::{Criteria, Queryable};

@@ -1,6 +1,6 @@
 use miette::Diagnostic;
 use moon_common::consts;
-use moon_config2::ConfigError;
+use moon_config::ConfigError;
 use moon_error::MoonError;
 use starbase_styles::{Style, Stylize};
 use starbase_utils::{fs::FsError, json::JsonError, yaml::YamlError};

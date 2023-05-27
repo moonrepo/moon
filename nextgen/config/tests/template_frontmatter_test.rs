@@ -1,6 +1,6 @@
 mod utils;
 
-use moon_config2::TemplateFrontmatterConfig;
+use moon_config::TemplateFrontmatterConfig;
 use utils::*;
 
 mod template_frontmatter {

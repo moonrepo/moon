@@ -1,6 +1,6 @@
 mod utils;
 
-use moon_config2::{FilePath, WorkspaceConfig, WorkspaceProjects};
+use moon_config::{FilePath, WorkspaceConfig, WorkspaceProjects};
 use rustc_hash::FxHashMap;
 use utils::*;
 

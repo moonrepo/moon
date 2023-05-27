@@ -2,7 +2,7 @@
 // as we need to test task inheritance, task expansion, etc...
 
 use moon::{generate_project_graph, load_workspace_from};
-use moon_config2::{
+use moon_config::{
     LanguageType, PartialInheritedTasksConfig, PartialNodeConfig, PartialRustConfig,
     PartialTaskConfig, PartialTaskOptionsConfig, PartialToolchainConfig, PartialWorkspaceConfig,
     PlatformType, TaskCommandArgs, WorkspaceProjects,

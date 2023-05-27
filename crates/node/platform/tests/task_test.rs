@@ -1,4 +1,4 @@
-use moon_config2::{PartialTaskConfig, TaskCommandArgs};
+use moon_config::{PartialTaskConfig, TaskCommandArgs};
 use moon_node_lang::PackageJson;
 use moon_node_platform::task::{create_task, should_run_in_ci, TaskContext};
 use moon_node_platform::{create_tasks_from_scripts, infer_tasks_from_scripts};

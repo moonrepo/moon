@@ -159,62 +159,7 @@
       "additionalProperties": false
     },
     "Target": {
-      "type": "object",
-      "required": [
-        "id",
-        "scope",
-        "task_id"
-      ],
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "scope": {
-          "$ref": "#/definitions/TargetScope"
-        },
-        "scope_id": {
-          "$ref": "#/definitions/Id"
-        },
-        "task_id": {
-          "$ref": "#/definitions/Id"
-        }
-      }
-    },
-    "TargetScope": {
-      "oneOf": [
-        {
-          "type": "string",
-          "enum": [
-            "All",
-            "Deps",
-            "OwnSelf"
-          ]
-        },
-        {
-          "type": "object",
-          "required": [
-            "Project"
-          ],
-          "properties": {
-            "Project": {
-              "$ref": "#/definitions/Id"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "Tag"
-          ],
-          "properties": {
-            "Tag": {
-              "$ref": "#/definitions/Id"
-            }
-          },
-          "additionalProperties": false
-        }
-      ]
+      "type": "string"
     },
     "VcsManager": {
       "type": "string",

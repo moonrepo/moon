@@ -3,7 +3,6 @@ use crate::target_scope::TargetScope;
 use moon_common::{Id, ID_CHARS};
 use once_cell::sync::Lazy;
 use regex::Regex;
-use schemars::JsonSchema;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::{
     cmp::Ordering,
@@ -19,7 +18,7 @@ pub static TARGET_PATTERN: Lazy<Regex> = Lazy::new(|| {
     .unwrap()
 });
 
-#[derive(Clone, Debug, Eq, Hash, JsonSchema, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Target {
     pub id: String,
     pub scope: TargetScope,
@@ -183,6 +182,16 @@ impl Serialize for Target {
         S: Serializer,
     {
         serializer.serialize_str(&self.id)
+    }
+}
+
+impl schemars::JsonSchema for Target {
+    fn schema_name() -> String {
+        "Target".to_owned()
+    }
+
+    fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
+        gen.subschema_for::<String>()
     }
 }
 

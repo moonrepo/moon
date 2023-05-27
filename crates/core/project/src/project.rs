@@ -1,8 +1,8 @@
 use crate::errors::ProjectError;
 use moon_common::{consts, Id};
 use moon_config::{
-    DependencyScope, InheritedTasksConfig, InheritedTasksManager, LanguageType, ProjectConfig,
-    ProjectDependsOn, ProjectType,
+    cacheable, cacheable_enum, DependencyScope, InheritedTasksConfig, InheritedTasksManager,
+    LanguageType, ProjectConfig, ProjectDependsOn, ProjectType,
 };
 use moon_file_group::{FileGroup, FileGroupError};
 use moon_logger::{debug, trace, Logable};
@@ -11,7 +11,6 @@ use moon_target::Target;
 use moon_task::{Task, TouchedFilePaths};
 use moon_utils::path;
 use rustc_hash::{FxHashMap, FxHashSet};
-use serde::{Deserialize, Serialize};
 use starbase_styles::color;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -224,67 +223,71 @@ fn create_tasks_from_config(
     Ok(tasks)
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Display, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum ProjectDependencySource {
-    #[default]
-    #[strum(serialize = "explicit")]
-    Explicit,
+cacheable_enum!(
+    #[derive(Clone, Debug, Default, Display, Eq, PartialEq)]
+    pub enum ProjectDependencySource {
+        #[default]
+        #[strum(serialize = "explicit")]
+        Explicit,
 
-    #[strum(serialize = "implicit")]
-    Implicit,
-}
+        #[strum(serialize = "implicit")]
+        Implicit,
+    }
+);
 
-#[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
-pub struct ProjectDependency {
-    pub id: Id,
-    pub scope: DependencyScope,
-    pub source: ProjectDependencySource,
-    pub via: Option<String>,
-}
+cacheable!(
+    #[derive(Clone, Debug, Default, Eq, PartialEq)]
+    pub struct ProjectDependency {
+        pub id: Id,
+        pub scope: DependencyScope,
+        pub source: ProjectDependencySource,
+        pub via: Option<String>,
+    }
+);
 
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
-#[serde(default, rename_all = "camelCase")]
-pub struct Project {
-    /// Unique alias of the project, alongside its official ID.
-    /// This is typically reserved for language specific semantics, like `name` from `package.json`.
-    pub alias: Option<String>,
+cacheable!(
+    #[derive(Clone, Debug, Default)]
+    pub struct Project {
+        /// Unique alias of the project, alongside its official ID.
+        /// This is typically reserved for language specific semantics, like `name` from `package.json`.
+        pub alias: Option<String>,
 
-    /// Project configuration loaded from "moon.yml", if it exists.
-    pub config: ProjectConfig,
+        /// Project configuration loaded from "moon.yml", if it exists.
+        pub config: ProjectConfig,
 
-    /// List of other projects this project depends on.
-    pub dependencies: ProjectDependenciesMap,
+        /// List of other projects this project depends on.
+        pub dependencies: ProjectDependenciesMap,
 
-    /// File groups specific to the project. Inherits all file groups from the global config.
-    pub file_groups: FileGroupsMap,
+        /// File groups specific to the project. Inherits all file groups from the global config.
+        pub file_groups: FileGroupsMap,
 
-    /// Unique ID for the project. Is the LHS of the `projects` setting.
-    pub id: Id,
+        /// Unique ID for the project. Is the LHS of the `projects` setting.
+        pub id: Id,
 
-    /// Task configuration that was inherited from the global scope.
-    pub inherited_config: InheritedTasksConfig,
+        /// Task configuration that was inherited from the global scope.
+        pub inherited_config: InheritedTasksConfig,
 
-    /// Primary programming language of the project.
-    pub language: LanguageType,
+        /// Primary programming language of the project.
+        pub language: LanguageType,
 
-    /// Logging target label.
-    #[serde(skip)]
-    pub log_target: String,
+        /// Logging target label.
+        #[serde(skip)]
+        pub log_target: String,
 
-    /// Absolute path to the project's root folder.
-    pub root: PathBuf,
+        /// Absolute path to the project's root folder.
+        pub root: PathBuf,
 
-    /// Relative path of the project from the workspace root. Is the RHS of the `projects` setting.
-    pub source: String,
+        /// Relative path of the project from the workspace root. Is the RHS of the `projects` setting.
+        pub source: String,
 
-    /// Tasks specific to the project. Inherits all tasks from the global config.
-    pub tasks: TasksMap,
+        /// Tasks specific to the project. Inherits all tasks from the global config.
+        pub tasks: TasksMap,
 
-    /// The type of project.
-    #[serde(rename = "type")]
-    pub type_of: ProjectType,
-}
+        /// The type of project.
+        #[serde(rename = "type")]
+        pub type_of: ProjectType,
+    }
+);
 
 impl PartialEq for Project {
     fn eq(&self, other: &Self) -> bool {

@@ -1,3 +1,4 @@
+use crate::cacheable;
 use crate::portable_path::is_glob;
 use schematic::{derive_enum, Config, ConfigEnum, ValidateError};
 use serde::{de, Deserialize, Deserializer, Serialize};
@@ -82,37 +83,40 @@ derive_enum!(
     }
 );
 
-#[derive(Clone, Config, Debug, Deserialize, Eq, PartialEq, Serialize)]
-pub struct TaskOptionsConfig {
-    pub affected_files: Option<TaskOptionAffectedFiles>,
+cacheable!(
+    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    pub struct TaskOptionsConfig {
+        pub affected_files: Option<TaskOptionAffectedFiles>,
 
-    pub cache: Option<bool>,
+        pub cache: Option<bool>,
 
-    #[setting(validate = validate_env_file)]
-    pub env_file: Option<TaskOptionEnvFile>,
+        #[setting(validate = validate_env_file)]
+        pub env_file: Option<TaskOptionEnvFile>,
 
-    pub merge_args: Option<TaskMergeStrategy>,
+        pub merge_args: Option<TaskMergeStrategy>,
 
-    pub merge_deps: Option<TaskMergeStrategy>,
+        pub merge_deps: Option<TaskMergeStrategy>,
 
-    pub merge_env: Option<TaskMergeStrategy>,
+        pub merge_env: Option<TaskMergeStrategy>,
 
-    pub merge_inputs: Option<TaskMergeStrategy>,
+        pub merge_inputs: Option<TaskMergeStrategy>,
 
-    pub merge_outputs: Option<TaskMergeStrategy>,
+        pub merge_outputs: Option<TaskMergeStrategy>,
 
-    pub output_style: Option<TaskOutputStyle>,
+        pub output_style: Option<TaskOutputStyle>,
 
-    pub persistent: Option<bool>,
+        pub persistent: Option<bool>,
 
-    pub retry_count: Option<u8>,
+        pub retry_count: Option<u8>,
 
-    pub run_deps_in_parallel: Option<bool>,
+        pub run_deps_in_parallel: Option<bool>,
 
-    #[setting(rename = "runInCI")]
-    pub run_in_ci: Option<bool>,
+        #[serde(rename = "runInCI")]
+        #[setting(rename = "runInCI")]
+        pub run_in_ci: Option<bool>,
 
-    pub run_from_workspace_root: Option<bool>,
+        pub run_from_workspace_root: Option<bool>,
 
-    pub shell: Option<bool>,
-}
+        pub shell: Option<bool>,
+    }
+);

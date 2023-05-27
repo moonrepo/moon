@@ -1,42 +1,42 @@
 use moon_config::{
-    TaskMergeStrategy, TaskOptionAffectedFiles, TaskOptionEnvFile, TaskOptionsConfig,
+    cacheable, TaskMergeStrategy, TaskOptionAffectedFiles, TaskOptionEnvFile, TaskOptionsConfig,
     TaskOutputStyle,
 };
-use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TaskOptions {
-    pub affected_files: Option<TaskOptionAffectedFiles>,
+cacheable!(
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    pub struct TaskOptions {
+        pub affected_files: Option<TaskOptionAffectedFiles>,
 
-    pub cache: bool,
+        pub cache: bool,
 
-    pub env_file: Option<String>,
+        pub env_file: Option<String>,
 
-    pub merge_args: TaskMergeStrategy,
+        pub merge_args: TaskMergeStrategy,
 
-    pub merge_deps: TaskMergeStrategy,
+        pub merge_deps: TaskMergeStrategy,
 
-    pub merge_env: TaskMergeStrategy,
+        pub merge_env: TaskMergeStrategy,
 
-    pub merge_inputs: TaskMergeStrategy,
+        pub merge_inputs: TaskMergeStrategy,
 
-    pub merge_outputs: TaskMergeStrategy,
+        pub merge_outputs: TaskMergeStrategy,
 
-    pub output_style: Option<TaskOutputStyle>,
+        pub output_style: Option<TaskOutputStyle>,
 
-    pub persistent: bool,
+        pub persistent: bool,
 
-    pub retry_count: u8,
+        pub retry_count: u8,
 
-    pub run_deps_in_parallel: bool,
+        pub run_deps_in_parallel: bool,
 
-    pub run_in_ci: bool,
+        pub run_in_ci: bool,
 
-    pub run_from_workspace_root: bool,
+        pub run_from_workspace_root: bool,
 
-    pub shell: bool,
-}
+        pub shell: bool,
+    }
+);
 
 impl Default for TaskOptions {
     fn default() -> Self {

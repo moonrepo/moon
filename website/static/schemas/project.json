@@ -1,15 +1,20 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "ProjectConfig",
+  "title": "PartialProjectConfig",
   "description": "Docs: https://moonrepo.dev/docs/config/project",
   "type": "object",
   "properties": {
     "$schema": {
-      "description": "JSON schema URI",
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "dependsOn": {
-      "type": "array",
+      "type": [
+        "array",
+        "null"
+      ],
       "items": {
         "$ref": "#/definitions/ProjectDependsOn"
       }
@@ -24,16 +29,26 @@
       }
     },
     "fileGroups": {
-      "type": "object",
+      "type": [
+        "object",
+        "null"
+      ],
       "additionalProperties": {
         "type": "array",
         "items": {
-          "type": "string"
+          "$ref": "#/definitions/PortablePath"
         }
       }
     },
     "language": {
-      "$ref": "#/definitions/ProjectLanguage"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/LanguageType"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "platform": {
       "anyOf": [
@@ -48,7 +63,7 @@
     "project": {
       "anyOf": [
         {
-          "$ref": "#/definitions/ProjectMetadataConfig"
+          "$ref": "#/definitions/PartialProjectMetadataConfig"
         },
         {
           "type": "null"
@@ -56,46 +71,56 @@
       ]
     },
     "tags": {
-      "type": "array",
+      "type": [
+        "array",
+        "null"
+      ],
       "items": {
-        "type": "string"
+        "$ref": "#/definitions/Id"
       }
     },
     "tasks": {
-      "type": "object",
+      "type": [
+        "object",
+        "null"
+      ],
       "additionalProperties": {
-        "$ref": "#/definitions/TaskConfig"
+        "$ref": "#/definitions/PartialTaskConfig"
       }
     },
     "toolchain": {
-      "$ref": "#/definitions/ProjectToolchainConfig"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialProjectToolchainConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "type": {
-      "$ref": "#/definitions/ProjectType"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ProjectType"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "workspace": {
-      "$ref": "#/definitions/ProjectWorkspaceConfig"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialProjectWorkspaceConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
     }
   },
+  "additionalProperties": false,
   "definitions": {
-    "DependencyConfig": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "default": "",
-          "type": "string"
-        },
-        "scope": {
-          "default": "production",
-          "allOf": [
-            {
-              "$ref": "#/definitions/DependencyScope"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false
-    },
     "DependencyScope": {
       "type": "string",
       "enum": [
@@ -104,27 +129,16 @@
         "production"
       ]
     },
-    "PlatformType": {
-      "type": "string",
-      "enum": [
-        "deno",
-        "node",
-        "rust",
-        "system",
-        "unknown"
-      ]
+    "FilePath": {
+      "type": "string"
     },
-    "ProjectDependsOn": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "$ref": "#/definitions/DependencyConfig"
-        }
-      ]
+    "GlobPath": {
+      "type": "string"
     },
-    "ProjectLanguage": {
+    "Id": {
+      "type": "string"
+    },
+    "LanguageType": {
       "oneOf": [
         {
           "type": "string",
@@ -148,18 +162,15 @@
           ],
           "properties": {
             "other": {
-              "type": "string"
+              "$ref": "#/definitions/Id"
             }
           },
           "additionalProperties": false
         }
       ]
     },
-    "ProjectMetadataConfig": {
+    "PartialProjectMetadataConfig": {
       "type": "object",
-      "required": [
-        "description"
-      ],
       "properties": {
         "channel": {
           "type": [
@@ -168,7 +179,10 @@
           ]
         },
         "description": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "maintainers": {
           "type": [
@@ -194,13 +208,25 @@
       },
       "additionalProperties": false
     },
-    "ProjectToolchainConfig": {
+    "PartialProjectToolchainCommonToolConfig": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "PartialProjectToolchainConfig": {
       "type": "object",
       "properties": {
         "node": {
           "anyOf": [
             {
-              "$ref": "#/definitions/ProjectToolchainNodeConfig"
+              "$ref": "#/definitions/PartialProjectToolchainCommonToolConfig"
             },
             {
               "type": "null"
@@ -210,7 +236,7 @@
         "rust": {
           "anyOf": [
             {
-              "$ref": "#/definitions/ProjectToolchainRustConfig"
+              "$ref": "#/definitions/PartialProjectToolchainCommonToolConfig"
             },
             {
               "type": "null"
@@ -220,7 +246,7 @@
         "typescript": {
           "anyOf": [
             {
-              "$ref": "#/definitions/ProjectToolchainTypeScriptConfig"
+              "$ref": "#/definitions/PartialProjectToolchainTypeScriptConfig"
             },
             {
               "type": "null"
@@ -230,35 +256,14 @@
       },
       "additionalProperties": false
     },
-    "ProjectToolchainNodeConfig": {
-      "type": "object",
-      "properties": {
-        "version": {
-          "type": [
-            "string",
-            "null"
-          ]
-        }
-      },
-      "additionalProperties": false
-    },
-    "ProjectToolchainRustConfig": {
-      "type": "object",
-      "properties": {
-        "version": {
-          "type": [
-            "string",
-            "null"
-          ]
-        }
-      },
-      "additionalProperties": false
-    },
-    "ProjectToolchainTypeScriptConfig": {
+    "PartialProjectToolchainTypeScriptConfig": {
       "type": "object",
       "properties": {
         "disabled": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "routeOutDirToCache": {
           "type": [
@@ -281,25 +286,23 @@
       },
       "additionalProperties": false
     },
-    "ProjectType": {
-      "type": "string",
-      "enum": [
-        "application",
-        "library",
-        "tool",
-        "unknown"
-      ]
-    },
-    "ProjectWorkspaceConfig": {
+    "PartialProjectWorkspaceConfig": {
       "type": "object",
       "properties": {
         "inheritedTasks": {
-          "$ref": "#/definitions/ProjectWorkspaceInheritedTasksConfig"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PartialProjectWorkspaceInheritedTasksConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
     },
-    "ProjectWorkspaceInheritedTasksConfig": {
+    "PartialProjectWorkspaceInheritedTasksConfig": {
       "type": "object",
       "properties": {
         "exclude": {
@@ -308,7 +311,7 @@
             "null"
           ],
           "items": {
-            "type": "string"
+            "$ref": "#/definitions/Id"
           }
         },
         "include": {
@@ -317,7 +320,7 @@
             "null"
           ],
           "items": {
-            "type": "string"
+            "$ref": "#/definitions/Id"
           }
         },
         "rename": {
@@ -326,26 +329,13 @@
             "null"
           ],
           "additionalProperties": {
-            "type": "string"
+            "$ref": "#/definitions/Id"
           }
         }
       },
       "additionalProperties": false
     },
-    "TaskCommandArgs": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      ]
-    },
-    "TaskConfig": {
+    "PartialTaskConfig": {
       "type": "object",
       "properties": {
         "args": {
@@ -374,7 +364,7 @@
             "null"
           ],
           "items": {
-            "type": "string"
+            "$ref": "#/definitions/Target"
           }
         },
         "env": {
@@ -396,10 +386,20 @@
           }
         },
         "local": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "options": {
-          "$ref": "#/definitions/TaskOptionsConfig"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PartialTaskOptionsConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "outputs": {
           "type": [
@@ -411,46 +411,35 @@
           }
         },
         "platform": {
-          "$ref": "#/definitions/PlatformType"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlatformType"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "type": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskType"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
     },
-    "TaskMergeStrategy": {
-      "type": "string",
-      "enum": [
-        "append",
-        "prepend",
-        "replace"
-      ]
-    },
-    "TaskOptionAffectedFilesConfig": {
-      "anyOf": [
-        {
-          "type": "boolean"
-        },
-        {
-          "type": "string"
-        }
-      ]
-    },
-    "TaskOptionEnvFileConfig": {
-      "anyOf": [
-        {
-          "type": "boolean"
-        },
-        {
-          "type": "string"
-        }
-      ]
-    },
-    "TaskOptionsConfig": {
+    "PartialTaskOptionsConfig": {
       "type": "object",
       "properties": {
         "affectedFiles": {
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskOptionAffectedFilesConfig"
+              "$ref": "#/definitions/TaskOptionAffectedFiles"
             },
             {
               "type": "null"
@@ -466,7 +455,7 @@
         "envFile": {
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskOptionEnvFileConfig"
+              "$ref": "#/definitions/TaskOptionEnvFile"
             },
             {
               "type": "null"
@@ -533,6 +522,12 @@
             }
           ]
         },
+        "persistent": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
         "retryCount": {
           "type": [
             "integer",
@@ -568,6 +563,114 @@
       },
       "additionalProperties": false
     },
+    "PlatformType": {
+      "type": "string",
+      "enum": [
+        "deno",
+        "node",
+        "rust",
+        "system",
+        "unknown"
+      ]
+    },
+    "PortablePath": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/FilePath"
+        },
+        {
+          "$ref": "#/definitions/GlobPath"
+        },
+        {
+          "$ref": "#/definitions/FilePath"
+        },
+        {
+          "$ref": "#/definitions/GlobPath"
+        }
+      ]
+    },
+    "ProjectDependsOn": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Id"
+        },
+        {
+          "type": "object",
+          "required": [
+            "id",
+            "scope"
+          ],
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/Id"
+            },
+            "scope": {
+              "$ref": "#/definitions/DependencyScope"
+            }
+          }
+        }
+      ]
+    },
+    "ProjectType": {
+      "type": "string",
+      "enum": [
+        "application",
+        "library",
+        "tool",
+        "unknown"
+      ]
+    },
+    "Target": {
+      "type": "string"
+    },
+    "TaskCommandArgs": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "TaskMergeStrategy": {
+      "type": "string",
+      "enum": [
+        "append",
+        "prepend",
+        "replace"
+      ]
+    },
+    "TaskOptionAffectedFiles": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "args",
+            "env"
+          ]
+        },
+        {
+          "type": "boolean"
+        }
+      ]
+    },
+    "TaskOptionEnvFile": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "string"
+        }
+      ]
+    },
     "TaskOutputStyle": {
       "type": "string",
       "enum": [
@@ -576,6 +679,14 @@
         "hash",
         "none",
         "stream"
+      ]
+    },
+    "TaskType": {
+      "type": "string",
+      "enum": [
+        "build",
+        "run",
+        "test"
       ]
     }
   }

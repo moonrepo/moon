@@ -105,7 +105,6 @@ cacheable!(
         pub platform: PlatformType,
 
         #[serde(rename = "type")]
-        #[setting(rename = "type")]
         pub type_of: Option<TaskType>,
     }
 );

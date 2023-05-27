@@ -1,11 +1,13 @@
 use moon_common::Id;
-use moon_config::{InheritedTasksManager, PlatformType, ProjectLanguage, ProjectType, TaskConfig};
+use moon_config2::{InheritedTasksManager, LanguageType, PlatformType, ProjectType, TaskConfig};
 use moon_file_group::FileGroup;
 use moon_project::Project;
 use moon_project_graph::{TokenContext, TokenResolver};
 use moon_target::Target;
 use moon_task::Task;
-use moon_test_utils::{get_fixtures_path, predicates::prelude::*};
+use moon_test_utils::{
+    create_workspace_paths_with_prefix, get_fixtures_path, predicates::prelude::*,
+};
 use rustc_hash::FxHashMap;
 use starbase_utils::{glob, string_vec};
 use std::path::{Path, PathBuf};
@@ -17,36 +19,54 @@ pub fn create_file_groups(source: &str) -> FxHashMap<Id, FileGroup> {
         "static".into(),
         FileGroup::new_with_source(
             "static",
-            source,
-            [
-                "file.ts",
-                "dir",
-                "dir/other.tsx",
-                "dir/subdir",
-                "dir/subdir/another.ts",
-            ],
+            create_workspace_paths_with_prefix(
+                source,
+                [
+                    "file.ts",
+                    "dir",
+                    "dir/other.tsx",
+                    "dir/subdir",
+                    "dir/subdir/another.ts",
+                ],
+            ),
         )
         .unwrap(),
     );
 
     map.insert(
         "dirs_glob".into(),
-        FileGroup::new_with_source("dirs_glob", source, ["**/*"]).unwrap(),
+        FileGroup::new_with_source(
+            "dirs_glob",
+            create_workspace_paths_with_prefix(source, ["**/*"]),
+        )
+        .unwrap(),
     );
 
     map.insert(
         "files_glob".into(),
-        FileGroup::new_with_source("files_glob", source, ["**/*.{ts,tsx}"]).unwrap(),
+        FileGroup::new_with_source(
+            "files_glob",
+            create_workspace_paths_with_prefix(source, ["**/*.{ts,tsx}"]),
+        )
+        .unwrap(),
     );
 
     map.insert(
         "globs".into(),
-        FileGroup::new_with_source("globs", source, ["**/*.{ts,tsx}", "*.js"]).unwrap(),
+        FileGroup::new_with_source(
+            "globs",
+            create_workspace_paths_with_prefix(source, ["**/*.{ts,tsx}", "*.js"]),
+        )
+        .unwrap(),
     );
 
     map.insert(
         "no_globs".into(),
-        FileGroup::new_with_source("no_globs", source, ["config.js"]).unwrap(),
+        FileGroup::new_with_source(
+            "no_globs",
+            create_workspace_paths_with_prefix(source, ["config.js"]),
+        )
+        .unwrap(),
     );
 
     map
@@ -62,7 +82,7 @@ fn create_project(workspace_root: &Path) -> Project {
         "files-and-dirs",
         workspace_root,
         &InheritedTasksManager::default(),
-        |_| ProjectLanguage::Unknown,
+        |_| LanguageType::Unknown,
     )
     .unwrap();
     project.file_groups = create_file_groups("files-and-dirs");
@@ -452,7 +472,7 @@ mod resolve_args {
     fn supports_vars() {
         let workspace_root = get_workspace_root();
         let mut project = create_project(&workspace_root);
-        project.language = ProjectLanguage::JavaScript;
+        project.language = LanguageType::JavaScript;
         project.type_of = ProjectType::Tool;
         project.alias = Some("some-alias".into());
 

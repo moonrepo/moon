@@ -1,6 +1,7 @@
 use miette::Diagnostic;
 use moon_common::consts::CONFIG_PROJECT_FILENAME;
 use moon_common::IdError;
+use moon_config2::ConfigError;
 use moon_error::MoonError;
 use moon_file_group::FileGroupError;
 use moon_query::QueryError;
@@ -32,6 +33,9 @@ pub enum ProjectError {
     UnconfiguredTask(String, String),
 
     #[diagnostic(transparent)]
+    #[error(transparent)]
+    Config(#[from] ConfigError),
+
     #[error(transparent)]
     FileGroup(#[from] FileGroupError),
 

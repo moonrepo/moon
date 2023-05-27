@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use moon_action_context::ActionContext;
 use moon_common::Id;
-use moon_config::{
+use moon_config2::{
     DependencyConfig, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap,
     ProjectsSourcesMap, TasksConfigsMap,
 };

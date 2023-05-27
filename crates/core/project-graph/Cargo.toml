@@ -12,7 +12,7 @@ harness = false
 
 [dependencies]
 moon_common = { path = "../../../nextgen/common" }
-moon_config = { path = "../config" }
+moon_config2 = { path = "../../../nextgen/config" }
 moon_enforcer = { path = "../enforcer" }
 moon_error = { path = "../error" }
 moon_file_group = { path = "../../../nextgen/file-group" }

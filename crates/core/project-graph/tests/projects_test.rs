@@ -2,9 +2,10 @@
 // as we need to test task inheritance, task expansion, etc...
 
 use moon::{generate_project_graph, load_workspace_from};
-use moon_config::{
-    InheritedTasksConfig, NodeConfig, PlatformType, RustConfig, TaskCommandArgs, TaskConfig,
-    TaskOptionsConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
+use moon_config2::{
+    LanguageType, PartialInheritedTasksConfig, PartialNodeConfig, PartialRustConfig,
+    PartialTaskConfig, PartialTaskOptionsConfig, PartialToolchainConfig, PartialWorkspaceConfig,
+    PlatformType, TaskCommandArgs, WorkspaceProjects,
 };
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
@@ -25,7 +26,7 @@ async fn tasks_sandbox() -> (Sandbox, ProjectGraph) {
 
 async fn tasks_sandbox_with_config<C>(callback: C) -> (Sandbox, ProjectGraph)
 where
-    C: FnOnce(&mut WorkspaceConfig, &mut InheritedTasksConfig),
+    C: FnOnce(&mut PartialWorkspaceConfig, &mut PartialInheritedTasksConfig),
 {
     tasks_sandbox_internal(callback, |_| {}).await
 }
@@ -39,7 +40,7 @@ where
 
 async fn tasks_sandbox_internal<C, S>(cfg_callback: C, box_callback: S) -> (Sandbox, ProjectGraph)
 where
-    C: FnOnce(&mut WorkspaceConfig, &mut InheritedTasksConfig),
+    C: FnOnce(&mut PartialWorkspaceConfig, &mut PartialInheritedTasksConfig),
     S: FnOnce(&Sandbox),
 {
     let (mut workspace_config, toolchain_config, mut tasks_config) = get_tasks_fixture_configs();
@@ -209,24 +210,23 @@ tasks:
             ])
         }
 
-        fn stub_global_task_config() -> TaskConfig {
-            TaskConfig {
+        fn stub_global_task_config() -> PartialTaskConfig {
+            PartialTaskConfig {
                 args: Some(TaskCommandArgs::Sequence(string_vec!["--a"])),
                 command: Some(TaskCommandArgs::String("standard".to_owned())),
-                deps: Some(string_vec!["a:standard"]),
+                deps: Some(vec![Target::parse("a:standard").unwrap()]),
                 env: Some(stub_global_env_vars()),
-                local: false,
-                global_inputs: vec![],
                 inputs: Some(string_vec!["a.*"]),
                 outputs: Some(string_vec!["a.ts"]),
-                options: TaskOptionsConfig {
+                options: Some(PartialTaskOptionsConfig {
                     cache: Some(true),
                     retry_count: Some(1),
                     run_deps_in_parallel: Some(true),
                     run_in_ci: Some(true),
-                    ..TaskOptionsConfig::default()
-                },
-                platform: PlatformType::Node,
+                    ..PartialTaskOptionsConfig::default()
+                }),
+                platform: Some(PlatformType::Node),
+                ..PartialTaskConfig::default()
             }
         }
 
@@ -235,6 +235,8 @@ tasks:
             let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
                 tasks_config
                     .tasks
+                    .as_mut()
+                    .unwrap()
                     .insert("standard".into(), stub_global_task_config());
             })
             .await;
@@ -255,6 +257,8 @@ tasks:
             let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
                 tasks_config
                     .tasks
+                    .as_mut()
+                    .unwrap()
                     .insert("standard".into(), stub_global_task_config());
             })
             .await;
@@ -281,6 +285,8 @@ tasks:
             let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
                 tasks_config
                     .tasks
+                    .as_mut()
+                    .unwrap()
                     .insert("standard".into(), stub_global_task_config());
             })
             .await;
@@ -307,6 +313,8 @@ tasks:
             let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
                 tasks_config
                     .tasks
+                    .as_mut()
+                    .unwrap()
                     .insert("standard".into(), stub_global_task_config());
             })
             .await;
@@ -331,47 +339,47 @@ tasks:
         use std::collections::BTreeMap;
 
         async fn tasks_inheritance_sandbox() -> (Sandbox, ProjectGraph) {
-            let workspace_config = WorkspaceConfig {
-                projects: WorkspaceProjects::Globs(string_vec!["*"]),
-                ..WorkspaceConfig::default()
+            let workspace_config = PartialWorkspaceConfig {
+                projects: Some(WorkspaceProjects::Globs(string_vec!["*"])),
+                ..PartialWorkspaceConfig::default()
             };
 
-            let toolchain_config = ToolchainConfig {
-                node: Some(NodeConfig::default()),
-                ..ToolchainConfig::default()
+            let toolchain_config = PartialToolchainConfig {
+                node: Some(PartialNodeConfig::default()),
+                ..PartialToolchainConfig::default()
             };
 
-            let tasks_config = InheritedTasksConfig {
-                tasks: BTreeMap::from_iter([
+            let tasks_config = PartialInheritedTasksConfig {
+                tasks: Some(BTreeMap::from_iter([
                     (
                         "a".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::String("a".into())),
                             inputs: Some(string_vec!["a"]),
-                            platform: PlatformType::Unknown,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Unknown),
+                            ..PartialTaskConfig::default()
                         },
                     ),
                     (
                         "b".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::String("b".into())),
                             inputs: Some(string_vec!["b"]),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         },
                     ),
                     (
                         "c".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::String("c".into())),
                             inputs: Some(string_vec!["c"]),
-                            platform: PlatformType::System,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::System),
+                            ..PartialTaskConfig::default()
                         },
                     ),
-                ]),
-                ..InheritedTasksConfig::default()
+                ])),
+                ..PartialInheritedTasksConfig::default()
             };
 
             let sandbox = create_sandbox_with_config(
@@ -764,7 +772,11 @@ mod task_expansion {
         #[tokio::test]
         async fn inherits_implicit_deps() {
             let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
-                tasks_config.implicit_deps = string_vec!["build", "~:build", "project:task",]
+                tasks_config.implicit_deps = Some(vec![
+                    Target::parse("build").unwrap(),
+                    Target::parse("~:build").unwrap(),
+                    Target::parse("project:task").unwrap(),
+                ]);
             })
             .await;
 
@@ -809,7 +821,7 @@ mod task_expansion {
         #[tokio::test]
         async fn resolves_implicit_deps_parent_depends_on() {
             let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
-                tasks_config.implicit_deps = string_vec!["^:build"]
+                tasks_config.implicit_deps = Some(vec![Target::parse("^:build").unwrap()]);
             })
             .await;
 
@@ -830,7 +842,7 @@ mod task_expansion {
         #[tokio::test]
         async fn avoids_implicit_deps_matching_target() {
             let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
-                tasks_config.implicit_deps = string_vec!["basic:build"]
+                tasks_config.implicit_deps = Some(vec![Target::parse("basic:build").unwrap()]);
             })
             .await;
 
@@ -930,7 +942,7 @@ mod task_expansion {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Target(NoAllInTaskDeps(\":build\"))")]
+        #[should_panic(expected = "target scope not supported as a task dependency")]
         async fn errors_for_all_scope() {
             tasks_sandbox_with_setup(|sandbox| {
                 sandbox.create_file(
@@ -946,7 +958,7 @@ mod task_expansion {
         }
 
         #[tokio::test]
-        #[should_panic(expected = "Target(NoTagInTaskDeps(\"#tag:build\"))")]
+        #[should_panic(expected = "target scope not supported as a task dependency")]
         async fn errors_for_tag_scope() {
             tasks_sandbox_with_setup(|sandbox| {
                 sandbox.create_file(
@@ -1232,7 +1244,7 @@ mod task_expansion {
         #[tokio::test]
         async fn inherits_implicit_inputs() {
             let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
-                tasks_config.implicit_inputs = string_vec!["package.json"];
+                tasks_config.implicit_inputs = Some(string_vec!["package.json"]);
             })
             .await;
 
@@ -1250,7 +1262,7 @@ mod task_expansion {
         #[tokio::test]
         async fn inherits_implicit_inputs_env_vars() {
             let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
-                tasks_config.implicit_inputs = string_vec!["$FOO", "$BAR"]
+                tasks_config.implicit_inputs = Some(string_vec!["$FOO", "$BAR"]);
             })
             .await;
 
@@ -1416,29 +1428,28 @@ mod task_expansion {
 
 mod detection {
     use super::*;
-    use moon_config::ProjectLanguage;
 
     async fn langs_sandbox() -> (Sandbox, ProjectGraph) {
-        let workspace_config = WorkspaceConfig {
-            projects: WorkspaceProjects::Globs(string_vec!["*"]),
-            ..WorkspaceConfig::default()
+        let workspace_config = PartialWorkspaceConfig {
+            projects: Some(WorkspaceProjects::Globs(string_vec!["*"])),
+            ..PartialWorkspaceConfig::default()
         };
 
-        let toolchain_config = ToolchainConfig {
-            node: Some(NodeConfig::default()),
-            rust: Some(RustConfig::default()),
-            ..ToolchainConfig::default()
+        let toolchain_config = PartialToolchainConfig {
+            node: Some(PartialNodeConfig::default()),
+            rust: Some(PartialRustConfig::default()),
+            ..PartialToolchainConfig::default()
         };
 
-        let tasks_config = InheritedTasksConfig {
-            tasks: BTreeMap::from_iter([(
+        let tasks_config = PartialInheritedTasksConfig {
+            tasks: Some(BTreeMap::from_iter([(
                 "command".into(),
-                TaskConfig {
+                PartialTaskConfig {
                     command: Some(TaskCommandArgs::String("command".into())),
-                    ..TaskConfig::default()
+                    ..PartialTaskConfig::default()
                 },
-            )]),
-            ..InheritedTasksConfig::default()
+            )])),
+            ..PartialInheritedTasksConfig::default()
         };
 
         let sandbox = create_sandbox_with_config(
@@ -1460,7 +1471,7 @@ mod detection {
 
         assert_eq!(
             project_graph.get("bash").unwrap().language,
-            ProjectLanguage::Bash
+            LanguageType::Bash
         );
     }
 
@@ -1470,7 +1481,7 @@ mod detection {
 
         assert_eq!(
             project_graph.get("batch").unwrap().language,
-            ProjectLanguage::Batch
+            LanguageType::Batch
         );
     }
 
@@ -1480,7 +1491,7 @@ mod detection {
 
         assert_eq!(
             project_graph.get("deno").unwrap().language,
-            ProjectLanguage::JavaScript
+            LanguageType::JavaScript
         );
         assert_eq!(
             project_graph.get("deno").unwrap().config.platform.unwrap(),
@@ -1489,7 +1500,7 @@ mod detection {
 
         assert_eq!(
             project_graph.get("deno-config").unwrap().language,
-            ProjectLanguage::TypeScript
+            LanguageType::TypeScript
         );
     }
 
@@ -1497,13 +1508,10 @@ mod detection {
     async fn detects_go() {
         let (_sandbox, project_graph) = langs_sandbox().await;
 
-        assert_eq!(
-            project_graph.get("go").unwrap().language,
-            ProjectLanguage::Go
-        );
+        assert_eq!(project_graph.get("go").unwrap().language, LanguageType::Go);
         assert_eq!(
             project_graph.get("go-config").unwrap().language,
-            ProjectLanguage::Go
+            LanguageType::Go
         );
     }
 
@@ -1513,11 +1521,11 @@ mod detection {
 
         assert_eq!(
             project_graph.get("js").unwrap().language,
-            ProjectLanguage::JavaScript
+            LanguageType::JavaScript
         );
         assert_eq!(
             project_graph.get("js-config").unwrap().language,
-            ProjectLanguage::JavaScript
+            LanguageType::JavaScript
         );
     }
 
@@ -1527,11 +1535,11 @@ mod detection {
 
         assert_eq!(
             project_graph.get("php").unwrap().language,
-            ProjectLanguage::Php
+            LanguageType::Php
         );
         assert_eq!(
             project_graph.get("php-config").unwrap().language,
-            ProjectLanguage::Php
+            LanguageType::Php
         );
     }
 
@@ -1541,11 +1549,11 @@ mod detection {
 
         assert_eq!(
             project_graph.get("python").unwrap().language,
-            ProjectLanguage::Python
+            LanguageType::Python
         );
         assert_eq!(
             project_graph.get("python-config").unwrap().language,
-            ProjectLanguage::Python
+            LanguageType::Python
         );
     }
 
@@ -1555,11 +1563,11 @@ mod detection {
 
         assert_eq!(
             project_graph.get("ruby").unwrap().language,
-            ProjectLanguage::Ruby
+            LanguageType::Ruby
         );
         assert_eq!(
             project_graph.get("ruby-config").unwrap().language,
-            ProjectLanguage::Ruby
+            LanguageType::Ruby
         );
     }
 
@@ -1569,11 +1577,11 @@ mod detection {
 
         assert_eq!(
             project_graph.get("rust").unwrap().language,
-            ProjectLanguage::Rust
+            LanguageType::Rust
         );
         assert_eq!(
             project_graph.get("rust-config").unwrap().language,
-            ProjectLanguage::Rust
+            LanguageType::Rust
         );
     }
 
@@ -1583,11 +1591,11 @@ mod detection {
 
         assert_eq!(
             project_graph.get("ts").unwrap().language,
-            ProjectLanguage::TypeScript
+            LanguageType::TypeScript
         );
         assert_eq!(
             project_graph.get("ts-config").unwrap().language,
-            ProjectLanguage::TypeScript
+            LanguageType::TypeScript
         );
     }
 
@@ -1597,7 +1605,7 @@ mod detection {
 
         assert_eq!(
             project_graph.get("other").unwrap().language,
-            ProjectLanguage::Other("kotlin".into())
+            LanguageType::Other("kotlin".into())
         );
     }
 

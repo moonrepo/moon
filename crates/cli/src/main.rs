@@ -1,6 +1,6 @@
 use mimalloc::MiMalloc;
 use moon_cli::{run_cli, BIN_NAME};
-use moon_constants::CONFIG_DIRNAME;
+use moon_common::consts::CONFIG_DIRNAME;
 use moon_node_lang::{
     node::{extract_canonical_node_module_bin, BinFile},
     NODE,

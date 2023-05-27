@@ -9,16 +9,6 @@ pub enum TargetError {
     )]
     InvalidFormat(String),
 
-    #[error(
-        "All scope (:) is not supported in task deps, for target {}.", .0.style(Style::Label)
-    )]
-    NoAllInTaskDeps(String),
-
-    #[error(
-        "Tag scope (#tag:) is not supported in task deps, for target {}.", .0.style(Style::Label)
-    )]
-    NoTagInTaskDeps(String),
-
     #[error("Dependencies scope (^:) is not supported in run contexts.")]
     NoDepsInRunContext,
 

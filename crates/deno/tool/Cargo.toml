@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-moon_config = { path = "../../core/config" }
+moon_config2 = { path = "../../../nextgen/config" }
 moon_platform_runtime = { path = "../../core/platform-runtime" }
 moon_tool = { path = "../../core/tool" }
 proto_cli = { workspace = true }

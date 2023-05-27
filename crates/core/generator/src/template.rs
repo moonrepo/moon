@@ -1,10 +1,7 @@
 use crate::filters;
 use crate::GeneratorError;
-use moon_config::{
-    format_error_line, format_figment_errors, ConfigError, TemplateConfig,
-    TemplateFrontmatterConfig,
-};
-use moon_constants::CONFIG_TEMPLATE_FILENAME;
+use moon_common::consts::CONFIG_TEMPLATE_FILENAME;
+use moon_config2::{ConfigError, TemplateConfig, TemplateFrontmatterConfig};
 use moon_logger::{debug, trace};
 use moon_utils::{path, regex};
 use once_cell::sync::Lazy;
@@ -79,14 +76,14 @@ impl TemplateFile {
 
     pub fn is_forced(&self) -> bool {
         match &self.config {
-            Some(cfg) => cfg.force.unwrap_or_default(),
+            Some(cfg) => cfg.force,
             None => false,
         }
     }
 
     pub fn is_skipped(&self) -> bool {
         match &self.config {
-            Some(cfg) => cfg.skip.unwrap_or_default(),
+            Some(cfg) => cfg.skip,
             None => false,
         }
     }
@@ -150,19 +147,6 @@ impl Template {
             color::path(&root)
         );
 
-        let config = match TemplateConfig::load(root.join(CONFIG_TEMPLATE_FILENAME)) {
-            Ok(cfg) => cfg,
-            Err(errors) => {
-                return Err(GeneratorError::InvalidConfigFile(
-                    if let ConfigError::FailedValidation(valids) = errors {
-                        format_figment_errors(valids)
-                    } else {
-                        format_error_line(errors.to_string())
-                    },
-                ));
-            }
-        };
-
         let mut engine = Tera::default();
         engine.register_filter("camel_case", filters::camel_case);
         engine.register_filter("kebab_case", filters::kebab_case);
@@ -176,7 +160,7 @@ impl Template {
         engine.register_filter("path_relative", filters::path_relative);
 
         Ok(Template {
-            config,
+            config: TemplateConfig::load_from(&root)?,
             engine,
             files: vec![],
             name,

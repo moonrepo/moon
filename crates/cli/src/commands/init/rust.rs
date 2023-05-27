@@ -1,7 +1,7 @@
 use super::InitOptions;
 use dialoguer::theme::ColorfulTheme;
 use miette::IntoDiagnostic;
-use moon_config::load_toolchain_rust_config_template;
+use moon_config2::load_toolchain_rust_config_template;
 use moon_rust_lang::toolchain_toml::ToolchainTomlCache;
 use moon_terminal::label_header;
 use starbase::AppResult;

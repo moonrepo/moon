@@ -5,10 +5,12 @@ use crate::portable_path::PortablePath;
 use crate::project::*;
 use moon_common::{consts, Id};
 use rustc_hash::FxHashMap;
-use schematic::{color, config_enum, validate, Config, ConfigError, ConfigLoader, ValidateError};
+use schematic::{
+    color, derive_enum, validate, Config, ConfigEnum, ConfigError, ConfigLoader, ValidateError,
+};
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::Path;
-use strum::Display;
 
 fn validate_channel<D, C>(value: &str, _data: &D, _ctx: &C) -> Result<(), ValidateError> {
     if !value.is_empty() && !value.starts_with('#') {
@@ -18,25 +20,18 @@ fn validate_channel<D, C>(value: &str, _data: &D, _ctx: &C) -> Result<(), Valida
     Ok(())
 }
 
-config_enum!(
-    #[derive(Default, Display)]
+derive_enum!(
+    #[derive(ConfigEnum, Copy, Default)]
     pub enum ProjectType {
-        #[strum(serialize = "application")]
         Application,
-
-        #[strum(serialize = "library")]
         Library,
-
-        #[strum(serialize = "tool")]
         Tool,
-
         #[default]
-        #[strum(serialize = "unknown")]
         Unknown,
     }
 );
 
-#[derive(Config)]
+#[derive(Clone, Config, Debug, Deserialize, Serialize)]
 pub struct ProjectMetadataConfig {
     pub name: Option<String>,
 
@@ -51,7 +46,7 @@ pub struct ProjectMetadataConfig {
     pub channel: Option<String>,
 }
 
-config_enum!(
+derive_enum!(
     #[serde(
         untagged,
         expecting = "expected a project name or dependency config object"
@@ -63,7 +58,7 @@ config_enum!(
 );
 
 /// Docs: https://moonrepo.dev/docs/config/project
-#[derive(Config)]
+#[derive(Clone, Config, Debug, Deserialize, Serialize)]
 pub struct ProjectConfig {
     #[setting(
         default = "https://moonrepo.dev/schemas/project.json",
@@ -107,10 +102,14 @@ impl ProjectConfig {
         let workspace_root = workspace_root.as_ref();
         let path = path.as_ref();
 
-        let result = ConfigLoader::<ProjectConfig>::yaml()
-            .label(color::path(path.strip_prefix(workspace_root).unwrap()))
-            .file(workspace_root.join(path))?
-            .load()?;
+        let mut loader = ConfigLoader::<ProjectConfig>::yaml();
+        loader.label(color::path(path.strip_prefix(workspace_root).unwrap()));
+
+        if path.exists() {
+            loader.file(path)?;
+        }
+
+        let result = loader.load()?;
 
         Ok(result.config)
     }
@@ -127,5 +126,19 @@ impl ProjectConfig {
                 .join(project_source.as_ref())
                 .join(consts::CONFIG_PROJECT_FILENAME),
         )
+    }
+
+    pub fn load_partial<P: AsRef<Path>>(
+        project_root: P,
+    ) -> Result<PartialProjectConfig, ConfigError> {
+        let path = project_root.as_ref().join(consts::CONFIG_PROJECT_FILENAME);
+
+        let mut loader = ConfigLoader::<ProjectConfig>::yaml();
+
+        if path.exists() {
+            loader.file(path)?;
+        }
+
+        loader.load_partial(&())
     }
 }

@@ -1,11 +1,22 @@
-use moon_config::{TaskCommandArgs, TaskConfig};
+use moon_config2::{PartialTaskConfig, TaskCommandArgs};
 use moon_node_lang::PackageJson;
 use moon_node_platform::task::{create_task, should_run_in_ci, TaskContext};
 use moon_node_platform::{create_tasks_from_scripts, infer_tasks_from_scripts};
+use moon_target::Target;
 use moon_task::PlatformType;
 use moon_utils::string_vec;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
+
+fn create_target_deps<I, V>(list: I) -> Vec<Target>
+where
+    I: IntoIterator<Item = V>,
+    V: AsRef<str>,
+{
+    list.into_iter()
+        .map(|value| Target::parse(value.as_ref()).unwrap())
+        .collect()
+}
 
 mod should_run_in_ci {
     use super::*;
@@ -164,13 +175,13 @@ mod create_task {
 
             assert_eq!(
                 task,
-                TaskConfig {
+                PartialTaskConfig {
                     command: Some(TaskCommandArgs::Sequence(string_vec![
                         "bash",
                         "scripts/setup.sh"
                     ])),
-                    platform: PlatformType::System,
-                    ..TaskConfig::default()
+                    platform: Some(PlatformType::System),
+                    ..PartialTaskConfig::default()
                 }
             )
         }
@@ -187,13 +198,13 @@ mod create_task {
 
             assert_eq!(
                 task,
-                TaskConfig {
+                PartialTaskConfig {
                     command: Some(TaskCommandArgs::Sequence(string_vec![
                         "bash",
                         "scripts/setup.sh"
                     ])),
-                    platform: PlatformType::System,
-                    ..TaskConfig::default()
+                    platform: Some(PlatformType::System),
+                    ..PartialTaskConfig::default()
                 }
             )
         }
@@ -210,13 +221,13 @@ mod create_task {
 
             assert_eq!(
                 task,
-                TaskConfig {
+                PartialTaskConfig {
                     command: Some(TaskCommandArgs::Sequence(string_vec![
                         "node",
                         "scripts/test.js"
                     ])),
-                    platform: PlatformType::Node,
-                    ..TaskConfig::default()
+                    platform: Some(PlatformType::Node),
+                    ..PartialTaskConfig::default()
                 }
             )
         }
@@ -236,10 +247,10 @@ mod create_task {
 
                 assert_eq!(
                     task,
-                    TaskConfig {
+                    PartialTaskConfig {
                         command: Some(TaskCommandArgs::Sequence(string_vec!["node", candidate])),
-                        platform: PlatformType::Node,
-                        ..TaskConfig::default()
+                        platform: Some(PlatformType::Node),
+                        ..PartialTaskConfig::default()
                     }
                 )
             }
@@ -261,14 +272,14 @@ mod create_task {
 
             assert_eq!(
                 task,
-                TaskConfig {
+                PartialTaskConfig {
                     command: Some(TaskCommandArgs::Sequence(string_vec!["yarn", "install"])),
                     env: Some(FxHashMap::from_iter([(
                         "KEY".to_owned(),
                         "VALUE".to_owned()
                     )])),
-                    platform: PlatformType::Node,
-                    ..TaskConfig::default()
+                    platform: Some(PlatformType::Node),
+                    ..PartialTaskConfig::default()
                 }
             )
         }
@@ -285,14 +296,14 @@ mod create_task {
 
             assert_eq!(
                 task,
-                TaskConfig {
+                PartialTaskConfig {
                     command: Some(TaskCommandArgs::Sequence(string_vec!["yarn", "install"])),
                     env: Some(FxHashMap::from_iter([
                         ("KEY1".to_owned(), "VAL1".to_owned()),
                         ("KEY2".to_owned(), "VAL2".to_owned())
                     ])),
-                    platform: PlatformType::Node,
-                    ..TaskConfig::default()
+                    platform: Some(PlatformType::Node),
+                    ..PartialTaskConfig::default()
                 }
             )
         }
@@ -309,14 +320,14 @@ mod create_task {
 
             assert_eq!(
                 task,
-                TaskConfig {
+                PartialTaskConfig {
                     command: Some(TaskCommandArgs::Sequence(string_vec!["yarn", "install"])),
                     env: Some(FxHashMap::from_iter([
                         ("KEY1".to_owned(), "VAL1".to_owned()),
                         ("KEY2".to_owned(), "VAL2".to_owned())
                     ])),
-                    platform: PlatformType::Node,
-                    ..TaskConfig::default()
+                    platform: Some(PlatformType::Node),
+                    ..PartialTaskConfig::default()
                 }
             )
         }
@@ -333,14 +344,14 @@ mod create_task {
 
             assert_eq!(
                 task,
-                TaskConfig {
+                PartialTaskConfig {
                     command: Some(TaskCommandArgs::String("yarn".to_owned())),
                     env: Some(FxHashMap::from_iter([(
                         "NODE_OPTIONS".to_owned(),
                         "-f -b".to_owned()
                     )])),
-                    platform: PlatformType::Node,
-                    ..TaskConfig::default()
+                    platform: Some(PlatformType::Node),
+                    ..PartialTaskConfig::default()
                 }
             )
         }
@@ -379,7 +390,7 @@ mod create_task {
 
                 assert_eq!(
                     task,
-                    TaskConfig {
+                    PartialTaskConfig {
                         command: Some(TaskCommandArgs::Sequence(string_vec![
                             "tool",
                             "build",
@@ -387,8 +398,8 @@ mod create_task {
                             candidate.1
                         ])),
                         outputs: Some(string_vec![candidate.2]),
-                        platform: PlatformType::Node,
-                        ..TaskConfig::default()
+                        platform: Some(PlatformType::Node),
+                        ..PartialTaskConfig::default()
                     }
                 )
             }
@@ -457,7 +468,7 @@ mod infer_tasks_from_scripts {
             BTreeMap::from([
                 (
                     "build-app".into(),
-                    TaskConfig {
+                    PartialTaskConfig {
                         command: Some(TaskCommandArgs::Sequence(string_vec![
                             "moon",
                             "node",
@@ -465,61 +476,61 @@ mod infer_tasks_from_scripts {
                             "build:app"
                         ])),
                         outputs: Some(string_vec!["dist"]),
-                        platform: PlatformType::Node,
-                        ..TaskConfig::default()
+                        platform: Some(PlatformType::Node),
+                        ..PartialTaskConfig::default()
                     }
                 ),
                 (
                     "dev".into(),
-                    TaskConfig {
+                    PartialTaskConfig {
                         command: Some(TaskCommandArgs::Sequence(string_vec![
                             "moon",
                             "node",
                             "run-script",
                             "dev"
                         ])),
-                        local: true,
-                        platform: PlatformType::Node,
-                        ..TaskConfig::default()
+                        local: Some(true),
+                        platform: Some(PlatformType::Node),
+                        ..PartialTaskConfig::default()
                     }
                 ),
                 (
                     "test".into(),
-                    TaskConfig {
+                    PartialTaskConfig {
                         command: Some(TaskCommandArgs::Sequence(string_vec![
                             "moon",
                             "node",
                             "run-script",
                             "test"
                         ])),
-                        platform: PlatformType::Node,
-                        ..TaskConfig::default()
+                        platform: Some(PlatformType::Node),
+                        ..PartialTaskConfig::default()
                     }
                 ),
                 (
                     "lint".into(),
-                    TaskConfig {
+                    PartialTaskConfig {
                         command: Some(TaskCommandArgs::Sequence(string_vec![
                             "moon",
                             "node",
                             "run-script",
                             "lint"
                         ])),
-                        platform: PlatformType::Node,
-                        ..TaskConfig::default()
+                        platform: Some(PlatformType::Node),
+                        ..PartialTaskConfig::default()
                     }
                 ),
                 (
                     "typecheck".into(),
-                    TaskConfig {
+                    PartialTaskConfig {
                         command: Some(TaskCommandArgs::Sequence(string_vec![
                             "moon",
                             "node",
                             "run-script",
                             "typecheck"
                         ])),
-                        platform: PlatformType::Node,
-                        ..TaskConfig::default()
+                        platform: Some(PlatformType::Node),
+                        ..PartialTaskConfig::default()
                     }
                 ),
             ])
@@ -603,28 +614,28 @@ mod create_tasks_from_scripts {
             BTreeMap::from([
                 (
                     "test".into(),
-                    TaskConfig {
+                    PartialTaskConfig {
                         command: Some(TaskCommandArgs::Sequence(string_vec!["jest", "."])),
-                        platform: PlatformType::Node,
-                        ..TaskConfig::default()
+                        platform: Some(PlatformType::Node),
+                        ..PartialTaskConfig::default()
                     }
                 ),
                 (
                     "lint".into(),
-                    TaskConfig {
+                    PartialTaskConfig {
                         command: Some(TaskCommandArgs::Sequence(string_vec![
                             "eslint", "src/**/*", "."
                         ])),
-                        platform: PlatformType::Node,
-                        ..TaskConfig::default()
+                        platform: Some(PlatformType::Node),
+                        ..PartialTaskConfig::default()
                     }
                 ),
                 (
                     "typecheck".into(),
-                    TaskConfig {
+                    PartialTaskConfig {
                         command: Some(TaskCommandArgs::Sequence(string_vec!["tsc", "--build"])),
-                        platform: PlatformType::Node,
-                        ..TaskConfig::default()
+                        platform: Some(PlatformType::Node),
+                        ..PartialTaskConfig::default()
                     }
                 ),
             ])
@@ -655,31 +666,31 @@ mod create_tasks_from_scripts {
                 BTreeMap::from([
                     (
                         "pretest".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "do",
                                 "something"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "posttest".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["do", "another"])),
-                            deps: Some(string_vec!["~:test"]),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            deps: Some(create_target_deps(["~:test"])),
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "test".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["jest", "."])),
-                            deps: Some(string_vec!["~:pretest"]),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            deps: Some(create_target_deps(["~:pretest"])),
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                 ])
@@ -705,31 +716,31 @@ mod create_tasks_from_scripts {
                 BTreeMap::from([
                     (
                         "pretest-dep1".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "do",
                                 "something"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "pretest".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["do", "another"])),
-                            deps: Some(string_vec!["~:pretest-dep1"]),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            deps: Some(create_target_deps(["~:pretest-dep1"])),
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "test".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["jest", "."])),
-                            deps: Some(string_vec!["~:pretest"]),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            deps: Some(create_target_deps(["~:pretest"])),
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     )
                 ])
@@ -755,30 +766,30 @@ mod create_tasks_from_scripts {
                 BTreeMap::from([
                     (
                         "posttest-dep1".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "do",
                                 "something"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "posttest".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["do", "another"])),
-                            deps: Some(string_vec!["~:posttest-dep1", "~:test"]),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            deps: Some(create_target_deps(["~:posttest-dep1", "~:test"])),
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "test".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["jest", "."])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                 ])
@@ -804,21 +815,21 @@ mod create_tasks_from_scripts {
                 BTreeMap::from([
                     (
                         "prerelease".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "webpack", "build"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "release".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["npm", "publish"])),
-                            deps: Some(string_vec!["~:prerelease"]),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            deps: Some(create_target_deps(["~:prerelease"])),
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                 ])
@@ -848,10 +859,10 @@ mod create_tasks_from_scripts {
                 tasks,
                 BTreeMap::from([(
                     "lint".into(),
-                    TaskConfig {
+                    PartialTaskConfig {
                         command: Some(TaskCommandArgs::Sequence(string_vec!["eslint", "."])),
-                        platform: PlatformType::Node,
-                        ..TaskConfig::default()
+                        platform: Some(PlatformType::Node),
+                        ..PartialTaskConfig::default()
                     }
                 )])
             )
@@ -886,24 +897,24 @@ mod create_tasks_from_scripts {
                     BTreeMap::from([
                         (
                             "lint".into(),
-                            TaskConfig {
+                            PartialTaskConfig {
                                 command: Some(TaskCommandArgs::Sequence(string_vec![
                                     "eslint", "."
                                 ])),
-                                platform: PlatformType::Node,
-                                ..TaskConfig::default()
+                                platform: Some(PlatformType::Node),
+                                ..PartialTaskConfig::default()
                             }
                         ),
                         (
                             "lint-fix".into(),
-                            TaskConfig {
+                            PartialTaskConfig {
                                 command: Some(TaskCommandArgs::Sequence(string_vec![
                                     "moon",
                                     "run",
                                     "project:lint"
                                 ])),
-                                platform: PlatformType::Node,
-                                ..TaskConfig::default()
+                                platform: Some(PlatformType::Node),
+                                ..PartialTaskConfig::default()
                             }
                         ),
                     ])
@@ -939,17 +950,17 @@ mod create_tasks_from_scripts {
                     BTreeMap::from([
                         (
                             "lint".into(),
-                            TaskConfig {
+                            PartialTaskConfig {
                                 command: Some(TaskCommandArgs::Sequence(string_vec![
                                     "eslint", "."
                                 ])),
-                                platform: PlatformType::Node,
-                                ..TaskConfig::default()
+                                platform: Some(PlatformType::Node),
+                                ..PartialTaskConfig::default()
                             }
                         ),
                         (
                             "lint-fix".into(),
-                            TaskConfig {
+                            PartialTaskConfig {
                                 command: Some(TaskCommandArgs::Sequence(string_vec![
                                     "moon",
                                     "run",
@@ -957,8 +968,8 @@ mod create_tasks_from_scripts {
                                     "--",
                                     "--fix"
                                 ])),
-                                platform: PlatformType::Node,
-                                ..TaskConfig::default()
+                                platform: Some(PlatformType::Node),
+                                ..PartialTaskConfig::default()
                             }
                         ),
                     ])
@@ -996,17 +1007,17 @@ mod create_tasks_from_scripts {
                 BTreeMap::from([
                     (
                         "build".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "webpack", "build"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "build-dev".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
                                 "run",
@@ -1018,13 +1029,13 @@ mod create_tasks_from_scripts {
                                 "NODE_ENV".to_owned(),
                                 "development".to_owned()
                             )])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "build-prod".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
                                 "run",
@@ -1034,13 +1045,13 @@ mod create_tasks_from_scripts {
                                 "NODE_ENV".to_owned(),
                                 "production".to_owned()
                             )])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "build-staging".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
                                 "run",
@@ -1053,8 +1064,8 @@ mod create_tasks_from_scripts {
                                 "NODE_ENV".to_owned(),
                                 "staging".to_owned()
                             )])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                 ])
@@ -1105,26 +1116,26 @@ mod create_tasks_from_scripts {
                 BTreeMap::from([
                     (
                         "build".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["babel", "."])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "lint".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["eslint", "."])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "test".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["jest", "."])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     )
                 ])
@@ -1187,100 +1198,100 @@ mod create_tasks_from_scripts {
                 BTreeMap::from([
                     (
                         "bootstrap".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "make",
                                 "bootstrap"
                             ])),
-                            platform: PlatformType::System,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::System),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "build".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["make", "build"])),
-                            platform: PlatformType::System,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::System),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "codesandbox-build".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "make",
                                 "build-no-bundle"
                             ])),
-                            platform: PlatformType::System,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::System),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "fix".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["make", "fix"])),
-                            platform: PlatformType::System,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::System),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "lint".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["make", "lint"])),
-                            platform: PlatformType::System,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::System),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "test".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec!["make", "test"])),
-                            platform: PlatformType::System,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::System),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "test-esm".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "node",
                                 "test/esm/index.js"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "test-runtime-bundlers".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "node",
                                 "test/runtime-integration/bundlers.cjs"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "test-runtime-generate-absolute-runtime".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "node",
                                 "test/runtime-integration/generate-absolute-runtime.cjs"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "test-runtime-node".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "node",
                                 "test/runtime-integration/node.cjs"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                 ])
@@ -1322,7 +1333,7 @@ mod create_tasks_from_scripts {
                 BTreeMap::from([
                     (
                         "build".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
                                 "run",
@@ -1330,51 +1341,51 @@ mod create_tasks_from_scripts {
                                 "--",
                                 "build"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "check-dep1".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
                                 "run",
                                 "project:type",
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "check-dep2".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
                                 "run",
                                 "project:test",
                             ])),
-                            deps: Some(string_vec!["~:check-dep1"]),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            deps: Some(create_target_deps(["~:check-dep1"])),
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "check".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
                                 "run",
                                 "project:lint",
                             ])),
-                            deps: Some(string_vec!["~:check-dep2"]),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            deps: Some(create_target_deps(["~:check-dep2"])),
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "clean".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
                                 "run",
@@ -1382,36 +1393,36 @@ mod create_tasks_from_scripts {
                                 "--",
                                 "clean"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "commit-dep1".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "yarn", "install"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "commit".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "git",
                                 "add",
                                 "yarn.lock"
                             ])),
-                            deps: Some(string_vec!["~:commit-dep1"]),
-                            platform: PlatformType::System,
-                            ..TaskConfig::default()
+                            deps: Some(create_target_deps(["~:commit-dep1"])),
+                            platform: Some(PlatformType::System),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "coverage".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
                                 "run",
@@ -1419,37 +1430,37 @@ mod create_tasks_from_scripts {
                                 "--",
                                 "--coverage"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "create-config".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::String("create-config".to_owned())),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "format".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::String("prettier".to_owned())),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "lint".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::String("eslint".to_owned())),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "packup".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
                                 "run",
@@ -1464,87 +1475,87 @@ mod create_tasks_from_scripts {
                                 "NODE_ENV".to_owned(),
                                 "production".to_owned()
                             )])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "packemon".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "node",
                                 "./packages/packemon/cjs/bin.cjs"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "prerelease-dep1".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
                                 "run",
                                 "project:clean"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "prerelease-dep2".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
                                 "run",
                                 "project:setup"
                             ])),
-                            deps: Some(string_vec!["~:prerelease-dep1"]),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            deps: Some(create_target_deps(["~:prerelease-dep1"])),
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "prerelease-dep3".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
                                 "run",
                                 "project:packup"
                             ])),
-                            deps: Some(string_vec!["~:prerelease-dep2"]),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            deps: Some(create_target_deps(["~:prerelease-dep2"])),
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "prerelease".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
                                 "run",
                                 "project:check"
                             ])),
-                            deps: Some(string_vec!["~:prerelease-dep3"]),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            deps: Some(create_target_deps(["~:prerelease-dep3"])),
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "release".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "run-script",
                                 "lerna-release"
                             ])),
-                            deps: Some(string_vec!["~:prerelease"]),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            deps: Some(create_target_deps(["~:prerelease"])),
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "setup".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "yarn",
                                 "dlx",
@@ -1556,32 +1567,32 @@ mod create_tasks_from_scripts {
                                 "packemon",
                                 "build"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "test".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::String("jest".to_owned())),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "type".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "typescript",
                                 "--build"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "validate".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
                                 "run",
@@ -1589,8 +1600,8 @@ mod create_tasks_from_scripts {
                                 "--",
                                 "validate"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                 ])
@@ -1644,47 +1655,47 @@ mod create_tasks_from_scripts {
                 BTreeMap::from([
                     (
                         "lint".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "run-p", "lint:*"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "lint-actionlint".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::String("node-actionlint".to_owned())),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "lint-changelog".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "node",
                                 "./scripts/lint-changelog.mjs"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "lint-deps".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "node",
                                 "./scripts/check-deps.mjs"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "lint-eslint".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "cross-env",
                                 "eslint",
@@ -1696,23 +1707,23 @@ mod create_tasks_from_scripts {
                                 "EFF_NO_LINK_RULES".to_owned(),
                                 "true".to_owned()
                             )])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "lint-prettier".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "prettier", ".", "!test*", "--check"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "lint-spellcheck".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "cspell",
                                 "--no-progress",
@@ -1720,21 +1731,21 @@ mod create_tasks_from_scripts {
                                 "--dot",
                                 "--gitignore"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "lint-typecheck".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::String("tsc".to_owned())),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "fix-eslint".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
                                 "run",
@@ -1742,13 +1753,13 @@ mod create_tasks_from_scripts {
                                 "--",
                                 "--fix"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "fix-prettier".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
                                 "run",
@@ -1756,52 +1767,52 @@ mod create_tasks_from_scripts {
                                 "--",
                                 "--write"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "build".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "node",
                                 "./scripts/build/build.mjs"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "build-website".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "node",
                                 "./scripts/build-website.mjs"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "perf".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "cross-env",
                                 "node",
                                 "./dist/bin-prettier.js"
                             ])),
-                            deps: Some(string_vec!["~:perf-dep1"]),
+                            deps: Some(create_target_deps(["~:perf-dep1"])),
                             env: Some(FxHashMap::from_iter([(
                                 "NODE_ENV".to_owned(),
                                 "production".to_owned()
                             )])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "perf-benchmark".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
                                 "run",
@@ -1809,63 +1820,63 @@ mod create_tasks_from_scripts {
                                 "--",
                                 "--debug-benchmark"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "perf-inspect".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "cross-env",
                                 "node",
                                 "--inspect-brk",
                                 "./dist/bin-prettier.js"
                             ])),
-                            deps: Some(string_vec!["~:perf-inspect-dep1"]),
+                            deps: Some(create_target_deps(["~:perf-inspect-dep1"])),
                             env: Some(FxHashMap::from_iter([(
                                 "NODE_ENV".to_owned(),
                                 "production".to_owned()
                             )])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "perf-inspect-dep1".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
                                 "run",
                                 "project:build"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "perf-dep1".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "moon",
                                 "run",
                                 "project:build"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "test".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::String("jest".to_owned())),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "test-dev-package".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "cross-env",
                                 "jest"
@@ -1874,13 +1885,13 @@ mod create_tasks_from_scripts {
                                 "INSTALL_PACKAGE".to_owned(),
                                 "1".to_owned()
                             )])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "test-dist".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "cross-env",
                                 "jest"
@@ -1889,13 +1900,13 @@ mod create_tasks_from_scripts {
                                 "NODE_ENV".to_owned(),
                                 "production".to_owned()
                             )])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "test-dist-lint".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "eslint",
                                 "--no-eslintrc",
@@ -1904,13 +1915,13 @@ mod create_tasks_from_scripts {
                                 "--config=./scripts/bundle-eslint-config.cjs",
                                 "dist/**/*.{js,mjs}"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "test-dist-standalone".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "cross-env",
                                 "jest"
@@ -1919,30 +1930,30 @@ mod create_tasks_from_scripts {
                                 ("TEST_STANDALONE".to_owned(), "1".to_owned()),
                                 ("NODE_ENV".to_owned(), "production".to_owned())
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "test-integration".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "jest",
                                 "tests/integration"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                     (
                         "vendors-bundle".into(),
-                        TaskConfig {
+                        PartialTaskConfig {
                             command: Some(TaskCommandArgs::Sequence(string_vec![
                                 "node",
                                 "./scripts/vendors/bundle-vendors.mjs"
                             ])),
-                            platform: PlatformType::Node,
-                            ..TaskConfig::default()
+                            platform: Some(PlatformType::Node),
+                            ..PartialTaskConfig::default()
                         }
                     ),
                 ])

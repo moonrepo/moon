@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 moon_action_context = { path = "../../core/action-context" }
 moon_common = { path = "../../../nextgen/common" }
-moon_config = { path = "../../core/config" }
+moon_config2 = { path = "../../../nextgen/config" }
 moon_deno_lang = { path = "../lang" }
 moon_deno_tool = { path = "../tool" }
 moon_error = { path = "../../core/error" }
@@ -26,8 +26,3 @@ rustc-hash = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
-
-[dev-dependencies]
-moon = { path = "../../core/moon" }
-moon_project_graph = { path = "../../core/project-graph" }
-moon_test_utils = { path = "../../core/test-utils" }

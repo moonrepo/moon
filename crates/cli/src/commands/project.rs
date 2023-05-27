@@ -62,8 +62,8 @@ pub async fn project(id: Id, json: bool) -> AppResult {
             term.render_entry("Owner", owner)?;
         }
 
-        if let Some(maintainers) = &meta.maintainers {
-            term.render_entry_list("Maintainers", maintainers)?;
+        if !meta.maintainers.is_empty() {
+            term.render_entry_list("Maintainers", &meta.maintainers)?;
         }
 
         if let Some(channel) = &meta.channel {

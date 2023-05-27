@@ -1,11 +1,11 @@
-use crate::portable_path::FilePath;
 use schematic::Config;
+use serde::Serialize;
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain#deno
-#[derive(Debug, Config)]
+#[derive(Debug, Clone, Config, Serialize)]
 pub struct DenoConfig {
     #[setting(default = "deps.ts")]
-    pub deps_file: FilePath,
+    pub deps_file: String,
 
     pub lockfile: bool,
 }

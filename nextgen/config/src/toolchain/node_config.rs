@@ -1,10 +1,11 @@
 use crate::validate::validate_semver;
 use crate::{inherit_tool, inherit_tool_required};
 use proto::ToolsConfig;
-use schematic::{config_enum, Config, ConfigError};
+use schematic::{derive_enum, Config, ConfigEnum, ConfigError};
+use serde::Serialize;
 
-config_enum!(
-    #[derive(Default)]
+derive_enum!(
+    #[derive(ConfigEnum, Copy, Default)]
     pub enum NodeProjectAliasFormat {
         #[default]
         NameAndScope, // @scope/name
@@ -12,8 +13,8 @@ config_enum!(
     }
 );
 
-config_enum!(
-    #[derive(Default)]
+derive_enum!(
+    #[derive(ConfigEnum, Copy, Default)]
     pub enum NodeVersionFormat {
         File,         // file:..
         Link,         // link:..
@@ -44,8 +45,8 @@ impl NodeVersionFormat {
     }
 }
 
-config_enum!(
-    #[derive(Default)]
+derive_enum!(
+    #[derive(ConfigEnum, Copy, Default)]
     pub enum NodePackageManager {
         #[default]
         Npm,
@@ -54,8 +55,8 @@ config_enum!(
     }
 );
 
-config_enum!(
-    #[derive(Default)]
+derive_enum!(
+    #[derive(ConfigEnum, Copy, Default)]
     pub enum NodeVersionManager {
         Nodenv,
         #[default]
@@ -63,19 +64,19 @@ config_enum!(
     }
 );
 
-#[derive(Debug, Config)]
+#[derive(Debug, Clone, Config, Serialize)]
 pub struct NpmConfig {
     #[setting(env = "MOON_NPM_VERSION", validate = validate_semver)]
     pub version: Option<String>,
 }
 
-#[derive(Debug, Config)]
+#[derive(Debug, Clone, Config, Serialize)]
 pub struct PnpmConfig {
     #[setting(env = "MOON_PNPM_VERSION", validate = validate_semver)]
     pub version: Option<String>,
 }
 
-#[derive(Debug, Config)]
+#[derive(Debug, Clone, Config, Serialize)]
 pub struct YarnConfig {
     pub plugins: Vec<String>,
 
@@ -84,7 +85,7 @@ pub struct YarnConfig {
 }
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain#node
-#[derive(Debug, Config)]
+#[derive(Debug, Clone, Config, Serialize)]
 pub struct NodeConfig {
     #[setting(default = true)]
     pub add_engines_constraint: bool,

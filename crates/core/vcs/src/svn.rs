@@ -1,7 +1,7 @@
 use crate::vcs::{TouchedFiles, Vcs, VcsResult};
 use async_trait::async_trait;
 use cached::{CachedAsync, TimedCache};
-use moon_config::VcsConfig;
+use moon_config2::VcsConfig;
 use moon_process::{output_to_string, output_to_trimmed_string, Command, ProcessError};
 use regex::Regex;
 use rustc_hash::FxHashSet;
@@ -183,7 +183,7 @@ impl Vcs for Svn {
         &self,
         files: &[String],
         _allow_ignored: bool,
-        _batch_size: Option<u16>,
+        _batch_size: u16,
     ) -> VcsResult<BTreeMap<String, String>> {
         let mut map = BTreeMap::new();
 

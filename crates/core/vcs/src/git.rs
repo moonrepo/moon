@@ -3,7 +3,7 @@ use crate::vcs::{TouchedFiles, Vcs, VcsResult};
 use async_trait::async_trait;
 use cached::{CachedAsync, TimedCache};
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
-use moon_config::VcsConfig;
+use moon_config2::VcsConfig;
 use moon_process::{output_to_string, output_to_trimmed_string, Command, ProcessError};
 use regex::Regex;
 use rustc_hash::FxHashSet;
@@ -182,7 +182,7 @@ impl Vcs for Git {
         &self,
         files: &[String],
         allow_ignored: bool,
-        batch_size: Option<u16>,
+        batch_size: u16,
     ) -> VcsResult<BTreeMap<String, String>> {
         let mut objects = vec![];
         let mut map = BTreeMap::new();
@@ -207,10 +207,9 @@ impl Vcs for Git {
         // Chunk into slices to avoid passing too many files
         let mut index = 0;
         let end_index = objects.len();
-        let batch_size = batch_size.unwrap_or(2500) as usize;
 
         while index < end_index {
-            let next_index = cmp::min(index + batch_size, end_index);
+            let next_index = cmp::min(index + (batch_size as usize), end_index);
             let slice = &objects[index..next_index];
 
             let mut command = self.create_command(vec!["hash-object", "--stdin-paths"]);

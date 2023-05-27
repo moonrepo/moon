@@ -2,7 +2,7 @@
 
 use moon_common::consts;
 use rustc_hash::FxHashMap;
-use schematic::{color, config_enum, validate, Config, ConfigError, ConfigLoader};
+use schematic::{color, derive_enum, validate, Config, ConfigError, ConfigLoader};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
@@ -13,7 +13,7 @@ pub struct TemplateVariableSetting<T> {
     pub required: Option<bool>,
 }
 
-config_enum!(
+derive_enum!(
     #[serde(
         untagged,
         expecting = "expected a value string or value object with label"
@@ -32,7 +32,7 @@ pub struct TemplateVariableEnumSetting {
     pub values: Vec<TemplateVariableEnumValue>,
 }
 
-config_enum!(
+derive_enum!(
     #[serde(tag = "type")]
     pub enum TemplateVariable {
         Boolean(TemplateVariableSetting<bool>),
@@ -45,7 +45,7 @@ config_enum!(
 );
 
 /// Docs: https://moonrepo.dev/docs/config/template
-#[derive(Config)]
+#[derive(Debug, Config)]
 pub struct TemplateConfig {
     #[setting(
         default = "https://moonrepo.dev/schemas/template.json",
@@ -63,33 +63,19 @@ pub struct TemplateConfig {
 }
 
 impl TemplateConfig {
-    pub fn load<R: AsRef<Path>, P: AsRef<Path>>(
-        workspace_root: R,
-        path: P,
-    ) -> Result<TemplateConfig, ConfigError> {
-        let workspace_root = workspace_root.as_ref();
+    pub fn load<P: AsRef<Path>>(path: P) -> Result<TemplateConfig, ConfigError> {
         let path = path.as_ref();
 
         let result = ConfigLoader::<TemplateConfig>::yaml()
-            .label(color::path(
-                if let Ok(relative_path) = path.strip_prefix(workspace_root) {
-                    relative_path
-                } else {
-                    path
-                },
-            ))
+            .label(color::path(path))
             .file(path)?
             .load()?;
 
         Ok(result.config)
     }
 
-    pub fn load_from<R: AsRef<Path>, P: AsRef<Path>>(
-        workspace_root: R,
-        template_root: P,
-    ) -> Result<TemplateConfig, ConfigError> {
+    pub fn load_from<P: AsRef<Path>>(template_root: P) -> Result<TemplateConfig, ConfigError> {
         Self::load(
-            workspace_root,
             template_root
                 .as_ref()
                 .join(consts::CONFIG_TEMPLATE_FILENAME),

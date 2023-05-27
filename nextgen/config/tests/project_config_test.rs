@@ -52,19 +52,13 @@ tasks:
 
         assert_eq!(build.command, TaskCommandArgs::String("webpack".to_owned()));
         assert_eq!(build.args, TaskCommandArgs::None);
-        assert_eq!(
-            build.inputs,
-            vec![PortablePath::ProjectGlob(GlobPath("src/**/*".into()))]
-        );
+        assert_eq!(build.inputs, Some(vec!["src/**/*".to_owned()]));
 
         let start = config.tasks.get("start").unwrap();
 
         assert_eq!(start.command, TaskCommandArgs::String("webpack".to_owned()));
         assert_eq!(start.args, TaskCommandArgs::String("serve".to_owned()));
-        assert_eq!(
-            start.inputs,
-            vec![PortablePath::ProjectGlob(GlobPath("src/**/*".into()))]
-        );
+        assert_eq!(start.inputs, Some(vec!["src/**/*".to_owned()]));
     }
 
     // TODO: fix this in schematic?
@@ -92,19 +86,13 @@ tasks:
 
         assert_eq!(build.command, TaskCommandArgs::String("webpack".to_owned()));
         assert_eq!(build.args, TaskCommandArgs::None);
-        assert_eq!(
-            build.inputs,
-            vec![PortablePath::ProjectGlob(GlobPath("src/**/*".into()))]
-        );
+        assert_eq!(build.inputs, Some(vec!["src/**/*".to_owned()]));
 
         let start = config.tasks.get("start").unwrap();
 
         assert_eq!(start.command, TaskCommandArgs::String("webpack".to_owned()));
         assert_eq!(start.args, TaskCommandArgs::String("serve".to_owned()));
-        assert_eq!(
-            start.inputs,
-            vec![PortablePath::ProjectGlob(GlobPath("src/**/*".into()))]
-        );
+        assert_eq!(start.inputs, Some(vec!["src/**/*".to_owned()]));
     }
 
     mod depends_on {
@@ -478,7 +466,10 @@ workspace:
             );
 
             assert_eq!(config.workspace.inherited_tasks.exclude, vec![Id::raw("a")]);
-            assert_eq!(config.workspace.inherited_tasks.include, vec![Id::raw("b")]);
+            assert_eq!(
+                config.workspace.inherited_tasks.include,
+                Some(vec![Id::raw("b")])
+            );
             assert_eq!(
                 config.workspace.inherited_tasks.rename,
                 FxHashMap::from_iter([(Id::raw("c"), Id::raw("d"))])

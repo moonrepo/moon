@@ -1,10 +1,7 @@
 use crate::errors::WorkspaceError;
 use moon_cache::CacheEngine;
-use moon_config::{
-    format_error_line, format_figment_errors, ConfigError, InheritedTasksConfig,
-    InheritedTasksManager, ToolchainConfig, WorkspaceConfig,
-};
-use moon_constants as constants;
+use moon_common::consts;
+use moon_config2::{InheritedTasksConfig, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_error::MoonError;
 use moon_logger::{debug, trace};
 use moon_platform::{BoxedPlatform, PlatformManager};
@@ -36,7 +33,7 @@ fn find_workspace_root<P: AsRef<Path>>(current_dir: P) -> Result<PathBuf, Worksp
         color::path(current_dir),
     );
 
-    let Some(possible_root) = fs::find_upwards(constants::CONFIG_DIRNAME, current_dir)
+    let Some(possible_root) = fs::find_upwards(consts::CONFIG_DIRNAME, current_dir)
         .map(|dir| dir.parent().unwrap().to_path_buf()) else {
         return Err(WorkspaceError::MissingConfigDir);
     };
@@ -55,28 +52,18 @@ fn find_workspace_root<P: AsRef<Path>>(current_dir: P) -> Result<PathBuf, Worksp
 fn load_tasks_config(root_dir: &Path) -> Result<InheritedTasksManager, WorkspaceError> {
     let mut manager = InheritedTasksManager::default();
     let config_path = root_dir
-        .join(constants::CONFIG_DIRNAME)
-        .join(constants::CONFIG_TASKS_FILENAME);
+        .join(consts::CONFIG_DIRNAME)
+        .join(consts::CONFIG_TASKS_FILENAME);
 
-    let do_load = |cfg_path: &Path| match InheritedTasksConfig::load(cfg_path.to_path_buf()) {
-        Ok(cfg) => Ok(cfg),
-        Err(errors) => Err(WorkspaceError::InvalidTasksConfigFile(
-            cfg_path.strip_prefix(root_dir).unwrap().to_path_buf(),
-            if let ConfigError::FailedValidation(valids) = errors {
-                format_figment_errors(valids)
-            } else {
-                format_error_line(errors.to_string())
-            },
-        )),
-    };
+    let do_load = |cfg_path: &Path| InheritedTasksConfig::load_partial(root_dir, cfg_path);
 
     trace!(
         target: LOG_TARGET,
         "Attempting to find {} in {}",
         color::file(format!(
             "{}/{}",
-            constants::CONFIG_DIRNAME,
-            constants::CONFIG_TASKS_FILENAME,
+            consts::CONFIG_DIRNAME,
+            consts::CONFIG_TASKS_FILENAME,
         )),
         color::path(root_dir)
     );
@@ -88,12 +75,12 @@ fn load_tasks_config(root_dir: &Path) -> Result<InheritedTasksManager, Workspace
     trace!(
         target: LOG_TARGET,
         "Attempting to find {} in {}",
-        color::file(format!("{}/{}", constants::CONFIG_DIRNAME, "tasks/*.yml")),
+        color::file(format!("{}/{}", consts::CONFIG_DIRNAME, "tasks/*.yml")),
         color::path(root_dir)
     );
 
     for config_path in glob::walk_files(
-        root_dir.join(constants::CONFIG_DIRNAME).join("tasks"),
+        root_dir.join(consts::CONFIG_DIRNAME).join("tasks"),
         ["*.yml"],
     )
     .map_err(MoonError::StarGlob)?
@@ -112,16 +99,16 @@ fn load_toolchain_config(
     proto_tools: &ToolsConfig,
 ) -> Result<ToolchainConfig, WorkspaceError> {
     let config_path = root_dir
-        .join(constants::CONFIG_DIRNAME)
-        .join(constants::CONFIG_TOOLCHAIN_FILENAME);
+        .join(consts::CONFIG_DIRNAME)
+        .join(consts::CONFIG_TOOLCHAIN_FILENAME);
 
     trace!(
         target: LOG_TARGET,
         "Loading {} from {}",
         color::file(format!(
             "{}/{}",
-            constants::CONFIG_DIRNAME,
-            constants::CONFIG_TOOLCHAIN_FILENAME,
+            consts::CONFIG_DIRNAME,
+            consts::CONFIG_TOOLCHAIN_FILENAME,
         )),
         color::path(root_dir)
     );
@@ -130,31 +117,22 @@ fn load_toolchain_config(
         return Ok(ToolchainConfig::default());
     }
 
-    match ToolchainConfig::load(config_path, proto_tools) {
-        Ok(cfg) => Ok(cfg),
-        Err(errors) => Err(WorkspaceError::InvalidToolchainConfigFile(
-            if let ConfigError::FailedValidation(valids) = errors {
-                format_figment_errors(valids)
-            } else {
-                format_error_line(errors.to_string())
-            },
-        )),
-    }
+    Ok(ToolchainConfig::load_from(root_dir, proto_tools)?)
 }
 
 // .moon/workspace.yml
 fn load_workspace_config(root_dir: &Path) -> Result<WorkspaceConfig, WorkspaceError> {
     let config_path = root_dir
-        .join(constants::CONFIG_DIRNAME)
-        .join(constants::CONFIG_WORKSPACE_FILENAME);
+        .join(consts::CONFIG_DIRNAME)
+        .join(consts::CONFIG_WORKSPACE_FILENAME);
 
     trace!(
         target: LOG_TARGET,
         "Loading {} from {}",
         color::file(format!(
             "{}/{}",
-            constants::CONFIG_DIRNAME,
-            constants::CONFIG_WORKSPACE_FILENAME,
+            consts::CONFIG_DIRNAME,
+            consts::CONFIG_WORKSPACE_FILENAME,
         )),
         color::path(root_dir)
     );
@@ -163,16 +141,7 @@ fn load_workspace_config(root_dir: &Path) -> Result<WorkspaceConfig, WorkspaceEr
         return Err(WorkspaceError::MissingWorkspaceConfigFile);
     }
 
-    match WorkspaceConfig::load(config_path) {
-        Ok(cfg) => Ok(cfg),
-        Err(errors) => Err(WorkspaceError::InvalidWorkspaceConfigFile(
-            if let ConfigError::FailedValidation(valids) = errors {
-                format_figment_errors(valids)
-            } else {
-                format_error_line(errors.to_string())
-            },
-        )),
-    }
+    Ok(WorkspaceConfig::load_from(root_dir)?)
 }
 
 pub struct Workspace {

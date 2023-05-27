@@ -1,6 +1,6 @@
-use crate::portable_path::PortablePath;
+use crate::portable_path::*;
 use schematic::{Segment, ValidateError};
-use semver::Version;
+use semver::{Version, VersionReq};
 use std::path::Path;
 
 // Validate the value is a valid child relative file system path.
@@ -53,7 +53,7 @@ pub fn validate_semver_requirement<D, C>(
     _data: &D,
     _ctx: &C,
 ) -> Result<(), ValidateError> {
-    Version::parse(value).map_err(|error| {
+    VersionReq::parse(value).map_err(|error| {
         ValidateError::new(format!(
             "doesn't meet semantic version requirements: {}",
             error
@@ -63,18 +63,14 @@ pub fn validate_semver_requirement<D, C>(
     Ok(())
 }
 
-pub fn validate_no_env_var_in_path<D, C>(
-    paths: &[PortablePath],
+pub fn validate_portable_paths<D, C>(
+    paths: &[String],
     _data: &D,
     _ctx: &C,
 ) -> Result<(), ValidateError> {
     for (i, path) in paths.iter().enumerate() {
-        if matches!(path, PortablePath::EnvVar(_)) {
-            return Err(ValidateError::with_segment(
-                "environment variables are not supported here",
-                Segment::Index(i),
-            ));
-        }
+        PortablePath::from_str(path)
+            .map_err(|error| ValidateError::with_segment(error.message, Segment::Index(i)))?;
     }
 
     Ok(())

@@ -2,7 +2,7 @@ use crate::actions;
 use crate::target_hasher::DenoTargetHasher;
 use moon_action_context::ActionContext;
 use moon_common::Id;
-use moon_config::{
+use moon_config2::{
     DenoConfig, DependencyConfig, HasherConfig, HasherOptimization, PlatformType, ProjectConfig,
     ProjectsAliasesMap, TypeScriptConfig,
 };

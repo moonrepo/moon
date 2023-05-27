@@ -1,4 +1,5 @@
-use moon_constants::CONFIG_TEMPLATE_FILENAME;
+use moon_common::consts::CONFIG_TEMPLATE_FILENAME;
+use moon_config2::TemplateFrontmatterConfig;
 use moon_generator::{Template, TemplateContext, TemplateFile};
 use moon_test_utils::get_fixtures_path;
 use std::path::PathBuf;
@@ -134,7 +135,6 @@ mod interpolate_path {
 
 mod set_content {
     use super::*;
-    use moon_config::TemplateFrontmatterConfig;
 
     #[test]
     fn works_without_frontmatter() {
@@ -185,7 +185,7 @@ mod set_content {
             .unwrap();
 
         assert!(!file.is_forced());
-        assert_eq!(file.config.unwrap().force, Some(false));
+        assert!(!file.config.unwrap().force);
         assert_eq!(file.content, "Content".to_owned());
     }
 
@@ -196,7 +196,7 @@ mod set_content {
             .unwrap();
 
         assert!(file.is_skipped());
-        assert_eq!(file.config.unwrap().skip, Some(true));
+        assert!(file.config.unwrap().skip);
         assert_eq!(file.content, "Content".to_owned());
     }
 }

@@ -1,6 +1,9 @@
 use moon::{generate_project_graph, load_workspace_from};
 use moon_common::Id;
-use moon_config::{NodeConfig, RustConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects};
+use moon_config2::{
+    DependencyScope, PartialConstraintsConfig, PartialNodeConfig, PartialRustConfig,
+    PartialToolchainConfig, PartialWorkspaceConfig, WorkspaceProjects,
+};
 use moon_project::{Project, ProjectDependency, ProjectDependencySource};
 use moon_project_graph::ProjectGraph;
 use moon_test_utils::{
@@ -40,14 +43,14 @@ async fn get_aliases_graph() -> (ProjectGraph, Sandbox) {
 }
 
 async fn get_dependencies_graph(enable_git: bool) -> (ProjectGraph, Sandbox) {
-    let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
-            ("a".to_owned(), "a".to_owned()),
-            ("b".to_owned(), "b".to_owned()),
-            ("c".to_owned(), "c".to_owned()),
-            ("d".to_owned(), "d".to_owned()),
-        ])),
-        ..WorkspaceConfig::default()
+    let workspace_config = PartialWorkspaceConfig {
+        projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([
+            ("a".into(), "a".to_owned()),
+            ("b".into(), "b".to_owned()),
+            ("c".into(), "c".to_owned()),
+            ("d".into(), "d".to_owned()),
+        ]))),
+        ..PartialWorkspaceConfig::default()
     };
 
     let sandbox = create_sandbox_with_config(
@@ -68,14 +71,14 @@ async fn get_dependencies_graph(enable_git: bool) -> (ProjectGraph, Sandbox) {
 }
 
 async fn get_dependents_graph() -> (ProjectGraph, Sandbox) {
-    let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
-            ("a".to_owned(), "a".to_owned()),
-            ("b".to_owned(), "b".to_owned()),
-            ("c".to_owned(), "c".to_owned()),
-            ("d".to_owned(), "d".to_owned()),
-        ])),
-        ..WorkspaceConfig::default()
+    let workspace_config = PartialWorkspaceConfig {
+        projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([
+            ("a".into(), "a".to_owned()),
+            ("b".into(), "b".to_owned()),
+            ("c".into(), "c".to_owned()),
+            ("d".into(), "d".to_owned()),
+        ]))),
+        ..PartialWorkspaceConfig::default()
     };
 
     let sandbox = create_sandbox_with_config(
@@ -95,21 +98,23 @@ async fn get_tag_constraints_graph<F>(setup: F) -> (ProjectGraph, Sandbox)
 where
     F: FnOnce(&Sandbox),
 {
-    let mut workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Globs(vec!["*".into()]),
-        ..WorkspaceConfig::default()
+    let workspace_config = PartialWorkspaceConfig {
+        projects: Some(WorkspaceProjects::Globs(vec!["*".into()])),
+        constraints: Some(PartialConstraintsConfig {
+            tag_relationships: Some(FxHashMap::from_iter([
+                (
+                    "warrior".into(),
+                    vec![Id::raw("barbarian"), Id::raw("paladin"), Id::raw("druid")],
+                ),
+                (
+                    "mage".into(),
+                    vec![Id::raw("wizard"), Id::raw("sorcerer"), Id::raw("druid")],
+                ),
+            ])),
+            ..PartialConstraintsConfig::default()
+        }),
+        ..PartialWorkspaceConfig::default()
     };
-
-    workspace_config.constraints.tag_relationships = FxHashMap::from_iter([
-        (
-            "warrior".into(),
-            vec![Id::raw("barbarian"), Id::raw("paladin"), Id::raw("druid")],
-        ),
-        (
-            "mage".into(),
-            vec![Id::raw("wizard"), Id::raw("sorcerer"), Id::raw("druid")],
-        ),
-    ]);
 
     let sandbox = create_sandbox_with_config(
         "project-graph/tag-constraints",
@@ -130,14 +135,14 @@ async fn get_type_constraints_graph<F>(setup: F) -> (ProjectGraph, Sandbox)
 where
     F: FnOnce(&Sandbox),
 {
-    let mut workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Globs(vec!["*".into()]),
-        ..WorkspaceConfig::default()
+    let workspace_config = PartialWorkspaceConfig {
+        projects: Some(WorkspaceProjects::Globs(vec!["*".into()])),
+        constraints: Some(PartialConstraintsConfig {
+            enforce_project_type_relationships: Some(true),
+            ..PartialConstraintsConfig::default()
+        }),
+        ..PartialWorkspaceConfig::default()
     };
-
-    workspace_config
-        .constraints
-        .enforce_project_type_relationships = true;
 
     let sandbox = create_sandbox_with_config(
         "project-graph/type-constraints",
@@ -155,15 +160,15 @@ where
 }
 
 async fn get_queries_graph() -> (ProjectGraph, Sandbox) {
-    let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Globs(vec!["*".into()]),
-        ..WorkspaceConfig::default()
+    let workspace_config = PartialWorkspaceConfig {
+        projects: Some(WorkspaceProjects::Globs(vec!["*".into()])),
+        ..PartialWorkspaceConfig::default()
     };
 
-    let toolchain_config = ToolchainConfig {
-        node: Some(NodeConfig::default()),
-        rust: Some(RustConfig::default()),
-        ..ToolchainConfig::default()
+    let toolchain_config = PartialToolchainConfig {
+        node: Some(PartialNodeConfig::default()),
+        rust: Some(PartialRustConfig::default()),
+        ..PartialToolchainConfig::default()
     };
 
     let sandbox = create_sandbox_with_config(
@@ -181,15 +186,15 @@ async fn get_queries_graph() -> (ProjectGraph, Sandbox) {
 
 #[tokio::test]
 async fn can_use_map_and_globs_setting() {
-    let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Both {
+    let workspace_config = PartialWorkspaceConfig {
+        projects: Some(WorkspaceProjects::Both {
             globs: string_vec!["deps/*"],
             sources: FxHashMap::from_iter([
-                ("basic".to_owned(), "basic".to_owned()),
-                ("noConfig".to_owned(), "no-config".to_owned()),
+                ("basic".into(), "basic".to_owned()),
+                ("noConfig".into(), "no-config".to_owned()),
             ]),
-        },
-        ..WorkspaceConfig::default()
+        }),
+        ..PartialWorkspaceConfig::default()
     };
 
     let sandbox = create_sandbox_with_config("projects", Some(workspace_config), None, None);
@@ -221,12 +226,12 @@ async fn can_use_map_and_globs_setting() {
 
 #[tokio::test]
 async fn can_generate_with_deps_cycles() {
-    let workspace_config = WorkspaceConfig {
-        projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
-            ("a".to_owned(), "a".to_owned()),
-            ("b".to_owned(), "b".to_owned()),
-        ])),
-        ..WorkspaceConfig::default()
+    let workspace_config = PartialWorkspaceConfig {
+        projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([
+            ("a".into(), "a".to_owned()),
+            ("b".into(), "b".to_owned()),
+        ]))),
+        ..PartialWorkspaceConfig::default()
     };
 
     let sandbox =
@@ -309,9 +314,9 @@ mod globs {
 
     #[tokio::test]
     async fn ignores_moon_dot_folder() {
-        let workspace_config = WorkspaceConfig {
-            projects: WorkspaceProjects::Globs(string_vec!["*"]),
-            ..WorkspaceConfig::default()
+        let workspace_config = PartialWorkspaceConfig {
+            projects: Some(WorkspaceProjects::Globs(string_vec!["*"])),
+            ..PartialWorkspaceConfig::default()
         };
 
         // Use git so we can test against the .git folder
@@ -333,9 +338,9 @@ mod globs {
 
     #[tokio::test]
     async fn filters_ignored_sources() {
-        let workspace_config = WorkspaceConfig {
-            projects: WorkspaceProjects::Globs(string_vec!["*"]),
-            ..WorkspaceConfig::default()
+        let workspace_config = PartialWorkspaceConfig {
+            projects: Some(WorkspaceProjects::Globs(string_vec!["*"])),
+            ..PartialWorkspaceConfig::default()
         };
 
         // Use git so we can test against the .git folder
@@ -358,9 +363,9 @@ mod globs {
 
     #[tokio::test]
     async fn supports_all_id_formats() {
-        let workspace_config = WorkspaceConfig {
-            projects: WorkspaceProjects::Globs(string_vec!["*"]),
-            ..WorkspaceConfig::default()
+        let workspace_config = PartialWorkspaceConfig {
+            projects: Some(WorkspaceProjects::Globs(string_vec!["*"])),
+            ..PartialWorkspaceConfig::default()
         };
 
         let sandbox =
@@ -440,14 +445,14 @@ mod to_dot {
 
     #[tokio::test]
     async fn renders_partial_tree() {
-        let workspace_config = WorkspaceConfig {
-            projects: WorkspaceProjects::Sources(FxHashMap::from_iter([
-                ("a".to_owned(), "a".to_owned()),
-                ("b".to_owned(), "b".to_owned()),
-                ("c".to_owned(), "c".to_owned()),
-                ("d".to_owned(), "d".to_owned()),
-            ])),
-            ..WorkspaceConfig::default()
+        let workspace_config = PartialWorkspaceConfig {
+            projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([
+                ("a".into(), "a".to_owned()),
+                ("b".into(), "b".to_owned()),
+                ("c".into(), "c".to_owned()),
+                ("d".into(), "d".to_owned()),
+            ]))),
+            ..PartialWorkspaceConfig::default()
         };
 
         let sandbox = create_sandbox_with_config(
@@ -484,7 +489,7 @@ mod implicit_explicit_deps {
                     "nodeNameScope".into(),
                     ProjectDependency {
                         id: "nodeNameScope".into(),
-                        scope: moon_config::DependencyScope::Development,
+                        scope: DependencyScope::Development,
                         source: ProjectDependencySource::Implicit,
                         via: Some("@scope/pkg-foo".to_string())
                     }
@@ -493,7 +498,7 @@ mod implicit_explicit_deps {
                     "node".into(),
                     ProjectDependency {
                         id: "node".into(),
-                        scope: moon_config::DependencyScope::Production,
+                        scope: DependencyScope::Production,
                         source: ProjectDependencySource::Implicit,
                         via: Some("project-graph-aliases-node".to_string())
                     }
@@ -515,7 +520,7 @@ mod implicit_explicit_deps {
                     "nodeNameScope".into(),
                     ProjectDependency {
                         id: "nodeNameScope".into(),
-                        scope: moon_config::DependencyScope::Production,
+                        scope: DependencyScope::Production,
                         source: ProjectDependencySource::Explicit,
                         via: None
                     }
@@ -524,7 +529,7 @@ mod implicit_explicit_deps {
                     "node".into(),
                     ProjectDependency {
                         id: "node".into(),
-                        scope: moon_config::DependencyScope::Development,
+                        scope: DependencyScope::Development,
                         source: ProjectDependencySource::Explicit,
                         via: None
                     }
@@ -546,7 +551,7 @@ mod implicit_explicit_deps {
                     "nodeNameScope".into(),
                     ProjectDependency {
                         id: "nodeNameScope".into(),
-                        scope: moon_config::DependencyScope::Production,
+                        scope: DependencyScope::Production,
                         source: ProjectDependencySource::Explicit,
                         via: None
                     }
@@ -555,7 +560,7 @@ mod implicit_explicit_deps {
                     "node".into(),
                     ProjectDependency {
                         id: "node".into(),
-                        scope: moon_config::DependencyScope::Development,
+                        scope: DependencyScope::Development,
                         source: ProjectDependencySource::Explicit,
                         via: None
                     }
@@ -564,7 +569,7 @@ mod implicit_explicit_deps {
                     "nodeNameOnly".into(),
                     ProjectDependency {
                         id: "nodeNameOnly".into(),
-                        scope: moon_config::DependencyScope::Peer,
+                        scope: DependencyScope::Peer,
                         source: ProjectDependencySource::Implicit,
                         via: Some("pkg-bar".to_string())
                     }

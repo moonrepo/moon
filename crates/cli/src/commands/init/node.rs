@@ -2,7 +2,7 @@ use super::InitOptions;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::{Confirm, Select};
 use miette::IntoDiagnostic;
-use moon_config::load_toolchain_node_config_template;
+use moon_config2::load_toolchain_node_config_template;
 use moon_lang::{is_using_dependency_manager, is_using_version_manager};
 use moon_node_lang::package_json::{PackageJson, PackageWorkspaces};
 use moon_node_lang::{NODENV, NPM, NVM, PNPM, YARN};

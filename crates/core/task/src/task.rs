@@ -2,11 +2,8 @@ use crate::errors::TaskError;
 use crate::task_options::TaskOptions;
 use crate::types::TouchedFilePaths;
 use moon_args::{split_args, ArgsSplitError};
-use moon_common::Id;
-use moon_config::{
-    cacheable, cacheable_enum, PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy,
-    TaskType,
-};
+use moon_common::{cacheable, cacheable_enum, Id};
+use moon_config::{PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskType};
 use moon_error::MoonError;
 use moon_logger::{debug, trace, Logable};
 use moon_target::Target;

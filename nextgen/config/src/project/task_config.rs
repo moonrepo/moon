@@ -1,7 +1,7 @@
-use crate::cacheable;
 use crate::language_platform::PlatformType;
 use crate::project::{PartialTaskOptionsConfig, TaskOptionsConfig};
 use crate::validate::validate_portable_paths;
+use moon_common::cacheable;
 use moon_target::{Target, TargetScope};
 use rustc_hash::FxHashMap;
 use schematic::{

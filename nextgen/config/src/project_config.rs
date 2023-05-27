@@ -1,9 +1,9 @@
 // moon.yml
 
-use crate::cacheable;
 use crate::language_platform::{LanguageType, PlatformType};
 use crate::portable_path::PortablePath;
 use crate::project::*;
+use moon_common::cacheable;
 use moon_common::{consts, Id};
 use rustc_hash::FxHashMap;
 use schematic::{

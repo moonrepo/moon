@@ -1,8 +1,8 @@
 use crate::errors::ProjectError;
-use moon_common::{consts, Id};
+use moon_common::{cacheable, cacheable_enum, consts, Id};
 use moon_config::{
-    cacheable, cacheable_enum, DependencyScope, InheritedTasksConfig, InheritedTasksManager,
-    LanguageType, ProjectConfig, ProjectDependsOn, ProjectType,
+    DependencyScope, InheritedTasksConfig, InheritedTasksManager, LanguageType, ProjectConfig,
+    ProjectDependsOn, ProjectType,
 };
 use moon_file_group::{FileGroup, FileGroupError};
 use moon_logger::{debug, trace, Logable};

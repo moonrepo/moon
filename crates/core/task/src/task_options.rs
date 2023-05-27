@@ -1,5 +1,6 @@
+use moon_common::cacheable;
 use moon_config::{
-    cacheable, TaskMergeStrategy, TaskOptionAffectedFiles, TaskOptionEnvFile, TaskOptionsConfig,
+    TaskMergeStrategy, TaskOptionAffectedFiles, TaskOptionEnvFile, TaskOptionsConfig,
     TaskOutputStyle,
 };
 

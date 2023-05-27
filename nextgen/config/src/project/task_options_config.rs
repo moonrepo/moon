@@ -1,6 +1,5 @@
 use crate::portable_path::is_glob;
 use moon_common::cacheable;
-use schemars::JsonSchema;
 use schematic::{derive_enum, Config, ConfigEnum, ValidateError};
 use serde::{de, Deserialize, Deserializer, Serialize};
 use serde_yaml::Value;
@@ -19,12 +18,38 @@ fn validate_env_file<D, C>(
     Ok(())
 }
 
-#[derive(Clone, Debug, Eq, JsonSchema, PartialEq, Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(untagged, rename_all = "kebab-case")]
 pub enum TaskOptionAffectedFiles {
     Args,
     Env,
     Enabled(bool),
+}
+
+impl schemars::JsonSchema for TaskOptionAffectedFiles {
+    fn schema_name() -> String {
+        "TaskOptionAffectedFiles".to_owned()
+    }
+
+    fn json_schema(_: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
+        schemars::schema::Schema::Object(schemars::schema::SchemaObject {
+            subschemas: Some(Box::new(schemars::schema::SubschemaValidation {
+                one_of: Some(vec![
+                    schemars::schema::Schema::Object(schemars::schema::SchemaObject {
+                        instance_type: Some(schemars::schema::InstanceType::String.into()),
+                        enum_values: Some(vec!["args".into(), "env".into()]),
+                        ..Default::default()
+                    }),
+                    schemars::schema::Schema::Object(schemars::schema::SchemaObject {
+                        instance_type: Some(schemars::schema::InstanceType::Boolean.into()),
+                        ..Default::default()
+                    }),
+                ]),
+                ..Default::default()
+            })),
+            ..Default::default()
+        })
+    }
 }
 
 impl<'de> Deserialize<'de> for TaskOptionAffectedFiles {

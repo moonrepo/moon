@@ -394,12 +394,13 @@
       ]
     },
     "TaskOptionAffectedFiles": {
-      "anyOf": [
+      "oneOf": [
         {
-          "type": "null"
-        },
-        {
-          "type": "null"
+          "type": "string",
+          "enum": [
+            "args",
+            "env"
+          ]
         },
         {
           "type": "boolean"

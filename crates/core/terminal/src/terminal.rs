@@ -1,5 +1,4 @@
-use crate::helpers::safe_exit;
-use console::{measure_text_width, style, Attribute, Style, Term};
+use console::{style, Attribute, Style, Term};
 use miette::IntoDiagnostic;
 use starbase_styles::color::{self, Color};
 use std::fmt::Display;
@@ -30,7 +29,6 @@ pub trait ExtendedTerm {
         key: K,
         values: V,
     ) -> TermWriteResult;
-    fn render_error(&self, error: Box<dyn std::error::Error>) -> !;
     fn render_label<V: AsRef<str>>(&self, kind: Label, message: V) -> TermWriteResult;
     fn render_list<V: AsRef<[String]>>(&self, values: V) -> TermWriteResult;
 }
@@ -95,29 +93,6 @@ impl ExtendedTerm for Term {
         self.render_list(values)?;
 
         Ok(())
-    }
-
-    #[track_caller]
-    fn render_error(&self, error: Box<dyn std::error::Error>) -> ! {
-        let label = self.format_label(Label::Failure, "Error");
-        let label_width = measure_text_width(&label);
-        let message = error.to_string();
-        let message = message.trim();
-        let message_width = measure_text_width(message);
-        let available_space = self.size().1 as usize - label_width - 3; // padding
-
-        let contents = if message.contains('\n') || message_width > available_space {
-            format!("{}\n\n{}", label, &message)
-        } else {
-            format!("{} {}", label, &message)
-        };
-
-        self.write_line("").unwrap();
-        self.write_line(&contents).unwrap();
-        self.write_line("").unwrap();
-        self.flush().unwrap();
-
-        safe_exit(1);
     }
 
     fn render_label<V: AsRef<str>>(&self, kind: Label, message: V) -> TermWriteResult {

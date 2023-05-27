@@ -20,7 +20,7 @@ fn main() {
         .clone()
         .into_root_schema_for::<PartialTemplateFrontmatterConfig>();
     let toolchain_schema = gen.clone().into_root_schema_for::<PartialToolchainConfig>();
-    let workspace_schema = gen.clone().into_root_schema_for::<PartialWorkspaceConfig>();
+    let workspace_schema = gen.into_root_schema_for::<PartialWorkspaceConfig>();
 
     fs::write(
         "website/static/schemas/project.json",

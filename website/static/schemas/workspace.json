@@ -1,106 +1,47 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "WorkspaceConfig",
+  "title": "PartialWorkspaceConfig",
   "description": "Docs: https://moonrepo.dev/docs/config/workspace",
   "type": "object",
   "properties": {
     "$schema": {
-      "description": "JSON schema URI",
       "type": "string"
     },
     "constraints": {
-      "$ref": "#/definitions/ConstraintsConfig"
+      "$ref": "#/definitions/PartialConstraintsConfig"
     },
     "extends": {
-      "type": [
-        "string",
-        "null"
-      ]
+      "type": "string"
     },
     "generator": {
-      "$ref": "#/definitions/GeneratorConfig"
+      "$ref": "#/definitions/PartialGeneratorConfig"
     },
     "hasher": {
-      "$ref": "#/definitions/HasherConfig"
+      "$ref": "#/definitions/PartialHasherConfig"
     },
     "notifier": {
-      "$ref": "#/definitions/NotifierConfig"
+      "$ref": "#/definitions/PartialNotifierConfig"
     },
     "projects": {
       "$ref": "#/definitions/WorkspaceProjects"
     },
     "runner": {
-      "$ref": "#/definitions/RunnerConfig"
+      "$ref": "#/definitions/PartialRunnerConfig"
     },
     "telemetry": {
       "type": "boolean"
     },
     "vcs": {
-      "$ref": "#/definitions/VcsConfig"
+      "$ref": "#/definitions/PartialVcsConfig"
     },
     "versionConstraint": {
-      "type": [
-        "string",
-        "null"
-      ]
+      "type": "string"
     }
   },
+  "additionalProperties": false,
   "definitions": {
-    "ConstraintsConfig": {
-      "type": "object",
-      "properties": {
-        "enforceProjectTypeRelationships": {
-          "type": "boolean"
-        },
-        "tagRelationships": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        }
-      },
-      "additionalProperties": false
-    },
-    "GeneratorConfig": {
-      "type": "object",
-      "properties": {
-        "templates": {
-          "default": [
-            "./templates"
-          ],
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      },
-      "additionalProperties": false
-    },
-    "HasherConfig": {
-      "type": "object",
-      "properties": {
-        "batchSize": {
-          "type": [
-            "integer",
-            "null"
-          ],
-          "format": "uint16",
-          "minimum": 0.0
-        },
-        "optimization": {
-          "$ref": "#/definitions/HasherOptimization"
-        },
-        "walkStrategy": {
-          "$ref": "#/definitions/HasherWalkStrategy"
-        },
-        "warnOnMissingInputs": {
-          "type": "boolean"
-        }
-      },
-      "additionalProperties": false
+    "FilePath": {
+      "type": "string"
     },
     "HasherOptimization": {
       "type": "string",
@@ -116,29 +57,78 @@
         "vcs"
       ]
     },
-    "NotifierConfig": {
+    "Id": {
+      "type": "string"
+    },
+    "PartialConstraintsConfig": {
       "type": "object",
       "properties": {
-        "webhookUrl": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "enforceProjectTypeRelationships": {
+          "type": "boolean"
+        },
+        "tagRelationships": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/Id"
+            }
+          }
         }
       },
       "additionalProperties": false
     },
-    "RunnerConfig": {
+    "PartialGeneratorConfig": {
+      "type": "object",
+      "properties": {
+        "templates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FilePath"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "PartialHasherConfig": {
+      "type": "object",
+      "properties": {
+        "batchSize": {
+          "type": "integer",
+          "format": "uint16",
+          "minimum": 0.0
+        },
+        "optimization": {
+          "$ref": "#/definitions/HasherOptimization"
+        },
+        "walkStrategy": {
+          "$ref": "#/definitions/HasherWalkStrategy"
+        },
+        "warnOnMissingInputs": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "PartialNotifierConfig": {
+      "type": "object",
+      "properties": {
+        "webhookUrl": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "PartialRunnerConfig": {
       "type": "object",
       "properties": {
         "archivableTargets": {
           "type": "array",
           "items": {
-            "type": "string"
+            "$ref": "#/definitions/Target"
           }
         },
         "cacheLifetime": {
-          "default": "7 days",
           "type": "string"
         },
         "inheritColorsForPipedTasks": {
@@ -150,21 +140,16 @@
       },
       "additionalProperties": false
     },
-    "VcsConfig": {
+    "PartialVcsConfig": {
       "type": "object",
       "properties": {
         "defaultBranch": {
-          "default": "master",
           "type": "string"
         },
         "manager": {
           "$ref": "#/definitions/VcsManager"
         },
         "remoteCandidates": {
-          "default": [
-            "origin",
-            "upstream"
-          ],
           "type": "array",
           "items": {
             "type": "string"
@@ -172,6 +157,64 @@
         }
       },
       "additionalProperties": false
+    },
+    "Target": {
+      "type": "object",
+      "required": [
+        "id",
+        "scope",
+        "task_id"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/definitions/TargetScope"
+        },
+        "scope_id": {
+          "$ref": "#/definitions/Id"
+        },
+        "task_id": {
+          "$ref": "#/definitions/Id"
+        }
+      }
+    },
+    "TargetScope": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "All",
+            "Deps",
+            "OwnSelf"
+          ]
+        },
+        {
+          "type": "object",
+          "required": [
+            "Project"
+          ],
+          "properties": {
+            "Project": {
+              "$ref": "#/definitions/Id"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "Tag"
+          ],
+          "properties": {
+            "Tag": {
+              "$ref": "#/definitions/Id"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
     },
     "VcsManager": {
       "type": "string",

@@ -5,17 +5,18 @@ use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::str::FromStr;
 
 #[derive(Clone, ConfigEnum, Debug, Default, Eq, JsonSchema, PartialEq)]
+#[serde(rename_all = "kebab-case")]
 pub enum LanguageType {
     Bash,
     Batch,
     Go,
-    #[variant(value = "javascript")]
+    #[serde(rename = "javascript")]
     JavaScript,
     Php,
     Python,
     Ruby,
     Rust,
-    #[variant(value = "typescript")]
+    #[serde(rename = "typescript")]
     TypeScript,
 
     // Not explicitly set or detected

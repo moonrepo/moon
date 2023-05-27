@@ -1,154 +1,30 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "ToolchainConfig",
+  "title": "PartialToolchainConfig",
   "description": "Docs: https://moonrepo.dev/docs/config/toolchain",
   "type": "object",
   "properties": {
     "$schema": {
-      "description": "JSON schema URI",
       "type": "string"
     },
     "deno": {
-      "anyOf": [
-        {
-          "$ref": "#/definitions/DenoConfig"
-        },
-        {
-          "type": "null"
-        }
-      ]
+      "$ref": "#/definitions/PartialDenoConfig"
     },
     "extends": {
-      "type": [
-        "string",
-        "null"
-      ]
+      "type": "string"
     },
     "node": {
-      "anyOf": [
-        {
-          "$ref": "#/definitions/NodeConfig"
-        },
-        {
-          "type": "null"
-        }
-      ]
+      "$ref": "#/definitions/PartialNodeConfig"
     },
     "rust": {
-      "anyOf": [
-        {
-          "$ref": "#/definitions/RustConfig"
-        },
-        {
-          "type": "null"
-        }
-      ]
+      "$ref": "#/definitions/PartialRustConfig"
     },
     "typescript": {
-      "anyOf": [
-        {
-          "$ref": "#/definitions/TypeScriptConfig"
-        },
-        {
-          "type": "null"
-        }
-      ]
+      "$ref": "#/definitions/PartialTypeScriptConfig"
     }
   },
+  "additionalProperties": false,
   "definitions": {
-    "DenoConfig": {
-      "type": "object",
-      "properties": {
-        "depsFile": {
-          "default": "deps.ts",
-          "type": "string"
-        },
-        "lockfile": {
-          "type": "boolean"
-        }
-      },
-      "additionalProperties": false
-    },
-    "NodeConfig": {
-      "type": "object",
-      "properties": {
-        "addEnginesConstraint": {
-          "type": "boolean"
-        },
-        "aliasPackageNames": {
-          "deprecated": true,
-          "anyOf": [
-            {
-              "$ref": "#/definitions/NodeProjectAliasFormat"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "binExecArgs": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "dedupeOnLockfileChange": {
-          "type": "boolean"
-        },
-        "dependencyVersionFormat": {
-          "$ref": "#/definitions/NodeVersionFormat"
-        },
-        "inferTasksFromScripts": {
-          "type": "boolean"
-        },
-        "npm": {
-          "$ref": "#/definitions/NpmConfig"
-        },
-        "packageManager": {
-          "$ref": "#/definitions/NodePackageManager"
-        },
-        "pnpm": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PnpmConfig"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "syncProjectWorkspaceDependencies": {
-          "type": "boolean"
-        },
-        "syncVersionManagerConfig": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/NodeVersionManager"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "version": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "yarn": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/YarnConfig"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false
-    },
     "NodePackageManager": {
       "type": "string",
       "enum": [
@@ -185,29 +61,88 @@
         "nvm"
       ]
     },
-    "NpmConfig": {
+    "PartialDenoConfig": {
+      "description": "Docs: https://moonrepo.dev/docs/config/toolchain#deno",
+      "type": "object",
+      "properties": {
+        "depsFile": {
+          "type": "string"
+        },
+        "lockfile": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "PartialNodeConfig": {
+      "description": "Docs: https://moonrepo.dev/docs/config/toolchain#node",
+      "type": "object",
+      "properties": {
+        "addEnginesConstraint": {
+          "type": "boolean"
+        },
+        "aliasPackageNames": {
+          "$ref": "#/definitions/NodeProjectAliasFormat"
+        },
+        "binExecArgs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "dedupeOnLockfileChange": {
+          "type": "boolean"
+        },
+        "dependencyVersionFormat": {
+          "$ref": "#/definitions/NodeVersionFormat"
+        },
+        "inferTasksFromScripts": {
+          "type": "boolean"
+        },
+        "npm": {
+          "$ref": "#/definitions/PartialNpmConfig"
+        },
+        "packageManager": {
+          "$ref": "#/definitions/NodePackageManager"
+        },
+        "pnpm": {
+          "$ref": "#/definitions/PartialPnpmConfig"
+        },
+        "syncProjectWorkspaceDependencies": {
+          "type": "boolean"
+        },
+        "syncVersionManagerConfig": {
+          "$ref": "#/definitions/NodeVersionManager"
+        },
+        "version": {
+          "type": "string"
+        },
+        "yarn": {
+          "$ref": "#/definitions/PartialYarnConfig"
+        }
+      },
+      "additionalProperties": false
+    },
+    "PartialNpmConfig": {
       "type": "object",
       "properties": {
         "version": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     },
-    "PnpmConfig": {
+    "PartialPnpmConfig": {
       "type": "object",
       "properties": {
         "version": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     },
-    "RustConfig": {
+    "PartialRustConfig": {
+      "description": "Docs: https://moonrepo.dev/docs/config/toolchain#rust",
       "type": "object",
       "properties": {
         "bins": {
@@ -220,30 +155,25 @@
           "type": "boolean"
         },
         "version": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         }
       },
       "additionalProperties": false
     },
-    "TypeScriptConfig": {
+    "PartialTypeScriptConfig": {
+      "description": "Docs: https://moonrepo.dev/docs/config/toolchain#typescript",
       "type": "object",
       "properties": {
         "createMissingConfig": {
           "type": "boolean"
         },
         "projectConfigFileName": {
-          "default": "tsconfig.json",
           "type": "string"
         },
         "rootConfigFileName": {
-          "default": "tsconfig.json",
           "type": "string"
         },
         "rootOptionsConfigFileName": {
-          "default": "tsconfig.options.json",
           "type": "string"
         },
         "routeOutDirToCache": {
@@ -258,25 +188,20 @@
       },
       "additionalProperties": false
     },
-    "YarnConfig": {
+    "PartialYarnConfig": {
       "type": "object",
       "properties": {
         "plugins": {
-          "type": [
-            "array",
-            "null"
-          ],
+          "type": "array",
           "items": {
             "type": "string"
           }
         },
         "version": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     }
   }
 }

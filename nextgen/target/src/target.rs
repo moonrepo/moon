@@ -4,7 +4,7 @@ use moon_common::{Id, ID_CHARS};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::{
     cmp::Ordering,
     fmt::{self, Display},
@@ -19,8 +19,7 @@ pub static TARGET_PATTERN: Lazy<Regex> = Lazy::new(|| {
     .unwrap()
 });
 
-#[derive(Clone, Debug, Deserialize, Eq, Hash, JsonSchema, PartialEq, Serialize)]
-#[serde(try_from = "String", into = "String")]
+#[derive(Clone, Debug, Eq, Hash, JsonSchema, PartialEq)]
 pub struct Target {
     pub id: String,
     pub scope: TargetScope,
@@ -169,21 +168,21 @@ impl Ord for Target {
     }
 }
 
-// These traits are for converting targets within configuration
-// into the `Target` object instead of strings.
-
-impl TryFrom<String> for Target {
-    type Error = TargetError;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        Target::parse(&value)
+impl<'de> Deserialize<'de> for Target {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Target::parse(&String::deserialize(deserializer)?).map_err(de::Error::custom)
     }
 }
 
-#[allow(clippy::from_over_into)]
-impl Into<String> for Target {
-    fn into(self) -> String {
-        self.id
+impl Serialize for Target {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.id)
     }
 }
 

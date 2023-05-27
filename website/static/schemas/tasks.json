@@ -1,12 +1,14 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "InheritedTasksConfig",
+  "title": "PartialInheritedTasksConfig",
   "description": "Docs: https://moonrepo.dev/docs/config/tasks",
   "type": "object",
   "properties": {
     "$schema": {
-      "description": "JSON schema URI",
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "extends": {
       "type": [
@@ -15,58 +17,54 @@
       ]
     },
     "fileGroups": {
-      "type": "object",
+      "type": [
+        "object",
+        "null"
+      ],
       "additionalProperties": {
         "type": "array",
         "items": {
-          "type": "string"
+          "$ref": "#/definitions/PortablePath"
         }
       }
     },
     "implicitDeps": {
-      "type": "array",
+      "type": [
+        "array",
+        "null"
+      ],
       "items": {
-        "type": "string"
+        "$ref": "#/definitions/Target"
       }
     },
     "implicitInputs": {
-      "type": "array",
+      "type": [
+        "array",
+        "null"
+      ],
       "items": {
         "type": "string"
       }
     },
     "tasks": {
-      "type": "object",
+      "type": [
+        "object",
+        "null"
+      ],
       "additionalProperties": {
-        "$ref": "#/definitions/TaskConfig"
+        "$ref": "#/definitions/PartialTaskConfig"
       }
     }
   },
+  "additionalProperties": false,
   "definitions": {
-    "PlatformType": {
-      "type": "string",
-      "enum": [
-        "deno",
-        "node",
-        "rust",
-        "system",
-        "unknown"
-      ]
+    "FilePath": {
+      "type": "string"
     },
-    "TaskCommandArgs": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      ]
+    "GlobPath": {
+      "type": "string"
     },
-    "TaskConfig": {
+    "PartialTaskConfig": {
       "type": "object",
       "properties": {
         "args": {
@@ -95,7 +93,7 @@
             "null"
           ],
           "items": {
-            "type": "string"
+            "$ref": "#/definitions/Target"
           }
         },
         "env": {
@@ -117,10 +115,20 @@
           }
         },
         "local": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "options": {
-          "$ref": "#/definitions/TaskOptionsConfig"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PartialTaskOptionsConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "outputs": {
           "type": [
@@ -132,46 +140,35 @@
           }
         },
         "platform": {
-          "$ref": "#/definitions/PlatformType"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlatformType"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "type": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskType"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
     },
-    "TaskMergeStrategy": {
-      "type": "string",
-      "enum": [
-        "append",
-        "prepend",
-        "replace"
-      ]
-    },
-    "TaskOptionAffectedFilesConfig": {
-      "anyOf": [
-        {
-          "type": "boolean"
-        },
-        {
-          "type": "string"
-        }
-      ]
-    },
-    "TaskOptionEnvFileConfig": {
-      "anyOf": [
-        {
-          "type": "boolean"
-        },
-        {
-          "type": "string"
-        }
-      ]
-    },
-    "TaskOptionsConfig": {
+    "PartialTaskOptionsConfig": {
       "type": "object",
       "properties": {
         "affectedFiles": {
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskOptionAffectedFilesConfig"
+              "$ref": "#/definitions/TaskOptionAffectedFiles"
             },
             {
               "type": "null"
@@ -187,7 +184,7 @@
         "envFile": {
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskOptionEnvFileConfig"
+              "$ref": "#/definitions/TaskOptionEnvFile"
             },
             {
               "type": "null"
@@ -254,6 +251,12 @@
             }
           ]
         },
+        "persistent": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
         "retryCount": {
           "type": [
             "integer",
@@ -289,6 +292,83 @@
       },
       "additionalProperties": false
     },
+    "PlatformType": {
+      "type": "string",
+      "enum": [
+        "deno",
+        "node",
+        "rust",
+        "system",
+        "unknown"
+      ]
+    },
+    "PortablePath": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/FilePath"
+        },
+        {
+          "$ref": "#/definitions/GlobPath"
+        },
+        {
+          "$ref": "#/definitions/FilePath"
+        },
+        {
+          "$ref": "#/definitions/GlobPath"
+        }
+      ]
+    },
+    "Target": {
+      "type": "string"
+    },
+    "TaskCommandArgs": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "TaskMergeStrategy": {
+      "type": "string",
+      "enum": [
+        "append",
+        "prepend",
+        "replace"
+      ]
+    },
+    "TaskOptionAffectedFiles": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "args",
+            "env"
+          ]
+        },
+        {
+          "type": "boolean"
+        }
+      ]
+    },
+    "TaskOptionEnvFile": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "string"
+        }
+      ]
+    },
     "TaskOutputStyle": {
       "type": "string",
       "enum": [
@@ -297,6 +377,14 @@
         "hash",
         "none",
         "stream"
+      ]
+    },
+    "TaskType": {
+      "type": "string",
+      "enum": [
+        "build",
+        "run",
+        "test"
       ]
     }
   }

@@ -26,6 +26,32 @@ pub enum TaskOptionAffectedFiles {
     Enabled(bool),
 }
 
+impl schemars::JsonSchema for TaskOptionAffectedFiles {
+    fn schema_name() -> String {
+        "TaskOptionAffectedFiles".to_owned()
+    }
+
+    fn json_schema(_: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
+        schemars::schema::Schema::Object(schemars::schema::SchemaObject {
+            subschemas: Some(Box::new(schemars::schema::SubschemaValidation {
+                one_of: Some(vec![
+                    schemars::schema::Schema::Object(schemars::schema::SchemaObject {
+                        instance_type: Some(schemars::schema::InstanceType::String.into()),
+                        enum_values: Some(vec!["args".into(), "env".into()]),
+                        ..Default::default()
+                    }),
+                    schemars::schema::Schema::Object(schemars::schema::SchemaObject {
+                        instance_type: Some(schemars::schema::InstanceType::Boolean.into()),
+                        ..Default::default()
+                    }),
+                ]),
+                ..Default::default()
+            })),
+            ..Default::default()
+        })
+    }
+}
+
 impl<'de> Deserialize<'de> for TaskOptionAffectedFiles {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -112,7 +138,6 @@ cacheable!(
         pub run_deps_in_parallel: Option<bool>,
 
         #[serde(rename = "runInCI")]
-        #[setting(rename = "runInCI")]
         pub run_in_ci: Option<bool>,
 
         pub run_from_workspace_root: Option<bool>,

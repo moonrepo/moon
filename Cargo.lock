@@ -2719,6 +2719,7 @@ dependencies = [
  "moon_target",
  "proto_cli",
  "rustc-hash",
+ "schemars",
  "schematic",
  "semver",
  "serde",
@@ -3319,6 +3320,7 @@ dependencies = [
  "moon_common",
  "once_cell",
  "regex",
+ "schemars",
  "serde",
  "thiserror",
 ]
@@ -4518,13 +4520,14 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.5.3"
+version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "581a9c919542e7727f27a0348e8c0496dabf65fe1f484cbe3de1a34097f09219"
+checksum = "829e8facab9cbff422cab3c66c7654c615e8bd96d62ff1ff4735b9f8dcd3abf1"
 dependencies = [
  "garde",
  "miette",
  "reqwest",
+ "schemars",
  "schematic_macros",
  "serde",
  "serde_path_to_error",
@@ -4535,9 +4538,9 @@ dependencies = [
 
 [[package]]
 name = "schematic_macros"
-version = "0.5.2"
+version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fdcfb7ebf27bd3f83bc0b0c3c75935bd9230467b3bd980c3b665098387c63dff"
+checksum = "72049704709c00ca96c34b490df58194fb292b4677c8e7f9bbeda4c7861bffc2"
 dependencies = [
  "convert_case",
  "darling 0.20.1",

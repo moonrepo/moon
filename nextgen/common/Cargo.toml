@@ -8,7 +8,7 @@ miette = { workspace = true }
 once_cell = { workspace = true }
 relative-path = { version = "1.8.0", features = ["serde"] }
 regex = { workspace = true }
-schemars = "0.8.12"
+schemars = { workspace = true }
 serde = { workspace = true }
 starbase_styles = { workspace = true }
 thiserror = { workspace = true }

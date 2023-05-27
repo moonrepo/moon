@@ -79,6 +79,7 @@ impl Default for WorkspaceProjects {
     }
 }
 
+/// Docs: https://moonrepo.dev/docs/config/workspace
 #[derive(Config)]
 pub struct WorkspaceConfig {
     #[setting(

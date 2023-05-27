@@ -1,31 +1,38 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "TemplateConfig",
+  "title": "PartialTemplateConfig",
   "description": "Docs: https://moonrepo.dev/docs/config/template",
   "type": "object",
-  "required": [
-    "description",
-    "title"
-  ],
   "properties": {
     "$schema": {
-      "description": "JSON schema URI",
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "description": {
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "title": {
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "variables": {
-      "default": {},
-      "type": "object",
+      "type": [
+        "object",
+        "null"
+      ],
       "additionalProperties": {
         "$ref": "#/definitions/TemplateVariable"
       }
     }
   },
+  "additionalProperties": false,
   "definitions": {
     "TemplateVariable": {
       "oneOf": [
@@ -103,7 +110,8 @@
           "properties": {
             "default": {
               "type": "integer",
-              "format": "int32"
+              "format": "uint",
+              "minimum": 0.0
             },
             "prompt": {
               "type": [

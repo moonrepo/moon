@@ -2,11 +2,12 @@
 
 use moon_common::consts;
 use rustc_hash::FxHashMap;
+use schemars::JsonSchema;
 use schematic::{color, derive_enum, validate, Config, ConfigError, ConfigLoader};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
 pub struct TemplateVariableSetting<T> {
     pub default: T,
     pub prompt: Option<String>,
@@ -24,7 +25,7 @@ derive_enum!(
     }
 );
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
 pub struct TemplateVariableEnumSetting {
     pub default: String,
     pub multiple: Option<bool>,

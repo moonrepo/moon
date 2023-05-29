@@ -1,7 +1,8 @@
 mod utils;
 
-use moon_config::ToolchainConfig;
+use moon_config::{NodePackageManager, ToolchainConfig};
 use proto::ToolsConfig;
+use starbase_sandbox::create_sandbox;
 use std::env;
 use utils::*;
 
@@ -30,6 +31,43 @@ mod toolchain_config {
         assert!(config.node.is_none());
         assert!(config.rust.is_none());
         assert!(config.typescript.is_none());
+    }
+
+    mod extends {
+        use super::*;
+
+        #[test]
+        fn recursive_merges() {
+            let sandbox = create_sandbox("toolchain-extends");
+            let config = test_config(sandbox.path().join("base-2.yml"), |path| {
+                ToolchainConfig::load(sandbox.path(), path, &ToolsConfig::default())
+            });
+
+            let node = config.node.unwrap();
+
+            assert_eq!(node.version.unwrap(), "4.5.6");
+            assert!(node.add_engines_constraint);
+            assert!(!node.dedupe_on_lockfile_change);
+            assert_eq!(node.package_manager, NodePackageManager::Yarn);
+
+            let yarn = node.yarn.unwrap();
+
+            assert_eq!(yarn.version.unwrap(), "3.3.0");
+        }
+
+        #[test]
+        fn recursive_merges_typescript() {
+            let sandbox = create_sandbox("toolchain-extends");
+            let config = test_config(sandbox.path().join("typescript-2.yml"), |path| {
+                ToolchainConfig::load(sandbox.path(), path, &ToolsConfig::default())
+            });
+
+            let typescript = config.typescript.unwrap();
+
+            assert_eq!(typescript.root_config_file_name, "tsconfig.root.json");
+            assert!(!typescript.create_missing_config);
+            assert!(typescript.sync_project_references);
+        }
     }
 
     mod deno {

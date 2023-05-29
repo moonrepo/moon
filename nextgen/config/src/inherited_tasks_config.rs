@@ -69,7 +69,7 @@ impl InheritedTasksConfig {
                     path
                 },
             ))
-            .file(path)?
+            .file_optional(path)?
             .load_partial(&())
     }
 }

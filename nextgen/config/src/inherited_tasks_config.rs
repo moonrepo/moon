@@ -74,6 +74,10 @@ impl InheritedTasksConfig {
     }
 }
 
+fn is_js_platform(platform: &PlatformType) -> bool {
+    matches!(platform, PlatformType::Deno | PlatformType::Node)
+}
+
 #[derive(Debug, Default)]
 pub struct InheritedTasksManager {
     pub configs: FxHashMap<String, PartialInheritedTasksConfig>,
@@ -107,16 +111,13 @@ impl InheritedTasksManager {
     ) -> Vec<String> {
         let mut lookup = vec!["*".to_string()];
 
-        // JS/TS is special in that it runs on multiple platforms
-        let is_js_platform = matches!(platform, PlatformType::Deno | PlatformType::Node);
-
-        if is_js_platform {
+        if is_js_platform(platform) {
             lookup.push(format!("{platform}"));
         }
 
         lookup.push(format!("{language}"));
 
-        if is_js_platform {
+        if is_js_platform(platform) {
             lookup.push(format!("{platform}-{project}"));
         }
 
@@ -137,6 +138,9 @@ impl InheritedTasksManager {
         tags: &[Id],
     ) -> Result<InheritedTasksConfig, ConfigError> {
         let mut config = PartialInheritedTasksConfig::default();
+
+        #[allow(clippy::let_unit_value)]
+        let context = ();
 
         for lookup in self.get_lookup_order(platform, language, project, tags) {
             if let Some(managed_config) = self.configs.get(&lookup) {
@@ -165,10 +169,34 @@ impl InheritedTasksManager {
                     }
                 }
 
-                config.merge(&(), managed_config)?;
+                config.merge(&context, managed_config)?;
             }
         }
 
-        InheritedTasksConfig::from_partial(&(), config, false)
+        let config = InheritedTasksConfig::from_partial(&context, config, false)?;
+
+        let label = if is_js_platform(platform) {
+            format!(
+                "({}, {}, {})",
+                color::label(platform.to_string()),
+                color::label(language.to_string()),
+                color::label(project.to_string())
+            )
+        } else {
+            format!(
+                "({}, {})",
+                color::label(language.to_string()),
+                color::label(project.to_string())
+            )
+        };
+
+        config
+            .validate(&context)
+            .map_err(|error| ConfigError::Validator {
+                config: format!("inherited tasks {}", label),
+                error,
+            })?;
+
+        Ok(config)
     }
 }

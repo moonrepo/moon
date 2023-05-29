@@ -3,9 +3,9 @@ use crate::infer_tasks_from_scripts;
 use moon_action_context::ActionContext;
 use moon_common::Id;
 use moon_config::{
-    Config, DependencyConfig, DependencyScope, HasherConfig, NodeConfig, PlatformType,
-    ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, TaskConfig, TasksConfigsMap,
-    TypeScriptConfig,
+    Config, DependencyConfig, DependencyScope, DependencySource, HasherConfig, NodeConfig,
+    PlatformType, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, TaskConfig,
+    TasksConfigsMap, TypeScriptConfig,
 };
 use moon_error::MoonError;
 use moon_hasher::{DepsHasher, HashSet};
@@ -185,6 +185,7 @@ impl Platform for NodePlatform {
                             implicit_deps.push(DependencyConfig {
                                 id: dep_project_id.to_owned(),
                                 scope: *scope,
+                                source: DependencySource::Implicit,
                                 via: Some(dep_name.clone()),
                             });
                         }

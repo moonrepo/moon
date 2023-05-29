@@ -4,11 +4,21 @@
 
 #### 🚀 Updates
 
+- Rewrote configuration from the ground-up:
+  - Strict parsing to bubble up typos, invalid nesting, and more.
+  - Recursive merging and validation.
+  - And many more improvements.
+- Rewrote error handling and rendering.
 - Added support for npm lockfile v3 format.
 
 #### 🐞 Fixes
 
 - Fixed an issue where colors were not being forced when passing `--color`.
+
+#### ⚙️ Internal
+
+- Updated to proto v0.9.
+- Updated Cargo dependencies.
 
 ## 1.6.1
 

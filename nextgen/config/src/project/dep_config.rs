@@ -1,4 +1,4 @@
-use moon_common::Id;
+use moon_common::{cacheable, Id};
 use schematic::{derive_enum, Config, ConfigEnum};
 
 derive_enum!(
@@ -11,9 +11,21 @@ derive_enum!(
     }
 );
 
-#[derive(Config)]
-pub struct DependencyConfig {
-    pub id: Id,
-    pub scope: DependencyScope,
-    pub via: Option<String>,
-}
+derive_enum!(
+    #[derive(ConfigEnum, Copy, Default)]
+    pub enum DependencySource {
+        #[default]
+        Explicit,
+        Implicit,
+    }
+);
+
+cacheable!(
+    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    pub struct DependencyConfig {
+        pub id: Id,
+        pub scope: DependencyScope,
+        pub source: DependencySource,
+        pub via: Option<String>,
+    }
+);

@@ -1,10 +1,11 @@
 use moon::{generate_project_graph, load_workspace_from};
 use moon_common::Id;
 use moon_config::{
-    DependencyScope, PartialConstraintsConfig, PartialNodeConfig, PartialRustConfig,
-    PartialToolchainConfig, PartialWorkspaceConfig, WorkspaceProjects,
+    DependencyConfig, DependencyScope, DependencySource, PartialConstraintsConfig,
+    PartialNodeConfig, PartialRustConfig, PartialToolchainConfig, PartialWorkspaceConfig,
+    WorkspaceProjects,
 };
-use moon_project::{Project, ProjectDependency, ProjectDependencySource};
+use moon_project::Project;
 use moon_project_graph::ProjectGraph;
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, get_project_graph_aliases_fixture_configs, Sandbox,
@@ -487,19 +488,19 @@ mod implicit_explicit_deps {
             FxHashMap::from_iter([
                 (
                     "nodeNameScope".into(),
-                    ProjectDependency {
+                    DependencyConfig {
                         id: "nodeNameScope".into(),
                         scope: DependencyScope::Development,
-                        source: ProjectDependencySource::Implicit,
+                        source: DependencySource::Implicit,
                         via: Some("@scope/pkg-foo".to_string())
                     }
                 ),
                 (
                     "node".into(),
-                    ProjectDependency {
+                    DependencyConfig {
                         id: "node".into(),
                         scope: DependencyScope::Production,
-                        source: ProjectDependencySource::Implicit,
+                        source: DependencySource::Implicit,
                         via: Some("project-graph-aliases-node".to_string())
                     }
                 )
@@ -518,19 +519,19 @@ mod implicit_explicit_deps {
             FxHashMap::from_iter([
                 (
                     "nodeNameScope".into(),
-                    ProjectDependency {
+                    DependencyConfig {
                         id: "nodeNameScope".into(),
                         scope: DependencyScope::Production,
-                        source: ProjectDependencySource::Explicit,
+                        source: DependencySource::Explicit,
                         via: None
                     }
                 ),
                 (
                     "node".into(),
-                    ProjectDependency {
+                    DependencyConfig {
                         id: "node".into(),
                         scope: DependencyScope::Development,
-                        source: ProjectDependencySource::Explicit,
+                        source: DependencySource::Explicit,
                         via: None
                     }
                 )
@@ -549,28 +550,28 @@ mod implicit_explicit_deps {
             FxHashMap::from_iter([
                 (
                     "nodeNameScope".into(),
-                    ProjectDependency {
+                    DependencyConfig {
                         id: "nodeNameScope".into(),
                         scope: DependencyScope::Production,
-                        source: ProjectDependencySource::Explicit,
+                        source: DependencySource::Explicit,
                         via: None
                     }
                 ),
                 (
                     "node".into(),
-                    ProjectDependency {
+                    DependencyConfig {
                         id: "node".into(),
                         scope: DependencyScope::Development,
-                        source: ProjectDependencySource::Explicit,
+                        source: DependencySource::Explicit,
                         via: None
                     }
                 ),
                 (
                     "nodeNameOnly".into(),
-                    ProjectDependency {
+                    DependencyConfig {
                         id: "nodeNameOnly".into(),
                         scope: DependencyScope::Peer,
-                        source: ProjectDependencySource::Implicit,
+                        source: DependencySource::Implicit,
                         via: Some("pkg-bar".to_string())
                     }
                 )

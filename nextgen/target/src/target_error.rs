@@ -10,11 +10,11 @@ pub enum TargetError {
     )]
     InvalidFormat(String),
 
-    #[diagnostic(code(target::run_scope::no_deps))]
+    #[diagnostic(code(target::run_context::no_deps_scope))]
     #[error("Dependencies scope (^:) is not supported in run contexts.")]
     NoDepsInRunContext,
 
-    #[diagnostic(code(target::run_scope::no_self))]
+    #[diagnostic(code(target::run_context::no_self_scope))]
     #[error("Self scope (~:) is not supported in run contexts.")]
     NoSelfInRunContext,
 

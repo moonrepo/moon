@@ -2,7 +2,9 @@
 source: crates/cli/tests/run_test.rs
 expression: assert.output()
 ---
-Error:   × Self scope (~:) is not supported in run contexts.
+Error: target::run_context::no_self_scope
+
+  × Self scope (~:) is not supported in run contexts.
 
 
 

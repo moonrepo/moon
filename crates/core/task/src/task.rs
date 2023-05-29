@@ -274,6 +274,10 @@ impl Task {
         matches!(self.type_of, TaskType::Test)
     }
 
+    pub fn is_persistent(&self) -> bool {
+        self.options.persistent
+    }
+
     pub fn merge(&mut self, config: &TaskConfig) -> Result<(), TaskError> {
         let (command, args) = get_command_and_args(config)?;
 

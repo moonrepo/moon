@@ -2,6 +2,7 @@ use miette::Diagnostic;
 use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
+#[diagnostic(code(args::split))]
 #[error("Failed to split arguments `{args}`: {error}")]
 pub struct ArgsSplitError {
     args: String,

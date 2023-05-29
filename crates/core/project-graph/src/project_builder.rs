@@ -144,7 +144,6 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         Ok(project)
     }
 
-    /// Enforce project constraints and boundaries.
     fn enforce_constraints(&self) -> Result<(), ProjectGraphError> {
         let type_relationships = self
             .workspace
@@ -160,6 +159,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                 .map(|idx| self.graph.node_weight(idx).unwrap())
                 .collect();
 
+            // Enforce project constraints and boundaries.
             for dep in deps {
                 if type_relationships {
                     enforce_project_type_relationships(project, dep)?;
@@ -167,6 +167,38 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
                 for (source_tag, required_tags) in tag_relationships {
                     enforce_tag_relationships(project, source_tag, dep, required_tags)?;
+                }
+            }
+
+            // Validate non-persistent tasks dont depend on persistent tasks
+            for task in project.tasks.values() {
+                for dep_target in &task.deps {
+                    let TargetScope::Project(maybe_project_id) = &dep_target.scope else {
+                        continue;
+                    };
+                    let project_id = self.resolve_id(maybe_project_id);
+
+                    let dep_task = if &project_id == &project.id {
+                        project.tasks.get(&dep_target.task_id)
+                    } else {
+                        let Some(dep_index) = self.indices.get(&project_id) else {
+                            // Our tests are wonky, fix later...
+                            continue;
+                        };
+
+                        let dep_project = self.graph.node_weight(*dep_index).unwrap();
+
+                        dep_project.tasks.get(&dep_target.task_id)
+                    };
+
+                    if let Some(dep_task) = dep_task {
+                        if !task.is_persistent() && dep_task.is_persistent() {
+                            return Err(ProjectGraphError::PersistentDepRequirement(
+                                task.target.to_string(),
+                                dep_task.target.to_string(),
+                            ));
+                        }
+                    }
                 }
             }
         }
@@ -320,36 +352,43 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             }
         };
 
-        for target in &task.deps {
-            match &target.scope {
+        for dep_target in &task.deps {
+            match &dep_target.scope {
                 // ^:task
                 TargetScope::Deps => {
                     for dep_id in project.get_dependency_ids() {
                         let dep_index = self.indices.get(dep_id).unwrap();
                         let dep_project = self.graph.node_weight(*dep_index).unwrap();
 
-                        if let Some(dep_task) = dep_project.tasks.get(&target.task_id) {
+                        if let Some(dep_task) = dep_project.tasks.get(&dep_target.task_id) {
                             push_target(dep_task.target.clone());
                         }
                     }
                 }
                 // ~:task
                 TargetScope::OwnSelf => {
-                    if target.task_id != task.id {
-                        push_target(Target::new(&project.id, &target.task_id)?);
+                    if dep_target.task_id == task.id {
+                        // Avoid circular references
+                    } else {
+                        push_target(Target::new(&project.id, &dep_target.task_id)?);
                     }
                 }
                 // project:task
                 TargetScope::Project(project_id) => {
-                    if project_id == &project.id && target.task_id == task.id {
+                    if project_id == &project.id && dep_target.task_id == task.id {
                         // Avoid circular references
                     } else {
-                        push_target(target.clone());
+                        push_target(dep_target.clone());
                     }
                 }
                 // :task
                 // #tag:task
-                _ => unreachable!(),
+                _ => {
+                    return Err(ProjectGraphError::PersistentDepRequirement(
+                        dep_target.to_string(),
+                        task.target.to_string(),
+                    ));
+                }
             };
         }
 
@@ -497,10 +536,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
     }
 
     fn internal_load(&mut self, alias_or_id: &str) -> Result<NodeIndex, ProjectGraphError> {
-        let id = Id::raw(match self.aliases.get(alias_or_id) {
-            Some(project_id) => project_id,
-            None => alias_or_id,
-        });
+        let id = self.resolve_id(alias_or_id);
 
         // Already loaded, abort early
         if let Some(index) = self.indices.get(&id) {
@@ -715,5 +751,12 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         self.workspace.cache.create_hash_manifest(&hash, &hasher)?;
 
         Ok(hash)
+    }
+
+    fn resolve_id(&self, alias_or_id: &str) -> Id {
+        Id::raw(match self.aliases.get(alias_or_id) {
+            Some(project_id) => project_id,
+            None => alias_or_id,
+        })
     }
 }

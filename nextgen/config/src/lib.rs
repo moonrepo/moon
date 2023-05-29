@@ -17,7 +17,7 @@ pub use language_platform::*;
 pub use portable_path::*;
 pub use project::*;
 pub use project_config::*;
-pub use schematic::{Config, ConfigError, PartialConfig};
+pub use schematic::{Config, ConfigEnum, ConfigError, PartialConfig};
 pub use template::*;
 pub use template_config::*;
 pub use toolchain::*;

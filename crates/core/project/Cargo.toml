@@ -17,7 +17,6 @@ miette = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 starbase_styles = { workspace = true }
-strum = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]

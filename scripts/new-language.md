@@ -15,8 +15,6 @@ This allows projects to configure their primary language, and is utilized by edi
 ```rust
 enum ProjectLanguage {
 	// ...
-
-	#[strum(serialize = "kotlin")]
 	Kotlin,
 }
 ```
@@ -136,8 +134,6 @@ This enum is the backbone of supporting language specific platforms.
 ```rust
 enum PlatformType {
 	// ...
-
-	#[strum(serialize = "kotlin")]
 	Kotlin,
 }
 ```

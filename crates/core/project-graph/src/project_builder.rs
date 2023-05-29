@@ -10,7 +10,7 @@ use moon_error::MoonError;
 use moon_hasher::{convert_paths_to_strings, to_hash};
 use moon_logger::{debug, map_list, trace, warn, Logable};
 use moon_platform_detector::{detect_project_language, detect_task_platform};
-use moon_project::{Project, ProjectDependency, ProjectDependencySource, ProjectError};
+use moon_project::{Project, ProjectError};
 use moon_target::{Target, TargetScope};
 use moon_task::{Task, TaskError, TaskFlag};
 use moon_utils::path::expand_to_workspace_relative;
@@ -126,12 +126,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                 project
                     .dependencies
                     .entry(dep_config.id.clone())
-                    .or_insert_with(|| ProjectDependency {
-                        id: dep_config.id.clone(),
-                        scope: dep_config.scope,
-                        source: ProjectDependencySource::Implicit,
-                        via: dep_config.via,
-                    });
+                    .or_insert_with(|| dep_config);
             }
 
             // Inherit platform specific tasks

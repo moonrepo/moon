@@ -2,14 +2,14 @@
 slug: moon-v1.7
 title: moon v1.7 - Next-generation configuration
 authors: [milesj]
-tags: [config]
-# image: ./img/moon/v1.6.png
+tags: [config, errors]
+image: ./img/moon/v1.7.png
 ---
 
-import Button from '@site/src/ui/Button';
 import Image from '@site/src/components/Image';
 
-???
+With this release, we've rewritten configuration from the ground up, improved error messages, and
+started work on diagnostics!
 
 <!--truncate-->
 
@@ -46,6 +46,8 @@ the file that failed to parse. Typically this will be for unknown fields and inv
 <Image src={require('./img/moon/v1.7/parse-unknown.png')} width="90%" />
 <Image src={require('./img/moon/v1.7/parse-type.png')} width="90%" />
 
+> We hope this bubbles up typos and incorrectly nested settings!
+
 ### Recursive validation
 
 Previously when validation would fail, we'd return on the first error and ignore subsequent errors.
@@ -66,6 +68,17 @@ With that being said, we'll continue to improve parsing, error messages, and uni
 like code frames within errors. Here's an example for a basic JSON file.
 
 <Image src={require('./img/moon/v1.7/code-frame.png')} width="90%" />
+
+## Better errors
+
+You may have noticed the errors in the screenshots above look quite different than what we've
+rendered until now, and you are correct. Going forward, all errors will be rendered by the wonderful
+Rust crate, [miette](https://crates.io/crates/miette).
+
+We've introduced this crate to handle _all_ errors and diagnostics within moon, not just
+configuration. So expect a much better developer experience moving forward!
+
+<Image src={require('./img/moon/v1.7/errors.png')} width="90%" />
 
 ## Other changes
 

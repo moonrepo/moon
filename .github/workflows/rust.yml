@@ -59,6 +59,7 @@ jobs:
         with:
           bins: cargo-make, cargo-nextest, cargo-llvm-cov
           components: llvm-tools-preview
+          cache: ${{ runner.os != 'Windows' }}
       - name: Run tests with coverage
         if: ${{ env.WITH_COVERAGE == 'true' }}
         run: cargo make test-coverage

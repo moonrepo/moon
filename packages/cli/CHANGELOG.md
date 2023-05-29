@@ -9,6 +9,8 @@
   - Recursive merging and validation.
   - And many more improvements.
 - Rewrote error handling and rendering.
+  - Improved error messages.
+  - Added custom error messages for certain situations.
 - Added support for npm lockfile v3 format.
 
 #### 🐞 Fixes

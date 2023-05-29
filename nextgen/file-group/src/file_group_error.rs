@@ -5,6 +5,7 @@ use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
 pub enum FileGroupError {
+    #[diagnostic(code(file_group::missing_glob))]
     #[error("No globs defined in file group {}.", .0.style(Style::Id))]
     NoGlobs(String),
 

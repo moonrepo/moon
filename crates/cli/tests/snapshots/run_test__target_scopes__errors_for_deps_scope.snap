@@ -2,7 +2,9 @@
 source: crates/cli/tests/run_test.rs
 expression: assert.output()
 ---
-Error:   × Dependencies scope (^:) is not supported in run contexts.
+Error: target::run_context::no_deps_scope
+
+  × Dependencies scope (^:) is not supported in run contexts.
 
 
 

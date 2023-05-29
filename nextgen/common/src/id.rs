@@ -19,6 +19,7 @@ pub static ID_PATTERN: Lazy<Regex> =
     Lazy::new(|| Regex::new(&format!("^([A-Za-z@]{{1}}{})$", ID_CHARS)).unwrap());
 
 #[derive(Error, Debug, Diagnostic)]
+#[diagnostic(code(id::invalid_format))]
 #[error("Invalid format for {}, may only contain alpha-numeric characters, dashes (-), slashes (/), underscores (_), and dots (.).", .0.style(Style::Id))]
 pub struct IdError(String);
 

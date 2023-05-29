@@ -12,6 +12,7 @@ tasks:
   devMiddleman:
     command: boop
     deps: [local]
+    local: true
   dev:
     command: noop
     deps:

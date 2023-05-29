@@ -153,7 +153,7 @@ impl InheritedTasksManager {
                             // let global_lookup = PortablePath::WorkspaceFile(FilePath(format!(
                             //     ".moon/tasks/{lookup}.yml"
                             // )));
-                            let global_lookup = format!(".moon/tasks/{lookup}.yml");
+                            let global_lookup = format!("/.moon/tasks/{lookup}.yml");
 
                             if let Some(global_inputs) = &mut task.global_inputs {
                                 global_inputs.push(global_lookup);

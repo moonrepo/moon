@@ -11,6 +11,23 @@ use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
 pub enum ProjectGraphError {
+    #[error(
+        "Non-persistent task {} cannot depend on persistent task {}. A task is marked persistent with the {} or {} settings.\n\nIf you're looking to avoid the cache, disable {} instead.",
+        .0.style(Style::Label),
+        .1.style(Style::Label),
+        "local".style(Style::Symbol),
+        "options.persistent".style(Style::Symbol),
+        "options.cache".style(Style::Symbol),
+    )]
+    PersistentDepRequirement(String, String),
+
+    #[error(
+        "Invalid dependency {} for task {}. All (:) and tag (#tag:) scopes are not supported.",
+        .0.style(Style::Label),
+        .1.style(Style::Label),
+    )]
+    UnsupportedTargetScopeInDeps(String, String),
+
     #[diagnostic(transparent)]
     #[error(transparent)]
     Enforcer(#[from] EnforcerError),

@@ -1,0 +1,88 @@
+---
+slug: moon-v1.7
+title: moon v1.7 - Next-generation configuration and errors
+authors: [milesj]
+tags: [config, errors]
+image: ./img/moon/v1.7.png
+---
+
+import Image from '@site/src/components/Image';
+
+With this release, we've rewritten configuration from the ground up, improved error messages, and
+started work on diagnostics!
+
+<!--truncate-->
+
+## Configuration rewrite
+
+If you've ever written Rust before, you may be familiar with the state of configuration crates in
+the ecosystem. There's only 2 viable choices to choose from, and we've been using 1 of them.
+However, it's been a constant source of friction for our use cases, and didn't support features that
+we've needed (built-in validation, file extending, and more).
+
+After researching our options, and attempting to contribute upstream, we decided to build our own
+configuration solution, unique to moonrepo's projects. As such, we're excited to announce
+[schematic](https://github.com/moonrepo/schematic), the most powerful configuration crate in the
+Rust ecosystem, with built-in features like:
+
+- Strict parsing with serde (serilization, deserialization).
+- Code frames in errors (when applicable).
+- Source file/URL extending.
+- Partial file parsing and merging.
+- Field-level merge strategies.
+- Recursive validation.
+- Dynamic default and env var values.
+- And much more!
+
+We've spent the last few weeks building this crate from the ground up, and migrating the moon
+codebase to it. It's been quite a feat, but we're very excited for what it has to offer already, and
+what's to come!
+
+### Strict parsing
+
+When we fail to parse a configuration file, we now include a descriptive message of the failure, and
+the file that failed to parse. Typically this will be for unknown fields and invalid value types.
+
+<Image src={require('./img/moon/v1.7/parse-unknown.png')} width="90%" />
+<Image src={require('./img/moon/v1.7/parse-type.png')} width="90%" />
+
+> We hope this bubbles up typos and incorrectly nested settings!
+
+### Recursive validation
+
+Previously when validation would fail, we'd return on the first error and ignore subsequent errors.
+This is a non-ideal experience as you'd have to constantly run `moon` commands until all validation
+issues have been resolved.
+
+Now we aggregate all validation errors, even from deeply nested fields, and present them together.
+
+<Image src={require('./img/moon/v1.7/validate.png')} width="90%" />
+
+### What's next?
+
+Since [schematic](https://github.com/moonrepo/schematic) is very young, and it hasn't been tested
+heavily in the ecosystem, we expect bugs and weird edge cases to popup. If you encounter any issues,
+please report them immediately so that we can fix them as soon as possible!
+
+With that being said, we'll continue to improve parsing, error messages, and unique functionality,
+like code frames within errors. Here's an example for a basic JSON file.
+
+<Image src={require('./img/moon/v1.7/code-frame.png')} width="90%" />
+
+## Better errors
+
+You may have noticed the errors in the screenshots above look quite different than what we've
+rendered until now, and you are correct. Going forward, all errors will be rendered by the wonderful
+Rust crate, [miette](https://crates.io/crates/miette).
+
+We've introduced this crate to handle _all_ errors and diagnostics within moon, not just
+configuration. So expect a much better developer experience moving forward!
+
+<Image src={require('./img/moon/v1.7/errors.png')} width="90%" />
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.7.0) for a full list of
+changes.
+
+- Added support for npm lockfile v3 format.

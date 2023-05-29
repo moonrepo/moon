@@ -1,7 +1,7 @@
 use crate::errors::ProjectError;
-use moon_common::{cacheable, cacheable_enum, consts, Id};
+use moon_common::{cacheable, consts, Id};
 use moon_config::{
-    DependencyScope, InheritedTasksConfig, InheritedTasksManager, LanguageType, ProjectConfig,
+    DependencyConfig, InheritedTasksConfig, InheritedTasksManager, LanguageType, ProjectConfig,
     ProjectDependsOn, ProjectType,
 };
 use moon_file_group::{FileGroup, FileGroupError};
@@ -14,11 +14,10 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_styles::color;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-use strum::Display;
 
 type FileGroupsMap = FxHashMap<Id, FileGroup>;
 
-type ProjectDependenciesMap = FxHashMap<Id, ProjectDependency>;
+type ProjectDependenciesMap = FxHashMap<Id, DependencyConfig>;
 
 type TasksMap = BTreeMap<Id, Task>;
 
@@ -96,19 +95,19 @@ fn create_dependencies_from_config(
             ProjectDependsOn::String(id) => {
                 deps.insert(
                     id.to_owned(),
-                    ProjectDependency {
+                    DependencyConfig {
                         id: id.to_owned(),
-                        ..ProjectDependency::default()
+                        ..DependencyConfig::default()
                     },
                 );
             }
             ProjectDependsOn::Object { id, scope } => {
                 deps.insert(
                     id.to_owned(),
-                    ProjectDependency {
+                    DependencyConfig {
                         id: id.to_owned(),
                         scope: scope.to_owned(),
-                        ..ProjectDependency::default()
+                        ..DependencyConfig::default()
                     },
                 );
             }
@@ -222,28 +221,6 @@ fn create_tasks_from_config(
 
     Ok(tasks)
 }
-
-cacheable_enum!(
-    #[derive(Clone, Debug, Default, Display, Eq, PartialEq)]
-    pub enum ProjectDependencySource {
-        #[default]
-        #[strum(serialize = "explicit")]
-        Explicit,
-
-        #[strum(serialize = "implicit")]
-        Implicit,
-    }
-);
-
-cacheable!(
-    #[derive(Clone, Debug, Default, Eq, PartialEq)]
-    pub struct ProjectDependency {
-        pub id: Id,
-        pub scope: DependencyScope,
-        pub source: ProjectDependencySource,
-        pub via: Option<String>,
-    }
-);
 
 cacheable!(
     #[derive(Clone, Debug, Default)]

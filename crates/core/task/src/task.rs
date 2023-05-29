@@ -12,12 +12,11 @@ use starbase_styles::color;
 use starbase_utils::glob;
 use std::env;
 use std::path::PathBuf;
-use strum::Display;
 
 type EnvVars = FxHashMap<String, String>;
 
 cacheable_enum!(
-    #[derive(Clone, Debug, Display, Eq, Hash, PartialEq)]
+    #[derive(Clone, Debug, Eq, Hash, PartialEq)]
     pub enum TaskFlag {
         NoInputs,
     }

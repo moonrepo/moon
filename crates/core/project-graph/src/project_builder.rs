@@ -178,7 +178,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                     };
                     let project_id = self.resolve_id(maybe_project_id);
 
-                    let dep_task = if &project_id == &project.id {
+                    let dep_task = if project_id == project.id {
                         project.tasks.get(&dep_target.task_id)
                     } else {
                         let Some(dep_index) = self.indices.get(&project_id) else {

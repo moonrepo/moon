@@ -1,0 +1,3 @@
+tasks:
+  deno:
+    command: deno

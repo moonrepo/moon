@@ -3,7 +3,7 @@
 use moon_common::consts;
 use rustc_hash::FxHashMap;
 use schemars::JsonSchema;
-use schematic::{color, derive_enum, validate, Config, ConfigError, ConfigLoader};
+use schematic::{derive_enum, validate, Config, ConfigError, ConfigLoader};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
@@ -65,11 +65,8 @@ pub struct TemplateConfig {
 
 impl TemplateConfig {
     pub fn load<P: AsRef<Path>>(path: P) -> Result<TemplateConfig, ConfigError> {
-        let path = path.as_ref();
-
         let result = ConfigLoader::<TemplateConfig>::yaml()
-            .label(color::path(path))
-            .file(path)?
+            .file(path.as_ref())?
             .load()?;
 
         Ok(result.config)

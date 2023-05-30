@@ -2,7 +2,7 @@
 
 use crate::toolchain::*;
 use crate::{inherit_tool, inherit_tool_without_version};
-use moon_common::{color, consts};
+use moon_common::consts;
 use proto::ToolsConfig;
 use schematic::{validate, Config, ConfigError, ConfigLoader};
 use serde::Serialize;
@@ -66,9 +66,7 @@ impl ToolchainConfig {
         proto_tools: &ToolsConfig,
     ) -> Result<ToolchainConfig, ConfigError> {
         let mut result = ConfigLoader::<ToolchainConfig>::yaml()
-            .label(color::path(
-                path.as_ref().strip_prefix(workspace_root.as_ref()).unwrap(),
-            ))
+            .set_root(workspace_root)
             .file_optional(path.as_ref())?
             .load()?;
 

@@ -8,11 +8,7 @@ use schematic::{
     derive_enum, Config, ConfigEnum, ConfigError, ConfigLoader, Segment, ValidateError,
 };
 
-fn validate_command<C>(
-    cmd: &TaskCommandArgs,
-    _task: &TaskConfig,
-    _ctx: &C,
-) -> Result<(), ValidateError> {
+fn validate_command<D, C>(cmd: &TaskCommandArgs, _task: &D, _ctx: &C) -> Result<(), ValidateError> {
     // Only fail for empty strings and not `None`
     let empty = match cmd {
         TaskCommandArgs::None => false,

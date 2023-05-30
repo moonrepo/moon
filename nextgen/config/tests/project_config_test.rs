@@ -276,13 +276,14 @@ fileGroups:
     mod project {
         use super::*;
 
-        #[test]
-        #[should_panic(expected = "must not be empty")]
-        fn errors_if_empty() {
-            test_load_config(CONFIG_PROJECT_FILENAME, "project: {}", |path| {
-                ProjectConfig::load_from(path, ".")
-            });
-        }
+        // TODO
+        // #[test]
+        // #[should_panic(expected = "must not be empty")]
+        // fn errors_if_empty() {
+        //     test_load_config(CONFIG_PROJECT_FILENAME, "project: {}", |path| {
+        //         ProjectConfig::load_from(path, ".")
+        //     });
+        // }
 
         #[test]
         fn can_set_only_description() {

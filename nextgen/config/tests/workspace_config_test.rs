@@ -33,13 +33,13 @@ mod workspace_config {
 
         #[test]
         fn recursive_merges() {
-            let sandbox = create_sandbox("workspace-extends");
+            let sandbox = create_sandbox("extends/workspace");
             let config = test_config(sandbox.path().join("base-2.yml"), |path| {
                 WorkspaceConfig::load(sandbox.path(), path)
             });
 
             assert_eq!(config.runner.cache_lifetime, "3 hours");
-            assert_eq!(config.runner.log_running_command, false);
+            assert!(!config.runner.log_running_command);
             assert_eq!(config.vcs.manager, VcsManager::Svn);
         }
 

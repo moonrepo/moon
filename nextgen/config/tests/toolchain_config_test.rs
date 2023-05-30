@@ -38,7 +38,7 @@ mod toolchain_config {
 
         #[test]
         fn recursive_merges() {
-            let sandbox = create_sandbox("toolchain-extends");
+            let sandbox = create_sandbox("extends/toolchain");
             let config = test_config(sandbox.path().join("base-2.yml"), |path| {
                 ToolchainConfig::load(sandbox.path(), path, &ToolsConfig::default())
             });
@@ -57,7 +57,7 @@ mod toolchain_config {
 
         #[test]
         fn recursive_merges_typescript() {
-            let sandbox = create_sandbox("toolchain-extends");
+            let sandbox = create_sandbox("extends/toolchain");
             let config = test_config(sandbox.path().join("typescript-2.yml"), |path| {
                 ToolchainConfig::load(sandbox.path(), path, &ToolsConfig::default())
             });

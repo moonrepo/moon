@@ -1,15 +1,24 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "WorkspaceConfig",
+  "title": "PartialWorkspaceConfig",
   "description": "Docs: https://moonrepo.dev/docs/config/workspace",
   "type": "object",
   "properties": {
     "$schema": {
-      "description": "JSON schema URI",
-      "type": "string"
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "constraints": {
-      "$ref": "#/definitions/ConstraintsConfig"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialConstraintsConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "extends": {
       "type": [
@@ -18,25 +27,70 @@
       ]
     },
     "generator": {
-      "$ref": "#/definitions/GeneratorConfig"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialGeneratorConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "hasher": {
-      "$ref": "#/definitions/HasherConfig"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialHasherConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "notifier": {
-      "$ref": "#/definitions/NotifierConfig"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialNotifierConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "projects": {
-      "$ref": "#/definitions/WorkspaceProjects"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/WorkspaceProjects"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "runner": {
-      "$ref": "#/definitions/RunnerConfig"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialRunnerConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "telemetry": {
-      "type": "boolean"
+      "type": [
+        "boolean",
+        "null"
+      ]
     },
     "vcs": {
-      "$ref": "#/definitions/VcsConfig"
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialVcsConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "versionConstraint": {
       "type": [
@@ -45,62 +99,10 @@
       ]
     }
   },
+  "additionalProperties": false,
   "definitions": {
-    "ConstraintsConfig": {
-      "type": "object",
-      "properties": {
-        "enforceProjectTypeRelationships": {
-          "type": "boolean"
-        },
-        "tagRelationships": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        }
-      },
-      "additionalProperties": false
-    },
-    "GeneratorConfig": {
-      "type": "object",
-      "properties": {
-        "templates": {
-          "default": [
-            "./templates"
-          ],
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      },
-      "additionalProperties": false
-    },
-    "HasherConfig": {
-      "type": "object",
-      "properties": {
-        "batchSize": {
-          "type": [
-            "integer",
-            "null"
-          ],
-          "format": "uint16",
-          "minimum": 0.0
-        },
-        "optimization": {
-          "$ref": "#/definitions/HasherOptimization"
-        },
-        "walkStrategy": {
-          "$ref": "#/definitions/HasherWalkStrategy"
-        },
-        "warnOnMissingInputs": {
-          "type": "boolean"
-        }
-      },
-      "additionalProperties": false
+    "FilePath": {
+      "type": "string"
     },
     "HasherOptimization": {
       "type": "string",
@@ -116,7 +118,89 @@
         "vcs"
       ]
     },
-    "NotifierConfig": {
+    "Id": {
+      "type": "string"
+    },
+    "PartialConstraintsConfig": {
+      "type": "object",
+      "properties": {
+        "enforceProjectTypeRelationships": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "tagRelationships": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/Id"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "PartialGeneratorConfig": {
+      "type": "object",
+      "properties": {
+        "templates": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/FilePath"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "PartialHasherConfig": {
+      "type": "object",
+      "properties": {
+        "batchSize": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint16",
+          "minimum": 0.0
+        },
+        "optimization": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/HasherOptimization"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "walkStrategy": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/HasherWalkStrategy"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "warnOnMissingInputs": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "PartialNotifierConfig": {
       "type": "object",
       "properties": {
         "webhookUrl": {
@@ -128,50 +212,72 @@
       },
       "additionalProperties": false
     },
-    "RunnerConfig": {
+    "PartialRunnerConfig": {
       "type": "object",
       "properties": {
         "archivableTargets": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
-            "type": "string"
+            "$ref": "#/definitions/Target"
           }
         },
         "cacheLifetime": {
-          "default": "7 days",
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "inheritColorsForPipedTasks": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "logRunningCommand": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         }
       },
       "additionalProperties": false
     },
-    "VcsConfig": {
+    "PartialVcsConfig": {
       "type": "object",
       "properties": {
         "defaultBranch": {
-          "default": "master",
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "manager": {
-          "$ref": "#/definitions/VcsManager"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/VcsManager"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "remoteCandidates": {
-          "default": [
-            "origin",
-            "upstream"
+          "type": [
+            "array",
+            "null"
           ],
-          "type": "array",
           "items": {
             "type": "string"
           }
         }
       },
       "additionalProperties": false
+    },
+    "Target": {
+      "type": "string"
     },
     "VcsManager": {
       "type": "string",

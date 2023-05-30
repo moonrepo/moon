@@ -2,11 +2,44 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moonrepo Blog</title>
-    <updated>2023-05-23T00:00:00.000Z</updated>
+    <updated>2023-05-30T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moonrepo Blog</subtitle>
     <icon>https://moonrepo.dev/img/favicon.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[moon v1.7 - Next-generation configuration and errors]]></title>
+        <id>https://moonrepo.dev/blog/moon-v1.7</id>
+        <link href="https://moonrepo.dev/blog/moon-v1.7"/>
+        <updated>2023-05-30T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[With this release, we've rewritten configuration from the ground up, improved error messages, and]]></summary>
+        <content type="html"><![CDATA[<p>With this release, we've rewritten configuration from the ground up, improved error messages, and
+started work on diagnostics!</p><h2 class="anchor anchorWithStickyNavbar_JmGV" id="configuration-rewrite">Configuration rewrite<a href="#configuration-rewrite" class="hash-link" aria-label="Direct link to Configuration rewrite" title="Direct link to Configuration rewrite">​</a></h2><p>If you've ever written Rust before, you may be familiar with the state of configuration crates in
+the ecosystem. There's only 2 viable choices to choose from, and we've been using 1 of them.
+However, it's been a constant source of friction for our use cases, and didn't support features that
+we've needed (built-in validation, file extending, and more).</p><p>After researching our options, and attempting to contribute upstream, we decided to build our own
+configuration solution, unique to moonrepo's projects. As such, we're excited to announce
+<a href="https://github.com/moonrepo/schematic" target="_blank" rel="noopener noreferrer">schematic</a>, the most powerful configuration crate in the
+Rust ecosystem, with built-in features like:</p><ul><li>Strict parsing with serde (serilization, deserialization).</li><li>Code frames in errors (when applicable).</li><li>Source file/URL extending.</li><li>Partial file parsing and merging.</li><li>Field-level merge strategies.</li><li>Recursive validation.</li><li>Dynamic default and env var values.</li><li>And much more!</li></ul><p>We've spent the last few weeks building this crate from the ground up, and migrating the moon
+codebase to it. It's been quite a feat, but we're very excited for what it has to offer already, and
+what's to come!</p><h3 class="anchor anchorWithStickyNavbar_JmGV" id="strict-parsing">Strict parsing<a href="#strict-parsing" class="hash-link" aria-label="Direct link to Strict parsing" title="Direct link to Strict parsing">​</a></h3><p>When we fail to parse a configuration file, we now include a descriptive message of the failure, and
+the file that failed to parse. Typically this will be for unknown fields and invalid value types.</p><div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="/assets/images/parse-unknown-2435995564068e43b3a8d5b52f1ddfaa.png" width="90%" alt="" class="inline-block"></div><div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="/assets/images/parse-type-2388b085fbfbf10a8f6dd0f74a2fb863.png" width="90%" alt="" class="inline-block"></div><blockquote><p>We hope this bubbles up typos and incorrectly nested settings!</p></blockquote><h3 class="anchor anchorWithStickyNavbar_JmGV" id="recursive-validation">Recursive validation<a href="#recursive-validation" class="hash-link" aria-label="Direct link to Recursive validation" title="Direct link to Recursive validation">​</a></h3><p>Previously when validation would fail, we'd return on the first error and ignore subsequent errors.
+This is a non-ideal experience as you'd have to constantly run <code>moon</code> commands until all validation
+issues have been resolved.</p><p>Now we aggregate all validation errors, even from deeply nested fields, and present them together.</p><div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="/assets/images/validate-c6d158c2f0d9ff9919b13b52e58321ea.png" width="90%" alt="" class="inline-block"></div><h3 class="anchor anchorWithStickyNavbar_JmGV" id="whats-next">What's next?<a href="#whats-next" class="hash-link" aria-label="Direct link to What's next?" title="Direct link to What's next?">​</a></h3><p>Since <a href="https://github.com/moonrepo/schematic" target="_blank" rel="noopener noreferrer">schematic</a> is very young, and it hasn't been tested
+heavily in the ecosystem, we expect bugs and weird edge cases to popup. If you encounter any issues,
+please report them immediately so that we can fix them as soon as possible!</p><p>With that being said, we'll continue to improve parsing, error messages, and unique functionality,
+like code frames within errors. Here's an example for a basic JSON file.</p><div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="/assets/images/code-frame-d3a7c89957fbda329862d5703004a54a.png" width="90%" alt="" class="inline-block"></div><h2 class="anchor anchorWithStickyNavbar_JmGV" id="better-errors">Better errors<a href="#better-errors" class="hash-link" aria-label="Direct link to Better errors" title="Direct link to Better errors">​</a></h2><p>You may have noticed the errors in the screenshots above look quite different than what we've
+rendered until now, and you are correct. Going forward, all errors will be rendered by the wonderful
+Rust crate, <a href="https://crates.io/crates/miette" target="_blank" rel="noopener noreferrer">miette</a>.</p><p>We've introduced this crate to handle <em>all</em> errors and diagnostics within moon, not just
+configuration. So expect a much better developer experience moving forward!</p><div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="/assets/images/errors-f298dbbf1f59c29318216a22e8464fac.png" width="90%" alt="" class="inline-block"></div><h2 class="anchor anchorWithStickyNavbar_JmGV" id="other-changes">Other changes<a href="#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes">​</a></h2><p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.7.0" target="_blank" rel="noopener noreferrer">official release</a> for a full list of
+changes.</p><ul><li>Added support for npm lockfile v3 format.</li></ul>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="config" term="config"/>
+        <category label="errors" term="errors"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[proto v0.9 - New GitHub action, plugin unpacking, and more]]></title>
         <id>https://moonrepo.dev/blog/proto-v0.9</id>

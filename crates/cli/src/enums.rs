@@ -28,6 +28,36 @@ impl Display for CacheMode {
     }
 }
 
+#[derive(ValueEnum, Clone, Debug, Default)]
+pub enum LogLevel {
+    Off,
+    Error,
+    Warn,
+    #[default]
+    Info,
+    Debug,
+    Trace,
+}
+
+impl Display for LogLevel {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        write!(
+            f,
+            "{}",
+            match self {
+                LogLevel::Off => "off",
+                LogLevel::Error => "error",
+                LogLevel::Warn => "warn",
+                LogLevel::Info => "info",
+                LogLevel::Debug => "debug",
+                LogLevel::Trace => "trace",
+            }
+        )?;
+
+        Ok(())
+    }
+}
+
 #[derive(ValueEnum, Clone, Copy, Debug, Deserialize, Default, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum TouchedStatus {

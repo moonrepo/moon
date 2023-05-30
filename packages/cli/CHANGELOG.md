@@ -16,7 +16,6 @@
 #### 🐞 Fixes
 
 - Fixed an issue where colors were not being forced when passing `--color`.
-- Fixed an issue where `--log` or `MOON_LOG` would error when running nested `moon` commands.
 
 #### ⚙️ Internal
 

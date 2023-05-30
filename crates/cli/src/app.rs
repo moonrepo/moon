@@ -2,7 +2,7 @@
 
 use crate::commands::bin::BinTool;
 use crate::commands::init::InitTool;
-use crate::enums::{CacheMode, TouchedStatus};
+use crate::enums::{CacheMode, LogLevel, TouchedStatus};
 use clap::{Parser, Subcommand};
 use clap_complete::Shell;
 use moon_action_context::ProfileType;
@@ -611,9 +611,10 @@ pub struct App {
         long,
         global = true,
         env = "MOON_LOG",
-        help = "Lowest log level to output"
+        help = "Lowest log level to output",
+        default_value_t
     )]
-    pub log: String,
+    pub log: LogLevel,
 
     #[arg(
         long,

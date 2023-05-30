@@ -26,25 +26,19 @@ use crate::commands::upgrade::upgrade;
 use crate::helpers::{check_for_new_version, setup_colors};
 use app::{App as CLI, Commands, DockerCommands, MigrateCommands, NodeCommands, QueryCommands};
 use clap::Parser;
-use enums::CacheMode;
+use enums::{CacheMode, LogLevel};
 use moon_logger::debug;
 use query::QueryHashDiffOptions;
 use starbase::{tracing::TracingOptions, App, AppResult};
 use starbase_styles::color;
 use starbase_utils::string_vec;
 use std::env;
-use std::str::FromStr;
-use tracing::Level;
 
 pub use app::BIN_NAME;
 
-fn setup_logging(base_level: &str) {
+fn setup_logging(level: &LogLevel) {
     if env::var("MOON_LOG").is_err() {
-        if let Ok(level) = Level::from_str(base_level) {
-            env::set_var("MOON_LOG", level.to_string());
-        } else {
-            env::set_var("MOON_LOG", "info");
-        }
+        env::set_var("MOON_LOG", level.to_string());
     }
 
     let version = env!("CARGO_PKG_VERSION");

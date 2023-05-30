@@ -7,7 +7,7 @@ use moon_common::cacheable;
 use moon_common::{consts, Id};
 use moon_target::Target;
 use rustc_hash::FxHashMap;
-use schematic::{color, merge, validate, Config, ConfigError, ConfigLoader, PartialConfig};
+use schematic::{merge, validate, Config, ConfigError, ConfigLoader, PartialConfig};
 use std::hash::Hash;
 use std::{collections::BTreeMap, path::Path};
 
@@ -70,13 +70,7 @@ impl InheritedTasksConfig {
         let path = path.as_ref();
 
         ConfigLoader::<InheritedTasksConfig>::yaml()
-            .label(color::path(
-                if let Ok(rel_path) = path.strip_prefix(workspace_root) {
-                    rel_path
-                } else {
-                    path
-                },
-            ))
+            .set_root(workspace_root)
             .file_optional(path)?
             .load_partial(&())
     }
@@ -181,21 +175,10 @@ impl InheritedTasksManager {
             }
         }
 
-        let config = InheritedTasksConfig::from_partial(&context, config, false)?;
-
         let label = if is_js_platform(platform) {
-            format!(
-                "({}, {}, {})",
-                color::label(platform.to_string()),
-                color::label(language.to_string()),
-                color::label(project.to_string())
-            )
+            format!("({}, {}, {})", platform, language, project,)
         } else {
-            format!(
-                "({}, {})",
-                color::label(language.to_string()),
-                color::label(project.to_string())
-            )
+            format!("({}, {})", language, project)
         };
 
         config
@@ -205,6 +188,6 @@ impl InheritedTasksManager {
                 error,
             })?;
 
-        Ok(config)
+        InheritedTasksConfig::from_partial(&context, config, false)
     }
 }

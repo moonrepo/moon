@@ -7,7 +7,7 @@ use moon_common::cacheable;
 use moon_common::{consts, Id};
 use rustc_hash::FxHashMap;
 use schematic::{
-    color, derive_enum, validate, Config, ConfigEnum, ConfigError, ConfigLoader, ValidateError,
+    derive_enum, validate, Config, ConfigEnum, ConfigError, ConfigLoader, ValidateError,
 };
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -107,7 +107,7 @@ impl ProjectConfig {
         let path = path.as_ref();
 
         let result = ConfigLoader::<ProjectConfig>::yaml()
-            .label(color::path(path.strip_prefix(workspace_root).unwrap()))
+            .set_root(workspace_root)
             .file_optional(path)?
             .load()?;
 

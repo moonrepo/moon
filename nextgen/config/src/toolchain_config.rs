@@ -69,7 +69,7 @@ impl ToolchainConfig {
             .label(color::path(
                 path.as_ref().strip_prefix(workspace_root.as_ref()).unwrap(),
             ))
-            .file(path.as_ref())?
+            .file_optional(path.as_ref())?
             .load()?;
 
         result.config.inherit_proto(proto_tools)?;

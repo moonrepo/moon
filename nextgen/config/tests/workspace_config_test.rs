@@ -1,7 +1,8 @@
 mod utils;
 
-use moon_config::{FilePath, WorkspaceConfig, WorkspaceProjects};
+use moon_config::{FilePath, VcsManager, WorkspaceConfig, WorkspaceProjects};
 use rustc_hash::FxHashMap;
+use starbase_sandbox::create_sandbox;
 use utils::*;
 
 const FILENAME: &str = ".moon/workspace.yml";
@@ -25,6 +26,58 @@ mod workspace_config {
 
         assert!(config.telemetry);
         assert!(config.version_constraint.is_none());
+    }
+
+    mod extends {
+        use super::*;
+
+        #[test]
+        fn recursive_merges() {
+            let sandbox = create_sandbox("extends/workspace");
+            let config = test_config(sandbox.path().join("base-2.yml"), |path| {
+                WorkspaceConfig::load(sandbox.path(), path)
+            });
+
+            assert_eq!(config.runner.cache_lifetime, "3 hours");
+            assert!(!config.runner.log_running_command);
+            assert_eq!(config.vcs.manager, VcsManager::Svn);
+        }
+
+        #[test]
+        #[should_panic(expected = "Unable to extend, expected a file path or URL.")]
+        fn not_a_url_or_file() {
+            test_load_config(FILENAME, "extends: 'random value'", |path| {
+                WorkspaceConfig::load_from(path)
+            });
+        }
+
+        #[test]
+        #[should_panic(expected = "Only secure URLs are allowed")]
+        fn not_a_https_url() {
+            test_load_config(
+                FILENAME,
+                "extends: 'http://domain.com/config.yml'",
+                |path| WorkspaceConfig::load_from(path),
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "Unable to extend, expected a file path or URL.")]
+        fn not_a_yaml_file() {
+            test_load_config(FILENAME, "extends: './file.txt'", |path| {
+                WorkspaceConfig::load_from(path)
+            });
+        }
+
+        // #[test]
+        // #[should_panic(expected = "Unable to extend, expected a file path or URL.")]
+        // fn not_a_yaml_url() {
+        //     test_load_config(
+        //         FILENAME,
+        //         "extends: 'https://domain.com/config.txt'",
+        //         |path| WorkspaceConfig::load_from(path),
+        //     );
+        // }
     }
 
     mod projects {

@@ -11,6 +11,15 @@ pub fn unwrap_config_result<T>(result: Result<T, ConfigError>) -> T {
     }
 }
 
+pub fn test_config<P, T, F>(path: P, callback: F) -> T
+where
+    P: AsRef<Path>,
+    T: Config,
+    F: FnOnce(&Path) -> Result<T, ConfigError>,
+{
+    unwrap_config_result(callback(path.as_ref()))
+}
+
 pub fn test_load_config<T, F>(file: &str, code: &str, callback: F) -> T
 where
     T: Config,

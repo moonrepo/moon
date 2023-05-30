@@ -37,7 +37,7 @@ fn validate_command<C>(
     Ok(())
 }
 
-fn validate_deps<C>(deps: &[Target], _task: &TaskConfig, _ctx: &C) -> Result<(), ValidateError> {
+pub fn validate_deps<D, C>(deps: &[Target], _data: &D, _ctx: &C) -> Result<(), ValidateError> {
     for (i, dep) in deps.iter().enumerate() {
         if matches!(dep.scope, TargetScope::All | TargetScope::Tag(_)) {
             return Err(ValidateError::with_segment(

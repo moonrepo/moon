@@ -1,6 +1,6 @@
 use crate::language_platform::{LanguageType, PlatformType};
 use crate::portable_path::PortablePath;
-use crate::project::TaskConfig;
+use crate::project::{validate_deps, TaskConfig};
 use crate::project_config::ProjectType;
 use crate::validate::validate_portable_paths;
 use moon_common::cacheable;
@@ -42,11 +42,11 @@ cacheable!(
         #[setting(merge = merge_fxhashmap)]
         pub file_groups: FxHashMap<Id, Vec<PortablePath>>,
 
-        #[setting(merge = merge::append_vec)]
+        #[setting(merge = merge::append_vec, validate = validate_deps)]
         pub implicit_deps: Vec<Target>,
 
         #[setting(merge = merge::append_vec, validate = validate_portable_paths)]
-        pub implicit_inputs: Vec<String>, // Vec<PortablePath>,
+        pub implicit_inputs: Vec<String>,
 
         #[setting(nested, merge = merge::merge_btreemap)]
         pub tasks: BTreeMap<Id, TaskConfig>,
@@ -54,6 +54,14 @@ cacheable!(
 );
 
 impl InheritedTasksConfig {
+    pub fn load<F: AsRef<Path>>(path: F) -> Result<InheritedTasksConfig, ConfigError> {
+        let result = ConfigLoader::<InheritedTasksConfig>::yaml()
+            .file_optional(path.as_ref())?
+            .load()?;
+
+        Ok(result.config)
+    }
+
     pub fn load_partial<T: AsRef<Path>, F: AsRef<Path>>(
         workspace_root: T,
         path: F,
@@ -69,7 +77,7 @@ impl InheritedTasksConfig {
                     path
                 },
             ))
-            .file(path)?
+            .file_optional(path)?
             .load_partial(&())
     }
 }

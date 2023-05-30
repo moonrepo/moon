@@ -106,14 +106,10 @@ impl ProjectConfig {
         let workspace_root = workspace_root.as_ref();
         let path = path.as_ref();
 
-        let mut loader = ConfigLoader::<ProjectConfig>::yaml();
-        loader.label(color::path(path.strip_prefix(workspace_root).unwrap()));
-
-        if path.exists() {
-            loader.file(path)?;
-        }
-
-        let result = loader.load()?;
+        let result = ConfigLoader::<ProjectConfig>::yaml()
+            .label(color::path(path.strip_prefix(workspace_root).unwrap()))
+            .file_optional(path)?
+            .load()?;
 
         Ok(result.config)
     }
@@ -137,12 +133,8 @@ impl ProjectConfig {
     ) -> Result<PartialProjectConfig, ConfigError> {
         let path = project_root.as_ref().join(consts::CONFIG_PROJECT_FILENAME);
 
-        let mut loader = ConfigLoader::<ProjectConfig>::yaml();
-
-        if path.exists() {
-            loader.file(path)?;
-        }
-
-        loader.load_partial(&())
+        ConfigLoader::<ProjectConfig>::yaml()
+            .file_optional(path)?
+            .load_partial(&())
     }
 }

@@ -20,7 +20,7 @@
 
 #### ⚙️ Internal
 
-- Updated to proto v0.9.
+- Updated to proto v0.10.
 - Updated Cargo dependencies.
 
 ## 1.6.1

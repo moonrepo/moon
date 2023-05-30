@@ -42,7 +42,15 @@ fn setup_logging(level: &LogLevel) {
     if env::var("MOON_LOG").is_err() {
         env::set_var("MOON_LOG", level.to_string());
     }
+}
 
+fn setup_caching(mode: &CacheMode) {
+    if env::var("MOON_CACHE").is_err() {
+        env::set_var("MOON_CACHE", mode.to_string());
+    }
+}
+
+fn detect_running_version() {
     let version = env!("CARGO_PKG_VERSION");
 
     if let Ok(exe_with) = env::var("MOON_EXECUTED_WITH") {
@@ -57,12 +65,6 @@ fn setup_logging(level: &LogLevel) {
     }
 
     env::set_var("MOON_VERSION", version);
-}
-
-fn setup_caching(mode: &CacheMode) {
-    if env::var("MOON_CACHE").is_err() {
-        env::set_var("MOON_CACHE", mode.to_string());
-    }
 }
 
 pub async fn run_cli() -> AppResult {
@@ -82,6 +84,8 @@ pub async fn run_cli() -> AppResult {
         test_env: "MOON_TEST".into(),
         ..TracingOptions::default()
     });
+
+    detect_running_version();
 
     // Check for new version
     let version_handle = if matches!(

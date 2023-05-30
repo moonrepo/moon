@@ -2693,6 +2693,7 @@ dependencies = [
 name = "moon_config"
 version = "0.1.0"
 dependencies = [
+ "httpmock",
  "moon_common",
  "moon_target",
  "proto_cli",
@@ -4490,9 +4491,9 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.5.6"
+version = "0.5.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "62bd223bd778ce255c632973fec64ed7e87c5eb4a5deab89fbb22f56db8185e6"
+checksum = "e2451fc941f602a6d05e6afb941e49af9295ab218278632845bb3cdcb4d9fcb4"
 dependencies = [
  "garde",
  "miette",
@@ -4504,6 +4505,7 @@ dependencies = [
  "serde_yaml",
  "starbase_styles",
  "thiserror",
+ "tracing",
 ]
 
 [[package]]

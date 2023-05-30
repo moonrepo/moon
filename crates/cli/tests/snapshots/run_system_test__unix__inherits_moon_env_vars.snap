@@ -5,7 +5,7 @@ expression: assert.output()
 ▪▪▪▪ unix:envVarsMoon
 MOON_CACHE=read-write
 MOON_CACHE_DIR=<WORKSPACE>/.moon/cache
-MOON_LOG=moon=trace,proto=trace,starbase=trace
+MOON_LOG=moon=trace,proto=trace,schematic=trace,starbase=trace
 MOON_PROJECT_ID=unix
 MOON_PROJECT_ROOT=<WORKSPACE>/unix
 MOON_PROJECT_RUNFILE=<WORKSPACE>/.moon/cache/states/unix/runfile.json

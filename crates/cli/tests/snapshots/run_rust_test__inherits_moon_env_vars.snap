@@ -6,7 +6,7 @@ expression: assert.output()
 ▪▪▪▪ rust:envVarsMoon
 MOON_CACHE=read-write
 MOON_CACHE_DIR=<WORKSPACE>/.moon/cache
-MOON_LOG=moon=trace,proto=trace,schematic=trace,starbase=trace
+MOON_LOG=trace
 MOON_PROJECT_ID=rust
 MOON_PROJECT_ROOT=<WORKSPACE>
 MOON_PROJECT_RUNFILE=<WORKSPACE>/.moon/cache/states/rust/runfile.json

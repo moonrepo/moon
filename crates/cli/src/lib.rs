@@ -37,6 +37,8 @@ use std::env;
 pub use app::BIN_NAME;
 
 fn setup_logging(level: &LogLevel) {
+    env::set_var("STARBASE_LOG", level.to_string());
+
     if env::var("MOON_LOG").is_err() {
         env::set_var("MOON_LOG", level.to_string());
     }
@@ -75,7 +77,7 @@ pub async fn run_cli() -> AppResult {
 
     App::setup_tracing_with_options(TracingOptions {
         filter_modules: string_vec!["moon", "proto", "schematic", "starbase"],
-        log_env: "MOON_LOG".into(),
+        log_env: "STARBASE_LOG".into(),
         log_file: args.log_file,
         test_env: "MOON_TEST".into(),
         ..TracingOptions::default()

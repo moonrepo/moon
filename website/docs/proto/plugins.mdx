@@ -197,3 +197,191 @@ version-files = [".protostar-version", ".protostarrc"]
 ### WASM plugin
 
 Coming soon!
+
+> Although plugins can be written in any language that compiles to WASM, we've only tested Rust. The
+> rest of this article assume you're using Rust and Cargo!
+
+#### Creating the project
+
+To start, create a new crate with Cargo:
+
+```shell
+cargo new plugin --lib
+cd plugin
+```
+
+And set the lib type to `cdylib`.
+
+```toml title="Cargo.toml"
+[lib]
+crate-type = ['cdylib']
+```
+
+Our Rust plugins are powered by [Extism](https://extism.org/), so lets add their PDK and ours as a
+dependency.
+
+```shell
+cargo add extism-pdk proto_pdk
+```
+
+In all Rust files, we can import both PDKs with the following:
+
+```rust title="src/lib.rs"
+use extism_pdk::*;
+use proto_pdk::*;
+```
+
+We can then build the WASM binary. The file will be available at
+`target/wasm32-wasi/debug/<name>.wasm`.
+
+```
+cargo build --target wasm32-wasi
+```
+
+#### Registering metadata
+
+The first step in a plugin's life-cycle is to register metadata about the plugin with the
+`register_metadata` function. This function is called immediately after a plugin is loaded at
+runtime, and must return a human-readable name and plugin type.
+
+```rust
+#[plugin_fn]
+pub fn register_metadata(_: ()) -> FnResult<Json<Metadata>> {
+    Ok(Json(Metadata {
+        name: "Node.js".into(),
+        type_of: PluginType::Language,
+    }))
+}
+```
+
+This function also receives the plugin ID as input, allowing for conditional logic based on the ID.
+The ID is the [key the plugin was configured with](#enabling-plugins), and what is passed to `proto`
+commands.
+
+```rust
+#[plugin_fn]
+pub fn register_metadata(Json(input): Json<MetadataInput>) -> FnResult<Json<Metadata>> {
+  input.id
+  // ...
+}
+```
+
+#### Downloading and installing
+
+Our plugin layers _only_ supports downloading pre-built tools, typically as an archive, and does
+_not_ support building from source. The `get_install_params` function must be defined, whichs
+configure how the tool should be downloaded and installed.
+
+The following fields are available:
+
+- `archive_prefix` - If the tool is distributed as an archive (zip, tar, etc), this is the name of
+  the direct folder within the archive that contains the tool, and will be removed when unpacking
+  the archive. If there is no prefix folder within the archive, this setting can be omitted.
+- `download_url` (required) - A secure URL to download the tool/archive.
+- `download_file` - File name of the archive to download. If not provided, will attempt to extract
+  it from the URL.
+- `checksum_url` - A secure URL to download the checksum file for verification. If the tool does not
+  support checksum verification, this setting can be omitted.
+
+```rust
+#[plugin_fn]
+pub fn get_install_params(Json(input): Json<EnvironmentInput>) -> FnResult<Json<InstallParams>> {
+    let version = input.version;
+    let arch = input.arch;
+    let os = input.os;
+
+    let prefix = match os.as_str() {
+        "linux" => format!("node-v{version}-linux-{arch}"),
+        "macos" => format!("node-v{version}-darwin-{arch}"),
+        "windows" => format!("node-v{version}-win-{arch}"),
+        other => {
+            return Err(PluginError::UnsupportedPlatform("Node.js".into(), other.into()))?;
+        }
+    };
+
+    let filename = if input.os == "windows" {
+        format!("{prefix}.zip")
+    } else {
+        format!("{prefix}.tar.xz")
+    };
+
+    Ok(Json(InstallParams {
+        archive_prefix: Some(prefix),
+        download_url: format!("https://nodejs.org/dist/v{version}/{filename}"),
+        download_file: Some(filename),
+        checksum_url: Some(format!("https://nodejs.org/dist/v{version}/SHASUMS256.txt")),
+        ..InstallParams::default()
+    }))
+}
+```
+
+> The current environment's `os` and `arch` are passed to the function as input, as these values
+> cannot be accessed from a WASM context.
+
+#### Unpacking an archive
+
+Our plugin layer will do its best to detect file extensions, unpack the downloaded file (if an
+archive), and install the tool to the correct directory. However, we're unable to account for _all_
+edge cases, so for situations where the params above are not sufficient, you may define an
+`unpack_archive` function.
+
+This function receives an input with the following fields:
+
+- `download_path` - Virtual path to the downloaded file. Maps to `~/.proto/temp/<id>/<file>`.
+- `install_dir` - Virtual directory to unpack the archive into, or copy the binary to. Maps to
+  `~/.proto/tools/<id>/<version>`.
+
+```rust
+#[plugin_fn]
+pub fn unpack_archive(Json(input): Json<UnpackArchiveInput>) -> FnResult<()> {
+    untar(input.download_path, input.install_dir)?;
+    Ok(())
+}
+```
+
+#### Detecting versions
+
+And lastly, we can configure how to [detect a version](./detection) contextually at runtime, using
+the `detect_version_files` function and optional `parse_version_file` function. The
+`detect_version_files` function can return a list of files to locate within a directory.
+
+```rust
+#[plugin_fn]
+pub fn detect_version_files(_: ()) -> FnResult<Json<DetectVersionFiles>> {
+    Ok(Json(DetectVersionFiles {
+        files: vec![
+            ".nvmrc".into(),
+            ".node-version".into(),
+            "package.json".into(),
+        ],
+    }))
+}
+```
+
+By default our plugin layer will assume the version file contains the literal version, and nothing
+else, like "1.2.3". If any of the files in the `detect_version_files` list require custom parsing
+(for example, `package.json` above), you can define the `parse_version_file` function.
+
+This function receives the file name and contents as input, and must return the parsed version (if
+applicable).
+
+```rust
+#[plugin_fn]
+pub fn parse_version_file(Json(input): Json<ParseVersionInput>) -> FnResult<Json<ParseVersion>> {
+    let mut version = None;
+
+    if input.file == "package.json" {
+        let json: PackageJson = serde_json::from_str(&input.content)?;
+
+        if let Some(engines) = json.engines {
+            if let Some(constraint) = engines.get("node") {
+                version = Some(constraint.to_owned());
+            }
+        }
+    } else {
+        version = Some(input.content.trim().to_owned());
+    }
+
+    Ok(Json(ParseVersion { version }))
+}
+```

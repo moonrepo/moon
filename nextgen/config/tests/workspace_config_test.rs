@@ -69,15 +69,15 @@ mod workspace_config {
             });
         }
 
-        // #[test]
-        // #[should_panic(expected = "Unable to extend, expected a file path or URL.")]
-        // fn not_a_yaml_url() {
-        //     test_load_config(
-        //         FILENAME,
-        //         "extends: 'https://domain.com/config.txt'",
-        //         |path| WorkspaceConfig::load_from(path),
-        //     );
-        // }
+        #[test]
+        #[should_panic(expected = "Unable to extend, expected a file path or URL.")]
+        fn not_a_yaml_url() {
+            test_load_config(
+                FILENAME,
+                "extends: 'https://domain.com/config.txt'",
+                |path| WorkspaceConfig::load_from(path),
+            );
+        }
     }
 
     mod projects {

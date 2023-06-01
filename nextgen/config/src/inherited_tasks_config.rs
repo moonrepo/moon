@@ -175,19 +175,22 @@ impl InheritedTasksManager {
             }
         }
 
-        let label = if is_js_platform(platform) {
-            format!("({}, {}, {})", platform, language, project,)
-        } else {
-            format!("({}, {})", language, project)
-        };
+        let config = config.finalize(&context)?;
 
         config
             .validate(&context)
             .map_err(|error| ConfigError::Validator {
-                config: format!("inherited tasks {}", label),
+                config: format!(
+                    "inherited tasks {}",
+                    if is_js_platform(platform) {
+                        format!("({}, {}, {})", platform, language, project)
+                    } else {
+                        format!("({}, {})", language, project)
+                    }
+                ),
                 error,
             })?;
 
-        InheritedTasksConfig::from_partial(&context, config, false)
+        Ok(InheritedTasksConfig::from_partial(config))
     }
 }

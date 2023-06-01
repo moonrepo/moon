@@ -54,7 +54,6 @@ dialoguer = { version = "0.10.4", default-features = false }
 diff = "0.1.13"
 indicatif = "0.17.3"
 itertools = "0.10.5"
-is-terminal = "0.4.5"
 miette = { workspace = true }
 mimalloc = { version = "0.1.37", default-features = false }
 open = "4.1.0"

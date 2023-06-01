@@ -2620,7 +2620,6 @@ dependencies = [
  "diff",
  "httpmock",
  "indicatif",
- "is-terminal",
  "itertools",
  "miette",
  "mimalloc",

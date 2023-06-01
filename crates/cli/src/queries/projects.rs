@@ -1,7 +1,6 @@
 use crate::queries::touched_files::{
     query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
 };
-use is_terminal::IsTerminal;
 use moon::generate_project_graph;
 use moon_common::Id;
 use moon_error::MoonError;
@@ -15,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use starbase::AppResult;
 use std::{
     collections::BTreeMap,
-    io::{stdin, Read},
+    io::{stdin, IsTerminal, Read},
     path::PathBuf,
 };
 

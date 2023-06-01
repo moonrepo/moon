@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- Updated Rust to v1.70.
+
 ## 1.7.1
 
 #### 🐞 Fixes

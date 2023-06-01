@@ -19,7 +19,7 @@ fn detect_rust_version(dest_dir: &Path) -> AppResult<String> {
         }
     }
 
-    Ok("1.69.0".into())
+    Ok("1.70.0".into())
 }
 
 pub async fn init_rust(

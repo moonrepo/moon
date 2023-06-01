@@ -17,7 +17,7 @@ moon_target = { path = "../target" }
 proto_cli = { workspace = true }
 rustc-hash = { workspace = true }
 schemars = { workspace = true }
-schematic = { version = "0.6.1", default-features = false, features = ["json_schema", "yaml", "valid_url"] }
+schematic = { version = "0.6.2", default-features = false, features = ["json_schema", "yaml", "valid_url"] }
 semver = "1.0.17"
 serde = { workspace = true }
 serde_json = { workspace = true }

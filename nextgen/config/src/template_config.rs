@@ -65,7 +65,7 @@ pub struct TemplateConfig {
 
 impl TemplateConfig {
     pub fn load<P: AsRef<Path>>(path: P) -> Result<TemplateConfig, ConfigError> {
-        let result = ConfigLoader::<TemplateConfig>::yaml()
+        let result = ConfigLoader::<TemplateConfig>::new()
             .file(path.as_ref())?
             .load()?;
 

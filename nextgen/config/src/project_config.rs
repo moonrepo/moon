@@ -106,7 +106,7 @@ impl ProjectConfig {
         let workspace_root = workspace_root.as_ref();
         let path = path.as_ref();
 
-        let result = ConfigLoader::<ProjectConfig>::yaml()
+        let result = ConfigLoader::<ProjectConfig>::new()
             .set_root(workspace_root)
             .file_optional(path)?
             .load()?;
@@ -133,7 +133,7 @@ impl ProjectConfig {
     ) -> Result<PartialProjectConfig, ConfigError> {
         let path = project_root.as_ref().join(consts::CONFIG_PROJECT_FILENAME);
 
-        ConfigLoader::<ProjectConfig>::yaml()
+        ConfigLoader::<ProjectConfig>::new()
             .file_optional(path)?
             .load_partial(&())
     }

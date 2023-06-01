@@ -124,7 +124,7 @@ impl WorkspaceConfig {
         workspace_root: R,
         path: P,
     ) -> Result<WorkspaceConfig, ConfigError> {
-        let result = ConfigLoader::<WorkspaceConfig>::yaml()
+        let result = ConfigLoader::<WorkspaceConfig>::new()
             .set_root(workspace_root.as_ref())
             .file(path.as_ref())?
             .load()?;

@@ -4491,9 +4491,9 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.6.2"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cadc163b849381acd41150fb1d55a9ac984667a05ad14f11658bdd38a41d3b63"
+checksum = "e7061bb47836d730065da00e04f23d8f21988b816489942fba6551e34ef49320"
 dependencies = [
  "garde",
  "miette",
@@ -4510,9 +4510,9 @@ dependencies = [
 
 [[package]]
 name = "schematic_macros"
-version = "0.6.1"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d94778c8750e3cf2e0edf682aa9cae0f524b0370f901471fcb3301c42cc6b951"
+checksum = "ac899cd52156c1c09b08adfa7e430ee2e3801948b677354ed8b29ebe1c02b181"
 dependencies = [
  "convert_case",
  "darling 0.20.1",

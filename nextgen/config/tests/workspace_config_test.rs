@@ -44,7 +44,7 @@ mod workspace_config {
         }
 
         #[test]
-        #[should_panic(expected = "invalid format, try a supported extension")]
+        #[should_panic(expected = "only file paths and URLs can be extended")]
         fn not_a_url_or_file() {
             test_load_config(FILENAME, "extends: 'random value'", |path| {
                 WorkspaceConfig::load_from(path)
@@ -62,22 +62,22 @@ mod workspace_config {
         }
 
         #[test]
-        #[should_panic(expected = "invalid format, try a supported extension")]
+        #[should_panic(expected = "only file paths and URLs can be extended")]
         fn not_a_yaml_file() {
             test_load_config(FILENAME, "extends: './file.txt'", |path| {
                 WorkspaceConfig::load_from(path)
             });
         }
 
-        // #[test]
-        // #[should_panic(expected = "Unable to extend, expected a file path or URL.")]
-        // fn not_a_yaml_url() {
-        //     test_load_config(
-        //         FILENAME,
-        //         "extends: 'https://domain.com/config.txt'",
-        //         |path| WorkspaceConfig::load_from(path),
-        //     );
-        // }
+        #[test]
+        #[should_panic(expected = "invalid format, try a supported extension")]
+        fn not_a_yaml_url() {
+            test_load_config(
+                FILENAME,
+                "extends: 'https://domain.com/config.txt'",
+                |path| WorkspaceConfig::load_from(path),
+            );
+        }
     }
 
     mod projects {

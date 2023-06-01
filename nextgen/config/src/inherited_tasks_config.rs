@@ -55,7 +55,7 @@ cacheable!(
 
 impl InheritedTasksConfig {
     pub fn load<F: AsRef<Path>>(path: F) -> Result<InheritedTasksConfig, ConfigError> {
-        let result = ConfigLoader::<InheritedTasksConfig>::yaml()
+        let result = ConfigLoader::<InheritedTasksConfig>::new()
             .file_optional(path.as_ref())?
             .load()?;
 
@@ -69,7 +69,7 @@ impl InheritedTasksConfig {
         let workspace_root = workspace_root.as_ref();
         let path = path.as_ref();
 
-        ConfigLoader::<InheritedTasksConfig>::yaml()
+        ConfigLoader::<InheritedTasksConfig>::new()
             .set_root(workspace_root)
             .file_optional(path)?
             .load_partial(&())

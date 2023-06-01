@@ -5,7 +5,7 @@ use moon_common::cacheable;
 use moon_target::{Target, TargetScope};
 use rustc_hash::FxHashMap;
 use schematic::{
-    derive_enum, Config, ConfigEnum, ConfigError, ConfigLoader, Segment, ValidateError,
+    derive_enum, Config, ConfigEnum, ConfigError, ConfigLoader, Format, Segment, ValidateError,
 };
 
 fn validate_command<D, C>(cmd: &TaskCommandArgs, _task: &D, _ctx: &C) -> Result<(), ValidateError> {
@@ -107,8 +107,8 @@ cacheable!(
 
 impl TaskConfig {
     pub fn parse<T: AsRef<str>>(code: T) -> Result<TaskConfig, ConfigError> {
-        let result = ConfigLoader::<TaskConfig>::yaml()
-            .code(code.as_ref())?
+        let result = ConfigLoader::<TaskConfig>::new()
+            .code(code.as_ref(), Format::Yaml)?
             .load()?;
 
         Ok(result.config)

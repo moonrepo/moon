@@ -65,7 +65,7 @@ impl ToolchainConfig {
         path: P,
         proto_tools: &ToolsConfig,
     ) -> Result<ToolchainConfig, ConfigError> {
-        let mut result = ConfigLoader::<ToolchainConfig>::yaml()
+        let mut result = ConfigLoader::<ToolchainConfig>::new()
             .set_root(workspace_root)
             .file_optional(path.as_ref())?
             .load()?;

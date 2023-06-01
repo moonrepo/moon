@@ -7,14 +7,13 @@ pub use crate::queries::touched_files::{
     query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
 };
 use console::Term;
-use is_terminal::IsTerminal;
 use miette::IntoDiagnostic;
 use moon::load_workspace;
 use moon_terminal::ExtendedTerm;
 use rustc_hash::FxHashMap;
 use starbase::AppResult;
 use starbase_styles::color;
-use std::io;
+use std::io::{self, IsTerminal};
 
 pub async fn hash(hash: &str, json: bool) -> AppResult {
     let workspace = load_workspace().await?;

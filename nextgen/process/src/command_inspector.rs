@@ -182,12 +182,11 @@ impl<'cmd> CommandInspector<'cmd> {
 
     pub fn log_command(&self) {
         let command_line = self.get_command_line();
+        let workspace_root = env::var("MOON_WORKSPACE_ROOT")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| env::current_dir().unwrap());
 
         if self.command.print_command {
-            let workspace_root = env::var("MOON_WORKSPACE_ROOT")
-                .map(PathBuf::from)
-                .unwrap_or_else(|_| env::current_dir().unwrap());
-
             println!(
                 "{}",
                 self.format_command(&command_line.main_command, &workspace_root, None)
@@ -215,15 +214,11 @@ impl<'cmd> CommandInspector<'cmd> {
             })
             .collect::<FxHashMap<_, _>>();
 
-        let working_dir_field = self
-            .command
-            .cwd
-            .as_ref()
-            .map(|cwd| cwd.display().to_string());
+        let working_dir_field = self.command.cwd.as_ref().unwrap_or(&workspace_root);
 
         debug!(
             env_vars = ?env_vars_field,
-            working_dir = working_dir_field,
+            working_dir = %working_dir_field.display(),
             "Running command {}",
             color::shell(command_line.to_string())
         );

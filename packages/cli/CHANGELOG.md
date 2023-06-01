@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed some configuration bugs.
+- Fixed initial bootstrap log messages not being logged.
+
 ## 1.7.0
 
 #### 🚀 Updates

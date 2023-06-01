@@ -226,11 +226,7 @@ impl Platform for NodePlatform {
             for (id, partial_task) in infer_tasks_from_scripts(&project.id, &package_json)
                 .map_err(|e| MoonError::Generic(e.to_string()))?
             {
-                tasks.insert(
-                    id,
-                    TaskConfig::from_partial(&(), partial_task, false)
-                        .map_err(|e| MoonError::Generic(e.to_string()))?,
-                );
+                tasks.insert(id, TaskConfig::from_partial(partial_task));
             }
         }
 

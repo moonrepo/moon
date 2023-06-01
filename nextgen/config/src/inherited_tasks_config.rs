@@ -55,7 +55,7 @@ cacheable!(
 
 impl InheritedTasksConfig {
     pub fn load<F: AsRef<Path>>(path: F) -> Result<InheritedTasksConfig, ConfigError> {
-        let result = ConfigLoader::<InheritedTasksConfig>::yaml()
+        let result = ConfigLoader::<InheritedTasksConfig>::new()
             .file_optional(path.as_ref())?
             .load()?;
 
@@ -69,7 +69,7 @@ impl InheritedTasksConfig {
         let workspace_root = workspace_root.as_ref();
         let path = path.as_ref();
 
-        ConfigLoader::<InheritedTasksConfig>::yaml()
+        ConfigLoader::<InheritedTasksConfig>::new()
             .set_root(workspace_root)
             .file_optional(path)?
             .load_partial(&())
@@ -175,19 +175,22 @@ impl InheritedTasksManager {
             }
         }
 
-        let label = if is_js_platform(platform) {
-            format!("({}, {}, {})", platform, language, project,)
-        } else {
-            format!("({}, {})", language, project)
-        };
+        let config = config.finalize(&context)?;
 
         config
             .validate(&context)
             .map_err(|error| ConfigError::Validator {
-                config: format!("inherited tasks {}", label),
+                config: format!(
+                    "inherited tasks {}",
+                    if is_js_platform(platform) {
+                        format!("({}, {}, {})", platform, language, project)
+                    } else {
+                        format!("({}, {})", language, project)
+                    }
+                ),
                 error,
             })?;
 
-        InheritedTasksConfig::from_partial(&context, config, false)
+        Ok(InheritedTasksConfig::from_partial(config))
     }
 }

@@ -1,4 +1,4 @@
-use schematic::{Config, ConfigError, ConfigLoader};
+use schematic::{Config, ConfigError, ConfigLoader, Format};
 
 /// Docs: https://moonrepo.dev/docs/config/template#frontmatter
 #[derive(Debug, Config, Eq, PartialEq)]
@@ -22,8 +22,8 @@ impl TemplateFrontmatterConfig {
             content = "{}";
         }
 
-        let result = ConfigLoader::<TemplateFrontmatterConfig>::yaml()
-            .code(content)?
+        let result = ConfigLoader::<TemplateFrontmatterConfig>::new()
+            .code(content, Format::Yaml)?
             .load()?;
 
         Ok(result.config)

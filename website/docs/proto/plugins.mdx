@@ -256,7 +256,7 @@ pub fn register_metadata(_: ()) -> FnResult<Json<Metadata>> {
 
 This function also receives the plugin ID as input, allowing for conditional logic based on the ID.
 The ID is the [key the plugin was configured with](#enabling-plugins), and what is passed to `proto`
-commands.
+commands (e.g. `proto install <id>`).
 
 ```rust
 #[plugin_fn]
@@ -268,7 +268,7 @@ pub fn register_metadata(Json(input): Json<MetadataInput>) -> FnResult<Json<Meta
 
 #### Downloading and installing
 
-Our plugin layers _only_ supports downloading pre-built tools, typically as an archive, and does
+Our plugin layer _only_ supports downloading pre-built tools, typically as an archive, and does
 _not_ support building from source. The `get_install_params` function must be defined, whichs
 configure how the tool should be downloaded and installed.
 

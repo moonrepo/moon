@@ -6,6 +6,7 @@
 
 - Fixed some configuration bugs.
 - Fixed initial bootstrap log messages not being logged.
+- Fixed an issue where hydrated caches would be partially written.
 
 ## 1.7.0
 

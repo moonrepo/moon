@@ -90,7 +90,7 @@ impl TreeDiffer {
     pub fn should_write_source<T: Read>(
         &self,
         source_size: u64,
-        source: &mut T,
+        _source: &mut T,
         dest_path: &Path,
     ) -> Result<bool, ArchiveError> {
         // If the destination doesn't exist, always use the source
@@ -107,10 +107,19 @@ impl TreeDiffer {
             return Ok(true);
         }
 
-        // If the file sizes are the same, compare byte ranges to determine a difference
-        let mut dest = fs::open_file(dest_path)?;
+        // NOTE: gzip doesn't support seeking, so we can't use the following util then!
 
-        Ok(!self.are_files_equal(source, &mut dest)?)
+        // If the file sizes are the same, compare byte ranges to determine a difference
+        // let mut dest = fs::open_file(dest_path)?;
+
+        // if self.are_files_equal(source, &mut dest)? {
+        //     return Ok(true);
+        // }
+
+        // // Reset read pointer to the start of the buffer
+        // source.seek(std::io::SeekFrom::Start(0));
+
+        Ok(true)
     }
 
     /// Untrack a destination file from the internal registry.

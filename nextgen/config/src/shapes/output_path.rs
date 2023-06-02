@@ -40,16 +40,14 @@ impl OutputPath {
     pub fn to_workspace_relative(
         &self,
         project_source: impl AsRef<str>,
-    ) -> WorkspaceRelativePathBuf {
+    ) -> Option<WorkspaceRelativePathBuf> {
         match self {
-            OutputPath::TokenFunc(_) => {
-                unreachable!()
-            }
-            OutputPath::ProjectFile(path) | OutputPath::ProjectGlob(path) => {
-                expand_to_workspace_relative(RelativeFrom::Project(project_source.as_ref()), path)
-            }
+            OutputPath::TokenFunc(_) => None,
+            OutputPath::ProjectFile(path) | OutputPath::ProjectGlob(path) => Some(
+                expand_to_workspace_relative(RelativeFrom::Project(project_source.as_ref()), path),
+            ),
             OutputPath::WorkspaceFile(path) | OutputPath::WorkspaceGlob(path) => {
-                expand_to_workspace_relative(RelativeFrom::Workspace, path)
+                Some(expand_to_workspace_relative(RelativeFrom::Workspace, path))
             }
         }
     }

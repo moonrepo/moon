@@ -498,6 +498,7 @@ impl<'task> TokenResolver<'task> {
             } else {
                 let rel = output
                     .to_workspace_relative(&self.project.source)
+                    .unwrap_or_default()
                     .to_logical_path("");
 
                 match task.output_paths.get(&rel) {

@@ -155,7 +155,34 @@ impl<'task> TokenResolver<'task> {
             if let InputPath::EnvVar(_) = input {
                 continue;
             }
-            // TODO
+
+            if self.has_token_func(input.as_str()) {
+                let (resolved_paths, resolved_globs) = self.resolve_func(input.as_str(), task)?;
+
+                paths.extend(resolved_paths);
+                globs.extend(resolved_globs);
+            } else {
+                let mut is_glob = input.is_glob();
+                let mut resolved = PathBuf::from(self.resolve_vars(
+                    input.to_workspace_relative(&self.project.source).as_str(),
+                    task,
+                )?);
+
+                // This is a special case for inputs that converts "foo" to "foo/**/*",
+                // when the input is a directory. This is necessary for VCS hashing.
+                if matches!(self.context, TokenContext::Inputs)
+                    && self.workspace_root.join(&resolved).is_dir()
+                {
+                    is_glob = true;
+                    resolved = resolved.join("**/*");
+                }
+
+                if is_glob {
+                    globs.push(glob::normalize(resolved).map_err(MoonError::StarGlob)?);
+                } else {
+                    paths.push(resolved);
+                }
+            }
         }
 
         Ok((paths, globs))
@@ -178,23 +205,13 @@ impl<'task> TokenResolver<'task> {
                 paths.extend(resolved_paths);
                 globs.extend(resolved_globs);
             } else {
-                let mut is_glob = glob::is_glob(value);
-                let mut resolved = path::expand_to_workspace_relative(
+                let resolved = path::expand_to_workspace_relative(
                     self.resolve_vars(value, task)?,
                     self.workspace_root,
                     &self.project.root,
                 );
 
-                // This is a special case for inputs that converts "foo" to "foo/**/*",
-                // when the input is a directory. This is necessary for VCS hashing.
-                if matches!(self.context, TokenContext::Inputs)
-                    && self.workspace_root.join(&resolved).is_dir()
-                {
-                    is_glob = true;
-                    resolved = resolved.join("**/*");
-                }
-
-                if is_glob {
+                if glob::is_glob(value) {
                     globs.push(glob::normalize(resolved).map_err(MoonError::StarGlob)?);
                 } else {
                     paths.push(resolved);
@@ -402,10 +419,11 @@ impl<'task> TokenResolver<'task> {
                     }
                 };
             } else {
-                // TODO switch to relativepathbuf
-                let _rel = input.to_workspace_relative(&self.project.source);
+                let rel = input
+                    .to_workspace_relative(&self.project.source)
+                    .to_logical_path("");
 
-                match task.input_paths.get(&PathBuf::from(".")) {
+                match task.input_paths.get(&rel) {
                     Some(p) => {
                         paths.push(p.clone());
                     }

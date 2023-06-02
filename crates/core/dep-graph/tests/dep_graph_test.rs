@@ -6,9 +6,7 @@ use moon_config::{
 use moon_dep_graph::BatchedTopoSort;
 use moon_project_graph::ProjectGraph;
 use moon_target::Target;
-use moon_test_utils::{
-    assert_snapshot, create_portable_paths, create_sandbox_with_config, Sandbox,
-};
+use moon_test_utils::{assert_snapshot, create_input_paths, create_sandbox_with_config, Sandbox};
 use moon_workspace::Workspace;
 use petgraph::graph::NodeIndex;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -43,9 +41,9 @@ async fn create_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
         file_groups: Some(FxHashMap::from_iter([
             (
                 "sources".into(),
-                create_portable_paths(["src/**/*", "types/**/*"]),
+                create_input_paths(["src/**/*", "types/**/*"]),
             ),
-            ("tests".into(), create_portable_paths(["tests/**/*"])),
+            ("tests".into(), create_input_paths(["tests/**/*"])),
         ])),
         ..PartialInheritedTasksConfig::default()
     };
@@ -97,7 +95,7 @@ async fn create_tasks_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
     let tasks_config = PartialInheritedTasksConfig {
         file_groups: Some(FxHashMap::from_iter([(
             "sources".into(),
-            create_portable_paths(["src/**/*"]),
+            create_input_paths(["src/**/*"]),
         )])),
         ..PartialInheritedTasksConfig::default()
     };

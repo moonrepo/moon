@@ -1,4 +1,4 @@
-use crate::create_portable_paths;
+use crate::create_input_paths;
 use moon_config::{
     InputPath, NodePackageManager, PartialInheritedTasksConfig, PartialNodeConfig,
     PartialNpmConfig, PartialPnpmConfig, PartialTaskConfig, PartialToolchainConfig,
@@ -109,9 +109,9 @@ pub fn get_projects_fixture_configs() -> (
         file_groups: Some(FxHashMap::from_iter([
             (
                 "sources".into(),
-                create_portable_paths(["src/**/*", "types/**/*"]),
+                create_input_paths(["src/**/*", "types/**/*"]),
             ),
-            ("tests".into(), create_portable_paths(["tests/**/*"])),
+            ("tests".into(), create_input_paths(["tests/**/*"])),
         ])),
         ..PartialInheritedTasksConfig::default()
     };
@@ -204,7 +204,7 @@ pub fn get_tasks_fixture_configs() -> (
         file_groups: Some(FxHashMap::from_iter([
             (
                 "static".into(),
-                create_portable_paths([
+                create_input_paths([
                     "file.ts",
                     "dir",
                     "dir/other.tsx",
@@ -212,16 +212,13 @@ pub fn get_tasks_fixture_configs() -> (
                     "dir/subdir/another.ts",
                 ]),
             ),
-            ("dirs_glob".into(), create_portable_paths(["**/*"])),
-            (
-                "files_glob".into(),
-                create_portable_paths(["**/*.{ts,tsx}"]),
-            ),
+            ("dirs_glob".into(), create_input_paths(["**/*"])),
+            ("files_glob".into(), create_input_paths(["**/*.{ts,tsx}"])),
             (
                 "globs".into(),
-                create_portable_paths(["**/*.{ts,tsx}", "*.js"]),
+                create_input_paths(["**/*.{ts,tsx}", "*.js"]),
             ),
-            ("no_globs".into(), create_portable_paths(["config.js"])),
+            ("no_globs".into(), create_input_paths(["config.js"])),
         ])),
         tasks: Some(BTreeMap::from_iter([
             (

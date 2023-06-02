@@ -1,5 +1,4 @@
 use crate::language_platform::{LanguageType, PlatformType};
-use crate::portable_path::PortablePath;
 use crate::project::{validate_deps, TaskConfig};
 use crate::project_config::ProjectType;
 use crate::shapes::InputPath;
@@ -40,7 +39,7 @@ cacheable!(
         pub extends: Option<String>,
 
         #[setting(merge = merge_fxhashmap)]
-        pub file_groups: FxHashMap<Id, Vec<PortablePath>>,
+        pub file_groups: FxHashMap<Id, Vec<InputPath>>,
 
         #[setting(merge = merge::append_vec, validate = validate_deps)]
         pub implicit_deps: Vec<Target>,

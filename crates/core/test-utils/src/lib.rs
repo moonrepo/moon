@@ -13,8 +13,9 @@ pub use sandbox::*;
 
 use clean_path::Clean;
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_config::{Portable, PortablePath};
+use moon_config::{InputPath, Portable, PortablePath};
 use std::path::PathBuf;
+use std::str::FromStr;
 
 pub fn get_fixtures_root() -> PathBuf {
     let mut root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -33,6 +34,16 @@ pub fn get_fixtures_path<T: AsRef<str>>(name: T) -> PathBuf {
     }
 
     path
+}
+
+pub fn create_input_paths<I, V>(list: I) -> Vec<InputPath>
+where
+    I: IntoIterator<Item = V>,
+    V: AsRef<str>,
+{
+    list.into_iter()
+        .map(|path| InputPath::from_str(path.as_ref()).unwrap())
+        .collect()
 }
 
 pub fn create_portable_paths<I, V>(list: I) -> Vec<PortablePath>

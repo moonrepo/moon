@@ -28,7 +28,14 @@ impl InputPath {
         }
     }
 
-    pub fn expand_to_workspace_relative(
+    pub fn is_glob(&self) -> bool {
+        matches!(
+            self,
+            InputPath::ProjectGlob(_) | InputPath::WorkspaceGlob(_)
+        )
+    }
+
+    pub fn to_workspace_relative(
         &self,
         project_source: impl AsRef<str>,
     ) -> WorkspaceRelativePathBuf {
@@ -41,13 +48,6 @@ impl InputPath {
                 expand_to_workspace_relative(RelativeFrom::Workspace, path)
             }
         }
-    }
-
-    pub fn is_glob(&self) -> bool {
-        matches!(
-            self,
-            InputPath::ProjectGlob(_) | InputPath::WorkspaceGlob(_)
-        )
     }
 }
 

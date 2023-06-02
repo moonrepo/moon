@@ -403,7 +403,7 @@ impl<'task> TokenResolver<'task> {
                 };
             } else {
                 // TODO switch to relativepathbuf
-                let _rel = input.expand_to_workspace_relative(&self.project.source);
+                let _rel = input.to_workspace_relative(&self.project.source);
 
                 match task.input_paths.get(&PathBuf::from(".")) {
                     Some(p) => {

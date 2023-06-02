@@ -2,8 +2,8 @@ mod utils;
 
 use moon_common::{consts::CONFIG_PROJECT_FILENAME, Id};
 use moon_config::{
-    DependencyScope, FilePath, GlobPath, InputPath, LanguageType, PlatformType, PortablePath,
-    ProjectConfig, ProjectDependsOn, ProjectType, TaskCommandArgs,
+    DependencyScope, InputPath, LanguageType, PlatformType, ProjectConfig, ProjectDependsOn,
+    ProjectType, TaskCommandArgs,
 };
 use rustc_hash::FxHashMap;
 use utils::*;
@@ -222,17 +222,17 @@ fileGroups:
                     (
                         "files".into(),
                         vec![
-                            PortablePath::WorkspaceFile(FilePath("ws/relative".into())),
-                            PortablePath::ProjectFile(FilePath("proj/relative".into()))
+                            InputPath::WorkspaceFile("ws/relative".into()),
+                            InputPath::ProjectFile("proj/relative".into())
                         ]
                     ),
                     (
                         "globs".into(),
                         vec![
-                            PortablePath::WorkspaceGlob(GlobPath("ws/**/*".into())),
-                            PortablePath::WorkspaceGlob(GlobPath("!ws/**/*".into())),
-                            PortablePath::ProjectGlob(GlobPath("proj/**/*".into())),
-                            PortablePath::ProjectGlob(GlobPath("!proj/**/*".into())),
+                            InputPath::WorkspaceGlob("ws/**/*".into()),
+                            InputPath::WorkspaceGlob("!ws/**/*".into()),
+                            InputPath::ProjectGlob("proj/**/*".into()),
+                            InputPath::ProjectGlob("!proj/**/*".into()),
                         ]
                     ),
                 ])

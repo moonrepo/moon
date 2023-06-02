@@ -4,8 +4,8 @@ use httpmock::prelude::*;
 use moon_common::consts::CONFIG_TASKS_FILENAME;
 use moon_common::Id;
 use moon_config::{
-    FilePath, GlobPath, InheritedTasksConfig, InheritedTasksManager, InputPath, LanguageType,
-    PlatformType, PortablePath, ProjectType, TaskCommandArgs, TaskConfig, TaskOptionsConfig,
+    InheritedTasksConfig, InheritedTasksManager, InputPath, LanguageType, PlatformType,
+    ProjectType, TaskCommandArgs, TaskConfig, TaskOptionsConfig,
 };
 use moon_target::Target;
 use rustc_hash::FxHashMap;
@@ -109,11 +109,11 @@ tasks:
                 FxHashMap::from_iter([
                     (
                         "tests".into(),
-                        vec![PortablePath::ProjectGlob(GlobPath("tests/**/*".into()))]
+                        vec![InputPath::ProjectGlob("tests/**/*".into())]
                     ),
                     (
                         "sources".into(),
-                        vec![PortablePath::ProjectGlob(GlobPath("sources/**/*".into()))]
+                        vec![InputPath::ProjectGlob("sources/**/*".into())]
                     ),
                 ])
             );
@@ -172,15 +172,15 @@ fileGroups:
                 FxHashMap::from_iter([
                     (
                         "tests".into(),
-                        vec![PortablePath::ProjectGlob(GlobPath("tests/**/*".into()))]
+                        vec![InputPath::ProjectGlob("tests/**/*".into())]
                     ),
                     (
                         "sources".into(),
-                        vec![PortablePath::ProjectGlob(GlobPath("sources/**/*".into()))]
+                        vec![InputPath::ProjectGlob("sources/**/*".into())]
                     ),
                     (
                         "configs".into(),
-                        vec![PortablePath::WorkspaceGlob(GlobPath("*.js".into()))]
+                        vec![InputPath::WorkspaceGlob("*.js".into())]
                     ),
                 ])
             );
@@ -226,15 +226,15 @@ fileGroups:
                 FxHashMap::from_iter([
                     (
                         "tests".into(),
-                        vec![PortablePath::ProjectGlob(GlobPath("tests/**/*".into()))]
+                        vec![InputPath::ProjectGlob("tests/**/*".into())]
                     ),
                     (
                         "sources".into(),
-                        vec![PortablePath::ProjectGlob(GlobPath("sources/**/*".into()))]
+                        vec![InputPath::ProjectGlob("sources/**/*".into())]
                     ),
                     (
                         "configs".into(),
-                        vec![PortablePath::WorkspaceGlob(GlobPath("*.js".into()))]
+                        vec![InputPath::WorkspaceGlob("*.js".into())]
                     ),
                 ])
             );
@@ -270,17 +270,17 @@ fileGroups:
                     (
                         "files".into(),
                         vec![
-                            PortablePath::WorkspaceFile(FilePath("ws/relative".into())),
-                            PortablePath::ProjectFile(FilePath("proj/relative".into()))
+                            InputPath::WorkspaceFile("ws/relative".into()),
+                            InputPath::ProjectFile("proj/relative".into())
                         ]
                     ),
                     (
                         "globs".into(),
                         vec![
-                            PortablePath::WorkspaceGlob(GlobPath("ws/**/*".into())),
-                            PortablePath::WorkspaceGlob(GlobPath("!ws/**/*".into())),
-                            PortablePath::ProjectGlob(GlobPath("proj/**/*".into())),
-                            PortablePath::ProjectGlob(GlobPath("!proj/**/*".into())),
+                            InputPath::WorkspaceGlob("ws/**/*".into()),
+                            InputPath::WorkspaceGlob("!ws/**/*".into()),
+                            InputPath::ProjectGlob("proj/**/*".into()),
+                            InputPath::ProjectGlob("!proj/**/*".into()),
                         ]
                     ),
                 ])

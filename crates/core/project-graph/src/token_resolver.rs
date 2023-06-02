@@ -152,36 +152,51 @@ impl<'task> TokenResolver<'task> {
         let mut globs: Vec<String> = vec![];
 
         for input in inputs {
-            if let InputPath::EnvVar(_) = input {
-                continue;
+            let mut is_glob = input.is_glob();
+            let mut resolved;
+
+            match input {
+                InputPath::EnvVar(_) => {
+                    continue;
+                }
+                InputPath::TokenFunc(func) => {
+                    if self.has_token_func(func) {
+                        let (resolved_paths, resolved_globs) = self.resolve_func(func, task)?;
+
+                        paths.extend(resolved_paths);
+                        globs.extend(resolved_globs);
+                    }
+
+                    continue;
+                }
+                InputPath::TokenVar(var) => {
+                    resolved = PathBuf::from(self.resolve_var(var, task)?);
+                }
+                other_input => {
+                    resolved = PathBuf::from(
+                        self.resolve_vars(
+                            other_input
+                                .to_workspace_relative(&self.project.source)
+                                .as_str(),
+                            task,
+                        )?,
+                    );
+                }
+            };
+
+            // This is a special case for inputs that converts "foo" to "foo/**/*",
+            // when the input is a directory. This is necessary for VCS hashing.
+            if matches!(self.context, TokenContext::Inputs)
+                && self.workspace_root.join(&resolved).is_dir()
+            {
+                is_glob = true;
+                resolved = resolved.join("**/*");
             }
 
-            if self.has_token_func(input.as_str()) {
-                let (resolved_paths, resolved_globs) = self.resolve_func(input.as_str(), task)?;
-
-                paths.extend(resolved_paths);
-                globs.extend(resolved_globs);
+            if is_glob {
+                globs.push(glob::normalize(resolved).map_err(MoonError::StarGlob)?);
             } else {
-                let mut is_glob = input.is_glob();
-                let mut resolved = PathBuf::from(self.resolve_vars(
-                    input.to_workspace_relative(&self.project.source).as_str(),
-                    task,
-                )?);
-
-                // This is a special case for inputs that converts "foo" to "foo/**/*",
-                // when the input is a directory. This is necessary for VCS hashing.
-                if matches!(self.context, TokenContext::Inputs)
-                    && self.workspace_root.join(&resolved).is_dir()
-                {
-                    is_glob = true;
-                    resolved = resolved.join("**/*");
-                }
-
-                if is_glob {
-                    globs.push(glob::normalize(resolved).map_err(MoonError::StarGlob)?);
-                } else {
-                    paths.push(resolved);
-                }
+                paths.push(resolved);
             }
         }
 

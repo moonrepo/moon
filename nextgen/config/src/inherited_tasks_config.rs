@@ -2,7 +2,7 @@ use crate::language_platform::{LanguageType, PlatformType};
 use crate::portable_path::PortablePath;
 use crate::project::{validate_deps, TaskConfig};
 use crate::project_config::ProjectType;
-use crate::InputPath;
+use crate::shapes::InputPath;
 use moon_common::cacheable;
 use moon_common::{consts, Id};
 use moon_target::Target;

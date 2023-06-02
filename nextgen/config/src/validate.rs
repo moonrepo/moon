@@ -9,9 +9,7 @@ pub fn validate_child_relative_path(value: &str) -> Result<(), ValidateError> {
     let path = Path::new(value);
 
     if path.has_root() || path.is_absolute() {
-        return Err(ValidateError::new(
-            "workspace or absolute paths are not supported",
-        ));
+        return Err(ValidateError::new("absolute paths are not supported"));
     }
 
     if path.starts_with("..") {

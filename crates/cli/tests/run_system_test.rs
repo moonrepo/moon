@@ -2,7 +2,6 @@ use moon_config::{PartialInheritedTasksConfig, PartialWorkspaceConfig, Workspace
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, predicates::prelude::*, Sandbox,
 };
-use moon_utils::string_vec;
 use rustc_hash::FxHashMap;
 
 fn system_sandbox() -> Sandbox {
@@ -16,7 +15,7 @@ fn system_sandbox() -> Sandbox {
 
     let tasks_config = PartialInheritedTasksConfig {
         // Avoid defaults in hashes or snapshots
-        implicit_inputs: Some(string_vec![]),
+        implicit_inputs: Some(vec![]),
         ..PartialInheritedTasksConfig::default()
     };
 

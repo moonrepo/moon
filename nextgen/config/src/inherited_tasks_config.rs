@@ -2,7 +2,7 @@ use crate::language_platform::{LanguageType, PlatformType};
 use crate::portable_path::PortablePath;
 use crate::project::{validate_deps, TaskConfig};
 use crate::project_config::ProjectType;
-use crate::validate::validate_portable_paths;
+use crate::InputPath;
 use moon_common::cacheable;
 use moon_common::{consts, Id};
 use moon_target::Target;
@@ -14,7 +14,7 @@ use std::{collections::BTreeMap, path::Path};
 pub fn merge_fxhashmap<K, V, C>(
     mut prev: FxHashMap<K, V>,
     next: FxHashMap<K, V>,
-    _: &C,
+    _context: &C,
 ) -> Result<Option<FxHashMap<K, V>>, ConfigError>
 where
     K: Eq + Hash,
@@ -45,8 +45,8 @@ cacheable!(
         #[setting(merge = merge::append_vec, validate = validate_deps)]
         pub implicit_deps: Vec<Target>,
 
-        #[setting(merge = merge::append_vec, validate = validate_portable_paths)]
-        pub implicit_inputs: Vec<String>,
+        #[setting(merge = merge::append_vec)]
+        pub implicit_inputs: Vec<InputPath>,
 
         #[setting(nested, merge = merge::merge_btreemap)]
         pub tasks: BTreeMap<Id, TaskConfig>,

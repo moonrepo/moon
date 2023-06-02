@@ -3,7 +3,7 @@
 
 use moon::{generate_project_graph, load_workspace_from};
 use moon_config::{
-    LanguageType, PartialInheritedTasksConfig, PartialNodeConfig, PartialRustConfig,
+    InputPath, LanguageType, PartialInheritedTasksConfig, PartialNodeConfig, PartialRustConfig,
     PartialTaskConfig, PartialTaskOptionsConfig, PartialToolchainConfig, PartialWorkspaceConfig,
     PlatformType, TaskCommandArgs, WorkspaceProjects,
 };
@@ -1244,7 +1244,7 @@ mod task_expansion {
         #[tokio::test]
         async fn inherits_implicit_inputs() {
             let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
-                tasks_config.implicit_inputs = Some(string_vec!["package.json"]);
+                tasks_config.implicit_inputs = Some(vec![InputPath::project_file("package.json")]);
             })
             .await;
 
@@ -1262,7 +1262,8 @@ mod task_expansion {
         #[tokio::test]
         async fn inherits_implicit_inputs_env_vars() {
             let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
-                tasks_config.implicit_inputs = Some(string_vec!["$FOO", "$BAR"]);
+                tasks_config.implicit_inputs =
+                    Some(vec![InputPath::env_var("FOO"), InputPath::env_var("BAR")]);
             })
             .await;
 

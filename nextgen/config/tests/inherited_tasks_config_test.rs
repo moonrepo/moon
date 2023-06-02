@@ -4,8 +4,8 @@ use httpmock::prelude::*;
 use moon_common::consts::CONFIG_TASKS_FILENAME;
 use moon_common::Id;
 use moon_config::{
-    FilePath, GlobPath, InheritedTasksConfig, InheritedTasksManager, LanguageType, PlatformType,
-    PortablePath, ProjectType, TaskCommandArgs, TaskConfig, TaskOptionsConfig,
+    FilePath, GlobPath, InheritedTasksConfig, InheritedTasksManager, InputPath, LanguageType,
+    PlatformType, PortablePath, ProjectType, TaskCommandArgs, TaskConfig, TaskOptionsConfig,
 };
 use moon_target::Target;
 use rustc_hash::FxHashMap;
@@ -363,12 +363,12 @@ implicitInputs:
             assert_eq!(
                 config.implicit_inputs,
                 vec![
-                    "/ws/path".to_owned(),
-                    "/ws/glob/**/*".to_owned(),
-                    "/!ws/glob/**/*".to_owned(),
-                    "proj/path".to_owned(),
-                    "proj/glob/{a,b,c}".to_owned(),
-                    "!proj/glob/{a,b,c}".to_owned(),
+                    InputPath::workspace_file("ws/path"),
+                    InputPath::workspace_glob("ws/glob/**/*"),
+                    InputPath::workspace_glob("!ws/glob/**/*"),
+                    InputPath::project_file("proj/path"),
+                    InputPath::project_glob("proj/glob/{a,b,c}"),
+                    InputPath::project_glob("!proj/glob/{a,b,c}"),
                 ]
             );
         }
@@ -387,7 +387,10 @@ implicitInputs:
 
             assert_eq!(
                 config.implicit_inputs,
-                vec!["$FOO_BAR".to_owned(), "file/path".to_owned(),]
+                vec![
+                    InputPath::env_var("FOO_BAR"),
+                    InputPath::project_file("file/path"),
+                ]
             );
         }
     }

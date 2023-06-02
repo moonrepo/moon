@@ -464,10 +464,10 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         project: &mut Project,
         task: &mut Task,
     ) -> Result<(), ProjectGraphError> {
-        if !project.inherited_config.implicit_inputs.is_empty() {
-            task.inputs
-                .extend(project.inherited_config.implicit_inputs.clone());
-        }
+        // if !project.inherited_config.implicit_inputs.is_empty() {
+        //     task.inputs
+        //         .extend(project.inherited_config.implicit_inputs.clone());
+        // }
 
         task.inputs.retain(|input| {
             if ENV_VAR.is_match(input) {

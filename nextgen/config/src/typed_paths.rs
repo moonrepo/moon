@@ -14,6 +14,28 @@ pub enum InputPath {
     WorkspaceGlob(GlobPath),
 }
 
+impl InputPath {
+    pub fn env_var(var: &str) -> InputPath {
+        InputPath::EnvVar(var.to_owned())
+    }
+
+    pub fn project_file(path: &str) -> InputPath {
+        InputPath::ProjectFile(ProjectFilePath(path.to_owned()))
+    }
+
+    pub fn project_glob(path: &str) -> InputPath {
+        InputPath::ProjectGlob(ProjectGlobPath(path.to_owned()))
+    }
+
+    pub fn workspace_file(path: &str) -> InputPath {
+        InputPath::WorkspaceFile(FilePath(path.to_owned()))
+    }
+
+    pub fn workspace_glob(path: &str) -> InputPath {
+        InputPath::WorkspaceGlob(GlobPath(path.to_owned()))
+    }
+}
+
 impl Portable for InputPath {
     fn from_str(value: &str) -> Result<Self, ValidateError> {
         if let Some(env_var) = value.strip_prefix('$') {

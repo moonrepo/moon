@@ -1,6 +1,6 @@
 use moon_common::cacheable;
 use moon_config::{
-    TaskMergeStrategy, TaskOptionAffectedFiles, TaskOptionEnvFile, TaskOptionsConfig,
+    FilePath, TaskMergeStrategy, TaskOptionAffectedFiles, TaskOptionEnvFile, TaskOptionsConfig,
     TaskOutputStyle,
 };
 
@@ -11,7 +11,7 @@ cacheable!(
 
         pub cache: bool,
 
-        pub env_file: Option<String>,
+        pub env_file: Option<FilePath>,
 
         pub merge_args: TaskMergeStrategy,
 
@@ -163,7 +163,7 @@ impl TaskOptions {
         }
 
         if let Some(env_file) = &self.env_file {
-            config.env_file = Some(if env_file == ".env" {
+            config.env_file = Some(if env_file.as_str() == ".env" {
                 TaskOptionEnvFile::Enabled(true)
             } else {
                 TaskOptionEnvFile::File(env_file.to_owned())

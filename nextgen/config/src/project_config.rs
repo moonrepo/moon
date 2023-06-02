@@ -1,8 +1,8 @@
 // moon.yml
 
 use crate::language_platform::{LanguageType, PlatformType};
-use crate::portable_path::PortablePath;
 use crate::project::*;
+use crate::shapes::InputPath;
 use moon_common::cacheable;
 use moon_common::{consts, Id};
 use rustc_hash::FxHashMap;
@@ -73,7 +73,7 @@ cacheable!(
 
         pub env: FxHashMap<String, String>,
 
-        pub file_groups: FxHashMap<Id, Vec<PortablePath>>,
+        pub file_groups: FxHashMap<Id, Vec<InputPath>>,
 
         pub language: LanguageType,
 

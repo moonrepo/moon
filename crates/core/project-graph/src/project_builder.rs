@@ -4,7 +4,7 @@ use crate::helpers::detect_projects_with_globs;
 use crate::project_graph::{GraphType, IndicesType, ProjectGraph, LOG_TARGET};
 use crate::token_resolver::{TokenContext, TokenResolver};
 use moon_common::{consts, Id};
-use moon_config::{ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceProjects};
+use moon_config::{InputPath, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceProjects};
 use moon_enforcer::{enforce_project_type_relationships, enforce_tag_relationships};
 use moon_error::MoonError;
 use moon_hasher::{convert_paths_to_strings, to_hash};
@@ -14,7 +14,7 @@ use moon_project::{Project, ProjectError};
 use moon_target::{Target, TargetScope};
 use moon_task::{Task, TaskError, TaskFlag};
 use moon_utils::path::expand_to_workspace_relative;
-use moon_utils::regex::{ENV_VAR, ENV_VAR_SUBSTITUTE};
+use moon_utils::regex::ENV_VAR_SUBSTITUTE;
 use moon_utils::{path, time};
 use moon_workspace::Workspace;
 use petgraph::graph::{DiGraph, NodeIndex};
@@ -26,6 +26,7 @@ use std::collections::BTreeMap;
 use std::env;
 use std::mem;
 use std::path::PathBuf;
+use std::str::FromStr;
 
 pub struct ProjectGraphBuilder<'ws> {
     workspace: &'ws mut Workspace,
@@ -415,7 +416,8 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                 |e: dotenvy::Error| TaskError::InvalidEnvFile(env_path.clone(), e.to_string());
 
             // Add as an input
-            task.inputs.push(env_file.to_owned());
+            task.inputs
+                .push(InputPath::from_str(env_file.as_str()).unwrap());
 
             // The `.env` file may not have been committed, so avoid crashing
             if env_path.exists() {
@@ -470,8 +472,8 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         }
 
         task.inputs.retain(|input| {
-            if ENV_VAR.is_match(input) {
-                task.input_vars.insert(input[1..].to_owned());
+            if let InputPath::EnvVar(var) = input {
+                task.input_vars.insert(var.to_owned());
                 false
             } else {
                 true
@@ -480,11 +482,12 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         // When no inputs defined, default to the whole project
         if task.inputs.is_empty() && !task.flags.contains(&TaskFlag::NoInputs) {
-            task.inputs.push("**/*".to_owned());
+            task.inputs.push(InputPath::ProjectGlob("**/*".into()));
         }
 
         // Always break cache if a core configuration changes
-        task.global_inputs.push("/.moon/*.yml".into());
+        task.global_inputs
+            .push(InputPath::WorkspaceGlob(".moon/*.yml".into()));
 
         let mut inputs_to_resolve = vec![];
         inputs_to_resolve.extend(&task.inputs);
@@ -496,10 +499,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         let token_resolver =
             TokenResolver::new(TokenContext::Inputs, project, &self.workspace.root);
-        let (paths, globs) = token_resolver.resolve(
-            &inputs_to_resolve.into_iter().cloned().collect::<Vec<_>>(),
-            task,
-        )?;
+        let (paths, globs) = token_resolver.resolve_inputs(&inputs_to_resolve, task)?;
 
         task.input_paths.extend(paths);
         task.input_globs.extend(globs);

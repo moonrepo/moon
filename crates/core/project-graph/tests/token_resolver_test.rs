@@ -731,7 +731,9 @@ mod resolve_inputs {
         let task = create_task(None);
 
         assert_eq!(
-            resolver.resolve(&string_vec!["dir"], &task).unwrap(),
+            resolver
+                .resolve_inputs(&[&InputPath::ProjectFile("dir".into())], &task)
+                .unwrap(),
             (
                 vec![],
                 vec![glob::normalize(PathBuf::from(&project.source).join("dir/**/*")).unwrap()]

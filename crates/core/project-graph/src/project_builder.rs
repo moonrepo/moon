@@ -482,7 +482,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         // When no inputs defined, default to the whole project
         if task.inputs.is_empty() && !task.flags.contains(&TaskFlag::NoInputs) {
-            task.inputs.push(InputPath::ProjectGlob("**/*".to_owned()));
+            task.inputs.push(InputPath::ProjectGlob("**/*".into()));
         }
 
         // Always break cache if a core configuration changes

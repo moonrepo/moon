@@ -31,7 +31,7 @@ mod task_config {
         use super::*;
 
         #[test]
-        #[should_panic(expected = "expected a string or a sequence of strings")]
+        #[should_panic(expected = "expected a string or a list of strings")]
         fn errors_on_invalid_type() {
             test_parse_config("command: 123", |code| TaskConfig::parse(code));
         }
@@ -492,7 +492,7 @@ options:
             }
 
             #[test]
-            #[should_panic(expected = "globs are not supported")]
+            #[should_panic(expected = "expected a boolean or a file system path")]
             fn errors_on_glob() {
                 test_parse_config(
                     r"

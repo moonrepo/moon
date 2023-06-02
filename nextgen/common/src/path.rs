@@ -24,12 +24,19 @@ pub fn expand_to_workspace_relative<P: AsRef<str>>(
 
     match from_format {
         RelativeFrom::Project(source) => {
-            let project_source = standardize_separators(source);
+            // Root-level project
+            if source.is_empty() || source == "." {
+                WorkspaceRelativePathBuf::from(path)
 
-            if let Some(negated_glob) = path.strip_prefix('!') {
-                WorkspaceRelativePathBuf::from(format!("!{project_source}")).join(negated_glob)
+                // Project-level, prefix with source path
             } else {
-                WorkspaceRelativePathBuf::from(project_source).join(path)
+                let project_source = standardize_separators(source);
+
+                if let Some(negated_glob) = path.strip_prefix('!') {
+                    WorkspaceRelativePathBuf::from(format!("!{project_source}")).join(negated_glob)
+                } else {
+                    WorkspaceRelativePathBuf::from(project_source).join(path)
+                }
             }
         }
         RelativeFrom::Workspace => WorkspaceRelativePathBuf::from(path),

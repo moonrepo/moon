@@ -5,6 +5,7 @@
 #### ⚙️ Internal
 
 - Updated Rust to v1.70.
+- Refactored task inputs and file groups to be more efficient.
 
 ## 1.7.1
 

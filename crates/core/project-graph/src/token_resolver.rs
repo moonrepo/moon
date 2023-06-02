@@ -1,4 +1,5 @@
 use crate::errors::TokenError;
+use moon_config::InputPath;
 use moon_error::MoonError;
 use moon_logger::warn;
 use moon_project::Project;
@@ -142,6 +143,64 @@ impl<'task> TokenResolver<'task> {
         value.contains('$') && matches_token_var(value)
     }
 
+    pub fn resolve_inputs(
+        &self,
+        inputs: &[&InputPath],
+        task: &Task,
+    ) -> Result<PathsGlobsResolved, TokenError> {
+        let mut paths: Vec<PathBuf> = vec![];
+        let mut globs: Vec<String> = vec![];
+
+        for input in inputs {
+            let mut is_glob = input.is_glob();
+            let mut resolved;
+
+            match input {
+                InputPath::EnvVar(_) => {
+                    continue;
+                }
+                InputPath::TokenFunc(func) => {
+                    if self.has_token_func(func) {
+                        let (resolved_paths, resolved_globs) = self.resolve_func(func, task)?;
+
+                        paths.extend(resolved_paths);
+                        globs.extend(resolved_globs);
+                    }
+
+                    continue;
+                }
+                InputPath::TokenVar(var) => {
+                    resolved = PathBuf::from(self.resolve_var(var, task)?);
+                }
+                other_input => {
+                    resolved = PathBuf::from(
+                        self.resolve_vars(
+                            other_input
+                                .to_workspace_relative(&self.project.source)
+                                .as_str(),
+                            task,
+                        )?,
+                    );
+                }
+            };
+
+            // This is a special case for inputs that converts "foo" to "foo/**/*",
+            // when the input is a directory. This is necessary for VCS hashing.
+            if self.workspace_root.join(&resolved).is_dir() {
+                is_glob = true;
+                resolved = resolved.join("**/*");
+            }
+
+            if is_glob {
+                globs.push(glob::normalize(resolved).map_err(MoonError::StarGlob)?);
+            } else {
+                paths.push(resolved);
+            }
+        }
+
+        Ok((paths, globs))
+    }
+
     /// Cycle through the values, resolve any tokens, and return a list of absolute file paths.
     /// This should only be used for `inputs` and `outputs`.
     pub fn resolve(
@@ -159,23 +218,13 @@ impl<'task> TokenResolver<'task> {
                 paths.extend(resolved_paths);
                 globs.extend(resolved_globs);
             } else {
-                let mut is_glob = glob::is_glob(value);
-                let mut resolved = path::expand_to_workspace_relative(
+                let resolved = path::expand_to_workspace_relative(
                     self.resolve_vars(value, task)?,
                     self.workspace_root,
                     &self.project.root,
                 );
 
-                // This is a special case for inputs that converts "foo" to "foo/**/*",
-                // when the input is a directory. This is necessary for VCS hashing.
-                if matches!(self.context, TokenContext::Inputs)
-                    && self.workspace_root.join(&resolved).is_dir()
-                {
-                    is_glob = true;
-                    resolved = resolved.join("**/*");
-                }
-
-                if is_glob {
+                if glob::is_glob(value) {
                     globs.push(glob::normalize(resolved).map_err(MoonError::StarGlob)?);
                 } else {
                     paths.push(resolved);
@@ -364,12 +413,17 @@ impl<'task> TokenResolver<'task> {
 
         if let TokenType::In(token, index) = token_type {
             let error = TokenError::InvalidInIndex(token, index);
+
             let Some(input) = task.inputs.get(index as usize) else {
                 return Err(error);
             };
 
-            if glob::is_glob(input) {
-                match task.input_globs.iter().find(|g| g.ends_with(input)) {
+            if input.is_glob() {
+                match task
+                    .input_globs
+                    .iter()
+                    .find(|g| g.ends_with(input.as_str()))
+                {
                     Some(g) => {
                         globs.push(g.to_owned());
                     }
@@ -378,11 +432,11 @@ impl<'task> TokenResolver<'task> {
                     }
                 };
             } else {
-                match task.input_paths.get(&path::expand_to_workspace_relative(
-                    input,
-                    self.workspace_root,
-                    &self.project.root,
-                )) {
+                let rel = input
+                    .to_workspace_relative(&self.project.source)
+                    .to_logical_path("");
+
+                match task.input_paths.get(&rel) {
                     Some(p) => {
                         paths.push(p.clone());
                     }

@@ -1,8 +1,7 @@
 use crate::language_platform::{LanguageType, PlatformType};
-use crate::portable_path::PortablePath;
 use crate::project::{validate_deps, TaskConfig};
 use crate::project_config::ProjectType;
-use crate::validate::validate_portable_paths;
+use crate::shapes::InputPath;
 use moon_common::cacheable;
 use moon_common::{consts, Id};
 use moon_target::Target;
@@ -14,7 +13,7 @@ use std::{collections::BTreeMap, path::Path};
 pub fn merge_fxhashmap<K, V, C>(
     mut prev: FxHashMap<K, V>,
     next: FxHashMap<K, V>,
-    _: &C,
+    _context: &C,
 ) -> Result<Option<FxHashMap<K, V>>, ConfigError>
 where
     K: Eq + Hash,
@@ -40,13 +39,13 @@ cacheable!(
         pub extends: Option<String>,
 
         #[setting(merge = merge_fxhashmap)]
-        pub file_groups: FxHashMap<Id, Vec<PortablePath>>,
+        pub file_groups: FxHashMap<Id, Vec<InputPath>>,
 
         #[setting(merge = merge::append_vec, validate = validate_deps)]
         pub implicit_deps: Vec<Target>,
 
-        #[setting(merge = merge::append_vec, validate = validate_portable_paths)]
-        pub implicit_inputs: Vec<String>,
+        #[setting(merge = merge::append_vec)]
+        pub implicit_inputs: Vec<InputPath>,
 
         #[setting(nested, merge = merge::merge_btreemap)]
         pub tasks: BTreeMap<Id, TaskConfig>,
@@ -152,16 +151,9 @@ impl InheritedTasksManager {
                     if let Some(tasks) = &mut managed_config.tasks {
                         for task in tasks.values_mut() {
                             // Automatically set this lookup as an input
-                            // let global_lookup = PortablePath::WorkspaceFile(FilePath(format!(
-                            //     ".moon/tasks/{lookup}.yml"
-                            // )));
-                            let global_lookup = format!("/.moon/tasks/{lookup}.yml");
-
-                            if let Some(global_inputs) = &mut task.global_inputs {
-                                global_inputs.push(global_lookup);
-                            } else {
-                                task.global_inputs = Some(vec![global_lookup]);
-                            }
+                            task.global_inputs.get_or_insert(vec![]).push(
+                                InputPath::WorkspaceFile(format!(".moon/tasks/{lookup}.yml")),
+                            );
 
                             // Automatically set the platform
                             if task.platform.unwrap_or_default().is_unknown() {

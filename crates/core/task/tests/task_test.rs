@@ -1,6 +1,6 @@
 use moon_config::{
-    TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskOptionEnvFile, TaskOptionsConfig,
-    TaskOutputStyle,
+    FilePath, InputPath, TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskOptionEnvFile,
+    TaskOptionsConfig, TaskOutputStyle,
 };
 use moon_target::Target;
 use moon_task::{Task, TaskFlag, TaskOptions};
@@ -9,6 +9,7 @@ use moon_utils::string_vec;
 use rustc_hash::FxHashSet;
 use std::env;
 use std::path::PathBuf;
+use std::str::FromStr;
 
 pub fn create_task(config: TaskConfig) -> Task {
     Task::from_config(Target::new("project", "task").unwrap(), &config).unwrap()
@@ -164,7 +165,7 @@ mod from_config {
         assert_eq!(
             task.options,
             TaskOptions {
-                env_file: Some(".env".to_owned()),
+                env_file: Some(FilePath(".env".to_owned())),
                 ..TaskOptions::default()
             }
         )
@@ -207,13 +208,22 @@ mod from_config {
         let task = Task::from_config(
             Target::new("foo", "test").unwrap(),
             &TaskConfig {
-                inputs: Some(string_vec!["foo", "bar"]),
+                inputs: Some(vec![
+                    InputPath::from_str("foo").unwrap(),
+                    InputPath::from_str("bar").unwrap(),
+                ]),
                 ..TaskConfig::default()
             },
         )
         .unwrap();
 
-        assert_eq!(task.inputs, string_vec!["foo", "bar"]);
+        assert_eq!(
+            task.inputs,
+            vec![
+                InputPath::ProjectFile("foo".into()),
+                InputPath::ProjectFile("bar".into())
+            ]
+        );
     }
 
     #[test]
@@ -227,7 +237,7 @@ mod from_config {
         )
         .unwrap();
 
-        assert_eq!(task.inputs, Vec::<String>::new());
+        assert_eq!(task.inputs, Vec::<InputPath>::new());
     }
 
     #[test]
@@ -235,15 +245,18 @@ mod from_config {
         let task = Task::from_config(
             Target::new("foo", "test").unwrap(),
             &TaskConfig {
-                global_inputs: string_vec!["global"],
-                inputs: Some(string_vec!["local"]),
+                global_inputs: vec![InputPath::from_str("global").unwrap()],
+                inputs: Some(vec![InputPath::from_str("local").unwrap()]),
                 ..TaskConfig::default()
             },
         )
         .unwrap();
 
-        assert_eq!(task.global_inputs, string_vec!["global"]);
-        assert_eq!(task.inputs, string_vec!["local"]);
+        assert_eq!(
+            task.global_inputs,
+            vec![InputPath::ProjectFile("global".into())]
+        );
+        assert_eq!(task.inputs, vec![InputPath::ProjectFile("local".into())]);
     }
 
     #[test]
@@ -265,7 +278,7 @@ mod from_config {
         let task = Task::from_config(
             Target::new("foo", "test").unwrap(),
             &TaskConfig {
-                inputs: Some(string_vec!["foo"]),
+                inputs: Some(vec![InputPath::from_str("foo").unwrap()]),
                 ..TaskConfig::default()
             },
         )
@@ -449,7 +462,7 @@ mod merge {
         let mut task = Task {
             command: "cmd".to_owned(),
             args: string_vec!["--arg"],
-            inputs: string_vec!["**/*"],
+            inputs: vec![InputPath::from_str("**/*").unwrap()],
             ..Task::default()
         };
 
@@ -463,7 +476,7 @@ mod merge {
         })
         .unwrap();
 
-        assert_eq!(task.inputs, string_vec![]);
+        assert_eq!(task.inputs, Vec::<InputPath>::new());
     }
 
     #[test]
@@ -471,7 +484,7 @@ mod merge {
         let mut task = Task {
             command: "cmd".to_owned(),
             args: string_vec!["--arg"],
-            inputs: string_vec!["**/*"],
+            inputs: vec![InputPath::from_str("**/*").unwrap()],
             ..Task::default()
         };
 
@@ -481,7 +494,7 @@ mod merge {
         })
         .unwrap();
 
-        assert_eq!(task.inputs, string_vec![]);
+        assert_eq!(task.inputs, Vec::<InputPath>::new());
     }
 
     #[test]
@@ -489,7 +502,7 @@ mod merge {
         let mut task = Task {
             command: "cmd".to_owned(),
             args: string_vec!["--arg"],
-            inputs: string_vec!["**/*"],
+            inputs: vec![InputPath::from_str("**/*").unwrap()],
             ..Task::default()
         };
 
@@ -507,12 +520,12 @@ mod merge {
         let mut task = Task {
             command: "cmd".to_owned(),
             args: string_vec!["--arg"],
-            inputs: string_vec!["**/*"],
+            inputs: vec![InputPath::from_str("**/*").unwrap()],
             ..Task::default()
         };
 
         task.merge(&TaskConfig {
-            inputs: Some(string_vec!["foo"]),
+            inputs: Some(vec![InputPath::from_str("foo").unwrap()]),
             ..TaskConfig::default()
         })
         .unwrap();
@@ -525,7 +538,7 @@ mod merge {
         let mut task = Task {
             command: "cmd".to_owned(),
             args: string_vec!["--arg"],
-            inputs: string_vec!["**/*"],
+            inputs: vec![InputPath::from_str("**/*").unwrap()],
             flags: FxHashSet::from_iter([TaskFlag::NoInputs]),
             ..Task::default()
         };
@@ -546,7 +559,7 @@ mod is_affected {
     #[test]
     fn returns_true_if_var_truthy() {
         let mut task = create_task(TaskConfig {
-            inputs: Some(string_vec!["$FOO"]),
+            inputs: Some(vec![InputPath::from_str("$FOO").unwrap()]),
             ..TaskConfig::default()
         });
 
@@ -562,7 +575,7 @@ mod is_affected {
     #[test]
     fn returns_false_if_var_missing() {
         let mut task = create_task(TaskConfig {
-            inputs: Some(string_vec!["$BAR"]),
+            inputs: Some(vec![InputPath::from_str("$BAR").unwrap()]),
             ..TaskConfig::default()
         });
 
@@ -574,7 +587,7 @@ mod is_affected {
     #[test]
     fn returns_false_if_var_empty() {
         let mut task = create_task(TaskConfig {
-            inputs: Some(string_vec!["$BAZ"]),
+            inputs: Some(vec![InputPath::from_str("$BAZ").unwrap()]),
             ..TaskConfig::default()
         });
 
@@ -591,7 +604,7 @@ mod is_affected {
     fn returns_true_if_matches_file() {
         let project_source = PathBuf::from("files-and-dirs");
         let mut task = create_task(TaskConfig {
-            inputs: Some(string_vec!["file.ts"]),
+            inputs: Some(vec![InputPath::from_str("file.ts").unwrap()]),
             ..TaskConfig::default()
         });
 
@@ -607,7 +620,7 @@ mod is_affected {
     fn returns_true_if_matches_glob() {
         let project_source = PathBuf::from("files-and-dirs");
         let mut task = create_task(TaskConfig {
-            inputs: Some(string_vec!["file.*"]),
+            inputs: Some(vec![InputPath::from_str("file.*").unwrap()]),
             ..TaskConfig::default()
         });
 
@@ -622,7 +635,7 @@ mod is_affected {
     #[test]
     fn returns_true_when_referencing_root_files() {
         let mut task = create_task(TaskConfig {
-            inputs: Some(string_vec!["/package.json"]),
+            inputs: Some(vec![InputPath::from_str("/package.json").unwrap()]),
             ..TaskConfig::default()
         });
 
@@ -638,7 +651,7 @@ mod is_affected {
     fn returns_false_if_outside_project() {
         let project_source = PathBuf::from("files-and-dirs");
         let mut task = create_task(TaskConfig {
-            inputs: Some(string_vec!["file.ts"]),
+            inputs: Some(vec![InputPath::from_str("file.ts").unwrap()]),
             ..TaskConfig::default()
         });
 
@@ -654,7 +667,10 @@ mod is_affected {
     fn returns_false_if_no_match() {
         let project_source = PathBuf::from("files-and-dirs");
         let mut task = create_task(TaskConfig {
-            inputs: Some(string_vec!["file.ts", "src/*"]),
+            inputs: Some(vec![
+                InputPath::from_str("file.ts").unwrap(),
+                InputPath::from_str("src/*").unwrap(),
+            ]),
             ..TaskConfig::default()
         });
 

@@ -1,4 +1,4 @@
-use moon_config::{PartialWorkspaceConfig, WorkspaceProjects};
+use moon_config::{InputPath, PartialWorkspaceConfig, WorkspaceProjects};
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, get_default_toolchain, predicates::str::contains,
     Sandbox,
@@ -148,7 +148,12 @@ mod from_turborepo {
 
         assert_eq!(
             config.implicit_inputs.unwrap(),
-            string_vec!["package.json", "*.json", "$FOO", "$BAR"]
+            vec![
+                InputPath::ProjectFile("package.json".into()),
+                InputPath::ProjectGlob("*.json".into()),
+                InputPath::EnvVar("FOO".into()),
+                InputPath::EnvVar("BAR".into())
+            ]
         );
     }
 

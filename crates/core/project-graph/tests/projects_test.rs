@@ -3,7 +3,7 @@
 
 use moon::{generate_project_graph, load_workspace_from};
 use moon_config::{
-    LanguageType, PartialInheritedTasksConfig, PartialNodeConfig, PartialRustConfig,
+    InputPath, LanguageType, PartialInheritedTasksConfig, PartialNodeConfig, PartialRustConfig,
     PartialTaskConfig, PartialTaskOptionsConfig, PartialToolchainConfig, PartialWorkspaceConfig,
     PlatformType, TaskCommandArgs, WorkspaceProjects,
 };
@@ -216,7 +216,7 @@ tasks:
                 command: Some(TaskCommandArgs::String("standard".to_owned())),
                 deps: Some(vec![Target::parse("a:standard").unwrap()]),
                 env: Some(stub_global_env_vars()),
-                inputs: Some(string_vec!["a.*"]),
+                inputs: Some(vec![InputPath::ProjectGlob("a.*".into())]),
                 outputs: Some(string_vec!["a.ts"]),
                 options: Some(PartialTaskOptionsConfig {
                     cache: Some(true),
@@ -247,8 +247,11 @@ tasks:
             assert_eq!(task.command, "newcmd".to_string());
             assert_eq!(task.args, string_vec!["--b"]);
             assert_eq!(task.env, FxHashMap::from_iter([("KEY".into(), "b".into())]));
-            assert_eq!(task.global_inputs, string_vec!["/.moon/*.yml"]);
-            assert_eq!(task.inputs, string_vec!["b.*"]);
+            assert_eq!(
+                task.global_inputs,
+                vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
+            );
+            assert_eq!(task.inputs, vec![InputPath::ProjectGlob("b.*".into())]);
             assert_eq!(task.outputs, string_vec!["b.ts"]);
         }
 
@@ -275,8 +278,17 @@ tasks:
                     ("KEY".to_owned(), "b".to_owned()),
                 ])
             );
-            assert_eq!(task.global_inputs, string_vec!["/.moon/*.yml"]);
-            assert_eq!(task.inputs, string_vec!["a.*", "b.*"]);
+            assert_eq!(
+                task.global_inputs,
+                vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
+            );
+            assert_eq!(
+                task.inputs,
+                vec![
+                    InputPath::ProjectGlob("a.*".into()),
+                    InputPath::ProjectGlob("b.*".into())
+                ]
+            );
             assert_eq!(task.outputs, string_vec!["a.ts", "b.ts"]);
         }
 
@@ -303,8 +315,17 @@ tasks:
                     ("KEY".to_owned(), "a".to_owned()),
                 ])
             );
-            assert_eq!(task.global_inputs, string_vec!["/.moon/*.yml"]);
-            assert_eq!(task.inputs, string_vec!["b.*", "a.*"]);
+            assert_eq!(
+                task.global_inputs,
+                vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
+            );
+            assert_eq!(
+                task.inputs,
+                vec![
+                    InputPath::ProjectGlob("b.*".into()),
+                    InputPath::ProjectGlob("a.*".into())
+                ]
+            );
             assert_eq!(task.outputs, string_vec!["b.ts", "a.ts"]);
         }
 
@@ -328,8 +349,11 @@ tasks:
                 task.env,
                 FxHashMap::from_iter([("KEY".to_owned(), "b".to_owned()),])
             );
-            assert_eq!(task.global_inputs, string_vec!["/.moon/*.yml"]);
-            assert_eq!(task.inputs, string_vec!["b.*"]);
+            assert_eq!(
+                task.global_inputs,
+                vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
+            );
+            assert_eq!(task.inputs, vec![InputPath::ProjectGlob("b.*".into())]);
             assert_eq!(task.outputs, string_vec!["a.ts", "b.ts"]);
         }
     }
@@ -355,7 +379,7 @@ tasks:
                         "a".into(),
                         PartialTaskConfig {
                             command: Some(TaskCommandArgs::String("a".into())),
-                            inputs: Some(string_vec!["a"]),
+                            inputs: Some(vec![InputPath::ProjectFile("a".into())]),
                             platform: Some(PlatformType::Unknown),
                             ..PartialTaskConfig::default()
                         },
@@ -364,7 +388,7 @@ tasks:
                         "b".into(),
                         PartialTaskConfig {
                             command: Some(TaskCommandArgs::String("b".into())),
-                            inputs: Some(string_vec!["b"]),
+                            inputs: Some(vec![InputPath::ProjectFile("b".into())]),
                             platform: Some(PlatformType::Node),
                             ..PartialTaskConfig::default()
                         },
@@ -373,7 +397,7 @@ tasks:
                         "c".into(),
                         PartialTaskConfig {
                             command: Some(TaskCommandArgs::String("c".into())),
-                            inputs: Some(string_vec!["c"]),
+                            inputs: Some(vec![InputPath::ProjectFile("c".into())]),
                             platform: Some(PlatformType::System),
                             ..PartialTaskConfig::default()
                         },
@@ -599,7 +623,10 @@ tasks:
 
             let project = project_graph.get("inputs").unwrap();
 
-            assert_eq!(project.get_task("a").unwrap().inputs, string_vec![]);
+            assert_eq!(
+                project.get_task("a").unwrap().inputs,
+                Vec::<InputPath>::new()
+            );
         }
 
         #[tokio::test]
@@ -608,7 +635,10 @@ tasks:
 
             let project = project_graph.get("inputs").unwrap();
 
-            assert_eq!(project.get_task("b").unwrap().inputs, string_vec!["other"]);
+            assert_eq!(
+                project.get_task("b").unwrap().inputs,
+                vec![InputPath::ProjectFile("other".into())]
+            );
         }
 
         #[tokio::test]
@@ -619,7 +649,10 @@ tasks:
 
             assert_eq!(
                 project.get_task("c").unwrap().inputs,
-                string_vec!["c", "other"]
+                vec![
+                    InputPath::ProjectFile("c".into()),
+                    InputPath::ProjectFile("other".into())
+                ]
             );
         }
     }
@@ -1001,7 +1034,7 @@ mod task_expansion {
                 ])
             );
 
-            assert!(task.inputs.contains(&".env".to_owned()));
+            assert!(task.inputs.contains(&InputPath::ProjectFile(".env".into())));
             assert!(task
                 .input_paths
                 .contains(&PathBuf::from(&project.source).join(".env")));
@@ -1022,7 +1055,9 @@ mod task_expansion {
                 ])
             );
 
-            assert!(task.inputs.contains(&".env.production".to_owned()));
+            assert!(task
+                .inputs
+                .contains(&InputPath::ProjectFile(".env.production".into())));
             assert!(task
                 .input_paths
                 .contains(&PathBuf::from(&project.source).join(".env.production")));
@@ -1040,7 +1075,9 @@ mod task_expansion {
                 FxHashMap::from_iter([("SOURCE".to_owned(), "workspace-level".to_owned()),])
             );
 
-            assert!(task.inputs.contains(&"/.env".to_owned()));
+            assert!(task
+                .inputs
+                .contains(&InputPath::WorkspaceFile(".env".into())));
             assert!(task.input_paths.contains(&PathBuf::from(".env")));
         }
 
@@ -1212,7 +1249,7 @@ mod task_expansion {
                 .get_task("noInputs")
                 .unwrap();
 
-            assert_eq!(task.inputs, string_vec![]);
+            assert_eq!(task.inputs, Vec::<InputPath>::new());
         }
 
         #[tokio::test]
@@ -1225,7 +1262,14 @@ mod task_expansion {
                 .get_task("explicitInputs")
                 .unwrap();
 
-            assert_eq!(task.inputs, string_vec!["a", "b", "c"]);
+            assert_eq!(
+                task.inputs,
+                vec![
+                    InputPath::ProjectFile("a".into()),
+                    InputPath::ProjectFile("b".into()),
+                    InputPath::ProjectFile("c".into())
+                ]
+            );
         }
 
         #[tokio::test]
@@ -1238,31 +1282,50 @@ mod task_expansion {
                 .get_task("allInputs")
                 .unwrap();
 
-            assert_eq!(task.inputs, string_vec!["**/*"]);
+            assert_eq!(task.inputs, vec![InputPath::ProjectGlob("**/*".into())]);
         }
 
         #[tokio::test]
         async fn inherits_implicit_inputs() {
             let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
-                tasks_config.implicit_inputs = Some(string_vec!["package.json"]);
+                tasks_config.implicit_inputs =
+                    Some(vec![InputPath::ProjectFile("package.json".into())]);
             })
             .await;
 
             let a = project_graph.get("inputA").unwrap().get_task("a").unwrap();
 
-            assert_eq!(a.global_inputs, string_vec!["/.moon/*.yml"]);
-            assert_eq!(a.inputs, string_vec!["a.ts", "package.json"]);
+            assert_eq!(
+                a.global_inputs,
+                vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
+            );
+            assert_eq!(
+                a.inputs,
+                vec![
+                    InputPath::ProjectFile("a.ts".into()),
+                    InputPath::ProjectFile("package.json".into())
+                ]
+            );
 
             let c = project_graph.get("inputC").unwrap().get_task("c").unwrap();
 
-            assert_eq!(c.global_inputs, string_vec!["/.moon/*.yml"]);
-            assert_eq!(c.inputs, string_vec!["package.json"]);
+            assert_eq!(
+                c.global_inputs,
+                vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
+            );
+            assert_eq!(
+                c.inputs,
+                vec![InputPath::ProjectFile("package.json".into())]
+            );
         }
 
         #[tokio::test]
         async fn inherits_implicit_inputs_env_vars() {
             let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
-                tasks_config.implicit_inputs = Some(string_vec!["$FOO", "$BAR"]);
+                tasks_config.implicit_inputs = Some(vec![
+                    InputPath::EnvVar("FOO".into()),
+                    InputPath::EnvVar("BAR".into()),
+                ]);
             })
             .await;
 

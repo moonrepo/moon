@@ -10,3 +10,28 @@ pub type WorkspaceRelativePathBuf = RelativePathBuf;
 pub fn standardize_separators<T: AsRef<str>>(path: T) -> String {
     path.as_ref().replace('\\', "/")
 }
+
+pub enum RelativeFrom<'path> {
+    Project(&'path str),
+    Workspace,
+}
+
+pub fn expand_to_workspace_relative<P: AsRef<str>>(
+    from_format: RelativeFrom,
+    path: P,
+) -> WorkspaceRelativePathBuf {
+    let path = standardize_separators(path.as_ref());
+
+    match from_format {
+        RelativeFrom::Project(source) => {
+            let project_source = standardize_separators(source);
+
+            if let Some(negated_glob) = path.strip_prefix('!') {
+                WorkspaceRelativePathBuf::from(format!("!{project_source}")).join(negated_glob)
+            } else {
+                WorkspaceRelativePathBuf::from(project_source).join(path)
+            }
+        }
+        RelativeFrom::Workspace => WorkspaceRelativePathBuf::from(path),
+    }
+}

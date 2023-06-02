@@ -88,8 +88,7 @@ cacheable!(
         // None = All inputs (**/*)
         // [] = No inputs
         // [...] = Specific inputs
-        #[setting(validate = validate_portable_paths)]
-        pub inputs: Option<Vec<String>>,
+        pub inputs: Option<Vec<InputPath>>,
 
         pub local: bool,
 

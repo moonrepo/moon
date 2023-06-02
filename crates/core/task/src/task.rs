@@ -41,7 +41,7 @@ cacheable!(
 
         pub id: Id,
 
-        pub inputs: Vec<String>,
+        pub inputs: Vec<InputPath>,
 
         // Relative from workspace root
         pub input_globs: FxHashSet<String>,
@@ -153,9 +153,10 @@ impl Task {
             config.env = self.env.clone();
         }
 
-        if !self.inputs.is_empty() || (self.inputs.len() == 1 && self.inputs[0] == "**/*") {
-            config.inputs = Some(self.inputs.clone());
-        }
+        // TODO
+        // if !self.inputs.is_empty() || (self.inputs.len() == 1 && self.inputs[0] == "**/*") {
+        //     config.inputs = Some(self.inputs.clone());
+        // }
 
         if !self.outputs.is_empty() {
             config.outputs = Some(self.outputs.clone());

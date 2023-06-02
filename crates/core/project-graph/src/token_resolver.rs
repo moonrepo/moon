@@ -1,4 +1,5 @@
 use crate::errors::TokenError;
+use moon_config::InputPath;
 use moon_error::MoonError;
 use moon_logger::warn;
 use moon_project::Project;
@@ -140,6 +141,24 @@ impl<'task> TokenResolver<'task> {
 
     pub fn has_token_var(&self, value: &str) -> bool {
         value.contains('$') && matches_token_var(value)
+    }
+
+    pub fn resolve_inputs(
+        &self,
+        inputs: &[&InputPath],
+        task: &Task,
+    ) -> Result<PathsGlobsResolved, TokenError> {
+        let mut paths: Vec<PathBuf> = vec![];
+        let mut globs: Vec<String> = vec![];
+
+        for input in inputs {
+            if let InputPath::EnvVar(_) = input {
+                continue;
+            }
+            // TODO
+        }
+
+        Ok((paths, globs))
     }
 
     /// Cycle through the values, resolve any tokens, and return a list of absolute file paths.
@@ -364,12 +383,17 @@ impl<'task> TokenResolver<'task> {
 
         if let TokenType::In(token, index) = token_type {
             let error = TokenError::InvalidInIndex(token, index);
+
             let Some(input) = task.inputs.get(index as usize) else {
                 return Err(error);
             };
 
-            if glob::is_glob(input) {
-                match task.input_globs.iter().find(|g| g.ends_with(input)) {
+            if input.is_glob() {
+                match task
+                    .input_globs
+                    .iter()
+                    .find(|g| g.ends_with(input.as_str()))
+                {
                     Some(g) => {
                         globs.push(g.to_owned());
                     }
@@ -378,11 +402,10 @@ impl<'task> TokenResolver<'task> {
                     }
                 };
             } else {
-                match task.input_paths.get(&path::expand_to_workspace_relative(
-                    input,
-                    self.workspace_root,
-                    &self.project.root,
-                )) {
+                // TODO switch to relativepathbuf
+                let _rel = input.expand_to_workspace_relative(&self.project.source);
+
+                match task.input_paths.get(&PathBuf::from(".")) {
                     Some(p) => {
                         paths.push(p.clone());
                     }

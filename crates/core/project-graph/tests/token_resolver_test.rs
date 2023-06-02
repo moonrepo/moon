@@ -1,5 +1,7 @@
 use moon_common::Id;
-use moon_config::{InheritedTasksManager, LanguageType, PlatformType, ProjectType, TaskConfig};
+use moon_config::{
+    InheritedTasksManager, InputPath, LanguageType, PlatformType, ProjectType, TaskConfig,
+};
 use moon_file_group::FileGroup;
 use moon_project::Project;
 use moon_project_graph::{TokenContext, TokenResolver};
@@ -11,6 +13,7 @@ use moon_test_utils::{
 use rustc_hash::FxHashMap;
 use starbase_utils::{glob, string_vec};
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 pub fn create_file_groups(source: &str) -> FxHashMap<Id, FileGroup> {
     let mut map = FxHashMap::default();
@@ -103,9 +106,9 @@ pub fn expand_task(project: &Project, task: &mut Task) {
     for input in &task.inputs {
         if glob::is_glob(input) {
             task.input_globs
-                .insert(glob::normalize(project_source.join(input)).unwrap());
+                .insert(glob::normalize(project_source.join(input.as_str())).unwrap());
         } else {
-            task.input_paths.insert(project_source.join(input));
+            task.input_paths.insert(project_source.join(input.as_str()));
         }
     }
 
@@ -173,7 +176,10 @@ mod in_token {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let task = create_task(Some(TaskConfig {
-            inputs: Some(string_vec!["dir/**/*", "file.ts"]),
+            inputs: Some(vec![
+                InputPath::from_str("dir/**/*").unwrap(),
+                InputPath::from_str("file.ts").unwrap(),
+            ]),
             ..TaskConfig::default()
         }));
 
@@ -187,7 +193,10 @@ mod in_token {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let task = create_task(Some(TaskConfig {
-            inputs: Some(string_vec!["dir/**/*", "file.ts"]),
+            inputs: Some(vec![
+                InputPath::from_str("dir/**/*").unwrap(),
+                InputPath::from_str("file.ts").unwrap(),
+            ]),
             ..TaskConfig::default()
         }));
 
@@ -394,7 +403,10 @@ mod resolve_args {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let mut task = create_task(Some(TaskConfig {
-            inputs: Some(string_vec!["dir/**/*", "file.ts"]),
+            inputs: Some(vec![
+                InputPath::from_str("dir/**/*").unwrap(),
+                InputPath::from_str("file.ts").unwrap(),
+            ]),
             ..TaskConfig::default()
         }));
 
@@ -412,7 +424,10 @@ mod resolve_args {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let mut task = create_task(Some(TaskConfig {
-            inputs: Some(string_vec!["src/**/*", "file.ts"]),
+            inputs: Some(vec![
+                InputPath::from_str("src/**/*").unwrap(),
+                InputPath::from_str("file.ts").unwrap(),
+            ]),
             ..TaskConfig::default()
         }));
 

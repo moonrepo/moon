@@ -1,11 +1,13 @@
 use crate::create_portable_paths;
 use moon_config::{
-    NodePackageManager, PartialInheritedTasksConfig, PartialNodeConfig, PartialNpmConfig,
-    PartialPnpmConfig, PartialTaskConfig, PartialToolchainConfig, PartialTypeScriptConfig,
-    PartialWorkspaceConfig, PartialYarnConfig, TaskCommandArgs, WorkspaceProjects,
+    InputPath, NodePackageManager, PartialInheritedTasksConfig, PartialNodeConfig,
+    PartialNpmConfig, PartialPnpmConfig, PartialTaskConfig, PartialToolchainConfig,
+    PartialTypeScriptConfig, PartialWorkspaceConfig, PartialYarnConfig, TaskCommandArgs,
+    WorkspaceProjects,
 };
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
+use std::str::FromStr;
 
 // Turn everything off by default
 pub fn get_default_toolchain() -> PartialToolchainConfig {
@@ -245,7 +247,10 @@ pub fn get_tasks_fixture_configs() -> (
                 "withInputs".into(),
                 PartialTaskConfig {
                     command: Some(TaskCommandArgs::String("cmd".into())),
-                    inputs: Some(vec!["rel/file.*".into(), "/root.*".into()]),
+                    inputs: Some(vec![
+                        InputPath::from_str("rel/file.*").unwrap(),
+                        InputPath::from_str("/root.*").unwrap(),
+                    ]),
                     ..PartialTaskConfig::default()
                 },
             ),
@@ -253,7 +258,10 @@ pub fn get_tasks_fixture_configs() -> (
                 "withOutputs".into(),
                 PartialTaskConfig {
                     command: Some(TaskCommandArgs::String("cmd".into())),
-                    inputs: Some(vec!["lib".into(), "/build".into()]),
+                    inputs: Some(vec![
+                        InputPath::from_str("lib").unwrap(),
+                        InputPath::from_str("/build").unwrap(),
+                    ]),
                     ..PartialTaskConfig::default()
                 },
             ),

@@ -79,7 +79,7 @@ tasks:
                     "inputs".into(),
                     TaskConfig {
                         command: TaskCommandArgs::String("d".to_owned()),
-                        inputs: Some(vec!["src/**/*".into()]),
+                        inputs: Some(vec![InputPath::ProjectGlob("src/**/*".into())]),
                         ..TaskConfig::default()
                     },
                 ),
@@ -738,7 +738,7 @@ mod task_manager {
                 load_tasks_into_manager(sandbox.path(), sandbox.path().join(CONFIG_TASKS_FILENAME));
 
             let mut task = stub_task("node-library", PlatformType::Node);
-            task.inputs = Some(vec!["c".into()]);
+            task.inputs = Some(vec![InputPath::ProjectFile("c".into())]);
 
             assert_eq!(
                 manager
@@ -761,7 +761,7 @@ mod task_manager {
                 load_tasks_into_manager(sandbox.path(), sandbox.path().join(CONFIG_TASKS_FILENAME));
 
             let mut task = stub_task("dotnet-application", PlatformType::System);
-            task.inputs = Some(vec!["c".into()]);
+            task.inputs = Some(vec![InputPath::ProjectFile("c".into())]);
 
             assert_eq!(
                 manager

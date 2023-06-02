@@ -6,7 +6,7 @@ use moon_config::{
     PartialTaskOptionsConfig, PlatformType, ProjectConfig, TaskCommandArgs,
 };
 use moon_logger::{info, warn};
-use moon_target::{Target, TargetError};
+use moon_target::Target;
 use moon_terminal::safe_exit;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
@@ -80,7 +80,7 @@ pub fn convert_globals(
     Ok(modified)
 }
 
-pub fn convert_task(name: Id, task: TurboTask) -> Result<PartialTaskConfig, TargetError> {
+pub fn convert_task(name: Id, task: TurboTask) -> AppResult<PartialTaskConfig> {
     let mut config = PartialTaskConfig::default();
     let mut inputs = vec![];
 
@@ -97,7 +97,7 @@ pub fn convert_task(name: Id, task: TurboTask) -> Result<PartialTaskConfig, Targ
             } else if dep.contains('#') {
                 deps.push(Target::parse(&dep.replace('#', ":"))?);
             } else if dep.starts_with('$') {
-                inputs.push(dep);
+                inputs.push(InputPath::from_str(&dep)?);
             } else {
                 deps.push(Target::parse(&dep)?);
             }
@@ -110,12 +110,14 @@ pub fn convert_task(name: Id, task: TurboTask) -> Result<PartialTaskConfig, Targ
 
     if let Some(turbo_env) = task.env {
         for env in turbo_env {
-            inputs.push(format!("${env}"));
+            inputs.push(InputPath::EnvVar(env));
         }
     }
 
     if let Some(turbo_inputs) = task.inputs {
-        inputs.extend(turbo_inputs);
+        for input in turbo_inputs {
+            inputs.push(InputPath::from_str(&input)?);
+        }
     }
 
     if let Some(turbo_outputs) = task.outputs {
@@ -344,7 +346,10 @@ mod tests {
                     Target::parse("project:normal").unwrap(),
                 ])
             );
-            assert_eq!(config.inputs.unwrap(), string_vec!["$VAR"]);
+            assert_eq!(
+                config.inputs.unwrap(),
+                vec![InputPath::EnvVar("VAR".into())]
+            );
         }
 
         #[test]
@@ -365,7 +370,13 @@ mod tests {
             )
             .unwrap();
 
-            assert_eq!(config.inputs.unwrap(), string_vec!["$FOO", "$BAR"]);
+            assert_eq!(
+                config.inputs.unwrap(),
+                vec![
+                    InputPath::EnvVar("FOO".into()),
+                    InputPath::EnvVar("BAR".into())
+                ]
+            );
         }
 
         #[test]
@@ -381,7 +392,11 @@ mod tests {
 
             assert_eq!(
                 config.inputs.unwrap(),
-                string_vec!["file.ts", "some/folder", "some/glob/**/*"]
+                vec![
+                    InputPath::ProjectFile("file.ts".into()),
+                    InputPath::ProjectFile("some/folder".into()),
+                    InputPath::ProjectGlob("some/glob/**/*".into()),
+                ]
             );
         }
 

@@ -2,8 +2,8 @@ mod utils;
 
 use moon_common::{consts::CONFIG_PROJECT_FILENAME, Id};
 use moon_config::{
-    DependencyScope, FilePath, GlobPath, LanguageType, PlatformType, PortablePath, ProjectConfig,
-    ProjectDependsOn, ProjectType, TaskCommandArgs,
+    DependencyScope, FilePath, GlobPath, InputPath, LanguageType, PlatformType, PortablePath,
+    ProjectConfig, ProjectDependsOn, ProjectType, TaskCommandArgs,
 };
 use rustc_hash::FxHashMap;
 use utils::*;
@@ -52,13 +52,19 @@ tasks:
 
         assert_eq!(build.command, TaskCommandArgs::String("webpack".to_owned()));
         assert_eq!(build.args, TaskCommandArgs::None);
-        assert_eq!(build.inputs, Some(vec!["src/**/*".to_owned()]));
+        assert_eq!(
+            build.inputs,
+            Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
+        );
 
         let start = config.tasks.get("start").unwrap();
 
         assert_eq!(start.command, TaskCommandArgs::String("webpack".to_owned()));
         assert_eq!(start.args, TaskCommandArgs::String("serve".to_owned()));
-        assert_eq!(start.inputs, Some(vec!["src/**/*".to_owned()]));
+        assert_eq!(
+            start.inputs,
+            Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
+        );
     }
 
     // TODO: fix this in schematic?
@@ -86,13 +92,19 @@ tasks:
 
         assert_eq!(build.command, TaskCommandArgs::String("webpack".to_owned()));
         assert_eq!(build.args, TaskCommandArgs::None);
-        assert_eq!(build.inputs, Some(vec!["src/**/*".to_owned()]));
+        assert_eq!(
+            build.inputs,
+            Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
+        );
 
         let start = config.tasks.get("start").unwrap();
 
         assert_eq!(start.command, TaskCommandArgs::String("webpack".to_owned()));
         assert_eq!(start.args, TaskCommandArgs::String("serve".to_owned()));
-        assert_eq!(start.inputs, Some(vec!["src/**/*".to_owned()]));
+        assert_eq!(
+            start.inputs,
+            Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
+        );
     }
 
     mod depends_on {

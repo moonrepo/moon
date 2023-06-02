@@ -2,7 +2,7 @@ use super::check_dirty_repo;
 use moon::{generate_project_graph, load_workspace};
 use moon_common::{consts, Id};
 use moon_config::{
-    InputPath, PartialInheritedTasksConfig, PartialProjectConfig, PartialTaskConfig,
+    InputPath, OutputPath, PartialInheritedTasksConfig, PartialProjectConfig, PartialTaskConfig,
     PartialTaskOptionsConfig, PlatformType, ProjectConfig, TaskCommandArgs,
 };
 use moon_logger::{info, warn};
@@ -125,9 +125,9 @@ pub fn convert_task(name: Id, task: TurboTask) -> AppResult<PartialTaskConfig> {
 
         for output in turbo_outputs {
             if output.ends_with("/**") {
-                outputs.push(format!("{output}/*"));
+                outputs.push(OutputPath::ProjectGlob(format!("{output}/*")));
             } else {
-                outputs.push(output);
+                outputs.push(OutputPath::from_str(&output)?);
             }
         }
 
@@ -419,7 +419,13 @@ mod tests {
 
             assert_eq!(
                 config.outputs.unwrap(),
-                string_vec!["dir", "dir/**/*", "dir/**/*", "dir/*", "dir/*/sub"]
+                vec![
+                    OutputPath::ProjectFile("dir".into()),
+                    OutputPath::ProjectGlob("dir/**/*".into()),
+                    OutputPath::ProjectGlob("dir/**/*".into()),
+                    OutputPath::ProjectGlob("dir/*".into()),
+                    OutputPath::ProjectGlob("dir/*/sub".into()),
+                ]
             );
         }
 

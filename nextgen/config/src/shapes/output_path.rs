@@ -77,9 +77,9 @@ impl FromStr for OutputPath {
 
         let value = standardize_separators(value);
 
-        // Workspace negated glob
-        if value.starts_with("/!") || value.starts_with("!/") {
-            return Ok(OutputPath::WorkspaceGlob(format!("!{}", &value[2..])));
+        // Negated glob
+        if value.starts_with("/!") || value.starts_with("!/") || value.starts_with('!') {
+            return Err(ValidateError::new("negated globs are not supported"));
         }
 
         // Workspace-relative

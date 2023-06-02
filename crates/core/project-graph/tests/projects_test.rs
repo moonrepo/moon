@@ -1244,7 +1244,8 @@ mod task_expansion {
         #[tokio::test]
         async fn inherits_implicit_inputs() {
             let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
-                tasks_config.implicit_inputs = Some(vec![InputPath::project_file("package.json")]);
+                tasks_config.implicit_inputs =
+                    Some(vec![InputPath::ProjectFile("package.json".into())]);
             })
             .await;
 
@@ -1262,8 +1263,10 @@ mod task_expansion {
         #[tokio::test]
         async fn inherits_implicit_inputs_env_vars() {
             let (_sandbox, project_graph) = tasks_sandbox_with_config(|_, tasks_config| {
-                tasks_config.implicit_inputs =
-                    Some(vec![InputPath::env_var("FOO"), InputPath::env_var("BAR")]);
+                tasks_config.implicit_inputs = Some(vec![
+                    InputPath::EnvVar("FOO".into()),
+                    InputPath::EnvVar("BAR".into()),
+                ]);
             })
             .await;
 

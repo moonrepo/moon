@@ -3,7 +3,7 @@ use moon::{generate_project_graph, load_workspace};
 use moon_common::{consts, Id};
 use moon_config::{
     InputPath, PartialInheritedTasksConfig, PartialProjectConfig, PartialTaskConfig,
-    PartialTaskOptionsConfig, PlatformType, Portable, ProjectConfig, TaskCommandArgs,
+    PartialTaskOptionsConfig, PlatformType, ProjectConfig, TaskCommandArgs,
 };
 use moon_logger::{info, warn};
 use moon_target::{Target, TargetError};
@@ -14,6 +14,7 @@ use starbase::AppResult;
 use starbase_utils::{fs, json, yaml};
 use std::collections::BTreeMap;
 use std::path::PathBuf;
+use std::str::FromStr;
 
 const LOG_TARGET: &str = "moon:migrate:from-turborepo";
 
@@ -261,7 +262,7 @@ mod tests {
         #[test]
         fn converts_deps() {
             let mut config = PartialInheritedTasksConfig {
-                implicit_inputs: Some(vec![InputPath::project_file("existing.txt")]),
+                implicit_inputs: Some(vec![InputPath::ProjectFile("existing.txt".into())]),
                 ..PartialInheritedTasksConfig::default()
             };
 
@@ -277,9 +278,9 @@ mod tests {
             assert_eq!(
                 config.implicit_inputs,
                 Some(vec![
-                    InputPath::project_file("existing.txt"),
-                    InputPath::project_file("file.ts"),
-                    InputPath::project_glob("glob/**/*.js")
+                    InputPath::ProjectFile("existing.txt".into()),
+                    InputPath::ProjectFile("file.ts".into()),
+                    InputPath::ProjectGlob("glob/**/*.js".into())
                 ])
             );
         }
@@ -287,7 +288,7 @@ mod tests {
         #[test]
         fn converst_env() {
             let mut config = PartialInheritedTasksConfig {
-                implicit_inputs: Some(vec![InputPath::env_var("FOO")]),
+                implicit_inputs: Some(vec![InputPath::EnvVar("FOO".into())]),
                 ..PartialInheritedTasksConfig::default()
             };
 
@@ -303,9 +304,9 @@ mod tests {
             assert_eq!(
                 config.implicit_inputs,
                 Some(vec![
-                    InputPath::env_var("FOO"),
-                    InputPath::env_var("BAR"),
-                    InputPath::env_var("BAZ")
+                    InputPath::EnvVar("FOO".into()),
+                    InputPath::EnvVar("BAR".into()),
+                    InputPath::EnvVar("BAZ".into())
                 ])
             );
         }

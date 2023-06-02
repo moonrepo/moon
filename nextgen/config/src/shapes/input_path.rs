@@ -1,43 +1,26 @@
-use crate::portable_path::{is_glob, Portable};
+#![allow(clippy::from_over_into)]
+
+use crate::portable_path::is_glob;
 use crate::validate::validate_child_relative_path;
 use moon_common::path::standardize_separators;
-use schematic::ValidateError;
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use schematic::{derive_enum, ValidateError};
+use std::str::FromStr;
 
-#[derive(Clone, Debug, Eq, PartialEq, schemars::JsonSchema)]
-#[serde(untagged)]
-pub enum InputPath {
-    EnvVar(String),
-    ProjectFile(String),
-    ProjectGlob(String),
-    WorkspaceFile(String),
-    WorkspaceGlob(String),
-}
-
-impl InputPath {
-    pub fn env_var(var: &str) -> InputPath {
-        InputPath::EnvVar(var.to_owned())
+derive_enum!(
+    #[serde(untagged, into = "String", try_from = "String")]
+    pub enum InputPath {
+        EnvVar(String),
+        ProjectFile(String),
+        ProjectGlob(String),
+        WorkspaceFile(String),
+        WorkspaceGlob(String),
     }
+);
 
-    pub fn project_file(path: &str) -> InputPath {
-        InputPath::ProjectFile(path.to_owned())
-    }
+impl FromStr for InputPath {
+    type Err = ValidateError;
 
-    pub fn project_glob(path: &str) -> InputPath {
-        InputPath::ProjectGlob(path.to_owned())
-    }
-
-    pub fn workspace_file(path: &str) -> InputPath {
-        InputPath::WorkspaceFile(path.to_owned())
-    }
-
-    pub fn workspace_glob(path: &str) -> InputPath {
-        InputPath::WorkspaceGlob(path.to_owned())
-    }
-}
-
-impl Portable for InputPath {
-    fn from_str(value: &str) -> Result<Self, ValidateError> {
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
         let value = standardize_separators(value);
 
         // Env var
@@ -74,27 +57,20 @@ impl Portable for InputPath {
     }
 }
 
-impl<'de> Deserialize<'de> for InputPath {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        InputPath::from_str(&String::deserialize(deserializer)?)
-            .map_err(|error| de::Error::custom(error.message))
+impl TryFrom<String> for InputPath {
+    type Error = ValidateError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        InputPath::from_str(&value)
     }
 }
 
-impl Serialize for InputPath {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let value = match self {
+impl Into<String> for InputPath {
+    fn into(self) -> String {
+        match self {
             InputPath::EnvVar(var) => format!("${var}"),
-            InputPath::ProjectFile(path) | InputPath::ProjectGlob(path) => path.to_owned(),
+            InputPath::ProjectFile(path) | InputPath::ProjectGlob(path) => path,
             InputPath::WorkspaceFile(path) | InputPath::WorkspaceGlob(path) => format!("/{path}"),
-        };
-
-        serializer.serialize_str(&value)
+        }
     }
 }

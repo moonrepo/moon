@@ -363,12 +363,12 @@ implicitInputs:
             assert_eq!(
                 config.implicit_inputs,
                 vec![
-                    InputPath::workspace_file("ws/path"),
-                    InputPath::workspace_glob("ws/glob/**/*"),
-                    InputPath::workspace_glob("!ws/glob/**/*"),
-                    InputPath::project_file("proj/path"),
-                    InputPath::project_glob("proj/glob/{a,b,c}"),
-                    InputPath::project_glob("!proj/glob/{a,b,c}"),
+                    InputPath::WorkspaceFile("ws/path".into()),
+                    InputPath::WorkspaceGlob("ws/glob/**/*".into()),
+                    InputPath::WorkspaceGlob("!ws/glob/**/*".into()),
+                    InputPath::ProjectFile("proj/path".into()),
+                    InputPath::ProjectGlob("proj/glob/{a,b,c}".into()),
+                    InputPath::ProjectGlob("!proj/glob/{a,b,c}".into()),
                 ]
             );
         }
@@ -388,8 +388,8 @@ implicitInputs:
             assert_eq!(
                 config.implicit_inputs,
                 vec![
-                    InputPath::env_var("FOO_BAR"),
-                    InputPath::project_file("file/path"),
+                    InputPath::EnvVar("FOO_BAR".into()),
+                    InputPath::ProjectFile("file/path".into()),
                 ]
             );
         }

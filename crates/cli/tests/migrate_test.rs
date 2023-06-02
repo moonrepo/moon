@@ -149,10 +149,10 @@ mod from_turborepo {
         assert_eq!(
             config.implicit_inputs.unwrap(),
             vec![
-                InputPath::project_file("package.json"),
-                InputPath::project_glob("*.json"),
-                InputPath::env_var("FOO"),
-                InputPath::env_var("BAR")
+                InputPath::ProjectFile("package.json".into()),
+                InputPath::ProjectGlob("*.json".into()),
+                InputPath::EnvVar("FOO".into()),
+                InputPath::EnvVar("BAR".into())
             ]
         );
     }

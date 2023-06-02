@@ -92,23 +92,6 @@ impl Portable for GlobPath {
     }
 }
 
-// Represents a project-relative file glob pattern.
-path_type!(ProjectFileGlob);
-
-impl Portable for ProjectFileGlob {
-    fn from_str(value: &str) -> Result<Self, ValidateError> {
-        validate_child_relative_path(value)?;
-
-        if value.starts_with('/') {
-            return Err(ValidateError::new(
-                "workspace relative paths are not supported",
-            ));
-        }
-
-        Ok(ProjectFileGlob(value.into()))
-    }
-}
-
 // Represents any file system path.
 path_type!(FilePath);
 
@@ -124,6 +107,17 @@ impl Portable for FilePath {
     }
 }
 
+// Represents a project-relative file glob pattern.
+path_type!(ProjectGlobPath);
+
+impl Portable for ProjectGlobPath {
+    fn from_str(value: &str) -> Result<Self, ValidateError> {
+        validate_child_relative_path(value)?;
+
+        Ok(ProjectGlobPath(value.into()))
+    }
+}
+
 // Represents a project-relative file system path.
 path_type!(ProjectFilePath);
 
@@ -136,12 +130,6 @@ impl Portable for ProjectFilePath {
         }
 
         validate_child_relative_path(value)?;
-
-        if value.starts_with('/') {
-            return Err(ValidateError::new(
-                "workspace relative paths are not supported",
-            ));
-        }
 
         Ok(ProjectFilePath(value.into()))
     }

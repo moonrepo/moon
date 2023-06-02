@@ -1,8 +1,8 @@
 mod utils;
 
 use moon_config::{
-    InputPath, PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskOutputStyle,
-    TaskType,
+    FilePath, InputPath, PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy,
+    TaskOutputStyle, TaskType,
 };
 use moon_target::Target;
 use utils::*;
@@ -471,7 +471,7 @@ options:
 
                 assert_eq!(
                     config.options.env_file,
-                    Some(TaskOptionEnvFile::File(".env.file".to_owned()))
+                    Some(TaskOptionEnvFile::File(FilePath(".env.file".to_owned())))
                 );
             }
 
@@ -487,7 +487,7 @@ options:
 
                 assert_eq!(
                     config.options.env_file,
-                    Some(TaskOptionEnvFile::File("/.env.file".to_owned()))
+                    Some(TaskOptionEnvFile::File(FilePath("/.env.file".to_owned())))
                 );
             }
 

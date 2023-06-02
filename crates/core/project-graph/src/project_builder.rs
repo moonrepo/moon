@@ -26,6 +26,7 @@ use std::collections::BTreeMap;
 use std::env;
 use std::mem;
 use std::path::PathBuf;
+use std::str::FromStr;
 
 pub struct ProjectGraphBuilder<'ws> {
     workspace: &'ws mut Workspace,
@@ -415,9 +416,8 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                 |e: dotenvy::Error| TaskError::InvalidEnvFile(env_path.clone(), e.to_string());
 
             // Add as an input
-            // TODO workspace relative
             task.inputs
-                .push(InputPath::ProjectFile(env_file.to_owned()));
+                .push(InputPath::from_str(env_file.as_str()).unwrap());
 
             // The `.env` file may not have been committed, so avoid crashing
             if env_path.exists() {
@@ -466,10 +466,10 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         project: &mut Project,
         task: &mut Task,
     ) -> Result<(), ProjectGraphError> {
-        // if !project.inherited_config.implicit_inputs.is_empty() {
-        //     task.inputs
-        //         .extend(project.inherited_config.implicit_inputs.clone());
-        // }
+        if !project.inherited_config.implicit_inputs.is_empty() {
+            task.inputs
+                .extend(project.inherited_config.implicit_inputs.clone());
+        }
 
         task.inputs.retain(|input| {
             if let InputPath::EnvVar(var) = input {

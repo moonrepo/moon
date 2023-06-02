@@ -1,5 +1,5 @@
 use moon_config::{
-    InputPath, TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskOptionEnvFile,
+    FilePath, InputPath, TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskOptionEnvFile,
     TaskOptionsConfig, TaskOutputStyle,
 };
 use moon_target::Target;
@@ -165,7 +165,7 @@ mod from_config {
         assert_eq!(
             task.options,
             TaskOptions {
-                env_file: Some(".env".to_owned()),
+                env_file: Some(FilePath(".env".to_owned())),
                 ..TaskOptions::default()
             }
         )

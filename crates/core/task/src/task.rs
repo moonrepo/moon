@@ -153,10 +153,10 @@ impl Task {
             config.env = self.env.clone();
         }
 
-        // TODO
-        // if !self.inputs.is_empty() || (self.inputs.len() == 1 && self.inputs[0] == "**/*") {
-        //     config.inputs = Some(self.inputs.clone());
-        // }
+        if !self.inputs.is_empty() || (self.inputs.len() == 1 && self.inputs[0].as_str() == "**/*")
+        {
+            config.inputs = Some(self.inputs.clone());
+        }
 
         if !self.outputs.is_empty() {
             config.outputs = Some(self.outputs.clone());

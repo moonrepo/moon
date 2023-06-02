@@ -1,7 +1,6 @@
 use crate::language_platform::PlatformType;
 use crate::project::{PartialTaskOptionsConfig, TaskOptionsConfig};
 use crate::shapes::InputPath;
-use crate::validate::validate_portable_paths;
 use moon_common::cacheable;
 use moon_target::{Target, TargetScope};
 use rustc_hash::FxHashMap;
@@ -92,7 +91,6 @@ cacheable!(
 
         pub local: bool,
 
-        #[setting(validate = validate_portable_paths)]
         pub outputs: Option<Vec<String>>,
 
         #[setting(nested)]

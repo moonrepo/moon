@@ -1,5 +1,4 @@
-use crate::portable_path::*;
-use schematic::{Segment, ValidateError};
+use schematic::ValidateError;
 use semver::{Version, VersionReq};
 use std::path::Path;
 
@@ -23,6 +22,7 @@ pub fn validate_child_relative_path(value: &str) -> Result<(), ValidateError> {
 
 // Validate the value is a valid child relative file system path or root path.
 // Will fail on parent relative paths ("../") and absolute paths.
+#[allow(dead_code)]
 pub fn validate_child_or_root_path<T: AsRef<str>>(value: T) -> Result<(), ValidateError> {
     let path = Path::new(value.as_ref());
 
@@ -59,19 +59,6 @@ pub fn validate_semver_requirement<D, C>(
             error
         ))
     })?;
-
-    Ok(())
-}
-
-pub fn validate_portable_paths<D, C>(
-    paths: &[String],
-    _data: &D,
-    _ctx: &C,
-) -> Result<(), ValidateError> {
-    for (i, path) in paths.iter().enumerate() {
-        PortablePath::from_str(path)
-            .map_err(|error| ValidateError::with_segment(error.message, Segment::Index(i)))?;
-    }
 
     Ok(())
 }

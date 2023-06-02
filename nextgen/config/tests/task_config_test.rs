@@ -226,10 +226,10 @@ inputs:
 outputs:
   - /ws/path
   - '/ws/glob/**/*'
-  - '/!ws/glob/**/*'
+  # - '/!ws/glob/**/*'
   - proj/path
   - 'proj/glob/{a,b,c}'
-  - '!proj/glob/{a,b,c}'
+  # - '!proj/glob/{a,b,c}'
 ",
                 |code| TaskConfig::parse(code),
             );
@@ -239,26 +239,26 @@ outputs:
                 vec![
                     OutputPath::WorkspaceFile("ws/path".into()),
                     OutputPath::WorkspaceGlob("ws/glob/**/*".into()),
-                    OutputPath::WorkspaceGlob("!ws/glob/**/*".into()),
+                    // OutputPath::WorkspaceGlob("!ws/glob/**/*".into()),
                     OutputPath::ProjectFile("proj/path".into()),
                     OutputPath::ProjectGlob("proj/glob/{a,b,c}".into()),
-                    OutputPath::ProjectGlob("!proj/glob/{a,b,c}".into()),
+                    // OutputPath::ProjectGlob("!proj/glob/{a,b,c}".into()),
                 ]
             );
         }
 
-        //         #[test]
-        //         #[should_panic(expected = "environment variables are not supported here")]
-        //         fn errors_on_env_var() {
-        //             test_parse_config(
-        //                 r"
-        // outputs:
-        //   - $FOO_BAR
-        //   - file/path
-        // ",
-        //                 |code| TaskConfig::parse(code),
-        //             );
-        //         }
+        #[test]
+        #[should_panic(expected = "token and environment variables are not supported")]
+        fn errors_on_env_var() {
+            test_parse_config(
+                r"
+outputs:
+  - $FOO_BAR
+  - file/path
+",
+                |code| TaskConfig::parse(code),
+            );
+        }
     }
 
     mod platform {

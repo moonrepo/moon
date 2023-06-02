@@ -71,7 +71,7 @@ impl FromStr for OutputPath {
         // Token/env var
         if value.starts_with('$') {
             return Err(ValidateError::new(
-                "token and environment variables not supported",
+                "token and environment variables are not supported",
             ));
         }
 
@@ -141,10 +141,6 @@ mod tests {
             OutputPath::ProjectFile("dir/file.rs".into())
         );
         assert_eq!(
-            OutputPath::from_str("!file.*").unwrap(),
-            OutputPath::ProjectGlob("!file.*".into())
-        );
-        assert_eq!(
             OutputPath::from_str("dir/**/*").unwrap(),
             OutputPath::ProjectGlob("dir/**/*".into())
         );
@@ -157,14 +153,6 @@ mod tests {
         assert_eq!(
             OutputPath::from_str("/dir/file.rs").unwrap(),
             OutputPath::WorkspaceFile("dir/file.rs".into())
-        );
-        assert_eq!(
-            OutputPath::from_str("/!file.*").unwrap(),
-            OutputPath::WorkspaceGlob("!file.*".into())
-        );
-        assert_eq!(
-            OutputPath::from_str("!/file.*").unwrap(),
-            OutputPath::WorkspaceGlob("!file.*".into())
         );
         assert_eq!(
             OutputPath::from_str("/dir/**/*").unwrap(),
@@ -198,14 +186,38 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "token and environment variables not supported")]
+    #[should_panic(expected = "token and environment variables are not supported")]
     fn errors_for_env_vars() {
         OutputPath::from_str("$VAR").unwrap();
     }
 
     #[test]
-    #[should_panic(expected = "token and environment variables not supported")]
+    #[should_panic(expected = "token and environment variables are not supported")]
     fn errors_for_token_vars() {
         OutputPath::from_str("$workspaceRoot").unwrap();
+    }
+
+    #[test]
+    #[should_panic(expected = "parent relative paths are not supported")]
+    fn errors_for_parent_relative_from_project() {
+        OutputPath::from_str("../test").unwrap();
+    }
+
+    #[test]
+    #[should_panic(expected = "parent relative paths are not supported")]
+    fn errors_for_parent_relative_from_workspace() {
+        OutputPath::from_str("/../test").unwrap();
+    }
+
+    #[test]
+    #[should_panic(expected = "negated globs are not supported")]
+    fn errors_for_project_negated_glob() {
+        OutputPath::from_str("!test").unwrap();
+    }
+
+    #[test]
+    #[should_panic(expected = "negated globs are not supported")]
+    fn errors_for_workspace_negated_glob() {
+        OutputPath::from_str("/!test").unwrap();
     }
 }

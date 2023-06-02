@@ -235,4 +235,16 @@ mod tests {
             InputPath::TokenVar("$projectType".into())
         );
     }
+
+    #[test]
+    #[should_panic(expected = "parent relative paths are not supported")]
+    fn errors_for_parent_relative_from_project() {
+        InputPath::from_str("../test").unwrap();
+    }
+
+    #[test]
+    #[should_panic(expected = "parent relative paths are not supported")]
+    fn errors_for_parent_relative_from_workspace() {
+        InputPath::from_str("/../test").unwrap();
+    }
 }

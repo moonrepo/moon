@@ -203,11 +203,43 @@ impl<'task> TokenResolver<'task> {
 
     pub fn resolve_outputs(
         &self,
-        values: &[OutputPath],
+        outputs: &[OutputPath],
         task: &Task,
     ) -> Result<PathsGlobsResolved, TokenError> {
         let mut paths: Vec<PathBuf> = vec![];
         let mut globs: Vec<String> = vec![];
+
+        for output in outputs {
+            match output {
+                OutputPath::TokenFunc(func) => {
+                    if self.has_token_func(func) {
+                        let (resolved_paths, resolved_globs) = self.resolve_func(func, task)?;
+
+                        paths.extend(resolved_paths);
+                        globs.extend(resolved_globs);
+                    }
+
+                    continue;
+                }
+                other_output => {
+                    let resolved = PathBuf::from(
+                        self.resolve_vars(
+                            other_output
+                                .to_workspace_relative(&self.project.source)
+                                .unwrap()
+                                .as_str(),
+                            task,
+                        )?,
+                    );
+
+                    if other_output.is_glob() {
+                        globs.push(glob::normalize(resolved).map_err(MoonError::StarGlob)?);
+                    } else {
+                        paths.push(resolved);
+                    }
+                }
+            };
+        }
 
         Ok((paths, globs))
     }

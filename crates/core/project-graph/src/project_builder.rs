@@ -4,7 +4,7 @@ use crate::helpers::detect_projects_with_globs;
 use crate::project_graph::{GraphType, IndicesType, ProjectGraph, LOG_TARGET};
 use crate::token_resolver::{TokenContext, TokenResolver};
 use moon_common::{consts, Id};
-use moon_config::{ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceProjects};
+use moon_config::{InputPath, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceProjects};
 use moon_enforcer::{enforce_project_type_relationships, enforce_tag_relationships};
 use moon_error::MoonError;
 use moon_hasher::{convert_paths_to_strings, to_hash};
@@ -484,11 +484,12 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         }
 
         // Always break cache if a core configuration changes
-        task.global_inputs.push("/.moon/*.yml".into());
+        task.global_inputs
+            .push(InputPath::WorkspaceGlob(".moon/*.yml".into()));
 
         let mut inputs_to_resolve = vec![];
         inputs_to_resolve.extend(&task.inputs);
-        inputs_to_resolve.extend(&task.global_inputs);
+        // inputs_to_resolve.extend(&task.global_inputs); // TODO
 
         if inputs_to_resolve.is_empty() {
             return Ok(());

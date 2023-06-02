@@ -1,6 +1,6 @@
 use moon_config::{
-    TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskOptionEnvFile, TaskOptionsConfig,
-    TaskOutputStyle,
+    InputPath, TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskOptionEnvFile,
+    TaskOptionsConfig, TaskOutputStyle,
 };
 use moon_target::Target;
 use moon_task::{Task, TaskFlag, TaskOptions};
@@ -9,6 +9,7 @@ use moon_utils::string_vec;
 use rustc_hash::FxHashSet;
 use std::env;
 use std::path::PathBuf;
+use std::str::FromStr;
 
 pub fn create_task(config: TaskConfig) -> Task {
     Task::from_config(Target::new("project", "task").unwrap(), &config).unwrap()
@@ -235,14 +236,17 @@ mod from_config {
         let task = Task::from_config(
             Target::new("foo", "test").unwrap(),
             &TaskConfig {
-                global_inputs: string_vec!["global"],
+                global_inputs: vec![InputPath::from_str("global").unwrap()],
                 inputs: Some(string_vec!["local"]),
                 ..TaskConfig::default()
             },
         )
         .unwrap();
 
-        assert_eq!(task.global_inputs, string_vec!["global"]);
+        assert_eq!(
+            task.global_inputs,
+            vec![InputPath::ProjectFile("global".into())]
+        );
         assert_eq!(task.inputs, string_vec!["local"]);
     }
 

@@ -152,16 +152,9 @@ impl InheritedTasksManager {
                     if let Some(tasks) = &mut managed_config.tasks {
                         for task in tasks.values_mut() {
                             // Automatically set this lookup as an input
-                            // let global_lookup = PortablePath::WorkspaceFile(FilePath(format!(
-                            //     ".moon/tasks/{lookup}.yml"
-                            // )));
-                            let global_lookup = format!("/.moon/tasks/{lookup}.yml");
-
-                            if let Some(global_inputs) = &mut task.global_inputs {
-                                global_inputs.push(global_lookup);
-                            } else {
-                                task.global_inputs = Some(vec![global_lookup]);
-                            }
+                            task.global_inputs.get_or_insert(vec![]).push(
+                                InputPath::WorkspaceFile(format!(".moon/tasks/{lookup}.yml")),
+                            );
 
                             // Automatically set the platform
                             if task.platform.unwrap_or_default().is_unknown() {

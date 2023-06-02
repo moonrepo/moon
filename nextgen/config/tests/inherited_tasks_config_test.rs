@@ -434,7 +434,9 @@ mod task_manager {
         let mut global_inputs = vec![];
 
         if command != "global" {
-            global_inputs.push(format!("/.moon/tasks/{command}.yml"));
+            global_inputs.push(InputPath::WorkspaceFile(format!(
+                ".moon/tasks/{command}.yml"
+            )));
         }
 
         TaskConfig {

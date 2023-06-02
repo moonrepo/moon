@@ -247,7 +247,10 @@ tasks:
             assert_eq!(task.command, "newcmd".to_string());
             assert_eq!(task.args, string_vec!["--b"]);
             assert_eq!(task.env, FxHashMap::from_iter([("KEY".into(), "b".into())]));
-            assert_eq!(task.global_inputs, string_vec!["/.moon/*.yml"]);
+            assert_eq!(
+                task.global_inputs,
+                vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
+            );
             assert_eq!(task.inputs, string_vec!["b.*"]);
             assert_eq!(task.outputs, string_vec!["b.ts"]);
         }
@@ -275,7 +278,10 @@ tasks:
                     ("KEY".to_owned(), "b".to_owned()),
                 ])
             );
-            assert_eq!(task.global_inputs, string_vec!["/.moon/*.yml"]);
+            assert_eq!(
+                task.global_inputs,
+                vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
+            );
             assert_eq!(task.inputs, string_vec!["a.*", "b.*"]);
             assert_eq!(task.outputs, string_vec!["a.ts", "b.ts"]);
         }
@@ -303,7 +309,10 @@ tasks:
                     ("KEY".to_owned(), "a".to_owned()),
                 ])
             );
-            assert_eq!(task.global_inputs, string_vec!["/.moon/*.yml"]);
+            assert_eq!(
+                task.global_inputs,
+                vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
+            );
             assert_eq!(task.inputs, string_vec!["b.*", "a.*"]);
             assert_eq!(task.outputs, string_vec!["b.ts", "a.ts"]);
         }
@@ -328,7 +337,10 @@ tasks:
                 task.env,
                 FxHashMap::from_iter([("KEY".to_owned(), "b".to_owned()),])
             );
-            assert_eq!(task.global_inputs, string_vec!["/.moon/*.yml"]);
+            assert_eq!(
+                task.global_inputs,
+                vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
+            );
             assert_eq!(task.inputs, string_vec!["b.*"]);
             assert_eq!(task.outputs, string_vec!["a.ts", "b.ts"]);
         }
@@ -1251,12 +1263,18 @@ mod task_expansion {
 
             let a = project_graph.get("inputA").unwrap().get_task("a").unwrap();
 
-            assert_eq!(a.global_inputs, string_vec!["/.moon/*.yml"]);
+            assert_eq!(
+                a.global_inputs,
+                vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
+            );
             assert_eq!(a.inputs, string_vec!["a.ts", "package.json"]);
 
             let c = project_graph.get("inputC").unwrap().get_task("c").unwrap();
 
-            assert_eq!(c.global_inputs, string_vec!["/.moon/*.yml"]);
+            assert_eq!(
+                c.global_inputs,
+                vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
+            );
             assert_eq!(c.inputs, string_vec!["package.json"]);
         }
 

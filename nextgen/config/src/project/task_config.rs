@@ -1,5 +1,6 @@
 use crate::language_platform::PlatformType;
 use crate::project::{PartialTaskOptionsConfig, TaskOptionsConfig};
+use crate::shapes::InputPath;
 use crate::validate::validate_portable_paths;
 use moon_common::cacheable;
 use moon_target::{Target, TargetScope};
@@ -82,7 +83,7 @@ cacheable!(
 
         // TODO
         #[setting(skip)]
-        pub global_inputs: Vec<String>,
+        pub global_inputs: Vec<InputPath>,
 
         // None = All inputs (**/*)
         // [] = No inputs

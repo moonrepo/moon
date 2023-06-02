@@ -81,7 +81,11 @@ impl TargetHasher {
         self.command = task.command.clone();
         self.args = task.args.clone();
         self.env_vars.extend(task.env.clone());
-        self.outputs = task.outputs.clone();
+        self.outputs = task
+            .outputs
+            .iter()
+            .map(|o| o.as_str().to_string())
+            .collect();
         self.target = task.target.id.clone();
 
         // Sort vectors to be deterministic

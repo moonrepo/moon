@@ -1,7 +1,8 @@
 mod utils;
 
 use moon_config::{
-    PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskOutputStyle, TaskType,
+    FilePath, InputPath, PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy,
+    TaskOutputStyle, TaskType,
 };
 use moon_target::Target;
 use utils::*;
@@ -30,7 +31,7 @@ mod task_config {
         use super::*;
 
         #[test]
-        #[should_panic(expected = "expected a string or a sequence of strings")]
+        #[should_panic(expected = "expected a string or a list of strings")]
         fn errors_on_invalid_type() {
             test_parse_config("command: 123", |code| TaskConfig::parse(code));
         }
@@ -181,26 +182,15 @@ inputs:
                 |code| TaskConfig::parse(code),
             );
 
-            // assert_eq!(
-            //     config.inputs,
-            //     vec![
-            //         PortablePath::WorkspaceFile(FilePath("ws/path".into())),
-            //         PortablePath::WorkspaceGlob(GlobPath("ws/glob/**/*".into())),
-            //         PortablePath::WorkspaceGlob(GlobPath("!ws/glob/**/*".into())),
-            //         PortablePath::ProjectFile(FilePath("proj/path".into())),
-            //         PortablePath::ProjectGlob(GlobPath("proj/glob/{a,b,c}".into())),
-            //         PortablePath::ProjectGlob(GlobPath("!proj/glob/{a,b,c}".into())),
-            //     ]
-            // );
             assert_eq!(
                 config.inputs.unwrap(),
                 vec![
-                    "/ws/path".to_owned(),
-                    "/ws/glob/**/*".to_owned(),
-                    "/!ws/glob/**/*".to_owned(),
-                    "proj/path".to_owned(),
-                    "proj/glob/{a,b,c}".to_owned(),
-                    "!proj/glob/{a,b,c}".to_owned(),
+                    InputPath::WorkspaceFile("ws/path".into()),
+                    InputPath::WorkspaceGlob("ws/glob/**/*".into()),
+                    InputPath::WorkspaceGlob("!ws/glob/**/*".into()),
+                    InputPath::ProjectFile("proj/path".into()),
+                    InputPath::ProjectGlob("proj/glob/{a,b,c}".into()),
+                    InputPath::ProjectGlob("!proj/glob/{a,b,c}".into()),
                 ]
             );
         }
@@ -216,16 +206,12 @@ inputs:
                 |code| TaskConfig::parse(code),
             );
 
-            // assert_eq!(
-            //     config.inputs,
-            //     vec![
-            //         PortablePath::EnvVar("FOO_BAR".into()),
-            //         PortablePath::ProjectFile(FilePath("file/path".into())),
-            //     ]
-            // );
             assert_eq!(
                 config.inputs.unwrap(),
-                vec!["$FOO_BAR".to_owned(), "file/path".to_owned(),]
+                vec![
+                    InputPath::EnvVar("FOO_BAR".into()),
+                    InputPath::ProjectFile("file/path".into()),
+                ]
             );
         }
     }
@@ -485,7 +471,7 @@ options:
 
                 assert_eq!(
                     config.options.env_file,
-                    Some(TaskOptionEnvFile::File(".env.file".to_owned()))
+                    Some(TaskOptionEnvFile::File(FilePath(".env.file".to_owned())))
                 );
             }
 
@@ -501,12 +487,12 @@ options:
 
                 assert_eq!(
                     config.options.env_file,
-                    Some(TaskOptionEnvFile::File("/.env.file".to_owned()))
+                    Some(TaskOptionEnvFile::File(FilePath("/.env.file".to_owned())))
                 );
             }
 
             #[test]
-            #[should_panic(expected = "globs are not supported")]
+            #[should_panic(expected = "expected a boolean or a file system path")]
             fn errors_on_glob() {
                 test_parse_config(
                     r"

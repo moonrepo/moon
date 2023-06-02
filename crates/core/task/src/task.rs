@@ -3,7 +3,9 @@ use crate::task_options::TaskOptions;
 use crate::types::TouchedFilePaths;
 use moon_args::{split_args, ArgsSplitError};
 use moon_common::{cacheable, cacheable_enum, Id};
-use moon_config::{PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskType};
+use moon_config::{
+    InputPath, PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskType,
+};
 use moon_error::MoonError;
 use moon_logger::{debug, trace, Logable};
 use moon_target::Target;
@@ -35,11 +37,11 @@ cacheable!(
 
         pub flags: FxHashSet<TaskFlag>,
 
-        pub global_inputs: Vec<String>,
+        pub global_inputs: Vec<InputPath>,
 
         pub id: Id,
 
-        pub inputs: Vec<String>,
+        pub inputs: Vec<InputPath>,
 
         // Relative from workspace root
         pub input_globs: FxHashSet<String>,
@@ -151,7 +153,8 @@ impl Task {
             config.env = self.env.clone();
         }
 
-        if !self.inputs.is_empty() || (self.inputs.len() == 1 && self.inputs[0] == "**/*") {
+        if !self.inputs.is_empty() || (self.inputs.len() == 1 && self.inputs[0].as_str() == "**/*")
+        {
             config.inputs = Some(self.inputs.clone());
         }
 

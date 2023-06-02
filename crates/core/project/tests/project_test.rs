@@ -6,7 +6,7 @@ use moon_config::{
 };
 use moon_file_group::FileGroup;
 use moon_project::Project;
-use moon_test_utils::{create_portable_paths, get_fixtures_root};
+use moon_test_utils::{create_input_paths, get_fixtures_root};
 use moon_utils::{path, string_vec};
 use rustc_hash::FxHashMap;
 
@@ -25,7 +25,7 @@ fn mock_tasks_config() -> InheritedTasksManager {
     let config = PartialInheritedTasksConfig {
         file_groups: Some(FxHashMap::from_iter([(
             "sources".into(),
-            create_portable_paths(["src/**/*"]),
+            create_input_paths(["src/**/*"]),
         )])),
         ..PartialInheritedTasksConfig::default()
     };
@@ -134,7 +134,7 @@ fn basic_config() {
                 depends_on: vec![ProjectDependsOn::String("noConfig".into())],
                 file_groups: FxHashMap::from_iter([(
                     "tests".into(),
-                    create_portable_paths(["**/*_test.rs"])
+                    create_input_paths(["**/*_test.rs"])
                 )]),
                 language: LanguageType::JavaScript,
                 tags: vec![Id::raw("vue")],

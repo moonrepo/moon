@@ -1,6 +1,6 @@
 // .moon/workspace.yml
 
-use crate::portable_path::{Portable, ProjectFileGlob, ProjectFilePath};
+use crate::portable_path::{Portable, ProjectFilePath, ProjectGlobPath};
 use crate::validate::validate_semver_requirement;
 use crate::workspace::*;
 use moon_common::{consts, Id};
@@ -20,7 +20,7 @@ fn validate_projects<D, C>(
     match projects {
         WorkspaceProjects::Both { globs, sources } => {
             for (i, g) in globs.iter().enumerate() {
-                ProjectFileGlob::from_str(g).map_err(|mut error| {
+                ProjectGlobPath::from_str(g).map_err(|mut error| {
                     error.path =
                         SettingPath::new(vec![Segment::Key("globs".to_owned()), Segment::Index(i)]);
                     error
@@ -39,7 +39,7 @@ fn validate_projects<D, C>(
         }
         WorkspaceProjects::Globs(globs) => {
             for (i, g) in globs.iter().enumerate() {
-                ProjectFileGlob::from_str(g).map_err(|mut error| {
+                ProjectGlobPath::from_str(g).map_err(|mut error| {
                     error.path = SettingPath::new(vec![Segment::Index(i)]);
                     error
                 })?;

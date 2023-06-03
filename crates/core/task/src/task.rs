@@ -4,7 +4,7 @@ use crate::types::TouchedFilePaths;
 use moon_args::{split_args, ArgsSplitError};
 use moon_common::{cacheable, cacheable_enum, Id};
 use moon_config::{
-    InputPath, PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskType,
+    InputPath, OutputPath, PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskType,
 };
 use moon_error::MoonError;
 use moon_logger::{debug, trace, Logable};
@@ -56,7 +56,7 @@ cacheable!(
 
         pub options: TaskOptions,
 
-        pub outputs: Vec<String>,
+        pub outputs: Vec<OutputPath>,
 
         // Relative from workspace root
         pub output_globs: FxHashSet<String>,

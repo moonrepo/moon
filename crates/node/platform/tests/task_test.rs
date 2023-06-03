@@ -1,4 +1,4 @@
-use moon_config::{PartialTaskConfig, TaskCommandArgs};
+use moon_config::{OutputPath, PartialTaskConfig, TaskCommandArgs};
 use moon_node_lang::PackageJson;
 use moon_node_platform::task::{create_task, should_run_in_ci, TaskContext};
 use moon_node_platform::{create_tasks_from_scripts, infer_tasks_from_scripts};
@@ -397,7 +397,7 @@ mod create_task {
                             candidate.0,
                             candidate.1
                         ])),
-                        outputs: Some(string_vec![candidate.2]),
+                        outputs: Some(vec![OutputPath::ProjectFile(candidate.2.to_owned())]),
                         platform: Some(PlatformType::Node),
                         ..PartialTaskConfig::default()
                     }
@@ -475,7 +475,7 @@ mod infer_tasks_from_scripts {
                             "run-script",
                             "build:app"
                         ])),
-                        outputs: Some(string_vec!["dist"]),
+                        outputs: Some(vec![OutputPath::ProjectFile("dist".into())]),
                         platform: Some(PlatformType::Node),
                         ..PartialTaskConfig::default()
                     }

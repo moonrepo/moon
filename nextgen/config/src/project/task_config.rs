@@ -1,6 +1,6 @@
 use crate::language_platform::PlatformType;
 use crate::project::{PartialTaskOptionsConfig, TaskOptionsConfig};
-use crate::shapes::InputPath;
+use crate::shapes::{InputPath, OutputPath};
 use moon_common::cacheable;
 use moon_target::{Target, TargetScope};
 use rustc_hash::FxHashMap;
@@ -91,7 +91,7 @@ cacheable!(
 
         pub local: bool,
 
-        pub outputs: Option<Vec<String>>,
+        pub outputs: Option<Vec<OutputPath>>,
 
         #[setting(nested)]
         pub options: TaskOptionsConfig,

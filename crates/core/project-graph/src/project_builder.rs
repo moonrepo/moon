@@ -519,7 +519,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         let token_resolver =
             TokenResolver::new(TokenContext::Outputs, project, &self.workspace.root);
-        let (paths, globs) = token_resolver.resolve(&task.outputs, task)?;
+        let (paths, globs) = token_resolver.resolve_outputs(&task.outputs, task)?;
 
         task.output_globs.extend(globs);
 

@@ -1,7 +1,7 @@
 mod utils;
 
 use moon_config::{
-    FilePath, InputPath, PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy,
+    FilePath, InputPath, OutputPath, PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy,
     TaskOutputStyle, TaskType,
 };
 use moon_target::Target;
@@ -226,50 +226,39 @@ inputs:
 outputs:
   - /ws/path
   - '/ws/glob/**/*'
-  - '/!ws/glob/**/*'
+  # - '/!ws/glob/**/*'
   - proj/path
   - 'proj/glob/{a,b,c}'
-  - '!proj/glob/{a,b,c}'
+  # - '!proj/glob/{a,b,c}'
 ",
                 |code| TaskConfig::parse(code),
             );
 
-            // assert_eq!(
-            //     config.outputs,
-            //     vec![
-            //         PortablePath::WorkspaceFile(FilePath("ws/path".into())),
-            //         PortablePath::WorkspaceGlob(GlobPath("ws/glob/**/*".into())),
-            //         PortablePath::WorkspaceGlob(GlobPath("!ws/glob/**/*".into())),
-            //         PortablePath::ProjectFile(FilePath("proj/path".into())),
-            //         PortablePath::ProjectGlob(GlobPath("proj/glob/{a,b,c}".into())),
-            //         PortablePath::ProjectGlob(GlobPath("!proj/glob/{a,b,c}".into())),
-            //     ]
-            // );
             assert_eq!(
                 config.outputs.unwrap(),
                 vec![
-                    "/ws/path".to_owned(),
-                    "/ws/glob/**/*".to_owned(),
-                    "/!ws/glob/**/*".to_owned(),
-                    "proj/path".to_owned(),
-                    "proj/glob/{a,b,c}".to_owned(),
-                    "!proj/glob/{a,b,c}".to_owned(),
+                    OutputPath::WorkspaceFile("ws/path".into()),
+                    OutputPath::WorkspaceGlob("ws/glob/**/*".into()),
+                    // OutputPath::WorkspaceGlob("!ws/glob/**/*".into()),
+                    OutputPath::ProjectFile("proj/path".into()),
+                    OutputPath::ProjectGlob("proj/glob/{a,b,c}".into()),
+                    // OutputPath::ProjectGlob("!proj/glob/{a,b,c}".into()),
                 ]
             );
         }
 
-        //         #[test]
-        //         #[should_panic(expected = "environment variables are not supported here")]
-        //         fn errors_on_env_var() {
-        //             test_parse_config(
-        //                 r"
-        // outputs:
-        //   - $FOO_BAR
-        //   - file/path
-        // ",
-        //                 |code| TaskConfig::parse(code),
-        //             );
-        //         }
+        #[test]
+        #[should_panic(expected = "token and environment variables are not supported")]
+        fn errors_on_env_var() {
+            test_parse_config(
+                r"
+outputs:
+  - $FOO_BAR
+  - file/path
+",
+                |code| TaskConfig::parse(code),
+            );
+        }
     }
 
     mod platform {

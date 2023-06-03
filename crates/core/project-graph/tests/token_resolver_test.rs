@@ -1,6 +1,7 @@
 use moon_common::Id;
 use moon_config::{
-    InheritedTasksManager, InputPath, LanguageType, PlatformType, ProjectType, TaskConfig,
+    InheritedTasksManager, InputPath, LanguageType, OutputPath, PlatformType, ProjectType,
+    TaskConfig,
 };
 use moon_file_group::FileGroup;
 use moon_project::Project;
@@ -115,9 +116,10 @@ pub fn expand_task(project: &Project, task: &mut Task) {
     for output in &task.outputs {
         if glob::is_glob(output) {
             task.output_globs
-                .insert(glob::normalize(project_source.join(output)).unwrap());
+                .insert(glob::normalize(project_source.join(output.as_str())).unwrap());
         } else {
-            task.output_paths.insert(project_source.join(output));
+            task.output_paths
+                .insert(project_source.join(output.as_str()));
         }
     }
 }
@@ -213,7 +215,10 @@ mod out_token {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let task = create_task(Some(TaskConfig {
-            outputs: Some(string_vec!["dir", "file.ts"]),
+            outputs: Some(vec![
+                OutputPath::from_str("dir").unwrap(),
+                OutputPath::from_str("file.ts").unwrap(),
+            ]),
             ..TaskConfig::default()
         }));
 
@@ -227,7 +232,10 @@ mod out_token {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let task = create_task(Some(TaskConfig {
-            outputs: Some(string_vec!["dir", "file.ts"]),
+            outputs: Some(vec![
+                OutputPath::from_str("dir").unwrap(),
+                OutputPath::from_str("file.ts").unwrap(),
+            ]),
             ..TaskConfig::default()
         }));
 
@@ -241,7 +249,7 @@ mod out_token {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let task = create_task(Some(TaskConfig {
-            outputs: Some(string_vec!["@group(name)"]),
+            outputs: Some(vec![OutputPath::from_str("@group(name)").unwrap()]),
             ..TaskConfig::default()
         }));
 
@@ -448,7 +456,10 @@ mod resolve_args {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let mut task = create_task(Some(TaskConfig {
-            outputs: Some(string_vec!["dir/", "file.ts"]),
+            outputs: Some(vec![
+                OutputPath::from_str("dir/").unwrap(),
+                OutputPath::from_str("file.ts").unwrap(),
+            ]),
             ..TaskConfig::default()
         }));
 

@@ -1,5 +1,5 @@
 use crate::errors::TokenError;
-use moon_config::InputPath;
+use moon_config::{InputPath, OutputPath};
 use moon_error::MoonError;
 use moon_logger::warn;
 use moon_project::Project;
@@ -196,6 +196,49 @@ impl<'task> TokenResolver<'task> {
             } else {
                 paths.push(resolved);
             }
+        }
+
+        Ok((paths, globs))
+    }
+
+    pub fn resolve_outputs(
+        &self,
+        outputs: &[OutputPath],
+        task: &Task,
+    ) -> Result<PathsGlobsResolved, TokenError> {
+        let mut paths: Vec<PathBuf> = vec![];
+        let mut globs: Vec<String> = vec![];
+
+        for output in outputs {
+            match output {
+                OutputPath::TokenFunc(func) => {
+                    if self.has_token_func(func) {
+                        let (resolved_paths, resolved_globs) = self.resolve_func(func, task)?;
+
+                        paths.extend(resolved_paths);
+                        globs.extend(resolved_globs);
+                    }
+
+                    continue;
+                }
+                other_output => {
+                    let resolved = PathBuf::from(
+                        self.resolve_vars(
+                            other_output
+                                .to_workspace_relative(&self.project.source)
+                                .unwrap()
+                                .as_str(),
+                            task,
+                        )?,
+                    );
+
+                    if other_output.is_glob() {
+                        globs.push(glob::normalize(resolved).map_err(MoonError::StarGlob)?);
+                    } else {
+                        paths.push(resolved);
+                    }
+                }
+            };
         }
 
         Ok((paths, globs))
@@ -462,16 +505,21 @@ impl<'task> TokenResolver<'task> {
 
         if let TokenType::Out(token, index) = token_type {
             let error = TokenError::InvalidOutIndex(token.clone(), index);
+
             let Some(output) = task.outputs.get(index as usize) else {
                 return Err(error);
             };
 
-            if self.has_token_func(output) {
+            if self.has_token_func(output.as_str()) {
                 return Err(TokenError::InvalidOutNoTokenFunctions(token));
             }
 
-            if glob::is_glob(output) {
-                match task.output_globs.iter().find(|g| g.ends_with(output)) {
+            if output.is_glob() {
+                match task
+                    .output_globs
+                    .iter()
+                    .find(|g| g.ends_with(output.as_str()))
+                {
                     Some(g) => {
                         globs.push(g.to_owned());
                     }
@@ -480,11 +528,12 @@ impl<'task> TokenResolver<'task> {
                     }
                 };
             } else {
-                match task.output_paths.get(&path::expand_to_workspace_relative(
-                    output,
-                    self.workspace_root,
-                    &self.project.root,
-                )) {
+                let rel = output
+                    .to_workspace_relative(&self.project.source)
+                    .unwrap_or_default()
+                    .to_logical_path("");
+
+                match task.output_paths.get(&rel) {
                     Some(p) => {
                         paths.push(p.clone());
                     }

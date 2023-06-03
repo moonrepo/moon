@@ -3,9 +3,9 @@
 
 use moon::{generate_project_graph, load_workspace_from};
 use moon_config::{
-    InputPath, LanguageType, PartialInheritedTasksConfig, PartialNodeConfig, PartialRustConfig,
-    PartialTaskConfig, PartialTaskOptionsConfig, PartialToolchainConfig, PartialWorkspaceConfig,
-    PlatformType, TaskCommandArgs, WorkspaceProjects,
+    InputPath, LanguageType, OutputPath, PartialInheritedTasksConfig, PartialNodeConfig,
+    PartialRustConfig, PartialTaskConfig, PartialTaskOptionsConfig, PartialToolchainConfig,
+    PartialWorkspaceConfig, PlatformType, TaskCommandArgs, WorkspaceProjects,
 };
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
@@ -217,7 +217,7 @@ tasks:
                 deps: Some(vec![Target::parse("a:standard").unwrap()]),
                 env: Some(stub_global_env_vars()),
                 inputs: Some(vec![InputPath::ProjectGlob("a.*".into())]),
-                outputs: Some(string_vec!["a.ts"]),
+                outputs: Some(vec![OutputPath::ProjectFile("a.ts".into())]),
                 options: Some(PartialTaskOptionsConfig {
                     cache: Some(true),
                     retry_count: Some(1),
@@ -252,7 +252,7 @@ tasks:
                 vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
             );
             assert_eq!(task.inputs, vec![InputPath::ProjectGlob("b.*".into())]);
-            assert_eq!(task.outputs, string_vec!["b.ts"]);
+            assert_eq!(task.outputs, vec![OutputPath::ProjectFile("b.ts".into())]);
         }
 
         #[tokio::test]
@@ -289,7 +289,13 @@ tasks:
                     InputPath::ProjectGlob("b.*".into())
                 ]
             );
-            assert_eq!(task.outputs, string_vec!["a.ts", "b.ts"]);
+            assert_eq!(
+                task.outputs,
+                vec![
+                    OutputPath::ProjectFile("a.ts".into()),
+                    OutputPath::ProjectFile("b.ts".into())
+                ]
+            );
         }
 
         #[tokio::test]
@@ -326,7 +332,13 @@ tasks:
                     InputPath::ProjectGlob("a.*".into())
                 ]
             );
-            assert_eq!(task.outputs, string_vec!["b.ts", "a.ts"]);
+            assert_eq!(
+                task.outputs,
+                vec![
+                    OutputPath::ProjectFile("b.ts".into()),
+                    OutputPath::ProjectFile("a.ts".into())
+                ]
+            );
         }
 
         #[tokio::test]
@@ -354,7 +366,13 @@ tasks:
                 vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
             );
             assert_eq!(task.inputs, vec![InputPath::ProjectGlob("b.*".into())]);
-            assert_eq!(task.outputs, string_vec!["a.ts", "b.ts"]);
+            assert_eq!(
+                task.outputs,
+                vec![
+                    OutputPath::ProjectFile("a.ts".into()),
+                    OutputPath::ProjectFile("b.ts".into())
+                ]
+            );
         }
     }
 

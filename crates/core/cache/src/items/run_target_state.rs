@@ -1,6 +1,7 @@
 use crate::cache_item;
 use crate::helpers::get_cache_mode;
 use moon_archive::{untar_with_diff, TarArchiver, TreeDiffer};
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_error::MoonError;
 use moon_logger::{map_list, trace, warn};
 use serde::{Deserialize, Serialize};
@@ -26,42 +27,23 @@ pub struct RunTargetState {
 
 cache_item!(RunTargetState);
 
-fn prepare_outputs_list(outputs: &[String], source: &str) -> Vec<String> {
-    let mut list = vec![];
-
-    for output in outputs {
-        if let Some(value) = output.strip_prefix('/') {
-            list.push(value.to_owned());
-        } else if source.is_empty() {
-            list.push(output.to_owned());
-        } else {
-            list.push(format!("{source}/{output}"));
-        }
-    }
-
-    list
-}
-
 impl RunTargetState {
     pub fn archive_outputs(
         &self,
         archive_file: &Path,
         workspace_root: &Path,
-        project_source: &str,
-        outputs: &[String],
+        output_paths: &[WorkspaceRelativePathBuf],
     ) -> Result<bool, MoonError> {
         if get_cache_mode().is_writable() && !archive_file.exists() {
             let mut tar = TarArchiver::new(workspace_root, archive_file);
 
             // Outputs are relative from project root (the input)
-            if !outputs.is_empty() {
-                let outputs = prepare_outputs_list(outputs, project_source);
-
-                for output in &outputs {
+            if !output_paths.is_empty() {
+                for output in output_paths {
                     if glob::is_glob(output) {
-                        tar.add_source_glob(output, None);
+                        tar.add_source_glob(output.as_str(), None);
                     } else {
-                        tar.add_source(workspace_root.join(output), Some(output));
+                        tar.add_source(output.to_path(workspace_root), Some(output.as_str()));
                     }
                 }
             }
@@ -89,14 +71,16 @@ impl RunTargetState {
         &self,
         archive_file: &Path,
         workspace_root: &Path,
-        project_source: &str,
-        outputs: &[String],
+        output_paths: &[WorkspaceRelativePathBuf],
     ) -> Result<bool, MoonError> {
         if get_cache_mode().is_readable() && archive_file.exists() {
             let tarball_file = archive_file.to_path_buf();
             let workspace_root = workspace_root.to_path_buf();
             let cache_logs = self.get_output_logs();
-            let outputs = prepare_outputs_list(outputs, project_source);
+            let outputs = output_paths
+                .iter()
+                .map(|o| o.as_str().to_string())
+                .collect::<Vec<_>>();
 
             // Run in a separate thread so that if the current thread aborts,
             // we don't stop hydration partially though, resulting in a

@@ -1,5 +1,6 @@
 use crate::RunnerError;
 use moon_common::consts::CONFIG_PROJECT_FILENAME;
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{HasherConfig, HasherWalkStrategy};
 use moon_logger::{warn, Logable};
 use moon_task::Task;
@@ -75,7 +76,7 @@ fn is_valid_input_source(
         return false;
     }
 
-    let workspace_relative_path = PathBuf::from(workspace_relative_input);
+    let workspace_relative_path = WorkspaceRelativePathBuf::from(workspace_relative_input);
 
     for output in &task.output_paths {
         if &workspace_relative_path == output || workspace_relative_path.starts_with(output) {
@@ -106,7 +107,7 @@ pub async fn collect_and_hash_inputs(
 
     if !task.input_paths.is_empty() {
         for input in &task.input_paths {
-            files_to_hash.insert(workspace_root.join(input));
+            files_to_hash.insert(input.to_path(workspace_root));
         }
     }
 

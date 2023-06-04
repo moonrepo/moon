@@ -1,6 +1,6 @@
 use crate::errors::TokenError;
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{InputPath, OutputPath};
-use moon_error::MoonError;
 use moon_logger::warn;
 use moon_project::Project;
 use moon_task::Task;
@@ -11,9 +11,9 @@ use moon_utils::regex::{
 use moon_utils::{path, time};
 use starbase_styles::color;
 use starbase_utils::glob;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
-type PathsGlobsResolved = (Vec<PathBuf>, Vec<String>);
+type PathsGlobsResolved = (Vec<WorkspaceRelativePathBuf>, Vec<WorkspaceRelativePathBuf>);
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum TokenContext {
@@ -148,8 +148,8 @@ impl<'task> TokenResolver<'task> {
         inputs: &[&InputPath],
         task: &Task,
     ) -> Result<PathsGlobsResolved, TokenError> {
-        let mut paths: Vec<PathBuf> = vec![];
-        let mut globs: Vec<String> = vec![];
+        let mut paths: Vec<WorkspaceRelativePathBuf> = vec![];
+        let mut globs: Vec<WorkspaceRelativePathBuf> = vec![];
 
         for input in inputs {
             let mut is_glob = input.is_glob();
@@ -170,10 +170,10 @@ impl<'task> TokenResolver<'task> {
                     continue;
                 }
                 InputPath::TokenVar(var) => {
-                    resolved = PathBuf::from(self.resolve_var(var, task)?);
+                    resolved = WorkspaceRelativePathBuf::from(self.resolve_var(var, task)?);
                 }
                 other_input => {
-                    resolved = PathBuf::from(
+                    resolved = WorkspaceRelativePathBuf::from(
                         self.resolve_vars(
                             other_input
                                 .to_workspace_relative(&self.project.source)
@@ -186,13 +186,13 @@ impl<'task> TokenResolver<'task> {
 
             // This is a special case for inputs that converts "foo" to "foo/**/*",
             // when the input is a directory. This is necessary for VCS hashing.
-            if self.workspace_root.join(&resolved).is_dir() {
+            if self.workspace_root.join(resolved.as_str()).is_dir() {
                 is_glob = true;
                 resolved = resolved.join("**/*");
             }
 
             if is_glob {
-                globs.push(glob::normalize(resolved).map_err(MoonError::StarGlob)?);
+                globs.push(resolved);
             } else {
                 paths.push(resolved);
             }
@@ -206,8 +206,8 @@ impl<'task> TokenResolver<'task> {
         outputs: &[OutputPath],
         task: &Task,
     ) -> Result<PathsGlobsResolved, TokenError> {
-        let mut paths: Vec<PathBuf> = vec![];
-        let mut globs: Vec<String> = vec![];
+        let mut paths: Vec<WorkspaceRelativePathBuf> = vec![];
+        let mut globs: Vec<WorkspaceRelativePathBuf> = vec![];
 
         for output in outputs {
             match output {
@@ -222,7 +222,7 @@ impl<'task> TokenResolver<'task> {
                     continue;
                 }
                 other_output => {
-                    let resolved = PathBuf::from(
+                    let resolved = WorkspaceRelativePathBuf::from(
                         self.resolve_vars(
                             other_output
                                 .to_workspace_relative(&self.project.source)
@@ -233,7 +233,7 @@ impl<'task> TokenResolver<'task> {
                     );
 
                     if other_output.is_glob() {
-                        globs.push(glob::normalize(resolved).map_err(MoonError::StarGlob)?);
+                        globs.push(resolved);
                     } else {
                         paths.push(resolved);
                     }
@@ -251,8 +251,8 @@ impl<'task> TokenResolver<'task> {
         values: &[String],
         task: &Task,
     ) -> Result<PathsGlobsResolved, TokenError> {
-        let mut paths: Vec<PathBuf> = vec![];
-        let mut globs: Vec<String> = vec![];
+        let mut paths: Vec<WorkspaceRelativePathBuf> = vec![];
+        let mut globs: Vec<WorkspaceRelativePathBuf> = vec![];
 
         for value in values {
             if self.has_token_func(value) {
@@ -261,14 +261,16 @@ impl<'task> TokenResolver<'task> {
                 paths.extend(resolved_paths);
                 globs.extend(resolved_globs);
             } else {
-                let resolved = path::expand_to_workspace_relative(
-                    self.resolve_vars(value, task)?,
-                    self.workspace_root,
-                    &self.project.root,
-                );
+                let resolved =
+                    WorkspaceRelativePathBuf::from_path(path::expand_to_workspace_relative(
+                        self.resolve_vars(value, task)?,
+                        self.workspace_root,
+                        &self.project.root,
+                    ))
+                    .unwrap();
 
                 if glob::is_glob(value) {
-                    globs.push(glob::normalize(resolved).map_err(MoonError::StarGlob)?);
+                    globs.push(resolved);
                 } else {
                     paths.push(resolved);
                 }
@@ -391,8 +393,8 @@ impl<'task> TokenResolver<'task> {
     ) -> Result<PathsGlobsResolved, TokenError> {
         token_type.check_context(&self.context)?;
 
-        let mut paths: Vec<PathBuf> = vec![];
-        let mut globs: Vec<String> = vec![];
+        let mut paths: Vec<WorkspaceRelativePathBuf> = vec![];
+        let mut globs: Vec<WorkspaceRelativePathBuf> = vec![];
         let file_groups = &self.project.file_groups;
 
         let get_file_group = |token: &str, id: &str| {
@@ -407,36 +409,32 @@ impl<'task> TokenResolver<'task> {
         match token_type {
             TokenType::Dirs(token, group) => {
                 for dir in get_file_group(&token, &group)?.dirs(workspace_root)? {
-                    paths.push(dir.to_logical_path(""));
+                    paths.push(dir);
                 }
             }
             TokenType::Files(token, group) => {
                 for file in get_file_group(&token, &group)?.files(workspace_root)? {
-                    paths.push(file.to_logical_path(""));
+                    paths.push(file);
                 }
             }
             TokenType::Globs(token, group) => {
                 for glob in get_file_group(&token, &group)?.globs()? {
-                    globs.push(glob.as_str().to_owned());
+                    globs.push(glob.to_owned());
                 }
             }
             TokenType::Group(token, group) => {
                 let group = get_file_group(&token, &group)?;
 
                 for file in &group.files {
-                    paths.push(file.to_logical_path(""));
+                    paths.push(file.to_owned());
                 }
 
                 for glob in &group.globs {
-                    globs.push(glob.as_str().to_owned());
+                    globs.push(glob.to_owned());
                 }
             }
             TokenType::Root(token, group) => {
-                paths.push(
-                    get_file_group(&token, &group)?
-                        .root(workspace_root, project_source)?
-                        .to_logical_path(""),
-                );
+                paths.push(get_file_group(&token, &group)?.root(workspace_root, project_source)?);
             }
             _ => {}
         }
@@ -451,8 +449,8 @@ impl<'task> TokenResolver<'task> {
     ) -> Result<PathsGlobsResolved, TokenError> {
         token_type.check_context(&self.context)?;
 
-        let mut paths: Vec<PathBuf> = vec![];
-        let mut globs: Vec<String> = vec![];
+        let mut paths: Vec<WorkspaceRelativePathBuf> = vec![];
+        let mut globs: Vec<WorkspaceRelativePathBuf> = vec![];
 
         if let TokenType::In(token, index) = token_type {
             let error = TokenError::InvalidInIndex(token, index);
@@ -475,9 +473,7 @@ impl<'task> TokenResolver<'task> {
                     }
                 };
             } else {
-                let rel = input
-                    .to_workspace_relative(&self.project.source)
-                    .to_logical_path("");
+                let rel = input.to_workspace_relative(&self.project.source);
 
                 match task.input_paths.get(&rel) {
                     Some(p) => {
@@ -500,8 +496,8 @@ impl<'task> TokenResolver<'task> {
     ) -> Result<PathsGlobsResolved, TokenError> {
         token_type.check_context(&self.context)?;
 
-        let mut paths: Vec<PathBuf> = vec![];
-        let mut globs: Vec<String> = vec![];
+        let mut paths: Vec<WorkspaceRelativePathBuf> = vec![];
+        let mut globs: Vec<WorkspaceRelativePathBuf> = vec![];
 
         if let TokenType::Out(token, index) = token_type {
             let error = TokenError::InvalidOutIndex(token.clone(), index);
@@ -530,8 +526,7 @@ impl<'task> TokenResolver<'task> {
             } else {
                 let rel = output
                     .to_workspace_relative(&self.project.source)
-                    .unwrap_or_default()
-                    .to_logical_path("");
+                    .unwrap_or_default();
 
                 match task.output_paths.get(&rel) {
                     Some(p) => {

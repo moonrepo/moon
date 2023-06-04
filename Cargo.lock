@@ -2505,6 +2505,7 @@ name = "moon_action_context"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "moon_common",
  "moon_target",
  "rustc-hash",
  "serde",

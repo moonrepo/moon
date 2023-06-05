@@ -184,7 +184,7 @@ impl DepGraph {
         let cycle = scc
             .last()
             .unwrap()
-            .into_iter()
+            .iter()
             .map(|i| self.get_node_from_index(i).unwrap().label())
             .collect::<Vec<String>>()
             .join(" → ");

@@ -47,7 +47,7 @@ impl<'ws> DepGraphBuilder<'ws> {
             color::muted_light(node.label())
         );
 
-        indices.insert(node.to_owned(), graph.add_node(node.to_owned()));
+        indices.insert(node.to_owned(), graph.add_node(node));
 
         DepGraphBuilder {
             all_query: None,

@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+moon_common = { path = "../../../nextgen/common" }
 moon_target = { path = "../../../nextgen/target" }
 clap = { workspace = true }
 rustc-hash = { workspace = true }

@@ -130,7 +130,7 @@ pub async fn touched_files(options: &mut QueryTouchedFilesOptions) -> AppResult 
         term.line(
             files
                 .iter()
-                .map(|f| f.to_string_lossy())
+                .map(|f| f.to_string())
                 .collect::<Vec<_>>()
                 .join("\n"),
         )?;

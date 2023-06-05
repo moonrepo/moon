@@ -2505,6 +2505,7 @@ name = "moon_action_context"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "moon_common",
  "moon_target",
  "rustc-hash",
  "serde",
@@ -4884,13 +4885,14 @@ dependencies = [
 
 [[package]]
 name = "starbase_styles"
-version = "0.1.8"
+version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "992a899124f44d47b1ee874f23585f9e51168f5ebacbd83190d13387caea20c6"
+checksum = "e66e1f18071d2faae1009fc03ef94c932e1a0e4e126195609dada0779a67b04a"
 dependencies = [
  "dirs",
  "miette",
  "owo-colors",
+ "relative-path",
  "supports-color",
 ]
 

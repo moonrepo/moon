@@ -3,6 +3,7 @@ use crate::graph_hasher::GraphHasher;
 use crate::helpers::detect_projects_with_globs;
 use crate::project_graph::{GraphType, IndicesType, ProjectGraph, LOG_TARGET};
 use crate::token_resolver::{TokenContext, TokenResolver};
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{consts, Id};
 use moon_config::{InputPath, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceProjects};
 use moon_enforcer::{enforce_project_type_relationships, enforce_tag_relationships};
@@ -25,7 +26,6 @@ use starbase_utils::glob;
 use std::collections::BTreeMap;
 use std::env;
 use std::mem;
-use std::path::PathBuf;
 use std::str::FromStr;
 
 pub struct ProjectGraphBuilder<'ws> {
@@ -276,31 +276,32 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         //  - Workspace paths are relative up to the root
         // When running from the workspace:
         //  - All paths are absolute
-        let handle_path = |path: PathBuf, is_glob: bool| -> Result<String, ProjectGraphError> {
-            let arg = path::to_string(
-                path::relative_from(
-                    self.workspace.root.join(path),
-                    if task.options.run_from_workspace_root {
-                        &self.workspace.root
-                    } else {
-                        &project.root
-                    },
-                )
-                .unwrap(),
-            )?;
+        let handle_path =
+            |path: WorkspaceRelativePathBuf, is_glob: bool| -> Result<String, ProjectGraphError> {
+                let arg = path::to_string(
+                    path::relative_from(
+                        path.to_path(&self.workspace.root),
+                        if task.options.run_from_workspace_root {
+                            &self.workspace.root
+                        } else {
+                            &project.root
+                        },
+                    )
+                    .unwrap(),
+                )?;
 
-            let arg = if arg.starts_with("..") {
-                arg
-            } else {
-                format!(".{}{}", std::path::MAIN_SEPARATOR, arg)
+                let arg = if arg.starts_with("..") {
+                    arg
+                } else {
+                    format!(".{}{}", std::path::MAIN_SEPARATOR, arg)
+                };
+
+                if is_glob {
+                    return Ok(glob::normalize(arg).map_err(MoonError::StarGlob)?);
+                }
+
+                Ok(arg)
             };
-
-            if is_glob {
-                return Ok(glob::normalize(arg).map_err(MoonError::StarGlob)?);
-            }
-
-            Ok(arg)
-        };
 
         // We cant use `TokenResolver.resolve` as args are a mix of strings,
         // strings with tokens, and file paths when tokens are resolved.
@@ -315,7 +316,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                 }
 
                 for glob in globs {
-                    args.push(handle_path(PathBuf::from(glob), true)?);
+                    args.push(handle_path(glob, true)?);
                 }
             } else if token_resolver.has_token_var(arg) {
                 args.push(token_resolver.resolve_vars(arg, task)?);

@@ -2,7 +2,7 @@ use crate::errors::TaskError;
 use crate::task_options::TaskOptions;
 use crate::types::TouchedFilePaths;
 use moon_args::{split_args, ArgsSplitError};
-use moon_common::{cacheable, cacheable_enum, Id};
+use moon_common::{cacheable, cacheable_enum, path::WorkspaceRelativePathBuf, Id};
 use moon_config::{
     InputPath, OutputPath, PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskType,
 };
@@ -43,11 +43,9 @@ cacheable!(
 
         pub inputs: Vec<InputPath>,
 
-        // Relative from workspace root
-        pub input_globs: FxHashSet<String>,
+        pub input_globs: FxHashSet<WorkspaceRelativePathBuf>,
 
-        // Relative from workspace root
-        pub input_paths: FxHashSet<PathBuf>,
+        pub input_paths: FxHashSet<WorkspaceRelativePathBuf>,
 
         pub input_vars: FxHashSet<String>,
 
@@ -58,11 +56,9 @@ cacheable!(
 
         pub outputs: Vec<OutputPath>,
 
-        // Relative from workspace root
-        pub output_globs: FxHashSet<String>,
+        pub output_globs: FxHashSet<WorkspaceRelativePathBuf>,
 
-        // Relative from workspace root
-        pub output_paths: FxHashSet<PathBuf>,
+        pub output_paths: FxHashSet<WorkspaceRelativePathBuf>,
 
         pub platform: PlatformType,
 
@@ -199,9 +195,9 @@ impl Task {
                 continue;
             }
 
-            if self.input_paths.contains(file) || globset.matches(file) {
+            if self.input_paths.contains(file) || globset.matches(file.as_str()) {
                 // Mimic relative from ("./")
-                files.push(PathBuf::from(".").join(file.strip_prefix(project_source).unwrap()));
+                files.push(file.strip_prefix(project_source).unwrap().to_path("."));
             }
         }
 
@@ -237,17 +233,17 @@ impl Task {
                 trace!(
                     target: self.get_log_target(),
                     "Affected by {} (via input files)",
-                    color::path(file),
+                    color::rel_path(file),
                 );
 
                 return Ok(true);
             }
 
-            if globset.matches(file) {
+            if globset.matches(file.as_str()) {
                 trace!(
                     target: self.get_log_target(),
                     "Affected by {} (via input globs)",
-                    color::path(file),
+                    color::rel_path(file),
                 );
 
                 return Ok(true);

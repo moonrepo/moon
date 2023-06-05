@@ -78,8 +78,18 @@ pub async fn task(target: Target, json: bool) -> AppResult {
     if !task.input_paths.is_empty() || !task.input_globs.is_empty() {
         term.line("")?;
         term.render_label(Label::Default, "Inputs")?;
-        term.render_list(task.input_globs.iter().map(color::file).collect::<Vec<_>>())?;
-        term.render_list(task.input_paths.iter().map(color::path).collect::<Vec<_>>())?;
+        term.render_list(
+            task.input_globs
+                .iter()
+                .map(color::rel_path)
+                .collect::<Vec<_>>(),
+        )?;
+        term.render_list(
+            task.input_paths
+                .iter()
+                .map(color::rel_path)
+                .collect::<Vec<_>>(),
+        )?;
     }
 
     if !task.output_paths.is_empty() || !task.output_globs.is_empty() {
@@ -88,13 +98,13 @@ pub async fn task(target: Target, json: bool) -> AppResult {
         term.render_list(
             task.output_globs
                 .iter()
-                .map(color::file)
+                .map(color::rel_path)
                 .collect::<Vec<_>>(),
         )?;
         term.render_list(
             task.output_paths
                 .iter()
-                .map(color::path)
+                .map(color::rel_path)
                 .collect::<Vec<_>>(),
         )?;
     }

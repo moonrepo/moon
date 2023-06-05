@@ -1,6 +1,8 @@
 use crate::RunnerError;
-use moon_common::consts::CONFIG_PROJECT_FILENAME;
-use moon_common::path::WorkspaceRelativePathBuf;
+use moon_common::{
+    consts::CONFIG_PROJECT_FILENAME,
+    path::{standardize_separators, WorkspaceRelativePathBuf},
+};
 use moon_config::{HasherConfig, HasherWalkStrategy};
 use moon_logger::{warn, Logable};
 use moon_task::Task;
@@ -54,7 +56,7 @@ fn convert_paths_to_strings(
             continue;
         }
 
-        files.push(path::to_string(rel_path)?);
+        files.push(standardize_separators(path::to_string(rel_path)?));
     }
 
     Ok(files)

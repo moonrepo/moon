@@ -89,8 +89,8 @@ impl Platform for RustPlatform {
     // PROJECT GRAPH
 
     fn is_project_in_dependency_workspace(&self, _project: &Project) -> Result<bool, MoonError> {
-        // Always assume Cargo is running from the root
-        Ok(true)
+        // moon requires a Rust project to be the root of the Cargo workspace
+        Ok(false)
     }
 
     fn load_project_graph_aliases(

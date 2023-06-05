@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Rust
+  - Fixed an issue where `cargo generate-lockfile` would run in the wrong directory.
+
 ## 1.7.1
 
 #### 🐞 Fixes

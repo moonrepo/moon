@@ -1,5 +1,5 @@
 use moon_config::{PartialWorkspaceConfig, WorkspaceProjects};
-use moon_test_utils::{assert_snapshot, create_sandbox_with_config};
+use moon_test_utils::{create_sandbox_with_config, predicates::prelude::*};
 use rustc_hash::FxHashMap;
 
 #[test]
@@ -25,7 +25,13 @@ fn syncs_all_projects() {
         cmd.arg("sync");
     });
 
-    assert_snapshot!(assert.output());
+    let output = assert.output();
+
+    // Output is non-deterministic
+    assert!(predicate::str::contains("SyncSystemProject(a)").eval(&output));
+    assert!(predicate::str::contains("SyncSystemProject(b)").eval(&output));
+    assert!(predicate::str::contains("SyncSystemProject(c)").eval(&output));
+    assert!(predicate::str::contains("SyncSystemProject(d)").eval(&output));
 
     assert.success();
 }

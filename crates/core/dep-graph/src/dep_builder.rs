@@ -35,10 +35,24 @@ impl<'ws> DepGraphBuilder<'ws> {
     pub fn new(platforms: &'ws PlatformManager, project_graph: &'ws ProjectGraph) -> Self {
         debug!(target: LOG_TARGET, "Creating dependency graph");
 
+        let mut graph = Graph::new();
+        let mut indices = FxHashMap::default();
+
+        // Always sync the workspace
+        let node = ActionNode::SyncWorkspace;
+
+        trace!(
+            target: LOG_TARGET,
+            "Adding {} to graph",
+            color::muted_light(node.label())
+        );
+
+        indices.insert(node.to_owned(), graph.add_node(node.to_owned()));
+
         DepGraphBuilder {
             all_query: None,
-            graph: Graph::new(),
-            indices: FxHashMap::default(),
+            graph,
+            indices,
             platforms,
             project_graph,
             runtimes: FxHashMap::default(),
@@ -46,9 +60,6 @@ impl<'ws> DepGraphBuilder<'ws> {
     }
 
     pub fn build(&mut self) -> DepGraph {
-        // Always sync the workspace
-        self.sync_workspace();
-
         DepGraph::new(mem::take(&mut self.graph), mem::take(&mut self.indices))
     }
 
@@ -458,20 +469,6 @@ impl<'ws> DepGraphBuilder<'ws> {
         }
 
         Ok(index)
-    }
-
-    pub fn sync_workspace(&mut self) {
-        let node = ActionNode::SyncWorkspace;
-
-        if self.get_index_from_node(&node).is_none() {
-            trace!(
-                target: LOG_TARGET,
-                "Adding {} to graph",
-                color::muted_light(node.label())
-            );
-
-            self.insert_node(&node);
-        }
     }
 
     // PRIVATE

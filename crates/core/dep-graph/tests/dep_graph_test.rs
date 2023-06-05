@@ -176,14 +176,15 @@ mod run_target {
                 NodeIndex::new(2), // sync project
                 NodeIndex::new(3), // test
                 NodeIndex::new(4), // lint
+                NodeIndex::new(5),
             ]
         );
         assert_eq!(
             sort_batches(graph.sort_batched_topological().unwrap()),
             vec![
-                vec![NodeIndex::new(0)],
-                vec![NodeIndex::new(1), NodeIndex::new(2)],
-                vec![NodeIndex::new(3), NodeIndex::new(4)]
+                vec![NodeIndex::new(1)],
+                vec![NodeIndex::new(2), NodeIndex::new(3)],
+                vec![NodeIndex::new(0), NodeIndex::new(4), NodeIndex::new(5)]
             ]
         );
     }
@@ -210,29 +211,35 @@ mod run_target {
             vec![
                 NodeIndex::new(0),
                 NodeIndex::new(1),
-                NodeIndex::new(2),  // sync project
-                NodeIndex::new(3),  // test
-                NodeIndex::new(4),  // lint
-                NodeIndex::new(5),  // sync project
-                NodeIndex::new(11), // f
-                NodeIndex::new(10), // e
-                NodeIndex::new(9),  // d
-                NodeIndex::new(8),  // c
-                NodeIndex::new(7),  // b
-                NodeIndex::new(6),  // a
+                NodeIndex::new(2), // sync project
+                NodeIndex::new(3), // test
+                NodeIndex::new(4), // lint
+                NodeIndex::new(5), // sync project
+                NodeIndex::new(6),
+                NodeIndex::new(12), // f
+                NodeIndex::new(11), // e
+                NodeIndex::new(10), // d
+                NodeIndex::new(9),  // c
+                NodeIndex::new(8),  // b
+                NodeIndex::new(7),  // a
             ]
         );
         assert_eq!(
             sort_batches(graph.sort_batched_topological().unwrap()),
             vec![
-                vec![NodeIndex::new(0)],
-                vec![NodeIndex::new(1), NodeIndex::new(5)],
+                vec![NodeIndex::new(1)],
+                vec![NodeIndex::new(2), NodeIndex::new(6)],
+                vec![NodeIndex::new(12)],
                 vec![NodeIndex::new(11)],
                 vec![NodeIndex::new(10)],
                 vec![NodeIndex::new(9)],
-                vec![NodeIndex::new(8)],
-                vec![NodeIndex::new(2), NodeIndex::new(7)],
-                vec![NodeIndex::new(3), NodeIndex::new(4), NodeIndex::new(6)]
+                vec![NodeIndex::new(3), NodeIndex::new(8)],
+                vec![
+                    NodeIndex::new(0),
+                    NodeIndex::new(4),
+                    NodeIndex::new(5),
+                    NodeIndex::new(7)
+                ]
             ]
         );
     }
@@ -272,20 +279,21 @@ mod run_target {
         assert_eq!(
             sort_batches(graph.sort_batched_topological().unwrap()),
             vec![
+                vec![NodeIndex::new(1)],
+                vec![
+                    NodeIndex::new(2),
+                    NodeIndex::new(8),
+                    NodeIndex::new(9),
+                    NodeIndex::new(10)
+                ],
+                vec![NodeIndex::new(7), NodeIndex::new(12), NodeIndex::new(13)],
+                vec![NodeIndex::new(3), NodeIndex::new(11)],
                 vec![NodeIndex::new(0)],
                 vec![
-                    NodeIndex::new(1),
-                    NodeIndex::new(7),
-                    NodeIndex::new(8),
-                    NodeIndex::new(9)
-                ],
-                vec![NodeIndex::new(6), NodeIndex::new(11), NodeIndex::new(12)],
-                vec![NodeIndex::new(2), NodeIndex::new(10)],
-                vec![
-                    NodeIndex::new(3),
                     NodeIndex::new(4),
                     NodeIndex::new(5),
-                    NodeIndex::new(13)
+                    NodeIndex::new(6),
+                    NodeIndex::new(14)
                 ],
             ]
         );
@@ -316,14 +324,15 @@ mod run_target {
                 NodeIndex::new(1),
                 NodeIndex::new(2), // sync project
                 NodeIndex::new(3), // lint
+                NodeIndex::new(4),
             ]
         );
         assert_eq!(
             sort_batches(graph.sort_batched_topological().unwrap()),
             vec![
-                vec![NodeIndex::new(0)],
-                vec![NodeIndex::new(1), NodeIndex::new(2)],
-                vec![NodeIndex::new(3)]
+                vec![NodeIndex::new(1)],
+                vec![NodeIndex::new(2), NodeIndex::new(3)],
+                vec![NodeIndex::new(0), NodeIndex::new(4)]
             ]
         );
     }
@@ -349,30 +358,31 @@ mod run_target {
                 NodeIndex::new(3),  // basic:build
                 NodeIndex::new(4),  // sync project: build-c
                 NodeIndex::new(5),  // sync project: build-a
-                NodeIndex::new(7),  // build-c:build
-                NodeIndex::new(6),  // build-a:build
-                NodeIndex::new(8),  // sync project: build-b
+                NodeIndex::new(6),  // build-c:build
+                NodeIndex::new(8),  // build-a:build
+                NodeIndex::new(7),  // sync project: build-b
                 NodeIndex::new(9),  // build-b:build
                 NodeIndex::new(10), // notasks
+                NodeIndex::new(11)
             ]
         );
         assert_eq!(
             sort_batches(graph.sort_batched_topological().unwrap()),
             vec![
-                vec![NodeIndex::new(0)],
+                vec![NodeIndex::new(1)],
                 vec![
-                    NodeIndex::new(1),
                     NodeIndex::new(2),
-                    NodeIndex::new(4),
-                    NodeIndex::new(7)
-                ],
-                vec![
                     NodeIndex::new(3),
                     NodeIndex::new(5),
-                    NodeIndex::new(6),
-                    NodeIndex::new(9)
+                    NodeIndex::new(8)
                 ],
-                vec![NodeIndex::new(8), NodeIndex::new(10)],
+                vec![
+                    NodeIndex::new(4),
+                    NodeIndex::new(6),
+                    NodeIndex::new(7),
+                    NodeIndex::new(10)
+                ],
+                vec![NodeIndex::new(0), NodeIndex::new(9), NodeIndex::new(11)],
             ]
         );
     }
@@ -508,18 +518,24 @@ mod sync_project {
             vec![
                 NodeIndex::new(0),
                 NodeIndex::new(1), // advanced
-                NodeIndex::new(3), // noConfig
+                NodeIndex::new(2), // noConfig
                 NodeIndex::new(4),
-                NodeIndex::new(2), // basic
-                NodeIndex::new(5), // emptyConfig
+                NodeIndex::new(5), // basic
+                NodeIndex::new(3), // emptyConfig
+                NodeIndex::new(6),
             ]
         );
         assert_eq!(
             sort_batches(graph.sort_batched_topological().unwrap()),
             vec![
-                vec![NodeIndex::new(3)],
-                vec![NodeIndex::new(0), NodeIndex::new(4)],
-                vec![NodeIndex::new(1), NodeIndex::new(2), NodeIndex::new(5)]
+                vec![NodeIndex::new(4)],
+                vec![NodeIndex::new(1), NodeIndex::new(5)],
+                vec![
+                    NodeIndex::new(0),
+                    NodeIndex::new(2),
+                    NodeIndex::new(3),
+                    NodeIndex::new(6)
+                ]
             ]
         );
     }
@@ -540,25 +556,26 @@ mod sync_project {
             graph.sort_topological().unwrap(),
             vec![
                 NodeIndex::new(0),
-                NodeIndex::new(2), // baz
+                NodeIndex::new(1), // baz
                 NodeIndex::new(3), // bar
                 NodeIndex::new(4),
-                NodeIndex::new(1), // foo
-                NodeIndex::new(6), // noConfig
-                NodeIndex::new(5), // basic
+                NodeIndex::new(5), // foo
+                NodeIndex::new(2), // noConfig
+                NodeIndex::new(7), // basic
+                NodeIndex::new(6),
             ]
         );
         assert_eq!(
             sort_batches(graph.sort_batched_topological().unwrap()),
             vec![
-                vec![NodeIndex::new(2)],
+                vec![NodeIndex::new(3)],
                 vec![
-                    NodeIndex::new(0),
-                    NodeIndex::new(3),
+                    NodeIndex::new(1),
                     NodeIndex::new(4),
-                    NodeIndex::new(6)
+                    NodeIndex::new(5),
+                    NodeIndex::new(7)
                 ],
-                vec![NodeIndex::new(1), NodeIndex::new(5)]
+                vec![NodeIndex::new(0), NodeIndex::new(2), NodeIndex::new(6)]
             ]
         );
     }
@@ -580,14 +597,15 @@ mod sync_project {
                 NodeIndex::new(0),
                 NodeIndex::new(1), // noConfig
                 NodeIndex::new(2),
-                NodeIndex::new(3) // tasks
+                NodeIndex::new(3), // tasks
+                NodeIndex::new(4),
             ]
         );
         assert_eq!(
             sort_batches(graph.sort_batched_topological().unwrap()),
             vec![
-                vec![NodeIndex::new(0), NodeIndex::new(2)],
-                vec![NodeIndex::new(1), NodeIndex::new(3)]
+                vec![NodeIndex::new(1), NodeIndex::new(3)],
+                vec![NodeIndex::new(0), NodeIndex::new(2), NodeIndex::new(4)]
             ]
         );
     }

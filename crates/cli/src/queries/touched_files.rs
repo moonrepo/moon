@@ -1,13 +1,12 @@
 use crate::enums::TouchedStatus;
+use moon_common::path::{standardize_separators, WorkspaceRelativePathBuf};
 use moon_logger::{debug, map_list, trace};
 use moon_task::TouchedFilePaths;
-use moon_utils::path;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
 use starbase::AppResult;
 use starbase_styles::color;
-use std::path::PathBuf;
 
 const LOG_TARGET: &str = "moon:query:touched-files";
 
@@ -110,14 +109,14 @@ pub async fn query_touched_files(
         }
     }
 
-    let touched_files: FxHashSet<PathBuf> = touched_files
+    let touched_files: FxHashSet<WorkspaceRelativePathBuf> = touched_files
         .iter()
         .map(|f| {
             if options.log {
                 touched_files_to_log.push(format!("  {}", color::file(f)));
             }
 
-            PathBuf::from(path::normalize_separators(f))
+            WorkspaceRelativePathBuf::from(standardize_separators(f))
         })
         .collect();
 

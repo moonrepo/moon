@@ -118,9 +118,13 @@ pub async fn install_deps(
     // When running in the workspace root, account for nested manifests
     if project.is_none() {
         for touched_file in &context.touched_files {
-            if touched_file.ends_with(&manifest) && touched_file != &manifest_path {
+            if touched_file.ends_with(&manifest) {
                 platform
-                    .hash_manifest_deps(touched_file, &mut hashset, &workspace.config.hasher)
+                    .hash_manifest_deps(
+                        &touched_file.to_path(""),
+                        &mut hashset,
+                        &workspace.config.hasher,
+                    )
                     .await?;
             }
         }

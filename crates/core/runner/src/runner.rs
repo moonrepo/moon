@@ -80,15 +80,16 @@ impl<'a> Runner<'a> {
         // We don't check globs here as it would required walking the file system
         if !self.task.outputs.is_empty() {
             for output in &self.task.output_paths {
-                if !output.to_path(self.workspace.root).exists() {
+                if !output.to_path(&self.workspace.root).exists() {
                     return Err(RunnerError::Task(TaskError::MissingOutput(
                         self.task.target.id.clone(),
                         path::to_string(
-                            if let Ok(stripped) = output.strip_prefix(&self.project.source) {
+                            (if let Ok(stripped) = output.strip_prefix(&self.project.source) {
                                 stripped
                             } else {
                                 output
-                            },
+                            })
+                            .to_path(""),
                         )?,
                     )));
                 }

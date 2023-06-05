@@ -2,6 +2,7 @@
 // as we need to test task inheritance, task expansion, etc...
 
 use moon::{generate_project_graph, load_workspace_from};
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{
     InputPath, LanguageType, OutputPath, PartialInheritedTasksConfig, PartialNodeConfig,
     PartialRustConfig, PartialTaskConfig, PartialTaskOptionsConfig, PartialToolchainConfig,
@@ -14,11 +15,10 @@ use moon_test_utils::{
     create_sandbox, create_sandbox_with_config, get_tasks_fixture_configs, Sandbox,
 };
 use rustc_hash::{FxHashMap, FxHashSet};
-use starbase_utils::{glob, string_vec};
+use starbase_utils::string_vec;
 use std::collections::BTreeMap;
 use std::env;
 use std::fs;
-use std::path::PathBuf;
 
 async fn tasks_sandbox() -> (Sandbox, ProjectGraph) {
     tasks_sandbox_with_config(|_, _| {}).await
@@ -1055,7 +1055,7 @@ mod task_expansion {
             assert!(task.inputs.contains(&InputPath::ProjectFile(".env".into())));
             assert!(task
                 .input_paths
-                .contains(&PathBuf::from(&project.source).join(".env")));
+                .contains(&WorkspaceRelativePathBuf::from(&project.source).join(".env")));
         }
 
         #[tokio::test]
@@ -1076,9 +1076,9 @@ mod task_expansion {
             assert!(task
                 .inputs
                 .contains(&InputPath::ProjectFile(".env.production".into())));
-            assert!(task
-                .input_paths
-                .contains(&PathBuf::from(&project.source).join(".env.production")));
+            assert!(task.input_paths.contains(
+                &WorkspaceRelativePathBuf::from(&project.source).join(".env.production")
+            ));
         }
 
         #[tokio::test]
@@ -1096,7 +1096,9 @@ mod task_expansion {
             assert!(task
                 .inputs
                 .contains(&InputPath::WorkspaceFile(".env".into())));
-            assert!(task.input_paths.contains(&PathBuf::from(".env")));
+            assert!(task
+                .input_paths
+                .contains(&WorkspaceRelativePathBuf::from(".env")));
         }
 
         #[tokio::test]
@@ -1373,23 +1375,23 @@ mod task_expansion {
             let (_, project_graph) = tasks_sandbox().await;
 
             let project = project_graph.get("tokens").unwrap();
-            let project_source = PathBuf::from(&project.source);
+            let project_source = WorkspaceRelativePathBuf::from(&project.source);
             let task = project.get_task("inputsFileGroups").unwrap();
 
             assert_eq!(
                 task.input_globs,
                 FxHashSet::from_iter([
-                    glob::normalize(".moon/*.yml").unwrap(),
-                    glob::normalize(project_source.join("**/*.{ts,tsx}")).unwrap(),
-                    glob::normalize(project_source.join("*.js")).unwrap()
+                    WorkspaceRelativePathBuf::from(".moon/*.yml"),
+                    project_source.join("**/*.{ts,tsx}"),
+                    project_source.join("*.js"),
                 ]),
             );
 
-            let a: FxHashSet<PathBuf> =
-                FxHashSet::from_iter(task.input_paths.iter().map(PathBuf::from));
-            let b: FxHashSet<PathBuf> = FxHashSet::from_iter(
+            let a: FxHashSet<WorkspaceRelativePathBuf> =
+                FxHashSet::from_iter(task.input_paths.iter().map(WorkspaceRelativePathBuf::from));
+            let b: FxHashSet<WorkspaceRelativePathBuf> = FxHashSet::from_iter(
                 vec![
-                    PathBuf::from("package.json"),
+                    WorkspaceRelativePathBuf::from("package.json"),
                     project_source.join("file.ts"),
                     project_source.join("dir"),
                     project_source.join("dir/subdir"),
@@ -1398,7 +1400,7 @@ mod task_expansion {
                     project_source.join("dir/subdir/another.ts"),
                 ]
                 .iter()
-                .map(PathBuf::from),
+                .map(WorkspaceRelativePathBuf::from),
             );
 
             assert_eq!(a, b);
@@ -1411,17 +1413,17 @@ mod task_expansion {
             let project = project_graph.get("tokens").unwrap();
             let task = project.get_task("inputsVars").unwrap();
 
-            assert!(task.input_globs.contains(
-                &glob::normalize(PathBuf::from(&project.source).join("$unknown.*")).unwrap()
+            assert!(task
+                .input_globs
+                .contains(&WorkspaceRelativePathBuf::from(&project.source).join("$unknown.*")));
+
+            assert!(task.input_paths.contains(
+                &WorkspaceRelativePathBuf::from(&project.source).join("dir/javascript/file")
             ));
 
             assert!(task
                 .input_paths
-                .contains(&PathBuf::from(&project.source).join("dir/javascript/file")));
-
-            assert!(task
-                .input_paths
-                .contains(&PathBuf::from(&project.source).join("file.unknown")));
+                .contains(&WorkspaceRelativePathBuf::from(&project.source).join("file.unknown")));
         }
 
         #[tokio::test]
@@ -1431,17 +1433,19 @@ mod task_expansion {
             let project = project_graph.get("tokens").unwrap();
             let task = project.get_task("inputs").unwrap();
 
-            assert!(task.input_globs.contains(
-                &glob::normalize(PathBuf::from(&project.source).join("glob/*")).unwrap()
-            ));
             assert!(task
                 .input_globs
-                .contains(&glob::normalize("glob.*").unwrap()));
+                .contains(&WorkspaceRelativePathBuf::from(&project.source).join("glob/*")));
+            assert!(task
+                .input_globs
+                .contains(&WorkspaceRelativePathBuf::from("glob.*")));
 
             assert!(task
                 .input_paths
-                .contains(&PathBuf::from(&project.source).join("path.ts")));
-            assert!(task.input_paths.contains(&PathBuf::from("path/dir")));
+                .contains(&WorkspaceRelativePathBuf::from(&project.source).join("path.ts")));
+            assert!(task
+                .input_paths
+                .contains(&WorkspaceRelativePathBuf::from("path/dir")));
 
             assert!(task.input_vars.contains("VAR"));
             assert!(task.input_vars.contains("FOO_BAR"));
@@ -1462,13 +1466,13 @@ mod task_expansion {
 
             assert!(task
                 .output_paths
-                .contains(&PathBuf::from(&project.source).join("dir")));
+                .contains(&WorkspaceRelativePathBuf::from(&project.source).join("dir")));
 
             let task = project.get_task("outputsGlobs").unwrap();
 
-            assert!(task.output_globs.contains(
-                &glob::normalize(PathBuf::from(&project.source).join("dir/**/*.js")).unwrap()
-            ));
+            assert!(task
+                .output_globs
+                .contains(&WorkspaceRelativePathBuf::from(&project.source).join("dir/**/*.js")));
         }
 
         #[tokio::test]
@@ -1481,26 +1485,22 @@ mod task_expansion {
             assert_eq!(
                 task.output_globs,
                 FxHashSet::from_iter([
-                    glob::normalize(PathBuf::from(&project.source).join("**/*.{ts,tsx}")).unwrap(),
-                    glob::normalize(PathBuf::from(&project.source).join("*.js")).unwrap()
+                    WorkspaceRelativePathBuf::from(&project.source).join("**/*.{ts,tsx}"),
+                    WorkspaceRelativePathBuf::from(&project.source).join("*.js")
                 ]),
             );
 
-            let a: FxHashSet<PathBuf> =
-                FxHashSet::from_iter(task.output_paths.iter().map(PathBuf::from));
-            let b: FxHashSet<PathBuf> = FxHashSet::from_iter(
-                vec![
-                    PathBuf::from("package.json"),
-                    PathBuf::from(&project.source).join("file.ts"),
-                    PathBuf::from(&project.source).join("dir"),
-                    PathBuf::from(&project.source).join("dir/subdir"),
-                    PathBuf::from(&project.source).join("file.ts"),
-                    PathBuf::from(&project.source).join("dir/other.tsx"),
-                    PathBuf::from(&project.source).join("dir/subdir/another.ts"),
-                ]
-                .iter()
-                .map(PathBuf::from),
-            );
+            let a: FxHashSet<WorkspaceRelativePathBuf> =
+                FxHashSet::from_iter(task.output_paths.iter().map(WorkspaceRelativePathBuf::from));
+            let b: FxHashSet<WorkspaceRelativePathBuf> = FxHashSet::from_iter(vec![
+                WorkspaceRelativePathBuf::from("package.json"),
+                WorkspaceRelativePathBuf::from(&project.source).join("file.ts"),
+                WorkspaceRelativePathBuf::from(&project.source).join("dir"),
+                WorkspaceRelativePathBuf::from(&project.source).join("dir/subdir"),
+                WorkspaceRelativePathBuf::from(&project.source).join("file.ts"),
+                WorkspaceRelativePathBuf::from(&project.source).join("dir/other.tsx"),
+                WorkspaceRelativePathBuf::from(&project.source).join("dir/subdir/another.ts"),
+            ]);
 
             assert_eq!(a, b);
         }

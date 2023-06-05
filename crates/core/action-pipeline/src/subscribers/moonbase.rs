@@ -166,7 +166,7 @@ impl Subscriber for MoonbaseSubscriber {
                     let touched_files = context
                         .touched_files
                         .iter()
-                        .map(|f| f.to_string_lossy().to_string())
+                        .map(|f| f.to_string())
                         .collect::<Vec<_>>();
 
                     let response = match graphql::post_mutation::<create_run::ResponseData>(

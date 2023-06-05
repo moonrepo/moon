@@ -1,4 +1,4 @@
+use moon_common::path::WorkspaceRelativePathBuf;
 use rustc_hash::FxHashSet;
-use std::path::PathBuf;
 
-pub type TouchedFilePaths = FxHashSet<PathBuf>;
+pub type TouchedFilePaths = FxHashSet<WorkspaceRelativePathBuf>;

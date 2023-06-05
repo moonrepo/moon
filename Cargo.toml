@@ -43,7 +43,7 @@ serde = { version = "1.0.163", features = ["derive"] }
 serde_json = "1.0.96"
 serde_yaml = "0.9.21"
 starbase_sandbox = "0.1.3"
-starbase_styles = "0.1.8"
+starbase_styles = { version = "0.1.9", features = ["relative-path"] }
 starbase_utils = { version = "0.2.10", default-features = false, features = ["editor-config", "glob", "json", "toml", "yaml"] }
 thiserror = "1.0.40"
 tokio = { version = "1.28.2", default-features = false, features = ["tracing"] }

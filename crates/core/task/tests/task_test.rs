@@ -1,3 +1,4 @@
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{
     FilePath, InputPath, TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskOptionEnvFile,
     TaskOptionsConfig, TaskOutputStyle,
@@ -8,7 +9,6 @@ use moon_test_utils::create_sandbox;
 use moon_utils::string_vec;
 use rustc_hash::FxHashSet;
 use std::env;
-use std::path::PathBuf;
 use std::str::FromStr;
 
 pub fn create_task(config: TaskConfig) -> Task {
@@ -602,7 +602,7 @@ mod is_affected {
 
     #[test]
     fn returns_true_if_matches_file() {
-        let project_source = PathBuf::from("files-and-dirs");
+        let project_source = WorkspaceRelativePathBuf::from("files-and-dirs");
         let mut task = create_task(TaskConfig {
             inputs: Some(vec![InputPath::from_str("file.ts").unwrap()]),
             ..TaskConfig::default()
@@ -618,7 +618,7 @@ mod is_affected {
 
     #[test]
     fn returns_true_if_matches_glob() {
-        let project_source = PathBuf::from("files-and-dirs");
+        let project_source = WorkspaceRelativePathBuf::from("files-and-dirs");
         let mut task = create_task(TaskConfig {
             inputs: Some(vec![InputPath::from_str("file.*").unwrap()]),
             ..TaskConfig::default()
@@ -639,17 +639,18 @@ mod is_affected {
             ..TaskConfig::default()
         });
 
-        task.input_paths.insert(PathBuf::from("package.json"));
+        task.input_paths
+            .insert(WorkspaceRelativePathBuf::from("package.json"));
 
         let mut set = FxHashSet::default();
-        set.insert(PathBuf::from("package.json"));
+        set.insert(WorkspaceRelativePathBuf::from("package.json"));
 
         assert!(task.is_affected(&set).unwrap());
     }
 
     #[test]
     fn returns_false_if_outside_project() {
-        let project_source = PathBuf::from("files-and-dirs");
+        let project_source = WorkspaceRelativePathBuf::from("files-and-dirs");
         let mut task = create_task(TaskConfig {
             inputs: Some(vec![InputPath::from_str("file.ts").unwrap()]),
             ..TaskConfig::default()
@@ -658,14 +659,14 @@ mod is_affected {
         task.input_paths.insert(project_source.join("file.ts"));
 
         let mut set = FxHashSet::default();
-        set.insert(PathBuf::from("base/other/outside.ts"));
+        set.insert(WorkspaceRelativePathBuf::from("base/other/outside.ts"));
 
         assert!(!task.is_affected(&set).unwrap());
     }
 
     #[test]
     fn returns_false_if_no_match() {
-        let project_source = PathBuf::from("files-and-dirs");
+        let project_source = WorkspaceRelativePathBuf::from("files-and-dirs");
         let mut task = create_task(TaskConfig {
             inputs: Some(vec![
                 InputPath::from_str("file.ts").unwrap(),
@@ -688,7 +689,7 @@ mod is_affected {
         let sandbox = create_sandbox("base");
         sandbox.create_file("files-and-dirs/.env", "");
 
-        let project_source = PathBuf::from("files-and-dirs");
+        let project_source = WorkspaceRelativePathBuf::from("files-and-dirs");
         let mut task = create_task(TaskConfig {
             options: TaskOptionsConfig {
                 env_file: Some(TaskOptionEnvFile::Enabled(true)),

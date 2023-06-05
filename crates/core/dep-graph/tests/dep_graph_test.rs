@@ -1,4 +1,5 @@
 use moon::{build_dep_graph, generate_project_graph, load_workspace_from};
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{
     PartialInheritedTasksConfig, PartialNodeConfig, PartialToolchainConfig, PartialWorkspaceConfig,
     WorkspaceProjects,
@@ -10,7 +11,6 @@ use moon_test_utils::{assert_snapshot, create_input_paths, create_sandbox_with_c
 use moon_workspace::Workspace;
 use petgraph::graph::NodeIndex;
 use rustc_hash::{FxHashMap, FxHashSet};
-use std::path::PathBuf;
 
 async fn create_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
     let workspace_config = PartialWorkspaceConfig {
@@ -436,8 +436,8 @@ mod run_target_if_touched {
         let (workspace, projects, _sandbox) = create_tasks_project_graph().await;
 
         let mut touched_files = FxHashSet::default();
-        touched_files.insert(PathBuf::from("input-a/a.ts"));
-        touched_files.insert(PathBuf::from("input-c/c.ts"));
+        touched_files.insert(WorkspaceRelativePathBuf::from("input-a/a.ts"));
+        touched_files.insert(WorkspaceRelativePathBuf::from("input-c/c.ts"));
 
         let mut graph = build_dep_graph(&workspace, &projects);
         graph
@@ -456,9 +456,9 @@ mod run_target_if_touched {
         let (workspace, projects, _sandbox) = create_tasks_project_graph().await;
 
         let mut touched_files = FxHashSet::default();
-        touched_files.insert(PathBuf::from("input-a/a2.ts"));
-        touched_files.insert(PathBuf::from("input-b/b2.ts"));
-        touched_files.insert(PathBuf::from("input-c/any.ts"));
+        touched_files.insert(WorkspaceRelativePathBuf::from("input-a/a2.ts"));
+        touched_files.insert(WorkspaceRelativePathBuf::from("input-b/b2.ts"));
+        touched_files.insert(WorkspaceRelativePathBuf::from("input-c/any.ts"));
 
         let mut graph = build_dep_graph(&workspace, &projects);
         graph

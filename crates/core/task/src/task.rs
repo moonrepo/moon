@@ -233,7 +233,7 @@ impl Task {
                 trace!(
                     target: self.get_log_target(),
                     "Affected by {} (via input files)",
-                    "", // color::path(file), TODO
+                    color::rel_path(file),
                 );
 
                 return Ok(true);
@@ -243,7 +243,7 @@ impl Task {
                 trace!(
                     target: self.get_log_target(),
                     "Affected by {} (via input globs)",
-                    "", // color::path(file), TODO
+                    color::rel_path(file),
                 );
 
                 return Ok(true);

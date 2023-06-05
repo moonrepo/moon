@@ -186,7 +186,7 @@ impl<'task> TokenResolver<'task> {
 
             // This is a special case for inputs that converts "foo" to "foo/**/*",
             // when the input is a directory. This is necessary for VCS hashing.
-            if self.workspace_root.join(resolved.as_str()).is_dir() {
+            if resolved.to_path(self.workspace_root).is_dir() {
                 is_glob = true;
                 resolved = resolved.join("**/*");
             }

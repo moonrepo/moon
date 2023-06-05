@@ -146,6 +146,21 @@ pub async fn process_action(
             sync_result
         }
 
+        // Sync the workspace
+        ActionNode::SyncWorkspace => {
+            local_emitter.emit(Event::WorkspaceSyncing).await?;
+
+            let sync_result = Ok(moon_action::ActionStatus::Passed);
+
+            local_emitter
+                .emit(Event::WorkspaceSynced {
+                    error: extract_error(&sync_result),
+                })
+                .await?;
+
+            sync_result
+        }
+
         // Run a task within a project
         ActionNode::RunTarget(runtime, target)
         | ActionNode::RunPersistentTarget(runtime, target) => {

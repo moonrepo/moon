@@ -52,7 +52,7 @@ fn validate_required_approvals<C>(
     _data: &PartialOwnersConfig,
     _context: &C,
 ) -> Result<(), ValidateError> {
-    if *value <= 0 {
+    if *value == 0 {
         return Err(ValidateError::new("at least 1 approver is required"));
     }
 

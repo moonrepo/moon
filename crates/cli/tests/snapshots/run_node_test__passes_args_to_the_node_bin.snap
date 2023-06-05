@@ -1,11 +1,10 @@
 ---
 source: crates/cli/tests/run_node_test.rs
-assertion_line: 194
-expression: "get_path_safe_output(&assert, fixture.path())"
+expression: assert.output()
 ---
 ▪▪▪▪ npm install
 ▪▪▪▪ node:binExecArgs
-[ '--title', 'node:binExecArgs', '--preserve-symlinks' ]
+[ '--preserve-symlinks' ]
 ▪▪▪▪ node:binExecArgs (100ms)
 
 Tasks: 1 completed

@@ -27,8 +27,8 @@ fn create_node_options(
 ) -> Result<Vec<String>, MoonError> {
     let mut options = string_vec![
         // "--inspect", // Enable node inspector
-        "--title",
-        &task.target.id,
+        // "--title",
+        // &task.target.id,
     ];
 
     options.extend(node_config.bin_exec_args.to_owned());

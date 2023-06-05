@@ -4,6 +4,8 @@
 
 #### 🐞 Fixes
 
+- Node.js
+  - Fixed an issue where some workers/packages would fail while inheriting parent args.
 - Rust
   - Fixed an issue where `cargo generate-lockfile` would run in the wrong directory.
 

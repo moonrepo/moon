@@ -70,6 +70,12 @@ export default function DepGraph() {
 					},
 				],
 				nodes: [
+					{
+						data: {
+							id: 'sync-workspace',
+							label: 'SyncWorkspace',
+						},
+					},
 					// Toolchain
 					{
 						data: {

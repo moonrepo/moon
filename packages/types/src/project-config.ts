@@ -93,11 +93,20 @@ export interface ProjectWorkspaceConfig {
 	};
 }
 
+export interface OwnersConfig {
+	customGroups: Record<string, string[]>;
+	defaultOwner: string | null;
+	optional: boolean;
+	paths: Record<string, string[]> | string[];
+	requiredApprovals: number;
+}
+
 export interface ProjectConfig {
 	dependsOn: (DependencyConfig | string)[];
 	env: Record<string, string> | null;
 	fileGroups: Record<string, string[]>;
 	language: ProjectLanguage;
+	owners: OwnersConfig;
 	platform: Platform | null;
 	project: ProjectMetadataConfig | null;
 	tags: string[];

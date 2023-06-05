@@ -77,6 +77,9 @@ cacheable!(
 
         pub language: LanguageType,
 
+        #[setting(nested)]
+        pub owners: OwnersConfig,
+
         pub platform: Option<PlatformType>,
 
         #[setting(nested)]

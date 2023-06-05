@@ -76,6 +76,105 @@ language: 'kotlin'
 > For convenience, when this setting is not defined, moon will attempt to detect the language based
 > on configuration files found in the project root. This only applies to non-custom languages!
 
+## `owners`<VersionLabel version="1.8.0" />
+
+<HeadingApiLink to="/api/types/interface/ProjectConfig#owners" />
+
+Defines ownership of source code within the current project, by mapping file system paths to owners.
+An owner is either a user, team, or group.
+
+Currently supports
+[GitHub](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners),
+[GitLab](https://docs.gitlab.com/ee/user/project/codeowners/reference.html), and
+[Bitbucket](https://marketplace.atlassian.com/apps/1218598/code-owners-for-bitbucket?tab=overview&hosting=cloud)
+(via app).
+
+### `customGroups`<RequiredLabel text="Bitbucket" />
+
+<HeadingApiLink to="/api/types/interface/OwnersConfig#customGroups" />
+
+When using the
+[Code Owners for Bitbucket](https://marketplace.atlassian.com/apps/1218598/code-owners-for-bitbucket?tab=overview&hosting=cloud)
+app, this setting provides a way to define custom groups that will be injected at the top of the
+`CODEOWNERS` file. These groups _must_ be unique across all projects.
+
+```yaml title="moon.yml" {2,3}
+owners:
+  customGroups:
+    '@@@backend': ['@"user name"', '@@team']
+```
+
+### `defaultOwner`
+
+<HeadingApiLink to="/api/types/interface/OwnersConfig#defaultOwner" />
+
+The default owner for all [`paths`](#paths). This setting is optional in some cases but helps to
+avoid unnecessary repetition.
+
+```yaml title="moon.yml" {2}
+owners:
+  defaultOwner: '@frontend'
+```
+
+### `optional`<RequiredLabel text="GitLab" />
+
+<HeadingApiLink to="/api/types/interface/OwnersConfig#optional" />
+
+For GitLab, marks the project's
+[code owners section](https://docs.gitlab.com/ee/user/project/codeowners/reference.html#optional-sections)
+as optional. Defaults to `false`.
+
+```yaml title="moon.yml" {2}
+owners:
+  optional: true
+```
+
+### `paths`
+
+<HeadingApiLink to="/api/types/interface/OwnersConfig#paths" />
+
+The primary setting for defining ownership of source code within the current project. This setting
+supports 2 formats, the first being a list of file paths relative from the current project. This
+format requires [`defaultOwner`](#defaultowner) to be defined, and only supports 1 owner for every
+path (the default owner).
+
+```yaml title="moon.yml" {3-5}
+owners:
+  defaultOwner: '@frontend'
+  paths:
+    - '**/*.{js,ts,tsx}'
+    - '*.config.js'
+```
+
+The second format provides far more granularity, allowing for multiple owners per path. This format
+requires a map, where the key is a file path relative from the current project, and the value is a
+list of owners. Paths with an empty list of owners will fallback to [`defaultOwner`](#defaultowner).
+
+```yaml title="moon.yml" {3-6}
+owners:
+  defaultOwner: '@frontend'
+  paths:
+    '**/*.rs': ['@backend']
+    '**/*.{js,ts,tsx}': []
+    '*.config.js': ['@frontend', '@frontend-infra']
+```
+
+> The syntax for owners is dependent on the provider you are using for version control (GitHub,
+> GitLab, Bitbucket). moon provides no validation or guarantees that these are correct.
+
+### `requiredApprovals`<RequiredLabel text="GitLab" />
+
+<HeadingApiLink to="/api/types/interface/OwnersConfig#requiredApprovals" />
+
+For GitLab, requires a specific number of approvers for the project's
+[code owners section](https://docs.gitlab.com/ee/user/project/codeowners/reference.html#sections-requiring-multiple-approvals).
+Defaults to `1`.
+
+```yaml title="moon.yml" {2}
+owners:
+  requiredApprovals: 2
+```
+
 ## `project`
 
 <HeadingApiLink to="/api/types/interface/ProjectConfig#project" />

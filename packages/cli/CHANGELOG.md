@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Added code owners (`CODEOWNERS`) support.
+  - Added `owners` setting to `moon.yml`.
+
 #### ⚙️ Internal
 
 - Updated Rust to v1.70.

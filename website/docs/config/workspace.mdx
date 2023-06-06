@@ -103,7 +103,23 @@ projects:
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#codeowners" />
 
-Configures code owners integration across the entire workspace.
+Configures code owners (`CODEOWNERS`) integration across the entire workspace.
+
+### `globalPaths`
+
+<HeadingApiLink to="/api/types/interface/CodeownersConfig#globalPaths" />
+
+This setting defines file patterns and their owners at the workspace-level, and are applied to any
+matching path, at any depth, within the entire workspace. This is useful for defining global or
+fallback owners when a granular [project-level path](./project#paths) does not match or exist.
+
+```yaml title=".moon/workspace.yml" {2-5}
+codeowners:
+  globalPaths:
+    '*': ['@admins']
+    'config/': ['@infra']
+    '/.github/': ['@infra']
+```
 
 ### `orderBy`
 

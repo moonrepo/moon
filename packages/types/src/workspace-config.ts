@@ -1,4 +1,5 @@
 export interface CodeownersConfig {
+	globalPaths: Record<string, string[]>;
 	orderBy: 'file-source' | 'project-name';
 	syncOnRun: boolean;
 }

@@ -2676,6 +2676,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_codeowners"
+version = "0.1.0"
+dependencies = [
+ "moon_config",
+ "moon_hasher",
+ "rustc-hash",
+ "serde",
+ "serde_json",
+ "starbase_sandbox",
+ "starbase_utils",
+]
+
+[[package]]
 name = "moon_common"
 version = "0.1.0"
 dependencies = [

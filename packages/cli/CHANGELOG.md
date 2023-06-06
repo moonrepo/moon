@@ -6,6 +6,8 @@
 
 - Added code owners (`CODEOWNERS`) support.
   - Added `owners` setting to `moon.yml`.
+  - Added `codeowners` setting to `.moon/workspace.yml`.
+- Added `vcs.provider` setting to `.moon/workspace.yml`.
 - Added a new action to the graph, `SyncWorkspace`, that'll be used for workspace-level checks.
 - Added `workspace.syncing` and `workspace.synced` webhooks.
 

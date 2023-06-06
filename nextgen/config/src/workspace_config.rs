@@ -89,6 +89,9 @@ pub struct WorkspaceConfig {
     pub schema: String,
 
     #[setting(nested)]
+    pub codeowners: CodeownersConfig,
+
+    #[setting(nested)]
     pub constraints: ConstraintsConfig,
 
     #[setting(extend, validate = validate::extends_string)]

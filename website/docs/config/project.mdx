@@ -162,13 +162,17 @@ owners:
 > The syntax for owners is dependent on the provider you are using for version control (GitHub,
 > GitLab, Bitbucket). moon provides no validation or guarantees that these are correct.
 
-### `requiredApprovals`<RequiredLabel text="GitLab" />
+### `requiredApprovals`<RequiredLabel text="Bitbucket / GitLab" />
 
 <HeadingApiLink to="/api/types/interface/OwnersConfig#requiredApprovals" />
 
-For GitLab, requires a specific number of approvers for the project's
-[code owners section](https://docs.gitlab.com/ee/user/project/codeowners/reference.html#sections-requiring-multiple-approvals).
-Defaults to `1`.
+Requires a specific number of approvals for a pull/merge request to be satisfied. Defaults to `1`.
+
+- For Bitbucket, defines the
+  [`Check()` condition](https://docs.mibexsoftware.com/codeowners/merge-checks#MergeChecks-2.MergeChecks:HowmanyoftheseCodeOwnersneedtoapprovebeforeapullrequestcanbemerged?)
+  when using a [`defaultOwner`](#defaultowner).
+- For GitLab, defines a requirement on the
+  [code owners section](https://docs.gitlab.com/ee/user/project/codeowners/reference.html#sections-requiring-multiple-approvals).
 
 ```yaml title="moon.yml" {2}
 owners:

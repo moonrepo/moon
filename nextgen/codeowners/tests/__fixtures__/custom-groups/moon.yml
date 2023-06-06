@@ -1,0 +1,5 @@
+owners:
+  customGroups:
+    '@@@group': ['@@team', '@user']
+  paths:
+    'path/with space/': ['@@@group']

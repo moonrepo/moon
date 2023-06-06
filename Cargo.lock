@@ -2676,6 +2676,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_codeowners"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "moon_config",
+ "starbase_utils",
+]
+
+[[package]]
 name = "moon_common"
 version = "0.1.0"
 dependencies = [

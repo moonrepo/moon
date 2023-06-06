@@ -14,7 +14,7 @@ pub struct ContentHasher<'owner> {
 }
 
 impl<'owner> ContentHasher<'owner> {
-    pub fn new<'new>(label: &'new str) -> ContentHasher<'new> {
+    pub fn new(label: &str) -> ContentHasher {
         debug!(label, "Created new content hasher");
 
         ContentHasher {

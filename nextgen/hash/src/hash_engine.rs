@@ -13,7 +13,7 @@ pub struct HashEngine {
 }
 
 impl HashEngine {
-    pub fn new(cache_dir: &Path) -> Result<HashEngine, HashError> {
+    pub fn new(cache_dir: &Path) -> HashEngine {
         let hashes_dir = cache_dir.join("hashes");
         let outputs_dir = cache_dir.join("outputs");
 
@@ -23,10 +23,10 @@ impl HashEngine {
             "Creating hash engine",
         );
 
-        Ok(HashEngine {
+        HashEngine {
             hashes_dir,
             outputs_dir,
-        })
+        }
     }
 
     pub fn save_manifest(&self, mut contents: ContentHasher) -> Result<String, HashError> {

@@ -13,3 +13,7 @@ sha2 = "0.10.6"
 starbase_utils = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
+
+[dev-dependencies]
+starbase_sandbox = { workspace = true }
+

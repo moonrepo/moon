@@ -2909,6 +2909,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "starbase_sandbox",
  "starbase_utils",
  "thiserror",
  "tracing",

@@ -1,13 +1,19 @@
 [package]
-name = "moon_codeowners"
+name = "moon_hash"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 moon_config = { path = "../config" }
-moon_hash = { path = "../hash" }
+erased-serde = "0.3.25"
+miette = { workspace = true }
 serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = "0.10.6"
 starbase_utils = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
 
 [dev-dependencies]
 starbase_sandbox = { workspace = true }
+

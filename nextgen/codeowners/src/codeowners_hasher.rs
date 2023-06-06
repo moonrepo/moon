@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 #[serde(rename_all = "camelCase")]
 pub struct CodeownersHasher<'cfg> {
     pub workspace: &'cfg CodeownersConfig,
-    pub projects: BTreeMap<String, &'cfg OwnersConfig>,
+    pub projects: BTreeMap<&'cfg str, &'cfg OwnersConfig>,
 }
 
 impl<'cfg> CodeownersHasher<'cfg> {
@@ -19,8 +19,8 @@ impl<'cfg> CodeownersHasher<'cfg> {
         }
     }
 
-    pub fn add_project(&mut self, name: &str, config: &'cfg OwnersConfig) {
-        self.projects.insert(name.to_owned(), config);
+    pub fn add_project(&mut self, name: &'cfg str, config: &'cfg OwnersConfig) {
+        self.projects.insert(name, config);
     }
 }
 

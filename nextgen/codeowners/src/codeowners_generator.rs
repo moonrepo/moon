@@ -150,7 +150,7 @@ impl CodeownersGenerator {
         let path = path.to_string_lossy();
 
         if path.contains(' ') {
-            return path.replace(" ", "\\ ");
+            return path.replace(' ', "\\ ");
         }
 
         path.to_string()

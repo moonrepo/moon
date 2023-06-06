@@ -1,3 +1,4 @@
+use moon_common::cacheable;
 use rustc_hash::FxHashMap;
 use schematic::{derive_enum, Config, ConfigEnum};
 
@@ -10,11 +11,13 @@ derive_enum!(
     }
 );
 
-#[derive(Config)]
-pub struct CodeownersConfig {
-    pub global_paths: FxHashMap<String, Vec<String>>,
+cacheable!(
+    #[derive(Config)]
+    pub struct CodeownersConfig {
+        pub global_paths: FxHashMap<String, Vec<String>>,
 
-    pub order_by: CodeownersOrderBy,
+        pub order_by: CodeownersOrderBy,
 
-    pub sync_on_run: bool,
-}
+        pub sync_on_run: bool,
+    }
+);

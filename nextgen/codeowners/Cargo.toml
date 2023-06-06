@@ -5,5 +5,9 @@ edition = "2021"
 
 [dependencies]
 moon_config = { path = "../config" }
+moon_hasher = { path = "../../crates/core/hasher" }
 chrono = { workspace = true }
+rustc-hash = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
 starbase_utils = { workspace = true }

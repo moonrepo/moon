@@ -7,6 +7,7 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 The `.moon/workspace.yml` file configures projects and services in the workspace. This file is
 _required_.
@@ -96,6 +97,53 @@ projects:
     - 'packages/*'
   sources:
     www: 'www'
+```
+
+## `codeowners`<VersionLabel version="1.8.0" />
+
+<HeadingApiLink to="/api/types/interface/WorkspaceConfig#codeowners" />
+
+Configures code owners (`CODEOWNERS`) integration across the entire workspace.
+
+### `globalPaths`
+
+<HeadingApiLink to="/api/types/interface/CodeownersConfig#globalPaths" />
+
+This setting defines file patterns and their owners at the workspace-level, and are applied to any
+matching path, at any depth, within the entire workspace. This is useful for defining global or
+fallback owners when a granular [project-level path](./project#paths) does not match or exist.
+
+```yaml title=".moon/workspace.yml" {2-5}
+codeowners:
+  globalPaths:
+    '*': ['@admins']
+    'config/': ['@infra']
+    '/.github/': ['@infra']
+```
+
+### `orderBy`
+
+<HeadingApiLink to="/api/types/interface/CodeownersConfig#orderBy" />
+
+The order in which code owners, grouped by project, are listed in the `CODEOWNERS` file. Accepts
+"file-source" (default) or "project-name".
+
+```yaml title=".moon/workspace.yml" {2}
+codeowners:
+  orderBy: 'project-name'
+```
+
+### `syncOnRun`
+
+<HeadingApiLink to="/api/types/interface/CodeownersConfig#syncOnRun" />
+
+Will automatically generate a `CODEOWNERS` file by aggregating and syncing all project
+[`owners`](./project#owners) in the workspace. The format and location of the `CODEOWNERS` file is
+based on the [`vcs.provider`](#provider) setting. Defaults to `false`.
+
+```yaml title=".moon/workspace.yml" {2}
+codeowners:
+  syncOnRun: true
 ```
 
 ## `constraints`
@@ -360,6 +408,18 @@ or "svn" (experimental, in development).
 ```yaml title=".moon/workspace.yml" {2}
 vcs:
   manager: 'git'
+```
+
+### `provider`<VersionLabel version="1.8.0" />
+
+<HeadingApiLink to="/api/types/interface/VcsConfig#provider" />
+
+Defines the service provider that the repository is hosted on. Accepts "github" (default), "gitlab",
+"bitbucket", or "other".
+
+```yaml title=".moon/workspace.yml" {2}
+vcs:
+  provider: 'github'
 ```
 
 ### `remoteCandidates`

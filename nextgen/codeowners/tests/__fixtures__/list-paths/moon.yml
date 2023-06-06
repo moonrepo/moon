@@ -1,0 +1,6 @@
+owners:
+  defaultOwner: '@frontend'
+  optional: true
+  paths:
+    - '*.{js,ts,tsx}'
+    - '*.config.js'

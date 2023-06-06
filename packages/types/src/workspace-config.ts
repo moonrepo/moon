@@ -1,3 +1,9 @@
+export interface CodeownersConfig {
+	globalPaths: Record<string, string[]>;
+	orderBy: 'file-source' | 'project-name';
+	syncOnRun: boolean;
+}
+
 export interface ConstraintsConfig {
 	enforceProjectTypeRelationships: boolean;
 	tagRelationships: Record<string, string[]>;
@@ -28,11 +34,13 @@ export interface RunnerConfig {
 export interface VcsConfig {
 	defaultBranch: string;
 	manager: 'git' | 'svn';
+	provider: 'bitbucket' | 'github' | 'gitlab' | 'other';
 	remoteCandidates: string[];
 }
 
 export interface WorkspaceConfig {
 	extends: string | null;
+	codeowners: CodeownersConfig;
 	constraints: ConstraintsConfig;
 	generator: GeneratorConfig;
 	hasher: HasherConfig;

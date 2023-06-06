@@ -2893,6 +2893,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_hash"
+version = "0.1.0"
+dependencies = [
+ "miette",
+ "moon_config",
+ "serde",
+ "serde_json",
+ "sha2",
+ "starbase_utils",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "moon_hasher"
 version = "0.1.0"
 dependencies = [

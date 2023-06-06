@@ -1,17 +1,20 @@
 use crate::hash_error::HashError;
-use serde::Serialize;
 use sha2::{Digest, Sha256};
 use tracing::{debug, trace};
 
-pub struct ContentHasher<'owner, T: Serialize> {
+pub trait ContentHashable: erased_serde::Serialize {}
+
+erased_serde::serialize_trait_object!(ContentHashable);
+
+pub struct ContentHasher<'owner> {
     content_cache: Option<String>,
-    contents: Vec<T>,
+    contents: Vec<Box<dyn ContentHashable>>,
     hash_cache: Option<String>,
     label: &'owner str,
 }
 
-impl<'owner, T: Serialize> ContentHasher<'owner, T> {
-    pub fn new<'new>(label: &'new str) -> ContentHasher<'new, T> {
+impl<'owner> ContentHasher<'owner> {
+    pub fn new<'new>(label: &'new str) -> ContentHasher<'new> {
         debug!(label, "Created new content hasher");
 
         ContentHasher {
@@ -46,10 +49,10 @@ impl<'owner, T: Serialize> ContentHasher<'owner, T> {
         Ok(hash)
     }
 
-    pub fn hash(&mut self, content: T) {
+    pub fn hash(&mut self, content: impl ContentHashable + 'static) {
         trace!(label = self.label, "Hashing content");
 
-        self.contents.push(content);
+        self.contents.push(Box::new(content));
         self.content_cache = None;
         self.hash_cache = None;
     }

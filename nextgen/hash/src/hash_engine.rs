@@ -1,6 +1,5 @@
 use crate::hash_error::HashError;
 use crate::hasher::ContentHasher;
-use serde::Serialize;
 use starbase_utils::fs;
 use std::path::{Path, PathBuf};
 use tracing::debug;
@@ -30,10 +29,7 @@ impl HashEngine {
         })
     }
 
-    pub fn save_manifest<T>(&self, mut contents: ContentHasher<T>) -> Result<String, HashError>
-    where
-        T: Serialize,
-    {
+    pub fn save_manifest(&self, mut contents: ContentHasher) -> Result<String, HashError> {
         let hash = contents.generate()?;
         let path = self.hashes_dir.join(format!("{hash}.json"));
 

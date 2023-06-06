@@ -144,13 +144,11 @@ impl CodeownersGenerator {
     }
 
     fn format_path(&self, path: PathBuf) -> String {
-        let path = path.to_string_lossy();
-
-        if path.contains(' ') {
-            return path.replace(' ', "\\ ");
-        }
-
-        path.to_string()
+        path.to_string_lossy()
+            // Always use forward slashes
+            .replace('\\', "/")
+            // Escape spaces
+            .replace(' ', "\\ ")
     }
 
     fn write<T: AsRef<str>>(&mut self, message: T) -> Result<(), FsError> {

@@ -2,6 +2,7 @@ use crate::actions::install_deps::install_deps;
 use crate::actions::run_target::run_target;
 use crate::actions::setup_tool::setup_tool;
 use crate::actions::sync_project::sync_project;
+use crate::actions::sync_workspace::sync_workspace;
 use crate::errors::PipelineError;
 use moon_action::{Action, ActionNode};
 use moon_action_context::ActionContext;
@@ -140,6 +141,21 @@ pub async fn process_action(
                     error: extract_error(&sync_result),
                     project,
                     runtime,
+                })
+                .await?;
+
+            sync_result
+        }
+
+        // Sync the workspace
+        ActionNode::SyncWorkspace => {
+            local_emitter.emit(Event::WorkspaceSyncing).await?;
+
+            let sync_result = sync_workspace(&mut action, context, workspace, project_graph).await;
+
+            local_emitter
+                .emit(Event::WorkspaceSynced {
+                    error: extract_error(&sync_result),
                 })
                 .await?;
 

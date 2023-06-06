@@ -5,6 +5,10 @@ import type { GraphInfo } from './types';
 cytoscape.use(dagre);
 
 function getActionType(label: string) {
+	if (label === 'SyncWorkspace') {
+		return 'sync-workspace';
+	}
+
 	if (label.startsWith('RunTarget') || label.startsWith('RunPersistentTarget')) {
 		return 'run-target';
 	}
@@ -110,6 +114,15 @@ export function render(element: HTMLElement, data: GraphInfo) {
 				style: {
 					// @ts-expect-error Types incorrect
 					'background-gradient-stop-colors': '#ff9da6 #ff5b6b #cc4956',
+					height: 120,
+					width: 120,
+				},
+			},
+			{
+				selector: 'node[type="sync-workspace"]',
+				style: {
+					// @ts-expect-error Types incorrect
+					'background-gradient-stop-colors': '#b7a9f9 #9a87f7 #8c75f5',
 					height: 120,
 					width: 120,
 				},

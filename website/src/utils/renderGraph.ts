@@ -84,6 +84,15 @@ export function renderGraph(element: HTMLElement, graph: cytoscape.ElementsDefin
 					width: 120,
 				},
 			},
+			{
+				selector: 'node[id="sync-workspace"]',
+				style: {
+					// @ts-expect-error Types incorrect
+					'background-gradient-stop-colors': '#b7a9f9 #9a87f7 #8c75f5',
+					height: 120,
+					width: 120,
+				},
+			},
 		],
 	});
 }

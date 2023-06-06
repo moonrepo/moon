@@ -35,10 +35,24 @@ impl<'ws> DepGraphBuilder<'ws> {
     pub fn new(platforms: &'ws PlatformManager, project_graph: &'ws ProjectGraph) -> Self {
         debug!(target: LOG_TARGET, "Creating dependency graph");
 
+        let mut graph = Graph::new();
+        let mut indices = FxHashMap::default();
+
+        // Always sync the workspace
+        let node = ActionNode::SyncWorkspace;
+
+        trace!(
+            target: LOG_TARGET,
+            "Adding {} to graph",
+            color::muted_light(node.label())
+        );
+
+        indices.insert(node.to_owned(), graph.add_node(node));
+
         DepGraphBuilder {
             all_query: None,
-            graph: Graph::new(),
-            indices: FxHashMap::default(),
+            graph,
+            indices,
             platforms,
             project_graph,
             runtimes: FxHashMap::default(),

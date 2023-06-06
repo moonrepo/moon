@@ -23,6 +23,11 @@ other runners.
 
 The following actions compose our dependency graph:
 
+### Sync workspace
+
+This is a common action that always runs and give's moon a chance to perform operations and health
+checks across the entire workspace.
+
 ### Setup toolchain
 
 The most important action in the graph is the setup toolchain action, which downloads and installs a

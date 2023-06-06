@@ -24,6 +24,9 @@ pub enum ActionNode {
 
     /// Sync a project with language specific semantics.
     SyncProject(Runtime, Id),
+
+    /// Sync the entire moon workspace.
+    SyncWorkspace,
 }
 
 impl ActionNode {
@@ -59,6 +62,7 @@ impl ActionNode {
                 }
             }
             ActionNode::SyncProject(platform, id) => format!("Sync{platform}Project({id})"),
+            ActionNode::SyncWorkspace => "SyncWorkspace".into(),
         }
     }
 }

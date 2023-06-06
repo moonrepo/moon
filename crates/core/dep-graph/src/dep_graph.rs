@@ -77,7 +77,15 @@ impl DepGraph {
         }
 
         // If no root nodes are found, but nodes exist, then we have a cycle
-        if root_nodes.is_empty() && !node_counts.is_empty() {
+        let has_sync_workspace = self
+            .graph
+            .node_weights()
+            .any(|n| matches!(n, ActionNode::SyncWorkspace));
+
+        if (!has_sync_workspace && root_nodes.is_empty()
+            || has_sync_workspace && root_nodes.len() == 1)
+            && !node_counts.is_empty()
+        {
             self.detect_cycle()?;
         }
 
@@ -165,6 +173,14 @@ impl DepGraph {
         use petgraph::algo::kosaraju_scc;
 
         let scc = kosaraju_scc(&self.graph);
+
+        // Remove the sync workspace node
+        let scc = scc
+            .into_iter()
+            .filter(|list| !(list.len() == 1 && list[0].index() == 0))
+            .collect::<Vec<Vec<NodeIndex>>>();
+
+        // The cycle is always the last sequence in the list
         let cycle = scc
             .last()
             .unwrap()

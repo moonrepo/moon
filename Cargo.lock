@@ -2680,10 +2680,8 @@ name = "moon_codeowners"
 version = "0.1.0"
 dependencies = [
  "moon_config",
- "moon_hasher",
- "rustc-hash",
+ "moon_hash",
  "serde",
- "serde_json",
  "starbase_sandbox",
  "starbase_utils",
 ]

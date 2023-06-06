@@ -5,10 +5,8 @@ edition = "2021"
 
 [dependencies]
 moon_config = { path = "../config" }
-moon_hasher = { path = "../../crates/core/hasher" }
-rustc-hash = { workspace = true }
+moon_hash = { path = "../hash" }
 serde = { workspace = true }
-serde_json = { workspace = true }
 starbase_utils = { workspace = true }
 
 [dev-dependencies]

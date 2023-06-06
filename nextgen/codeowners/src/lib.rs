@@ -1,5 +1,5 @@
 mod codeowners_generator;
-mod codeowners_hasher;
+mod codeowners_hash;
 
 pub use codeowners_generator::*;
-pub use codeowners_hasher::*;
+pub use codeowners_hash::*;

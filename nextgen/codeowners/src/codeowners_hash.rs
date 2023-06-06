@@ -3,15 +3,15 @@ use moon_hash::{content_hashable, ContentHashable};
 use std::collections::BTreeMap;
 
 content_hashable!(
-    pub struct CodeownersHasher<'cfg> {
+    pub struct CodeownersHash<'cfg> {
         projects: BTreeMap<&'cfg str, &'cfg OwnersConfig>,
         workspace: &'cfg CodeownersConfig,
     }
 );
 
-impl<'cfg> CodeownersHasher<'cfg> {
-    pub fn new(workspace: &CodeownersConfig) -> CodeownersHasher {
-        CodeownersHasher {
+impl<'cfg> CodeownersHash<'cfg> {
+    pub fn new(workspace: &CodeownersConfig) -> CodeownersHash {
+        CodeownersHash {
             projects: BTreeMap::new(),
             workspace,
         }
@@ -22,4 +22,4 @@ impl<'cfg> CodeownersHasher<'cfg> {
     }
 }
 
-impl<'cfg> ContentHashable for CodeownersHasher<'cfg> {}
+impl<'cfg> ContentHashable for CodeownersHash<'cfg> {}

@@ -10,7 +10,7 @@ pub use hasher::*;
 macro_rules! content_hashable {
     ($impl:item) => {
         #[derive(serde::Serialize)]
-        #[serde(rename_all = "camelCase")]
+        #[serde(default, rename_all = "camelCase")]
         $impl
     };
 }

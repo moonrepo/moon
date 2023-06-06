@@ -9,7 +9,7 @@ moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
 async-trait = { workspace = true }
 cached = { workspace = true }
-chrono = { workspace = true, features = ["serde"] }
+chrono = { workspace = true }
 clean-path = "0.2.1"
 dunce = "1.0.4"
 humantime = "2.1.0"

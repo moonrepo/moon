@@ -3,6 +3,7 @@ use starbase_utils::fs::{self, FsError};
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use tracing::{debug, trace};
 
 pub struct CodeownersGenerator {
     file: File,
@@ -12,6 +13,8 @@ pub struct CodeownersGenerator {
 
 impl CodeownersGenerator {
     pub fn new(workspace_root: &Path, provider: VcsProvider) -> Result<Self, FsError> {
+        debug!("Aggregating code owners");
+
         let file_path = workspace_root.join(match provider {
             VcsProvider::GitHub => ".github/CODEOWNERS",
             VcsProvider::GitLab => ".gitlab/CODEOWNERS",
@@ -31,14 +34,20 @@ impl CodeownersGenerator {
 
     pub fn add_project_entry(
         &mut self,
-        name: &str,
+        id: &str,
         source: &str,
         config: &OwnersConfig,
     ) -> Result<(), FsError> {
+        if config.paths.is_empty() {
+            return Ok(());
+        }
+
+        trace!(project = id, source, "Adding project entries");
+
         self.write("")?;
 
         // Render the header
-        self.write(format!("# {}", name))?;
+        self.write(format!("# {}", id))?;
 
         match &self.provider {
             VcsProvider::Bitbucket => {
@@ -53,7 +62,7 @@ impl CodeownersGenerator {
             }
 
             VcsProvider::GitLab => {
-                let mut header = format!("[{name}]");
+                let mut header = format!("[{id}]");
 
                 if config.optional {
                     header = format!("^{header}")
@@ -116,6 +125,8 @@ impl CodeownersGenerator {
             return Ok(());
         }
 
+        trace!("Adding workspace entries");
+
         self.write("")?;
         self.write("# (workspace)")?;
 
@@ -134,6 +145,8 @@ impl CodeownersGenerator {
 
     pub fn generate(mut self) -> Result<(), FsError> {
         self.write("")?;
+
+        debug!(file = %self.file_path.display(), "Generating and writing CODEOWNERS file");
 
         self.file.flush().map_err(|error| FsError::Create {
             path: self.file_path.to_path_buf(),

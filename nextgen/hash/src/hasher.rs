@@ -1,5 +1,7 @@
-use crate::hash_error::HashError;
+use std::path::PathBuf;
+
 use sha2::{Digest, Sha256};
+use starbase_utils::json::JsonError;
 use tracing::{debug, trace};
 
 pub trait ContentHashable: erased_serde::Serialize {}
@@ -25,7 +27,7 @@ impl<'owner> ContentHasher<'owner> {
         }
     }
 
-    pub fn generate_hash(&mut self) -> Result<String, HashError> {
+    pub fn generate_hash(&mut self) -> Result<String, JsonError> {
         if let Some(hash) = &self.hash_cache {
             debug!(
                 hash,
@@ -50,19 +52,19 @@ impl<'owner> ContentHasher<'owner> {
     }
 
     pub fn hash_content<T: ContentHashable>(&mut self, content: &'owner T) {
-        trace!(label = self.label, "Hashing content");
+        trace!(label = self.label, "Adding content to hasher");
 
         self.contents.push(content);
         self.content_cache = None;
         self.hash_cache = None;
     }
 
-    pub fn serialize(&mut self) -> Result<&String, HashError> {
+    pub fn serialize(&mut self) -> Result<&String, JsonError> {
         if self.content_cache.is_none() {
             self.content_cache = Some(serde_json::to_string_pretty(&self.contents).map_err(
-                |error| HashError::ContentHashFailed {
+                |error| JsonError::StringifyFile {
+                    path: PathBuf::from(""), // TODO
                     error,
-                    label: self.label.to_owned(),
                 },
             )?);
         }

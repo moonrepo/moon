@@ -1,4 +1,3 @@
-use crate::errors::PipelineError;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_logger::debug;
@@ -16,7 +15,7 @@ pub async fn setup_tool(
     context: Arc<RwLock<ActionContext>>,
     workspace: Arc<RwLock<Workspace>>,
     runtime: &Runtime,
-) -> Result<ActionStatus, PipelineError> {
+) -> miette::Result<ActionStatus> {
     env::set_var("MOON_RUNNING_ACTION", "setup-tool");
 
     if matches!(runtime, Runtime::System) {

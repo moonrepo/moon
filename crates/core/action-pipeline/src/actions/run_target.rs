@@ -1,4 +1,3 @@
-use crate::errors::PipelineError;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_emitter::Emitter;
@@ -23,7 +22,7 @@ pub async fn run_target(
     project: &Project,
     target: &Target,
     runtime: &Runtime,
-) -> Result<ActionStatus, PipelineError> {
+) -> miette::Result<ActionStatus> {
     env::set_var("MOON_RUNNING_ACTION", "run-target");
 
     let emitter = emitter.read().await;

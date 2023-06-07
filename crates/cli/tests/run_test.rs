@@ -1,6 +1,7 @@
 use moon_cache::CacheEngine;
 use moon_config::{
-    HasherWalkStrategy, PartialHasherConfig, PartialRunnerConfig, PartialWorkspaceConfig,
+    HasherWalkStrategy, PartialCodeownersConfig, PartialHasherConfig, PartialRunnerConfig,
+    PartialVcsConfig, PartialWorkspaceConfig, VcsProvider,
 };
 use moon_target::Target;
 use moon_test_utils::{
@@ -1853,5 +1854,83 @@ mod query {
         let output = assert.output();
 
         assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+    }
+}
+
+mod sync_codeowners {
+    use super::*;
+
+    #[test]
+    fn doesnt_create_if_not_enabled() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("base:standard");
+        });
+
+        assert!(!sandbox.path().join(".github/CODEOWNERS").exists());
+    }
+
+    #[test]
+    fn creates_if_enabled() {
+        let sandbox = cases_sandbox_with_config(|workspace_config| {
+            workspace_config.codeowners = Some(PartialCodeownersConfig {
+                sync_on_run: Some(true),
+                ..PartialCodeownersConfig::default()
+            });
+        });
+
+        sandbox.enable_git();
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("base:standard");
+        });
+
+        assert!(sandbox.path().join(".github/CODEOWNERS").exists());
+    }
+
+    #[test]
+    fn creates_for_gitlab() {
+        let sandbox = cases_sandbox_with_config(|workspace_config| {
+            workspace_config.codeowners = Some(PartialCodeownersConfig {
+                sync_on_run: Some(true),
+                ..PartialCodeownersConfig::default()
+            });
+            workspace_config.vcs = Some(PartialVcsConfig {
+                provider: Some(VcsProvider::GitLab),
+                ..PartialVcsConfig::default()
+            });
+        });
+
+        sandbox.enable_git();
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("base:standard");
+        });
+
+        assert!(sandbox.path().join(".gitlab/CODEOWNERS").exists());
+    }
+
+    #[test]
+    fn creates_for_bitbucket() {
+        let sandbox = cases_sandbox_with_config(|workspace_config| {
+            workspace_config.codeowners = Some(PartialCodeownersConfig {
+                sync_on_run: Some(true),
+                ..PartialCodeownersConfig::default()
+            });
+            workspace_config.vcs = Some(PartialVcsConfig {
+                provider: Some(VcsProvider::Bitbucket),
+                ..PartialVcsConfig::default()
+            });
+        });
+
+        sandbox.enable_git();
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("base:standard");
+        });
+
+        assert!(sandbox.path().join("CODEOWNERS").exists());
     }
 }

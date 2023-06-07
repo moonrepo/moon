@@ -10,6 +10,16 @@
         "null"
       ]
     },
+    "codeowners": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialCodeownersConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "constraints": {
       "anyOf": [
         {
@@ -101,6 +111,13 @@
   },
   "additionalProperties": false,
   "definitions": {
+    "CodeownersOrderBy": {
+      "type": "string",
+      "enum": [
+        "file-source",
+        "project-name"
+      ]
+    },
     "FilePath": {
       "type": "string"
     },
@@ -120,6 +137,40 @@
     },
     "Id": {
       "type": "string"
+    },
+    "PartialCodeownersConfig": {
+      "type": "object",
+      "properties": {
+        "globalPaths": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "orderBy": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CodeownersOrderBy"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "syncOnRun": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
     },
     "PartialConstraintsConfig": {
       "type": "object",
@@ -264,6 +315,16 @@
             }
           ]
         },
+        "provider": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/VcsProvider"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "remoteCandidates": {
           "type": [
             "array",
@@ -284,6 +345,15 @@
       "enum": [
         "git",
         "svn"
+      ]
+    },
+    "VcsProvider": {
+      "type": "string",
+      "enum": [
+        "bitbucket",
+        "github",
+        "gitlab",
+        "other"
       ]
     },
     "WorkspaceProjects": {

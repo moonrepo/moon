@@ -1,6 +1,5 @@
-use crate::hash_error::HashError;
-use crate::hasher::ContentHasher;
-use starbase_utils::fs;
+use crate::hasher::{ContentHashable, ContentHasher};
+use starbase_utils::{fs, json::JsonError};
 use std::path::{Path, PathBuf};
 use tracing::debug;
 
@@ -29,14 +28,29 @@ impl HashEngine {
         }
     }
 
-    pub fn save_manifest(&self, mut contents: ContentHasher) -> Result<String, HashError> {
-        let hash = contents.generate()?;
+    pub fn create_hasher<'hasher>(&self, label: &'hasher str) -> ContentHasher<'hasher> {
+        ContentHasher::new(label)
+    }
+
+    pub fn save_manifest(&self, mut hasher: ContentHasher) -> Result<String, JsonError> {
+        let hash = hasher.generate_hash()?;
         let path = self.hashes_dir.join(format!("{hash}.json"));
 
         debug!(manifest = %path.display(), "Saving hash manifest");
 
-        fs::write_file(&path, contents.serialize()?)?;
+        fs::write_file(&path, hasher.serialize()?)?;
 
         Ok(hash)
+    }
+
+    pub fn save_manifest_without_hasher<'hasher, T: ContentHashable>(
+        &self,
+        label: &'hasher str,
+        content: &'hasher T,
+    ) -> Result<String, JsonError> {
+        let mut hasher = ContentHasher::new(label);
+        hasher.hash_content(content);
+
+        self.save_manifest(hasher)
     }
 }

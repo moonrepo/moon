@@ -1,7 +1,7 @@
 use crate::helpers::LOG_TARGET;
 use crate::items::{DependenciesState, ProjectsState, RunTargetState, ToolState};
 use crate::runfiles::Runfile;
-use crate::{get_cache_mode, CacheMode};
+use crate::{get_cache_mode, CacheMode, CodeownersState};
 use moon_common::consts::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_logger::{debug, trace};
@@ -92,6 +92,10 @@ impl CacheEngine {
         }
 
         Ok(item)
+    }
+
+    pub fn cache_codeowners_state(&self) -> Result<CodeownersState, MoonError> {
+        CodeownersState::load(self.get_state_path("codeowners.json"))
     }
 
     pub fn cache_projects_state(&self) -> Result<ProjectsState, MoonError> {

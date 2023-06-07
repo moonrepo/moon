@@ -1,4 +1,3 @@
-use crate::errors::PipelineError;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_logger::debug;
@@ -22,7 +21,7 @@ pub async fn sync_project(
     project_graph: Arc<RwLock<ProjectGraph>>,
     project: &Project,
     runtime: &Runtime,
-) -> Result<ActionStatus, PipelineError> {
+) -> miette::Result<ActionStatus> {
     env::set_var("MOON_RUNNING_ACTION", "sync-project");
 
     let workspace = workspace.read().await;

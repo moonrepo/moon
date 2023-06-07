@@ -2532,9 +2532,12 @@ dependencies = [
  "moon_action",
  "moon_action_context",
  "moon_cache",
+ "moon_codeowners",
+ "moon_config",
  "moon_dep_graph",
  "moon_emitter",
  "moon_error",
+ "moon_hash",
  "moon_hasher",
  "moon_logger",
  "moon_notifier",
@@ -2694,6 +2697,7 @@ dependencies = [
  "serde",
  "starbase_sandbox",
  "starbase_utils",
+ "tracing",
 ]
 
 [[package]]

@@ -17,7 +17,7 @@ fn load_generator(provider: VcsProvider) -> Sandbox {
         .add_workspace_entries(&workspace_config.codeowners)
         .unwrap();
 
-    for project_fixture in ["custom-groups", "list-paths", "map-paths"] {
+    for project_fixture in ["custom-groups", "list-paths", "map-paths", "no-paths"] {
         let project_config = ProjectConfig::load(
             sandbox.path(),
             locate_fixture(project_fixture).join("moon.yml"),

@@ -13,6 +13,15 @@ derive_enum!(
     }
 );
 
+impl OwnersPaths {
+    pub fn is_empty(&self) -> bool {
+        match self {
+            OwnersPaths::List(list) => list.is_empty(),
+            OwnersPaths::Map(map) => map.is_empty(),
+        }
+    }
+}
+
 impl Default for OwnersPaths {
     fn default() -> Self {
         OwnersPaths::List(Vec::new())

@@ -8,6 +8,7 @@ moon_config = { path = "../config" }
 moon_hash = { path = "../hash" }
 serde = { workspace = true }
 starbase_utils = { workspace = true }
+tracing = { workspace = true }
 
 [dev-dependencies]
 starbase_sandbox = { workspace = true }

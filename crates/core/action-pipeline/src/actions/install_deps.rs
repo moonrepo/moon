@@ -1,4 +1,3 @@
-use crate::errors::PipelineError;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_error::map_io_to_fs_error;
@@ -36,7 +35,7 @@ pub async fn install_deps(
     workspace: Arc<RwLock<Workspace>>,
     runtime: &Runtime,
     project: Option<&Project>,
-) -> Result<ActionStatus, PipelineError> {
+) -> miette::Result<ActionStatus> {
     env::set_var("MOON_RUNNING_ACTION", "install-deps");
 
     if matches!(runtime, Runtime::System) {

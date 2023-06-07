@@ -14,7 +14,7 @@ use starbase_styles::color;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-fn extract_error<T>(result: &Result<T, PipelineError>) -> Option<String> {
+fn extract_error<T>(result: &miette::Result<T>) -> Option<String> {
     match result {
         Ok(_) => None,
         Err(error) => Some(error.to_string()),

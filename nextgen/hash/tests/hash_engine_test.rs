@@ -17,7 +17,7 @@ fn saves_manifest() {
     let engine = HashEngine::new(sandbox.path());
 
     let mut hasher = ContentHasher::new("test");
-    hasher.hash(Content {
+    hasher.hash_content(&Content {
         one: "abc",
         two: 123,
     });

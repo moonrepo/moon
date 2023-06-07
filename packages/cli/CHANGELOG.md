@@ -10,6 +10,7 @@
 - Added `vcs.provider` setting to `.moon/workspace.yml`.
 - Added a new action to the graph, `SyncWorkspace`, that'll be used for workspace-level checks.
 - Added `workspace.syncing` and `workspace.synced` webhooks.
+- Added `MOON_OUTPUT_STYLE` and `MOON_RETRY_COUNT` environment variables.
 
 #### ⚙️ Internal
 

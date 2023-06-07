@@ -114,10 +114,12 @@ cacheable!(
 
         pub merge_outputs: Option<TaskMergeStrategy>,
 
+        #[setting(env = "MOON_OUTPUT_STYLE")]
         pub output_style: Option<TaskOutputStyle>,
 
         pub persistent: Option<bool>,
 
+        #[setting(env = "MOON_RETRY_COUNT")]
         pub retry_count: Option<u8>,
 
         pub run_deps_in_parallel: Option<bool>,

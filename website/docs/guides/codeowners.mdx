@@ -1,0 +1,206 @@
+---
+title: Code owners
+toc_max_heading_level: 6
+tags: [code, owners, codeowners]
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+Code owners enables companies to define individuals, teams, or groups that are responsible for code
+in a repository. This is useful in ensuring that pull/merge requests are reviewed and approved by a
+specific set of contributors, before the branch is merged into the base branch.
+
+With that being said, moon _does not_ implement a custom code owners solution, and instead builds
+upon the popular `CODEOWNERS` integration in VCS providers, like GitHub, GitLab, and Bitbucket.
+
+## Enabling automatic syncing
+
+Code owners is an opt-in feature, and must be enabled in
+[`.moon/workspace.yml`](../config/workspace#codeowners) before it can be used.
+
+When the [`codeowners.syncOnRun`](../config/workspace#synconrun) setting is enabled, moon will
+automatically generate a `CODEOWNERS` file by aggregating and syncing all project owners in the
+workspace. The format and location of the `CODEOWNERS` file is based on the
+[`vcs.provider`](../config/workspace#provider) setting.
+
+```yaml title=".moon/workspace.yml"
+codeowners:
+	syncOnRun: true
+```
+
+## Defining owners
+
+With moon, you _do not_ modify the `CODEOWNERS` file directly. Instead you define owners per project
+with [`moon.yml`](../config/project), or globally with [`.moon/workspace.yml`](../config/workspace).
+These owners are then aggregated and automatically synced to the `CODEOWNERS` file when a target is
+ran.
+
+:::info
+
+An owner is a user, team, or group unique to your VCS provider. Please refer to your provider's
+documentation for the correct format in which to define owners.
+
+:::
+
+### Project-level
+
+For projects, we support an [`owners`](../config/project#owners) setting in
+[`moon.yml`](../config/project) that accepts file patterns/paths and their owners (contributors
+required to review), as well as operational settings for minimum required approvals, custom groups,
+and more.
+
+Paths configured here are relative from the project root, and will be prefixed with the project
+source (path from workspace root to project root) when the file is synced.
+
+```yaml title="packages/components/moon.yml"
+owners:
+	requiredApprovals: 2
+	paths:
+		'src/': ['@frontend', '@design-system']
+		'*.config.js': ['@frontend-infra']
+		'*.json': ['@frontend-infra']
+```
+
+The configuration above would generate the following:
+
+<Tabs
+  groupId="codeowners"
+  defaultValue="github"
+  values={[
+    { label: 'GitHub', value: 'github' },
+    { label: 'GitLab', value: 'gitlab' },
+    { label: 'Bitbucket', value: 'bitbucket' },
+  ]}
+>
+<TabItem value="github">
+
+```shell title=".github/CODEOWNERS"
+# components
+/packages/components/src/ @frontend @design-system
+/packages/components/*.config.js @frontend-infra
+/packages/components/*.json @frontend-infra
+```
+
+</TabItem>
+<TabItem value="gitlab">
+
+```shell title=".gitlab/CODEOWNERS"
+# components
+[components][2]
+/packages/components/src/ @frontend @design-system
+/packages/components/*.config.js @frontend-infra
+/packages/components/*.json @frontend-infra
+```
+
+</TabItem>
+<TabItem value="bitbucket">
+
+```shell title="CODEOWNERS"
+# components
+/packages/components/src/ @frontend @design-system
+/packages/components/*.config.js @frontend-infra
+/packages/components/*.json @frontend-infra
+```
+
+</TabItem>
+</Tabs>
+
+### Workspace-level
+
+Project scoped owners are great but sometimes you need to define owners for files that span across
+all projects, or files at any depth within the repository. With the
+[`codeowners.globalPaths`](../config/workspace#globalpaths) setting in
+[`.moon/workspace.yml`](../config/workspace), you can do just that.
+
+Paths configured here are used as-is, allowing for full control of what ownership is applied.
+
+```yaml title=".moon/workspace.yml"
+codeowners:
+	globalPaths:
+		# All files
+		'*': ['@admins']
+		# Config folder at any depth
+		'config/': ['@app-platform']
+		# GitHub folder at the root
+		'/.github/': ['@infra']
+```
+
+The configuration above would generate the following at the top of the file (is the same for all
+providers):
+
+<Tabs
+  groupId="codeowners"
+  defaultValue="github"
+  values={[
+    { label: 'GitHub', value: 'github' },
+    { label: 'GitLab', value: 'gitlab' },
+    { label: 'Bitbucket', value: 'bitbucket' },
+  ]}
+>
+<TabItem value="github">
+
+```shell title=".github/CODEOWNERS"
+# (workspace)
+* @admins
+config/ @app-platform
+/.github/ @infra
+```
+
+</TabItem>
+<TabItem value="gitlab">
+
+```shell title=".gitlab/CODEOWNERS"
+# (workspace)
+* @admins
+config/ @app-platform
+/.github/ @infra
+```
+
+</TabItem>
+<TabItem value="bitbucket">
+
+```shell title="CODEOWNERS"
+# (workspace)
+* @admins
+config/ @app-platform
+/.github/ @infra
+```
+
+</TabItem>
+</Tabs>
+
+## FAQ
+
+### What providers or formats are supported?
+
+The following providers are supported, based on the [`vcs.provider`](../config/workspace#provider)
+setting.
+
+- [Bitbucket](https://marketplace.atlassian.com/apps/1218598/code-owners-for-bitbucket?tab=overview&hosting=cloud)
+  (via a 3rd-party app)
+- [GitHub](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners)
+- [GitLab](https://docs.gitlab.com/ee/user/project/codeowners/reference.html)
+- Other (very basic syntax)
+
+### Where does the `CODEOWNERS` file get created?
+
+The location of the file is dependent on the configured provider.
+
+- GitHub -> `.github/CODEOWNERS`
+- GitLab -> `.gitlab/CODEOWNERS`
+- Everything else -> `CODEOWNERS`
+
+### Why are owners defined in `moon.yml` and not an alternative like `OWNERS`?
+
+A very popular pattern for defining owners is through an `OWNERS` file, which can appear in any
+folder, at any depth, within the repository. All of these files are then aggregated into a single
+`CODEOWNERS` file.
+
+While this is useful for viewing ownership of a folder at a glance, it incurs a massive performance
+hit as we'd have to constantly glob the _entire_ repository to find all `OWNERS` files. We found it
+best to define owners in `moon.yml` instead for the following reasons:
+
+- No performance hit, as we're already loading and parsing these files.
+- Co-locates owners with the rest of moon's configuration.
+- Ownership is now a part of the project graph, enabling future features.

@@ -142,7 +142,8 @@ path (the default owner).
 owners:
   defaultOwner: '@frontend'
   paths:
-    - '**/*.{js,ts,tsx}'
+    - '**/*.ts'
+    - '**/*.tsx'
     - '*.config.js'
 ```
 
@@ -155,7 +156,7 @@ owners:
   defaultOwner: '@frontend'
   paths:
     '**/*.rs': ['@backend']
-    '**/*.{js,ts,tsx}': []
+    '**/*.js': []
     '*.config.js': ['@frontend', '@frontend-infra']
 ```
 

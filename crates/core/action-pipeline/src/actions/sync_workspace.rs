@@ -33,8 +33,10 @@ pub async fn sync_codeowners(
     codeowners.add_workspace_entries(&workspace.config.codeowners)?;
 
     for project in projects {
-        codeowners_hash.add_project(&project.id, &project.config.owners);
-        codeowners.add_project_entry(&project.id, &project.source, &project.config.owners)?;
+        if !project.config.owners.paths.is_empty() {
+            codeowners_hash.add_project(&project.id, &project.config.owners);
+            codeowners.add_project_entry(&project.id, &project.source, &project.config.owners)?;
+        }
     }
 
     hasher.hash_content(&codeowners_hash);

@@ -20,9 +20,9 @@ Code owners is an opt-in feature, and must be enabled in
 [`.moon/workspace.yml`](../config/workspace#codeowners) before it can be used.
 
 When the [`codeowners.syncOnRun`](../config/workspace#synconrun) setting is enabled, moon will
-automatically generate a `CODEOWNERS` file by aggregating and syncing all project owners in the
-workspace. The format and location of the `CODEOWNERS` file is based on the
-[`vcs.provider`](../config/workspace#provider) setting.
+automatically generate a `CODEOWNERS` file when a [target](../concepts/target) is ran. The format
+and location of the `CODEOWNERS` file is based on the [`vcs.provider`](../config/workspace#provider)
+setting.
 
 ```yaml title=".moon/workspace.yml"
 codeowners:

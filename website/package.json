@@ -14,10 +14,10 @@
     "write-translations": "docusaurus write-translations"
   },
   "dependencies": {
-    "@docusaurus/core": "^2.4.0",
-    "@docusaurus/plugin-client-redirects": "^2.4.0",
-    "@docusaurus/preset-classic": "^2.4.0",
-    "@docusaurus/theme-common": "^2.4.0",
+    "@docusaurus/core": "^2.4.1",
+    "@docusaurus/plugin-client-redirects": "^2.4.1",
+    "@docusaurus/preset-classic": "^2.4.1",
+    "@docusaurus/theme-common": "^2.4.1",
     "@fortawesome/fontawesome-svg-core": "^6.4.0",
     "@fortawesome/free-brands-svg-icons": "^6.4.0",
     "@fortawesome/pro-duotone-svg-icons": "^6.4.0",
@@ -33,7 +33,7 @@
     "react-dom": "^17.0.2"
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "^2.4.0",
+    "@docusaurus/module-type-aliases": "^2.4.1",
     "@moonrepo/runtime": "workspace:^",
     "@moonrepo/types": "workspace:^",
     "@tsconfig/docusaurus": "^1.0.7",

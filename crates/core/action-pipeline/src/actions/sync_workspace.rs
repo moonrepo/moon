@@ -30,7 +30,9 @@ pub async fn sync_codeowners(
     let mut codeowners_hash = CodeownersHash::new(&workspace.config.codeowners);
     let mut codeowners = CodeownersGenerator::new(&workspace.root, workspace.config.vcs.provider)?;
 
-    codeowners.add_workspace_entries(&workspace.config.codeowners)?;
+    if !workspace.config.codeowners.global_paths.is_empty() {
+        codeowners.add_workspace_entries(&workspace.config.codeowners)?;
+    }
 
     for project in projects {
         if !project.config.owners.paths.is_empty() {

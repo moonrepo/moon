@@ -21,13 +21,14 @@ pub struct Git {
     config: VcsConfig,
     ignore: Option<Gitignore>,
     root: PathBuf,
+    workspace_prefix: String,
 }
 
 impl Git {
-    pub fn load(config: &VcsConfig, working_dir: &Path) -> VcsResult<Self> {
-        let root = match fs::find_upwards(".git", working_dir) {
+    pub fn load(config: &VcsConfig, workspace_root: &Path) -> VcsResult<Self> {
+        let root = match fs::find_upwards(".git", workspace_root) {
             Some(dir) => dir.parent().unwrap().to_path_buf(),
-            None => working_dir.to_path_buf(),
+            None => workspace_root.to_path_buf(),
         };
 
         let mut ignore: Option<Gitignore> = None;
@@ -43,12 +44,48 @@ impl Git {
             ignore = Some(builder.build().map_err(VcsError::Ignore)?);
         }
 
+        let prefix = workspace_root
+            .strip_prefix(&root)
+            .unwrap()
+            .to_owned()
+            .to_string_lossy()
+            .to_string();
+
         Ok(Git {
             cache: Arc::new(RwLock::new(TimedCache::with_lifespan(15))),
             config: config.to_owned(),
             ignore,
+            workspace_prefix: if prefix == "/" { String::new() } else { prefix },
             root,
         })
+    }
+
+    fn append_prefix(&self, file: &str) -> String {
+        if self.workspace_prefix.is_empty() {
+            return file.to_owned();
+        }
+
+        if file.starts_with(&self.workspace_prefix) {
+            file.to_owned()
+        } else {
+            format!("{}/{}", self.workspace_prefix, file)
+        }
+    }
+
+    fn remove_prefix<'l>(&self, file: &'l str) -> &'l str {
+        if self.workspace_prefix.is_empty() {
+            return file;
+        }
+
+        if let Some(stripped) = file.strip_prefix(&self.workspace_prefix) {
+            if let Some(stripped2) = stripped.strip_prefix('/') {
+                stripped2
+            } else {
+                stripped
+            }
+        } else {
+            file
+        }
     }
 
     pub fn extract_slug_from_remote(output: String) -> Result<String, VcsError> {
@@ -188,12 +225,12 @@ impl Vcs for Git {
         let mut map = BTreeMap::new();
 
         for file in files {
-            let abs_file = self.root.join(file);
+            let abs_file = self.root.join(self.append_prefix(file));
 
             // File must exists or git fails
             if abs_file.exists() && abs_file.is_file() && (allow_ignored || !self.is_ignored(file))
             {
-                objects.push(file.clone());
+                objects.push(file);
             }
         }
 
@@ -210,7 +247,10 @@ impl Vcs for Git {
 
         while index < end_index {
             let next_index = cmp::min(index + (batch_size as usize), end_index);
-            let slice = &objects[index..next_index];
+            let slice = objects[index..next_index]
+                .iter()
+                .map(|s| self.append_prefix(s))
+                .collect::<Vec<_>>();
 
             let mut command = self.create_command(vec!["hash-object", "--stdin-paths"]);
             command.input(&[slice.join("\n")]);
@@ -219,7 +259,7 @@ impl Vcs for Git {
 
             for (i, hash) in output.split('\n').enumerate() {
                 if !hash.is_empty() {
-                    map.insert(slice[i].clone(), hash.to_owned());
+                    map.insert(self.remove_prefix(&slice[i]).to_owned(), hash.to_owned());
                 }
             }
 
@@ -242,13 +282,16 @@ impl Vcs for Git {
                     // Added in v2.31
                     // "--deduplicate",
                     "--exclude-standard",
-                    dir,
+                    self.append_prefix(dir).as_str(),
                 ]),
                 true,
             )
             .await?;
 
-        Ok(output.split('\n').map(|l| l.to_owned()).collect::<Vec<_>>())
+        Ok(output
+            .split('\n')
+            .map(|l| self.remove_prefix(l).to_owned())
+            .collect::<Vec<_>>())
     }
 
     async fn get_repository_slug(&self) -> VcsResult<String> {
@@ -308,7 +351,7 @@ impl Vcs for Git {
             let mut chars = line.chars();
             let x = chars.next().unwrap_or_default();
             let y = chars.next().unwrap_or_default();
-            let file = String::from(&line[3..]);
+            let file = self.remove_prefix(&line[3..]).to_owned();
 
             match x {
                 'A' | 'C' => {
@@ -429,7 +472,7 @@ impl Vcs for Git {
             }
 
             let x = last_status.chars().next().unwrap_or_default();
-            let file = line.to_owned();
+            let file = self.remove_prefix(line).to_owned();
 
             match x {
                 'A' | 'C' => {

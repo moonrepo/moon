@@ -9,14 +9,14 @@ pub struct VcsLoader {}
 
 impl VcsLoader {
     pub fn load(
-        working_dir: &Path,
+        workspace_root: &Path,
         workspace_config: &WorkspaceConfig,
     ) -> Result<BoxedVcs, VcsError> {
         let vcs_config = &workspace_config.vcs;
 
         Ok(match vcs_config.manager {
-            VcsManager::Svn => Box::new(Svn::load(vcs_config, working_dir)),
-            _ => Box::new(Git::load(vcs_config, working_dir)?),
+            VcsManager::Svn => Box::new(Svn::load(vcs_config, workspace_root)),
+            _ => Box::new(Git::load(vcs_config, workspace_root)?),
         })
     }
 }

@@ -214,6 +214,15 @@ pub enum QueryCommands {
 }
 
 #[derive(Debug, Subcommand)]
+pub enum SyncCommands {
+    #[command(
+        name = "codeowners",
+        about = "Aggregate and sync code owners to a `CODEOWNERS` file."
+    )]
+    Codeowners,
+}
+
+#[derive(Debug, Subcommand)]
 pub enum Commands {
     #[command(
         name = "completions",
@@ -337,7 +346,10 @@ pub enum Commands {
         name = "sync",
         about = "Sync all projects in the workspace to a healthy state."
     )]
-    Sync,
+    Sync {
+        #[command(subcommand)]
+        command: Option<SyncCommands>,
+    },
 
     // moon task <target>
     #[command(

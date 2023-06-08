@@ -2531,13 +2531,11 @@ dependencies = [
  "moon",
  "moon_action",
  "moon_action_context",
+ "moon_actions",
  "moon_cache",
- "moon_codeowners",
- "moon_config",
  "moon_dep_graph",
  "moon_emitter",
  "moon_error",
- "moon_hash",
  "moon_hasher",
  "moon_logger",
  "moon_notifier",
@@ -2561,6 +2559,18 @@ dependencies = [
  "thiserror",
  "tokio",
  "tokio-util",
+]
+
+[[package]]
+name = "moon_actions"
+version = "0.1.0"
+dependencies = [
+ "miette",
+ "moon_codeowners",
+ "moon_config",
+ "moon_hash",
+ "moon_project_graph",
+ "moon_workspace",
 ]
 
 [[package]]
@@ -2639,6 +2649,7 @@ dependencies = [
  "moon",
  "moon_action_context",
  "moon_action_pipeline",
+ "moon_actions",
  "moon_archive",
  "moon_cache",
  "moon_common",

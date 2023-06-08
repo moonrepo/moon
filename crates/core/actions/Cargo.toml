@@ -1,0 +1,12 @@
+[package]
+name = "moon_actions"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_codeowners = { path = "../../../nextgen/codeowners" }
+moon_config = { path = "../../../nextgen/config" }
+moon_hash = { path = "../../../nextgen/hash" }
+moon_project_graph = { path = "../project-graph" }
+moon_workspace = { path = "../workspace" }
+miette = { workspace = true }

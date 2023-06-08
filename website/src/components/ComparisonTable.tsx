@@ -419,7 +419,7 @@ const taskRunnerRows: Comparison[] = [
 		support: {
 			moon: SUPPORTED,
 			nx: PARTIALLY_SUPPORTED,
-			turborepo: SUPPORTED,
+			turborepo: PARTIALLY_SUPPORTED,
 		},
 	},
 	{

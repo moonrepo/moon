@@ -87,6 +87,7 @@ const workspaceRows: Comparison[] = [
 		support: {
 			moon: SUPPORTED,
 			nx: SUPPORTED,
+			turborepo: SUPPORTED,
 		},
 	},
 ];
@@ -410,6 +411,7 @@ const taskRunnerRows: Comparison[] = [
 		feature: 'Can generate run reports',
 		support: {
 			moon: SUPPORTED,
+			turborepo: SUPPORTED,
 		},
 	},
 	{
@@ -417,7 +419,7 @@ const taskRunnerRows: Comparison[] = [
 		support: {
 			moon: SUPPORTED,
 			nx: PARTIALLY_SUPPORTED,
-			turborepo: PARTIALLY_SUPPORTED,
+			turborepo: SUPPORTED,
 		},
 	},
 	{
@@ -440,7 +442,7 @@ const generatorRows: Comparison[] = [
 		support: {
 			moon: 'generator',
 			nx: 'generator',
-			turborepo: 'n/a',
+			turborepo: 'generator',
 		},
 	},
 	{
@@ -454,6 +456,7 @@ const generatorRows: Comparison[] = [
 		feature: 'Template file extensions (optional)',
 		support: {
 			moon: [SUPPORTED, '.tera, .twig'],
+			turborepo: [SUPPORTED, '.hbs'],
 		},
 	},
 	{
@@ -467,6 +470,7 @@ const generatorRows: Comparison[] = [
 		support: {
 			moon: SUPPORTED,
 			nx: SUPPORTED,
+			turborepo: SUPPORTED,
 		},
 	},
 	{
@@ -474,6 +478,7 @@ const generatorRows: Comparison[] = [
 		support: {
 			moon: [SUPPORTED, 'JSON/YAML only'],
 			nx: [SUPPORTED, 'using JavaScript'],
+			turborepo: SUPPORTED,
 		},
 	},
 	{
@@ -481,6 +486,7 @@ const generatorRows: Comparison[] = [
 		support: {
 			moon: [SUPPORTED, 'via Tera'],
 			nx: [SUPPORTED, 'via EJS'],
+			turborepo: [SUPPORTED, 'via Handlebars'],
 		},
 	},
 	{
@@ -488,6 +494,7 @@ const generatorRows: Comparison[] = [
 		support: {
 			moon: SUPPORTED,
 			nx: SUPPORTED,
+			turborepo: SUPPORTED,
 		},
 	},
 	{
@@ -495,6 +502,7 @@ const generatorRows: Comparison[] = [
 		support: {
 			moon: SUPPORTED,
 			nx: SUPPORTED,
+			turborepo: SUPPORTED,
 		},
 	},
 	{
@@ -502,12 +510,14 @@ const generatorRows: Comparison[] = [
 		support: {
 			moon: SUPPORTED,
 			nx: SUPPORTED,
+			turborepo: SUPPORTED,
 		},
 	},
 	{
 		feature: 'Can define variable values via command line args',
 		support: {
 			moon: SUPPORTED,
+			turborepo: SUPPORTED,
 		},
 	},
 	{
@@ -522,12 +532,14 @@ const generatorRows: Comparison[] = [
 		support: {
 			moon: SUPPORTED,
 			nx: SUPPORTED,
+			turborepo: SUPPORTED,
 		},
 	},
 	{
 		feature: 'Generators can compose other generators',
 		support: {
 			nx: [SUPPORTED, 'using JavaScript'],
+			turborepo: [SUPPORTED, 'using JavaScript'],
 		},
 	},
 ];
@@ -543,6 +555,7 @@ const otherSystemRows: Comparison[] = [
 		feature: 'Generates run reports with granular stats/metrics',
 		support: {
 			moon: SUPPORTED,
+			turborepo: SUPPORTED,
 		},
 	},
 ];

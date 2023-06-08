@@ -23,8 +23,8 @@ pub enum TaskError {
     )]
     NoParentOutput(String, String),
 
-    #[error("Target {} defines the output {}, but this output does not exist after being ran.", .0.style(Style::Label), .1.style(Style::File))]
-    MissingOutput(String, String),
+    #[error("Target {} defines outputs, but none exist after being ran.", .0.style(Style::Label))]
+    MissingOutput(String),
 
     #[diagnostic(transparent)]
     #[error(transparent)]

@@ -3,11 +3,12 @@ use moon_config::CodeownersOrderBy;
 use moon_hash::HashEngine;
 use moon_project_graph::ProjectGraph;
 use moon_workspace::Workspace;
+use std::path::PathBuf;
 
 pub async fn sync_codeowners(
     workspace: &Workspace,
     project_graph: &ProjectGraph,
-) -> miette::Result<()> {
+) -> miette::Result<PathBuf> {
     let hash_engine = HashEngine::new(&workspace.cache.dir);
     let mut hasher = hash_engine.create_hasher("CODEOWNERS");
 
@@ -39,6 +40,7 @@ pub async fn sync_codeowners(
 
     // Check the cache before writing the file
     let mut cache = workspace.cache.cache_codeowners_state()?;
+    let file_path = codeowners.file_path.clone();
 
     if hasher.generate_hash()? != cache.last_hash {
         codeowners.generate()?;
@@ -47,5 +49,5 @@ pub async fn sync_codeowners(
         cache.save()?;
     }
 
-    Ok(())
+    Ok(file_path)
 }

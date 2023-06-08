@@ -313,6 +313,7 @@ pub async fn run_cli() -> AppResult {
         Commands::Setup => setup().await,
         Commands::Sync { command } => match command {
             Some(SyncCommands::Codeowners) => syncs::codeowners::sync().await,
+            Some(SyncCommands::Projects) => syncs::projects::sync().await,
             None => sync().await,
         },
         Commands::Task { target, json } => task(target, json).await,

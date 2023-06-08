@@ -220,6 +220,12 @@ pub enum SyncCommands {
         about = "Aggregate and sync code owners to a `CODEOWNERS` file."
     )]
     Codeowners,
+
+    #[command(
+        name = "projects",
+        about = "Sync all projects and configs in the workspace."
+    )]
+    Projects,
 }
 
 #[derive(Debug, Subcommand)]
@@ -342,10 +348,7 @@ pub enum Commands {
         json: bool,
     },
 
-    #[command(
-        name = "sync",
-        about = "Sync all projects in the workspace to a healthy state."
-    )]
+    #[command(name = "sync", about = "Sync the workspace to a healthy state.")]
     Sync {
         #[command(subcommand)]
         command: Option<SyncCommands>,

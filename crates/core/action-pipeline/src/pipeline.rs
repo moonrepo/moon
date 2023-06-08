@@ -102,7 +102,7 @@ impl Pipeline {
             })
             .await?;
 
-        // Launch a separate thread to listen for CTRL+C
+        // Launch a separate thread to listen for ctrl+c
         let cancel_token = CancellationToken::new();
         let ctrl_c_token = cancel_token.clone();
 
@@ -152,7 +152,7 @@ impl Pipeline {
                             biased;
 
                             _ = cancel_token_clone.cancelled() => {
-                                Err(PipelineError::Aborted("Received CTRL + C, shutting down".into()))
+                                Err(PipelineError::Aborted("Received ctrl + c, shutting down".into()))
                             }
                             res = process_action(
                                 action,

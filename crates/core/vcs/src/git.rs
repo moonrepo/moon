@@ -44,18 +44,16 @@ impl Git {
             ignore = Some(builder.build().map_err(VcsError::Ignore)?);
         }
 
-        let prefix = workspace_root
-            .strip_prefix(&root)
-            .unwrap()
-            .to_owned()
-            .to_string_lossy()
-            .to_string();
-
         Ok(Git {
             cache: Arc::new(RwLock::new(TimedCache::with_lifespan(15))),
             config: config.to_owned(),
             ignore,
-            workspace_prefix: if prefix == "/" { String::new() } else { prefix },
+            workspace_prefix: workspace_root
+                .strip_prefix(&root)
+                .unwrap()
+                .to_owned()
+                .to_string_lossy()
+                .to_string(),
             root,
         })
     }

@@ -102,8 +102,17 @@ impl Pipeline {
             })
             .await?;
 
-        // This limits how many tasks can run in parallel
+        // Launch a separate thread to listen for CTRL+C
         let cancel_token = CancellationToken::new();
+        let ctrl_c_token = cancel_token.clone();
+
+        tokio::spawn(async move {
+            if tokio::signal::ctrl_c().await.is_ok() {
+                ctrl_c_token.cancel();
+            }
+        });
+
+        // This limits how many tasks can run in parallel
         let semaphore = Arc::new(Semaphore::new(
             self.concurrency.unwrap_or_else(num_cpus::get),
         ));
@@ -140,19 +149,18 @@ impl Pipeline {
 
                     action_handles.push(tokio::spawn(async move {
                         let result = tokio::select! {
+                            biased;
+
                             _ = cancel_token_clone.cancelled() => {
-                                Err(PipelineError::Aborted("Received CTRL+C".into()))
+                                Err(PipelineError::Aborted("Received CTRL + C, shutting down".into()))
                             }
-                            _ = tokio::time::sleep(std::time::Duration::from_secs(9999)) => {
-                                process_action(
-                                    action,
-                                    context_clone,
-                                    emitter_clone,
-                                    workspace_clone,
-                                    project_graph_clone,
-                                )
-                                .await
-                            }
+                            res = process_action(
+                                action,
+                                context_clone,
+                                emitter_clone,
+                                workspace_clone,
+                                project_graph_clone,
+                            ) => res
                         };
 
                         drop(permit);

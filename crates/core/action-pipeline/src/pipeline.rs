@@ -19,6 +19,7 @@ use starbase_styles::color;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::{RwLock, Semaphore};
+use tokio_util::sync::CancellationToken;
 
 const LOG_TARGET: &str = "moon:action-pipeline";
 
@@ -102,6 +103,7 @@ impl Pipeline {
             .await?;
 
         // This limits how many tasks can run in parallel
+        let cancel_token = CancellationToken::new();
         let semaphore = Arc::new(Semaphore::new(
             self.concurrency.unwrap_or_else(num_cpus::get),
         ));
@@ -127,6 +129,7 @@ impl Pipeline {
                     let emitter_clone = Arc::clone(&emitter);
                     let workspace_clone = Arc::clone(&workspace);
                     let project_graph_clone = Arc::clone(&project_graph);
+                    let cancel_token_clone = cancel_token.clone();
 
                     let mut action = Action::new(node.to_owned());
                     action.log_target = format!("{batch_target_name}:{action_index}");
@@ -136,14 +139,21 @@ impl Pipeline {
                     };
 
                     action_handles.push(tokio::spawn(async move {
-                        let result = process_action(
-                            action,
-                            context_clone,
-                            emitter_clone,
-                            workspace_clone,
-                            project_graph_clone,
-                        )
-                        .await;
+                        let result = tokio::select! {
+                            _ = cancel_token_clone.cancelled() => {
+                                Err(PipelineError::Aborted("Received CTRL+C".into()))
+                            }
+                            _ = tokio::time::sleep(std::time::Duration::from_secs(9999)) => {
+                                process_action(
+                                    action,
+                                    context_clone,
+                                    emitter_clone,
+                                    workspace_clone,
+                                    project_graph_clone,
+                                )
+                                .await
+                            }
+                        };
 
                         drop(permit);
 
@@ -156,6 +166,7 @@ impl Pipeline {
 
             // Wait for all actions in this batch to complete
             let mut abort_error = None;
+            let mut show_abort_log = false;
 
             for handle in action_handles {
                 if abort_error.is_some() {
@@ -172,6 +183,8 @@ impl Pipeline {
                             } else {
                                 passed_count += 1;
                             }
+
+                            show_abort_log = result.should_abort();
 
                             if self.bail && result.has_failed() || result.should_abort() {
                                 abort_error =
@@ -191,10 +204,12 @@ impl Pipeline {
             }
 
             if let Some(abort_error) = abort_error {
-                error!(
-                    target: &batch_target_name,
-                    "Encountered a critical error, aborting the action pipeline"
-                );
+                if show_abort_log {
+                    error!(
+                        target: &batch_target_name,
+                        "Encountered a critical error, aborting the action pipeline"
+                    );
+                }
 
                 local_emitter
                     .emit(Event::PipelineAborted {

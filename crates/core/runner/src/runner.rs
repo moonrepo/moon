@@ -78,12 +78,10 @@ impl<'a> Runner<'a> {
         }
 
         // Check that outputs actually exist
-        if !self.task.outputs.is_empty() {
-            if !self.has_outputs()? {
-                return Err(RunnerError::Task(TaskError::MissingOutput(
-                    self.task.target.id.clone(),
-                )));
-            }
+        if !self.task.outputs.is_empty() && !self.has_outputs()? {
+            return Err(RunnerError::Task(TaskError::MissingOutput(
+                self.task.target.id.clone(),
+            )));
         }
 
         // If so, then cache the archive

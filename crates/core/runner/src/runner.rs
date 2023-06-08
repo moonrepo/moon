@@ -19,6 +19,7 @@ use moon_utils::{is_ci, is_test_env, path, time};
 use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
+use starbase_utils::glob;
 use tokio::{
     task,
     time::{sleep, Duration},
@@ -360,6 +361,13 @@ impl<'a> Runner<'a> {
         Ok(env_vars)
     }
 
+    pub fn flush_output(&self) -> Result<(), MoonError> {
+        self.stdout.flush()?;
+        self.stderr.flush()?;
+
+        Ok(())
+    }
+
     pub fn get_short_hash(&self) -> &str {
         if self.cache.hash.is_empty() {
             "" // Empty when cache is disabled
@@ -368,11 +376,22 @@ impl<'a> Runner<'a> {
         }
     }
 
-    pub fn flush_output(&self) -> Result<(), MoonError> {
-        self.stdout.flush()?;
-        self.stderr.flush()?;
+    pub fn has_outputs(&self) -> Result<bool, MoonError> {
+        // Check paths first since they are literal
+        for output in &self.task.output_paths {
+            if !self.workspace.root.join(output).exists() {
+                return Ok(false);
+            }
+        }
 
-        Ok(())
+        // Check globs last, as they are costly
+        if !self.task.output_globs.is_empty() {
+            let outputs = glob::walk_files(&self.workspace.root, &self.task.output_globs)?;
+
+            return Ok(!outputs.is_empty());
+        }
+
+        Ok(true)
     }
 
     /// Determine if the current task can be archived.
@@ -443,14 +462,8 @@ impl<'a> Runner<'a> {
             .insert(self.task.target.clone(), hash.clone());
 
         // Hash is the same as the previous build, so simply abort!
-        // However, ensure the outputs also exist, otherwise we should hydrate.
-        let has_outputs = self
-            .task
-            .output_paths
-            .iter()
-            .all(|p| self.workspace.root.join(p).exists());
-
-        if self.cache.hash == hash && has_outputs {
+        // However, ensure the outputs also exist, otherwise we should hydrate
+        if self.cache.hash == hash && self.has_outputs()? {
             debug!(
                 target: LOG_TARGET,
                 "Cache hit for hash {}, reusing previous build",

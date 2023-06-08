@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where glob task outputs were not invalidating a previous build.
+
 ## 1.7.2
 
 #### 🐞 Fixes

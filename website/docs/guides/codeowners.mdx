@@ -14,27 +14,12 @@ specific set of contributors, before the branch is merged into the base branch.
 With that being said, moon _does not_ implement a custom code owners solution, and instead builds
 upon the popular `CODEOWNERS` integration in VCS providers, like GitHub, GitLab, and Bitbucket.
 
-## Enabling automatic syncing
-
-Code owners is an opt-in feature, and must be enabled in
-[`.moon/workspace.yml`](../config/workspace#codeowners) before it can be used.
-
-When the [`codeowners.syncOnRun`](../config/workspace#synconrun) setting is enabled, moon will
-automatically generate a `CODEOWNERS` file when a [target](../concepts/target) is ran. The format
-and location of the `CODEOWNERS` file is based on the [`vcs.provider`](../config/workspace#provider)
-setting.
-
-```yaml title=".moon/workspace.yml"
-codeowners:
-	syncOnRun: true
-```
-
 ## Defining owners
 
-With moon, you _do not_ modify the `CODEOWNERS` file directly. Instead you define owners per project
+With moon, you _do not_ modify a `CODEOWNERS` file directly. Instead you define owners _per project_
 with [`moon.yml`](../config/project), or globally with [`.moon/workspace.yml`](../config/workspace).
-These owners are then aggregated and automatically synced to the `CODEOWNERS` file when a target is
-ran.
+These owners are then aggregated and automatically
+[synced to a `CODEOWNERS` file](#generating-codeowners).
 
 :::info
 
@@ -170,6 +155,30 @@ config/ @app-platform
 </TabItem>
 </Tabs>
 
+## Generating `CODEOWNERS`
+
+Code owners is an opt-in feature, and as such, the `CODEOWNERS` file can be generated in a few ways.
+The first is manually, with the [`moon sync codeowners`](../commands/sync/codeowners) command.
+
+```shell
+$ moon sync codeowners
+```
+
+While this works, it is a manual process, and can easily be forgotten, resulting in an out-of-date
+file.
+
+An alternative solution is the [`codeowners.syncOnRun`](../config/workspace#synconrun) setting in
+[`.moon/workspace.yml`](../config/workspace#codeowners), that when enabled, moon will automatically
+generate a `CODEOWNERS` file when a [target](../concepts/target) is ran.
+
+```yaml title=".moon/workspace.yml"
+codeowners:
+	syncOnRun: true
+```
+
+> The format and location of the `CODEOWNERS` file is based on the
+> [`vcs.provider`](../config/workspace#provider) setting.
+
 ## FAQ
 
 ### What providers or formats are supported?
@@ -201,6 +210,6 @@ While this is useful for viewing ownership of a folder at a glance, it incurs a 
 hit as we'd have to constantly glob the _entire_ repository to find all `OWNERS` files. We found it
 best to define owners in `moon.yml` instead for the following reasons:
 
-- No performance hit, as we're already loading and parsing these files.
+- No performance hit, as we're already loading and parsing these config files.
 - Co-locates owners with the rest of moon's configuration.
 - Ownership is now a part of the project graph, enabling future features.

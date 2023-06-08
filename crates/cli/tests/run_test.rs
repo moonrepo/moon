@@ -621,10 +621,26 @@ mod outputs {
 
         let output = assert.output();
 
-        assert!(predicate::str::contains(
-            "Target outputs:missingOutput defines the output unknown"
-        )
-        .eval(&output));
+        assert!(
+            predicate::str::contains("Target outputs:missingOutput defines outputs").eval(&output)
+        );
+    }
+
+    #[test]
+    fn errors_if_output_missing_with_globs() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputs:missingOutputGlob");
+        });
+
+        let output = assert.output();
+
+        assert!(
+            predicate::str::contains("Target outputs:missingOutputGlob defines outputs")
+                .eval(&output)
+        );
     }
 
     #[test]

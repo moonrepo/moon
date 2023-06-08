@@ -78,21 +78,11 @@ impl<'a> Runner<'a> {
         }
 
         // Check that outputs actually exist
-        // We don't check globs here as it would required walking the file system
         if !self.task.outputs.is_empty() {
-            for output in &self.task.output_paths {
-                if !self.workspace.root.join(output).exists() {
-                    return Err(RunnerError::Task(TaskError::MissingOutput(
-                        self.task.target.id.clone(),
-                        path::to_string(
-                            if let Ok(stripped) = output.strip_prefix(&self.project.source) {
-                                stripped
-                            } else {
-                                output
-                            },
-                        )?,
-                    )));
-                }
+            if !self.has_outputs()? {
+                return Err(RunnerError::Task(TaskError::MissingOutput(
+                    self.task.target.id.clone(),
+                )));
             }
         }
 

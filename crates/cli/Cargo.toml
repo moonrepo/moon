@@ -16,6 +16,7 @@ crate-type = ["rlib"]
 moon = { path = "../core/moon" }
 moon_action_context = { path = "../core/action-context" }
 moon_action_pipeline = { path = "../core/action-pipeline" }
+moon_actions = { path = "../core/actions" }
 moon_common = { path = "../../nextgen/common" }
 moon_config = { path = "../../nextgen/config" }
 moon_dep_graph = { path = "../core/dep-graph" }

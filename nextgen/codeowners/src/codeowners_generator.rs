@@ -6,8 +6,8 @@ use std::path::{Path, PathBuf};
 use tracing::{debug, trace};
 
 pub struct CodeownersGenerator {
+    pub file_path: PathBuf,
     file: File,
-    file_path: PathBuf,
     provider: VcsProvider,
 }
 

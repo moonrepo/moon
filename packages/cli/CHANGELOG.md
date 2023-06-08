@@ -7,6 +7,7 @@
 - Added code owners (`CODEOWNERS`) support.
   - Added `owners` setting to `moon.yml`.
   - Added `codeowners` setting to `.moon/workspace.yml`.
+  - Added `moon sync codeowners` command.
 - Added `vcs.provider` setting to `.moon/workspace.yml`.
 - Added a new action to the graph, `SyncWorkspace`, that'll be used for workspace-level checks.
 - Added `workspace.syncing` and `workspace.synced` webhooks.
@@ -14,8 +15,9 @@
 
 #### ⚙️ Internal
 
-- Updated Rust to v1.70.
+- Deprecated the `moon sync` command, use `moon sync projects` instead.
 - Refactored task inputs, outputs, and file groups to be more accurate.
+- Updated Rust to v1.70.
 
 ## 1.7.3
 

@@ -13,13 +13,11 @@ harness = false
 [dependencies]
 moon_action = { path = "../action" }
 moon_action_context = { path = "../action-context" }
+moon_actions = { path = "../actions" }
 moon_cache = { path = "../cache" }
-moon_codeowners = { path = "../../../nextgen/codeowners" }
-moon_config = { path = "../../../nextgen/config" }
 moon_dep_graph = { path = "../dep-graph" }
 moon_emitter = { path = "../emitter" }
 moon_error = { path = "../error" }
-moon_hash = { path = "../../../nextgen/hash" }
 moon_hasher = { path = "../hasher" }
 moon_logger = { path = "../logger" }
 moon_notifier = { path = "../notifier" }

@@ -7,6 +7,7 @@
 - Fixed an issue where glob task outputs were not invalidating a previous build.
 - Fixed an issue where changing inputs would not mark a task as affected, when a moon workspace is
   nested within a repository.
+- Improved handling of ctrl+c signal detection and shutting down processes.
 
 ## 1.7.2
 

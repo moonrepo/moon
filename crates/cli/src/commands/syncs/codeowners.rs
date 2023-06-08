@@ -5,7 +5,7 @@ use starbase::AppResult;
 use starbase_styles::color;
 
 pub async fn sync() -> AppResult {
-    let done = create_progress_bar("Generating code owners");
+    let done = create_progress_bar("Syncing code owners...");
 
     let mut workspace = load_workspace().await?;
     let project_graph = generate_project_graph(&mut workspace).await?;

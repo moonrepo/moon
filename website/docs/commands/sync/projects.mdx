@@ -4,10 +4,11 @@ sidebar_label: projects
 ---
 
 The `moon sync projects` command will force sync _all_ projects in the workspace to help achieve a
-[healthy repository state](../faq#what-should-be-considered-the-source-of-truth). This applies the
-following:
+[healthy repository state](../../faq#what-should-be-considered-the-source-of-truth). This applies
+the following:
 
-- Ensures cross-project dependencies are linked based on [`dependsOn`](../config/project#dependsOn).
+- Ensures cross-project dependencies are linked based on
+  [`dependsOn`](../../config/project#dependsOn).
 - Ensures language specific configuration files are present and accurate (`package.json`,
   `tsconfig.json`, etc).
 - Ensures root configuration and project configuration are in sync.
@@ -17,5 +18,5 @@ following:
 $ moon sync projects
 ```
 
-> This command should rarely be ran, as [`moon run`](./run) will sync affected projects
+> This command should rarely be ran, as [`moon run`](../run) will sync affected projects
 > automatically! However, when migrating or refactoring, manual syncing may be necessary.

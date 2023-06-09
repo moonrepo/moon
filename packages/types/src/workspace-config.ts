@@ -2,6 +2,9 @@
 
 /* eslint-disable */
 
+import type { Id, Target, FilePath } from './common-config';
+import type { WorkspaceProjects } from './common-fixes';
+
 export type CodeownersOrderBy = 'file-source' | 'project-name';
 
 export type HasherOptimization = 'accuracy' | 'performance';

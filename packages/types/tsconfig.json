@@ -4,6 +4,7 @@
     "outDir": "../../.moon/cache/types/packages/types"
   },
   "include": [
+    ".eslintrc.js",
     "src/**/*"
   ],
   "references": [

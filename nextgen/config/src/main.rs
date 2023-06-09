@@ -59,6 +59,30 @@ fn generate_project() {
     generator.generate().unwrap();
 }
 
+fn generate_tasks() {
+    let tasks_schema = schema_for!(PartialInheritedTasksConfig);
+
+    fs::write(
+        "website/static/schemas/tasks.json",
+        serde_json::to_string_pretty(&tasks_schema).unwrap(),
+    )
+    .unwrap();
+
+    let mut generator =
+        TypeScriptGenerator::new(PathBuf::from("packages/types/src/tasks-config.ts"));
+
+    generator.add_enum::<TaskMergeStrategy>();
+    generator.add_enum::<TaskOutputStyle>();
+    generator.add_enum::<TaskType>();
+    generator.add::<InheritedTasksConfig>();
+    generator.add::<InheritedTasksConfig>();
+    generator.add::<TaskOptionsConfig>();
+    generator.add::<TaskConfig>();
+    generator.add::<InheritedTasksConfig>();
+
+    generator.generate().unwrap();
+}
+
 fn generate_template() {
     let template_schema = schema_for!(PartialTemplateConfig);
     let template_frontmatter_schema = schema_for!(PartialTemplateFrontmatterConfig);
@@ -136,17 +160,9 @@ fn generate_workspace() {
 }
 
 fn main() {
-    // Generate JSON schemas derived from our structs
-    let tasks_schema = schema_for!(PartialInheritedTasksConfig);
-
-    fs::write(
-        "website/static/schemas/tasks.json",
-        serde_json::to_string_pretty(&tasks_schema).unwrap(),
-    )
-    .unwrap();
-
     generate_common();
     generate_project();
+    generate_tasks();
     generate_template();
     generate_toolchain();
     generate_workspace();

@@ -1,4 +1,4 @@
-export type Platform = 'deno' | 'node' | 'system' | 'unknown';
+import type { PlatformType } from './common-config';
 
 export type Nullable<T> = { [K in keyof T]: T[K] | null };
 
@@ -8,6 +8,6 @@ export interface Duration {
 }
 
 export interface Runtime {
-	platform: Capitalize<Platform>;
+	platform: Capitalize<PlatformType>;
 	version?: string;
 }

@@ -125,6 +125,7 @@
           ]
         },
         "aliasPackageNames": {
+          "deprecated": true,
           "anyOf": [
             {
               "$ref": "#/definitions/NodeProjectAliasFormat"

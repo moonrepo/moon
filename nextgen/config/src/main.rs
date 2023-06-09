@@ -1,8 +1,35 @@
 use moon_config::*;
 use schemars::schema_for;
-use schematic::typescript::TypeScriptGenerator;
+use schematic::typescript::{Output, Type, TypeScriptGenerator};
 use std::fs;
 use std::path::PathBuf;
+
+fn create_type_alias(name: &str) -> Output {
+    Output::Enum {
+        name,
+        fields: vec![Output::Field {
+            name: "".into(),
+            value: Type::String,
+            optional: false,
+        }],
+    }
+}
+
+fn generate_common() {
+    let mut generator =
+        TypeScriptGenerator::new(PathBuf::from("packages/types/src/common-config.ts"));
+
+    generator.add_custom(create_type_alias("Id"));
+    generator.add_custom(create_type_alias("Target"));
+    generator.add_custom(create_type_alias("FilePath"));
+    generator.add_custom(create_type_alias("GlobPath"));
+    generator.add_custom(create_type_alias("InputPath"));
+    generator.add_custom(create_type_alias("OutputPath"));
+    generator.add_enum::<LanguageType>();
+    generator.add_enum::<PlatformType>();
+
+    generator.generate().unwrap();
+}
 
 fn generate_project() {
     let project_schema = schema_for!(PartialProjectConfig);
@@ -18,8 +45,6 @@ fn generate_project() {
 
     generator.add_enum::<DependencyScope>();
     generator.add_enum::<DependencySource>();
-    generator.add_enum::<ProjectType>();
-    generator.add_enum::<ProjectType>();
     generator.add_enum::<ProjectType>();
     generator.add::<DependencyConfig>();
     generator.add::<ProjectMetadataConfig>();
@@ -98,7 +123,6 @@ fn generate_workspace() {
     generator.add_enum::<HasherWalkStrategy>();
     generator.add_enum::<VcsManager>();
     generator.add_enum::<VcsProvider>();
-    // generator.add_enum::<WorkspaceProjects>();
     generator.add::<CodeownersConfig>();
     generator.add::<ConstraintsConfig>();
     generator.add::<GeneratorConfig>();
@@ -121,6 +145,7 @@ fn main() {
     )
     .unwrap();
 
+    generate_common();
     generate_project();
     generate_template();
     generate_toolchain();

@@ -11,7 +11,3 @@ export interface Runtime {
 	platform: Capitalize<Platform>;
 	version?: string;
 }
-
-export type Id = string;
-export type Target = string;
-export type FilePath = string;

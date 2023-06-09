@@ -8,10 +8,6 @@ export type DependencySource = 'explicit' | 'implicit';
 
 export type ProjectType = 'application' | 'library' | 'tool' | 'unknown';
 
-export type ProjectType = 'application' | 'library' | 'tool' | 'unknown';
-
-export type ProjectType = 'application' | 'library' | 'tool' | 'unknown';
-
 export interface DependencyConfig {
 	id: Id;
 	scope: DependencyScope;

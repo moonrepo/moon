@@ -4,16 +4,7 @@
 
 export type NodeProjectAliasFormat = 'name-and-scope' | 'name-only';
 
-export type NodeVersionFormat =
-	| 'file'
-	| 'link'
-	| 'star'
-	| 'version'
-	| 'version-caret'
-	| 'version-tilde'
-	| 'workspace'
-	| 'workspace-caret'
-	| 'workspace-tilde';
+export type NodeVersionFormat = 'file' | 'link' | 'star' | 'version' | 'version-caret' | 'version-tilde' | 'workspace' | 'workspace-caret' | 'workspace-tilde';
 
 export type NodePackageManager = 'npm' | 'pnpm' | 'yarn';
 

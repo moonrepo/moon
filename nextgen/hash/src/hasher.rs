@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use sha2::{Digest, Sha256};
 use starbase_utils::json::JsonError;
 use tracing::{debug, trace};
@@ -61,12 +59,10 @@ impl<'owner> ContentHasher<'owner> {
 
     pub fn serialize(&mut self) -> Result<&String, JsonError> {
         if self.content_cache.is_none() {
-            self.content_cache = Some(serde_json::to_string_pretty(&self.contents).map_err(
-                |error| JsonError::StringifyFile {
-                    path: PathBuf::from(""), // TODO
-                    error,
-                },
-            )?);
+            self.content_cache = Some(
+                serde_json::to_string_pretty(&self.contents)
+                    .map_err(|error| JsonError::Stringify { error })?,
+            );
         }
 
         Ok(self.content_cache.as_ref().unwrap())

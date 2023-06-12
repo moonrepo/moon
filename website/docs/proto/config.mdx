@@ -65,3 +65,21 @@ auto-install = true
   [`proto use`](./commands/use) is run. Defaults to `false`.
 - `[plugins]` - A mapping of plugins available to the user. Refer to the [plugins](#plugins) section
   above for more information.
+
+## GitHub Action
+
+To streamline GitHub CI workflows, we provide the
+[`moonrepo/setup-proto`](https://github.com/moonrepo/setup-proto) action, which can be used to
+install `proto` globally, and cache the toolchain found at `~/.proto`.
+
+```yaml title=".github/workflows/ci.yml"
+# ...
+jobs:
+  ci:
+    name: 'CI'
+    runs-on: 'ubuntu-latest'
+    steps:
+      - uses: 'actions/checkout@v3'
+      - uses: 'moonrepo/setup-proto@v0'
+      - run: 'proto use'
+```

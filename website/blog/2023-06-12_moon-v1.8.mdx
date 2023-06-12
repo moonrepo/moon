@@ -1,0 +1,141 @@
+---
+slug: moon-v1.8
+title: moon v1.8 - Code owners and shared configuration
+authors: [milesj]
+tags: [source, code, owners, ownership]
+image: ./img/moon/v1.8.png
+---
+
+With this release, we've focused on a critical facet of managing a large codebase, source code
+ownership, and sharing task configuration.
+
+<!--truncate-->
+
+## Support for code ownership
+
+An important workflow for companies of any size is reviewing code, and ensuring the right people are
+reviewing and approving that code. This is especially true for large companies with hundreds of
+developers, or many distinct teams working in a single codebase.
+
+Popular VCS providers like [GitHub](https://github.com/), [GitLab](https://about.gitlab.com/), and
+[Bitbucket](https://bitbucket.org/product/) provide built-in features to handle such workflows,
+aptly named code owners. They all achieve this through a similar mechanism, a single `CODEOWNERS`
+file that maps file system paths to owners (users, teams, groups, etc). These owners are then
+required to approve a pull/merge request because it can be merged into the base branch.
+
+:::info
+
+For more information, view our official in-depth [code owners guide](/docs/guides/codeowners)!
+
+:::
+
+### Generate a `CODEOWNERS`
+
+Managing the `CODEOWNERS` file manually can be a tedious task, especially when you have hundreds of
+projects. To help with this, moon can generate the `CODEOWNERS` file for you,
+[based on project owners](#new-project-owners-setting), formatted to your VCS provider of choice.
+This helps to avoid an out-of-date ownership file!
+
+We're introducing a few new workspace settings to handle this, the first is
+[`codeowners`](/docs/config/workspace#codeowners), which enables and configure code ownership as a
+whole, and the second is [`vcs.provider`](/docs/config/workspace#provider), which determines the VCS
+provider to generate the file for (and unlocks future features).
+
+```yaml title=".moon/workspace.yml"
+codeowners:
+  syncOnRun: true
+  globalPaths:
+    '*': ['@admins']
+
+vcs:
+  manager: 'git'
+  provider: 'github'
+```
+
+The settings above will generate the following file:
+
+```shell title=".github/CODEOWNERS"
+# (workspace)
+* @admins
+```
+
+While this looks very simple, it really shines once projects start adding their own granular code
+ownership. Continue reading for more information!
+
+### New project `owners` setting
+
+To make use of code owners, you'll need to define an [`owners`](/docs/config/project#owners) setting
+in a project's [`moon.yml`](/docs/config/project) file. This setting requires a list/map of owners
+(contributors required to review) associated to file paths/patterns, relative from the current
+project's root.
+
+```yaml title="packages/components/moon.yml"
+owners:
+  paths:
+    'src/': ['@frontend', '@design-system']
+    '*.config.js': ['@frontend-infra']
+    '*.json': ['@frontend-infra']
+```
+
+These paths will then be prefixed with the project source when
+[generating the `CODEOWNERS`](#generate-a-codeowners) file.
+
+```shell title=".github/CODEOWNERS"
+# components
+/packages/components/src/ @frontend @design-system
+/packages/components/*.config.js @frontend-infra
+/packages/components/*.json @frontend-infra
+```
+
+### New `moon sync codeowners` command
+
+Although moon can [automatically generate](/docs/config/workspace#synconrun) the `CODEOWNERS` file
+when running a target, there may be situations where this is disabled, or teams/developers would
+like to generate the file manually. To handle this, we're providing the
+[`moon sync codeowners`](/docs/commands/sync/codeowners) command, which will trigger the generation
+process.
+
+```shell
+$ moon sync codeowners
+```
+
+## Community-driven task configuration
+
+A powerful but often overlooked feature of moon is the ability to
+[share and extend task configuration](/docs/guides/sharing-config) from remote sources. This is
+extremely useful in...
+
+- Providing a single source of truth for configuration.
+- Reducing task duplication across projects.
+- Ensuring tasks are battle-tested and ready for use.
+
+The other upside of this approach is that configuration can be _community-driven_! To support this
+as a first-class feature, we're launching the
+[`moon-configs` repository](https://github.com/moonrepo/moon-configs), a collection of task
+configurations for popular programming languages, frameworks, libraries, and more! As of now, the
+repository is kind of empty, but we're hoping to grow it over time, so feel free to contribute!
+
+If you're curious how this works in practice, we'll use our Rust configuration as an example. The
+entire system is based around [tag inheritance](/docs/concepts/task#inheritance), where a project
+can inherit tasks from a remote source, and then extend or override them as needed. For example,
+create the tag-based config:
+
+```yaml title=".moon/tasks/tag-rust.yml"
+extends: 'https://raw.githubusercontent.com/moonrepo/moon-configs/master/rust/tasks-workspace.yml'
+```
+
+And then in Rust projects that you'd like to inherit these tasks, add the following tags:
+
+```yaml title="<project>/moon.yml"
+tags: ['rust']
+```
+
+It's as simple as that!
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.8.0) for a full list of
+changes.
+
+- Added a new action to the graph, `SyncWorkspace`, that'll be used for workspace-level checks.
+- Added `MOON_OUTPUT_STYLE` and `MOON_RETRY_COUNT` environment variables.

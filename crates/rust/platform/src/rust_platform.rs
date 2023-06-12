@@ -1,4 +1,4 @@
-use crate::{bins_hasher::RustBinsHasher, target_hasher::RustTargetHasher};
+use crate::{bins_hasher::RustBinsHasher, find_cargo_lock, target_hasher::RustTargetHasher};
 use moon_action_context::ActionContext;
 use moon_common::Id;
 use moon_config::{
@@ -24,7 +24,10 @@ use moon_utils::{async_trait, string_vec};
 use proto::{rust::RustLanguage, Executable, Proto};
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
-use starbase_utils::fs::{self, FsError};
+use starbase_utils::{
+    fs::{self, FsError},
+    glob::GlobSet,
+};
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
@@ -88,8 +91,24 @@ impl Platform for RustPlatform {
 
     // PROJECT GRAPH
 
-    fn is_project_in_dependency_workspace(&self, _project: &Project) -> Result<bool, MoonError> {
-        // moon requires a Rust project to be the root of the Cargo workspace
+    fn is_project_in_dependency_workspace(&self, project: &Project) -> Result<bool, MoonError> {
+        if project.root == self.workspace_root {
+            return Ok(true);
+        }
+
+        let Some(lockfile_path) = find_cargo_lock(&project.root) else {
+            return Ok(false);
+        };
+
+        let Some(cargo_toml) = CargoTomlCache::read(lockfile_path.parent().unwrap())? else {
+            return Ok(false);
+        };
+
+        if let Some(workspace) = cargo_toml.workspace {
+            return Ok(GlobSet::new_split(&workspace.members, &workspace.exclude)?
+                .matches(&project.source));
+        }
+
         Ok(false)
     }
 
@@ -101,10 +120,6 @@ impl Platform for RustPlatform {
         // Extract the alias from the Cargo project relative to the lockfile
         for (id, source) in projects_map {
             let project_root = self.workspace_root.join(source);
-
-            if !project_root.join(CARGO.lockfile).exists() {
-                continue;
-            }
 
             if let Some(cargo_toml) = CargoTomlCache::read(project_root)? {
                 if let Some(package) = cargo_toml.package {
@@ -120,8 +135,6 @@ impl Platform for RustPlatform {
                     }
                 }
             }
-
-            break;
         }
 
         Ok(())
@@ -202,9 +215,8 @@ impl Platform for RustPlatform {
         working_dir: &Path,
     ) -> Result<(), ToolError> {
         let tool = self.toolchain.get_for_version(runtime.version())?;
-        let lockfile_path = working_dir.join(CARGO.lockfile);
 
-        if !lockfile_path.exists() {
+        if find_cargo_lock(working_dir).is_none() {
             print_checkpoint("cargo generate-lockfile", Checkpoint::Setup);
 
             tool.exec_cargo(["generate-lockfile"], working_dir).await?;
@@ -256,8 +268,15 @@ impl Platform for RustPlatform {
         _dependencies: &FxHashMap<Id, &Project>,
     ) -> Result<bool, ProjectError> {
         let mut mutated_files = false;
-        let legacy_toolchain_path = project.root.join(RUSTUP_LEGACY.version_file);
-        let toolchain_path = project.root.join(RUSTUP.version_file);
+
+        let lockfile_path = find_cargo_lock(&project.root);
+        let cargo_root = match lockfile_path {
+            Some(path) => path.parent().unwrap().to_owned(),
+            None => project.root.to_owned(),
+        };
+
+        let legacy_toolchain_path = cargo_root.join(RUSTUP_LEGACY.version_file);
+        let toolchain_path = cargo_root.join(RUSTUP.version_file);
 
         // Convert rust-toolchain to rust-toolchain.toml
         if legacy_toolchain_path.exists() {

@@ -138,8 +138,9 @@ codeowners:
 <HeadingApiLink to="/api/types/interface/CodeownersConfig#syncOnRun" />
 
 Will automatically generate a `CODEOWNERS` file by aggregating and syncing all project
-[`owners`](./project#owners) in the workspace. The format and location of the `CODEOWNERS` file is
-based on the [`vcs.provider`](#provider) setting. Defaults to `false`.
+[`owners`](./project#owners) in the workspace when a [target is run](../concepts/target). The format
+and location of the `CODEOWNERS` file is based on the [`vcs.provider`](#provider) setting. Defaults
+to `false`.
 
 ```yaml title=".moon/workspace.yml" {2}
 codeowners:

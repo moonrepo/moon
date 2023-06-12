@@ -175,8 +175,8 @@ const config = {
 								to: 'https://github.com/moonrepo/moon/releases',
 							},
 							{
-								label: 'Discussions',
-								to: 'https://github.com/moonrepo/moon/discussions',
+								label: 'Shared configs',
+								to: 'https://github.com/moonrepo/moon-configs',
 							},
 							{
 								label: 'Developer tools',

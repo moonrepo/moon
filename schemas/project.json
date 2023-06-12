@@ -36,7 +36,7 @@
       "additionalProperties": {
         "type": "array",
         "items": {
-          "$ref": "#/definitions/PortablePath"
+          "$ref": "#/definitions/InputPath"
         }
       }
     },
@@ -44,6 +44,16 @@
       "anyOf": [
         {
           "$ref": "#/definitions/LanguageType"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "owners": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialOwnersConfig"
         },
         {
           "type": "null"
@@ -132,11 +142,33 @@
     "FilePath": {
       "type": "string"
     },
-    "GlobPath": {
-      "type": "string"
-    },
     "Id": {
       "type": "string"
+    },
+    "InputPath": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        }
+      ]
     },
     "LanguageType": {
       "oneOf": [
@@ -168,6 +200,92 @@
           "additionalProperties": false
         }
       ]
+    },
+    "OutputPath": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        }
+      ]
+    },
+    "OwnersPaths": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "PartialOwnersConfig": {
+      "type": "object",
+      "properties": {
+        "customGroups": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "defaultOwner": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "optional": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "paths": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/OwnersPaths"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "requiredApprovals": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint8",
+          "minimum": 0.0
+        }
+      },
+      "additionalProperties": false
     },
     "PartialProjectMetadataConfig": {
       "type": "object",
@@ -382,7 +500,7 @@
             "null"
           ],
           "items": {
-            "type": "string"
+            "$ref": "#/definitions/InputPath"
           }
         },
         "local": {
@@ -407,7 +525,7 @@
             "null"
           ],
           "items": {
-            "type": "string"
+            "$ref": "#/definitions/OutputPath"
           }
         },
         "platform": {
@@ -573,22 +691,6 @@
         "unknown"
       ]
     },
-    "PortablePath": {
-      "anyOf": [
-        {
-          "$ref": "#/definitions/FilePath"
-        },
-        {
-          "$ref": "#/definitions/GlobPath"
-        },
-        {
-          "$ref": "#/definitions/FilePath"
-        },
-        {
-          "$ref": "#/definitions/GlobPath"
-        }
-      ]
-    },
     "ProjectDependsOn": {
       "anyOf": [
         {
@@ -667,7 +769,7 @@
           "type": "boolean"
         },
         {
-          "type": "string"
+          "$ref": "#/definitions/FilePath"
         }
       ]
     },

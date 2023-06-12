@@ -58,3 +58,14 @@ version, you lose your global packages. We suggest using `proto install-global` 
 packages, which installs everything to a shared location, `~/.proto/tools/node/globals/bin`.
 
 You'll also need to manually add these global directories to your `PATH`.
+
+### OS is unable to find an installed binary, how to resolve?
+
+To start, ensure that proto's binaries directory (`~/.proto/bin`) is listed first on `PATH`, and
+takes precedence over other binaries of the same name that may collide.
+
+Secondly, proto is powered entirely through shims, which means on Windows, we do not provide `.exe`
+binaries, and instead use `.cmd`. If you're attempting to run a script that uses a hard-coded binary
+name like `node.exe`, this won't work in proto. You'll need to remove the `.exe` and simply run
+`node` instead. Windows will use the `PATHEXT` environment variable to find the appropriate
+extension, which includes `.cmd` by default.

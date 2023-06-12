@@ -71,7 +71,7 @@ const config = {
 				{
 					name: 'keywords',
 					content:
-						'moon, repo, build, system, ci, times, devx, developer, experience, tooling, tools, monorepo, polyrepo, productivity, platform',
+						'moon, repo, moonrepo, task, runner, build, system, ci, times, devx, developer, experience, tooling, tools, monorepo, polyrepo, productivity, platform, proto, toolchain',
 				},
 				{
 					name: 'og:image',
@@ -105,10 +105,21 @@ const config = {
 						],
 					},
 					{
-						type: 'doc',
-						docId: 'intro',
+						type: 'dropdown',
 						position: 'left',
 						label: 'Docs',
+						items: [
+							{
+								type: 'doc',
+								docId: 'intro',
+								html: '<strong>moon</strong>',
+							},
+							{
+								type: 'doc',
+								docId: 'proto/index',
+								html: '<strong>proto</strong>',
+							},
+						],
 					},
 					{
 						type: 'doc',
@@ -125,53 +136,6 @@ const config = {
 						...social[0],
 						position: 'left',
 					},
-					/* {
-						to: '/api',
-						label: 'API',
-						position: 'left',
-					},
-					{
-						type: 'dropdown',
-						label: 'Packages',
-						items: [
-							{
-								label: '@moonrepo/cli',
-								href: 'https://www.npmjs.com/package/@moonrepo/cli',
-							},
-							{
-								label: '@moonrepo/dev',
-								href: 'https://www.npmjs.com/package/@moonrepo/dev',
-							},
-							{
-								label: '@moonrepo/report',
-								href: 'https://www.npmjs.com/package/@moonrepo/report',
-							},
-							{
-								label: '@moonrepo/types',
-								href: 'https://www.npmjs.com/package/@moonrepo/types',
-							},
-							{
-								label: 'babel-preset-moon',
-								href: 'https://www.npmjs.com/package/babel-preset-moon',
-							},
-							{
-								label: 'eslint-config-moon',
-								href: 'https://www.npmjs.com/package/eslint-config-moon',
-							},
-							{
-								label: 'jest-preset-moon',
-								href: 'https://www.npmjs.com/package/jest-preset-moon',
-							},
-							{
-								label: 'prettier-config-moon',
-								href: 'https://www.npmjs.com/package/prettier-config-moon',
-							},
-							{
-								label: 'tsconfig-moon',
-								href: 'https://www.npmjs.com/package/tsconfig-moon',
-							},
-						],
-					}, */
 					{
 						to: 'https://moonrepo.app',
 						label: 'Sign in',
@@ -211,8 +175,8 @@ const config = {
 								to: 'https://github.com/moonrepo/moon/releases',
 							},
 							{
-								label: 'Discussions',
-								to: 'https://github.com/moonrepo/moon/discussions',
+								label: 'Shared configs',
+								to: 'https://github.com/moonrepo/moon-configs',
 							},
 							{
 								label: 'Developer tools',

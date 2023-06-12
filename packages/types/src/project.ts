@@ -1,15 +1,11 @@
-import type { Platform } from './common';
+import type { LanguageType, PlatformType } from './common-config';
+import type { DependencyConfig, ProjectConfig, ProjectType } from './project-config';
 import type {
-	DependencyConfig,
 	InheritedTasksConfig,
-	ProjectConfig,
-	ProjectLanguage,
-	ProjectType,
 	TaskMergeStrategy,
 	TaskOutputStyle,
-} from './project-config';
-
-export type TaskType = 'build' | 'run' | 'test';
+	TaskType,
+} from './tasks-config';
 
 export interface FileGroup {
 	files: string[];
@@ -47,23 +43,19 @@ export interface Task {
 	outputs: string[];
 	outputGlobs: string[];
 	outputPaths: string[];
-	platform: Platform;
+	platform: PlatformType;
 	target: string;
 	type: TaskType;
-}
-
-export interface ProjectDependency extends DependencyConfig {
-	source: 'explicit' | 'implicit';
 }
 
 export interface Project {
 	alias: string | null;
 	config: ProjectConfig;
-	dependencies: Record<string, ProjectDependency>;
+	dependencies: Record<string, DependencyConfig>;
 	fileGroups: Record<string, FileGroup>;
 	id: string;
 	inheritedConfig: InheritedTasksConfig;
-	language: ProjectLanguage;
+	language: LanguageType;
 	root: string;
 	source: string;
 	tasks: Record<string, Task>;

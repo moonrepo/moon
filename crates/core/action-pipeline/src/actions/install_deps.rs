@@ -1,4 +1,3 @@
-use crate::errors::PipelineError;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_error::map_io_to_fs_error;
@@ -36,7 +35,7 @@ pub async fn install_deps(
     workspace: Arc<RwLock<Workspace>>,
     runtime: &Runtime,
     project: Option<&Project>,
-) -> Result<ActionStatus, PipelineError> {
+) -> miette::Result<ActionStatus> {
     env::set_var("MOON_RUNNING_ACTION", "install-deps");
 
     if matches!(runtime, Runtime::System) {
@@ -118,9 +117,13 @@ pub async fn install_deps(
     // When running in the workspace root, account for nested manifests
     if project.is_none() {
         for touched_file in &context.touched_files {
-            if touched_file.ends_with(&manifest) && touched_file != &manifest_path {
+            if touched_file.ends_with(&manifest) {
                 platform
-                    .hash_manifest_deps(touched_file, &mut hashset, &workspace.config.hasher)
+                    .hash_manifest_deps(
+                        &touched_file.to_path(""),
+                        &mut hashset,
+                        &workspace.config.hasher,
+                    )
                     .await?;
             }
         }

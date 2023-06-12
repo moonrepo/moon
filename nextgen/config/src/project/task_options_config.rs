@@ -1,22 +1,8 @@
-use crate::portable_path::is_glob;
+use crate::portable_path::FilePath;
 use moon_common::cacheable;
-use schematic::{derive_enum, Config, ConfigEnum, ValidateError};
+use schematic::{derive_enum, Config, ConfigEnum};
 use serde::{de, Deserialize, Deserializer, Serialize};
 use serde_yaml::Value;
-
-fn validate_env_file<D, C>(
-    env_file: &TaskOptionEnvFile,
-    _data: &D,
-    _ctx: &C,
-) -> Result<(), ValidateError> {
-    if let TaskOptionEnvFile::File(file) = env_file {
-        if is_glob(file) {
-            return Err(ValidateError::new("globs are not supported"));
-        }
-    }
-
-    Ok(())
-}
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(untagged, rename_all = "kebab-case")]
@@ -73,16 +59,16 @@ derive_enum!(
     #[serde(untagged, expecting = "expected a boolean or a file system path")]
     pub enum TaskOptionEnvFile {
         Enabled(bool),
-        File(String),
+        File(FilePath),
     }
 );
 
 impl TaskOptionEnvFile {
-    pub fn to_option(&self) -> Option<String> {
+    pub fn to_option(&self) -> Option<FilePath> {
         match self {
-            TaskOptionEnvFile::Enabled(true) => Some(".env".to_owned()),
+            TaskOptionEnvFile::Enabled(true) => Some(FilePath(".env".into())),
             TaskOptionEnvFile::Enabled(false) => None,
-            TaskOptionEnvFile::File(path) => Some(path.to_owned()),
+            TaskOptionEnvFile::File(path) => Some(path.clone()),
         }
     }
 }
@@ -116,7 +102,6 @@ cacheable!(
 
         pub cache: Option<bool>,
 
-        #[setting(validate = validate_env_file)]
         pub env_file: Option<TaskOptionEnvFile>,
 
         pub merge_args: Option<TaskMergeStrategy>,
@@ -129,10 +114,12 @@ cacheable!(
 
         pub merge_outputs: Option<TaskMergeStrategy>,
 
+        #[setting(env = "MOON_OUTPUT_STYLE")]
         pub output_style: Option<TaskOutputStyle>,
 
         pub persistent: Option<bool>,
 
+        #[setting(env = "MOON_RETRY_COUNT")]
         pub retry_count: Option<u8>,
 
         pub run_deps_in_parallel: Option<bool>,

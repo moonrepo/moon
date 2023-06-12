@@ -11,9 +11,7 @@ mod workspace_config {
     use super::*;
 
     #[test]
-    #[should_panic(
-        expected = "unknown field `unknown`, expected one of `$schema`, `constraints`, `extends`, `generator`, `hasher`, `notifier`, `projects`, `runner`, `telemetry`, `vcs`, `versionConstraint`"
-    )]
+    #[should_panic(expected = "unknown field `unknown`, expected one of `$schema`")]
     fn error_unknown_field() {
         test_load_config(FILENAME, "unknown: 123", |path| {
             WorkspaceConfig::load_from(path)

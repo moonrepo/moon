@@ -44,6 +44,12 @@ pub enum Event<'e> {
         runtime: &'e Runtime,
     },
 
+    // Syncing workspace
+    WorkspaceSyncing,
+    WorkspaceSynced {
+        error: Option<String>,
+    },
+
     // Runner
     PipelineAborted {
         error: String,
@@ -140,6 +146,8 @@ impl<'e> Event<'e> {
             Event::TargetOutputCacheCheck { .. } => "target-output.cache-check",
             Event::ToolInstalling { .. } => "tool.installing",
             Event::ToolInstalled { .. } => "tool.installed",
+            Event::WorkspaceSyncing => "workspace.syncing",
+            Event::WorkspaceSynced { .. } => "workspace.synced",
         };
 
         key.to_owned()

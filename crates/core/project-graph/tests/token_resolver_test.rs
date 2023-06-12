@@ -1,5 +1,9 @@
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
-use moon_config::{InheritedTasksManager, LanguageType, PlatformType, ProjectType, TaskConfig};
+use moon_config::{
+    InheritedTasksManager, InputPath, LanguageType, OutputPath, PlatformType, ProjectType,
+    TaskConfig,
+};
 use moon_file_group::FileGroup;
 use moon_project::Project;
 use moon_project_graph::{TokenContext, TokenResolver};
@@ -11,6 +15,7 @@ use moon_test_utils::{
 use rustc_hash::FxHashMap;
 use starbase_utils::{glob, string_vec};
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 pub fn create_file_groups(source: &str) -> FxHashMap<Id, FileGroup> {
     let mut map = FxHashMap::default();
@@ -98,23 +103,23 @@ pub fn create_task(config: Option<TaskConfig>) -> Task {
 }
 
 pub fn expand_task(project: &Project, task: &mut Task) {
-    let project_source = PathBuf::from(&project.source);
+    let project_source = WorkspaceRelativePathBuf::from(&project.source);
 
     for input in &task.inputs {
         if glob::is_glob(input) {
-            task.input_globs
-                .insert(glob::normalize(project_source.join(input)).unwrap());
+            task.input_globs.insert(project_source.join(input.as_str()));
         } else {
-            task.input_paths.insert(project_source.join(input));
+            task.input_paths.insert(project_source.join(input.as_str()));
         }
     }
 
     for output in &task.outputs {
         if glob::is_glob(output) {
             task.output_globs
-                .insert(glob::normalize(project_source.join(output)).unwrap());
+                .insert(project_source.join(output.as_str()));
         } else {
-            task.output_paths.insert(project_source.join(output));
+            task.output_paths
+                .insert(project_source.join(output.as_str()));
         }
     }
 }
@@ -157,7 +162,7 @@ fn doesnt_match_when_not_alone() {
             .resolve(&string_vec!["foo/@dirs(static)/bar"], &task)
             .unwrap(),
         (
-            vec![PathBuf::from(project.source).join("foo/@dirs(static)/bar")],
+            vec![WorkspaceRelativePathBuf::from(project.source).join("foo/@dirs(static)/bar")],
             vec![]
         )
     );
@@ -173,7 +178,10 @@ mod in_token {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let task = create_task(Some(TaskConfig {
-            inputs: Some(string_vec!["dir/**/*", "file.ts"]),
+            inputs: Some(vec![
+                InputPath::from_str("dir/**/*").unwrap(),
+                InputPath::from_str("file.ts").unwrap(),
+            ]),
             ..TaskConfig::default()
         }));
 
@@ -187,7 +195,10 @@ mod in_token {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let task = create_task(Some(TaskConfig {
-            inputs: Some(string_vec!["dir/**/*", "file.ts"]),
+            inputs: Some(vec![
+                InputPath::from_str("dir/**/*").unwrap(),
+                InputPath::from_str("file.ts").unwrap(),
+            ]),
             ..TaskConfig::default()
         }));
 
@@ -204,7 +215,10 @@ mod out_token {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let task = create_task(Some(TaskConfig {
-            outputs: Some(string_vec!["dir", "file.ts"]),
+            outputs: Some(vec![
+                OutputPath::from_str("dir").unwrap(),
+                OutputPath::from_str("file.ts").unwrap(),
+            ]),
             ..TaskConfig::default()
         }));
 
@@ -218,7 +232,10 @@ mod out_token {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let task = create_task(Some(TaskConfig {
-            outputs: Some(string_vec!["dir", "file.ts"]),
+            outputs: Some(vec![
+                OutputPath::from_str("dir").unwrap(),
+                OutputPath::from_str("file.ts").unwrap(),
+            ]),
             ..TaskConfig::default()
         }));
 
@@ -232,7 +249,7 @@ mod out_token {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let task = create_task(Some(TaskConfig {
-            outputs: Some(string_vec!["@group(name)"]),
+            outputs: Some(vec![OutputPath::from_str("@group(name)").unwrap()]),
             ..TaskConfig::default()
         }));
 
@@ -281,18 +298,13 @@ mod resolve_args {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let task = create_task(None);
+        let base = WorkspaceRelativePathBuf::from(&project.source);
 
         assert_eq!(
             resolver
                 .resolve(&string_vec!["@dirs(static)"], &task)
                 .unwrap(),
-            (
-                vec![
-                    PathBuf::from(&project.source).join("dir"),
-                    PathBuf::from(&project.source).join("dir/subdir")
-                ],
-                vec![]
-            )
+            (vec![base.join("dir"), base.join("dir/subdir")], vec![])
         );
     }
 
@@ -302,18 +314,13 @@ mod resolve_args {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let task = create_task(None);
+        let base = WorkspaceRelativePathBuf::from(&project.source);
 
         assert_eq!(
             resolver
                 .resolve(&string_vec!["@dirs(dirs_glob)"], &task)
                 .unwrap(),
-            (
-                vec![
-                    PathBuf::from(&project.source).join("dir"),
-                    PathBuf::from(&project.source).join("dir/subdir")
-                ],
-                vec![]
-            )
+            (vec![base.join("dir"), base.join("dir/subdir")], vec![])
         );
     }
 
@@ -323,6 +330,7 @@ mod resolve_args {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let task = create_task(None);
+        let base = WorkspaceRelativePathBuf::from(&project.source);
 
         let mut files = resolver
             .resolve(&string_vec!["@files(static)"], &task)
@@ -333,9 +341,9 @@ mod resolve_args {
             files,
             (
                 vec![
-                    PathBuf::from(&project.source).join("dir/other.tsx"),
-                    PathBuf::from(&project.source).join("dir/subdir/another.ts"),
-                    PathBuf::from(&project.source).join("file.ts"),
+                    base.join("dir/other.tsx"),
+                    base.join("dir/subdir/another.ts"),
+                    base.join("file.ts"),
                 ],
                 vec![]
             )
@@ -348,6 +356,7 @@ mod resolve_args {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let task = create_task(None);
+        let base = WorkspaceRelativePathBuf::from(&project.source);
 
         let mut files = resolver
             .resolve(&string_vec!["@files(files_glob)"], &task)
@@ -358,9 +367,9 @@ mod resolve_args {
             files,
             (
                 vec![
-                    PathBuf::from(&project.source).join("dir/other.tsx"),
-                    PathBuf::from(&project.source).join("dir/subdir/another.ts"),
-                    PathBuf::from(&project.source).join("file.ts"),
+                    base.join("dir/other.tsx"),
+                    base.join("dir/subdir/another.ts"),
+                    base.join("file.ts"),
                 ],
                 vec![]
             )
@@ -373,18 +382,13 @@ mod resolve_args {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let task = create_task(None);
+        let base = WorkspaceRelativePathBuf::from(&project.source);
 
         assert_eq!(
             resolver
                 .resolve(&string_vec!["@globs(globs)"], &task)
                 .unwrap(),
-            (
-                vec![],
-                vec![
-                    glob::normalize(PathBuf::from(&project.source).join("**/*.{ts,tsx}")).unwrap(),
-                    glob::normalize(PathBuf::from(&project.source).join("*.js")).unwrap()
-                ]
-            )
+            (vec![], vec![base.join("**/*.{ts,tsx}"), base.join("*.js"),])
         );
     }
 
@@ -393,8 +397,13 @@ mod resolve_args {
         let workspace_root = get_workspace_root();
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
+        let base = WorkspaceRelativePathBuf::from(&project.source);
+
         let mut task = create_task(Some(TaskConfig {
-            inputs: Some(string_vec!["dir/**/*", "file.ts"]),
+            inputs: Some(vec![
+                InputPath::from_str("dir/**/*").unwrap(),
+                InputPath::from_str("file.ts").unwrap(),
+            ]),
             ..TaskConfig::default()
         }));
 
@@ -402,7 +411,7 @@ mod resolve_args {
 
         assert_eq!(
             resolver.resolve(&string_vec!["@in(1)"], &task).unwrap(),
-            (vec![PathBuf::from(&project.source).join("file.ts")], vec![])
+            (vec![base.join("file.ts")], vec![])
         );
     }
 
@@ -411,8 +420,13 @@ mod resolve_args {
         let workspace_root = get_workspace_root();
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
+        let base = WorkspaceRelativePathBuf::from(&project.source);
+
         let mut task = create_task(Some(TaskConfig {
-            inputs: Some(string_vec!["src/**/*", "file.ts"]),
+            inputs: Some(vec![
+                InputPath::from_str("src/**/*").unwrap(),
+                InputPath::from_str("file.ts").unwrap(),
+            ]),
             ..TaskConfig::default()
         }));
 
@@ -420,10 +434,7 @@ mod resolve_args {
 
         assert_eq!(
             resolver.resolve(&string_vec!["@in(0)"], &task).unwrap(),
-            (
-                vec![],
-                vec![glob::normalize(PathBuf::from(&project.source).join("src/**/*")).unwrap()]
-            )
+            (vec![], vec![base.join("src/**/*")])
         );
     }
 
@@ -432,8 +443,13 @@ mod resolve_args {
         let workspace_root = get_workspace_root();
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
+        let base = WorkspaceRelativePathBuf::from(&project.source);
+
         let mut task = create_task(Some(TaskConfig {
-            outputs: Some(string_vec!["dir/", "file.ts"]),
+            outputs: Some(vec![
+                OutputPath::from_str("dir/").unwrap(),
+                OutputPath::from_str("file.ts").unwrap(),
+            ]),
             ..TaskConfig::default()
         }));
 
@@ -443,13 +459,7 @@ mod resolve_args {
             resolver
                 .resolve(&string_vec!["@out(0)", "@out(1)"], &task)
                 .unwrap(),
-            (
-                vec![
-                    PathBuf::from(&project.source).join("dir"),
-                    PathBuf::from(&project.source).join("file.ts")
-                ],
-                vec![]
-            )
+            (vec![base.join("dir"), base.join("file.ts")], vec![])
         );
     }
 
@@ -459,12 +469,13 @@ mod resolve_args {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let task = create_task(None);
+        let base = WorkspaceRelativePathBuf::from(&project.source);
 
         assert_eq!(
             resolver
                 .resolve(&string_vec!["@root(static)"], &task)
                 .unwrap(),
-            (vec![PathBuf::from(&project.source).join("dir")], vec![])
+            (vec![base.join("dir")], vec![])
         );
     }
 
@@ -564,18 +575,13 @@ mod resolve_inputs {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Inputs, &project, &workspace_root);
         let task = create_task(None);
+        let base = WorkspaceRelativePathBuf::from(&project.source);
 
         assert_eq!(
             resolver
                 .resolve(&string_vec!["@dirs(static)"], &task)
                 .unwrap(),
-            (
-                vec![
-                    PathBuf::from(&project.source).join("dir"),
-                    PathBuf::from(&project.source).join("dir/subdir")
-                ],
-                vec![]
-            )
+            (vec![base.join("dir"), base.join("dir/subdir")], vec![])
         );
     }
 
@@ -585,18 +591,13 @@ mod resolve_inputs {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Inputs, &project, &workspace_root);
         let task = create_task(None);
+        let base = WorkspaceRelativePathBuf::from(&project.source);
 
         assert_eq!(
             resolver
                 .resolve(&string_vec!["@dirs(dirs_glob)"], &task)
                 .unwrap(),
-            (
-                vec![
-                    PathBuf::from(&project.source).join("dir"),
-                    PathBuf::from(&project.source).join("dir/subdir")
-                ],
-                vec![]
-            )
+            (vec![base.join("dir"), base.join("dir/subdir")], vec![])
         );
     }
 
@@ -606,6 +607,7 @@ mod resolve_inputs {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Inputs, &project, &workspace_root);
         let task = create_task(None);
+        let base = WorkspaceRelativePathBuf::from(&project.source);
 
         let mut files = resolver
             .resolve(&string_vec!["@files(static)"], &task)
@@ -616,9 +618,9 @@ mod resolve_inputs {
             files,
             (
                 vec![
-                    PathBuf::from(&project.source).join("dir/other.tsx"),
-                    PathBuf::from(&project.source).join("dir/subdir/another.ts"),
-                    PathBuf::from(&project.source).join("file.ts"),
+                    base.join("dir/other.tsx"),
+                    base.join("dir/subdir/another.ts"),
+                    base.join("file.ts"),
                 ],
                 vec![]
             )
@@ -631,6 +633,7 @@ mod resolve_inputs {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Inputs, &project, &workspace_root);
         let task = create_task(None);
+        let base = WorkspaceRelativePathBuf::from(&project.source);
 
         let mut files = resolver
             .resolve(&string_vec!["@files(files_glob)"], &task)
@@ -641,9 +644,9 @@ mod resolve_inputs {
             files,
             (
                 vec![
-                    PathBuf::from(&project.source).join("dir/other.tsx"),
-                    PathBuf::from(&project.source).join("dir/subdir/another.ts"),
-                    PathBuf::from(&project.source).join("file.ts"),
+                    base.join("dir/other.tsx"),
+                    base.join("dir/subdir/another.ts"),
+                    base.join("file.ts"),
                 ],
                 vec![]
             )
@@ -656,18 +659,13 @@ mod resolve_inputs {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Inputs, &project, &workspace_root);
         let task = create_task(None);
+        let base = WorkspaceRelativePathBuf::from(&project.source);
 
         assert_eq!(
             resolver
                 .resolve(&string_vec!["@globs(globs)"], &task)
                 .unwrap(),
-            (
-                vec![],
-                vec![
-                    glob::normalize(PathBuf::from(&project.source).join("**/*.{ts,tsx}")).unwrap(),
-                    glob::normalize(PathBuf::from(&project.source).join("*.js")).unwrap()
-                ]
-            ),
+            (vec![], vec![base.join("**/*.{ts,tsx}"), base.join("*.js")]),
         );
     }
 
@@ -699,12 +697,13 @@ mod resolve_inputs {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Inputs, &project, &workspace_root);
         let task = create_task(None);
+        let base = WorkspaceRelativePathBuf::from(&project.source);
 
         assert_eq!(
             resolver
                 .resolve(&string_vec!["@root(static)"], &task)
                 .unwrap(),
-            (vec![PathBuf::from(&project.source).join("dir")], vec![]),
+            (vec![base.join("dir")], vec![]),
         );
     }
 
@@ -714,13 +713,13 @@ mod resolve_inputs {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Inputs, &project, &workspace_root);
         let task = create_task(None);
+        let base = WorkspaceRelativePathBuf::from(&project.source);
 
         assert_eq!(
-            resolver.resolve(&string_vec!["dir"], &task).unwrap(),
-            (
-                vec![],
-                vec![glob::normalize(PathBuf::from(&project.source).join("dir/**/*")).unwrap()]
-            ),
+            resolver
+                .resolve_inputs(&[&InputPath::ProjectFile("dir".into())], &task)
+                .unwrap(),
+            (vec![], vec![base.join("dir/**/*")]),
         );
     }
 }
@@ -734,18 +733,13 @@ mod resolve_outputs {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Outputs, &project, &workspace_root);
         let task = create_task(None);
+        let base = WorkspaceRelativePathBuf::from(&project.source);
 
         assert_eq!(
             resolver
                 .resolve(&string_vec!["@dirs(static)"], &task)
                 .unwrap(),
-            (
-                vec![
-                    PathBuf::from(&project.source).join("dir"),
-                    PathBuf::from(&project.source).join("dir/subdir")
-                ],
-                vec![]
-            )
+            (vec![base.join("dir"), base.join("dir/subdir"),], vec![])
         );
     }
 
@@ -755,18 +749,13 @@ mod resolve_outputs {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Outputs, &project, &workspace_root);
         let task = create_task(None);
+        let base = WorkspaceRelativePathBuf::from(&project.source);
 
         assert_eq!(
             resolver
                 .resolve(&string_vec!["@dirs(dirs_glob)"], &task)
                 .unwrap(),
-            (
-                vec![
-                    PathBuf::from(&project.source).join("dir"),
-                    PathBuf::from(&project.source).join("dir/subdir")
-                ],
-                vec![]
-            )
+            (vec![base.join("dir"), base.join("dir/subdir")], vec![])
         );
     }
 
@@ -776,6 +765,7 @@ mod resolve_outputs {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Outputs, &project, &workspace_root);
         let task = create_task(None);
+        let base = WorkspaceRelativePathBuf::from(&project.source);
 
         let mut files = resolver
             .resolve(&string_vec!["@files(static)"], &task)
@@ -786,9 +776,9 @@ mod resolve_outputs {
             files,
             (
                 vec![
-                    PathBuf::from(&project.source).join("dir/other.tsx"),
-                    PathBuf::from(&project.source).join("dir/subdir/another.ts"),
-                    PathBuf::from(&project.source).join("file.ts"),
+                    base.join("dir/other.tsx"),
+                    base.join("dir/subdir/another.ts"),
+                    base.join("file.ts"),
                 ],
                 vec![]
             )
@@ -801,6 +791,7 @@ mod resolve_outputs {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Outputs, &project, &workspace_root);
         let task = create_task(None);
+        let base = WorkspaceRelativePathBuf::from(&project.source);
 
         let mut files = resolver
             .resolve(&string_vec!["@files(files_glob)"], &task)
@@ -811,9 +802,9 @@ mod resolve_outputs {
             files,
             (
                 vec![
-                    PathBuf::from(&project.source).join("dir/other.tsx"),
-                    PathBuf::from(&project.source).join("dir/subdir/another.ts"),
-                    PathBuf::from(&project.source).join("file.ts"),
+                    base.join("dir/other.tsx"),
+                    base.join("dir/subdir/another.ts"),
+                    base.join("file.ts"),
                 ],
                 vec![]
             )
@@ -826,18 +817,13 @@ mod resolve_outputs {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Outputs, &project, &workspace_root);
         let task = create_task(None);
+        let base = WorkspaceRelativePathBuf::from(&project.source);
 
         assert_eq!(
             resolver
                 .resolve(&string_vec!["@globs(globs)"], &task)
                 .unwrap(),
-            (
-                vec![],
-                vec![
-                    glob::normalize(PathBuf::from(&project.source).join("**/*.{ts,tsx}")).unwrap(),
-                    glob::normalize(PathBuf::from(&project.source).join("*.js")).unwrap()
-                ]
-            ),
+            (vec![], vec![base.join("**/*.{ts,tsx}"), base.join("*.js")]),
         );
     }
 
@@ -869,12 +855,13 @@ mod resolve_outputs {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Outputs, &project, &workspace_root);
         let task = create_task(None);
+        let base = WorkspaceRelativePathBuf::from(&project.source);
 
         assert_eq!(
             resolver
                 .resolve(&string_vec!["@root(static)"], &task)
                 .unwrap(),
-            (vec![PathBuf::from(&project.source).join("dir")], vec![]),
+            (vec![base.join("dir")], vec![]),
         );
     }
 

@@ -2,7 +2,7 @@ mod utils;
 
 use moon_common::{consts::CONFIG_PROJECT_FILENAME, Id};
 use moon_config::{
-    DependencyScope, FilePath, GlobPath, LanguageType, PlatformType, PortablePath, ProjectConfig,
+    DependencyScope, InputPath, LanguageType, OwnersPaths, PlatformType, ProjectConfig,
     ProjectDependsOn, ProjectType, TaskCommandArgs,
 };
 use rustc_hash::FxHashMap;
@@ -13,7 +13,7 @@ mod project_config {
 
     #[test]
     #[should_panic(
-        expected = "unknown field `unknown`, expected one of `$schema`, `dependsOn`, `env`, `fileGroups`, `language`, `platform`, `project`, `tags`, `tasks`, `toolchain`, `type`, `workspace`"
+        expected = "unknown field `unknown`, expected one of `$schema`, `dependsOn`, `env`, `fileGroups`, `language`, `owners`, `platform`, `project`, `tags`, `tasks`, `toolchain`, `type`, `workspace`"
     )]
     fn error_unknown_field() {
         test_load_config(CONFIG_PROJECT_FILENAME, "unknown: 123", |path| {
@@ -52,13 +52,19 @@ tasks:
 
         assert_eq!(build.command, TaskCommandArgs::String("webpack".to_owned()));
         assert_eq!(build.args, TaskCommandArgs::None);
-        assert_eq!(build.inputs, Some(vec!["src/**/*".to_owned()]));
+        assert_eq!(
+            build.inputs,
+            Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
+        );
 
         let start = config.tasks.get("start").unwrap();
 
         assert_eq!(start.command, TaskCommandArgs::String("webpack".to_owned()));
         assert_eq!(start.args, TaskCommandArgs::String("serve".to_owned()));
-        assert_eq!(start.inputs, Some(vec!["src/**/*".to_owned()]));
+        assert_eq!(
+            start.inputs,
+            Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
+        );
     }
 
     // TODO: fix this in schematic?
@@ -86,13 +92,19 @@ tasks:
 
         assert_eq!(build.command, TaskCommandArgs::String("webpack".to_owned()));
         assert_eq!(build.args, TaskCommandArgs::None);
-        assert_eq!(build.inputs, Some(vec!["src/**/*".to_owned()]));
+        assert_eq!(
+            build.inputs,
+            Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
+        );
 
         let start = config.tasks.get("start").unwrap();
 
         assert_eq!(start.command, TaskCommandArgs::String("webpack".to_owned()));
         assert_eq!(start.args, TaskCommandArgs::String("serve".to_owned()));
-        assert_eq!(start.inputs, Some(vec!["src/**/*".to_owned()]));
+        assert_eq!(
+            start.inputs,
+            Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
+        );
     }
 
     mod depends_on {
@@ -210,17 +222,17 @@ fileGroups:
                     (
                         "files".into(),
                         vec![
-                            PortablePath::WorkspaceFile(FilePath("ws/relative".into())),
-                            PortablePath::ProjectFile(FilePath("proj/relative".into()))
+                            InputPath::WorkspaceFile("ws/relative".into()),
+                            InputPath::ProjectFile("proj/relative".into())
                         ]
                     ),
                     (
                         "globs".into(),
                         vec![
-                            PortablePath::WorkspaceGlob(GlobPath("ws/**/*".into())),
-                            PortablePath::WorkspaceGlob(GlobPath("!ws/**/*".into())),
-                            PortablePath::ProjectGlob(GlobPath("proj/**/*".into())),
-                            PortablePath::ProjectGlob(GlobPath("!proj/**/*".into())),
+                            InputPath::WorkspaceGlob("ws/**/*".into()),
+                            InputPath::WorkspaceGlob("!ws/**/*".into()),
+                            InputPath::ProjectGlob("proj/**/*".into()),
+                            InputPath::ProjectGlob("!proj/**/*".into()),
                         ]
                     ),
                 ])
@@ -273,17 +285,147 @@ fileGroups:
         }
     }
 
+    mod owners {
+        use super::*;
+
+        #[test]
+        fn loads_defaults() {
+            let config = test_load_config(CONFIG_PROJECT_FILENAME, "owners: {}", |path| {
+                ProjectConfig::load_from(path, ".")
+            });
+
+            assert_eq!(config.owners.custom_groups, FxHashMap::default());
+            assert_eq!(config.owners.default_owner, None);
+            assert!(!config.owners.optional);
+            assert_eq!(config.owners.paths, OwnersPaths::List(vec![]));
+            assert_eq!(config.owners.required_approvals, 1);
+        }
+
+        #[test]
+        fn can_set_values() {
+            let config = test_load_config(
+                CONFIG_PROJECT_FILENAME,
+                r"
+owners:
+  customGroups:
+    foo: [a, b, c]
+    bar: [x, y, z]
+  defaultOwner: x
+  optional: true
+  requiredApprovals: 2
+",
+                |path| ProjectConfig::load_from(path, "."),
+            );
+
+            assert_eq!(
+                config.owners.custom_groups,
+                FxHashMap::from_iter([
+                    ("foo".into(), vec!["a".into(), "b".into(), "c".into()]),
+                    ("bar".into(), vec!["x".into(), "y".into(), "z".into()]),
+                ])
+            );
+            assert_eq!(config.owners.default_owner, Some("x".to_string()));
+            assert!(config.owners.optional);
+            assert_eq!(config.owners.required_approvals, 2);
+        }
+
+        #[test]
+        fn can_set_paths_as_list() {
+            let config = test_load_config(
+                CONFIG_PROJECT_FILENAME,
+                r"
+owners:
+  defaultOwner: x
+  paths:
+    - file.txt
+    - dir/**/*
+",
+                |path| ProjectConfig::load_from(path, "."),
+            );
+
+            assert_eq!(
+                config.owners.paths,
+                OwnersPaths::List(vec!["file.txt".into(), "dir/**/*".into()])
+            );
+        }
+
+        #[test]
+        fn can_set_paths_as_map() {
+            let config = test_load_config(
+                CONFIG_PROJECT_FILENAME,
+                r"
+owners:
+  paths:
+    'file.txt': [a, b]
+    'dir/**/*': [c, d]
+",
+                |path| ProjectConfig::load_from(path, "."),
+            );
+
+            assert_eq!(
+                config.owners.paths,
+                OwnersPaths::Map(FxHashMap::from_iter([
+                    ("file.txt".into(), vec!["a".into(), "b".into()]),
+                    ("dir/**/*".into(), vec!["c".into(), "d".into()]),
+                ]))
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "a default owner is required when defining a list of paths")]
+        fn errors_on_paths_list_empty_owner() {
+            test_load_config(
+                CONFIG_PROJECT_FILENAME,
+                r"
+owners:
+  paths:
+    - file.txt
+    - dir/**/*
+",
+                |path| ProjectConfig::load_from(path, "."),
+            );
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "a default owner is required when defining an empty list of owners"
+        )]
+        fn errors_on_paths_map_empty_owner() {
+            test_load_config(
+                CONFIG_PROJECT_FILENAME,
+                r"
+owners:
+  paths:
+    'file.txt': []
+",
+                |path| ProjectConfig::load_from(path, "."),
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "at least 1 approver is required")]
+        fn errors_if_approvers_zero() {
+            test_load_config(
+                CONFIG_PROJECT_FILENAME,
+                r"
+owners:
+  requiredApprovals: 0
+",
+                |path| ProjectConfig::load_from(path, "."),
+            );
+        }
+    }
+
     mod project {
         use super::*;
 
-        // TODO
-        // #[test]
-        // #[should_panic(expected = "must not be empty")]
-        // fn errors_if_empty() {
-        //     test_load_config(CONFIG_PROJECT_FILENAME, "project: {}", |path| {
-        //         ProjectConfig::load_from(path, ".")
-        //     });
-        // }
+        #[test]
+        #[should_panic(expected = "must not be empty")]
+        fn errors_if_empty() {
+            test_load_config(CONFIG_PROJECT_FILENAME, "project: {}", |path| {
+                ProjectConfig::load_from(path, ".")
+            });
+        }
 
         #[test]
         fn can_set_only_description() {

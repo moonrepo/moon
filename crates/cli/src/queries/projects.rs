@@ -1,9 +1,8 @@
 use crate::queries::touched_files::{
     query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
 };
-use is_terminal::IsTerminal;
 use moon::generate_project_graph;
-use moon_common::Id;
+use moon_common::{path::WorkspaceRelativePathBuf, Id};
 use moon_error::MoonError;
 use moon_logger::{debug, trace};
 use moon_project::Project;
@@ -15,8 +14,7 @@ use serde::{Deserialize, Serialize};
 use starbase::AppResult;
 use std::{
     collections::BTreeMap,
-    io::{stdin, Read},
-    path::PathBuf,
+    io::{stdin, IsTerminal, Read},
 };
 
 const LOG_TARGET: &str = "moon:query:projects";
@@ -84,7 +82,8 @@ async fn load_touched_files(workspace: &Workspace) -> AppResult<TouchedFilePaths
 
             // As lines
         } else {
-            let files = FxHashSet::from_iter(buffer.split('\n').map(PathBuf::from));
+            let files =
+                FxHashSet::from_iter(buffer.split('\n').map(WorkspaceRelativePathBuf::from));
 
             return Ok(files);
         }

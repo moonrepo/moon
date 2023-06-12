@@ -2,7 +2,7 @@ use super::MANIFEST_NAME;
 use moon::{generate_project_graph, load_workspace};
 use moon_common::consts::CONFIG_DIRNAME;
 use moon_common::Id;
-use moon_config::LanguageType;
+use moon_config::{ConfigEnum, LanguageType};
 use moon_error::MoonError;
 use moon_platform_detector::detect_language_files;
 use moon_project_graph::ProjectGraph;

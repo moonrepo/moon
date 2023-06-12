@@ -24,7 +24,7 @@
       "additionalProperties": {
         "type": "array",
         "items": {
-          "$ref": "#/definitions/PortablePath"
+          "$ref": "#/definitions/InputPath"
         }
       }
     },
@@ -43,7 +43,7 @@
         "null"
       ],
       "items": {
-        "type": "string"
+        "$ref": "#/definitions/InputPath"
       }
     },
     "tasks": {
@@ -61,8 +61,49 @@
     "FilePath": {
       "type": "string"
     },
-    "GlobPath": {
-      "type": "string"
+    "InputPath": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        }
+      ]
+    },
+    "OutputPath": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        }
+      ]
     },
     "PartialTaskConfig": {
       "type": "object",
@@ -111,7 +152,7 @@
             "null"
           ],
           "items": {
-            "type": "string"
+            "$ref": "#/definitions/InputPath"
           }
         },
         "local": {
@@ -136,7 +177,7 @@
             "null"
           ],
           "items": {
-            "type": "string"
+            "$ref": "#/definitions/OutputPath"
           }
         },
         "platform": {
@@ -302,22 +343,6 @@
         "unknown"
       ]
     },
-    "PortablePath": {
-      "anyOf": [
-        {
-          "$ref": "#/definitions/FilePath"
-        },
-        {
-          "$ref": "#/definitions/GlobPath"
-        },
-        {
-          "$ref": "#/definitions/FilePath"
-        },
-        {
-          "$ref": "#/definitions/GlobPath"
-        }
-      ]
-    },
     "Target": {
       "type": "string"
     },
@@ -365,7 +390,7 @@
           "type": "boolean"
         },
         {
-          "type": "string"
+          "$ref": "#/definitions/FilePath"
         }
       ]
     },

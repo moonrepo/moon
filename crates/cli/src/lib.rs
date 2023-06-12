@@ -20,11 +20,15 @@ use crate::commands::query::{self, QueryProjectsOptions, QueryTouchedFilesOption
 use crate::commands::run::{run, RunOptions};
 use crate::commands::setup::setup;
 use crate::commands::sync::sync;
+use crate::commands::syncs;
 use crate::commands::task::task;
 use crate::commands::teardown::teardown;
 use crate::commands::upgrade::upgrade;
 use crate::helpers::{check_for_new_version, setup_colors};
-use app::{App as CLI, Commands, DockerCommands, MigrateCommands, NodeCommands, QueryCommands};
+use app::{
+    App as CLI, Commands, DockerCommands, MigrateCommands, NodeCommands, QueryCommands,
+    SyncCommands,
+};
 use clap::Parser;
 use enums::{CacheMode, LogLevel};
 use moon_logger::debug;
@@ -307,7 +311,11 @@ pub async fn run_cli() -> AppResult {
             .await
         }
         Commands::Setup => setup().await,
-        Commands::Sync => sync().await,
+        Commands::Sync { command } => match command {
+            Some(SyncCommands::Codeowners) => syncs::codeowners::sync().await,
+            Some(SyncCommands::Projects) => syncs::projects::sync().await,
+            None => sync().await,
+        },
         Commands::Task { target, json } => task(target, json).await,
         Commands::Teardown => teardown().await,
         Commands::Upgrade => upgrade().await,

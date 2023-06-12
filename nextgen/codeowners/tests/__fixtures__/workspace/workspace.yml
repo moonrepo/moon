@@ -1,0 +1,5 @@
+codeowners:
+  globalPaths:
+    '*': ['@admins']
+    '/config': ['@infra']
+    '/*.js': ['@infra', '@frontend']

@@ -1,23 +1,20 @@
 use super::check_dirty_repo;
 use moon::{generate_project_graph, load_workspace};
-use moon_common::consts;
-use moon_common::Id;
-use moon_config::PartialTaskOptionsConfig;
-use moon_config::ProjectConfig;
+use moon_common::{consts, Id};
 use moon_config::{
-    PartialInheritedTasksConfig, PartialProjectConfig, PartialTaskConfig, PlatformType,
-    TaskCommandArgs,
+    InputPath, OutputPath, PartialInheritedTasksConfig, PartialProjectConfig, PartialTaskConfig,
+    PartialTaskOptionsConfig, PlatformType, ProjectConfig, TaskCommandArgs,
 };
 use moon_logger::{info, warn};
-use moon_target::{Target, TargetError};
+use moon_target::Target;
 use moon_terminal::safe_exit;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use starbase::AppResult;
-use starbase_utils::fs;
-use starbase_utils::{json, yaml};
+use starbase_utils::{fs, json, yaml};
 use std::collections::BTreeMap;
 use std::path::PathBuf;
+use std::str::FromStr;
 
 const LOG_TARGET: &str = "moon:migrate:from-turborepo";
 
@@ -53,14 +50,18 @@ pub fn extract_project_task_ids(key: &str) -> (Option<Id>, Id) {
     (None, Id::raw(key))
 }
 
-pub fn convert_globals(turbo: &TurboJson, tasks_config: &mut PartialInheritedTasksConfig) -> bool {
+pub fn convert_globals(
+    turbo: &TurboJson,
+    tasks_config: &mut PartialInheritedTasksConfig,
+) -> AppResult<bool> {
     let mut modified = false;
 
     if let Some(global_deps) = &turbo.global_dependencies {
-        tasks_config
-            .implicit_inputs
-            .get_or_insert(vec![])
-            .extend(global_deps.to_owned());
+        let implicit_inputs = tasks_config.implicit_inputs.get_or_insert(vec![]);
+
+        for dep in global_deps {
+            implicit_inputs.push(InputPath::from_str(dep)?);
+        }
 
         modified = true;
     }
@@ -70,16 +71,16 @@ pub fn convert_globals(turbo: &TurboJson, tasks_config: &mut PartialInheritedTas
             tasks_config
                 .implicit_inputs
                 .get_or_insert(vec![])
-                .push(format!("${env}"));
+                .push(InputPath::EnvVar(env.to_owned()));
         }
 
         modified = true;
     }
 
-    modified
+    Ok(modified)
 }
 
-pub fn convert_task(name: Id, task: TurboTask) -> Result<PartialTaskConfig, TargetError> {
+pub fn convert_task(name: Id, task: TurboTask) -> AppResult<PartialTaskConfig> {
     let mut config = PartialTaskConfig::default();
     let mut inputs = vec![];
 
@@ -96,7 +97,7 @@ pub fn convert_task(name: Id, task: TurboTask) -> Result<PartialTaskConfig, Targ
             } else if dep.contains('#') {
                 deps.push(Target::parse(&dep.replace('#', ":"))?);
             } else if dep.starts_with('$') {
-                inputs.push(dep);
+                inputs.push(InputPath::from_str(&dep)?);
             } else {
                 deps.push(Target::parse(&dep)?);
             }
@@ -109,12 +110,14 @@ pub fn convert_task(name: Id, task: TurboTask) -> Result<PartialTaskConfig, Targ
 
     if let Some(turbo_env) = task.env {
         for env in turbo_env {
-            inputs.push(format!("${env}"));
+            inputs.push(InputPath::EnvVar(env));
         }
     }
 
     if let Some(turbo_inputs) = task.inputs {
-        inputs.extend(turbo_inputs);
+        for input in turbo_inputs {
+            inputs.push(InputPath::from_str(&input)?);
+        }
     }
 
     if let Some(turbo_outputs) = task.outputs {
@@ -122,9 +125,9 @@ pub fn convert_task(name: Id, task: TurboTask) -> Result<PartialTaskConfig, Targ
 
         for output in turbo_outputs {
             if output.ends_with("/**") {
-                outputs.push(format!("{output}/*"));
+                outputs.push(OutputPath::ProjectGlob(format!("{output}/*")));
             } else {
-                outputs.push(output);
+                outputs.push(OutputPath::from_str(&output)?);
             }
         }
 
@@ -174,7 +177,7 @@ pub async fn from_turborepo(skip_touched_files_check: bool) -> AppResult {
     let mut has_modified_global_tasks = false;
 
     // Convert globals first
-    if convert_globals(&turbo_json, &mut node_tasks_config) {
+    if convert_globals(&turbo_json, &mut node_tasks_config)? {
         has_modified_global_tasks = true;
     }
 
@@ -259,9 +262,9 @@ mod tests {
         use super::*;
 
         #[test]
-        fn converst_deps() {
+        fn converts_deps() {
             let mut config = PartialInheritedTasksConfig {
-                implicit_inputs: Some(string_vec!["existing.txt"]),
+                implicit_inputs: Some(vec![InputPath::ProjectFile("existing.txt".into())]),
                 ..PartialInheritedTasksConfig::default()
             };
 
@@ -271,18 +274,23 @@ mod tests {
                     ..TurboJson::default()
                 },
                 &mut config,
-            );
+            )
+            .unwrap();
 
             assert_eq!(
                 config.implicit_inputs,
-                Some(string_vec!["existing.txt", "file.ts", "glob/**/*.js"])
+                Some(vec![
+                    InputPath::ProjectFile("existing.txt".into()),
+                    InputPath::ProjectFile("file.ts".into()),
+                    InputPath::ProjectGlob("glob/**/*.js".into())
+                ])
             );
         }
 
         #[test]
         fn converst_env() {
             let mut config = PartialInheritedTasksConfig {
-                implicit_inputs: Some(string_vec!["$FOO"]),
+                implicit_inputs: Some(vec![InputPath::EnvVar("FOO".into())]),
                 ..PartialInheritedTasksConfig::default()
             };
 
@@ -292,11 +300,16 @@ mod tests {
                     ..TurboJson::default()
                 },
                 &mut config,
-            );
+            )
+            .unwrap();
 
             assert_eq!(
                 config.implicit_inputs,
-                Some(string_vec!["$FOO", "$BAR", "$BAZ"])
+                Some(vec![
+                    InputPath::EnvVar("FOO".into()),
+                    InputPath::EnvVar("BAR".into()),
+                    InputPath::EnvVar("BAZ".into())
+                ])
             );
         }
     }
@@ -333,7 +346,10 @@ mod tests {
                     Target::parse("project:normal").unwrap(),
                 ])
             );
-            assert_eq!(config.inputs.unwrap(), string_vec!["$VAR"]);
+            assert_eq!(
+                config.inputs.unwrap(),
+                vec![InputPath::EnvVar("VAR".into())]
+            );
         }
 
         #[test]
@@ -354,7 +370,13 @@ mod tests {
             )
             .unwrap();
 
-            assert_eq!(config.inputs.unwrap(), string_vec!["$FOO", "$BAR"]);
+            assert_eq!(
+                config.inputs.unwrap(),
+                vec![
+                    InputPath::EnvVar("FOO".into()),
+                    InputPath::EnvVar("BAR".into())
+                ]
+            );
         }
 
         #[test]
@@ -370,7 +392,11 @@ mod tests {
 
             assert_eq!(
                 config.inputs.unwrap(),
-                string_vec!["file.ts", "some/folder", "some/glob/**/*"]
+                vec![
+                    InputPath::ProjectFile("file.ts".into()),
+                    InputPath::ProjectFile("some/folder".into()),
+                    InputPath::ProjectGlob("some/glob/**/*".into()),
+                ]
             );
         }
 
@@ -393,7 +419,13 @@ mod tests {
 
             assert_eq!(
                 config.outputs.unwrap(),
-                string_vec!["dir", "dir/**/*", "dir/**/*", "dir/*", "dir/*/sub"]
+                vec![
+                    OutputPath::ProjectFile("dir".into()),
+                    OutputPath::ProjectGlob("dir/**/*".into()),
+                    OutputPath::ProjectGlob("dir/**/*".into()),
+                    OutputPath::ProjectGlob("dir/*".into()),
+                    OutputPath::ProjectGlob("dir/*/sub".into()),
+                ]
             );
         }
 

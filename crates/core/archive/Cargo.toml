@@ -20,10 +20,10 @@ starbase_styles = { workspace = true }
 starbase_utils = { workspace = true }
 tar = "0.4.38"
 thiserror = { workspace = true }
-zip = { version = "0.6.4", default-features = false }
+zip = { version = "0.6.6", default-features = false }
 
 [dev-dependencies]
 moon_test_utils = { path = "../test-utils" }
 criterion = { workspace = true }
-fake = "2.5.0"
+fake = "2.6.1"
 rand = "0.8.5"

@@ -13,6 +13,7 @@ harness = false
 [dependencies]
 moon_action = { path = "../action" }
 moon_action_context = { path = "../action-context" }
+moon_actions = { path = "../actions" }
 moon_cache = { path = "../cache" }
 moon_dep_graph = { path = "../dep-graph" }
 moon_emitter = { path = "../emitter" }

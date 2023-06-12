@@ -231,7 +231,7 @@ impl Pipeline {
 
         let duration = start.elapsed();
         let estimate = Estimator::calculate(&results, duration);
-        let context = Arc::try_unwrap(context).unwrap().into_inner();
+        let context = Arc::into_inner(context).unwrap().into_inner();
 
         debug!(
             target: LOG_TARGET,

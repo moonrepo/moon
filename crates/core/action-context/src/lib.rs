@@ -1,4 +1,5 @@
 use clap::ValueEnum;
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_target::Target;
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
@@ -27,7 +28,7 @@ pub struct ActionContext {
 
     pub target_hashes: FxHashMap<Target, String>,
 
-    pub touched_files: FxHashSet<PathBuf>,
+    pub touched_files: FxHashSet<WorkspaceRelativePathBuf>,
 
     pub workspace_root: PathBuf,
 }

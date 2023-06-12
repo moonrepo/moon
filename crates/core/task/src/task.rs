@@ -2,8 +2,10 @@ use crate::errors::TaskError;
 use crate::task_options::TaskOptions;
 use crate::types::TouchedFilePaths;
 use moon_args::{split_args, ArgsSplitError};
-use moon_common::{cacheable, cacheable_enum, Id};
-use moon_config::{PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskType};
+use moon_common::{cacheable, cacheable_enum, path::WorkspaceRelativePathBuf, Id};
+use moon_config::{
+    InputPath, OutputPath, PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskType,
+};
 use moon_error::MoonError;
 use moon_logger::{debug, trace, Logable};
 use moon_target::Target;
@@ -35,17 +37,15 @@ cacheable!(
 
         pub flags: FxHashSet<TaskFlag>,
 
-        pub global_inputs: Vec<String>,
+        pub global_inputs: Vec<InputPath>,
 
         pub id: Id,
 
-        pub inputs: Vec<String>,
+        pub inputs: Vec<InputPath>,
 
-        // Relative from workspace root
-        pub input_globs: FxHashSet<String>,
+        pub input_globs: FxHashSet<WorkspaceRelativePathBuf>,
 
-        // Relative from workspace root
-        pub input_paths: FxHashSet<PathBuf>,
+        pub input_paths: FxHashSet<WorkspaceRelativePathBuf>,
 
         pub input_vars: FxHashSet<String>,
 
@@ -54,13 +54,11 @@ cacheable!(
 
         pub options: TaskOptions,
 
-        pub outputs: Vec<String>,
+        pub outputs: Vec<OutputPath>,
 
-        // Relative from workspace root
-        pub output_globs: FxHashSet<String>,
+        pub output_globs: FxHashSet<WorkspaceRelativePathBuf>,
 
-        // Relative from workspace root
-        pub output_paths: FxHashSet<PathBuf>,
+        pub output_paths: FxHashSet<WorkspaceRelativePathBuf>,
 
         pub platform: PlatformType,
 
@@ -151,7 +149,8 @@ impl Task {
             config.env = self.env.clone();
         }
 
-        if !self.inputs.is_empty() || (self.inputs.len() == 1 && self.inputs[0] == "**/*") {
+        if !self.inputs.is_empty() || (self.inputs.len() == 1 && self.inputs[0].as_str() == "**/*")
+        {
             config.inputs = Some(self.inputs.clone());
         }
 
@@ -196,9 +195,9 @@ impl Task {
                 continue;
             }
 
-            if self.input_paths.contains(file) || globset.matches(file) {
+            if self.input_paths.contains(file) || globset.matches(file.as_str()) {
                 // Mimic relative from ("./")
-                files.push(PathBuf::from(".").join(file.strip_prefix(project_source).unwrap()));
+                files.push(file.strip_prefix(project_source).unwrap().to_path("."));
             }
         }
 
@@ -234,17 +233,17 @@ impl Task {
                 trace!(
                     target: self.get_log_target(),
                     "Affected by {} (via input files)",
-                    color::path(file),
+                    color::rel_path(file),
                 );
 
                 return Ok(true);
             }
 
-            if globset.matches(file) {
+            if globset.matches(file.as_str()) {
                 trace!(
                     target: self.get_log_target(),
                     "Affected by {} (via input globs)",
-                    color::path(file),
+                    color::rel_path(file),
                 );
 
                 return Ok(true);

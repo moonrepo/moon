@@ -46,13 +46,13 @@ impl Subscriber for LocalCacheSubscriber {
                 ..
             } => {
                 let archive_path = workspace.cache.get_hash_archive_path(hash);
+                let output_paths = task
+                    .outputs
+                    .iter()
+                    .filter_map(|o| o.to_workspace_relative(&project.source))
+                    .collect::<Vec<_>>();
 
-                if cache.archive_outputs(
-                    &archive_path,
-                    &workspace.root,
-                    &project.source,
-                    &task.outputs,
-                )? {
+                if cache.archive_outputs(&archive_path, &workspace.root, &output_paths)? {
                     return Ok(EventFlow::Return(path::to_string(archive_path)?));
                 }
             }
@@ -66,13 +66,13 @@ impl Subscriber for LocalCacheSubscriber {
                 ..
             } => {
                 let archive_path = workspace.cache.get_hash_archive_path(hash);
+                let output_paths = task
+                    .outputs
+                    .iter()
+                    .filter_map(|o| o.to_workspace_relative(&project.source))
+                    .collect::<Vec<_>>();
 
-                if cache.hydrate_outputs(
-                    &archive_path,
-                    &workspace.root,
-                    &project.source,
-                    &task.outputs,
-                )? {
+                if cache.hydrate_outputs(&archive_path, &workspace.root, &output_paths)? {
                     return Ok(EventFlow::Return(path::to_string(archive_path)?));
                 }
             }

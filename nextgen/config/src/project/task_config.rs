@@ -1,6 +1,6 @@
 use crate::language_platform::PlatformType;
 use crate::project::{PartialTaskOptionsConfig, TaskOptionsConfig};
-use crate::validate::validate_portable_paths;
+use crate::shapes::{InputPath, OutputPath};
 use moon_common::cacheable;
 use moon_target::{Target, TargetScope};
 use rustc_hash::FxHashMap;
@@ -9,7 +9,6 @@ use schematic::{
 };
 
 fn validate_command<D, C>(cmd: &TaskCommandArgs, _task: &D, _ctx: &C) -> Result<(), ValidateError> {
-    // Only fail for empty strings and not `None`
     let empty = match cmd {
         TaskCommandArgs::None => false,
         TaskCommandArgs::String(cmd_string) => {
@@ -24,6 +23,7 @@ fn validate_command<D, C>(cmd: &TaskCommandArgs, _task: &D, _ctx: &C) -> Result<
         TaskCommandArgs::Sequence(cmd_args) => cmd_args.is_empty() || cmd_args[0].is_empty(),
     };
 
+    // Only fail for empty strings and not `None`
     if empty {
         return Err(ValidateError::new(
             "a command is required; use \"noop\" otherwise",
@@ -33,7 +33,7 @@ fn validate_command<D, C>(cmd: &TaskCommandArgs, _task: &D, _ctx: &C) -> Result<
     Ok(())
 }
 
-pub fn validate_deps<D, C>(deps: &[Target], _data: &D, _ctx: &C) -> Result<(), ValidateError> {
+pub fn validate_deps<D, C>(deps: &[Target], _data: &D, _context: &C) -> Result<(), ValidateError> {
     for (i, dep) in deps.iter().enumerate() {
         if matches!(dep.scope, TargetScope::All | TargetScope::Tag(_)) {
             return Err(ValidateError::with_segment(
@@ -58,7 +58,7 @@ derive_enum!(
 
 derive_enum!(
     #[derive(Default)]
-    #[serde(untagged, expecting = "expected a string or a sequence of strings")]
+    #[serde(untagged, expecting = "expected a string or a list of strings")]
     pub enum TaskCommandArgs {
         #[default]
         None,
@@ -82,18 +82,16 @@ cacheable!(
 
         // TODO
         #[setting(skip)]
-        pub global_inputs: Vec<String>,
+        pub global_inputs: Vec<InputPath>,
 
         // None = All inputs (**/*)
         // [] = No inputs
         // [...] = Specific inputs
-        #[setting(validate = validate_portable_paths)]
-        pub inputs: Option<Vec<String>>,
+        pub inputs: Option<Vec<InputPath>>,
 
         pub local: bool,
 
-        #[setting(validate = validate_portable_paths)]
-        pub outputs: Option<Vec<String>>,
+        pub outputs: Option<Vec<OutputPath>>,
 
         #[setting(nested)]
         pub options: TaskOptionsConfig,

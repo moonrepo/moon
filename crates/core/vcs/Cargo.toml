@@ -14,7 +14,7 @@ ignore = "0.4.20"
 miette = { workspace = true }
 regex = { workspace = true }
 rustc-hash = { workspace = true }
-url = "2.3.1"
+url = "2.4.0"
 starbase_utils = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }

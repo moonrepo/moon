@@ -13,6 +13,9 @@
 - Added `workspace.syncing` and `workspace.synced` webhooks.
 - Added `MOON_OUTPUT_STYLE` and `MOON_RETRY_COUNT` environment variables.
 
+- Rust
+  - Improved Cargo workspace root and members detection.
+
 #### ⚙️ Internal
 
 - Deprecated the `moon sync` command, use `moon sync projects` instead.

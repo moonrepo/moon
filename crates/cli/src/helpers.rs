@@ -88,9 +88,10 @@ pub async fn check_for_new_version() {
         match check_version(version, false).await {
             Ok(Some(newer_version)) => {
                 println!(
-                    "{} There's a new version of moon available, {}!",
+                    "{} There's a new version of moon available, {} (currently on {})!",
                     prefix,
-                    color::success(newer_version.current_version)
+                    color::success(newer_version.current_version),
+                    version,
                 );
 
                 if let Some(newer_message) = newer_version.message {

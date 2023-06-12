@@ -1,0 +1,84 @@
+---
+slug: moon-v1.8
+title: moon v1.8 - Code owners
+authors: [milesj]
+tags: [source, code, owners, ownership]
+image: ./img/moon/v1.8.png
+---
+
+import Image from '@site/src/components/Image';
+
+With this release, we've focused on a critical facet of managing a large codebase, source code
+ownership.
+
+<!--truncate-->
+
+## Support for code ownership
+
+### Generate a `CODEOWNERS`
+
+```yaml title=".moon/workspace.yml"
+codeowners:
+	syncOnRun: true
+	globalPaths:
+		'*': ['@admins']
+
+vcs:
+	manager: 'git'
+	provider: 'github'
+```
+
+The settings above will generate the following file:
+
+```shell title=".github/CODEOWNERS"
+# (workspace)
+* @admins
+```
+
+While this looks very simple, it really shines once projects start adding their own granular code
+ownership. Continue reading for more information!
+
+### New project `owners` setting
+
+To make use of code owners, you'll need to define an [`owners`](/docs/config/project#owners) setting
+in a project's [`moon.yml`](/docs/config/project) file. This setting requires a list/map of owners
+(contributors required to review) associated to file paths/patterns, relative from the current
+project's root.
+
+```yaml title="packages/components/moon.yml"
+owners:
+	paths:
+		'src/': ['@frontend', '@design-system']
+		'*.config.js': ['@frontend-infra']
+		'*.json': ['@frontend-infra']
+```
+
+These paths will then be prefixed with the project source when
+[generating the `CODEOWNERS`](#generate-a-codeowners) file.
+
+```shell title=".github/CODEOWNERS"
+# components
+/packages/components/src/ @frontend @design-system
+/packages/components/*.config.js @frontend-infra
+/packages/components/*.json @frontend-infra
+```
+
+### New `moon sync codeowners` command
+
+Although moon can [automatically generate](/docs/config/workspace#synconrun) the `CODEOWNERS` file
+when running a target, there may be situations where this is disabled, or teams/developers would
+like to generate the file manually. To handle this, we're providing the
+[`moon sync codeowners`](/docs/commands/sync/codeowners) command, which will trigger the generation
+process.
+
+```shell
+$ moon sync codeowners
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.8.0) for a full list of
+changes.
+
+- Added a new action to the graph, `SyncWorkspace`, that'll be used for workspace-level checks.
+- Added `MOON_OUTPUT_STYLE` and `MOON_RETRY_COUNT` environment variables.

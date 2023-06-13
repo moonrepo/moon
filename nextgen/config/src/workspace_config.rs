@@ -6,7 +6,8 @@ use crate::workspace::*;
 use moon_common::{consts, Id};
 use rustc_hash::FxHashMap;
 use schematic::{
-    derive_enum, validate, Config, ConfigError, ConfigLoader, Segment, SettingPath, ValidateError,
+    derive_enum, validate, Config, ConfigError, ConfigLoader, SchemaField, SchemaType, Schematic,
+    Segment, SettingPath, ValidateError,
 };
 use std::path::Path;
 
@@ -76,6 +77,22 @@ derive_enum!(
 impl Default for WorkspaceProjects {
     fn default() -> Self {
         WorkspaceProjects::Sources(FxHashMap::default())
+    }
+}
+
+impl Schematic for WorkspaceProjects {
+    fn generate_schema() -> SchemaType {
+        SchemaType::union(vec![
+            SchemaType::array(SchemaType::string()),
+            SchemaType::object(SchemaType::string(), SchemaType::string()),
+            SchemaType::structure(vec![
+                SchemaField::new("globs", SchemaType::array(SchemaType::string())),
+                SchemaField::new(
+                    "sources",
+                    SchemaType::object(SchemaType::string(), SchemaType::string()),
+                ),
+            ]),
+        ])
     }
 }
 

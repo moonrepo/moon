@@ -1,10 +1,9 @@
 use moon_common::Id;
-use schemars::JsonSchema;
 use schematic::{derive_enum, ConfigEnum};
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use serde::{de, Deserialize, Deserializer, Serialize};
 use std::str::FromStr;
 
-#[derive(Clone, ConfigEnum, Debug, Default, Eq, JsonSchema, PartialEq)]
+#[derive(Clone, ConfigEnum, Debug, Default, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum LanguageType {
     Bash,
@@ -45,16 +44,6 @@ impl<'de> Deserialize<'de> for LanguageType {
                 Err(error)
             }
         }
-    }
-}
-
-// TODO: remove?
-impl Serialize for LanguageType {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(&self.to_string())
     }
 }
 

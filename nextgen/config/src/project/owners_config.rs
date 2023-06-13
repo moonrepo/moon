@@ -1,6 +1,6 @@
 use moon_common::cacheable;
 use rustc_hash::FxHashMap;
-use schematic::{derive_enum, Config, Segment, ValidateError};
+use schematic::{derive_enum, Config, SchemaType, Schematic, Segment, ValidateError};
 
 derive_enum!(
     #[serde(
@@ -25,6 +25,18 @@ impl OwnersPaths {
 impl Default for OwnersPaths {
     fn default() -> Self {
         OwnersPaths::List(Vec::new())
+    }
+}
+
+impl Schematic for OwnersPaths {
+    fn generate_schema() -> SchemaType {
+        SchemaType::union(vec![
+            SchemaType::array(SchemaType::string()),
+            SchemaType::object(
+                SchemaType::string(),
+                SchemaType::array(SchemaType::string()),
+            ),
+        ])
     }
 }
 

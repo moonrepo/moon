@@ -1,7 +1,7 @@
 #![allow(clippy::from_over_into)]
 
 use crate::validate::validate_child_relative_path;
-use schemars::JsonSchema;
+use schematic::schema::{SchemaType, Schematic};
 use schematic::ValidateError;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
@@ -21,7 +21,7 @@ pub trait Portable: Sized {
 
 macro_rules! path_type {
     ($name:ident) => {
-        #[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
+        #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
         #[serde(into = "String", try_from = "String")]
         pub struct $name(pub String);
 
@@ -76,6 +76,12 @@ macro_rules! path_type {
         impl Into<String> for $name {
             fn into(self) -> String {
                 self.0
+            }
+        }
+
+        impl Schematic for $name {
+            fn generate_schema() -> SchemaType {
+                SchemaType::string()
             }
         }
     };

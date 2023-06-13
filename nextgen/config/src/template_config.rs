@@ -2,7 +2,7 @@
 
 use moon_common::consts;
 use rustc_hash::FxHashMap;
-use schemars::JsonSchema;
+use schematic::schema::{SchemaType, Schematic, StringType};
 use schematic::{derive_enum, validate, Config, ConfigError, ConfigLoader};
 use serde::{Deserialize, Serialize};
 use std::path::Path;

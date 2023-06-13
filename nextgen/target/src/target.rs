@@ -3,6 +3,7 @@ use crate::target_scope::TargetScope;
 use moon_common::{Id, ID_CHARS};
 use once_cell::sync::Lazy;
 use regex::Regex;
+use schematic::{SchemaType, Schematic};
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::{
     cmp::Ordering,
@@ -185,13 +186,9 @@ impl Serialize for Target {
     }
 }
 
-impl schemars::JsonSchema for Target {
-    fn schema_name() -> String {
-        "Target".to_owned()
-    }
-
-    fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
-        gen.subschema_for::<String>()
+impl Schematic for Target {
+    fn generate_schema() -> SchemaType {
+        SchemaType::string()
     }
 }
 

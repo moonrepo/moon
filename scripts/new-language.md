@@ -102,9 +102,7 @@ this struct is empty to start. Over time we will add toolchain support, settings
 automation, and more.
 
 ```rust
-#[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
-#[schemars(default)]
-#[serde(default, rename_all = "camelCase")]
+#[derive(Config)]
 pub struct KotlinConfig {
 }
 ```
@@ -115,8 +113,7 @@ When ready, add a new field to the `ToolchainConfig` struct.
 pub struct ToolchainConfig {
 	// ...
 
-	#[serde(skip_serializing_if = "Option::is_none")]
-	#[validate]
+	#[setting(nested)]
 	pub kotlin: Option<KotlinConfig>,
 }
 ```
@@ -240,14 +237,9 @@ the language must have a `version` field. This field must be `Option<String>`, w
 toolchain to be disabled.
 
 ```rust
-#[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
-#[schemars(default)]
-#[serde(default, rename_all = "camelCase")]
+#[derive(Config)]
 pub struct KotlinConfig {
 	// ...
-
-	#[serde(skip_serializing_if = "Option::is_none")]
-	#[validate(custom = "validate_kotlin_version")]
 	pub version: Option<String>,
 }
 ```

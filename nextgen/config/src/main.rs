@@ -34,33 +34,27 @@ use std::path::PathBuf;
 //     generator.generate().unwrap();
 // }
 
-// fn generate_project() {
-//     let project_schema = schema_for!(PartialProjectConfig);
+fn generate_project() {
+    let mut generator = SchemaGenerator::default();
 
-//     fs::write(
-//         "website/static/schemas/project.json",
-//         serde_json::to_string_pretty(&project_schema).unwrap(),
-//     )
-//     .unwrap();
+    generator.add::<PartialProjectConfig>();
 
-//     let mut generator =
-//         TypeScriptGenerator::new(PathBuf::from("packages/types/src/project-config.ts"));
+    generator
+        .generate(
+            PathBuf::from("website/static/schemas/project.json"),
+            JsonSchemaRenderer::default(),
+        )
+        .unwrap();
 
-//     generator.add_enum::<DependencyScope>();
-//     generator.add_enum::<DependencySource>();
-//     generator.add_enum::<ProjectType>();
-//     generator.add::<DependencyConfig>();
-//     generator.add::<ProjectMetadataConfig>();
-//     generator.add::<OwnersConfig>();
-//     generator.add::<ProjectToolchainCommonToolConfig>();
-//     generator.add::<ProjectToolchainTypeScriptConfig>();
-//     generator.add::<ProjectToolchainConfig>();
-//     generator.add::<ProjectWorkspaceInheritedTasksConfig>();
-//     generator.add::<ProjectWorkspaceConfig>();
-//     generator.add::<ProjectConfig>();
+    generator.add::<ProjectConfig>();
 
-//     generator.generate().unwrap();
-// }
+    generator
+        .generate(
+            PathBuf::from("packages/types/src/project-config.ts"),
+            TypeScriptRenderer::default(),
+        )
+        .unwrap();
+}
 
 fn generate_tasks() {
     let mut generator = SchemaGenerator::default();
@@ -150,7 +144,7 @@ fn generate_workspace() {
 
 fn main() {
     // generate_common();
-    // generate_project();
+    generate_project();
     generate_tasks();
     generate_template();
     // generate_toolchain();

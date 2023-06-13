@@ -103,35 +103,27 @@ use std::path::PathBuf;
 //     .unwrap();
 // }
 
-// fn generate_toolchain() {
-//     let toolchain_schema = schema_for!(PartialToolchainConfig);
+fn generate_toolchain() {
+    let mut generator = SchemaGenerator::default();
 
-//     fs::write(
-//         "website/static/schemas/toolchain.json",
-//         serde_json::to_string_pretty(&toolchain_schema).unwrap(),
-//     )
-//     .unwrap();
+    generator.add::<PartialToolchainConfig>();
 
-//     let mut generator =
-//         TypeScriptGenerator::new(PathBuf::from("packages/types/src/toolchain-config.ts"));
+    generator
+        .generate(
+            PathBuf::from("website/static/schemas/toolchain.json"),
+            JsonSchemaRenderer::default(),
+        )
+        .unwrap();
 
-//     generator.add_enum::<NodeProjectAliasFormat>();
-//     generator.add_enum::<NodeVersionFormat>();
-//     generator.add_enum::<NodePackageManager>();
-//     generator.add_enum::<NodeVersionManager>();
-//     generator.add::<DenoConfig>();
-//     generator.add::<NpmConfig>();
-//     generator.add::<PnpmConfig>();
-//     generator.add::<YarnConfig>();
-//     generator.add::<NodeConfig>();
-//     generator.add::<RustConfig>();
-//     generator.add::<TypeScriptConfig>();
-//     generator.add::<ToolchainConfig>();
-//     generator.add::<ToolchainConfig>();
-//     generator.add::<ToolchainConfig>();
+    generator.add::<ToolchainConfig>();
 
-//     generator.generate().unwrap();
-// }
+    generator
+        .generate(
+            PathBuf::from("packages/types/src/toolchain-config.ts"),
+            TypeScriptRenderer::default(),
+        )
+        .unwrap();
+}
 
 fn generate_workspace() {
     let mut generator = SchemaGenerator::default();
@@ -160,6 +152,6 @@ fn main() {
     // generate_project();
     // generate_tasks();
     // generate_template();
-    // generate_toolchain();
+    generate_toolchain();
     generate_workspace();
 }

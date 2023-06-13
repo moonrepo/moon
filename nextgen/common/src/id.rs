@@ -1,7 +1,7 @@
 use miette::Diagnostic;
 use once_cell::sync::Lazy;
 use regex::Regex;
-use schematic::schema::{SchemaType, Schematic};
+use schematic::{SchemaType, Schematic};
 use serde::{de, Deserialize, Deserializer, Serialize};
 use starbase_styles::{Style, Stylize};
 use std::{

@@ -1,8 +1,7 @@
 #![allow(clippy::from_over_into)]
 
 use crate::validate::validate_child_relative_path;
-use schematic::schema::{SchemaType, Schematic};
-use schematic::ValidateError;
+use schematic::{SchemaType, Schematic, ValidateError};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 

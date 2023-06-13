@@ -82,7 +82,7 @@ impl Default for WorkspaceProjects {
 
 impl Schematic for WorkspaceProjects {
     fn generate_schema() -> SchemaType {
-        SchemaType::union(vec![
+        let mut schema = SchemaType::union(vec![
             SchemaType::array(SchemaType::string()),
             SchemaType::object(SchemaType::string(), SchemaType::string()),
             SchemaType::structure(vec![
@@ -92,7 +92,9 @@ impl Schematic for WorkspaceProjects {
                     SchemaType::object(SchemaType::string(), SchemaType::string()),
                 ),
             ]),
-        ])
+        ]);
+        schema.set_name("WorkspaceProjects");
+        schema
     }
 }
 

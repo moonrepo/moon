@@ -2,16 +2,27 @@
 
 use moon_common::consts;
 use rustc_hash::FxHashMap;
-use schematic::schema::{SchemaType, Schematic, StringType};
-use schematic::{derive_enum, validate, Config, ConfigError, ConfigLoader};
+use schematic::{
+    derive_enum, validate, Config, ConfigError, ConfigLoader, SchemaField, SchemaType, Schematic,
+};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
-#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct TemplateVariableSetting<T> {
     pub default: T,
     pub prompt: Option<String>,
     pub required: Option<bool>,
+}
+
+impl<T: Schematic> Schematic for TemplateVariableSetting<T> {
+    fn generate_schema() -> SchemaType {
+        SchemaType::structure(vec![
+            SchemaField::new("default", SchemaType::infer::<T>()),
+            SchemaField::new("prompt", SchemaType::infer::<Option<String>>()),
+            SchemaField::new("required", SchemaType::infer::<Option<bool>>()),
+        ])
+    }
 }
 
 derive_enum!(
@@ -25,12 +36,38 @@ derive_enum!(
     }
 );
 
-#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
+impl Schematic for TemplateVariableEnumValue {
+    fn generate_schema() -> SchemaType {
+        SchemaType::union(vec![
+            SchemaType::string(),
+            SchemaType::structure(vec![
+                SchemaField::new("label", SchemaType::string()),
+                SchemaField::new("value", SchemaType::string()),
+            ]),
+        ])
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct TemplateVariableEnumSetting {
     pub default: String,
     pub multiple: Option<bool>,
     pub prompt: String,
     pub values: Vec<TemplateVariableEnumValue>,
+}
+
+impl Schematic for TemplateVariableEnumSetting {
+    fn generate_schema() -> SchemaType {
+        SchemaType::structure(vec![
+            SchemaField::new("default", SchemaType::string()),
+            SchemaField::new("multiple", SchemaType::infer::<Option<bool>>()),
+            SchemaField::new("prompt", SchemaType::string()),
+            SchemaField::new(
+                "values",
+                SchemaType::infer::<Vec<TemplateVariableEnumValue>>(),
+            ),
+        ])
+    }
 }
 
 derive_enum!(
@@ -44,6 +81,12 @@ derive_enum!(
         // StringList(TemplateVariableConfig<Vec<String>>),
     }
 );
+
+impl Schematic for TemplateVariable {
+    fn generate_schema() -> SchemaType {
+        SchemaType::Unknown
+    }
+}
 
 /// Docs: https://moonrepo.dev/docs/config/template
 #[derive(Debug, Config)]

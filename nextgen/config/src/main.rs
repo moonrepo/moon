@@ -62,29 +62,27 @@ use std::path::PathBuf;
 //     generator.generate().unwrap();
 // }
 
-// fn generate_tasks() {
-//     let tasks_schema = schema_for!(PartialInheritedTasksConfig);
+fn generate_tasks() {
+    let mut generator = SchemaGenerator::default();
 
-//     fs::write(
-//         "website/static/schemas/tasks.json",
-//         serde_json::to_string_pretty(&tasks_schema).unwrap(),
-//     )
-//     .unwrap();
+    generator.add::<PartialInheritedTasksConfig>();
 
-//     let mut generator =
-//         TypeScriptGenerator::new(PathBuf::from("packages/types/src/tasks-config.ts"));
+    generator
+        .generate(
+            PathBuf::from("website/static/schemas/tasks.json"),
+            JsonSchemaRenderer::default(),
+        )
+        .unwrap();
 
-//     generator.add_enum::<TaskMergeStrategy>();
-//     generator.add_enum::<TaskOutputStyle>();
-//     generator.add_enum::<TaskType>();
-//     generator.add::<InheritedTasksConfig>();
-//     generator.add::<InheritedTasksConfig>();
-//     generator.add::<TaskOptionsConfig>();
-//     generator.add::<TaskConfig>();
-//     generator.add::<InheritedTasksConfig>();
+    generator.add::<InheritedTasksConfig>();
 
-//     generator.generate().unwrap();
-// }
+    generator
+        .generate(
+            PathBuf::from("packages/types/src/tasks-config.ts"),
+            TypeScriptRenderer::default(),
+        )
+        .unwrap();
+}
 
 fn generate_template() {
     let mut generator = SchemaGenerator::default();
@@ -153,7 +151,7 @@ fn generate_workspace() {
 fn main() {
     // generate_common();
     // generate_project();
-    // generate_tasks();
+    generate_tasks();
     generate_template();
     // generate_toolchain();
     generate_workspace();

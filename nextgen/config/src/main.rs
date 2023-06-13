@@ -86,22 +86,25 @@ use std::path::PathBuf;
 //     generator.generate().unwrap();
 // }
 
-// fn generate_template() {
-//     let template_schema = schema_for!(PartialTemplateConfig);
-//     let template_frontmatter_schema = schema_for!(PartialTemplateFrontmatterConfig);
+fn generate_template() {
+    let mut generator = SchemaGenerator::default();
+    generator.add::<PartialTemplateConfig>();
+    generator
+        .generate(
+            PathBuf::from("website/static/schemas/template.json"),
+            JsonSchemaRenderer::default(),
+        )
+        .unwrap();
 
-//     fs::write(
-//         "website/static/schemas/template.json",
-//         serde_json::to_string_pretty(&template_schema).unwrap(),
-//     )
-//     .unwrap();
-
-//     fs::write(
-//         "website/static/schemas/template-frontmatter.json",
-//         serde_json::to_string_pretty(&template_frontmatter_schema).unwrap(),
-//     )
-//     .unwrap();
-// }
+    let mut generator = SchemaGenerator::default();
+    generator.add::<PartialTemplateFrontmatterConfig>();
+    generator
+        .generate(
+            PathBuf::from("website/static/schemas/template-frontmatter.json"),
+            JsonSchemaRenderer::default(),
+        )
+        .unwrap();
+}
 
 fn generate_toolchain() {
     let mut generator = SchemaGenerator::default();
@@ -151,7 +154,7 @@ fn main() {
     // generate_common();
     // generate_project();
     // generate_tasks();
-    // generate_template();
-    generate_toolchain();
+    generate_template();
+    // generate_toolchain();
     generate_workspace();
 }

@@ -2,24 +2,7 @@
 
 /* eslint-disable */
 
-import type { Id, Target, FilePath } from './common-config';
-import type { WorkspaceProjects } from './common-fixes';
-
 export type CodeownersOrderBy = 'file-source' | 'project-name';
-
-export type HasherOptimization = 'accuracy' | 'performance';
-
-export type HasherWalkStrategy = 'glob' | 'vcs';
-
-export type VcsManager = 'git' | 'svn';
-
-export type VcsProvider = 'bitbucket' | 'github' | 'gitlab' | 'other';
-
-export interface CodeownersConfig {
-	globalPaths: Record<string, string[]>;
-	orderBy: CodeownersOrderBy;
-	syncOnRun: boolean;
-}
 
 export interface PartialCodeownersConfig {
 	globalPaths?: Record<string, string[]> | null;
@@ -27,22 +10,84 @@ export interface PartialCodeownersConfig {
 	syncOnRun?: boolean | null;
 }
 
-export interface ConstraintsConfig {
-	enforceProjectTypeRelationships: boolean;
-	tagRelationships: Record<Id, Id[]>;
-}
-
 export interface PartialConstraintsConfig {
 	enforceProjectTypeRelationships?: boolean | null;
-	tagRelationships?: Record<Id, Id[]> | null;
-}
-
-export interface GeneratorConfig {
-	templates: FilePath[];
+	tagRelationships?: Record<string, string[]> | null;
 }
 
 export interface PartialGeneratorConfig {
-	templates?: FilePath[] | null;
+	templates?: string[] | null;
+}
+
+export type HasherOptimization = 'accuracy' | 'performance';
+
+export type HasherWalkStrategy = 'glob' | 'vcs';
+
+export interface PartialHasherConfig {
+	batchSize?: number | null;
+	optimization?: HasherOptimization | null;
+	walkStrategy?: HasherWalkStrategy | null;
+	warnOnMissingInputs?: boolean | null;
+}
+
+export interface PartialNotifierConfig {
+	webhookUrl?: string | null;
+}
+
+export type WorkspaceProjects =
+	| string[]
+	| Record<string, string>
+	| {
+			globs: string[];
+			sources: Record<string, string>;
+	  };
+
+export interface PartialRunnerConfig {
+	archivableTargets?: string[] | null;
+	cacheLifetime?: string | null;
+	inheritColorsForPipedTasks?: boolean | null;
+	logRunningCommand?: boolean | null;
+}
+
+export type VcsManager = 'git' | 'svn';
+
+export type VcsProvider = 'bitbucket' | 'github' | 'gitlab' | 'other';
+
+export interface PartialVcsConfig {
+	defaultBranch?: string | null;
+	manager?: VcsManager | null;
+	provider?: VcsProvider | null;
+	remoteCandidates?: string[] | null;
+}
+
+export interface PartialWorkspaceConfig {
+	$schema?: string | null;
+	codeowners?: PartialCodeownersConfig | null;
+	constraints?: PartialConstraintsConfig | null;
+	extends?: string | null;
+	generator?: PartialGeneratorConfig | null;
+	hasher?: PartialHasherConfig | null;
+	notifier?: PartialNotifierConfig | null;
+	projects?: WorkspaceProjects | null;
+	runner?: PartialRunnerConfig | null;
+	telemetry?: boolean | null;
+	vcs?: PartialVcsConfig | null;
+	versionConstraint?: string | null;
+}
+
+export interface CodeownersConfig {
+	globalPaths: Record<string, string[]>;
+	orderBy: CodeownersOrderBy;
+	syncOnRun: boolean;
+}
+
+export interface ConstraintsConfig {
+	enforceProjectTypeRelationships: boolean;
+	tagRelationships: Record<string, string[]>;
+}
+
+export interface GeneratorConfig {
+	templates: string[];
 }
 
 export interface HasherConfig {
@@ -52,33 +97,15 @@ export interface HasherConfig {
 	warnOnMissingInputs: boolean;
 }
 
-export interface PartialHasherConfig {
-	batchSize?: number | null;
-	optimization?: HasherOptimization | null;
-	walkStrategy?: HasherWalkStrategy | null;
-	warnOnMissingInputs?: boolean | null;
-}
-
 export interface NotifierConfig {
 	webhookUrl: string | null;
 }
 
-export interface PartialNotifierConfig {
-	webhookUrl?: string | null;
-}
-
 export interface RunnerConfig {
-	archivableTargets: Target[];
+	archivableTargets: string[];
 	cacheLifetime: string;
 	inheritColorsForPipedTasks: boolean;
 	logRunningCommand: boolean;
-}
-
-export interface PartialRunnerConfig {
-	archivableTargets?: Target[] | null;
-	cacheLifetime?: string | null;
-	inheritColorsForPipedTasks?: boolean | null;
-	logRunningCommand?: boolean | null;
 }
 
 export interface VcsConfig {
@@ -86,13 +113,6 @@ export interface VcsConfig {
 	manager: VcsManager;
 	provider: VcsProvider;
 	remoteCandidates: string[];
-}
-
-export interface PartialVcsConfig {
-	defaultBranch?: string | null;
-	manager?: VcsManager | null;
-	provider?: VcsProvider | null;
-	remoteCandidates?: string[] | null;
 }
 
 export interface WorkspaceConfig {
@@ -108,19 +128,4 @@ export interface WorkspaceConfig {
 	telemetry: boolean;
 	vcs: VcsConfig;
 	versionConstraint: string | null;
-}
-
-export interface PartialWorkspaceConfig {
-	$schema?: string | null;
-	codeowners?: CodeownersConfig | null;
-	constraints?: ConstraintsConfig | null;
-	extends?: string | null;
-	generator?: GeneratorConfig | null;
-	hasher?: HasherConfig | null;
-	notifier?: NotifierConfig | null;
-	projects?: WorkspaceProjects | null;
-	runner?: RunnerConfig | null;
-	telemetry?: boolean | null;
-	vcs?: VcsConfig | null;
-	versionConstraint?: string | null;
 }

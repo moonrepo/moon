@@ -5,7 +5,8 @@ use moon_common::cacheable;
 use moon_target::{Target, TargetScope};
 use rustc_hash::FxHashMap;
 use schematic::{
-    derive_enum, Config, ConfigEnum, ConfigError, ConfigLoader, Format, Segment, ValidateError,
+    derive_enum, Config, ConfigEnum, ConfigError, ConfigLoader, Format, SchemaType, Schematic,
+    Segment, ValidateError,
 };
 
 fn validate_command<D, C>(cmd: &TaskCommandArgs, _task: &D, _ctx: &C) -> Result<(), ValidateError> {
@@ -66,6 +67,18 @@ derive_enum!(
         Sequence(Vec<String>),
     }
 );
+
+impl Schematic for TaskCommandArgs {
+    fn generate_schema() -> SchemaType {
+        let mut schema = SchemaType::union(vec![
+            SchemaType::Null,
+            SchemaType::string(),
+            SchemaType::array(SchemaType::string()),
+        ]);
+        schema.set_name("TaskCommandArgs");
+        schema
+    }
+}
 
 cacheable!(
     #[derive(Clone, Config, Debug, Eq, PartialEq)]

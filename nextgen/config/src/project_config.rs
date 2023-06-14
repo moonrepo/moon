@@ -7,7 +7,8 @@ use moon_common::cacheable;
 use moon_common::{consts, Id};
 use rustc_hash::FxHashMap;
 use schematic::{
-    derive_enum, validate, Config, ConfigEnum, ConfigError, ConfigLoader, ValidateError,
+    derive_enum, validate, Config, ConfigEnum, ConfigError, ConfigLoader, SchemaField, SchemaType,
+    Schematic, ValidateError,
 };
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -58,6 +59,20 @@ derive_enum!(
         Object { id: Id, scope: DependencyScope },
     }
 );
+
+impl Schematic for ProjectDependsOn {
+    fn generate_schema() -> SchemaType {
+        let mut schema = SchemaType::union(vec![
+            SchemaType::string(),
+            SchemaType::structure(vec![
+                SchemaField::new("id", SchemaType::string()),
+                SchemaField::new("scope", SchemaType::infer::<DependencyScope>()),
+            ]),
+        ]);
+        schema.set_name("ProjectDependsOn");
+        schema
+    }
+}
 
 cacheable!(
     /// Docs: https://moonrepo.dev/docs/config/project

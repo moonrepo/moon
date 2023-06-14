@@ -5,163 +5,256 @@
   "type": "object",
   "properties": {
     "$schema": {
-      "type": [
-        "string",
-        "null"
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
       ]
     },
     "description": {
-      "type": [
-        "string",
-        "null"
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
       ]
     },
     "title": {
-      "type": [
-        "string",
-        "null"
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
       ]
     },
     "variables": {
-      "type": [
-        "object",
-        "null"
-      ],
-      "additionalProperties": {
-        "$ref": "#/definitions/TemplateVariable"
-      }
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/TemplateVariable"
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
     }
   },
   "additionalProperties": false,
   "definitions": {
-    "TemplateVariable": {
-      "oneOf": [
-        {
-          "type": "object",
-          "required": [
-            "default",
-            "type"
-          ],
-          "properties": {
-            "default": {
+    "PartialTemplateVariableEnumSetting": {
+      "title": "PartialTemplateVariableEnumSetting",
+      "type": "object",
+      "properties": {
+        "default": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "multiple": {
+          "anyOf": [
+            {
               "type": "boolean"
             },
-            "prompt": {
-              "type": [
-                "string",
-                "null"
-              ]
-            },
-            "required": {
-              "type": [
-                "boolean",
-                "null"
-              ]
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "boolean"
-              ]
+            {
+              "type": "null"
             }
-          }
+          ]
         },
-        {
-          "type": "object",
-          "required": [
-            "default",
-            "prompt",
-            "type",
-            "values"
-          ],
-          "properties": {
-            "default": {
+        "prompt": {
+          "anyOf": [
+            {
               "type": "string"
             },
-            "multiple": {
-              "type": [
-                "boolean",
-                "null"
-              ]
-            },
-            "prompt": {
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "type": {
+          "anyOf": [
+            {
               "type": "string"
             },
-            "type": {
-              "type": "string",
-              "enum": [
-                "enum"
-              ]
-            },
-            "values": {
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "values": {
+          "anyOf": [
+            {
               "type": "array",
               "items": {
                 "$ref": "#/definitions/TemplateVariableEnumValue"
               }
+            },
+            {
+              "type": "null"
             }
-          }
-        },
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "TemplateVariable": {
+      "anyOf": [
         {
           "type": "object",
-          "required": [
-            "default",
-            "type"
-          ],
           "properties": {
             "default": {
-              "type": "integer",
-              "format": "uint",
-              "minimum": 0.0
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             },
             "prompt": {
-              "type": [
-                "string",
-                "null"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
               ]
             },
             "required": {
-              "type": [
-                "boolean",
-                "null"
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
               ]
             },
             "type": {
-              "type": "string",
-              "enum": [
-                "number"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
               ]
             }
-          }
+          },
+          "additionalProperties": false
+        },
+        {
+          "$ref": "#/definitions/PartialTemplateVariableEnumSetting"
         },
         {
           "type": "object",
-          "required": [
-            "default",
-            "type"
-          ],
           "properties": {
             "default": {
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             },
             "prompt": {
-              "type": [
-                "string",
-                "null"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
               ]
             },
             "required": {
-              "type": [
-                "boolean",
-                "null"
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
               ]
             },
             "type": {
-              "type": "string",
-              "enum": [
-                "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
               ]
             }
-          }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "default": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "prompt": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
         }
       ]
     },
@@ -172,18 +265,29 @@
         },
         {
           "type": "object",
-          "required": [
-            "label",
-            "value"
-          ],
           "properties": {
             "label": {
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             },
             "value": {
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             }
-          }
+          },
+          "additionalProperties": false
         }
       ]
     }

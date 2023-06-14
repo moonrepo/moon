@@ -2029,9 +2029,9 @@ checksum = "0cfe9645a18782869361d9c8732246be7b410ad4e919d3609ebabdac00ba12c3"
 
 [[package]]
 name = "indexmap"
-version = "1.9.2"
+version = "1.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1885e79c1fc4b10f0e172c475f458b7f7b93061064d98c3293e98c5ba0c8b399"
+checksum = "bd070e393353796e801d209ad339e89596eb4c8d430d18ede6a1cced8fafbd99"
 dependencies = [
  "autocfg",
  "hashbrown 0.12.3",
@@ -2756,7 +2756,7 @@ dependencies = [
  "once_cell",
  "regex",
  "relative-path",
- "schemars",
+ "schematic",
  "serde",
  "starbase_styles",
  "thiserror",
@@ -2771,7 +2771,6 @@ dependencies = [
  "moon_target",
  "proto_cli",
  "rustc-hash",
- "schemars",
  "schematic",
  "semver",
  "serde",
@@ -3387,7 +3386,7 @@ dependencies = [
  "moon_common",
  "once_cell",
  "regex",
- "schemars",
+ "schematic",
  "serde",
  "thiserror",
 ]
@@ -4551,35 +4550,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "02c613288622e5f0c3fdc5dbd4db1c5fbe752746b1d1a56a0630b78fd00de44f"
 dependencies = [
  "dyn-clone",
- "schemars_derive",
  "serde",
  "serde_json",
 ]
 
 [[package]]
-name = "schemars_derive"
-version = "0.8.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "109da1e6b197438deb6db99952990c7f959572794b80ff93707d55a232545e7c"
-dependencies = [
- "proc-macro2",
- "quote",
- "serde_derive_internals",
- "syn 1.0.109",
-]
-
-[[package]]
 name = "schematic"
-version = "0.8.1"
+version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe824844d467e03a277ed2a73fad65de53dfd55f721e7907fe946c8e7addecd8"
+checksum = "e15407a6ef26d61501c520cf7bbb2368acbf94250a69e41dca9751f6e9e1072c"
 dependencies = [
  "garde",
+ "indexmap",
  "miette",
  "reqwest",
  "schemars",
  "schematic_macros",
+ "schematic_types",
  "serde",
+ "serde_json",
  "serde_path_to_error",
  "serde_yaml",
  "starbase_styles",
@@ -4589,9 +4578,9 @@ dependencies = [
 
 [[package]]
 name = "schematic_macros"
-version = "0.8.0"
+version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d6a8bb8f2b09e1ce852d0acc358aac5359a7dd3c435975085637f3fcdee2be19"
+checksum = "bbb12b87912c7b0eb5d237270fe127e6cd7a5b93ee909f69915ca409b9d6f28e"
 dependencies = [
  "convert_case",
  "darling 0.20.1",
@@ -4599,6 +4588,12 @@ dependencies = [
  "quote",
  "syn 2.0.18",
 ]
+
+[[package]]
+name = "schematic_types"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6f01d37c54024d0a166f8d8413d91086303f13373375aca3ac505faf1a20ff83"
 
 [[package]]
 name = "scopeguard"
@@ -4672,17 +4667,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.18",
-]
-
-[[package]]
-name = "serde_derive_internals"
-version = "0.26.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "85bf8229e7920a9f636479437026331ce11aa132b4dde37d121944a44d6e5f3c"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
 ]
 
 [[package]]

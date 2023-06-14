@@ -45,21 +45,18 @@ repository.
 ## Enabling remote caching
 
 Once you have a [moonrepo.app](https://moonrepo.app) account, an organization, and repository, you
-can enable remote caching in your CI pipeline. From a moonbase repository page, you can view your
-API keys in the actions menu. The first is the secret key for your entire organization, and the
-second is an access key specific to that repository.
+can enable remote caching in your CI pipeline. From a moonbase organization page, you can view your
+API key in the actions menu.
 
-In that repository's CI environment, set the following environment variables.
+In a repository's CI environment, set the following environment variable.
 
 ```
 MOONBASE_SECRET_KEY=<secret key>
-MOONBASE_ACCESS_KEY=<access key>
 ```
 
-moon will automatically authenticate the remote caching service when all credentials in the
-environment exist.
-
-> Access keys are unique _per repository_. You'll need different keys for each pipeline!
+moon will automatically authenticate the remote caching service when credentials in the environment
+exist. Furthermore, the repository in question must be within the moonbase organization, and the
+repository slug (`<owner>/<repo>`) must match.
 
 ## FAQ
 

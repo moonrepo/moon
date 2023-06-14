@@ -1,4 +1,4 @@
-import type { PlatformType } from './common-config';
+import type { PlatformType } from './tasks-config';
 
 export type Nullable<T> = { [K in keyof T]: T[K] | null };
 

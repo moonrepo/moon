@@ -1,7 +1,7 @@
 use miette::Diagnostic;
 use once_cell::sync::Lazy;
 use regex::Regex;
-use schemars::JsonSchema;
+use schematic::{SchemaType, Schematic};
 use serde::{de, Deserialize, Deserializer, Serialize};
 use starbase_styles::{Style, Stylize};
 use std::{
@@ -23,7 +23,7 @@ pub static ID_PATTERN: Lazy<Regex> =
 #[error("Invalid format for {}, may only contain alpha-numeric characters, dashes (-), slashes (/), underscores (_), and dots (.).", .0.style(Style::Id))]
 pub struct IdError(String);
 
-#[derive(Clone, Debug, Default, Eq, Hash, JsonSchema, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct Id(String);
 
 impl Id {
@@ -121,6 +121,12 @@ impl<'de> Deserialize<'de> for Id {
     {
         Id::new(String::deserialize(deserializer)?)
             .map_err(|error| de::Error::custom(error.to_string()))
+    }
+}
+
+impl Schematic for Id {
+    fn generate_schema() -> SchemaType {
+        SchemaType::string()
     }
 }
 

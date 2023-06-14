@@ -1,7 +1,7 @@
-import type { LanguageType, PlatformType } from './common-config';
-import type { DependencyConfig, ProjectConfig, ProjectType } from './project-config';
+import type { DependencyConfig, LanguageType, ProjectConfig, ProjectType } from './project-config';
 import type {
 	InheritedTasksConfig,
+	PlatformType,
 	TaskMergeStrategy,
 	TaskOutputStyle,
 	TaskType,

@@ -5,7 +5,7 @@ use crate::validate::validate_child_relative_path;
 use moon_common::path::{
     expand_to_workspace_relative, standardize_separators, RelativeFrom, WorkspaceRelativePathBuf,
 };
-use schematic::{derive_enum, ValidateError};
+use schematic::{derive_enum, SchemaType, Schematic, ValidateError};
 use std::str::FromStr;
 
 derive_enum!(
@@ -122,6 +122,12 @@ impl Into<String> for OutputPath {
             | OutputPath::TokenFunc(value) => value,
             OutputPath::WorkspaceFile(path) | OutputPath::WorkspaceGlob(path) => format!("/{path}"),
         }
+    }
+}
+
+impl Schematic for OutputPath {
+    fn generate_schema() -> SchemaType {
+        SchemaType::string()
     }
 }
 

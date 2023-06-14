@@ -22,7 +22,7 @@ enum ProjectLanguage {
 - [ ] Updated enum
 - [ ] Updated TypeScript types at `packages/types/src/project-config.ts`
 - [ ] Verified all `match` callsites handle the new variant
-- [ ] Ran `cargo make json-schemas` and updated the JSON schemas
+- [ ] Ran `cargo make schemas` and updated the JSON schemas
 
 ### Add case to `PlatformType::from` in `moon_config`
 
@@ -102,9 +102,7 @@ this struct is empty to start. Over time we will add toolchain support, settings
 automation, and more.
 
 ```rust
-#[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
-#[schemars(default)]
-#[serde(default, rename_all = "camelCase")]
+#[derive(Config)]
 pub struct KotlinConfig {
 }
 ```
@@ -115,8 +113,7 @@ When ready, add a new field to the `ToolchainConfig` struct.
 pub struct ToolchainConfig {
 	// ...
 
-	#[serde(skip_serializing_if = "Option::is_none")]
-	#[validate]
+	#[setting(nested)]
 	pub kotlin: Option<KotlinConfig>,
 }
 ```
@@ -124,7 +121,7 @@ pub struct ToolchainConfig {
 - [ ] Created language struct
 - [ ] Created config template file
 - [ ] Updated `ToolchainConfig` struct
-- [ ] Ran `cargo make json-schemas` and updated the JSON schemas
+- [ ] Ran `cargo make schemas` and updated the JSON schemas
 - [ ] Add `.prototools` support in `crates/core/config/src/toolchain/config.rs`
 
 ### Add variant to `PlatformType` enum in `moon_config`
@@ -240,14 +237,9 @@ the language must have a `version` field. This field must be `Option<String>`, w
 toolchain to be disabled.
 
 ```rust
-#[derive(Clone, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize, Validate)]
-#[schemars(default)]
-#[serde(default, rename_all = "camelCase")]
+#[derive(Config)]
 pub struct KotlinConfig {
 	// ...
-
-	#[serde(skip_serializing_if = "Option::is_none")]
-	#[validate(custom = "validate_kotlin_version")]
 	pub version: Option<String>,
 }
 ```
@@ -261,7 +253,7 @@ kotlin = "1.2.3"
 - [ ] Updated config struct: `crates/core/config/src/toolchain/<lang>.rs`
 - [ ] Supported proto version in `crates/core/config/src/toolchain/config.rs`
 - [ ] Added tests: `crates/core/config/tests/toolchain_test.rs`
-- [ ] Ran `cargo make json-schemas` and updated the JSON schemas
+- [ ] Ran `cargo make schemas` and updated the JSON schemas
 
 ### Integrate proto tool into moon tool crate
 

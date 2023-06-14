@@ -1,6 +1,7 @@
 use crate::portable_path::FilePath;
 use moon_common::cacheable;
-use schematic::{derive_enum, Config, ConfigEnum};
+use schematic::schema::StringType;
+use schematic::{derive_enum, Config, ConfigEnum, SchemaType, Schematic};
 use serde::{de, Deserialize, Deserializer, Serialize};
 use serde_yaml::Value;
 
@@ -12,29 +13,17 @@ pub enum TaskOptionAffectedFiles {
     Enabled(bool),
 }
 
-impl schemars::JsonSchema for TaskOptionAffectedFiles {
-    fn schema_name() -> String {
-        "TaskOptionAffectedFiles".to_owned()
-    }
-
-    fn json_schema(_: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
-        schemars::schema::Schema::Object(schemars::schema::SchemaObject {
-            subschemas: Some(Box::new(schemars::schema::SubschemaValidation {
-                one_of: Some(vec![
-                    schemars::schema::Schema::Object(schemars::schema::SchemaObject {
-                        instance_type: Some(schemars::schema::InstanceType::String.into()),
-                        enum_values: Some(vec!["args".into(), "env".into()]),
-                        ..Default::default()
-                    }),
-                    schemars::schema::Schema::Object(schemars::schema::SchemaObject {
-                        instance_type: Some(schemars::schema::InstanceType::Boolean.into()),
-                        ..Default::default()
-                    }),
-                ]),
+impl Schematic for TaskOptionAffectedFiles {
+    fn generate_schema() -> SchemaType {
+        let mut schema = SchemaType::union(vec![
+            SchemaType::Boolean,
+            SchemaType::String(StringType {
+                enum_values: Some(vec!["args".into(), "env".into()]),
                 ..Default::default()
-            })),
-            ..Default::default()
-        })
+            }),
+        ]);
+        schema.set_name("TaskOptionAffectedFiles");
+        schema
     }
 }
 
@@ -70,6 +59,14 @@ impl TaskOptionEnvFile {
             TaskOptionEnvFile::Enabled(false) => None,
             TaskOptionEnvFile::File(path) => Some(path.clone()),
         }
+    }
+}
+
+impl Schematic for TaskOptionEnvFile {
+    fn generate_schema() -> SchemaType {
+        let mut schema = SchemaType::union(vec![SchemaType::Boolean, SchemaType::string()]);
+        schema.set_name("TaskOptionEnvFile");
+        schema
     }
 }
 

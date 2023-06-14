@@ -57,12 +57,20 @@ user choice and customization, and as such, support a user configuration file lo
 auto-install = true
 ```
 
+These settings (excluding plugins) can also be configured via environment variables.
+
+```shell
+PROTO_AUTO_INSTALL=true proto run node
+```
+
 ### Settings
 
 - `auto-install` - When enabled, will automatically installing missing tools when
   [`proto run`](./commands/run) is run, instead of erroring. Defaults to `false`.
 - `auto-clean` - When enabled, will automatically clean up the proto cache when
   [`proto use`](./commands/use) is run. Defaults to `false`.
+- `node-intercept-globals` - When enabled, will intercept global package installs for npm/pnpm/yarn
+  and suggest using [`proto install-global`](./commands/install-global) instead. Defaults to `true`.
 - `[plugins]` - A mapping of plugins available to the user. Refer to the [plugins](#plugins) section
   above for more information.
 

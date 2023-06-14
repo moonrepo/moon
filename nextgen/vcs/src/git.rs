@@ -91,7 +91,7 @@ impl Git {
                 "Loading ignore rules from .gitignore",
             );
 
-            let mut builder = GitignoreBuilder::new(&git_root);
+            let mut builder = GitignoreBuilder::new(git_root);
 
             if let Some(error) = builder.add(ignore_path) {
                 return Err(VcsError::LoadGitignoreFailed { error });
@@ -129,7 +129,7 @@ impl Git {
         command
     }
 
-    async fn create_and_run_command<I, A>(&self, args: I, trim: bool) -> VcsResult<String>
+    async fn create_and_run_command<I, A>(&self, args: I, trim: bool) -> VcsResult<&str>
     where
         I: IntoIterator<Item = A>,
         A: AsRef<OsStr>,
@@ -137,7 +137,7 @@ impl Git {
         self.run_command(self.create_command(args), trim).await
     }
 
-    async fn run_command(&self, command: Command, trim: bool) -> VcsResult<String> {
+    async fn run_command(&self, command: Command, trim: bool) -> VcsResult<&str> {
         let mut executor = command.create_async();
         let cache_key = executor.inspector.get_cache_key();
 
@@ -151,14 +151,10 @@ impl Git {
 
         let output = self.cache.get(&cache_key).unwrap();
 
-        Ok(if trim {
-            output.trim().to_owned()
-        } else {
-            output.to_owned()
-        })
+        Ok(if trim { output.trim() } else { output })
     }
 
-    async fn get_merge_base(&self, base: &str, head: &str) -> VcsResult<String> {
+    async fn get_merge_base(&self, base: &str, head: &str) -> VcsResult<Option<&str>> {
         let mut args = vec!["merge-base", head];
         let mut candidates = vec![base.to_owned()];
 
@@ -169,7 +165,7 @@ impl Git {
         // To start, we need to find a working base
         for candidate in &candidates {
             if self
-                .create_and_run_command(["merge-base", &candidate, head], true)
+                .create_and_run_command(["merge-base", candidate, head], true)
                 .await
                 .is_ok()
             {
@@ -180,16 +176,16 @@ impl Git {
         // Then we need to run it again and extract the base hash.
         // This is necessary to support comparisons between forks!
         if let Ok(hash) = self.create_and_run_command(args, true).await {
-            return Ok(hash);
+            return Ok(Some(hash));
         }
 
-        Ok(base.to_owned())
+        Ok(None)
     }
 }
 
 #[async_trait]
 impl Vcs for Git {
-    async fn get_local_branch(&self) -> VcsResult<String> {
+    async fn get_local_branch(&self) -> VcsResult<&str> {
         // --show-current was added in 2.22.0
         if let Ok(branch) = self
             .create_and_run_command(["branch", "--show-current"], true)
@@ -202,21 +198,21 @@ impl Vcs for Git {
             .await
     }
 
-    async fn get_local_branch_revision(&self) -> VcsResult<String> {
+    async fn get_local_branch_revision(&self) -> VcsResult<&str> {
         self.create_and_run_command(["rev-parse", "HEAD"], true)
             .await
     }
 
-    fn get_default_branch(&self) -> &str {
-        &self.default_branch
+    async fn get_default_branch(&self) -> VcsResult<&str> {
+        Ok(&self.default_branch)
     }
 
-    async fn get_default_branch_revision(&self) -> VcsResult<String> {
+    async fn get_default_branch_revision(&self) -> VcsResult<&str> {
         self.create_and_run_command(["rev-parse", &self.default_branch], true)
             .await
     }
 
-    async fn get_repository_slug(&self) -> VcsResult<String> {
+    async fn get_repository_slug(&self) -> VcsResult<&str> {
         let output = self
             .create_and_run_command(["remote", "get-url", "origin"], true)
             .await?;
@@ -328,9 +324,8 @@ impl Vcs for Git {
             revision
         };
 
-        Ok(self
-            .get_touched_files_between_revisions(format!("{revision}~1").as_str(), revision)
-            .await?)
+        self.get_touched_files_between_revisions(format!("{revision}~1").as_str(), revision)
+            .await
     }
 
     async fn get_touched_files_between_revisions(
@@ -338,7 +333,10 @@ impl Vcs for Git {
         base_revision: &str,
         revision: &str,
     ) -> VcsResult<TouchedFiles> {
-        let base = self.get_merge_base(base_revision, revision).await?;
+        let base = self
+            .get_merge_base(base_revision, revision)
+            .await?
+            .unwrap_or(base_revision);
 
         let output = self
             .create_and_run_command(
@@ -351,7 +349,7 @@ impl Vcs for Git {
                     // We use this option so that file names with special characters
                     // are displayed as-is and are not quoted/escaped
                     "-z",
-                    &base,
+                    base,
                 ],
                 false,
             )

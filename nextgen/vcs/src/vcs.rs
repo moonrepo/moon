@@ -7,19 +7,19 @@ pub type VcsResult<T> = Result<T, VcsError>;
 #[async_trait]
 pub trait Vcs {
     /// Get the local checkout branch name.
-    async fn get_local_branch(&self) -> VcsResult<String>;
+    async fn get_local_branch(&self) -> VcsResult<&str>;
 
     /// Get the revision hash/number of the local branch's HEAD.
-    async fn get_local_branch_revision(&self) -> VcsResult<String>;
+    async fn get_local_branch_revision(&self) -> VcsResult<&str>;
 
     /// Get the remote checkout default name. Typically master/main on git, and trunk on svn.
-    fn get_default_branch(&self) -> &str;
+    async fn get_default_branch(&self) -> VcsResult<&str>;
 
     /// Get the revision hash/number of the default branch's HEAD.
-    async fn get_default_branch_revision(&self) -> VcsResult<String>;
+    async fn get_default_branch_revision(&self) -> VcsResult<&str>;
 
     /// Return the repository slug ("moonrepo/moon") of the current checkout.
-    async fn get_repository_slug(&self) -> VcsResult<String>;
+    async fn get_repository_slug(&self) -> VcsResult<&str>;
 
     /// Determine touched files from the local index / working tree.
     async fn get_touched_files(&self) -> VcsResult<TouchedFiles>;

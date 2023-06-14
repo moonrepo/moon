@@ -346,12 +346,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "async_once"
-version = "0.2.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2ce4f10ea3abcd6617873bae9f91d1c5332b4a778bd9ce34d0cd517474c1de82"
-
-[[package]]
 name = "atomic-waker"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -544,31 +538,12 @@ dependencies = [
 
 [[package]]
 name = "cached"
-version = "0.43.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc2fafddf188d13788e7099295a59b99e99b2148ab2195cae454e754cc099925"
-dependencies = [
- "async-trait",
- "async_once",
- "cached_proc_macro 0.16.0",
- "cached_proc_macro_types",
- "futures",
- "hashbrown 0.13.2",
- "instant",
- "lazy_static",
- "once_cell",
- "thiserror",
- "tokio",
-]
-
-[[package]]
-name = "cached"
 version = "0.44.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b195e4fbc4b6862bbd065b991a34750399c119797efff72492f28a5864de8700"
 dependencies = [
  "async-trait",
- "cached_proc_macro 0.17.0",
+ "cached_proc_macro",
  "cached_proc_macro_types",
  "futures",
  "hashbrown 0.13.2",
@@ -576,19 +551,6 @@ dependencies = [
  "once_cell",
  "thiserror",
  "tokio",
-]
-
-[[package]]
-name = "cached_proc_macro"
-version = "0.16.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e10ca87c81aaa3a949dbbe2b5e6c2c45dbc94ba4897e45ea31ff9ec5087be3dc"
-dependencies = [
- "cached_proc_macro_types",
- "darling 0.14.4",
- "proc-macro2",
- "quote",
- "syn 1.0.109",
 ]
 
 [[package]]
@@ -760,9 +722,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.3.2"
+version = "4.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "401a4694d2bf92537b6867d94de48c4842089645fdcdf6c71865b175d836e9c2"
+checksum = "80672091db20273a15cf9fdd4e47ed43b5091ec9841bf4c6145c9dfbbcae09ed"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -771,9 +733,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.3.1"
+version = "4.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "72394f3339a76daf211e57d4bcb374410f3965dcc606dd0e03738c7888766980"
+checksum = "c1458a1df40e1e2afebb7ab60ce55c1fa8f431146205aa5f4887e0b111c27636"
 dependencies = [
  "anstream",
  "anstyle",
@@ -1494,9 +1456,9 @@ dependencies = [
 
 [[package]]
 name = "fs4"
-version = "0.6.4"
+version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7f5b6908aecca5812a4569056285e58c666588c9573ee59765bf1d3692699e2"
+checksum = "7672706608ecb74ab2e055c68327ffc25ae4cac1e12349204fd5fb0f3487cce2"
 dependencies = [
  "rustix 0.37.19",
  "windows-sys 0.48.0",
@@ -2039,11 +2001,12 @@ dependencies = [
 
 [[package]]
 name = "indicatif"
-version = "0.17.3"
+version = "0.17.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cef509aa9bc73864d6756f0d34d35504af3cf0844373afe9b8669a5b8005a729"
+checksum = "8ff8cc23a7393a397ed1d7f56e6365cba772aba9f9912ab968b03043c395d057"
 dependencies = [
  "console",
+ "instant",
  "number_prefix",
  "portable-atomic",
  "unicode-width",
@@ -2783,7 +2746,7 @@ dependencies = [
 name = "moon_deno_lang"
 version = "0.1.0"
 dependencies = [
- "cached 0.44.0",
+ "cached",
  "moon_error",
  "moon_lang",
  "moon_logger",
@@ -3018,7 +2981,7 @@ dependencies = [
 name = "moon_node_lang"
 version = "0.1.0"
 dependencies = [
- "cached 0.44.0",
+ "cached",
  "content_inspector",
  "moon_error",
  "moon_lang",
@@ -3167,7 +3130,7 @@ dependencies = [
 name = "moon_process"
 version = "0.1.0"
 dependencies = [
- "cached 0.44.0",
+ "cached",
  "miette",
  "moon_args",
  "moon_common",
@@ -3301,7 +3264,7 @@ dependencies = [
 name = "moon_rust_lang"
 version = "0.1.0"
 dependencies = [
- "cached 0.44.0",
+ "cached",
  "cargo-lock",
  "cargo_toml",
  "moon_error",
@@ -3460,7 +3423,7 @@ dependencies = [
 name = "moon_typescript_lang"
 version = "0.1.0"
 dependencies = [
- "cached 0.44.0",
+ "cached",
  "moon_error",
  "moon_lang",
  "moon_logger",
@@ -3497,7 +3460,7 @@ name = "moon_utils"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "cached 0.44.0",
+ "cached",
  "chrono",
  "clean-path",
  "dunce",
@@ -3523,7 +3486,7 @@ name = "moon_vcs"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "cached 0.44.0",
+ "cached",
  "ignore",
  "miette",
  "moon_config",
@@ -4043,9 +4006,9 @@ dependencies = [
 
 [[package]]
 name = "portable-atomic"
-version = "0.3.19"
+version = "1.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "26f6a7b87c2e435a3241addceeeff740ff8b7e76b74c13bf9acb17fa454ea00b"
+checksum = "767eb9f07d4a5ebcb39bbf2d452058a93c011373abf6832e24194a1c3f004794"
 
 [[package]]
 name = "ppv-lite86"
@@ -4113,9 +4076,9 @@ dependencies = [
 
 [[package]]
 name = "proto_bun"
-version = "0.9.1"
+version = "0.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e0ed0d8b4d31c148855f4b703f6fb5f94afb9e6c435a2e0652fd8523372e4d6"
+checksum = "3acacc090186c015b33298f40f22dd7e83bcf32addb8cbecaa3c6ec9832cac0f"
 dependencies = [
  "once_cell",
  "proto_core",
@@ -4127,9 +4090,9 @@ dependencies = [
 
 [[package]]
 name = "proto_cli"
-version = "0.10.4"
+version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "476547a5e55ab989d8655b61e979a3edadc20938cb9e539ec102ffe967bb86c6"
+checksum = "2453ec71e3f65fb804a7ff7a045c51797eeac5c934e99cc1764724c422944d91"
 dependencies = [
  "async-recursion",
  "clap",
@@ -4161,12 +4124,12 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "04359d5b483d098b412d02e080b88c55752f9dfc4e7834610ed2310253d627e5"
+checksum = "af846cf291334457b8a2d8685ce2cedf446401b6ac4950dfe92a4ff4e2d6539b"
 dependencies = [
  "async-trait",
- "cached 0.43.0",
+ "cached",
  "convert_case",
  "dirs",
  "flate2",
@@ -4193,9 +4156,9 @@ dependencies = [
 
 [[package]]
 name = "proto_deno"
-version = "0.9.1"
+version = "0.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be37329c19aca86743c8b606d9012356d8aaf6a6031844b570255c1ca71ec2f6"
+checksum = "aace61e1315addfa2e786ca7cb1438b8e07eca91a7d9a05f9fe7508178ab19fa"
 dependencies = [
  "once_cell",
  "proto_core",
@@ -4206,9 +4169,9 @@ dependencies = [
 
 [[package]]
 name = "proto_go"
-version = "0.9.1"
+version = "0.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eba3260e506cc79eb7a4517a9524d849c7d4aae340f5a71cc19ad65ca5be236c"
+checksum = "e54320a8a72df225c4ddc3141f4b94c80152b75e74ce7d1aaa620680c6290346"
 dependencies = [
  "once_cell",
  "proto_core",
@@ -4220,9 +4183,9 @@ dependencies = [
 
 [[package]]
 name = "proto_node"
-version = "0.9.2"
+version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eed5629ea790f3ea5a72f4511c9a49ddc9a3620ada4105c904e0cbb98e24c33a"
+checksum = "e2e001d4ca4a45d9c085ab40a4a626cf57460af7fe5142191f993afa82370734"
 dependencies = [
  "clean-path",
  "once_cell",
@@ -4235,9 +4198,9 @@ dependencies = [
 
 [[package]]
 name = "proto_rust"
-version = "0.7.1"
+version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b1874bf05ef5abf88a5f1caa07c01a3fbd7f1a12c9b277ab6036bf76dce765d"
+checksum = "0c0ffc2b64d234028fbefc7adf7cac25743aceb14faefc950181d75c85dbccbc"
 dependencies = [
  "once_cell",
  "proto_core",
@@ -4247,9 +4210,9 @@ dependencies = [
 
 [[package]]
 name = "proto_schema_plugin"
-version = "0.5.1"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "90d46d9f350f9fc7526fab50f5ccb6811b78886cbe36bc83f647e056daa5874e"
+checksum = "a348a77276074da9332318ee3d4cbc0ab4f4d33997c959f57e8735cb2d440df4"
 dependencies = [
  "once_cell",
  "proto_core",

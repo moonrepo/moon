@@ -69,7 +69,7 @@ args = ["llvm-cov", "report", "--html", "--ignore-filename-regex", "error", "--o
 
 ## OTHER
 
-[tasks.json-schemas]
+[tasks.schemas]
 command = "cargo"
 args = ["run", "-p", "moon_config"]
 

@@ -1,5 +1,6 @@
 use miette::Diagnostic;
 use moon_common::{Style, Stylize};
+use moon_process::ProcessError;
 use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
@@ -10,4 +11,8 @@ pub enum VcsError {
         #[source]
         error: ignore::Error,
     },
+
+    #[diagnostic(transparent)]
+    #[error(transparent)]
+    Process(#[from] ProcessError),
 }

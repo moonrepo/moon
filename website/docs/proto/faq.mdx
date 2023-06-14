@@ -53,11 +53,13 @@ languages install a global to a shared location regardless of the language's ver
 using language specific commands.
 
 The exception to this is Node.js (and npm, pnpm, yarn). Each of these tools install global packages
-_differently_, and they're also tied to the parent tools version. So if you install a new language
+_differently_, and some are tied to the parent tools version. So if you install a new language
 version, you lose your global packages. We suggest using `proto install-global` for all Node.js
-packages, which installs everything to a shared location, `~/.proto/tools/node/globals/bin`.
+packages, which installs everything to a shared location, `~/.proto/tools/node/globals/bin`. You'll
+also need to manually add these global directories to your `PATH`.
 
-You'll also need to manually add these global directories to your `PATH`.
+However, if you'd prefer to use the native non-proto workflow, you can disable the globals intercept
+using the [`node-intercept-globals` setting](./config#settings).
 
 ### OS is unable to find an installed binary, how to resolve?
 

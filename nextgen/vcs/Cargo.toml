@@ -1,0 +1,12 @@
+[package]
+name = "moon_vcs2"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_common = { path = "../common" }
+async-trait = { workspace = true }
+miette = { workspace = true }
+relative-path = { workspace = true }
+rustc-hash = { workspace = true }
+thiserror = { workspace = true }

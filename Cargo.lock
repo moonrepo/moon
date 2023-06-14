@@ -3503,6 +3503,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_vcs2"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "miette",
+ "moon_common",
+ "relative-path",
+ "rustc-hash",
+ "thiserror",
+]
+
+[[package]]
 name = "moon_workspace"
 version = "0.1.0"
 dependencies = [

@@ -1,3 +1,5 @@
+#![allow(clippy::disallowed_types)]
+
 use moon_config::*;
 use schematic::renderers::json_schema::JsonSchemaRenderer;
 use schematic::renderers::typescript::{TypeScriptOptions, TypeScriptRenderer};
@@ -24,7 +26,7 @@ fn generate_project() {
         .generate(
             PathBuf::from("packages/types/src/project-config.ts"),
             TypeScriptRenderer::new(TypeScriptOptions {
-                exclude_exports: HashSet::from_iter([
+                exclude_references: HashSet::from_iter([
                     "PlatformType".into(),
                     "TaskCommandArgs".into(),
                     "TaskMergeStrategy".into(),

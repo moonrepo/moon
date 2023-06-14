@@ -4556,7 +4556,9 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.9.2"
+version = "0.9.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bfe2760ebb117a7726117e829c3f68d514591fed13759f51dd0cad48e82b945e"
 dependencies = [
  "garde",
  "miette",
@@ -4575,7 +4577,9 @@ dependencies = [
 
 [[package]]
 name = "schematic_macros"
-version = "0.9.1"
+version = "0.9.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "482964155bf9c918adb3639fa33c701236c3688f33b3ba3e7c347721605e8007"
 dependencies = [
  "convert_case",
  "darling 0.20.1",
@@ -4586,7 +4590,9 @@ dependencies = [
 
 [[package]]
 name = "schematic_types"
-version = "0.2.1"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ebebbdda685190566e5d0f23356c7db8b4269f2b001435a267da691412c9fbd8"
 
 [[package]]
 name = "scopeguard"

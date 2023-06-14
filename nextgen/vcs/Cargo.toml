@@ -6,7 +6,10 @@ edition = "2021"
 [dependencies]
 moon_common = { path = "../common" }
 async-trait = { workspace = true }
+ignore = "0.4.20"
 miette = { workspace = true }
+once_map = "0.4.6"
 relative-path = { workspace = true }
 rustc-hash = { workspace = true }
 thiserror = { workspace = true }
+tracing = { workspace = true }

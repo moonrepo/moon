@@ -1,8 +1,6 @@
+use crate::touched_files::TouchedFiles;
+use crate::vcs_error::VcsError;
 use async_trait::async_trait;
-
-use crate::TouchedFiles;
-
-pub struct VcsError;
 
 pub type VcsResult<T> = Result<T, VcsError>;
 

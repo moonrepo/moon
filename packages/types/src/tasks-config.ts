@@ -4,14 +4,18 @@
 
 export type TaskCommandArgs = null | string | string[];
 
+export type TaskOptionAffectedFiles = boolean | 'args' | 'env';
+
+export type TaskOptionEnvFile = boolean | string;
+
 export type TaskMergeStrategy = 'append' | 'prepend' | 'replace';
 
 export type TaskOutputStyle = 'buffer' | 'buffer-only-failure' | 'hash' | 'none' | 'stream';
 
 export interface PartialTaskOptionsConfig {
-	affectedFiles?: boolean | string | null;
+	affectedFiles?: TaskOptionAffectedFiles | null;
 	cache?: boolean | null;
-	envFile?: boolean | string | null;
+	envFile?: TaskOptionEnvFile | null;
 	mergeArgs?: TaskMergeStrategy | null;
 	mergeDeps?: TaskMergeStrategy | null;
 	mergeEnv?: TaskMergeStrategy | null;
@@ -53,9 +57,9 @@ export interface PartialInheritedTasksConfig {
 }
 
 export interface TaskOptionsConfig {
-	affectedFiles: boolean | string | null;
+	affectedFiles: TaskOptionAffectedFiles | null;
 	cache: boolean | null;
-	envFile: boolean | string | null;
+	envFile: TaskOptionEnvFile | null;
 	mergeArgs: TaskMergeStrategy | null;
 	mergeDeps: TaskMergeStrategy | null;
 	mergeEnv: TaskMergeStrategy | null;

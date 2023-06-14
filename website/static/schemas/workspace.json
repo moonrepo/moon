@@ -1,10 +1,11 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "PartialWorkspaceConfig",
+  "description": "Docs: https://moonrepo.dev/docs/config/workspace",
   "type": "object",
   "properties": {
     "$schema": {
-      "oneOf": [
+      "anyOf": [
         {
           "type": "string"
         },
@@ -14,7 +15,7 @@
       ]
     },
     "codeowners": {
-      "oneOf": [
+      "anyOf": [
         {
           "$ref": "#/definitions/PartialCodeownersConfig"
         },
@@ -24,7 +25,7 @@
       ]
     },
     "constraints": {
-      "oneOf": [
+      "anyOf": [
         {
           "$ref": "#/definitions/PartialConstraintsConfig"
         },
@@ -34,7 +35,7 @@
       ]
     },
     "extends": {
-      "oneOf": [
+      "anyOf": [
         {
           "type": "string"
         },
@@ -44,7 +45,7 @@
       ]
     },
     "generator": {
-      "oneOf": [
+      "anyOf": [
         {
           "$ref": "#/definitions/PartialGeneratorConfig"
         },
@@ -54,7 +55,7 @@
       ]
     },
     "hasher": {
-      "oneOf": [
+      "anyOf": [
         {
           "$ref": "#/definitions/PartialHasherConfig"
         },
@@ -64,7 +65,7 @@
       ]
     },
     "notifier": {
-      "oneOf": [
+      "anyOf": [
         {
           "$ref": "#/definitions/PartialNotifierConfig"
         },
@@ -74,14 +75,17 @@
       ]
     },
     "projects": {
-      "allOf": [
+      "anyOf": [
         {
           "$ref": "#/definitions/WorkspaceProjects"
+        },
+        {
+          "type": "null"
         }
       ]
     },
     "runner": {
-      "oneOf": [
+      "anyOf": [
         {
           "$ref": "#/definitions/PartialRunnerConfig"
         },
@@ -91,7 +95,7 @@
       ]
     },
     "telemetry": {
-      "oneOf": [
+      "anyOf": [
         {
           "type": "boolean"
         },
@@ -101,7 +105,7 @@
       ]
     },
     "vcs": {
-      "oneOf": [
+      "anyOf": [
         {
           "$ref": "#/definitions/PartialVcsConfig"
         },
@@ -111,7 +115,7 @@
       ]
     },
     "versionConstraint": {
-      "oneOf": [
+      "anyOf": [
         {
           "type": "string"
         },
@@ -121,6 +125,7 @@
       ]
     }
   },
+  "additionalProperties": false,
   "definitions": {
     "CodeownersOrderBy": {
       "type": "string",
@@ -148,7 +153,7 @@
       "type": "object",
       "properties": {
         "globalPaths": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "object",
               "additionalProperties": {
@@ -167,7 +172,7 @@
           ]
         },
         "orderBy": {
-          "oneOf": [
+          "anyOf": [
             {
               "$ref": "#/definitions/CodeownersOrderBy"
             },
@@ -177,7 +182,7 @@
           ]
         },
         "syncOnRun": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "boolean"
             },
@@ -186,14 +191,15 @@
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "PartialConstraintsConfig": {
       "title": "PartialConstraintsConfig",
       "type": "object",
       "properties": {
         "enforceProjectTypeRelationships": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "boolean"
             },
@@ -203,7 +209,7 @@
           ]
         },
         "tagRelationships": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "object",
               "additionalProperties": {
@@ -221,14 +227,15 @@
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "PartialGeneratorConfig": {
       "title": "PartialGeneratorConfig",
       "type": "object",
       "properties": {
         "templates": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "array",
               "items": {
@@ -240,14 +247,15 @@
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "PartialHasherConfig": {
       "title": "PartialHasherConfig",
       "type": "object",
       "properties": {
         "batchSize": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "number"
             },
@@ -257,7 +265,7 @@
           ]
         },
         "optimization": {
-          "oneOf": [
+          "anyOf": [
             {
               "$ref": "#/definitions/HasherOptimization"
             },
@@ -267,7 +275,7 @@
           ]
         },
         "walkStrategy": {
-          "oneOf": [
+          "anyOf": [
             {
               "$ref": "#/definitions/HasherWalkStrategy"
             },
@@ -277,7 +285,7 @@
           ]
         },
         "warnOnMissingInputs": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "boolean"
             },
@@ -286,14 +294,15 @@
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "PartialNotifierConfig": {
       "title": "PartialNotifierConfig",
       "type": "object",
       "properties": {
         "webhookUrl": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "string"
             },
@@ -302,14 +311,15 @@
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "PartialRunnerConfig": {
       "title": "PartialRunnerConfig",
       "type": "object",
       "properties": {
         "archivableTargets": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "array",
               "items": {
@@ -322,7 +332,7 @@
           ]
         },
         "cacheLifetime": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "string"
             },
@@ -332,7 +342,7 @@
           ]
         },
         "inheritColorsForPipedTasks": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "boolean"
             },
@@ -342,7 +352,7 @@
           ]
         },
         "logRunningCommand": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "boolean"
             },
@@ -351,14 +361,15 @@
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "PartialVcsConfig": {
       "title": "PartialVcsConfig",
       "type": "object",
       "properties": {
         "defaultBranch": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "string"
             },
@@ -368,7 +379,7 @@
           ]
         },
         "manager": {
-          "oneOf": [
+          "anyOf": [
             {
               "$ref": "#/definitions/VcsManager"
             },
@@ -378,7 +389,7 @@
           ]
         },
         "provider": {
-          "oneOf": [
+          "anyOf": [
             {
               "$ref": "#/definitions/VcsProvider"
             },
@@ -388,7 +399,7 @@
           ]
         },
         "remoteCandidates": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "array",
               "items": {
@@ -400,7 +411,8 @@
             }
           ]
         }
-      }
+      },
+      "additionalProperties": false
     },
     "VcsManager": {
       "type": "string",
@@ -439,7 +451,7 @@
           "type": "object",
           "properties": {
             "globs": {
-              "oneOf": [
+              "anyOf": [
                 {
                   "type": "array",
                   "items": {
@@ -452,7 +464,7 @@
               ]
             },
             "sources": {
-              "oneOf": [
+              "anyOf": [
                 {
                   "type": "object",
                   "additionalProperties": {
@@ -467,7 +479,8 @@
                 }
               ]
             }
-          }
+          },
+          "additionalProperties": false
         }
       ]
     }

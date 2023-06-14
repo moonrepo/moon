@@ -1,10 +1,11 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "PartialTemplateConfig",
+  "description": "Docs: https://moonrepo.dev/docs/config/template",
   "type": "object",
   "properties": {
     "$schema": {
-      "oneOf": [
+      "anyOf": [
         {
           "type": "string"
         },
@@ -14,7 +15,7 @@
       ]
     },
     "description": {
-      "oneOf": [
+      "anyOf": [
         {
           "type": "string"
         },
@@ -24,7 +25,7 @@
       ]
     },
     "title": {
-      "oneOf": [
+      "anyOf": [
         {
           "type": "string"
         },
@@ -34,7 +35,7 @@
       ]
     },
     "variables": {
-      "oneOf": [
+      "anyOf": [
         {
           "type": "object",
           "additionalProperties": {
@@ -49,5 +50,6 @@
         }
       ]
     }
-  }
+  },
+  "additionalProperties": false
 }

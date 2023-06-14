@@ -27,15 +27,17 @@ fn generate_project() {
             PathBuf::from("packages/types/src/project-config.ts"),
             TypeScriptRenderer::new(TypeScriptOptions {
                 exclude_references: HashSet::from_iter([
+                    "PartialTaskConfig".into(),
+                    "PartialTaskOptionsConfig".into(),
                     "PlatformType".into(),
                     "TaskCommandArgs".into(),
+                    "TaskConfig".into(),
                     "TaskMergeStrategy".into(),
+                    "TaskOptionAffectedFiles".into(),
+                    "TaskOptionEnvFile".into(),
+                    "TaskOptionsConfig".into(),
                     "TaskOutputStyle".into(),
                     "TaskType".into(),
-                    "PartialTaskOptionsConfig".into(),
-                    "PartialTaskConfig".into(),
-                    "TaskOptionsConfig".into(),
-                    "TaskConfig".into(),
                 ]),
                 external_types: HashMap::from_iter([(
                     "./tasks-config".into(),

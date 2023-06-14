@@ -9,8 +9,8 @@ export type DependencyScope = 'development' | 'peer' | 'production';
 export type ProjectDependsOn =
 	| string
 	| {
-			id?: string | null;
-			scope?: DependencyScope | null;
+			id: string;
+			scope: DependencyScope;
 	  };
 
 export type LanguageType =

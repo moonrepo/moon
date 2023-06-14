@@ -38,8 +38,8 @@ export type WorkspaceProjects =
 	| string[]
 	| Record<string, string>
 	| {
-			globs?: string[] | null;
-			sources?: Record<string, string> | null;
+			globs: string[];
+			sources: Record<string, string>;
 	  };
 
 export interface PartialRunnerConfig {

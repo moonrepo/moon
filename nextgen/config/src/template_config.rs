@@ -38,13 +38,15 @@ derive_enum!(
 
 impl Schematic for TemplateVariableEnumValue {
     fn generate_schema() -> SchemaType {
-        SchemaType::union(vec![
+        let mut schema = SchemaType::union(vec![
             SchemaType::string(),
             SchemaType::structure(vec![
                 SchemaField::new("label", SchemaType::string()),
                 SchemaField::new("value", SchemaType::string()),
             ]),
-        ])
+        ]);
+        schema.set_name("TemplateVariableEnumValue");
+        schema
     }
 }
 
@@ -58,7 +60,7 @@ pub struct TemplateVariableEnumSetting {
 
 impl Schematic for TemplateVariableEnumSetting {
     fn generate_schema() -> SchemaType {
-        SchemaType::structure(vec![
+        let mut schema = SchemaType::structure(vec![
             SchemaField::new("default", SchemaType::string()),
             SchemaField::new("multiple", SchemaType::infer::<Option<bool>>()),
             SchemaField::new("prompt", SchemaType::string()),
@@ -66,7 +68,9 @@ impl Schematic for TemplateVariableEnumSetting {
                 "values",
                 SchemaType::infer::<Vec<TemplateVariableEnumValue>>(),
             ),
-        ])
+        ]);
+        schema.set_name("TemplateVariableEnumSetting");
+        schema
     }
 }
 
@@ -84,7 +88,57 @@ derive_enum!(
 
 impl Schematic for TemplateVariable {
     fn generate_schema() -> SchemaType {
-        SchemaType::Unknown
+        let add_type = |schema: &mut SchemaType| {
+            if let SchemaType::Struct(inner) = schema {
+                inner
+                    .fields
+                    .push(SchemaField::new("type", SchemaType::string()));
+            }
+        };
+
+        let mut b = TemplateVariableSetting::<bool>::generate_schema();
+        add_type(&mut b);
+
+        // if let SchemaType::Struct(b) = &mut b {
+        //     b.fields.push(SchemaField::new(
+        //         "type",
+        //         SchemaType::literal(LiteralValue::String("boolean".into())),
+        //     ));
+        // }
+
+        let mut e = TemplateVariableEnumSetting::generate_schema();
+        add_type(&mut e);
+
+        // if let SchemaType::Struct(e) = &mut e {
+        //     e.fields.push(SchemaField::new(
+        //         "type",
+        //         SchemaType::literal(LiteralValue::String("enum".into())),
+        //     ));
+        // }
+
+        let mut n = TemplateVariableSetting::<usize>::generate_schema();
+        add_type(&mut n);
+
+        // if let SchemaType::Struct(n) = &mut n {
+        //     n.fields.push(SchemaField::new(
+        //         "type",
+        //         SchemaType::literal(LiteralValue::String("number".into())),
+        //     ));
+        // }
+
+        let mut s = TemplateVariableSetting::<String>::generate_schema();
+        add_type(&mut s);
+
+        // if let SchemaType::Struct(s) = &mut s {
+        //     s.fields.push(SchemaField::new(
+        //         "type",
+        //         SchemaType::literal(LiteralValue::String("string".into())),
+        //     ));
+        // }
+
+        let mut schema = SchemaType::union(vec![b, e, n, s]);
+        schema.set_name("TemplateVariable");
+        schema
     }
 }
 

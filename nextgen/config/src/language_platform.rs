@@ -1,21 +1,20 @@
 use moon_common::Id;
 use schematic::{derive_enum, ConfigEnum};
-use serde::{de, Deserialize, Deserializer, Serialize};
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::str::FromStr;
 
-#[derive(Clone, ConfigEnum, Debug, Default, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "kebab-case")]
+#[derive(Clone, ConfigEnum, Debug, Default, Eq, PartialEq)]
 pub enum LanguageType {
     Bash,
     Batch,
     Go,
-    #[serde(rename = "javascript")]
+    #[variant(value = "javascript")]
     JavaScript,
     Php,
     Python,
     Ruby,
     Rust,
-    #[serde(rename = "typescript")]
+    #[variant(value = "typescript")]
     TypeScript,
 
     // Not explicitly set or detected
@@ -27,7 +26,7 @@ pub enum LanguageType {
     Other(Id),
 }
 
-// TODO: remove?
+// Required to handle the other and unknown variants
 impl<'de> Deserialize<'de> for LanguageType {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -44,6 +43,16 @@ impl<'de> Deserialize<'de> for LanguageType {
                 Err(error)
             }
         }
+    }
+}
+
+// Required to handle the other variant
+impl Serialize for LanguageType {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
     }
 }
 

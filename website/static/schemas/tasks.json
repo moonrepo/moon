@@ -1,168 +1,163 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "PartialInheritedTasksConfig",
-  "description": "Docs: https://moonrepo.dev/docs/config/tasks",
   "type": "object",
   "properties": {
     "$schema": {
-      "type": [
-        "string",
-        "null"
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
       ]
     },
     "extends": {
-      "type": [
-        "string",
-        "null"
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
       ]
     },
     "fileGroups": {
-      "type": [
-        "object",
-        "null"
-      ],
-      "additionalProperties": {
-        "type": "array",
-        "items": {
-          "$ref": "#/definitions/InputPath"
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "null"
         }
-      }
+      ]
     },
     "implicitDeps": {
-      "type": [
-        "array",
-        "null"
-      ],
-      "items": {
-        "$ref": "#/definitions/Target"
-      }
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "implicitInputs": {
-      "type": [
-        "array",
-        "null"
-      ],
-      "items": {
-        "$ref": "#/definitions/InputPath"
-      }
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "tasks": {
-      "type": [
-        "object",
-        "null"
-      ],
-      "additionalProperties": {
-        "$ref": "#/definitions/PartialTaskConfig"
-      }
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/PartialTaskConfig"
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
     }
   },
-  "additionalProperties": false,
   "definitions": {
-    "FilePath": {
-      "type": "string"
-    },
-    "InputPath": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "string"
-        },
-        {
-          "type": "string"
-        },
-        {
-          "type": "string"
-        },
-        {
-          "type": "string"
-        },
-        {
-          "type": "string"
-        },
-        {
-          "type": "string"
-        }
-      ]
-    },
-    "OutputPath": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "string"
-        },
-        {
-          "type": "string"
-        },
-        {
-          "type": "string"
-        },
-        {
-          "type": "string"
-        }
-      ]
-    },
     "PartialTaskConfig": {
+      "title": "PartialTaskConfig",
       "type": "object",
       "properties": {
         "args": {
-          "anyOf": [
+          "allOf": [
             {
               "$ref": "#/definitions/TaskCommandArgs"
-            },
-            {
-              "type": "null"
             }
           ]
         },
         "command": {
-          "anyOf": [
+          "allOf": [
             {
               "$ref": "#/definitions/TaskCommandArgs"
+            }
+          ]
+        },
+        "deps": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
             {
               "type": "null"
             }
           ]
         },
-        "deps": {
-          "type": [
-            "array",
-            "null"
-          ],
-          "items": {
-            "$ref": "#/definitions/Target"
-          }
-        },
         "env": {
-          "type": [
-            "object",
-            "null"
-          ],
-          "additionalProperties": {
-            "type": "string"
-          }
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "propertyNames": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "inputs": {
-          "type": [
-            "array",
-            "null"
-          ],
-          "items": {
-            "$ref": "#/definitions/InputPath"
-          }
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "local": {
-          "type": [
-            "boolean",
-            "null"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "options": {
-          "anyOf": [
+          "oneOf": [
             {
               "$ref": "#/definitions/PartialTaskOptionsConfig"
             },
@@ -172,16 +167,20 @@
           ]
         },
         "outputs": {
-          "type": [
-            "array",
-            "null"
-          ],
-          "items": {
-            "$ref": "#/definitions/OutputPath"
-          }
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "platform": {
-          "anyOf": [
+          "oneOf": [
             {
               "$ref": "#/definitions/PlatformType"
             },
@@ -191,7 +190,7 @@
           ]
         },
         "type": {
-          "anyOf": [
+          "oneOf": [
             {
               "$ref": "#/definitions/TaskType"
             },
@@ -200,16 +199,27 @@
             }
           ]
         }
-      },
-      "additionalProperties": false
+      }
     },
     "PartialTaskOptionsConfig": {
+      "title": "PartialTaskOptionsConfig",
       "type": "object",
       "properties": {
         "affectedFiles": {
-          "anyOf": [
+          "oneOf": [
             {
-              "$ref": "#/definitions/TaskOptionAffectedFiles"
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "args",
+                    "env"
+                  ]
+                }
+              ]
             },
             {
               "type": "null"
@@ -217,15 +227,26 @@
           ]
         },
         "cache": {
-          "type": [
-            "boolean",
-            "null"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "envFile": {
-          "anyOf": [
+          "oneOf": [
             {
-              "$ref": "#/definitions/TaskOptionEnvFile"
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
             },
             {
               "type": "null"
@@ -233,7 +254,7 @@
           ]
         },
         "mergeArgs": {
-          "anyOf": [
+          "oneOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
             },
@@ -243,7 +264,7 @@
           ]
         },
         "mergeDeps": {
-          "anyOf": [
+          "oneOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
             },
@@ -253,7 +274,7 @@
           ]
         },
         "mergeEnv": {
-          "anyOf": [
+          "oneOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
             },
@@ -263,7 +284,7 @@
           ]
         },
         "mergeInputs": {
-          "anyOf": [
+          "oneOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
             },
@@ -273,7 +294,7 @@
           ]
         },
         "mergeOutputs": {
-          "anyOf": [
+          "oneOf": [
             {
               "$ref": "#/definitions/TaskMergeStrategy"
             },
@@ -283,7 +304,7 @@
           ]
         },
         "outputStyle": {
-          "anyOf": [
+          "oneOf": [
             {
               "$ref": "#/definitions/TaskOutputStyle"
             },
@@ -293,45 +314,66 @@
           ]
         },
         "persistent": {
-          "type": [
-            "boolean",
-            "null"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "retryCount": {
-          "type": [
-            "integer",
-            "null"
-          ],
-          "format": "uint8",
-          "minimum": 0.0
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "runDepsInParallel": {
-          "type": [
-            "boolean",
-            "null"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "runFromWorkspaceRoot": {
-          "type": [
-            "boolean",
-            "null"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "runInCI": {
-          "type": [
-            "boolean",
-            "null"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "shell": {
-          "type": [
-            "boolean",
-            "null"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
           ]
         }
-      },
-      "additionalProperties": false
+      }
     },
     "PlatformType": {
       "type": "string",
@@ -342,9 +384,6 @@
         "system",
         "unknown"
       ]
-    },
-    "Target": {
-      "type": "string"
     },
     "TaskCommandArgs": {
       "anyOf": [
@@ -368,30 +407,6 @@
         "append",
         "prepend",
         "replace"
-      ]
-    },
-    "TaskOptionAffectedFiles": {
-      "oneOf": [
-        {
-          "type": "string",
-          "enum": [
-            "args",
-            "env"
-          ]
-        },
-        {
-          "type": "boolean"
-        }
-      ]
-    },
-    "TaskOptionEnvFile": {
-      "anyOf": [
-        {
-          "type": "boolean"
-        },
-        {
-          "$ref": "#/definitions/FilePath"
-        }
       ]
     },
     "TaskOutputStyle": {

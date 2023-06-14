@@ -34,10 +34,13 @@ export interface PartialNotifierConfig {
 	webhookUrl?: string | null;
 }
 
-export type WorkspaceProjects = string[] | Record<string, string> | {
-	globs?: string[] | null;
-	sources?: Record<string, string> | null;
-};
+export type WorkspaceProjects =
+	| string[]
+	| Record<string, string>
+	| {
+			globs?: string[] | null;
+			sources?: Record<string, string> | null;
+	  };
 
 export interface PartialRunnerConfig {
 	archivableTargets?: string[] | null;

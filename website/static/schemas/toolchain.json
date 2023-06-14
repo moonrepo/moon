@@ -1,17 +1,20 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "PartialToolchainConfig",
-  "description": "Docs: https://moonrepo.dev/docs/config/toolchain",
   "type": "object",
   "properties": {
     "$schema": {
-      "type": [
-        "string",
-        "null"
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
       ]
     },
     "deno": {
-      "anyOf": [
+      "oneOf": [
         {
           "$ref": "#/definitions/PartialDenoConfig"
         },
@@ -21,13 +24,17 @@
       ]
     },
     "extends": {
-      "type": [
-        "string",
-        "null"
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
       ]
     },
     "node": {
-      "anyOf": [
+      "oneOf": [
         {
           "$ref": "#/definitions/PartialNodeConfig"
         },
@@ -37,7 +44,7 @@
       ]
     },
     "rust": {
-      "anyOf": [
+      "oneOf": [
         {
           "$ref": "#/definitions/PartialRustConfig"
         },
@@ -47,7 +54,7 @@
       ]
     },
     "typescript": {
-      "anyOf": [
+      "oneOf": [
         {
           "$ref": "#/definitions/PartialTypeScriptConfig"
         },
@@ -57,7 +64,6 @@
       ]
     }
   },
-  "additionalProperties": false,
   "definitions": {
     "NodePackageManager": {
       "type": "string",
@@ -96,37 +102,48 @@
       ]
     },
     "PartialDenoConfig": {
-      "description": "Docs: https://moonrepo.dev/docs/config/toolchain#deno",
+      "title": "PartialDenoConfig",
       "type": "object",
       "properties": {
         "depsFile": {
-          "type": [
-            "string",
-            "null"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "lockfile": {
-          "type": [
-            "boolean",
-            "null"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
           ]
         }
-      },
-      "additionalProperties": false
+      }
     },
     "PartialNodeConfig": {
-      "description": "Docs: https://moonrepo.dev/docs/config/toolchain#node",
+      "title": "PartialNodeConfig",
       "type": "object",
       "properties": {
         "addEnginesConstraint": {
-          "type": [
-            "boolean",
-            "null"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "aliasPackageNames": {
           "deprecated": true,
-          "anyOf": [
+          "oneOf": [
             {
               "$ref": "#/definitions/NodeProjectAliasFormat"
             },
@@ -136,22 +153,30 @@
           ]
         },
         "binExecArgs": {
-          "type": [
-            "array",
-            "null"
-          ],
-          "items": {
-            "type": "string"
-          }
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "dedupeOnLockfileChange": {
-          "type": [
-            "boolean",
-            "null"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "dependencyVersionFormat": {
-          "anyOf": [
+          "oneOf": [
             {
               "$ref": "#/definitions/NodeVersionFormat"
             },
@@ -161,13 +186,17 @@
           ]
         },
         "inferTasksFromScripts": {
-          "type": [
-            "boolean",
-            "null"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "npm": {
-          "anyOf": [
+          "oneOf": [
             {
               "$ref": "#/definitions/PartialNpmConfig"
             },
@@ -177,7 +206,7 @@
           ]
         },
         "packageManager": {
-          "anyOf": [
+          "oneOf": [
             {
               "$ref": "#/definitions/NodePackageManager"
             },
@@ -187,7 +216,7 @@
           ]
         },
         "pnpm": {
-          "anyOf": [
+          "oneOf": [
             {
               "$ref": "#/definitions/PartialPnpmConfig"
             },
@@ -197,13 +226,17 @@
           ]
         },
         "syncProjectWorkspaceDependencies": {
-          "type": [
-            "boolean",
-            "null"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "syncVersionManagerConfig": {
-          "anyOf": [
+          "oneOf": [
             {
               "$ref": "#/definitions/NodeVersionManager"
             },
@@ -213,13 +246,17 @@
           ]
         },
         "version": {
-          "type": [
-            "string",
-            "null"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "yarn": {
-          "anyOf": [
+          "oneOf": [
             {
               "$ref": "#/definitions/PartialYarnConfig"
             },
@@ -228,130 +265,183 @@
             }
           ]
         }
-      },
-      "additionalProperties": false
+      }
     },
     "PartialNpmConfig": {
+      "title": "PartialNpmConfig",
       "type": "object",
       "properties": {
         "version": {
-          "type": [
-            "string",
-            "null"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
           ]
         }
-      },
-      "additionalProperties": false
+      }
     },
     "PartialPnpmConfig": {
+      "title": "PartialPnpmConfig",
       "type": "object",
       "properties": {
         "version": {
-          "type": [
-            "string",
-            "null"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
           ]
         }
-      },
-      "additionalProperties": false
+      }
     },
     "PartialRustConfig": {
-      "description": "Docs: https://moonrepo.dev/docs/config/toolchain#rust",
+      "title": "PartialRustConfig",
       "type": "object",
       "properties": {
         "bins": {
-          "type": [
-            "array",
-            "null"
-          ],
-          "items": {
-            "type": "string"
-          }
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "syncToolchainConfig": {
-          "type": [
-            "boolean",
-            "null"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "version": {
-          "type": [
-            "string",
-            "null"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
           ]
         }
-      },
-      "additionalProperties": false
+      }
     },
     "PartialTypeScriptConfig": {
-      "description": "Docs: https://moonrepo.dev/docs/config/toolchain#typescript",
+      "title": "PartialTypeScriptConfig",
       "type": "object",
       "properties": {
         "createMissingConfig": {
-          "type": [
-            "boolean",
-            "null"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "projectConfigFileName": {
-          "type": [
-            "string",
-            "null"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "rootConfigFileName": {
-          "type": [
-            "string",
-            "null"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "rootOptionsConfigFileName": {
-          "type": [
-            "string",
-            "null"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "routeOutDirToCache": {
-          "type": [
-            "boolean",
-            "null"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "syncProjectReferences": {
-          "type": [
-            "boolean",
-            "null"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "syncProjectReferencesToPaths": {
-          "type": [
-            "boolean",
-            "null"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
           ]
         }
-      },
-      "additionalProperties": false
+      }
     },
     "PartialYarnConfig": {
+      "title": "PartialYarnConfig",
       "type": "object",
       "properties": {
         "plugins": {
-          "type": [
-            "array",
-            "null"
-          ],
-          "items": {
-            "type": "string"
-          }
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "version": {
-          "type": [
-            "string",
-            "null"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
           ]
         }
-      },
-      "additionalProperties": false
+      }
     }
   }
 }

@@ -62,13 +62,15 @@ derive_enum!(
 
 impl Schematic for ProjectDependsOn {
     fn generate_schema() -> SchemaType {
-        SchemaType::union(vec![
+        let mut schema = SchemaType::union(vec![
             SchemaType::string(),
             SchemaType::structure(vec![
                 SchemaField::new("id", SchemaType::string()),
                 SchemaField::new("scope", SchemaType::infer::<DependencyScope>()),
             ]),
-        ])
+        ]);
+        schema.set_name("ProjectDependsOn");
+        schema
     }
 }
 

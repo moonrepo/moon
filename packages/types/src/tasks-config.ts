@@ -2,73 +2,16 @@
 
 /* eslint-disable */
 
-import type { Id, Target, InputPath, OutputPath, PlatformType } from './common-config';
-import type { TaskCommandArgs, TaskOptionAffectedFiles, TaskOptionEnvFile } from './common-fixes';
+export type TaskCommandArgs = null | string | string[];
 
 export type TaskMergeStrategy = 'append' | 'prepend' | 'replace';
 
 export type TaskOutputStyle = 'buffer' | 'buffer-only-failure' | 'hash' | 'none' | 'stream';
 
-export type TaskType = 'build' | 'run' | 'test';
-
-export interface InheritedTasksConfig {
-	$schema: string;
-	extends: string | null;
-	fileGroups: Record<Id, InputPath[]>;
-	implicitDeps: Target[];
-	implicitInputs: InputPath[];
-	tasks: Record<Id, TaskConfig>;
-}
-
-export interface PartialInheritedTasksConfig {
-	$schema?: string | null;
-	extends?: string | null;
-	fileGroups?: Record<Id, InputPath[]> | null;
-	implicitDeps?: Target[] | null;
-	implicitInputs?: InputPath[] | null;
-	tasks?: Record<Id, TaskConfig> | null;
-}
-
-export interface InheritedTasksConfig {
-	$schema: string;
-	extends: string | null;
-	fileGroups: Record<Id, InputPath[]>;
-	implicitDeps: Target[];
-	implicitInputs: InputPath[];
-	tasks: Record<Id, TaskConfig>;
-}
-
-export interface PartialInheritedTasksConfig {
-	$schema?: string | null;
-	extends?: string | null;
-	fileGroups?: Record<Id, InputPath[]> | null;
-	implicitDeps?: Target[] | null;
-	implicitInputs?: InputPath[] | null;
-	tasks?: Record<Id, TaskConfig> | null;
-}
-
-export interface TaskOptionsConfig {
-	affectedFiles: TaskOptionAffectedFiles | null;
-	cache: boolean | null;
-	envFile: TaskOptionEnvFile | null;
-	mergeArgs: TaskMergeStrategy | null;
-	mergeDeps: TaskMergeStrategy | null;
-	mergeEnv: TaskMergeStrategy | null;
-	mergeInputs: TaskMergeStrategy | null;
-	mergeOutputs: TaskMergeStrategy | null;
-	outputStyle: TaskOutputStyle | null;
-	persistent: boolean | null;
-	retryCount: number | null;
-	runDepsInParallel: boolean | null;
-	runInCI: boolean | null;
-	runFromWorkspaceRoot: boolean | null;
-	shell: boolean | null;
-}
-
 export interface PartialTaskOptionsConfig {
-	affectedFiles?: TaskOptionAffectedFiles | null;
+	affectedFiles?: boolean | string | null;
 	cache?: boolean | null;
-	envFile?: TaskOptionEnvFile | null;
+	envFile?: boolean | string | null;
 	mergeArgs?: TaskMergeStrategy | null;
 	mergeDeps?: TaskMergeStrategy | null;
 	mergeEnv?: TaskMergeStrategy | null;
@@ -78,51 +21,73 @@ export interface PartialTaskOptionsConfig {
 	persistent?: boolean | null;
 	retryCount?: number | null;
 	runDepsInParallel?: boolean | null;
-	runInCI?: boolean | null;
 	runFromWorkspaceRoot?: boolean | null;
+	runInCI?: boolean | null;
 	shell?: boolean | null;
 }
 
-export interface TaskConfig {
-	command: TaskCommandArgs;
-	args: TaskCommandArgs;
-	deps: Target[];
-	env: Record<string, string>;
-	inputs: InputPath[] | null;
-	local: boolean;
-	outputs: OutputPath[] | null;
-	options: TaskOptionsConfig;
-	platform: PlatformType;
-	type: TaskType | null;
-}
+export type PlatformType = 'deno' | 'node' | 'rust' | 'system' | 'unknown';
+
+export type TaskType = 'build' | 'run' | 'test';
 
 export interface PartialTaskConfig {
-	command?: TaskCommandArgs | null;
 	args?: TaskCommandArgs | null;
-	deps?: Target[] | null;
+	command?: TaskCommandArgs | null;
+	deps?: string[] | null;
 	env?: Record<string, string> | null;
-	inputs?: InputPath[] | null;
+	inputs?: string[] | null;
 	local?: boolean | null;
-	outputs?: OutputPath[] | null;
-	options?: TaskOptionsConfig | null;
+	options?: PartialTaskOptionsConfig | null;
+	outputs?: string[] | null;
 	platform?: PlatformType | null;
 	type?: TaskType | null;
-}
-
-export interface InheritedTasksConfig {
-	$schema: string;
-	extends: string | null;
-	fileGroups: Record<Id, InputPath[]>;
-	implicitDeps: Target[];
-	implicitInputs: InputPath[];
-	tasks: Record<Id, TaskConfig>;
 }
 
 export interface PartialInheritedTasksConfig {
 	$schema?: string | null;
 	extends?: string | null;
-	fileGroups?: Record<Id, InputPath[]> | null;
-	implicitDeps?: Target[] | null;
-	implicitInputs?: InputPath[] | null;
-	tasks?: Record<Id, TaskConfig> | null;
+	fileGroups?: Record<string, string[]> | null;
+	implicitDeps?: string[] | null;
+	implicitInputs?: string[] | null;
+	tasks?: Record<string, PartialTaskConfig> | null;
+}
+
+export interface TaskOptionsConfig {
+	affectedFiles: boolean | string | null;
+	cache: boolean | null;
+	envFile: boolean | string | null;
+	mergeArgs: TaskMergeStrategy | null;
+	mergeDeps: TaskMergeStrategy | null;
+	mergeEnv: TaskMergeStrategy | null;
+	mergeInputs: TaskMergeStrategy | null;
+	mergeOutputs: TaskMergeStrategy | null;
+	outputStyle: TaskOutputStyle | null;
+	persistent: boolean | null;
+	retryCount: number | null;
+	runDepsInParallel: boolean | null;
+	runFromWorkspaceRoot: boolean | null;
+	runInCI: boolean | null;
+	shell: boolean | null;
+}
+
+export interface TaskConfig {
+	args: TaskCommandArgs;
+	command: TaskCommandArgs;
+	deps: string[];
+	env: Record<string, string>;
+	inputs: string[] | null;
+	local: boolean;
+	options: TaskOptionsConfig;
+	outputs: string[] | null;
+	platform: PlatformType;
+	type: TaskType | null;
+}
+
+export interface InheritedTasksConfig {
+	$schema: string;
+	extends: string | null;
+	fileGroups: Record<string, string[]>;
+	implicitDeps: string[];
+	implicitInputs: string[];
+	tasks: Record<string, TaskConfig>;
 }

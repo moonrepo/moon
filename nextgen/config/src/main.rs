@@ -1,38 +1,9 @@
 use moon_config::*;
 use schematic::renderers::json_schema::JsonSchemaRenderer;
-use schematic::renderers::typescript::TypeScriptRenderer;
-// use schemars::schema_for;
-// use schematic::typescript::{Output, Type, TypeScriptGenerator};
+use schematic::renderers::typescript::{TypeScriptOptions, TypeScriptRenderer};
 use schematic::schema::SchemaGenerator;
-use std::fs;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
-
-// fn create_type_alias(name: &str) -> Output {
-//     Output::Enum {
-//         name,
-//         fields: vec![Output::Field {
-//             name: "".into(),
-//             value: Type::String,
-//             optional: false,
-//         }],
-//     }
-// }
-
-// fn generate_common() {
-//     let mut generator =
-//         TypeScriptGenerator::new(PathBuf::from("packages/types/src/common-config.ts"));
-
-//     generator.add_custom(create_type_alias("Id"));
-//     generator.add_custom(create_type_alias("Target"));
-//     generator.add_custom(create_type_alias("FilePath"));
-//     generator.add_custom(create_type_alias("GlobPath"));
-//     generator.add_custom(create_type_alias("InputPath"));
-//     generator.add_custom(create_type_alias("OutputPath"));
-//     generator.add_enum::<LanguageType>();
-//     generator.add_enum::<PlatformType>();
-
-//     generator.generate().unwrap();
-// }
 
 fn generate_project() {
     let mut generator = SchemaGenerator::default();
@@ -46,12 +17,34 @@ fn generate_project() {
         )
         .unwrap();
 
+    generator.add::<DependencyConfig>();
     generator.add::<ProjectConfig>();
 
     generator
         .generate(
             PathBuf::from("packages/types/src/project-config.ts"),
-            TypeScriptRenderer::default(),
+            TypeScriptRenderer::new(TypeScriptOptions {
+                exclude_exports: HashSet::from_iter([
+                    "PlatformType".into(),
+                    "TaskCommandArgs".into(),
+                    "TaskMergeStrategy".into(),
+                    "TaskOutputStyle".into(),
+                    "TaskType".into(),
+                    "PartialTaskOptionsConfig".into(),
+                    "PartialTaskConfig".into(),
+                    "TaskOptionsConfig".into(),
+                    "TaskConfig".into(),
+                ]),
+                external_types: HashMap::from_iter([(
+                    "./tasks-config".into(),
+                    HashSet::from_iter([
+                        "PlatformType".into(),
+                        "PartialTaskConfig".into(),
+                        "TaskConfig".into(),
+                    ]),
+                )]),
+                ..Default::default()
+            }),
         )
         .unwrap();
 }
@@ -143,10 +136,9 @@ fn generate_workspace() {
 }
 
 fn main() {
-    // generate_common();
     generate_project();
     generate_tasks();
     generate_template();
-    // generate_toolchain();
+    generate_toolchain();
     generate_workspace();
 }

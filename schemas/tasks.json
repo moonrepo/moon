@@ -5,107 +5,91 @@
   "type": "object",
   "properties": {
     "$schema": {
-      "type": [
-        "string",
-        "null"
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
       ]
     },
     "extends": {
-      "type": [
-        "string",
-        "null"
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
       ]
     },
     "fileGroups": {
-      "type": [
-        "object",
-        "null"
-      ],
-      "additionalProperties": {
-        "type": "array",
-        "items": {
-          "$ref": "#/definitions/InputPath"
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "null"
         }
-      }
+      ]
     },
     "implicitDeps": {
-      "type": [
-        "array",
-        "null"
-      ],
-      "items": {
-        "$ref": "#/definitions/Target"
-      }
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "implicitInputs": {
-      "type": [
-        "array",
-        "null"
-      ],
-      "items": {
-        "$ref": "#/definitions/InputPath"
-      }
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "tasks": {
-      "type": [
-        "object",
-        "null"
-      ],
-      "additionalProperties": {
-        "$ref": "#/definitions/PartialTaskConfig"
-      }
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/PartialTaskConfig"
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
     }
   },
   "additionalProperties": false,
   "definitions": {
-    "FilePath": {
-      "type": "string"
-    },
-    "InputPath": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "string"
-        },
-        {
-          "type": "string"
-        },
-        {
-          "type": "string"
-        },
-        {
-          "type": "string"
-        },
-        {
-          "type": "string"
-        },
-        {
-          "type": "string"
-        }
-      ]
-    },
-    "OutputPath": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "string"
-        },
-        {
-          "type": "string"
-        },
-        {
-          "type": "string"
-        },
-        {
-          "type": "string"
-        }
-      ]
-    },
     "PartialTaskConfig": {
+      "title": "PartialTaskConfig",
       "type": "object",
       "properties": {
         "args": {
@@ -129,36 +113,55 @@
           ]
         },
         "deps": {
-          "type": [
-            "array",
-            "null"
-          ],
-          "items": {
-            "$ref": "#/definitions/Target"
-          }
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "env": {
-          "type": [
-            "object",
-            "null"
-          ],
-          "additionalProperties": {
-            "type": "string"
-          }
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "propertyNames": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "inputs": {
-          "type": [
-            "array",
-            "null"
-          ],
-          "items": {
-            "$ref": "#/definitions/InputPath"
-          }
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "local": {
-          "type": [
-            "boolean",
-            "null"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "options": {
@@ -172,13 +175,17 @@
           ]
         },
         "outputs": {
-          "type": [
-            "array",
-            "null"
-          ],
-          "items": {
-            "$ref": "#/definitions/OutputPath"
-          }
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "platform": {
           "anyOf": [
@@ -204,6 +211,7 @@
       "additionalProperties": false
     },
     "PartialTaskOptionsConfig": {
+      "title": "PartialTaskOptionsConfig",
       "type": "object",
       "properties": {
         "affectedFiles": {
@@ -217,9 +225,13 @@
           ]
         },
         "cache": {
-          "type": [
-            "boolean",
-            "null"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "envFile": {
@@ -293,41 +305,63 @@
           ]
         },
         "persistent": {
-          "type": [
-            "boolean",
-            "null"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "retryCount": {
-          "type": [
-            "integer",
-            "null"
-          ],
-          "format": "uint8",
-          "minimum": 0.0
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "runDepsInParallel": {
-          "type": [
-            "boolean",
-            "null"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "runFromWorkspaceRoot": {
-          "type": [
-            "boolean",
-            "null"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "runInCI": {
-          "type": [
-            "boolean",
-            "null"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "shell": {
-          "type": [
-            "boolean",
-            "null"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
           ]
         }
       },
@@ -342,9 +376,6 @@
         "system",
         "unknown"
       ]
-    },
-    "Target": {
-      "type": "string"
     },
     "TaskCommandArgs": {
       "anyOf": [
@@ -371,16 +402,16 @@
       ]
     },
     "TaskOptionAffectedFiles": {
-      "oneOf": [
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
         {
           "type": "string",
           "enum": [
             "args",
             "env"
           ]
-        },
-        {
-          "type": "boolean"
         }
       ]
     },
@@ -390,7 +421,7 @@
           "type": "boolean"
         },
         {
-          "$ref": "#/definitions/FilePath"
+          "type": "string"
         }
       ]
     },

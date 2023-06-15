@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where failed processes would not bubble up the original error.
+- Fixed TypeScript type issues in `@moonrepo/types`.
+- Fixed JSON schema issues.
+
+#### ⚙️ Internal
+
+- Updated to proto v0.10.
+
 ## 1.8.0
 
 #### 🚀 Updates

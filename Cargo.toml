@@ -50,3 +50,4 @@ starbase_utils = { version = "0.2.11", default-features = false, features = ["ed
 thiserror = "1.0.40"
 tokio = { version = "1.28.2", default-features = false, features = ["tracing"] }
 tracing = "0.1.37"
+url = "2.4.0"

@@ -194,7 +194,7 @@ impl Vcs for Git {
             return Ok(branch);
         }
 
-        self.create_and_run_command(["rev-parse --abbrev-ref HEAD"], true)
+        self.create_and_run_command(["rev-parse", "--abbrev-ref", "HEAD"], true)
             .await
     }
 

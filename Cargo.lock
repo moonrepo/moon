@@ -3539,6 +3539,7 @@ dependencies = [
  "rustc-hash",
  "thiserror",
  "tracing",
+ "url",
 ]
 
 [[package]]

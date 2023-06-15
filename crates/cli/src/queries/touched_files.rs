@@ -49,7 +49,7 @@ pub async fn query_touched_files(
     }
 
     // On default branch, so compare against self -1 revision
-    let touched_files_map = if options.default_branch && vcs.is_default_branch(&current_branch) {
+    let touched_files_map = if options.default_branch && vcs.is_default_branch(current_branch) {
         trace!(
             target: LOG_TARGET,
             "On default branch {}, comparing against previous revision",

@@ -1,8 +1,8 @@
 use moon::{generate_project_graph, load_workspace_from};
-use moon_config::HasherWalkStrategy;
+use moon_config::{HasherWalkStrategy, WorkspaceConfig};
 use moon_runner::inputs_collector::collect_and_hash_inputs;
 use moon_test_utils::{create_sandbox_with_config, get_cases_fixture_configs, Sandbox};
-use moon_vcs::VcsLoader;
+use moon_vcs2::{BoxedVcs, Git};
 use std::fs;
 use std::path::Path;
 
@@ -27,6 +27,17 @@ fn create_out_files(project_root: &Path) {
     }
 }
 
+fn load_vcs(workspace_root: &Path, workspace_config: &WorkspaceConfig) -> BoxedVcs {
+    Box::new(
+        Git::load(
+            workspace_root,
+            &workspace_config.vcs.default_branch,
+            &workspace_config.vcs.remote_candidates,
+        )
+        .unwrap(),
+    )
+}
+
 #[tokio::test]
 async fn filters_using_input_globs() {
     let sandbox = cases_sandbox();
@@ -34,7 +45,7 @@ async fn filters_using_input_globs() {
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
     let project_graph = generate_project_graph(&mut workspace).await.unwrap();
-    let vcs = VcsLoader::load(&workspace.root, &workspace.config).unwrap();
+    let vcs = load_vcs(&workspace.root, &workspace.config);
 
     let project = project_graph.get("outputsFiltering").unwrap();
 
@@ -99,7 +110,7 @@ async fn filters_using_input_globs_in_glob_mode() {
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
     let project_graph = generate_project_graph(&mut workspace).await.unwrap();
-    let vcs = VcsLoader::load(&workspace.root, &workspace.config).unwrap();
+    let vcs = load_vcs(&workspace.root, &workspace.config);
 
     workspace.config.hasher.walk_strategy = HasherWalkStrategy::Glob;
 
@@ -166,7 +177,7 @@ async fn filters_using_input_files() {
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
     let project_graph = generate_project_graph(&mut workspace).await.unwrap();
-    let vcs = VcsLoader::load(&workspace.root, &workspace.config).unwrap();
+    let vcs = load_vcs(&workspace.root, &workspace.config);
 
     let project = project_graph.get("outputsFiltering").unwrap();
 
@@ -230,7 +241,7 @@ async fn filters_using_input_files_in_glob_mode() {
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
     let project_graph = generate_project_graph(&mut workspace).await.unwrap();
-    let vcs = VcsLoader::load(&workspace.root, &workspace.config).unwrap();
+    let vcs = load_vcs(&workspace.root, &workspace.config);
 
     workspace.config.hasher.walk_strategy = HasherWalkStrategy::Glob;
 

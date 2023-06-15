@@ -12,3 +12,4 @@ releases:
 declined:
   - '@moonrepo/report'
   - '@moonrepo/runtime'
+  - 'website'

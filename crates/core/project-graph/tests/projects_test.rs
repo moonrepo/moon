@@ -713,37 +713,20 @@ mod task_expansion {
                     .get_task("argsFileGroups")
                     .unwrap()
                     .args,
-                if cfg!(windows) {
-                    vec![
-                        "--dirs",
-                        ".\\dir",
-                        ".\\dir\\subdir",
-                        "--files",
-                        ".\\file.ts",
-                        ".\\dir\\other.tsx",
-                        ".\\dir\\subdir\\another.ts",
-                        "--globs",
-                        "./**/*.{ts,tsx}",
-                        "./*.js",
-                        "--root",
-                        ".\\dir",
-                    ]
-                } else {
-                    vec![
-                        "--dirs",
-                        "./dir",
-                        "./dir/subdir",
-                        "--files",
-                        "./file.ts",
-                        "./dir/other.tsx",
-                        "./dir/subdir/another.ts",
-                        "--globs",
-                        "./**/*.{ts,tsx}",
-                        "./*.js",
-                        "--root",
-                        "./dir",
-                    ]
-                },
+                vec![
+                    "--dirs",
+                    "./dir",
+                    "./dir/subdir",
+                    "--files",
+                    "./file.ts",
+                    "./dir/other.tsx",
+                    "./dir/subdir/another.ts",
+                    "--globs",
+                    "./**/*.{ts,tsx}",
+                    "./*.js",
+                    "--root",
+                    "./dir",
+                ]
             );
         }
 
@@ -755,37 +738,20 @@ mod task_expansion {
 
             assert_eq!(
                 *project.get_task("argsFileGroupsWorkspace").unwrap().args,
-                if cfg!(windows) {
-                    vec![
-                        "--dirs",
-                        ".\\tokens\\dir",
-                        ".\\tokens\\dir\\subdir",
-                        "--files",
-                        ".\\tokens\\file.ts",
-                        ".\\tokens\\dir\\other.tsx",
-                        ".\\tokens\\dir\\subdir\\another.ts",
-                        "--globs",
-                        "./tokens/**/*.{ts,tsx}",
-                        "./tokens/*.js",
-                        "--root",
-                        ".\\tokens\\dir",
-                    ]
-                } else {
-                    vec![
-                        "--dirs",
-                        "./tokens/dir",
-                        "./tokens/dir/subdir",
-                        "--files",
-                        "./tokens/file.ts",
-                        "./tokens/dir/other.tsx",
-                        "./tokens/dir/subdir/another.ts",
-                        "--globs",
-                        "./tokens/**/*.{ts,tsx}",
-                        "./tokens/*.js",
-                        "--root",
-                        "./tokens/dir",
-                    ]
-                },
+                vec![
+                    "--dirs",
+                    "./tokens/dir",
+                    "./tokens/dir/subdir",
+                    "--files",
+                    "./tokens/file.ts",
+                    "./tokens/dir/other.tsx",
+                    "./tokens/dir/subdir/another.ts",
+                    "--globs",
+                    "./tokens/**/*.{ts,tsx}",
+                    "./tokens/*.js",
+                    "--root",
+                    "./tokens/dir",
+                ]
             );
         }
 

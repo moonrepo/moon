@@ -21,6 +21,9 @@ pub static DIFF_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(A|D|M|T|U|X)$
 
 pub static DIFF_SCORE_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(C|M|R)(\d{3})$").unwrap());
 
+pub static VERSION_CLEAN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"\.(win|windows|msysgit)\.\d+").unwrap());
+
 pub struct Git {
     /// Default git branch name.
     pub default_branch: String,
@@ -468,7 +471,18 @@ impl Vcs for Git {
     async fn get_version(&self) -> VcsResult<Version> {
         let version = self
             .process
-            .run_with_formatter(["--version"], true, |out| out.replace("git version", ""))
+            .run_with_formatter(["--version"], true, |out| {
+                VERSION_CLEAN
+                    .replace(
+                        &out.to_lowercase()
+                            .replace("git version", "")
+                            .replace("git for windows", "")
+                            .replace("(32-bit)", "")
+                            .replace("(64-bit)", ""),
+                        "",
+                    )
+                    .to_string()
+            })
             .await?;
 
         Ok(Version::parse(version).unwrap())

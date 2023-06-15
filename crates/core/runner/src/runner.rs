@@ -266,7 +266,7 @@ impl<'a> Runner<'a> {
         if let Some(check_affected) = &self.task.options.affected_files {
             let mut affected_files = if context.affected_only {
                 self.task
-                    .get_affected_files(&context.touched_files, &self.project.source)?
+                    .get_affected_files(&context.touched_files, self.project.source.as_str())?
             } else {
                 Vec::with_capacity(0)
             };
@@ -320,7 +320,7 @@ impl<'a> Runner<'a> {
         );
         env_vars.insert(
             "MOON_PROJECT_SOURCE".to_owned(),
-            self.project.source.clone(),
+            self.project.source.to_string(),
         );
         env_vars.insert("MOON_TARGET".to_owned(), self.task.target.id.to_string());
         env_vars.insert(

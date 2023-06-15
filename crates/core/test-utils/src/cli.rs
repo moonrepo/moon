@@ -103,7 +103,10 @@ impl<'s> SandboxAssert<'s> {
         // Replace home dir
         if let Some(home_dir) = home_dir() {
             let home = home_dir.to_str().unwrap();
+            let root_without_home = root.replace(home, "~");
 
+            output = output.replace(&root_without_home, "<WORKSPACE>");
+            output = output.replace(&root_without_home.replace('\\', "/"), "<WORKSPACE>");
             output = output.replace(home, "~");
             output = output.replace(&home.replace('\\', "/"), "~");
         }

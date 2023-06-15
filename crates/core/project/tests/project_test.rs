@@ -1,4 +1,4 @@
-use moon_common::path::WorkspaceRelativePathBuf;
+use moon_common::path::{normalize_separators, WorkspaceRelativePathBuf};
 use moon_common::Id;
 use moon_config::{
     InheritedTasksManager, LanguageType, PartialInheritedTasksConfig, ProjectConfig,
@@ -7,7 +7,6 @@ use moon_config::{
 use moon_file_group::FileGroup;
 use moon_project::Project;
 use moon_test_utils::{create_input_paths, get_fixtures_root};
-use moon_utils::{path, string_vec};
 use rustc_hash::FxHashMap;
 
 fn mock_file_groups(source: &str) -> FxHashMap<Id, FileGroup> {
@@ -66,9 +65,9 @@ fn no_config() {
         Project {
             id: "no-config".into(),
             log_target: "moon:project:no-config".into(),
-            root: workspace_root.join(path::normalize_separators("projects/no-config")),
+            root: workspace_root.join(normalize_separators("projects/no-config")),
             file_groups: mock_file_groups("projects/no-config"),
-            source: path::normalize_separators("projects/no-config"),
+            source: WorkspaceRelativePathBuf::from("projects/no-config"),
             ..Project::default()
         }
     );
@@ -92,9 +91,9 @@ fn empty_config() {
             id: "empty-config".into(),
             config: ProjectConfig::default(),
             log_target: "moon:project:empty-config".into(),
-            root: workspace_root.join(path::normalize_separators("projects/empty-config")),
+            root: workspace_root.join(normalize_separators("projects/empty-config")),
             file_groups: mock_file_groups("projects/empty-config"),
-            source: path::normalize_separators("projects/empty-config"),
+            source: WorkspaceRelativePathBuf::from("projects/empty-config"),
             ..Project::default()
         }
     );
@@ -111,7 +110,7 @@ fn basic_config() {
         |_| LanguageType::Unknown,
     )
     .unwrap();
-    let project_root = workspace_root.join(path::normalize_separators("projects/basic"));
+    let project_root = workspace_root.join(normalize_separators("projects/basic"));
 
     // Merges with global
     let mut file_groups = mock_file_groups("projects/basic");
@@ -143,7 +142,7 @@ fn basic_config() {
             log_target: "moon:project:basic".into(),
             root: project_root,
             file_groups,
-            source: path::normalize_separators("projects/basic"),
+            source: WorkspaceRelativePathBuf::from("projects/basic"),
             ..Project::default()
         }
     );
@@ -170,7 +169,7 @@ fn advanced_config() {
                     name: Some("Advanced".into()),
                     description: "Advanced example.".into(),
                     owner: Some("Batman".into()),
-                    maintainers: string_vec!["Bruce Wayne"],
+                    maintainers: vec!["Bruce Wayne".into()],
                     channel: Some("#batcave".into()),
                 }),
                 tags: vec![Id::raw("react")],
@@ -179,9 +178,9 @@ fn advanced_config() {
                 ..ProjectConfig::default()
             },
             log_target: "moon:project:advanced".into(),
-            root: workspace_root.join(path::normalize_separators("projects/advanced")),
+            root: workspace_root.join(normalize_separators("projects/advanced")),
             file_groups: mock_file_groups("projects/advanced"),
-            source: path::normalize_separators("projects/advanced"),
+            source: WorkspaceRelativePathBuf::from("projects/advanced"),
             ..Project::default()
         }
     );

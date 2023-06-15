@@ -417,8 +417,7 @@
     "VcsManager": {
       "type": "string",
       "enum": [
-        "git",
-        "svn"
+        "git"
       ]
     },
     "VcsProvider": {

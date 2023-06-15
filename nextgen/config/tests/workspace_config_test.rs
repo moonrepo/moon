@@ -539,7 +539,7 @@ vcs:
         }
 
         #[test]
-        #[should_panic(expected = "unknown variant `mercurial`, expected `git` or `svn`")]
+        #[should_panic(expected = "unknown variant `mercurial`, expected `git`")]
         fn errors_on_invalid_manager() {
             test_load_config(
                 FILENAME,

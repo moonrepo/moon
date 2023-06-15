@@ -9,6 +9,7 @@
 
 #### ⚙️ Internal
 
+- Dropped SVN support since it was never finished and doesn't work.
 - Improved VCS/git file handling, caching, and performance.
 
 ## 1.8.1

@@ -77,7 +77,7 @@ const workspaceRows: Comparison[] = [
 	{
 		feature: 'Integrates with a version control system',
 		support: {
-			moon: [SUPPORTED, 'git', PARTIALLY_SUPPORTED, 'svn (in dev)'],
+			moon: [SUPPORTED, 'git'],
 			nx: [SUPPORTED, 'git'],
 			turborepo: [SUPPORTED, 'git'],
 		},

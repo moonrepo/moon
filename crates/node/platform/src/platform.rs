@@ -104,7 +104,7 @@ impl Platform for NodePlatform {
         }
 
         if let Some(globs) = get_package_manager_workspaces(self.workspace_root.to_owned())? {
-            in_workspace = GlobSet::new(&globs)?.matches(&project.source);
+            in_workspace = GlobSet::new(&globs)?.matches(project.source.as_str());
         }
 
         Ok(in_workspace)

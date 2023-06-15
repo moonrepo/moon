@@ -158,7 +158,7 @@ pub async fn query_projects(
         }
 
         if let Some(regex) = &source_regex {
-            if !regex.is_match(&project.source) {
+            if !regex.is_match(project.source.as_str()) {
                 continue;
             }
         }

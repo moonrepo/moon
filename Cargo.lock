@@ -3233,7 +3233,6 @@ dependencies = [
  "moon_target",
  "moon_task",
  "moon_test_utils",
- "moon_utils",
  "rustc-hash",
  "serde",
  "starbase_styles",

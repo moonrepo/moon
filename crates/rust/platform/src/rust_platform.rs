@@ -106,7 +106,7 @@ impl Platform for RustPlatform {
 
         if let Some(workspace) = cargo_toml.workspace {
             return Ok(GlobSet::new_split(&workspace.members, &workspace.exclude)?
-                .matches(&project.source));
+                .matches(project.source.as_str()));
         }
 
         Ok(false)

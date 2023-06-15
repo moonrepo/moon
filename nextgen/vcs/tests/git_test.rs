@@ -130,7 +130,7 @@ mod file_hashing {
         let (_sandbox, git) = create_git_sandbox("vcs");
 
         assert_eq!(
-            git.get_file_hashes(["foo/file2.txt", "baz/file5.txt"], false, 100)
+            git.get_file_hashes(&["foo/file2.txt", "baz/file5.txt"], false, 100)
                 .await
                 .unwrap(),
             BTreeMap::from([
@@ -152,7 +152,7 @@ mod file_hashing {
 
         assert_eq!(
             git.get_file_hashes(
-                ["foo/file1.txt", "foo/file2.txt", "baz/file5.txt"],
+                &["foo/file1.txt", "foo/file2.txt", "baz/file5.txt"],
                 false,
                 100
             )
@@ -171,7 +171,7 @@ mod file_hashing {
 
         assert_eq!(
             git.get_file_hashes(
-                ["foo/file1.txt", "foo/file2.txt", "baz/file5.txt"],
+                &["foo/file1.txt", "foo/file2.txt", "baz/file5.txt"],
                 true,
                 100
             )
@@ -288,9 +288,7 @@ mod file_hashing {
         let (_sandbox, git) = create_git_sandbox("vcs");
 
         assert_eq!(
-            git.get_file_hashes(&[WorkspaceRelativePathBuf::from("foo")], false, 100)
-                .await
-                .unwrap(),
+            git.get_file_hashes(&["foo"], false, 100).await.unwrap(),
             BTreeMap::new()
         );
     }

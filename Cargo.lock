@@ -3613,7 +3613,7 @@ dependencies = [
  "moon_platform",
  "moon_test_utils",
  "moon_utils",
- "moon_vcs",
+ "moon_vcs2",
  "moonbase",
  "proto_cli",
  "reqwest",

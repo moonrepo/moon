@@ -2,7 +2,7 @@ use miette::Diagnostic;
 use moon_common::consts;
 use moon_config::ConfigError;
 use moon_error::MoonError;
-use moon_vcs::VcsError;
+use moon_vcs2::VcsError;
 use moonbase::MoonbaseError;
 use proto::ProtoError;
 use starbase_styles::{Style, Stylize};

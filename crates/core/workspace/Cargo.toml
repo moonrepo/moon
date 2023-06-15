@@ -12,7 +12,7 @@ moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
 moon_platform = { path = "../platform" }
 moon_utils = { path = "../utils" }
-moon_vcs = { path = "../vcs" }
+moon_vcs2 = { path = "../../../nextgen/vcs" }
 miette = { workspace = true }
 proto_cli = { workspace = true }
 reqwest = { workspace = true }

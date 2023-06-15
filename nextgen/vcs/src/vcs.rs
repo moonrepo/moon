@@ -25,17 +25,14 @@ pub trait Vcs {
     /// the workspace root.
     async fn get_file_hashes(
         &self,
-        files: impl IntoIterator<Item = impl AsRef<str>> + Send,
+        files: &[&str],
         allow_ignored: bool,
         batch_size: u16,
     ) -> VcsResult<BTreeMap<WorkspaceRelativePathBuf, String>>;
 
     /// Get a list of all files in the provided directory, recursing through all sub-directories.
     /// Directory *must* be relative from the workspace root.
-    async fn get_file_tree(
-        &self,
-        dir: impl AsRef<str> + Send,
-    ) -> VcsResult<Vec<WorkspaceRelativePathBuf>>;
+    async fn get_file_tree(&self, dir: &str) -> VcsResult<Vec<WorkspaceRelativePathBuf>>;
 
     /// Return the repository slug ("moonrepo/moon") of the current checkout.
     async fn get_repository_slug(&self) -> VcsResult<&str>;

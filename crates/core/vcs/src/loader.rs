@@ -15,7 +15,7 @@ impl VcsLoader {
         let vcs_config = &workspace_config.vcs;
 
         Ok(match vcs_config.manager {
-            VcsManager::Svn => Box::new(Svn::load(vcs_config, workspace_root)),
+            // VcsManager::Svn => Box::new(Svn::load(vcs_config, workspace_root)),
             _ => Box::new(Git::load(vcs_config, workspace_root)?),
         })
     }

@@ -6,7 +6,7 @@ use moon_error::MoonError;
 use moon_logger::{debug, trace};
 use moon_platform::{BoxedPlatform, PlatformManager};
 use moon_utils::semver;
-use moon_vcs::{BoxedVcs, VcsLoader};
+use moon_vcs2::{BoxedVcs, Git};
 use moonbase::Moonbase;
 use proto::{get_root, ToolsConfig, TOOLS_CONFIG_NAME};
 use starbase_styles::color;
@@ -214,7 +214,11 @@ impl Workspace {
 
         // Setup components
         let cache = CacheEngine::load(&root_dir)?;
-        let vcs = VcsLoader::load(&root_dir, &config)?;
+        let vcs = Git::load(
+            &root_dir,
+            &config.vcs.default_branch,
+            &config.vcs.remote_candidates,
+        )?;
 
         Ok(Workspace {
             cache,
@@ -226,7 +230,7 @@ impl Workspace {
             tasks_config,
             toolchain_config,
             toolchain_root: get_root()?,
-            vcs,
+            vcs: Box::new(vcs),
             working_dir: working_dir.to_owned(),
         })
     }

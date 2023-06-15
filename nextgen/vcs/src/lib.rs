@@ -8,3 +8,5 @@ pub use git::*;
 pub use touched_files::*;
 pub use vcs::*;
 pub use vcs_error::*;
+
+pub type BoxedVcs = Box<dyn Vcs + Send + Sync + 'static>;

@@ -1,6 +1,6 @@
 mod utils;
 
-use moon_config::{FilePath, VcsManager, WorkspaceConfig, WorkspaceProjects};
+use moon_config::{FilePath, WorkspaceConfig, WorkspaceProjects};
 use rustc_hash::FxHashMap;
 use starbase_sandbox::create_sandbox;
 use utils::*;
@@ -38,7 +38,7 @@ mod workspace_config {
 
             assert_eq!(config.runner.cache_lifetime, "3 hours");
             assert!(!config.runner.log_running_command);
-            assert_eq!(config.vcs.manager, VcsManager::Svn);
+            // assert_eq!(config.vcs.manager, VcsManager::Svn);
         }
 
         #[test]

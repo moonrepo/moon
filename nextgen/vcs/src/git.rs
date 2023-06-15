@@ -173,7 +173,7 @@ impl Vcs for Git {
 
     async fn get_file_hashes(
         &self,
-        files: impl IntoIterator<Item = impl AsRef<str>> + Send,
+        files: &[&str],
         allow_ignored: bool,
         batch_size: u16,
     ) -> VcsResult<BTreeMap<WorkspaceRelativePathBuf, String>> {
@@ -181,7 +181,6 @@ impl Vcs for Git {
         let mut map = BTreeMap::new();
 
         for file in files {
-            let file = file.as_ref();
             let abs_file = self.process.root.join(file);
 
             // File must exist or git fails
@@ -225,10 +224,7 @@ impl Vcs for Git {
         Ok(map)
     }
 
-    async fn get_file_tree(
-        &self,
-        dir: impl AsRef<str> + Send,
-    ) -> VcsResult<Vec<WorkspaceRelativePathBuf>> {
+    async fn get_file_tree(&self, dir: &str) -> VcsResult<Vec<WorkspaceRelativePathBuf>> {
         let mut args = vec![
             "ls-files",
             "--full-name",
@@ -236,7 +232,7 @@ impl Vcs for Git {
             "--modified",
             "--others", // Includes untracked
             "--exclude-standard",
-            dir.as_ref(),
+            dir,
         ];
 
         if self.is_version_supported(">=2.31.0").await? {

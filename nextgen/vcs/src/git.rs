@@ -8,7 +8,7 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use rustc_hash::FxHashSet;
-use semver::{Version, VersionReq};
+use semver::Version;
 use std::cmp;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -23,22 +23,22 @@ pub static DIFF_SCORE_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(C|M|R)(
 
 pub struct Git {
     /// Default git branch name.
-    default_branch: String,
+    pub default_branch: String,
 
     /// Path between the git and workspace root.
     // file_prefix: RelativePathBuf,
 
     /// Root of the git repository (where `.git` is located).
-    git_root: PathBuf,
+    pub git_root: PathBuf,
 
     /// Ignore rules derived from a root `.gitignore` file.
     ignore: Option<Gitignore>,
 
     /// Run and cache `git` commands.
-    process: ProcessCache,
+    pub process: ProcessCache,
 
     /// List of remotes to use as merge candidates.
-    remote_candidates: Vec<String>,
+    pub remote_candidates: Vec<String>,
 }
 
 impl Git {

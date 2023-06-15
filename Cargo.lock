@@ -2757,7 +2757,7 @@ dependencies = [
  "moon_tool",
  "moon_typescript_lang",
  "moon_utils",
- "moon_vcs",
+ "moon_vcs2",
  "moon_workspace",
  "open",
  "petgraph",
@@ -3556,27 +3556,6 @@ dependencies = [
  "starbase_styles",
  "starbase_utils",
  "tokio",
-]
-
-[[package]]
-name = "moon_vcs"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "cached",
- "ignore",
- "miette",
- "moon_config",
- "moon_error",
- "moon_process",
- "moon_test_utils",
- "moon_utils",
- "regex",
- "rustc-hash",
- "starbase_utils",
- "thiserror",
- "tokio",
- "url",
 ]
 
 [[package]]

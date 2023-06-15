@@ -12,7 +12,7 @@ use moon_node_lang::NPM;
 use moon_rust_lang::CARGO;
 use moon_terminal::{create_theme, safe_exit};
 use moon_utils::path;
-use moon_vcs::detect_vcs;
+use moon_vcs2::{Git, Vcs};
 use node::init_node;
 use rust::init_rust;
 use starbase::AppResult;
@@ -154,9 +154,9 @@ pub async fn init(dest: String, tool: Option<InitTool>, options: InitOptions) ->
     };
     let mut context = create_default_context();
 
-    let vcs = detect_vcs(&dest_dir).await?;
-    context.insert("vcs_manager", &vcs.0.to_string());
-    context.insert("vcs_default_branch", &vcs.1);
+    let git = Git::load(&dest_dir, "master", &[])?;
+    context.insert("vcs_manager", "git");
+    context.insert("vcs_default_branch", git.get_local_branch().await?);
 
     // Initialize all tools
     let mut toolchain_configs = VecDeque::new();

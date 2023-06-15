@@ -607,7 +607,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         let mut add_sources = |map: &FxHashMap<Id, String>| -> Result<(), ProjectGraphError> {
             for (id, source) in map {
-                sources.insert(id.to_owned(), path::normalize_separators(source));
+                sources.insert(id.to_owned(), path::standardize_separators(source));
             }
 
             Ok(())

@@ -1,5 +1,5 @@
 use crate::errors::ProjectError;
-use moon_common::path::{normalize_separators, standardize_separators, WorkspaceRelativePathBuf};
+use moon_common::path::{normalize_separators, WorkspaceRelativePathBuf};
 use moon_common::{cacheable, consts, Id};
 use moon_config::{
     DependencyConfig, InheritedTasksConfig, InheritedTasksManager, LanguageType, ProjectConfig,
@@ -295,7 +295,6 @@ impl Project {
         F: FnOnce(&Path) -> LanguageType,
     {
         let log_target = format!("moon:project:{id}");
-        let source = standardize_separators(source);
 
         // For the root-level project, the "." dot actually causes
         // a ton of unwanted issues, so just use workspace root directly.
@@ -303,7 +302,7 @@ impl Project {
             workspace_root.to_owned()
         } else {
             // For absolute paths, use native path separators
-            workspace_root.join(normalize_separators(&source))
+            workspace_root.join(normalize_separators(source))
         };
 
         debug!(
@@ -311,14 +310,14 @@ impl Project {
             "Loading project from {} (id = {}, path = {})",
             color::path(&root),
             color::id(id),
-            color::file(&source),
+            color::file(source),
         );
 
         if !root.exists() {
-            return Err(ProjectError::MissingProjectAtSource(source));
+            return Err(ProjectError::MissingProjectAtSource(source.to_owned()));
         }
 
-        let config = load_project_config(&log_target, workspace_root, &source)?;
+        let config = load_project_config(&log_target, workspace_root, source)?;
         let language = if matches!(config.language, LanguageType::Unknown) {
             detect_language(&root)
         } else {
@@ -333,7 +332,7 @@ impl Project {
             &config.tags,
         )?;
         let file_groups =
-            create_file_groups_from_config(&log_target, &source, &config, &global_tasks)?;
+            create_file_groups_from_config(&log_target, source, &config, &global_tasks)?;
         let dependencies = create_dependencies_from_config(&log_target, &config);
         let tasks = create_tasks_from_config(&log_target, id, &config, &global_tasks)?;
 

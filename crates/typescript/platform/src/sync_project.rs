@@ -99,7 +99,7 @@ pub fn sync_project_tsconfig_compiler_options(
 
         // Out dir
         if setting_route_to_cache {
-            let cache_route = get_cache_dir().join("types").join(&project.source);
+            let cache_route = get_cache_dir().join("types").join(project.source.as_str());
             let out_dir =
                 path::to_virtual_string(path::relative_from(cache_route, &project.root).unwrap())?;
             let updated_options = tsconfig_json.update_compiler_options(|options| {

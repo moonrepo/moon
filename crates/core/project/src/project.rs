@@ -1,4 +1,5 @@
 use crate::errors::ProjectError;
+use moon_common::path::{standardize_separators, WorkspaceRelativePathBuf};
 use moon_common::{cacheable, consts, Id};
 use moon_config::{
     DependencyConfig, InheritedTasksConfig, InheritedTasksManager, LanguageType, ProjectConfig,
@@ -9,7 +10,6 @@ use moon_logger::{debug, trace, Logable};
 use moon_query::{Condition, Criteria, Field, LogicalOperator, QueryError, Queryable};
 use moon_target::Target;
 use moon_task::{Task, TouchedFilePaths};
-use moon_utils::path;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_styles::color;
 use std::collections::BTreeMap;
@@ -255,7 +255,7 @@ cacheable!(
         pub root: PathBuf,
 
         /// Relative path of the project from the workspace root. Is the RHS of the `projects` setting.
-        pub source: String,
+        pub source: WorkspaceRelativePathBuf,
 
         /// Tasks specific to the project. Inherits all tasks from the global config.
         pub tasks: TasksMap,
@@ -295,7 +295,7 @@ impl Project {
         F: FnOnce(&Path) -> LanguageType,
     {
         let log_target = format!("moon:project:{id}");
-        let source = path::normalize_separators(source);
+        let source = standardize_separators(source);
 
         // For the root-level project, the "." dot actually causes
         // a ton of unwanted issues, so just use workspace root directly.
@@ -344,7 +344,7 @@ impl Project {
             language,
             log_target,
             root,
-            source,
+            source: WorkspaceRelativePathBuf::from(source),
             tasks,
             type_of: config.type_of,
             inherited_config: global_tasks,
@@ -398,7 +398,9 @@ impl Queryable for Project {
                                 Ok(false)
                             }
                         }
-                        Field::ProjectSource(sources) => condition.matches(sources, &self.source),
+                        Field::ProjectSource(sources) => {
+                            condition.matches(sources, &self.source.to_string())
+                        }
                         Field::ProjectType(types) => condition.matches_enum(types, &self.type_of),
                         Field::Tag(tags) => condition.matches_list(
                             tags,

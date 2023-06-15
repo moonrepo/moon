@@ -110,12 +110,13 @@ impl FileGroup {
 
     /// Return the file group reduced down to the lowest common directory.
     /// If the reduced directories is not = 1, the project root "." will be returned.
-    pub fn root(
+    pub fn root<P: AsRef<Path>, S: AsRef<str>>(
         &self,
-        workspace_root: &Path,
-        project_source: &str,
+        workspace_root: P,
+        project_source: S,
     ) -> Result<WorkspaceRelativePathBuf, FileGroupError> {
-        let dirs = self.dirs(workspace_root)?;
+        let dirs = self.dirs(workspace_root.as_ref())?;
+        let project_source = project_source.as_ref();
 
         if !dirs.is_empty() {
             let paths = dirs

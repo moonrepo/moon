@@ -146,7 +146,8 @@ impl Subscriber for MoonbaseSubscriber {
                             .vcs
                             .get_local_branch()
                             .await
-                            .map_err(|e| MoonError::Generic(e.to_string()))?;
+                            .map_err(|e| MoonError::Generic(e.to_string()))?
+                            .to_owned();
                     }
 
                     if revision.is_empty() {
@@ -154,7 +155,8 @@ impl Subscriber for MoonbaseSubscriber {
                             .vcs
                             .get_local_branch_revision()
                             .await
-                            .map_err(|e| MoonError::Generic(e.to_string()))?;
+                            .map_err(|e| MoonError::Generic(e.to_string()))?
+                            .to_owned();
                     }
 
                     let affected_targets = context

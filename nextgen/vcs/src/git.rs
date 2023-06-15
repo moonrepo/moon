@@ -173,7 +173,7 @@ impl Vcs for Git {
 
     async fn get_file_hashes(
         &self,
-        files: &[&str],
+        files: &[String],
         allow_ignored: bool,
         batch_size: u16,
     ) -> VcsResult<BTreeMap<WorkspaceRelativePathBuf, String>> {
@@ -186,7 +186,7 @@ impl Vcs for Git {
             // File must exist or git fails
             if abs_file.exists() && abs_file.is_file() && (allow_ignored || !self.is_ignored(file))
             {
-                objects.push(file.to_owned());
+                objects.push(file);
             }
         }
 
@@ -203,7 +203,10 @@ impl Vcs for Git {
 
         while index < end_index {
             let next_index = cmp::min(index + (batch_size as usize), end_index);
-            let slice = objects[index..next_index].to_vec();
+            let slice = objects[index..next_index]
+                .iter()
+                .map(|i| (*i).to_owned())
+                .collect::<Vec<_>>();
 
             let mut command = self
                 .process

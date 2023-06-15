@@ -25,7 +25,7 @@ pub trait Vcs {
     /// the workspace root.
     async fn get_file_hashes(
         &self,
-        files: &[&str],
+        files: &[String],
         allow_ignored: bool,
         batch_size: u16,
     ) -> VcsResult<BTreeMap<WorkspaceRelativePathBuf, String>>;

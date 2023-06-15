@@ -1,7 +1,8 @@
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
 use moon_config::{ProjectsAliasesMap, ProjectsSourcesMap};
 use moon_hasher::{hash_btree, Digest, Hasher, Sha256};
-use moon_utils::{is_docker_container, path};
+use moon_utils::is_docker_container;
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, env};
 
@@ -41,10 +42,9 @@ impl GraphHasher {
         self.aliases.extend(aliases.to_owned());
     }
 
-    pub fn hash_configs(&mut self, configs: &BTreeMap<String, String>) {
+    pub fn hash_configs(&mut self, configs: &BTreeMap<WorkspaceRelativePathBuf, String>) {
         for (config, hash) in configs {
-            self.configs
-                .insert(path::standardize_separators(config), hash.to_owned());
+            self.configs.insert(config.to_string(), hash.to_owned());
         }
     }
 

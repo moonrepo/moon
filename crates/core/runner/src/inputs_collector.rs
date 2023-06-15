@@ -7,7 +7,7 @@ use moon_config::{HasherConfig, HasherWalkStrategy};
 use moon_logger::{warn, Logable};
 use moon_task::Task;
 use moon_utils::{is_ci, path};
-use moon_vcs::BoxedVcs;
+use moon_vcs2::BoxedVcs;
 use rustc_hash::FxHashSet;
 use starbase_styles::color;
 use starbase_utils::glob;
@@ -16,7 +16,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-type HashedInputs = BTreeMap<String, String>;
+type HashedInputs = BTreeMap<WorkspaceRelativePathBuf, String>;
 
 fn convert_paths_to_strings(
     log_target: &str,
@@ -125,7 +125,7 @@ pub async fn collect_and_hash_inputs(
 
             // Using VCS to collect inputs in a project is faster than globbing
             for file in vcs.get_file_tree(&project_source).await? {
-                files_to_hash.insert(workspace_root.join(file));
+                files_to_hash.insert(file.to_path(workspace_root));
             }
 
             // However that completely ignores workspace level globs,
@@ -145,8 +145,8 @@ pub async fn collect_and_hash_inputs(
     // Include local file changes so that development builds work.
     // Also run this LAST as it should take highest precedence!
     if !is_ci() {
-        for local_file in vcs.get_touched_files().await?.all {
-            let local_file = workspace_root.join(local_file);
+        for local_file in vcs.get_touched_files().await?.all() {
+            let local_file = local_file.to_path(workspace_root);
 
             // Deleted files are listed in `git status` but are
             // not valid inputs, so avoid hashing them!
@@ -177,13 +177,6 @@ pub async fn collect_and_hash_inputs(
                 .await?,
         );
     }
-
-    // 4: Normalize input key paths
-
-    hashed_inputs = hashed_inputs
-        .into_iter()
-        .map(|(k, v)| (path::standardize_separators(k), v))
-        .collect::<BTreeMap<_, _>>();
 
     Ok(hashed_inputs)
 }

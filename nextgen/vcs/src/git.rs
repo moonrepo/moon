@@ -4,7 +4,7 @@ use crate::vcs::{Vcs, VcsResult};
 use crate::vcs_error::VcsError;
 use async_trait::async_trait;
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
-use moon_common::path::{ProjectRelativePathBuf, WorkspaceRelativePathBuf};
+use moon_common::path::WorkspaceRelativePathBuf;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use rustc_hash::FxHashSet;
@@ -27,11 +27,11 @@ pub struct Git {
     /// Path between the git and workspace root.
     // file_prefix: RelativePathBuf,
 
-    /// Ignore rules derived from a root `.gitignore` file.
-    ignore: Option<Gitignore>,
-
     /// Root of the git repository (where `.git` is located).
     git_root: PathBuf,
+
+    /// Ignore rules derived from a root `.gitignore` file.
+    ignore: Option<Gitignore>,
 
     /// Run and cache `git` commands.
     process: ProcessCache,
@@ -44,6 +44,7 @@ impl Git {
     pub fn load<R: AsRef<Path>, B: AsRef<str>>(
         workspace_root: R,
         default_branch: B,
+        remote_candidates: &[String],
     ) -> VcsResult<Git> {
         debug!("Using git as a VCS");
 
@@ -103,12 +104,10 @@ impl Git {
 
         Ok(Git {
             default_branch: default_branch.as_ref().to_owned(),
-            ignore,
-            // file_prefix: RelativePathBuf::from_path(workspace_root.strip_prefix(git_root).unwrap())
-            //     .unwrap(),
-            remote_candidates: Vec::new(),
-            process: ProcessCache::new("git", workspace_root),
             git_root: git_root.to_owned(),
+            ignore,
+            process: ProcessCache::new("git", workspace_root),
+            remote_candidates: remote_candidates.to_owned(),
         })
     }
 
@@ -225,7 +224,7 @@ impl Vcs for Git {
         Ok(map)
     }
 
-    async fn get_file_tree(&self, dir: &str) -> VcsResult<Vec<ProjectRelativePathBuf>> {
+    async fn get_file_tree(&self, dir: &str) -> VcsResult<Vec<WorkspaceRelativePathBuf>> {
         let output = self
             .process
             .run(
@@ -247,7 +246,7 @@ impl Vcs for Git {
 
         Ok(output
             .split('\n')
-            .map(ProjectRelativePathBuf::from)
+            .map(WorkspaceRelativePathBuf::from)
             .collect::<Vec<_>>())
     }
 

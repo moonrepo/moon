@@ -4,6 +4,7 @@ use once_map::OnceMap;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
+#[derive(Debug)]
 pub struct ProcessCache {
     /// Output cache of all executed commands.
     cache: OnceMap<String, String>,

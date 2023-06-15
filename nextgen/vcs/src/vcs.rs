@@ -1,7 +1,7 @@
 use crate::touched_files::TouchedFiles;
 use crate::vcs_error::VcsError;
 use async_trait::async_trait;
-use moon_common::path::{ProjectRelativePathBuf, WorkspaceRelativePathBuf};
+use moon_common::path::WorkspaceRelativePathBuf;
 use std::collections::BTreeMap;
 
 pub type VcsResult<T> = Result<T, VcsError>;
@@ -20,7 +20,8 @@ pub trait Vcs {
     /// Get the revision hash/number of the default branch's HEAD.
     async fn get_default_branch_revision(&self) -> VcsResult<&str>;
 
-    /// Get a map of hashes for the provided files.
+    /// Get a map of hashes for the provided files. Files *must* be relative from
+    /// the workspace root.
     async fn get_file_hashes(
         &self,
         files: &[String],
@@ -29,7 +30,8 @@ pub trait Vcs {
     ) -> VcsResult<BTreeMap<WorkspaceRelativePathBuf, String>>;
 
     /// Get a list of all files in the provided directory, recursing through all sub-directories.
-    async fn get_file_tree(&self, dir: &str) -> VcsResult<Vec<ProjectRelativePathBuf>>;
+    /// Directory *must* be relative from the workspace root.
+    async fn get_file_tree(&self, dir: &str) -> VcsResult<Vec<WorkspaceRelativePathBuf>>;
 
     /// Return the repository slug ("moonrepo/moon") of the current checkout.
     async fn get_repository_slug(&self) -> VcsResult<&str>;

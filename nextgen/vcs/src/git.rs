@@ -24,6 +24,7 @@ pub static DIFF_SCORE_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(C|M|R)(
 pub static VERSION_CLEAN: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"\.(win|windows|msysgit)\.\d+").unwrap());
 
+#[derive(Debug)]
 pub struct Git {
     /// Default git branch name.
     pub default_branch: String,
@@ -50,7 +51,7 @@ impl Git {
         default_branch: B,
         remote_candidates: &[String],
     ) -> VcsResult<Git> {
-        debug!("Using git as a VCS");
+        debug!("Using git as a version control system");
 
         let workspace_root = workspace_root.as_ref();
 
@@ -63,9 +64,11 @@ impl Git {
         let mut git_root = workspace_root;
 
         loop {
-            if git_root.join(".git").exists() {
+            let git_dir = git_root.join(".git");
+
+            if git_dir.exists() {
                 debug!(
-                    git_root = %git_root.display(),
+                    git_dir = %git_dir.display(),
                     "Found a .git directory"
                 );
 
@@ -89,7 +92,7 @@ impl Git {
 
         if ignore_path.exists() {
             debug!(
-                ignore_path = %ignore_path.display(),
+                ignore_file = %ignore_path.display(),
                 "Loading ignore rules from .gitignore",
             );
 

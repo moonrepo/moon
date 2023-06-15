@@ -4,11 +4,12 @@ use async_trait::async_trait;
 use moon_common::path::WorkspaceRelativePathBuf;
 use semver::{Version, VersionReq};
 use std::collections::BTreeMap;
+use std::fmt::Debug;
 
 pub type VcsResult<T> = Result<T, VcsError>;
 
 #[async_trait]
-pub trait Vcs {
+pub trait Vcs: Debug {
     /// Get the local checkout branch name.
     async fn get_local_branch(&self) -> VcsResult<&str>;
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- Improved VCS/git file handling, caching, and performance.
+
 ## 1.8.1
 
 #### 🐞 Fixes
@@ -10,7 +16,7 @@
 
 #### ⚙️ Internal
 
-- Updated to proto v0.10.
+- Updated to proto v0.10.5.
 
 ## 1.8.0
 

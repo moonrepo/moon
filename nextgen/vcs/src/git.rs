@@ -4,7 +4,7 @@ use crate::vcs::{Vcs, VcsResult};
 use crate::vcs_error::VcsError;
 use async_trait::async_trait;
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
-use moon_common::path::{WorkspaceRelativePath, WorkspaceRelativePathBuf};
+use moon_common::path::WorkspaceRelativePathBuf;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use rustc_hash::FxHashSet;
@@ -174,7 +174,7 @@ impl Vcs for Git {
 
     async fn get_file_hashes(
         &self,
-        files: &[WorkspaceRelativePathBuf],
+        files: impl IntoIterator<Item = impl AsRef<str>> + Send,
         allow_ignored: bool,
         batch_size: u16,
     ) -> VcsResult<BTreeMap<WorkspaceRelativePathBuf, String>> {
@@ -182,14 +182,13 @@ impl Vcs for Git {
         let mut map = BTreeMap::new();
 
         for file in files {
-            let abs_file = file.to_path(&self.process.root);
+            let file = file.as_ref();
+            let abs_file = self.process.root.join(file);
 
             // File must exist or git fails
-            if abs_file.exists()
-                && abs_file.is_file()
-                && (allow_ignored || !self.is_ignored(file.as_str()))
+            if abs_file.exists() && abs_file.is_file() && (allow_ignored || !self.is_ignored(file))
             {
-                objects.push(file);
+                objects.push(file.to_owned());
             }
         }
 
@@ -206,10 +205,7 @@ impl Vcs for Git {
 
         while index < end_index {
             let next_index = cmp::min(index + (batch_size as usize), end_index);
-            let slice = objects[index..next_index]
-                .iter()
-                .map(|s| (*s).to_string())
-                .collect::<Vec<_>>();
+            let slice = objects[index..next_index].to_vec();
 
             let mut command = self
                 .process
@@ -232,7 +228,7 @@ impl Vcs for Git {
 
     async fn get_file_tree(
         &self,
-        dir: &WorkspaceRelativePath,
+        dir: impl AsRef<str> + Send,
     ) -> VcsResult<Vec<WorkspaceRelativePathBuf>> {
         let mut args = vec![
             "ls-files",
@@ -241,7 +237,7 @@ impl Vcs for Git {
             "--modified",
             "--others", // Includes untracked
             "--exclude-standard",
-            dir.as_str(),
+            dir.as_ref(),
         ];
 
         if self.is_version_supported(">=2.31.0").await? {
@@ -479,7 +475,7 @@ impl Vcs for Git {
             .run_with_formatter(["--version"], true, |out| out.replace("git version", ""))
             .await?;
 
-        Ok(Version::parse(&version).unwrap())
+        Ok(Version::parse(version).unwrap())
     }
 
     fn is_default_branch(&self, branch: &str) -> bool {

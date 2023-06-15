@@ -130,13 +130,9 @@ mod file_hashing {
         let (_sandbox, git) = create_git_sandbox("vcs");
 
         assert_eq!(
-            git.get_file_hashes(
-                &["foo/file2.txt".into(), "baz/file5.txt".into()],
-                false,
-                100
-            )
-            .await
-            .unwrap(),
+            git.get_file_hashes(["foo/file2.txt", "baz/file5.txt"], false, 100)
+                .await
+                .unwrap(),
             BTreeMap::from([
                 (
                     WorkspaceRelativePathBuf::from("baz/file5.txt"),
@@ -156,11 +152,7 @@ mod file_hashing {
 
         assert_eq!(
             git.get_file_hashes(
-                &[
-                    "foo/file1.txt".into(),
-                    "foo/file2.txt".into(),
-                    "baz/file5.txt".into()
-                ],
+                ["foo/file1.txt", "foo/file2.txt", "baz/file5.txt"],
                 false,
                 100
             )
@@ -179,11 +171,7 @@ mod file_hashing {
 
         assert_eq!(
             git.get_file_hashes(
-                &[
-                    "foo/file1.txt".into(),
-                    "foo/file2.txt".into(),
-                    "baz/file5.txt".into()
-                ],
+                ["foo/file1.txt", "foo/file2.txt", "baz/file5.txt"],
                 true,
                 100
             )
@@ -210,10 +198,7 @@ mod file_hashing {
     async fn hashes_an_entire_folder() {
         let (_sandbox, git) = create_git_sandbox("vcs");
 
-        let tree = git
-            .get_file_tree(&WorkspaceRelativePathBuf::from("."))
-            .await
-            .unwrap();
+        let tree = git.get_file_tree(".").await.unwrap();
 
         let hashes = git.get_file_hashes(&tree, false, 100).await.unwrap();
 
@@ -256,10 +241,7 @@ mod file_hashing {
     async fn hashes_and_ignores_an_entire_folder() {
         let (_sandbox, git) = create_git_sandbox_with_ignored("vcs");
 
-        let tree = git
-            .get_file_tree(&WorkspaceRelativePathBuf::from("."))
-            .await
-            .unwrap();
+        let tree = git.get_file_tree(".").await.unwrap();
 
         let hashes = git.get_file_hashes(&tree, false, 100).await.unwrap();
 
@@ -294,10 +276,7 @@ mod file_hashing {
             fs::write(sandbox.path().join(format!("file{}", i)), i.to_string()).unwrap();
         }
 
-        let tree = git
-            .get_file_tree(&WorkspaceRelativePathBuf::from("."))
-            .await
-            .unwrap();
+        let tree = git.get_file_tree(".").await.unwrap();
 
         let hashes = git.get_file_hashes(&tree, false, 100).await.unwrap();
 
@@ -313,6 +292,56 @@ mod file_hashing {
                 .await
                 .unwrap(),
             BTreeMap::new()
+        );
+    }
+}
+
+mod file_tree {
+    use super::*;
+
+    #[tokio::test]
+    async fn returns_from_dir() {
+        let (_sandbox, git) = create_git_sandbox_with_ignored("vcs");
+
+        let tree = git.get_file_tree("foo").await.unwrap();
+
+        assert_eq!(
+            tree,
+            vec![
+                WorkspaceRelativePathBuf::from("foo/file1.txt"),
+                WorkspaceRelativePathBuf::from("foo/file2.txt"),
+                WorkspaceRelativePathBuf::from("foo/file3.txt"),
+            ]
+        );
+    }
+
+    #[tokio::test]
+    async fn returns_from_deeply_nested_dir() {
+        let (_sandbox, git) = create_git_sandbox_with_ignored("vcs");
+
+        let tree = git.get_file_tree("bar/sub/dir").await.unwrap();
+
+        assert_eq!(
+            tree,
+            vec![WorkspaceRelativePathBuf::from("bar/sub/dir/file4.txt")]
+        );
+    }
+
+    #[tokio::test]
+    async fn includes_untracked() {
+        let (sandbox, git) = create_git_sandbox_with_ignored("vcs");
+
+        sandbox.create_file("baz/extra.txt", "");
+
+        let tree = git.get_file_tree("baz").await.unwrap();
+
+        assert_eq!(
+            tree,
+            vec![
+                WorkspaceRelativePathBuf::from("baz/extra.txt"),
+                WorkspaceRelativePathBuf::from("baz/dir/file6.txt"),
+                WorkspaceRelativePathBuf::from("baz/file5.txt"),
+            ]
         );
     }
 }

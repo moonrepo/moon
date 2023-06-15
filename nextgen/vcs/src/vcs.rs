@@ -1,7 +1,7 @@
 use crate::touched_files::TouchedFiles;
 use crate::vcs_error::VcsError;
 use async_trait::async_trait;
-use moon_common::path::{WorkspaceRelativePath, WorkspaceRelativePathBuf};
+use moon_common::path::WorkspaceRelativePathBuf;
 use semver::{Version, VersionReq};
 use std::collections::BTreeMap;
 
@@ -25,7 +25,7 @@ pub trait Vcs {
     /// the workspace root.
     async fn get_file_hashes(
         &self,
-        files: &[WorkspaceRelativePathBuf],
+        files: impl IntoIterator<Item = impl AsRef<str>> + Send,
         allow_ignored: bool,
         batch_size: u16,
     ) -> VcsResult<BTreeMap<WorkspaceRelativePathBuf, String>>;
@@ -34,7 +34,7 @@ pub trait Vcs {
     /// Directory *must* be relative from the workspace root.
     async fn get_file_tree(
         &self,
-        dir: &WorkspaceRelativePath,
+        dir: impl AsRef<str> + Send,
     ) -> VcsResult<Vec<WorkspaceRelativePathBuf>>;
 
     /// Return the repository slug ("moonrepo/moon") of the current checkout.

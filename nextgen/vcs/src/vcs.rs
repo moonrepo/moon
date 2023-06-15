@@ -2,6 +2,7 @@ use crate::touched_files::TouchedFiles;
 use crate::vcs_error::VcsError;
 use async_trait::async_trait;
 use moon_common::path::WorkspaceRelativePathBuf;
+use semver::{Version, VersionReq};
 use std::collections::BTreeMap;
 
 pub type VcsResult<T> = Result<T, VcsError>;
@@ -52,6 +53,9 @@ pub trait Vcs {
         revision: &str,
     ) -> VcsResult<TouchedFiles>;
 
+    /// Get the version of the current VCS binary
+    async fn get_version(&self) -> VcsResult<Version>;
+
     /// Return true if the provided branch matches the default branch.
     fn is_default_branch(&self, branch: &str) -> bool;
 
@@ -60,4 +64,11 @@ pub trait Vcs {
 
     /// Return true if the provided file path has been ignored.
     fn is_ignored(&self, file: &str) -> bool;
+
+    /// Return true if the current binary version matches the provided requirement.
+    async fn is_version_supported(&self, req: &str) -> VcsResult<bool> {
+        let version = self.get_version().await?;
+
+        Ok(VersionReq::parse(req).unwrap().matches(&version))
+    }
 }

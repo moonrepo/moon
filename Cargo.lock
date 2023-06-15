@@ -3594,9 +3594,11 @@ dependencies = [
  "once_map",
  "regex",
  "rustc-hash",
+ "semver",
+ "starbase_sandbox",
  "thiserror",
+ "tokio",
  "tracing",
- "url",
 ]
 
 [[package]]

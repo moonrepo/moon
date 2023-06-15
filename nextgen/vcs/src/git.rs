@@ -8,6 +8,7 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use rustc_hash::FxHashSet;
+use semver::{Version, VersionReq};
 use std::cmp;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -41,6 +42,10 @@ pub struct Git {
 }
 
 impl Git {
+    pub fn new<R: AsRef<Path>>(workspace_root: R) -> VcsResult<Git> {
+        Git::load(workspace_root, "master", &["origin".into()])
+    }
+
     pub fn load<R: AsRef<Path>, B: AsRef<str>>(
         workspace_root: R,
         default_branch: B,
@@ -144,9 +149,8 @@ impl Git {
 #[async_trait]
 impl Vcs for Git {
     async fn get_local_branch(&self) -> VcsResult<&str> {
-        // --show-current was added in 2.22.0
-        if let Ok(branch) = self.process.run(["branch", "--show-current"], true).await {
-            return Ok(branch);
+        if self.is_version_supported(">=2.22.0").await? {
+            return self.process.run(["branch", "--show-current"], true).await;
         }
 
         self.process
@@ -225,24 +229,21 @@ impl Vcs for Git {
     }
 
     async fn get_file_tree(&self, dir: &str) -> VcsResult<Vec<WorkspaceRelativePathBuf>> {
-        let output = self
-            .process
-            .run(
-                [
-                    "ls-files",
-                    "--full-name",
-                    "--cached",
-                    "--modified",
-                    // Includes untracked
-                    "--others",
-                    // Added in v2.31
-                    // "--deduplicate",
-                    "--exclude-standard",
-                    dir,
-                ],
-                true,
-            )
-            .await?;
+        let mut args = vec![
+            "ls-files",
+            "--full-name",
+            "--cached",
+            "--modified",
+            "--others", // Includes untracked
+            "--exclude-standard",
+            dir,
+        ];
+
+        if self.is_version_supported(">=2.31.0").await? {
+            args.push("--deduplicate");
+        }
+
+        let output = self.process.run(args, true).await?;
 
         Ok(output
             .split('\n')
@@ -269,7 +270,7 @@ impl Vcs for Git {
             }
         }
 
-        Ok("unknown")
+        Err(VcsError::ExtractGitRepoSlug)
     }
 
     // https://git-scm.com/docs/git-status#_short_format
@@ -465,6 +466,15 @@ impl Vcs for Git {
             unstaged,
             untracked: FxHashSet::default(),
         })
+    }
+
+    async fn get_version(&self) -> VcsResult<Version> {
+        let version = self
+            .process
+            .run_with_formatter(["--version"], true, |out| out.replace("git version", ""))
+            .await?;
+
+        Ok(Version::parse(&version).unwrap())
     }
 
     fn is_default_branch(&self, branch: &str) -> bool {

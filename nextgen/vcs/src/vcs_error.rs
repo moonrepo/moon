@@ -12,6 +12,10 @@ pub enum VcsError {
         error: ignore::Error,
     },
 
+    #[diagnostic(code(git::repository::slug))]
+    #[error("Failed to extract a repository slug from git remote candidates.")]
+    ExtractGitRepoSlug,
+
     #[diagnostic(transparent)]
     #[error(transparent)]
     Process(#[from] ProcessError),

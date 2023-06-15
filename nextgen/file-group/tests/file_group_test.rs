@@ -179,7 +179,7 @@ mod root {
         let file_group = FileGroup::new_with_source("id", [file("**/*")]).unwrap();
 
         assert_eq!(
-            file_group.root(&workspace_root, "project").unwrap(),
+            file_group.root(workspace_root, "project").unwrap(),
             RelativePathBuf::from("project/dir")
         );
     }
@@ -190,7 +190,7 @@ mod root {
         let file_group = FileGroup::new_with_source("id", [file("**/*")]).unwrap();
 
         assert_eq!(
-            file_group.root(&workspace_root, ".").unwrap(),
+            file_group.root(workspace_root, ".").unwrap(),
             RelativePathBuf::from(".")
         );
     }
@@ -201,7 +201,7 @@ mod root {
         let file_group = FileGroup::new_with_source("id", []).unwrap();
 
         assert_eq!(
-            file_group.root(&workspace_root, "project").unwrap(),
+            file_group.root(workspace_root, "project").unwrap(),
             RelativePathBuf::from(".")
         );
     }

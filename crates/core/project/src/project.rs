@@ -1,5 +1,5 @@
 use crate::errors::ProjectError;
-use moon_common::path::{standardize_separators, WorkspaceRelativePathBuf};
+use moon_common::path::{normalize_separators, standardize_separators, WorkspaceRelativePathBuf};
 use moon_common::{cacheable, consts, Id};
 use moon_config::{
     DependencyConfig, InheritedTasksConfig, InheritedTasksManager, LanguageType, ProjectConfig,
@@ -302,7 +302,8 @@ impl Project {
         let root = if source.is_empty() || source == "." {
             workspace_root.to_owned()
         } else {
-            workspace_root.join(&source)
+            // For absolute paths, use native path separators
+            workspace_root.join(normalize_separators(&source))
         };
 
         debug!(

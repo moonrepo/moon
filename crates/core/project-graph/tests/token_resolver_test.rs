@@ -1,4 +1,3 @@
-use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
 use moon_config::{
     InheritedTasksManager, InputPath, LanguageType, OutputPath, PlatformType, ProjectType,
@@ -103,7 +102,7 @@ pub fn create_task(config: Option<TaskConfig>) -> Task {
 }
 
 pub fn expand_task(project: &Project, task: &mut Task) {
-    let project_source = WorkspaceRelativePathBuf::from(&project.source);
+    let project_source = &project.source;
 
     for input in &task.inputs {
         if glob::is_glob(input) {
@@ -161,10 +160,7 @@ fn doesnt_match_when_not_alone() {
         resolver
             .resolve(&string_vec!["foo/@dirs(static)/bar"], &task)
             .unwrap(),
-        (
-            vec![WorkspaceRelativePathBuf::from(project.source).join("foo/@dirs(static)/bar")],
-            vec![]
-        )
+        (vec![project.source.join("foo/@dirs(static)/bar")], vec![])
     );
 }
 
@@ -298,7 +294,7 @@ mod resolve_args {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let task = create_task(None);
-        let base = WorkspaceRelativePathBuf::from(&project.source);
+        let base = &project.source;
 
         assert_eq!(
             resolver
@@ -314,7 +310,7 @@ mod resolve_args {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let task = create_task(None);
-        let base = WorkspaceRelativePathBuf::from(&project.source);
+        let base = &project.source;
 
         assert_eq!(
             resolver
@@ -330,7 +326,7 @@ mod resolve_args {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let task = create_task(None);
-        let base = WorkspaceRelativePathBuf::from(&project.source);
+        let base = &project.source;
 
         let mut files = resolver
             .resolve(&string_vec!["@files(static)"], &task)
@@ -356,7 +352,7 @@ mod resolve_args {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let task = create_task(None);
-        let base = WorkspaceRelativePathBuf::from(&project.source);
+        let base = &project.source;
 
         let mut files = resolver
             .resolve(&string_vec!["@files(files_glob)"], &task)
@@ -382,7 +378,7 @@ mod resolve_args {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let task = create_task(None);
-        let base = WorkspaceRelativePathBuf::from(&project.source);
+        let base = &project.source;
 
         assert_eq!(
             resolver
@@ -397,7 +393,7 @@ mod resolve_args {
         let workspace_root = get_workspace_root();
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
-        let base = WorkspaceRelativePathBuf::from(&project.source);
+        let base = &project.source;
 
         let mut task = create_task(Some(TaskConfig {
             inputs: Some(vec![
@@ -420,7 +416,7 @@ mod resolve_args {
         let workspace_root = get_workspace_root();
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
-        let base = WorkspaceRelativePathBuf::from(&project.source);
+        let base = &project.source;
 
         let mut task = create_task(Some(TaskConfig {
             inputs: Some(vec![
@@ -443,7 +439,7 @@ mod resolve_args {
         let workspace_root = get_workspace_root();
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
-        let base = WorkspaceRelativePathBuf::from(&project.source);
+        let base = &project.source;
 
         let mut task = create_task(Some(TaskConfig {
             outputs: Some(vec![
@@ -469,7 +465,7 @@ mod resolve_args {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Args, &project, &workspace_root);
         let task = create_task(None);
-        let base = WorkspaceRelativePathBuf::from(&project.source);
+        let base = &project.source;
 
         assert_eq!(
             resolver
@@ -575,7 +571,7 @@ mod resolve_inputs {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Inputs, &project, &workspace_root);
         let task = create_task(None);
-        let base = WorkspaceRelativePathBuf::from(&project.source);
+        let base = &project.source;
 
         assert_eq!(
             resolver
@@ -591,7 +587,7 @@ mod resolve_inputs {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Inputs, &project, &workspace_root);
         let task = create_task(None);
-        let base = WorkspaceRelativePathBuf::from(&project.source);
+        let base = &project.source;
 
         assert_eq!(
             resolver
@@ -607,7 +603,7 @@ mod resolve_inputs {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Inputs, &project, &workspace_root);
         let task = create_task(None);
-        let base = WorkspaceRelativePathBuf::from(&project.source);
+        let base = &project.source;
 
         let mut files = resolver
             .resolve(&string_vec!["@files(static)"], &task)
@@ -633,7 +629,7 @@ mod resolve_inputs {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Inputs, &project, &workspace_root);
         let task = create_task(None);
-        let base = WorkspaceRelativePathBuf::from(&project.source);
+        let base = &project.source;
 
         let mut files = resolver
             .resolve(&string_vec!["@files(files_glob)"], &task)
@@ -659,7 +655,7 @@ mod resolve_inputs {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Inputs, &project, &workspace_root);
         let task = create_task(None);
-        let base = WorkspaceRelativePathBuf::from(&project.source);
+        let base = &project.source;
 
         assert_eq!(
             resolver
@@ -697,7 +693,7 @@ mod resolve_inputs {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Inputs, &project, &workspace_root);
         let task = create_task(None);
-        let base = WorkspaceRelativePathBuf::from(&project.source);
+        let base = &project.source;
 
         assert_eq!(
             resolver
@@ -713,7 +709,7 @@ mod resolve_inputs {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Inputs, &project, &workspace_root);
         let task = create_task(None);
-        let base = WorkspaceRelativePathBuf::from(&project.source);
+        let base = &project.source;
 
         assert_eq!(
             resolver
@@ -733,7 +729,7 @@ mod resolve_outputs {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Outputs, &project, &workspace_root);
         let task = create_task(None);
-        let base = WorkspaceRelativePathBuf::from(&project.source);
+        let base = &project.source;
 
         assert_eq!(
             resolver
@@ -749,7 +745,7 @@ mod resolve_outputs {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Outputs, &project, &workspace_root);
         let task = create_task(None);
-        let base = WorkspaceRelativePathBuf::from(&project.source);
+        let base = &project.source;
 
         assert_eq!(
             resolver
@@ -765,7 +761,7 @@ mod resolve_outputs {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Outputs, &project, &workspace_root);
         let task = create_task(None);
-        let base = WorkspaceRelativePathBuf::from(&project.source);
+        let base = &project.source;
 
         let mut files = resolver
             .resolve(&string_vec!["@files(static)"], &task)
@@ -791,7 +787,7 @@ mod resolve_outputs {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Outputs, &project, &workspace_root);
         let task = create_task(None);
-        let base = WorkspaceRelativePathBuf::from(&project.source);
+        let base = &project.source;
 
         let mut files = resolver
             .resolve(&string_vec!["@files(files_glob)"], &task)
@@ -817,7 +813,7 @@ mod resolve_outputs {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Outputs, &project, &workspace_root);
         let task = create_task(None);
-        let base = WorkspaceRelativePathBuf::from(&project.source);
+        let base = &project.source;
 
         assert_eq!(
             resolver
@@ -855,7 +851,7 @@ mod resolve_outputs {
         let project = create_project(&workspace_root);
         let resolver = TokenResolver::new(TokenContext::Outputs, &project, &workspace_root);
         let task = create_task(None);
-        let base = WorkspaceRelativePathBuf::from(&project.source);
+        let base = &project.source;
 
         assert_eq!(
             resolver

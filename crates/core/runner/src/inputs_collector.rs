@@ -7,7 +7,7 @@ use moon_config::{HasherConfig, HasherWalkStrategy};
 use moon_logger::{warn, Logable};
 use moon_task::Task;
 use moon_utils::{is_ci, path};
-use moon_vcs2::BoxedVcs;
+use moon_vcs::BoxedVcs;
 use rustc_hash::FxHashSet;
 use starbase_styles::color;
 use starbase_utils::glob;

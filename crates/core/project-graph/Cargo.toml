@@ -24,7 +24,7 @@ moon_query = { path = "../../../nextgen/query" }
 moon_target = { path = "../../../nextgen/target" }
 moon_task = { path = "../task" }
 moon_utils = { path = "../utils" }
-moon_vcs2 = { path = "../../../nextgen/vcs" }
+moon_vcs = { path = "../../../nextgen/vcs" }
 moon_workspace = { path = "../workspace" }
 dotenvy = "0.15.7"
 miette = { workspace = true }

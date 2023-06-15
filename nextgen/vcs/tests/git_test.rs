@@ -1,5 +1,5 @@
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_vcs2::{Git, TouchedFiles, Vcs};
+use moon_vcs::{Git, TouchedFiles, Vcs};
 use rustc_hash::FxHashSet;
 use starbase_sandbox::{create_sandbox, Sandbox};
 use std::collections::BTreeMap;

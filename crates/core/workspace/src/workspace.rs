@@ -6,7 +6,7 @@ use moon_error::MoonError;
 use moon_logger::{debug, trace};
 use moon_platform::{BoxedPlatform, PlatformManager};
 use moon_utils::semver;
-use moon_vcs2::{BoxedVcs, Git};
+use moon_vcs::{BoxedVcs, Git};
 use moonbase::Moonbase;
 use proto::{get_root, ToolsConfig, TOOLS_CONFIG_NAME};
 use starbase_styles::color;

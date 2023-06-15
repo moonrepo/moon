@@ -21,7 +21,7 @@ moon_task = { path = "../task" }
 moon_tool = { path = "../tool" }
 moon_terminal = { path = "../terminal" }
 moon_utils = { path = "../utils" }
-moon_vcs2 = { path = "../../../nextgen/vcs" }
+moon_vcs = { path = "../../../nextgen/vcs" }
 moon_workspace = { path = "../workspace" }
 console = { workspace = true }
 miette = { workspace = true }

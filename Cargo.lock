@@ -2757,7 +2757,7 @@ dependencies = [
  "moon_tool",
  "moon_typescript_lang",
  "moon_utils",
- "moon_vcs2",
+ "moon_vcs",
  "moon_workspace",
  "open",
  "petgraph",
@@ -3262,7 +3262,7 @@ dependencies = [
  "moon_task",
  "moon_test_utils",
  "moon_utils",
- "moon_vcs2",
+ "moon_vcs",
  "moon_workspace",
  "petgraph",
  "rustc-hash",
@@ -3326,7 +3326,7 @@ dependencies = [
  "moon_test_utils",
  "moon_tool",
  "moon_utils",
- "moon_vcs2",
+ "moon_vcs",
  "moon_workspace",
  "rustc-hash",
  "serde",
@@ -3559,7 +3559,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_vcs2"
+name = "moon_vcs"
 version = "0.1.0"
 dependencies = [
  "async-trait",
@@ -3592,7 +3592,7 @@ dependencies = [
  "moon_platform",
  "moon_test_utils",
  "moon_utils",
- "moon_vcs2",
+ "moon_vcs",
  "moonbase",
  "proto_cli",
  "reqwest",

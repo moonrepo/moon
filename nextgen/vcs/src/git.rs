@@ -189,7 +189,7 @@ impl Vcs for Git {
             // File must exist or git fails
             if abs_file.exists() && abs_file.is_file() && (allow_ignored || !self.is_ignored(file))
             {
-                objects.push(file);
+                objects.push(file.to_owned());
             }
         }
 
@@ -206,15 +206,12 @@ impl Vcs for Git {
 
         while index < end_index {
             let next_index = cmp::min(index + (batch_size as usize), end_index);
-            let slice = objects[index..next_index]
-                .iter()
-                .map(|i| (*i).to_owned())
-                .collect::<Vec<_>>();
+            let slice = objects[index..next_index].to_vec();
 
             let mut command = self
                 .process
                 .create_command(["hash-object", "--stdin-paths"]);
-            command.input(&[slice.join("\n")]);
+            command.input([slice.join("\n")]);
 
             let output = self.process.run_command(command, true).await?;
 

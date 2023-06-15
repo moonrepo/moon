@@ -42,7 +42,7 @@ moon_terminal = { path = "../core/terminal" }
 moon_tool = { path = "../core/tool" }
 moon_typescript_lang = { path = "../typescript/lang" }
 moon_utils = { path = "../core/utils" }
-moon_vcs2 = { path = "../../nextgen/vcs" }
+moon_vcs = { path = "../../nextgen/vcs" }
 moon_workspace = { path = "../core/workspace" }
 bytes = "1.4.0"
 ci_env = { workspace = true }

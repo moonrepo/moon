@@ -4,7 +4,7 @@ use moon_config::ProjectsSourcesMap;
 use moon_error::MoonError;
 use moon_logger::{debug, warn};
 use moon_utils::{path, regex};
-use moon_vcs2::BoxedVcs;
+use moon_vcs::BoxedVcs;
 use starbase_styles::color;
 use starbase_utils::{fs, glob};
 use std::path::Path;

@@ -45,7 +45,7 @@ pub fn convert_paths_to_strings(
                 path
             };
 
-            files.push(path::to_string(rel_path)?);
+            files.push(path::to_virtual_string(rel_path)?);
         }
     }
 

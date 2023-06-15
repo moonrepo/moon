@@ -7,16 +7,16 @@ use moon_utils::{path, regex};
 use moon_vcs::BoxedVcs;
 use starbase_styles::color;
 use starbase_utils::{fs, glob};
-use std::path::{Path, MAIN_SEPARATOR_STR};
+use std::path::Path;
 
 /// Infer a project name from a source path, by using the name of
 /// the project folder.
 pub fn infer_project_name_and_source(source: &str) -> (String, String) {
     let source = path::standardize_separators(source);
 
-    if source.contains(MAIN_SEPARATOR_STR) {
+    if source.contains('/') {
         (
-            source.split(MAIN_SEPARATOR_STR).last().unwrap().to_owned(),
+            source.split('/').last().unwrap().to_owned(),
             source,
         )
     } else {

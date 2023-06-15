@@ -4,7 +4,7 @@
 
 #### ⚙️ Internal
 
-- Improved VCS/git file handling and caching.
+- Improved VCS/git file handling, caching, and performance.
 
 ## 1.8.1
 

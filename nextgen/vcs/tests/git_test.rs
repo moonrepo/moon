@@ -9,7 +9,7 @@ fn create_git_sandbox(fixture: &str) -> (Sandbox, Git) {
     let sandbox = create_sandbox(fixture);
     sandbox.enable_git();
 
-    let git = Git::new(sandbox.path()).unwrap();
+    let git = Git::load(sandbox.path(), "master", &["origin".into()]).unwrap();
 
     (sandbox, git)
 }
@@ -19,7 +19,7 @@ fn create_git_sandbox_with_ignored(fixture: &str) -> (Sandbox, Git) {
     sandbox.enable_git();
     sandbox.create_file(".gitignore", "foo/*.txt");
 
-    let git = Git::new(sandbox.path()).unwrap();
+    let git = Git::load(sandbox.path(), "master", &["origin".into()]).unwrap();
 
     (sandbox, git)
 }
@@ -49,7 +49,7 @@ mod root_detection {
     async fn same_dir_if_no_git_dir() {
         let sandbox = create_sandbox("vcs");
 
-        let git = Git::new(sandbox.path()).unwrap();
+        let git = Git::load(sandbox.path(), "master", &["origin".into()]).unwrap();
 
         assert_eq!(git.git_root, sandbox.path());
         assert_eq!(git.process.root, sandbox.path());
@@ -60,7 +60,7 @@ mod root_detection {
         let sandbox = create_sandbox("vcs");
         sandbox.enable_git();
 
-        let git = Git::new(sandbox.path().join("bar/sub")).unwrap();
+        let git = Git::load(sandbox.path().join("bar/sub"), "master", &["origin".into()]).unwrap();
 
         assert_eq!(git.git_root, sandbox.path());
         assert_eq!(git.process.root, sandbox.path().join("bar/sub"));

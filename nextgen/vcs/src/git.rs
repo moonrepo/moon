@@ -42,10 +42,6 @@ pub struct Git {
 }
 
 impl Git {
-    pub fn new<R: AsRef<Path>>(workspace_root: R) -> VcsResult<Git> {
-        Git::load(workspace_root, "master", &["origin".into()])
-    }
-
     pub fn load<R: AsRef<Path>, B: AsRef<str>>(
         workspace_root: R,
         default_branch: B,

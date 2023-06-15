@@ -6,7 +6,11 @@ use thiserror::Error;
 #[derive(Error, Debug, Diagnostic)]
 pub enum ProcessError {
     #[diagnostic(code(process::capture::failed))]
-    #[error("Failed to execute {} and capture output.", .bin.style(Style::Shell))]
+    #[error(
+        "Failed to execute {} and capture output.\n\n{}",
+        .bin.style(Style::Shell),
+        .error.to_string().style(Style::MutedLight),
+    )]
     Capture {
         bin: String,
         #[source]
@@ -33,7 +37,11 @@ pub enum ProcessError {
     },
 
     #[diagnostic(code(process::stream::failed))]
-    #[error("Failed to execute {} and stream output.", .bin.style(Style::Shell))]
+    #[error(
+        "Failed to execute {} and stream output.\n\n{}",
+        .bin.style(Style::Shell),
+        .error.to_string().style(Style::MutedLight),
+    )]
     Stream {
         bin: String,
         #[source]
@@ -41,7 +49,11 @@ pub enum ProcessError {
     },
 
     #[diagnostic(code(process::capture_stream::failed))]
-    #[error("Failed to execute {} and stream and capture output.", .bin.style(Style::Shell))]
+    #[error(
+        "Failed to execute {} and stream and capture output.\n\n{}",
+        .bin.style(Style::Shell),
+        .error.to_string().style(Style::MutedLight),
+    )]
     StreamCapture {
         bin: String,
         #[source]
@@ -49,7 +61,11 @@ pub enum ProcessError {
     },
 
     #[diagnostic(code(process::stdin::failed))]
-    #[error("Failed to write stdin to {}.", .bin.style(Style::Shell))]
+    #[error(
+        "Failed to write stdin to {}.\n\n{}",
+        .bin.style(Style::Shell),
+        .error.to_string().style(Style::MutedLight),
+    )]
     WriteInput {
         bin: String,
         #[source]

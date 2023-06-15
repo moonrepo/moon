@@ -15,10 +15,7 @@ pub fn infer_project_name_and_source(source: &str) -> (String, String) {
     let source = path::standardize_separators(source);
 
     if source.contains('/') {
-        (
-            source.split('/').last().unwrap().to_owned(),
-            source,
-        )
+        (source.split('/').last().unwrap().to_owned(), source)
     } else {
         (source.clone(), source)
     }

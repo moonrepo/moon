@@ -7,14 +7,14 @@ use thiserror::Error;
 pub enum VcsError {
     #[diagnostic(code(git::ignore::invalid))]
     #[error("Failed to load and parse {}.", ".gitignore".style(Style::File))]
-    LoadGitignoreFailed {
+    GitignoreLoadFailed {
         #[source]
         error: ignore::Error,
     },
 
     #[diagnostic(code(git::repository::slug))]
     #[error("Failed to extract a repository slug from git remote candidates.")]
-    ExtractGitRepoSlug,
+    GitExtractRepoSlug,
 
     #[diagnostic(transparent)]
     #[error(transparent)]

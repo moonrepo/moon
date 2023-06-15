@@ -4,7 +4,7 @@ use crate::vcs::{Vcs, VcsResult};
 use crate::vcs_error::VcsError;
 use async_trait::async_trait;
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
-use moon_common::path::WorkspaceRelativePathBuf;
+use moon_common::path::{WorkspaceRelativePath, WorkspaceRelativePathBuf};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use rustc_hash::FxHashSet;
@@ -97,13 +97,13 @@ impl Git {
             let mut builder = GitignoreBuilder::new(git_root);
 
             if let Some(error) = builder.add(ignore_path) {
-                return Err(VcsError::LoadGitignoreFailed { error });
+                return Err(VcsError::GitignoreLoadFailed { error });
             }
 
             ignore = Some(
                 builder
                     .build()
-                    .map_err(|error| VcsError::LoadGitignoreFailed { error })?,
+                    .map_err(|error| VcsError::GitignoreLoadFailed { error })?,
             );
         }
 
@@ -174,7 +174,7 @@ impl Vcs for Git {
 
     async fn get_file_hashes(
         &self,
-        files: &[String],
+        files: &[WorkspaceRelativePathBuf],
         allow_ignored: bool,
         batch_size: u16,
     ) -> VcsResult<BTreeMap<WorkspaceRelativePathBuf, String>> {
@@ -182,10 +182,12 @@ impl Vcs for Git {
         let mut map = BTreeMap::new();
 
         for file in files {
-            let abs_file = self.process.root.join(file);
+            let abs_file = file.to_path(&self.process.root);
 
             // File must exist or git fails
-            if abs_file.exists() && abs_file.is_file() && (allow_ignored || !self.is_ignored(file))
+            if abs_file.exists()
+                && abs_file.is_file()
+                && (allow_ignored || !self.is_ignored(file.as_str()))
             {
                 objects.push(file);
             }
@@ -206,7 +208,7 @@ impl Vcs for Git {
             let next_index = cmp::min(index + (batch_size as usize), end_index);
             let slice = objects[index..next_index]
                 .iter()
-                .map(|s| (*s).to_owned())
+                .map(|s| (*s).to_string())
                 .collect::<Vec<_>>();
 
             let mut command = self
@@ -228,7 +230,10 @@ impl Vcs for Git {
         Ok(map)
     }
 
-    async fn get_file_tree(&self, dir: &str) -> VcsResult<Vec<WorkspaceRelativePathBuf>> {
+    async fn get_file_tree(
+        &self,
+        dir: &WorkspaceRelativePath,
+    ) -> VcsResult<Vec<WorkspaceRelativePathBuf>> {
         let mut args = vec![
             "ls-files",
             "--full-name",
@@ -236,7 +241,7 @@ impl Vcs for Git {
             "--modified",
             "--others", // Includes untracked
             "--exclude-standard",
-            dir,
+            dir.as_str(),
         ];
 
         if self.is_version_supported(">=2.31.0").await? {
@@ -270,7 +275,7 @@ impl Vcs for Git {
             }
         }
 
-        Err(VcsError::ExtractGitRepoSlug)
+        Err(VcsError::GitExtractRepoSlug)
     }
 
     // https://git-scm.com/docs/git-status#_short_format

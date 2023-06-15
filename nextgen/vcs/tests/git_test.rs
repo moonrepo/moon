@@ -2,11 +2,22 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use moon_vcs2::{Git, TouchedFiles, Vcs};
 use rustc_hash::FxHashSet;
 use starbase_sandbox::{create_sandbox, Sandbox};
+use std::collections::BTreeMap;
 use std::fs;
 
 fn create_git_sandbox(fixture: &str) -> (Sandbox, Git) {
     let sandbox = create_sandbox(fixture);
     sandbox.enable_git();
+
+    let git = Git::new(sandbox.path()).unwrap();
+
+    (sandbox, git)
+}
+
+fn create_git_sandbox_with_ignored(fixture: &str) -> (Sandbox, Git) {
+    let sandbox = create_sandbox(fixture);
+    sandbox.enable_git();
+    sandbox.create_file(".gitignore", "foo/*.txt");
 
     let git = Git::new(sandbox.path()).unwrap();
 
@@ -108,6 +119,201 @@ mod local {
 
         // Hash changes every time, so check that it's not empty
         assert_ne!(git.get_default_branch_revision().await.unwrap(), "");
+    }
+}
+
+mod file_hashing {
+    use super::*;
+
+    #[tokio::test]
+    async fn hashes_a_list_of_files() {
+        let (_sandbox, git) = create_git_sandbox("vcs");
+
+        assert_eq!(
+            git.get_file_hashes(
+                &["foo/file2.txt".into(), "baz/file5.txt".into()],
+                false,
+                100
+            )
+            .await
+            .unwrap(),
+            BTreeMap::from([
+                (
+                    WorkspaceRelativePathBuf::from("baz/file5.txt"),
+                    "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                ),
+                (
+                    WorkspaceRelativePathBuf::from("foo/file2.txt"),
+                    "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                )
+            ])
+        );
+    }
+
+    #[tokio::test]
+    async fn ignores_files_when_hashing() {
+        let (_sandbox, git) = create_git_sandbox_with_ignored("vcs");
+
+        assert_eq!(
+            git.get_file_hashes(
+                &[
+                    "foo/file1.txt".into(),
+                    "foo/file2.txt".into(),
+                    "baz/file5.txt".into()
+                ],
+                false,
+                100
+            )
+            .await
+            .unwrap(),
+            BTreeMap::from([(
+                WorkspaceRelativePathBuf::from("baz/file5.txt"),
+                "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+            )])
+        );
+    }
+
+    #[tokio::test]
+    async fn can_allow_ignored_files_when_hashing() {
+        let (_sandbox, git) = create_git_sandbox_with_ignored("vcs");
+
+        assert_eq!(
+            git.get_file_hashes(
+                &[
+                    "foo/file1.txt".into(),
+                    "foo/file2.txt".into(),
+                    "baz/file5.txt".into()
+                ],
+                true,
+                100
+            )
+            .await
+            .unwrap(),
+            BTreeMap::from([
+                (
+                    WorkspaceRelativePathBuf::from("baz/file5.txt"),
+                    "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                ),
+                (
+                    WorkspaceRelativePathBuf::from("foo/file1.txt"),
+                    "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                ),
+                (
+                    WorkspaceRelativePathBuf::from("foo/file2.txt"),
+                    "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                )
+            ])
+        );
+    }
+
+    #[tokio::test]
+    async fn hashes_an_entire_folder() {
+        let (_sandbox, git) = create_git_sandbox("vcs");
+
+        let tree = git
+            .get_file_tree(&WorkspaceRelativePathBuf::from("."))
+            .await
+            .unwrap();
+
+        let hashes = git.get_file_hashes(&tree, false, 100).await.unwrap();
+
+        assert_eq!(
+            hashes,
+            BTreeMap::from([
+                (
+                    WorkspaceRelativePathBuf::from(".gitignore"),
+                    "2c085d1d2fb7e1d865a5c1161f0fbbcb682af240".to_owned()
+                ),
+                (
+                    WorkspaceRelativePathBuf::from("bar/sub/dir/file4.txt"),
+                    "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                ),
+                (
+                    WorkspaceRelativePathBuf::from("baz/dir/file6.txt"),
+                    "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                ),
+                (
+                    WorkspaceRelativePathBuf::from("baz/file5.txt"),
+                    "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                ),
+                (
+                    WorkspaceRelativePathBuf::from("foo/file1.txt"),
+                    "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                ),
+                (
+                    WorkspaceRelativePathBuf::from("foo/file2.txt"),
+                    "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                ),
+                (
+                    WorkspaceRelativePathBuf::from("foo/file3.txt"),
+                    "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                ),
+            ])
+        );
+    }
+
+    #[tokio::test]
+    async fn hashes_and_ignores_an_entire_folder() {
+        let (_sandbox, git) = create_git_sandbox_with_ignored("vcs");
+
+        let tree = git
+            .get_file_tree(&WorkspaceRelativePathBuf::from("."))
+            .await
+            .unwrap();
+
+        let hashes = git.get_file_hashes(&tree, false, 100).await.unwrap();
+
+        assert_eq!(
+            hashes,
+            BTreeMap::from([
+                (
+                    WorkspaceRelativePathBuf::from(".gitignore"),
+                    "666918819a0845b940d6022bd47a8adf85a094aa".to_owned()
+                ),
+                (
+                    WorkspaceRelativePathBuf::from("bar/sub/dir/file4.txt"),
+                    "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                ),
+                (
+                    WorkspaceRelativePathBuf::from("baz/dir/file6.txt"),
+                    "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                ),
+                (
+                    WorkspaceRelativePathBuf::from("baz/file5.txt"),
+                    "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391".to_owned()
+                ),
+            ])
+        );
+    }
+
+    #[tokio::test]
+    async fn hashes_a_massive_number_of_files() {
+        let (sandbox, git) = create_git_sandbox("vcs");
+
+        for i in 0..10000 {
+            fs::write(sandbox.path().join(format!("file{}", i)), i.to_string()).unwrap();
+        }
+
+        let tree = git
+            .get_file_tree(&WorkspaceRelativePathBuf::from("."))
+            .await
+            .unwrap();
+
+        let hashes = git.get_file_hashes(&tree, false, 100).await.unwrap();
+
+        assert!(hashes.len() >= 10000);
+    }
+
+    #[tokio::test]
+    async fn cannot_hash_dirs() {
+        let (_sandbox, git) = create_git_sandbox("vcs");
+
+        assert_eq!(
+            git.get_file_hashes(&[WorkspaceRelativePathBuf::from("foo")], false, 100)
+                .await
+                .unwrap(),
+            BTreeMap::new()
+        );
     }
 }
 

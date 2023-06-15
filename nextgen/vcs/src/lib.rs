@@ -1,4 +1,5 @@
 mod git;
+mod process_cache;
 mod touched_files;
 mod vcs;
 mod vcs_error;

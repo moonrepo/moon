@@ -1,15 +1,13 @@
+use crate::process_cache::ProcessCache;
 use crate::touched_files::TouchedFiles;
 use crate::vcs::{Vcs, VcsResult};
 use crate::vcs_error::VcsError;
 use async_trait::async_trait;
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
-use moon_process::{output_to_string, Command};
 use once_cell::sync::Lazy;
-use once_map::OnceMap;
 use regex::Regex;
 use relative_path::RelativePathBuf;
 use rustc_hash::FxHashSet;
-use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use tracing::debug;
 
@@ -21,9 +19,6 @@ pub static DIFF_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(A|D|M|T|U|X)$
 pub static DIFF_SCORE_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(C|M|R)(\d{3})$").unwrap());
 
 pub struct Git {
-    /// Output cache of all executed git commands.
-    cache: OnceMap<String, String>,
-
     /// Default git branch name.
     default_branch: String,
 
@@ -36,11 +31,11 @@ pub struct Git {
     /// Root of the git repository (where `.git` is located).
     git_root: PathBuf,
 
+    /// Run and cache `git` commands.
+    process: ProcessCache,
+
     /// List of remotes to use as merge candidates.
     remote_candidates: Vec<String>,
-
-    /// Root of the moon workspace.
-    workspace_root: PathBuf,
 }
 
 impl Git {
@@ -105,53 +100,14 @@ impl Git {
         }
 
         Ok(Git {
-            cache: OnceMap::new(),
             default_branch: default_branch.as_ref().to_owned(),
             ignore,
             file_prefix: RelativePathBuf::from_path(workspace_root.strip_prefix(git_root).unwrap())
                 .unwrap(),
             remote_candidates: Vec::new(),
+            process: ProcessCache::new("git", workspace_root),
             git_root: git_root.to_owned(),
-            workspace_root: workspace_root.to_owned(),
         })
-    }
-
-    fn create_command<I, A>(&self, args: I) -> Command
-    where
-        I: IntoIterator<Item = A>,
-        A: AsRef<OsStr>,
-    {
-        let mut command = Command::new("git");
-        command.args(args);
-        // Run from workspace root instead of git root so that we can avoid
-        // prefixing all file paths to ensure everything is relative and accurate.
-        command.cwd(&self.workspace_root);
-        command
-    }
-
-    async fn create_and_run_command<I, A>(&self, args: I, trim: bool) -> VcsResult<&str>
-    where
-        I: IntoIterator<Item = A>,
-        A: AsRef<OsStr>,
-    {
-        self.run_command(self.create_command(args), trim).await
-    }
-
-    async fn run_command(&self, command: Command, trim: bool) -> VcsResult<&str> {
-        let mut executor = command.create_async();
-        let cache_key = executor.inspector.get_cache_key();
-
-        // Execute and insert output into the cache if not already present
-        if !self.cache.contains_key(&cache_key) {
-            let output = executor.exec_capture_output().await?;
-
-            self.cache
-                .insert(cache_key.clone(), |_| output_to_string(&output.stdout));
-        }
-
-        let output = self.cache.get(&cache_key).unwrap();
-
-        Ok(if trim { output.trim() } else { output })
     }
 
     async fn get_merge_base(&self, base: &str, head: &str) -> VcsResult<Option<&str>> {
@@ -165,6 +121,7 @@ impl Git {
         // To start, we need to find a working base
         for candidate in &candidates {
             if self
+                .process
                 .create_and_run_command(["merge-base", candidate, head], true)
                 .await
                 .is_ok()
@@ -175,7 +132,7 @@ impl Git {
 
         // Then we need to run it again and extract the base hash.
         // This is necessary to support comparisons between forks!
-        if let Ok(hash) = self.create_and_run_command(args, true).await {
+        if let Ok(hash) = self.process.create_and_run_command(args, true).await {
             return Ok(Some(hash));
         }
 
@@ -188,18 +145,21 @@ impl Vcs for Git {
     async fn get_local_branch(&self) -> VcsResult<&str> {
         // --show-current was added in 2.22.0
         if let Ok(branch) = self
+            .process
             .create_and_run_command(["branch", "--show-current"], true)
             .await
         {
             return Ok(branch);
         }
 
-        self.create_and_run_command(["rev-parse", "--abbrev-ref", "HEAD"], true)
+        self.process
+            .create_and_run_command(["rev-parse", "--abbrev-ref", "HEAD"], true)
             .await
     }
 
     async fn get_local_branch_revision(&self) -> VcsResult<&str> {
-        self.create_and_run_command(["rev-parse", "HEAD"], true)
+        self.process
+            .create_and_run_command(["rev-parse", "HEAD"], true)
             .await
     }
 
@@ -208,12 +168,14 @@ impl Vcs for Git {
     }
 
     async fn get_default_branch_revision(&self) -> VcsResult<&str> {
-        self.create_and_run_command(["rev-parse", &self.default_branch], true)
+        self.process
+            .create_and_run_command(["rev-parse", &self.default_branch], true)
             .await
     }
 
     async fn get_repository_slug(&self) -> VcsResult<&str> {
         let output = self
+            .process
             .create_and_run_command(["remote", "get-url", "origin"], true)
             .await?;
 
@@ -225,6 +187,7 @@ impl Vcs for Git {
     // https://git-scm.com/docs/git-status#_short_format
     async fn get_touched_files(&self) -> VcsResult<TouchedFiles> {
         let output = self
+            .process
             .create_and_run_command(
                 [
                     "status",
@@ -339,6 +302,7 @@ impl Vcs for Git {
             .unwrap_or(base_revision);
 
         let output = self
+            .process
             .create_and_run_command(
                 [
                     "--no-pager",

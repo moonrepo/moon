@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- Improved VCS/git file handling, caching, and performance.
+
 ## 1.8.3
 
 #### 🐞 Fixes

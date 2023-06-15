@@ -7,12 +7,12 @@ edition = "2021"
 moon_common = { path = "../common" }
 moon_process = { path = "../process" }
 async-trait = { workspace = true }
+git-url-parse = "0.4.4"
 ignore = "0.4.20"
 miette = { workspace = true }
 once_cell = { workspace = true }
 once_map = "0.4.6"
 regex = { workspace = true }
-relative-path = { workspace = true }
 rustc-hash = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }

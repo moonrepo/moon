@@ -9,10 +9,10 @@ pub struct ProcessCache {
     cache: OnceMap<String, String>,
 
     /// Binary/command to run.
-    bin: String,
+    pub bin: String,
 
     /// Root of the moon workspace, and where to run commands.
-    root: PathBuf,
+    pub root: PathBuf,
 }
 
 impl ProcessCache {
@@ -37,7 +37,7 @@ impl ProcessCache {
         command
     }
 
-    pub async fn create_and_run_command<I, A>(&self, args: I, trim: bool) -> VcsResult<&str>
+    pub async fn run<I, A>(&self, args: I, trim: bool) -> VcsResult<&str>
     where
         I: IntoIterator<Item = A>,
         A: AsRef<OsStr>,
@@ -45,7 +45,30 @@ impl ProcessCache {
         self.run_command(self.create_command(args), trim).await
     }
 
+    pub async fn run_with_formatter<I, A>(
+        &self,
+        args: I,
+        trim: bool,
+        format: impl FnOnce(String) -> String,
+    ) -> VcsResult<&str>
+    where
+        I: IntoIterator<Item = A>,
+        A: AsRef<OsStr>,
+    {
+        self.run_command_with_formatter(self.create_command(args), trim, format)
+            .await
+    }
+
     pub async fn run_command(&self, command: Command, trim: bool) -> VcsResult<&str> {
+        self.run_command_with_formatter(command, trim, |s| s).await
+    }
+
+    pub async fn run_command_with_formatter(
+        &self,
+        command: Command,
+        trim: bool,
+        format: impl FnOnce(String) -> String,
+    ) -> VcsResult<&str> {
         let mut executor = command.create_async();
         let cache_key = executor.inspector.get_cache_key();
 
@@ -53,8 +76,9 @@ impl ProcessCache {
         if !self.cache.contains_key(&cache_key) {
             let output = executor.exec_capture_output().await?;
 
-            self.cache
-                .insert(cache_key.clone(), |_| output_to_string(&output.stdout));
+            self.cache.insert(cache_key.clone(), |_| {
+                format(output_to_string(&output.stdout))
+            });
         }
 
         let output = self.cache.get(&cache_key).unwrap();

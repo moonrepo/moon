@@ -4,10 +4,12 @@ use crate::vcs::{Vcs, VcsResult};
 use crate::vcs_error::VcsError;
 use async_trait::async_trait;
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
+use moon_common::path::{ProjectRelativePathBuf, WorkspaceRelativePathBuf};
 use once_cell::sync::Lazy;
 use regex::Regex;
-use relative_path::RelativePathBuf;
 use rustc_hash::FxHashSet;
+use std::cmp;
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use tracing::debug;
 
@@ -23,7 +25,7 @@ pub struct Git {
     default_branch: String,
 
     /// Path between the git and workspace root.
-    file_prefix: RelativePathBuf,
+    // file_prefix: RelativePathBuf,
 
     /// Ignore rules derived from a root `.gitignore` file.
     ignore: Option<Gitignore>,
@@ -102,8 +104,8 @@ impl Git {
         Ok(Git {
             default_branch: default_branch.as_ref().to_owned(),
             ignore,
-            file_prefix: RelativePathBuf::from_path(workspace_root.strip_prefix(git_root).unwrap())
-                .unwrap(),
+            // file_prefix: RelativePathBuf::from_path(workspace_root.strip_prefix(git_root).unwrap())
+            //     .unwrap(),
             remote_candidates: Vec::new(),
             process: ProcessCache::new("git", workspace_root),
             git_root: git_root.to_owned(),
@@ -122,7 +124,7 @@ impl Git {
         for candidate in &candidates {
             if self
                 .process
-                .create_and_run_command(["merge-base", candidate, head], true)
+                .run(["merge-base", candidate, head], true)
                 .await
                 .is_ok()
             {
@@ -132,7 +134,7 @@ impl Git {
 
         // Then we need to run it again and extract the base hash.
         // This is necessary to support comparisons between forks!
-        if let Ok(hash) = self.process.create_and_run_command(args, true).await {
+        if let Ok(hash) = self.process.run(args, true).await {
             return Ok(Some(hash));
         }
 
@@ -144,23 +146,17 @@ impl Git {
 impl Vcs for Git {
     async fn get_local_branch(&self) -> VcsResult<&str> {
         // --show-current was added in 2.22.0
-        if let Ok(branch) = self
-            .process
-            .create_and_run_command(["branch", "--show-current"], true)
-            .await
-        {
+        if let Ok(branch) = self.process.run(["branch", "--show-current"], true).await {
             return Ok(branch);
         }
 
         self.process
-            .create_and_run_command(["rev-parse", "--abbrev-ref", "HEAD"], true)
+            .run(["rev-parse", "--abbrev-ref", "HEAD"], true)
             .await
     }
 
     async fn get_local_branch_revision(&self) -> VcsResult<&str> {
-        self.process
-            .create_and_run_command(["rev-parse", "HEAD"], true)
-            .await
+        self.process.run(["rev-parse", "HEAD"], true).await
     }
 
     async fn get_default_branch(&self) -> VcsResult<&str> {
@@ -169,26 +165,119 @@ impl Vcs for Git {
 
     async fn get_default_branch_revision(&self) -> VcsResult<&str> {
         self.process
-            .create_and_run_command(["rev-parse", &self.default_branch], true)
+            .run(["rev-parse", &self.default_branch], true)
             .await
     }
 
-    async fn get_repository_slug(&self) -> VcsResult<&str> {
+    async fn get_file_hashes(
+        &self,
+        files: &[String],
+        allow_ignored: bool,
+        batch_size: u16,
+    ) -> VcsResult<BTreeMap<WorkspaceRelativePathBuf, String>> {
+        let mut objects = vec![];
+        let mut map = BTreeMap::new();
+
+        for file in files {
+            let abs_file = self.process.root.join(file);
+
+            // File must exist or git fails
+            if abs_file.exists() && abs_file.is_file() && (allow_ignored || !self.is_ignored(file))
+            {
+                objects.push(file);
+            }
+        }
+
+        if objects.is_empty() {
+            return Ok(map);
+        }
+
+        // Sort for deterministic caching within the vcs layer
+        objects.sort();
+
+        // Chunk into slices to avoid passing too many files
+        let mut index = 0;
+        let end_index = objects.len();
+
+        while index < end_index {
+            let next_index = cmp::min(index + (batch_size as usize), end_index);
+            let slice = objects[index..next_index]
+                .iter()
+                .map(|s| (*s).to_owned())
+                .collect::<Vec<_>>();
+
+            let mut command = self
+                .process
+                .create_command(["hash-object", "--stdin-paths"]);
+            command.input(&[slice.join("\n")]);
+
+            let output = self.process.run_command(command, true).await?;
+
+            for (i, hash) in output.split('\n').enumerate() {
+                if !hash.is_empty() {
+                    map.insert(WorkspaceRelativePathBuf::from(&slice[i]), hash.to_owned());
+                }
+            }
+
+            index = next_index;
+        }
+
+        Ok(map)
+    }
+
+    async fn get_file_tree(&self, dir: &str) -> VcsResult<Vec<ProjectRelativePathBuf>> {
         let output = self
             .process
-            .create_and_run_command(["remote", "get-url", "origin"], true)
+            .run(
+                [
+                    "ls-files",
+                    "--full-name",
+                    "--cached",
+                    "--modified",
+                    // Includes untracked
+                    "--others",
+                    // Added in v2.31
+                    // "--deduplicate",
+                    "--exclude-standard",
+                    dir,
+                ],
+                true,
+            )
             .await?;
 
-        // TODO
-        // Self::extract_slug_from_remote(output)
-        Ok(output)
+        Ok(output
+            .split('\n')
+            .map(ProjectRelativePathBuf::from)
+            .collect::<Vec<_>>())
+    }
+
+    async fn get_repository_slug(&self) -> VcsResult<&str> {
+        use git_url_parse::GitUrl;
+
+        for candidate in &self.remote_candidates {
+            if let Ok(output) = self
+                .process
+                .run_with_formatter(["remote", "get-url", candidate], true, |out| {
+                    if let Ok(url) = GitUrl::parse(&out) {
+                        url.fullname
+                    } else {
+                        out
+                    }
+                })
+                .await
+            {
+                return Ok(output);
+            }
+        }
+
+        Ok("unknown")
     }
 
     // https://git-scm.com/docs/git-status#_short_format
     async fn get_touched_files(&self) -> VcsResult<TouchedFiles> {
         let output = self
             .process
-            .create_and_run_command(
+            .run(
                 [
                     "status",
                     "--porcelain",
@@ -229,7 +318,7 @@ impl Vcs for Git {
             let mut chars = line.chars();
             let x = chars.next().unwrap_or_default();
             let y = chars.next().unwrap_or_default();
-            let file = RelativePathBuf::from(&line[3..]);
+            let file = WorkspaceRelativePathBuf::from(&line[3..]);
 
             match x {
                 'A' | 'C' => {
@@ -303,7 +392,7 @@ impl Vcs for Git {
 
         let output = self
             .process
-            .create_and_run_command(
+            .run(
                 [
                     "--no-pager",
                     "diff",
@@ -347,7 +436,7 @@ impl Vcs for Git {
             }
 
             let x = last_status.chars().next().unwrap_or_default();
-            let file = RelativePathBuf::from(line);
+            let file = WorkspaceRelativePathBuf::from(line);
 
             match x {
                 'A' | 'C' => {

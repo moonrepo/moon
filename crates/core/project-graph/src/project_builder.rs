@@ -278,7 +278,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         //  - All paths are absolute
         let handle_path =
             |path: WorkspaceRelativePathBuf, is_glob: bool| -> Result<String, ProjectGraphError> {
-                let arg = path::to_string(
+                let arg = path::to_virtual_string(
                     path::relative_from(
                         path.to_path(&self.workspace.root),
                         if task.options.run_from_workspace_root {
@@ -293,7 +293,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                 let arg = if arg.starts_with("..") {
                     arg
                 } else {
-                    format!(".{}{}", std::path::MAIN_SEPARATOR, arg)
+                    format!("./{}", arg)
                 };
 
                 if is_glob {

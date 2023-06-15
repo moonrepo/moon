@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 🐞 Fixes
+
+- Fixed an issue where task hashes would be different between Windows and Unix machines.
+  - Root cause is that arguments would use different path separators.
+
 #### ⚙️ Internal
 
 - Improved VCS/git file handling, caching, and performance.

@@ -48,16 +48,6 @@ moon requires a version control system (VCS) to be present for functionality lik
 hashing, and revision comparison. The VCS and its default branch can be configured through the
 [`vcs`](./config/workspace#vcs) setting.
 
-<Tabs
-  groupId="vcs"
-  defaultValue="git"
-  values={[
-    { label: 'git', value: 'git' },
-    { label: 'svn', value: 'svn' },
-  ]}
->
-<TabItem value="git">
-
 ```yaml title=".moon/workspace.yml"
 vcs:
 	manager: 'git'
@@ -65,20 +55,6 @@ vcs:
 ```
 
 > moon defaults to `git` and the settings above, so feel free to skip this.
-
-</TabItem>
-<TabItem value="svn">
-
-```yaml title=".moon/workspace.yml"
-vcs:
-	manager: 'svn'
-	defaultBranch: 'trunk'
-```
-
-> SVN support is highly experimental and may not work properly!
-
-</TabItem>
-</Tabs>
 
 ## Next steps
 

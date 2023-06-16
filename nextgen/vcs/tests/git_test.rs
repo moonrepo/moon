@@ -1,5 +1,5 @@
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_vcs2::{Git, TouchedFiles, Vcs};
+use moon_vcs::{Git, TouchedFiles, Vcs};
 use rustc_hash::FxHashSet;
 use starbase_sandbox::{create_sandbox, Sandbox};
 use std::collections::BTreeMap;
@@ -130,9 +130,13 @@ mod file_hashing {
         let (_sandbox, git) = create_git_sandbox("vcs");
 
         assert_eq!(
-            git.get_file_hashes(["foo/file2.txt", "baz/file5.txt"], false, 100)
-                .await
-                .unwrap(),
+            git.get_file_hashes(
+                &["foo/file2.txt".into(), "baz/file5.txt".into()],
+                false,
+                100
+            )
+            .await
+            .unwrap(),
             BTreeMap::from([
                 (
                     WorkspaceRelativePathBuf::from("baz/file5.txt"),
@@ -152,7 +156,11 @@ mod file_hashing {
 
         assert_eq!(
             git.get_file_hashes(
-                ["foo/file1.txt", "foo/file2.txt", "baz/file5.txt"],
+                &[
+                    "foo/file1.txt".into(),
+                    "foo/file2.txt".into(),
+                    "baz/file5.txt".into()
+                ],
                 false,
                 100
             )
@@ -171,7 +179,11 @@ mod file_hashing {
 
         assert_eq!(
             git.get_file_hashes(
-                ["foo/file1.txt", "foo/file2.txt", "baz/file5.txt"],
+                &[
+                    "foo/file1.txt".into(),
+                    "foo/file2.txt".into(),
+                    "baz/file5.txt".into()
+                ],
                 true,
                 100
             )
@@ -198,7 +210,13 @@ mod file_hashing {
     async fn hashes_an_entire_folder() {
         let (_sandbox, git) = create_git_sandbox("vcs");
 
-        let tree = git.get_file_tree(".").await.unwrap();
+        let tree = git
+            .get_file_tree(".")
+            .await
+            .unwrap()
+            .into_iter()
+            .map(|i| i.to_string())
+            .collect::<Vec<_>>();
 
         let hashes = git.get_file_hashes(&tree, false, 100).await.unwrap();
 
@@ -241,7 +259,13 @@ mod file_hashing {
     async fn hashes_and_ignores_an_entire_folder() {
         let (_sandbox, git) = create_git_sandbox_with_ignored("vcs");
 
-        let tree = git.get_file_tree(".").await.unwrap();
+        let tree = git
+            .get_file_tree(".")
+            .await
+            .unwrap()
+            .into_iter()
+            .map(|i| i.to_string())
+            .collect::<Vec<_>>();
 
         let hashes = git.get_file_hashes(&tree, false, 100).await.unwrap();
 
@@ -276,7 +300,13 @@ mod file_hashing {
             fs::write(sandbox.path().join(format!("file{}", i)), i.to_string()).unwrap();
         }
 
-        let tree = git.get_file_tree(".").await.unwrap();
+        let tree = git
+            .get_file_tree(".")
+            .await
+            .unwrap()
+            .into_iter()
+            .map(|i| i.to_string())
+            .collect::<Vec<_>>();
 
         let hashes = git.get_file_hashes(&tree, false, 100).await.unwrap();
 
@@ -288,7 +318,7 @@ mod file_hashing {
         let (_sandbox, git) = create_git_sandbox("vcs");
 
         assert_eq!(
-            git.get_file_hashes(&[WorkspaceRelativePathBuf::from("foo")], false, 100)
+            git.get_file_hashes(&["foo".into()], false, 100)
                 .await
                 .unwrap(),
             BTreeMap::new()

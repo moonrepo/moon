@@ -46,6 +46,7 @@ semver = "1.0.17"
 serde = { version = "1.0.163", features = ["derive"] }
 serde_json = "1.0.96"
 serde_yaml = "0.9.21"
+starbase = "0.1.12"
 starbase_sandbox = "0.1.5"
 starbase_styles = { version = "0.1.11", features = ["relative-path"] }
 starbase_utils = { version = "0.2.13", default-features = false, features = ["editor-config", "glob", "json", "toml", "yaml"] }

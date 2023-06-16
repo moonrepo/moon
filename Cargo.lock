@@ -2654,6 +2654,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_app"
+version = "0.1.0"
+dependencies = [
+ "miette",
+ "moon_app_components",
+ "starbase",
+ "starbase_styles",
+ "starbase_utils",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
+name = "moon_app_components"
+version = "0.1.0"
+dependencies = [
+ "miette",
+]
+
+[[package]]
 name = "moon_archive"
 version = "0.1.0"
 dependencies = [

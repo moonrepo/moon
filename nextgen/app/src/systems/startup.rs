@@ -4,7 +4,7 @@ use crate::app_error::AppError;
 use moon_app_components::{AppInfo, Tasks, Toolchain, WorkingDir, Workspace, WorkspaceRoot};
 use moon_common::consts;
 use moon_config::{InheritedTasksConfig, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
-use proto::{ToolsConfig, TOOLS_CONFIG_NAME};
+use proto::{get_root, ToolsConfig, TOOLS_CONFIG_NAME};
 use semver::Version;
 use starbase::system;
 use starbase_styles::color;
@@ -151,6 +151,7 @@ pub fn load_toolchain_config(workspace_root: StateRef<WorkspaceRoot>, resources:
     resources.set(Toolchain {
         config,
         proto: proto_tools,
+        proto_root: get_root()?,
     });
 }
 
@@ -191,7 +192,7 @@ pub fn load_tasks_config(workspace_root: StateRef<WorkspaceRoot>, resources: Res
 
     debug!(
         scopes = ?manager.configs.keys(),
-        "Loaded {} task configs",
+        "Loaded {} task configs to inherit",
         manager.configs.len(),
     );
 

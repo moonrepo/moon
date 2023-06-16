@@ -5,7 +5,7 @@ use moon_config::{
     ProjectConfig, ProjectDependsOn,
 };
 use moon_file_group::FileGroup;
-use moon_project2::Project;
+use moon_project2::{Project, ProjectError};
 use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
 use tracing::debug;
@@ -26,7 +26,11 @@ pub struct ProjectBuilder<'app> {
 }
 
 impl<'app> ProjectBuilder<'app> {
-    pub fn new(id: Id, source: WorkspaceRelativePathBuf, workspace_root: &'app Path) -> Self {
+    pub fn new(
+        id: Id,
+        source: WorkspaceRelativePathBuf,
+        workspace_root: &'app Path,
+    ) -> Result<Self, ProjectError> {
         debug!(
             id = ?id,
             source = ?source,
@@ -34,18 +38,24 @@ impl<'app> ProjectBuilder<'app> {
             color::id(&id),
         );
 
-        // TODO check that project root exists
+        let project_root = source.to_logical_path(workspace_root);
 
-        ProjectBuilder {
+        if !project_root.exists() {
+            return Err(ProjectError::MissingProjectAtSource(
+                source.as_str().to_owned(),
+            ));
+        }
+
+        Ok(ProjectBuilder {
             id,
-            project_root: source.to_logical_path(workspace_root),
+            project_root,
             source,
             workspace_root,
             global_config: None,
             local_config: None,
             language: LanguageType::Unknown,
             platform: PlatformType::Unknown,
-        }
+        })
     }
 
     pub fn inherit_global_config(

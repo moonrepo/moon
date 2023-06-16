@@ -6,7 +6,8 @@ use starbase::tracing::TracingOptions;
 use starbase::{App, MainResult};
 use starbase_utils::string_vec;
 use systems::{
-    detect_app_process_info, find_workspace_root, load_toolchain_config, load_workspace_config,
+    detect_app_process_info, find_workspace_root, load_tasks_config, load_toolchain_config,
+    load_workspace_config,
 };
 
 #[global_allocator]
@@ -31,6 +32,7 @@ async fn main() -> MainResult {
     app.startup(find_workspace_root);
     app.startup(load_workspace_config);
     app.startup(load_toolchain_config);
+    app.startup(load_tasks_config);
 
     app.run().await?;
 

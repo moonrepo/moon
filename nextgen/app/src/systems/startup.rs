@@ -1,14 +1,14 @@
 // Systems are defined in the order they should be executed!
 
 use crate::app_error::AppError;
-use moon_app_components::{AppInfo, Toolchain, WorkingDir, Workspace, WorkspaceRoot};
+use moon_app_components::{AppInfo, Tasks, Toolchain, WorkingDir, Workspace, WorkspaceRoot};
 use moon_common::consts;
-use moon_config::{ToolchainConfig, WorkspaceConfig};
+use moon_config::{InheritedTasksConfig, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use proto::{ToolsConfig, TOOLS_CONFIG_NAME};
 use semver::Version;
 use starbase::system;
 use starbase_styles::color;
-use starbase_utils::{dirs, fs};
+use starbase_utils::{dirs, fs, glob};
 use std::env;
 use std::path::PathBuf;
 use tracing::debug;
@@ -128,7 +128,7 @@ pub fn load_toolchain_config(workspace_root: StateRef<WorkspaceRoot>, resources:
 
     debug!(
         file = ?config_path.display(),
-        "Attempting to load {} (not required)", color::file(&config_name),
+        "Attempting to load {} (optional)", color::file(&config_name),
     );
 
     if proto_path.exists() {
@@ -152,4 +152,48 @@ pub fn load_toolchain_config(workspace_root: StateRef<WorkspaceRoot>, resources:
         config,
         proto: proto_tools,
     });
+}
+
+/// Load the tasks configuration file from the `.moon` directory if it exists.
+/// Also load all scoped tasks from the `.moon/tasks` directory and load into the manager.
+#[system]
+pub fn load_tasks_config(workspace_root: StateRef<WorkspaceRoot>, resources: ResourcesMut) {
+    let config_name = format!(
+        "{}/{}",
+        consts::CONFIG_DIRNAME,
+        consts::CONFIG_TASKS_FILENAME
+    );
+    let config_path = workspace_root.join(&config_name);
+    let tasks_dir = workspace_root.join(consts::CONFIG_DIRNAME).join("tasks");
+
+    debug!(
+        file = ?config_path.display(),
+        "Attempting to load {} and {} (optional)",
+        color::file(&config_name),
+        color::file(format!("{}/tasks/*.yml", consts::CONFIG_DIRNAME)),
+    );
+
+    let mut manager = InheritedTasksManager::default();
+
+    if config_path.exists() {
+        manager.add_config(
+            &config_path,
+            InheritedTasksConfig::load_partial(workspace_root, &config_path)?,
+        )
+    };
+
+    for scoped_config_path in glob::walk_files(tasks_dir, ["*.yml"])? {
+        manager.add_config(
+            &scoped_config_path,
+            InheritedTasksConfig::load_partial(workspace_root, &scoped_config_path)?,
+        )
+    }
+
+    debug!(
+        scopes = ?manager.configs.keys(),
+        "Loaded {} task configs",
+        manager.configs.len(),
+    );
+
+    resources.set(Tasks { manager });
 }

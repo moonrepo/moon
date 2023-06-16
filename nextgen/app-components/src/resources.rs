@@ -1,4 +1,4 @@
-use moon_config::{ToolchainConfig, WorkspaceConfig};
+use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use proto::ToolsConfig;
 use semver::Version;
 use starbase::Resource;
@@ -19,6 +19,11 @@ pub struct AppInfo {
 
     /// Current versio of moon.
     pub version: Version,
+}
+
+#[derive(Debug, Resource)]
+pub struct Tasks {
+    pub manager: InheritedTasksManager,
 }
 
 #[derive(Debug, Resource)]

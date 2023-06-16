@@ -107,7 +107,7 @@ pub fn load_workspace_config(workspace_root: StateRef<WorkspaceRoot>, resources:
         return Err(AppError::MissingConfigFile(config_name).into());
     }
 
-    let config = WorkspaceConfig::load(&workspace_root, &config_path)?;
+    let config = WorkspaceConfig::load(workspace_root, &config_path)?;
 
     resources.set(Workspace {
         telemetry: config.telemetry,
@@ -145,7 +145,7 @@ pub fn load_toolchain_config(workspace_root: StateRef<WorkspaceRoot>, resources:
 
         ToolchainConfig::default()
     } else {
-        ToolchainConfig::load(&workspace_root, &config_path, &proto_tools)?
+        ToolchainConfig::load(workspace_root, &config_path, &proto_tools)?
     };
 
     resources.set(Toolchain {

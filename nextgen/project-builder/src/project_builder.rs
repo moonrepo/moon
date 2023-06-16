@@ -73,8 +73,8 @@ impl<'app> ProjectBuilder<'app> {
     where
         F: FnOnce(&Path) -> LanguageType,
     {
-        let config_name = format!("{}/{}", &self.source, consts::CONFIG_PROJECT_FILENAME);
-        let config_path = self.workspace_root.join(&config_name);
+        let config_name = self.source.join(consts::CONFIG_PROJECT_FILENAME);
+        let config_path = config_name.to_path(self.workspace_root);
 
         debug!(
             id = ?self.id,
@@ -87,25 +87,31 @@ impl<'app> ProjectBuilder<'app> {
 
         // Use configured language or detect from environment
         self.language = if config.language == LanguageType::Unknown {
+            let language = detect_language(&self.project_root);
+
             debug!(
                 id = ?self.id,
+                language = ?language,
                 "Unknown project language, detecting from environment",
             );
 
-            detect_language(&self.project_root)
+            language
         } else {
             config.language.clone()
         };
 
         // Use configured platform or infer from language
         self.platform = config.platform.unwrap_or_else(|| {
+            let platform: PlatformType = self.language.clone().into();
+
             debug!(
                 id = ?self.id,
                 language = ?self.language,
+                platform = ?self.platform,
                 "Unknown tasks platform, inferring from language",
             );
 
-            self.language.clone().into()
+            platform
         });
 
         self.local_config = Some(config);
@@ -138,27 +144,19 @@ impl<'app> ProjectBuilder<'app> {
 
         if let Some(local) = &self.local_config {
             for dep_on in &local.depends_on {
-                match dep_on {
-                    ProjectDependsOn::String(id) => {
-                        deps.insert(
-                            id.to_owned(),
-                            DependencyConfig {
-                                id: id.to_owned(),
-                                ..DependencyConfig::default()
-                            },
-                        );
-                    }
-                    ProjectDependsOn::Object { id, scope } => {
-                        deps.insert(
-                            id.to_owned(),
-                            DependencyConfig {
-                                id: id.to_owned(),
-                                scope: scope.to_owned(),
-                                ..DependencyConfig::default()
-                            },
-                        );
-                    }
-                }
+                let dep_config = match dep_on {
+                    ProjectDependsOn::String(id) => DependencyConfig {
+                        id: id.to_owned(),
+                        ..DependencyConfig::default()
+                    },
+                    ProjectDependsOn::Object { id, scope } => DependencyConfig {
+                        id: id.to_owned(),
+                        scope: scope.to_owned(),
+                        ..DependencyConfig::default()
+                    },
+                };
+
+                deps.insert(dep_config.id.clone(), dep_config);
             }
         }
 

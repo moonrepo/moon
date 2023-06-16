@@ -37,7 +37,7 @@ pub async fn query_touched_files(
     debug!(target: LOG_TARGET, "Querying for touched files");
 
     let vcs = &workspace.vcs;
-    let default_branch = vcs.get_default_branch();
+    let default_branch = vcs.get_default_branch().await?;
     let current_branch = vcs.get_local_branch().await?;
 
     if options.base.is_empty() {
@@ -49,7 +49,7 @@ pub async fn query_touched_files(
     }
 
     // On default branch, so compare against self -1 revision
-    let touched_files_map = if options.default_branch && vcs.is_default_branch(&current_branch) {
+    let touched_files_map = if options.default_branch && vcs.is_default_branch(current_branch) {
         trace!(
             target: LOG_TARGET,
             "On default branch {}, comparing against previous revision",
@@ -88,7 +88,7 @@ pub async fn query_touched_files(
             color::symbol(TouchedStatus::All.to_string())
         );
 
-        touched_files.extend(&touched_files_map.all);
+        touched_files.extend(touched_files_map.all());
     } else {
         debug!(
             target: LOG_TARGET,
@@ -98,13 +98,13 @@ pub async fn query_touched_files(
 
         for status in &options.status {
             touched_files.extend(match status {
-                TouchedStatus::Added => &touched_files_map.added,
-                TouchedStatus::All => &touched_files_map.all,
-                TouchedStatus::Deleted => &touched_files_map.deleted,
-                TouchedStatus::Modified => &touched_files_map.modified,
-                TouchedStatus::Staged => &touched_files_map.staged,
-                TouchedStatus::Unstaged => &touched_files_map.unstaged,
-                TouchedStatus::Untracked => &touched_files_map.untracked,
+                TouchedStatus::Added => touched_files_map.added.iter().collect(),
+                TouchedStatus::All => touched_files_map.all(),
+                TouchedStatus::Deleted => touched_files_map.deleted.iter().collect(),
+                TouchedStatus::Modified => touched_files_map.modified.iter().collect(),
+                TouchedStatus::Staged => touched_files_map.staged.iter().collect(),
+                TouchedStatus::Unstaged => touched_files_map.unstaged.iter().collect(),
+                TouchedStatus::Untracked => touched_files_map.untracked.iter().collect(),
             });
         }
     }

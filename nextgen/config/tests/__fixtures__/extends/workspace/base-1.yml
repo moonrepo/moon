@@ -4,4 +4,4 @@ runner:
   logRunningCommand: true
 
 vcs:
-  manager: 'svn'
+  provider: 'bitbucket'

@@ -24,6 +24,7 @@ pub static DIFF_SCORE_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(C|M|R)(
 pub static VERSION_CLEAN: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"\.(win|windows|msysgit)\.\d+").unwrap());
 
+#[derive(Debug)]
 pub struct Git {
     /// Default git branch name.
     pub default_branch: String,
@@ -50,7 +51,7 @@ impl Git {
         default_branch: B,
         remote_candidates: &[String],
     ) -> VcsResult<Git> {
-        debug!("Using git as a VCS");
+        debug!("Using git as a version control system");
 
         let workspace_root = workspace_root.as_ref();
 
@@ -63,9 +64,11 @@ impl Git {
         let mut git_root = workspace_root;
 
         loop {
-            if git_root.join(".git").exists() {
+            let git_dir = git_root.join(".git");
+
+            if git_dir.exists() {
                 debug!(
-                    git_root = %git_root.display(),
+                    git_dir = %git_dir.display(),
                     "Found a .git directory"
                 );
 
@@ -89,7 +92,7 @@ impl Git {
 
         if ignore_path.exists() {
             debug!(
-                ignore_path = %ignore_path.display(),
+                ignore_file = %ignore_path.display(),
                 "Loading ignore rules from .gitignore",
             );
 
@@ -173,7 +176,7 @@ impl Vcs for Git {
 
     async fn get_file_hashes(
         &self,
-        files: impl IntoIterator<Item = impl AsRef<str>> + Send,
+        files: &[String],
         allow_ignored: bool,
         batch_size: u16,
     ) -> VcsResult<BTreeMap<WorkspaceRelativePathBuf, String>> {
@@ -181,7 +184,6 @@ impl Vcs for Git {
         let mut map = BTreeMap::new();
 
         for file in files {
-            let file = file.as_ref();
             let abs_file = self.process.root.join(file);
 
             // File must exist or git fails
@@ -209,7 +211,7 @@ impl Vcs for Git {
             let mut command = self
                 .process
                 .create_command(["hash-object", "--stdin-paths"]);
-            command.input(&[slice.join("\n")]);
+            command.input([slice.join("\n")]);
 
             let output = self.process.run_command(command, true).await?;
 
@@ -225,10 +227,7 @@ impl Vcs for Git {
         Ok(map)
     }
 
-    async fn get_file_tree(
-        &self,
-        dir: impl AsRef<str> + Send,
-    ) -> VcsResult<Vec<WorkspaceRelativePathBuf>> {
+    async fn get_file_tree(&self, dir: &str) -> VcsResult<Vec<WorkspaceRelativePathBuf>> {
         let mut args = vec![
             "ls-files",
             "--full-name",
@@ -236,7 +235,7 @@ impl Vcs for Git {
             "--modified",
             "--others", // Includes untracked
             "--exclude-standard",
-            dir.as_ref(),
+            dir,
         ];
 
         if self.is_version_supported(">=2.31.0").await? {

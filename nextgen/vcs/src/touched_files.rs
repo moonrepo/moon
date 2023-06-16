@@ -14,8 +14,8 @@ pub struct TouchedFiles {
 }
 
 impl TouchedFiles {
-    pub fn all(&self) -> Vec<&WorkspaceRelativePathBuf> {
-        let mut files = vec![];
+    pub fn all(&self) -> FxHashSet<&WorkspaceRelativePathBuf> {
+        let mut files = FxHashSet::default();
         files.extend(&self.added);
         files.extend(&self.deleted);
         files.extend(&self.modified);

@@ -1,3 +1,6 @@
+use moon_config::{ToolchainConfig, WorkspaceConfig};
+use proto::ToolsConfig;
+use semver::Version;
 use starbase::Resource;
 use std::path::PathBuf;
 
@@ -15,5 +18,17 @@ pub struct AppInfo {
     pub running_exe: Option<PathBuf>,
 
     /// Current versio of moon.
-    pub version: String,
+    pub version: Version,
+}
+
+#[derive(Debug, Resource)]
+pub struct Toolchain {
+    pub config: ToolchainConfig,
+    pub proto: ToolsConfig,
+}
+
+#[derive(Debug, Resource)]
+pub struct Workspace {
+    pub config: WorkspaceConfig,
+    pub telemetry: bool,
 }

@@ -4,4 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+moon_config = { path = "../config" }
+proto_cli = { workspace = true }
+semver = { workspace = true }
 starbase = { workspace = true }

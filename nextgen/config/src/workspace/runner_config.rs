@@ -1,7 +1,7 @@
 use moon_target::Target;
 use schematic::Config;
 
-#[derive(Config)]
+#[derive(Debug, Config)]
 pub struct RunnerConfig {
     pub archivable_targets: Vec<Target>,
 

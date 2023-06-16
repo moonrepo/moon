@@ -20,6 +20,13 @@ pub enum AppError {
     )]
     MissingConfigDir,
 
+    #[diagnostic(code(app::missing_config))]
+    #[error(
+        "Unable to locate {} configuration file.",
+        .0.style(Style::File),
+    )]
+    MissingConfigFile(String),
+
     #[diagnostic(code(app::missing_home_dir))]
     #[error("Unable to determine your home directory.")]
     MissingHomeDir,

@@ -5,7 +5,9 @@ use mimalloc::MiMalloc;
 use starbase::tracing::TracingOptions;
 use starbase::{App, MainResult};
 use starbase_utils::string_vec;
-use systems::{detect_app_process_info, find_workspace_root};
+use systems::{
+    detect_app_process_info, find_workspace_root, load_toolchain_config, load_workspace_config,
+};
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
@@ -23,8 +25,13 @@ async fn main() -> MainResult {
     });
 
     let mut app = App::new();
-    app.startup(find_workspace_root);
+
+    // Startup order is important!
     app.startup(detect_app_process_info);
+    app.startup(find_workspace_root);
+    app.startup(load_workspace_config);
+    app.startup(load_toolchain_config);
+
     app.run().await?;
 
     Ok(())

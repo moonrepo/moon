@@ -14,9 +14,11 @@ crate-type = ["rlib"]
 
 [dependencies]
 moon_app_components = { path = "../app-components" }
+moon_common = { path = "../common" }
 miette = { workspace = true }
 starbase = { workspace = true }
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
+tracing = { workspace = true }

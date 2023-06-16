@@ -2659,18 +2659,20 @@ version = "0.1.0"
 dependencies = [
  "miette",
  "moon_app_components",
+ "moon_common",
  "starbase",
  "starbase_styles",
  "starbase_utils",
  "thiserror",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
 name = "moon_app_components"
 version = "0.1.0"
 dependencies = [
- "miette",
+ "starbase",
 ]
 
 [[package]]

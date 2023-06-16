@@ -5,7 +5,7 @@ derive_enum!(
     pub enum VcsManager {
         #[default]
         Git,
-        Svn,
+        // Svn,
     }
 );
 

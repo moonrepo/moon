@@ -49,7 +49,7 @@ export interface PartialRunnerConfig {
 	logRunningCommand?: boolean | null;
 }
 
-export type VcsManager = 'git' | 'svn';
+export type VcsManager = 'git';
 
 export type VcsProvider = 'bitbucket' | 'github' | 'gitlab' | 'other';
 

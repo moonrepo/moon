@@ -1,9 +1,9 @@
 use crate::errors::RunnerError;
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
 use moon_hasher::{hash_btree, hash_vec, Digest, Hasher, Sha256};
 use moon_target::Target;
 use moon_task::Task;
-use moon_utils::path;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -62,11 +62,11 @@ impl TargetHasher {
 
     /// Hash a mapping of input file paths to unique file hashes.
     /// File paths *must* be relative from the workspace root.
-    pub fn hash_inputs(&mut self, inputs: BTreeMap<String, String>) {
+    pub fn hash_inputs(&mut self, inputs: BTreeMap<WorkspaceRelativePathBuf, String>) {
         for (file, hash) in inputs {
             // Standardize on `/` separators so that the hash is
             // the same between windows and nix machines.
-            self.inputs.insert(path::standardize_separators(file), hash);
+            self.inputs.insert(file.to_string(), hash);
         }
     }
 

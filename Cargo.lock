@@ -3563,27 +3563,6 @@ name = "moon_vcs"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "cached",
- "ignore",
- "miette",
- "moon_config",
- "moon_error",
- "moon_process",
- "moon_test_utils",
- "moon_utils",
- "regex",
- "rustc-hash",
- "starbase_utils",
- "thiserror",
- "tokio",
- "url",
-]
-
-[[package]]
-name = "moon_vcs2"
-version = "0.1.0"
-dependencies = [
- "async-trait",
  "git-url-parse",
  "ignore",
  "miette",

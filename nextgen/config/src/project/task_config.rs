@@ -5,8 +5,8 @@ use moon_common::cacheable;
 use moon_target::{Target, TargetScope};
 use rustc_hash::FxHashMap;
 use schematic::{
-    derive_enum, Config, ConfigEnum, ConfigError, ConfigLoader, Format, SchemaType, Schematic,
-    Segment, ValidateError,
+    derive_enum, merge, Config, ConfigEnum, ConfigError, ConfigLoader, Format, SchemaType,
+    Schematic, Segment, ValidateError,
 };
 
 fn validate_command<D, C>(cmd: &TaskCommandArgs, _task: &D, _ctx: &C) -> Result<(), ValidateError> {
@@ -93,8 +93,7 @@ cacheable!(
 
         pub env: FxHashMap<String, String>,
 
-        // TODO
-        #[setting(skip)]
+        #[setting(skip, merge = merge::append_vec)]
         pub global_inputs: Vec<InputPath>,
 
         // None = All inputs (**/*)

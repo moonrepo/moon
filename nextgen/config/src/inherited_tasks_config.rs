@@ -154,6 +154,8 @@ impl InheritedTasksManager {
         self.cache.try_insert_cloned(lookup_key, |_| {
             let mut partial_config = PartialInheritedTasksConfig::default();
             let mut layers = vec![];
+
+            #[allow(clippy::let_unit_value)]
             let context = ();
 
             for lookup in lookup_order {
@@ -170,16 +172,21 @@ impl InheritedTasksManager {
                         format!("{}/tasks/{lookup}.yml", consts::CONFIG_DIRNAME)
                     };
 
-                    if let Some(tasks) = &mut managed_config.tasks {
-                        for task in tasks.values_mut() {
-                            // Automatically set this lookup as an input
-                            task.global_inputs
-                                .get_or_insert(vec![])
-                                .push(InputPath::WorkspaceFile(source_path.clone()));
+                    // Only modify tasks for `tasks/*.yml` files instead of `tasks.yml`,
+                    // as the latter will be globbed alongside toolchain/workspace configs.
+                    // We also don't know what platform each of the tasks should be yet.
+                    if lookup != "*" {
+                        if let Some(tasks) = &mut managed_config.tasks {
+                            for task in tasks.values_mut() {
+                                // Automatically set this source as an input
+                                task.global_inputs
+                                    .get_or_insert(vec![])
+                                    .push(InputPath::WorkspaceFile(source_path.clone()));
 
-                            // Automatically set the platform
-                            if task.platform.unwrap_or_default().is_unknown() {
-                                task.platform = Some(platform.to_owned());
+                                // Automatically set the platform
+                                if task.platform.unwrap_or_default().is_unknown() {
+                                    task.platform = Some(platform.to_owned());
+                                }
                             }
                         }
                     }

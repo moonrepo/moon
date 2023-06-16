@@ -591,6 +591,7 @@ mod task_manager {
 
     mod config_order {
         use super::*;
+        use schematic::Source;
 
         #[test]
         fn creates_js_config() {
@@ -598,16 +599,17 @@ mod task_manager {
             let manager =
                 load_tasks_into_manager(sandbox.path(), sandbox.path().join(CONFIG_TASKS_FILENAME));
 
+            let config = manager
+                .get_inherited_config(
+                    &PlatformType::Node,
+                    &LanguageType::JavaScript,
+                    &ProjectType::Application,
+                    &[],
+                )
+                .unwrap();
+
             assert_eq!(
-                manager
-                    .get_inherited_config(
-                        &PlatformType::Node,
-                        &LanguageType::JavaScript,
-                        &ProjectType::Application,
-                        &[]
-                    )
-                    .unwrap()
-                    .tasks,
+                config.config.tasks,
                 BTreeMap::from_iter([
                     ("global".into(), stub_task("global", PlatformType::Unknown)),
                     ("node".into(), stub_task("node", PlatformType::Node)),
@@ -621,6 +623,20 @@ mod task_manager {
                     ),
                 ]),
             );
+
+            assert_eq!(
+                config
+                    .layers
+                    .into_iter()
+                    .map(|i| i.source)
+                    .collect::<Vec<_>>(),
+                vec![
+                    Source::file(".moon/tasks.yml", true).unwrap(),
+                    Source::file(".moon/tasks/node.yml", true).unwrap(),
+                    Source::file(".moon/tasks/javascript.yml", true).unwrap(),
+                    Source::file(".moon/tasks/node-application.yml", true).unwrap(),
+                ]
+            );
         }
 
         #[test]
@@ -629,16 +645,17 @@ mod task_manager {
             let manager =
                 load_tasks_into_manager(sandbox.path(), sandbox.path().join(CONFIG_TASKS_FILENAME));
 
+            let config = manager
+                .get_inherited_config(
+                    &PlatformType::Node,
+                    &LanguageType::TypeScript,
+                    &ProjectType::Tool,
+                    &[],
+                )
+                .unwrap();
+
             assert_eq!(
-                manager
-                    .get_inherited_config(
-                        &PlatformType::Node,
-                        &LanguageType::TypeScript,
-                        &ProjectType::Tool,
-                        &[]
-                    )
-                    .unwrap()
-                    .tasks,
+                config.config.tasks,
                 BTreeMap::from_iter([
                     ("global".into(), stub_task("global", PlatformType::Unknown)),
                     ("node".into(), stub_task("node", PlatformType::Node)),
@@ -648,6 +665,19 @@ mod task_manager {
                     ),
                 ]),
             );
+
+            assert_eq!(
+                config
+                    .layers
+                    .into_iter()
+                    .map(|i| i.source)
+                    .collect::<Vec<_>>(),
+                vec![
+                    Source::file(".moon/tasks.yml", true).unwrap(),
+                    Source::file(".moon/tasks/node.yml", true).unwrap(),
+                    Source::file(".moon/tasks/typescript.yml", true).unwrap(),
+                ]
+            );
         }
 
         #[test]
@@ -656,20 +686,33 @@ mod task_manager {
             let manager =
                 load_tasks_into_manager(sandbox.path(), sandbox.path().join(CONFIG_TASKS_FILENAME));
 
+            let config = manager
+                .get_inherited_config(
+                    &PlatformType::System,
+                    &LanguageType::Rust,
+                    &ProjectType::Library,
+                    &[],
+                )
+                .unwrap();
+
             assert_eq!(
-                manager
-                    .get_inherited_config(
-                        &PlatformType::System,
-                        &LanguageType::Rust,
-                        &ProjectType::Library,
-                        &[]
-                    )
-                    .unwrap()
-                    .tasks,
+                config.config.tasks,
                 BTreeMap::from_iter([
                     ("global".into(), stub_task("global", PlatformType::Unknown)),
                     ("rust".into(), stub_task("rust", PlatformType::System)),
                 ]),
+            );
+
+            assert_eq!(
+                config
+                    .layers
+                    .into_iter()
+                    .map(|i| i.source)
+                    .collect::<Vec<_>>(),
+                vec![
+                    Source::file(".moon/tasks.yml", true).unwrap(),
+                    Source::file(".moon/tasks/rust.yml", true).unwrap(),
+                ]
             );
         }
 
@@ -679,16 +722,17 @@ mod task_manager {
             let manager =
                 load_tasks_into_manager(sandbox.path(), sandbox.path().join(CONFIG_TASKS_FILENAME));
 
+            let config = manager
+                .get_inherited_config(
+                    &PlatformType::Node,
+                    &LanguageType::TypeScript,
+                    &ProjectType::Tool,
+                    &["normal".into(), "kebab-case".into()],
+                )
+                .unwrap();
+
             assert_eq!(
-                manager
-                    .get_inherited_config(
-                        &PlatformType::Node,
-                        &LanguageType::TypeScript,
-                        &ProjectType::Tool,
-                        &["normal".into(), "kebab-case".into()]
-                    )
-                    .unwrap()
-                    .tasks,
+                config.config.tasks,
                 BTreeMap::from_iter([
                     ("global".into(), stub_task("global", PlatformType::Unknown)),
                     ("node".into(), stub_task("node", PlatformType::Node)),
@@ -702,6 +746,21 @@ mod task_manager {
                     ),
                 ]),
             );
+
+            assert_eq!(
+                config
+                    .layers
+                    .into_iter()
+                    .map(|i| i.source)
+                    .collect::<Vec<_>>(),
+                vec![
+                    Source::file(".moon/tasks.yml", true).unwrap(),
+                    Source::file(".moon/tasks/node.yml", true).unwrap(),
+                    Source::file(".moon/tasks/typescript.yml", true).unwrap(),
+                    Source::file(".moon/tasks/tag-normal.yml", true).unwrap(),
+                    Source::file(".moon/tasks/tag-kebab-case.yml", true).unwrap(),
+                ]
+            );
         }
 
         #[test]
@@ -710,20 +769,33 @@ mod task_manager {
             let manager =
                 load_tasks_into_manager(sandbox.path(), sandbox.path().join(CONFIG_TASKS_FILENAME));
 
+            let config = manager
+                .get_inherited_config(
+                    &PlatformType::System,
+                    &LanguageType::Other("kotlin".into()),
+                    &ProjectType::Library,
+                    &[],
+                )
+                .unwrap();
+
             assert_eq!(
-                manager
-                    .get_inherited_config(
-                        &PlatformType::System,
-                        &LanguageType::Other("kotlin".into()),
-                        &ProjectType::Library,
-                        &[]
-                    )
-                    .unwrap()
-                    .tasks,
+                config.config.tasks,
                 BTreeMap::from_iter([
                     ("global".into(), stub_task("global", PlatformType::Unknown)),
                     ("kotlin".into(), stub_task("kotlin", PlatformType::System)),
                 ]),
+            );
+
+            assert_eq!(
+                config
+                    .layers
+                    .into_iter()
+                    .map(|i| i.source)
+                    .collect::<Vec<_>>(),
+                vec![
+                    Source::file(".moon/tasks.yml", true).unwrap(),
+                    Source::file(".moon/tasks/kotlin.yml", true).unwrap(),
+                ]
             );
         }
     }
@@ -740,16 +812,17 @@ mod task_manager {
             let mut task = stub_task("node-library", PlatformType::Node);
             task.inputs = Some(vec![InputPath::ProjectFile("c".into())]);
 
+            let config = manager
+                .get_inherited_config(
+                    &PlatformType::Node,
+                    &LanguageType::JavaScript,
+                    &ProjectType::Library,
+                    &[],
+                )
+                .unwrap();
+
             assert_eq!(
-                manager
-                    .get_inherited_config(
-                        &PlatformType::Node,
-                        &LanguageType::JavaScript,
-                        &ProjectType::Library,
-                        &[]
-                    )
-                    .unwrap()
-                    .tasks,
+                config.config.tasks,
                 BTreeMap::from_iter([("command".into(), task)]),
             );
         }
@@ -763,16 +836,17 @@ mod task_manager {
             let mut task = stub_task("dotnet-application", PlatformType::System);
             task.inputs = Some(vec![InputPath::ProjectFile("c".into())]);
 
+            let config = manager
+                .get_inherited_config(
+                    &PlatformType::System,
+                    &LanguageType::Other("dotnet".into()),
+                    &ProjectType::Application,
+                    &[],
+                )
+                .unwrap();
+
             assert_eq!(
-                manager
-                    .get_inherited_config(
-                        &PlatformType::System,
-                        &LanguageType::Other("dotnet".into()),
-                        &ProjectType::Application,
-                        &[]
-                    )
-                    .unwrap()
-                    .tasks,
+                config.config.tasks,
                 BTreeMap::from_iter([("command".into(), task)]),
             );
         }

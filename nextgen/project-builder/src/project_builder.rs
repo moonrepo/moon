@@ -204,7 +204,7 @@ impl<'app> ProjectBuilder<'app> {
             file_groups.insert(
                 id.to_owned(),
                 FileGroup::new_with_source(
-                    id.to_owned(),
+                    id,
                     inputs
                         .iter()
                         .map(|i| i.to_workspace_relative(project_source)),

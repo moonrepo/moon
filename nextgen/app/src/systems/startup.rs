@@ -1,7 +1,7 @@
 // Systems are defined in the order they should be executed!
 
 use crate::app_error::AppError;
-use moon_app_components::{WorkingDir, WorkspaceRoot};
+use moon_app_components::{AppInfo, WorkingDir, WorkspaceRoot};
 use moon_common::consts;
 use starbase::system;
 use starbase_styles::color;
@@ -53,4 +53,25 @@ pub fn find_workspace_root(states: StatesMut) {
 
     states.set(WorkingDir(working_dir));
     states.set(WorkspaceRoot(workspace_root));
+}
+
+#[system]
+pub fn detect_app_process_info(resources: ResourcesMut) {
+    let current_exe = env::current_exe().ok();
+    let version = env!("CARGO_PKG_VERSION");
+
+    if let Some(exe) = &current_exe {
+        debug!(current_bin = %exe.display(), "Running moon v{}", version);
+    } else {
+        debug!("Running moon v{}", version);
+    }
+
+    env::set_var("MOON_VERSION", version);
+
+    resources.set(AppInfo {
+        running_exe: current_exe.clone(),
+        current_exe,
+        global: false,
+        version: version.to_owned(),
+    });
 }

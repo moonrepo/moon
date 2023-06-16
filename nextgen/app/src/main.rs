@@ -1,10 +1,14 @@
 mod app_error;
 mod systems;
 
+use mimalloc::MiMalloc;
 use starbase::tracing::TracingOptions;
 use starbase::{App, MainResult};
 use starbase_utils::string_vec;
-use systems::find_workspace_root;
+use systems::{detect_app_process_info, find_workspace_root};
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 #[tokio::main]
 async fn main() -> MainResult {
@@ -20,6 +24,7 @@ async fn main() -> MainResult {
 
     let mut app = App::new();
     app.startup(find_workspace_root);
+    app.startup(detect_app_process_info);
     app.run().await?;
 
     Ok(())

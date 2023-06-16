@@ -16,6 +16,7 @@ crate-type = ["rlib"]
 moon_app_components = { path = "../app-components" }
 moon_common = { path = "../common" }
 miette = { workspace = true }
+mimalloc = { version = "0.1.37", default-features = false }
 starbase = { workspace = true }
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true }

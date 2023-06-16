@@ -1,5 +1,5 @@
 use moon_common::{cacheable, path::WorkspaceRelativePathBuf, Id};
-use moon_config::{DependencyConfig, LanguageType, ProjectConfig, ProjectType};
+use moon_config::{DependencyConfig, LanguageType, PlatformType, ProjectConfig, ProjectType};
 use moon_file_group::FileGroup;
 use moon_task2::Task;
 use rustc_hash::FxHashMap;
@@ -31,6 +31,9 @@ cacheable!(
 
         /// Primary programming language of the project.
         pub language: LanguageType,
+
+        /// Default platform to run tasks against.
+        pub platform: PlatformType,
 
         /// Absolute path to the project's root folder.
         pub root: PathBuf,

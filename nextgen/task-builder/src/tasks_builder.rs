@@ -1,4 +1,6 @@
-use moon_config::{InheritedTasksConfig, InheritedTasksManager, LanguageType, ProjectType};
+#![allow(dead_code)]
+
+use moon_config::{InheritedTasksConfig, InheritedTasksManager};
 use std::path::Path;
 
 pub struct TasksBuilder<'proj> {

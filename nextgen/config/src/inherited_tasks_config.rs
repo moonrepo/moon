@@ -5,8 +5,9 @@ use crate::shapes::InputPath;
 use moon_common::cacheable;
 use moon_common::{consts, Id};
 use moon_target::Target;
+use once_map::OnceMap;
 use rustc_hash::FxHashMap;
-use schematic::{merge, validate, Config, ConfigError, ConfigLoader, PartialConfig};
+use schematic::{merge, validate, Config, ConfigError, ConfigLoader, Layer, PartialConfig, Source};
 use std::hash::Hash;
 use std::{collections::BTreeMap, path::Path};
 
@@ -79,8 +80,15 @@ fn is_js_platform(platform: &PlatformType) -> bool {
     matches!(platform, PlatformType::Deno | PlatformType::Node)
 }
 
+#[derive(Clone, Debug, Default)]
+pub struct InheritedTasksResult {
+    pub config: InheritedTasksConfig,
+    pub layers: Vec<Layer<InheritedTasksConfig>>,
+}
+
 #[derive(Debug, Default)]
 pub struct InheritedTasksManager {
+    cache: OnceMap<String, InheritedTasksResult>,
     pub configs: FxHashMap<String, PartialInheritedTasksConfig>,
 }
 
@@ -137,23 +145,37 @@ impl InheritedTasksManager {
         language: &LanguageType,
         project: &ProjectType,
         tags: &[Id],
-    ) -> Result<InheritedTasksConfig, ConfigError> {
-        let mut config = PartialInheritedTasksConfig::default();
+    ) -> Result<InheritedTasksResult, ConfigError> {
+        let lookup_order = self.get_lookup_order(platform, language, project, tags);
+        let lookup_key = lookup_order.join(":");
 
-        #[allow(clippy::let_unit_value)]
-        let context = ();
+        // Cache the result as this lookup may be the same for a large number of projects,
+        // and since this clones constantly, we can avoid a lot of allocations and overhead.
+        self.cache.try_insert_cloned(lookup_key, |_| {
+            let mut partial_config = PartialInheritedTasksConfig::default();
+            let mut layers = vec![];
+            let context = ();
 
-        for lookup in self.get_lookup_order(platform, language, project, tags) {
-            if let Some(managed_config) = self.configs.get(&lookup) {
-                let mut managed_config = managed_config.clone();
+            for lookup in lookup_order {
+                if let Some(managed_config) = self.configs.get(&lookup) {
+                    let mut managed_config = managed_config.clone();
 
-                if lookup != "*" {
+                    let source_path = if lookup == "*" {
+                        format!(
+                            "{}/{}",
+                            consts::CONFIG_DIRNAME,
+                            consts::CONFIG_TASKS_FILENAME
+                        )
+                    } else {
+                        format!("{}/tasks/{lookup}.yml", consts::CONFIG_DIRNAME)
+                    };
+
                     if let Some(tasks) = &mut managed_config.tasks {
                         for task in tasks.values_mut() {
                             // Automatically set this lookup as an input
-                            task.global_inputs.get_or_insert(vec![]).push(
-                                InputPath::WorkspaceFile(format!(".moon/tasks/{lookup}.yml")),
-                            );
+                            task.global_inputs
+                                .get_or_insert(vec![])
+                                .push(InputPath::WorkspaceFile(source_path.clone()));
 
                             // Automatically set the platform
                             if task.platform.unwrap_or_default().is_unknown() {
@@ -161,28 +183,36 @@ impl InheritedTasksManager {
                             }
                         }
                     }
+
+                    layers.push(Layer {
+                        partial: managed_config.clone(),
+                        source: Source::file(source_path, true)?,
+                    });
+
+                    partial_config.merge(&context, managed_config)?;
                 }
-
-                config.merge(&context, managed_config)?;
             }
-        }
 
-        let config = config.finalize(&context)?;
+            let config = partial_config.finalize(&context)?;
 
-        config
-            .validate(&context)
-            .map_err(|error| ConfigError::Validator {
-                config: format!(
-                    "inherited tasks {}",
-                    if is_js_platform(platform) {
-                        format!("({}, {}, {})", platform, language, project)
-                    } else {
-                        format!("({}, {})", language, project)
-                    }
-                ),
-                error,
-            })?;
+            config
+                .validate(&context)
+                .map_err(|error| ConfigError::Validator {
+                    config: format!(
+                        "inherited tasks {}",
+                        if is_js_platform(platform) {
+                            format!("({}, {}, {})", platform, language, project)
+                        } else {
+                            format!("({}, {})", language, project)
+                        }
+                    ),
+                    error,
+                })?;
 
-        Ok(InheritedTasksConfig::from_partial(config))
+            Ok(InheritedTasksResult {
+                config: InheritedTasksConfig::from_partial(config),
+                layers,
+            })
+        })
     }
 }

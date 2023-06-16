@@ -332,9 +332,9 @@ impl Project {
             &config.tags,
         )?;
         let file_groups =
-            create_file_groups_from_config(&log_target, source, &config, &global_tasks)?;
+            create_file_groups_from_config(&log_target, source, &config, &global_tasks.config)?;
         let dependencies = create_dependencies_from_config(&log_target, &config);
-        let tasks = create_tasks_from_config(&log_target, id, &config, &global_tasks)?;
+        let tasks = create_tasks_from_config(&log_target, id, &config, &global_tasks.config)?;
 
         Ok(Project {
             alias: None,
@@ -347,7 +347,7 @@ impl Project {
             source: WorkspaceRelativePathBuf::from(source),
             tasks,
             type_of: config.type_of,
-            inherited_config: global_tasks,
+            inherited_config: global_tasks.config,
             config,
         })
     }

@@ -3256,6 +3256,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_project_builder"
+version = "0.1.0"
+dependencies = [
+ "miette",
+ "moon_common",
+ "moon_config",
+ "moon_file_group",
+ "moon_project2",
+ "rustc-hash",
+ "tracing",
+]
+
+[[package]]
 name = "moon_project_graph"
 version = "0.1.0"
 dependencies = [

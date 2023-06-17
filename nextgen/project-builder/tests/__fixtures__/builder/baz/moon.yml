@@ -1,0 +1,6 @@
+language: 'javascript'
+platform: 'node'
+
+tasks:
+  baz:
+    command: baz

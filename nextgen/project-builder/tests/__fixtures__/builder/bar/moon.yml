@@ -1,0 +1,5 @@
+language: 'rust'
+
+tasks:
+  bar:
+    command: bar

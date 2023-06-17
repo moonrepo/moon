@@ -139,6 +139,7 @@ impl InheritedTasksManager {
         lookup
     }
 
+    // TODO make this return an option
     pub fn get_inherited_config(
         &self,
         platform: &PlatformType,

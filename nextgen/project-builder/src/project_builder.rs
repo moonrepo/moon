@@ -61,7 +61,7 @@ impl<'app> ProjectBuilder<'app> {
     pub fn inherit_global_config(
         &mut self,
         tasks_manager: &InheritedTasksManager,
-    ) -> miette::Result<()> {
+    ) -> miette::Result<&mut Self> {
         let config = self
             .local_config
             .as_ref()
@@ -76,10 +76,10 @@ impl<'app> ProjectBuilder<'app> {
             &config.tags,
         )?);
 
-        Ok(())
+        Ok(self)
     }
 
-    pub fn load_local_config<F>(&mut self, detect_language: F) -> miette::Result<()>
+    pub fn load_local_config<F>(&mut self, detect_language: F) -> miette::Result<&mut Self>
     where
         F: FnOnce(&Path) -> LanguageType,
     {
@@ -126,13 +126,14 @@ impl<'app> ProjectBuilder<'app> {
 
         self.local_config = Some(config);
 
-        Ok(())
+        Ok(self)
     }
 
     pub fn build(mut self) -> miette::Result<Project> {
         let mut project = Project::default();
         let config = self.local_config.take().unwrap_or_default();
 
+        // TODO
         project.dependencies = self.build_dependencies()?;
         project.file_groups = self.build_file_groups()?;
         project.id = self.id;
@@ -143,6 +144,7 @@ impl<'app> ProjectBuilder<'app> {
         // project.tasks;
         project.type_of = config.type_of;
         project.config = config;
+        // project.inherited_config;
 
         Ok(project)
     }

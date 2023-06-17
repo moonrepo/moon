@@ -11,3 +11,6 @@ moon_project2 = { path = "../project" }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
 tracing = { workspace = true }
+
+[dev-dependencies]
+starbase_sandbox = { workspace = true }

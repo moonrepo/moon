@@ -1,6 +1,11 @@
 language: 'javascript'
 platform: 'node'
 
+dependsOn:
+  - 'bar'
+  - id: 'foo'
+    scope: 'development'
+
 tasks:
   baz:
     command: baz

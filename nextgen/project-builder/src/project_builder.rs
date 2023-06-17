@@ -10,6 +10,7 @@ use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
 use tracing::debug;
 
+#[derive(Debug)]
 pub struct ProjectBuilder<'app> {
     id: Id,
     source: WorkspaceRelativePathBuf,
@@ -131,7 +132,6 @@ impl<'app> ProjectBuilder<'app> {
 
     pub fn build(mut self) -> miette::Result<Project> {
         let mut project = Project::default();
-        let config = self.local_config.take().unwrap_or_default();
 
         // TODO
         project.dependencies = self.build_dependencies()?;
@@ -142,9 +142,12 @@ impl<'app> ProjectBuilder<'app> {
         project.root = self.project_root;
         project.source = self.source;
         // project.tasks;
+        // project.inherited_config;
+
+        let config = self.local_config.take().unwrap_or_default();
+
         project.type_of = config.type_of;
         project.config = config;
-        // project.inherited_config;
 
         Ok(project)
     }
@@ -170,6 +173,13 @@ impl<'app> ProjectBuilder<'app> {
 
                 deps.insert(dep_config.id.clone(), dep_config);
             }
+
+            debug!(
+                id = ?self.id,
+                deps = ?deps.keys(),
+                "Depends on {} projects",
+                deps.len(),
+            );
         }
 
         Ok(deps)

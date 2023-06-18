@@ -1,8 +1,7 @@
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
 use moon_config::{
-    DependencyConfig, DependencyScope, InheritedTasksConfig, InheritedTasksManager, LanguageType,
-    PlatformType,
+    DependencyConfig, DependencyScope, InheritedTasksManager, LanguageType, PlatformType,
 };
 use moon_file_group::FileGroup;
 use moon_project2::Project;
@@ -11,38 +10,9 @@ use rustc_hash::FxHashMap;
 use starbase_sandbox::create_sandbox;
 use std::path::Path;
 
-fn load_tasks_into_manager(workspace_root: &Path) -> InheritedTasksManager {
-    let mut manager = InheritedTasksManager::default();
-    let tasks_path = workspace_root.join("global/tasks.yml");
-
-    manager.add_config(
-        &tasks_path,
-        InheritedTasksConfig::load_partial(workspace_root, &tasks_path).unwrap(),
-    );
-
-    let tasks_dir = tasks_path.parent().unwrap().join("tasks");
-
-    if !tasks_dir.exists() {
-        return manager;
-    }
-
-    for file in std::fs::read_dir(tasks_dir).unwrap() {
-        let file = file.unwrap();
-
-        if file.file_type().unwrap().is_file() {
-            manager.add_config(
-                &file.path(),
-                InheritedTasksConfig::load_partial(workspace_root, &file.path()).unwrap(),
-            );
-        }
-    }
-
-    manager
-}
-
 fn build_project(id: &str, root: &Path) -> Project {
     let mut builder = ProjectBuilder::new(id.into(), id.into(), root).unwrap();
-    let manager = load_tasks_into_manager(root);
+    let manager = InheritedTasksManager::load(root, root.join("global")).unwrap();
 
     // Use JavaScript so we inherit the correct tasks
     builder

@@ -8,6 +8,7 @@ use moon_target::Target;
 use once_map::OnceMap;
 use rustc_hash::FxHashMap;
 use schematic::{merge, validate, Config, ConfigError, ConfigLoader, Layer, PartialConfig, Source};
+use std::fs;
 use std::hash::Hash;
 use std::{collections::BTreeMap, path::Path};
 
@@ -84,6 +85,7 @@ fn is_js_platform(platform: &PlatformType) -> bool {
 pub struct InheritedTasksResult {
     pub config: InheritedTasksConfig,
     pub layers: Vec<Layer<InheritedTasksConfig>>,
+    pub order: Vec<String>,
 }
 
 #[derive(Debug, Default)]
@@ -93,12 +95,63 @@ pub struct InheritedTasksManager {
 }
 
 impl InheritedTasksManager {
+    pub fn load<T: AsRef<Path>, D: AsRef<Path>>(
+        workspace_root: T,
+        moon_dir: D,
+    ) -> Result<InheritedTasksManager, ConfigError> {
+        let mut manager = InheritedTasksManager::default();
+        let workspace_root = workspace_root.as_ref();
+        let moon_dir = moon_dir.as_ref();
+
+        // tasks.yml
+        let tasks_file = moon_dir.join(consts::CONFIG_TASKS_FILENAME);
+
+        if tasks_file.exists() {
+            manager.add_config(
+                &tasks_file,
+                InheritedTasksConfig::load_partial(workspace_root, &tasks_file)?,
+            );
+        }
+
+        // tasks/*.yml
+        let tasks_dir = moon_dir.join("tasks");
+
+        if !tasks_dir.exists() {
+            return Ok(manager);
+        }
+
+        for file in fs::read_dir(tasks_dir)?.flatten() {
+            if file.file_type()?.is_file() {
+                let path = file.path();
+
+                manager.add_config(
+                    &path,
+                    InheritedTasksConfig::load_partial(workspace_root, &path)?,
+                );
+            }
+        }
+
+        Ok(manager)
+    }
+
+    pub fn load_from<T: AsRef<Path>>(
+        workspace_root: T,
+    ) -> Result<InheritedTasksManager, ConfigError> {
+        let workspace_root = workspace_root.as_ref();
+
+        Self::load(workspace_root, workspace_root.join(consts::CONFIG_DIRNAME))
+    }
+
     pub fn add_config(&mut self, path: &Path, config: PartialInheritedTasksConfig) {
         let name = path
             .file_name()
             .unwrap_or_default()
             .to_str()
             .unwrap_or_default();
+
+        if !name.ends_with(".yml") {
+            return;
+        }
 
         let name = if name == consts::CONFIG_TASKS_FILENAME {
             "*"
@@ -159,8 +212,8 @@ impl InheritedTasksManager {
             #[allow(clippy::let_unit_value)]
             let context = ();
 
-            for lookup in lookup_order {
-                if let Some(managed_config) = self.configs.get(&lookup) {
+            for lookup in &lookup_order {
+                if let Some(managed_config) = self.configs.get(lookup) {
                     let mut managed_config = managed_config.clone();
 
                     let source_path = if lookup == "*" {
@@ -220,6 +273,7 @@ impl InheritedTasksManager {
             Ok(InheritedTasksResult {
                 config: InheritedTasksConfig::from_partial(config),
                 layers,
+                order: lookup_order,
             })
         })
     }

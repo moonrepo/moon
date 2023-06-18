@@ -63,19 +63,25 @@ impl<'app> ProjectBuilder<'app> {
         &mut self,
         tasks_manager: &InheritedTasksManager,
     ) -> miette::Result<&mut Self> {
-        let config = self
+        let local_config = self
             .local_config
             .as_ref()
             .expect("Local config must be loaded before global config!");
 
-        debug!(id = ?self.id, "Inheriting global file groups and tasks");
-
-        self.global_config = Some(tasks_manager.get_inherited_config(
+        let global_config = tasks_manager.get_inherited_config(
             &self.platform,
             &self.language,
-            &config.type_of,
-            &config.tags,
-        )?);
+            &local_config.type_of,
+            &local_config.tags,
+        )?;
+
+        debug!(
+            id = ?self.id,
+            lookup = ?global_config.order,
+            "Inheriting global file groups and tasks",
+        );
+
+        self.global_config = Some(global_config);
 
         Ok(self)
     }
@@ -131,16 +137,18 @@ impl<'app> ProjectBuilder<'app> {
     }
 
     pub fn build(mut self) -> miette::Result<Project> {
-        let mut project = Project::default();
+        let mut project = Project {
+            dependencies: self.build_dependencies()?,
+            file_groups: self.build_file_groups()?,
+            id: self.id,
+            language: self.language,
+            platform: self.platform,
+            root: self.project_root,
+            source: self.source,
+            ..Project::default()
+        };
 
         // TODO
-        project.dependencies = self.build_dependencies()?;
-        project.file_groups = self.build_file_groups()?;
-        project.id = self.id;
-        project.language = self.language;
-        project.platform = self.platform;
-        project.root = self.project_root;
-        project.source = self.source;
         // project.tasks;
         // project.inherited_config;
 

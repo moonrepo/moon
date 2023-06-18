@@ -1,7 +1,6 @@
 mod utils;
 
 use httpmock::prelude::*;
-use moon_common::consts::CONFIG_TASKS_FILENAME;
 use moon_common::Id;
 use moon_config::{
     InheritedTasksConfig, InheritedTasksManager, InputPath, LanguageType, PlatformType,
@@ -11,7 +10,6 @@ use moon_target::Target;
 use rustc_hash::FxHashMap;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
 use std::collections::BTreeMap;
-use std::path::{Path, PathBuf};
 use utils::*;
 
 const FILENAME: &str = ".moon/tasks.yml";
@@ -399,37 +397,6 @@ implicitInputs:
 mod task_manager {
     use super::*;
 
-    fn load_tasks_into_manager(
-        workspace_root: &Path,
-        tasks_path: PathBuf,
-    ) -> InheritedTasksManager {
-        let mut manager = InheritedTasksManager::default();
-
-        manager.add_config(
-            &tasks_path,
-            InheritedTasksConfig::load_partial(workspace_root, &tasks_path).unwrap(),
-        );
-
-        let tasks_dir = tasks_path.parent().unwrap().join("tasks");
-
-        if !tasks_dir.exists() {
-            return manager;
-        }
-
-        for file in std::fs::read_dir(tasks_dir).unwrap() {
-            let file = file.unwrap();
-
-            if file.file_type().unwrap().is_file() {
-                manager.add_config(
-                    &file.path(),
-                    InheritedTasksConfig::load_partial(workspace_root, &file.path()).unwrap(),
-                );
-            }
-        }
-
-        manager
-    }
-
     fn stub_task(command: &str, platform: PlatformType) -> TaskConfig {
         let mut global_inputs = vec![];
 
@@ -450,8 +417,7 @@ mod task_manager {
     #[test]
     fn loads_all_task_configs_into_manager() {
         let sandbox = create_sandbox("inheritance/files");
-        let manager =
-            load_tasks_into_manager(sandbox.path(), sandbox.path().join(CONFIG_TASKS_FILENAME));
+        let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
 
         let mut keys = manager.configs.keys().collect::<Vec<_>>();
         keys.sort();
@@ -596,8 +562,7 @@ mod task_manager {
         #[test]
         fn creates_js_config() {
             let sandbox = create_sandbox("inheritance/files");
-            let manager =
-                load_tasks_into_manager(sandbox.path(), sandbox.path().join(CONFIG_TASKS_FILENAME));
+            let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
                 .get_inherited_config(
@@ -642,8 +607,7 @@ mod task_manager {
         #[test]
         fn creates_ts_config() {
             let sandbox = create_sandbox("inheritance/files");
-            let manager =
-                load_tasks_into_manager(sandbox.path(), sandbox.path().join(CONFIG_TASKS_FILENAME));
+            let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
                 .get_inherited_config(
@@ -683,8 +647,7 @@ mod task_manager {
         #[test]
         fn creates_rust_config() {
             let sandbox = create_sandbox("inheritance/files");
-            let manager =
-                load_tasks_into_manager(sandbox.path(), sandbox.path().join(CONFIG_TASKS_FILENAME));
+            let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
                 .get_inherited_config(
@@ -719,8 +682,7 @@ mod task_manager {
         #[test]
         fn creates_config_with_tags() {
             let sandbox = create_sandbox("inheritance/files");
-            let manager =
-                load_tasks_into_manager(sandbox.path(), sandbox.path().join(CONFIG_TASKS_FILENAME));
+            let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
                 .get_inherited_config(
@@ -766,8 +728,7 @@ mod task_manager {
         #[test]
         fn creates_other_config() {
             let sandbox = create_sandbox("inheritance/files");
-            let manager =
-                load_tasks_into_manager(sandbox.path(), sandbox.path().join(CONFIG_TASKS_FILENAME));
+            let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
 
             let config = manager
                 .get_inherited_config(
@@ -806,8 +767,7 @@ mod task_manager {
         #[test]
         fn entirely_overrides_task_of_same_name() {
             let sandbox = create_sandbox("inheritance/override");
-            let manager =
-                load_tasks_into_manager(sandbox.path(), sandbox.path().join(CONFIG_TASKS_FILENAME));
+            let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
 
             let mut task = stub_task("node-library", PlatformType::Node);
             task.inputs = Some(vec![InputPath::ProjectFile("c".into())]);
@@ -830,8 +790,7 @@ mod task_manager {
         #[test]
         fn entirely_overrides_task_of_same_name_for_other_lang() {
             let sandbox = create_sandbox("inheritance/override");
-            let manager =
-                load_tasks_into_manager(sandbox.path(), sandbox.path().join(CONFIG_TASKS_FILENAME));
+            let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
 
             let mut task = stub_task("dotnet-application", PlatformType::System);
             task.inputs = Some(vec![InputPath::ProjectFile("c".into())]);

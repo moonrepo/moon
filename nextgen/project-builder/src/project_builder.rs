@@ -6,7 +6,10 @@ use moon_config::{
 };
 use moon_file_group::FileGroup;
 use moon_project2::{Project, ProjectError};
+use moon_task2::Task;
+use moon_task_builder::TasksBuilder;
 use rustc_hash::FxHashMap;
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use tracing::debug;
 
@@ -140,6 +143,7 @@ impl<'app> ProjectBuilder<'app> {
         let mut project = Project {
             dependencies: self.build_dependencies()?,
             file_groups: self.build_file_groups()?,
+            tasks: self.build_tasks()?,
             id: self.id,
             language: self.language,
             platform: self.platform,
@@ -241,5 +245,24 @@ impl<'app> ProjectBuilder<'app> {
         }
 
         Ok(file_groups)
+    }
+
+    fn build_tasks(&self) -> miette::Result<BTreeMap<Id, Task>> {
+        let mut tasks = BTreeMap::default();
+
+        debug!(id = ?self.id, "Building tasks");
+
+        let mut tasks_builder = TasksBuilder::new(&self.project_root, self.workspace_root);
+
+        if let Some(global_config) = &self.global_config {
+            tasks_builder.inherit_global_tasks(
+                &global_config.config,
+                self.local_config
+                    .as_ref()
+                    .map(|cfg| &cfg.workspace.inherited_tasks),
+            );
+        }
+
+        Ok(tasks)
     }
 }

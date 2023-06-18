@@ -8,6 +8,8 @@ moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_file_group = { path = "../file-group" }
 moon_project2 = { path = "../project" }
+moon_task2 = { path = "../task" }
+moon_task_builder = { path = "../task-builder" }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
 tracing = { workspace = true }

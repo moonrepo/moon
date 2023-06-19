@@ -52,6 +52,10 @@ fn setup_caching(mode: &CacheMode) {
     if env::var("MOON_CACHE").is_err() {
         env::set_var("MOON_CACHE", mode.to_string());
     }
+
+    if matches!(mode, CacheMode::Off | CacheMode::Write) {
+        env::set_var("PROTO_CACHE", "off");
+    }
 }
 
 fn detect_running_version() {

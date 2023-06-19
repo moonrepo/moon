@@ -190,7 +190,7 @@ impl Vcs for Git {
         }
 
         self.run_command(
-            self.create_command(vec!["rev-parse --abbrev-ref HEAD"]),
+            self.create_command(vec!["rev-parse", "--abbrev-ref", "HEAD"]),
             true,
         )
         .await

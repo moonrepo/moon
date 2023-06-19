@@ -3508,6 +3508,7 @@ dependencies = [
  "moon_args",
  "moon_common",
  "moon_config",
+ "moon_target",
  "moon_task2",
  "rustc-hash",
  "thiserror",

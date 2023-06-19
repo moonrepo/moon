@@ -6,6 +6,7 @@ use moon_config::{
     InheritedTasksConfig, InputPath, ProjectConfig, ProjectWorkspaceInheritedTasksConfig,
     TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskOutputStyle, TaskType,
 };
+use moon_target::Target;
 use moon_task2::{Task, TaskOptions};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
@@ -17,6 +18,11 @@ pub struct TasksBuilder<'proj> {
     project_root: &'proj Path,
     workspace_root: &'proj Path,
 
+    // Global settings for tasks to inherit
+    implicit_deps: Vec<&'proj Target>,
+    implicit_inputs: Vec<&'proj InputPath>,
+
+    // Tasks to merge and build
     task_ids: FxHashSet<&'proj Id>,
     global_tasks: FxHashMap<&'proj Id, &'proj TaskConfig>,
     local_tasks: FxHashMap<&'proj Id, &'proj TaskConfig>,
@@ -27,6 +33,8 @@ impl<'proj> TasksBuilder<'proj> {
         Self {
             project_root,
             workspace_root,
+            implicit_deps: vec![],
+            implicit_inputs: vec![],
             task_ids: FxHashSet::default(),
             global_tasks: FxHashMap::default(),
             local_tasks: FxHashMap::default(),
@@ -103,6 +111,9 @@ impl<'proj> TasksBuilder<'proj> {
             self.task_ids.insert(task_key);
         }
 
+        self.implicit_deps.extend(&global_config.implicit_deps);
+        self.implicit_inputs.extend(&global_config.implicit_inputs);
+
         self
     }
 
@@ -141,7 +152,7 @@ impl<'proj> TasksBuilder<'proj> {
         // Determine command and args before building options and the task,
         // as we need to figure out if we're running locally or not.
         let mut is_local = false;
-        let mut args = vec![];
+        let mut args_sets = vec![];
 
         for config in &configs {
             let (command, base_args) = self.get_command_and_args(config)?;
@@ -151,7 +162,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             // Set later after we have a merge strategy
-            args.extend(base_args);
+            args_sets.push(base_args);
 
             if let Some(local) = config.local {
                 is_local = local;
@@ -169,8 +180,22 @@ impl<'proj> TasksBuilder<'proj> {
         let mut configured_inputs = 0;
         let mut has_configured_inputs = false;
 
-        if !args.is_empty() {
-            task.args = self.merge_vec(task.args, args, task.options.merge_args);
+        task.deps = self
+            .implicit_deps
+            .iter()
+            .map(|d| (*d).to_owned())
+            .collect::<Vec<Target>>();
+
+        task.inputs = self
+            .implicit_inputs
+            .iter()
+            .map(|d| (*d).to_owned())
+            .collect::<Vec<InputPath>>();
+
+        for args in args_sets {
+            if !args.is_empty() {
+                task.args = self.merge_vec(task.args, args, task.options.merge_args);
+            }
         }
 
         for config in configs {

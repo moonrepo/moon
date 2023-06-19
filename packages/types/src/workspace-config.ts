@@ -55,9 +55,11 @@ export type VcsProvider = 'bitbucket' | 'github' | 'gitlab' | 'other';
 
 export interface PartialVcsConfig {
 	defaultBranch?: string | null;
+	hooks?: Record<string, string[]> | null;
 	manager?: VcsManager | null;
 	provider?: VcsProvider | null;
 	remoteCandidates?: string[] | null;
+	syncHooksOnRun?: boolean | null;
 }
 
 export interface PartialWorkspaceConfig {
@@ -110,9 +112,11 @@ export interface RunnerConfig {
 
 export interface VcsConfig {
 	defaultBranch: string;
+	hooks: Record<string, string[]>;
 	manager: VcsManager;
 	provider: VcsProvider;
 	remoteCandidates: string[];
+	syncHooksOnRun: boolean;
 }
 
 export interface WorkspaceConfig {

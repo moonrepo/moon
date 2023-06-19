@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Updated `CODEOWNERS` to take `.editorconfig` into account when generating.
+- Fixed an issue where `git` branch commands would fail on <= v2.22.
+
 ## 1.8.1
 
 #### 🐞 Fixes

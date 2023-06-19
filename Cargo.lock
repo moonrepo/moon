@@ -4634,9 +4634,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.96"
+version = "1.0.97"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "057d394a50403bcac12672b2b18fb387ab6d289d957dab67dd201875391e52f1"
+checksum = "bdf3bf93142acad5821c99197022e170842cdbc1c30482b98750c688c640842a"
 dependencies = [
  "indexmap",
  "itoa",
@@ -4895,9 +4895,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_sandbox"
-version = "0.1.3"
+version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2cdea800d59826627268386762973162e35e38b8db6dd8b738bf505f0ec71e30"
+checksum = "e830673d56b507194471b834a0d5823db747e72f6ae4b099607be5891aff0fbc"
 dependencies = [
  "assert_cmd",
  "assert_fs",
@@ -4911,9 +4911,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_styles"
-version = "0.1.9"
+version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e66e1f18071d2faae1009fc03ef94c932e1a0e4e126195609dada0779a67b04a"
+checksum = "7e90aad208a2a27137042da4039efb62c7ecd5c2ee78b9c82885e16ce828e984"
 dependencies = [
  "dirs",
  "miette",
@@ -4924,9 +4924,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.2.11"
+version = "0.2.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19f9e355df7318394c0d8a17e7934b69bbf8fea964802148afb017dd8a6d3bdc"
+checksum = "8b89a6b84dee72cc983a70b8ceb425ef9d4045f421c8d098859005ad967f2546"
 dependencies = [
  "dirs",
  "ec4rs",

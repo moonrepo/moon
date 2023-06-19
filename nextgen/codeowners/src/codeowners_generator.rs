@@ -145,9 +145,13 @@ impl CodeownersGenerator {
     }
 
     pub fn generate(mut self) -> Result<(), FsError> {
-        self.write("")?;
-
         debug!(file = %self.file_path.display(), "Generating and writing CODEOWNERS file");
+
+        let editor_config = fs::get_editor_config_props(&self.file_path);
+
+        if editor_config.eof == "\n" {
+            self.write("")?;
+        }
 
         self.file.flush().map_err(|error| FsError::Create {
             path: self.file_path.to_path_buf(),

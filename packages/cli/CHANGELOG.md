@@ -6,6 +6,7 @@
 
 - Updated `CODEOWNERS` to take `.editorconfig` into account when generating.
 - Fixed an issue where `git` branch commands would fail on <= v2.22.
+- Fixed an issue where disabling moon's cache would not disable proto's cache.
 
 ## 1.8.1
 
@@ -17,7 +18,7 @@
 
 #### ⚙️ Internal
 
-- Updated to proto v0.10.
+- Updated to proto v0.10.5.
 
 ## 1.8.0
 

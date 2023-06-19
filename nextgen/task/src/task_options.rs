@@ -46,7 +46,7 @@ impl Default for TaskOptions {
             merge_deps: TaskMergeStrategy::Append,
             merge_env: TaskMergeStrategy::Append,
             merge_inputs: TaskMergeStrategy::Append,
-            merge_outputs: TaskMergeStrategy::Replace,
+            merge_outputs: TaskMergeStrategy::Append,
             output_style: None,
             persistent: false,
             retry_count: 0,

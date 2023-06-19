@@ -101,7 +101,7 @@ cacheable!(
         // [...] = Specific inputs
         pub inputs: Option<Vec<InputPath>>,
 
-        pub local: bool,
+        pub local: Option<bool>,
 
         pub outputs: Option<Vec<OutputPath>>,
 

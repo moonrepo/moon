@@ -10,4 +10,6 @@ moon_target = { path = "../target" }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
+starbase_utils = { workspace = true }
 thiserror = { workspace = true }
+tracing = { workspace = true }

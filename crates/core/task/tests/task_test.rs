@@ -53,7 +53,7 @@ mod from_config {
         let task = Task::from_config(
             Target::new("foo", "test").unwrap(),
             &TaskConfig {
-                local: true,
+                local: Some(true),
                 ..TaskConfig::default()
             },
         )
@@ -99,7 +99,7 @@ mod from_config {
         let task = Task::from_config(
             Target::new("foo", "test").unwrap(),
             &TaskConfig {
-                local: true,
+                local: Some(true),
                 options: TaskOptionsConfig {
                     output_style: Some(TaskOutputStyle::Buffer),
                     ..TaskOptionsConfig::default()
@@ -126,7 +126,7 @@ mod from_config {
         let task = Task::from_config(
             Target::new("foo", "test").unwrap(),
             &TaskConfig {
-                local: true,
+                local: Some(true),
                 options: TaskOptionsConfig {
                     persistent: Some(false),
                     ..TaskOptionsConfig::default()

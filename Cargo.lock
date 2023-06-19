@@ -3495,7 +3495,9 @@ dependencies = [
  "moon_target",
  "rustc-hash",
  "serde",
+ "starbase_utils",
  "thiserror",
+ "tracing",
 ]
 
 [[package]]
@@ -3503,8 +3505,10 @@ name = "moon_task_builder"
 version = "0.1.0"
 dependencies = [
  "miette",
+ "moon_args",
  "moon_common",
  "moon_config",
+ "moon_task2",
  "rustc-hash",
  "thiserror",
  "tracing",

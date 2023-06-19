@@ -248,8 +248,6 @@ impl<'app> ProjectBuilder<'app> {
     }
 
     fn build_tasks(&self) -> miette::Result<BTreeMap<Id, Task>> {
-        let mut tasks = BTreeMap::default();
-
         debug!(id = ?self.id, "Building tasks");
 
         let mut tasks_builder = TasksBuilder::new(&self.project_root, self.workspace_root);
@@ -263,6 +261,10 @@ impl<'app> ProjectBuilder<'app> {
             );
         }
 
-        Ok(tasks)
+        if let Some(local_config) = &self.local_config {
+            tasks_builder.load_local_tasks(local_config);
+        }
+
+        tasks_builder.build()
     }
 }

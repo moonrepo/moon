@@ -53,7 +53,7 @@ fn setup_caching(mode: &CacheMode) {
         env::set_var("MOON_CACHE", mode.to_string());
     }
 
-    if matches!(mode, CacheMode::Off) {
+    if matches!(mode, CacheMode::Off | CacheMode::Write) {
         env::set_var("PROTO_CACHE", "off");
     }
 }

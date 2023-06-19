@@ -36,7 +36,7 @@ impl<'app> ProjectBuilder<'app> {
         workspace_root: &'app Path,
     ) -> Result<Self, ProjectError> {
         debug!(
-            id = ?id,
+            project_id = ?id,
             source = ?source,
             "Building project {} from source",
             color::id(&id),
@@ -79,7 +79,7 @@ impl<'app> ProjectBuilder<'app> {
         )?;
 
         debug!(
-            id = ?self.id,
+            project_id = ?self.id,
             lookup = ?global_config.order,
             "Inheriting global file groups and tasks",
         );
@@ -97,7 +97,7 @@ impl<'app> ProjectBuilder<'app> {
         let config_path = config_name.to_path(self.workspace_root);
 
         debug!(
-            id = ?self.id,
+            project_id = ?self.id,
             file = ?config_path.display(),
             "Attempting to load {} (optional)",
             color::file(&config_name)
@@ -110,7 +110,7 @@ impl<'app> ProjectBuilder<'app> {
             let language = detect_language(&self.project_root);
 
             debug!(
-                id = ?self.id,
+                project_id = ?self.id,
                 language = ?language,
                 "Unknown project language, detecting from environment",
             );
@@ -125,7 +125,7 @@ impl<'app> ProjectBuilder<'app> {
             let platform: PlatformType = self.language.clone().into();
 
             debug!(
-                id = ?self.id,
+                project_id = ?self.id,
                 language = ?self.language,
                 platform = ?self.platform,
                 "Unknown tasks platform, inferring from language",
@@ -152,9 +152,7 @@ impl<'app> ProjectBuilder<'app> {
             ..Project::default()
         };
 
-        // TODO
-        // project.tasks;
-        // project.inherited_config;
+        project.inherited_sources = self.global_config.take();
 
         let config = self.local_config.take().unwrap_or_default();
 
@@ -167,7 +165,7 @@ impl<'app> ProjectBuilder<'app> {
     fn build_dependencies(&self) -> miette::Result<FxHashMap<Id, DependencyConfig>> {
         let mut deps = FxHashMap::default();
 
-        debug!(id = ?self.id, "Building project dependencies");
+        debug!(project_id = ?self.id, "Building project dependencies");
 
         if let Some(local) = &self.local_config {
             for dep_on in &local.depends_on {
@@ -187,7 +185,7 @@ impl<'app> ProjectBuilder<'app> {
             }
 
             debug!(
-                id = ?self.id,
+                project_id = ?self.id,
                 deps = ?deps.keys(),
                 "Depends on {} projects",
                 deps.len(),
@@ -201,12 +199,12 @@ impl<'app> ProjectBuilder<'app> {
         let mut file_inputs = FxHashMap::default();
         let project_source = &self.source;
 
-        debug!(id = ?self.id, "Building file groups");
+        debug!(project_id = ?self.id, "Building file groups");
 
         // Inherit global first
         if let Some(global) = &self.global_config {
             debug!(
-                id = ?self.id,
+                project_id = ?self.id,
                 groups = ?global.config.file_groups.keys(),
                 "Inheriting global file groups",
             );
@@ -219,7 +217,7 @@ impl<'app> ProjectBuilder<'app> {
         // Override with local second
         if let Some(local) = &self.local_config {
             debug!(
-                id = ?self.id,
+                project_id = ?self.id,
                 groups = ?local.file_groups.keys(),
                 "Using local file groups",
             );
@@ -248,9 +246,9 @@ impl<'app> ProjectBuilder<'app> {
     }
 
     fn build_tasks(&self) -> miette::Result<BTreeMap<Id, Task>> {
-        debug!(id = ?self.id, "Building tasks");
+        debug!(project_id = ?self.id, "Building tasks");
 
-        let mut tasks_builder = TasksBuilder::new(&self.project_root, self.workspace_root);
+        let mut tasks_builder = TasksBuilder::new(&self.id);
 
         if let Some(global_config) = &self.global_config {
             tasks_builder.inherit_global_tasks(

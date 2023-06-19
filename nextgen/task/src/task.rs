@@ -17,7 +17,7 @@ cacheable!(
         // Inputs were configured explicitly as `[]`
         pub empty_inputs: bool,
 
-        // Was configured as local running task
+        // Was configured as a local running task
         pub local: bool,
     }
 );

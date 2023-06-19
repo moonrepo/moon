@@ -557,7 +557,6 @@ mod task_manager {
 
     mod config_order {
         use super::*;
-        use schematic::Source;
 
         #[test]
         fn creates_js_config() {
@@ -590,16 +589,12 @@ mod task_manager {
             );
 
             assert_eq!(
-                config
-                    .layers
-                    .into_iter()
-                    .map(|i| i.source)
-                    .collect::<Vec<_>>(),
+                config.layers.keys().collect::<Vec<_>>(),
                 vec![
-                    Source::file(".moon/tasks.yml", true).unwrap(),
-                    Source::file(".moon/tasks/node.yml", true).unwrap(),
-                    Source::file(".moon/tasks/javascript.yml", true).unwrap(),
-                    Source::file(".moon/tasks/node-application.yml", true).unwrap(),
+                    ".moon/tasks.yml",
+                    ".moon/tasks/javascript.yml",
+                    ".moon/tasks/node-application.yml",
+                    ".moon/tasks/node.yml",
                 ]
             );
         }
@@ -631,15 +626,11 @@ mod task_manager {
             );
 
             assert_eq!(
-                config
-                    .layers
-                    .into_iter()
-                    .map(|i| i.source)
-                    .collect::<Vec<_>>(),
+                config.layers.keys().collect::<Vec<_>>(),
                 vec![
-                    Source::file(".moon/tasks.yml", true).unwrap(),
-                    Source::file(".moon/tasks/node.yml", true).unwrap(),
-                    Source::file(".moon/tasks/typescript.yml", true).unwrap(),
+                    ".moon/tasks.yml",
+                    ".moon/tasks/node.yml",
+                    ".moon/tasks/typescript.yml",
                 ]
             );
         }
@@ -667,15 +658,8 @@ mod task_manager {
             );
 
             assert_eq!(
-                config
-                    .layers
-                    .into_iter()
-                    .map(|i| i.source)
-                    .collect::<Vec<_>>(),
-                vec![
-                    Source::file(".moon/tasks.yml", true).unwrap(),
-                    Source::file(".moon/tasks/rust.yml", true).unwrap(),
-                ]
+                config.layers.keys().collect::<Vec<_>>(),
+                vec![".moon/tasks.yml", ".moon/tasks/rust.yml",]
             );
         }
 
@@ -710,17 +694,13 @@ mod task_manager {
             );
 
             assert_eq!(
-                config
-                    .layers
-                    .into_iter()
-                    .map(|i| i.source)
-                    .collect::<Vec<_>>(),
+                config.layers.keys().collect::<Vec<_>>(),
                 vec![
-                    Source::file(".moon/tasks.yml", true).unwrap(),
-                    Source::file(".moon/tasks/node.yml", true).unwrap(),
-                    Source::file(".moon/tasks/typescript.yml", true).unwrap(),
-                    Source::file(".moon/tasks/tag-normal.yml", true).unwrap(),
-                    Source::file(".moon/tasks/tag-kebab-case.yml", true).unwrap(),
+                    ".moon/tasks.yml",
+                    ".moon/tasks/node.yml",
+                    ".moon/tasks/tag-kebab-case.yml",
+                    ".moon/tasks/tag-normal.yml",
+                    ".moon/tasks/typescript.yml",
                 ]
             );
         }
@@ -748,15 +728,8 @@ mod task_manager {
             );
 
             assert_eq!(
-                config
-                    .layers
-                    .into_iter()
-                    .map(|i| i.source)
-                    .collect::<Vec<_>>(),
-                vec![
-                    Source::file(".moon/tasks.yml", true).unwrap(),
-                    Source::file(".moon/tasks/kotlin.yml", true).unwrap(),
-                ]
+                config.layers.keys().collect::<Vec<_>>(),
+                vec![".moon/tasks.yml", ".moon/tasks/kotlin.yml",]
             );
         }
     }

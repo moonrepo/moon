@@ -1,6 +1,8 @@
 use crate::project_error::ProjectError;
 use moon_common::{cacheable, path::WorkspaceRelativePathBuf, Id};
-use moon_config::{DependencyConfig, LanguageType, PlatformType, ProjectConfig, ProjectType};
+use moon_config::{
+    DependencyConfig, InheritedTasksResult, LanguageType, PlatformType, ProjectConfig, ProjectType,
+};
 use moon_file_group::FileGroup;
 use moon_query::{Condition, Criteria, Field, LogicalOperator, QueryError, Queryable};
 use moon_task2::Task;
@@ -18,9 +20,8 @@ cacheable!(
         /// Project configuration loaded from "moon.yml", if it exists.
         pub config: ProjectConfig,
 
-        // TODO fix schematic
         /// Task configuration that was inherited from ".moon/tasks".
-        // pub inherited_config: InheritedTasksResult,
+        pub inherited_sources: Option<InheritedTasksResult>,
 
         /// List of other projects this project depends on.
         pub dependencies: FxHashMap<Id, DependencyConfig>,

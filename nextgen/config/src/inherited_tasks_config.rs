@@ -7,7 +7,7 @@ use moon_common::{consts, Id};
 use moon_target::Target;
 use once_map::OnceMap;
 use rustc_hash::FxHashMap;
-use schematic::{merge, validate, Config, ConfigError, ConfigLoader, Layer, PartialConfig, Source};
+use schematic::{merge, validate, Config, ConfigError, ConfigLoader, PartialConfig};
 use std::fs;
 use std::hash::Hash;
 use std::{collections::BTreeMap, path::Path};
@@ -81,12 +81,14 @@ fn is_js_platform(platform: &PlatformType) -> bool {
     matches!(platform, PlatformType::Deno | PlatformType::Node)
 }
 
-#[derive(Clone, Debug, Default)]
-pub struct InheritedTasksResult {
-    pub config: InheritedTasksConfig,
-    pub layers: Vec<Layer<InheritedTasksConfig>>,
-    pub order: Vec<String>,
-}
+cacheable!(
+    #[derive(Clone, Debug, Default)]
+    pub struct InheritedTasksResult {
+        pub config: InheritedTasksConfig,
+        pub layers: BTreeMap<String, PartialInheritedTasksConfig>,
+        pub order: Vec<String>,
+    }
+);
 
 #[derive(Debug, Default)]
 pub struct InheritedTasksManager {
@@ -207,7 +209,7 @@ impl InheritedTasksManager {
         // and since this clones constantly, we can avoid a lot of allocations and overhead.
         self.cache.try_insert_cloned(lookup_key, |_| {
             let mut partial_config = PartialInheritedTasksConfig::default();
-            let mut layers = vec![];
+            let mut layers = BTreeMap::default();
 
             #[allow(clippy::let_unit_value)]
             let context = ();
@@ -245,11 +247,7 @@ impl InheritedTasksManager {
                         }
                     }
 
-                    layers.push(Layer {
-                        partial: managed_config.clone(),
-                        source: Source::file(source_path, true)?,
-                    });
-
+                    layers.insert(source_path, managed_config.clone());
                     partial_config.merge(&context, managed_config)?;
                 }
             }

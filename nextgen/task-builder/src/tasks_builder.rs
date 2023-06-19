@@ -11,12 +11,10 @@ use moon_task2::{Task, TaskOptions};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::hash::Hash;
-use std::path::Path;
 use tracing::debug;
 
 pub struct TasksBuilder<'proj> {
-    project_root: &'proj Path,
-    workspace_root: &'proj Path,
+    project_id: &'proj Id,
 
     // Global settings for tasks to inherit
     implicit_deps: Vec<&'proj Target>,
@@ -29,10 +27,9 @@ pub struct TasksBuilder<'proj> {
 }
 
 impl<'proj> TasksBuilder<'proj> {
-    pub fn new(project_root: &'proj Path, workspace_root: &'proj Path) -> Self {
+    pub fn new(project_id: &'proj Id) -> Self {
         Self {
-            project_root,
-            workspace_root,
+            project_id,
             implicit_deps: vec![],
             implicit_inputs: vec![],
             task_ids: FxHashSet::default(),
@@ -61,7 +58,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
         }
 
-        debug!("Filtering global tasks");
+        debug!(project_id = ?self.project_id, "Filtering global tasks");
 
         for (task_id, task_config) in &global_config.tasks {
             // None = Include all
@@ -69,11 +66,15 @@ impl<'proj> TasksBuilder<'proj> {
             // ["a"] = Include "a"
             if !include_all {
                 if include_set.is_empty() {
-                    debug!("Not inheriting global tasks, empty include filter");
+                    debug!(
+                        project_id = ?self.project_id,
+                        "Not inheriting global tasks, empty include filter",
+                    );
 
                     break;
                 } else if !include_set.contains(task_id) {
                     debug!(
+                        project_id = ?self.project_id,
                         "Not inheriting global task {}, not included",
                         color::id(task_id)
                     );
@@ -84,8 +85,9 @@ impl<'proj> TasksBuilder<'proj> {
 
             // None, [] = Exclude none
             // ["a"] = Exclude "a"
-            if !exclude.is_empty() && exclude.contains(&&task_id) {
+            if !exclude.is_empty() && exclude.contains(&task_id) {
                 debug!(
+                    project_id = ?self.project_id,
                     "Not inheriting global task {}, excluded",
                     color::id(task_id)
                 );
@@ -95,6 +97,7 @@ impl<'proj> TasksBuilder<'proj> {
 
             let task_key = if let Some(renamed_task_id) = rename.get(task_id) {
                 debug!(
+                    project_id = ?self.project_id,
                     "Inheriting global task {} and renaming to {}",
                     color::id(task_id),
                     color::id(renamed_task_id)
@@ -102,7 +105,11 @@ impl<'proj> TasksBuilder<'proj> {
 
                 renamed_task_id
             } else {
-                debug!("Inheriting global task {}", color::id(task_id));
+                debug!(
+                    project_id = ?self.project_id,
+                    "Inheriting global task {}",
+                    color::id(task_id),
+                );
 
                 task_id
             };
@@ -113,7 +120,6 @@ impl<'proj> TasksBuilder<'proj> {
 
         self.implicit_deps.extend(&global_config.implicit_deps);
         self.implicit_inputs.extend(&global_config.implicit_inputs);
-
         self
     }
 
@@ -138,6 +144,12 @@ impl<'proj> TasksBuilder<'proj> {
     }
 
     fn build_task(&self, id: &Id) -> miette::Result<Task> {
+        debug!(
+            project_id = ?self.project_id,
+            task_id = ?id,
+            "Building task",
+        );
+
         let mut task = Task::default();
         let mut configs = vec![];
 
@@ -240,8 +252,20 @@ impl<'proj> TasksBuilder<'proj> {
         // inputs are handled explicitly, while globally inherited sources are handled implicitly.
         if configured_inputs == 0 {
             if has_configured_inputs {
+                debug!(
+                    project_id = ?self.project_id,
+                    task_id = ?id,
+                    "Task has explicitly disabled inputs",
+                );
+
                 task.flags.empty_inputs = true;
             } else {
+                debug!(
+                    project_id = ?self.project_id,
+                    task_id = ?id,
+                    "No inputs configured, defaulting to **/* (from project)",
+                );
+
                 task.inputs.push(InputPath::ProjectGlob("**/*".into()));
             }
         }
@@ -256,8 +280,9 @@ impl<'proj> TasksBuilder<'proj> {
             task.command = "noop".into();
         }
 
+        task.target = Target::new(self.project_id, id)?;
+
         task.id = id.to_owned();
-        // task.target; TODO
 
         task.type_of = if !task.outputs.is_empty() {
             TaskType::Build

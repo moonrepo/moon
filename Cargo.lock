@@ -4090,9 +4090,9 @@ dependencies = [
 
 [[package]]
 name = "proto_cli"
-version = "0.10.5"
+version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2453ec71e3f65fb804a7ff7a045c51797eeac5c934e99cc1764724c422944d91"
+checksum = "60978c23b602f36dd7e901bd177843102438fe85d9f2cbd550b456bdb761f580"
 dependencies = [
  "async-recursion",
  "clap",
@@ -4124,9 +4124,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.10.2"
+version = "0.10.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af846cf291334457b8a2d8685ce2cedf446401b6ac4950dfe92a4ff4e2d6539b"
+checksum = "10662212cd7775b6b39cacf45daca9618d6866a1f714abb3555dd8b1e65e540d"
 dependencies = [
  "async-trait",
  "cached",

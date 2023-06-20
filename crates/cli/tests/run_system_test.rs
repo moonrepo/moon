@@ -252,6 +252,8 @@ mod unix {
             cmd.arg("run").arg("unix:syntaxExpansion");
         });
 
+        assert.debug();
+
         let output = assert.output();
 
         assert!(predicate::str::contains("xyc").eval(&output));

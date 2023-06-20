@@ -9,14 +9,15 @@ use tracing::debug;
 
 pub enum ShellType {
     Bash,
+    Pwsh,
     PowerShell,
 }
 
-impl Default for ShellType {
+impl ShellType {
     // Determine whether we should use Bash or PowerShell as the hook file format.
     // On Unix machines, always use Bash. On Windows, scan PATH/PATHEXT for Bash,
     // otherwise fallback to PowerShell.
-    fn default() -> Self {
+    pub fn detect() -> Self {
         if cfg!(unix) {
             return ShellType::Bash;
         }
@@ -24,20 +25,40 @@ impl Default for ShellType {
         if let (Some(path_list), Ok(path_exts)) = (env::var_os("PATH"), env::var("PATHEXT")) {
             let exts = path_exts.split(';').collect::<Vec<_>>();
 
-            for path_dir in env::split_paths(&path_list) {
-                if path_dir.join("bash").exists() {
-                    return ShellType::Bash;
-                }
+            let has_command = |command: &str| {
+                for path_dir in env::split_paths(&path_list) {
+                    if path_dir.join(command).exists() {
+                        return true;
+                    }
 
-                for ext in &exts {
-                    if path_dir.join(format!("bash.{ext}")).exists() {
-                        return ShellType::Bash;
+                    for ext in &exts {
+                        if path_dir.join(format!("{command}.{ext}")).exists() {
+                            return true;
+                        }
                     }
                 }
+
+                false
+            };
+
+            if has_command("bash") {
+                return ShellType::Bash;
+            }
+
+            if has_command("pwsh") {
+                return ShellType::Pwsh;
             }
         }
 
         ShellType::PowerShell
+    }
+
+    pub fn env(&self) -> String {
+        match self {
+            ShellType::Bash => "bash".into(),
+            ShellType::Pwsh => "pwsh".into(),
+            ShellType::PowerShell => "powershell".into(),
+        }
     }
 }
 
@@ -53,7 +74,7 @@ impl<'app> HooksGenerator<'app> {
         Self {
             config,
             output_dir: workspace_root.join(consts::CONFIG_DIRNAME).join("hooks"),
-            shell: ShellType::default(),
+            shell: ShellType::detect(),
             vcs,
         }
     }
@@ -142,10 +163,18 @@ impl<'app> HooksGenerator<'app> {
     ) -> miette::Result<()> {
         let mut contents = vec![];
 
-        if matches!(self.shell, ShellType::PowerShell) {
-            contents.extend(["#!/usr/bin/env pwsh", "$ErrorActionPreference = 'Stop'", ""]);
-        } else {
+        if matches!(self.shell, ShellType::Bash) {
             contents.extend(["#!/usr/bin/env bash", "set -eo pipefail", ""]);
+        } else {
+            contents.extend([
+                if matches!(self.shell, ShellType::Pwsh) {
+                    "#!/usr/bin/env pwsh"
+                } else {
+                    "#!/usr/bin/env powershell"
+                },
+                "$ErrorActionPreference = 'Stop'",
+                "",
+            ]);
         }
 
         if with_header {

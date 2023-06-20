@@ -7,6 +7,7 @@ edition = "2021"
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_hash = { path = "../hash" }
+moon_vcs = { path = "../vcs" }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }

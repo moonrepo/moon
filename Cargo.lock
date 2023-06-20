@@ -3588,6 +3588,7 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_hash",
+ "moon_vcs",
  "rustc-hash",
  "serde",
  "starbase_utils",

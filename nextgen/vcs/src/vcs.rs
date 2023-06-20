@@ -5,7 +5,7 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use semver::{Version, VersionReq};
 use std::collections::BTreeMap;
 use std::fmt::Debug;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub type VcsResult<T> = Result<T, VcsError>;
 
@@ -39,7 +39,10 @@ pub trait Vcs: Debug {
     /// Get an absolute path to the hooks directory, when applicable.
     async fn get_hooks_dir(&self) -> VcsResult<PathBuf>;
 
-    /// Get the repository slug ("moonrepo/moon") of the current checkout.
+    /// Return an absolute path to the repository root.
+    async fn get_repository_root(&self) -> VcsResult<&Path>;
+
+    /// Return the repository slug ("moonrepo/moon") of the current checkout.
     async fn get_repository_slug(&self) -> VcsResult<&str>;
 
     /// Determine touched files from the local index / working tree.

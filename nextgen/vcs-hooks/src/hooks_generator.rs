@@ -1,5 +1,6 @@
 use moon_common::{color, consts};
 use moon_config::VcsConfig;
+use moon_vcs::BoxedVcs;
 use rustc_hash::FxHashMap;
 use starbase_utils::fs;
 use std::env;
@@ -42,25 +43,25 @@ impl Default for ShellType {
 
 pub struct HooksGenerator<'app> {
     config: &'app VcsConfig,
-    external_dir: PathBuf,
-    internal_dir: PathBuf,
+    output_dir: PathBuf,
     shell: ShellType,
+    vcs: &'app BoxedVcs,
 }
 
 impl<'app> HooksGenerator<'app> {
-    pub fn new(workspace_root: &Path, hooks_dir: &PathBuf, config: &'app VcsConfig) -> Self {
+    pub fn new(workspace_root: &Path, vcs: &'app BoxedVcs, config: &'app VcsConfig) -> Self {
         Self {
             config,
-            external_dir: hooks_dir.to_owned(),
-            internal_dir: workspace_root.join(consts::CONFIG_DIRNAME).join("hooks"),
+            output_dir: workspace_root.join(consts::CONFIG_DIRNAME).join("hooks"),
             shell: ShellType::default(),
+            vcs,
         }
     }
 
-    pub fn generate(&self) -> miette::Result<()> {
+    pub async fn generate(&self) -> miette::Result<()> {
         debug!("Generating {} hooks", self.config.manager);
 
-        self.sync_to_vcs(self.create_hooks()?)?;
+        self.sync_to_vcs(self.create_hooks()?).await?;
 
         Ok(())
     }
@@ -73,13 +74,13 @@ impl<'app> HooksGenerator<'app> {
                 continue;
             }
 
-            let hook_path =
-                self.internal_dir
-                    .join(if matches!(self.shell, ShellType::PowerShell) {
-                        format!("{}.ps1", hook_name)
-                    } else {
-                        format!("{}.sh", hook_name)
-                    });
+            let hook_path = self
+                .output_dir
+                .join(if matches!(self.shell, ShellType::PowerShell) {
+                    format!("{}.ps1", hook_name)
+                } else {
+                    format!("{}.sh", hook_name)
+                });
 
             debug!(file = ?hook_path, "Creating {} hook", color::file(hook_name));
 
@@ -91,10 +92,17 @@ impl<'app> HooksGenerator<'app> {
         Ok(hooks)
     }
 
-    fn sync_to_vcs(&self, hooks: FxHashMap<&'app String, PathBuf>) -> miette::Result<()> {
+    async fn sync_to_vcs(&self, hooks: FxHashMap<&'app String, PathBuf>) -> miette::Result<()> {
+        let hooks_dir = self.vcs.get_hooks_dir().await?;
+        let repo_root = self.vcs.get_repository_root().await?;
+
         for (hook_name, internal_path) in hooks {
-            let external_path = self.external_dir.join(hook_name);
-            let external_command = internal_path.display().to_string();
+            let external_path = hooks_dir.join(hook_name);
+
+            let external_command = PathBuf::from(".")
+                .join(internal_path.strip_prefix(repo_root).unwrap())
+                .display()
+                .to_string();
 
             debug!(
                 external_file = ?external_path,

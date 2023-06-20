@@ -266,6 +266,10 @@ impl Vcs for Git {
         Ok(self.repository_root.join(".git").join("hooks"))
     }
 
+    async fn get_repository_root(&self) -> VcsResult<&Path> {
+        Ok(&self.repository_root)
+    }
+
     async fn get_repository_slug(&self) -> VcsResult<&str> {
         use git_url_parse::GitUrl;
 

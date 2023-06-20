@@ -4,7 +4,6 @@ use moon_workspace::Workspace;
 
 pub async fn sync_vcs_hooks(workspace: &Workspace) -> miette::Result<()> {
     let vcs_config = &workspace.config.vcs;
-    let hooks_dir = workspace.vcs.get_hooks_dir().await?;
 
     let hash_engine = HashEngine::new(&workspace.cache.dir);
     let mut hasher = hash_engine.create_hasher("VCS hooks");
@@ -22,7 +21,9 @@ pub async fn sync_vcs_hooks(workspace: &Workspace) -> miette::Result<()> {
     let mut cache = workspace.cache.cache_vcs_hooks_state()?;
 
     if hasher.generate_hash()? != cache.last_hash {
-        HooksGenerator::new(&workspace.root, &hooks_dir, vcs_config).generate()?;
+        HooksGenerator::new(&workspace.root, &workspace.vcs, vcs_config)
+            .generate()
+            .await?;
 
         cache.last_hash = hash_engine.save_manifest(hasher)?;
         cache.save()?;

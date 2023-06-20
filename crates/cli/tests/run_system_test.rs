@@ -232,7 +232,7 @@ mod unix {
     }
 
     #[test]
-    fn supprts_inline_vars() {
+    fn supports_inline_vars() {
         let sandbox = system_sandbox();
 
         let assert = sandbox.run_moon(|cmd| {
@@ -245,7 +245,7 @@ mod unix {
     }
 
     #[test]
-    fn supprts_expansion() {
+    fn supports_expansion() {
         let sandbox = system_sandbox();
 
         let assert = sandbox.run_moon(|cmd| {

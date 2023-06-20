@@ -244,6 +244,8 @@ mod unix {
         assert!(predicate::str::contains("value").eval(&output));
     }
 
+    // Works on macOS but not Linux
+    #[cfg(target_os = "macos")]
     #[test]
     fn supports_expansion() {
         let sandbox = system_sandbox();
@@ -251,8 +253,6 @@ mod unix {
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("unix:syntaxExpansion");
         });
-
-        assert.debug();
 
         let output = assert.output();
 

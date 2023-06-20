@@ -256,7 +256,7 @@ mod unix {
 
         let output = assert.output();
 
-        assert!(predicate::str::contains("xyc").eval(&output));
+        assert!(predicate::str::contains("cd").eval(&output));
     }
 
     mod caching {

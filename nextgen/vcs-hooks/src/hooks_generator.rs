@@ -117,14 +117,14 @@ impl<'app> HooksGenerator<'app> {
         let hooks_dir = self.vcs.get_hooks_dir().await?;
         let repo_root = self.vcs.get_repository_root().await?;
 
-        for (hook_name, internal_path) in hooks {
-            let external_path = hooks_dir.join(hook_name);
-
-            // Format the file path to a repository relative script (./.moon/hooks/script)
-            let external_command = PathBuf::from(".")
-                .join(internal_path.strip_prefix(&repo_root).unwrap())
+        let to_relative = |base_path: &Path| PathBuf::from(".")
+                .join(base_path.strip_prefix(&repo_root).unwrap())
                 .display()
                 .to_string();
+
+        for (hook_name, internal_path) in hooks {
+            let external_path = hooks_dir.join(hook_name);
+            let external_command = to_relative(&internal_path);
 
             debug!(
                 external_file = ?external_path,
@@ -134,20 +134,36 @@ impl<'app> HooksGenerator<'app> {
                 self.config.manager,
             );
 
-            // A hook script already exists, so instead of overwriting it, we'll append our
-            // command to it if it doesn't already exist!
-            if external_path.exists() {
-                let mut contents = fs::read_file(&external_path)?;
+            // On Windows, the hook file itself is extensionless, which means we can't use PowerShell.
+            // Instead we will create a relative .ps1 file, and have the original hook call that instead.
+            // https://stackoverflow.com/questions/5629261/running-powershell-scripts-as-git-hooks
+            #[cfg(windows)]
+            {
+                let script_path = hooks_dir.join(format!("{}.ps1", hook_name));
 
-                if !contents.contains(&external_command) {
-                    contents.push('\n');
-                    contents.push_str(&external_command);
+                // pre-commit
+                fs::write_file(
+                    &external_path,
+                    format!(
+                        "#!/bin/sh\n{}.exe -NoProfile -ExecutionPolicy Bypass -File '{}'",
+                        self.shell.env(),
+                        to_relative(&script_path)
+                    ),
+                )?;
+                fs::update_perms(external_path, Some(0o0775))?;
 
-                    fs::write_file(&external_path, contents)?;
-                }
+                // pre-commit.ps1
+                self.create_hook_file(
+                    &script_path,
+                    &[external_command],
+                    false,
+                )?;
+            }
 
-                // Otherwise create a new hook script!
-            } else {
+            // On Unix, we can use the hook file itself and run Bash commands within it.
+            #[cfg(not(windows))]
+            {
+                // pre-commit
                 self.create_hook_file(&external_path, &[external_command], false)?;
             }
         }

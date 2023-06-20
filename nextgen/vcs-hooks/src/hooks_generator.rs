@@ -106,7 +106,7 @@ impl<'app> HooksGenerator<'app> {
                 let mut contents = fs::read_file(&external_path)?;
 
                 if !contents.contains(&external_command) {
-                    contents.push_str("\n");
+                    contents.push('\n');
                     contents.push_str(&external_command);
 
                     fs::write_file(&external_path, contents)?;
@@ -144,11 +144,11 @@ impl<'app> HooksGenerator<'app> {
         }
 
         for command in commands {
-            contents.push(&command);
+            contents.push(command);
         }
 
-        fs::write_file(&file_path, contents.join("\n"))?;
-        fs::update_perms(&file_path, Some(0o0775))?;
+        fs::write_file(file_path, contents.join("\n"))?;
+        fs::update_perms(file_path, Some(0o0775))?;
 
         Ok(())
     }

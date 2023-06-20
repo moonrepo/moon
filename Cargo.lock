@@ -2648,6 +2648,7 @@ dependencies = [
  "moon_config",
  "moon_hash",
  "moon_project_graph",
+ "moon_vcs_hooks",
  "moon_workspace",
 ]
 

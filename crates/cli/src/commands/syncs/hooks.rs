@@ -1,20 +1,19 @@
 use crate::helpers::create_progress_bar;
-use moon::{generate_project_graph, load_workspace};
-use moon_actions::sync_codeowners;
+use moon::load_workspace;
+use moon_actions::sync_vcs_hooks;
 use starbase::AppResult;
-use starbase_styles::color;
 
 pub async fn sync() -> AppResult {
-    let done = create_progress_bar("Syncing code owners...");
+    let workspace = load_workspace().await?;
 
-    let mut workspace = load_workspace().await?;
-    let project_graph = generate_project_graph(&mut workspace).await?;
-    let codeowners_path = sync_codeowners(&workspace, &project_graph).await?;
+    let done = create_progress_bar(format!("Syncing {} hooks...", workspace.config.vcs.manager));
+
+    sync_vcs_hooks(&workspace).await?;
 
     done(
         format!(
-            "Successfully synced to {}",
-            color::path(codeowners_path.strip_prefix(&workspace.root).unwrap())
+            "Successfully synced {} hooks",
+            workspace.config.vcs.hooks.len()
         ),
         true,
     );

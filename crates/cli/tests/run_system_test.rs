@@ -231,6 +231,32 @@ mod unix {
         assert!(sandbox.path().join("unix/bar").exists());
     }
 
+    #[test]
+    fn supprts_inline_vars() {
+        let sandbox = system_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("unix:syntaxVar");
+        });
+
+        let output = assert.output();
+
+        assert!(predicate::str::contains("value").eval(&output));
+    }
+
+    #[test]
+    fn supprts_expansion() {
+        let sandbox = system_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("unix:syntaxExpansion");
+        });
+
+        let output = assert.output();
+
+        assert!(predicate::str::contains("xyc").eval(&output));
+    }
+
     mod caching {
         use super::*;
         use moon_cache::RunTargetState;

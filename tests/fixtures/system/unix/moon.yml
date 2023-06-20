@@ -93,8 +93,10 @@ tasks:
     env:
       VAR_NAME: value
   syntaxExpansion:
-    command: 'echo ${abc/ab/xy}'
+    command: 'echo ${VAR_NAME/ab/xy}'
     platform: system
+    env:
+      VAR_NAME: abc
   syntaxSubstitution:
     command: 'echo $(echo sub)'
     platform: system

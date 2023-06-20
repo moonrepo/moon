@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where command line arguments were incorrectly escaped in Bash shells.
+
 ## 1.8.2
 
 #### 🐞 Fixes

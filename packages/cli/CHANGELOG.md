@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Added VCS hooks management support.
+  - Added `vcs.hooks` setting to `.moon/workspace.yml`.
+  - Added `moon sync hooks` command.
+
 #### 🐞 Fixes
 
 - Fixed an issue where task hashes would be different between Windows and Unix machines.
@@ -10,7 +16,7 @@
 #### ⚙️ Internal
 
 - Dropped SVN support since it was never finished and doesn't work.
-- Improved VCS/git file handling, caching, and performance.
+- Improved VCS file handling, caching, and performance.
 
 ## 1.8.2
 

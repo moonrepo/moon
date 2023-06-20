@@ -99,8 +99,9 @@ impl<'app> HooksGenerator<'app> {
         for (hook_name, internal_path) in hooks {
             let external_path = hooks_dir.join(hook_name);
 
+            // Format the file path to a repository relative script (./.moon/hooks/script)
             let external_command = PathBuf::from(".")
-                .join(internal_path.strip_prefix(repo_root).unwrap())
+                .join(internal_path.strip_prefix(&repo_root).unwrap())
                 .display()
                 .to_string();
 

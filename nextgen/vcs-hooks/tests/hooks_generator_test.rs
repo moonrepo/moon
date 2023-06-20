@@ -70,6 +70,7 @@ async fn doesnt_generate_when_no_commands() {
     assert!(!sandbox.path().join(".moon/hooks").exists());
 }
 
+#[cfg(not(windows))]
 mod unix {
     use super::*;
 
@@ -82,6 +83,45 @@ mod unix {
 
         let pre_commit = sandbox.path().join(".moon/hooks/pre-commit.sh");
         let post_push = sandbox.path().join(".moon/hooks/post-push.sh");
+
+        assert!(pre_commit.exists());
+        assert!(post_push.exists());
+
+        assert_snapshot!(fs::read_to_string(pre_commit).unwrap());
+        assert_snapshot!(fs::read_to_string(post_push).unwrap());
+    }
+
+    #[tokio::test]
+    async fn links_git_hooks() {
+        let sandbox = create_empty_sandbox();
+        sandbox.enable_git();
+
+        run_generator(sandbox.path()).await;
+
+        let pre_commit = sandbox.path().join(".git/hooks/pre-commit");
+        let post_push = sandbox.path().join(".git/hooks/post-push");
+
+        assert!(pre_commit.exists());
+        assert!(post_push.exists());
+
+        assert_snapshot!(fs::read_to_string(pre_commit).unwrap());
+        assert_snapshot!(fs::read_to_string(post_push).unwrap());
+    }
+}
+
+#[cfg(windows)]
+mod windows {
+    use super::*;
+
+    #[tokio::test]
+    async fn creates_local_hook_files() {
+        let sandbox = create_empty_sandbox();
+        sandbox.enable_git();
+
+        run_generator(sandbox.path()).await;
+
+        let pre_commit = sandbox.path().join(".moon/hooks/pre-commit.ps1");
+        let post_push = sandbox.path().join(".moon/hooks/post-push.ps1");
 
         assert!(pre_commit.exists());
         assert!(post_push.exists());

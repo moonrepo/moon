@@ -15,50 +15,21 @@ pub enum ShellType {
 
 impl ShellType {
     // Determine whether we should use Bash or PowerShell as the hook file format.
-    // On Unix machines, always use Bash. On Windows, scan PATH/PATHEXT for Bash,
-    // otherwise fallback to PowerShell.
+    // On Unix machines, always use Bash. On Windows, scan PATH for PowerShell.
     pub fn detect() -> Self {
         if cfg!(unix) {
             return ShellType::Bash;
         }
 
-        if let (Some(path_list), Ok(path_exts)) = (env::var_os("PATH"), env::var("PATHEXT")) {
-            let exts = path_exts.split(';').collect::<Vec<_>>();
-
-            let has_command = |command: &str| {
-                for path_dir in env::split_paths(&path_list) {
-                    if path_dir.join(command).exists() {
-                        return true;
-                    }
-
-                    for ext in &exts {
-                        if path_dir.join(format!("{command}.{ext}")).exists() {
-                            return true;
-                        }
-                    }
+        if let Some(path_list) = env::var_os("PATH") {
+            for path_dir in env::split_paths(&path_list) {
+                if path_dir.join("pwsh").exists() || path_dir.join("pwsh.exe").exists() {
+                    return ShellType::Pwsh;
                 }
-
-                false
-            };
-
-            if has_command("bash") {
-                return ShellType::Bash;
-            }
-
-            if has_command("pwsh") {
-                return ShellType::Pwsh;
             }
         }
 
         ShellType::PowerShell
-    }
-
-    pub fn env(&self) -> String {
-        match self {
-            ShellType::Bash => "bash".into(),
-            ShellType::Pwsh => "pwsh".into(),
-            ShellType::PowerShell => "powershell".into(),
-        }
     }
 }
 
@@ -97,10 +68,10 @@ impl<'app> HooksGenerator<'app> {
 
             let hook_path = self
                 .output_dir
-                .join(if matches!(self.shell, ShellType::PowerShell) {
-                    format!("{}.ps1", hook_name)
-                } else {
+                .join(if matches!(self.shell, ShellType::Bash) {
                     format!("{}.sh", hook_name)
+                } else {
+                    format!("{}.ps1", hook_name)
                 });
 
             debug!(file = ?hook_path, "Creating {} hook", color::file(hook_name));
@@ -117,14 +88,13 @@ impl<'app> HooksGenerator<'app> {
         let hooks_dir = self.vcs.get_hooks_dir().await?;
         let repo_root = self.vcs.get_repository_root().await?;
 
-        let to_relative = |base_path: &Path| PathBuf::from(".")
-                .join(base_path.strip_prefix(&repo_root).unwrap())
-                .display()
-                .to_string();
-
         for (hook_name, internal_path) in hooks {
             let external_path = hooks_dir.join(hook_name);
-            let external_command = to_relative(&internal_path);
+
+            let external_command = PathBuf::from(".")
+                .join(internal_path.strip_prefix(&repo_root).unwrap())
+                .display()
+                .to_string();
 
             debug!(
                 external_file = ?external_path,
@@ -135,28 +105,23 @@ impl<'app> HooksGenerator<'app> {
             );
 
             // On Windows, the hook file itself is extensionless, which means we can't use PowerShell.
-            // Instead we will create a relative .ps1 file, and have the original hook call that instead.
+            // Instead we will execute our .ps1 script through PowerShell.
             // https://stackoverflow.com/questions/5629261/running-powershell-scripts-as-git-hooks
             #[cfg(windows)]
             {
-                let script_path = hooks_dir.join(format!("{}.ps1", hook_name));
+                let powershell_exe = if matches!(self.shell, ShellType::Pwsh) {
+                    "pwsh.exe"
+                } else {
+                    "powershell.exe"
+                };
 
                 // pre-commit
-                fs::write_file(
+                self.create_file(
                     &external_path,
                     format!(
-                        "#!/bin/sh\n{}.exe -NoProfile -ExecutionPolicy Bypass -File '{}'",
-                        self.shell.env(),
-                        to_relative(&script_path)
+                        "#!/bin/sh\n{} -NoProfile -ExecutionPolicy Bypass -File '{}'",
+                        powershell_exe, external_command
                     ),
-                )?;
-                fs::update_perms(external_path, Some(0o0775))?;
-
-                // pre-commit.ps1
-                self.create_hook_file(
-                    &script_path,
-                    &[external_command],
-                    false,
                 )?;
             }
 
@@ -167,6 +132,13 @@ impl<'app> HooksGenerator<'app> {
                 self.create_hook_file(&external_path, &[external_command], false)?;
             }
         }
+
+        Ok(())
+    }
+
+    fn create_file(&self, file_path: &Path, contents: String) -> miette::Result<()> {
+        fs::write_file(file_path, contents)?;
+        fs::update_perms(file_path, Some(0o0775))?;
 
         Ok(())
     }
@@ -205,8 +177,7 @@ impl<'app> HooksGenerator<'app> {
             contents.push(command);
         }
 
-        fs::write_file(file_path, contents.join("\n"))?;
-        fs::update_perms(file_path, Some(0o0775))?;
+        self.create_file(file_path, contents.join("\n"))?;
 
         Ok(())
     }

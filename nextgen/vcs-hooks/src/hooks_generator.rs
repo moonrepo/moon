@@ -69,6 +69,10 @@ impl<'app> HooksGenerator<'app> {
         let mut hooks = FxHashMap::default();
 
         for (hook_name, commands) in &self.config.hooks {
+            if commands.is_empty() {
+                continue;
+            }
+
             let hook_path =
                 self.internal_dir
                     .join(if matches!(self.shell, ShellType::PowerShell) {

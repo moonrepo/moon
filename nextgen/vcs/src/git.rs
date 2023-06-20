@@ -9,9 +9,9 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use rustc_hash::FxHashSet;
 use semver::Version;
-use std::cmp;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
+use std::{cmp, env};
 use tracing::debug;
 
 pub static STATUS_PATTERN: Lazy<Regex> =
@@ -32,9 +32,6 @@ pub struct Git {
     /// Path between the git and workspace root.
     // file_prefix: RelativePathBuf,
 
-    /// Root of the git repository (where `.git` is located).
-    pub git_root: PathBuf,
-
     /// Ignore rules derived from a root `.gitignore` file.
     ignore: Option<Gitignore>,
 
@@ -43,6 +40,9 @@ pub struct Git {
 
     /// List of remotes to use as merge candidates.
     pub remote_candidates: Vec<String>,
+
+    /// Root of the git repository (where `.git` is located).
+    pub repository_root: PathBuf,
 }
 
 impl Git {
@@ -111,7 +111,7 @@ impl Git {
 
         Ok(Git {
             default_branch: default_branch.as_ref().to_owned(),
-            git_root: git_root.to_owned(),
+            repository_root: git_root.to_owned(),
             ignore,
             process: ProcessCache::new("git", workspace_root),
             remote_candidates: remote_candidates.to_owned(),
@@ -259,7 +259,11 @@ impl Vcs for Git {
             return Ok(PathBuf::from(output));
         }
 
-        Ok(self.git_root.join("hooks"))
+        if let Ok(dir) = env::var("GIT_DIR") {
+            return Ok(PathBuf::from(dir).join("hooks"));
+        }
+
+        Ok(self.repository_root.join(".git").join("hooks"))
     }
 
     async fn get_repository_slug(&self) -> VcsResult<&str> {
@@ -514,7 +518,7 @@ impl Vcs for Git {
     }
 
     fn is_enabled(&self) -> bool {
-        self.git_root.join(".git").exists()
+        self.repository_root.join(".git").exists()
     }
 
     fn is_ignored(&self, file: &str) -> bool {

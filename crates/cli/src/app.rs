@@ -222,6 +222,12 @@ pub enum SyncCommands {
     Codeowners,
 
     #[command(
+        name = "hooks",
+        about = "Generate and sync hook scripts for the workspace configured VCS."
+    )]
+    Hooks,
+
+    #[command(
         name = "projects",
         about = "Sync all projects and configs in the workspace."
     )]

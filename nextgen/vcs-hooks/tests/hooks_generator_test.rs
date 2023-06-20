@@ -113,6 +113,11 @@ mod unix {
 mod windows {
     use super::*;
 
+    // Standardize snapshots across machines with different powershell versions
+    fn clean_powershell(content: String) -> String {
+        content.replace("powershell", "pwsh")
+    }
+
     #[tokio::test]
     async fn creates_local_hook_files() {
         let sandbox = create_empty_sandbox();
@@ -126,8 +131,8 @@ mod windows {
         assert!(pre_commit.exists());
         assert!(post_push.exists());
 
-        assert_snapshot!(fs::read_to_string(pre_commit).unwrap());
-        assert_snapshot!(fs::read_to_string(post_push).unwrap());
+        assert_snapshot!(clean_powershell(fs::read_to_string(pre_commit).unwrap()));
+        assert_snapshot!(clean_powershell(fs::read_to_string(post_push).unwrap()));
     }
 
     #[tokio::test]
@@ -143,7 +148,7 @@ mod windows {
         assert!(pre_commit.exists());
         assert!(post_push.exists());
 
-        assert_snapshot!(fs::read_to_string(pre_commit).unwrap());
-        assert_snapshot!(fs::read_to_string(post_push).unwrap());
+        assert_snapshot!(clean_powershell(fs::read_to_string(pre_commit).unwrap()));
+        assert_snapshot!(clean_powershell(fs::read_to_string(post_push).unwrap()));
     }
 }

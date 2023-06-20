@@ -54,8 +54,14 @@ mod sync_hooks {
             .success();
 
         assert!(hooks_dir.exists());
-        assert!(hooks_dir.join("pre-commit.sh").exists());
-        assert!(hooks_dir.join("post-push.sh").exists());
+
+        if cfg!(windows) {
+            assert!(hooks_dir.join("pre-commit.ps1").exists());
+            assert!(hooks_dir.join("post-push.ps1").exists());
+        } else {
+            assert!(hooks_dir.join("pre-commit.sh").exists());
+            assert!(hooks_dir.join("post-push.sh").exists());
+        }
     }
 }
 

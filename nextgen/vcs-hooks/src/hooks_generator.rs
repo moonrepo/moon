@@ -15,7 +15,7 @@ pub enum ShellType {
 
 impl ShellType {
     // Determine whether we should use Bash or PowerShell as the hook file format.
-    // On Unix machines, always use Bash. On Windows, scan PATH for PowerShell.
+    // On Unix machines, always use Bash. On Windows, scan PATH for applicable PowerShell.
     pub fn detect() -> Self {
         if cfg!(unix) {
             return ShellType::Bash;

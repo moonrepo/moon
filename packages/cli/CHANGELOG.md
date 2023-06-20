@@ -5,7 +5,7 @@
 #### 🚀 Updates
 
 - Added VCS hooks management support.
-  - Added `vcs.hooks` setting to `.moon/workspace.yml`.
+  - Added `vcs.hooks` and `vcs.syncHooksOnRun` settings to `.moon/workspace.yml`.
   - Added `moon sync hooks` command.
 
 #### 🐞 Fixes

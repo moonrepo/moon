@@ -43,13 +43,18 @@ where
         let arg = arg.as_ref();
 
         match arg {
-            "&" | "&&" | "|" | "||" | ";" | "!" | ">" | ">>" | "<" => {
+            "&" | "&&" | "|&" | "|" | "||" | ";" | "!" | ">" | ">>" | "<" | "-" | "--" => {
                 line.push_str(arg);
                 line.push(' ');
             }
             _ => {
-                let quoted = shell_words::quote(arg);
-                line.push_str(quoted.as_ref());
+                if arg.starts_with('$') || arg.starts_with('\'') || arg.starts_with('"') {
+                    line.push_str(arg);
+                } else {
+                    let quoted = shell_words::quote(arg);
+                    line.push_str(quoted.as_ref());
+                }
+
                 line.push(' ');
             }
         };

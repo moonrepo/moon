@@ -231,6 +231,34 @@ mod unix {
         assert!(sandbox.path().join("unix/bar").exists());
     }
 
+    #[test]
+    fn supports_inline_vars() {
+        let sandbox = system_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("unix:syntaxVar");
+        });
+
+        let output = assert.output();
+
+        assert!(predicate::str::contains("value").eval(&output));
+    }
+
+    // Works on macOS but not Linux
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn supports_expansion() {
+        let sandbox = system_sandbox();
+
+        let assert = sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("unix:syntaxExpansion");
+        });
+
+        let output = assert.output();
+
+        assert!(predicate::str::contains("cd").eval(&output));
+    }
+
     mod caching {
         use super::*;
         use moon_cache::RunTargetState;

@@ -3,7 +3,7 @@ source: crates/cli/tests/run_system_test.rs
 expression: assert.output()
 ---
 ▪▪▪▪ unix:passthroughArgs
-Args: -aBc --opt value --optCamel=value foo 'bar baz' --opt-kebab 123
+Args: -aBc --opt value --optCamel=value foo bar baz --opt-kebab 123
 ▪▪▪▪ unix:passthroughArgs (100ms)
 
 Tasks: 1 completed

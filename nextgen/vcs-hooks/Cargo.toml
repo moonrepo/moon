@@ -1,0 +1,13 @@
+[package]
+name = "moon_vcs_hooks"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_common = { path = "../common" }
+moon_config = { path = "../config" }
+miette = { workspace = true }
+rustc-hash = { workspace = true }
+starbase_utils = { workspace = true }
+tracing = { workspace = true }
+

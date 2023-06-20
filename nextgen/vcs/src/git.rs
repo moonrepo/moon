@@ -250,6 +250,18 @@ impl Vcs for Git {
             .collect::<Vec<_>>())
     }
 
+    async fn get_hooks_dir(&self) -> VcsResult<PathBuf> {
+        if let Ok(output) = self
+            .process
+            .run(["config", "--get", "core.hooksPath"], true)
+            .await
+        {
+            return Ok(PathBuf::from(output));
+        }
+
+        Ok(self.git_root.join("hooks"))
+    }
+
     async fn get_repository_slug(&self) -> VcsResult<&str> {
         use git_url_parse::GitUrl;
 

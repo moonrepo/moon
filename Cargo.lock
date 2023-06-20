@@ -3580,6 +3580,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_vcs_hooks"
+version = "0.1.0"
+dependencies = [
+ "miette",
+ "moon_common",
+ "moon_config",
+ "rustc-hash",
+ "starbase_utils",
+ "tracing",
+]
+
+[[package]]
 name = "moon_workspace"
 version = "0.1.0"
 dependencies = [

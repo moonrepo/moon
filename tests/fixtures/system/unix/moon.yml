@@ -86,6 +86,22 @@ tasks:
     command: 'mkdir foo; mkdir bar'
     platform: system
 
+  # Shell syntax
+  syntaxVar:
+    command: 'echo $VAR_NAME'
+    platform: system
+    env:
+      VAR_NAME: value
+  syntaxExpansion:
+    command: 'echo ${abc/ab/xy}'
+    platform: system
+  syntaxSubstitution:
+    command: 'echo $(echo sub)'
+    platform: system
+  syntaxSubstitutionTick:
+    command: 'echo `echo sub`'
+    platform: system
+
   # Misc
   foo:
     command: bash -c "echo 'foo'"

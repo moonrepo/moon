@@ -82,6 +82,14 @@ mod split_args {
         );
         assert_eq!(split_args("bin | bin2").unwrap(), vec!["bin", "|", "bin2"]);
     }
+
+    #[test]
+    fn echo_vars() {
+        assert_eq!(
+            split_args("echo $VAR_NAME").unwrap(),
+            vec!["echo", "$VAR_NAME"]
+        );
+    }
 }
 
 mod join_args {
@@ -106,6 +114,14 @@ mod join_args {
     #[test]
     fn quotes() {
         assert_eq!(join_args(vec!["bin", "foo bar"]), "bin 'foo bar'");
+    }
+
+    #[test]
+    fn quoted_strings() {
+        assert_eq!(
+            join_args(vec!["echo", "'foo'", "\"bar\""]),
+            "echo 'foo' \"bar\""
+        );
     }
 
     #[test]
@@ -135,5 +151,10 @@ mod join_args {
         assert_eq!(join_args(vec!["bin", ">", "./file"]), "bin > ./file");
         assert_eq!(join_args(vec!["bin", ">>", "./file"]), "bin >> ./file");
         assert_eq!(join_args(vec!["bin", "|", "bin2"]), "bin | bin2");
+    }
+
+    #[test]
+    fn echo_vars() {
+        assert_eq!(join_args(vec!["echo", "$VAR_NAME"]), "echo $VAR_NAME");
     }
 }

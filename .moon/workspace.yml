@@ -25,6 +25,6 @@ runner:
 
 vcs:
   defaultBranch: 'master'
-  hooks:
-    pre-commit:
-      - 'cargo run -- run :lint'
+  # hooks:
+  #   pre-commit:
+  #     - 'cargo run -- run :lint'

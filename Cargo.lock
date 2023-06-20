@@ -3586,7 +3586,9 @@ dependencies = [
  "miette",
  "moon_common",
  "moon_config",
+ "moon_hash",
  "rustc-hash",
+ "serde",
  "starbase_utils",
  "tracing",
 ]

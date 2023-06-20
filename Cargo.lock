@@ -3591,7 +3591,9 @@ dependencies = [
  "moon_vcs",
  "rustc-hash",
  "serde",
+ "starbase_sandbox",
  "starbase_utils",
+ "tokio",
  "tracing",
 ]
 

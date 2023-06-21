@@ -304,7 +304,15 @@ impl Platform for NodePlatform {
             );
         }
 
-        Ok(self.toolchain.setup(&version, last_versions).await?)
+        let installed = self.toolchain.setup(&version, last_versions).await?;
+
+        actions::setup_tool(
+            self.toolchain.get_for_version(runtime.version())?,
+            &self.workspace_root,
+        )
+        .await?;
+
+        Ok(installed)
     }
 
     async fn install_deps(
@@ -316,7 +324,6 @@ impl Platform for NodePlatform {
         actions::install_deps(
             self.toolchain.get_for_version(runtime.version())?,
             working_dir,
-            &self.workspace_root,
         )
         .await?;
 

@@ -2648,6 +2648,7 @@ dependencies = [
  "moon_config",
  "moon_hash",
  "moon_project_graph",
+ "moon_vcs_hooks",
  "moon_workspace",
 ]
 
@@ -3575,6 +3576,23 @@ dependencies = [
  "semver",
  "starbase_sandbox",
  "thiserror",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "moon_vcs_hooks"
+version = "0.1.0"
+dependencies = [
+ "miette",
+ "moon_common",
+ "moon_config",
+ "moon_hash",
+ "moon_vcs",
+ "rustc-hash",
+ "serde",
+ "starbase_sandbox",
+ "starbase_utils",
  "tokio",
  "tracing",
 ]

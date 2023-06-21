@@ -9,4 +9,5 @@ moon_config = { path = "../../../nextgen/config" }
 moon_hash = { path = "../../../nextgen/hash" }
 moon_project_graph = { path = "../project-graph" }
 moon_workspace = { path = "../workspace" }
+moon_vcs_hooks = { path = "../../../nextgen/vcs-hooks" }
 miette = { workspace = true }

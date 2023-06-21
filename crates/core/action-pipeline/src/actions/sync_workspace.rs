@@ -1,6 +1,6 @@
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
-use moon_actions::sync_codeowners;
+use moon_actions::{sync_codeowners, sync_vcs_hooks};
 use moon_logger::debug;
 use moon_project_graph::ProjectGraph;
 use moon_workspace::Workspace;
@@ -24,7 +24,18 @@ pub async fn sync_workspace(
     debug!(target: LOG_TARGET, "Syncing workspace");
 
     if workspace.config.codeowners.sync_on_run {
+        debug!(target: LOG_TARGET, "Syncing codeowners (syncOnRun enabled)");
+
         sync_codeowners(&workspace, &project_graph).await?;
+    }
+
+    if workspace.config.vcs.sync_hooks_on_run {
+        debug!(
+            target: LOG_TARGET,
+            "Syncing {} hooks (syncHooksOnRun enabled)", workspace.config.vcs.manager
+        );
+
+        sync_vcs_hooks(&workspace).await?;
     }
 
     Ok(ActionStatus::Passed)

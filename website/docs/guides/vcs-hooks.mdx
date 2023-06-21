@@ -1,15 +1,15 @@
 ---
-title: Git hooks
+title: VCS hooks
+tags: [vcs, hooks, git, git-hooks]
 ---
 
-[Git hooks](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks) are a mechanism for running
-scripts at pre-defined phases in git's lifecycle, most commonly pre-commit, pre-push, or pre-merge.
+VCS hooks (most popular with [Git](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks)) are a
+mechanism for running scripts at pre-defined phases in the VCS's lifecycle, most commonly
+pre-commit, pre-push, or pre-merge.
 
-While moon provides no functionality for managing hooks (_yet_), you can run moon itself from hooks!
-This is useful for ensuring that commit messages are formatted correctly, or that source code
-quality thresholds are met.
+## Examples
 
-## Pre-commit
+### Pre-commit
 
 A perfect use case for the `pre-commit` hook is to check linting and formatting of the files being
 committed. If either of these tasks fail, the commit will abort until they are fixed. Be sure to use

@@ -378,6 +378,25 @@
             }
           ]
         },
+        "hooks": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "propertyNames": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "manager": {
           "anyOf": [
             {
@@ -405,6 +424,16 @@
               "items": {
                 "type": "string"
               }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "syncHooksOnRun": {
+          "anyOf": [
+            {
+              "type": "boolean"
             },
             {
               "type": "null"

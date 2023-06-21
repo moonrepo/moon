@@ -1,7 +1,7 @@
 use crate::helpers::LOG_TARGET;
-use crate::items::{DependenciesState, ProjectsState, RunTargetState, ToolState};
+use crate::items::{CommonState, DependenciesState, ProjectsState, RunTargetState, ToolState};
 use crate::runfiles::Runfile;
-use crate::{get_cache_mode, CacheMode, CodeownersState};
+use crate::{get_cache_mode, CacheMode};
 use moon_common::consts::CONFIG_DIRNAME;
 use moon_error::MoonError;
 use moon_logger::{debug, trace};
@@ -94,8 +94,8 @@ impl CacheEngine {
         Ok(item)
     }
 
-    pub fn cache_codeowners_state(&self) -> Result<CodeownersState, MoonError> {
-        CodeownersState::load(self.get_state_path("codeowners.json"))
+    pub fn cache_codeowners_state(&self) -> Result<CommonState, MoonError> {
+        CommonState::load(self.get_state_path("codeowners.json"))
     }
 
     pub fn cache_projects_state(&self) -> Result<ProjectsState, MoonError> {
@@ -104,6 +104,10 @@ impl CacheEngine {
 
     pub fn cache_tool_state(&self, runtime: &Runtime) -> Result<ToolState, MoonError> {
         ToolState::load(self.get_state_path(format!("tool{}-{}.json", runtime, runtime.version())))
+    }
+
+    pub fn cache_vcs_hooks_state(&self) -> Result<CommonState, MoonError> {
+        CommonState::load(self.get_state_path("vcsHooks.json"))
     }
 
     pub fn clean_stale_cache(&self, lifetime: &str) -> Result<(usize, u64), MoonError> {

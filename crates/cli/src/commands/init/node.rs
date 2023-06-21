@@ -1,4 +1,5 @@
 use super::InitOptions;
+use crate::helpers::fully_qualify_version;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::{Confirm, Select};
 use miette::IntoDiagnostic;
@@ -25,18 +26,14 @@ pub fn render_template(context: Context) -> AppResult<String> {
 fn detect_node_version(dest_dir: &Path) -> AppResult<(String, String)> {
     if is_using_version_manager(dest_dir, &NVM) {
         return Ok((
-            fs::read_file(dest_dir.join(NVM.version_file))?
-                .trim()
-                .to_owned(),
+            fully_qualify_version(fs::read_file(dest_dir.join(NVM.version_file))?.trim()),
             NVM.binary.to_owned(),
         ));
     }
 
     if is_using_version_manager(dest_dir, &NODENV) {
         return Ok((
-            fs::read_file(dest_dir.join(NODENV.version_file))?
-                .trim()
-                .to_owned(),
+            fully_qualify_version(fs::read_file(dest_dir.join(NODENV.version_file))?.trim()),
             NODENV.binary.to_owned(),
         ));
     }
@@ -99,7 +96,7 @@ fn detect_package_manager(
         pm_type = items[index].to_owned();
     }
 
-    Ok((pm_type, pm_version))
+    Ok((pm_type, fully_qualify_version(&pm_version)))
 }
 
 // Detect potential projects (for existing repos only) by

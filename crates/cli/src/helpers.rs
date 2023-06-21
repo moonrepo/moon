@@ -8,6 +8,21 @@ use starbase_styles::color::{self, no_color, supports_color};
 use std::env;
 use std::time::Duration;
 
+pub fn fully_qualify_version(version: &str) -> String {
+    if version.is_empty() {
+        return version.to_owned();
+    }
+
+    let mut parts = version.split('.');
+
+    vec![
+        parts.next().unwrap_or("0"),
+        parts.next().unwrap_or("0"),
+        parts.next().unwrap_or("0"),
+    ]
+    .join(".")
+}
+
 pub fn create_progress_bar<S: AsRef<str>, F: AsRef<str>>(start: S) -> impl FnOnce(F, bool) {
     let pb = ProgressBar::new_spinner();
     pb.set_message(start.as_ref().to_owned());

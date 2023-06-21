@@ -19,12 +19,11 @@ projects:
   - 'apps/*'
   - 'packages/*'
 
-
 # Configures the version control system to utilize within the workspace. A VCS
 # is required for determining touched (added, modified, etc) files, calculating file hashes,
 # computing affected files, and much more.
 vcs:
-  # The manager/binary to use when managing the repository.
+  # The client to use when managing the repository.
   # Accepts "git". Defaults to "git".
   manager: 'svn'
 

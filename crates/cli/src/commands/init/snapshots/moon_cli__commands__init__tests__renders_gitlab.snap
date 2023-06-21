@@ -27,6 +27,9 @@ vcs:
   # Accepts "git". Defaults to "git".
   manager: 'git'
 
+  # The provider in which the repository is hosted on.
+  provider: 'gitlab'
+
   # The default branch (master/main/trunk) in the repository for comparing the
   # local branch against. For git, this is is typically "master" or "main",
   # and must include the remote prefix (before /).

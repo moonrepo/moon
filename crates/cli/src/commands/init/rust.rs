@@ -1,4 +1,5 @@
 use super::InitOptions;
+use crate::helpers::fully_qualify_version;
 use dialoguer::theme::ColorfulTheme;
 use miette::IntoDiagnostic;
 use moon_config::load_toolchain_rust_config_template;
@@ -15,7 +16,11 @@ pub fn render_template(context: Context) -> AppResult<String> {
 fn detect_rust_version(dest_dir: &Path) -> AppResult<String> {
     if let Some(toolchain_toml) = ToolchainTomlCache::read(dest_dir)? {
         if let Some(version) = toolchain_toml.toolchain.channel {
-            return Ok(version);
+            if version == "stable" || version == "beta" || version == "nightly" {
+                // Fall-through
+            } else {
+                return Ok(fully_qualify_version(&version));
+            }
         }
     }
 

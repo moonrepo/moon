@@ -47,8 +47,19 @@ fn create_default_context() -> Context {
     context.insert("projects", &BTreeMap::<String, String>::new());
     context.insert("project_globs", &vec!["apps/*", "packages/*"]);
     context.insert("vcs_manager", &"git");
+    context.insert("vcs_provider", &"github");
     context.insert("vcs_default_branch", &"master");
     context
+}
+
+fn detect_vcs_provider(repo_root: PathBuf) -> String {
+    if repo_root.join(".gitlab").exists() {
+        "gitlab".into()
+    } else if repo_root.join("bitbucket-pipelines.yml").exists() {
+        "bitbucket".into()
+    } else {
+        "github".into()
+    }
 }
 
 pub struct InitOptions {
@@ -156,6 +167,10 @@ pub async fn init(dest: String, tool: Option<InitTool>, options: InitOptions) ->
 
     let git = Git::load(&dest_dir, "master", &[])?;
     context.insert("vcs_manager", "git");
+    context.insert(
+        "vcs_provider",
+        &detect_vcs_provider(git.get_repository_root().await?),
+    );
     context.insert(
         "vcs_default_branch",
         if git.is_enabled() {
@@ -289,6 +304,26 @@ mod tests {
         let mut context = create_default_context();
         context.insert("vcs_manager", &"svn");
         context.insert("vcs_default_branch", &"trunk");
+
+        assert_snapshot!(render_workspace_template(&context).unwrap());
+    }
+
+    #[test]
+    fn renders_gitlab() {
+        let mut context = create_default_context();
+        context.insert("vcs_manager", &"git");
+        context.insert("vcs_provider", &"gitlab");
+        context.insert("vcs_default_branch", &"main");
+
+        assert_snapshot!(render_workspace_template(&context).unwrap());
+    }
+
+    #[test]
+    fn renders_bitbucket() {
+        let mut context = create_default_context();
+        context.insert("vcs_manager", &"git");
+        context.insert("vcs_provider", &"bitbucket");
+        context.insert("vcs_default_branch", &"main");
 
         assert_snapshot!(render_workspace_template(&context).unwrap());
     }

@@ -9,6 +9,7 @@ use moon_test_utils::{
     predicates::{self, prelude::*},
     Sandbox,
 };
+use rustc_hash::FxHashMap;
 use std::fs;
 use std::path::Path;
 
@@ -1932,5 +1933,43 @@ mod sync_codeowners {
         });
 
         assert!(sandbox.path().join("CODEOWNERS").exists());
+    }
+}
+
+mod sync_vcs_hooks {
+    use super::*;
+
+    #[test]
+    fn doesnt_create_if_not_enabled() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("base:standard");
+        });
+
+        assert!(!sandbox.path().join(".moon/hooks").exists());
+    }
+
+    #[test]
+    fn creates_if_enabled() {
+        let sandbox = cases_sandbox_with_config(|workspace_config| {
+            workspace_config.vcs = Some(PartialVcsConfig {
+                hooks: Some(FxHashMap::from_iter([(
+                    "pre-commit".into(),
+                    vec!["moon check --all".into()],
+                )])),
+                sync_hooks_on_run: Some(true),
+                ..Default::default()
+            });
+        });
+
+        sandbox.enable_git();
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("base:standard");
+        });
+
+        assert!(sandbox.path().join(".moon/hooks").exists());
     }
 }

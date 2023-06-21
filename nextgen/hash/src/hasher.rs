@@ -13,6 +13,9 @@ pub struct ContentHasher<'owner> {
     label: &'owner str,
 }
 
+unsafe impl<'owner> Send for ContentHasher<'owner> {}
+unsafe impl<'owner> Sync for ContentHasher<'owner> {}
+
 impl<'owner> ContentHasher<'owner> {
     pub fn new(label: &str) -> ContentHasher {
         debug!(label, "Created new content hasher");

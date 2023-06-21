@@ -50,7 +50,7 @@ pub async fn sync_codeowners(
     if hasher.generate_hash()? != cache.last_hash {
         codeowners.generate()?;
 
-        cache.last_hash = HashEngine::new(&workspace.cache.dir).save_manifest(hasher)?;
+        cache.last_hash = hash_engine.save_manifest(hasher)?;
         cache.save()?;
     }
 

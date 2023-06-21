@@ -154,7 +154,7 @@ const sidebars = {
 				{
 					type: 'category',
 					label: 'sync',
-					items: ['commands/sync/codeowners', 'commands/sync/projects'],
+					items: ['commands/sync/codeowners', 'commands/sync/hooks', 'commands/sync/projects'],
 					link: {
 						type: 'generated-index',
 						title: 'sync',
@@ -190,7 +190,6 @@ const sidebars = {
 		'guides/codegen',
 		'guides/codeowners',
 		'guides/docker',
-		'guides/git-hooks',
 		'guides/offline-mode',
 		'guides/open-source',
 		'guides/profile',
@@ -198,6 +197,7 @@ const sidebars = {
 		'guides/root-project',
 		'guides/sharing-config',
 		'guides/webhooks',
+		'guides/vcs-hooks',
 		{
 			type: 'html',
 			value: '<hr />',

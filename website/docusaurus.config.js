@@ -215,6 +215,10 @@ const config = {
 						from: '/docs/config/inherited-tasks',
 						to: '/docs/config/tasks',
 					},
+					{
+						from: '/docs/guides/git-hooks',
+						to: '/docs/guides/vcs-hooks',
+					},
 				],
 			},
 		],

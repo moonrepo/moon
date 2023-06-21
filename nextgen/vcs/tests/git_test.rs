@@ -41,7 +41,7 @@ mod root_detection {
     async fn same_dir() {
         let (sandbox, git) = create_git_sandbox("vcs");
 
-        assert_eq!(git.git_root, sandbox.path());
+        assert_eq!(git.repository_root, sandbox.path());
         assert_eq!(git.process.root, sandbox.path());
     }
 
@@ -51,7 +51,7 @@ mod root_detection {
 
         let git = Git::load(sandbox.path(), "master", &["origin".into()]).unwrap();
 
-        assert_eq!(git.git_root, sandbox.path());
+        assert_eq!(git.repository_root, sandbox.path());
         assert_eq!(git.process.root, sandbox.path());
     }
 
@@ -62,7 +62,7 @@ mod root_detection {
 
         let git = Git::load(sandbox.path().join("bar/sub"), "master", &["origin".into()]).unwrap();
 
-        assert_eq!(git.git_root, sandbox.path());
+        assert_eq!(git.repository_root, sandbox.path());
         assert_eq!(git.process.root, sandbox.path().join("bar/sub"));
     }
 }

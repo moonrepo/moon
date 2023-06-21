@@ -9,11 +9,11 @@ use std::path::{Path, PathBuf};
 
 #[derive(Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(default, rename_all = "camelCase")]
-pub struct CodeownersState {
+pub struct CommonState {
     pub last_hash: String,
 
     #[serde(skip)]
     pub path: PathBuf,
 }
 
-cache_item!(CodeownersState);
+cache_item!(CommonState);

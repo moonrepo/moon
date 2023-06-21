@@ -399,6 +399,31 @@ vcs:
   defaultBranch: 'master'
 ```
 
+### `hooks`
+
+<HeadingApiLink to="/api/types/interface/VcsConfig#hooks" />
+
+Defines a mapping of hooks to a list of commands to run when that event is triggered. There are no
+restrictions to what commands can be run, but the binaries for each command must exist on each
+machine that will be running hooks.
+
+For Git, each [hook name](https://git-scm.com/docs/githooks#_hooks) must be a valid kebab-cased
+name. [Learn more about Git hooks](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks).
+
+```yaml title=".moon/workspace.yml" {2-5}
+vcs:
+  hooks:
+    pre-commit:
+      - 'moon run :lint :format --affected --status=staged'
+      - 'check-commit-message'
+```
+
+:::info
+
+If running `moon` commands directly, the `moon` binary must be installed globally!
+
+:::
+
 ### `manager`
 
 <HeadingApiLink to="/api/types/interface/VcsConfig#manager" />
@@ -436,6 +461,28 @@ vcs:
     - 'origin'
     - 'upstream'
 ```
+
+### `syncHooksOnRun`
+
+<HeadingApiLink to="/api/types/interface/VcsConfig#syncHooksOnRun" />
+
+Will automatically generate [hook scripts](#hooks) to `.moon/hooks` and sync the scripts to the
+local VCS checkout, everytime a [target is run](../concepts/target). The hooks format and location
+is based on the [`vcs.manager`](#manager) setting. Defaults to `false`.
+
+```yaml title=".moon/workspace.yml" {4}
+vcs:
+  hooks:
+    # ...
+  syncHooksOnRun: true
+```
+
+:::caution
+
+When enabled, this will sync hooks for _all_ users of the repository. For personal or small
+projects, this may be fine, but for larger projects, this may be undesirable and disruptive!
+
+:::
 
 ## `versionConstraint`
 

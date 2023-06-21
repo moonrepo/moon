@@ -7,7 +7,10 @@
 - Added VCS hooks management support.
   - Added `vcs.hooks` and `vcs.syncHooksOnRun` settings to `.moon/workspace.yml`.
   - Added `moon sync hooks` command.
-- Node.js
+- Updated `moon init` to:
+  - Detect an applicable VCS provider and set the `vcs.provider` setting.
+  - Convert a detected tool version to a fully-qualified semantic version.
+- **Node.js**
   - Moved syncing logic from `InstallNodeDeps` action to `SetupNodeTool` action. This includes
     syncing `packageManager`, `engines`, and version files. This should feel more natural.
 
@@ -59,8 +62,7 @@
 - Added a new action to the graph, `SyncWorkspace`, that'll be used for workspace-level checks.
 - Added `workspace.syncing` and `workspace.synced` webhooks.
 - Added `MOON_OUTPUT_STYLE` and `MOON_RETRY_COUNT` environment variables.
-
-- Rust
+- **Rust**
   - Improved Cargo workspace root and members detection.
 
 #### ⚙️ Internal

@@ -471,6 +471,8 @@ mod engines {
             cmd.arg("run").arg("node:standard");
         });
 
+        sandbox.debug_files();
+
         assert_snapshot!(read_to_string(sandbox.path().join("package.json")).unwrap());
     }
 
@@ -530,6 +532,8 @@ mod version_manager {
         sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("node:standard");
         });
+
+        sandbox.debug_files();
 
         assert!(sandbox.path().join(".node-version").exists());
 

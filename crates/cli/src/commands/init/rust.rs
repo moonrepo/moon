@@ -17,7 +17,7 @@ fn detect_rust_version(dest_dir: &Path) -> AppResult<String> {
     if let Some(toolchain_toml) = ToolchainTomlCache::read(dest_dir)? {
         if let Some(version) = toolchain_toml.toolchain.channel {
             if version == "stable" || version == "beta" || version == "nightly" {
-                return Ok(version);
+                // Fall-through
             } else {
                 return Ok(fully_qualify_version(&version));
             }

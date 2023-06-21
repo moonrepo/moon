@@ -7,6 +7,9 @@
 - Added VCS hooks management support.
   - Added `vcs.hooks` and `vcs.syncHooksOnRun` settings to `.moon/workspace.yml`.
   - Added `moon sync hooks` command.
+- Node.js
+  - Moved syncing logic from `InstallNodeDeps` action to `SetupNodeTool` action. This includes
+    syncing `packageManager`, `engines`, and version files. This should feel more natural.
 
 #### 🐞 Fixes
 

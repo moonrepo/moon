@@ -4,7 +4,6 @@ use moon_logger::debug;
 use moon_node_lang::{PackageJson, NODENV, NPM, NVM, PNPM, YARN};
 use moon_node_tool::NodeTool;
 use moon_tool::ToolError;
-use moon_utils::is_ci;
 use starbase_styles::color;
 use starbase_utils::fs;
 use std::path::Path;
@@ -62,10 +61,6 @@ fn add_engines_constraint(node_config: &NodeConfig, package_json: &mut PackageJs
 }
 
 pub async fn setup_tool(node: &NodeTool, workspace_root: &Path) -> Result<(), ToolError> {
-    if is_ci() {
-        return Ok(());
-    }
-
     // Find the `package.json` workspaces root
     let lockfile = match node.config.package_manager {
         NodePackageManager::Npm => NPM.lockfile,

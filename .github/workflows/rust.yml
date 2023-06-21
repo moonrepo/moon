@@ -15,7 +15,7 @@ on:
       - Makefile.toml
       - rust-toolchain.toml
 env:
-  RUST_BACKTRACE: 1
+  # RUST_BACKTRACE: 1
   WITH_COVERAGE: ${{ contains(github.head_ref, 'develop-') || endsWith(github.ref, 'master') }}
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

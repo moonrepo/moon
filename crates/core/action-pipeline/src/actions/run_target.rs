@@ -70,7 +70,7 @@ pub async fn run_target(
     } else {
         // Concurrent long-running tasks will cause a deadlock, as some threads will
         // attempt to write to context while others are reading from it, and long-running
-        // tasks may never release the lock. Unfortuantely we have to clone  here to work
+        // tasks may never release the lock. Unfortuantely we have to clone here to work
         // around it, so revisit in the future.
         let context = (context.read().await).clone();
 

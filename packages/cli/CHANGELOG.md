@@ -9,6 +9,7 @@
   - Added `moon sync hooks` command.
 - Updated `moon init` to:
   - Detect an applicable VCS provider and set the `vcs.provider` setting.
+  - Convert a detected tool version to a fully-qualified semantic version.
 - **Node.js**
   - Moved syncing logic from `InstallNodeDeps` action to `SetupNodeTool` action. This includes
     syncing `packageManager`, `engines`, and version files. This should feel more natural.

@@ -17,7 +17,7 @@ Hooks can be configured with the [`vcs.hooks`](../config/workspace#hooks) settin
 format required by your VCS), to a list of arbitrary commands to run within the hook script.
 Commands are used as-is and are not formatted or interpolated in any way.
 
-To demonstrate this, let's configure a `pre-commit` hook that runs a `lint` task for affected
+To demonstrate this, let's configure a `pre-commit` hook that runs a moon `lint` task for affected
 projects, and also verifies that the commit message abides by a specified format (using
 [pre-commit](https://pre-commit.com/)).
 
@@ -31,8 +31,8 @@ vcs:
 
 :::info
 
-All commands are executed globally and must exist on `PATH`, for every machine. If `moon` is
-installed locally, you can execute it using a repository relative path, like
+All commands are executed from the repository root (not moon's workspace root) and must exist on
+`PATH`. If `moon` is installed locally, you can execute it using a repository relative path, like
 `./node_modules/@moonrepo/cli/moon`.
 
 :::
@@ -42,6 +42,13 @@ installed locally, you can execute it using a repository relative path, like
 Hooks are a divisive subject, as some developers love them, and others hate them. Finding a viable
 solution for everyone can be difficult, so with moon, we opted to support both options. Choose the
 solution that works best for your project, team, or company!
+
+:::caution
+
+If you have existing VCS hooks, back them up as moon's implementation will overwrite them! To
+migrate your existing hooks, [configure them as commands to run](#defining-hooks).
+
+:::
 
 ### Automatically for everyone
 
@@ -56,7 +63,7 @@ vcs:
   syncHooksOnRun: true
 ```
 
-### Manually for each developer
+### Manually by each developer
 
 If you'd prefer contributors to have a choice in whether or not they want to use hooks, then simply
 do nothing, and guide them to run the [`moon sync hooks`](../commands/sync/hooks) command. This
@@ -70,14 +77,14 @@ $ moon sync hooks
 
 When hooks are [enabled](#enabling-hooks), the following processes will take place.
 
-1. The [configured hooks](#defining-hooks) will be generated as individual script files in the
+1. The configured [hooks](#defining-hooks) will be generated as individual script files in the
    `.moon/hooks` directory. Whether or not you commit or ignore these script files is your choice.
    They are written to the `.moon` directory so that they can be reviewed, audited, and easily
-   tested.
+   tested, but _are required_.
 
 2. We then sync these generated hook scripts with the current VCS. For Git, we create `.git/hooks`
-   files that execute our generated scripts, using repository root relative commands. Any existing
-   VCS hooks _will be overwritten_.
+   files that execute our generated scripts, using repository relative commands. Any existing VCS
+   hooks _will be overwritten_.
 
 :::info
 

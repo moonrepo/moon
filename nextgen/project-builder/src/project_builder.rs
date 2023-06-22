@@ -152,7 +152,7 @@ impl<'app> ProjectBuilder<'app> {
             ..Project::default()
         };
 
-        project.inherited_sources = self.global_config.take();
+        project.inherited = self.global_config.take();
 
         let config = self.local_config.take().unwrap_or_default();
 

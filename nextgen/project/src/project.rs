@@ -20,9 +20,6 @@ cacheable!(
         /// Project configuration loaded from "moon.yml", if it exists.
         pub config: ProjectConfig,
 
-        /// Task configuration that was inherited from ".moon/tasks".
-        pub inherited_sources: Option<InheritedTasksResult>,
-
         /// List of other projects this project depends on.
         pub dependencies: FxHashMap<Id, DependencyConfig>,
 
@@ -31,6 +28,9 @@ cacheable!(
 
         /// Unique ID for the project. Is the LHS of the `projects` setting.
         pub id: Id,
+
+        /// Task configuration that was inherited from ".moon/tasks".
+        pub inherited: Option<InheritedTasksResult>,
 
         /// Primary programming language of the project.
         pub language: LanguageType,
@@ -61,8 +61,8 @@ impl Project {
     }
 
     /// Return a task with the defined ID.
-    pub fn get_task(&self, task_id: &str) -> Result<&Task, ProjectError> {
-        let task_id = Id::raw(task_id);
+    pub fn get_task<I: AsRef<str>>(&self, task_id: I) -> Result<&Task, ProjectError> {
+        let task_id = Id::raw(task_id.as_ref());
 
         self.tasks
             .get(&task_id)

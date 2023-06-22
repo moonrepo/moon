@@ -70,13 +70,14 @@ impl Task {
 
     /// Return a list of project-relative affected files filtered down from
     /// the provided touched files list.
-    pub fn get_affected_files(
+    pub fn get_affected_files<S: AsRef<str>>(
         &self,
         touched_files: &FxHashSet<WorkspaceRelativePathBuf>,
-        project_source: &str,
+        project_source: S,
     ) -> Result<Vec<ProjectRelativePathBuf>, glob::GlobError> {
         let mut files = vec![];
         let globset = self.create_globset()?;
+        let project_source = project_source.as_ref();
 
         for file in touched_files {
             // Don't run on files outside of the project
@@ -104,8 +105,9 @@ impl Task {
             if let Ok(var) = env::var(var_name) {
                 if !var.is_empty() {
                     debug!(
-                        env_var = var_name,
-                        value = var,
+                        target = ?self.target,
+                        env_key = var_name,
+                        env_val = var,
                         "Affected by environment variable",
                     );
 
@@ -118,19 +120,27 @@ impl Task {
 
         for file in touched_files {
             if self.input_paths.contains(file) {
-                debug!(input = ?file, "Affected by input file");
+                debug!(
+                    target = ?self.target,
+                    input = ?file,
+                    "Affected by input file",
+                );
 
                 return Ok(true);
             }
 
             if globset.matches(file.as_str()) {
-                debug!(input = ?file, "Affected by input glob");
+                debug!(
+                    target = ?self.target,
+                    input = ?file,
+                    "Affected by input glob",
+                );
 
                 return Ok(true);
             }
         }
 
-        debug!("Not affected by touched files");
+        debug!(target = ?self.target, "Not affected by touched files");
 
         Ok(false)
     }

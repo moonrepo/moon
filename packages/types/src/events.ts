@@ -39,7 +39,9 @@ export type EventType =
 	| 'target.ran'
 	| 'target.running'
 	| 'tool.installed'
-	| 'tool.installing';
+	| 'tool.installing'
+	| 'workspace.synced'
+	| 'workspace.syncing';
 
 export interface EventActionStarted {
 	action: Action;
@@ -202,3 +204,11 @@ export interface EventToolInstalled {
 }
 
 export type PayloadToolInstalled = WebhookPayload<'tool.installed', EventToolInstalled>;
+
+export type PayloadWorkspaceSyncing = WebhookPayload<'workspace.syncing', {}>;
+
+export interface EventWorkspaceSynced {
+	error: string | null;
+}
+
+export type PayloadWorkspaceSynced = WebhookPayload<'workspace.synced', EventWorkspaceSynced>;

@@ -1,0 +1,32 @@
+tasks:
+  # Inferred from name
+  dev:
+    command: 'dev'
+  start:
+    command: 'start'
+  serve:
+    command: 'serve'
+
+  # Override options
+  override-cache:
+    local: true
+    options:
+      cache: true
+  override-style:
+    local: true
+    options:
+      outputStyle: 'hash'
+  override-persistent:
+    local: true
+    options:
+      persistent: false
+  override-ci:
+    local: true
+    options:
+      runInCI: true
+
+  # Override global tasks
+  global-build:
+    local: true
+  global-run:
+    local: false

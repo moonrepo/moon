@@ -1,6 +1,6 @@
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{
-    FilePath, InputPath, TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskOptionEnvFile,
+    InputPath, TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskOptionEnvFile,
     TaskOptionsConfig, TaskOutputStyle,
 };
 use moon_target::Target;
@@ -165,7 +165,7 @@ mod from_config {
         assert_eq!(
             task.options,
             TaskOptions {
-                env_file: Some(FilePath(".env".to_owned())),
+                env_file: Some(InputPath::ProjectFile(".env".to_owned())),
                 ..TaskOptions::default()
             }
         )
@@ -177,7 +177,7 @@ mod from_config {
             Target::new("foo", "test").unwrap(),
             &TaskConfig {
                 command: TaskCommandArgs::String("foo --bar".to_owned()),
-                args: TaskCommandArgs::Sequence(string_vec!["--baz"]),
+                args: TaskCommandArgs::List(string_vec!["--baz"]),
                 ..TaskConfig::default()
             },
         )
@@ -192,7 +192,7 @@ mod from_config {
         let task = Task::from_config(
             Target::new("foo", "test").unwrap(),
             &TaskConfig {
-                command: TaskCommandArgs::Sequence(string_vec!["foo", "--bar"]),
+                command: TaskCommandArgs::List(string_vec!["foo", "--bar"]),
                 args: TaskCommandArgs::String("--baz".to_owned()),
                 ..TaskConfig::default()
             },
@@ -315,7 +315,7 @@ mod merge {
 
         task.merge(&TaskConfig {
             command: TaskCommandArgs::String("foo --bar".to_owned()),
-            args: TaskCommandArgs::Sequence(string_vec!["--baz"]),
+            args: TaskCommandArgs::List(string_vec!["--baz"]),
             ..TaskConfig::default()
         })
         .unwrap();
@@ -333,7 +333,7 @@ mod merge {
         };
 
         task.merge(&TaskConfig {
-            command: TaskCommandArgs::Sequence(string_vec!["foo", "--bar"]),
+            command: TaskCommandArgs::List(string_vec!["foo", "--bar"]),
             args: TaskCommandArgs::String("--baz".to_owned()),
             ..TaskConfig::default()
         })
@@ -431,7 +431,7 @@ mod merge {
         assert_eq!(task.args, string_vec!["--arg", "--a"]);
 
         task.merge(&TaskConfig {
-            args: TaskCommandArgs::Sequence(string_vec!["--b"]),
+            args: TaskCommandArgs::List(string_vec!["--b"]),
             options: TaskOptionsConfig {
                 merge_args: Some(TaskMergeStrategy::Prepend),
                 ..TaskOptionsConfig::default()

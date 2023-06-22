@@ -1,7 +1,7 @@
 use moon_common::Id;
 use moon_config::{
     InheritedTasksManager, InputPath, OutputPath, ProjectConfig, ProjectWorkspaceConfig,
-    ProjectWorkspaceInheritedTasksConfig, TaskType,
+    ProjectWorkspaceInheritedTasksConfig, TaskOptionAffectedFiles, TaskOutputStyle, TaskType,
 };
 use moon_target::Target;
 use moon_task2::Task;
@@ -62,7 +62,7 @@ mod tasks_builder {
             ]
         );
         assert_eq!(build.outputs, vec![OutputPath::ProjectFile("out".into())]);
-        assert_eq!(build.flags.local, false);
+        assert!(!build.flags.local);
 
         let run = tasks.get("local-run").unwrap();
 
@@ -75,7 +75,7 @@ mod tasks_builder {
             ]
         );
         assert_eq!(run.outputs, vec![]);
-        assert_eq!(run.flags.local, true);
+        assert!(run.flags.local);
     }
 
     #[test]
@@ -94,7 +94,7 @@ mod tasks_builder {
             ]
         );
         assert_eq!(build.outputs, vec![OutputPath::ProjectFile("out".into())]);
-        assert_eq!(build.flags.local, false);
+        assert!(!build.flags.local);
 
         let run = tasks.get("local-run").unwrap();
 
@@ -107,7 +107,7 @@ mod tasks_builder {
             ]
         );
         assert_eq!(run.outputs, vec![]);
-        assert_eq!(run.flags.local, true);
+        assert!(run.flags.local);
     }
 
     mod defaults {
@@ -279,6 +279,163 @@ mod tasks_builder {
         }
     }
 
+    mod special_options {
+        use super::*;
+
+        #[test]
+        fn affected_files() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "options/moon.yml");
+
+            let task = tasks.get("affected").unwrap();
+
+            assert_eq!(
+                task.options.affected_files,
+                Some(TaskOptionAffectedFiles::Enabled(true))
+            );
+
+            let task = tasks.get("not-affected").unwrap();
+
+            assert_eq!(
+                task.options.affected_files,
+                Some(TaskOptionAffectedFiles::Enabled(false))
+            );
+
+            let task = tasks.get("affected-args").unwrap();
+
+            assert_eq!(
+                task.options.affected_files,
+                Some(TaskOptionAffectedFiles::Args)
+            );
+
+            let task = tasks.get("affected-env").unwrap();
+
+            assert_eq!(
+                task.options.affected_files,
+                Some(TaskOptionAffectedFiles::Env)
+            );
+        }
+
+        #[test]
+        fn env_file() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "options/moon.yml");
+
+            let task = tasks.get("env-file").unwrap();
+
+            assert_eq!(
+                task.options.env_file,
+                Some(InputPath::ProjectFile(".env".into()))
+            );
+
+            let task = tasks.get("no-env-file").unwrap();
+
+            assert_eq!(task.options.env_file, None);
+
+            let task = tasks.get("env-file-project").unwrap();
+
+            assert_eq!(
+                task.options.env_file,
+                Some(InputPath::ProjectFile(".env.test".into()))
+            );
+
+            let task = tasks.get("env-file-workspace").unwrap();
+
+            assert_eq!(
+                task.options.env_file,
+                Some(InputPath::WorkspaceFile(".env.shared".into()))
+            );
+        }
+
+        #[test]
+        fn adds_env_file_as_an_input() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "options/moon.yml");
+
+            let task = tasks.get("env-file").unwrap();
+
+            assert!(task.inputs.contains(&InputPath::ProjectFile(".env".into())));
+
+            let task = tasks.get("no-env-file").unwrap();
+
+            assert!(!task.inputs.contains(&InputPath::ProjectFile(".env".into())));
+
+            let task = tasks.get("env-file-project").unwrap();
+
+            assert!(task
+                .inputs
+                .contains(&InputPath::ProjectFile(".env.test".into())));
+
+            let task = tasks.get("env-file-workspace").unwrap();
+
+            assert!(task
+                .inputs
+                .contains(&InputPath::WorkspaceFile(".env.shared".into())));
+        }
+    }
+
+    mod local_mode {
+        use super::*;
+
+        fn is_local(task: &Task) {
+            assert!(task.flags.local);
+            assert!(!task.options.cache);
+            assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
+            assert!(task.options.persistent);
+            assert!(!task.options.run_in_ci);
+        }
+
+        #[test]
+        fn infers_from_task_name() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "local-mode/moon.yml");
+
+            is_local(tasks.get("dev").unwrap());
+            is_local(tasks.get("start").unwrap());
+            is_local(tasks.get("serve").unwrap());
+        }
+
+        #[test]
+        fn can_override_options() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "local-mode/moon.yml");
+
+            let cache = tasks.get("override-cache").unwrap();
+
+            assert!(cache.flags.local);
+            assert!(cache.options.cache);
+
+            let style = tasks.get("override-style").unwrap();
+
+            assert!(style.flags.local);
+            assert_eq!(style.options.output_style, Some(TaskOutputStyle::Hash));
+
+            let persistent = tasks.get("override-persistent").unwrap();
+
+            assert!(persistent.flags.local);
+            assert!(!persistent.options.persistent);
+
+            let ci = tasks.get("override-ci").unwrap();
+
+            assert!(ci.flags.local);
+            assert!(ci.options.run_in_ci);
+        }
+
+        #[test]
+        fn can_override_global_task() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "local-mode/moon.yml");
+
+            let build = tasks.get("global-build").unwrap();
+
+            assert!(build.flags.local);
+
+            let run = tasks.get("global-run").unwrap();
+
+            assert!(!run.flags.local);
+        }
+    }
+
     mod global_inheritance {
         use super::*;
 
@@ -286,10 +443,7 @@ mod tasks_builder {
             inherited_tasks: ProjectWorkspaceInheritedTasksConfig,
         ) -> ProjectConfig {
             ProjectConfig {
-                workspace: ProjectWorkspaceConfig {
-                    inherited_tasks: inherited_tasks,
-                    ..Default::default()
-                },
+                workspace: ProjectWorkspaceConfig { inherited_tasks },
                 ..Default::default()
             }
         }
@@ -411,7 +565,7 @@ mod tasks_builder {
                     InputPath::WorkspaceGlob(".moon/*.yml".into()),
                 ]
             );
-            assert_eq!(task.flags.empty_inputs, false);
+            assert!(!task.flags.empty_inputs);
         }
 
         #[test]
@@ -428,7 +582,7 @@ mod tasks_builder {
                     InputPath::WorkspaceGlob(".moon/*.yml".into()),
                 ]
             );
-            assert_eq!(task.flags.empty_inputs, true);
+            assert!(task.flags.empty_inputs);
         }
 
         #[test]
@@ -446,7 +600,7 @@ mod tasks_builder {
                     InputPath::WorkspaceGlob(".moon/*.yml".into()),
                 ]
             );
-            assert_eq!(task.flags.empty_inputs, false);
+            assert!(!task.flags.empty_inputs);
         }
 
         #[test]
@@ -481,5 +635,17 @@ mod tasks_builder {
                 ]
             );
         }
+    }
+
+    mod inputs_scenarios {
+        // TODO
+    }
+
+    mod merge_strategies {
+        // TODO
+    }
+
+    mod project_env_vars {
+        // TODO
     }
 }

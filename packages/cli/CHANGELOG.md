@@ -18,6 +18,7 @@
 
 - Fixed an issue where task hashes would be different between Windows and Unix machines.
   - Root cause is that arguments would use different path separators.
+- Fixed an issue where `dev`, `start`, or `serve` tasks would not always be marked as `local`.
 
 #### ⚙️ Internal
 

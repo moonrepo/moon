@@ -1,5 +1,5 @@
 use moon_common::cacheable;
-use moon_config::{FilePath, TaskMergeStrategy, TaskOptionAffectedFiles, TaskOutputStyle};
+use moon_config::{InputPath, TaskMergeStrategy, TaskOptionAffectedFiles, TaskOutputStyle};
 
 cacheable!(
     #[derive(Clone, Debug, Eq, PartialEq)]
@@ -8,7 +8,7 @@ cacheable!(
 
         pub cache: bool,
 
-        pub env_file: Option<FilePath>,
+        pub env_file: Option<InputPath>,
 
         pub merge_args: TaskMergeStrategy,
 

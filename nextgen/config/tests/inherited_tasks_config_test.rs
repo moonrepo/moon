@@ -69,7 +69,7 @@ tasks:
                     "arrayArgs".into(),
                     TaskConfig {
                         command: TaskCommandArgs::String("c".to_owned()),
-                        args: TaskCommandArgs::Sequence(vec!["array".into(), "args".into()]),
+                        args: TaskCommandArgs::List(vec!["array".into(), "args".into()]),
                         ..TaskConfig::default()
                     },
                 ),

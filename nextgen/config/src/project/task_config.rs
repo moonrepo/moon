@@ -21,7 +21,7 @@ fn validate_command<D, C>(cmd: &TaskCommandArgs, _task: &D, _ctx: &C) -> Result<
                 true
             }
         }
-        TaskCommandArgs::Sequence(cmd_args) => cmd_args.is_empty() || cmd_args[0].is_empty(),
+        TaskCommandArgs::List(cmd_args) => cmd_args.is_empty() || cmd_args[0].is_empty(),
     };
 
     // Only fail for empty strings and not `None`
@@ -64,7 +64,7 @@ derive_enum!(
         #[default]
         None,
         String(String),
-        Sequence(Vec<String>),
+        List(Vec<String>),
     }
 );
 

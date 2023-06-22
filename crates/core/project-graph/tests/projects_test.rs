@@ -212,7 +212,7 @@ tasks:
 
         fn stub_global_task_config() -> PartialTaskConfig {
             PartialTaskConfig {
-                args: Some(TaskCommandArgs::Sequence(string_vec!["--a"])),
+                args: Some(TaskCommandArgs::List(string_vec!["--a"])),
                 command: Some(TaskCommandArgs::String("standard".to_owned())),
                 deps: Some(vec![Target::parse("a:standard").unwrap()]),
                 env: Some(stub_global_env_vars()),

@@ -168,7 +168,7 @@ impl<'proj> TasksBuilder<'proj> {
 
         // Determine command and args before building options and the task,
         // as we need to figure out if we're running locally or not.
-        let mut is_local = false;
+        let mut is_local = id == "dev" || id == "serve" || id == "start";
         let mut args_sets = vec![];
 
         for config in &configs {
@@ -178,14 +178,11 @@ impl<'proj> TasksBuilder<'proj> {
                 task.command = command;
             }
 
-            // Set later after we have a merge strategy
+            // Add to task later after we have a merge strategy
             args_sets.push(base_args);
 
             if let Some(local) = config.local {
                 is_local = local;
-            } else {
-                is_local =
-                    task.command == "dev" || task.command == "serve" || task.command == "start";
             }
         }
 
@@ -193,7 +190,7 @@ impl<'proj> TasksBuilder<'proj> {
         task.flags.local = is_local;
 
         // Finally build the task itself, while applying our complex inputs logic,
-        // and inheriting implicit deps/inputs from the global config.
+        // and inheriting implicit deps/inputs/env from the global config.
         let mut configured_inputs = 0;
         let mut has_configured_inputs = false;
 
@@ -208,6 +205,10 @@ impl<'proj> TasksBuilder<'proj> {
             .iter()
             .map(|d| (*d).to_owned())
             .collect::<Vec<InputPath>>();
+
+        if let Some(env_file) = &task.options.env_file {
+            task.inputs.push(env_file.to_owned());
+        }
 
         for args in args_sets {
             if !args.is_empty() {
@@ -342,7 +343,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if let Some(env_file) = &config.env_file {
-                options.env_file = env_file.to_option();
+                options.env_file = env_file.to_input_path();
             }
 
             if let Some(merge_args) = &config.merge_args {
@@ -407,7 +408,7 @@ impl<'proj> TasksBuilder<'proj> {
         let mut cmd_list = match &config.command {
             TaskCommandArgs::None => vec![],
             TaskCommandArgs::String(cmd_string) => split_args(cmd_string)?,
-            TaskCommandArgs::Sequence(cmd_args) => cmd_args.clone(),
+            TaskCommandArgs::List(cmd_args) => cmd_args.to_owned(),
         };
 
         if !cmd_list.is_empty() {
@@ -418,8 +419,8 @@ impl<'proj> TasksBuilder<'proj> {
         match &config.args {
             TaskCommandArgs::None => {}
             TaskCommandArgs::String(args_string) => args.extend(split_args(args_string)?),
-            TaskCommandArgs::Sequence(args_list) => args.extend(args_list.clone()),
-        }
+            TaskCommandArgs::List(args_list) => args.extend(args_list.to_owned()),
+        };
 
         Ok((command, args))
     }
@@ -463,6 +464,7 @@ impl<'proj> TasksBuilder<'proj> {
         // we need to preserve the insertion order. Revisit if this is costly!
         let mut append = |items: Vec<T>, force: bool| {
             for item in items {
+                #[allow(clippy::nonminimal_bool)]
                 if force || !dedupe || (dedupe && !list.contains(&item)) {
                     list.push(item);
                 }

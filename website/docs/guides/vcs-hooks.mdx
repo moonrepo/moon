@@ -40,8 +40,8 @@ All commands are executed from the repository root (not moon's workspace root) a
 ## Enabling hooks
 
 Hooks are a divisive subject, as some developers love them, and others hate them. Finding a viable
-solution for everyone can be difficult, so with moon, we opted to support both options. Choose the
-solution that works best for your project, team, or company!
+solution for everyone can be difficult, so with moon, we opted to support 2 distinct options, but
+only 1 can be used at a time. Choose the option that works best for your project, team, or company!
 
 :::caution
 
@@ -53,14 +53,14 @@ migrate your existing hooks, [configure them as commands to run](#defining-hooks
 ### Automatically for everyone
 
 If you'd like hooks to be enforced for every contributor of the repository, then simply enable the
-[`vcs.syncHooksOnRun`](../config/workspace#synchooksonrun) setting in
+[`vcs.syncHooks`](../config/workspace#synchooks) setting in
 [`.moon/workspace.yml`](../config/workspace). This will automatically generate hook scripts and link
 them with the local VCS checkout, everytime a [target](../concepts/target) is ran.
 
 ```yaml title=".moon/workspace.yml"
 vcs:
   hooks: [...]
-  syncHooksOnRun: true
+  syncHooks: true
 ```
 
 ### Manually by each developer

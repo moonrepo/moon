@@ -59,7 +59,7 @@ export interface PartialVcsConfig {
 	manager?: VcsManager | null;
 	provider?: VcsProvider | null;
 	remoteCandidates?: string[] | null;
-	syncHooksOnRun?: boolean | null;
+	syncHooks?: boolean | null;
 }
 
 export interface PartialWorkspaceConfig {
@@ -116,7 +116,7 @@ export interface VcsConfig {
 	manager: VcsManager;
 	provider: VcsProvider;
 	remoteCandidates: string[];
-	syncHooksOnRun: boolean;
+	syncHooks: boolean;
 }
 
 export interface WorkspaceConfig {

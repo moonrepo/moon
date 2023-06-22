@@ -462,19 +462,19 @@ vcs:
     - 'upstream'
 ```
 
-### `syncHooksOnRun`
+### `syncHooks`
 
-<HeadingApiLink to="/api/types/interface/VcsConfig#syncHooksOnRun" />
+<HeadingApiLink to="/api/types/interface/VcsConfig#syncHooks" />
 
 Will automatically generate [hook scripts](#hooks) to `.moon/hooks` and sync the scripts to the
-local VCS checkout, everytime a [target is run](../concepts/target). The hooks format and location
-is based on the [`vcs.manager`](#manager) setting. Defaults to `false`.
+local VCS checkout. The hooks format and location is based on the [`vcs.manager`](#manager) setting.
+Defaults to `false`.
 
 ```yaml title=".moon/workspace.yml" {4}
 vcs:
   hooks:
     # ...
-  syncHooksOnRun: true
+  syncHooks: true
 ```
 
 :::caution

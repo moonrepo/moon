@@ -40,5 +40,5 @@ pub struct VcsConfig {
     #[setting(default = vec!["origin".into(), "upstream".into()])]
     pub remote_candidates: Vec<String>,
 
-    pub sync_hooks_on_run: bool,
+    pub sync_hooks: bool,
 }

@@ -16,14 +16,15 @@ import {
 	faGridDividers,
 	faLayerGroup,
 	faMerge,
-	faMessageCode,
 	faMicrochip,
 	faRectangleBarcode,
+	faScroll,
 	faShieldHalved,
 	faSitemap,
 	faSlidersUp,
 	faToolbox,
 	faUserSecret,
+	faWebhook,
 } from '@fortawesome/pro-duotone-svg-icons';
 import AdditionalFeatures from '@site/src/components/Products/AdditionalFeatures';
 import Features, { Feature } from '@site/src/components/Products/Features';
@@ -41,7 +42,6 @@ const managementFeatures: Feature[] = [
 		title: 'Remote caching',
 		icon: faCloudArrowUp,
 		description: 'Persists builds, hashes, and caches between teammates and CI/CD environments.',
-		status: 'new',
 	},
 	{
 		title: 'Integrated toolchain',
@@ -74,10 +74,10 @@ const organizationFeatures: Feature[] = [
 			'Define a task once to be inherited by all or scoped projects. Avoid defining the same task in every project.',
 	},
 	{
-		title: 'Ownership metadata',
+		title: 'Code ownership',
 		icon: faRectangleBarcode,
-		description:
-			'Declare an owner, maintainers, support channels, and more, for LDAP or another integration.',
+		description: 'Declare owners, maintainers, support channels, and more. Generate CODEOWNERS.',
+		status: 'new',
 	},
 ];
 
@@ -112,11 +112,10 @@ const notificationFeatures: Feature[] = [
 		title: 'Flakiness detection',
 		icon: faShieldHalved,
 		description: 'Reduce flaky builds with automatic retries and passthrough settings.',
-		status: 'experimental',
 	},
 	{
 		title: 'Webhook events',
-		icon: faMessageCode,
+		icon: faWebhook,
 		description:
 			'Receive a webhook for every event in the pipeline. Useful for metrics gathering and insights.',
 		status: 'experimental',
@@ -127,6 +126,12 @@ const notificationFeatures: Feature[] = [
 		description:
 			'Receives notifications in your chosen terminal when builds are successful... or are not.',
 		status: 'coming-soon',
+	},
+	{
+		title: 'Git hooks',
+		icon: faScroll,
+		description: 'Manage Git hooks to enforce workflows and requirements for contributors.',
+		status: 'new',
 	},
 ];
 

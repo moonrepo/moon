@@ -430,7 +430,7 @@
             }
           ]
         },
-        "syncHooksOnRun": {
+        "syncHooks": {
           "anyOf": [
             {
               "type": "boolean"

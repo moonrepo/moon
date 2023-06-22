@@ -29,10 +29,10 @@ pub async fn sync_workspace(
         sync_codeowners(&workspace, &project_graph).await?;
     }
 
-    if workspace.config.vcs.sync_hooks_on_run {
+    if workspace.config.vcs.sync_hooks {
         debug!(
             target: LOG_TARGET,
-            "Syncing {} hooks (syncHooksOnRun enabled)", workspace.config.vcs.manager
+            "Syncing {} hooks (syncHooks enabled)", workspace.config.vcs.manager
         );
 
         sync_vcs_hooks(&workspace).await?;

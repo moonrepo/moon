@@ -1,0 +1,70 @@
+---
+slug: moon-v1.9
+title: moon v1.9 - VCS hooks management
+authors: [milesj]
+tags: [vcs, git, hooks]
+# image: ./img/moon/v1.9.png
+---
+
+???
+
+<!--truncate-->
+
+## Support for VCS hooks
+
+In our last release, we added support for [code ownership](./moon-v1.8), to better help teams manage
+their code review and approval workflows. To continue this trend of "features all companies require
+but don't have a good solution for", we're adding support for VCS hooks,
+[starting with Git](https://git-scm.com/docs/githooks).
+
+If you're unfamiliar with Git hooks, they're a mechanism for running scripts before or after certain
+Git events. For example, before a commit is added, before pushing, or after merging. Hooks can be
+used for such situations as:
+
+- Ensuring commit messages abide by a certain format.
+- Ensuring affected project's source code pass linting and formatting checks.
+- Validating configuration files.
+- And much more!
+
+:::info
+
+For more information, view our official in-depth [VCS hooks guide](/docs/guides/vcs-hooks)!
+
+:::
+
+### New `vcs` settings
+
+To support hooks, we're introducing the `vcs.hooks` and `vcs.syncHooks` settings to
+[`.moon/workspace.yml`](/docs/config/workspace). The former is where you configure the list of
+commands to run, grouped by hook type.
+
+```yaml title=".moon/workspace.yml"
+vcs:
+  hooks:
+    pre-commit:
+      - 'pre-commit run'
+      - 'moon run :lint --affected'
+```
+
+The latter will automatically create and sync hooks with the local VCS checkout, enabling them going
+forward. [Learn more about enabling hooks](/docs/guides/vcs-hooks#enabling-hooks), and choosing the
+approach that works best for you or your team!
+
+### New `moon sync hooks` command
+
+Although moon can [automatically create](/docs/config/workspace#synchooksonrun) hooks when running a
+target, this may be undesirable or abrasive for some developers. Instead, we also support an opt-in
+solution through the [`moon sync hooks`](/docs/commands/sync/hooks) command, which will manually
+create the hooks.
+
+```shell
+$ moon sync hooks
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.9.0) for a full list of
+changes.
+
+- Updated `moon init` to detect VCS providers and resolve fully-qualified tool versions.
+- Improved VCS file handling, caching, and performance.

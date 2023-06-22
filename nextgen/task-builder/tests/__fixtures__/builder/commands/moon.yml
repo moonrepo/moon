@@ -1,0 +1,29 @@
+tasks:
+  no-command: {}
+  command-only:
+    command: 'bin'
+  command-string:
+    command: 'bin --foo bar'
+  command-list:
+    command: ['bin', '--foo', 'bar']
+
+  args-string:
+    args: '--foo bar'
+  args-list:
+    args: ['--foo', 'bar']
+
+  both-string:
+    command: 'bin'
+    args: '--foo bar'
+  both-list:
+    command: 'bin'
+    args: ['--foo', 'bar']
+  both-list-many:
+    command: ['bin', '-qux']
+    args: ['--foo', 'bar']
+
+  # These override/merge with the global
+  global-build:
+    command: 'override-bin --with args'
+  global-test:
+    args: ['extra', 'args']

@@ -147,7 +147,7 @@ impl Task {
 
     /// Return true if the task is a "build" type.
     pub fn is_build_type(&self) -> bool {
-        matches!(self.type_of, TaskType::Build)
+        matches!(self.type_of, TaskType::Build) || !self.outputs.is_empty()
     }
 
     /// Return true if the task is a "no operation" and does nothing.
@@ -157,7 +157,7 @@ impl Task {
 
     /// Return true if the task is a "run" type.
     pub fn is_run_type(&self) -> bool {
-        matches!(self.type_of, TaskType::Run)
+        matches!(self.type_of, TaskType::Run) || self.flags.local
     }
 
     /// Return true if the task is a "test" type.

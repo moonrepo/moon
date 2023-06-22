@@ -68,13 +68,15 @@ impl<'proj> TasksBuilder<'proj> {
                 if include_set.is_empty() {
                     debug!(
                         project_id = ?self.project_id,
-                        "Not inheriting global tasks, empty include filter",
+                        task_id = ?task_id,
+                        "Not inheriting any global tasks, empty include filter",
                     );
 
                     break;
                 } else if !include_set.contains(task_id) {
                     debug!(
                         project_id = ?self.project_id,
+                        task_id = ?task_id,
                         "Not inheriting global task {}, not included",
                         color::id(task_id)
                     );
@@ -88,6 +90,7 @@ impl<'proj> TasksBuilder<'proj> {
             if !exclude.is_empty() && exclude.contains(&task_id) {
                 debug!(
                     project_id = ?self.project_id,
+                    task_id = ?task_id,
                     "Not inheriting global task {}, excluded",
                     color::id(task_id)
                 );
@@ -98,6 +101,7 @@ impl<'proj> TasksBuilder<'proj> {
             let task_key = if let Some(renamed_task_id) = rename.get(task_id) {
                 debug!(
                     project_id = ?self.project_id,
+                    task_id = ?task_id,
                     "Inheriting global task {} and renaming to {}",
                     color::id(task_id),
                     color::id(renamed_task_id)
@@ -107,6 +111,7 @@ impl<'proj> TasksBuilder<'proj> {
             } else {
                 debug!(
                     project_id = ?self.project_id,
+                    task_id = ?task_id,
                     "Inheriting global task {}",
                     color::id(task_id),
                 );
@@ -206,14 +211,18 @@ impl<'proj> TasksBuilder<'proj> {
 
         for args in args_sets {
             if !args.is_empty() {
-                task.args = self.merge_vec(task.args, args, task.options.merge_args);
+                task.args = self.merge_vec(task.args, args, task.options.merge_args, false);
             }
         }
 
         for config in configs {
             if !config.deps.is_empty() {
-                task.deps =
-                    self.merge_vec(task.deps, config.deps.to_owned(), task.options.merge_deps);
+                task.deps = self.merge_vec(
+                    task.deps,
+                    config.deps.to_owned(),
+                    task.options.merge_deps,
+                    true,
+                );
             }
 
             if !config.env.is_empty() {
@@ -226,6 +235,7 @@ impl<'proj> TasksBuilder<'proj> {
                     task.inputs,
                     config.global_inputs.to_owned(),
                     task.options.merge_inputs,
+                    true,
                 );
             }
 
@@ -234,13 +244,21 @@ impl<'proj> TasksBuilder<'proj> {
                 configured_inputs += inputs.len();
                 has_configured_inputs = true;
 
-                task.inputs =
-                    self.merge_vec(task.inputs, inputs.to_owned(), task.options.merge_inputs);
+                task.inputs = self.merge_vec(
+                    task.inputs,
+                    inputs.to_owned(),
+                    task.options.merge_inputs,
+                    true,
+                );
             }
 
             if let Some(outputs) = &config.outputs {
-                task.outputs =
-                    self.merge_vec(task.outputs, outputs.to_owned(), task.options.merge_outputs);
+                task.outputs = self.merge_vec(
+                    task.outputs,
+                    outputs.to_owned(),
+                    task.options.merge_outputs,
+                    true,
+                );
             }
 
             if !config.platform.is_unknown() {
@@ -432,17 +450,33 @@ impl<'proj> TasksBuilder<'proj> {
         }
     }
 
-    fn merge_vec<T>(&self, base: Vec<T>, next: Vec<T>, strategy: TaskMergeStrategy) -> Vec<T> {
+    fn merge_vec<T: Eq>(
+        &self,
+        base: Vec<T>,
+        next: Vec<T>,
+        strategy: TaskMergeStrategy,
+        dedupe: bool,
+    ) -> Vec<T> {
         let mut list: Vec<T> = vec![];
+
+        // Dedupe while merging vectors. We can't use a set here because
+        // we need to preserve the insertion order. Revisit if this is costly!
+        let mut append = |items: Vec<T>, force: bool| {
+            for item in items {
+                if force || !dedupe || (dedupe && !list.contains(&item)) {
+                    list.push(item);
+                }
+            }
+        };
 
         match strategy {
             TaskMergeStrategy::Append => {
-                list.extend(base);
-                list.extend(next);
+                append(base, true);
+                append(next, false);
             }
             TaskMergeStrategy::Prepend => {
-                list.extend(next);
-                list.extend(base);
+                append(next, true);
+                append(base, false);
             }
             TaskMergeStrategy::Replace => {
                 list.extend(next);

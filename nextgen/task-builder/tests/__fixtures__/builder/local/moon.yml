@@ -1,0 +1,13 @@
+tasks:
+  local-build:
+    command: 'local-build'
+    inputs:
+      - 'abc'
+    outputs:
+      - 'out'
+    local: false
+  local-run:
+    command: 'local-run'
+    inputs:
+      - 'xyz'
+    local: true

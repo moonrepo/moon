@@ -51,8 +51,7 @@ and provide a first-class developer experience.
 - **Code generation** - Easily scaffold new applications, libraries, tooling, and more!
 - **Dependency workspaces** - Works alongside package manager workspaces so that projects have
   distinct dependency trees.
-- **Ownership metadata** - Declare an owner, maintainers, support channels, and more, for LDAP or
-  another integration.
+- **Code ownership** - Declare owners, maintainers, support channels, and more. Generate CODEOWNERS.
 
 #### Orchestration
 
@@ -70,3 +69,4 @@ and provide a first-class developer experience.
   gathering and insights.
 - **Terminal notifications** - Receives notifications in your chosen terminal when builds are
   successful... or are not.
+- **Git hooks** - Manage Git hooks to enforce workflows and requirements for contributors.

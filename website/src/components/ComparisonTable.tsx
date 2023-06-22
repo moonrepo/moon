@@ -558,6 +558,24 @@ const otherSystemRows: Comparison[] = [
 			turborepo: SUPPORTED,
 		},
 	},
+	{
+		feature: 'Can define and manage code owners',
+		support: {
+			moon: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Can generate a `CODEOWNERS` file',
+		support: {
+			moon: SUPPORTED,
+		},
+	},
+	{
+		feature: 'Can define and manage VCS (git) hooks',
+		support: {
+			moon: SUPPORTED,
+		},
+	},
 ];
 
 const javascriptRows: Comparison[] = [

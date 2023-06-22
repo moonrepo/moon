@@ -1959,7 +1959,7 @@ mod sync_vcs_hooks {
                     "pre-commit".into(),
                     vec!["moon check --all".into()],
                 )])),
-                sync_hooks_on_run: Some(true),
+                sync_hooks: Some(true),
                 ..Default::default()
             });
         });

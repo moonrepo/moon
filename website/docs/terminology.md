@@ -32,7 +32,7 @@ title: Terminology
 | Transitive target             | A target that is the dependency of the primary target, and must be ran before the primary.                                                              |
 | Touched                       | A file that has been created, modified, deleted, or changed in any way.                                                                                 |
 | Upstream                      | Dependencies or producers of the item in question.                                                                                                      |
-| VCS                           | Version control system (like git or svn).                                                                                                               |
+| VCS                           | Version control system (like Git or SVN).                                                                                                               |
 | [Workspace][workspace]        | Root of the moon installation, and houses one or many [projects][project]. _Also refers to package manager workspaces (like Yarn)._                     |
 
 [project]: ./concepts/project

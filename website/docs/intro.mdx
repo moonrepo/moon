@@ -113,8 +113,7 @@ currently:
 
 - **Smart hashing** - Collects inputs from multiple sources to ensure builds are deterministic and
   reproducible.
-- **Remote caching** <FeatureStatus status="new" /> - Persists builds, hashes, and caches between
-  teammates and CI/CD environments.
+- **Remote caching** - Persists builds, hashes, and caches between teammates and CI/CD environments.
 - **Integrated toolchain** - Automatically downloads and installs explicit versions of Node.js and
   other tools for consistency across the entire workspace or per project.
 - **Multi-platform** - Runs on common development platforms: Linux, macOS, and Windows.
@@ -125,8 +124,8 @@ currently:
 - **Code generation** - Easily scaffold new applications, libraries, tooling, and more!
 - **Dependency workspaces** - Works alongside package manager workspaces so that projects have
   distinct dependency trees.
-- **Ownership metadata** - Declare an owner, maintainers, support channels, and more, for LDAP or
-  another integration.
+- **Code ownership** <FeatureStatus status="new" /> - Declare owners, maintainers, support channels,
+  and more. Generate CODEOWNERS.
 
 #### Orchestration
 
@@ -140,12 +139,13 @@ currently:
 
 #### Notification
 
-- **Flakiness detection** <FeatureStatus status="experimental" /> - Reduce flaky builds with
-  automatic retries and passthrough settings.
+- **Flakiness detection** - Reduce flaky builds with automatic retries and passthrough settings.
 - **Webhook events** <FeatureStatus status="experimental" /> - Receive a webhook for every event in
   the pipeline. Useful for metrics gathering and insights.
 - **Terminal notifications** <FeatureStatus status="coming-soon" /> - Receives notifications in your
   chosen terminal when builds are successful... or are not.
+- **Git hooks** <FeatureStatus status="new" /> - Manage Git hooks to enforce workflows and
+  requirements for contributors.
 
 ## moonbase
 

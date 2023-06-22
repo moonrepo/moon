@@ -424,6 +424,43 @@ targets can be scoped with the `RunTarget(...)` and `RunPersistentTarget(...)` l
 }
 ```
 
+### `workspace.syncing`
+
+<HeadingApiLink to="/api/types#PayloadWorkspaceSyncing" />
+
+Triggered when the workspace is being synced.
+
+```json
+{
+  "type": "workspace.syncing",
+  "createdAt": "...",
+  "environment": "...",
+  "event": {
+    "target": "app:build"
+  },
+  "uuid": "..."
+}
+```
+
+### `workspace.synced`
+
+<HeadingApiLink to="/api/types#PayloadWorkspaceSynced" />
+
+Triggered when the workspace has finished syncing. If the action failed, the `error` field will be
+set with the error message.
+
+```json
+{
+  "type": "workspace.synced",
+  "createdAt": "...",
+  "environment": "...",
+  "event": {
+    "error": null
+  },
+  "uuid": "..."
+}
+```
+
 ### Targets
 
 Targets to run. Each event contains a `hash` field, that is a unique SHA-256 identifier for the the

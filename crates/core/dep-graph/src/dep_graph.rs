@@ -77,10 +77,7 @@ impl DepGraph {
         }
 
         // If no root nodes are found, but nodes exist, then we have a cycle
-        let has_sync_workspace = self
-            .graph
-            .node_weights()
-            .any(|n| matches!(n, ActionNode::SyncWorkspace));
+        let has_sync_workspace = root_nodes.contains(&NodeIndex::new(0));
 
         if (!has_sync_workspace && root_nodes.is_empty()
             || has_sync_workspace && root_nodes.len() == 1)
@@ -181,14 +178,16 @@ impl DepGraph {
             .collect::<Vec<Vec<NodeIndex>>>();
 
         // The cycle is always the last sequence in the list
-        let cycle = scc
-            .last()
-            .unwrap()
+        let Some(cycle) = scc.last() else {
+            return Err(DepGraphError::CycleDetected("(unknown)".into()));
+        };
+
+        let path = cycle
             .iter()
-            .map(|i| self.get_node_from_index(i).unwrap().label())
+            .filter_map(|i| self.get_node_from_index(i).map(|n| n.label()))
             .collect::<Vec<String>>()
             .join(" → ");
 
-        Err(DepGraphError::CycleDetected(cycle))
+        Err(DepGraphError::CycleDetected(path))
     }
 }

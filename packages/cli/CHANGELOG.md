@@ -21,6 +21,7 @@
 - Fixed an issue where `dev`, `start`, or `serve` tasks would not always be marked as `local`.
 - Fixed an issue where inherited tasks parameters (inputs, deps, etc) would sometimes be lost based
   on the merge strategy.
+- Fixed an issue with dependency graph cycle detection.
 
 #### ⚙️ Internal
 

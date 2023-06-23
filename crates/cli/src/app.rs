@@ -225,7 +225,13 @@ pub enum SyncCommands {
         name = "hooks",
         about = "Generate and sync hook scripts for the workspace configured VCS."
     )]
-    Hooks,
+    Hooks {
+        #[arg(long, help = "Clean and remove previously generated hooks")]
+        clean: bool,
+
+        #[arg(long, help = "Bypass cache and force create hooks.")]
+        force: bool,
+    },
 
     #[command(
         name = "projects",

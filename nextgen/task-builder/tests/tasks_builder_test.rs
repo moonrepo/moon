@@ -79,6 +79,18 @@ mod tasks_builder {
         );
         assert_eq!(run.outputs, vec![]);
         assert!(run.flags.local);
+
+        let test = tasks.get("local-test").unwrap();
+
+        assert_eq!(test.command, "local-test");
+        assert_eq!(
+            test.inputs,
+            vec![
+                InputPath::ProjectGlob("**/*".into()),
+                InputPath::WorkspaceGlob(".moon/*.yml".into()),
+            ]
+        );
+        assert!(!test.flags.local);
     }
 
     #[test]
@@ -111,6 +123,25 @@ mod tasks_builder {
         );
         assert_eq!(run.outputs, vec![]);
         assert!(run.flags.local);
+    }
+
+    #[test]
+    fn inherits_global_tasks_from_all_scopes() {
+        let sandbox = create_sandbox("builder");
+        let tasks = build_tasks(sandbox.path(), "scopes/moon.yml");
+
+        assert_eq!(
+            tasks.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
+            vec![
+                "global-build",
+                "global-run",
+                "global-test",
+                "local",
+                "node",
+                "node-application",
+                "tag"
+            ]
+        );
     }
 
     mod defaults {
@@ -707,8 +738,45 @@ mod tasks_builder {
         }
     }
 
-    mod project_env_vars {
-        // TODO
+    mod project_settings {
+        use super::*;
+
+        #[test]
+        fn inherits_project_env_vars() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "local/moon.yml");
+
+            let build = tasks.get("local-build").unwrap();
+
+            assert_eq!(
+                build.env,
+                FxHashMap::from_iter([
+                    ("SCOPE".into(), "project".into()),
+                    ("KEY".into(), "value".into()),
+                ])
+            );
+
+            let run = tasks.get("local-run").unwrap();
+
+            assert_eq!(
+                run.env,
+                FxHashMap::from_iter([
+                    ("SCOPE".into(), "project".into()),
+                    ("KEY".into(), "value".into()),
+                ])
+            );
+
+            let test = tasks.get("local-test").unwrap();
+
+            assert_eq!(
+                test.env,
+                FxHashMap::from_iter([
+                    ("SCOPE".into(), "task".into()),
+                    ("KEY".into(), "value".into()),
+                    ("KEY2".into(), "value2".into()),
+                ])
+            );
+        }
     }
 
     mod workspace_overrides {

@@ -12,11 +12,12 @@ use moon_task2::{Task, TaskOptions};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::hash::Hash;
-use tracing::debug;
+use tracing::{debug, trace};
 
 pub struct TasksBuilder<'proj> {
     project_id: &'proj Id,
-    fallback_platform: &'proj PlatformType,
+    project_env: FxHashMap<&'proj str, &'proj str>,
+    project_platform: &'proj PlatformType,
 
     // Global settings for tasks to inherit
     implicit_deps: Vec<&'proj Target>,
@@ -29,10 +30,11 @@ pub struct TasksBuilder<'proj> {
 }
 
 impl<'proj> TasksBuilder<'proj> {
-    pub fn new(project_id: &'proj Id, fallback_platform: &'proj PlatformType) -> Self {
+    pub fn new(project_id: &'proj Id, project_platform: &'proj PlatformType) -> Self {
         Self {
             project_id,
-            fallback_platform,
+            project_env: FxHashMap::default(),
+            project_platform,
             implicit_deps: vec![],
             implicit_inputs: vec![],
             task_ids: FxHashSet::default(),
@@ -132,6 +134,10 @@ impl<'proj> TasksBuilder<'proj> {
     }
 
     pub fn load_local_tasks(&mut self, local_config: &'proj ProjectConfig) -> &mut Self {
+        for (key, value) in &local_config.env {
+            self.project_env.insert(key, value);
+        }
+
         self.local_tasks.extend(&local_config.tasks);
 
         for id in local_config.tasks.keys() {
@@ -170,7 +176,7 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         // Determine command and args before building options and the task,
-        // as we need to figure out if we're running locally or not.
+        // as we need to figure out if we're running in local mode or not.
         let mut is_local = id == "dev" || id == "serve" || id == "start";
         let mut args_sets = vec![];
 
@@ -189,16 +195,31 @@ impl<'proj> TasksBuilder<'proj> {
             }
         }
 
+        trace!(
+            project_id = ?self.project_id,
+            task_id = ?id,
+            "Marking task as local",
+        );
+
         task.options = self.build_task_options(id, is_local)?;
         task.flags.local = is_local;
 
-        // Aggregate a list of deps/inputs that are inherited in someway,
+        // Aggregate all values that are inherited from the global task configs,
         // and should always be included in the task, regardless of merge strategy.
         let global_deps = self
             .implicit_deps
             .iter()
             .map(|d| (*d).to_owned())
             .collect::<Vec<_>>();
+
+        if !global_deps.is_empty() {
+            trace!(
+                project_id = ?self.project_id,
+                task_id = ?id,
+                deps = ?global_deps,
+                "Inheriting global implicit deps",
+            );
+        }
 
         let mut global_inputs = self
             .implicit_inputs
@@ -212,16 +233,41 @@ impl<'proj> TasksBuilder<'proj> {
             global_inputs.push(env_file.to_owned());
         }
 
-        // Finally build the task itself, while applying our complex inputs logic,
-        // and inheriting implicit deps/inputs/env from the global config.
-        let mut configured_inputs = 0;
-        let mut has_configured_inputs = false;
+        if !global_inputs.is_empty() {
+            trace!(
+                project_id = ?self.project_id,
+                task_id = ?id,
+                inputs = ?global_inputs,
+                "Inheriting global implicit inputs",
+            );
+        }
 
+        // Aggregate all values that that are inherited from the project,
+        // and should be set on the task first, so that merge strategies can be applied.
         for args in args_sets {
             if !args.is_empty() {
                 task.args = self.merge_vec(task.args, args, task.options.merge_args, false);
             }
         }
+
+        task.env = self
+            .project_env
+            .iter()
+            .map(|(k, v)| ((*k).to_owned(), (*v).to_owned()))
+            .collect::<FxHashMap<_, _>>();
+
+        if !task.env.is_empty() {
+            trace!(
+                project_id = ?self.project_id,
+                task_id = ?id,
+                env_vars = ?self.project_env,
+                "Inheriting project env vars",
+            );
+        }
+
+        // Finally build the task itself, while applying our complex merge logic!
+        let mut configured_inputs = 0;
+        let mut has_configured_inputs = false;
 
         for config in configs {
             if !config.deps.is_empty() {
@@ -242,7 +288,7 @@ impl<'proj> TasksBuilder<'proj> {
                 global_inputs.extend(config.global_inputs.to_owned());
             }
 
-            // Inherit local inputs, which are used configured, and keep track of the total
+            // Inherit local inputs, which are user configured, and keep track of the total
             if let Some(inputs) = &config.inputs {
                 configured_inputs += inputs.len();
                 has_configured_inputs = true;
@@ -309,7 +355,7 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         if task.platform.is_unknown() {
-            task.platform = self.fallback_platform.to_owned();
+            task.platform = self.project_platform.to_owned();
         }
 
         task.target = Target::new(self.project_id, id)?;

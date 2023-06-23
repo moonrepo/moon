@@ -4,6 +4,7 @@ use moon_actions::{sync_codeowners, sync_vcs_hooks};
 use moon_logger::debug;
 use moon_project_graph::ProjectGraph;
 use moon_workspace::Workspace;
+use starbase_styles::color;
 use std::env;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -24,18 +25,24 @@ pub async fn sync_workspace(
     debug!(target: LOG_TARGET, "Syncing workspace");
 
     if workspace.config.codeowners.sync_on_run {
-        debug!(target: LOG_TARGET, "Syncing codeowners (syncOnRun enabled)");
+        debug!(
+            target: LOG_TARGET,
+            "Syncing codeowners ({} enabled)",
+            color::id("codeowners.syncOnRun"),
+        );
 
-        sync_codeowners(&workspace, &project_graph).await?;
+        sync_codeowners(&workspace, &project_graph, false).await?;
     }
 
     if workspace.config.vcs.sync_hooks {
         debug!(
             target: LOG_TARGET,
-            "Syncing {} hooks (syncHooks enabled)", workspace.config.vcs.manager
+            "Syncing {} hooks ({} enabled)",
+            workspace.config.vcs.manager,
+            color::id("vcs.syncHooks"),
         );
 
-        sync_vcs_hooks(&workspace).await?;
+        sync_vcs_hooks(&workspace, false).await?;
     }
 
     Ok(ActionStatus::Passed)

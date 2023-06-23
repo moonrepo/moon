@@ -22,6 +22,30 @@ mod sync_codeowners {
 
         assert!(sandbox.path().join(".github/CODEOWNERS").exists());
     }
+
+    #[test]
+    fn removes_codeowners_file() {
+        let (workspace_config, _, _) = get_cases_fixture_configs();
+        let sandbox = create_sandbox_with_config("cases", Some(workspace_config), None, None);
+
+        assert!(!sandbox.path().join(".github/CODEOWNERS").exists());
+
+        sandbox
+            .run_moon(|cmd| {
+                cmd.arg("sync").arg("codeowners");
+            })
+            .success();
+
+        assert!(sandbox.path().join(".github/CODEOWNERS").exists());
+
+        sandbox
+            .run_moon(|cmd| {
+                cmd.arg("sync").arg("codeowners").arg("--clean");
+            })
+            .success();
+
+        assert!(!sandbox.path().join(".github/CODEOWNERS").exists());
+    }
 }
 
 mod sync_hooks {
@@ -62,6 +86,43 @@ mod sync_hooks {
             assert!(hooks_dir.join("pre-commit.sh").exists());
             assert!(hooks_dir.join("post-push.sh").exists());
         }
+    }
+
+    #[test]
+    fn removes_hook_files() {
+        let (mut workspace_config, _, _) = get_cases_fixture_configs();
+
+        workspace_config.vcs = Some(PartialVcsConfig {
+            hooks: Some(FxHashMap::from_iter([
+                (
+                    "pre-commit".into(),
+                    vec!["moon run :lint".into(), "some-command".into()],
+                ),
+                ("post-push".into(), vec!["moon check --all".into()]),
+            ])),
+            ..Default::default()
+        });
+
+        let sandbox = create_sandbox_with_config("cases", Some(workspace_config), None, None);
+        let hooks_dir = sandbox.path().join(".moon/hooks");
+
+        assert!(!hooks_dir.exists());
+
+        sandbox
+            .run_moon(|cmd| {
+                cmd.arg("sync").arg("hooks");
+            })
+            .success();
+
+        assert!(hooks_dir.exists());
+
+        sandbox
+            .run_moon(|cmd| {
+                cmd.arg("sync").arg("hooks").arg("--clean");
+            })
+            .success();
+
+        assert!(!hooks_dir.exists());
     }
 }
 

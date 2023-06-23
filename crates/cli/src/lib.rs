@@ -30,6 +30,8 @@ use app::{
     SyncCommands,
 };
 use clap::Parser;
+use commands::syncs::codeowners::SyncCodeownersOptions;
+use commands::syncs::hooks::SyncHooksOptions;
 use enums::{CacheMode, LogLevel};
 use moon_logger::debug;
 use query::QueryHashDiffOptions;
@@ -316,8 +318,12 @@ pub async fn run_cli() -> AppResult {
         }
         Commands::Setup => setup().await,
         Commands::Sync { command } => match command {
-            Some(SyncCommands::Codeowners) => syncs::codeowners::sync().await,
-            Some(SyncCommands::Hooks) => syncs::hooks::sync().await,
+            Some(SyncCommands::Codeowners { clean, force }) => {
+                syncs::codeowners::sync(SyncCodeownersOptions { clean, force }).await
+            }
+            Some(SyncCommands::Hooks { clean, force }) => {
+                syncs::hooks::sync(SyncHooksOptions { clean, force }).await
+            }
             Some(SyncCommands::Projects) => syncs::projects::sync().await,
             None => sync().await,
         },

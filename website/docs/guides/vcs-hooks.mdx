@@ -73,6 +73,23 @@ command will generate hook scripts and link them with the local VCS checkout.
 $ moon sync hooks
 ```
 
+## Disabling hooks
+
+If you choose to stop using hooks, you'll need to cleanup the previously generated hook scripts, and
+reset the VCS checkout. To start, disable the `vcs.syncHooks` setting.
+
+```yaml title=".moon/workspace.yml"
+vcs:
+  syncHooks: false
+```
+
+And then run the following command, which will delete files from your local filesystem. Every
+developer that is using hooks will need to run this command.
+
+```shell
+$ moon sync hooks --clean
+```
+
 ## How it works
 
 When hooks are [enabled](#enabling-hooks), the following processes will take place.

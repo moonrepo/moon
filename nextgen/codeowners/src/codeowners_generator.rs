@@ -144,6 +144,16 @@ impl CodeownersGenerator {
         Ok(())
     }
 
+    pub fn cleanup(self) -> Result<(), FsError> {
+        debug!(file = %self.file_path.display(), "Removing CODEOWNERS file");
+
+        drop(self.file);
+
+        fs::remove_file(&self.file_path)?;
+
+        Ok(())
+    }
+
     pub fn generate(mut self) -> Result<(), FsError> {
         debug!(file = %self.file_path.display(), "Generating and writing CODEOWNERS file");
 

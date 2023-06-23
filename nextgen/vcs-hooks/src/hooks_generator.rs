@@ -50,6 +50,28 @@ impl<'app> HooksGenerator<'app> {
         }
     }
 
+    pub async fn cleanup(&self) -> miette::Result<()> {
+        debug!("Cleaning up {} hooks", self.config.manager);
+
+        let hooks_dir = self.vcs.get_hooks_dir().await?;
+
+        for hook_name in self.config.hooks.keys() {
+            let hook_path = hooks_dir.join(hook_name);
+
+            if hook_path.exists() {
+                debug!(file = ?hook_path, "Removing {} hook", color::file(hook_name));
+
+                fs::remove_file(&hook_path)?;
+            }
+        }
+
+        debug!(dir = ?self.output_dir, "Removing local hooks");
+
+        fs::remove_dir_all(&self.output_dir)?;
+
+        Ok(())
+    }
+
     pub async fn generate(&self) -> miette::Result<()> {
         debug!("Generating {} hooks", self.config.manager);
 

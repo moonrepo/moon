@@ -7,6 +7,7 @@
 - Added VCS hooks management support.
   - Added `vcs.hooks` and `vcs.syncHooks` settings to `.moon/workspace.yml`.
   - Added `moon sync hooks` command.
+- Added `--clean` and `--force` flags to `moon sync codeowners` command.
 - Updated `moon init` to:
   - Detect an applicable VCS provider and set the `vcs.provider` setting.
   - Convert a detected tool version to a fully-qualified semantic version.

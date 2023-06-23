@@ -1,4 +1,3 @@
-use crate::errors::ProjectGraphError;
 use moon_common::{consts, Id};
 use moon_config::ProjectsSourcesMap;
 use moon_error::MoonError;
@@ -29,7 +28,7 @@ pub fn detect_projects_with_globs(
     globs: &[String],
     projects: &mut ProjectsSourcesMap,
     vcs: Option<&BoxedVcs>,
-) -> Result<(), ProjectGraphError> {
+) -> miette::Result<()> {
     let root_source = ".".to_owned();
 
     // Root-level project has special handling

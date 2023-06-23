@@ -6,6 +6,10 @@ use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
 pub enum ProjectError {
+    #[diagnostic(code(project::invalid::env_file))]
+    #[error("Failed to parse env file {}: {1}", .0.style(Style::Path))]
+    InvalidEnvFile(PathBuf, String),
+
     #[diagnostic(code(project::missing_source))]
     #[error("No project exists at path {}.", .0.style(Style::File))]
     MissingProjectAtSource(String),
@@ -13,6 +17,10 @@ pub enum ProjectError {
     #[diagnostic(code(project::missing_path))]
     #[error("No project could be located starting from path {}.", .0.style(Style::Path))]
     MissingProjectFromPath(PathBuf),
+
+    #[diagnostic(code(project::unknown))]
+    #[error("No project has been configured with the ID {}.", .0.style(Style::Id))]
+    UnconfiguredID(String),
 
     #[diagnostic(code(project::task::unknown), help = "Has this task been configured?")]
     #[error(

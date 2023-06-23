@@ -1,7 +1,6 @@
 use crate::enums::TouchedStatus;
 use moon_common::path::{standardize_separators, WorkspaceRelativePathBuf};
 use moon_logger::{debug, map_list, trace};
-use moon_task::TouchedFilePaths;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
@@ -25,7 +24,7 @@ pub struct QueryTouchedFilesOptions {
 
 #[derive(Deserialize, Serialize)]
 pub struct QueryTouchedFilesResult {
-    pub files: TouchedFilePaths,
+    pub files: FxHashSet<WorkspaceRelativePathBuf>,
     pub options: QueryTouchedFilesOptions,
 }
 
@@ -33,7 +32,7 @@ pub struct QueryTouchedFilesResult {
 pub async fn query_touched_files(
     workspace: &Workspace,
     options: &mut QueryTouchedFilesOptions,
-) -> AppResult<TouchedFilePaths> {
+) -> AppResult<FxHashSet<WorkspaceRelativePathBuf>> {
     debug!(target: LOG_TARGET, "Querying for touched files");
 
     let vcs = &workspace.vcs;

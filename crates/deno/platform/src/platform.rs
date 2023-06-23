@@ -8,12 +8,11 @@ use moon_config::{
 };
 use moon_deno_lang::{load_lockfile_dependencies, DenoJson, DENO_DEPS};
 use moon_deno_tool::DenoTool;
-use moon_error::MoonError;
 use moon_hasher::{DepsHasher, HashSet};
 use moon_logger::debug;
 use moon_platform::{Platform, Runtime, Version};
 use moon_process::Command;
-use moon_project::{Project, ProjectError};
+use moon_project::Project;
 use moon_task::Task;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{Tool, ToolManager};
@@ -197,7 +196,7 @@ impl Platform for DenoPlatform {
         _context: &ActionContext,
         project: &Project,
         dependencies: &FxHashMap<Id, &Project>,
-    ) -> miette::Result<bool, ProjectError> {
+    ) -> miette::Result<bool> {
         let modified = actions::sync_project(
             project,
             dependencies,

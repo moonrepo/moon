@@ -63,7 +63,7 @@ impl ProjectGraph {
     }
 
     /// Return all projects that match the query criteria.
-    pub fn query<Q: AsRef<Criteria>>(&self, query: Q) -> Result<Vec<&Project>, ProjectError> {
+    pub fn query<Q: AsRef<Criteria>>(&self, query: Q) -> miette::Result<Vec<&Project>> {
         let query = query.as_ref();
         let query_input = query.input.as_ref().unwrap();
 
@@ -114,7 +114,7 @@ impl ProjectGraph {
 
     /// Return a project with the associated ID. If the project does not
     /// exist or has been misconfigured, return an error.
-    pub fn get(&self, alias_or_id: &str) -> Result<&Project, ProjectError> {
+    pub fn get(&self, alias_or_id: &str) -> miette::Result<&Project> {
         let id = Id::raw(match self.aliases.get(alias_or_id) {
             Some(project_id) => project_id,
             None => alias_or_id,
@@ -129,14 +129,14 @@ impl ProjectGraph {
     }
 
     /// Return all projects from the graph.
-    pub fn get_all(&self) -> Result<Vec<&Project>, ProjectError> {
+    pub fn get_all(&self) -> miette::Result<Vec<&Project>> {
         Ok(self.graph.raw_nodes().iter().map(|n| &n.weight).collect())
     }
 
     /// Find and return a project based on the initial path location.
     /// This will attempt to find the closest matching project source.
     #[track_caller]
-    pub fn get_from_path<P: AsRef<Path>>(&self, current_file: P) -> Result<&Project, ProjectError> {
+    pub fn get_from_path<P: AsRef<Path>>(&self, current_file: P) -> miette::Result<&Project> {
         let current_file = current_file.as_ref();
         let workspace_root = get_workspace_root();
 
@@ -174,14 +174,14 @@ impl ProjectGraph {
         }
 
         if possible_id.is_empty() {
-            return Err(ProjectError::MissingProjectFromPath(file));
+            return Err(ProjectError::MissingProjectFromPath(file).into());
         }
 
         self.get(&possible_id)
     }
 
     /// Return a list of direct project IDs that the defined project depends on.
-    pub fn get_dependencies_of(&self, project: &Project) -> Result<Vec<Id>, ProjectError> {
+    pub fn get_dependencies_of(&self, project: &Project) -> miette::Result<Vec<Id>> {
         let deps = self
             .graph
             .neighbors_directed(*self.indices.get(&project.id).unwrap(), Direction::Outgoing)
@@ -192,7 +192,7 @@ impl ProjectGraph {
     }
 
     /// Return a list of project IDs that require the defined project.
-    pub fn get_dependents_of(&self, project: &Project) -> Result<Vec<Id>, ProjectError> {
+    pub fn get_dependents_of(&self, project: &Project) -> miette::Result<Vec<Id>> {
         let deps = self
             .graph
             .neighbors_directed(*self.indices.get(&project.id).unwrap(), Direction::Incoming)

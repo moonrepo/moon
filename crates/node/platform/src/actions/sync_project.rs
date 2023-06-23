@@ -18,7 +18,7 @@ pub async fn sync_project(
     workspace_root: &Path,
     node_config: &NodeConfig,
     typescript_config: &Option<TypeScriptConfig>,
-) -> Result<bool, ProjectError> {
+) -> miette::Result<bool> {
     let mut mutated_project_files = false;
     let is_project_typescript_enabled = project.config.toolchain.is_typescript_enabled();
 

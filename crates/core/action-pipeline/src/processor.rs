@@ -27,7 +27,7 @@ pub async fn process_action(
     emitter: Arc<RwLock<Emitter>>,
     workspace: Arc<RwLock<Workspace>>,
     project_graph: Arc<RwLock<ProjectGraph>>,
-) -> Result<Action, PipelineError> {
+) -> miette::Result<Action> {
     action.start();
 
     let node = action.node.take().unwrap();

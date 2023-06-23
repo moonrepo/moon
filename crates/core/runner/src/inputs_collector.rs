@@ -23,7 +23,7 @@ fn convert_paths_to_strings(
     log_missing: bool,
     paths: &FxHashSet<PathBuf>,
     workspace_root: &Path,
-) -> Result<Vec<String>, RunnerError> {
+) -> miette::Result<Vec<String>> {
     let mut files: Vec<String> = vec![];
 
     for path in paths {
@@ -99,7 +99,7 @@ pub async fn collect_and_hash_inputs(
     project_root: &Path,
     workspace_root: &Path,
     hasher_config: &HasherConfig,
-) -> Result<HashedInputs, RunnerError> {
+) -> miette::Result<HashedInputs> {
     let mut files_to_hash = FxHashSet::default(); // Absolute paths
     let globset = task.create_globset()?;
     let use_globs = project_root == workspace_root

@@ -1,6 +1,7 @@
 use crate::target_hasher::TargetHasher;
 use crate::{errors::RunnerError, inputs_collector};
 use console::Term;
+use miette::IntoDiagnostic;
 use moon_action::{ActionStatus, Attempt};
 use moon_action_context::ActionContext;
 use moon_cache::RunTargetState;
@@ -13,7 +14,7 @@ use moon_platform_runtime::Runtime;
 use moon_process::{args, output_to_error, output_to_string, Command, Output};
 use moon_project::Project;
 use moon_target::{TargetError, TargetScope};
-use moon_task::{Task, TaskError};
+use moon_task::Task;
 use moon_terminal::{label_checkpoint, Checkpoint};
 use moon_utils::{is_ci, is_test_env, path, time};
 use moon_workspace::Workspace;
@@ -55,7 +56,7 @@ impl<'a> Runner<'a> {
         workspace: &'a Workspace,
         project: &'a Project,
         task: &'a Task,
-    ) -> Result<Runner<'a>, MoonError> {
+    ) -> miette::Result<Runner<'a>> {
         Ok(Runner {
             cache: workspace.cache.cache_run_target_state(&task.target)?,
             emitter,
@@ -70,7 +71,7 @@ impl<'a> Runner<'a> {
     /// Cache outputs to the `.moon/cache/outputs` folder and to the cloud,
     /// so that subsequent builds are faster, and any local outputs
     /// can be hydrated easily.
-    pub async fn archive_outputs(&self) -> Result<(), RunnerError> {
+    pub async fn archive_outputs(&self) -> miette::Result<()> {
         let hash = &self.cache.hash;
 
         if hash.is_empty() || !self.is_archivable()? {
@@ -79,9 +80,7 @@ impl<'a> Runner<'a> {
 
         // Check that outputs actually exist
         if !self.task.outputs.is_empty() && !self.has_outputs()? {
-            return Err(RunnerError::Task(TaskError::MissingOutput(
-                self.task.target.id.clone(),
-            )));
+            return Err(RunnerError::MissingOutput(self.task.target.id.clone()).into());
         }
 
         // If so, then cache the archive
@@ -110,7 +109,7 @@ impl<'a> Runner<'a> {
         Ok(())
     }
 
-    pub async fn hydrate(&self, from: HydrateFrom) -> Result<ActionStatus, RunnerError> {
+    pub async fn hydrate(&self, from: HydrateFrom) -> miette::Result<ActionStatus> {
         // Only hydrate when the hash is different from the previous build,
         // as we can assume the outputs from the previous build still exist?
         if matches!(from, HydrateFrom::LocalCache) || matches!(from, HydrateFrom::RemoteCache) {
@@ -140,7 +139,7 @@ impl<'a> Runner<'a> {
 
     /// If we are cached (hash match), hydrate the project with the
     /// cached task outputs found in the hashed archive.
-    pub async fn hydrate_outputs(&self) -> Result<(), RunnerError> {
+    pub async fn hydrate_outputs(&self) -> miette::Result<()> {
         let hash = &self.cache.hash;
 
         if hash.is_empty() {
@@ -182,7 +181,7 @@ impl<'a> Runner<'a> {
         &self,
         context: &ActionContext,
         hashset: &mut HashSet,
-    ) -> Result<(), RunnerError> {
+    ) -> miette::Result<()> {
         let vcs = &self.workspace.vcs;
         let task = &self.task;
         let project = &self.project;
@@ -217,7 +216,7 @@ impl<'a> Runner<'a> {
         &self,
         context: &ActionContext,
         runtime: &Runtime,
-    ) -> Result<Command, RunnerError> {
+    ) -> miette::Result<Command> {
         let workspace = &self.workspace;
         let project = &self.project;
         let task = &self.task;
@@ -284,7 +283,7 @@ impl<'a> Runner<'a> {
                     } else {
                         affected_files
                             .iter()
-                            .map(|f| f.to_string_lossy())
+                            .map(|f| f.as_str().to_string())
                             .collect::<Vec<_>>()
                             .join(",")
                     },
@@ -298,7 +297,7 @@ impl<'a> Runner<'a> {
                 if affected_files.is_empty() {
                     command.arg_if_missing(".");
                 } else {
-                    command.args(affected_files);
+                    command.args(affected_files.iter().map(|f| f.as_str()));
                 }
             }
         }
@@ -306,7 +305,7 @@ impl<'a> Runner<'a> {
         Ok(command)
     }
 
-    pub async fn create_env_vars(&self) -> Result<FxHashMap<String, String>, MoonError> {
+    pub async fn create_env_vars(&self) -> miette::Result<FxHashMap<String, String>> {
         let mut env_vars = FxHashMap::default();
 
         env_vars.insert(
@@ -349,9 +348,9 @@ impl<'a> Runner<'a> {
         Ok(env_vars)
     }
 
-    pub fn flush_output(&self) -> Result<(), MoonError> {
-        self.stdout.flush()?;
-        self.stderr.flush()?;
+    pub fn flush_output(&self) -> miette::Result<()> {
+        self.stdout.flush().into_diagnostic()?;
+        self.stderr.flush().into_diagnostic()?;
 
         Ok(())
     }
@@ -364,7 +363,7 @@ impl<'a> Runner<'a> {
         }
     }
 
-    pub fn has_outputs(&self) -> Result<bool, MoonError> {
+    pub fn has_outputs(&self) -> miette::Result<bool> {
         // Check paths first since they are literal
         for output in &self.task.output_paths {
             if !output.to_path(&self.workspace.root).exists() {
@@ -383,7 +382,7 @@ impl<'a> Runner<'a> {
     }
 
     /// Determine if the current task can be archived.
-    pub fn is_archivable(&self) -> Result<bool, TargetError> {
+    pub fn is_archivable(&self) -> miette::Result<bool> {
         let task = self.task;
 
         if task.is_build_type() {
@@ -405,8 +404,8 @@ impl<'a> Runner<'a> {
                     }
                 }
                 TargetScope::Tag(_) => todo!(),
-                TargetScope::Deps => return Err(TargetError::NoDepsInRunContext),
-                TargetScope::OwnSelf => return Err(TargetError::NoSelfInRunContext),
+                TargetScope::Deps => return Err(TargetError::NoDepsInRunContext.into()),
+                TargetScope::OwnSelf => return Err(TargetError::NoSelfInRunContext.into()),
             };
         }
 
@@ -420,7 +419,7 @@ impl<'a> Runner<'a> {
         &mut self,
         context: &mut ActionContext,
         runtime: &Runtime,
-    ) -> Result<Option<HydrateFrom>, RunnerError> {
+    ) -> miette::Result<Option<HydrateFrom>> {
         let mut hashset = HashSet::default();
 
         self.hash_common_target(context, &mut hashset).await?;
@@ -513,7 +512,7 @@ impl<'a> Runner<'a> {
         &mut self,
         context: &ActionContext,
         command: &mut Command,
-    ) -> Result<Vec<Attempt>, RunnerError> {
+    ) -> miette::Result<Vec<Attempt>> {
         let attempt_total = self.task.options.retry_count + 1;
         let mut attempt_index = 1;
         let mut attempts = vec![];
@@ -615,7 +614,8 @@ impl<'a> Runner<'a> {
                             self.task.command.clone(),
                             &out,
                             false,
-                        )));
+                        ))
+                        .into());
                     } else {
                         attempt_index += 1;
 
@@ -634,7 +634,7 @@ impl<'a> Runner<'a> {
 
                     interval_handle.abort();
 
-                    return Err(RunnerError::Process(error));
+                    return Err(RunnerError::Process(error).into());
                 }
             }
         }
@@ -655,7 +655,7 @@ impl<'a> Runner<'a> {
         &mut self,
         context: &ActionContext,
         runtime: &Runtime,
-    ) -> Result<Vec<Attempt>, RunnerError> {
+    ) -> miette::Result<Vec<Attempt>> {
         let attempts = if self.task.is_no_op() {
             debug!(
                 target: LOG_TARGET,
@@ -679,7 +679,7 @@ impl<'a> Runner<'a> {
         Ok(attempts)
     }
 
-    pub fn print_cache_item(&self) -> Result<(), MoonError> {
+    pub fn print_cache_item(&self) -> miette::Result<()> {
         let item = &self.cache;
         let (stdout, stderr) = item.load_output_logs()?;
 
@@ -692,24 +692,26 @@ impl<'a> Runner<'a> {
         &self,
         checkpoint: Checkpoint,
         comments: &[T],
-    ) -> Result<(), MoonError> {
+    ) -> miette::Result<()> {
         let label = label_checkpoint(&self.task.target, checkpoint);
 
         if comments.is_empty() {
-            self.stdout.write_line(&label)?;
+            self.stdout.write_line(&label).into_diagnostic()?;
         } else {
-            self.stdout.write_line(&format!(
-                "{} {}",
-                label,
-                color::muted(format!(
-                    "({})",
-                    comments
-                        .iter()
-                        .map(|c| c.as_ref())
-                        .collect::<Vec<_>>()
-                        .join(", ")
+            self.stdout
+                .write_line(&format!(
+                    "{} {}",
+                    label,
+                    color::muted(format!(
+                        "({})",
+                        comments
+                            .iter()
+                            .map(|c| c.as_ref())
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    ))
                 ))
-            ))?;
+                .into_diagnostic()?;
         }
 
         Ok(())
@@ -720,18 +722,18 @@ impl<'a> Runner<'a> {
         stdout: &str,
         stderr: &str,
         failed: bool,
-    ) -> Result<(), MoonError> {
-        let print_stdout = || -> Result<(), MoonError> {
+    ) -> miette::Result<()> {
+        let print_stdout = || -> miette::Result<()> {
             if !stdout.is_empty() {
-                self.stdout.write_line(stdout)?;
+                self.stdout.write_line(stdout).into_diagnostic()?;
             }
 
             Ok(())
         };
 
-        let print_stderr = || -> Result<(), MoonError> {
+        let print_stderr = || -> miette::Result<()> {
             if !stderr.is_empty() {
-                self.stderr.write_line(stderr)?;
+                self.stderr.write_line(stderr).into_diagnostic()?;
             }
 
             Ok(())
@@ -751,7 +753,7 @@ impl<'a> Runner<'a> {
 
                 if !hash.is_empty() {
                     // Print to stderr so it can be captured
-                    self.stderr.write_line(hash)?;
+                    self.stderr.write_line(hash).into_diagnostic()?;
                 }
             }
             // Show nothing
@@ -770,7 +772,7 @@ impl<'a> Runner<'a> {
         &self,
         context: &ActionContext,
         command: &Command,
-    ) -> Result<(), MoonError> {
+    ) -> miette::Result<()> {
         if !self.workspace.config.runner.log_running_command {
             return Ok(());
         }
@@ -795,7 +797,7 @@ impl<'a> Runner<'a> {
             }),
         ));
 
-        self.stdout.write_line(&message)?;
+        self.stdout.write_line(&message).into_diagnostic()?;
 
         Ok(())
     }
@@ -805,7 +807,7 @@ impl<'a> Runner<'a> {
         checkpoint: Checkpoint,
         attempt: &Attempt,
         attempt_total: u8,
-    ) -> Result<(), MoonError> {
+    ) -> miette::Result<()> {
         let mut comments = vec![];
 
         if self.task.is_no_op() {
@@ -834,7 +836,7 @@ impl<'a> Runner<'a> {
         attempt: &Attempt,
         attempt_total: u8,
         output: &Output,
-    ) -> Result<(), MoonError> {
+    ) -> miette::Result<()> {
         self.print_target_label(
             if output.status.success() {
                 Checkpoint::RunPassed
@@ -861,7 +863,7 @@ impl<'a> Runner<'a> {
         attempt: &Attempt,
         attempt_total: u8,
         output: &Output,
-    ) -> Result<(), MoonError> {
+    ) -> miette::Result<()> {
         self.print_target_label(
             if output.status.success() {
                 Checkpoint::RunPassed

@@ -5,7 +5,6 @@ use moon_error::MoonError;
 use moon_file_group::FileGroupError;
 use moon_project::ProjectError;
 use moon_target::TargetError;
-use moon_task::TaskError;
 use starbase_styles::{Style, Stylize};
 use thiserror::Error;
 
@@ -49,10 +48,6 @@ pub enum ProjectGraphError {
     #[diagnostic(transparent)]
     #[error(transparent)]
     Target(#[from] TargetError),
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
-    Task(#[from] TaskError),
 
     #[diagnostic(transparent)]
     #[error(transparent)]

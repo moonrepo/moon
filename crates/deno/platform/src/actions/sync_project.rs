@@ -1,6 +1,6 @@
 use moon_common::Id;
 use moon_config::{DenoConfig, TypeScriptConfig};
-use moon_project::{Project, ProjectError};
+use moon_project::Project;
 use moon_typescript_lang::tsconfig::CompilerOptionsPaths;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;

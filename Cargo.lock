@@ -2564,6 +2564,7 @@ dependencies = [
 name = "moon"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_deno_platform",
  "moon_dep_graph",
  "moon_error",
@@ -3088,6 +3089,7 @@ dependencies = [
 name = "moon_node_platform"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon",
  "moon_action_context",
  "moon_common",
@@ -3277,6 +3279,7 @@ dependencies = [
  "moon_logger",
  "moon_platform_detector",
  "moon_project",
+ "moon_project_builder",
  "moon_query",
  "moon_target",
  "moon_task",

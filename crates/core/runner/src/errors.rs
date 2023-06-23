@@ -19,6 +19,10 @@ pub enum RunnerError {
     )]
     MissingDependencyHash(String, String),
 
+    #[diagnostic(code(target_runner::missing_output))]
+    #[error("Target {} defines outputs, but none exist after being ran.", .0.style(Style::Label))]
+    MissingOutput(String),
+
     #[diagnostic(transparent)]
     #[error(transparent)]
     Moon(#[from] MoonError),

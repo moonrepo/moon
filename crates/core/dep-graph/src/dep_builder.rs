@@ -1,6 +1,7 @@
 use crate::dep_graph::{DepGraph, DepGraphType, IndicesType};
 use crate::errors::DepGraphError;
 use moon_action::ActionNode;
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
 use moon_logger::{debug, map_list, trace};
 use moon_platform::{PlatformManager, Runtime};
@@ -8,7 +9,7 @@ use moon_project::Project;
 use moon_project_graph::ProjectGraph;
 use moon_query::{build_query, Criteria};
 use moon_target::{Target, TargetError, TargetScope};
-use moon_task::{Task, TouchedFilePaths};
+use moon_task::Task;
 use petgraph::graph::NodeIndex;
 use petgraph::Graph;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -18,6 +19,7 @@ use std::mem;
 const LOG_TARGET: &str = "moon:dep-graph";
 
 type RuntimePair = (Runtime, Runtime);
+type TouchedFilePaths = FxHashSet<WorkspaceRelativePathBuf>;
 
 /// A directed acyclic graph (DAG) for the work that needs to be processed, based on a
 /// project or task's dependency chain. This is also known as a "task graph" (not to
@@ -63,7 +65,7 @@ impl<'ws> DepGraphBuilder<'ws> {
         DepGraph::new(mem::take(&mut self.graph), mem::take(&mut self.indices))
     }
 
-    pub fn set_query(&mut self, input: &str) -> Result<(), DepGraphError> {
+    pub fn set_query(&mut self, input: &str) -> miette::Result<()> {
         self.all_query = Some(build_query(input)?);
 
         Ok(())
@@ -112,7 +114,7 @@ impl<'ws> DepGraphBuilder<'ws> {
         &mut self,
         project: &Project,
         task: Option<&Task>,
-    ) -> Result<NodeIndex, DepGraphError> {
+    ) -> miette::Result<NodeIndex> {
         let (project_runtime, workspace_runtime) = self.get_runtimes_from_project(project, task);
         let mut installs_in_project = false;
 
@@ -184,10 +186,7 @@ impl<'ws> DepGraphBuilder<'ws> {
         index
     }
 
-    pub fn run_dependents_for_target<T: AsRef<Target>>(
-        &mut self,
-        target: T,
-    ) -> Result<(), DepGraphError> {
+    pub fn run_dependents_for_target<T: AsRef<Target>>(&mut self, target: T) -> miette::Result<()> {
         let target = target.as_ref();
 
         trace!(
@@ -216,7 +215,7 @@ impl<'ws> DepGraphBuilder<'ws> {
         &mut self,
         target: T,
         touched_files: Option<&TouchedFilePaths>,
-    ) -> Result<(FxHashSet<Target>, FxHashSet<NodeIndex>), DepGraphError> {
+    ) -> miette::Result<(FxHashSet<Target>, FxHashSet<NodeIndex>)> {
         let target = target.as_ref();
         let mut inserted_targets = FxHashSet::default();
         let mut inserted_indexes = FxHashSet::default();
@@ -247,7 +246,7 @@ impl<'ws> DepGraphBuilder<'ws> {
             }
             // ^:task
             TargetScope::Deps => {
-                return Err(DepGraphError::Target(TargetError::NoDepsInRunContext));
+                return Err(DepGraphError::Target(TargetError::NoDepsInRunContext).into());
             }
             // project:task
             TargetScope::Project(project_id) => {
@@ -282,7 +281,7 @@ impl<'ws> DepGraphBuilder<'ws> {
             }
             // ~:task
             TargetScope::OwnSelf => {
-                return Err(DepGraphError::Target(TargetError::NoSelfInRunContext));
+                return Err(DepGraphError::Target(TargetError::NoSelfInRunContext).into());
             }
         };
 
@@ -294,7 +293,7 @@ impl<'ws> DepGraphBuilder<'ws> {
         target: T,
         project: &Project,
         touched_files: Option<&TouchedFilePaths>,
-    ) -> Result<Option<NodeIndex>, DepGraphError> {
+    ) -> miette::Result<Option<NodeIndex>> {
         let target = target.as_ref();
         let task = project.get_task(&target.task_id)?;
         let (runtime, _) = self.get_runtimes_from_project(project, Some(task));
@@ -359,7 +358,7 @@ impl<'ws> DepGraphBuilder<'ws> {
         &mut self,
         task: &Task,
         touched_files: Option<&TouchedFilePaths>,
-    ) -> Result<Vec<NodeIndex>, DepGraphError> {
+    ) -> miette::Result<Vec<NodeIndex>> {
         let parallel = task.options.run_deps_in_parallel;
         let mut indexes = vec![];
         let mut previous_target_index = None;
@@ -392,7 +391,7 @@ impl<'ws> DepGraphBuilder<'ws> {
         &mut self,
         target_ids: &[String],
         touched_files: Option<&TouchedFilePaths>,
-    ) -> Result<Vec<Target>, DepGraphError> {
+    ) -> miette::Result<Vec<Target>> {
         let mut qualified_targets = vec![];
         let mut project_targets = vec![];
 
@@ -438,7 +437,7 @@ impl<'ws> DepGraphBuilder<'ws> {
         self.insert_node(&node)
     }
 
-    pub fn sync_project(&mut self, project: &Project) -> Result<NodeIndex, DepGraphError> {
+    pub fn sync_project(&mut self, project: &Project) -> miette::Result<NodeIndex> {
         let (runtime, _) = self.get_runtimes_from_project(project, None);
         let node = ActionNode::SyncProject(runtime.clone(), project.id.clone());
 

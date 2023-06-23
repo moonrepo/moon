@@ -60,7 +60,7 @@ fn add_engines_constraint(node_config: &NodeConfig, package_json: &mut PackageJs
     false
 }
 
-pub async fn setup_tool(node: &NodeTool, workspace_root: &Path) -> Result<(), ToolError> {
+pub async fn setup_tool(node: &NodeTool, workspace_root: &Path) -> miette::Result<()> {
     // Find the `package.json` workspaces root
     let lockfile = match node.config.package_manager {
         NodePackageManager::Npm => NPM.lockfile,

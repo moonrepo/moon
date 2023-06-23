@@ -8,6 +8,7 @@ use std::path::PathBuf;
 pub async fn sync_codeowners(
     workspace: &Workspace,
     project_graph: &ProjectGraph,
+    force: bool,
 ) -> miette::Result<PathBuf> {
     let hash_engine = HashEngine::new(&workspace.cache.dir);
     let mut hasher = hash_engine.create_hasher("CODEOWNERS");
@@ -47,12 +48,21 @@ pub async fn sync_codeowners(
     let mut cache = workspace.cache.cache_codeowners_state()?;
     let file_path = codeowners.file_path.clone();
 
-    if hasher.generate_hash()? != cache.last_hash {
+    if force || hasher.generate_hash()? != cache.last_hash {
         codeowners.generate()?;
 
         cache.last_hash = hash_engine.save_manifest(hasher)?;
         cache.save()?;
     }
+
+    Ok(file_path)
+}
+
+pub async fn unsync_codeowners(workspace: &Workspace) -> miette::Result<PathBuf> {
+    let codeowners = CodeownersGenerator::new(&workspace.root, workspace.config.vcs.provider)?;
+    let file_path = codeowners.file_path.clone();
+
+    codeowners.cleanup()?;
 
     Ok(file_path)
 }

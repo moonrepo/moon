@@ -31,7 +31,7 @@ pub async fn sync_workspace(
             color::id("codeowners.syncOnRun"),
         );
 
-        sync_codeowners(&workspace, &project_graph).await?;
+        sync_codeowners(&workspace, &project_graph, false).await?;
     }
 
     if workspace.config.vcs.sync_hooks {

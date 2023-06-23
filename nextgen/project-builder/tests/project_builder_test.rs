@@ -96,9 +96,9 @@ mod project_builder {
         let bar = build_project("bar", sandbox.path());
         let baz = build_project("baz", sandbox.path());
 
-        assert_eq!(foo.tasks.len(), 0);
-        assert_eq!(bar.tasks.len(), 1);
-        assert_eq!(baz.tasks.len(), 1);
+        assert_eq!(foo.tasks.len(), 4);
+        assert_eq!(bar.tasks.len(), 3);
+        assert_eq!(baz.tasks.len(), 5);
     }
 
     mod file_groups {

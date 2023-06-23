@@ -3264,6 +3264,7 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_file_group",
+ "moon_platform_detector",
  "moon_project2",
  "moon_task2",
  "moon_task_builder",

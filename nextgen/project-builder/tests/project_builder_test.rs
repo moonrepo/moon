@@ -4,6 +4,7 @@ use moon_config::{
     DependencyConfig, DependencyScope, InheritedTasksManager, LanguageType, PlatformType,
 };
 use moon_file_group::FileGroup;
+use moon_platform_detector::detect_project_language;
 use moon_project2::Project;
 use moon_project_builder::ProjectBuilder;
 use rustc_hash::FxHashMap;
@@ -20,6 +21,15 @@ fn build_project(id: &str, root: &Path) -> Project {
         .unwrap();
 
     builder.inherit_global_config(&manager).unwrap();
+
+    builder.build().unwrap()
+}
+
+fn build_lang_project(id: &str) -> Project {
+    let sandbox = create_sandbox("langs");
+
+    let mut builder = ProjectBuilder::new(id.into(), id.into(), sandbox.path()).unwrap();
+    builder.load_local_config(detect_project_language).unwrap();
 
     builder.build().unwrap()
 }
@@ -76,89 +86,6 @@ mod project_builder {
                 }
             ]
         );
-    }
-
-    mod language_detect {
-        use super::*;
-
-        #[test]
-        fn inherits_from_config() {
-            let sandbox = create_sandbox("builder");
-
-            let mut builder =
-                ProjectBuilder::new("bar".into(), "bar".into(), sandbox.path()).unwrap();
-            builder
-                .load_local_config(|_| LanguageType::Unknown)
-                .unwrap();
-
-            let project = builder.build().unwrap();
-
-            assert_eq!(project.language, LanguageType::Rust);
-        }
-
-        #[test]
-        fn detects_from_env() {
-            let sandbox = create_sandbox("builder");
-
-            let mut builder =
-                ProjectBuilder::new("foo".into(), "foo".into(), sandbox.path()).unwrap();
-            builder
-                .load_local_config(|_| LanguageType::TypeScript)
-                .unwrap();
-
-            let project = builder.build().unwrap();
-
-            assert_eq!(project.language, LanguageType::TypeScript);
-        }
-    }
-
-    mod platform_detect {
-        use super::*;
-
-        #[test]
-        fn inherits_from_config() {
-            let sandbox = create_sandbox("builder");
-
-            let mut builder =
-                ProjectBuilder::new("baz".into(), "baz".into(), sandbox.path()).unwrap();
-            builder
-                .load_local_config(|_| LanguageType::Unknown)
-                .unwrap();
-
-            let project = builder.build().unwrap();
-
-            assert_eq!(project.platform, PlatformType::Node);
-        }
-
-        #[test]
-        fn infers_from_config_lang() {
-            let sandbox = create_sandbox("builder");
-
-            let mut builder =
-                ProjectBuilder::new("bar".into(), "bar".into(), sandbox.path()).unwrap();
-            builder
-                .load_local_config(|_| LanguageType::Unknown)
-                .unwrap();
-
-            let project = builder.build().unwrap();
-
-            assert_eq!(project.platform, PlatformType::Rust);
-        }
-
-        #[test]
-        fn infers_from_detected_lang() {
-            let sandbox = create_sandbox("builder");
-
-            let mut builder =
-                ProjectBuilder::new("foo".into(), "foo".into(), sandbox.path()).unwrap();
-            builder
-                .load_local_config(|_| LanguageType::TypeScript)
-                .unwrap();
-
-            let project = builder.build().unwrap();
-
-            assert_eq!(project.platform, PlatformType::Node);
-        }
     }
 
     mod file_groups {
@@ -234,6 +161,237 @@ mod project_builder {
                         .unwrap()
                     )
                 ])
+            );
+        }
+    }
+
+    mod language_detect {
+        use super::*;
+
+        #[test]
+        fn inherits_from_config() {
+            let sandbox = create_sandbox("builder");
+
+            let mut builder =
+                ProjectBuilder::new("bar".into(), "bar".into(), sandbox.path()).unwrap();
+            builder
+                .load_local_config(|_| LanguageType::Unknown)
+                .unwrap();
+
+            let project = builder.build().unwrap();
+
+            assert_eq!(project.language, LanguageType::Rust);
+        }
+
+        #[test]
+        fn detects_from_env() {
+            let sandbox = create_sandbox("builder");
+
+            let mut builder =
+                ProjectBuilder::new("foo".into(), "foo".into(), sandbox.path()).unwrap();
+            builder
+                .load_local_config(|_| LanguageType::TypeScript)
+                .unwrap();
+
+            let project = builder.build().unwrap();
+
+            assert_eq!(project.language, LanguageType::TypeScript);
+        }
+
+        #[test]
+        fn detects_bash() {
+            let project = build_lang_project("bash");
+
+            assert_eq!(project.language, LanguageType::Bash);
+            assert_eq!(project.platform, PlatformType::System);
+        }
+
+        #[test]
+        fn detects_batch() {
+            let project = build_lang_project("batch");
+
+            assert_eq!(project.language, LanguageType::Batch);
+            assert_eq!(project.platform, PlatformType::System);
+        }
+
+        #[test]
+        fn detects_deno() {
+            let project = build_lang_project("deno");
+
+            assert_eq!(project.language, LanguageType::JavaScript);
+            assert_eq!(project.platform, PlatformType::Deno);
+
+            let project = build_lang_project("deno-config");
+
+            assert_eq!(project.language, LanguageType::TypeScript);
+            // assert_eq!(project.platform, PlatformType::Deno);
+        }
+
+        #[test]
+        fn detects_go() {
+            let project = build_lang_project("go");
+
+            assert_eq!(project.language, LanguageType::Go);
+            assert_eq!(project.platform, PlatformType::System);
+
+            let project = build_lang_project("go-config");
+
+            assert_eq!(project.language, LanguageType::Go);
+            assert_eq!(project.platform, PlatformType::System);
+        }
+
+        #[test]
+        fn detects_js() {
+            let project = build_lang_project("js");
+
+            assert_eq!(project.language, LanguageType::JavaScript);
+            assert_eq!(project.platform, PlatformType::Node);
+
+            let project = build_lang_project("js-config");
+
+            assert_eq!(project.language, LanguageType::JavaScript);
+            assert_eq!(project.platform, PlatformType::Node);
+        }
+
+        #[test]
+        fn detects_other() {
+            let project = build_lang_project("other");
+
+            assert_eq!(project.language, LanguageType::Other("kotlin".into()));
+            assert_eq!(project.platform, PlatformType::System);
+        }
+
+        #[test]
+        fn detects_php() {
+            let project = build_lang_project("php");
+
+            assert_eq!(project.language, LanguageType::Php);
+            assert_eq!(project.platform, PlatformType::System);
+
+            let project = build_lang_project("php-config");
+
+            assert_eq!(project.language, LanguageType::Php);
+            assert_eq!(project.platform, PlatformType::System);
+        }
+
+        #[test]
+        fn detects_python() {
+            let project = build_lang_project("python");
+
+            assert_eq!(project.language, LanguageType::Python);
+            assert_eq!(project.platform, PlatformType::System);
+
+            let project = build_lang_project("python-config");
+
+            assert_eq!(project.language, LanguageType::Python);
+            assert_eq!(project.platform, PlatformType::System);
+        }
+
+        #[test]
+        fn detects_ruby() {
+            let project = build_lang_project("ruby");
+
+            assert_eq!(project.language, LanguageType::Ruby);
+            assert_eq!(project.platform, PlatformType::System);
+
+            let project = build_lang_project("ruby-config");
+
+            assert_eq!(project.language, LanguageType::Ruby);
+            assert_eq!(project.platform, PlatformType::System);
+        }
+
+        #[test]
+        fn detects_rust() {
+            let project = build_lang_project("rust");
+
+            assert_eq!(project.language, LanguageType::Rust);
+            assert_eq!(project.platform, PlatformType::Rust);
+
+            let project = build_lang_project("rust-config");
+
+            assert_eq!(project.language, LanguageType::Rust);
+            assert_eq!(project.platform, PlatformType::Rust);
+        }
+
+        #[test]
+        fn detects_ts() {
+            let project = build_lang_project("ts");
+
+            assert_eq!(project.language, LanguageType::TypeScript);
+            assert_eq!(project.platform, PlatformType::Node);
+
+            let project = build_lang_project("ts-config");
+
+            assert_eq!(project.language, LanguageType::TypeScript);
+            assert_eq!(project.platform, PlatformType::Node);
+        }
+    }
+
+    mod platform_detect {
+        use super::*;
+
+        #[test]
+        fn inherits_from_config() {
+            let sandbox = create_sandbox("builder");
+
+            let mut builder =
+                ProjectBuilder::new("baz".into(), "baz".into(), sandbox.path()).unwrap();
+            builder
+                .load_local_config(|_| LanguageType::Unknown)
+                .unwrap();
+
+            let project = builder.build().unwrap();
+
+            assert_eq!(project.platform, PlatformType::Node);
+        }
+
+        #[test]
+        fn infers_from_config_lang() {
+            let sandbox = create_sandbox("builder");
+
+            let mut builder =
+                ProjectBuilder::new("bar".into(), "bar".into(), sandbox.path()).unwrap();
+            builder
+                .load_local_config(|_| LanguageType::Unknown)
+                .unwrap();
+
+            let project = builder.build().unwrap();
+
+            assert_eq!(project.platform, PlatformType::Rust);
+        }
+
+        #[test]
+        fn infers_from_detected_lang() {
+            let sandbox = create_sandbox("builder");
+
+            let mut builder =
+                ProjectBuilder::new("foo".into(), "foo".into(), sandbox.path()).unwrap();
+            builder
+                .load_local_config(|_| LanguageType::TypeScript)
+                .unwrap();
+
+            let project = builder.build().unwrap();
+
+            assert_eq!(project.platform, PlatformType::Node);
+        }
+
+        #[test]
+        fn fallsback_to_project() {
+            let project = build_lang_project("project-platform");
+
+            assert_eq!(
+                project.get_task("node-a").unwrap().platform,
+                PlatformType::Node
+            );
+
+            assert_eq!(
+                project.get_task("node-b").unwrap().platform,
+                PlatformType::Node
+            );
+
+            assert_eq!(
+                project.get_task("system").unwrap().platform,
+                PlatformType::System
             );
         }
     }

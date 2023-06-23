@@ -3,8 +3,9 @@
 use moon_args::{split_args, ArgsSplitError};
 use moon_common::{color, Id};
 use moon_config::{
-    InheritedTasksConfig, InputPath, ProjectConfig, ProjectWorkspaceInheritedTasksConfig,
-    TaskCommandArgs, TaskConfig, TaskMergeStrategy, TaskOutputStyle, TaskType,
+    InheritedTasksConfig, InputPath, PlatformType, ProjectConfig,
+    ProjectWorkspaceInheritedTasksConfig, TaskCommandArgs, TaskConfig, TaskMergeStrategy,
+    TaskOutputStyle, TaskType,
 };
 use moon_target::Target;
 use moon_task2::{Task, TaskOptions};
@@ -15,6 +16,7 @@ use tracing::debug;
 
 pub struct TasksBuilder<'proj> {
     project_id: &'proj Id,
+    fallback_platform: &'proj PlatformType,
 
     // Global settings for tasks to inherit
     implicit_deps: Vec<&'proj Target>,
@@ -27,9 +29,10 @@ pub struct TasksBuilder<'proj> {
 }
 
 impl<'proj> TasksBuilder<'proj> {
-    pub fn new(project_id: &'proj Id) -> Self {
+    pub fn new(project_id: &'proj Id, fallback_platform: &'proj PlatformType) -> Self {
         Self {
             project_id,
+            fallback_platform,
             implicit_deps: vec![],
             implicit_inputs: vec![],
             task_ids: FxHashSet::default(),
@@ -189,26 +192,30 @@ impl<'proj> TasksBuilder<'proj> {
         task.options = self.build_task_options(id, is_local)?;
         task.flags.local = is_local;
 
-        // Finally build the task itself, while applying our complex inputs logic,
-        // and inheriting implicit deps/inputs/env from the global config.
-        let mut configured_inputs = 0;
-        let mut has_configured_inputs = false;
-
-        task.deps = self
+        // Aggregate a list of deps/inputs that are inherited in someway,
+        // and should always be included in the task, regardless of merge strategy.
+        let global_deps = self
             .implicit_deps
             .iter()
             .map(|d| (*d).to_owned())
             .collect::<Vec<Target>>();
 
-        task.inputs = self
+        let mut global_inputs = self
             .implicit_inputs
             .iter()
             .map(|d| (*d).to_owned())
             .collect::<Vec<InputPath>>();
 
+        global_inputs.push(InputPath::WorkspaceGlob(".moon/*.yml".into()));
+
         if let Some(env_file) = &task.options.env_file {
-            task.inputs.push(env_file.to_owned());
+            global_inputs.push(env_file.to_owned());
         }
+
+        // Finally build the task itself, while applying our complex inputs logic,
+        // and inheriting implicit deps/inputs/env from the global config.
+        let mut configured_inputs = 0;
+        let mut has_configured_inputs = false;
 
         for args in args_sets {
             if !args.is_empty() {
@@ -232,12 +239,7 @@ impl<'proj> TasksBuilder<'proj> {
 
             // Inherit global inputs as normal inputs, but do not consider them a configured input
             if !config.global_inputs.is_empty() {
-                task.inputs = self.merge_vec(
-                    task.inputs,
-                    config.global_inputs.to_owned(),
-                    task.options.merge_inputs,
-                    true,
-                );
+                global_inputs.extend(config.global_inputs.to_owned());
             }
 
             // Inherit local inputs, which are used configured, and keep track of the total
@@ -289,19 +291,28 @@ impl<'proj> TasksBuilder<'proj> {
             }
         }
 
-        // Always break cache if a core configuration changes
-        task.inputs
-            .push(InputPath::WorkspaceGlob(".moon/*.yml".into()));
-
-        // And lastly, before we return the task and options, we should finalize all necessary
-        // fields and populate/calculate with values.
+        // And lastly, before we return the task and options, we should finalize
+        // all necessary fields and populate/calculate with values.
         if task.command.is_empty() {
             task.command = "noop".into();
         }
 
-        task.target = Target::new(self.project_id, id)?;
+        if !global_deps.is_empty() {
+            task.deps = self.merge_vec(task.deps, global_deps, TaskMergeStrategy::Append, true);
+        }
 
         task.id = id.to_owned();
+
+        if !global_inputs.is_empty() {
+            task.inputs =
+                self.merge_vec(task.inputs, global_inputs, TaskMergeStrategy::Append, true);
+        }
+
+        if task.platform.is_unknown() {
+            task.platform = self.fallback_platform.to_owned();
+        }
+
+        task.target = Target::new(self.project_id, id)?;
 
         task.type_of = if !task.outputs.is_empty() {
             TaskType::Build

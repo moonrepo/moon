@@ -1,7 +1,8 @@
 use moon_common::Id;
 use moon_config::{
-    InheritedTasksManager, InputPath, OutputPath, ProjectConfig, ProjectWorkspaceConfig,
-    ProjectWorkspaceInheritedTasksConfig, TaskOptionAffectedFiles, TaskOutputStyle, TaskType,
+    InheritedTasksManager, InputPath, OutputPath, PlatformType, ProjectConfig,
+    ProjectWorkspaceConfig, ProjectWorkspaceInheritedTasksConfig, TaskOptionAffectedFiles,
+    TaskOutputStyle, TaskType,
 };
 use moon_target::Target;
 use moon_task2::Task;
@@ -13,7 +14,9 @@ use std::path::Path;
 
 fn build_tasks_with_config(root: &Path, local_config: ProjectConfig) -> BTreeMap<Id, Task> {
     let id = Id::raw("project");
-    let mut builder = TasksBuilder::new(&id);
+    let platform = local_config.platform.unwrap_or_default();
+
+    let mut builder = TasksBuilder::new(&id, &platform);
 
     builder.load_local_tasks(&local_config);
 
@@ -21,7 +24,7 @@ fn build_tasks_with_config(root: &Path, local_config: ProjectConfig) -> BTreeMap
 
     let global_config = global_manager
         .get_inherited_config(
-            &local_config.platform.unwrap_or_default(),
+            &platform,
             &local_config.language,
             &local_config.type_of,
             &local_config.tags,
@@ -279,6 +282,48 @@ mod tasks_builder {
         }
     }
 
+    mod detect_platforms {
+        use super::*;
+
+        #[test]
+        fn uses_explicitly_configured() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "platforms/moon.yml");
+
+            let task = tasks.get("system").unwrap();
+
+            assert_eq!(task.platform, PlatformType::System);
+
+            let task = tasks.get("node").unwrap();
+
+            assert_eq!(task.platform, PlatformType::Node);
+        }
+
+        #[test]
+        fn unknown_fallsback_to_project_platform() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "platforms/moon.yml");
+
+            let task = tasks.get("unknown").unwrap();
+
+            assert_eq!(task.platform, PlatformType::Rust);
+
+            let task = tasks.get("unknown-implicit").unwrap();
+
+            assert_eq!(task.platform, PlatformType::Rust);
+        }
+
+        #[test]
+        fn applies_to_global_inherited() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "platforms/moon.yml");
+
+            let task = tasks.get("global-build").unwrap();
+
+            assert_eq!(task.platform, PlatformType::Rust);
+        }
+    }
+
     mod special_options {
         use super::*;
 
@@ -436,6 +481,163 @@ mod tasks_builder {
         }
     }
 
+    mod inputs_scenarios {
+        // TODO
+    }
+
+    mod merge_strategies {
+        use super::*;
+
+        #[test]
+        fn append() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "merge-append/moon.yml");
+
+            let task = tasks.get("args").unwrap();
+
+            assert_eq!(task.args, vec!["a", "b", "c", "x", "y", "z"]);
+
+            let task = tasks.get("deps").unwrap();
+
+            assert_eq!(
+                task.deps,
+                vec![
+                    Target::parse("global:build").unwrap(),
+                    Target::parse("local:build").unwrap()
+                ]
+            );
+
+            let task = tasks.get("env").unwrap();
+
+            assert_eq!(
+                task.env,
+                FxHashMap::from_iter([
+                    ("KEY1".into(), "overwrite".into()),
+                    ("KEY2".into(), "value2".into()),
+                    ("LOCAL".into(), "true".into()),
+                ])
+            );
+
+            let task = tasks.get("inputs").unwrap();
+
+            assert_eq!(
+                task.inputs,
+                vec![
+                    InputPath::ProjectFile("global".into()),
+                    InputPath::ProjectFile("local".into()),
+                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                    InputPath::WorkspaceFile(".moon/tasks/tag-merge.yml".into()),
+                ]
+            );
+
+            let task = tasks.get("outputs").unwrap();
+
+            assert_eq!(
+                task.outputs,
+                vec![
+                    OutputPath::ProjectFile("global".into()),
+                    OutputPath::ProjectFile("local".into()),
+                ]
+            );
+        }
+
+        #[test]
+        fn prepend() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "merge-prepend/moon.yml");
+
+            let task = tasks.get("args").unwrap();
+
+            assert_eq!(task.args, vec!["x", "y", "z", "a", "b", "c"]);
+
+            let task = tasks.get("deps").unwrap();
+
+            assert_eq!(
+                task.deps,
+                vec![
+                    Target::parse("local:build").unwrap(),
+                    Target::parse("global:build").unwrap(),
+                ]
+            );
+
+            let task = tasks.get("env").unwrap();
+
+            assert_eq!(
+                task.env,
+                FxHashMap::from_iter([
+                    ("KEY1".into(), "value1".into()),
+                    ("KEY2".into(), "value2".into()),
+                    ("LOCAL".into(), "true".into()),
+                ])
+            );
+
+            let task = tasks.get("inputs").unwrap();
+
+            assert_eq!(
+                task.inputs,
+                vec![
+                    InputPath::ProjectFile("local".into()),
+                    InputPath::ProjectFile("global".into()),
+                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                    InputPath::WorkspaceFile(".moon/tasks/tag-merge.yml".into()),
+                ]
+            );
+
+            let task = tasks.get("outputs").unwrap();
+
+            assert_eq!(
+                task.outputs,
+                vec![
+                    OutputPath::ProjectFile("local".into()),
+                    OutputPath::ProjectFile("global".into()),
+                ]
+            );
+        }
+
+        #[test]
+        fn replace() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "merge-replace/moon.yml");
+
+            let task = tasks.get("args").unwrap();
+
+            assert_eq!(task.args, vec!["x", "y", "z"]);
+
+            let task = tasks.get("deps").unwrap();
+
+            assert_eq!(task.deps, vec![Target::parse("local:build").unwrap(),]);
+
+            let task = tasks.get("env").unwrap();
+
+            assert_eq!(
+                task.env,
+                FxHashMap::from_iter([
+                    ("KEY1".into(), "overwrite".into()),
+                    ("LOCAL".into(), "true".into()),
+                ])
+            );
+
+            let task = tasks.get("inputs").unwrap();
+
+            assert_eq!(
+                task.inputs,
+                vec![
+                    InputPath::ProjectFile("local".into()),
+                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                    InputPath::WorkspaceFile(".moon/tasks/tag-merge.yml".into()),
+                ]
+            );
+
+            let task = tasks.get("outputs").unwrap();
+
+            assert_eq!(task.outputs, vec![OutputPath::ProjectFile("local".into()),]);
+        }
+    }
+
+    mod project_env_vars {
+        // TODO
+    }
+
     mod global_inheritance {
         use super::*;
 
@@ -559,9 +761,9 @@ mod tasks_builder {
             assert_eq!(
                 task.inputs,
                 vec![
+                    InputPath::ProjectGlob("**/*".into()),
                     InputPath::ProjectGlob("project/**/*".into()),
                     InputPath::WorkspaceFile("workspace.json".into()),
-                    InputPath::ProjectGlob("**/*".into()),
                     InputPath::WorkspaceGlob(".moon/*.yml".into()),
                 ]
             );
@@ -594,9 +796,9 @@ mod tasks_builder {
             assert_eq!(
                 task.inputs,
                 vec![
+                    InputPath::ProjectGlob("local/*".into()),
                     InputPath::ProjectGlob("project/**/*".into()),
                     InputPath::WorkspaceFile("workspace.json".into()),
-                    InputPath::ProjectGlob("local/*".into()),
                     InputPath::WorkspaceGlob(".moon/*.yml".into()),
                 ]
             );
@@ -630,22 +832,10 @@ mod tasks_builder {
             assert_eq!(
                 task.deps,
                 vec![
+                    Target::parse("^:build").unwrap(),
                     Target::parse("app:build").unwrap(),
-                    Target::parse("^:build").unwrap()
                 ]
             );
         }
-    }
-
-    mod inputs_scenarios {
-        // TODO
-    }
-
-    mod merge_strategies {
-        // TODO
-    }
-
-    mod project_env_vars {
-        // TODO
     }
 }

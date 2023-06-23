@@ -78,6 +78,12 @@ impl Deref for Id {
     }
 }
 
+impl PartialEq<str> for Id {
+    fn eq(&self, other: &str) -> bool {
+        self.0 == other
+    }
+}
+
 impl PartialEq<&str> for Id {
     fn eq(&self, other: &&str) -> bool {
         &self.0 == other

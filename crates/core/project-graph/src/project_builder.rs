@@ -14,7 +14,6 @@ use moon_platform_detector::{detect_project_language, detect_task_platform};
 use moon_project::{Project, ProjectError};
 use moon_target::{Target, TargetScope};
 use moon_task::{Task, TaskError, TaskFlag};
-use moon_utils::path::expand_to_workspace_relative;
 use moon_utils::regex::ENV_VAR_SUBSTITUTE;
 use moon_utils::{path, time};
 use moon_workspace::Workspace;
@@ -26,7 +25,6 @@ use starbase_utils::glob;
 use std::collections::BTreeMap;
 use std::env;
 use std::mem;
-use std::str::FromStr;
 
 pub struct ProjectGraphBuilder<'ws> {
     workspace: &'ws mut Workspace,
@@ -407,18 +405,15 @@ impl<'ws> ProjectGraphBuilder<'ws> {
     ) -> Result<(), ProjectGraphError> {
         // Load from env file first
         if let Some(env_file) = &task.options.env_file {
-            let env_path = self.workspace.root.join(expand_to_workspace_relative(
-                env_file,
-                &self.workspace.root,
-                &project.root,
-            ));
+            let env_path = env_file
+                .to_workspace_relative(&project.source)
+                .to_path(&self.workspace.root);
 
             let error_handler =
                 |e: dotenvy::Error| TaskError::InvalidEnvFile(env_path.clone(), e.to_string());
 
             // Add as an input
-            task.inputs
-                .push(InputPath::from_str(env_file.as_str()).unwrap());
+            task.inputs.push(env_file.to_owned());
 
             // The `.env` file may not have been committed, so avoid crashing
             if env_path.exists() {

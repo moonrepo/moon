@@ -1,0 +1,4 @@
+tasks:
+  command:
+    # We have to explicitly set it because JS has 3 platforms!
+    platform: 'deno'

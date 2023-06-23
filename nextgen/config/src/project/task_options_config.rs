@@ -1,4 +1,7 @@
+use std::str::FromStr;
+
 use crate::portable_path::FilePath;
+use crate::shapes::InputPath;
 use moon_common::cacheable;
 use schematic::schema::StringType;
 use schematic::{derive_enum, Config, ConfigEnum, SchemaType, Schematic};
@@ -53,11 +56,11 @@ derive_enum!(
 );
 
 impl TaskOptionEnvFile {
-    pub fn to_option(&self) -> Option<FilePath> {
+    pub fn to_input_path(&self) -> Option<InputPath> {
         match self {
-            TaskOptionEnvFile::Enabled(true) => Some(FilePath(".env".into())),
+            TaskOptionEnvFile::Enabled(true) => Some(InputPath::ProjectFile(".env".into())),
             TaskOptionEnvFile::Enabled(false) => None,
-            TaskOptionEnvFile::File(path) => Some(path.clone()),
+            TaskOptionEnvFile::File(path) => InputPath::from_str(path.as_str()).ok(),
         }
     }
 }

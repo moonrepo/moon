@@ -11,7 +11,7 @@ git-url-parse = "0.4.4"
 ignore = "0.4.20"
 miette = { workspace = true }
 once_cell = { workspace = true }
-once_map = "0.4.6"
+once_map = { workspace = true }
 regex = { workspace = true }
 rustc-hash = { workspace = true }
 semver = { workspace = true }

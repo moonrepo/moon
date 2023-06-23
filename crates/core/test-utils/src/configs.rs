@@ -232,7 +232,7 @@ pub fn get_tasks_fixture_configs() -> (
                 "withArgs".into(),
                 PartialTaskConfig {
                     command: Some(TaskCommandArgs::String("cmd".into())),
-                    args: Some(TaskCommandArgs::Sequence(vec![
+                    args: Some(TaskCommandArgs::List(vec![
                         "--foo".into(),
                         "--bar".into(),
                         "baz".into(),

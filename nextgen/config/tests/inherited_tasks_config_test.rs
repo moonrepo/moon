@@ -1,7 +1,6 @@
 mod utils;
 
 use httpmock::prelude::*;
-use moon_common::consts::CONFIG_TASKS_FILENAME;
 use moon_common::Id;
 use moon_config::{
     InheritedTasksConfig, InheritedTasksManager, InputPath, LanguageType, PlatformType,
@@ -11,7 +10,6 @@ use moon_target::Target;
 use rustc_hash::FxHashMap;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
 use std::collections::BTreeMap;
-use std::path::{Path, PathBuf};
 use utils::*;
 
 const FILENAME: &str = ".moon/tasks.yml";
@@ -71,7 +69,7 @@ tasks:
                     "arrayArgs".into(),
                     TaskConfig {
                         command: TaskCommandArgs::String("c".to_owned()),
-                        args: TaskCommandArgs::Sequence(vec!["array".into(), "args".into()]),
+                        args: TaskCommandArgs::List(vec!["array".into(), "args".into()]),
                         ..TaskConfig::default()
                     },
                 ),
@@ -399,37 +397,6 @@ implicitInputs:
 mod task_manager {
     use super::*;
 
-    fn load_tasks_into_manager(
-        workspace_root: &Path,
-        tasks_path: PathBuf,
-    ) -> InheritedTasksManager {
-        let mut manager = InheritedTasksManager::default();
-
-        manager.add_config(
-            &tasks_path,
-            InheritedTasksConfig::load_partial(workspace_root, &tasks_path).unwrap(),
-        );
-
-        let tasks_dir = tasks_path.parent().unwrap().join("tasks");
-
-        if !tasks_dir.exists() {
-            return manager;
-        }
-
-        for file in std::fs::read_dir(tasks_dir).unwrap() {
-            let file = file.unwrap();
-
-            if file.file_type().unwrap().is_file() {
-                manager.add_config(
-                    &file.path(),
-                    InheritedTasksConfig::load_partial(workspace_root, &file.path()).unwrap(),
-                );
-            }
-        }
-
-        manager
-    }
-
     fn stub_task(command: &str, platform: PlatformType) -> TaskConfig {
         let mut global_inputs = vec![];
 
@@ -450,8 +417,7 @@ mod task_manager {
     #[test]
     fn loads_all_task_configs_into_manager() {
         let sandbox = create_sandbox("inheritance/files");
-        let manager =
-            load_tasks_into_manager(sandbox.path(), sandbox.path().join(CONFIG_TASKS_FILENAME));
+        let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
 
         let mut keys = manager.configs.keys().collect::<Vec<_>>();
         keys.sort();
@@ -595,19 +561,19 @@ mod task_manager {
         #[test]
         fn creates_js_config() {
             let sandbox = create_sandbox("inheritance/files");
-            let manager =
-                load_tasks_into_manager(sandbox.path(), sandbox.path().join(CONFIG_TASKS_FILENAME));
+            let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
+
+            let config = manager
+                .get_inherited_config(
+                    &PlatformType::Node,
+                    &LanguageType::JavaScript,
+                    &ProjectType::Application,
+                    &[],
+                )
+                .unwrap();
 
             assert_eq!(
-                manager
-                    .get_inherited_config(
-                        &PlatformType::Node,
-                        &LanguageType::JavaScript,
-                        &ProjectType::Application,
-                        &[]
-                    )
-                    .unwrap()
-                    .tasks,
+                config.config.tasks,
                 BTreeMap::from_iter([
                     ("global".into(), stub_task("global", PlatformType::Unknown)),
                     ("node".into(), stub_task("node", PlatformType::Node)),
@@ -621,24 +587,34 @@ mod task_manager {
                     ),
                 ]),
             );
+
+            assert_eq!(
+                config.layers.keys().collect::<Vec<_>>(),
+                vec![
+                    ".moon/tasks.yml",
+                    ".moon/tasks/javascript.yml",
+                    ".moon/tasks/node-application.yml",
+                    ".moon/tasks/node.yml",
+                ]
+            );
         }
 
         #[test]
         fn creates_ts_config() {
             let sandbox = create_sandbox("inheritance/files");
-            let manager =
-                load_tasks_into_manager(sandbox.path(), sandbox.path().join(CONFIG_TASKS_FILENAME));
+            let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
+
+            let config = manager
+                .get_inherited_config(
+                    &PlatformType::Node,
+                    &LanguageType::TypeScript,
+                    &ProjectType::Tool,
+                    &[],
+                )
+                .unwrap();
 
             assert_eq!(
-                manager
-                    .get_inherited_config(
-                        &PlatformType::Node,
-                        &LanguageType::TypeScript,
-                        &ProjectType::Tool,
-                        &[]
-                    )
-                    .unwrap()
-                    .tasks,
+                config.config.tasks,
                 BTreeMap::from_iter([
                     ("global".into(), stub_task("global", PlatformType::Unknown)),
                     ("node".into(), stub_task("node", PlatformType::Node)),
@@ -648,47 +624,61 @@ mod task_manager {
                     ),
                 ]),
             );
+
+            assert_eq!(
+                config.layers.keys().collect::<Vec<_>>(),
+                vec![
+                    ".moon/tasks.yml",
+                    ".moon/tasks/node.yml",
+                    ".moon/tasks/typescript.yml",
+                ]
+            );
         }
 
         #[test]
         fn creates_rust_config() {
             let sandbox = create_sandbox("inheritance/files");
-            let manager =
-                load_tasks_into_manager(sandbox.path(), sandbox.path().join(CONFIG_TASKS_FILENAME));
+            let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
+
+            let config = manager
+                .get_inherited_config(
+                    &PlatformType::System,
+                    &LanguageType::Rust,
+                    &ProjectType::Library,
+                    &[],
+                )
+                .unwrap();
 
             assert_eq!(
-                manager
-                    .get_inherited_config(
-                        &PlatformType::System,
-                        &LanguageType::Rust,
-                        &ProjectType::Library,
-                        &[]
-                    )
-                    .unwrap()
-                    .tasks,
+                config.config.tasks,
                 BTreeMap::from_iter([
                     ("global".into(), stub_task("global", PlatformType::Unknown)),
                     ("rust".into(), stub_task("rust", PlatformType::System)),
                 ]),
+            );
+
+            assert_eq!(
+                config.layers.keys().collect::<Vec<_>>(),
+                vec![".moon/tasks.yml", ".moon/tasks/rust.yml",]
             );
         }
 
         #[test]
         fn creates_config_with_tags() {
             let sandbox = create_sandbox("inheritance/files");
-            let manager =
-                load_tasks_into_manager(sandbox.path(), sandbox.path().join(CONFIG_TASKS_FILENAME));
+            let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
+
+            let config = manager
+                .get_inherited_config(
+                    &PlatformType::Node,
+                    &LanguageType::TypeScript,
+                    &ProjectType::Tool,
+                    &["normal".into(), "kebab-case".into()],
+                )
+                .unwrap();
 
             assert_eq!(
-                manager
-                    .get_inherited_config(
-                        &PlatformType::Node,
-                        &LanguageType::TypeScript,
-                        &ProjectType::Tool,
-                        &["normal".into(), "kebab-case".into()]
-                    )
-                    .unwrap()
-                    .tasks,
+                config.config.tasks,
                 BTreeMap::from_iter([
                     ("global".into(), stub_task("global", PlatformType::Unknown)),
                     ("node".into(), stub_task("node", PlatformType::Node)),
@@ -702,28 +692,44 @@ mod task_manager {
                     ),
                 ]),
             );
+
+            assert_eq!(
+                config.layers.keys().collect::<Vec<_>>(),
+                vec![
+                    ".moon/tasks.yml",
+                    ".moon/tasks/node.yml",
+                    ".moon/tasks/tag-kebab-case.yml",
+                    ".moon/tasks/tag-normal.yml",
+                    ".moon/tasks/typescript.yml",
+                ]
+            );
         }
 
         #[test]
         fn creates_other_config() {
             let sandbox = create_sandbox("inheritance/files");
-            let manager =
-                load_tasks_into_manager(sandbox.path(), sandbox.path().join(CONFIG_TASKS_FILENAME));
+            let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
+
+            let config = manager
+                .get_inherited_config(
+                    &PlatformType::System,
+                    &LanguageType::Other("kotlin".into()),
+                    &ProjectType::Library,
+                    &[],
+                )
+                .unwrap();
 
             assert_eq!(
-                manager
-                    .get_inherited_config(
-                        &PlatformType::System,
-                        &LanguageType::Other("kotlin".into()),
-                        &ProjectType::Library,
-                        &[]
-                    )
-                    .unwrap()
-                    .tasks,
+                config.config.tasks,
                 BTreeMap::from_iter([
                     ("global".into(), stub_task("global", PlatformType::Unknown)),
                     ("kotlin".into(), stub_task("kotlin", PlatformType::System)),
                 ]),
+            );
+
+            assert_eq!(
+                config.layers.keys().collect::<Vec<_>>(),
+                vec![".moon/tasks.yml", ".moon/tasks/kotlin.yml",]
             );
         }
     }
@@ -734,22 +740,22 @@ mod task_manager {
         #[test]
         fn entirely_overrides_task_of_same_name() {
             let sandbox = create_sandbox("inheritance/override");
-            let manager =
-                load_tasks_into_manager(sandbox.path(), sandbox.path().join(CONFIG_TASKS_FILENAME));
+            let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
 
             let mut task = stub_task("node-library", PlatformType::Node);
             task.inputs = Some(vec![InputPath::ProjectFile("c".into())]);
 
+            let config = manager
+                .get_inherited_config(
+                    &PlatformType::Node,
+                    &LanguageType::JavaScript,
+                    &ProjectType::Library,
+                    &[],
+                )
+                .unwrap();
+
             assert_eq!(
-                manager
-                    .get_inherited_config(
-                        &PlatformType::Node,
-                        &LanguageType::JavaScript,
-                        &ProjectType::Library,
-                        &[]
-                    )
-                    .unwrap()
-                    .tasks,
+                config.config.tasks,
                 BTreeMap::from_iter([("command".into(), task)]),
             );
         }
@@ -757,22 +763,22 @@ mod task_manager {
         #[test]
         fn entirely_overrides_task_of_same_name_for_other_lang() {
             let sandbox = create_sandbox("inheritance/override");
-            let manager =
-                load_tasks_into_manager(sandbox.path(), sandbox.path().join(CONFIG_TASKS_FILENAME));
+            let manager = InheritedTasksManager::load(sandbox.path(), sandbox.path()).unwrap();
 
             let mut task = stub_task("dotnet-application", PlatformType::System);
             task.inputs = Some(vec![InputPath::ProjectFile("c".into())]);
 
+            let config = manager
+                .get_inherited_config(
+                    &PlatformType::System,
+                    &LanguageType::Other("dotnet".into()),
+                    &ProjectType::Application,
+                    &[],
+                )
+                .unwrap();
+
             assert_eq!(
-                manager
-                    .get_inherited_config(
-                        &PlatformType::System,
-                        &LanguageType::Other("dotnet".into()),
-                        &ProjectType::Application,
-                        &[]
-                    )
-                    .unwrap()
-                    .tasks,
+                config.config.tasks,
                 BTreeMap::from_iter([("command".into(), task)]),
             );
         }

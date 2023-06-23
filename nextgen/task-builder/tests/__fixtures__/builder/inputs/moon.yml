@@ -1,0 +1,22 @@
+tasks:
+  no-inputs:
+    command: 'no-inputs'
+  empty-inputs:
+    command: 'empty-inputs'
+    inputs: []
+  with-inputs:
+    command: 'with-inputs'
+    inputs:
+      - 'local/*'
+
+  # Extend globals
+  global-build:
+    inputs:
+      - '/workspace-local'
+  global-test:
+    inputs:
+      - 'local.json'
+    options:
+      mergeInputs: replace
+  global-run:
+    inputs: []

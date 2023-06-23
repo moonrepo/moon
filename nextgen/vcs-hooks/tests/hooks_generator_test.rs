@@ -10,24 +10,31 @@ fn load_git(root: &Path) -> BoxedVcs {
     Box::new(Git::load(root, "master", &[]).unwrap())
 }
 
+fn create_config() -> VcsConfig {
+    VcsConfig {
+        hooks: FxHashMap::from_iter([
+            (
+                "pre-commit".into(),
+                vec!["moon run :lint".into(), "some-command".into()],
+            ),
+            ("post-push".into(), vec!["moon check --all".into()]),
+        ]),
+        ..VcsConfig::default()
+    }
+}
+
 async fn run_generator(root: &Path) {
-    HooksGenerator::new(
-        root,
-        &load_git(root),
-        &VcsConfig {
-            hooks: FxHashMap::from_iter([
-                (
-                    "pre-commit".into(),
-                    vec!["moon run :lint".into(), "some-command".into()],
-                ),
-                ("post-push".into(), vec!["moon check --all".into()]),
-            ]),
-            ..VcsConfig::default()
-        },
-    )
-    .generate()
-    .await
-    .unwrap();
+    HooksGenerator::new(root, &load_git(root), &create_config())
+        .generate()
+        .await
+        .unwrap();
+}
+
+async fn clean_generator(root: &Path) {
+    HooksGenerator::new(root, &load_git(root), &create_config())
+        .cleanup()
+        .await
+        .unwrap();
 }
 
 #[tokio::test]
@@ -68,6 +75,28 @@ async fn doesnt_generate_when_no_commands() {
     .unwrap();
 
     assert!(!sandbox.path().join(".moon/hooks").exists());
+}
+
+#[tokio::test]
+async fn cleans_up_hooks() {
+    let sandbox = create_empty_sandbox();
+    sandbox.enable_git();
+
+    run_generator(sandbox.path()).await;
+
+    let pre_commit = sandbox.path().join(".git/hooks/pre-commit");
+    let post_push = sandbox.path().join(".git/hooks/post-push");
+    let local_hooks = sandbox.path().join(".moon/hooks");
+
+    assert!(pre_commit.exists());
+    assert!(post_push.exists());
+    assert!(local_hooks.exists());
+
+    clean_generator(sandbox.path()).await;
+
+    assert!(!pre_commit.exists());
+    assert!(!post_push.exists());
+    assert!(!local_hooks.exists());
 }
 
 #[cfg(not(windows))]

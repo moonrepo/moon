@@ -1,10 +1,15 @@
 use crate::helpers::create_progress_bar;
 use moon::load_workspace;
-use moon_actions::sync_vcs_hooks;
+use moon_actions::{sync_vcs_hooks, unsync_vcs_hooks};
 use starbase::AppResult;
 use starbase_styles::color;
 
-pub async fn sync() -> AppResult {
+pub struct SyncHooksOptions {
+    pub clean: bool,
+    pub force: bool,
+}
+
+pub async fn sync(options: SyncHooksOptions) -> AppResult {
     let workspace = load_workspace().await?;
 
     if workspace.config.vcs.hooks.is_empty() {
@@ -21,23 +26,24 @@ pub async fn sync() -> AppResult {
     }
 
     let done = create_progress_bar(format!("Syncing {} hooks...", workspace.config.vcs.manager));
+    let hook_names = workspace
+        .config
+        .vcs
+        .hooks
+        .keys()
+        .map(color::id)
+        .collect::<Vec<_>>()
+        .join(", ");
 
-    sync_vcs_hooks(&workspace).await?;
+    if options.clean {
+        unsync_vcs_hooks(&workspace).await?;
 
-    done(
-        format!(
-            "Successfully synced {} hooks",
-            workspace
-                .config
-                .vcs
-                .hooks
-                .keys()
-                .map(color::id)
-                .collect::<Vec<_>>()
-                .join(", ")
-        ),
-        true,
-    );
+        done(format!("Successfully removed {} hooks", hook_names), true);
+    } else {
+        sync_vcs_hooks(&workspace, options.force).await?;
+
+        done(format!("Successfully created {} hooks", hook_names), true);
+    }
 
     Ok(())
 }

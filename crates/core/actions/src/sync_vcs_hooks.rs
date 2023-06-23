@@ -2,7 +2,7 @@ use moon_hash::HashEngine;
 use moon_vcs_hooks::{HooksGenerator, HooksHash};
 use moon_workspace::Workspace;
 
-pub async fn sync_vcs_hooks(workspace: &Workspace) -> miette::Result<()> {
+pub async fn sync_vcs_hooks(workspace: &Workspace, force: bool) -> miette::Result<()> {
     let vcs_config = &workspace.config.vcs;
 
     let hash_engine = HashEngine::new(&workspace.cache.dir);
@@ -20,7 +20,7 @@ pub async fn sync_vcs_hooks(workspace: &Workspace) -> miette::Result<()> {
     // Check the cache before creating the files
     let mut cache = workspace.cache.cache_vcs_hooks_state()?;
 
-    if hasher.generate_hash()? != cache.last_hash {
+    if force || hasher.generate_hash()? != cache.last_hash {
         HooksGenerator::new(&workspace.root, &workspace.vcs, vcs_config)
             .generate()
             .await?;
@@ -28,6 +28,14 @@ pub async fn sync_vcs_hooks(workspace: &Workspace) -> miette::Result<()> {
         cache.last_hash = hash_engine.save_manifest(hasher)?;
         cache.save()?;
     }
+
+    Ok(())
+}
+
+pub async fn unsync_vcs_hooks(workspace: &Workspace) -> miette::Result<()> {
+    HooksGenerator::new(&workspace.root, &workspace.vcs, &workspace.config.vcs)
+        .cleanup()
+        .await?;
 
     Ok(())
 }

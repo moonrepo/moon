@@ -1,10 +1,9 @@
-use crate::RunnerError;
 use moon_common::{
     consts::CONFIG_PROJECT_FILENAME,
     path::{standardize_separators, WorkspaceRelativePathBuf},
 };
 use moon_config::{HasherConfig, HasherWalkStrategy};
-use moon_logger::{warn, Logable};
+use moon_logger::warn;
 use moon_task::Task;
 use moon_utils::{is_ci, path};
 use moon_vcs::BoxedVcs;

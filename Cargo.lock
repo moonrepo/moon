@@ -2101,9 +2101,9 @@ dependencies = [
 
 [[package]]
 name = "insta"
-version = "1.29.0"
+version = "1.30.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a28d25139df397cbca21408bb742cf6837e04cdbebf1b07b760caf971d6a972"
+checksum = "28491f7753051e5704d4d0ae7860d45fae3238d7d235bc4289dcd45c48d3cec3"
 dependencies = [
  "console",
  "lazy_static",
@@ -5002,9 +5002,9 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
 name = "starbase"
-version = "0.1.10"
+version = "0.1.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7708e38aea278675ab6ce053c150dc4422a0b0ba56bc3b71d4fc7b19e664a265"
+checksum = "c412084261b95daae3e53bf998bcdb3808e05995c4752342be63519a7d659ed4"
 dependencies = [
  "async-trait",
  "chrono",
@@ -5024,9 +5024,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_events"
-version = "0.1.6"
+version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f2b364180917e872168d220ded73c26f9724e3ceb6aa8d7ae172b50b1aa5926"
+checksum = "412f023b7548483a191380412787706aa005af761a53d376727af4bf49674a5d"
 dependencies = [
  "async-trait",
  "miette",
@@ -5036,9 +5036,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_macros"
-version = "0.1.7"
+version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2565b3b5eefc0b0d7da2a9f6b567e049df5c82cec14328f2a3268382167f5156"
+checksum = "7ac76e6f7c9ada8bcc4606ff3021a267e59c14885a2abf7ab58922dd6701f54e"
 dependencies = [
  "darling 0.20.1",
  "proc-macro2",
@@ -5048,9 +5048,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_sandbox"
-version = "0.1.4"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e830673d56b507194471b834a0d5823db747e72f6ae4b099607be5891aff0fbc"
+checksum = "92dda8534bc2a9d19da1eddba58dcf840317f3d5d5e7a748aad29d201dae71a7"
 dependencies = [
  "assert_cmd",
  "assert_fs",
@@ -5064,9 +5064,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_styles"
-version = "0.1.10"
+version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7e90aad208a2a27137042da4039efb62c7ecd5c2ee78b9c82885e16ce828e984"
+checksum = "9cf0d8c14a248ab71633cc81525935091d7e456900955e48aba23f250af18baf"
 dependencies = [
  "dirs",
  "miette",
@@ -5077,9 +5077,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.2.12"
+version = "0.2.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b89a6b84dee72cc983a70b8ceb425ef9d4045f421c8d098859005ad967f2546"
+checksum = "6f3013297e49317821842bc3fd32e5163eaf151bfa5f73f67a48690be1af1764"
 dependencies = [
  "dirs",
  "ec4rs",

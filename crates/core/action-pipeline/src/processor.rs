@@ -3,7 +3,6 @@ use crate::actions::run_target::run_target;
 use crate::actions::setup_tool::setup_tool;
 use crate::actions::sync_project::sync_project;
 use crate::actions::sync_workspace::sync_workspace;
-use crate::errors::PipelineError;
 use moon_action::{Action, ActionNode};
 use moon_action_context::ActionContext;
 use moon_emitter::{Emitter, Event};

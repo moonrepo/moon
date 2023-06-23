@@ -145,7 +145,7 @@ impl CodeownersGenerator {
     }
 
     pub fn cleanup(self) -> Result<(), FsError> {
-        debug!(file = %self.file_path.display(), "Removing CODEOWNERS file");
+        debug!(file = ?self.file_path, "Removing CODEOWNERS file");
 
         drop(self.file);
 
@@ -155,7 +155,7 @@ impl CodeownersGenerator {
     }
 
     pub fn generate(mut self) -> Result<(), FsError> {
-        debug!(file = %self.file_path.display(), "Generating and writing CODEOWNERS file");
+        debug!(file = ?self.file_path, "Generating and writing CODEOWNERS file");
 
         let editor_config = fs::get_editor_config_props(&self.file_path);
 

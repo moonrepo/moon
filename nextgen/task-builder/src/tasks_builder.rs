@@ -63,25 +63,28 @@ impl<'proj> TasksBuilder<'proj> {
             }
         }
 
-        debug!(project_id = ?self.project_id, "Filtering global tasks");
+        debug!(
+            project_id = self.project_id.as_str(),
+            "Filtering global tasks"
+        );
 
         for (task_id, task_config) in &global_config.tasks {
+            let target = Target::new(self.project_id, task_id).unwrap();
+
             // None = Include all
             // [] = Include none
             // ["a"] = Include "a"
             if !include_all {
                 if include_set.is_empty() {
                     debug!(
-                        project_id = ?self.project_id,
-                        task_id = ?task_id,
+                        target = target.as_str(),
                         "Not inheriting any global tasks, empty include filter",
                     );
 
                     break;
                 } else if !include_set.contains(task_id) {
                     debug!(
-                        project_id = ?self.project_id,
-                        task_id = ?task_id,
+                        target = target.as_str(),
                         "Not inheriting global task {}, not included",
                         color::id(task_id)
                     );
@@ -94,8 +97,7 @@ impl<'proj> TasksBuilder<'proj> {
             // ["a"] = Exclude "a"
             if !exclude.is_empty() && exclude.contains(&task_id) {
                 debug!(
-                    project_id = ?self.project_id,
-                    task_id = ?task_id,
+                    target = target.as_str(),
                     "Not inheriting global task {}, excluded",
                     color::id(task_id)
                 );
@@ -105,8 +107,7 @@ impl<'proj> TasksBuilder<'proj> {
 
             let task_key = if let Some(renamed_task_id) = rename.get(task_id) {
                 debug!(
-                    project_id = ?self.project_id,
-                    task_id = ?task_id,
+                    target = target.as_str(),
                     "Inheriting global task {} and renaming to {}",
                     color::id(task_id),
                     color::id(renamed_task_id)
@@ -115,8 +116,7 @@ impl<'proj> TasksBuilder<'proj> {
                 renamed_task_id
             } else {
                 debug!(
-                    project_id = ?self.project_id,
-                    task_id = ?task_id,
+                    target = target.as_str(),
                     "Inheriting global task {}",
                     color::id(task_id),
                 );
@@ -147,6 +147,7 @@ impl<'proj> TasksBuilder<'proj> {
         self
     }
 
+    #[tracing::instrument(name = "task", skip_all)]
     pub fn build(self) -> miette::Result<BTreeMap<Id, Task>> {
         let mut tasks = BTreeMap::new();
 
@@ -158,11 +159,9 @@ impl<'proj> TasksBuilder<'proj> {
     }
 
     fn build_task(&self, id: &Id) -> miette::Result<Task> {
-        debug!(
-            project_id = ?self.project_id,
-            task_id = ?id,
-            "Building task",
-        );
+        let target = Target::new(self.project_id, id)?;
+
+        debug!(target = target.as_str(), "Building task");
 
         let mut task = Task::default();
         let mut configs = vec![];
@@ -195,11 +194,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
         }
 
-        trace!(
-            project_id = ?self.project_id,
-            task_id = ?id,
-            "Marking task as local",
-        );
+        trace!(target = target.as_str(), "Marking task as local");
 
         task.options = self.build_task_options(id, is_local)?;
         task.flags.local = is_local;
@@ -214,9 +209,8 @@ impl<'proj> TasksBuilder<'proj> {
 
         if !global_deps.is_empty() {
             trace!(
-                project_id = ?self.project_id,
-                task_id = ?id,
-                deps = ?global_deps,
+                target = target.as_str(),
+                deps = ?global_deps.iter().map(|d| d.as_str()).collect::<Vec<_>>(),
                 "Inheriting global implicit deps",
             );
         }
@@ -235,9 +229,8 @@ impl<'proj> TasksBuilder<'proj> {
 
         if !global_inputs.is_empty() {
             trace!(
-                project_id = ?self.project_id,
-                task_id = ?id,
-                inputs = ?global_inputs,
+                target = target.as_str(),
+                inputs = ?global_inputs.iter().map(|d| d.as_str()).collect::<Vec<_>>(),
                 "Inheriting global implicit inputs",
             );
         }
@@ -258,8 +251,7 @@ impl<'proj> TasksBuilder<'proj> {
 
         if !task.env.is_empty() {
             trace!(
-                project_id = ?self.project_id,
-                task_id = ?id,
+                target = target.as_str(),
                 env_vars = ?self.project_env,
                 "Inheriting project env vars",
             );
@@ -320,17 +312,16 @@ impl<'proj> TasksBuilder<'proj> {
         if configured_inputs == 0 {
             if has_configured_inputs {
                 debug!(
-                    project_id = ?self.project_id,
-                    task_id = ?id,
+                    target = target.as_str(),
                     "Task has explicitly disabled inputs",
                 );
 
                 task.flags.empty_inputs = true;
             } else {
                 debug!(
-                    project_id = ?self.project_id,
-                    task_id = ?id,
-                    "No inputs configured, defaulting to **/* (from project)",
+                    target = target.as_str(),
+                    "No inputs configured, defaulting to {} (from project)",
+                    color::file("**/*"),
                 );
 
                 task.inputs.push(InputPath::ProjectGlob("**/*".into()));
@@ -358,7 +349,7 @@ impl<'proj> TasksBuilder<'proj> {
             task.platform = self.project_platform.to_owned();
         }
 
-        task.target = Target::new(self.project_id, id)?;
+        task.target = target;
 
         task.type_of = if !task.outputs.is_empty() {
             TaskType::Build

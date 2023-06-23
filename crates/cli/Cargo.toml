@@ -65,7 +65,7 @@ rustc-hash = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
-starbase = "0.1.10"
+starbase = "0.1.11"
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true }
 tera = { workspace = true }

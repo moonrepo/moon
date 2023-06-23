@@ -7,7 +7,6 @@ use moon_action_context::ActionContext;
 use moon_cache::RunTargetState;
 use moon_config::{TaskOptionAffectedFiles, TaskOutputStyle};
 use moon_emitter::{Emitter, Event, EventFlow};
-use moon_error::MoonError;
 use moon_hasher::HashSet;
 use moon_logger::{debug, warn};
 use moon_platform_runtime::Runtime;

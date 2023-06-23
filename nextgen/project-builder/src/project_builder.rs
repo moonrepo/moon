@@ -36,8 +36,8 @@ impl<'app> ProjectBuilder<'app> {
         workspace_root: &'app Path,
     ) -> Result<Self, ProjectError> {
         debug!(
-            project_id = ?id,
-            source = ?source,
+            id = id.as_str(),
+            source = source.as_str(),
             "Building project {} from source",
             color::id(&id),
         );
@@ -79,7 +79,7 @@ impl<'app> ProjectBuilder<'app> {
         )?;
 
         debug!(
-            project_id = ?self.id,
+            id = self.id.as_str(),
             lookup = ?global_config.order,
             "Inheriting global file groups and tasks",
         );
@@ -97,8 +97,8 @@ impl<'app> ProjectBuilder<'app> {
         let config_path = config_name.to_path(self.workspace_root);
 
         debug!(
-            project_id = ?self.id,
-            file = ?config_path.display(),
+            id = self.id.as_str(),
+            file = ?config_path,
             "Attempting to load {} (optional)",
             color::file(&config_name)
         );
@@ -110,7 +110,7 @@ impl<'app> ProjectBuilder<'app> {
             let language = detect_language(&self.project_root);
 
             debug!(
-                project_id = ?self.id,
+                id = self.id.as_str(),
                 language = ?language,
                 "Unknown project language, detecting from environment",
             );
@@ -125,7 +125,7 @@ impl<'app> ProjectBuilder<'app> {
             let platform: PlatformType = self.language.clone().into();
 
             debug!(
-                project_id = ?self.id,
+                id = self.id.as_str(),
                 language = ?self.language,
                 platform = ?self.platform,
                 "Unknown tasks platform, inferring from language",
@@ -139,6 +139,7 @@ impl<'app> ProjectBuilder<'app> {
         Ok(self)
     }
 
+    #[tracing::instrument(name = "project", skip_all)]
     pub fn build(mut self) -> miette::Result<Project> {
         let mut project = Project {
             dependencies: self.build_dependencies()?,
@@ -165,7 +166,7 @@ impl<'app> ProjectBuilder<'app> {
     fn build_dependencies(&self) -> miette::Result<FxHashMap<Id, DependencyConfig>> {
         let mut deps = FxHashMap::default();
 
-        debug!(project_id = ?self.id, "Building project dependencies");
+        debug!(id = self.id.as_str(), "Building project dependencies");
 
         if let Some(local) = &self.local_config {
             for dep_on in &local.depends_on {
@@ -185,8 +186,8 @@ impl<'app> ProjectBuilder<'app> {
             }
 
             debug!(
-                project_id = ?self.id,
-                deps = ?deps.keys(),
+                id = self.id.as_str(),
+                deps = ?deps.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
                 "Depends on {} projects",
                 deps.len(),
             );
@@ -199,13 +200,13 @@ impl<'app> ProjectBuilder<'app> {
         let mut file_inputs = FxHashMap::default();
         let project_source = &self.source;
 
-        debug!(project_id = ?self.id, "Building file groups");
+        debug!(id = self.id.as_str(), "Building file groups");
 
         // Inherit global first
         if let Some(global) = &self.global_config {
             debug!(
-                project_id = ?self.id,
-                groups = ?global.config.file_groups.keys(),
+                id = self.id.as_str(),
+                groups = ?global.config.file_groups.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
                 "Inheriting global file groups",
             );
 
@@ -217,8 +218,8 @@ impl<'app> ProjectBuilder<'app> {
         // Override with local second
         if let Some(local) = &self.local_config {
             debug!(
-                project_id = ?self.id,
-                groups = ?local.file_groups.keys(),
+                id = self.id.as_str(),
+                groups = ?local.file_groups.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
                 "Using local file groups",
             );
 
@@ -246,7 +247,7 @@ impl<'app> ProjectBuilder<'app> {
     }
 
     fn build_tasks(&self) -> miette::Result<BTreeMap<Id, Task>> {
-        debug!(project_id = ?self.id, "Building tasks");
+        debug!(id = self.id.as_str(), "Building tasks");
 
         let mut tasks_builder = TasksBuilder::new(&self.id, &self.platform);
 

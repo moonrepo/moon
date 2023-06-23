@@ -88,6 +88,19 @@ mod project_builder {
         );
     }
 
+    // Tasks are tested heavily in the tasks-builder crate
+    #[test]
+    fn builds_tasks() {
+        let sandbox = create_sandbox("builder");
+        let foo = build_project("foo", sandbox.path());
+        let bar = build_project("bar", sandbox.path());
+        let baz = build_project("baz", sandbox.path());
+
+        assert_eq!(foo.tasks.len(), 0);
+        assert_eq!(bar.tasks.len(), 1);
+        assert_eq!(baz.tasks.len(), 1);
+    }
+
     mod file_groups {
         use super::*;
 

@@ -283,6 +283,14 @@ tasks:
     platform: 'rust'
 ```
 
+:::tip
+
+The `cargo-binstall` crate may require a `GITHUB_TOKEN` environment variable to make GitHub Releases
+API requests, especially in CI. If you're being rate limited, or fail to find a download, try
+creating a token with necessary permissions.
+
+:::
+
 ### Lockfile handling
 
 To expand our integration even further, we also take `Cargo.lock` into account, and apply the

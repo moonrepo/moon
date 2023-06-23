@@ -28,11 +28,7 @@ pub struct NodeTool {
 }
 
 impl NodeTool {
-    pub fn new(
-        proto: &Proto,
-        config: &NodeConfig,
-        version: &Version,
-    ) -> Result<NodeTool, ToolError> {
+    pub fn new(proto: &Proto, config: &NodeConfig, version: &Version) -> miette::Result<NodeTool> {
         let mut node = NodeTool {
             global: false,
             config: config.to_owned(),
@@ -69,7 +65,7 @@ impl NodeTool {
         package: &str,
         args: &[&str],
         working_dir: &Path,
-    ) -> Result<(), ToolError> {
+    ) -> miette::Result<()> {
         let mut exec_args = vec!["--silent", "--package", package, "--"];
         exec_args.extend(args);
 
@@ -89,14 +85,14 @@ impl NodeTool {
     }
 
     /// Return the `npm` package manager.
-    pub fn get_npm(&self) -> Result<&NpmTool, ToolError> {
+    pub fn get_npm(&self) -> miette::Result<&NpmTool> {
         match &self.npm {
             Some(npm) => Ok(npm),
-            None => Err(ToolError::UnknownTool("npm".into())),
+            None => Err(ToolError::UnknownTool("npm".into()).into()),
         }
     }
 
-    pub fn get_npx_path(&self) -> Result<PathBuf, ToolError> {
+    pub fn get_npx_path(&self) -> miette::Result<PathBuf> {
         if self.global {
             return Ok("npx".into());
         }
@@ -108,18 +104,18 @@ impl NodeTool {
     }
 
     /// Return the `pnpm` package manager.
-    pub fn get_pnpm(&self) -> Result<&PnpmTool, ToolError> {
+    pub fn get_pnpm(&self) -> miette::Result<&PnpmTool> {
         match &self.pnpm {
             Some(pnpm) => Ok(pnpm),
-            None => Err(ToolError::UnknownTool("pnpm".into())),
+            None => Err(ToolError::UnknownTool("pnpm".into()).into()),
         }
     }
 
     /// Return the `yarn` package manager.
-    pub fn get_yarn(&self) -> Result<&YarnTool, ToolError> {
+    pub fn get_yarn(&self) -> miette::Result<&YarnTool> {
         match &self.yarn {
             Some(yarn) => Ok(yarn),
-            None => Err(ToolError::UnknownTool("yarn".into())),
+            None => Err(ToolError::UnknownTool("yarn".into()).into()),
         }
     }
 
@@ -146,7 +142,7 @@ impl Tool for NodeTool {
         self
     }
 
-    fn get_bin_path(&self) -> Result<PathBuf, ToolError> {
+    fn get_bin_path(&self) -> miette::Result<PathBuf> {
         Ok(if self.global {
             "node".into()
         } else {
@@ -154,10 +150,7 @@ impl Tool for NodeTool {
         })
     }
 
-    async fn setup(
-        &mut self,
-        last_versions: &mut FxHashMap<String, String>,
-    ) -> Result<u8, ToolError> {
+    async fn setup(&mut self, last_versions: &mut FxHashMap<String, String>) -> miette::Result<u8> {
         let mut installed = 0;
 
         // Don't abort early, as we need to setup package managers below
@@ -211,7 +204,7 @@ impl Tool for NodeTool {
         Ok(installed)
     }
 
-    async fn teardown(&mut self) -> Result<(), ToolError> {
+    async fn teardown(&mut self) -> miette::Result<()> {
         self.tool.teardown().await?;
 
         Ok(())

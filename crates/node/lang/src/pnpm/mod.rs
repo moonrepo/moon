@@ -6,7 +6,6 @@ pub mod workspace;
 use crate::PNPM;
 use cached::proc_macro::cached;
 use dependency_path::PnpmDependencyPath;
-use moon_error::MoonError;
 use moon_lang::{config_cache, LockfileDependencyVersions};
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
@@ -59,7 +58,7 @@ pub struct PnpmLock {
 }
 
 #[cached(result)]
-pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVersions, MoonError> {
+pub fn load_lockfile_dependencies(path: PathBuf) -> miette::Result<LockfileDependencyVersions> {
     let mut deps: LockfileDependencyVersions = FxHashMap::default();
 
     if let Some(lockfile) = PnpmLock::read(path)? {

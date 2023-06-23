@@ -12,11 +12,7 @@ pub struct DenoTool {
 }
 
 impl DenoTool {
-    pub fn new(
-        _proto: &Proto,
-        config: &DenoConfig,
-        version: &Version,
-    ) -> Result<DenoTool, ToolError> {
+    pub fn new(_proto: &Proto, config: &DenoConfig, version: &Version) -> miette::Result<DenoTool> {
         let mut deno = DenoTool {
             config: config.to_owned(),
             global: true,
@@ -39,7 +35,7 @@ impl Tool for DenoTool {
         self
     }
 
-    fn get_bin_path(&self) -> Result<PathBuf, ToolError> {
+    fn get_bin_path(&self) -> miette::Result<PathBuf> {
         Ok(PathBuf::from("deno"))
     }
 }

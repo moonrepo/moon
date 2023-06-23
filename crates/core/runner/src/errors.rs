@@ -3,7 +3,6 @@ use moon_error::MoonError;
 use moon_process::ProcessError;
 use moon_project::ProjectError;
 use moon_target::TargetError;
-use moon_task::TaskError;
 use moon_tool::ToolError;
 use moon_workspace::{VcsError, WorkspaceError};
 use starbase_styles::{Style, Stylize};
@@ -39,10 +38,6 @@ pub enum RunnerError {
     #[diagnostic(transparent)]
     #[error(transparent)]
     Target(#[from] TargetError),
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
-    Task(#[from] TaskError),
 
     #[diagnostic(transparent)]
     #[error(transparent)]

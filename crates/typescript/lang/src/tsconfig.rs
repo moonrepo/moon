@@ -71,7 +71,7 @@ pub struct TsConfigJson {
 }
 
 impl TsConfigJson {
-    pub fn load_with_extends<T: AsRef<Path>>(path: T) -> Result<TsConfigJson, MoonError> {
+    pub fn load_with_extends<T: AsRef<Path>>(path: T) -> miette::Result<TsConfigJson> {
         let path = path.as_ref();
         let values = load_to_value(path, true)?;
 
@@ -151,7 +151,7 @@ impl TsConfigJson {
         updated
     }
 
-    pub fn save(&mut self) -> Result<(), MoonError> {
+    pub fn save(&mut self) -> miette::Result<()> {
         if !self.dirty.is_empty() {
             write_preserved_json(&self.path, self)?;
             self.dirty.clear();
@@ -163,7 +163,7 @@ impl TsConfigJson {
     }
 }
 
-pub fn load_to_value<T: AsRef<Path>>(path: T, extend: bool) -> Result<JsonValue, MoonError> {
+pub fn load_to_value<T: AsRef<Path>>(path: T, extend: bool) -> miette::Result<JsonValue> {
     let path = path.as_ref();
     let mut merged_file = JsonValue::Object(JsonMap::new());
     let last_file: JsonValue = json::read_file(path)?;

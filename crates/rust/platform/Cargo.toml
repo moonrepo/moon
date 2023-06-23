@@ -20,6 +20,7 @@ moon_task = { path = "../../../nextgen/task" }
 moon_terminal = { path = "../../core/terminal" }
 moon_tool = { path = "../../core/tool" }
 moon_utils = { path = "../../core/utils" }
+miette = { workspace = true }
 proto_cli = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }

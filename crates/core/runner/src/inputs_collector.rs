@@ -159,7 +159,7 @@ pub async fn collect_and_hash_inputs(
     // 2: Convert to workspace relative paths and filter out invalid inputs
 
     let mut files_to_hash = convert_paths_to_strings(
-        task.get_log_target(),
+        task.target.as_str(),
         hasher_config.warn_on_missing_inputs,
         &files_to_hash,
         workspace_root,

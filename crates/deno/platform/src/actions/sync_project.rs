@@ -14,7 +14,7 @@ pub async fn sync_project(
     workspace_root: &Path,
     _deno_config: &DenoConfig,
     typescript_config: &Option<TypeScriptConfig>,
-) -> Result<bool, ProjectError> {
+) -> miette::Result<bool> {
     let mut mutated_project_files = false;
     let tsconfig_project_refs: FxHashSet<String> = FxHashSet::default();
     let tsconfig_paths: CompilerOptionsPaths = BTreeMap::new();

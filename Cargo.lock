@@ -2827,7 +2827,7 @@ name = "moon_deno_lang"
 version = "0.1.0"
 dependencies = [
  "cached",
- "moon_error",
+ "miette",
  "moon_lang",
  "moon_logger",
  "moon_typescript_lang",
@@ -2843,12 +2843,12 @@ dependencies = [
 name = "moon_deno_platform"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_action_context",
  "moon_common",
  "moon_config",
  "moon_deno_lang",
  "moon_deno_tool",
- "moon_error",
  "moon_hasher",
  "moon_logger",
  "moon_platform",
@@ -2871,6 +2871,7 @@ dependencies = [
 name = "moon_deno_tool"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_config",
  "moon_platform_runtime",
  "moon_tool",
@@ -2991,6 +2992,7 @@ dependencies = [
 name = "moon_go_lang"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_lang",
 ]
 
@@ -3026,6 +3028,7 @@ dependencies = [
 name = "moon_lang"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "rustc-hash",
 ]
 
@@ -3063,7 +3066,7 @@ version = "0.1.0"
 dependencies = [
  "cached",
  "content_inspector",
- "moon_error",
+ "miette",
  "moon_lang",
  "moon_logger",
  "moon_test_utils",
@@ -3121,6 +3124,7 @@ dependencies = [
 name = "moon_node_tool"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_config",
  "moon_logger",
  "moon_node_lang",
@@ -3158,6 +3162,7 @@ dependencies = [
 name = "moon_php_lang"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_lang",
 ]
 
@@ -3166,6 +3171,7 @@ name = "moon_platform"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "miette",
  "moon_action_context",
  "moon_common",
  "moon_config",
@@ -3292,6 +3298,7 @@ dependencies = [
 name = "moon_python_lang"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_lang",
 ]
 
@@ -3312,6 +3319,7 @@ dependencies = [
 name = "moon_ruby_lang"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_lang",
 ]
 
@@ -3358,6 +3366,7 @@ dependencies = [
  "cached",
  "cargo-lock",
  "cargo_toml",
+ "miette",
  "moon_error",
  "moon_lang",
  "moon_logger",
@@ -3372,6 +3381,7 @@ dependencies = [
 name = "moon_rust_platform"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon",
  "moon_action_context",
  "moon_common",
@@ -3404,6 +3414,7 @@ dependencies = [
 name = "moon_rust_tool"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_config",
  "moon_logger",
  "moon_platform_runtime",
@@ -3419,6 +3430,7 @@ dependencies = [
 name = "moon_system_platform"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_action_context",
  "moon_config",
  "moon_hasher",
@@ -3525,6 +3537,7 @@ name = "moon_typescript_lang"
 version = "0.1.0"
 dependencies = [
  "cached",
+ "miette",
  "moon_error",
  "moon_lang",
  "moon_logger",
@@ -3540,6 +3553,7 @@ dependencies = [
 name = "moon_typescript_platform"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_common",
  "moon_config",
  "moon_error",

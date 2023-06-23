@@ -27,7 +27,7 @@ pub struct YarnTool {
 }
 
 impl YarnTool {
-    pub fn new(proto: &Proto, config: &Option<YarnConfig>) -> Result<YarnTool, ToolError> {
+    pub fn new(proto: &Proto, config: &Option<YarnConfig>) -> miette::Result<YarnTool> {
         let config = config.to_owned().unwrap_or_default();
 
         Ok(YarnTool {
@@ -45,7 +45,7 @@ impl YarnTool {
             .unwrap_or(false)
     }
 
-    pub async fn set_version(&mut self, node: &NodeTool) -> Result<(), ToolError> {
+    pub async fn set_version(&mut self, node: &NodeTool) -> miette::Result<()> {
         if !self.is_berry() {
             return Ok(());
         }
@@ -89,7 +89,7 @@ impl Tool for YarnTool {
         self
     }
 
-    fn get_bin_path(&self) -> Result<PathBuf, ToolError> {
+    fn get_bin_path(&self) -> miette::Result<PathBuf> {
         Ok(if self.global {
             "yarn".into()
         } else {
@@ -101,10 +101,7 @@ impl Tool for YarnTool {
         self.tool.get_shim_path().map(|p| p.to_path_buf())
     }
 
-    async fn setup(
-        &mut self,
-        last_versions: &mut FxHashMap<String, String>,
-    ) -> Result<u8, ToolError> {
+    async fn setup(&mut self, last_versions: &mut FxHashMap<String, String>) -> miette::Result<u8> {
         let mut count = 0;
         let version = self.config.version.clone();
 
@@ -145,7 +142,7 @@ impl Tool for YarnTool {
         Ok(count)
     }
 
-    async fn teardown(&mut self) -> Result<(), ToolError> {
+    async fn teardown(&mut self) -> miette::Result<()> {
         self.tool.teardown().await?;
 
         Ok(())
@@ -154,7 +151,7 @@ impl Tool for YarnTool {
 
 #[async_trait]
 impl DependencyManager<NodeTool> for YarnTool {
-    fn create_command(&self, node: &NodeTool) -> Result<Command, ToolError> {
+    fn create_command(&self, node: &NodeTool) -> miette::Result<Command> {
         let mut cmd = if self.global {
             Command::new("yarn")
         } else if let Some(shim) = self.get_shim_path() {
@@ -179,7 +176,7 @@ impl DependencyManager<NodeTool> for YarnTool {
         node: &NodeTool,
         working_dir: &Path,
         log: bool,
-    ) -> Result<(), ToolError> {
+    ) -> miette::Result<()> {
         if self.config.version.is_none() {
             return Ok(());
         }
@@ -220,7 +217,7 @@ impl DependencyManager<NodeTool> for YarnTool {
     async fn get_resolved_dependencies(
         &self,
         project_root: &Path,
-    ) -> Result<LockfileDependencyVersions, ToolError> {
+    ) -> miette::Result<LockfileDependencyVersions> {
         let Some(lockfile_path) = fs::find_upwards(YARN.lockfile, project_root) else {
             return Ok(FxHashMap::default());
         };
@@ -233,7 +230,7 @@ impl DependencyManager<NodeTool> for YarnTool {
         node: &NodeTool,
         working_dir: &Path,
         log: bool,
-    ) -> Result<(), ToolError> {
+    ) -> miette::Result<()> {
         let mut args = vec!["install"];
 
         if !self.is_berry() {
@@ -270,7 +267,7 @@ impl DependencyManager<NodeTool> for YarnTool {
         node: &NodeTool,
         packages: &[String],
         production_only: bool,
-    ) -> Result<(), ToolError> {
+    ) -> miette::Result<()> {
         let mut cmd = self.create_command(node)?;
 
         if self.is_berry() {
@@ -281,9 +278,9 @@ impl DependencyManager<NodeTool> for YarnTool {
                 get_workspace_root().join(".yarn/plugins/@yarnpkg/plugin-workspace-tools.cjs");
 
             if !workspace_plugin.exists() {
-                return Err(ToolError::RequiresPlugin(
-                    "yarn plugin import workspace-tools".into(),
-                ));
+                return Err(
+                    ToolError::RequiresPlugin("yarn plugin import workspace-tools".into()).into(),
+                );
             }
         } else {
             cmd.arg("install");

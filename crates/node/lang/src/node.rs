@@ -2,11 +2,11 @@ use crate::package_json::{PackageJson, PackageWorkspaces};
 use crate::pnpm::workspace::PnpmWorkspace;
 use crate::NODE;
 use cached::proc_macro::cached;
-use moon_error::{map_io_to_fs_error, MoonError};
+use miette::IntoDiagnostic;
 use moon_utils::{path, regex};
 use once_cell::sync::Lazy;
+use starbase_utils::fs;
 use std::env;
-use std::fs;
 use std::path::{Path, PathBuf};
 
 static BIN_PATH_PATTERN: Lazy<regex::Regex> = Lazy::new(|| {
@@ -44,24 +44,22 @@ pub enum BinFile {
 ///     - Windows: Creates a wrapping shell script AND .cmd that executes the bin file.
 #[cached(result)]
 #[track_caller]
-pub fn extract_canonical_node_module_bin(bin_path: PathBuf) -> Result<BinFile, MoonError> {
-    let error_handler = |e| map_io_to_fs_error(e, bin_path.clone());
-
+pub fn extract_canonical_node_module_bin(bin_path: PathBuf) -> miette::Result<BinFile> {
     // Resolve to the real file location if applicable
     let bin_path = if bin_path.is_symlink() {
-        bin_path.canonicalize().map_err(error_handler)?
+        bin_path.canonicalize().into_diagnostic()?
     } else {
         bin_path.clone()
     };
 
-    let buffer = fs::read(&bin_path).map_err(error_handler)?;
+    let buffer = fs::read_file_bytes(&bin_path)?;
 
     // Found a Rust or Go binary shipped in node modules, abort early
     if content_inspector::inspect(&buffer).is_binary() {
         return Ok(BinFile::Binary(bin_path));
     }
 
-    let contents = String::from_utf8(buffer).map_err(|e| MoonError::Generic(e.to_string()))?;
+    let contents = String::from_utf8(buffer).into_diagnostic()?;
 
     // Found a JavaScript file, use as-is
     if has_shebang(&contents, "node") {
@@ -85,7 +83,7 @@ pub fn extract_canonical_node_module_bin(bin_path: PathBuf) -> Result<BinFile, M
 pub fn find_package_bin<P: AsRef<Path>, B: AsRef<str>>(
     starting_dir: P,
     bin_name: B,
-) -> Result<Option<BinFile>, MoonError> {
+) -> miette::Result<Option<BinFile>> {
     let starting_dir = starting_dir.as_ref();
     let bin_name = bin_name.as_ref();
     let bin_path = starting_dir
@@ -131,7 +129,7 @@ pub fn get_bin_name_suffix<T: AsRef<str>>(name: T, windows_ext: &str, flat: bool
 #[cached(result)]
 pub fn get_package_manager_workspaces(
     workspace_root: PathBuf,
-) -> Result<Option<Vec<String>>, MoonError> {
+) -> miette::Result<Option<Vec<String>>> {
     if let Some(pnpm_workspace) = PnpmWorkspace::read(workspace_root.clone())? {
         if !pnpm_workspace.packages.is_empty() {
             return Ok(Some(pnpm_workspace.packages));

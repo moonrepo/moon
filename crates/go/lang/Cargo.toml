@@ -5,3 +5,4 @@ edition = "2021"
 
 [dependencies]
 moon_lang = { path = "../../core/lang" }
+miette = { workspace = true }

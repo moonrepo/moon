@@ -9,7 +9,6 @@ moon_common = { path = "../../../nextgen/common" }
 moon_config = { path = "../../../nextgen/config" }
 moon_deno_lang = { path = "../lang" }
 moon_deno_tool = { path = "../tool" }
-moon_error = { path = "../../core/error" }
 moon_hasher = { path = "../../core/hasher" }
 moon_logger = { path = "../../core/logger" }
 moon_platform = { path = "../../core/platform" }
@@ -21,6 +20,7 @@ moon_tool = { path = "../../core/tool" }
 moon_typescript_lang = { path = "../../typescript/lang" }
 moon_typescript_platform = { path = "../../typescript/platform" }
 moon_utils = { path = "../../core/utils" }
+miette = { workspace = true }
 proto_cli = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }

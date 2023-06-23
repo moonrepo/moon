@@ -114,6 +114,10 @@ impl Target {
         })
     }
 
+    pub fn as_str(&self) -> &str {
+        &self.id
+    }
+
     pub fn is_all_task(&self, task_id: &str) -> bool {
         if matches!(&self.scope, TargetScope::All) {
             return if let Some(id) = task_id.strip_prefix(':') {

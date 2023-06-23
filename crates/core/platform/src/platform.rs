@@ -5,13 +5,12 @@ use moon_config::{
     DependencyConfig, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap,
     ProjectsSourcesMap, TasksConfigsMap,
 };
-use moon_error::MoonError;
 use moon_hasher::HashSet;
 use moon_platform_runtime::{Runtime, Version};
 use moon_process::Command;
-use moon_project::{Project, ProjectError};
+use moon_project::Project;
 use moon_task::Task;
-use moon_tool::{Tool, ToolError};
+use moon_tool::Tool;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::fmt::Debug;
@@ -32,7 +31,7 @@ pub trait Platform: Debug + Send + Sync {
 
     /// Determine if the provided project is within the platform's dependency manager
     /// workspace (not to be confused with moon's workspace).
-    fn is_project_in_dependency_workspace(&self, project: &Project) -> Result<bool, MoonError> {
+    fn is_project_in_dependency_workspace(&self, project: &Project) -> miette::Result<bool> {
         Ok(false)
     }
 
@@ -42,7 +41,7 @@ pub trait Platform: Debug + Send + Sync {
         &mut self,
         projects_map: &ProjectsSourcesMap,
         aliases_map: &mut ProjectsAliasesMap,
-    ) -> Result<(), MoonError> {
+    ) -> miette::Result<()> {
         Ok(())
     }
 
@@ -52,42 +51,42 @@ pub trait Platform: Debug + Send + Sync {
         &self,
         project: &Project,
         aliases_map: &ProjectsAliasesMap,
-    ) -> Result<Vec<DependencyConfig>, MoonError> {
+    ) -> miette::Result<Vec<DependencyConfig>> {
         Ok(vec![])
     }
 
     /// During project creation (when being lazy loaded and instantiated in the graph),
     /// load and infer any *additional* tasks for the platform.
-    fn load_project_tasks(&self, project: &Project) -> Result<TasksConfigsMap, MoonError> {
+    fn load_project_tasks(&self, project: &Project) -> miette::Result<TasksConfigsMap> {
         Ok(BTreeMap::new())
     }
 
     // TOOLCHAIN
 
-    fn is_toolchain_enabled(&self) -> Result<bool, ToolError>;
+    fn is_toolchain_enabled(&self) -> miette::Result<bool>;
 
     /// Return a tool instance from the internal toolchain for the top-level version.
     /// If the version does not exist in the toolchain, return an error.
-    fn get_tool(&self) -> Result<Box<&dyn Tool>, ToolError>;
+    fn get_tool(&self) -> miette::Result<Box<&dyn Tool>>;
 
     /// Return a tool instance from the internal toolchain for the provided version.
     /// If the version does not exist in the toolchain, return an error.
-    fn get_tool_for_version(&self, version: Version) -> Result<Box<&dyn Tool>, ToolError>;
+    fn get_tool_for_version(&self, version: Version) -> miette::Result<Box<&dyn Tool>>;
 
     /// Return the filename of the lockfile and manifest (in this order)
     /// for the language's dependency manager, if applicable.
-    fn get_dependency_configs(&self) -> Result<Option<(String, String)>, ToolError> {
+    fn get_dependency_configs(&self) -> miette::Result<Option<(String, String)>> {
         Ok(None)
     }
 
     /// Setup the top-level tool in the toolchain if applicable.
     /// This is a one off flow, as most flows will be using the pipeline.
-    async fn setup_toolchain(&mut self) -> Result<(), ToolError> {
+    async fn setup_toolchain(&mut self) -> miette::Result<()> {
         Ok(())
     }
 
     /// Teardown all tools that are currently registered in the toolchain.
-    async fn teardown_toolchain(&mut self) -> Result<(), ToolError> {
+    async fn teardown_toolchain(&mut self) -> miette::Result<()> {
         Ok(())
     }
 
@@ -101,7 +100,7 @@ pub trait Platform: Debug + Send + Sync {
         context: &ActionContext,
         runtime: &Runtime,
         last_versions: &mut FxHashMap<String, String>,
-    ) -> Result<u8, ToolError> {
+    ) -> miette::Result<u8> {
         Ok(0)
     }
 
@@ -112,7 +111,7 @@ pub trait Platform: Debug + Send + Sync {
         context: &ActionContext,
         runtime: &Runtime,
         working_dir: &Path,
-    ) -> Result<(), ToolError> {
+    ) -> miette::Result<()> {
         Ok(())
     }
 
@@ -123,7 +122,7 @@ pub trait Platform: Debug + Send + Sync {
         context: &ActionContext,
         project: &Project,
         dependencies: &FxHashMap<Id, &Project>,
-    ) -> Result<bool, ProjectError> {
+    ) -> miette::Result<bool> {
         Ok(false)
     }
 
@@ -134,7 +133,7 @@ pub trait Platform: Debug + Send + Sync {
         manifest_path: &Path,
         hashset: &mut HashSet,
         hasher_config: &HasherConfig,
-    ) -> Result<(), ToolError> {
+    ) -> miette::Result<()> {
         Ok(())
     }
 
@@ -146,7 +145,7 @@ pub trait Platform: Debug + Send + Sync {
         runtime: &Runtime,
         hashset: &mut HashSet,
         hasher_config: &HasherConfig,
-    ) -> Result<(), ToolError> {
+    ) -> miette::Result<()> {
         Ok(())
     }
 
@@ -158,5 +157,5 @@ pub trait Platform: Debug + Send + Sync {
         task: &Task,
         runtime: &Runtime,
         working_dir: &Path,
-    ) -> Result<Command, ToolError>;
+    ) -> miette::Result<Command>;
 }

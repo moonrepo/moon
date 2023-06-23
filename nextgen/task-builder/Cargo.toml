@@ -8,7 +8,7 @@ moon_args = { path = "../args" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_target = { path = "../target" }
-moon_task2 = { path = "../task" }
+moon_task = { path = "../task" }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
 thiserror = { workspace = true }

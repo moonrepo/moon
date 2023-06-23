@@ -16,7 +16,7 @@ moon_process = { path = "../../../nextgen/process" }
 moon_project = { path = "../../core/project" }
 moon_rust_lang = { path = "../lang" }
 moon_rust_tool = { path = "../tool" }
-moon_task = { path = "../../core/task" }
+moon_task = { path = "../../../nextgen/task" }
 moon_terminal = { path = "../../core/terminal" }
 moon_tool = { path = "../../core/tool" }
 moon_utils = { path = "../../core/utils" }

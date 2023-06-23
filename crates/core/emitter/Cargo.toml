@@ -18,7 +18,7 @@ moon_error = { path = "../error" }
 moon_platform_runtime = { path = "../platform-runtime" }
 moon_project = { path = "../project" }
 moon_target = { path = "../../../nextgen/target" }
-moon_task = { path = "../task" }
+moon_task = { path = "../../../nextgen/task" }
 moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
 async-trait = { workspace = true }

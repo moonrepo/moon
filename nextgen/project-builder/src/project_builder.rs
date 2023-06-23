@@ -6,7 +6,7 @@ use moon_config::{
 };
 use moon_file_group::FileGroup;
 use moon_project2::{Project, ProjectError};
-use moon_task2::Task;
+use moon_task::Task;
 use moon_task_builder::TasksBuilder;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;

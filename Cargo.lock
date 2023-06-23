@@ -3250,7 +3250,7 @@ dependencies = [
  "moon_config",
  "moon_file_group",
  "moon_query",
- "moon_task2",
+ "moon_task",
  "rustc-hash",
  "serde",
  "thiserror",
@@ -3266,7 +3266,7 @@ dependencies = [
  "moon_file_group",
  "moon_platform_detector",
  "moon_project2",
- "moon_task2",
+ "moon_task",
  "moon_task_builder",
  "rustc-hash",
  "starbase_sandbox",
@@ -3470,27 +3470,6 @@ name = "moon_task"
 version = "0.1.0"
 dependencies = [
  "miette",
- "moon_args",
- "moon_common",
- "moon_config",
- "moon_error",
- "moon_logger",
- "moon_target",
- "moon_test_utils",
- "moon_utils",
- "once_cell",
- "rustc-hash",
- "serde",
- "starbase_styles",
- "starbase_utils",
- "thiserror",
-]
-
-[[package]]
-name = "moon_task2"
-version = "0.1.0"
-dependencies = [
- "miette",
  "moon_common",
  "moon_config",
  "moon_target",
@@ -3510,7 +3489,7 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_target",
- "moon_task2",
+ "moon_task",
  "rustc-hash",
  "starbase_sandbox",
  "thiserror",

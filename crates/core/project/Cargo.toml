@@ -11,7 +11,7 @@ moon_file_group = { path = "../../../nextgen/file-group" }
 moon_logger = { path = "../logger" }
 moon_query = { path = "../../../nextgen/query" }
 moon_target = { path = "../../../nextgen/target" }
-moon_task = { path = "../task" }
+moon_task = { path = "../../../nextgen/task" }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }

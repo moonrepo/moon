@@ -20,7 +20,7 @@ moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
 moon_query = { path = "../../../nextgen/query" }
 moon_target = { path = "../../../nextgen/target" }
-moon_task = { path = "../task" }
+moon_task = { path = "../../../nextgen/task" }
 miette = { workspace = true }
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }

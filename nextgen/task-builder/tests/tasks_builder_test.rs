@@ -5,7 +5,7 @@ use moon_config::{
     TaskOutputStyle, TaskType,
 };
 use moon_target::Target;
-use moon_task2::Task;
+use moon_task::Task;
 use moon_task_builder::TasksBuilder;
 use rustc_hash::FxHashMap;
 use starbase_sandbox::create_sandbox;

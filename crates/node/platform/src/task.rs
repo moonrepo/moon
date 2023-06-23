@@ -183,7 +183,7 @@ pub fn create_task(
 
     if is_wrapping {
         task_config.platform = Some(PlatformType::Node);
-        task_config.command = Some(TaskCommandArgs::Sequence(string_vec![
+        task_config.command = Some(TaskCommandArgs::List(string_vec![
             "moon",
             "node",
             "run-script",
@@ -206,7 +206,7 @@ pub fn create_task(
         task_config.command = Some(if args.len() == 1 {
             TaskCommandArgs::String(args.remove(0))
         } else {
-            TaskCommandArgs::Sequence(args)
+            TaskCommandArgs::List(args)
         });
     }
 

@@ -1,0 +1,11 @@
+platform: node
+
+tasks:
+  node-a:
+    command: noop
+  node-b:
+    command: noop
+    platform: unknown
+  system:
+    command: noop
+    platform: system

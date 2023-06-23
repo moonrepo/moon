@@ -65,10 +65,7 @@ mod task_config {
         fn parses_list() {
             let config = test_parse_config("command: [bin]", |code| TaskConfig::parse(code));
 
-            assert_eq!(
-                config.command,
-                TaskCommandArgs::Sequence(vec!["bin".into()])
-            );
+            assert_eq!(config.command, TaskCommandArgs::List(vec!["bin".into()]));
         }
     }
 
@@ -86,7 +83,7 @@ mod task_config {
         fn parses_list() {
             let config = test_parse_config("args: [bin]", |code| TaskConfig::parse(code));
 
-            assert_eq!(config.args, TaskCommandArgs::Sequence(vec!["bin".into()]));
+            assert_eq!(config.args, TaskCommandArgs::List(vec!["bin".into()]));
         }
 
         #[test]
@@ -106,7 +103,7 @@ args:
 
             assert_eq!(
                 config.args,
-                TaskCommandArgs::Sequence(vec![
+                TaskCommandArgs::List(vec![
                     "arg".into(),
                     "-o".into(),
                     "@token(0)".into(),

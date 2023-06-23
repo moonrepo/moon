@@ -1,0 +1,15 @@
+[package]
+name = "moon_project2"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_common = { path = "../common" }
+moon_config = { path = "../config" }
+moon_file_group = { path = "../file-group" }
+moon_task2 = { path = "../task" }
+moon_query = { path = "../query" }
+miette = { workspace = true }
+rustc-hash = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }

@@ -1,0 +1,24 @@
+env:
+  SCOPE: 'project'
+  KEY: 'value'
+
+tasks:
+  local-build:
+    command: 'local-build'
+    inputs:
+      - 'abc'
+    outputs:
+      - 'out'
+    local: false
+
+  local-run:
+    command: 'local-run'
+    inputs:
+      - 'xyz'
+    local: true
+
+  local-test:
+    command: 'local-test'
+    env:
+      SCOPE: 'task'
+      KEY2: 'value2'

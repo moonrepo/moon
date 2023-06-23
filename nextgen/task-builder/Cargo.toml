@@ -1,0 +1,18 @@
+[package]
+name = "moon_task_builder"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_args = { path = "../args" }
+moon_common = { path = "../common" }
+moon_config = { path = "../config" }
+moon_target = { path = "../target" }
+moon_task2 = { path = "../task" }
+miette = { workspace = true }
+rustc-hash = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+starbase_sandbox = { workspace = true }

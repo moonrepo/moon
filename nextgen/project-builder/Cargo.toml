@@ -1,0 +1,20 @@
+[package]
+name = "moon_project_builder"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_common = { path = "../common" }
+moon_config = { path = "../config" }
+moon_file_group = { path = "../file-group" }
+moon_project2 = { path = "../project" }
+moon_task2 = { path = "../task" }
+moon_task_builder = { path = "../task-builder" }
+miette = { workspace = true }
+rustc-hash = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+starbase_sandbox = { workspace = true }
+# TODO remove
+moon_platform_detector = { path = "../../crates/core/platform-detector" }

@@ -1,0 +1,18 @@
+fileGroups:
+  sources:
+    - 'global'
+  tests:
+    - 'global'
+  other:
+    - 'global'
+
+tasks:
+  global-unknown:
+    command: 'global-unknown'
+    inputs:
+      - 'in'
+    outputs:
+      - 'out'
+  global-node:
+    command: 'global-node'
+    platform: 'node'

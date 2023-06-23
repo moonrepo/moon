@@ -2811,6 +2811,7 @@ dependencies = [
  "httpmock",
  "moon_common",
  "moon_target",
+ "once_map",
  "proto_cli",
  "rustc-hash",
  "schematic",
@@ -3241,6 +3242,38 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_project2"
+version = "0.1.0"
+dependencies = [
+ "miette",
+ "moon_common",
+ "moon_config",
+ "moon_file_group",
+ "moon_query",
+ "moon_task2",
+ "rustc-hash",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
+name = "moon_project_builder"
+version = "0.1.0"
+dependencies = [
+ "miette",
+ "moon_common",
+ "moon_config",
+ "moon_file_group",
+ "moon_platform_detector",
+ "moon_project2",
+ "moon_task2",
+ "moon_task_builder",
+ "rustc-hash",
+ "starbase_sandbox",
+ "tracing",
+]
+
+[[package]]
 name = "moon_project_graph"
 version = "0.1.0"
 dependencies = [
@@ -3451,6 +3484,37 @@ dependencies = [
  "starbase_styles",
  "starbase_utils",
  "thiserror",
+]
+
+[[package]]
+name = "moon_task2"
+version = "0.1.0"
+dependencies = [
+ "miette",
+ "moon_common",
+ "moon_config",
+ "moon_target",
+ "rustc-hash",
+ "serde",
+ "starbase_utils",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
+name = "moon_task_builder"
+version = "0.1.0"
+dependencies = [
+ "miette",
+ "moon_args",
+ "moon_common",
+ "moon_config",
+ "moon_target",
+ "moon_task2",
+ "rustc-hash",
+ "starbase_sandbox",
+ "thiserror",
+ "tracing",
 ]
 
 [[package]]

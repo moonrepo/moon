@@ -80,6 +80,8 @@ implicitDeps:
   - '^:build'
 ```
 
+> Implicit dependencies are _always_ inherited, regardless of the [`mergeDeps`](#mergedeps) option.
+
 ## `implicitInputs`
 
 <HeadingApiLink to="/api/types/interface/InheritedTasksConfig#implicitInputs" />
@@ -96,6 +98,8 @@ supported and encouraged.
 implicitInputs:
   - 'package.json'
 ```
+
+> Implicit inputs are _always_ inherited, regardless of the [`mergeInputs`](#mergeinputs) option.
 
 ## `tasks`
 

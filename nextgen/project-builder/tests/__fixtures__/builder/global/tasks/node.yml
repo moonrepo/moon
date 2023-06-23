@@ -1,0 +1,13 @@
+fileGroups:
+  sources:
+    - 'node'
+
+tasks:
+  global-system:
+    command: 'node-global-override'
+    inputs:
+      - 'in-override'
+    outputs:
+      - 'out-override'
+  node-standard:
+    command: 'node-standard'

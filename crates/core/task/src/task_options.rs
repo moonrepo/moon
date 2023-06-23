@@ -1,7 +1,7 @@
 use moon_common::cacheable;
 use moon_config::{
-    FilePath, TaskMergeStrategy, TaskOptionAffectedFiles, TaskOptionEnvFile, TaskOptionsConfig,
-    TaskOutputStyle,
+    FilePath, InputPath, TaskMergeStrategy, TaskOptionAffectedFiles, TaskOptionEnvFile,
+    TaskOptionsConfig, TaskOutputStyle,
 };
 
 cacheable!(
@@ -11,7 +11,7 @@ cacheable!(
 
         pub cache: bool,
 
-        pub env_file: Option<FilePath>,
+        pub env_file: Option<InputPath>,
 
         pub merge_args: TaskMergeStrategy,
 
@@ -72,7 +72,7 @@ impl TaskOptions {
         }
 
         if let Some(env_file) = &config.env_file {
-            self.env_file = env_file.to_option();
+            self.env_file = env_file.to_input_path();
         }
 
         if let Some(merge_args) = &config.merge_args {
@@ -130,7 +130,7 @@ impl TaskOptions {
             cache: config.cache.unwrap_or(!is_local),
             env_file: config
                 .env_file
-                .map(|env_file| env_file.to_option().unwrap()),
+                .map(|env_file| env_file.to_input_path().unwrap()),
             merge_args: config.merge_args.unwrap_or_default(),
             merge_deps: config.merge_deps.unwrap_or_default(),
             merge_env: config.merge_env.unwrap_or_default(),
@@ -166,7 +166,7 @@ impl TaskOptions {
             config.env_file = Some(if env_file.as_str() == ".env" {
                 TaskOptionEnvFile::Enabled(true)
             } else {
-                TaskOptionEnvFile::File(env_file.to_owned())
+                TaskOptionEnvFile::File(FilePath(env_file.as_str().to_owned()))
             });
         }
 

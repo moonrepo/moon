@@ -1,0 +1,23 @@
+tags: [implicit]
+
+tasks:
+  no-inputs:
+    command: 'no-inputs'
+  empty-inputs:
+    command: 'empty-inputs'
+    inputs: []
+  with-inputs:
+    command: 'with-inputs'
+    inputs:
+      - 'local/*'
+
+  no-deps:
+    command: 'no-deps'
+  empty-deps:
+    command: 'empty-deps'
+    deps: []
+  with-deps:
+    command: 'with-deps'
+    deps:
+      - '^:build'
+      - 'app:build'

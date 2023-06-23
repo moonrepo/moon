@@ -1,0 +1,26 @@
+tasks:
+  affected:
+    options:
+      affectedFiles: true
+  affected-args:
+    options:
+      affectedFiles: args
+  affected-env:
+    options:
+      affectedFiles: env
+  not-affected:
+    options:
+      affectedFiles: false
+
+  env-file:
+    options:
+      envFile: true
+  env-file-project:
+    options:
+      envFile: '.env.test'
+  env-file-workspace:
+    options:
+      envFile: '/.env.shared'
+  no-env-file:
+    options:
+      envFile: false

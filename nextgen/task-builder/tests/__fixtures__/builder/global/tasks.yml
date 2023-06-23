@@ -1,0 +1,14 @@
+tasks:
+  global-build:
+    command: 'global-build'
+    inputs:
+      - 'src/**/*'
+    outputs:
+      - 'build'
+  global-test:
+    command: 'global-test --with args'
+    inputs:
+      - 'src/**/*'
+  global-run:
+    command: 'global-run'
+    local: true

@@ -1,0 +1,10 @@
+platform: rust
+
+tasks:
+  system:
+    platform: system
+  node:
+    platform: node
+  unknown:
+    platform: unknown
+  unknown-implicit: {}

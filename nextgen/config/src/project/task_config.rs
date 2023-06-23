@@ -5,8 +5,8 @@ use moon_common::cacheable;
 use moon_target::{Target, TargetScope};
 use rustc_hash::FxHashMap;
 use schematic::{
-    derive_enum, Config, ConfigEnum, ConfigError, ConfigLoader, Format, SchemaType, Schematic,
-    Segment, ValidateError,
+    derive_enum, merge, Config, ConfigEnum, ConfigError, ConfigLoader, Format, SchemaType,
+    Schematic, Segment, ValidateError,
 };
 
 fn validate_command<D, C>(cmd: &TaskCommandArgs, _task: &D, _ctx: &C) -> Result<(), ValidateError> {
@@ -21,7 +21,7 @@ fn validate_command<D, C>(cmd: &TaskCommandArgs, _task: &D, _ctx: &C) -> Result<
                 true
             }
         }
-        TaskCommandArgs::Sequence(cmd_args) => cmd_args.is_empty() || cmd_args[0].is_empty(),
+        TaskCommandArgs::List(cmd_args) => cmd_args.is_empty() || cmd_args[0].is_empty(),
     };
 
     // Only fail for empty strings and not `None`
@@ -64,7 +64,7 @@ derive_enum!(
         #[default]
         None,
         String(String),
-        Sequence(Vec<String>),
+        List(Vec<String>),
     }
 );
 
@@ -93,8 +93,7 @@ cacheable!(
 
         pub env: FxHashMap<String, String>,
 
-        // TODO
-        #[setting(skip)]
+        #[setting(skip, merge = merge::append_vec)]
         pub global_inputs: Vec<InputPath>,
 
         // None = All inputs (**/*)
@@ -102,7 +101,7 @@ cacheable!(
         // [...] = Specific inputs
         pub inputs: Option<Vec<InputPath>>,
 
-        pub local: bool,
+        pub local: Option<bool>,
 
         pub outputs: Option<Vec<OutputPath>>,
 

@@ -82,8 +82,10 @@ impl Task {
 
         let (command, args) = get_command_and_args(config)?;
         let command = command.unwrap_or_else(|| "noop".to_owned());
-        let is_local =
-            cloned_config.local || command == "dev" || command == "serve" || command == "start";
+        let is_local = cloned_config.local.unwrap_or_default()
+            || command == "dev"
+            || command == "serve"
+            || command == "start";
         let log_target = format!("moon:project:{}", target.id);
 
         debug!(
@@ -136,7 +138,7 @@ impl Task {
         command.extend(self.args.clone());
 
         let mut config = TaskConfig {
-            command: TaskCommandArgs::Sequence(command),
+            command: TaskCommandArgs::List(command),
             options: self.options.to_config(),
             ..TaskConfig::default()
         };
@@ -388,7 +390,7 @@ fn get_command_and_args(
     let mut cmd_list = match &task.command {
         TaskCommandArgs::None => vec![],
         TaskCommandArgs::String(cmd_string) => split_args(cmd_string)?,
-        TaskCommandArgs::Sequence(cmd_args) => cmd_args.clone(),
+        TaskCommandArgs::List(cmd_args) => cmd_args.clone(),
     };
 
     if !cmd_list.is_empty() {
@@ -399,7 +401,7 @@ fn get_command_and_args(
     match &task.args {
         TaskCommandArgs::None => {}
         TaskCommandArgs::String(args_string) => args.extend(split_args(args_string)?),
-        TaskCommandArgs::Sequence(args_list) => args.extend(args_list.clone()),
+        TaskCommandArgs::List(args_list) => args.extend(args_list.clone()),
     }
 
     Ok((command, args))

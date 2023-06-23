@@ -8,7 +8,7 @@ moon_config = { path = "../../../nextgen/config" }
 moon_error = { path = "../../core/error" }
 moon_hasher = { path = "../../core/hasher" }
 moon_logger = { path = "../../core/logger" }
-moon_project = { path = "../../core/project" }
+moon_project = { path = "../../../nextgen/project" }
 moon_utils = { path = "../../core/utils" }
 moon_typescript_lang = { path = "../lang" }
 rustc-hash = { workspace = true }

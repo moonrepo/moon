@@ -5,7 +5,7 @@ use moon_config::{
     ProjectConfig, ProjectDependsOn,
 };
 use moon_file_group::FileGroup;
-use moon_project2::{Project, ProjectError};
+use moon_project::{Project, ProjectError};
 use moon_task::Task;
 use moon_task_builder::TasksBuilder;
 use rustc_hash::FxHashMap;

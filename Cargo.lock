@@ -3228,26 +3228,6 @@ dependencies = [
  "miette",
  "moon_common",
  "moon_config",
- "moon_error",
- "moon_file_group",
- "moon_logger",
- "moon_query",
- "moon_target",
- "moon_task",
- "moon_test_utils",
- "rustc-hash",
- "serde",
- "starbase_styles",
- "thiserror",
-]
-
-[[package]]
-name = "moon_project2"
-version = "0.1.0"
-dependencies = [
- "miette",
- "moon_common",
- "moon_config",
  "moon_file_group",
  "moon_query",
  "moon_task",
@@ -3265,7 +3245,7 @@ dependencies = [
  "moon_config",
  "moon_file_group",
  "moon_platform_detector",
- "moon_project2",
+ "moon_project",
  "moon_task",
  "moon_task_builder",
  "rustc-hash",

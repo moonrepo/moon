@@ -16,7 +16,7 @@ moon_common = { path = "../../../nextgen/common" }
 moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
 moon_platform = { path = "../platform" }
-moon_project = { path = "../project" }
+moon_project = { path = "../../../nextgen/project" }
 moon_project_graph = { path = "../project-graph" }
 moon_query = { path = "../../../nextgen/query" }
 moon_target = { path = "../../../nextgen/target" }

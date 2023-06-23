@@ -5,7 +5,7 @@ use moon_config::{
 };
 use moon_file_group::FileGroup;
 use moon_platform_detector::detect_project_language;
-use moon_project2::Project;
+use moon_project::Project;
 use moon_project_builder::ProjectBuilder;
 use rustc_hash::FxHashMap;
 use starbase_sandbox::create_sandbox;

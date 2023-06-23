@@ -92,13 +92,13 @@ mod project_builder {
     #[test]
     fn builds_tasks() {
         let sandbox = create_sandbox("builder");
-        let foo = build_project("foo", sandbox.path());
-        let bar = build_project("bar", sandbox.path());
-        let baz = build_project("baz", sandbox.path());
+        let a = build_project("foo", sandbox.path());
+        let b = build_project("bar", sandbox.path());
+        let c = build_project("baz", sandbox.path());
 
-        assert_eq!(foo.tasks.len(), 4);
-        assert_eq!(bar.tasks.len(), 3);
-        assert_eq!(baz.tasks.len(), 5);
+        assert_eq!(a.tasks.len(), 4);
+        assert_eq!(b.tasks.len(), 3);
+        assert_eq!(c.tasks.len(), 5);
     }
 
     mod file_groups {

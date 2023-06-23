@@ -49,7 +49,7 @@ pub fn extract_canonical_node_module_bin(bin_path: PathBuf) -> miette::Result<Bi
     let bin_path = if bin_path.is_symlink() {
         bin_path.canonicalize().into_diagnostic()?
     } else {
-        bin_path.clone()
+        bin_path
     };
 
     let buffer = fs::read_file_bytes(&bin_path)?;

@@ -2,7 +2,7 @@ use moon_common::Id;
 use moon_config::{DependencyScope, NodeConfig, NodeVersionFormat, TypeScriptConfig};
 use moon_logger::debug;
 use moon_node_lang::{PackageJson, NPM};
-use moon_project::{Project, ProjectError};
+use moon_project::Project;
 use moon_typescript_lang::tsconfig::CompilerOptionsPaths;
 use moon_utils::{path, semver};
 use rustc_hash::{FxHashMap, FxHashSet};

@@ -131,7 +131,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             }
 
             // Inherit platform specific tasks
-            for (task_id, task_config) in platform.load_project_tasks(&project)? {
+            for (task_id, _task_config) in platform.load_project_tasks(&project)? {
                 // Inferred must not override explicit
                 #[allow(clippy::map_entry)]
                 if !project.tasks.contains_key(&task_id) {

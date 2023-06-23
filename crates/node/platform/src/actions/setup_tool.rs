@@ -3,7 +3,7 @@ use moon_error::MoonError;
 use moon_logger::debug;
 use moon_node_lang::{PackageJson, NODENV, NPM, NVM, PNPM, YARN};
 use moon_node_tool::NodeTool;
-use moon_tool::ToolError;
+
 use starbase_styles::color;
 use starbase_utils::fs;
 use std::path::Path;

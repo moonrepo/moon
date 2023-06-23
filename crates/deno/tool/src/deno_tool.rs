@@ -1,6 +1,6 @@
 use moon_config::DenoConfig;
 use moon_platform_runtime::Version;
-use moon_tool::{Tool, ToolError};
+use moon_tool::Tool;
 use proto::{async_trait, Proto};
 use std::path::PathBuf;
 

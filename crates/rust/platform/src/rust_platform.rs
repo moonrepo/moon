@@ -4,12 +4,12 @@ use moon_common::Id;
 use moon_config::{
     HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, RustConfig,
 };
-use moon_error::MoonError;
+
 use moon_hasher::HashSet;
 use moon_logger::{debug, map_list};
 use moon_platform::{Platform, Runtime, Version};
 use moon_process::Command;
-use moon_project::{Project, ProjectError};
+use moon_project::Project;
 use moon_rust_lang::{
     cargo_lock::load_lockfile_dependencies,
     cargo_toml::CargoTomlCache,
@@ -25,7 +25,7 @@ use proto::{rust::RustLanguage, Executable, Proto};
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use starbase_utils::{
-    fs::{self, FsError},
+    fs::{self},
     glob::GlobSet,
 };
 use std::{

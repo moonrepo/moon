@@ -482,7 +482,80 @@ mod tasks_builder {
     }
 
     mod inputs_scenarios {
-        // TODO
+        use super::*;
+
+        #[test]
+        fn handles_different_inputs_values() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "inputs/moon.yml");
+
+            let task = tasks.get("no-inputs").unwrap();
+
+            assert_eq!(
+                task.inputs,
+                vec![
+                    InputPath::ProjectGlob("**/*".into()),
+                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                ]
+            );
+            assert!(!task.flags.empty_inputs);
+
+            let task = tasks.get("empty-inputs").unwrap();
+
+            assert_eq!(
+                task.inputs,
+                vec![InputPath::WorkspaceGlob(".moon/*.yml".into()),]
+            );
+            assert!(task.flags.empty_inputs);
+
+            let task = tasks.get("with-inputs").unwrap();
+
+            assert_eq!(
+                task.inputs,
+                vec![
+                    InputPath::ProjectGlob("local/*".into()),
+                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                ]
+            );
+            assert!(!task.flags.empty_inputs);
+        }
+
+        #[test]
+        fn merges_with_global_tasks() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "inputs/moon.yml");
+
+            let task = tasks.get("global-build").unwrap();
+
+            assert_eq!(
+                task.inputs,
+                vec![
+                    InputPath::ProjectGlob("src/**/*".into()),
+                    InputPath::WorkspaceFile("workspace-local".into()),
+                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                ]
+            );
+            assert!(!task.flags.empty_inputs);
+
+            let task = tasks.get("global-test").unwrap();
+
+            assert_eq!(
+                task.inputs,
+                vec![
+                    InputPath::ProjectFile("local.json".into()),
+                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                ]
+            );
+            assert!(!task.flags.empty_inputs);
+
+            let task = tasks.get("global-run").unwrap();
+
+            assert_eq!(
+                task.inputs,
+                vec![InputPath::WorkspaceGlob(".moon/*.yml".into()),]
+            );
+            assert!(task.flags.empty_inputs);
+        }
     }
 
     mod merge_strategies {
@@ -638,7 +711,7 @@ mod tasks_builder {
         // TODO
     }
 
-    mod global_inheritance {
+    mod workspace_overrides {
         use super::*;
 
         fn create_overrides(

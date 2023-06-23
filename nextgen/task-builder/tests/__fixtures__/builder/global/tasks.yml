@@ -1,6 +1,8 @@
 tasks:
   global-build:
     command: 'global-build'
+    inputs:
+      - 'src/**/*'
     outputs:
       - 'build'
   global-test:

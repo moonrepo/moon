@@ -198,13 +198,13 @@ impl<'proj> TasksBuilder<'proj> {
             .implicit_deps
             .iter()
             .map(|d| (*d).to_owned())
-            .collect::<Vec<Target>>();
+            .collect::<Vec<_>>();
 
         let mut global_inputs = self
             .implicit_inputs
             .iter()
             .map(|d| (*d).to_owned())
-            .collect::<Vec<InputPath>>();
+            .collect::<Vec<_>>();
 
         global_inputs.push(InputPath::WorkspaceGlob(".moon/*.yml".into()));
 

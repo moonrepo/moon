@@ -407,8 +407,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                 for entry in dotenvy::from_path_iter(&env_path).map_err(error_handler)? {
                     let (key, value) = entry.map_err(error_handler)?;
 
-                    // Vars defined in task `env` take precedence over those in the env file
-                    task.env.entry(key).or_insert(value);
+                    task.env.insert(key, value);
                 }
             } else {
                 warn!(

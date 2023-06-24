@@ -355,7 +355,7 @@ mod unix {
             let output = assert.output();
 
             assert!(predicate::str::contains("Args: ./input1.txt ./input2.txt").eval(&output));
-            assert!(predicate::str::contains("Env: ./input1.txt,./input2.txt").eval(&output));
+            assert!(predicate::str::contains("Env: input1.txt,input2.txt").eval(&output));
         }
 
         #[test]
@@ -392,7 +392,7 @@ mod unix {
             let output = assert.output();
 
             assert!(predicate::str::contains("Args: \n").eval(&output));
-            assert!(predicate::str::contains("Env: ./input1.txt,./input2.txt\n").eval(&output));
+            assert!(predicate::str::contains("Env: input1.txt,input2.txt\n").eval(&output));
         }
     }
 }

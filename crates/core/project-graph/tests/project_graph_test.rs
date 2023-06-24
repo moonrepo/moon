@@ -765,7 +765,7 @@ mod tag_constraints {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "InvalidTagRelationship(\"a\", \"mage\", \"b\",")]
+    #[should_panic(expected = "Invalid tag relationship. Project a with tag mage cannot depend on")]
     async fn errors_for_depon_empty_tags() {
         get_tag_constraints_graph(|sandbox| {
             append_file(

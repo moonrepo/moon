@@ -259,7 +259,7 @@ mod resolve_command {
     use super::*;
 
     #[test]
-    #[should_panic(expected = "InvalidTokenContext(\"@in\", \"command\")")]
+    #[should_panic(expected = "Token @in cannot be used within command.")]
     fn doesnt_support_functions() {
         let workspace_root = get_workspace_root();
         let project = create_project(&workspace_root);

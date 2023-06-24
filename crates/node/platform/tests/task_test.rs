@@ -404,7 +404,9 @@ mod create_task {
             }
         }
 
-        #[should_panic(expected = "NoParentOutput(\"../parent/dir\", \"project:task\")")]
+        #[should_panic(
+            expected = "Task outputs must be project relative and cannot traverse upwards."
+        )]
         #[test]
         fn fails_on_parent_relative() {
             create_task(
@@ -416,7 +418,7 @@ mod create_task {
             .unwrap();
         }
 
-        #[should_panic(expected = "NoAbsoluteOutput(\"/abs/dir\", \"project:task\")")]
+        #[should_panic(expected = "Task outputs must be project relative and cannot be absolute.")]
         #[test]
         fn fails_on_absolute() {
             create_task(
@@ -428,7 +430,7 @@ mod create_task {
             .unwrap();
         }
 
-        #[should_panic(expected = "NoAbsoluteOutput(\"C:\\\\abs\\\\dir\", \"project:task\")")]
+        #[should_panic(expected = "Task outputs must be project relative and cannot be absolute.")]
         #[test]
         fn fails_on_absolute_windows() {
             create_task(

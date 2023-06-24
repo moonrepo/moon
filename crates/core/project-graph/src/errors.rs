@@ -70,7 +70,7 @@ pub enum TokenError {
     #[error("Output token {} may not reference outputs using token functions.", .0.style(Style::Symbol))]
     InvalidOutNoTokenFunctions(String),
 
-    #[error("Token {} cannot be used within {}.", .0.style(Style::Symbol), .0.style(Style::Symbol))]
+    #[error("Token {} cannot be used within {}.", .0.style(Style::Symbol), .1.style(Style::Symbol))]
     InvalidTokenContext(String, String), // token, context
 
     #[error("Unknown file group {} used in token {}.", .1.style(Style::Id), .0.style(Style::Symbol))]

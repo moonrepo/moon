@@ -247,11 +247,14 @@ tasks:
             assert_eq!(task.command, "newcmd".to_string());
             assert_eq!(task.args, string_vec!["--b"]);
             assert_eq!(task.env, FxHashMap::from_iter([("KEY".into(), "b".into())]));
-            // assert_eq!(
-            //     task.global_inputs,
-            //     vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
-            // );
-            assert_eq!(task.inputs, vec![InputPath::ProjectGlob("b.*".into())]);
+
+            assert_eq!(
+                task.inputs,
+                vec![
+                    InputPath::ProjectGlob("b.*".into()),
+                    InputPath::WorkspaceGlob(".moon/*.yml".into())
+                ]
+            );
             assert_eq!(task.outputs, vec![OutputPath::ProjectFile("b.ts".into())]);
         }
 
@@ -278,15 +281,12 @@ tasks:
                     ("KEY".to_owned(), "b".to_owned()),
                 ])
             );
-            // assert_eq!(
-            //     task.global_inputs,
-            //     vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
-            // );
             assert_eq!(
                 task.inputs,
                 vec![
                     InputPath::ProjectGlob("a.*".into()),
-                    InputPath::ProjectGlob("b.*".into())
+                    InputPath::ProjectGlob("b.*".into()),
+                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
                 ]
             );
             assert_eq!(
@@ -321,15 +321,12 @@ tasks:
                     ("KEY".to_owned(), "a".to_owned()),
                 ])
             );
-            // assert_eq!(
-            //     task.global_inputs,
-            //     vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
-            // );
             assert_eq!(
                 task.inputs,
                 vec![
                     InputPath::ProjectGlob("b.*".into()),
-                    InputPath::ProjectGlob("a.*".into())
+                    InputPath::ProjectGlob("a.*".into()),
+                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
                 ]
             );
             assert_eq!(
@@ -361,11 +358,13 @@ tasks:
                 task.env,
                 FxHashMap::from_iter([("KEY".to_owned(), "b".to_owned()),])
             );
-            // assert_eq!(
-            //     task.global_inputs,
-            //     vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
-            // );
-            assert_eq!(task.inputs, vec![InputPath::ProjectGlob("b.*".into())]);
+            assert_eq!(
+                task.inputs,
+                vec![
+                    InputPath::ProjectGlob("b.*".into()),
+                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                ]
+            );
             assert_eq!(
                 task.outputs,
                 vec![
@@ -643,7 +642,10 @@ tasks:
 
             assert_eq!(
                 project.get_task("a").unwrap().inputs,
-                Vec::<InputPath>::new()
+                vec![
+                    InputPath::ProjectFile("a".into()),
+                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                ]
             );
         }
 
@@ -655,7 +657,10 @@ tasks:
 
             assert_eq!(
                 project.get_task("b").unwrap().inputs,
-                vec![InputPath::ProjectFile("other".into())]
+                vec![
+                    InputPath::ProjectFile("other".into()),
+                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                ]
             );
         }
 
@@ -669,7 +674,8 @@ tasks:
                 project.get_task("c").unwrap().inputs,
                 vec![
                     InputPath::ProjectFile("c".into()),
-                    InputPath::ProjectFile("other".into())
+                    InputPath::ProjectFile("other".into()),
+                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
                 ]
             );
         }
@@ -1235,7 +1241,10 @@ mod task_expansion {
                 .get_task("noInputs")
                 .unwrap();
 
-            assert_eq!(task.inputs, Vec::<InputPath>::new());
+            assert_eq!(
+                task.inputs,
+                vec![InputPath::WorkspaceGlob(".moon/*.yml".into()),]
+            );
         }
 
         #[tokio::test]
@@ -1253,7 +1262,8 @@ mod task_expansion {
                 vec![
                     InputPath::ProjectFile("a".into()),
                     InputPath::ProjectFile("b".into()),
-                    InputPath::ProjectFile("c".into())
+                    InputPath::ProjectFile("c".into()),
+                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
                 ]
             );
         }
@@ -1268,7 +1278,13 @@ mod task_expansion {
                 .get_task("allInputs")
                 .unwrap();
 
-            assert_eq!(task.inputs, vec![InputPath::ProjectGlob("**/*".into())]);
+            assert_eq!(
+                task.inputs,
+                vec![
+                    InputPath::ProjectGlob("**/*".into()),
+                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                ]
+            );
         }
 
         #[tokio::test]
@@ -1281,27 +1297,24 @@ mod task_expansion {
 
             let a = project_graph.get("inputA").unwrap().get_task("a").unwrap();
 
-            // assert_eq!(
-            //     a.global_inputs,
-            //     vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
-            // );
             assert_eq!(
                 a.inputs,
                 vec![
                     InputPath::ProjectFile("a.ts".into()),
-                    InputPath::ProjectFile("package.json".into())
+                    InputPath::ProjectFile("package.json".into()),
+                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
                 ]
             );
 
             let c = project_graph.get("inputC").unwrap().get_task("c").unwrap();
 
-            // assert_eq!(
-            //     c.global_inputs,
-            //     vec![InputPath::WorkspaceGlob(".moon/*.yml".into())]
-            // );
             assert_eq!(
                 c.inputs,
-                vec![InputPath::ProjectFile("package.json".into())]
+                vec![
+                    InputPath::ProjectGlob("**/*".into()),
+                    InputPath::ProjectFile("package.json".into()),
+                    InputPath::WorkspaceGlob(".moon/*.yml".into())
+                ]
             );
         }
 

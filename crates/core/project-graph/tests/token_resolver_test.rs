@@ -668,7 +668,7 @@ mod resolve_inputs {
     }
 
     #[test]
-    #[should_panic(expected = "InvalidTokenContext(\"@in\", \"inputs\")")]
+    #[should_panic(expected = "Token @in cannot be used within inputs.")]
     fn doesnt_support_in() {
         let workspace_root = get_workspace_root();
         let project = create_project(&workspace_root);
@@ -679,7 +679,7 @@ mod resolve_inputs {
     }
 
     #[test]
-    #[should_panic(expected = "InvalidTokenContext(\"@out\", \"inputs\")")]
+    #[should_panic(expected = "Token @out cannot be used within inputs.")]
     fn doesnt_support_out() {
         let workspace_root = get_workspace_root();
         let project = create_project(&workspace_root);
@@ -826,7 +826,7 @@ mod resolve_outputs {
     }
 
     #[test]
-    #[should_panic(expected = "InvalidTokenContext(\"@in\", \"outputs\")")]
+    #[should_panic(expected = "Token @in cannot be used within outputs.")]
     fn doesnt_support_in() {
         let workspace_root = get_workspace_root();
         let project = create_project(&workspace_root);
@@ -837,7 +837,7 @@ mod resolve_outputs {
     }
 
     #[test]
-    #[should_panic(expected = "InvalidTokenContext(\"@out\", \"outputs\")")]
+    #[should_panic(expected = "Token @out cannot be used within outputs.")]
     fn doesnt_support_out() {
         let workspace_root = get_workspace_root();
         let project = create_project(&workspace_root);
@@ -864,7 +864,7 @@ mod resolve_outputs {
     }
 
     #[test]
-    #[should_panic(expected = "InvalidTokenContext(\"$project\", \"outputs\")")]
+    #[should_panic(expected = "Token $project cannot be used within outputs.")]
     fn doesnt_support_vars() {
         let workspace_root = get_workspace_root();
         let project = create_project(&workspace_root);

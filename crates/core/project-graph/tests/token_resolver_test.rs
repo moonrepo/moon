@@ -1,8 +1,5 @@
 use moon_common::Id;
-use moon_config::{
-    InheritedTasksManager, InputPath, LanguageType, OutputPath, PlatformType, ProjectType,
-    TaskConfig,
-};
+use moon_config::{InputPath, LanguageType, OutputPath, PlatformType, ProjectType, TaskConfig};
 use moon_file_group::FileGroup;
 use moon_project::Project;
 use moon_project_graph::{TokenContext, TokenResolver};
@@ -81,24 +78,26 @@ fn get_workspace_root() -> PathBuf {
 }
 
 fn create_project(workspace_root: &Path) -> Project {
-    let mut project = Project::new(
-        &Id::raw("project"),
-        "files-and-dirs",
-        workspace_root,
-        &InheritedTasksManager::default(),
-        |_| LanguageType::Unknown,
-    )
-    .unwrap();
-    project.file_groups = create_file_groups("files-and-dirs");
-    project
+    Project {
+        id: Id::raw("project"),
+        root: workspace_root.join("files-and-dirs"),
+        file_groups: create_file_groups("files-and-dirs"),
+        ..Project::default()
+    }
 }
 
 pub fn create_task(config: Option<TaskConfig>) -> Task {
-    Task::from_config(
-        Target::new("project", "task").unwrap(),
-        &config.unwrap_or_default(),
-    )
-    .unwrap()
+    let mut task = Task {
+        target: Target::new("project", "task").unwrap(),
+        ..Task::default()
+    };
+
+    if let Some(cfg) = config {
+        task.inputs = cfg.inputs.unwrap_or_default();
+        task.outputs = cfg.outputs.unwrap_or_default();
+    }
+
+    task
 }
 
 pub fn expand_task(project: &Project, task: &mut Task) {

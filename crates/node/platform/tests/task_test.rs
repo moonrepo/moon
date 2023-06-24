@@ -1,9 +1,8 @@
-use moon_config::{OutputPath, PartialTaskConfig, TaskCommandArgs};
+use moon_config::{OutputPath, PartialTaskConfig, PlatformType, TaskCommandArgs};
 use moon_node_lang::PackageJson;
 use moon_node_platform::task::{create_task, should_run_in_ci, TaskContext};
 use moon_node_platform::{create_tasks_from_scripts, infer_tasks_from_scripts};
 use moon_target::Target;
-use moon_task::PlatformType;
 use moon_utils::string_vec;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;

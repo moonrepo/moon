@@ -1,3 +1,4 @@
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
 use moon_config::{InputPath, LanguageType, OutputPath, PlatformType, ProjectType, TaskConfig};
 use moon_file_group::FileGroup;
@@ -80,6 +81,7 @@ fn get_workspace_root() -> PathBuf {
 fn create_project(workspace_root: &Path) -> Project {
     Project {
         id: Id::raw("project"),
+        source: WorkspaceRelativePathBuf::from("files-and-dirs"),
         root: workspace_root.join("files-and-dirs"),
         file_groups: create_file_groups("files-and-dirs"),
         ..Project::default()
@@ -88,6 +90,7 @@ fn create_project(workspace_root: &Path) -> Project {
 
 pub fn create_task(config: Option<TaskConfig>) -> Task {
     let mut task = Task {
+        id: Id::raw("task"),
         target: Target::new("project", "task").unwrap(),
         ..Task::default()
     };

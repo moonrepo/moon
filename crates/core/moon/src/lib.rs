@@ -2,7 +2,7 @@ use moon_deno_platform::DenoPlatform;
 use moon_dep_graph::DepGraphBuilder;
 use moon_error::MoonError;
 use moon_node_platform::NodePlatform;
-use moon_project_graph::{ProjectGraph, ProjectGraphBuilder, ProjectGraphError};
+use moon_project_graph::{ProjectGraph, ProjectGraphBuilder};
 use moon_rust_platform::RustPlatform;
 use moon_system_platform::SystemPlatform;
 use moon_utils::{is_ci, is_test_env};
@@ -118,8 +118,7 @@ pub async fn generate_project_graph(workspace: &mut Workspace) -> miette::Result
     let mut builder = build_project_graph(workspace).await?;
 
     if builder.is_cached && cache_path.exists() {
-        let graph: ProjectGraph = json::read_file(&cache_path)
-            .map_err(|e| ProjectGraphError::Moon(MoonError::StarJson(e)))?;
+        let graph: ProjectGraph = json::read_file(&cache_path)?;
 
         return Ok(graph);
     }
@@ -129,8 +128,7 @@ pub async fn generate_project_graph(workspace: &mut Workspace) -> miette::Result
     let graph = builder.build()?;
 
     if !builder.hash.is_empty() {
-        json::write_file(&cache_path, &graph, false)
-            .map_err(|e| ProjectGraphError::Moon(MoonError::StarJson(e)))?;
+        json::write_file(&cache_path, &graph, false)?;
     }
 
     Ok(graph)

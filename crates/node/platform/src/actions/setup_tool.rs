@@ -1,5 +1,4 @@
 use moon_config::{NodeConfig, NodePackageManager, NodeVersionManager};
-use moon_error::MoonError;
 use moon_logger::debug;
 use moon_node_lang::{PackageJson, NODENV, NPM, NVM, PNPM, YARN};
 use moon_node_tool::NodeTool;
@@ -91,7 +90,7 @@ pub async fn setup_tool(node: &NodeTool, workspace_root: &Path) -> miette::Resul
             };
             let rc_path = packages_root.join(rc_name);
 
-            fs::write_file(&rc_path, node_version).map_err(MoonError::StarFs)?;
+            fs::write_file(&rc_path, node_version)?;
 
             debug!(
                 target: LOG_TARGET,

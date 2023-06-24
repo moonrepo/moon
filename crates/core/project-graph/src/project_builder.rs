@@ -277,7 +277,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         // When running from the workspace:
         //  - All paths are absolute
         let handle_path =
-            |path: WorkspaceRelativePathBuf, is_glob: bool| -> Result<String, ProjectGraphError> {
+            |path: WorkspaceRelativePathBuf, is_glob: bool| -> miette::Result<String> {
                 let arg = path::to_virtual_string(
                     path::relative_from(
                         path.to_path(&self.workspace.root),
@@ -297,7 +297,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                 };
 
                 if is_glob {
-                    return Ok(glob::normalize(arg).map_err(MoonError::StarGlob)?);
+                    return Ok(glob::normalize(arg)?);
                 }
 
                 Ok(arg)

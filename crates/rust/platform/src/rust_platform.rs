@@ -24,10 +24,7 @@ use moon_utils::{async_trait, string_vec};
 use proto::{rust::RustLanguage, Executable, Proto};
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
-use starbase_utils::{
-    fs::{self},
-    glob::GlobSet,
-};
+use starbase_utils::{fs, glob::GlobSet};
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},

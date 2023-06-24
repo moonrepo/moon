@@ -388,7 +388,7 @@ mod run_target {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "Target(NoDepsInRunContext)")]
+    #[should_panic(expected = "Dependencies scope (^:) is not supported in run contexts.")]
     async fn errors_for_target_deps_scope() {
         let (workspace, projects, _sandbox) = create_project_graph().await;
 
@@ -399,7 +399,7 @@ mod run_target {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "Target(NoSelfInRunContext)")]
+    #[should_panic(expected = "Self scope (~:) is not supported in run contexts.")]
     async fn errors_for_target_self_scope() {
         let (workspace, projects, _sandbox) = create_project_graph().await;
 
@@ -410,7 +410,7 @@ mod run_target {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "Project(UnconfiguredID(\"unknown\"))")]
+    #[should_panic(expected = "No project has been configured with the ID unknown")]
     async fn errors_for_unknown_project() {
         let (workspace, projects, _sandbox) = create_project_graph().await;
 
@@ -424,7 +424,7 @@ mod run_target {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "Project(UnconfiguredTask(\"build\", \"tasks\"))")]
+    #[should_panic(expected = "Unknown task build for project tasks.")]
     async fn errors_for_unknown_task() {
         let (workspace, projects, _sandbox) = create_project_graph().await;
 
@@ -623,7 +623,7 @@ mod sync_project {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "UnconfiguredID(\"unknown\")")]
+    #[should_panic(expected = "No project has been configured with the ID unknown")]
     async fn errors_for_unknown_project() {
         let (workspace, projects, _sandbox) = create_project_graph().await;
         let mut graph = build_dep_graph(&workspace, &projects);

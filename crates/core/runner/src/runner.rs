@@ -296,7 +296,8 @@ impl<'a> Runner<'a> {
                 if affected_files.is_empty() {
                     command.arg_if_missing(".");
                 } else {
-                    command.args(affected_files.iter().map(|f| f.as_str()));
+                    // Mimic relative from ("./")
+                    command.args(affected_files.iter().map(|f| format!("./{f}")));
                 }
             }
         }

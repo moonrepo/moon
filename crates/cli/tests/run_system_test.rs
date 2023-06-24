@@ -370,6 +370,7 @@ mod unix {
                     .arg("unix:affectedFilesArgs")
                     .arg("--affected");
             });
+
             let output = assert.output();
 
             assert!(predicate::str::contains("Args: ./input1.txt ./input2.txt\n").eval(&output));

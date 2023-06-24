@@ -249,7 +249,8 @@ impl<'app> ProjectBuilder<'app> {
     fn build_tasks(&self) -> miette::Result<BTreeMap<Id, Task>> {
         debug!(id = self.id.as_str(), "Building tasks");
 
-        let mut tasks_builder = TasksBuilder::new(&self.id, &self.platform);
+        let mut tasks_builder =
+            TasksBuilder::new(&self.id, &self.platform, &self.source, self.workspace_root);
 
         if let Some(global_config) = &self.global_config {
             tasks_builder.inherit_global_tasks(

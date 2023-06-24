@@ -392,32 +392,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
     }
 
     /// Expand environment variables by loading a `.env` file if configured.
-    pub fn expand_task_env(&self, project: &mut Project, task: &mut Task) -> miette::Result<()> {
-        // Load from env file first
-        if let Some(env_file) = &task.options.env_file {
-            let env_path = env_file
-                .to_workspace_relative(&project.source)
-                .to_path(&self.workspace.root);
-
-            let error_handler =
-                |e: dotenvy::Error| ProjectError::InvalidEnvFile(env_path.clone(), e.to_string());
-
-            // The `.env` file may not have been committed, so avoid crashing
-            if env_path.exists() {
-                for entry in dotenvy::from_path_iter(&env_path).map_err(error_handler)? {
-                    let (key, value) = entry.map_err(error_handler)?;
-
-                    task.env.insert(key, value);
-                }
-            } else {
-                warn!(
-                    "The `envFile` option is enabled but no {} file exists, skipping as this may be intentional",
-                    color::file(env_file),
-                );
-            }
-        }
-
-        // Expand interpolated vars last
+    pub fn expand_task_env(&self, _project: &mut Project, task: &mut Task) -> miette::Result<()> {
         task.env.iter_mut().for_each(|(_, value)| {
             while let Some(matches) = ENV_VAR_SUBSTITUTE.captures(value) {
                 let sub = matches.get(0).unwrap().as_str();

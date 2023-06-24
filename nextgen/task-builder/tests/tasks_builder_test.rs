@@ -1,3 +1,4 @@
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
 use moon_config::{
     InheritedTasksManager, InputPath, OutputPath, PlatformType, ProjectConfig,
@@ -14,9 +15,10 @@ use std::path::Path;
 
 fn build_tasks_with_config(root: &Path, local_config: ProjectConfig) -> BTreeMap<Id, Task> {
     let id = Id::raw("project");
+    let source = WorkspaceRelativePathBuf::from("project");
     let platform = local_config.platform.unwrap_or_default();
 
-    let mut builder = TasksBuilder::new(&id, &platform);
+    let mut builder = TasksBuilder::new(&id, &platform, &source, root);
 
     builder.load_local_tasks(&local_config);
 

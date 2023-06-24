@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 
-use moon_args::{split_args, ArgsSplitError};
+use miette::IntoDiagnostic;
+use moon_args::split_args;
+use moon_common::path::WorkspaceRelativePath;
 use moon_common::{color, Id};
 use moon_config::{
     InheritedTasksConfig, InputPath, PlatformType, ProjectConfig,
@@ -12,12 +14,15 @@ use moon_task::{Task, TaskOptions};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::hash::Hash;
-use tracing::{debug, trace};
+use std::path::Path;
+use tracing::{debug, trace, warn};
 
 pub struct TasksBuilder<'proj> {
     project_id: &'proj Id,
     project_env: FxHashMap<&'proj str, &'proj str>,
     project_platform: &'proj PlatformType,
+    project_source: &'proj WorkspaceRelativePath,
+    workspace_root: &'proj Path,
 
     // Global settings for tasks to inherit
     implicit_deps: Vec<&'proj Target>,
@@ -30,11 +35,18 @@ pub struct TasksBuilder<'proj> {
 }
 
 impl<'proj> TasksBuilder<'proj> {
-    pub fn new(project_id: &'proj Id, project_platform: &'proj PlatformType) -> Self {
+    pub fn new(
+        project_id: &'proj Id,
+        project_platform: &'proj PlatformType,
+        project_source: &'proj WorkspaceRelativePath,
+        workspace_root: &'proj Path,
+    ) -> Self {
         Self {
             project_id,
             project_env: FxHashMap::default(),
             project_platform,
+            project_source,
+            workspace_root,
             implicit_deps: vec![],
             implicit_inputs: vec![],
             task_ids: FxHashSet::default(),
@@ -201,39 +213,8 @@ impl<'proj> TasksBuilder<'proj> {
 
         // Aggregate all values that are inherited from the global task configs,
         // and should always be included in the task, regardless of merge strategy.
-        let global_deps = self
-            .implicit_deps
-            .iter()
-            .map(|d| (*d).to_owned())
-            .collect::<Vec<_>>();
-
-        if !global_deps.is_empty() {
-            trace!(
-                target = target.as_str(),
-                deps = ?global_deps.iter().map(|d| d.as_str()).collect::<Vec<_>>(),
-                "Inheriting global implicit deps",
-            );
-        }
-
-        let mut global_inputs = self
-            .implicit_inputs
-            .iter()
-            .map(|d| (*d).to_owned())
-            .collect::<Vec<_>>();
-
-        global_inputs.push(InputPath::WorkspaceGlob(".moon/*.yml".into()));
-
-        if let Some(env_file) = &task.options.env_file {
-            global_inputs.push(env_file.to_owned());
-        }
-
-        if !global_inputs.is_empty() {
-            trace!(
-                target = target.as_str(),
-                inputs = ?global_inputs.iter().map(|d| d.as_str()).collect::<Vec<_>>(),
-                "Inheriting global implicit inputs",
-            );
-        }
+        let global_deps = self.build_global_deps(&target)?;
+        let mut global_inputs = self.build_global_inputs(&target, &task.options)?;
 
         // Aggregate all values that that are inherited from the project,
         // and should be set on the task first, so that merge strategies can be applied.
@@ -243,19 +224,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
         }
 
-        task.env = self
-            .project_env
-            .iter()
-            .map(|(k, v)| ((*k).to_owned(), (*v).to_owned()))
-            .collect::<FxHashMap<_, _>>();
-
-        if !task.env.is_empty() {
-            trace!(
-                target = target.as_str(),
-                env_vars = ?self.project_env,
-                "Inheriting project env vars",
-            );
-        }
+        task.env = self.build_env(&target, &task.options)?;
 
         // Finally build the task itself, while applying our complex merge logic!
         let mut configured_inputs = 0;
@@ -446,10 +415,111 @@ impl<'proj> TasksBuilder<'proj> {
         Ok(options)
     }
 
+    fn build_global_deps(&self, target: &Target) -> miette::Result<Vec<Target>> {
+        let global_deps = self
+            .implicit_deps
+            .iter()
+            .map(|d| (*d).to_owned())
+            .collect::<Vec<_>>();
+
+        if !global_deps.is_empty() {
+            trace!(
+                target = target.as_str(),
+                deps = ?global_deps.iter().map(|d| d.as_str()).collect::<Vec<_>>(),
+                "Inheriting global implicit deps",
+            );
+        }
+
+        Ok(global_deps)
+    }
+
+    fn build_global_inputs(
+        &self,
+        target: &Target,
+        options: &TaskOptions,
+    ) -> miette::Result<Vec<InputPath>> {
+        let mut global_inputs = self
+            .implicit_inputs
+            .iter()
+            .map(|d| (*d).to_owned())
+            .collect::<Vec<_>>();
+
+        global_inputs.push(InputPath::WorkspaceGlob(".moon/*.yml".into()));
+
+        if let Some(env_file) = &options.env_file {
+            global_inputs.push(env_file.to_owned());
+        }
+
+        if !global_inputs.is_empty() {
+            trace!(
+                target = target.as_str(),
+                inputs = ?global_inputs.iter().map(|d| d.as_str()).collect::<Vec<_>>(),
+                "Inheriting global implicit inputs",
+            );
+        }
+
+        Ok(global_inputs)
+    }
+
+    /// Build environment variables for the task. The precedence is as follows.
+    ///     - 1st - project-level `env`
+    ///     - 2nd - task `env_file` (when enabled)
+    ///     - 3rd - task-level `env`
+    fn build_env(
+        &self,
+        target: &Target,
+        options: &TaskOptions,
+    ) -> miette::Result<FxHashMap<String, String>> {
+        let mut env = self
+            .project_env
+            .iter()
+            .map(|(k, v)| ((*k).to_owned(), (*v).to_owned()))
+            .collect::<FxHashMap<_, _>>();
+
+        if !env.is_empty() {
+            trace!(
+                target = target.as_str(),
+                env_vars = ?self.project_env,
+                "Inheriting project env vars",
+            );
+        }
+
+        if let Some(env_file) = &options.env_file {
+            let env_path = env_file
+                .to_workspace_relative(self.project_source)
+                .to_path(self.workspace_root);
+
+            trace!(
+                target = target.as_str(),
+                env_file = ?env_path,
+                "Loading env vars from dotfile",
+            );
+
+            // The `.env` file may not have been committed, so avoid crashing
+            if env_path.exists() {
+                let env_file_vars = dotenvy::from_path_iter(&env_path)
+                    .into_diagnostic()?
+                    .flatten()
+                    .collect::<FxHashMap<_, _>>();
+
+                env = self.merge_map(env, env_file_vars, options.merge_env);
+            } else {
+                warn!(
+                    target = target.as_str(),
+                    env_file = ?env_path,
+                    "The {} option is enabled but file doesn't exist, skipping as this may be intentional",
+                    color::id("envFile"),
+                );
+            }
+        }
+
+        Ok(env)
+    }
+
     fn get_command_and_args(
         &self,
         config: &TaskConfig,
-    ) -> Result<(Option<String>, Vec<String>), ArgsSplitError> {
+    ) -> miette::Result<(Option<String>, Vec<String>)> {
         let mut command = None;
         let mut args = vec![];
 

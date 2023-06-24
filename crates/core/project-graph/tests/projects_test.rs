@@ -1001,15 +1001,6 @@ mod task_expansion {
         use super::*;
 
         #[tokio::test]
-        #[should_panic(expected = "Failed to parse env file")]
-        async fn errors_on_invalid_file() {
-            tasks_sandbox_with_setup(|sandbox| {
-                sandbox.create_file("expand-env/.env", "FOO");
-            })
-            .await;
-        }
-
-        #[tokio::test]
         async fn loads_using_bool() {
             let (_sandbox, project_graph) = tasks_sandbox().await;
 
@@ -1073,21 +1064,21 @@ mod task_expansion {
                 .contains(&WorkspaceRelativePathBuf::from(".env")));
         }
 
-        // #[tokio::test]
-        // async fn doesnt_override_other_env() {
-        //     let (_sandbox, project_graph) = tasks_sandbox().await;
+        #[tokio::test]
+        async fn doesnt_override_other_env() {
+            let (_sandbox, project_graph) = tasks_sandbox().await;
 
-        //     let project = project_graph.get("expandEnv").unwrap();
-        //     let task = project.get_task("mergeWithEnv").unwrap();
+            let project = project_graph.get("expandEnv").unwrap();
+            let task = project.get_task("mergeWithEnv").unwrap();
 
-        //     assert_eq!(
-        //         task.env,
-        //         FxHashMap::from_iter([
-        //             ("FOO".to_owned(), "original".to_owned()),
-        //             ("BAR".to_owned(), "123".to_owned())
-        //         ])
-        //     );
-        // }
+            assert_eq!(
+                task.env,
+                FxHashMap::from_iter([
+                    ("FOO".to_owned(), "original".to_owned()),
+                    ("BAR".to_owned(), "123".to_owned())
+                ])
+            );
+        }
 
         #[tokio::test]
         async fn substitutes_values() {
@@ -1216,8 +1207,7 @@ mod task_expansion {
                 assert_eq!(
                     task.env,
                     FxHashMap::from_iter([
-                        // ("SOURCE".to_owned(), "task-level".to_owned()),
-                        ("SOURCE".to_owned(), "env-file".to_owned()),
+                        ("SOURCE".to_owned(), "task-level".to_owned()),
                         ("PROJECT".to_owned(), "true".to_owned()),
                         ("FILE".to_owned(), "true".to_owned()),
                         ("TASK".to_owned(), "true".to_owned()),

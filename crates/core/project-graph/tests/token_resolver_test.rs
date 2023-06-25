@@ -126,7 +126,7 @@ pub fn expand_task(project: &Project, task: &mut Task) {
 }
 
 #[test]
-#[should_panic(expected = "UnknownFileGroup(\"@dirs(unknown)\", \"unknown\")")]
+#[should_panic(expected = "Unknown file group unknown used in token @dirs(unknown).")]
 fn errors_for_unknown_file_group() {
     let workspace_root = get_workspace_root();
     let project = create_project(&workspace_root);
@@ -139,7 +139,7 @@ fn errors_for_unknown_file_group() {
 }
 
 #[test]
-#[should_panic(expected = "NoGlobs(\"no_globs\")")]
+#[should_panic(expected = "No globs defined in file group no_globs.")]
 fn errors_if_no_globs_in_file_group() {
     let workspace_root = get_workspace_root();
     let project = create_project(&workspace_root);
@@ -170,7 +170,7 @@ mod in_token {
     use super::*;
 
     #[test]
-    #[should_panic(expected = "InvalidIndexType(\"@in(abc)\", \"abc\")")]
+    #[should_panic(expected = "Token @in(abc) received an invalid type for index \"abc\"")]
     fn errors_for_invalid_index_format() {
         let workspace_root = get_workspace_root();
         let project = create_project(&workspace_root);
@@ -187,7 +187,7 @@ mod in_token {
     }
 
     #[test]
-    #[should_panic(expected = "InvalidInIndex(\"@in(5)\", 5)")]
+    #[should_panic(expected = "Input index 5 doesn't exist for token @in(5).")]
     fn errors_for_index_out_of_bounds() {
         let workspace_root = get_workspace_root();
         let project = create_project(&workspace_root);
@@ -207,7 +207,7 @@ mod in_token {
 mod out_token {
     use super::*;
     #[test]
-    #[should_panic(expected = "InvalidIndexType(\"@out(abc)\", \"abc\")")]
+    #[should_panic(expected = "Token @out(abc) received an invalid type for index \"abc\"")]
     fn errors_for_invalid_index_format() {
         let workspace_root = get_workspace_root();
         let project = create_project(&workspace_root);
@@ -224,7 +224,7 @@ mod out_token {
     }
 
     #[test]
-    #[should_panic(expected = "InvalidOutIndex(\"@out(5)\", 5)")]
+    #[should_panic(expected = "Output index 5 doesn't exist for token @out(5).")]
     fn errors_for_index_out_of_bounds() {
         let workspace_root = get_workspace_root();
         let project = create_project(&workspace_root);
@@ -241,7 +241,9 @@ mod out_token {
     }
 
     #[test]
-    #[should_panic(expected = "InvalidOutNoTokenFunctions(\"@out(0)\")")]
+    #[should_panic(
+        expected = "Output token @out(0) may not reference outputs using token functions."
+    )]
     fn errors_for_referencing_token_func() {
         let workspace_root = get_workspace_root();
         let project = create_project(&workspace_root);

@@ -172,6 +172,13 @@
         "production"
       ]
     },
+    "DependencySource": {
+      "type": "string",
+      "enum": [
+        "explicit",
+        "implicit"
+      ]
+    },
     "LanguageType": {
       "type": "string",
       "enum": [
@@ -186,6 +193,53 @@
         "typescript",
         "unknown"
       ]
+    },
+    "PartialDependencyConfig": {
+      "title": "PartialDependencyConfig",
+      "type": "object",
+      "properties": {
+        "id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "scope": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DependencyScope"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DependencySource"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "via": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
     },
     "PartialOwnersConfig": {
       "title": "PartialOwnersConfig",
@@ -790,30 +844,7 @@
           "type": "string"
         },
         {
-          "type": "object",
-          "properties": {
-            "id": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "scope": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/DependencyScope"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            }
-          },
-          "additionalProperties": false
+          "$ref": "#/definitions/PartialDependencyConfig"
         }
       ]
     },

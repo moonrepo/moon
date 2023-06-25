@@ -212,10 +212,6 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             self.expand_task_args(project, &mut task)?;
             self.expand_task_command(project, &mut task)?;
 
-            // Determine type after expanding
-            // TODO
-            // task.determine_type();
-
             tasks.insert(task_id, task);
         }
 

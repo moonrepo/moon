@@ -4,7 +4,6 @@ use moon_common::Id;
 use moon_config::{
     HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, RustConfig,
 };
-
 use moon_hasher::HashSet;
 use moon_logger::{debug, map_list};
 use moon_platform::{Platform, Runtime, Version};

@@ -7,7 +7,7 @@ use moon_config::{
 use moon_file_group::FileGroup;
 use moon_project::{Project, ProjectError};
 use moon_task::Task;
-use moon_task_builder::TasksBuilder;
+use moon_task_builder::{PlatformDetector, TasksBuilder};
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -30,6 +30,7 @@ pub struct ProjectBuilder<'app> {
     language_detector: Option<Box<LanguageDetector>>,
 
     pub platform: PlatformType,
+    platform_detector: Option<Box<PlatformDetector>>,
 }
 
 impl<'app> ProjectBuilder<'app> {
@@ -56,6 +57,7 @@ impl<'app> ProjectBuilder<'app> {
             language: LanguageType::Unknown,
             language_detector: None,
             platform: PlatformType::Unknown,
+            platform_detector: None,
         })
     }
 
@@ -65,6 +67,15 @@ impl<'app> ProjectBuilder<'app> {
         F: Fn(&Path) -> LanguageType + 'static,
     {
         self.language_detector = Some(Box::new(detector));
+        self
+    }
+
+    /// Register a function to detect a task's platform when unknown.
+    pub fn detect_platform<F>(&mut self, detector: F) -> &mut Self
+    where
+        F: Fn(&str) -> PlatformType + 'static,
+    {
+        self.platform_detector = Some(Box::new(detector));
         self
     }
 
@@ -281,11 +292,15 @@ impl<'app> ProjectBuilder<'app> {
         Ok(file_groups)
     }
 
-    fn build_tasks(&self) -> miette::Result<BTreeMap<Id, Task>> {
+    fn build_tasks(&mut self) -> miette::Result<BTreeMap<Id, Task>> {
         debug!(id = self.id, "Building tasks");
 
         let mut tasks_builder =
             TasksBuilder::new(self.id, self.source, &self.platform, self.workspace_root);
+
+        if let Some(detector) = self.platform_detector.take() {
+            tasks_builder.detect_platform(detector);
+        }
 
         if let Some(global_config) = &self.global_config {
             tasks_builder.inherit_global_tasks(

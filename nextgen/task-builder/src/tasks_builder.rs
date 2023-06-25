@@ -16,6 +16,8 @@ use std::hash::Hash;
 use std::path::Path;
 use tracing::{debug, trace, warn};
 
+pub type PlatformDetector = dyn Fn(&str) -> PlatformType;
+
 pub struct TasksBuilder<'proj> {
     project_id: &'proj str,
     project_env: FxHashMap<&'proj str, &'proj str>,
@@ -26,6 +28,7 @@ pub struct TasksBuilder<'proj> {
     // Global settings for tasks to inherit
     implicit_deps: Vec<&'proj Target>,
     implicit_inputs: Vec<&'proj InputPath>,
+    platform_detector: Option<Box<PlatformDetector>>,
 
     // Tasks to merge and build
     task_ids: FxHashSet<&'proj Id>,
@@ -46,12 +49,22 @@ impl<'proj> TasksBuilder<'proj> {
             project_platform,
             project_source,
             workspace_root,
+            platform_detector: None,
             implicit_deps: vec![],
             implicit_inputs: vec![],
             task_ids: FxHashSet::default(),
             global_tasks: FxHashMap::default(),
             local_tasks: FxHashMap::default(),
         }
+    }
+
+    /// Register a function to detect a task's platform when unknown.
+    pub fn detect_platform<F>(&mut self, detector: F) -> &mut Self
+    where
+        F: Fn(&str) -> PlatformType + 'static,
+    {
+        self.platform_detector = Some(Box::new(detector));
+        self
     }
 
     pub fn inherit_global_tasks(
@@ -311,7 +324,15 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         if task.platform.is_unknown() {
-            task.platform = self.project_platform.to_owned();
+            if let Some(detector) = &self.platform_detector {
+                task.platform = detector(&task.command);
+            } else {
+                task.platform = self.project_platform.to_owned();
+            }
+
+            if task.platform.is_unknown() {
+                task.platform = PlatformType::System;
+            }
         }
 
         task.target = target;

@@ -103,6 +103,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         let mut builder = ProjectBuilder::new(id, source, &self.workspace.root)?;
 
         builder.detect_language(detect_project_language);
+        builder.detect_platform(detect_task_platform);
         builder.load_local_config()?;
         builder.inherit_global_config(&self.workspace.tasks_config)?;
 
@@ -200,24 +201,9 @@ impl<'ws> ProjectGraphBuilder<'ws> {
     /// to resolve "parent" relations.
     fn expand_project(&mut self, project: &mut Project) -> miette::Result<()> {
         let mut tasks = BTreeMap::new();
-        let project_platform = project.config.platform.unwrap_or_default();
 
         // Use `mem::take` so that we can mutably borrow the project and tasks in parallel
         for (task_id, mut task) in mem::take(&mut project.tasks) {
-            // Detect the platform if its unknown
-            if task.platform.is_unknown() {
-                // TODO
-                task.platform = if project_platform.is_unknown() {
-                    detect_task_platform(
-                        &task.command,
-                        &project.language,
-                        &self.workspace.toolchain_config,
-                    )
-                } else {
-                    project_platform
-                };
-            }
-
             // Resolve in this order!
             self.expand_task_env(project, &mut task)?;
             self.expand_task_deps(project, &mut task)?;

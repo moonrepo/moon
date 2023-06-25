@@ -100,14 +100,25 @@ impl<'ws> ProjectGraphBuilder<'ws> {
     /// configured language, detect and infer implicit dependencies and tasks for the
     /// matching platform. Do *not* expand tasks until after dependents have been created.
     fn create_project(&self, id: &Id, source: &str) -> miette::Result<Project> {
-        let mut builder = ProjectBuilder::new(
-            id.to_owned(),
-            WorkspaceRelativePathBuf::from(source),
-            &self.workspace.root,
-        )?;
+        let mut builder = ProjectBuilder::new(id, source, &self.workspace.root)?;
 
-        builder.load_local_config(detect_project_language)?;
+        builder.detect_language(detect_project_language);
+        builder.load_local_config()?;
         builder.inherit_global_config(&self.workspace.tasks_config)?;
+
+        if let Ok(platform) = self.workspace.platforms.get(builder.language.clone()) {
+            // Inherit implicit dependencies
+            for dep_config in
+                platform.load_project_implicit_dependencies(id, source, &self.aliases)?
+            {
+                builder.extend_with_dependency(dep_config);
+            }
+
+            // Inherit platform specific tasks
+            for (task_id, task_config) in platform.load_project_tasks(id, source)? {
+                builder.extend_with_task(task_id, task_config);
+            }
+        }
 
         let mut project = builder.build()?;
 
@@ -115,31 +126,6 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         for (alias, project_id) in &self.aliases {
             if project_id == id {
                 project.alias = Some(alias.to_owned());
-            }
-        }
-
-        if let Ok(platform) = self.workspace.platforms.get(project.language.clone()) {
-            // Inherit implicit dependencies
-            for dep_config in
-                platform.load_project_implicit_dependencies(&project, &self.aliases)?
-            {
-                // Implicit must not override explicit
-                project
-                    .dependencies
-                    .entry(dep_config.id.clone())
-                    .or_insert_with(|| dep_config);
-            }
-
-            // Inherit platform specific tasks
-            for (task_id, _task_config) in platform.load_project_tasks(&project)? {
-                // Inferred must not override explicit
-                #[allow(clippy::map_entry)]
-                if !project.tasks.contains_key(&task_id) {
-                    // TODO
-                    // let task = Task::from_config(Target::new(id, &task_id)?, &task_config)?;
-
-                    // project.tasks.insert(task_id, task);
-                }
             }
         }
 

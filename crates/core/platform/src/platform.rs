@@ -31,7 +31,7 @@ pub trait Platform: Debug + Send + Sync {
 
     /// Determine if the provided project is within the platform's dependency manager
     /// workspace (not to be confused with moon's workspace).
-    fn is_project_in_dependency_workspace(&self, project: &Project) -> miette::Result<bool> {
+    fn is_project_in_dependency_workspace(&self, project_source: &str) -> miette::Result<bool> {
         Ok(false)
     }
 
@@ -49,7 +49,8 @@ pub trait Platform: Debug + Send + Sync {
     /// scan for any implicit project dependency relations using the platforms manifest.
     fn load_project_implicit_dependencies(
         &self,
-        project: &Project,
+        project_id: &str,
+        project_source: &str,
         aliases_map: &ProjectsAliasesMap,
     ) -> miette::Result<Vec<DependencyConfig>> {
         Ok(vec![])
@@ -57,7 +58,11 @@ pub trait Platform: Debug + Send + Sync {
 
     /// During project creation (when being lazy loaded and instantiated in the graph),
     /// load and infer any *additional* tasks for the platform.
-    fn load_project_tasks(&self, project: &Project) -> miette::Result<TasksConfigsMap> {
+    fn load_project_tasks(
+        &self,
+        project_id: &str,
+        project_source: &str,
+    ) -> miette::Result<TasksConfigsMap> {
         Ok(BTreeMap::new())
     }
 

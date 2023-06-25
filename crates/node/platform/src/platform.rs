@@ -7,7 +7,6 @@ use moon_config::{
     PlatformType, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, TaskConfig,
     TasksConfigsMap, TypeScriptConfig,
 };
-use moon_error::MoonError;
 use moon_hasher::{DepsHasher, HashSet};
 use moon_logger::{debug, warn};
 use moon_node_lang::node::get_package_manager_workspaces;
@@ -95,16 +94,16 @@ impl Platform for NodePlatform {
 
     // PROJECT GRAPH
 
-    fn is_project_in_dependency_workspace(&self, project: &Project) -> miette::Result<bool> {
+    fn is_project_in_dependency_workspace(&self, project_source: &str) -> miette::Result<bool> {
         let mut in_workspace = false;
 
         // Root package is always considered within the workspace
-        if project.root == self.workspace_root {
+        if project_source.is_empty() || project_source == "." {
             return Ok(true);
         }
 
         if let Some(globs) = get_package_manager_workspaces(self.workspace_root.to_owned())? {
-            in_workspace = GlobSet::new(&globs)?.matches(project.source.as_str());
+            in_workspace = GlobSet::new(&globs)?.matches(project_source);
         }
 
         Ok(in_workspace)
@@ -166,7 +165,8 @@ impl Platform for NodePlatform {
 
     fn load_project_implicit_dependencies(
         &self,
-        project: &Project,
+        project_id: &str,
+        project_source: &str,
         _aliases_map: &ProjectsAliasesMap,
     ) -> miette::Result<Vec<DependencyConfig>> {
         let mut implicit_deps = vec![];
@@ -174,10 +174,10 @@ impl Platform for NodePlatform {
         debug!(
             target: LOG_TARGET,
             "Scanning {} for implicit dependency relations",
-            color::id(&project.id),
+            color::id(project_id),
         );
 
-        if let Some(package_json) = PackageJson::read(&project.root)? {
+        if let Some(package_json) = PackageJson::read(self.workspace_root.join(project_source))? {
             let mut find_implicit_relations =
                 |package_deps: &BTreeMap<String, String>, scope: &DependencyScope| {
                     for dep_name in package_deps.keys() {
@@ -185,7 +185,7 @@ impl Platform for NodePlatform {
                             implicit_deps.push(DependencyConfig {
                                 id: dep_project_id.to_owned(),
                                 scope: *scope,
-                                source: DependencySource::Implicit,
+                                source: Some(DependencySource::Implicit),
                                 via: Some(dep_name.clone()),
                             });
                         }
@@ -208,7 +208,11 @@ impl Platform for NodePlatform {
         Ok(implicit_deps)
     }
 
-    fn load_project_tasks(&self, project: &Project) -> miette::Result<TasksConfigsMap> {
+    fn load_project_tasks(
+        &self,
+        project_id: &str,
+        project_source: &str,
+    ) -> miette::Result<TasksConfigsMap> {
         let mut tasks = BTreeMap::new();
 
         if !self.config.infer_tasks_from_scripts {
@@ -218,14 +222,12 @@ impl Platform for NodePlatform {
         debug!(
             target: LOG_TARGET,
             "Inferring {} tasks from {}",
-            color::id(&project.id),
+            color::id(project_id),
             color::file(NPM.manifest)
         );
 
-        if let Some(package_json) = PackageJson::read(&project.root)? {
-            for (id, partial_task) in infer_tasks_from_scripts(&project.id, &package_json)
-                .map_err(|e| MoonError::Generic(e.to_string()))?
-            {
+        if let Some(package_json) = PackageJson::read(self.workspace_root.join(project_source))? {
+            for (id, partial_task) in infer_tasks_from_scripts(project_id, &package_json)? {
                 tasks.insert(id, TaskConfig::from_partial(partial_task));
             }
         }

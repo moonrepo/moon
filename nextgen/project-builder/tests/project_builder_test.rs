@@ -2,6 +2,7 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
 use moon_config::{
     DependencyConfig, DependencyScope, InheritedTasksManager, LanguageType, PlatformType,
+    TaskConfig,
 };
 use moon_file_group::FileGroup;
 use moon_platform_detector::detect_project_language;
@@ -12,13 +13,13 @@ use starbase_sandbox::create_sandbox;
 use std::path::Path;
 
 fn build_project(id: &str, root: &Path) -> Project {
-    let mut builder = ProjectBuilder::new(id.into(), id.into(), root).unwrap();
+    let mut builder = ProjectBuilder::new(id, id, root).unwrap();
     let manager = InheritedTasksManager::load(root, root.join("global")).unwrap();
 
     // Use JavaScript so we inherit the correct tasks
-    builder
-        .load_local_config(|_| LanguageType::JavaScript)
-        .unwrap();
+    builder.detect_language(|_| LanguageType::JavaScript);
+
+    builder.load_local_config().unwrap();
 
     builder.inherit_global_config(&manager).unwrap();
 
@@ -28,8 +29,11 @@ fn build_project(id: &str, root: &Path) -> Project {
 fn build_lang_project(id: &str) -> Project {
     let sandbox = create_sandbox("langs");
 
-    let mut builder = ProjectBuilder::new(id.into(), id.into(), sandbox.path()).unwrap();
-    builder.load_local_config(detect_project_language).unwrap();
+    let mut builder = ProjectBuilder::new(id, id, sandbox.path()).unwrap();
+
+    builder.detect_language(detect_project_language);
+
+    builder.load_local_config().unwrap();
 
     builder.build().unwrap()
 }
@@ -42,17 +46,15 @@ mod project_builder {
     fn errors_missing_source() {
         let sandbox = create_sandbox("builder");
 
-        ProjectBuilder::new("qux".into(), "qux".into(), sandbox.path()).unwrap();
+        ProjectBuilder::new("qux", "qux", sandbox.path()).unwrap();
     }
 
     #[test]
     fn sets_common_fields() {
         let sandbox = create_sandbox("builder");
 
-        let mut builder = ProjectBuilder::new("baz".into(), "baz".into(), sandbox.path()).unwrap();
-        builder
-            .load_local_config(|_| LanguageType::Unknown)
-            .unwrap();
+        let mut builder = ProjectBuilder::new("baz", "baz", sandbox.path()).unwrap();
+        builder.load_local_config().unwrap();
 
         let project = builder.build().unwrap();
 
@@ -65,10 +67,8 @@ mod project_builder {
     fn builds_depends_on() {
         let sandbox = create_sandbox("builder");
 
-        let mut builder = ProjectBuilder::new("baz".into(), "baz".into(), sandbox.path()).unwrap();
-        builder
-            .load_local_config(|_| LanguageType::Unknown)
-            .unwrap();
+        let mut builder = ProjectBuilder::new("baz", "baz", sandbox.path()).unwrap();
+        builder.load_local_config().unwrap();
 
         let project = builder.build().unwrap();
 
@@ -185,11 +185,8 @@ mod project_builder {
         fn inherits_from_config() {
             let sandbox = create_sandbox("builder");
 
-            let mut builder =
-                ProjectBuilder::new("bar".into(), "bar".into(), sandbox.path()).unwrap();
-            builder
-                .load_local_config(|_| LanguageType::Unknown)
-                .unwrap();
+            let mut builder = ProjectBuilder::new("bar", "bar", sandbox.path()).unwrap();
+            builder.load_local_config().unwrap();
 
             let project = builder.build().unwrap();
 
@@ -200,11 +197,9 @@ mod project_builder {
         fn detects_from_env() {
             let sandbox = create_sandbox("builder");
 
-            let mut builder =
-                ProjectBuilder::new("foo".into(), "foo".into(), sandbox.path()).unwrap();
-            builder
-                .load_local_config(|_| LanguageType::TypeScript)
-                .unwrap();
+            let mut builder = ProjectBuilder::new("foo", "foo", sandbox.path()).unwrap();
+            builder.detect_language(|_| LanguageType::TypeScript);
+            builder.load_local_config().unwrap();
 
             let project = builder.build().unwrap();
 
@@ -347,11 +342,8 @@ mod project_builder {
         fn inherits_from_config() {
             let sandbox = create_sandbox("builder");
 
-            let mut builder =
-                ProjectBuilder::new("baz".into(), "baz".into(), sandbox.path()).unwrap();
-            builder
-                .load_local_config(|_| LanguageType::Unknown)
-                .unwrap();
+            let mut builder = ProjectBuilder::new("baz", "baz", sandbox.path()).unwrap();
+            builder.load_local_config().unwrap();
 
             let project = builder.build().unwrap();
 
@@ -362,11 +354,8 @@ mod project_builder {
         fn infers_from_config_lang() {
             let sandbox = create_sandbox("builder");
 
-            let mut builder =
-                ProjectBuilder::new("bar".into(), "bar".into(), sandbox.path()).unwrap();
-            builder
-                .load_local_config(|_| LanguageType::Unknown)
-                .unwrap();
+            let mut builder = ProjectBuilder::new("bar", "bar", sandbox.path()).unwrap();
+            builder.load_local_config().unwrap();
 
             let project = builder.build().unwrap();
 
@@ -377,11 +366,9 @@ mod project_builder {
         fn infers_from_detected_lang() {
             let sandbox = create_sandbox("builder");
 
-            let mut builder =
-                ProjectBuilder::new("foo".into(), "foo".into(), sandbox.path()).unwrap();
-            builder
-                .load_local_config(|_| LanguageType::TypeScript)
-                .unwrap();
+            let mut builder = ProjectBuilder::new("foo", "foo", sandbox.path()).unwrap();
+            builder.detect_language(|_| LanguageType::TypeScript);
+            builder.load_local_config().unwrap();
 
             let project = builder.build().unwrap();
 
@@ -406,6 +393,92 @@ mod project_builder {
                 project.get_task("system").unwrap().platform,
                 PlatformType::System
             );
+        }
+    }
+
+    mod graph_extending {
+        use moon_config::TaskCommandArgs;
+
+        use super::*;
+
+        #[test]
+        fn inherits_dep() {
+            let sandbox = create_sandbox("builder");
+
+            let mut builder = ProjectBuilder::new("bar", "bar", sandbox.path()).unwrap();
+            builder.load_local_config().unwrap();
+
+            builder.extend_with_dependency(DependencyConfig {
+                id: "foo".into(),
+                scope: DependencyScope::Development,
+                ..DependencyConfig::default()
+            });
+
+            let project = builder.build().unwrap();
+
+            assert!(project.dependencies.contains_key("foo"));
+        }
+
+        #[test]
+        fn doesnt_override_dep_of_same_id() {
+            let sandbox = create_sandbox("builder");
+
+            let mut builder = ProjectBuilder::new("baz", "baz", sandbox.path()).unwrap();
+            builder.load_local_config().unwrap();
+
+            builder.extend_with_dependency(DependencyConfig {
+                id: "foo".into(),
+                scope: DependencyScope::Peer,
+                ..DependencyConfig::default()
+            });
+
+            let project = builder.build().unwrap();
+
+            assert!(project.dependencies.contains_key("foo"));
+            assert_eq!(
+                project.dependencies.get("foo").unwrap().scope,
+                DependencyScope::Development
+            );
+        }
+
+        #[test]
+        fn inherits_task() {
+            let sandbox = create_sandbox("builder");
+
+            let mut builder = ProjectBuilder::new("bar", "bar", sandbox.path()).unwrap();
+            builder.load_local_config().unwrap();
+
+            builder.extend_with_task(
+                Id::raw("task"),
+                TaskConfig {
+                    ..TaskConfig::default()
+                },
+            );
+
+            let project = builder.build().unwrap();
+
+            assert!(project.tasks.contains_key("task"));
+        }
+
+        #[test]
+        fn doesnt_override_task_of_same_id() {
+            let sandbox = create_sandbox("builder");
+
+            let mut builder = ProjectBuilder::new("baz", "baz", sandbox.path()).unwrap();
+            builder.load_local_config().unwrap();
+
+            builder.extend_with_task(
+                Id::raw("baz"),
+                TaskConfig {
+                    command: TaskCommandArgs::String("new-command-name".into()),
+                    ..TaskConfig::default()
+                },
+            );
+
+            let project = builder.build().unwrap();
+
+            assert!(project.tasks.contains_key("baz"));
+            assert_eq!(project.tasks.get("baz").unwrap().command, "baz");
         }
     }
 }

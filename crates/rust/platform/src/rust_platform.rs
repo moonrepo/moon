@@ -88,12 +88,8 @@ impl Platform for RustPlatform {
 
     // PROJECT GRAPH
 
-    fn is_project_in_dependency_workspace(&self, project: &Project) -> miette::Result<bool> {
-        if project.root == self.workspace_root {
-            return Ok(true);
-        }
-
-        let Some(lockfile_path) = find_cargo_lock(&project.root) else {
+    fn is_project_in_dependency_workspace(&self, project_source: &str) -> miette::Result<bool> {
+        let Some(lockfile_path) = find_cargo_lock(&self.workspace_root.join(project_source)) else {
             return Ok(false);
         };
 
@@ -102,8 +98,9 @@ impl Platform for RustPlatform {
         };
 
         if let Some(workspace) = cargo_toml.workspace {
-            return Ok(GlobSet::new_split(&workspace.members, &workspace.exclude)?
-                .matches(project.source.as_str()));
+            return Ok(
+                GlobSet::new_split(&workspace.members, &workspace.exclude)?.matches(project_source)
+            );
         }
 
         Ok(false)

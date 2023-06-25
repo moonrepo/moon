@@ -79,7 +79,8 @@ impl Platform for DenoPlatform {
 
     fn load_project_implicit_dependencies(
         &self,
-        _project: &Project,
+        _project_id: &str,
+        _project_source: &str,
         _aliases_map: &ProjectsAliasesMap,
     ) -> miette::Result<Vec<DependencyConfig>> {
         let implicit_deps = vec![];

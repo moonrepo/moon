@@ -481,7 +481,7 @@ mod implicit_explicit_deps {
                     DependencyConfig {
                         id: "nodeNameScope".into(),
                         scope: DependencyScope::Development,
-                        source: DependencySource::Implicit,
+                        source: Some(DependencySource::Implicit),
                         via: Some("@scope/pkg-foo".to_string())
                     }
                 ),
@@ -490,7 +490,7 @@ mod implicit_explicit_deps {
                     DependencyConfig {
                         id: "node".into(),
                         scope: DependencyScope::Production,
-                        source: DependencySource::Implicit,
+                        source: Some(DependencySource::Implicit),
                         via: Some("project-graph-aliases-node".to_string())
                     }
                 )
@@ -512,7 +512,7 @@ mod implicit_explicit_deps {
                     DependencyConfig {
                         id: "nodeNameScope".into(),
                         scope: DependencyScope::Production,
-                        source: DependencySource::Explicit,
+                        source: Some(DependencySource::Explicit),
                         via: None
                     }
                 ),
@@ -521,7 +521,7 @@ mod implicit_explicit_deps {
                     DependencyConfig {
                         id: "node".into(),
                         scope: DependencyScope::Development,
-                        source: DependencySource::Explicit,
+                        source: Some(DependencySource::Explicit),
                         via: None
                     }
                 )
@@ -543,7 +543,7 @@ mod implicit_explicit_deps {
                     DependencyConfig {
                         id: "nodeNameScope".into(),
                         scope: DependencyScope::Production,
-                        source: DependencySource::Explicit,
+                        source: Some(DependencySource::Explicit),
                         via: None
                     }
                 ),
@@ -552,7 +552,7 @@ mod implicit_explicit_deps {
                     DependencyConfig {
                         id: "node".into(),
                         scope: DependencyScope::Development,
-                        source: DependencySource::Explicit,
+                        source: Some(DependencySource::Explicit),
                         via: None
                     }
                 ),
@@ -561,7 +561,7 @@ mod implicit_explicit_deps {
                     DependencyConfig {
                         id: "nodeNameOnly".into(),
                         scope: DependencyScope::Peer,
-                        source: DependencySource::Implicit,
+                        source: Some(DependencySource::Implicit),
                         via: Some("pkg-bar".to_string())
                     }
                 )

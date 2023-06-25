@@ -2,7 +2,6 @@
 
 use miette::IntoDiagnostic;
 use moon_args::split_args;
-use moon_common::path::WorkspaceRelativePath;
 use moon_common::{color, Id};
 use moon_config::{
     InheritedTasksConfig, InputPath, PlatformType, ProjectConfig,
@@ -18,10 +17,10 @@ use std::path::Path;
 use tracing::{debug, trace, warn};
 
 pub struct TasksBuilder<'proj> {
-    project_id: &'proj Id,
+    project_id: &'proj str,
     project_env: FxHashMap<&'proj str, &'proj str>,
     project_platform: &'proj PlatformType,
-    project_source: &'proj WorkspaceRelativePath,
+    project_source: &'proj str,
     workspace_root: &'proj Path,
 
     // Global settings for tasks to inherit
@@ -36,9 +35,9 @@ pub struct TasksBuilder<'proj> {
 
 impl<'proj> TasksBuilder<'proj> {
     pub fn new(
-        project_id: &'proj Id,
+        project_id: &'proj str,
+        project_source: &'proj str,
         project_platform: &'proj PlatformType,
-        project_source: &'proj WorkspaceRelativePath,
         workspace_root: &'proj Path,
     ) -> Self {
         Self {
@@ -75,10 +74,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
         }
 
-        debug!(
-            project_id = self.project_id.as_str(),
-            "Filtering global tasks"
-        );
+        debug!(project_id = self.project_id, "Filtering global tasks");
 
         for (task_id, task_config) in &global_config.tasks {
             let target = Target::new(self.project_id, task_id).unwrap();

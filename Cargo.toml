@@ -27,7 +27,7 @@ async-trait = "0.1.68"
 cached = "0.44.0"
 chrono = { version = "0.4.26", features = ["serde"] }
 ci_env = "0.2.0"
-clap = { version = "4.3.2", features = ["derive", "env", "wrap_help"] }
+clap = { version = "4.3.8", features = ["derive", "env", "wrap_help"] }
 clap_complete = "4.3.1"
 console = "0.15.7"
 criterion = { version = "0.5.1", features = ["async_tokio"] }

@@ -3,12 +3,12 @@
 use crate::app_error::AppError;
 use moon_app_components::{AppInfo, Tasks, Toolchain, WorkingDir, Workspace, WorkspaceRoot};
 use moon_common::consts;
-use moon_config::{InheritedTasksConfig, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
+use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use proto::{get_root, ToolsConfig, TOOLS_CONFIG_NAME};
 use semver::Version;
 use starbase::system;
 use starbase_styles::color;
-use starbase_utils::{dirs, fs, glob};
+use starbase_utils::{dirs, fs};
 use std::env;
 use std::path::PathBuf;
 use tracing::debug;
@@ -20,7 +20,7 @@ pub fn detect_app_process_info(resources: ResourcesMut) {
     let version = env!("CARGO_PKG_VERSION");
 
     if let Some(exe) = &current_exe {
-        debug!(current_bin = ?exe.display(), "Running moon v{}", version);
+        debug!(current_bin = ?exe, "Running moon v{}", version);
     } else {
         debug!("Running moon v{}", version);
     }
@@ -42,7 +42,7 @@ pub fn find_workspace_root(states: StatesMut) {
     let working_dir = env::current_dir().map_err(|_| AppError::MissingWorkingDir)?;
 
     debug!(
-        working_dir = ?working_dir.display(),
+        working_dir = ?working_dir,
         "Attempting to find workspace root from current working directory",
     );
 
@@ -63,11 +63,8 @@ pub fn find_workspace_root(states: StatesMut) {
 
         root
     } else {
-        let Some(moon_dir) = fs::find_upwards(consts::CONFIG_DIRNAME, &working_dir) else {
-            return Err(AppError::MissingConfigDir.into());
-        };
-
-        moon_dir.parent().unwrap().to_path_buf()
+        fs::find_upwards_root(consts::CONFIG_DIRNAME, &working_dir)
+            .ok_or_else(|| AppError::MissingConfigDir)?
     };
 
     // Avoid finding the ~/.moon directory
@@ -78,8 +75,8 @@ pub fn find_workspace_root(states: StatesMut) {
     }
 
     debug!(
-        workspace_root = ?workspace_root.display(),
-        working_dir = ?working_dir.display(),
+        workspace_root = ?workspace_root,
+        working_dir = ?working_dir,
         "Found workspace root",
     );
 
@@ -99,7 +96,7 @@ pub fn load_workspace_config(workspace_root: StateRef<WorkspaceRoot>, resources:
     let config_path = workspace_root.join(&config_name);
 
     debug!(
-        file = ?config_path.display(),
+        file = ?config_path,
         "Loading {} (required)", color::file(&config_name),
     );
 
@@ -127,8 +124,9 @@ pub fn load_toolchain_config(workspace_root: StateRef<WorkspaceRoot>, resources:
     let proto_path = workspace_root.join(TOOLS_CONFIG_NAME);
 
     debug!(
-        file = ?config_path.display(),
-        "Attempting to load {} (optional)", color::file(&config_name),
+        file = ?config_path,
+        "Attempting to load {} (optional)",
+        color::file(&config_name),
     );
 
     if proto_path.exists() {
@@ -165,30 +163,15 @@ pub fn load_tasks_config(workspace_root: StateRef<WorkspaceRoot>, resources: Res
         consts::CONFIG_TASKS_FILENAME
     );
     let config_path = workspace_root.join(&config_name);
-    let tasks_dir = workspace_root.join(consts::CONFIG_DIRNAME).join("tasks");
 
     debug!(
-        file = ?config_path.display(),
+        file = ?config_path,
         "Attempting to load {} and {} (optional)",
         color::file(&config_name),
         color::file(format!("{}/tasks/*.yml", consts::CONFIG_DIRNAME)),
     );
 
-    let mut manager = InheritedTasksManager::default();
-
-    if config_path.exists() {
-        manager.add_config(
-            &config_path,
-            InheritedTasksConfig::load_partial(workspace_root, &config_path)?,
-        )
-    };
-
-    for scoped_config_path in glob::walk_files(tasks_dir, ["*.yml"])? {
-        manager.add_config(
-            &scoped_config_path,
-            InheritedTasksConfig::load_partial(workspace_root, &scoped_config_path)?,
-        )
-    }
+    let manager = InheritedTasksManager::load_from(workspace_root)?;
 
     debug!(
         scopes = ?manager.configs.keys(),

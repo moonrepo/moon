@@ -9,9 +9,10 @@ moon_config = { path = "../../../nextgen/config" }
 moon_hasher = { path = "../../core/hasher" }
 moon_platform = { path = "../../core/platform" }
 moon_process = { path = "../../../nextgen/process" }
-moon_project = { path = "../../core/project" }
-moon_task = { path = "../../core/task" }
+moon_project = { path = "../../../nextgen/project" }
+moon_task = { path = "../../../nextgen/task" }
 moon_tool = { path = "../../core/tool" }
 moon_utils = { path = "../../core/utils" }
+miette = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

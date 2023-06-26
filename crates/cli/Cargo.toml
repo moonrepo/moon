@@ -30,14 +30,14 @@ moon_node_platform = { path = "../node/platform" }
 moon_node_tool = { path = "../node/tool" }
 moon_platform = { path = "../core/platform" }
 moon_platform_detector = { path = "../core/platform-detector" }
-moon_project = { path = "../core/project" }
+moon_project = { path = "../../nextgen/project" }
 moon_project_graph = { path = "../core/project-graph" }
 moon_query = { path = "../../nextgen/query" }
 moon_rust_lang = { path = "../rust/lang" }
 moon_rust_tool = { path = "../rust/tool" }
 moon_system_platform = { path = "../system/platform" }
 moon_target = { path = "../../nextgen/target" }
-moon_task = { path = "../core/task" }
+moon_task = { path = "../../nextgen/task" }
 moon_terminal = { path = "../core/terminal" }
 moon_tool = { path = "../core/tool" }
 moon_typescript_lang = { path = "../typescript/lang" }
@@ -65,7 +65,7 @@ rustc-hash = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
-starbase = "0.1.10"
+starbase = "0.1.11"
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true }
 tera = { workspace = true }

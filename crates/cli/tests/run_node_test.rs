@@ -1166,13 +1166,8 @@ mod affected_files {
 
         let output = assert.output();
 
-        if cfg!(windows) {
-            assert!(predicate::str::contains("Args: .\\input1.js .\\input2.js\n").eval(&output));
-            assert!(predicate::str::contains("Env: .\\input1.js,.\\input2.js\n").eval(&output));
-        } else {
-            assert!(predicate::str::contains("Args: ./input1.js ./input2.js\n").eval(&output));
-            assert!(predicate::str::contains("Env: ./input1.js,./input2.js\n").eval(&output));
-        }
+        assert!(predicate::str::contains("Args: ./input1.js ./input2.js\n").eval(&output));
+        assert!(predicate::str::contains("Env: input1.js,input2.js\n").eval(&output));
     }
 
     #[test]
@@ -1190,13 +1185,8 @@ mod affected_files {
 
         let output = assert.output();
 
-        if cfg!(windows) {
-            assert!(predicate::str::contains("Args: .\\input1.js .\\input2.js\n").eval(&output));
-            assert!(predicate::str::contains("Env: \n").eval(&output));
-        } else {
-            assert!(predicate::str::contains("Args: ./input1.js ./input2.js\n").eval(&output));
-            assert!(predicate::str::contains("Env: \n").eval(&output));
-        }
+        assert!(predicate::str::contains("Args: ./input1.js ./input2.js\n").eval(&output));
+        assert!(predicate::str::contains("Env: \n").eval(&output));
     }
 
     #[test]
@@ -1214,12 +1204,7 @@ mod affected_files {
 
         let output = assert.output();
 
-        if cfg!(windows) {
-            assert!(predicate::str::contains("Args: \n").eval(&output));
-            assert!(predicate::str::contains("Env: .\\input1.js,.\\input2.js\n").eval(&output));
-        } else {
-            assert!(predicate::str::contains("Args: \n").eval(&output));
-            assert!(predicate::str::contains("Env: ./input1.js,./input2.js\n").eval(&output));
-        }
+        assert!(predicate::str::contains("Args: \n").eval(&output));
+        assert!(predicate::str::contains("Env: input1.js,input2.js\n").eval(&output));
     }
 }

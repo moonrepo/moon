@@ -5,7 +5,7 @@ use moon_config::{
 };
 use moon_file_group::FileGroup;
 use moon_query::{Condition, Criteria, Field, LogicalOperator, QueryError, Queryable};
-use moon_task2::Task;
+use moon_task::Task;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::path::PathBuf;

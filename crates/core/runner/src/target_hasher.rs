@@ -105,7 +105,7 @@ impl TargetHasher {
         &mut self,
         task: &Task,
         hashes: &FxHashMap<Target, String>,
-    ) -> Result<(), RunnerError> {
+    ) -> miette::Result<()> {
         for dep in &task.deps {
             self.deps.insert(
                 dep.id.to_owned(),
@@ -115,7 +115,8 @@ impl TargetHasher {
                         return Err(RunnerError::MissingDependencyHash(
                             dep.id.to_owned(),
                             task.target.id.to_owned(),
-                        ));
+                        )
+                        .into());
                     }
                 },
             );

@@ -1,5 +1,4 @@
 use moon_config::TypeScriptConfig;
-use moon_error::MoonError;
 use moon_hasher::{hash_btree, Hasher, Sha256};
 use moon_typescript_lang::tsconfig::{CompilerOptions, TsConfigJson};
 use serde::{Deserialize, Serialize};
@@ -17,7 +16,7 @@ impl TypeScriptTargetHasher {
         config: &TypeScriptConfig,
         workspace_root: &Path,
         project_root: &Path,
-    ) -> Result<TypeScriptTargetHasher, MoonError> {
+    ) -> miette::Result<TypeScriptTargetHasher> {
         let mut hasher = TypeScriptTargetHasher::default();
 
         if let Some(root_tsconfig) =

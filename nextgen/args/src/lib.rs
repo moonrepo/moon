@@ -3,10 +3,11 @@ use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
 #[diagnostic(code(args::split))]
-#[error("Failed to split arguments `{args}`: {error}")]
+#[error("Failed to split arguments \"{args}\".")]
 pub struct ArgsSplitError {
     args: String,
-    error: String,
+    #[source]
+    error: shell_words::ParseError,
 }
 
 // When parsing a command line with multiple commands separated by a semicolon,
@@ -21,7 +22,7 @@ pub fn split_args<T: AsRef<str>>(line: T) -> Result<Vec<String>, ArgsSplitError>
 
     shell_words::split(&line).map_err(|error| ArgsSplitError {
         args: line.to_owned(),
-        error: error.to_string(),
+        error,
     })
 }
 

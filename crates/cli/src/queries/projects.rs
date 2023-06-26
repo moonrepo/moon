@@ -6,7 +6,7 @@ use moon_common::{path::WorkspaceRelativePathBuf, Id};
 use moon_error::MoonError;
 use moon_logger::{debug, trace};
 use moon_project::Project;
-use moon_task::{Task, TouchedFilePaths};
+use moon_task::Task;
 use moon_utils::{is_ci, regex};
 use moon_workspace::Workspace;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -62,7 +62,9 @@ fn convert_to_regex(field: &str, value: &Option<String>) -> AppResult<Option<reg
     }
 }
 
-async fn load_touched_files(workspace: &Workspace) -> AppResult<TouchedFilePaths> {
+async fn load_touched_files(
+    workspace: &Workspace,
+) -> AppResult<FxHashSet<WorkspaceRelativePathBuf>> {
     let mut buffer = String::new();
 
     // Only read piped data when stdin is not a TTY,

@@ -20,18 +20,17 @@ impl<T: Tool> ToolManager<T> {
         }
     }
 
-    pub fn get(&self) -> Result<&T, ToolError> {
+    pub fn get(&self) -> miette::Result<&T> {
         self.get_for_version(&self.default_version)
     }
 
-    pub fn get_for_version<V: AsRef<Version>>(&self, version: V) -> Result<&T, ToolError> {
+    pub fn get_for_version<V: AsRef<Version>>(&self, version: V) -> miette::Result<&T> {
         let version = version.as_ref();
 
         if !self.has(version) {
-            return Err(ToolError::UnknownTool(format!(
-                "{} {}",
-                self.runtime, version.number
-            )));
+            return Err(
+                ToolError::UnknownTool(format!("{} {}", self.runtime, version.number)).into(),
+            );
         }
 
         Ok(self.cache.get(&version.number).unwrap())
@@ -55,14 +54,14 @@ impl<T: Tool> ToolManager<T> {
         &mut self,
         version: &Version,
         last_versions: &mut FxHashMap<String, String>,
-    ) -> Result<u8, ToolError> {
+    ) -> miette::Result<u8> {
         match self.cache.get_mut(&version.number) {
             Some(cache) => Ok(cache.setup(last_versions).await?),
-            None => Err(ToolError::UnknownTool(self.runtime.to_string())),
+            None => Err(ToolError::UnknownTool(self.runtime.to_string()).into()),
         }
     }
 
-    pub async fn teardown(&mut self, version: &Version) -> Result<(), ToolError> {
+    pub async fn teardown(&mut self, version: &Version) -> miette::Result<()> {
         if let Some(mut tool) = self.cache.remove(&version.number) {
             tool.teardown().await?;
         }
@@ -70,7 +69,7 @@ impl<T: Tool> ToolManager<T> {
         Ok(())
     }
 
-    pub async fn teardown_all(&mut self) -> Result<(), ToolError> {
+    pub async fn teardown_all(&mut self) -> miette::Result<()> {
         for (_, mut tool) in self.cache.drain() {
             tool.teardown().await?;
         }

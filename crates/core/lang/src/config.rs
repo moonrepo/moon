@@ -6,7 +6,7 @@ macro_rules! config_cache {
         config_cache!($struct, $file, $reader, noop_write);
     };
     ($struct:ident, $file:expr, $reader:ident, $writer:ident) => {
-        fn load_config_internal(path: &Path) -> Result<$struct, MoonError> {
+        fn load_config_internal(path: &Path) -> miette::Result<$struct> {
             use moon_logger::trace;
             use starbase_styles::color;
 
@@ -16,7 +16,7 @@ macro_rules! config_cache {
                 color::path(&path),
             );
 
-            let mut cfg: $struct = $reader(&path).map_err(|e| MoonError::Generic(e.to_string()))?;
+            let mut cfg: $struct = $reader(&path)?;
             cfg.path = path.to_path_buf();
 
             Ok(cfg)
@@ -24,11 +24,11 @@ macro_rules! config_cache {
 
         // This merely exists to create the global cache!
         #[cached(sync_writes = true, result = true)]
-        fn load_config(path: PathBuf) -> Result<$struct, MoonError> {
+        fn load_config(path: PathBuf) -> miette::Result<$struct> {
             load_config_internal(&path)
         }
 
-        fn noop_write(_path: &Path, _file: &$struct) -> Result<(), MoonError> {
+        fn noop_write(_path: &Path, _file: &$struct) -> miette::Result<()> {
             Ok(()) // Do nothing
         }
 
@@ -36,13 +36,13 @@ macro_rules! config_cache {
             /// Read the config file from the cache. If not cached and the file exists,
             /// load it and store in the cache, otherwise return none.
             #[track_caller]
-            pub fn read<P: AsRef<Path>>(path: P) -> Result<Option<$struct>, MoonError> {
+            pub fn read<P: AsRef<Path>>(path: P) -> miette::Result<Option<$struct>> {
                 $struct::read_with_name(path, $file)
             }
 
             /// Read the config file from the cache using the provided file name.
             #[track_caller]
-            pub fn read_with_name<P, N>(path: P, name: N) -> Result<Option<$struct>, MoonError>
+            pub fn read_with_name<P, N>(path: P, name: N) -> miette::Result<Option<$struct>>
             where
                 P: AsRef<Path>,
                 N: AsRef<str>
@@ -64,20 +64,20 @@ macro_rules! config_cache {
             /// If the file exists, load it from the file system, mutate it,
             /// write it back to the file system and to the cache.
             #[track_caller]
-            pub fn sync<P, F>(path: P, func: F) -> Result<bool, MoonError>
+            pub fn sync<P, F>(path: P, func: F) -> miette::Result<bool>
             where
                 P: AsRef<Path>,
-                F: FnOnce(&mut $struct) -> Result<bool, MoonError>
+                F: FnOnce(&mut $struct) -> miette::Result<bool>
             {
                 $struct::sync_with_name(path, $file, func)
             }
 
             #[track_caller]
-            pub fn sync_with_name<P, N, F>(path: P, name: N, func: F) -> Result<bool, MoonError>
+            pub fn sync_with_name<P, N, F>(path: P, name: N, func: F) -> miette::Result<bool>
             where
                 P: AsRef<Path>,
                 N: AsRef<str>,
-                F: FnOnce(&mut $struct) -> Result<bool, MoonError>
+                F: FnOnce(&mut $struct) -> miette::Result<bool>
             {
                 use cached::Cached;
                 use moon_logger::trace;
@@ -95,9 +95,7 @@ macro_rules! config_cache {
                     return Ok(false);
                 }
 
-                let mut cache = LOAD_CONFIG.lock()
-                    .map_err(|_| MoonError::Generic(format!("Unable to acquire lock on {:?}.", &path)))?;
-
+                let mut cache = LOAD_CONFIG.lock().unwrap();
                 let mut cfg: $struct;
 
                 if let Some(item) = cache.cache_get(&path) {
@@ -127,13 +125,12 @@ macro_rules! config_cache {
 
             /// Write (or overwrite) the value directly into the cache.
             #[track_caller]
-            pub fn write(value: $struct) -> Result<(), MoonError> {
+            pub fn write(value: $struct) -> miette::Result<()> {
                 use cached::Cached;
                 use moon_logger::trace;
                 use starbase_styles::color;
 
-                let mut cache = LOAD_CONFIG.lock()
-                    .map_err(|_| MoonError::Generic(format!("Unable to acquire lock on {:?}.", &value.path)))?;
+                let mut cache = LOAD_CONFIG.lock().unwrap();
 
                 trace!(
                     target: "moon:lang:config",
@@ -165,7 +162,7 @@ macro_rules! config_cache_container {
         mod $namespace {
             use super::*;
 
-            pub fn load_config_internal(path: &Path) -> Result<$struct, MoonError> {
+            pub fn load_config_internal(path: &Path) -> miette::Result<$struct> {
                 use moon_logger::trace;
                 use starbase_styles::color;
 
@@ -175,19 +172,19 @@ macro_rules! config_cache_container {
                     color::path(&path),
                 );
 
-                let cfg: $struct = $reader(&path).map_err(|e| MoonError::Generic(e.to_string()))?;
+                let cfg: $struct = $reader(&path)?;
 
                 Ok(cfg)
             }
 
             // This merely exists to create the global cache!
             #[cached(sync_writes = true, result = true)]
-            pub fn load_config(path: PathBuf) -> Result<$struct, MoonError> {
+            pub fn load_config(path: PathBuf) -> miette::Result<$struct> {
                 load_config_internal(&path)
             }
         }
 
-        pub fn noop_write(_path: &Path, _file: &$struct) -> Result<(), MoonError> {
+        pub fn noop_write(_path: &Path, _file: &$struct) -> miette::Result<()> {
             Ok(()) // Do nothing
         }
 
@@ -196,12 +193,12 @@ macro_rules! config_cache_container {
         impl $container {
             /// Read the config file from the cache. If not cached and the file exists,
             /// load it and store in the cache, otherwise return none.
-            pub fn read<P: AsRef<Path>>(path: P) -> Result<Option<$struct>, MoonError> {
+            pub fn read<P: AsRef<Path>>(path: P) -> miette::Result<Option<$struct>> {
                 $container::read_with_name(path, $file)
             }
 
             /// Read the config file from the cache using the provided file name.
-            pub fn read_with_name<P, N>(path: P, name: N) -> Result<Option<$struct>, MoonError>
+            pub fn read_with_name<P, N>(path: P, name: N) -> miette::Result<Option<$struct>>
             where
                 P: AsRef<Path>,
                 N: AsRef<str>
@@ -222,19 +219,19 @@ macro_rules! config_cache_container {
 
             /// If the file exists, load it from the file system, mutate it,
             /// write it back to the file system and to the cache.
-            pub fn sync<P, F>(path: P, func: F) -> Result<bool, MoonError>
+            pub fn sync<P, F>(path: P, func: F) -> miette::Result<bool>
             where
                 P: AsRef<Path>,
-                F: FnOnce(&mut $struct) -> Result<bool, MoonError>
+                F: FnOnce(&mut $struct) -> miette::Result<bool>
             {
                 $container::sync_with_name(path, $file, func)
             }
 
-            pub fn sync_with_name<P, N, F>(path: P, name: N, func: F) -> Result<bool, MoonError>
+            pub fn sync_with_name<P, N, F>(path: P, name: N, func: F) -> miette::Result<bool>
             where
                 P: AsRef<Path>,
                 N: AsRef<str>,
-                F: FnOnce(&mut $struct) -> Result<bool, MoonError>
+                F: FnOnce(&mut $struct) -> miette::Result<bool>
             {
                 use cached::Cached;
                 use moon_logger::trace;
@@ -252,9 +249,7 @@ macro_rules! config_cache_container {
                     return Ok(false);
                 }
 
-                let mut cache = $namespace::LOAD_CONFIG.lock()
-                    .map_err(|_| MoonError::Generic(format!("Unable to acquire lock on {:?}.", &path)))?;
-
+                let mut cache = $namespace::LOAD_CONFIG.lock().unwrap();
                 let mut cfg: $struct;
 
                 if let Some(item) = cache.cache_get(&path) {
@@ -283,14 +278,13 @@ macro_rules! config_cache_container {
             }
 
             /// Write (or overwrite) the value directly into the cache.
-            pub fn write<P: AsRef<Path>>(path: P, value: $struct) -> Result<(), MoonError> {
+            pub fn write<P: AsRef<Path>>(path: P, value: $struct) -> miette::Result<()> {
                 use cached::Cached;
                 use moon_logger::trace;
                 use starbase_styles::color;
 
                 let path = path.as_ref();
-                let mut cache = $namespace::LOAD_CONFIG.lock()
-                    .map_err(|_| MoonError::Generic(format!("Unable to acquire lock on {:?}.", &path)))?;
+                let mut cache = $namespace::LOAD_CONFIG.lock().unwrap();
 
                 trace!(
                     target: "moon:lang:config",

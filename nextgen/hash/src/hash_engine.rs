@@ -17,8 +17,8 @@ impl HashEngine {
         let outputs_dir = cache_dir.join("outputs");
 
         debug!(
-            hashes_dir = %hashes_dir.display(),
-            outputs_dir = %outputs_dir.display(),
+            hashes_dir = ?hashes_dir,
+            outputs_dir = ?outputs_dir,
             "Creating hash engine",
         );
 
@@ -36,7 +36,7 @@ impl HashEngine {
         let hash = hasher.generate_hash()?;
         let path = self.hashes_dir.join(format!("{hash}.json"));
 
-        debug!(manifest = %path.display(), "Saving hash manifest");
+        debug!(manifest = ?path, "Saving hash manifest");
 
         fs::write_file(&path, hasher.serialize()?)?;
 

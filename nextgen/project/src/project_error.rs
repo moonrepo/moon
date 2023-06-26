@@ -4,10 +4,6 @@ use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
 pub enum ProjectError {
-    #[diagnostic(code(project::missing_source))]
-    #[error("No project exists at path {}.", .0.style(Style::File))]
-    MissingProjectAtSource(String),
-
     #[diagnostic(code(project::task::unknown), help = "Has this task been configured?")]
     #[error(
         "Unknown task {} for project {}.",

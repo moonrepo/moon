@@ -5,7 +5,6 @@ use moon_error::MoonError;
 use moon_file_group::FileGroupError;
 use moon_project::ProjectError;
 use moon_target::TargetError;
-use moon_task::TaskError;
 use starbase_styles::{Style, Stylize};
 use thiserror::Error;
 
@@ -52,10 +51,6 @@ pub enum ProjectGraphError {
 
     #[diagnostic(transparent)]
     #[error(transparent)]
-    Task(#[from] TaskError),
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
     Token(#[from] TokenError),
 }
 
@@ -75,7 +70,7 @@ pub enum TokenError {
     #[error("Output token {} may not reference outputs using token functions.", .0.style(Style::Symbol))]
     InvalidOutNoTokenFunctions(String),
 
-    #[error("Token {} cannot be used within {}.", .0.style(Style::Symbol), .0.style(Style::Symbol))]
+    #[error("Token {} cannot be used within {}.", .0.style(Style::Symbol), .1.style(Style::Symbol))]
     InvalidTokenContext(String, String), // token, context
 
     #[error("Unknown file group {} used in token {}.", .1.style(Style::Id), .0.style(Style::Symbol))]

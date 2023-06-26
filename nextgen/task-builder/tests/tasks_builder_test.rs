@@ -1,22 +1,27 @@
 use moon_common::Id;
 use moon_config::{
-    InheritedTasksManager, InputPath, OutputPath, PlatformType, ProjectConfig,
-    ProjectWorkspaceConfig, ProjectWorkspaceInheritedTasksConfig, TaskOptionAffectedFiles,
-    TaskOutputStyle, TaskType,
+    DenoConfig, InheritedTasksManager, InputPath, NodeConfig, OutputPath, PlatformType,
+    ProjectConfig, ProjectWorkspaceConfig, ProjectWorkspaceInheritedTasksConfig, RustConfig,
+    TaskOptionAffectedFiles, TaskOutputStyle, TaskType, ToolchainConfig,
 };
+use moon_platform_detector::detect_task_platform;
 use moon_target::Target;
-use moon_task2::Task;
+use moon_task::Task;
 use moon_task_builder::TasksBuilder;
 use rustc_hash::FxHashMap;
 use starbase_sandbox::create_sandbox;
 use std::collections::BTreeMap;
 use std::path::Path;
 
-fn build_tasks_with_config(root: &Path, local_config: ProjectConfig) -> BTreeMap<Id, Task> {
-    let id = Id::raw("project");
+fn build_tasks_with_config(
+    root: &Path,
+    source: &str,
+    local_config: ProjectConfig,
+    toolchain_config: ToolchainConfig,
+) -> BTreeMap<Id, Task> {
     let platform = local_config.platform.unwrap_or_default();
 
-    let mut builder = TasksBuilder::new(&id, &platform);
+    let mut builder = TasksBuilder::new("project", source, &platform, root);
 
     builder.load_local_tasks(&local_config);
 
@@ -36,13 +41,31 @@ fn build_tasks_with_config(root: &Path, local_config: ProjectConfig) -> BTreeMap
         Some(&local_config.workspace.inherited_tasks),
     );
 
+    builder.detect_platform(detect_task_platform, &toolchain_config);
+
     builder.build().unwrap()
 }
 
 fn build_tasks(root: &Path, config_path: &str) -> BTreeMap<Id, Task> {
     build_tasks_with_config(
         root,
+        &config_path.replace("/moon.yml", ""),
         ProjectConfig::load(root, root.join(config_path)).unwrap(),
+        ToolchainConfig::default(),
+    )
+}
+
+fn build_tasks_with_toolchain(root: &Path, config_path: &str) -> BTreeMap<Id, Task> {
+    build_tasks_with_config(
+        root,
+        &config_path.replace("/moon.yml", ""),
+        ProjectConfig::load(root, root.join(config_path)).unwrap(),
+        ToolchainConfig {
+            deno: Some(DenoConfig::default()),
+            node: Some(NodeConfig::default()),
+            rust: Some(RustConfig::default()),
+            ..ToolchainConfig::default()
+        },
     )
 }
 
@@ -331,9 +354,45 @@ mod tasks_builder {
         }
 
         #[test]
-        fn unknown_fallsback_to_project_platform() {
+        fn detects_from_command_name() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks_with_toolchain(sandbox.path(), "platforms/moon.yml");
+
+            let task = tasks.get("deno-via-cmd").unwrap();
+
+            assert_eq!(task.platform, PlatformType::Deno);
+
+            let task = tasks.get("node-via-cmd").unwrap();
+
+            assert_eq!(task.platform, PlatformType::Node);
+
+            let task = tasks.get("rust-via-cmd").unwrap();
+
+            assert_eq!(task.platform, PlatformType::Rust);
+        }
+
+        #[test]
+        fn doesnt_detect_from_command_if_not_toolchain_enabled() {
             let sandbox = create_sandbox("builder");
             let tasks = build_tasks(sandbox.path(), "platforms/moon.yml");
+
+            let task = tasks.get("deno-via-cmd").unwrap();
+
+            assert_eq!(task.platform, PlatformType::System);
+
+            let task = tasks.get("node-via-cmd").unwrap();
+
+            assert_eq!(task.platform, PlatformType::System);
+
+            let task = tasks.get("rust-via-cmd").unwrap();
+
+            assert_eq!(task.platform, PlatformType::System);
+        }
+
+        #[test]
+        fn unknown_fallsback_to_project_platform() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks_with_toolchain(sandbox.path(), "platforms/moon.yml");
 
             let task = tasks.get("unknown").unwrap();
 
@@ -347,7 +406,7 @@ mod tasks_builder {
         #[test]
         fn applies_to_global_inherited() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "platforms/moon.yml");
+            let tasks = build_tasks_with_toolchain(sandbox.path(), "platforms/moon.yml");
 
             let task = tasks.get("global-build").unwrap();
 
@@ -794,7 +853,12 @@ mod tasks_builder {
         #[test]
         fn inherits_all_globals_by_default() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks_with_config(sandbox.path(), ProjectConfig::default());
+            let tasks = build_tasks_with_config(
+                sandbox.path(),
+                "project",
+                ProjectConfig::default(),
+                ToolchainConfig::default(),
+            );
 
             assert_eq!(
                 tasks.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
@@ -807,10 +871,12 @@ mod tasks_builder {
             let sandbox = create_sandbox("builder");
             let tasks = build_tasks_with_config(
                 sandbox.path(),
+                "project",
                 create_overrides(ProjectWorkspaceInheritedTasksConfig {
                     include: Some(vec![]),
                     ..Default::default()
                 }),
+                ToolchainConfig::default(),
             );
 
             assert!(tasks.is_empty());
@@ -821,10 +887,12 @@ mod tasks_builder {
             let sandbox = create_sandbox("builder");
             let tasks = build_tasks_with_config(
                 sandbox.path(),
+                "project",
                 create_overrides(ProjectWorkspaceInheritedTasksConfig {
                     include: Some(vec!["global-build".into(), "global-run".into()]),
                     ..Default::default()
                 }),
+                ToolchainConfig::default(),
             );
 
             assert_eq!(
@@ -838,10 +906,12 @@ mod tasks_builder {
             let sandbox = create_sandbox("builder");
             let tasks = build_tasks_with_config(
                 sandbox.path(),
+                "project",
                 create_overrides(ProjectWorkspaceInheritedTasksConfig {
                     exclude: vec!["global-build".into(), "global-run".into()],
                     ..Default::default()
                 }),
+                ToolchainConfig::default(),
             );
 
             assert_eq!(
@@ -855,11 +925,13 @@ mod tasks_builder {
             let sandbox = create_sandbox("builder");
             let tasks = build_tasks_with_config(
                 sandbox.path(),
+                "project",
                 create_overrides(ProjectWorkspaceInheritedTasksConfig {
                     include: Some(vec!["global-build".into(), "global-run".into()]),
                     exclude: vec!["global-build".into()],
                     ..Default::default()
                 }),
+                ToolchainConfig::default(),
             );
 
             assert_eq!(
@@ -873,6 +945,7 @@ mod tasks_builder {
             let sandbox = create_sandbox("builder");
             let tasks = build_tasks_with_config(
                 sandbox.path(),
+                "project",
                 create_overrides(ProjectWorkspaceInheritedTasksConfig {
                     rename: FxHashMap::from_iter([
                         ("global-build".into(), "renamed-build".into()),
@@ -881,6 +954,7 @@ mod tasks_builder {
                     ]),
                     ..Default::default()
                 }),
+                ToolchainConfig::default(),
             );
 
             assert_eq!(
@@ -976,6 +1050,77 @@ mod tasks_builder {
                     Target::parse("^:build").unwrap(),
                     Target::parse("app:build").unwrap(),
                 ]
+            );
+        }
+    }
+
+    mod env_var_merging {
+        use super::*;
+
+        #[test]
+        fn no_env() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "env/moon.yml");
+            let task = tasks.get("no-env").unwrap();
+
+            assert_eq!(
+                task.env,
+                FxHashMap::from_iter([
+                    ("SCOPE".into(), "project".into()),
+                    ("KEY1".into(), "value1".into()),
+                    ("KEY2".into(), "value2".into()),
+                ])
+            );
+        }
+
+        #[test]
+        fn with_env() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "env/moon.yml");
+            let task = tasks.get("with-env").unwrap();
+
+            assert_eq!(
+                task.env,
+                FxHashMap::from_iter([
+                    ("SCOPE".into(), "task".into()),
+                    ("KEY1".into(), "value1".into()),
+                    ("KEY2".into(), "env-value2".into()),
+                    ("EXTRA".into(), "123".into()),
+                ])
+            );
+        }
+
+        #[test]
+        fn env_file() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "env/moon.yml");
+            let task = tasks.get("env-file").unwrap();
+
+            assert_eq!(
+                task.env,
+                FxHashMap::from_iter([
+                    ("SCOPE".into(), "env-file".into()),
+                    ("KEY1".into(), "file-value1".into()),
+                    ("KEY2".into(), "value2".into()),
+                    ("EXTRA".into(), "abc".into()),
+                ])
+            );
+        }
+
+        #[test]
+        fn all_patterns() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "env/moon.yml");
+            let task = tasks.get("all").unwrap();
+
+            assert_eq!(
+                task.env,
+                FxHashMap::from_iter([
+                    ("SCOPE".into(), "task".into()),
+                    ("KEY1".into(), "file-value1".into()),
+                    ("KEY2".into(), "env-value2".into()),
+                    ("EXTRA".into(), "123".into()),
+                ])
             );
         }
     }

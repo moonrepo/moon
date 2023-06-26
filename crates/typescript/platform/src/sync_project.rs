@@ -1,7 +1,6 @@
 use moon_config::TypeScriptConfig;
-use moon_error::MoonError;
 use moon_logger::debug;
-use moon_project::{Project, ProjectError};
+use moon_project::Project;
 use moon_typescript_lang::{
     tsconfig::{CompilerOptionsPaths, TsConfigExtends},
     TsConfigJson,
@@ -21,7 +20,7 @@ pub fn create_missing_tsconfig(
     tsconfig_project_name: &str,
     tsconfig_options_name: &str,
     workspace_root: &Path,
-) -> Result<bool, MoonError> {
+) -> miette::Result<bool> {
     let tsconfig_path = project.root.join(tsconfig_project_name);
 
     if tsconfig_path.exists() {
@@ -51,7 +50,7 @@ pub fn sync_root_tsconfig_references(
     tsconfig_project_name: &str,
     tsconfig_root_name: &str,
     workspace_root: &Path,
-) -> Result<bool, MoonError> {
+) -> miette::Result<bool> {
     TsConfigJson::sync_with_name(workspace_root, tsconfig_root_name, |tsconfig_json| {
         // Don't sync a root project to itself
         if tsconfig_root_name == "tsconfig.json" && project.source == "." {
@@ -84,7 +83,7 @@ pub fn sync_project_tsconfig_compiler_options(
     setting_route_to_cache: bool,
     setting_sync_project_refs: bool,
     setting_sync_path_aliases: bool,
-) -> Result<bool, MoonError> {
+) -> miette::Result<bool> {
     TsConfigJson::sync_with_name(&project.root, tsconfig_project_name, |tsconfig_json| {
         let mut mutated_tsconfig = false;
 
@@ -135,7 +134,7 @@ pub fn sync_project(
     workspace_root: &Path,
     tsconfig_paths: CompilerOptionsPaths,
     tsconfig_project_refs: FxHashSet<String>,
-) -> Result<bool, ProjectError> {
+) -> miette::Result<bool> {
     let is_project_typescript_enabled = project.config.toolchain.is_typescript_enabled();
     let mut mutated_tsconfig = false;
 

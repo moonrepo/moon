@@ -1,9 +1,8 @@
 use moon_config::{NodeConfig, NodePackageManager, NodeVersionManager};
-use moon_error::MoonError;
 use moon_logger::debug;
 use moon_node_lang::{PackageJson, NODENV, NPM, NVM, PNPM, YARN};
 use moon_node_tool::NodeTool;
-use moon_tool::ToolError;
+
 use starbase_styles::color;
 use starbase_utils::fs;
 use std::path::Path;
@@ -60,7 +59,7 @@ fn add_engines_constraint(node_config: &NodeConfig, package_json: &mut PackageJs
     false
 }
 
-pub async fn setup_tool(node: &NodeTool, workspace_root: &Path) -> Result<(), ToolError> {
+pub async fn setup_tool(node: &NodeTool, workspace_root: &Path) -> miette::Result<()> {
     // Find the `package.json` workspaces root
     let lockfile = match node.config.package_manager {
         NodePackageManager::Npm => NPM.lockfile,
@@ -91,7 +90,7 @@ pub async fn setup_tool(node: &NodeTool, workspace_root: &Path) -> Result<(), To
             };
             let rc_path = packages_root.join(rc_name);
 
-            fs::write_file(&rc_path, node_version).map_err(MoonError::StarFs)?;
+            fs::write_file(&rc_path, node_version)?;
 
             debug!(
                 target: LOG_TARGET,

@@ -218,7 +218,7 @@ impl<'cmd> CommandInspector<'cmd> {
 
         debug!(
             env_vars = ?env_vars_field,
-            working_dir = %working_dir_field.display(),
+            working_dir = ?working_dir_field,
             "Running command {}",
             color::shell(command_line.to_string())
         );

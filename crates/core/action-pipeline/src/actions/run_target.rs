@@ -45,7 +45,7 @@ pub async fn run_target(
         let mut ctx = context.write().await;
 
         if let Some(cache_location) = runner.is_cached(&mut ctx, runtime).await? {
-            return Ok(runner.hydrate(cache_location).await?);
+            return runner.hydrate(cache_location).await;
         }
     } else {
         debug!(

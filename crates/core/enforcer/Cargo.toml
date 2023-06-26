@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 moon_common = { path = "../../../nextgen/common" }
-moon_project = { path = "../project" }
+moon_project = { path = "../../../nextgen/project" }
 miette = { workspace = true }
 starbase_styles = { workspace = true }
 thiserror = { workspace = true }

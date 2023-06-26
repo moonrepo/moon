@@ -13,7 +13,7 @@ fn read_lockfile(path: &Path) -> Result<CargoLock, MoonError> {
 config_cache_container!(CargoLockCache, CargoLock, CARGO.lockfile, read_lockfile);
 
 #[cached(result)]
-pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVersions, MoonError> {
+pub fn load_lockfile_dependencies(path: PathBuf) -> miette::Result<LockfileDependencyVersions> {
     let mut deps: LockfileDependencyVersions = FxHashMap::default();
 
     if let Some(lockfile) = CargoLockCache::read(path)? {

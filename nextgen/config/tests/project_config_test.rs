@@ -2,8 +2,8 @@ mod utils;
 
 use moon_common::{consts::CONFIG_PROJECT_FILENAME, Id};
 use moon_config::{
-    DependencyScope, InputPath, LanguageType, OwnersPaths, PlatformType, ProjectConfig,
-    ProjectDependsOn, ProjectType, TaskCommandArgs,
+    DependencyConfig, DependencyScope, InputPath, LanguageType, OwnersPaths, PlatformType,
+    ProjectConfig, ProjectDependsOn, ProjectType, TaskCommandArgs,
 };
 use rustc_hash::FxHashMap;
 use utils::*;
@@ -144,14 +144,16 @@ dependsOn:
             assert_eq!(
                 config.depends_on,
                 vec![
-                    ProjectDependsOn::Object {
+                    ProjectDependsOn::Object(DependencyConfig {
                         id: "a".into(),
                         scope: DependencyScope::Development,
-                    },
-                    ProjectDependsOn::Object {
+                        ..DependencyConfig::default()
+                    }),
+                    ProjectDependsOn::Object(DependencyConfig {
                         id: "b".into(),
                         scope: DependencyScope::Production,
-                    }
+                        ..DependencyConfig::default()
+                    })
                 ]
             );
         }
@@ -172,10 +174,11 @@ dependsOn:
                 config.depends_on,
                 vec![
                     ProjectDependsOn::String("a".into()),
-                    ProjectDependsOn::Object {
+                    ProjectDependsOn::Object(DependencyConfig {
                         id: "b".into(),
                         scope: DependencyScope::Production,
-                    }
+                        ..DependencyConfig::default()
+                    })
                 ]
             );
         }

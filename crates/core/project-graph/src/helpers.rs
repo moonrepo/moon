@@ -1,7 +1,5 @@
-use crate::errors::ProjectGraphError;
 use moon_common::{consts, Id};
 use moon_config::ProjectsSourcesMap;
-use moon_error::MoonError;
 use moon_logger::{debug, warn};
 use moon_utils::{path, regex};
 use moon_vcs::BoxedVcs;
@@ -29,7 +27,7 @@ pub fn detect_projects_with_globs(
     globs: &[String],
     projects: &mut ProjectsSourcesMap,
     vcs: Option<&BoxedVcs>,
-) -> Result<(), ProjectGraphError> {
+) -> miette::Result<()> {
     let root_source = ".".to_owned();
 
     // Root-level project has special handling
@@ -47,7 +45,7 @@ pub fn detect_projects_with_globs(
     }
 
     // Glob for all other projects
-    for project_root in glob::walk(workspace_root, globs).map_err(MoonError::StarGlob)? {
+    for project_root in glob::walk(workspace_root, globs)? {
         if project_root.is_dir() {
             let project_source =
                 path::to_virtual_string(project_root.strip_prefix(workspace_root).unwrap())?;

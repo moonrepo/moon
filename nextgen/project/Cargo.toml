@@ -1,5 +1,5 @@
 [package]
-name = "moon_project2"
+name = "moon_project"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,7 +7,7 @@ edition = "2021"
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_file_group = { path = "../file-group" }
-moon_task2 = { path = "../task" }
+moon_task = { path = "../task" }
 moon_query = { path = "../query" }
 miette = { workspace = true }
 rustc-hash = { workspace = true }

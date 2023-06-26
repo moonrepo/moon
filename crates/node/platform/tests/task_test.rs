@@ -1,9 +1,8 @@
-use moon_config::{OutputPath, PartialTaskConfig, TaskCommandArgs};
+use moon_config::{OutputPath, PartialTaskConfig, PlatformType, TaskCommandArgs};
 use moon_node_lang::PackageJson;
 use moon_node_platform::task::{create_task, should_run_in_ci, TaskContext};
 use moon_node_platform::{create_tasks_from_scripts, infer_tasks_from_scripts};
 use moon_target::Target;
-use moon_task::PlatformType;
 use moon_utils::string_vec;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
@@ -405,7 +404,9 @@ mod create_task {
             }
         }
 
-        #[should_panic(expected = "NoParentOutput(\"../parent/dir\", \"project:task\")")]
+        #[should_panic(
+            expected = "Task outputs must be project relative and cannot traverse upwards."
+        )]
         #[test]
         fn fails_on_parent_relative() {
             create_task(
@@ -417,7 +418,7 @@ mod create_task {
             .unwrap();
         }
 
-        #[should_panic(expected = "NoAbsoluteOutput(\"/abs/dir\", \"project:task\")")]
+        #[should_panic(expected = "Task outputs must be project relative and cannot be absolute.")]
         #[test]
         fn fails_on_absolute() {
             create_task(
@@ -429,7 +430,7 @@ mod create_task {
             .unwrap();
         }
 
-        #[should_panic(expected = "NoAbsoluteOutput(\"C:\\\\abs\\\\dir\", \"project:task\")")]
+        #[should_panic(expected = "Task outputs must be project relative and cannot be absolute.")]
         #[test]
         fn fails_on_absolute_windows() {
             create_task(

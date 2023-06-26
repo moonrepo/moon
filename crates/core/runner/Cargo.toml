@@ -15,9 +15,9 @@ moon_hasher = { path = "../hasher" }
 moon_logger = { path = "../logger" }
 moon_platform_runtime = { path = "../platform-runtime" }
 moon_process = { path = "../../../nextgen/process" }
-moon_project = { path = "../project" }
+moon_project = { path = "../../../nextgen/project" }
 moon_target = { path = "../../../nextgen/target" }
-moon_task = { path = "../task" }
+moon_task = { path = "../../../nextgen/task" }
 moon_tool = { path = "../tool" }
 moon_terminal = { path = "../terminal" }
 moon_utils = { path = "../utils" }

@@ -1,4 +1,3 @@
-use crate::errors::ToolError;
 use async_trait::async_trait;
 use moon_lang::LockfileDependencyVersions;
 use moon_process::Command;
@@ -12,7 +11,7 @@ pub trait Tool: Any + Debug + Send + Sync {
     fn as_any(&self) -> &dyn Any;
 
     /// Return an absolute path to the tool's binary.
-    fn get_bin_path(&self) -> Result<PathBuf, ToolError>;
+    fn get_bin_path(&self) -> miette::Result<PathBuf>;
 
     /// Return an absolute path to an applicable tool shim.
     fn get_shim_path(&self) -> Option<PathBuf> {
@@ -24,12 +23,12 @@ pub trait Tool: Any + Debug + Send + Sync {
     async fn setup(
         &mut self,
         _last_versions: &mut FxHashMap<String, String>,
-    ) -> Result<u8, ToolError> {
+    ) -> miette::Result<u8> {
         Ok(0)
     }
 
     /// Teardown the tool by uninstalling and deleting files.
-    async fn teardown(&mut self) -> Result<(), ToolError> {
+    async fn teardown(&mut self) -> miette::Result<()> {
         Ok(())
     }
 }
@@ -37,7 +36,7 @@ pub trait Tool: Any + Debug + Send + Sync {
 #[async_trait]
 pub trait DependencyManager<T: Send + Sync>: Send + Sync + Tool {
     /// Create a command to run that wraps the binary.
-    fn create_command(&self, tool: &T) -> Result<Command, ToolError>;
+    fn create_command(&self, tool: &T) -> miette::Result<Command>;
 
     /// Dedupe dependencies after they have been installed.
     async fn dedupe_dependencies(
@@ -45,7 +44,7 @@ pub trait DependencyManager<T: Send + Sync>: Send + Sync + Tool {
         tool: &T,
         working_dir: &Path,
         log: bool,
-    ) -> Result<(), ToolError>;
+    ) -> miette::Result<()>;
 
     /// Return the name of the lockfile.
     fn get_lock_filename(&self) -> String;
@@ -58,7 +57,7 @@ pub trait DependencyManager<T: Send + Sync>: Send + Sync + Tool {
     async fn get_resolved_dependencies(
         &self,
         project_root: &Path,
-    ) -> Result<LockfileDependencyVersions, ToolError>;
+    ) -> miette::Result<LockfileDependencyVersions>;
 
     /// Install dependencies for a defined manifest.
     async fn install_dependencies(
@@ -66,7 +65,7 @@ pub trait DependencyManager<T: Send + Sync>: Send + Sync + Tool {
         tool: &T,
         working_dir: &Path,
         log: bool,
-    ) -> Result<(), ToolError>;
+    ) -> miette::Result<()>;
 
     /// Install dependencies for a single package in the workspace.
     async fn install_focused_dependencies(
@@ -74,5 +73,5 @@ pub trait DependencyManager<T: Send + Sync>: Send + Sync + Tool {
         tool: &T,
         packages: &[String],
         production_only: bool,
-    ) -> Result<(), ToolError>;
+    ) -> miette::Result<()>;
 }

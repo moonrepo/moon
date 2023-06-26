@@ -1,4 +1,4 @@
-use moon_config::{LanguageType, PlatformType, ToolchainConfig};
+use moon_config::{PlatformType, ToolchainConfig};
 use moon_utils::regex::{self, UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
 use once_cell::sync::Lazy;
 
@@ -27,7 +27,7 @@ fn use_platform_if_enabled(
 
 pub fn detect_task_platform(
     command: &str,
-    language: &LanguageType,
+    // language: &LanguageType,
     toolchain_config: &ToolchainConfig,
 ) -> PlatformType {
     if DENO_COMMANDS.is_match(command) {
@@ -47,11 +47,13 @@ pub fn detect_task_platform(
     }
 
     // Default to the platform of the project's language
-    let platform: PlatformType = language.clone().into();
+    // let platform: PlatformType = language.clone().into();
 
-    if platform.is_unknown() {
-        return PlatformType::System;
-    }
+    // if platform.is_unknown() {
+    //     return PlatformType::System;
+    // }
 
-    use_platform_if_enabled(platform, toolchain_config)
+    // use_platform_if_enabled(platform, toolchain_config)
+
+    PlatformType::Unknown
 }

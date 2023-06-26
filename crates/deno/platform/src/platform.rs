@@ -8,15 +8,14 @@ use moon_config::{
 };
 use moon_deno_lang::{load_lockfile_dependencies, DenoJson, DENO_DEPS};
 use moon_deno_tool::DenoTool;
-use moon_error::MoonError;
 use moon_hasher::{DepsHasher, HashSet};
 use moon_logger::debug;
 use moon_platform::{Platform, Runtime, Version};
 use moon_process::Command;
-use moon_project::{Project, ProjectError};
+use moon_project::Project;
 use moon_task::Task;
 use moon_terminal::{print_checkpoint, Checkpoint};
-use moon_tool::{Tool, ToolError, ToolManager};
+use moon_tool::{Tool, ToolManager};
 use moon_typescript_platform::TypeScriptTargetHasher;
 use moon_utils::async_trait;
 use proto::{get_sha256_hash_of_file, Proto};
@@ -80,9 +79,10 @@ impl Platform for DenoPlatform {
 
     fn load_project_implicit_dependencies(
         &self,
-        _project: &Project,
+        _project_id: &str,
+        _project_source: &str,
         _aliases_map: &ProjectsAliasesMap,
-    ) -> Result<Vec<DependencyConfig>, MoonError> {
+    ) -> miette::Result<Vec<DependencyConfig>> {
         let implicit_deps = vec![];
 
         Ok(implicit_deps)
@@ -90,30 +90,30 @@ impl Platform for DenoPlatform {
 
     // TOOLCHAIN
 
-    fn is_toolchain_enabled(&self) -> Result<bool, ToolError> {
+    fn is_toolchain_enabled(&self) -> miette::Result<bool> {
         Ok(false)
     }
 
-    fn get_tool(&self) -> Result<Box<&dyn Tool>, ToolError> {
+    fn get_tool(&self) -> miette::Result<Box<&dyn Tool>> {
         let tool = self.toolchain.get()?;
 
         Ok(Box::new(tool))
     }
 
-    fn get_tool_for_version(&self, version: Version) -> Result<Box<&dyn Tool>, ToolError> {
+    fn get_tool_for_version(&self, version: Version) -> miette::Result<Box<&dyn Tool>> {
         let tool = self.toolchain.get_for_version(&version)?;
 
         Ok(Box::new(tool))
     }
 
-    fn get_dependency_configs(&self) -> Result<Option<(String, String)>, ToolError> {
+    fn get_dependency_configs(&self) -> miette::Result<Option<(String, String)>> {
         Ok(Some((
             DENO_DEPS.lockfile.to_owned(),
             self.config.deps_file.to_owned(),
         )))
     }
 
-    async fn setup_toolchain(&mut self) -> Result<(), ToolError> {
+    async fn setup_toolchain(&mut self) -> miette::Result<()> {
         // let version = match &self.config.version {
         //     Some(v) => Version::new(v),
         //     None => Version::new_global(),
@@ -134,7 +134,7 @@ impl Platform for DenoPlatform {
         Ok(())
     }
 
-    async fn teardown_toolchain(&mut self) -> Result<(), ToolError> {
+    async fn teardown_toolchain(&mut self) -> miette::Result<()> {
         self.toolchain.teardown_all().await?;
 
         Ok(())
@@ -147,7 +147,7 @@ impl Platform for DenoPlatform {
         _context: &ActionContext,
         runtime: &Runtime,
         last_versions: &mut FxHashMap<String, String>,
-    ) -> Result<u8, ToolError> {
+    ) -> miette::Result<u8> {
         let version = runtime.version();
 
         if !self.toolchain.has(&version) {
@@ -165,7 +165,7 @@ impl Platform for DenoPlatform {
         _context: &ActionContext,
         runtime: &Runtime,
         working_dir: &Path,
-    ) -> Result<(), ToolError> {
+    ) -> miette::Result<()> {
         if !self.config.lockfile {
             return Ok(());
         }
@@ -197,7 +197,7 @@ impl Platform for DenoPlatform {
         _context: &ActionContext,
         project: &Project,
         dependencies: &FxHashMap<Id, &Project>,
-    ) -> Result<bool, ProjectError> {
+    ) -> miette::Result<bool> {
         let modified = actions::sync_project(
             project,
             dependencies,
@@ -215,7 +215,7 @@ impl Platform for DenoPlatform {
         manifest_path: &Path,
         hashset: &mut HashSet,
         _hasher_config: &HasherConfig,
-    ) -> Result<(), ToolError> {
+    ) -> miette::Result<()> {
         let mut hasher = DepsHasher::new("deno".into());
         let project_root = manifest_path.parent().unwrap();
 
@@ -255,7 +255,7 @@ impl Platform for DenoPlatform {
         _runtime: &Runtime,
         hashset: &mut HashSet,
         hasher_config: &HasherConfig,
-    ) -> Result<(), ToolError> {
+    ) -> miette::Result<()> {
         let mut deno_hasher = DenoTargetHasher::new(None);
 
         if matches!(hasher_config.optimization, HasherOptimization::Accuracy)
@@ -299,7 +299,7 @@ impl Platform for DenoPlatform {
         task: &Task,
         _runtime: &Runtime,
         working_dir: &Path,
-    ) -> Result<Command, ToolError> {
+    ) -> miette::Result<Command> {
         let mut command = Command::new(&task.command);
 
         command.args(&task.args).envs(&task.env).cwd(working_dir);

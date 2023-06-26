@@ -80,7 +80,7 @@ export interface TaskConfig {
 	deps: string[];
 	env: Record<string, string>;
 	inputs: string[] | null;
-	local: boolean;
+	local: boolean | null;
 	options: TaskOptionsConfig;
 	outputs: string[] | null;
 	platform: PlatformType;

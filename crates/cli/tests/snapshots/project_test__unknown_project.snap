@@ -2,7 +2,9 @@
 source: crates/cli/tests/project_test.rs
 expression: get_assert_stderr_output(&assert.inner)
 ---
-Error:   × No project has been configured with the ID unknown.
+Error: project::unknown
+
+  × No project has been configured with the ID unknown.
 
 
 

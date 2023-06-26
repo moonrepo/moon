@@ -2,7 +2,7 @@ use moon_common::Id;
 use moon_config::{DependencyScope, NodeConfig, NodeVersionFormat, TypeScriptConfig};
 use moon_logger::debug;
 use moon_node_lang::{PackageJson, NPM};
-use moon_project::{Project, ProjectError};
+use moon_project::Project;
 use moon_typescript_lang::tsconfig::CompilerOptionsPaths;
 use moon_utils::{path, semver};
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -18,7 +18,7 @@ pub async fn sync_project(
     workspace_root: &Path,
     node_config: &NodeConfig,
     typescript_config: &Option<TypeScriptConfig>,
-) -> Result<bool, ProjectError> {
+) -> miette::Result<bool> {
     let mut mutated_project_files = false;
     let is_project_typescript_enabled = project.config.toolchain.is_typescript_enabled();
 

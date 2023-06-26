@@ -4,13 +4,12 @@ use moon_logger::{debug, warn};
 use moon_node_lang::NODE;
 use moon_node_tool::NodeTool;
 use moon_terminal::{print_checkpoint, Checkpoint};
-use moon_tool::ToolError;
 use moon_utils::{is_ci, is_test_env};
 use std::path::Path;
 
 const LOG_TARGET: &str = "moon:node-platform:install-deps";
 
-pub async fn install_deps(node: &NodeTool, working_dir: &Path) -> Result<(), ToolError> {
+pub async fn install_deps(node: &NodeTool, working_dir: &Path) -> miette::Result<()> {
     // When in CI, we can avoid installing dependencies because
     // we can assume they've already been installed before moon runs!
     if is_ci() && has_vendor_installed_dependencies(working_dir, &NODE) {

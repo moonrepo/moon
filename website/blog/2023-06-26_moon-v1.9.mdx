@@ -61,10 +61,35 @@ create the hooks.
 $ moon sync hooks
 ```
 
+## Rewritten task inheritance
+
+One of the most complicated systems in moon is the task inheritance layer. On the surface, it sounds
+rather simple, but internally it was very complicated. For common use cases, it worked very well,
+but for advanced use cases, how a task was "inherited and merged" was sometimes undefined behavior.
+
+Over the past year, we've introduced many new features, such as
+[implicit dependencies and inputs](./v0.23), [tag-based task inheritance](./moon-v1.2),
+[project-level environment variables](./v0.23#project-level-environment-variables),
+[custom languages](./v0.25#custom-project-language) and
+[platforms](./v0.24#project-level-task-platform), and so much more. Each of these new features would
+throw yet another facet to be aware of during the task inheritance model, and over the past year, it
+has become rather unwieldy.
+
+To rectify this situation before it becomes worse, we rewrote our
+[project, task](https://github.com/moonrepo/moon/pull/921), and
+[task inheritance](https://github.com/moonrepo/moon/pull/939) layers from the ground-up using a new
+builder pattern, including writing all new unit tests, to properly and efficiently account for all
+edge cases.
+
+Going forward, tasks should be far more accurate and deterministic. If you encounter any weirdness,
+it's either a bug/edge case that was rectified (and is no longer allowed), or a bug/edge case not
+accounted for in our current unit test suite. Please report them either way!
+
 ## Other changes
 
 View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.9.0) for a full list of
 changes.
 
+- Added `--clean` and `--force` flags to `moon sync codeowners` command.
 - Updated `moon init` to detect VCS providers and resolve fully-qualified tool versions.
 - Improved VCS file handling, caching, and performance.

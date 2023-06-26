@@ -9,11 +9,12 @@ use moon_config::{InputPath, ProjectsAliasesMap, ProjectsSourcesMap, WorkspacePr
 use moon_enforcer::{enforce_project_type_relationships, enforce_tag_relationships};
 use moon_error::MoonError;
 use moon_hasher::{convert_paths_to_strings, to_hash};
-use moon_logger::{debug, map_list, trace, warn, Logable};
+use moon_logger::{debug, map_list, trace, warn};
 use moon_platform_detector::{detect_project_language, detect_task_platform};
-use moon_project::{Project, ProjectError};
+use moon_project::Project;
+use moon_project_builder::{ProjectBuilder, ProjectBuilderError};
 use moon_target::{Target, TargetScope};
-use moon_task::{Task, TaskError, TaskFlag};
+use moon_task::Task;
 use moon_utils::regex::ENV_VAR_SUBSTITUTE;
 use moon_utils::{path, time};
 use moon_workspace::Workspace;
@@ -43,9 +44,7 @@ pub struct ProjectGraphBuilder<'ws> {
 }
 
 impl<'ws> ProjectGraphBuilder<'ws> {
-    pub async fn new(
-        workspace: &'ws mut Workspace,
-    ) -> Result<ProjectGraphBuilder<'ws>, ProjectGraphError> {
+    pub async fn new(workspace: &'ws mut Workspace) -> miette::Result<ProjectGraphBuilder<'ws>> {
         debug!(target: LOG_TARGET, "Creating project graph");
 
         let mut graph = ProjectGraphBuilder {
@@ -64,7 +63,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         Ok(graph)
     }
 
-    pub fn build(&mut self) -> Result<ProjectGraph, ProjectGraphError> {
+    pub fn build(&mut self) -> miette::Result<ProjectGraph> {
         self.enforce_constraints()?;
 
         Ok(ProjectGraph::new(
@@ -75,13 +74,13 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         ))
     }
 
-    pub fn load(&mut self, alias_or_id: &str) -> Result<&Self, ProjectGraphError> {
+    pub fn load(&mut self, alias_or_id: &str) -> miette::Result<&Self> {
         self.internal_load(alias_or_id)?;
 
         Ok(self)
     }
 
-    pub fn load_all(&mut self) -> Result<&Self, ProjectGraphError> {
+    pub fn load_all(&mut self) -> miette::Result<&Self> {
         // TODO: Don't clone data here, but satisfying the borrow checker
         // is almost impossible here without a major refactor!
         let ids = self
@@ -100,14 +99,29 @@ impl<'ws> ProjectGraphBuilder<'ws> {
     /// Create a project with the provided ID and file path source. Based on the project's
     /// configured language, detect and infer implicit dependencies and tasks for the
     /// matching platform. Do *not* expand tasks until after dependents have been created.
-    fn create_project(&self, id: &Id, source: &str) -> Result<Project, ProjectGraphError> {
-        let mut project = Project::new(
-            id,
-            source,
-            &self.workspace.root,
-            &self.workspace.tasks_config,
-            detect_project_language,
-        )?;
+    fn create_project(&self, id: &Id, source: &str) -> miette::Result<Project> {
+        let mut builder = ProjectBuilder::new(id, source, &self.workspace.root)?;
+
+        builder.detect_language(detect_project_language);
+        builder.detect_platform(detect_task_platform, &self.workspace.toolchain_config);
+        builder.load_local_config()?;
+        builder.inherit_global_config(&self.workspace.tasks_config)?;
+
+        if let Ok(platform) = self.workspace.platforms.get(builder.language.clone()) {
+            // Inherit implicit dependencies
+            for dep_config in
+                platform.load_project_implicit_dependencies(id, source, &self.aliases)?
+            {
+                builder.extend_with_dependency(dep_config);
+            }
+
+            // Inherit platform specific tasks
+            for (task_id, task_config) in platform.load_project_tasks(id, source)? {
+                builder.extend_with_task(task_id, task_config);
+            }
+        }
+
+        let mut project = builder.build()?;
 
         // Collect all aliases for the current project ID
         for (alias, project_id) in &self.aliases {
@@ -116,34 +130,10 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             }
         }
 
-        if let Ok(platform) = self.workspace.platforms.get(project.language.clone()) {
-            // Inherit implicit dependencies
-            for dep_config in
-                platform.load_project_implicit_dependencies(&project, &self.aliases)?
-            {
-                // Implicit must not override explicit
-                project
-                    .dependencies
-                    .entry(dep_config.id.clone())
-                    .or_insert_with(|| dep_config);
-            }
-
-            // Inherit platform specific tasks
-            for (task_id, task_config) in platform.load_project_tasks(&project)? {
-                // Inferred must not override explicit
-                #[allow(clippy::map_entry)]
-                if !project.tasks.contains_key(&task_id) {
-                    let task = Task::from_config(Target::new(id, &task_id)?, &task_config)?;
-
-                    project.tasks.insert(task_id, task);
-                }
-            }
-        }
-
         Ok(project)
     }
 
-    fn enforce_constraints(&self) -> Result<(), ProjectGraphError> {
+    fn enforce_constraints(&self) -> miette::Result<()> {
         let type_relationships = self
             .workspace
             .config
@@ -195,7 +185,8 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                             return Err(ProjectGraphError::PersistentDepRequirement(
                                 task.target.to_string(),
                                 dep_task.target.to_string(),
-                            ));
+                            )
+                            .into());
                         }
                     }
                 }
@@ -208,25 +199,11 @@ impl<'ws> ProjectGraphBuilder<'ws> {
     /// Expand all tasks within a project, by expanding data and resolving any tokens.
     /// This must run *after* dependent projects have been created, as we require them
     /// to resolve "parent" relations.
-    fn expand_project(&mut self, project: &mut Project) -> Result<(), ProjectGraphError> {
+    fn expand_project(&mut self, project: &mut Project) -> miette::Result<()> {
         let mut tasks = BTreeMap::new();
-        let project_platform = project.config.platform.unwrap_or_default();
 
         // Use `mem::take` so that we can mutably borrow the project and tasks in parallel
         for (task_id, mut task) in mem::take(&mut project.tasks) {
-            // Detect the platform if its unknown
-            if task.platform.is_unknown() {
-                task.platform = if project_platform.is_unknown() {
-                    detect_task_platform(
-                        &task.command,
-                        &project.language,
-                        &self.workspace.toolchain_config,
-                    )
-                } else {
-                    project_platform
-                };
-            }
-
             // Resolve in this order!
             self.expand_task_env(project, &mut task)?;
             self.expand_task_deps(project, &mut task)?;
@@ -234,9 +211,6 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             self.expand_task_outputs(project, &mut task)?;
             self.expand_task_args(project, &mut task)?;
             self.expand_task_command(project, &mut task)?;
-
-            // Determine type after expanding
-            task.determine_type();
 
             tasks.insert(task_id, task);
         }
@@ -250,7 +224,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         &self,
         project: &mut Project,
         task: &mut Task,
-    ) -> Result<(), ProjectGraphError> {
+    ) -> miette::Result<()> {
         task.command = TokenResolver::new(TokenContext::Command, project, &self.workspace.root)
             .resolve_command(task)?;
 
@@ -258,11 +232,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
     }
 
     /// Expand the args list to resolve tokens, relative to the project root.
-    pub fn expand_task_args(
-        &self,
-        project: &mut Project,
-        task: &mut Task,
-    ) -> Result<(), ProjectGraphError> {
+    pub fn expand_task_args(&self, project: &mut Project, task: &mut Task) -> miette::Result<()> {
         if task.args.is_empty() {
             return Ok(());
         }
@@ -275,7 +245,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         // When running from the workspace:
         //  - All paths are absolute
         let handle_path =
-            |path: WorkspaceRelativePathBuf, is_glob: bool| -> Result<String, ProjectGraphError> {
+            |path: WorkspaceRelativePathBuf, is_glob: bool| -> miette::Result<String> {
                 let arg = path::to_virtual_string(
                     path::relative_from(
                         path.to_path(&self.workspace.root),
@@ -295,7 +265,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                 };
 
                 if is_glob {
-                    return Ok(glob::normalize(arg).map_err(MoonError::StarGlob)?);
+                    return Ok(glob::normalize(arg)?);
                 }
 
                 Ok(arg)
@@ -329,16 +299,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
     }
 
     /// Expand the deps list and resolve parent/self scopes.
-    pub fn expand_task_deps(
-        &self,
-        project: &mut Project,
-        task: &mut Task,
-    ) -> Result<(), ProjectGraphError> {
-        if !project.inherited_config.implicit_deps.is_empty() {
-            task.deps
-                .extend(project.inherited_config.implicit_deps.clone());
-        }
-
+    pub fn expand_task_deps(&self, project: &mut Project, task: &mut Task) -> miette::Result<()> {
         if task.deps.is_empty() {
             return Ok(());
         }
@@ -387,7 +348,8 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                     return Err(ProjectGraphError::PersistentDepRequirement(
                         dep_target.to_string(),
                         task.target.to_string(),
-                    ));
+                    )
+                    .into());
                 }
             };
         }
@@ -398,51 +360,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
     }
 
     /// Expand environment variables by loading a `.env` file if configured.
-    pub fn expand_task_env(
-        &self,
-        project: &mut Project,
-        task: &mut Task,
-    ) -> Result<(), ProjectGraphError> {
-        // Load from env file first
-        if let Some(env_file) = &task.options.env_file {
-            let env_path = env_file
-                .to_workspace_relative(&project.source)
-                .to_path(&self.workspace.root);
-
-            let error_handler =
-                |e: dotenvy::Error| TaskError::InvalidEnvFile(env_path.clone(), e.to_string());
-
-            // Add as an input
-            task.inputs.push(env_file.to_owned());
-
-            // The `.env` file may not have been committed, so avoid crashing
-            if env_path.exists() {
-                for entry in dotenvy::from_path_iter(&env_path).map_err(error_handler)? {
-                    let (key, value) = entry.map_err(error_handler)?;
-
-                    // Vars defined in task `env` take precedence over those in the env file
-                    task.env.entry(key).or_insert(value);
-                }
-            } else {
-                warn!(
-                    target: task.get_log_target(),
-                    "The `envFile` option is enabled but no {} file exists, skipping as this may be intentional",
-                    color::file(env_file),
-                );
-            }
-        }
-
-        // Inherit project-level
-        if !project.config.env.is_empty() {
-            for (key, value) in &project.config.env {
-                // Vars defined in task `env` take precedence
-                task.env
-                    .entry(key.to_owned())
-                    .or_insert_with(|| value.to_owned());
-            }
-        }
-
-        // Expand interpolated vars last
+    pub fn expand_task_env(&self, _project: &mut Project, task: &mut Task) -> miette::Result<()> {
         task.env.iter_mut().for_each(|(_, value)| {
             while let Some(matches) = ENV_VAR_SUBSTITUTE.captures(value) {
                 let sub = matches.get(0).unwrap().as_str();
@@ -457,16 +375,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
     }
 
     /// Expand the inputs list to a set of absolute file paths, while resolving tokens.
-    pub fn expand_task_inputs(
-        &self,
-        project: &mut Project,
-        task: &mut Task,
-    ) -> Result<(), ProjectGraphError> {
-        if !project.inherited_config.implicit_inputs.is_empty() {
-            task.inputs
-                .extend(project.inherited_config.implicit_inputs.clone());
-        }
-
+    pub fn expand_task_inputs(&self, project: &mut Project, task: &mut Task) -> miette::Result<()> {
         task.inputs.retain(|input| {
             if let InputPath::EnvVar(var) = input {
                 task.input_vars.insert(var.to_owned());
@@ -476,18 +385,8 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             }
         });
 
-        // When no inputs defined, default to the whole project
-        if task.inputs.is_empty() && !task.flags.contains(&TaskFlag::NoInputs) {
-            task.inputs.push(InputPath::ProjectGlob("**/*".into()));
-        }
-
-        // Always break cache if a core configuration changes
-        task.global_inputs
-            .push(InputPath::WorkspaceGlob(".moon/*.yml".into()));
-
         let mut inputs_to_resolve = vec![];
         inputs_to_resolve.extend(&task.inputs);
-        inputs_to_resolve.extend(&task.global_inputs);
 
         if inputs_to_resolve.is_empty() {
             return Ok(());
@@ -508,7 +407,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         &self,
         project: &mut Project,
         task: &mut Task,
-    ) -> Result<(), ProjectGraphError> {
+    ) -> miette::Result<()> {
         if task.outputs.is_empty() {
             return Ok(());
         }
@@ -531,7 +430,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         Ok(())
     }
 
-    fn internal_load(&mut self, alias_or_id: &str) -> Result<NodeIndex, ProjectGraphError> {
+    fn internal_load(&mut self, alias_or_id: &str) -> miette::Result<NodeIndex> {
         let id = self.resolve_id(alias_or_id);
 
         // Already loaded, abort early
@@ -553,7 +452,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         // Create the current project
         let Some(source) = self.sources.get(&id) else {
-            return Err(ProjectGraphError::Project(ProjectError::UnconfiguredID(id.to_string())));
+            return Err(ProjectBuilderError::UnconfiguredID(id.to_string()).into());
         };
 
         let mut project = self.create_project(&id, source)?;
@@ -594,7 +493,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         Ok(index)
     }
 
-    async fn preload(&mut self) -> Result<(), ProjectGraphError> {
+    async fn preload(&mut self) -> miette::Result<()> {
         let mut globs = vec![];
         let mut sources: ProjectsSourcesMap = FxHashMap::default();
         let mut aliases: ProjectsAliasesMap = FxHashMap::default();
@@ -690,7 +589,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         &self,
         sources: &ProjectsSourcesMap,
         aliases: &ProjectsAliasesMap,
-    ) -> Result<String, MoonError> {
+    ) -> miette::Result<String> {
         if !self.workspace.vcs.is_enabled() {
             return Ok(String::new());
         }

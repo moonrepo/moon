@@ -3,7 +3,7 @@ use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
 #[diagnostic(code(args::split))]
-#[error("Failed to split arguments `{args}`")]
+#[error("Failed to split arguments \"{args}\".")]
 pub struct ArgsSplitError {
     args: String,
     #[source]

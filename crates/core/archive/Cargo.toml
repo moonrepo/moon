@@ -11,7 +11,6 @@ name = "tar_benchmark"
 harness = false
 
 [dependencies]
-moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
 moon_utils = { path = "../utils" }
 flate2 = "1.0.26"

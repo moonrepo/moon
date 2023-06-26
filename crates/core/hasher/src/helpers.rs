@@ -1,5 +1,4 @@
 use crate::hasher::Hasher;
-use moon_error::MoonError;
 use moon_utils::path;
 use rustc_hash::FxHashSet;
 use sha2::{Digest, Sha256};
@@ -31,7 +30,7 @@ pub fn hash_vec<T: Display>(list: &Vec<T>, sha: &mut Sha256) {
 pub fn convert_paths_to_strings(
     paths: &FxHashSet<PathBuf>,
     workspace_root: &Path,
-) -> Result<Vec<String>, MoonError> {
+) -> miette::Result<Vec<String>> {
     let mut files: Vec<String> = vec![];
 
     for path in paths {

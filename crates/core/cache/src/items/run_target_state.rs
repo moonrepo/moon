@@ -2,7 +2,6 @@ use crate::cache_item;
 use crate::helpers::get_cache_mode;
 use moon_archive::{untar_with_diff, TarArchiver, TreeDiffer};
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_error::MoonError;
 use moon_logger::{map_list, trace, warn};
 use serde::{Deserialize, Serialize};
 use starbase_styles::color;
@@ -33,7 +32,7 @@ impl RunTargetState {
         archive_file: &Path,
         workspace_root: &Path,
         output_paths: &[WorkspaceRelativePathBuf],
-    ) -> Result<bool, MoonError> {
+    ) -> miette::Result<bool> {
         if get_cache_mode().is_writable() && !archive_file.exists() {
             let mut tar = TarArchiver::new(workspace_root, archive_file);
 
@@ -59,7 +58,7 @@ impl RunTargetState {
                 tar.add_source(stderr_path, Some("stderr.log"));
             }
 
-            tar.pack().map_err(|e| MoonError::Generic(e.to_string()))?;
+            tar.pack()?;
 
             return Ok(true);
         }
@@ -72,7 +71,7 @@ impl RunTargetState {
         archive_file: &Path,
         workspace_root: &Path,
         output_paths: &[WorkspaceRelativePathBuf],
-    ) -> Result<bool, MoonError> {
+    ) -> miette::Result<bool> {
         if get_cache_mode().is_readable() && archive_file.exists() {
             let tarball_file = archive_file.to_path_buf();
             let workspace_root = workspace_root.to_path_buf();
@@ -86,8 +85,7 @@ impl RunTargetState {
             // we don't stop hydration partially though, resulting in a
             // corrupted cache.
             tokio::spawn(async move {
-                let mut differ = TreeDiffer::load(&workspace_root, &outputs)
-                    .map_err(|e| MoonError::Generic(e.to_string()))?;
+                let mut differ = TreeDiffer::load(&workspace_root, &outputs)?;
                 let stdout_log = workspace_root.join("stdout.log");
                 let stderr_log = workspace_root.join("stderr.log");
 
@@ -118,7 +116,7 @@ impl RunTargetState {
                     }
                 }
 
-                Ok::<(), MoonError>(())
+                Ok::<(), _>(())
             });
 
             // Attempt to emulate how long it would take to unpack the archive
@@ -146,7 +144,7 @@ impl RunTargetState {
     }
 
     /// Load the stdout.log and stderr.log files from the cache directory.
-    pub fn load_output_logs(&self) -> Result<(String, String), MoonError> {
+    pub fn load_output_logs(&self) -> miette::Result<(String, String)> {
         let (stdout_path, stderr_path) = self.get_output_logs();
 
         let stdout = if stdout_path.exists() {
@@ -165,7 +163,7 @@ impl RunTargetState {
     }
 
     /// Write stdout and stderr log files to the cache directory.
-    pub fn save_output_logs(&self, stdout: String, stderr: String) -> Result<(), MoonError> {
+    pub fn save_output_logs(&self, stdout: String, stderr: String) -> miette::Result<()> {
         let (stdout_path, stderr_path) = self.get_output_logs();
 
         fs::write_file(stdout_path, stdout)?;

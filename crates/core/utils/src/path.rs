@@ -1,5 +1,4 @@
 use clean_path::Clean;
-use moon_error::MoonError;
 use std::path::{Path, PathBuf};
 
 pub use pathdiff::diff_paths as relative_from;
@@ -68,7 +67,7 @@ pub fn standardize_separators<T: AsRef<str>>(path: T) -> String {
 }
 
 #[inline]
-pub fn to_string<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
+pub fn to_string<T: AsRef<Path>>(path: T) -> miette::Result<String> {
     let mut path = path.as_ref();
 
     // Avoid UNC paths as they cause lots of issues
@@ -83,6 +82,6 @@ pub fn to_string<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
 }
 
 #[inline]
-pub fn to_virtual_string<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
+pub fn to_virtual_string<T: AsRef<Path>>(path: T) -> miette::Result<String> {
     Ok(standardize_separators(to_string(path)?))
 }

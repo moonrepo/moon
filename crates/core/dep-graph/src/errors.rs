@@ -1,5 +1,4 @@
 use miette::Diagnostic;
-use moon_error::MoonError;
 use moon_project::ProjectError;
 use moon_query::QueryError;
 use moon_target::TargetError;
@@ -13,10 +12,6 @@ pub enum DepGraphError {
 
     #[error("Unknown node {0} found in dependency graph. How did this get here?")]
     UnknownNode(usize),
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
-    Moon(#[from] MoonError),
 
     #[diagnostic(transparent)]
     #[error(transparent)]

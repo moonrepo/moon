@@ -2,7 +2,6 @@ use crate::errors::WorkspaceError;
 use moon_cache::CacheEngine;
 use moon_common::consts;
 use moon_config::{InheritedTasksConfig, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
-use moon_error::MoonError;
 use moon_logger::{debug, trace};
 use moon_platform::{BoxedPlatform, PlatformManager};
 use moon_utils::semver;
@@ -18,7 +17,7 @@ const LOG_TARGET: &str = "moon:workspace";
 
 /// Recursively attempt to find the workspace root by locating the ".moon"
 /// configuration folder, starting from the current working directory.
-fn find_workspace_root<P: AsRef<Path>>(current_dir: P) -> Result<PathBuf, WorkspaceError> {
+fn find_workspace_root<P: AsRef<Path>>(current_dir: P) -> miette::Result<PathBuf> {
     if let Ok(root) = env::var("MOON_WORKSPACE_ROOT") {
         let root: PathBuf = root.parse().expect("Failed to parse MOON_WORKSPACE_ROOT.");
 
@@ -49,7 +48,7 @@ fn find_workspace_root<P: AsRef<Path>>(current_dir: P) -> Result<PathBuf, Worksp
 }
 
 // .moon/tasks.yml, .moon/tasks/*.yml
-fn load_tasks_config(root_dir: &Path) -> Result<InheritedTasksManager, WorkspaceError> {
+fn load_tasks_config(root_dir: &Path) -> miette::Result<InheritedTasksManager> {
     let mut manager = InheritedTasksManager::default();
     let config_path = root_dir
         .join(consts::CONFIG_DIRNAME)
@@ -82,9 +81,7 @@ fn load_tasks_config(root_dir: &Path) -> Result<InheritedTasksManager, Workspace
     for config_path in glob::walk_files(
         root_dir.join(consts::CONFIG_DIRNAME).join("tasks"),
         ["*.yml"],
-    )
-    .map_err(MoonError::StarGlob)?
-    {
+    )? {
         trace!(target: LOG_TARGET, "Found {}", color::path(&config_path));
 
         manager.add_config(&config_path, do_load(&config_path)?);
@@ -97,7 +94,7 @@ fn load_tasks_config(root_dir: &Path) -> Result<InheritedTasksManager, Workspace
 fn load_toolchain_config(
     root_dir: &Path,
     proto_tools: &ToolsConfig,
-) -> Result<ToolchainConfig, WorkspaceError> {
+) -> miette::Result<ToolchainConfig> {
     let config_path = root_dir
         .join(consts::CONFIG_DIRNAME)
         .join(consts::CONFIG_TOOLCHAIN_FILENAME);
@@ -121,7 +118,7 @@ fn load_toolchain_config(
 }
 
 // .moon/workspace.yml
-fn load_workspace_config(root_dir: &Path) -> Result<WorkspaceConfig, WorkspaceError> {
+fn load_workspace_config(root_dir: &Path) -> miette::Result<WorkspaceConfig> {
     let config_path = root_dir
         .join(consts::CONFIG_DIRNAME)
         .join(consts::CONFIG_WORKSPACE_FILENAME);

@@ -1,7 +1,6 @@
 // tsconfig.json
 
 use cached::proc_macro::cached;
-use moon_error::{map_json_to_error, MoonError};
 use moon_lang::config_cache;
 use moon_utils::path::standardize_separators;
 use serde::{Deserialize, Deserializer, Serialize};

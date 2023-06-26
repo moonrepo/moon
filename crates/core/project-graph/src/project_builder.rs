@@ -7,7 +7,6 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{consts, Id};
 use moon_config::{InputPath, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceProjects};
 use moon_enforcer::{enforce_project_type_relationships, enforce_tag_relationships};
-use moon_error::MoonError;
 use moon_hasher::{convert_paths_to_strings, to_hash};
 use moon_logger::{debug, map_list, trace, warn};
 use moon_platform_detector::{detect_project_language, detect_task_platform};
@@ -635,8 +634,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             .workspace
             .vcs
             .get_file_hashes(&configs, false, 100)
-            .await
-            .map_err(|e| MoonError::Generic(e.to_string()))?;
+            .await?;
 
         hasher.hash_configs(&config_hashes);
 

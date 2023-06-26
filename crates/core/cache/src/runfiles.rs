@@ -1,4 +1,3 @@
-use moon_error::MoonError;
 use moon_logger::trace;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -14,7 +13,7 @@ impl Runfile {
     pub fn load<T: DeserializeOwned + Serialize>(
         path: PathBuf,
         data: &T,
-    ) -> Result<Runfile, MoonError> {
+    ) -> miette::Result<Runfile> {
         trace!(target: "moon:cache:runfile", "Writing runfile {}", color::path(&path));
 
         fs::create_dir_all(path.parent().unwrap())?;

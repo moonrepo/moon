@@ -1,6 +1,5 @@
 use moon_deno_platform::DenoPlatform;
 use moon_dep_graph::DepGraphBuilder;
-use moon_error::MoonError;
 use moon_node_platform::NodePlatform;
 use moon_project_graph::{ProjectGraph, ProjectGraphBuilder};
 use moon_rust_platform::RustPlatform;
@@ -93,10 +92,7 @@ pub async fn load_workspace_with_toolchain() -> miette::Result<Workspace> {
     let mut workspace = load_workspace().await?;
 
     for platform in workspace.platforms.list_mut() {
-        platform
-            .setup_toolchain()
-            .await
-            .map_err(|e| WorkspaceError::Moon(MoonError::Generic(e.to_string())))?;
+        platform.setup_toolchain().await?;
     }
 
     Ok(workspace)

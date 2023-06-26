@@ -1,7 +1,6 @@
 use miette::Diagnostic;
 use moon_common::consts;
 use moon_config::ConfigError;
-use moon_error::MoonError;
 use moon_vcs::VcsError;
 use moonbase::MoonbaseError;
 use proto::ProtoError;
@@ -53,10 +52,6 @@ pub enum WorkspaceError {
     #[diagnostic(transparent)]
     #[error(transparent)]
     Config(#[from] ConfigError),
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
-    Moon(#[from] MoonError),
 
     #[diagnostic(transparent)]
     #[error(transparent)]

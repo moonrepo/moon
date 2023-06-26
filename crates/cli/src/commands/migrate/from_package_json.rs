@@ -3,7 +3,6 @@ use moon::{generate_project_graph, load_workspace};
 use moon_common::consts::CONFIG_PROJECT_FILENAME;
 use moon_common::Id;
 use moon_config::{DependencyConfig, DependencyScope, ProjectConfig, ProjectDependsOn};
-use moon_error::MoonError;
 use moon_logger::info;
 use moon_node_lang::package_json::{DepsSet, PackageJson};
 use moon_node_platform::create_tasks_from_scripts;
@@ -59,9 +58,7 @@ pub async fn from_package_json(project_id: Id, skip_touched_files_check: bool) -
 
     PackageJson::sync(&project.root, |package_json| {
         // Create tasks from `package.json` scripts
-        for (task_id, task_config) in create_tasks_from_scripts(&project.id, package_json)
-            .map_err(|e| MoonError::Generic(e.to_string()))?
-        {
+        for (task_id, task_config) in create_tasks_from_scripts(&project.id, package_json)? {
             partial_config
                 .tasks
                 .get_or_insert(BTreeMap::new())

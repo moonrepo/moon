@@ -1,6 +1,5 @@
 use miette::Diagnostic;
 use moon_dep_graph::DepGraphError;
-use moon_error::MoonError;
 use moon_project::ProjectError;
 use moon_runner::RunnerError;
 use moon_target::TargetError;
@@ -24,10 +23,6 @@ pub enum PipelineError {
     #[diagnostic(transparent)]
     #[error(transparent)]
     Fs(#[from] FsError),
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
-    Moon(#[from] MoonError),
 
     #[diagnostic(transparent)]
     #[error(transparent)]

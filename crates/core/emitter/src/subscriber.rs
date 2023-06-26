@@ -1,5 +1,4 @@
 use crate::event::{Event, EventFlow};
-use moon_error::MoonError;
 use moon_workspace::Workspace;
 
 #[async_trait::async_trait]
@@ -8,5 +7,5 @@ pub trait Subscriber: Send + Sync {
         &mut self,
         event: &Event<'e>,
         workspace: &Workspace,
-    ) -> Result<EventFlow, MoonError>;
+    ) -> miette::Result<EventFlow>;
 }

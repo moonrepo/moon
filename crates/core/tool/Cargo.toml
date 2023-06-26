@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-moon_error = { path = "../error" }
 moon_lang = { path = "../lang" }
 moon_platform_runtime = { path = "../platform-runtime" }
 moon_process = { path = "../../../nextgen/process" }

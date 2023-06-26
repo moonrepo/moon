@@ -378,6 +378,25 @@
             }
           ]
         },
+        "hooks": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "propertyNames": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "manager": {
           "anyOf": [
             {
@@ -410,6 +429,16 @@
               "type": "null"
             }
           ]
+        },
+        "syncHooks": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
@@ -417,8 +446,7 @@
     "VcsManager": {
       "type": "string",
       "enum": [
-        "git",
-        "svn"
+        "git"
       ]
     },
     "VcsProvider": {

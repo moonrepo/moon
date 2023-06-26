@@ -249,9 +249,7 @@ impl Template {
             .to_string();
 
         // Render the path to interpolate the values
-        Tera::default()
-            .render_str(&name, context)
-            .into_diagnostic()
+        Tera::default().render_str(&name, context).into_diagnostic()
     }
 
     /// Write the template file to the defined destination path.

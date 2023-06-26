@@ -7,8 +7,7 @@ use moon_common::cacheable;
 use moon_common::{consts, Id};
 use rustc_hash::FxHashMap;
 use schematic::{
-    derive_enum, validate, Config, ConfigEnum, ConfigLoader, SchemaType, Schematic,
-    ValidateError,
+    derive_enum, validate, Config, ConfigEnum, ConfigLoader, SchemaType, Schematic, ValidateError,
 };
 use std::collections::BTreeMap;
 use std::path::Path;

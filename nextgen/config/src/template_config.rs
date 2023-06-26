@@ -2,9 +2,7 @@
 
 use moon_common::consts;
 use rustc_hash::FxHashMap;
-use schematic::{
-    derive_enum, validate, Config, ConfigLoader, SchemaField, SchemaType, Schematic,
-};
+use schematic::{derive_enum, validate, Config, ConfigLoader, SchemaField, SchemaType, Schematic};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 

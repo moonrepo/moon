@@ -6,8 +6,8 @@ use crate::workspace::*;
 use moon_common::{consts, Id};
 use rustc_hash::FxHashMap;
 use schematic::{
-    derive_enum, validate, Config, ConfigLoader, Path as SettingPath, PathSegment,
-    SchemaField, SchemaType, Schematic, ValidateError,
+    derive_enum, validate, Config, ConfigLoader, Path as SettingPath, PathSegment, SchemaField,
+    SchemaType, Schematic, ValidateError,
 };
 use std::path::Path;
 

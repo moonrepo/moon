@@ -1,5 +1,5 @@
 use moon_common::consts::CONFIG_DIRNAME;
-use starbase_utils::fs::{self};
+use starbase_utils::fs;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 

@@ -5,8 +5,8 @@ use moon_common::cacheable;
 use moon_target::{Target, TargetScope};
 use rustc_hash::FxHashMap;
 use schematic::{
-    derive_enum, merge, Config, ConfigEnum, ConfigError, ConfigLoader, Format, SchemaType,
-    Schematic, Segment, ValidateError,
+    derive_enum, merge, Config, ConfigEnum, ConfigError, ConfigLoader, Format, PathSegment,
+    SchemaType, Schematic, ValidateError,
 };
 
 fn validate_command<D, C>(cmd: &TaskCommandArgs, _task: &D, _ctx: &C) -> Result<(), ValidateError> {
@@ -39,7 +39,7 @@ pub fn validate_deps<D, C>(deps: &[Target], _data: &D, _context: &C) -> Result<(
         if matches!(dep.scope, TargetScope::All | TargetScope::Tag(_)) {
             return Err(ValidateError::with_segment(
                 "target scope not supported as a task dependency",
-                Segment::Index(i),
+                PathSegment::Index(i),
             ));
         }
     }

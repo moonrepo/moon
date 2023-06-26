@@ -6,8 +6,8 @@
 
 $ErrorActionPreference = 'Stop'
 
-$Target = "moon-x86_64-pc-windows-msvc.exe"
 $Version = "latest"
+$Target = "moon-x86_64-pc-windows-msvc.exe"
 
 if ($Args.Length -eq 1) {
   $Version = $Args.Get(0)
@@ -15,8 +15,6 @@ if ($Args.Length -eq 1) {
 
 $DownloadUrl = if ($Version -eq "latest") {
   "https://github.com/moonrepo/moon/releases/latest/download/${Target}"
-} elseif ($Version -like "0*") {
-  "https://github.com/moonrepo/moon/releases/download/%40moonrepo%2Fcli%40${Version}/${Target}"
 } else {
   "https://github.com/moonrepo/moon/releases/download/v${Version}/${Target}"
 }

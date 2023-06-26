@@ -13,13 +13,6 @@ if ($Args.Length -eq 1) {
   $Version = $Args.Get(0)
 }
 
-if ($Version -eq "latest") {
-  $Response = Invoke-WebRequest -UseBasicParsing -URI "https://raw.githubusercontent.com/moonrepo/proto/master/version"
-  $Version = $Response.Content.Trim()
-} elseif ($Version -match '^0\.[0-8]') {
-  $Target = "proto_cli-v${Version}-x86_64-pc-windows-msvc"
-}
-
 $DownloadUrl = if ($Version -eq "latest") {
   "https://github.com/moonrepo/proto/releases/latest/download/${Target}.zip"
 } else {

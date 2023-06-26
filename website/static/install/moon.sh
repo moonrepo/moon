@@ -45,10 +45,8 @@ fi
 
 if [ $# -eq 0 ]; then
 	download_url="https://github.com/moonrepo/moon/releases/latest/download/${target}"
-elif [[ $version == 0* ]]; then
-	download_url="https://github.com/moonrepo/moon/releases/download/%40moonrepo%2Fcli%40${1}/${target}"
 else
-	download_url="https://github.com/moonrepo/moon/releases/download/v${1}/${target}"
+	download_url="https://github.com/moonrepo/moon/releases/download/v${version}/${target}"
 fi
 
 install_dir="$HOME/.moon/bin"

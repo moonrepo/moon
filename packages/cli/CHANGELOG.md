@@ -26,6 +26,7 @@
 
 #### ⚙️ Internal
 
+- Updated to proto v0.11.
 - Dropped SVN support since it was never finished and doesn't work.
 - Improved VCS file handling, caching, and performance.
 

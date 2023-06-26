@@ -42,7 +42,7 @@ impl<'app> ProjectBuilder<'app> {
         id: &'app str,
         source: &'app str,
         workspace_root: &'app Path,
-    ) -> Result<Self, ProjectBuilderError> {
+    ) -> miette::Result<Self> {
         debug!(id, source, "Building project {} from source", color::id(id));
 
         let source = WorkspaceRelativePathBuf::from(source);

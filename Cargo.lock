@@ -2834,6 +2834,7 @@ dependencies = [
 name = "moon_codeowners"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_config",
  "moon_hash",
  "serde",
@@ -3493,6 +3494,7 @@ dependencies = [
 name = "moon_task"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_common",
  "moon_config",
  "moon_target",

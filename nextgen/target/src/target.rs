@@ -28,7 +28,7 @@ pub struct Target {
 }
 
 impl Target {
-    pub fn new<S, T>(scope_id: S, task_id: T) -> Result<Target, TargetError>
+    pub fn new<S, T>(scope_id: S, task_id: T) -> miette::Result<Target>
     where
         S: AsRef<str>,
         T: AsRef<str>,
@@ -47,7 +47,7 @@ impl Target {
         })
     }
 
-    pub fn new_self<T>(task_id: T) -> Result<Target, TargetError>
+    pub fn new_self<T>(task_id: T) -> miette::Result<Target>
     where
         T: AsRef<str>,
     {
@@ -62,7 +62,7 @@ impl Target {
         })
     }
 
-    pub fn format<S, T>(scope: S, task: T) -> Result<String, TargetError>
+    pub fn format<S, T>(scope: S, task: T) -> miette::Result<String>
     where
         S: AsRef<TargetScope>,
         T: AsRef<str>,
@@ -70,9 +70,9 @@ impl Target {
         Ok(format!("{}:{}", scope.as_ref(), task.as_ref()))
     }
 
-    pub fn parse(target_id: &str) -> Result<Target, TargetError> {
+    pub fn parse(target_id: &str) -> miette::Result<Target> {
         if target_id == ":" {
-            return Err(TargetError::TooWild);
+            return Err(TargetError::TooWild.into());
         }
 
         if !target_id.contains(':') {
@@ -80,7 +80,7 @@ impl Target {
         }
 
         let Some(matches) = TARGET_PATTERN.captures(target_id) else {
-            return Err(TargetError::InvalidFormat(target_id.to_owned()));
+            return Err(TargetError::InvalidFormat(target_id.to_owned()).into());
         };
 
         let handle_error = |_| TargetError::InvalidFormat(target_id.to_owned());

@@ -1,6 +1,5 @@
 use miette::Diagnostic;
 use moon_common::{Style, Stylize};
-use moon_process::ProcessError;
 use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
@@ -15,8 +14,4 @@ pub enum VcsError {
     #[diagnostic(code(git::repository::slug))]
     #[error("Failed to extract a repository slug from git remote candidates.")]
     GitExtractRepoSlug,
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
-    Process(#[from] ProcessError),
 }

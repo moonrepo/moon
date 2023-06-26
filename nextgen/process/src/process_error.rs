@@ -1,5 +1,4 @@
 use miette::Diagnostic;
-use moon_args::ArgsSplitError;
 use moon_common::{Style, Stylize};
 use thiserror::Error;
 
@@ -71,8 +70,4 @@ pub enum ProcessError {
         #[source]
         error: std::io::Error,
     },
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
-    ArgsSplit(#[from] ArgsSplitError),
 }

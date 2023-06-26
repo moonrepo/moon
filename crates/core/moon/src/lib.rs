@@ -56,7 +56,7 @@ pub async fn load_workspace_from(path: &Path) -> miette::Result<Workspace> {
         }
         Err(err) => {
             set_telemetry(false);
-            return Err(err.into());
+            return Err(err);
         }
     };
 

@@ -61,7 +61,7 @@ impl Project {
     }
 
     /// Return a task with the defined ID.
-    pub fn get_task<I: AsRef<str>>(&self, task_id: I) -> Result<&Task, ProjectError> {
+    pub fn get_task<I: AsRef<str>>(&self, task_id: I) -> miette::Result<&Task> {
         let task_id = Id::raw(task_id.as_ref());
 
         self.tasks
@@ -83,7 +83,7 @@ impl Project {
 
 impl Queryable for Project {
     /// Return true if this project matches the given query criteria.
-    fn matches_criteria(&self, query: &Criteria) -> Result<bool, QueryError> {
+    fn matches_criteria(&self, query: &Criteria) -> miette::Result<bool> {
         let match_all = matches!(query.op, LogicalOperator::And);
         let mut matched_any = false;
 

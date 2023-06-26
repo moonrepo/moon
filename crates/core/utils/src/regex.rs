@@ -54,7 +54,7 @@ pub static WINDOWS_SYSTEM_COMMAND: Lazy<regex::Regex> = Lazy::new(|| {
 
 #[inline]
 pub fn create_regex<V: AsRef<str>>(value: V) -> miette::Result<Regex> {
-    Ok(Regex::new(value.as_ref()).into_diagnostic()?)
+    Regex::new(value.as_ref()).into_diagnostic()
 }
 
 #[inline]

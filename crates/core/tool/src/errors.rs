@@ -1,7 +1,5 @@
 use miette::Diagnostic;
 use moon_platform_runtime::Runtime;
-use moon_process::ProcessError;
-use proto::ProtoError;
 use starbase_styles::{Style, Stylize};
 use thiserror::Error;
 
@@ -21,12 +19,4 @@ pub enum ToolError {
 
     #[error("This functionality requires a plugin. Install it with {}.", .0.style(Style::Shell))]
     RequiresPlugin(String),
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
-    Process(#[from] ProcessError),
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
-    Proto(#[from] ProtoError),
 }

@@ -1,10 +1,11 @@
 use crate::process_cache::ProcessCache;
 use crate::touched_files::TouchedFiles;
 use crate::vcs::Vcs;
-use crate::vcs_error::VcsError;
 use async_trait::async_trait;
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
+use miette::Diagnostic;
 use moon_common::path::WorkspaceRelativePathBuf;
+use moon_common::{Style, Stylize};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use rustc_hash::FxHashSet;
@@ -12,6 +13,7 @@ use semver::Version;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::{cmp, env};
+use thiserror::Error;
 use tracing::debug;
 
 pub static STATUS_PATTERN: Lazy<Regex> =
@@ -23,6 +25,20 @@ pub static DIFF_SCORE_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(C|M|R)(
 
 pub static VERSION_CLEAN: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"\.(win|windows|msysgit)\.\d+").unwrap());
+
+#[derive(Error, Debug, Diagnostic)]
+pub enum GitError {
+    #[diagnostic(code(git::ignore::load_invalid))]
+    #[error("Failed to load and parse {}.", ".gitignore".style(Style::File))]
+    GitignoreLoadFailed {
+        #[source]
+        error: ignore::Error,
+    },
+
+    #[diagnostic(code(git::repository::extract_slug))]
+    #[error("Failed to extract a repository slug from git remote candidates.")]
+    ExtractRepoSlugFailed,
+}
 
 #[derive(Debug)]
 pub struct Git {
@@ -99,13 +115,13 @@ impl Git {
             let mut builder = GitignoreBuilder::new(git_root);
 
             if let Some(error) = builder.add(ignore_path) {
-                return Err(VcsError::GitignoreLoadFailed { error }.into());
+                return Err(GitError::GitignoreLoadFailed { error }.into());
             }
 
             ignore = Some(
                 builder
                     .build()
-                    .map_err(|error| VcsError::GitignoreLoadFailed { error })?,
+                    .map_err(|error| GitError::GitignoreLoadFailed { error })?,
             );
         }
 
@@ -289,7 +305,7 @@ impl Vcs for Git {
             }
         }
 
-        Err(VcsError::GitExtractRepoSlug.into())
+        Err(GitError::ExtractRepoSlugFailed.into())
     }
 
     // https://git-scm.com/docs/git-status#_short_format

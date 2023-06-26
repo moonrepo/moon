@@ -1,4 +1,3 @@
-use crate::errors::ArchiveError;
 use crate::helpers::prepend_name;
 use crate::tree_differ::TreeDiffer;
 use flate2::read::GzDecoder;
@@ -120,9 +119,7 @@ impl<'l> TarArchiver<'l> {
 
             for file in glob::walk_files(self.input_root, &[glob])? {
                 let mut fh = fs::open_file(&file)?;
-                let file_name = path::to_string(file.strip_prefix(self.input_root).unwrap())
-                    .map_err(|e| ArchiveError::Message(e.to_string()))
-                    .into_diagnostic()?;
+                let file_name = path::to_string(file.strip_prefix(self.input_root).unwrap())?;
 
                 archive
                     .append_file(

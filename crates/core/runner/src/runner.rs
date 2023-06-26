@@ -610,12 +610,7 @@ impl<'a> Runner<'a> {
                     } else if attempt_index >= attempt_total {
                         interval_handle.abort();
 
-                        return Err(RunnerError::Process(output_to_error(
-                            self.task.command.clone(),
-                            &out,
-                            false,
-                        ))
-                        .into());
+                        return Err(output_to_error(self.task.command.clone(), &out, false).into());
                     } else {
                         attempt_index += 1;
 

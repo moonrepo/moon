@@ -1,9 +1,5 @@
 use miette::Diagnostic;
 use moon_common::consts;
-use moon_config::ConfigError;
-use moon_vcs::VcsError;
-use moonbase::MoonbaseError;
-use proto::ProtoError;
 use starbase_styles::{Style, Stylize};
 use std::path::PathBuf;
 use thiserror::Error;
@@ -48,20 +44,4 @@ pub enum WorkspaceError {
 
     #[error("Invalid moon version, unable to proceed. Found {0}, expected {1}.")]
     InvalidMoonVersion(String, String),
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
-    Config(#[from] ConfigError),
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
-    Moonbase(#[from] MoonbaseError),
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
-    Proto(#[from] ProtoError),
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
-    Vcs(#[from] VcsError),
 }

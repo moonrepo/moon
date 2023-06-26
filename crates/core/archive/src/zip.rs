@@ -1,4 +1,3 @@
-use crate::errors::ArchiveError;
 use crate::helpers::prepend_name;
 use miette::IntoDiagnostic;
 use moon_logger::{debug, map_list, trace};
@@ -21,9 +20,7 @@ fn zip_contents<P: AsRef<str>>(
     prefix: P,
 ) -> miette::Result<()> {
     let prefix = prefix.as_ref();
-    let name = to_string(path.strip_prefix(root).unwrap())
-        .map_err(|e| ArchiveError::Message(e.to_string()))
-        .into_diagnostic()?;
+    let name = to_string(path.strip_prefix(root).unwrap())?;
 
     #[allow(unused_mut)] // windows
     let mut options = FileOptions::default().compression_method(CompressionMethod::Stored);

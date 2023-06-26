@@ -1,7 +1,4 @@
 use miette::Diagnostic;
-use moon_project::ProjectError;
-use moon_query::QueryError;
-use moon_target::TargetError;
 use starbase_styles::{Style, Stylize};
 use thiserror::Error;
 
@@ -12,16 +9,4 @@ pub enum DepGraphError {
 
     #[error("Unknown node {0} found in dependency graph. How did this get here?")]
     UnknownNode(usize),
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
-    Project(#[from] ProjectError),
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
-    Query(#[from] QueryError),
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
-    Target(#[from] TargetError),
 }

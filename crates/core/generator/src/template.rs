@@ -225,7 +225,7 @@ impl Template {
         path: &Path,
         context: &Context,
     ) -> Result<String, GeneratorError> {
-        let mut name = path::to_virtual_string(path)?;
+        let mut name = path::to_virtual_string(path).unwrap();
 
         // Remove template file extensions
         if name.ends_with(".tera") {

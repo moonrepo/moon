@@ -9,6 +9,7 @@ moon_common = { path = "../../../nextgen/common" }
 moon_logger = { path = "../logger" }
 moon_platform_runtime = { path = "../platform-runtime" }
 moon_utils = { path = "../utils" }
+miette = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 starbase_styles = { workspace = true }

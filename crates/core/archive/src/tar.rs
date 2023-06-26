@@ -115,7 +115,8 @@ impl<'l> TarArchiver<'l> {
 
             for file in glob::walk_files(self.input_root, &[glob])? {
                 let mut fh = fs::open_file(&file)?;
-                let file_name = path::to_string(file.strip_prefix(self.input_root).unwrap())?;
+                let file_name = path::to_string(file.strip_prefix(self.input_root).unwrap())
+                    .map_err(|e| ArchiveError::Message(e.to_string()))?;
 
                 archive.append_file(
                     prepend_name(&prepend_name(&file_name, file_prefix), self.prefix),

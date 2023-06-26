@@ -5,6 +5,9 @@ use zip::result::ZipError;
 
 #[derive(Error, Debug)]
 pub enum ArchiveError {
+    #[error("{0}")]
+    Message(String),
+
     #[error(transparent)]
     Fs(#[from] FsError),
 

@@ -23,7 +23,7 @@ impl PlatformManager {
 
         self.cache
             .get(&type_of)
-            .ok_or_else(|| ToolError::UnsupportedPlatform(type_of.to_string()))
+            .ok_or_else(|| ToolError::UnsupportedPlatform(type_of.to_string()).into())
     }
 
     pub fn get_mut<T: Into<PlatformType>>(
@@ -34,7 +34,7 @@ impl PlatformManager {
 
         self.cache
             .get_mut(&type_of)
-            .ok_or_else(|| ToolError::UnsupportedPlatform(type_of.to_string()))
+            .ok_or_else(|| ToolError::UnsupportedPlatform(type_of.to_string()).into())
     }
 
     pub fn list(&self) -> std::collections::hash_map::Values<PlatformType, BoxedPlatform> {

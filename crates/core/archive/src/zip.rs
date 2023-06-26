@@ -20,7 +20,8 @@ fn zip_contents<P: AsRef<str>>(
     prefix: P,
 ) -> Result<(), ArchiveError> {
     let prefix = prefix.as_ref();
-    let name = to_string(path.strip_prefix(root).unwrap())?;
+    let name = to_string(path.strip_prefix(root).unwrap())
+        .map_err(|e| ArchiveError::Message(e.to_string()))?;
 
     #[allow(unused_mut)] // windows
     let mut options = FileOptions::default().compression_method(CompressionMethod::Stored);

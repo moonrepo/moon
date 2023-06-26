@@ -1,12 +1,13 @@
 use crate::CARGO;
 use cached::proc_macro::cached;
 use cargo_lock::Lockfile as CargoLock;
+use miette::IntoDiagnostic;
 use moon_lang::{config_cache_container, LockfileDependencyVersions};
 use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
 
 fn read_lockfile(path: &Path) -> miette::Result<CargoLock> {
-    CargoLock::load(path)
+    CargoLock::load(path).into_diagnostic()
 }
 
 config_cache_container!(CargoLockCache, CargoLock, CARGO.lockfile, read_lockfile);

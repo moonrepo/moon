@@ -11,7 +11,7 @@ use moonbase::{
         self, add_job_to_run, create_run, update_job, update_run, AddJobToRun, CreateRun,
         GraphQLQuery, UpdateJob, UpdateRun,
     },
-    upload_artifact, ArtifactWriteInput, MoonbaseError,
+    upload_artifact, ArtifactWriteInput,
 };
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
@@ -386,7 +386,7 @@ impl Subscriber for MoonbaseSubscriber {
         if moonbase.remote_caching_enabled {
             // We don't want errors to bubble up and crash the program,
             // so instead, we log the error (as a warning) to the console!
-            fn log_failure(error: MoonbaseError) {
+            fn log_failure(error: miette::Report) {
                 warn!(
                     target: LOG_TARGET,
                     "Remote caching failure: {}",

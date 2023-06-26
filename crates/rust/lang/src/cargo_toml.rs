@@ -1,6 +1,7 @@
 use crate::CARGO;
 use cached::proc_macro::cached;
 use cargo_toml::Manifest as CargoToml;
+use miette::IntoDiagnostic;
 use moon_lang::config_cache_container;
 use starbase_utils::glob;
 use std::path::{Path, PathBuf};
@@ -8,7 +9,7 @@ use std::path::{Path, PathBuf};
 pub use cargo_toml::*;
 
 fn read_manifest(path: &Path) -> miette::Result<CargoToml> {
-    CargoToml::from_path(path)
+    CargoToml::from_path(path).into_diagnostic()
 }
 
 config_cache_container!(CargoTomlCache, CargoToml, CARGO.manifest, read_manifest);
@@ -38,7 +39,7 @@ impl CargoTomlExt for CargoToml {
         })
     }
 
-    fn get_member_manifest_paths(&self, root_dir: &Path) -> Result<Vec<PathBuf>, MoonError> {
+    fn get_member_manifest_paths(&self, root_dir: &Path) -> miette::Result<Vec<PathBuf>> {
         let mut paths = vec![];
 
         let Some(workspace) = &self.workspace else {

@@ -10,6 +10,7 @@ moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
 async-trait = { workspace = true }
 ci_env = { workspace = true }
+miette = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

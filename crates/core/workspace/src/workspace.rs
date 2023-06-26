@@ -34,14 +34,14 @@ fn find_workspace_root<P: AsRef<Path>>(current_dir: P) -> miette::Result<PathBuf
 
     let Some(possible_root) = fs::find_upwards(consts::CONFIG_DIRNAME, current_dir)
         .map(|dir| dir.parent().unwrap().to_path_buf()) else {
-        return Err(WorkspaceError::MissingConfigDir);
+        return Err(WorkspaceError::MissingConfigDir.into());
     };
 
     // Avoid finding the ~/.moon directory
     let home_dir = dirs::home_dir().ok_or(WorkspaceError::MissingHomeDir)?;
 
     if home_dir == possible_root {
-        return Err(WorkspaceError::MissingConfigDir);
+        return Err(WorkspaceError::MissingConfigDir.into());
     }
 
     Ok(possible_root)
@@ -135,7 +135,7 @@ fn load_workspace_config(root_dir: &Path) -> miette::Result<WorkspaceConfig> {
     );
 
     if !config_path.exists() {
-        return Err(WorkspaceError::MissingWorkspaceConfigFile);
+        return Err(WorkspaceError::MissingWorkspaceConfigFile.into());
     }
 
     Ok(WorkspaceConfig::load_from(root_dir)?)
@@ -179,7 +179,7 @@ pub struct Workspace {
 impl Workspace {
     /// Create a new workspace instance starting from the current working directory.
     /// Will locate the workspace root and load available configuration files.
-    pub fn load_from<P: AsRef<Path>>(working_dir: P) -> Result<Workspace, WorkspaceError> {
+    pub fn load_from<P: AsRef<Path>>(working_dir: P) -> miette::Result<Workspace> {
         let working_dir = working_dir.as_ref();
         let root_dir = find_workspace_root(working_dir)?;
 
@@ -204,7 +204,8 @@ impl Workspace {
                     return Err(WorkspaceError::InvalidMoonVersion(
                         current_version,
                         constraint.to_owned(),
-                    ));
+                    )
+                    .into());
                 }
             }
         }

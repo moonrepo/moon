@@ -77,7 +77,10 @@ pub fn to_string<T: AsRef<Path>>(path: T) -> miette::Result<String> {
 
     match path.to_str() {
         Some(p) => Ok(p.to_owned()),
-        None => Err(MoonError::PathInvalidUTF8(path.to_path_buf())),
+        None => Err(miette::miette!(
+            "Path {} contains invalid UTF-8 characters.",
+            path.display()
+        )),
     }
 }
 

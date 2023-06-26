@@ -1,7 +1,8 @@
 use moon_common::Id;
 use moon_config::{ProjectsAliasesMap, ProjectsSourcesMap};
 use moon_logger::debug;
-use moon_project::{Project, ProjectError};
+use moon_project::Project;
+use moon_project_builder::ProjectBuilderError;
 use moon_query::{Criteria, Queryable};
 use moon_utils::{get_workspace_root, path};
 use petgraph::dot::{Config, Dot};
@@ -123,7 +124,7 @@ impl ProjectGraph {
         let index = self
             .indices
             .get(&id)
-            .ok_or_else(|| ProjectError::UnconfiguredID(id.to_string()))?;
+            .ok_or_else(|| ProjectBuilderError::UnconfiguredID(id.to_string()))?;
 
         Ok(self.graph.node_weight(*index).unwrap())
     }
@@ -174,7 +175,7 @@ impl ProjectGraph {
         }
 
         if possible_id.is_empty() {
-            return Err(ProjectError::MissingFromPath(file).into());
+            return Err(ProjectBuilderError::MissingFromPath(file).into());
         }
 
         self.get(&possible_id)

@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use miette::IntoDiagnostic;
+use crate::tasks_builder_error::TasksBuilderError;
 use moon_args::split_args;
 use moon_common::{color, Id};
 use moon_config::{
@@ -522,7 +522,10 @@ impl<'proj> TasksBuilder<'proj> {
             // The `.env` file may not have been committed, so avoid crashing
             if env_path.exists() {
                 let env_file_vars = dotenvy::from_path_iter(&env_path)
-                    .into_diagnostic()?
+                    .map_err(|error| TasksBuilderError::InvalidEnvFile {
+                        path: env_path.to_path_buf(),
+                        error,
+                    })?
                     .flatten()
                     .collect::<FxHashMap<_, _>>();
 

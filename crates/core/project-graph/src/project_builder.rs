@@ -11,8 +11,8 @@ use moon_error::MoonError;
 use moon_hasher::{convert_paths_to_strings, to_hash};
 use moon_logger::{debug, map_list, trace, warn};
 use moon_platform_detector::{detect_project_language, detect_task_platform};
-use moon_project::{Project, ProjectError};
-use moon_project_builder::ProjectBuilder;
+use moon_project::Project;
+use moon_project_builder::{ProjectBuilder, ProjectBuilderError};
 use moon_target::{Target, TargetScope};
 use moon_task::Task;
 use moon_utils::regex::ENV_VAR_SUBSTITUTE;
@@ -452,7 +452,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         // Create the current project
         let Some(source) = self.sources.get(&id) else {
-            return Err(ProjectGraphError::Project(ProjectError::UnconfiguredID(id.to_string())).into());
+            return Err(ProjectBuilderError::UnconfiguredID(id.to_string()).into());
         };
 
         let mut project = self.create_project(&id, source)?;

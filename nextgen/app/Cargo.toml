@@ -1,0 +1,28 @@
+[package]
+name = "moon_app"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "moon_app"
+path = "src/main.rs"
+
+[lib]
+name = "moon_app"
+path = "src/lib.rs"
+crate-type = ["rlib"]
+
+[dependencies]
+moon_app_components = { path = "../app-components" }
+moon_common = { path = "../common" }
+moon_config = { path = "../config" }
+miette = { workspace = true }
+mimalloc = { version = "0.1.37", default-features = false }
+proto_cli = { workspace = true }
+semver = { workspace = true }
+starbase = { workspace = true }
+starbase_styles = { workspace = true }
+starbase_utils = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }

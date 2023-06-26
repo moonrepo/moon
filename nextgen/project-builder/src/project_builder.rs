@@ -1,8 +1,8 @@
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{color, consts, Id};
 use moon_config::{
-    DependencyConfig, InheritedTasksManager, InheritedTasksResult, LanguageType, PlatformType,
-    ProjectConfig, ProjectDependsOn, TaskConfig, ToolchainConfig,
+    DependencyConfig, DependencySource, InheritedTasksManager, InheritedTasksResult, LanguageType,
+    PlatformType, ProjectConfig, ProjectDependsOn, TaskConfig, ToolchainConfig,
 };
 use moon_file_group::FileGroup;
 use moon_project::{Project, ProjectError};
@@ -17,7 +17,7 @@ pub type LanguageDetector = dyn Fn(&Path) -> LanguageType;
 
 pub struct ProjectBuilder<'app> {
     id: &'app str,
-    source: &'app str,
+    source: WorkspaceRelativePathBuf,
     project_root: PathBuf,
 
     // Workspace information
@@ -42,17 +42,18 @@ impl<'app> ProjectBuilder<'app> {
         source: &'app str,
         workspace_root: &'app Path,
     ) -> Result<Self, ProjectError> {
-        debug!(id, source, "Building project {} from source", color::id(id),);
+        debug!(id, source, "Building project {} from source", color::id(id));
 
-        let project_root = workspace_root.join(source);
+        let source = WorkspaceRelativePathBuf::from(source);
+        let root = source.to_logical_path(workspace_root);
 
-        if !project_root.exists() {
-            return Err(ProjectError::MissingProjectAtSource(source.to_owned()));
+        if !root.exists() {
+            return Err(ProjectError::MissingAtSource(source.as_str().to_owned()));
         }
 
         Ok(ProjectBuilder {
             id,
-            project_root,
+            project_root: root,
             source,
             workspace_root,
             toolchain_config: None,
@@ -115,14 +116,14 @@ impl<'app> ProjectBuilder<'app> {
     /// Load a `moon.yml` config file from the root of the project (derived from source).
     /// Once loaded, detect applicable language and platform fields.
     pub fn load_local_config(&mut self) -> miette::Result<&mut Self> {
-        let config_name = PathBuf::from(self.source).join(consts::CONFIG_PROJECT_FILENAME);
-        let config_path = self.workspace_root.join(&config_name);
+        let config_name = self.source.join(consts::CONFIG_PROJECT_FILENAME);
+        let config_path = config_name.to_path(self.workspace_root);
 
         debug!(
             id = self.id,
             file = ?config_path,
             "Attempting to load {} (optional)",
-            color::file(config_name.to_str().unwrap_or_default())
+            color::file(config_name.as_str())
         );
 
         let config = ProjectConfig::load(self.workspace_root, config_path)?;
@@ -167,7 +168,7 @@ impl<'app> ProjectBuilder<'app> {
 
     /// Extend the builder with a project dependency implicitly derived from the project graph.
     /// Implicit dependencies *must not* override explicitly configured dependencies.
-    pub fn extend_with_dependency(&mut self, config: DependencyConfig) -> &mut Self {
+    pub fn extend_with_dependency(&mut self, mut config: DependencyConfig) -> &mut Self {
         let local_config = self
             .local_config
             .as_mut()
@@ -179,6 +180,10 @@ impl<'app> ProjectBuilder<'app> {
         });
 
         if !has_dep {
+            if config.source.is_none() {
+                config.source = Some(DependencySource::Implicit);
+            }
+
             local_config
                 .depends_on
                 .push(ProjectDependsOn::Object(config));
@@ -210,7 +215,7 @@ impl<'app> ProjectBuilder<'app> {
             language: self.language,
             platform: self.platform,
             root: self.project_root,
-            source: WorkspaceRelativePathBuf::from(self.source),
+            source: self.source,
             ..Project::default()
         };
 
@@ -231,13 +236,17 @@ impl<'app> ProjectBuilder<'app> {
 
         if let Some(local) = &self.local_config {
             for dep_on in &local.depends_on {
-                let dep_config = match dep_on {
+                let mut dep_config = match dep_on {
                     ProjectDependsOn::String(id) => DependencyConfig {
                         id: id.to_owned(),
                         ..DependencyConfig::default()
                     },
                     ProjectDependsOn::Object(config) => config.to_owned(),
                 };
+
+                if dep_config.source.is_none() {
+                    dep_config.source = Some(DependencySource::Explicit);
+                }
 
                 deps.insert(dep_config.id.clone(), dep_config);
             }
@@ -306,8 +315,12 @@ impl<'app> ProjectBuilder<'app> {
     fn build_tasks(&mut self) -> miette::Result<BTreeMap<Id, Task>> {
         debug!(id = self.id, "Building tasks");
 
-        let mut tasks_builder =
-            TasksBuilder::new(self.id, self.source, &self.platform, self.workspace_root);
+        let mut tasks_builder = TasksBuilder::new(
+            self.id,
+            self.source.as_str(),
+            &self.platform,
+            self.workspace_root,
+        );
 
         if let Some(detector) = self.platform_detector.take() {
             tasks_builder.detect_platform(detector, self.toolchain_config.as_ref().unwrap());

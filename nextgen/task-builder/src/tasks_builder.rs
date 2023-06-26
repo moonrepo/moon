@@ -334,7 +334,11 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if task.platform.is_unknown() {
-                task.platform = self.project_platform.to_owned();
+                task.platform = if self.project_platform.is_unknown() {
+                    PlatformType::System
+                } else {
+                    self.project_platform.to_owned()
+                };
             }
         }
 

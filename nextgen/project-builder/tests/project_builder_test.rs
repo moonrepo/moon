@@ -1,8 +1,8 @@
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
 use moon_config::{
-    DependencyConfig, DependencyScope, InheritedTasksManager, LanguageType, PlatformType,
-    TaskConfig,
+    DependencyConfig, DependencyScope, DependencySource, InheritedTasksManager, LanguageType,
+    PlatformType, TaskCommandArgs, TaskConfig,
 };
 use moon_file_group::FileGroup;
 use moon_platform_detector::detect_project_language;
@@ -42,7 +42,7 @@ mod project_builder {
     use super::*;
 
     #[test]
-    #[should_panic(expected = "MissingProjectAtSource(\"qux\")")]
+    #[should_panic(expected = "MissingAtSource(\"qux\")")]
     fn errors_missing_source() {
         let sandbox = create_sandbox("builder");
 
@@ -77,10 +77,12 @@ mod project_builder {
             vec![
                 DependencyConfig {
                     id: "bar".into(),
+                    source: Some(DependencySource::Explicit),
                     ..Default::default()
                 },
                 DependencyConfig {
                     id: "foo".into(),
+                    source: Some(DependencySource::Explicit),
                     scope: DependencyScope::Development,
                     ..Default::default()
                 }
@@ -397,8 +399,6 @@ mod project_builder {
     }
 
     mod graph_extending {
-        use moon_config::TaskCommandArgs;
-
         use super::*;
 
         #[test]
@@ -416,7 +416,15 @@ mod project_builder {
 
             let project = builder.build().unwrap();
 
-            assert!(project.dependencies.contains_key("foo"));
+            assert_eq!(
+                project.dependencies.into_values().collect::<Vec<_>>(),
+                vec![DependencyConfig {
+                    id: "foo".into(),
+                    scope: DependencyScope::Development,
+                    source: Some(DependencySource::Implicit),
+                    ..DependencyConfig::default()
+                }]
+            );
         }
 
         #[test]
@@ -438,6 +446,10 @@ mod project_builder {
             assert_eq!(
                 project.dependencies.get("foo").unwrap().scope,
                 DependencyScope::Development
+            );
+            assert_eq!(
+                project.dependencies.get("foo").unwrap().source,
+                Some(DependencySource::Explicit)
             );
         }
 

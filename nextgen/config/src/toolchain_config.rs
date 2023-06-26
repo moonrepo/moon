@@ -6,7 +6,6 @@ use moon_common::consts;
 use proto::ToolsConfig;
 use schematic::{validate, Config, ConfigError, ConfigLoader};
 use serde::Serialize;
-use std::env;
 use std::path::Path;
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain
@@ -72,22 +71,6 @@ impl ToolchainConfig {
             .load()?;
 
         result.config.inherit_proto(proto_tools)?;
-
-        let mut enabled = vec![];
-
-        if result.config.deno.is_some() {
-            enabled.push("deno");
-        }
-
-        if result.config.node.is_some() {
-            enabled.push("node");
-        }
-
-        if result.config.rust.is_some() {
-            enabled.push("rust");
-        }
-
-        env::set_var("MOON_TOOLCHAIN_PLATFORMS", enabled.join(","));
 
         Ok(result.config)
     }

@@ -11,11 +11,11 @@ pub enum ProjectError {
 
     #[diagnostic(code(project::missing_source))]
     #[error("No project exists at path {}.", .0.style(Style::File))]
-    MissingProjectAtSource(String),
+    MissingAtSource(String),
 
     #[diagnostic(code(project::missing_path))]
     #[error("No project could be located starting from path {}.", .0.style(Style::Path))]
-    MissingProjectFromPath(PathBuf),
+    MissingFromPath(PathBuf),
 
     #[diagnostic(code(project::unknown))]
     #[error("No project has been configured with the ID {}.", .0.style(Style::Id))]

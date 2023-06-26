@@ -1,7 +1,7 @@
 use crate::filters;
-use crate::GeneratorError;
+use miette::IntoDiagnostic;
 use moon_common::consts::CONFIG_TEMPLATE_FILENAME;
-use moon_config::{ConfigError, TemplateConfig, TemplateFrontmatterConfig};
+use moon_config::{TemplateConfig, TemplateFrontmatterConfig};
 use moon_logger::{debug, trace};
 use moon_utils::{path, regex};
 use once_cell::sync::Lazy;
@@ -88,11 +88,7 @@ impl TemplateFile {
         }
     }
 
-    pub fn set_content<T: AsRef<str>>(
-        &mut self,
-        content: T,
-        dest: &Path,
-    ) -> Result<(), ConfigError> {
+    pub fn set_content<T: AsRef<str>>(&mut self, content: T, dest: &Path) -> miette::Result<()> {
         let content = content.as_ref().trim_start();
 
         self.dest_path = dest.join(&self.name);
@@ -139,7 +135,7 @@ pub struct Template {
 }
 
 impl Template {
-    pub fn new(name: String, root: PathBuf) -> Result<Template, GeneratorError> {
+    pub fn new(name: String, root: PathBuf) -> miette::Result<Template> {
         debug!(
             target: LOG_TARGET,
             "Loading template {} from {}",
@@ -170,7 +166,7 @@ impl Template {
 
     /// Load all template files from the source directory and return a list
     /// of template file structs. These will later be used for rendering and generating.
-    pub fn load_files(&mut self, dest: &Path, context: &Context) -> Result<(), GeneratorError> {
+    pub fn load_files(&mut self, dest: &Path, context: &Context) -> miette::Result<()> {
         let mut files = vec![];
 
         for entry in fs::read_dir_all(&self.root)? {
@@ -183,7 +179,9 @@ impl Template {
             let name =
                 self.interpolate_path(source_path.strip_prefix(&self.root).unwrap(), context)?;
 
-            self.engine.add_template_file(&source_path, Some(&name))?;
+            self.engine
+                .add_template_file(&source_path, Some(&name))
+                .into_diagnostic()?;
 
             // Add partials to Tera, but skip copying them
             if name.contains("partial") {
@@ -206,7 +204,10 @@ impl Template {
             //     dbg!(e);
             // }
 
-            file.set_content(self.engine.render(&file.name, context)?, dest)?;
+            file.set_content(
+                self.engine.render(&file.name, context).into_diagnostic()?,
+                dest,
+            )?;
         }
 
         // Sort so files are deterministic
@@ -220,12 +221,8 @@ impl Template {
     /// Tera *does not* support iterating over the context, so we're unable
     /// to interpolate a path ourselves. Instead, let's use Tera and its
     /// template rendering to handle this.
-    pub fn interpolate_path(
-        &self,
-        path: &Path,
-        context: &Context,
-    ) -> Result<String, GeneratorError> {
-        let mut name = path::to_virtual_string(path).unwrap();
+    pub fn interpolate_path(&self, path: &Path, context: &Context) -> miette::Result<String> {
+        let mut name = path::to_virtual_string(path)?;
 
         // Remove template file extensions
         if name.ends_with(".tera") {
@@ -252,11 +249,13 @@ impl Template {
             .to_string();
 
         // Render the path to interpolate the values
-        Ok(Tera::default().render_str(&name, context)?)
+        Tera::default()
+            .render_str(&name, context)
+            .into_diagnostic()
     }
 
     /// Write the template file to the defined destination path.
-    pub fn write_file(&self, file: &TemplateFile) -> Result<(), GeneratorError> {
+    pub fn write_file(&self, file: &TemplateFile) -> miette::Result<()> {
         match file.state {
             FileState::Merge => {
                 trace!(

@@ -6,7 +6,7 @@ use crate::workspace::*;
 use moon_common::{consts, Id};
 use rustc_hash::FxHashMap;
 use schematic::{
-    derive_enum, validate, Config, ConfigError, ConfigLoader, Path as SettingPath, PathSegment,
+    derive_enum, validate, Config, ConfigLoader, Path as SettingPath, PathSegment,
     SchemaField, SchemaType, Schematic, ValidateError,
 };
 use std::path::Path;
@@ -147,7 +147,7 @@ impl WorkspaceConfig {
     pub fn load<R: AsRef<Path>, P: AsRef<Path>>(
         workspace_root: R,
         path: P,
-    ) -> Result<WorkspaceConfig, ConfigError> {
+    ) -> miette::Result<WorkspaceConfig> {
         let result = ConfigLoader::<WorkspaceConfig>::new()
             .set_root(workspace_root.as_ref())
             .file(path.as_ref())?
@@ -156,7 +156,7 @@ impl WorkspaceConfig {
         Ok(result.config)
     }
 
-    pub fn load_from<P: AsRef<Path>>(workspace_root: P) -> Result<WorkspaceConfig, ConfigError> {
+    pub fn load_from<P: AsRef<Path>>(workspace_root: P) -> miette::Result<WorkspaceConfig> {
         let workspace_root = workspace_root.as_ref();
 
         Self::load(

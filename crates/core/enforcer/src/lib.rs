@@ -7,7 +7,7 @@ use moon_project::{Project, ProjectType};
 pub fn enforce_project_type_relationships(
     source: &Project,
     dependency: &Project,
-) -> Result<(), EnforcerError> {
+) -> miette::Result<()> {
     let valid = match source.type_of {
         ProjectType::Application => {
             matches!(
@@ -33,7 +33,8 @@ pub fn enforce_project_type_relationships(
             source.type_of,
             dependency.id.to_string(),
             dependency.type_of,
-        ));
+        )
+        .into());
     }
 
     Ok(())
@@ -44,7 +45,7 @@ pub fn enforce_tag_relationships(
     source_tag: &Id,
     dependency: &Project,
     required_tags: &[Id],
-) -> Result<(), EnforcerError> {
+) -> miette::Result<()> {
     // Source project isn't using the source tag
     if source_tag.is_empty()
         || source.config.tags.is_empty()
@@ -81,5 +82,6 @@ pub fn enforce_tag_relationships(
             .map(|t| t.to_string())
             .collect::<Vec<_>>()
             .join(", "),
-    ))
+    )
+    .into())
 }

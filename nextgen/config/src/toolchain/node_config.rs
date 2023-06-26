@@ -1,7 +1,7 @@
 use crate::validate::validate_semver;
 use crate::{inherit_tool, inherit_tool_required};
 use proto::ToolsConfig;
-use schematic::{derive_enum, Config, ConfigEnum, ConfigError};
+use schematic::{derive_enum, Config, ConfigEnum};
 use serde::Serialize;
 
 derive_enum!(
@@ -127,7 +127,7 @@ impl NodeConfig {
     inherit_tool!(PnpmConfig, pnpm, "pnpm", inherit_proto_pnpm);
     inherit_tool!(YarnConfig, yarn, "yarn", inherit_proto_yarn);
 
-    pub fn inherit_proto(&mut self, proto_tools: &ToolsConfig) -> Result<(), ConfigError> {
+    pub fn inherit_proto(&mut self, proto_tools: &ToolsConfig) -> miette::Result<()> {
         match &self.package_manager {
             NodePackageManager::Npm => {
                 self.inherit_proto_npm(proto_tools)?;

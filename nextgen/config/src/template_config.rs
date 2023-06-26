@@ -3,7 +3,7 @@
 use moon_common::consts;
 use rustc_hash::FxHashMap;
 use schematic::{
-    derive_enum, validate, Config, ConfigError, ConfigLoader, SchemaField, SchemaType, Schematic,
+    derive_enum, validate, Config, ConfigLoader, SchemaField, SchemaType, Schematic,
 };
 use serde::{Deserialize, Serialize};
 use std::path::Path;
@@ -161,7 +161,7 @@ pub struct TemplateConfig {
 }
 
 impl TemplateConfig {
-    pub fn load<P: AsRef<Path>>(path: P) -> Result<TemplateConfig, ConfigError> {
+    pub fn load<P: AsRef<Path>>(path: P) -> miette::Result<TemplateConfig> {
         let result = ConfigLoader::<TemplateConfig>::new()
             .file(path.as_ref())?
             .load()?;
@@ -169,7 +169,7 @@ impl TemplateConfig {
         Ok(result.config)
     }
 
-    pub fn load_from<P: AsRef<Path>>(template_root: P) -> Result<TemplateConfig, ConfigError> {
+    pub fn load_from<P: AsRef<Path>>(template_root: P) -> miette::Result<TemplateConfig> {
         Self::load(
             template_root
                 .as_ref()

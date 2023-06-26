@@ -1,4 +1,4 @@
-use crate::errors::ArchiveError;
+
 use rustc_hash::FxHashMap;
 use starbase_utils::{fs, glob};
 use std::io::{BufReader, Read};
@@ -14,7 +14,7 @@ impl TreeDiffer {
     /// Load the tree at the defined destination root and scan the file system
     /// using the defined lists of paths, either files or folders. If a folder,
     /// recursively scan all files and create an internal manifest to track diffing.
-    pub fn load(dest_root: &Path, paths: &[String]) -> Result<Self, ArchiveError> {
+    pub fn load(dest_root: &Path, paths: &[String]) -> miette::Result<Self> {
         let mut files = FxHashMap::default();
 
         let mut track = |file: PathBuf| {
@@ -54,7 +54,7 @@ impl TreeDiffer {
         &self,
         source: &mut S,
         dest: &mut D,
-    ) -> Result<bool, ArchiveError> {
+    ) -> miette::Result<bool> {
         let mut areader = BufReader::new(source);
         let mut breader = BufReader::new(dest);
         let mut abuf = [0; 512];
@@ -92,7 +92,7 @@ impl TreeDiffer {
         source_size: u64,
         _source: &mut T,
         dest_path: &Path,
-    ) -> Result<bool, ArchiveError> {
+    ) -> miette::Result<bool> {
         // If the destination doesn't exist, always use the source
         if !dest_path.exists() || !self.files.contains_key(dest_path) {
             return Ok(true);

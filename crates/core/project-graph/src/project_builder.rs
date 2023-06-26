@@ -498,7 +498,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         let mut aliases: ProjectsAliasesMap = FxHashMap::default();
         let mut cache = self.workspace.cache.cache_projects_state()?;
 
-        let mut add_sources = |map: &FxHashMap<Id, String>| -> Result<(), ProjectGraphError> {
+        let mut add_sources = |map: &FxHashMap<Id, String>| -> miette::Result<()> {
             for (id, source) in map {
                 sources.insert(id.to_owned(), path::standardize_separators(source));
             }

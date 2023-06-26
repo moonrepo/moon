@@ -65,7 +65,10 @@ cacheable!(
 impl Task {
     /// Create a globset of all input globs to match with.
     pub fn create_globset(&self) -> miette::Result<glob::GlobSet> {
-        glob::GlobSet::new_split(&self.input_globs, &self.output_globs)
+        Ok(glob::GlobSet::new_split(
+            &self.input_globs,
+            &self.output_globs,
+        )?)
     }
 
     /// Return a list of project-relative affected files filtered down from

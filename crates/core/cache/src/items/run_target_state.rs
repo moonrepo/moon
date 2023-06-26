@@ -1,6 +1,6 @@
 use crate::cache_item;
 use crate::helpers::get_cache_mode;
-use miette::IntoDiagnostic;
+
 use moon_archive::{untar_with_diff, TarArchiver, TreeDiffer};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_logger::{map_list, trace, warn};
@@ -59,7 +59,7 @@ impl RunTargetState {
                 tar.add_source(stderr_path, Some("stderr.log"));
             }
 
-            tar.pack().into_diagnostic()?;
+            tar.pack()?;
 
             return Ok(true);
         }
@@ -86,7 +86,7 @@ impl RunTargetState {
             // we don't stop hydration partially though, resulting in a
             // corrupted cache.
             tokio::spawn(async move {
-                let mut differ = TreeDiffer::load(&workspace_root, &outputs).into_diagnostic()?;
+                let mut differ = TreeDiffer::load(&workspace_root, &outputs)?;
                 let stdout_log = workspace_root.join("stdout.log");
                 let stderr_log = workspace_root.join("stderr.log");
 

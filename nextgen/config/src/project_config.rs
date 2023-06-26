@@ -7,7 +7,7 @@ use moon_common::cacheable;
 use moon_common::{consts, Id};
 use rustc_hash::FxHashMap;
 use schematic::{
-    derive_enum, validate, Config, ConfigEnum, ConfigError, ConfigLoader, SchemaType, Schematic,
+    derive_enum, validate, Config, ConfigEnum, ConfigLoader, SchemaType, Schematic,
     ValidateError,
 };
 use std::collections::BTreeMap;
@@ -117,7 +117,7 @@ impl ProjectConfig {
     pub fn load<R: AsRef<Path>, P: AsRef<Path>>(
         workspace_root: R,
         path: P,
-    ) -> Result<ProjectConfig, ConfigError> {
+    ) -> miette::Result<ProjectConfig> {
         let workspace_root = workspace_root.as_ref();
         let path = path.as_ref();
 
@@ -132,7 +132,7 @@ impl ProjectConfig {
     pub fn load_from<R: AsRef<Path>, P: AsRef<str>>(
         workspace_root: R,
         project_source: P,
-    ) -> Result<ProjectConfig, ConfigError> {
+    ) -> miette::Result<ProjectConfig> {
         let workspace_root = workspace_root.as_ref();
 
         Self::load(
@@ -143,13 +143,11 @@ impl ProjectConfig {
         )
     }
 
-    pub fn load_partial<P: AsRef<Path>>(
-        project_root: P,
-    ) -> Result<PartialProjectConfig, ConfigError> {
+    pub fn load_partial<P: AsRef<Path>>(project_root: P) -> miette::Result<PartialProjectConfig> {
         let path = project_root.as_ref().join(consts::CONFIG_PROJECT_FILENAME);
 
-        ConfigLoader::<ProjectConfig>::new()
+        Ok(ConfigLoader::<ProjectConfig>::new()
             .file_optional(path)?
-            .load_partial(&())
+            .load_partial(&())?)
     }
 }

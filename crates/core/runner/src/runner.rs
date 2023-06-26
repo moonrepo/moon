@@ -634,7 +634,7 @@ impl<'a> Runner<'a> {
 
                     interval_handle.abort();
 
-                    return Err(RunnerError::Process(error).into());
+                    return Err(error);
                 }
             }
         }

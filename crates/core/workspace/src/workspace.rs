@@ -114,7 +114,7 @@ fn load_toolchain_config(
         return Ok(ToolchainConfig::default());
     }
 
-    Ok(ToolchainConfig::load_from(root_dir, proto_tools)?)
+    ToolchainConfig::load_from(root_dir, proto_tools)
 }
 
 // .moon/workspace.yml
@@ -138,7 +138,7 @@ fn load_workspace_config(root_dir: &Path) -> miette::Result<WorkspaceConfig> {
         return Err(WorkspaceError::MissingWorkspaceConfigFile.into());
     }
 
-    Ok(WorkspaceConfig::load_from(root_dir)?)
+    WorkspaceConfig::load_from(root_dir)
 }
 
 pub struct Workspace {
@@ -237,7 +237,7 @@ impl Workspace {
         self.platforms.register(platform.get_type(), platform);
     }
 
-    pub async fn signin_to_moonbase(&mut self) -> Result<(), WorkspaceError> {
+    pub async fn signin_to_moonbase(&mut self) -> miette::Result<()> {
         let Ok(secret_key) = env::var("MOONBASE_SECRET_KEY") else {
             return Ok(());
         };

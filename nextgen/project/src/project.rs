@@ -4,7 +4,7 @@ use moon_config::{
     DependencyConfig, InheritedTasksResult, LanguageType, PlatformType, ProjectConfig, ProjectType,
 };
 use moon_file_group::FileGroup;
-use moon_query::{Condition, Criteria, Field, LogicalOperator, QueryError, Queryable};
+use moon_query::{Condition, Criteria, Field, LogicalOperator, Queryable};
 use moon_task::Task;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
@@ -64,12 +64,13 @@ impl Project {
     pub fn get_task<I: AsRef<str>>(&self, task_id: I) -> miette::Result<&Task> {
         let task_id = Id::raw(task_id.as_ref());
 
-        self.tasks
+        Ok(self
+            .tasks
             .get(&task_id)
             .ok_or_else(|| ProjectError::UnknownTask {
                 task_id: task_id.to_string(),
                 project_id: self.id.to_string(),
-            })
+            })?)
     }
 
     /// Return true if this project is affected based on touched files.

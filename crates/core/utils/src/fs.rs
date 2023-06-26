@@ -1,5 +1,5 @@
 use moon_common::consts::CONFIG_DIRNAME;
-use starbase_utils::fs::{self, FsError};
+use starbase_utils::fs::{self};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 
@@ -17,7 +17,7 @@ pub mod temp {
         get_dir().join(format!("{}.{}", crate::hash(source), ext))
     }
 
-    pub fn read<P: AsRef<Path>>(path: P) -> Result<Option<String>, FsError> {
+    pub fn read<P: AsRef<Path>>(path: P) -> miette::Result<Option<String>> {
         let file = path.as_ref();
 
         if !file.exists() {
@@ -40,7 +40,7 @@ pub mod temp {
         Ok(Some(fs::read_file(file)?))
     }
 
-    pub fn write<P: AsRef<Path>, D: AsRef<str>>(path: P, data: D) -> Result<(), FsError> {
+    pub fn write<P: AsRef<Path>, D: AsRef<str>>(path: P, data: D) -> miette::Result<()> {
         let path = path.as_ref();
 
         if let Some(parent) = path.parent() {

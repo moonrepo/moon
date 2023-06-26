@@ -49,9 +49,7 @@ impl<'app> ProjectBuilder<'app> {
         let root = source.to_logical_path(workspace_root);
 
         if !root.exists() {
-            return Err(ProjectBuilderError::MissingAtSource(
-                source.as_str().to_owned(),
-            ));
+            return Err(ProjectBuilderError::MissingAtSource(source.as_str().to_owned()).into());
         }
 
         Ok(ProjectBuilder {

@@ -51,7 +51,7 @@ pub enum TokenType {
 }
 
 impl TokenType {
-    pub fn check_context(&self, context: &TokenContext) -> Result<(), TokenError> {
+    pub fn check_context(&self, context: &TokenContext) -> miette::Result<()> {
         let allowed = match self {
             TokenType::Dirs(_, _)
             | TokenType::Files(_, _)
@@ -78,7 +78,8 @@ impl TokenType {
             return Err(TokenError::InvalidTokenContext(
                 self.token_label(),
                 context.context_label(),
-            ));
+            )
+            .into());
         }
 
         Ok(())
@@ -147,7 +148,7 @@ impl<'task> TokenResolver<'task> {
         &self,
         inputs: &[&InputPath],
         task: &Task,
-    ) -> Result<PathsGlobsResolved, TokenError> {
+    ) -> miette::Result<PathsGlobsResolved> {
         let mut paths: Vec<WorkspaceRelativePathBuf> = vec![];
         let mut globs: Vec<WorkspaceRelativePathBuf> = vec![];
 
@@ -205,7 +206,7 @@ impl<'task> TokenResolver<'task> {
         &self,
         outputs: &[OutputPath],
         task: &Task,
-    ) -> Result<PathsGlobsResolved, TokenError> {
+    ) -> miette::Result<PathsGlobsResolved> {
         let mut paths: Vec<WorkspaceRelativePathBuf> = vec![];
         let mut globs: Vec<WorkspaceRelativePathBuf> = vec![];
 
@@ -246,11 +247,7 @@ impl<'task> TokenResolver<'task> {
 
     /// Cycle through the values, resolve any tokens, and return a list of absolute file paths.
     /// This should only be used for `inputs` and `outputs`.
-    pub fn resolve(
-        &self,
-        values: &[String],
-        task: &Task,
-    ) -> Result<PathsGlobsResolved, TokenError> {
+    pub fn resolve(&self, values: &[String], task: &Task) -> miette::Result<PathsGlobsResolved> {
         let mut paths: Vec<WorkspaceRelativePathBuf> = vec![];
         let mut globs: Vec<WorkspaceRelativePathBuf> = vec![];
 
@@ -280,7 +277,7 @@ impl<'task> TokenResolver<'task> {
         Ok((paths, globs))
     }
 
-    pub fn resolve_command(&self, task: &Task) -> Result<String, TokenError> {
+    pub fn resolve_command(&self, task: &Task) -> miette::Result<String> {
         if self.has_token_func(&task.command) {
             // Trigger validation only
             self.resolve_func(&task.command, task)?;
@@ -291,7 +288,7 @@ impl<'task> TokenResolver<'task> {
         self.resolve_vars(&task.command, task)
     }
 
-    pub fn resolve_func(&self, value: &str, task: &Task) -> Result<PathsGlobsResolved, TokenError> {
+    pub fn resolve_func(&self, value: &str, task: &Task) -> miette::Result<PathsGlobsResolved> {
         let matches = TOKEN_FUNC_PATTERN.captures(value).unwrap();
         let token = matches.get(0).unwrap().as_str(); // @name(arg)
         let func = matches.get(1).unwrap().as_str(); // name
@@ -327,11 +324,11 @@ impl<'task> TokenResolver<'task> {
             "root" => {
                 self.replace_file_group_tokens(TokenType::Root(token.to_owned(), arg.to_owned()))
             }
-            _ => Err(TokenError::UnknownTokenFunc(token.to_owned())),
+            _ => Err(TokenError::UnknownTokenFunc(token.to_owned()).into()),
         }
     }
 
-    pub fn resolve_vars(&self, value: &str, task: &Task) -> Result<String, TokenError> {
+    pub fn resolve_vars(&self, value: &str, task: &Task) -> miette::Result<String> {
         let mut value = value.to_owned();
 
         while self.has_token_var(&value) {
@@ -341,7 +338,7 @@ impl<'task> TokenResolver<'task> {
         Ok(value)
     }
 
-    pub fn resolve_var(&self, value: &str, task: &Task) -> Result<String, TokenError> {
+    pub fn resolve_var(&self, value: &str, task: &Task) -> miette::Result<String> {
         let Some(matches) = TOKEN_VAR_PATTERN.captures(value) else {
             return Ok(value.to_owned());
         };
@@ -380,17 +377,17 @@ impl<'task> TokenResolver<'task> {
         Ok(value.replace(token, &var_value))
     }
 
-    fn convert_string_to_u8(&self, token: &str, value: String) -> Result<u8, TokenError> {
+    fn convert_string_to_u8(&self, token: &str, value: String) -> miette::Result<u8> {
         match value.parse::<u8>() {
             Ok(i) => Ok(i),
-            Err(_) => Err(TokenError::InvalidIndexType(token.to_owned(), value)),
+            Err(_) => Err(TokenError::InvalidIndexType(token.to_owned(), value).into()),
         }
     }
 
     fn replace_file_group_tokens(
         &self,
         token_type: TokenType,
-    ) -> Result<PathsGlobsResolved, TokenError> {
+    ) -> miette::Result<PathsGlobsResolved> {
         token_type.check_context(&self.context)?;
 
         let mut paths: Vec<WorkspaceRelativePathBuf> = vec![];
@@ -446,7 +443,7 @@ impl<'task> TokenResolver<'task> {
         &self,
         token_type: TokenType,
         task: &Task,
-    ) -> Result<PathsGlobsResolved, TokenError> {
+    ) -> miette::Result<PathsGlobsResolved> {
         token_type.check_context(&self.context)?;
 
         let mut paths: Vec<WorkspaceRelativePathBuf> = vec![];
@@ -456,7 +453,7 @@ impl<'task> TokenResolver<'task> {
             let error = TokenError::InvalidInIndex(token, index);
 
             let Some(input) = task.inputs.get(index as usize) else {
-                return Err(error);
+                return Err(error.into());
             };
 
             if input.is_glob() {
@@ -469,7 +466,7 @@ impl<'task> TokenResolver<'task> {
                         globs.push(g.to_owned());
                     }
                     None => {
-                        return Err(error);
+                        return Err(error.into());
                     }
                 };
             } else {
@@ -480,7 +477,7 @@ impl<'task> TokenResolver<'task> {
                         paths.push(p.clone());
                     }
                     None => {
-                        return Err(error);
+                        return Err(error.into());
                     }
                 };
             }
@@ -493,7 +490,7 @@ impl<'task> TokenResolver<'task> {
         &self,
         token_type: TokenType,
         task: &Task,
-    ) -> Result<PathsGlobsResolved, TokenError> {
+    ) -> miette::Result<PathsGlobsResolved> {
         token_type.check_context(&self.context)?;
 
         let mut paths: Vec<WorkspaceRelativePathBuf> = vec![];
@@ -503,11 +500,11 @@ impl<'task> TokenResolver<'task> {
             let error = TokenError::InvalidOutIndex(token.clone(), index);
 
             let Some(output) = task.outputs.get(index as usize) else {
-                return Err(error);
+                return Err(error.into());
             };
 
             if self.has_token_func(output.as_str()) {
-                return Err(TokenError::InvalidOutNoTokenFunctions(token));
+                return Err(TokenError::InvalidOutNoTokenFunctions(token).into());
             }
 
             if output.is_glob() {
@@ -520,7 +517,7 @@ impl<'task> TokenResolver<'task> {
                         globs.push(g.to_owned());
                     }
                     None => {
-                        return Err(error);
+                        return Err(error.into());
                     }
                 };
             } else {
@@ -533,7 +530,7 @@ impl<'task> TokenResolver<'task> {
                         paths.push(p.clone());
                     }
                     None => {
-                        return Err(error);
+                        return Err(error.into());
                     }
                 };
             }

@@ -1,4 +1,4 @@
-use moon_tool::{Tool, ToolError};
+use moon_tool::Tool;
 use std::path::PathBuf;
 
 #[derive(Debug, Default)]
@@ -11,7 +11,7 @@ impl Tool for SystemToolStub {
         self
     }
 
-    fn get_bin_path(&self) -> Result<PathBuf, ToolError> {
+    fn get_bin_path(&self) -> miette::Result<PathBuf> {
         Ok(self.bin_path.to_path_buf())
     }
 }

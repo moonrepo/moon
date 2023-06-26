@@ -6,12 +6,16 @@ import type { PartialTaskConfig, PlatformType, TaskConfig } from './tasks-config
 
 export type DependencyScope = 'development' | 'peer' | 'production';
 
-export type ProjectDependsOn =
-	| string
-	| {
-			id: string;
-			scope: DependencyScope;
-	  };
+export type DependencySource = 'explicit' | 'implicit';
+
+export interface PartialDependencyConfig {
+	id?: string | null;
+	scope?: DependencyScope | null;
+	source?: DependencySource | null;
+	via?: string | null;
+}
+
+export type ProjectDependsOn = string | DependencyConfig;
 
 export type LanguageType =
 	| 'bash'
@@ -86,12 +90,10 @@ export interface PartialProjectConfig {
 	workspace?: PartialProjectWorkspaceConfig | null;
 }
 
-export type DependencySource = 'explicit' | 'implicit';
-
 export interface DependencyConfig {
 	id: string;
 	scope: DependencyScope;
-	source: DependencySource;
+	source: DependencySource | null;
 	via: string | null;
 }
 

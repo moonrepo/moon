@@ -3,7 +3,6 @@ use crate::actions::run_target::run_target;
 use crate::actions::setup_tool::setup_tool;
 use crate::actions::sync_project::sync_project;
 use crate::actions::sync_workspace::sync_workspace;
-use crate::errors::PipelineError;
 use moon_action::{Action, ActionNode};
 use moon_action_context::ActionContext;
 use moon_emitter::{Emitter, Event};
@@ -27,7 +26,7 @@ pub async fn process_action(
     emitter: Arc<RwLock<Emitter>>,
     workspace: Arc<RwLock<Workspace>>,
     project_graph: Arc<RwLock<ProjectGraph>>,
-) -> Result<Action, PipelineError> {
+) -> miette::Result<Action> {
     action.start();
 
     let node = action.node.take().unwrap();

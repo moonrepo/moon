@@ -4,11 +4,11 @@ use itertools::Itertools;
 use moon::{build_dep_graph, generate_project_graph, load_workspace};
 use moon_action_context::ActionContext;
 use moon_action_pipeline::Pipeline;
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_dep_graph::DepGraph;
 use moon_logger::debug;
 use moon_project_graph::ProjectGraph;
 use moon_target::Target;
-use moon_task::TouchedFilePaths;
 use moon_terminal::safe_exit;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
@@ -47,7 +47,7 @@ async fn gather_touched_files(
     provider: &CiOutput,
     workspace: &Workspace,
     options: &CiOptions,
-) -> AppResult<TouchedFilePaths> {
+) -> AppResult<FxHashSet<WorkspaceRelativePathBuf>> {
     print_header(provider, "Gathering touched files");
 
     let results = query_touched_files(
@@ -71,7 +71,7 @@ async fn gather_touched_files(
 fn gather_runnable_targets(
     provider: &CiOutput,
     project_graph: &ProjectGraph,
-    touched_files: &TouchedFilePaths,
+    touched_files: &FxHashSet<WorkspaceRelativePathBuf>,
 ) -> AppResult<TargetList> {
     print_header(provider, "Gathering runnable targets");
 

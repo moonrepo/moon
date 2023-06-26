@@ -7,11 +7,12 @@ edition = "2021"
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_file_group = { path = "../file-group" }
-moon_project2 = { path = "../project" }
-moon_task2 = { path = "../task" }
+moon_project = { path = "../project" }
+moon_task = { path = "../task" }
 moon_task_builder = { path = "../task-builder" }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
+thiserror = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]

@@ -56,7 +56,7 @@ impl Git {
         let workspace_root = workspace_root.as_ref();
 
         debug!(
-            starting_dir = %workspace_root.display(),
+            starting_dir = ?workspace_root,
             "Attempting to find a .git directory"
         );
 
@@ -68,7 +68,7 @@ impl Git {
 
             if git_dir.exists() {
                 debug!(
-                    git_dir = %git_dir.display(),
+                    git_dir = ?git_dir,
                     "Found a .git directory"
                 );
 
@@ -92,7 +92,7 @@ impl Git {
 
         if ignore_path.exists() {
             debug!(
-                ignore_file = %ignore_path.display(),
+                ignore_file = ?ignore_path,
                 "Loading ignore rules from .gitignore",
             );
 

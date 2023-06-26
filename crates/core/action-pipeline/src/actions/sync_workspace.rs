@@ -3,6 +3,7 @@ use moon_action_context::ActionContext;
 use moon_actions::{sync_codeowners, sync_vcs_hooks};
 use moon_logger::debug;
 use moon_project_graph::ProjectGraph;
+use moon_utils::is_test_env;
 use moon_workspace::Workspace;
 use starbase_styles::color;
 use std::env;
@@ -17,7 +18,10 @@ pub async fn sync_workspace(
     workspace: Arc<RwLock<Workspace>>,
     project_graph: Arc<RwLock<ProjectGraph>>,
 ) -> miette::Result<ActionStatus> {
-    env::set_var("MOON_RUNNING_ACTION", "sync-workspace");
+    // This causes a lot of churn in tests, revisit
+    if !is_test_env() {
+        env::set_var("MOON_RUNNING_ACTION", "sync-workspace");
+    }
 
     let workspace = workspace.read().await;
     let project_graph = project_graph.read().await;
@@ -27,7 +31,7 @@ pub async fn sync_workspace(
     if workspace.config.codeowners.sync_on_run {
         debug!(
             target: LOG_TARGET,
-            "Syncing codeowners ({} enabled)",
+            "Syncing code owners ({} enabled)",
             color::id("codeowners.syncOnRun"),
         );
 

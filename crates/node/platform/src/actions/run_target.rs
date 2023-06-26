@@ -1,7 +1,7 @@
 use crate::target_hasher::NodeTargetHasher;
 use moon_action_context::{ActionContext, ProfileType};
 use moon_config::{HasherConfig, HasherOptimization, NodeConfig, NodePackageManager};
-use moon_error::MoonError;
+
 use moon_logger::trace;
 use moon_node_lang::{
     node::{self, BinFile},
@@ -24,7 +24,7 @@ fn create_node_options(
     node_config: &NodeConfig,
     context: &ActionContext,
     task: &Task,
-) -> Result<Vec<String>, MoonError> {
+) -> miette::Result<Vec<String>> {
     let mut options = string_vec![
         // "--inspect", // Enable node inspector
         // "--title",
@@ -83,7 +83,7 @@ fn find_package_bin(
     starting_dir: &Path,
     working_dir: &Path,
     bin_name: &str,
-) -> Result<Option<Command>, ToolError> {
+) -> miette::Result<Option<Command>> {
     let possible_bin_path = match node::find_package_bin(starting_dir, bin_name)? {
         Some(bin) => bin,
         None => {
@@ -93,10 +93,7 @@ fn find_package_bin(
                 return Ok(Some(Command::new(bin_name)));
             }
 
-            return Err(ToolError::MissingBinary(
-                "node module".into(),
-                bin_name.to_owned(),
-            ));
+            return Err(ToolError::MissingBinary("node module".into(), bin_name.to_owned()).into());
         }
     };
 
@@ -122,7 +119,7 @@ fn prepare_target_command(
     context: &ActionContext,
     task: &Task,
     node_config: &NodeConfig,
-) -> Result<(), ToolError> {
+) -> miette::Result<()> {
     command.args(&task.args).envs(&task.env);
 
     // This functionality mimics what pnpm's "node_modules/.bin" binaries do
@@ -157,7 +154,7 @@ pub fn create_target_command(
     project: &Project,
     task: &Task,
     working_dir: &Path,
-) -> Result<Command, ToolError> {
+) -> miette::Result<Command> {
     let node_bin = node.get_bin_path()?;
     let node_options = create_node_options(&node.config, context, task)?;
     let mut command = Command::new(node.get_shim_path().unwrap_or(node_bin));
@@ -203,7 +200,7 @@ pub fn create_target_command_without_tool(
     project: &Project,
     task: &Task,
     working_dir: &Path,
-) -> Result<Command, ToolError> {
+) -> miette::Result<Command> {
     let node_options = create_node_options(node_config, context, task)?;
     let mut command = Command::new("node");
 
@@ -233,7 +230,7 @@ pub async fn create_target_hasher(
     project: &Project,
     workspace_root: &Path,
     hasher_config: &HasherConfig,
-) -> Result<NodeTargetHasher, ToolError> {
+) -> miette::Result<NodeTargetHasher> {
     let mut hasher =
         NodeTargetHasher::new(node.map(|n| n.config.version.clone()).unwrap_or_default());
 

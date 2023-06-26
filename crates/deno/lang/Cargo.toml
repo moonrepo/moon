@@ -4,12 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-moon_error = { path = "../../core/error" }
 moon_lang = { path = "../../core/lang" }
 moon_logger = { path = "../../core/logger" }
 moon_utils = { path = "../../core/utils" }
 moon_typescript_lang = { path = "../../typescript/lang" }
 cached = { workspace = true }
+miette = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true, features = ["preserve_order"] }

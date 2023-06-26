@@ -336,7 +336,7 @@ mod target_command {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "MissingBinary(\"Cargo binary\", \"nextest\")")]
+    #[should_panic(expected = "Unable to find a Cargo binary for nextest.")]
     async fn errors_for_missing_cargo_bin() {
         let sandbox = create_sandbox("rust/project");
 

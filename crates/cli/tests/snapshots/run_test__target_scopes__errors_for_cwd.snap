@@ -2,7 +2,9 @@
 source: crates/cli/tests/run_test.rs
 expression: assert.output()
 ---
-Error:   × No project could be located starting from path fakeDir.
+Error: project::missing_path
+
+  × No project could be located starting from path fakeDir.
 
 
 

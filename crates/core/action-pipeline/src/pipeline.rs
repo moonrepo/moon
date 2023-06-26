@@ -152,7 +152,7 @@ impl Pipeline {
                             biased;
 
                             _ = cancel_token_clone.cancelled() => {
-                                Err(PipelineError::Aborted("Received ctrl + c, shutting down".into()))
+                                Err(PipelineError::Aborted("Received ctrl + c, shutting down".into()).into())
                             }
                             res = process_action(
                                 action,

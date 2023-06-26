@@ -1,6 +1,5 @@
 use crate::PNPM;
 use cached::proc_macro::cached;
-use moon_error::MoonError;
 use moon_lang::config_cache;
 use serde::{Deserialize, Serialize};
 use starbase_utils::yaml::read_file as read_yaml;

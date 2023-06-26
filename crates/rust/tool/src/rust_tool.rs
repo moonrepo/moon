@@ -3,7 +3,7 @@ use moon_logger::debug;
 use moon_platform_runtime::Version;
 use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
-use moon_tool::{Tool, ToolError};
+use moon_tool::Tool;
 use proto::{async_trait, rust::RustLanguage, Installable, Proto, Tool as ProtoTool};
 use rustc_hash::FxHashMap;
 use std::{
@@ -21,11 +21,7 @@ pub struct RustTool {
 }
 
 impl RustTool {
-    pub fn new(
-        proto: &Proto,
-        config: &RustConfig,
-        version: &Version,
-    ) -> Result<RustTool, ToolError> {
+    pub fn new(proto: &Proto, config: &RustConfig, version: &Version) -> miette::Result<RustTool> {
         let mut rust = RustTool {
             config: config.to_owned(),
             global: false,
@@ -42,7 +38,7 @@ impl RustTool {
         Ok(rust)
     }
 
-    pub async fn exec_cargo<I, S>(&self, args: I, working_dir: &Path) -> Result<(), ToolError>
+    pub async fn exec_cargo<I, S>(&self, args: I, working_dir: &Path) -> miette::Result<()>
     where
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
@@ -64,14 +60,11 @@ impl Tool for RustTool {
         self
     }
 
-    fn get_bin_path(&self) -> Result<PathBuf, ToolError> {
+    fn get_bin_path(&self) -> miette::Result<PathBuf> {
         Ok(PathBuf::from("cargo"))
     }
 
-    async fn setup(
-        &mut self,
-        last_versions: &mut FxHashMap<String, String>,
-    ) -> Result<u8, ToolError> {
+    async fn setup(&mut self, last_versions: &mut FxHashMap<String, String>) -> miette::Result<u8> {
         let mut installed = 0;
 
         let Some(version) = &self.config.version else  {
@@ -109,7 +102,7 @@ impl Tool for RustTool {
         Ok(installed)
     }
 
-    async fn teardown(&mut self) -> Result<(), ToolError> {
+    async fn teardown(&mut self) -> miette::Result<()> {
         self.tool.teardown().await?;
 
         Ok(())

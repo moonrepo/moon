@@ -1,10 +1,9 @@
 use moon_common::Id;
-use moon_config::{OutputPath, PartialTaskConfig, TaskCommandArgs};
+use moon_config::{OutputPath, PartialTaskConfig, PlatformType, TaskCommandArgs};
 use moon_logger::{debug, warn};
 use moon_node_lang::package_json::{PackageJson, ScriptsSet};
 use moon_process::args::split_args;
 use moon_target::Target;
-use moon_task::{PlatformType, TaskError};
 use moon_utils::regex::{ID_CLEAN, UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
 use moon_utils::{regex, string_vec};
 use once_cell::sync::Lazy;
@@ -101,16 +100,18 @@ fn clean_env_var(pair: &str) -> (String, String) {
     (key.to_owned(), val.to_owned())
 }
 
-fn clean_output_path(target_id: &str, output: &str) -> Result<String, TaskError> {
+fn clean_output_path(target_id: &str, output: &str) -> miette::Result<String> {
     if output.starts_with("..") {
-        Err(TaskError::NoParentOutput(
-            output.to_owned(),
-            target_id.to_owned(),
+        Err(miette::miette!(
+            "Task outputs must be project relative and cannot traverse upwards. Found {} in {}.",
+            output,
+            target_id,
         ))
     } else if output.starts_with('/') || WIN_DRIVE.is_match(output) {
-        Err(TaskError::NoAbsoluteOutput(
-            output.to_owned(),
-            target_id.to_owned(),
+        Err(miette::miette!(
+            "Task outputs must be project relative and cannot be absolute. Found {} in {}.",
+            output,
+            target_id,
         ))
     } else if output.starts_with("./") || output.starts_with(".\\") {
         Ok(output[2..].to_owned())
@@ -145,7 +146,7 @@ pub fn create_task(
     script_name: &str,
     script: &str,
     context: TaskContext,
-) -> Result<PartialTaskConfig, TaskError> {
+) -> miette::Result<PartialTaskConfig> {
     let is_wrapping = matches!(context, TaskContext::WrapRunScript);
     let script_args = split_args(script).unwrap();
     let mut task_config = PartialTaskConfig::default();
@@ -272,7 +273,7 @@ impl<'a> ScriptParser<'a> {
         }
     }
 
-    pub fn infer_scripts(&mut self, package_json: &PackageJson) -> Result<(), TaskError> {
+    pub fn infer_scripts(&mut self, package_json: &PackageJson) -> miette::Result<()> {
         let scripts = match &package_json.scripts {
             Some(s) => s.clone(),
             None => {
@@ -298,7 +299,7 @@ impl<'a> ScriptParser<'a> {
         Ok(())
     }
 
-    pub fn update_package(&mut self, package_json: &mut PackageJson) -> Result<(), TaskError> {
+    pub fn update_package(&mut self, package_json: &mut PackageJson) -> miette::Result<()> {
         let mut scripts: ScriptsSet = BTreeMap::new();
 
         for (name, script) in &self.life_cycles {
@@ -310,7 +311,7 @@ impl<'a> ScriptParser<'a> {
         Ok(())
     }
 
-    pub fn parse_scripts(&mut self, package_json: &PackageJson) -> Result<(), TaskError> {
+    pub fn parse_scripts(&mut self, package_json: &PackageJson) -> miette::Result<()> {
         let scripts = match &package_json.scripts {
             Some(s) => s.clone(),
             None => {
@@ -452,7 +453,7 @@ impl<'a> ScriptParser<'a> {
         &mut self,
         name: K,
         value: V,
-    ) -> Result<Option<Id>, TaskError> {
+    ) -> miette::Result<Option<Id>> {
         let name = name.as_ref();
         let value = value.as_ref();
 
@@ -469,7 +470,7 @@ impl<'a> ScriptParser<'a> {
         &mut self,
         name: K,
         value: V,
-    ) -> Result<Id, TaskError> {
+    ) -> miette::Result<Id> {
         let name = name.as_ref();
         let value = value.as_ref();
         let task_id = Id::new(clean_script_name(name))?;
@@ -490,7 +491,7 @@ impl<'a> ScriptParser<'a> {
         &mut self,
         name: T,
         value: &str,
-    ) -> Result<Option<Id>, TaskError> {
+    ) -> miette::Result<Option<Id>> {
         let name = name.as_ref();
         let scripts: Vec<_> = value.split("&&").map(|v| v.trim()).collect();
         let mut previous_task_id = Id::raw("");
@@ -529,7 +530,7 @@ impl<'a> ScriptParser<'a> {
         &mut self,
         name: T,
         value: &str,
-    ) -> Result<Option<Id>, TaskError> {
+    ) -> miette::Result<Option<Id>> {
         let name = name.as_ref();
 
         let caps = PM_RUN_COMMAND.captures(value).unwrap();
@@ -548,7 +549,7 @@ impl<'a> ScriptParser<'a> {
         Ok(None)
     }
 
-    fn apply_pre_post_hooks(&mut self, script_name: &str, task_id: &Id) -> Result<(), TaskError> {
+    fn apply_pre_post_hooks(&mut self, script_name: &str, task_id: &Id) -> miette::Result<()> {
         // Convert pre hooks as `deps`
         if self.pre.contains_key(script_name) {
             let pre = self.pre.remove(script_name).unwrap();

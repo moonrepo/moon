@@ -481,7 +481,7 @@ mod implicit_explicit_deps {
                     DependencyConfig {
                         id: "nodeNameScope".into(),
                         scope: DependencyScope::Development,
-                        source: DependencySource::Implicit,
+                        source: Some(DependencySource::Implicit),
                         via: Some("@scope/pkg-foo".to_string())
                     }
                 ),
@@ -490,7 +490,7 @@ mod implicit_explicit_deps {
                     DependencyConfig {
                         id: "node".into(),
                         scope: DependencyScope::Production,
-                        source: DependencySource::Implicit,
+                        source: Some(DependencySource::Implicit),
                         via: Some("project-graph-aliases-node".to_string())
                     }
                 )
@@ -512,7 +512,7 @@ mod implicit_explicit_deps {
                     DependencyConfig {
                         id: "nodeNameScope".into(),
                         scope: DependencyScope::Production,
-                        source: DependencySource::Explicit,
+                        source: Some(DependencySource::Explicit),
                         via: None
                     }
                 ),
@@ -521,7 +521,7 @@ mod implicit_explicit_deps {
                     DependencyConfig {
                         id: "node".into(),
                         scope: DependencyScope::Development,
-                        source: DependencySource::Explicit,
+                        source: Some(DependencySource::Explicit),
                         via: None
                     }
                 )
@@ -543,7 +543,7 @@ mod implicit_explicit_deps {
                     DependencyConfig {
                         id: "nodeNameScope".into(),
                         scope: DependencyScope::Production,
-                        source: DependencySource::Explicit,
+                        source: Some(DependencySource::Explicit),
                         via: None
                     }
                 ),
@@ -552,7 +552,7 @@ mod implicit_explicit_deps {
                     DependencyConfig {
                         id: "node".into(),
                         scope: DependencyScope::Development,
-                        source: DependencySource::Explicit,
+                        source: Some(DependencySource::Explicit),
                         via: None
                     }
                 ),
@@ -561,7 +561,7 @@ mod implicit_explicit_deps {
                     DependencyConfig {
                         id: "nodeNameOnly".into(),
                         scope: DependencyScope::Peer,
-                        source: DependencySource::Implicit,
+                        source: Some(DependencySource::Implicit),
                         via: Some("pkg-bar".to_string())
                     }
                 )
@@ -599,7 +599,7 @@ mod type_constraints {
 
     #[tokio::test]
     #[should_panic(
-        expected = "InvalidTypeRelationship(\"app\", Application, \"app-other\", Application)"
+        expected = "Invalid project relationship. Project app of type application cannot"
     )]
     async fn app_cannot_use_app() {
         get_type_constraints_graph(|sandbox| {
@@ -635,7 +635,7 @@ mod type_constraints {
 
     #[tokio::test]
     #[should_panic(
-        expected = "InvalidTypeRelationship(\"library\", Library, \"app\", Application)"
+        expected = "Invalid project relationship. Project library of type library cannot"
     )]
     async fn library_cannot_use_app() {
         get_type_constraints_graph(|sandbox| {
@@ -645,7 +645,9 @@ mod type_constraints {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "InvalidTypeRelationship(\"library\", Library, \"tool\", Tool)")]
+    #[should_panic(
+        expected = "Invalid project relationship. Project library of type library cannot"
+    )]
     async fn library_cannot_use_tool() {
         get_type_constraints_graph(|sandbox| {
             append_file(sandbox.path().join("library/moon.yml"), "dependsOn: [tool]");
@@ -670,7 +672,7 @@ mod type_constraints {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "InvalidTypeRelationship(\"tool\", Tool, \"app\", Application)")]
+    #[should_panic(expected = "Invalid project relationship. Project tool of type tool cannot")]
     async fn tool_cannot_use_app() {
         get_type_constraints_graph(|sandbox| {
             append_file(sandbox.path().join("tool/moon.yml"), "dependsOn: [app]");
@@ -679,7 +681,7 @@ mod type_constraints {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "InvalidTypeRelationship(\"tool\", Tool, \"tool-other\", Tool)")]
+    #[should_panic(expected = "Invalid project relationship. Project tool of type tool cannot")]
     async fn tool_cannot_use_tool() {
         get_type_constraints_graph(|sandbox| {
             append_file(
@@ -727,7 +729,7 @@ mod tag_constraints {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "InvalidTagRelationship(\"a\", \"warrior\", \"b\",")]
+    #[should_panic(expected = "Invalid tag relationship. Project a with tag warrior cannot")]
     async fn errors_for_no_source_tag_match() {
         get_tag_constraints_graph(|sandbox| {
             append_file(
@@ -752,7 +754,7 @@ mod tag_constraints {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "InvalidTagRelationship(\"a\", \"warrior\", \"b\",")]
+    #[should_panic(expected = "Invalid tag relationship. Project a with tag warrior cannot")]
     async fn errors_for_no_allowed_tag_match() {
         get_tag_constraints_graph(|sandbox| {
             append_file(
@@ -765,7 +767,7 @@ mod tag_constraints {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "InvalidTagRelationship(\"a\", \"mage\", \"b\",")]
+    #[should_panic(expected = "Invalid tag relationship. Project a with tag mage cannot")]
     async fn errors_for_depon_empty_tags() {
         get_tag_constraints_graph(|sandbox| {
             append_file(

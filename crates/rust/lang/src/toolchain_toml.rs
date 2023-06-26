@@ -1,6 +1,5 @@
 use crate::RUSTUP;
 use cached::proc_macro::cached;
-use moon_error::MoonError;
 use moon_lang::config_cache_container;
 use serde::{Deserialize, Serialize};
 use starbase_utils::toml::{read_file as read_toml, write_file, TomlError};

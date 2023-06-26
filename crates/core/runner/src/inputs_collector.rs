@@ -1,10 +1,9 @@
-use crate::RunnerError;
 use moon_common::{
     consts::CONFIG_PROJECT_FILENAME,
     path::{standardize_separators, WorkspaceRelativePathBuf},
 };
 use moon_config::{HasherConfig, HasherWalkStrategy};
-use moon_logger::{warn, Logable};
+use moon_logger::warn;
 use moon_task::Task;
 use moon_utils::{is_ci, path};
 use moon_vcs::BoxedVcs;
@@ -23,7 +22,7 @@ fn convert_paths_to_strings(
     log_missing: bool,
     paths: &FxHashSet<PathBuf>,
     workspace_root: &Path,
-) -> Result<Vec<String>, RunnerError> {
+) -> miette::Result<Vec<String>> {
     let mut files: Vec<String> = vec![];
 
     for path in paths {
@@ -99,7 +98,7 @@ pub async fn collect_and_hash_inputs(
     project_root: &Path,
     workspace_root: &Path,
     hasher_config: &HasherConfig,
-) -> Result<HashedInputs, RunnerError> {
+) -> miette::Result<HashedInputs> {
     let mut files_to_hash = FxHashSet::default(); // Absolute paths
     let globset = task.create_globset()?;
     let use_globs = project_root == workspace_root
@@ -159,7 +158,7 @@ pub async fn collect_and_hash_inputs(
     // 2: Convert to workspace relative paths and filter out invalid inputs
 
     let mut files_to_hash = convert_paths_to_strings(
-        task.get_log_target(),
+        task.target.as_str(),
         hasher_config.warn_on_missing_inputs,
         &files_to_hash,
         workspace_root,

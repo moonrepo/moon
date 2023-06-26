@@ -7,7 +7,6 @@ use moon_config::{
     PlatformType, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, TaskConfig,
     TasksConfigsMap, TypeScriptConfig,
 };
-use moon_error::MoonError;
 use moon_hasher::{DepsHasher, HashSet};
 use moon_logger::{debug, warn};
 use moon_node_lang::node::get_package_manager_workspaces;
@@ -15,9 +14,9 @@ use moon_node_lang::{PackageJson, NPM};
 use moon_node_tool::NodeTool;
 use moon_platform::{Platform, Runtime, Version};
 use moon_process::Command;
-use moon_project::{Project, ProjectError};
+use moon_project::Project;
 use moon_task::Task;
-use moon_tool::{Tool, ToolError, ToolManager};
+use moon_tool::{Tool, ToolManager};
 use moon_typescript_platform::TypeScriptTargetHasher;
 use moon_utils::async_trait;
 use proto::Proto;
@@ -95,16 +94,16 @@ impl Platform for NodePlatform {
 
     // PROJECT GRAPH
 
-    fn is_project_in_dependency_workspace(&self, project: &Project) -> Result<bool, MoonError> {
+    fn is_project_in_dependency_workspace(&self, project_source: &str) -> miette::Result<bool> {
         let mut in_workspace = false;
 
         // Root package is always considered within the workspace
-        if project.root == self.workspace_root {
+        if project_source.is_empty() || project_source == "." {
             return Ok(true);
         }
 
         if let Some(globs) = get_package_manager_workspaces(self.workspace_root.to_owned())? {
-            in_workspace = GlobSet::new(&globs)?.matches(project.source.as_str());
+            in_workspace = GlobSet::new(&globs)?.matches(project_source);
         }
 
         Ok(in_workspace)
@@ -114,7 +113,7 @@ impl Platform for NodePlatform {
         &mut self,
         projects_map: &ProjectsSourcesMap,
         aliases_map: &mut ProjectsAliasesMap,
-    ) -> Result<(), MoonError> {
+    ) -> miette::Result<()> {
         debug!(
             target: LOG_TARGET,
             "Loading names (aliases) from project {}'s",
@@ -166,18 +165,19 @@ impl Platform for NodePlatform {
 
     fn load_project_implicit_dependencies(
         &self,
-        project: &Project,
+        project_id: &str,
+        project_source: &str,
         _aliases_map: &ProjectsAliasesMap,
-    ) -> Result<Vec<DependencyConfig>, MoonError> {
+    ) -> miette::Result<Vec<DependencyConfig>> {
         let mut implicit_deps = vec![];
 
         debug!(
             target: LOG_TARGET,
             "Scanning {} for implicit dependency relations",
-            color::id(&project.id),
+            color::id(project_id),
         );
 
-        if let Some(package_json) = PackageJson::read(&project.root)? {
+        if let Some(package_json) = PackageJson::read(self.workspace_root.join(project_source))? {
             let mut find_implicit_relations =
                 |package_deps: &BTreeMap<String, String>, scope: &DependencyScope| {
                     for dep_name in package_deps.keys() {
@@ -185,7 +185,7 @@ impl Platform for NodePlatform {
                             implicit_deps.push(DependencyConfig {
                                 id: dep_project_id.to_owned(),
                                 scope: *scope,
-                                source: DependencySource::Implicit,
+                                source: Some(DependencySource::Implicit),
                                 via: Some(dep_name.clone()),
                             });
                         }
@@ -208,7 +208,11 @@ impl Platform for NodePlatform {
         Ok(implicit_deps)
     }
 
-    fn load_project_tasks(&self, project: &Project) -> Result<TasksConfigsMap, MoonError> {
+    fn load_project_tasks(
+        &self,
+        project_id: &str,
+        project_source: &str,
+    ) -> miette::Result<TasksConfigsMap> {
         let mut tasks = BTreeMap::new();
 
         if !self.config.infer_tasks_from_scripts {
@@ -218,14 +222,12 @@ impl Platform for NodePlatform {
         debug!(
             target: LOG_TARGET,
             "Inferring {} tasks from {}",
-            color::id(&project.id),
+            color::id(project_id),
             color::file(NPM.manifest)
         );
 
-        if let Some(package_json) = PackageJson::read(&project.root)? {
-            for (id, partial_task) in infer_tasks_from_scripts(&project.id, &package_json)
-                .map_err(|e| MoonError::Generic(e.to_string()))?
-            {
+        if let Some(package_json) = PackageJson::read(self.workspace_root.join(project_source))? {
+            for (id, partial_task) in infer_tasks_from_scripts(project_id, &package_json)? {
                 tasks.insert(id, TaskConfig::from_partial(partial_task));
             }
         }
@@ -235,23 +237,23 @@ impl Platform for NodePlatform {
 
     // TOOLCHAIN
 
-    fn is_toolchain_enabled(&self) -> Result<bool, ToolError> {
+    fn is_toolchain_enabled(&self) -> miette::Result<bool> {
         Ok(self.config.version.is_some())
     }
 
-    fn get_tool(&self) -> Result<Box<&dyn Tool>, ToolError> {
+    fn get_tool(&self) -> miette::Result<Box<&dyn Tool>> {
         let tool = self.toolchain.get()?;
 
         Ok(Box::new(tool))
     }
 
-    fn get_tool_for_version(&self, version: Version) -> Result<Box<&dyn Tool>, ToolError> {
+    fn get_tool_for_version(&self, version: Version) -> miette::Result<Box<&dyn Tool>> {
         let tool = self.toolchain.get_for_version(&version)?;
 
         Ok(Box::new(tool))
     }
 
-    fn get_dependency_configs(&self) -> Result<Option<(String, String)>, ToolError> {
+    fn get_dependency_configs(&self) -> miette::Result<Option<(String, String)>> {
         let tool = self.toolchain.get()?;
         let depman = tool.get_package_manager();
 
@@ -261,7 +263,7 @@ impl Platform for NodePlatform {
         )))
     }
 
-    async fn setup_toolchain(&mut self) -> Result<(), ToolError> {
+    async fn setup_toolchain(&mut self) -> miette::Result<()> {
         let version = match &self.config.version {
             Some(v) => Version::new(v),
             None => Version::new_global(),
@@ -281,7 +283,7 @@ impl Platform for NodePlatform {
         Ok(())
     }
 
-    async fn teardown_toolchain(&mut self) -> Result<(), ToolError> {
+    async fn teardown_toolchain(&mut self) -> miette::Result<()> {
         self.toolchain.teardown_all().await?;
 
         Ok(())
@@ -294,7 +296,7 @@ impl Platform for NodePlatform {
         _context: &ActionContext,
         runtime: &Runtime,
         last_versions: &mut FxHashMap<String, String>,
-    ) -> Result<u8, ToolError> {
+    ) -> miette::Result<u8> {
         let version = runtime.version();
 
         if !self.toolchain.has(&version) {
@@ -320,7 +322,7 @@ impl Platform for NodePlatform {
         _context: &ActionContext,
         runtime: &Runtime,
         working_dir: &Path,
-    ) -> Result<(), ToolError> {
+    ) -> miette::Result<()> {
         actions::install_deps(
             self.toolchain.get_for_version(runtime.version())?,
             working_dir,
@@ -335,7 +337,7 @@ impl Platform for NodePlatform {
         _context: &ActionContext,
         project: &Project,
         dependencies: &FxHashMap<Id, &Project>,
-    ) -> Result<bool, ProjectError> {
+    ) -> miette::Result<bool> {
         let modified = actions::sync_project(
             project,
             dependencies,
@@ -353,7 +355,7 @@ impl Platform for NodePlatform {
         manifest_path: &Path,
         hashset: &mut HashSet,
         _hasher_config: &HasherConfig,
-    ) -> Result<(), ToolError> {
+    ) -> miette::Result<()> {
         if let Ok(Some(package)) = PackageJson::read(manifest_path) {
             let name = package.name.unwrap_or_else(|| "unknown".into());
             let mut hasher = DepsHasher::new(name);
@@ -382,7 +384,7 @@ impl Platform for NodePlatform {
         runtime: &Runtime,
         hashset: &mut HashSet,
         hasher_config: &HasherConfig,
-    ) -> Result<(), ToolError> {
+    ) -> miette::Result<()> {
         let node_hasher = actions::create_target_hasher(
             self.toolchain.get_for_version(runtime.version()).ok(),
             project,
@@ -413,7 +415,7 @@ impl Platform for NodePlatform {
         task: &Task,
         runtime: &Runtime,
         working_dir: &Path,
-    ) -> Result<Command, ToolError> {
+    ) -> miette::Result<Command> {
         let command = if self.is_toolchain_enabled()? {
             actions::create_target_command(
                 self.toolchain.get_for_version(runtime.version())?,

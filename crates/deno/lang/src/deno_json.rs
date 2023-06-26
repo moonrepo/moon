@@ -1,7 +1,6 @@
 // deno.json
 
 use cached::proc_macro::cached;
-use moon_error::MoonError;
 use moon_lang::config_cache;
 use moon_typescript_lang::tsconfig::CompilerOptions;
 use serde::{Deserialize, Serialize};
@@ -49,7 +48,7 @@ pub enum DenoJsonLock {
 }
 
 impl DenoJson {
-    pub fn save(&mut self) -> Result<(), MoonError> {
+    pub fn save(&mut self) -> miette::Result<()> {
         if !self.dirty.is_empty() {
             write_preserved_json(&self.path, self)?;
             self.dirty.clear();
@@ -62,7 +61,7 @@ impl DenoJson {
 }
 
 #[track_caller]
-fn write_preserved_json(path: &Path, _config: &DenoJson) -> Result<(), MoonError> {
+fn write_preserved_json(path: &Path, _config: &DenoJson) -> miette::Result<()> {
     let data: JsonValue = json::read_file(path)?;
 
     // We only need to set fields that we modify within moon,

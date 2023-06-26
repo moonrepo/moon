@@ -1,5 +1,4 @@
 use moon_common::Id;
-use moon_config::{InheritedTasksManager, LanguageType};
 use moon_project::Project;
 use moon_test_utils::{create_sandbox_with_config, get_node_fixture_configs};
 use moon_typescript_lang::tsconfig::TsConfigExtends;
@@ -20,14 +19,11 @@ mod missing_tsconfig {
             Some(tasks_config),
         );
 
-        let project = Project::new(
-            &Id::raw("deps-a"),
-            "deps-a",
-            sandbox.path(),
-            &InheritedTasksManager::default(),
-            |_| LanguageType::Unknown,
-        )
-        .unwrap();
+        let project = Project {
+            id: Id::raw("deps-a"),
+            root: sandbox.path().join("deps-a"),
+            ..Project::default()
+        };
 
         let tsconfig_path = project.root.join("tsconfig.json");
 
@@ -64,14 +60,11 @@ mod missing_tsconfig {
             Some(tasks_config),
         );
 
-        let project = Project::new(
-            &Id::raw("deps-a"),
-            "deps-a",
-            sandbox.path(),
-            &InheritedTasksManager::default(),
-            |_| LanguageType::Unknown,
-        )
-        .unwrap();
+        let project = Project {
+            id: Id::raw("deps-a"),
+            root: sandbox.path().join("deps-a"),
+            ..Project::default()
+        };
 
         let tsconfig_path = project.root.join("tsconfig.ref.json");
 
@@ -108,14 +101,11 @@ mod missing_tsconfig {
             Some(tasks_config),
         );
 
-        let project = Project::new(
-            &Id::raw("deps-b"),
-            "deps-b",
-            sandbox.path(),
-            &InheritedTasksManager::default(),
-            |_| LanguageType::Unknown,
-        )
-        .unwrap();
+        let project = Project {
+            id: Id::raw("deps-b"),
+            root: sandbox.path().join("deps-b"),
+            ..Project::default()
+        };
 
         let tsconfig_path = project.root.join("tsconfig.json");
 

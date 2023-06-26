@@ -13,4 +13,5 @@ moon_rust_platform = { path = "../../rust/platform" }
 moon_system_platform = { path = "../../system/platform" }
 moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
+miette = { workspace = true }
 starbase_utils = { workspace = true }

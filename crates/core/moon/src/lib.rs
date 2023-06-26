@@ -2,7 +2,7 @@ use moon_deno_platform::DenoPlatform;
 use moon_dep_graph::DepGraphBuilder;
 use moon_error::MoonError;
 use moon_node_platform::NodePlatform;
-use moon_project_graph::{ProjectGraph, ProjectGraphBuilder, ProjectGraphError};
+use moon_project_graph::{ProjectGraph, ProjectGraphBuilder};
 use moon_rust_platform::RustPlatform;
 use moon_system_platform::SystemPlatform;
 use moon_utils::{is_ci, is_test_env};
@@ -29,7 +29,7 @@ pub fn set_telemetry(state: bool) {
 }
 
 /// Loads the workspace from the current working directory.
-pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
+pub async fn load_workspace() -> miette::Result<Workspace> {
     let current_dir = env::current_dir().map_err(|_| WorkspaceError::MissingWorkingDir)?;
     let mut workspace = load_workspace_from(&current_dir).await?;
 
@@ -49,7 +49,7 @@ pub async fn load_workspace() -> Result<Workspace, WorkspaceError> {
 }
 
 /// Loads the workspace from a provided directory.
-pub async fn load_workspace_from(path: &Path) -> Result<Workspace, WorkspaceError> {
+pub async fn load_workspace_from(path: &Path) -> miette::Result<Workspace> {
     let mut workspace = match Workspace::load_from(path) {
         Ok(workspace) => {
             set_telemetry(workspace.config.telemetry);
@@ -57,7 +57,7 @@ pub async fn load_workspace_from(path: &Path) -> Result<Workspace, WorkspaceErro
         }
         Err(err) => {
             set_telemetry(false);
-            return Err(err);
+            return Err(err.into());
         }
     };
 
@@ -89,7 +89,7 @@ pub async fn load_workspace_from(path: &Path) -> Result<Workspace, WorkspaceErro
 
 // Some commands require the toolchain to exist, but don't use
 // the action pipeline. This is a simple flow to wire up the tools.
-pub async fn load_workspace_with_toolchain() -> Result<Workspace, WorkspaceError> {
+pub async fn load_workspace_with_toolchain() -> miette::Result<Workspace> {
     let mut workspace = load_workspace().await?;
 
     for platform in workspace.platforms.list_mut() {
@@ -109,21 +109,16 @@ pub fn build_dep_graph<'g>(
     DepGraphBuilder::new(&workspace.platforms, project_graph)
 }
 
-pub async fn build_project_graph(
-    workspace: &mut Workspace,
-) -> Result<ProjectGraphBuilder, ProjectGraphError> {
+pub async fn build_project_graph(workspace: &mut Workspace) -> miette::Result<ProjectGraphBuilder> {
     ProjectGraphBuilder::new(workspace).await
 }
 
-pub async fn generate_project_graph(
-    workspace: &mut Workspace,
-) -> Result<ProjectGraph, ProjectGraphError> {
+pub async fn generate_project_graph(workspace: &mut Workspace) -> miette::Result<ProjectGraph> {
     let cache_path = workspace.cache.get_state_path("projectGraph.json");
     let mut builder = build_project_graph(workspace).await?;
 
     if builder.is_cached && cache_path.exists() {
-        let graph: ProjectGraph = json::read_file(&cache_path)
-            .map_err(|e| ProjectGraphError::Moon(MoonError::StarJson(e)))?;
+        let graph: ProjectGraph = json::read_file(&cache_path)?;
 
         return Ok(graph);
     }
@@ -133,8 +128,7 @@ pub async fn generate_project_graph(
     let graph = builder.build()?;
 
     if !builder.hash.is_empty() {
-        json::write_file(&cache_path, &graph, false)
-            .map_err(|e| ProjectGraphError::Moon(MoonError::StarJson(e)))?;
+        json::write_file(&cache_path, &graph, false)?;
     }
 
     Ok(graph)

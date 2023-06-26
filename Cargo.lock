@@ -2101,9 +2101,9 @@ dependencies = [
 
 [[package]]
 name = "insta"
-version = "1.29.0"
+version = "1.30.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a28d25139df397cbca21408bb742cf6837e04cdbebf1b07b760caf971d6a972"
+checksum = "28491f7753051e5704d4d0ae7860d45fae3238d7d235bc4289dcd45c48d3cec3"
 dependencies = [
  "console",
  "lazy_static",
@@ -2564,6 +2564,7 @@ dependencies = [
 name = "moon"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_deno_platform",
  "moon_dep_graph",
  "moon_error",
@@ -2827,7 +2828,7 @@ name = "moon_deno_lang"
 version = "0.1.0"
 dependencies = [
  "cached",
- "moon_error",
+ "miette",
  "moon_lang",
  "moon_logger",
  "moon_typescript_lang",
@@ -2843,12 +2844,12 @@ dependencies = [
 name = "moon_deno_platform"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_action_context",
  "moon_common",
  "moon_config",
  "moon_deno_lang",
  "moon_deno_tool",
- "moon_error",
  "moon_hasher",
  "moon_logger",
  "moon_platform",
@@ -2871,6 +2872,7 @@ dependencies = [
 name = "moon_deno_tool"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_config",
  "moon_platform_runtime",
  "moon_tool",
@@ -2991,6 +2993,7 @@ dependencies = [
 name = "moon_go_lang"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_lang",
 ]
 
@@ -3026,6 +3029,7 @@ dependencies = [
 name = "moon_lang"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "rustc-hash",
 ]
 
@@ -3063,7 +3067,7 @@ version = "0.1.0"
 dependencies = [
  "cached",
  "content_inspector",
- "moon_error",
+ "miette",
  "moon_lang",
  "moon_logger",
  "moon_test_utils",
@@ -3085,6 +3089,7 @@ dependencies = [
 name = "moon_node_platform"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon",
  "moon_action_context",
  "moon_common",
@@ -3121,6 +3126,7 @@ dependencies = [
 name = "moon_node_tool"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_config",
  "moon_logger",
  "moon_node_lang",
@@ -3158,6 +3164,7 @@ dependencies = [
 name = "moon_php_lang"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_lang",
 ]
 
@@ -3166,6 +3173,7 @@ name = "moon_platform"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "miette",
  "moon_action_context",
  "moon_common",
  "moon_config",
@@ -3228,29 +3236,9 @@ dependencies = [
  "miette",
  "moon_common",
  "moon_config",
- "moon_error",
  "moon_file_group",
- "moon_logger",
  "moon_query",
- "moon_target",
  "moon_task",
- "moon_test_utils",
- "rustc-hash",
- "serde",
- "starbase_styles",
- "thiserror",
-]
-
-[[package]]
-name = "moon_project2"
-version = "0.1.0"
-dependencies = [
- "miette",
- "moon_common",
- "moon_config",
- "moon_file_group",
- "moon_query",
- "moon_task2",
  "rustc-hash",
  "serde",
  "thiserror",
@@ -3265,11 +3253,12 @@ dependencies = [
  "moon_config",
  "moon_file_group",
  "moon_platform_detector",
- "moon_project2",
- "moon_task2",
+ "moon_project",
+ "moon_task",
  "moon_task_builder",
  "rustc-hash",
  "starbase_sandbox",
+ "thiserror",
  "tracing",
 ]
 
@@ -3291,6 +3280,7 @@ dependencies = [
  "moon_logger",
  "moon_platform_detector",
  "moon_project",
+ "moon_project_builder",
  "moon_query",
  "moon_target",
  "moon_task",
@@ -3312,6 +3302,7 @@ dependencies = [
 name = "moon_python_lang"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_lang",
 ]
 
@@ -3332,6 +3323,7 @@ dependencies = [
 name = "moon_ruby_lang"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_lang",
 ]
 
@@ -3378,6 +3370,7 @@ dependencies = [
  "cached",
  "cargo-lock",
  "cargo_toml",
+ "miette",
  "moon_error",
  "moon_lang",
  "moon_logger",
@@ -3392,6 +3385,7 @@ dependencies = [
 name = "moon_rust_platform"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon",
  "moon_action_context",
  "moon_common",
@@ -3424,6 +3418,7 @@ dependencies = [
 name = "moon_rust_tool"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_config",
  "moon_logger",
  "moon_platform_runtime",
@@ -3439,6 +3434,7 @@ dependencies = [
 name = "moon_system_platform"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_action_context",
  "moon_config",
  "moon_hasher",
@@ -3469,35 +3465,12 @@ dependencies = [
 name = "moon_task"
 version = "0.1.0"
 dependencies = [
- "miette",
- "moon_args",
- "moon_common",
- "moon_config",
- "moon_error",
- "moon_logger",
- "moon_target",
- "moon_test_utils",
- "moon_utils",
- "once_cell",
- "rustc-hash",
- "serde",
- "starbase_styles",
- "starbase_utils",
- "thiserror",
-]
-
-[[package]]
-name = "moon_task2"
-version = "0.1.0"
-dependencies = [
- "miette",
  "moon_common",
  "moon_config",
  "moon_target",
  "rustc-hash",
  "serde",
  "starbase_utils",
- "thiserror",
  "tracing",
 ]
 
@@ -3505,12 +3478,14 @@ dependencies = [
 name = "moon_task_builder"
 version = "0.1.0"
 dependencies = [
+ "dotenvy",
  "miette",
  "moon_args",
  "moon_common",
  "moon_config",
+ "moon_platform_detector",
  "moon_target",
- "moon_task2",
+ "moon_task",
  "rustc-hash",
  "starbase_sandbox",
  "thiserror",
@@ -3566,6 +3541,7 @@ name = "moon_typescript_lang"
 version = "0.1.0"
 dependencies = [
  "cached",
+ "miette",
  "moon_error",
  "moon_lang",
  "moon_logger",
@@ -3581,6 +3557,7 @@ dependencies = [
 name = "moon_typescript_platform"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_common",
  "moon_config",
  "moon_error",
@@ -5026,9 +5003,9 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
 name = "starbase"
-version = "0.1.10"
+version = "0.1.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7708e38aea278675ab6ce053c150dc4422a0b0ba56bc3b71d4fc7b19e664a265"
+checksum = "c412084261b95daae3e53bf998bcdb3808e05995c4752342be63519a7d659ed4"
 dependencies = [
  "async-trait",
  "chrono",
@@ -5048,9 +5025,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_events"
-version = "0.1.6"
+version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f2b364180917e872168d220ded73c26f9724e3ceb6aa8d7ae172b50b1aa5926"
+checksum = "412f023b7548483a191380412787706aa005af761a53d376727af4bf49674a5d"
 dependencies = [
  "async-trait",
  "miette",
@@ -5060,9 +5037,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_macros"
-version = "0.1.7"
+version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2565b3b5eefc0b0d7da2a9f6b567e049df5c82cec14328f2a3268382167f5156"
+checksum = "7ac76e6f7c9ada8bcc4606ff3021a267e59c14885a2abf7ab58922dd6701f54e"
 dependencies = [
  "darling 0.20.1",
  "proc-macro2",
@@ -5072,9 +5049,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_sandbox"
-version = "0.1.4"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e830673d56b507194471b834a0d5823db747e72f6ae4b099607be5891aff0fbc"
+checksum = "92dda8534bc2a9d19da1eddba58dcf840317f3d5d5e7a748aad29d201dae71a7"
 dependencies = [
  "assert_cmd",
  "assert_fs",
@@ -5088,9 +5065,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_styles"
-version = "0.1.10"
+version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7e90aad208a2a27137042da4039efb62c7ecd5c2ee78b9c82885e16ce828e984"
+checksum = "9cf0d8c14a248ab71633cc81525935091d7e456900955e48aba23f250af18baf"
 dependencies = [
  "dirs",
  "miette",
@@ -5101,9 +5078,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.2.12"
+version = "0.2.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b89a6b84dee72cc983a70b8ceb425ef9d4045f421c8d098859005ad967f2546"
+checksum = "6f3013297e49317821842bc3fd32e5163eaf151bfa5f73f67a48690be1af1764"
 dependencies = [
  "dirs",
  "ec4rs",

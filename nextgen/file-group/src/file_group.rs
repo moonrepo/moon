@@ -28,8 +28,6 @@ impl FileGroup {
     {
         let id = Id::new(id)?;
 
-        debug!(id = %id, "Creating file group");
-
         Ok(FileGroup {
             files: vec![],
             globs: vec![],
@@ -72,9 +70,9 @@ impl FileGroup {
         }
 
         debug!(
-            id = %self.id,
+            id = self.id.as_str(),
             patterns = ?log_patterns,
-            "Setting patterns to file group"
+            "Creating file group"
         );
 
         self

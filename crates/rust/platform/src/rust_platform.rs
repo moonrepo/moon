@@ -4,12 +4,11 @@ use moon_common::Id;
 use moon_config::{
     HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, RustConfig,
 };
-use moon_error::MoonError;
 use moon_hasher::HashSet;
 use moon_logger::{debug, map_list};
 use moon_platform::{Platform, Runtime, Version};
 use moon_process::Command;
-use moon_project::{Project, ProjectError};
+use moon_project::Project;
 use moon_rust_lang::{
     cargo_lock::load_lockfile_dependencies,
     cargo_toml::CargoTomlCache,
@@ -24,10 +23,7 @@ use moon_utils::{async_trait, string_vec};
 use proto::{rust::RustLanguage, Executable, Proto};
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
-use starbase_utils::{
-    fs::{self, FsError},
-    glob::GlobSet,
-};
+use starbase_utils::{fs, glob::GlobSet};
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
@@ -91,12 +87,8 @@ impl Platform for RustPlatform {
 
     // PROJECT GRAPH
 
-    fn is_project_in_dependency_workspace(&self, project: &Project) -> Result<bool, MoonError> {
-        if project.root == self.workspace_root {
-            return Ok(true);
-        }
-
-        let Some(lockfile_path) = find_cargo_lock(&project.root) else {
+    fn is_project_in_dependency_workspace(&self, project_source: &str) -> miette::Result<bool> {
+        let Some(lockfile_path) = find_cargo_lock(&self.workspace_root.join(project_source)) else {
             return Ok(false);
         };
 
@@ -105,8 +97,9 @@ impl Platform for RustPlatform {
         };
 
         if let Some(workspace) = cargo_toml.workspace {
-            return Ok(GlobSet::new_split(&workspace.members, &workspace.exclude)?
-                .matches(project.source.as_str()));
+            return Ok(
+                GlobSet::new_split(&workspace.members, &workspace.exclude)?.matches(project_source)
+            );
         }
 
         Ok(false)
@@ -116,7 +109,7 @@ impl Platform for RustPlatform {
         &mut self,
         projects_map: &ProjectsSourcesMap,
         aliases_map: &mut ProjectsAliasesMap,
-    ) -> Result<(), MoonError> {
+    ) -> miette::Result<()> {
         // Extract the alias from the Cargo project relative to the lockfile
         for (id, source) in projects_map {
             let project_root = self.workspace_root.join(source);
@@ -142,27 +135,27 @@ impl Platform for RustPlatform {
 
     // TOOLCHAIN
 
-    fn is_toolchain_enabled(&self) -> Result<bool, ToolError> {
+    fn is_toolchain_enabled(&self) -> miette::Result<bool> {
         Ok(self.config.version.is_some())
     }
 
-    fn get_tool(&self) -> Result<Box<&dyn Tool>, ToolError> {
+    fn get_tool(&self) -> miette::Result<Box<&dyn Tool>> {
         let tool = self.toolchain.get()?;
 
         Ok(Box::new(tool))
     }
 
-    fn get_tool_for_version(&self, version: Version) -> Result<Box<&dyn Tool>, ToolError> {
+    fn get_tool_for_version(&self, version: Version) -> miette::Result<Box<&dyn Tool>> {
         let tool = self.toolchain.get_for_version(&version)?;
 
         Ok(Box::new(tool))
     }
 
-    fn get_dependency_configs(&self) -> Result<Option<(String, String)>, ToolError> {
+    fn get_dependency_configs(&self) -> miette::Result<Option<(String, String)>> {
         Ok(Some((CARGO.lockfile.to_owned(), CARGO.manifest.to_owned())))
     }
 
-    async fn setup_toolchain(&mut self) -> Result<(), ToolError> {
+    async fn setup_toolchain(&mut self) -> miette::Result<()> {
         let version = match &self.config.version {
             Some(v) => Version::new(v),
             None => Version::new_global(),
@@ -182,7 +175,7 @@ impl Platform for RustPlatform {
         Ok(())
     }
 
-    async fn teardown_toolchain(&mut self) -> Result<(), ToolError> {
+    async fn teardown_toolchain(&mut self) -> miette::Result<()> {
         self.toolchain.teardown_all().await?;
 
         Ok(())
@@ -195,7 +188,7 @@ impl Platform for RustPlatform {
         _context: &ActionContext,
         runtime: &Runtime,
         last_versions: &mut FxHashMap<String, String>,
-    ) -> Result<u8, ToolError> {
+    ) -> miette::Result<u8> {
         let version = runtime.version();
 
         if !self.toolchain.has(&version) {
@@ -213,7 +206,7 @@ impl Platform for RustPlatform {
         _context: &ActionContext,
         runtime: &Runtime,
         working_dir: &Path,
-    ) -> Result<(), ToolError> {
+    ) -> miette::Result<()> {
         let tool = self.toolchain.get_for_version(runtime.version())?;
 
         if find_cargo_lock(working_dir).is_none() {
@@ -266,7 +259,7 @@ impl Platform for RustPlatform {
         _context: &ActionContext,
         project: &Project,
         _dependencies: &FxHashMap<Id, &Project>,
-    ) -> Result<bool, ProjectError> {
+    ) -> miette::Result<bool> {
         let mut mutated_files = false;
 
         let lockfile_path = find_cargo_lock(&project.root);
@@ -287,13 +280,12 @@ impl Platform for RustPlatform {
                 color::file(RUSTUP.version_file),
             );
 
-            let handle_error = |error: FsError| ProjectError::Moon(MoonError::StarFs(error));
-            let legacy_contents = fs::read_file(&legacy_toolchain_path).map_err(handle_error)?;
+            let legacy_contents = fs::read_file(&legacy_toolchain_path)?;
 
             if legacy_contents.contains("[toolchain]") {
-                fs::rename(&legacy_toolchain_path, &toolchain_path).map_err(handle_error)?;
+                fs::rename(&legacy_toolchain_path, &toolchain_path)?;
             } else {
-                fs::remove_file(&legacy_toolchain_path).map_err(handle_error)?;
+                fs::remove_file(&legacy_toolchain_path)?;
 
                 ToolchainTomlCache::write(
                     &toolchain_path,
@@ -350,7 +342,7 @@ impl Platform for RustPlatform {
         _manifest_path: &Path,
         hashset: &mut HashSet,
         _hasher_config: &HasherConfig,
-    ) -> Result<(), ToolError> {
+    ) -> miette::Result<()> {
         if !self.config.bins.is_empty() {
             hashset.hash(RustBinsHasher {
                 bins: self.config.bins.clone(),
@@ -416,7 +408,7 @@ impl Platform for RustPlatform {
         _runtime: &Runtime,
         hashset: &mut HashSet,
         _hasher_config: &HasherConfig,
-    ) -> Result<(), ToolError> {
+    ) -> miette::Result<()> {
         let lockfile_path = project.root.join(CARGO.lockfile);
 
         // Not running in the Cargo workspace root, not sure how to handle!
@@ -443,7 +435,7 @@ impl Platform for RustPlatform {
         task: &Task,
         runtime: &Runtime,
         working_dir: &Path,
-    ) -> Result<Command, ToolError> {
+    ) -> miette::Result<Command> {
         let mut command = Command::new(&task.command);
         let mut args = vec![];
 
@@ -485,7 +477,8 @@ impl Platform for RustPlatform {
                     return Err(ToolError::MissingBinary(
                         "Cargo binary".into(),
                         cargo_bin.to_owned(),
-                    ));
+                    )
+                    .into());
                 }
             }
         }

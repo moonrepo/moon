@@ -7,7 +7,7 @@ use moon_platform::{Platform, Runtime, Version};
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
-use moon_tool::{Tool, ToolError};
+use moon_tool::Tool;
 use moon_utils::async_trait;
 use std::path::Path;
 
@@ -40,15 +40,15 @@ impl Platform for SystemPlatform {
 
     // TOOLCHAIN
 
-    fn is_toolchain_enabled(&self) -> Result<bool, ToolError> {
+    fn is_toolchain_enabled(&self) -> miette::Result<bool> {
         Ok(false)
     }
 
-    fn get_tool(&self) -> Result<Box<&dyn Tool>, ToolError> {
+    fn get_tool(&self) -> miette::Result<Box<&dyn Tool>> {
         Ok(Box::new(&self.tool))
     }
 
-    fn get_tool_for_version(&self, _version: Version) -> Result<Box<&dyn Tool>, ToolError> {
+    fn get_tool_for_version(&self, _version: Version) -> miette::Result<Box<&dyn Tool>> {
         Ok(Box::new(&self.tool))
     }
 
@@ -60,7 +60,7 @@ impl Platform for SystemPlatform {
         _runtime: &Runtime,
         hashset: &mut HashSet,
         _hasher_config: &HasherConfig,
-    ) -> Result<(), ToolError> {
+    ) -> miette::Result<()> {
         hashset.hash(SystemTargetHasher::new());
 
         Ok(())
@@ -73,7 +73,7 @@ impl Platform for SystemPlatform {
         task: &Task,
         _runtime: &Runtime,
         working_dir: &Path,
-    ) -> Result<Command, ToolError> {
+    ) -> miette::Result<Command> {
         let mut command = Command::new(&task.command);
 
         // cmd/pwsh requires an absolute path to batch files

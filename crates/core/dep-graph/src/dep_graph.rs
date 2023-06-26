@@ -37,20 +37,21 @@ impl DepGraph {
         self.graph.node_weight(*index)
     }
 
-    pub fn sort_topological(&self) -> Result<Vec<NodeIndex>, DepGraphError> {
+    pub fn sort_topological(&self) -> miette::Result<Vec<NodeIndex>> {
         let list = match toposort(&self.graph, None) {
             Ok(nodes) => nodes,
             Err(error) => {
                 return Err(DepGraphError::CycleDetected(
                     self.get_node_from_index(&error.node_id()).unwrap().label(),
-                ));
+                )
+                .into());
             }
         };
 
         Ok(list.into_iter().rev().collect())
     }
 
-    pub fn sort_batched_topological(&self) -> Result<BatchedTopoSort, DepGraphError> {
+    pub fn sort_batched_topological(&self) -> miette::Result<BatchedTopoSort> {
         let mut batches: BatchedTopoSort = vec![];
 
         // Count how many times an index is referenced across nodes and edges
@@ -166,7 +167,7 @@ impl DepGraph {
     }
 
     #[track_caller]
-    fn detect_cycle(&self) -> Result<(), DepGraphError> {
+    fn detect_cycle(&self) -> miette::Result<()> {
         use petgraph::algo::kosaraju_scc;
 
         let scc = kosaraju_scc(&self.graph);
@@ -179,7 +180,7 @@ impl DepGraph {
 
         // The cycle is always the last sequence in the list
         let Some(cycle) = scc.last() else {
-            return Err(DepGraphError::CycleDetected("(unknown)".into()));
+            return Err(DepGraphError::CycleDetected("(unknown)".into()).into());
         };
 
         let path = cycle
@@ -188,6 +189,6 @@ impl DepGraph {
             .collect::<Vec<String>>()
             .join(" → ");
 
-        Err(DepGraphError::CycleDetected(path))
+        Err(DepGraphError::CycleDetected(path).into())
     }
 }

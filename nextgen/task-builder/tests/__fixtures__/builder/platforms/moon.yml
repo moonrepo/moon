@@ -3,8 +3,14 @@ platform: rust
 tasks:
   system:
     platform: system
+  deno-via-cmd:
+    command: deno
   node:
     platform: node
+  node-via-cmd:
+    command: npm
+  rust-via-cmd:
+    command: cargo
   unknown:
     platform: unknown
   unknown-implicit: {}

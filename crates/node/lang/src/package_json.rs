@@ -2,7 +2,6 @@
 
 use crate::NPM;
 use cached::proc_macro::cached;
-use moon_error::MoonError;
 use moon_lang::config_cache;
 use serde::{Deserialize, Serialize};
 use starbase_utils::json::{self, read_file as read_json, JsonValue};
@@ -51,7 +50,7 @@ pub struct PackageJson {
 }
 
 impl PackageJson {
-    pub fn save(&mut self) -> Result<(), MoonError> {
+    pub fn save(&mut self) -> miette::Result<()> {
         if !self.dirty.is_empty() {
             write_preserved_json(&self.path, self)?;
             self.dirty.clear();
@@ -239,7 +238,7 @@ pub enum PackageWorkspaces {
 // making the changes. For this to work correctly, we need to read the json
 // file again and parse it with `json`, then stringify it with `json`.
 #[track_caller]
-fn write_preserved_json(path: &Path, package: &PackageJson) -> Result<(), MoonError> {
+fn write_preserved_json(path: &Path, package: &PackageJson) -> miette::Result<()> {
     let mut data: JsonValue = json::read_file(path)?;
 
     // We only need to set fields that we modify within moon,

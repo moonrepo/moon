@@ -3,7 +3,6 @@ use moon_error::MoonError;
 use moon_project::ProjectError;
 use moon_query::QueryError;
 use moon_target::TargetError;
-use moon_task::TaskError;
 use starbase_styles::{Style, Stylize};
 use thiserror::Error;
 
@@ -26,10 +25,6 @@ pub enum DepGraphError {
     #[diagnostic(transparent)]
     #[error(transparent)]
     Query(#[from] QueryError),
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
-    Task(#[from] TaskError),
 
     #[diagnostic(transparent)]
     #[error(transparent)]

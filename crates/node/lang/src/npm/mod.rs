@@ -1,14 +1,14 @@
 use crate::NPM;
 use cached::proc_macro::cached;
-use moon_error::MoonError;
+use miette::IntoDiagnostic;
 use moon_lang::{config_cache_container, LockfileDependencyVersions};
 use package_lock_json_parser::{parse, PackageLockJson};
 use rustc_hash::FxHashMap;
 use starbase_utils::fs;
 use std::path::{Path, PathBuf};
 
-fn read_file(path: &Path) -> Result<PackageLockJson, MoonError> {
-    parse(fs::read_file(path)?).map_err(|e| MoonError::Generic(e.to_string()))
+fn read_file(path: &Path) -> miette::Result<PackageLockJson> {
+    parse(fs::read_file(path)?).into_diagnostic()
 }
 
 config_cache_container!(
@@ -20,7 +20,7 @@ config_cache_container!(
 
 // https://docs.npmjs.com/cli/v9/configuring-npm/package-lock-json?v=true
 #[cached(result)]
-pub fn load_lockfile_dependencies(path: PathBuf) -> Result<LockfileDependencyVersions, MoonError> {
+pub fn load_lockfile_dependencies(path: PathBuf) -> miette::Result<LockfileDependencyVersions> {
     let mut deps: LockfileDependencyVersions = FxHashMap::default();
 
     let mut add_dep = |name: &str, version: &str, integrity: Option<&String>| {

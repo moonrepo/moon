@@ -103,7 +103,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         let mut builder = ProjectBuilder::new(id, source, &self.workspace.root)?;
 
         builder.detect_language(detect_project_language);
-        builder.detect_platform(detect_task_platform);
+        builder.detect_platform(detect_task_platform, &self.workspace.toolchain_config);
         builder.load_local_config()?;
         builder.inherit_global_config(&self.workspace.tasks_config)?;
 

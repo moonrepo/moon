@@ -17,3 +17,5 @@ tracing = { workspace = true }
 
 [dev-dependencies]
 starbase_sandbox = { workspace = true }
+# TODO remove
+moon_platform_detector = { path = "../../crates/core/platform-detector" }

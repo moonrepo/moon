@@ -2,7 +2,7 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{color, consts, Id};
 use moon_config::{
     DependencyConfig, InheritedTasksManager, InheritedTasksResult, LanguageType, PlatformType,
-    ProjectConfig, ProjectDependsOn, TaskConfig,
+    ProjectConfig, ProjectDependsOn, TaskConfig, ToolchainConfig,
 };
 use moon_file_group::FileGroup;
 use moon_project::{Project, ProjectError};
@@ -19,7 +19,10 @@ pub struct ProjectBuilder<'app> {
     id: &'app str,
     source: &'app str,
     project_root: PathBuf,
+
+    // Workspace information
     workspace_root: &'app Path,
+    toolchain_config: Option<&'app ToolchainConfig>,
 
     // Configs to derive information from
     global_config: Option<InheritedTasksResult>,
@@ -52,6 +55,7 @@ impl<'app> ProjectBuilder<'app> {
             project_root,
             source,
             workspace_root,
+            toolchain_config: None,
             global_config: None,
             local_config: None,
             language: LanguageType::Unknown,
@@ -71,11 +75,12 @@ impl<'app> ProjectBuilder<'app> {
     }
 
     /// Register a function to detect a task's platform when unknown.
-    pub fn detect_platform<F>(&mut self, detector: F) -> &mut Self
+    pub fn detect_platform<F>(&mut self, detector: F, config: &'app ToolchainConfig) -> &mut Self
     where
-        F: Fn(&str) -> PlatformType + 'static,
+        F: Fn(&str, &ToolchainConfig) -> PlatformType + 'static,
     {
         self.platform_detector = Some(Box::new(detector));
+        self.toolchain_config = Some(config);
         self
     }
 
@@ -163,17 +168,20 @@ impl<'app> ProjectBuilder<'app> {
     /// Extend the builder with a project dependency implicitly derived from the project graph.
     /// Implicit dependencies *must not* override explicitly configured dependencies.
     pub fn extend_with_dependency(&mut self, config: DependencyConfig) -> &mut Self {
-        if let Some(local_config) = &mut self.local_config {
-            let has_dep = local_config.depends_on.iter().any(|d| match d {
-                ProjectDependsOn::String(id) => id == &config.id,
-                ProjectDependsOn::Object(cfg) => cfg.id == config.id,
-            });
+        let local_config = self
+            .local_config
+            .as_mut()
+            .expect("Local config must be loaded before extending dependencies!");
 
-            if !has_dep {
-                local_config
-                    .depends_on
-                    .push(ProjectDependsOn::Object(config));
-            }
+        let has_dep = local_config.depends_on.iter().any(|d| match d {
+            ProjectDependsOn::String(id) => id == &config.id,
+            ProjectDependsOn::Object(cfg) => cfg.id == config.id,
+        });
+
+        if !has_dep {
+            local_config
+                .depends_on
+                .push(ProjectDependsOn::Object(config));
         }
 
         self
@@ -182,9 +190,12 @@ impl<'app> ProjectBuilder<'app> {
     /// Extend the builder with a platform specific task implicitly derived from the project graph.
     /// Implicit tasks *must not* override explicitly configured tasks.
     pub fn extend_with_task(&mut self, id: Id, config: TaskConfig) -> &mut Self {
-        if let Some(local_config) = &mut self.local_config {
-            local_config.tasks.entry(id).or_insert(config);
-        }
+        let local_config = self
+            .local_config
+            .as_mut()
+            .expect("Local config must be loaded before extending tasks!");
+
+        local_config.tasks.entry(id).or_insert(config);
 
         self
     }
@@ -299,7 +310,7 @@ impl<'app> ProjectBuilder<'app> {
             TasksBuilder::new(self.id, self.source, &self.platform, self.workspace_root);
 
         if let Some(detector) = self.platform_detector.take() {
-            tasks_builder.detect_platform(detector);
+            tasks_builder.detect_platform(detector, self.toolchain_config.as_ref().unwrap());
         }
 
         if let Some(global_config) = &self.global_config {

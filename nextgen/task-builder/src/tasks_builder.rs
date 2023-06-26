@@ -6,7 +6,7 @@ use moon_common::{color, Id};
 use moon_config::{
     InheritedTasksConfig, InputPath, PlatformType, ProjectConfig,
     ProjectWorkspaceInheritedTasksConfig, TaskCommandArgs, TaskConfig, TaskMergeStrategy,
-    TaskOutputStyle, TaskType,
+    TaskOutputStyle, TaskType, ToolchainConfig,
 };
 use moon_target::Target;
 use moon_task::{Task, TaskOptions};
@@ -16,19 +16,22 @@ use std::hash::Hash;
 use std::path::Path;
 use tracing::{debug, trace, warn};
 
-pub type PlatformDetector = dyn Fn(&str) -> PlatformType;
+pub type PlatformDetector = dyn Fn(&str, &ToolchainConfig) -> PlatformType;
 
 pub struct TasksBuilder<'proj> {
     project_id: &'proj str,
     project_env: FxHashMap<&'proj str, &'proj str>,
     project_platform: &'proj PlatformType,
     project_source: &'proj str,
+
+    // Workspace information
     workspace_root: &'proj Path,
+    platform_detector: Option<Box<PlatformDetector>>,
+    toolchain_config: Option<&'proj ToolchainConfig>,
 
     // Global settings for tasks to inherit
     implicit_deps: Vec<&'proj Target>,
     implicit_inputs: Vec<&'proj InputPath>,
-    platform_detector: Option<Box<PlatformDetector>>,
 
     // Tasks to merge and build
     task_ids: FxHashSet<&'proj Id>,
@@ -50,6 +53,7 @@ impl<'proj> TasksBuilder<'proj> {
             project_source,
             workspace_root,
             platform_detector: None,
+            toolchain_config: None,
             implicit_deps: vec![],
             implicit_inputs: vec![],
             task_ids: FxHashSet::default(),
@@ -59,11 +63,12 @@ impl<'proj> TasksBuilder<'proj> {
     }
 
     /// Register a function to detect a task's platform when unknown.
-    pub fn detect_platform<F>(&mut self, detector: F) -> &mut Self
+    pub fn detect_platform<F>(&mut self, detector: F, config: &'proj ToolchainConfig) -> &mut Self
     where
-        F: Fn(&str) -> PlatformType + 'static,
+        F: Fn(&str, &ToolchainConfig) -> PlatformType + 'static,
     {
         self.platform_detector = Some(Box::new(detector));
+        self.toolchain_config = Some(config);
         self
     }
 
@@ -325,13 +330,11 @@ impl<'proj> TasksBuilder<'proj> {
 
         if task.platform.is_unknown() {
             if let Some(detector) = &self.platform_detector {
-                task.platform = detector(&task.command);
-            } else {
-                task.platform = self.project_platform.to_owned();
+                task.platform = detector(&task.command, self.toolchain_config.as_ref().unwrap());
             }
 
             if task.platform.is_unknown() {
-                task.platform = PlatformType::System;
+                task.platform = self.project_platform.to_owned();
             }
         }
 

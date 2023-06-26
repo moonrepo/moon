@@ -99,7 +99,7 @@ impl Schematic for WorkspaceProjects {
 }
 
 /// Docs: https://moonrepo.dev/docs/config/workspace
-#[derive(Config)]
+#[derive(Debug, Config)]
 pub struct WorkspaceConfig {
     #[setting(
         default = "https://moonrepo.dev/schemas/workspace.json",

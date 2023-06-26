@@ -12,7 +12,7 @@ derive_enum!(
 );
 
 cacheable!(
-    #[derive(Config)]
+    #[derive(Debug, Config)]
     pub struct CodeownersConfig {
         pub global_paths: FxHashMap<String, Vec<String>>,
 

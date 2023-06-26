@@ -6,7 +6,7 @@ mod create_template {
     use super::*;
 
     #[test]
-    #[should_panic(expected = "ExistingTemplate(\"standard\"")]
+    #[should_panic(expected = "A template with the name standard already exists")]
     fn errors_if_already_exists() {
         let sandbox = create_sandbox("generator");
 

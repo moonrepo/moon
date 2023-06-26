@@ -1,13 +1,18 @@
 #![allow(dead_code)]
 
-use schematic::Config;
+use schematic::{Config, ConfigError};
 use starbase_sandbox::create_empty_sandbox;
 use std::path::Path;
 
 pub fn unwrap_config_result<T>(result: miette::Result<T>) -> T {
     match result {
         Ok(config) => config,
-        Err(error) => panic!("{}", error.to_string()),
+        Err(error) => {
+            panic!(
+                "{}",
+                error.downcast::<ConfigError>().unwrap().to_full_string()
+            )
+        }
     }
 }
 

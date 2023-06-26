@@ -1,0 +1,39 @@
+---
+slug: proto-v0.11
+title: proto v0.11 - New shims and better logging
+authors: [milesj]
+tags: [proto, shim, logging]
+---
+
+This is a small release that improves shims and logs.
+
+<!--truncate-->
+
+## New and improved shims
+
+The core facet of proto is our shims found at `~/.proto/bin`. They exist purely to re-route tool
+executions internally to proto, so that we can detect the correct version of these tools to run.
+However, maintaining and creating these shims has historically been very complicated. So we chose to
+rewrite them from the ground-up!
+
+All tools should continue to function exactly as they did before, if not better. Furthermore,
+because of this new shim layer, we're now able to create what we call "secondary shims", like
+[`bunx` for Bun](https://bun.sh/docs/cli/bunx), `pnpx` for pnpm, and `yarnpkg` for Yarn.
+
+## Better logging
+
+proto has supported logging since its initial release behind the `PROTO_LOG` environment variable.
+However, this variable wasn't heavily documented, nor easily discoverable. So as an alternative, we
+now support a global `--log` option, which can be passed to any `proto` command.
+
+```shell
+$ proto install node --log trace
+```
+
+On top of this, we also ran an audit of all our log calls, to improve messaging, include additional
+information, rework applicable levels, and more. They should be far more readable!
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.11.0) for a full list
+of changes.

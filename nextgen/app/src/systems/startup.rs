@@ -64,7 +64,7 @@ pub fn find_workspace_root(states: StatesMut) {
         root
     } else {
         fs::find_upwards_root(consts::CONFIG_DIRNAME, &working_dir)
-            .ok_or_else(|| AppError::MissingConfigDir)?
+            .ok_or(AppError::MissingConfigDir)?
     };
 
     // Avoid finding the ~/.moon directory

@@ -122,10 +122,23 @@ impl InheritedTasksManager {
             return Ok(manager);
         }
 
-        for file in fs::read_dir(tasks_dir)?.flatten() {
-            if file.file_type()?.is_file() {
-                let path = file.path();
+        for file in fs::read_dir(&tasks_dir)
+            .map_err(|error| ConfigError::ReadFileFailed {
+                path: tasks_dir,
+                error,
+            })?
+            .flatten()
+        {
+            let path = file.path();
 
+            if file
+                .file_type()
+                .map_err(|error| ConfigError::ReadFileFailed {
+                    path: path.to_path_buf(),
+                    error,
+                })?
+                .is_file()
+            {
                 manager.add_config(
                     &path,
                     InheritedTasksConfig::load_partial(workspace_root, &path)?,

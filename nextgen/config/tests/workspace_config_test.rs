@@ -60,7 +60,7 @@ mod workspace_config {
         }
 
         #[test]
-        #[should_panic(expected = "only file paths and URLs can be extended")]
+        #[should_panic(expected = "invalid format, try a supported extension")]
         fn not_a_yaml_file() {
             test_load_config(FILENAME, "extends: './file.txt'", |path| {
                 WorkspaceConfig::load_from(path)

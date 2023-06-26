@@ -1,6 +1,6 @@
 use moon_common::cacheable;
 use rustc_hash::FxHashMap;
-use schematic::{derive_enum, Config, SchemaType, Schematic, Segment, ValidateError};
+use schematic::{derive_enum, Config, PathSegment, SchemaType, Schematic, ValidateError};
 
 derive_enum!(
     #[serde(
@@ -58,7 +58,7 @@ fn validate_paths<C>(
                 if value.is_empty() && data.default_owner.is_none() {
                     return Err(ValidateError::with_segment(
                         "a default owner is required when defining an empty list of owners",
-                        Segment::Key(key.to_owned()),
+                        PathSegment::Key(key.to_owned()),
                     ));
                 }
             }

@@ -1,6 +1,7 @@
 use crate::codegen_error::CodegenError;
 use crate::template::Template;
 use moon_common::consts::CONFIG_TEMPLATE_FILENAME;
+use moon_common::path::RelativePathBuf;
 use moon_common::Id;
 use moon_config::{load_template_config_template, GeneratorConfig};
 use starbase_utils::fs;
@@ -26,11 +27,7 @@ impl CodeGenerator {
     /// Will error if a template of the same name already exists.
     pub fn create_template(&self, id: &str) -> miette::Result<Template> {
         let id = Id::new(id)?;
-
-        let root = self
-            .workspace_root
-            .join(&self.config.templates[0])
-            .join(id.as_str());
+        let root = self.create_absolute_path(self.config.templates[0].as_str(), id.as_str());
 
         if root.exists() {
             return Err(CodegenError::ExistingTemplate(id, root).into());
@@ -56,17 +53,17 @@ impl CodeGenerator {
         let id = Id::new(id)?;
 
         debug!(
-            template = %id,
-            locations = self.config.templates.len(),
-            "Finding template from configured locations",
+            template = id.as_str(),
+            locations = ?self.config.templates.iter().map(|t| t.as_str()).collect::<Vec<_>>(),
+            "Attempting to find template from configured locations",
         );
 
         for template_path in &self.config.templates {
-            let root = self.workspace_root.join(template_path).join(id.as_str());
+            let root = self.create_absolute_path(template_path.as_str(), id.as_str());
 
             if root.exists() {
                 debug!(
-                    template = %id,
+                    template = id.as_str(),
                     root = ?root,
                     "Found template"
                 );
@@ -79,10 +76,7 @@ impl CodeGenerator {
     }
 
     pub fn generate(&self, template: &Template) -> miette::Result<()> {
-        debug!(
-            template = %template.id,
-            "Generating template files",
-        );
+        debug!(template = template.id.as_str(), "Generating template files");
 
         for file in &template.files {
             if file.should_write() {
@@ -90,11 +84,15 @@ impl CodeGenerator {
             }
         }
 
-        debug!(
-            template = %template.id,
-            "Code generation complete!",
-        );
+        debug!(template = template.id.as_str(), "Code generation complete!");
 
         Ok(())
+    }
+
+    fn create_absolute_path(&self, template_path: &str, template_name: &str) -> PathBuf {
+        RelativePathBuf::from(template_path)
+            .join(template_name)
+            .normalize()
+            .to_logical_path(&self.workspace_root)
     }
 }

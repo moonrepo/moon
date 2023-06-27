@@ -53,6 +53,12 @@ impl Template {
     pub fn load_files(&mut self, dest: &Path, context: &Context) -> miette::Result<()> {
         let mut files = vec![];
 
+        debug!(
+            template = self.id.as_str(),
+            root = ?self.root,
+            "Loading template files"
+        );
+
         for entry in fs::read_dir_all(&self.root)? {
             // This is our schema, so skip it
             if entry.file_name() == CONFIG_TEMPLATE_FILENAME {
@@ -70,6 +76,7 @@ impl Template {
             // Add partials to Tera, but skip copying them
             if name.as_str().contains("partial") {
                 debug!(
+                    template = self.id.as_str(),
                     file = name.as_str(),
                     source = ?source_path,
                     "Skipping partial as a template file",
@@ -79,6 +86,7 @@ impl Template {
             }
 
             debug!(
+                template = self.id.as_str(),
                 file = name.as_str(),
                 source = ?source_path,
                 "Loading template file",

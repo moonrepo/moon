@@ -2831,6 +2831,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_codegen"
+version = "0.1.0"
+dependencies = [
+ "convert_case",
+ "miette",
+ "moon_common",
+ "moon_config",
+ "once_cell",
+ "pathdiff",
+ "regex",
+ "serde_json",
+ "starbase_styles",
+ "starbase_utils",
+ "tera",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "moon_codeowners"
 version = "0.1.0"
 dependencies = [

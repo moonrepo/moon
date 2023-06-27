@@ -241,12 +241,12 @@ cargo build --target wasm32-wasi
 #### Registering metadata
 
 The first step in a plugin's life-cycle is to register metadata about the plugin with the
-`register_metadata` function. This function is called immediately after a plugin is loaded at
-runtime, and must return a human-readable name and plugin type.
+`register_tool` function. This function is called immediately after a plugin is loaded at runtime,
+and must return a human-readable name and plugin type.
 
 ```rust
 #[plugin_fn]
-pub fn register_metadata(_: ()) -> FnResult<Json<Metadata>> {
+pub fn register_tool(_: ()) -> FnResult<Json<ToolMetadata>> {
     Ok(Json(Metadata {
         name: "Node.js".into(),
         type_of: PluginType::Language,
@@ -260,7 +260,7 @@ commands (e.g. `proto install <id>`).
 
 ```rust
 #[plugin_fn]
-pub fn register_metadata(Json(input): Json<MetadataInput>) -> FnResult<Json<Metadata>> {
+pub fn register_metadata(Json(input): Json<ToolMetadataInput>) -> FnResult<Json<ToolMetadata>> {
   input.id
   // ...
 }
@@ -269,8 +269,8 @@ pub fn register_metadata(Json(input): Json<MetadataInput>) -> FnResult<Json<Meta
 #### Downloading and installing
 
 Our plugin layer _only_ supports downloading pre-built tools, typically as an archive, and does
-_not_ support building from source. The `get_install_params` function must be defined, whichs
-configure how the tool should be downloaded and installed.
+_not_ support building from source. The `register_install_params` function _must_ be defined, whichs
+configures how the tool should be downloaded and installed.
 
 The following fields are available:
 
@@ -285,7 +285,7 @@ The following fields are available:
 
 ```rust
 #[plugin_fn]
-pub fn get_install_params(Json(input): Json<EnvironmentInput>) -> FnResult<Json<InstallParams>> {
+pub fn register_install_params(Json(input): Json<EnvironmentInput>) -> FnResult<Json<InstallParams>> {
     let version = input.version;
     let arch = input.arch;
     let os = input.os;
@@ -322,7 +322,7 @@ pub fn get_install_params(Json(input): Json<EnvironmentInput>) -> FnResult<Json<
 
 Our plugin layer will do its best to detect file extensions, unpack the downloaded file (if an
 archive), and install the tool to the correct directory. However, we're unable to account for _all_
-edge cases, so for situations where the params above are not sufficient, you may define an
+edge cases, so for situations where the install params above are not sufficient, you may define an
 `unpack_archive` function.
 
 This function receives an input with the following fields:
@@ -358,9 +358,9 @@ pub fn detect_version_files(_: ()) -> FnResult<Json<DetectVersionFiles>> {
 }
 ```
 
-By default our plugin layer will assume the version file contains the literal version, and nothing
-else, like "1.2.3". If any of the files in the `detect_version_files` list require custom parsing
-(for example, `package.json` above), you can define the `parse_version_file` function.
+By default our plugin layer will assume the version file's contents contain the literal version, and
+nothing else, like "1.2.3". If any of the files in the `detect_version_files` list require custom
+parsing (for example, `package.json` above), you can define the `parse_version_file` function.
 
 This function receives the file name and contents as input, and must return the parsed version (if
 applicable).
@@ -383,5 +383,36 @@ pub fn parse_version_file(Json(input): Json<ParseVersionInput>) -> FnResult<Json
     }
 
     Ok(Json(ParseVersion { version }))
+}
+```
+
+#### Creating shims
+
+Tools within proto wouldn't function without shims, and as such, plugins can register their own
+shims to be created. By default, proto _will always_ create a global shim of the plugin at
+`~/.proto/bin/<id>`, but you can also register additional shims with the `register_shims` function.
+
+##### Global shims
+
+Global shims are optional scripts that are available on `PATH` as they are generated in the
+`~/.proto/bin` directory, and can be defined with the `global_shims` parameter. This param is a hash
+map, where the key is the shim file name, and the value is a relative path (from the tool's
+directory) to a binary to execute.
+
+```rust
+#[plugin_fn]
+pub fn register_shims(Json(input): Json<EnvironmentInput>) -> FnResult<Json<ShimParams>> {
+    let mut global_shims = HashMap::new();
+
+    global_shims.insert("npx".into(), if input.os == "windows" {
+        "npx.cmd".into()
+    } else {
+        "bin/npx".into()
+    });
+
+    Ok(Json(ShimParams {
+        global_shims,
+        ..ShimParams::default()
+    }))
 }
 ```

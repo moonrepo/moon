@@ -1,5 +1,5 @@
 use miette::Diagnostic;
-use moon_common::{consts, Id, Style, Stylize};
+use moon_common::{Id, Style, Stylize};
 use std::path::PathBuf;
 use thiserror::Error;
 
@@ -13,14 +13,9 @@ pub enum CodegenError {
     )]
     ExistingTemplate(Id, PathBuf),
 
+    #[diagnostic(code(codegen::var::parse_failed))]
     #[error("Failed to parse variable argument --{0}: {1}")]
     FailedToParseArgVar(String, String),
-
-    #[error(
-        "Failed to validate {} schema.\n\n{0}",
-        consts::CONFIG_WORKSPACE_FILENAME.style(Style::File)
-    )]
-    InvalidConfigFile(String),
 
     #[diagnostic(code(codegen::template::missing))]
     #[error(

@@ -16,3 +16,6 @@ starbase_utils = { workspace = true }
 tera = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
+
+[dev-dependencies]
+starbase_sandbox = { workspace = true }

@@ -2843,6 +2843,7 @@ dependencies = [
  "pathdiff",
  "regex",
  "serde_json",
+ "starbase_sandbox",
  "starbase_utils",
  "tera",
  "thiserror",

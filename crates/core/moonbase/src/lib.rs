@@ -4,7 +4,7 @@ mod errors;
 pub mod graphql;
 
 use common::{endpoint, get_request, post_request, Response};
-use moon_error::map_io_to_fs_error;
+use miette::IntoDiagnostic;
 use moon_logger::{debug, warn};
 use reqwest::Body;
 use starbase_styles::color;
@@ -94,7 +94,7 @@ impl Moonbase {
     pub async fn read_artifact(
         &self,
         hash: &str,
-    ) -> Result<Option<(Artifact, Option<String>)>, MoonbaseError> {
+    ) -> miette::Result<Option<(Artifact, Option<String>)>> {
         let response = get_request(format!("artifacts/{hash}"), Some(&self.auth_token)).await?;
 
         // dbg!("read_artifact", hash, &response);
@@ -108,10 +108,7 @@ impl Moonbase {
                 if status == 404 {
                     Ok(None)
                 } else {
-                    Err(MoonbaseError::ArtifactCheckFailure(
-                        color::hash(hash),
-                        message,
-                    ))
+                    Err(MoonbaseError::ArtifactCheckFailure(color::hash(hash), message).into())
                 }
             }
         }
@@ -121,7 +118,7 @@ impl Moonbase {
         &self,
         hash: &str,
         input: ArtifactWriteInput,
-    ) -> Result<(Artifact, Option<String>), MoonbaseError> {
+    ) -> miette::Result<(Artifact, Option<String>)> {
         // dbg!("write_artifact", hash, &input);
 
         let response =
@@ -134,10 +131,9 @@ impl Moonbase {
                 artifact,
                 presigned_url,
             }) => Ok((artifact, presigned_url)),
-            Response::Failure { message, .. } => Err(MoonbaseError::ArtifactUploadFailure(
-                hash.to_string(),
-                message,
-            )),
+            Response::Failure { message, .. } => {
+                Err(MoonbaseError::ArtifactUploadFailure(hash.to_string(), message).into())
+            }
         }
     }
 
@@ -146,7 +142,7 @@ impl Moonbase {
         hash: &str,
         dest_path: &Path,
         download_url: &Option<String>,
-    ) -> Result<(), MoonbaseError> {
+    ) -> miette::Result<()> {
         // dbg!("download_artifact", download_url);
 
         let request = if let Some(url) = download_url {
@@ -158,17 +154,16 @@ impl Moonbase {
                 .header("Accept", "application/json")
         };
 
-        let response = request.send().await?;
+        let response = request.send().await.into_diagnostic()?;
         let status = response.status();
 
         // dbg!(&status);
 
         if status.is_success() {
-            let error_handler = |e: io::Error| map_io_to_fs_error(e, dest_path.to_path_buf());
-            let mut contents = io::Cursor::new(response.bytes().await?);
-            let mut file = std::fs::File::create(dest_path).map_err(error_handler)?;
+            let mut contents = io::Cursor::new(response.bytes().await.into_diagnostic()?);
+            let mut file = std::fs::File::create(dest_path).into_diagnostic()?;
 
-            io::copy(&mut contents, &mut file).map_err(error_handler)?;
+            io::copy(&mut contents, &mut file).into_diagnostic()?;
 
             return Ok(());
         }
@@ -179,7 +174,8 @@ impl Moonbase {
                 .canonical_reason()
                 .unwrap_or("Internal server error")
                 .to_owned(),
-        ))
+        )
+        .into())
     }
 }
 
@@ -191,10 +187,8 @@ pub async fn upload_artifact(
     path: PathBuf,
     upload_url: Option<String>,
     job_id: Option<i64>,
-) -> Result<(), MoonbaseError> {
-    let file = fs::File::open(&path)
-        .await
-        .map_err(|e| map_io_to_fs_error(e, path.to_path_buf()))?;
+) -> miette::Result<()> {
+    let file = fs::File::open(&path).await.into_diagnostic()?;
     let file_length = match file.metadata().await {
         Ok(meta) => meta.len(),
         Err(_) => 0,
@@ -233,16 +227,14 @@ pub async fn upload_artifact(
                         .canonical_reason()
                         .unwrap_or("Internal server error")
                         .to_owned(),
-                ))
+                )
+                .into())
             }
         }
         Err(error) => {
             mark_upload_complete(&auth_token, &hash, false, job_id).await?;
 
-            Err(MoonbaseError::ArtifactUploadFailure(
-                hash.to_string(),
-                error.to_string(),
-            ))
+            Err(MoonbaseError::ArtifactUploadFailure(hash.to_string(), error.to_string()).into())
         }
     }
 }

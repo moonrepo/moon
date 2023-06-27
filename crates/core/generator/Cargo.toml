@@ -6,7 +6,6 @@ edition = "2021"
 [dependencies]
 moon_common = { path = "../../../nextgen/common" }
 moon_config = { path = "../../../nextgen/config" }
-moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
 moon_utils = { path = "../utils" }
 convert_case = "0.6.0"

@@ -1,5 +1,5 @@
 use miette::Diagnostic;
-use moon_common::{IdError, Style, Stylize};
+use moon_common::{Style, Stylize};
 use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
@@ -21,8 +21,4 @@ pub enum TargetError {
     #[diagnostic(code(target::missing_segments))]
     #[error("Target \":\" encountered. Wildcard scope and task not supported.")]
     TooWild,
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
-    IdError(#[from] IdError),
 }

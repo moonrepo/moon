@@ -1,10 +1,11 @@
 use crate::process_cache::ProcessCache;
 use crate::touched_files::TouchedFiles;
-use crate::vcs::{Vcs, VcsResult};
-use crate::vcs_error::VcsError;
+use crate::vcs::Vcs;
 use async_trait::async_trait;
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
+use miette::Diagnostic;
 use moon_common::path::WorkspaceRelativePathBuf;
+use moon_common::{Style, Stylize};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use rustc_hash::FxHashSet;
@@ -12,6 +13,7 @@ use semver::Version;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::{cmp, env};
+use thiserror::Error;
 use tracing::debug;
 
 pub static STATUS_PATTERN: Lazy<Regex> =
@@ -23,6 +25,20 @@ pub static DIFF_SCORE_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(C|M|R)(
 
 pub static VERSION_CLEAN: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"\.(win|windows|msysgit)\.\d+").unwrap());
+
+#[derive(Error, Debug, Diagnostic)]
+pub enum GitError {
+    #[diagnostic(code(git::ignore::load_invalid))]
+    #[error("Failed to load and parse {}.", ".gitignore".style(Style::File))]
+    GitignoreLoadFailed {
+        #[source]
+        error: ignore::Error,
+    },
+
+    #[diagnostic(code(git::repository::extract_slug))]
+    #[error("Failed to extract a repository slug from git remote candidates.")]
+    ExtractRepoSlugFailed,
+}
 
 #[derive(Debug)]
 pub struct Git {
@@ -50,7 +66,7 @@ impl Git {
         workspace_root: R,
         default_branch: B,
         remote_candidates: &[String],
-    ) -> VcsResult<Git> {
+    ) -> miette::Result<Git> {
         debug!("Using git as a version control system");
 
         let workspace_root = workspace_root.as_ref();
@@ -99,13 +115,13 @@ impl Git {
             let mut builder = GitignoreBuilder::new(git_root);
 
             if let Some(error) = builder.add(ignore_path) {
-                return Err(VcsError::GitignoreLoadFailed { error });
+                return Err(GitError::GitignoreLoadFailed { error }.into());
             }
 
             ignore = Some(
                 builder
                     .build()
-                    .map_err(|error| VcsError::GitignoreLoadFailed { error })?,
+                    .map_err(|error| GitError::GitignoreLoadFailed { error })?,
             );
         }
 
@@ -118,7 +134,7 @@ impl Git {
         })
     }
 
-    async fn get_merge_base(&self, base: &str, head: &str) -> VcsResult<Option<&str>> {
+    async fn get_merge_base(&self, base: &str, head: &str) -> miette::Result<Option<&str>> {
         let mut args = vec!["merge-base", head];
         let mut candidates = vec![base.to_owned()];
 
@@ -150,7 +166,7 @@ impl Git {
 
 #[async_trait]
 impl Vcs for Git {
-    async fn get_local_branch(&self) -> VcsResult<&str> {
+    async fn get_local_branch(&self) -> miette::Result<&str> {
         if self.is_version_supported(">=2.22.0").await? {
             return self.process.run(["branch", "--show-current"], true).await;
         }
@@ -160,15 +176,15 @@ impl Vcs for Git {
             .await
     }
 
-    async fn get_local_branch_revision(&self) -> VcsResult<&str> {
+    async fn get_local_branch_revision(&self) -> miette::Result<&str> {
         self.process.run(["rev-parse", "HEAD"], true).await
     }
 
-    async fn get_default_branch(&self) -> VcsResult<&str> {
+    async fn get_default_branch(&self) -> miette::Result<&str> {
         Ok(&self.default_branch)
     }
 
-    async fn get_default_branch_revision(&self) -> VcsResult<&str> {
+    async fn get_default_branch_revision(&self) -> miette::Result<&str> {
         self.process
             .run(["rev-parse", &self.default_branch], true)
             .await
@@ -179,7 +195,7 @@ impl Vcs for Git {
         files: &[String],
         allow_ignored: bool,
         batch_size: u16,
-    ) -> VcsResult<BTreeMap<WorkspaceRelativePathBuf, String>> {
+    ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
         let mut objects = vec![];
         let mut map = BTreeMap::new();
 
@@ -227,7 +243,7 @@ impl Vcs for Git {
         Ok(map)
     }
 
-    async fn get_file_tree(&self, dir: &str) -> VcsResult<Vec<WorkspaceRelativePathBuf>> {
+    async fn get_file_tree(&self, dir: &str) -> miette::Result<Vec<WorkspaceRelativePathBuf>> {
         let mut args = vec![
             "ls-files",
             "--full-name",
@@ -250,7 +266,7 @@ impl Vcs for Git {
             .collect::<Vec<_>>())
     }
 
-    async fn get_hooks_dir(&self) -> VcsResult<PathBuf> {
+    async fn get_hooks_dir(&self) -> miette::Result<PathBuf> {
         if let Ok(output) = self
             .process
             .run(["config", "--get", "core.hooksPath"], true)
@@ -266,11 +282,11 @@ impl Vcs for Git {
         Ok(self.repository_root.join(".git").join("hooks"))
     }
 
-    async fn get_repository_root(&self) -> VcsResult<PathBuf> {
+    async fn get_repository_root(&self) -> miette::Result<PathBuf> {
         Ok(self.repository_root.to_owned())
     }
 
-    async fn get_repository_slug(&self) -> VcsResult<&str> {
+    async fn get_repository_slug(&self) -> miette::Result<&str> {
         use git_url_parse::GitUrl;
 
         for candidate in &self.remote_candidates {
@@ -289,11 +305,11 @@ impl Vcs for Git {
             }
         }
 
-        Err(VcsError::GitExtractRepoSlug)
+        Err(GitError::ExtractRepoSlugFailed.into())
     }
 
     // https://git-scm.com/docs/git-status#_short_format
-    async fn get_touched_files(&self) -> VcsResult<TouchedFiles> {
+    async fn get_touched_files(&self) -> miette::Result<TouchedFiles> {
         let output = self
             .process
             .run(
@@ -388,7 +404,7 @@ impl Vcs for Git {
     async fn get_touched_files_against_previous_revision(
         &self,
         revision: &str,
-    ) -> VcsResult<TouchedFiles> {
+    ) -> miette::Result<TouchedFiles> {
         let revision = if self.is_default_branch(revision) {
             "HEAD"
         } else {
@@ -403,7 +419,7 @@ impl Vcs for Git {
         &self,
         base_revision: &str,
         revision: &str,
-    ) -> VcsResult<TouchedFiles> {
+    ) -> miette::Result<TouchedFiles> {
         let base = self
             .get_merge_base(base_revision, revision)
             .await?
@@ -487,7 +503,7 @@ impl Vcs for Git {
         })
     }
 
-    async fn get_version(&self) -> VcsResult<Version> {
+    async fn get_version(&self) -> miette::Result<Version> {
         let version = self
             .process
             .run_with_formatter(["--version"], true, |out| {

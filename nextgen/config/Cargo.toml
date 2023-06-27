@@ -14,6 +14,7 @@ path = "src/lib.rs"
 [dependencies]
 moon_common = { path = "../common" }
 moon_target = { path = "../target" }
+miette = { workspace = true }
 once_map = { workspace = true }
 proto_cli = { workspace = true }
 rustc-hash = { workspace = true }

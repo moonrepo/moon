@@ -17,7 +17,7 @@ pub struct Generator {
 }
 
 impl Generator {
-    pub fn load(workspace_root: &Path, config: &GeneratorConfig) -> Result<Self, GeneratorError> {
+    pub fn load(workspace_root: &Path, config: &GeneratorConfig) -> miette::Result<Self> {
         debug!(target: LOG_TARGET, "Creating generator");
 
         Ok(Generator {
@@ -28,7 +28,7 @@ impl Generator {
 
     /// Create a new template with a schema, using the first configured template path.
     /// Will error if a template of the same name already exists.
-    pub fn create_template(&self, name: &str) -> Result<Template, GeneratorError> {
+    pub fn create_template(&self, name: &str) -> miette::Result<Template> {
         let name = clean_id(name);
         let root = self
             .workspace_root
@@ -36,7 +36,7 @@ impl Generator {
             .join(&name);
 
         if root.exists() {
-            return Err(GeneratorError::ExistingTemplate(name, root));
+            return Err(GeneratorError::ExistingTemplate(name, root).into());
         }
 
         debug!(
@@ -58,7 +58,7 @@ impl Generator {
 
     /// Load the template with the provided name, using the first match amongst
     /// the list of template paths. Will error if no match is found.
-    pub fn load_template(&self, name: &str) -> Result<Template, GeneratorError> {
+    pub fn load_template(&self, name: &str) -> miette::Result<Template> {
         let name = clean_id(name);
 
         trace!(
@@ -78,10 +78,10 @@ impl Generator {
             }
         }
 
-        Err(GeneratorError::MissingTemplate(name))
+        Err(GeneratorError::MissingTemplate(name).into())
     }
 
-    pub fn generate(&self, template: &Template) -> Result<(), GeneratorError> {
+    pub fn generate(&self, template: &Template) -> miette::Result<()> {
         debug!(
             target: LOG_TARGET,
             "Generating template {} files",

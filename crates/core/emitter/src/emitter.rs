@@ -1,6 +1,5 @@
 use crate::event::{Event, EventFlow};
 use crate::subscriber::Subscriber;
-use moon_error::MoonError;
 use moon_workspace::Workspace;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -19,7 +18,7 @@ impl Emitter {
         }
     }
 
-    pub async fn emit<'e>(&self, event: Event<'e>) -> Result<EventFlow, MoonError> {
+    pub async fn emit<'e>(&self, event: Event<'e>) -> miette::Result<EventFlow> {
         let workspace = self.workspace.read().await;
 
         // dbg!(&event);

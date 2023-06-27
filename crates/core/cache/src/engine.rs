@@ -3,7 +3,6 @@ use crate::items::{CommonState, DependenciesState, ProjectsState, RunTargetState
 use crate::runfiles::Runfile;
 use crate::{get_cache_mode, CacheMode};
 use moon_common::consts::CONFIG_DIRNAME;
-use moon_error::MoonError;
 use moon_logger::{debug, trace};
 use moon_platform_runtime::Runtime;
 use moon_utils::time;
@@ -30,7 +29,7 @@ pub struct CacheEngine {
 }
 
 impl CacheEngine {
-    pub fn load(workspace_root: &Path) -> Result<Self, MoonError> {
+    pub fn load(workspace_root: &Path) -> miette::Result<Self> {
         let dir = workspace_root.join(CONFIG_DIRNAME).join("cache");
         let hashes_dir = dir.join("hashes");
         let outputs_dir = dir.join("outputs");
@@ -70,7 +69,7 @@ impl CacheEngine {
         &self,
         runtime: &Runtime,
         project_id: Option<&str>,
-    ) -> Result<DependenciesState, MoonError> {
+    ) -> miette::Result<DependenciesState> {
         let name = format!("deps{runtime}.json");
 
         DependenciesState::load(self.get_state_path(if let Some(id) = project_id {
@@ -83,7 +82,7 @@ impl CacheEngine {
     pub fn cache_run_target_state<T: AsRef<str>>(
         &self,
         target_id: T,
-    ) -> Result<RunTargetState, MoonError> {
+    ) -> miette::Result<RunTargetState> {
         let target_id = target_id.as_ref();
         let mut item = RunTargetState::load(self.get_target_dir(target_id).join("lastRun.json"))?;
 
@@ -94,25 +93,25 @@ impl CacheEngine {
         Ok(item)
     }
 
-    pub fn cache_codeowners_state(&self) -> Result<CommonState, MoonError> {
+    pub fn cache_codeowners_state(&self) -> miette::Result<CommonState> {
         CommonState::load(self.get_state_path("codeowners.json"))
     }
 
-    pub fn cache_projects_state(&self) -> Result<ProjectsState, MoonError> {
+    pub fn cache_projects_state(&self) -> miette::Result<ProjectsState> {
         ProjectsState::load(self.get_state_path("projects.json"))
     }
 
-    pub fn cache_tool_state(&self, runtime: &Runtime) -> Result<ToolState, MoonError> {
+    pub fn cache_tool_state(&self, runtime: &Runtime) -> miette::Result<ToolState> {
         ToolState::load(self.get_state_path(format!("tool{}-{}.json", runtime, runtime.version())))
     }
 
-    pub fn cache_vcs_hooks_state(&self) -> Result<CommonState, MoonError> {
+    pub fn cache_vcs_hooks_state(&self) -> miette::Result<CommonState> {
         CommonState::load(self.get_state_path("vcsHooks.json"))
     }
 
-    pub fn clean_stale_cache(&self, lifetime: &str) -> Result<(usize, u64), MoonError> {
-        let duration = time::parse_duration(lifetime)
-            .map_err(|e| MoonError::Generic(format!("Invalid lifetime: {e}")))?;
+    pub fn clean_stale_cache(&self, lifetime: &str) -> miette::Result<(usize, u64)> {
+        let duration =
+            time::parse_duration(lifetime).map_err(|e| miette::miette!("Invalid lifetime: {e}"))?;
 
         trace!(
             target: LOG_TARGET,
@@ -136,7 +135,7 @@ impl CacheEngine {
         Ok((deleted, bytes))
     }
 
-    pub fn create_hash_manifest<T>(&self, hash: &str, contents: &T) -> Result<(), MoonError>
+    pub fn create_hash_manifest<T>(&self, hash: &str, contents: &T) -> miette::Result<()>
     where
         T: ?Sized + Serialize,
     {
@@ -153,7 +152,7 @@ impl CacheEngine {
         Ok(())
     }
 
-    pub fn create_json_report<T: Serialize>(&self, name: &str, data: T) -> Result<(), MoonError> {
+    pub fn create_json_report<T: Serialize>(&self, name: &str, data: T) -> miette::Result<()> {
         let path = self.dir.join(name);
 
         trace!(target: LOG_TARGET, "Writing report {}", color::path(&path));
@@ -167,7 +166,7 @@ impl CacheEngine {
         &self,
         project_id: &str,
         data: &T,
-    ) -> Result<Runfile, MoonError> {
+    ) -> miette::Result<Runfile> {
         Runfile::load(self.get_state_path(project_id).join("runfile.json"), data)
     }
 

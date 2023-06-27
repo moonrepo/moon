@@ -2592,7 +2592,6 @@ dependencies = [
  "miette",
  "moon_deno_platform",
  "moon_dep_graph",
- "moon_error",
  "moon_node_platform",
  "moon_project_graph",
  "moon_rust_platform",
@@ -2639,7 +2638,6 @@ dependencies = [
  "moon_cache",
  "moon_dep_graph",
  "moon_emitter",
- "moon_error",
  "moon_hasher",
  "moon_logger",
  "moon_notifier",
@@ -2714,7 +2712,7 @@ dependencies = [
  "criterion",
  "fake",
  "flate2",
- "moon_error",
+ "miette",
  "moon_logger",
  "moon_test_utils",
  "moon_utils",
@@ -2748,9 +2746,9 @@ dependencies = [
 name = "moon_cache"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_archive",
  "moon_common",
- "moon_error",
  "moon_logger",
  "moon_platform_runtime",
  "moon_test_utils",
@@ -2789,7 +2787,6 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_dep_graph",
- "moon_error",
  "moon_generator",
  "moon_lang",
  "moon_launchpad",
@@ -2837,6 +2834,7 @@ dependencies = [
 name = "moon_codeowners"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_config",
  "moon_hash",
  "serde",
@@ -2864,6 +2862,7 @@ name = "moon_config"
 version = "0.1.0"
 dependencies = [
  "httpmock",
+ "miette",
  "moon_common",
  "moon_target",
  "once_map",
@@ -2944,7 +2943,6 @@ dependencies = [
  "moon_action",
  "moon_common",
  "moon_config",
- "moon_error",
  "moon_logger",
  "moon_platform",
  "moon_project",
@@ -2968,10 +2966,10 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "criterion",
+ "miette",
  "moon_action",
  "moon_action_context",
  "moon_cache",
- "moon_error",
  "moon_platform_runtime",
  "moon_project",
  "moon_target",
@@ -2992,20 +2990,6 @@ dependencies = [
  "moon_project",
  "starbase_styles",
  "thiserror",
-]
-
-[[package]]
-name = "moon_error"
-version = "0.1.0"
-dependencies = [
- "miette",
- "regex",
- "serde_json",
- "serde_yaml",
- "starbase_styles",
- "starbase_utils",
- "thiserror",
- "wax",
 ]
 
 [[package]]
@@ -3031,7 +3015,6 @@ dependencies = [
  "miette",
  "moon_common",
  "moon_config",
- "moon_error",
  "moon_logger",
  "moon_test_utils",
  "moon_utils",
@@ -3071,7 +3054,7 @@ dependencies = [
 name = "moon_hasher"
 version = "0.1.0"
 dependencies = [
- "moon_error",
+ "miette",
  "moon_utils",
  "rustc-hash",
  "serde",
@@ -3095,7 +3078,6 @@ dependencies = [
  "ci_env",
  "miette",
  "moon_common",
- "moon_error",
  "moon_logger",
  "moon_utils",
  "proto_cli",
@@ -3148,7 +3130,6 @@ dependencies = [
  "moon_action_context",
  "moon_common",
  "moon_config",
- "moon_error",
  "moon_hasher",
  "moon_lang",
  "moon_logger",
@@ -3201,8 +3182,8 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "ci_env",
+ "miette",
  "moon_emitter",
- "moon_error",
  "moon_logger",
  "moon_utils",
  "moon_workspace",
@@ -3231,7 +3212,6 @@ dependencies = [
  "moon_action_context",
  "moon_common",
  "moon_config",
- "moon_error",
  "moon_hasher",
  "moon_platform_runtime",
  "moon_process",
@@ -3328,7 +3308,6 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_enforcer",
- "moon_error",
  "moon_file_group",
  "moon_hasher",
  "moon_logger",
@@ -3394,7 +3373,6 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_emitter",
- "moon_error",
  "moon_hasher",
  "moon_logger",
  "moon_platform_runtime",
@@ -3425,7 +3403,6 @@ dependencies = [
  "cargo-lock",
  "cargo_toml",
  "miette",
- "moon_error",
  "moon_lang",
  "moon_logger",
  "moon_test_utils",
@@ -3444,7 +3421,6 @@ dependencies = [
  "moon_action_context",
  "moon_common",
  "moon_config",
- "moon_error",
  "moon_hasher",
  "moon_lang",
  "moon_logger",
@@ -3519,6 +3495,7 @@ dependencies = [
 name = "moon_task"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_common",
  "moon_config",
  "moon_target",
@@ -3580,7 +3557,6 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "miette",
- "moon_error",
  "moon_lang",
  "moon_platform_runtime",
  "moon_process",
@@ -3596,7 +3572,6 @@ version = "0.1.0"
 dependencies = [
  "cached",
  "miette",
- "moon_error",
  "moon_lang",
  "moon_logger",
  "moon_test_utils",
@@ -3614,7 +3589,6 @@ dependencies = [
  "miette",
  "moon_common",
  "moon_config",
- "moon_error",
  "moon_hasher",
  "moon_logger",
  "moon_project",
@@ -3639,8 +3613,8 @@ dependencies = [
  "dunce",
  "humantime",
  "md5",
+ "miette",
  "moon_common",
- "moon_error",
  "moon_logger",
  "moon_test_utils",
  "once_cell",
@@ -3700,7 +3674,6 @@ dependencies = [
  "moon_cache",
  "moon_common",
  "moon_config",
- "moon_error",
  "moon_logger",
  "moon_platform",
  "moon_test_utils",
@@ -3720,7 +3693,6 @@ version = "0.1.0"
 dependencies = [
  "graphql_client",
  "miette",
- "moon_error",
  "moon_logger",
  "moon_utils",
  "reqwest",

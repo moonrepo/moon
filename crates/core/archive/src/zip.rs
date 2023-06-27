@@ -1,5 +1,5 @@
-use crate::errors::ArchiveError;
 use crate::helpers::prepend_name;
+use miette::IntoDiagnostic;
 use moon_logger::{debug, map_list, trace};
 use moon_utils::path::to_string;
 use starbase_styles::color;
@@ -18,7 +18,7 @@ fn zip_contents<P: AsRef<str>>(
     path: &Path,
     root: &Path,
     prefix: P,
-) -> Result<(), ArchiveError> {
+) -> miette::Result<()> {
     let prefix = prefix.as_ref();
     let name = to_string(path.strip_prefix(root).unwrap())?;
 
@@ -30,19 +30,24 @@ fn zip_contents<P: AsRef<str>>(
         {
             use std::os::unix::fs::PermissionsExt;
 
-            options = options.unix_permissions(path.metadata()?.permissions().mode());
+            options =
+                options.unix_permissions(path.metadata().into_diagnostic()?.permissions().mode());
         }
 
         trace!(target: LOG_TARGET, "Zipping file {}", color::path(path));
 
-        archive.start_file(prepend_name(&name, prefix), options)?;
-        archive.write_all(fs::read_file(path)?.as_bytes())?;
+        archive
+            .start_file(prepend_name(&name, prefix), options)
+            .into_diagnostic()?;
+        archive
+            .write_all(fs::read_file(path)?.as_bytes())
+            .into_diagnostic()?;
 
         return Ok(());
     }
 
     if path.is_dir() {
-        archive.add_directory(name, options)?;
+        archive.add_directory(name, options).into_diagnostic()?;
 
         for entry in fs::read_dir(path)? {
             let path = entry.path();
@@ -62,7 +67,7 @@ pub fn zip<I: AsRef<Path>, O: AsRef<Path>>(
     files: &[String],
     output_file: O,
     base_prefix: Option<&str>,
-) -> Result<(), ArchiveError> {
+) -> miette::Result<()> {
     let input_root = input_root.as_ref();
     let output_file = output_file.as_ref();
 
@@ -87,7 +92,7 @@ pub fn zip<I: AsRef<Path>, O: AsRef<Path>>(
         zip_contents(&mut archive, &input_src, input_root, prefix)?;
     }
 
-    archive.finish()?;
+    archive.finish().into_diagnostic()?;
 
     Ok(())
 }
@@ -97,7 +102,7 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
     input_file: I,
     output_dir: O,
     remove_prefix: Option<&str>,
-) -> Result<(), ArchiveError> {
+) -> miette::Result<()> {
     let input_file = input_file.as_ref();
     let output_dir = output_dir.as_ref();
 
@@ -114,10 +119,10 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
     let zip = fs::open_file(input_file)?;
 
     // Unpack the archive into the output dir
-    let mut archive = ZipArchive::new(zip)?;
+    let mut archive = ZipArchive::new(zip).into_diagnostic()?;
 
     for i in 0..archive.len() {
-        let mut file = archive.by_index(i)?;
+        let mut file = archive.by_index(i).into_diagnostic()?;
 
         let mut path = match file.enclosed_name() {
             Some(path) => path.to_owned(),
@@ -147,7 +152,7 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
         if file.is_file() {
             let mut out = fs::create_file(&output_path)?;
 
-            io::copy(&mut file, &mut out)?;
+            io::copy(&mut file, &mut out).into_diagnostic()?;
             fs::update_perms(&output_path, file.unix_mode())?;
         }
     }
@@ -162,7 +167,7 @@ pub fn unzip<I: AsRef<Path>, O: AsRef<Path>>(
 //     input_file: I,
 //     output_dir: O,
 //     remove_prefix: Option<&str>,
-// ) -> Result<(), ArchiveError> {
+// ) -> miette::Result<()> {
 //     let input_file = input_file.as_ref();
 //     let output_dir = output_dir.as_ref();
 

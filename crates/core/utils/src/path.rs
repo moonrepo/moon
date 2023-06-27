@@ -1,5 +1,4 @@
 use clean_path::Clean;
-use moon_error::MoonError;
 use std::path::{Path, PathBuf};
 
 pub use pathdiff::diff_paths as relative_from;
@@ -68,7 +67,7 @@ pub fn standardize_separators<T: AsRef<str>>(path: T) -> String {
 }
 
 #[inline]
-pub fn to_string<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
+pub fn to_string<T: AsRef<Path>>(path: T) -> miette::Result<String> {
     let mut path = path.as_ref();
 
     // Avoid UNC paths as they cause lots of issues
@@ -78,11 +77,14 @@ pub fn to_string<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
 
     match path.to_str() {
         Some(p) => Ok(p.to_owned()),
-        None => Err(MoonError::PathInvalidUTF8(path.to_path_buf())),
+        None => Err(miette::miette!(
+            "Path {} contains invalid UTF-8 characters.",
+            path.display()
+        )),
     }
 }
 
 #[inline]
-pub fn to_virtual_string<T: AsRef<Path>>(path: T) -> Result<String, MoonError> {
+pub fn to_virtual_string<T: AsRef<Path>>(path: T) -> miette::Result<String> {
     Ok(standardize_separators(to_string(path)?))
 }

@@ -1,7 +1,6 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use moon_action_context::ActionContext;
 use moon_emitter::{Emitter, Event, EventFlow, Subscriber};
-use moon_error::MoonError;
 use moon_test_utils::get_fixtures_path;
 use moon_workspace::Workspace;
 use std::sync::Arc;
@@ -15,7 +14,7 @@ impl Subscriber for TestSubscriber {
         &mut self,
         _event: &Event<'e>,
         _workspace: &Workspace,
-    ) -> Result<EventFlow, MoonError> {
+    ) -> miette::Result<EventFlow> {
         Ok(EventFlow::Continue)
     }
 }

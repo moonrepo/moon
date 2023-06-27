@@ -28,7 +28,7 @@ impl<'owner> ContentHasher<'owner> {
         }
     }
 
-    pub fn generate_hash(&mut self) -> Result<String, JsonError> {
+    pub fn generate_hash(&mut self) -> miette::Result<String> {
         if let Some(hash) = &self.hash_cache {
             debug!(
                 hash,
@@ -60,7 +60,7 @@ impl<'owner> ContentHasher<'owner> {
         self.hash_cache = None;
     }
 
-    pub fn serialize(&mut self) -> Result<&String, JsonError> {
+    pub fn serialize(&mut self) -> miette::Result<&String> {
         if self.content_cache.is_none() {
             self.content_cache = Some(
                 serde_json::to_string_pretty(&self.contents)

@@ -42,16 +42,14 @@ impl<'app> ProjectBuilder<'app> {
         id: &'app str,
         source: &'app str,
         workspace_root: &'app Path,
-    ) -> Result<Self, ProjectBuilderError> {
+    ) -> miette::Result<Self> {
         debug!(id, source, "Building project {} from source", color::id(id));
 
         let source = WorkspaceRelativePathBuf::from(source);
         let root = source.to_logical_path(workspace_root);
 
         if !root.exists() {
-            return Err(ProjectBuilderError::MissingAtSource(
-                source.as_str().to_owned(),
-            ));
+            return Err(ProjectBuilderError::MissingAtSource(source.as_str().to_owned()).into());
         }
 
         Ok(ProjectBuilder {

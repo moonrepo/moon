@@ -1,6 +1,5 @@
 use miette::Diagnostic;
 use moon_common::{Style, Stylize};
-use starbase_utils::glob::GlobError;
 use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
@@ -28,8 +27,4 @@ pub enum QueryError {
     #[diagnostic(code(query::parse::failed))]
     #[error("Failed to parse query:\n\n{}", .0.style(Style::MutedLight))]
     ParseFailure(String),
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
-    Glob(#[from] GlobError),
 }

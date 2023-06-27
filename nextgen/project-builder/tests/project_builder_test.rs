@@ -42,7 +42,7 @@ mod project_builder {
     use super::*;
 
     #[test]
-    #[should_panic(expected = "MissingAtSource(\"qux\")")]
+    #[should_panic(expected = "No project exists at path qux.")]
     fn errors_missing_source() {
         let sandbox = create_sandbox("builder");
 

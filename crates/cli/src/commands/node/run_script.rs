@@ -1,7 +1,6 @@
 use moon::{build_project_graph, load_workspace_with_toolchain};
 use moon_common::Id;
 use moon_config::PlatformType;
-use moon_error::MoonError;
 use moon_node_tool::NodeTool;
 use starbase::AppResult;
 use std::env;
@@ -33,10 +32,9 @@ pub async fn run_script(name: String, project_id: Option<Id>) -> AppResult {
 
         // This should rarely happen...
     } else {
-        return Err(MoonError::Generic(
-            "This command must be ran within the context of a project.".to_owned(),
-        )
-        .into());
+        return Err(miette::miette!(
+            "This command must be ran within the context of a project.",
+        ));
     }
 
     command.create_async().exec_stream_output().await?;

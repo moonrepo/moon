@@ -4,7 +4,7 @@ use crate::toolchain::*;
 use crate::{inherit_tool, inherit_tool_without_version};
 use moon_common::consts;
 use proto::ToolsConfig;
-use schematic::{validate, Config, ConfigError, ConfigLoader};
+use schematic::{validate, Config, ConfigLoader};
 use serde::Serialize;
 use std::path::Path;
 
@@ -47,7 +47,7 @@ impl ToolchainConfig {
         inherit_proto_typescript
     );
 
-    pub fn inherit_proto(&mut self, proto_tools: &ToolsConfig) -> Result<(), ConfigError> {
+    pub fn inherit_proto(&mut self, proto_tools: &ToolsConfig) -> miette::Result<()> {
         self.inherit_proto_deno(proto_tools)?;
         self.inherit_proto_rust(proto_tools)?;
         self.inherit_proto_node(proto_tools)?;
@@ -64,7 +64,7 @@ impl ToolchainConfig {
         workspace_root: R,
         path: P,
         proto_tools: &ToolsConfig,
-    ) -> Result<ToolchainConfig, ConfigError> {
+    ) -> miette::Result<ToolchainConfig> {
         let mut result = ConfigLoader::<ToolchainConfig>::new()
             .set_root(workspace_root)
             .file_optional(path.as_ref())?
@@ -78,7 +78,7 @@ impl ToolchainConfig {
     pub fn load_from<R: AsRef<Path>>(
         workspace_root: R,
         proto_tools: &ToolsConfig,
-    ) -> Result<ToolchainConfig, ConfigError> {
+    ) -> miette::Result<ToolchainConfig> {
         let workspace_root = workspace_root.as_ref();
 
         Self::load(

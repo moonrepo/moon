@@ -55,7 +55,7 @@ cacheable!(
 );
 
 impl InheritedTasksConfig {
-    pub fn load<F: AsRef<Path>>(path: F) -> Result<InheritedTasksConfig, ConfigError> {
+    pub fn load<F: AsRef<Path>>(path: F) -> miette::Result<InheritedTasksConfig> {
         let result = ConfigLoader::<InheritedTasksConfig>::new()
             .file_optional(path.as_ref())?
             .load()?;
@@ -66,14 +66,14 @@ impl InheritedTasksConfig {
     pub fn load_partial<T: AsRef<Path>, F: AsRef<Path>>(
         workspace_root: T,
         path: F,
-    ) -> Result<PartialInheritedTasksConfig, ConfigError> {
+    ) -> miette::Result<PartialInheritedTasksConfig> {
         let workspace_root = workspace_root.as_ref();
         let path = path.as_ref();
 
-        ConfigLoader::<InheritedTasksConfig>::new()
+        Ok(ConfigLoader::<InheritedTasksConfig>::new()
             .set_root(workspace_root)
             .file_optional(path)?
-            .load_partial(&())
+            .load_partial(&())?)
     }
 }
 
@@ -100,7 +100,7 @@ impl InheritedTasksManager {
     pub fn load<T: AsRef<Path>, D: AsRef<Path>>(
         workspace_root: T,
         moon_dir: D,
-    ) -> Result<InheritedTasksManager, ConfigError> {
+    ) -> miette::Result<InheritedTasksManager> {
         let mut manager = InheritedTasksManager::default();
         let workspace_root = workspace_root.as_ref();
         let moon_dir = moon_dir.as_ref();
@@ -149,9 +149,7 @@ impl InheritedTasksManager {
         Ok(manager)
     }
 
-    pub fn load_from<T: AsRef<Path>>(
-        workspace_root: T,
-    ) -> Result<InheritedTasksManager, ConfigError> {
+    pub fn load_from<T: AsRef<Path>>(workspace_root: T) -> miette::Result<InheritedTasksManager> {
         let workspace_root = workspace_root.as_ref();
 
         Self::load(workspace_root, workspace_root.join(consts::CONFIG_DIRNAME))
@@ -214,7 +212,7 @@ impl InheritedTasksManager {
         language: &LanguageType,
         project: &ProjectType,
         tags: &[Id],
-    ) -> Result<InheritedTasksResult, ConfigError> {
+    ) -> miette::Result<InheritedTasksResult> {
         let lookup_order = self.get_lookup_order(platform, language, project, tags);
         let lookup_key = lookup_order.join(":");
 

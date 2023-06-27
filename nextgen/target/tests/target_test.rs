@@ -2,19 +2,19 @@ use moon_common::Id;
 use moon_target::{Target, TargetScope};
 
 #[test]
-#[should_panic(expected = "InvalidFormat(\"foo$:build\")")]
+#[should_panic(expected = "Invalid target foo$:build, must be in the format of \"scope:task\"")]
 fn errors_on_invalid_chars() {
     Target::parse("foo$:build").unwrap();
 }
 
 #[test]
-#[should_panic(expected = "InvalidFormat(\"foo:@build\")")]
+#[should_panic(expected = "Invalid target foo:@build, must be in the format of \"scope:task\"")]
 fn errors_on_invalid_task_no_at() {
     Target::parse("foo:@build").unwrap();
 }
 
 #[test]
-#[should_panic(expected = "TooWild")]
+#[should_panic(expected = "Target \":\" encountered. Wildcard scope and task not supported.")]
 fn errors_on_too_wild() {
     Target::parse(":").unwrap();
 }

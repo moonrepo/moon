@@ -1,5 +1,4 @@
 use crate::dep_graph::{DepGraph, DepGraphType, IndicesType};
-use crate::errors::DepGraphError;
 use moon_action::ActionNode;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
@@ -246,7 +245,7 @@ impl<'ws> DepGraphBuilder<'ws> {
             }
             // ^:task
             TargetScope::Deps => {
-                return Err(DepGraphError::Target(TargetError::NoDepsInRunContext).into());
+                return Err(TargetError::NoDepsInRunContext.into());
             }
             // project:task
             TargetScope::Project(project_id) => {
@@ -281,7 +280,7 @@ impl<'ws> DepGraphBuilder<'ws> {
             }
             // ~:task
             TargetScope::OwnSelf => {
-                return Err(DepGraphError::Target(TargetError::NoSelfInRunContext).into());
+                return Err(TargetError::NoSelfInRunContext.into());
             }
         };
 

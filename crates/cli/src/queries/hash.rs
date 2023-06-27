@@ -1,4 +1,3 @@
-use moon_error::MoonError;
 use moon_logger::debug;
 use moon_workspace::Workspace;
 use starbase::AppResult;
@@ -30,9 +29,8 @@ pub async fn query_hash(workspace: &Workspace, hash: &str) -> AppResult<(String,
         }
     }
 
-    Err(MoonError::Generic(format!(
+    Err(miette::miette!(
         "Unable to find a hash manifest for {}!",
         color::hash(hash)
     ))
-    .into())
 }

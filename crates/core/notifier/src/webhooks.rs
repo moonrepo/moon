@@ -1,6 +1,5 @@
 use ci_env::{get_environment, CiEnvironment};
 use moon_emitter::{Event, EventFlow, Subscriber};
-use moon_error::MoonError;
 use moon_logger::{error, trace};
 use moon_utils::time::{chrono::prelude::*, now_timestamp};
 use moon_workspace::Workspace;
@@ -73,7 +72,7 @@ impl Subscriber for WebhooksSubscriber {
         &mut self,
         event: &Event<'a>,
         _workspace: &Workspace,
-    ) -> Result<EventFlow, MoonError> {
+    ) -> miette::Result<EventFlow> {
         if !self.enabled {
             return Ok(EventFlow::Continue);
         }

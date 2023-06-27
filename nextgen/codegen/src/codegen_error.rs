@@ -23,4 +23,37 @@ pub enum CodegenError {
         .0.style(Style::Id),
     )]
     MissingTemplate(Id),
+
+    #[diagnostic(code(codegen::template_file::load_failed))]
+    #[error(
+        "Failed to load template file {}.",
+        .path.style(Style::Path),
+    )]
+    LoadTemplateFileFailed {
+        path: PathBuf,
+        #[source]
+        error: tera::Error,
+    },
+
+    #[diagnostic(code(codegen::template_file::render_failed))]
+    #[error(
+        "Failed to render template file {}.",
+        .path.style(Style::Path),
+    )]
+    RenderTemplateFileFailed {
+        path: PathBuf,
+        #[source]
+        error: tera::Error,
+    },
+
+    #[diagnostic(code(codegen::template_file::interpolate_path))]
+    #[error(
+        "Failed to interpolate variables into template file path {}.",
+        .path.style(Style::File),
+    )]
+    InterpolateTemplateFileFailed {
+        path: String,
+        #[source]
+        error: tera::Error,
+    },
 }

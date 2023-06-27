@@ -1,8 +1,7 @@
-use crate::filters;
 use crate::template_file::{FileState, TemplateFile};
-use miette::IntoDiagnostic;
+use crate::{filters, CodegenError};
 use moon_common::consts::CONFIG_TEMPLATE_FILENAME;
-use moon_common::path::{standardize_separators, RelativePathBuf};
+use moon_common::path::{to_virtual_string, RelativePathBuf};
 use moon_common::Id;
 use moon_config::TemplateConfig;
 use once_cell::sync::Lazy;
@@ -71,7 +70,10 @@ impl Template {
 
             self.engine
                 .add_template_file(&source_path, Some(name.as_str()))
-                .into_diagnostic()?;
+                .map_err(|error| CodegenError::LoadTemplateFileFailed {
+                    path: source_path.clone(),
+                    error,
+                })?;
 
             // Add partials to Tera, but skip copying them
             if name.as_str().contains("partial") {
@@ -100,7 +102,10 @@ impl Template {
             file.set_content(
                 self.engine
                     .render(file.name.as_str(), context)
-                    .into_diagnostic()?,
+                    .map_err(|error| CodegenError::RenderTemplateFileFailed {
+                        path: file.source_path.clone(),
+                        error,
+                    })?,
                 dest,
             )?;
         }
@@ -121,7 +126,7 @@ impl Template {
         path: &Path,
         context: &Context,
     ) -> miette::Result<RelativePathBuf> {
-        let mut name = standardize_separators(path.to_str().unwrap()); // TODO
+        let mut name = to_virtual_string(path)?;
 
         // Remove template file extensions
         if let Some(name_prefix) = name.strip_suffix(".tera") {
@@ -148,11 +153,14 @@ impl Template {
             .to_string();
 
         // Render the path to interpolate the values
-        Ok(RelativePathBuf::from(
-            Tera::default()
-                .render_str(&name, context)
-                .into_diagnostic()?,
-        ))
+        let path = Tera::default()
+            .render_str(&name, context)
+            .map_err(|error| CodegenError::InterpolateTemplateFileFailed {
+                path: name.to_owned(),
+                error,
+            })?;
+
+        Ok(RelativePathBuf::from(path))
     }
 
     /// Write the template file to the defined destination path.

@@ -3,7 +3,6 @@ use moon::{generate_project_graph, load_workspace};
 use moon_common::consts::CONFIG_DIRNAME;
 use moon_common::Id;
 use moon_config::{ConfigEnum, LanguageType};
-use moon_error::MoonError;
 use moon_platform_detector::detect_language_files;
 use moon_project_graph::ProjectGraph;
 use moon_rust_lang::cargo_toml::{CargoTomlCache, CargoTomlExt};
@@ -105,7 +104,7 @@ fn scaffold_workspace(
     let moon_configs = moon_configs
         .iter()
         .map(|f| path::to_string(f.strip_prefix(&workspace.root).unwrap()))
-        .collect::<Result<Vec<String>, MoonError>>()?;
+        .collect::<Result<Vec<String>, _>>()?;
 
     copy_files(&moon_configs, &workspace.root, &docker_workspace_root)?;
 
@@ -175,7 +174,7 @@ fn scaffold_sources(
         let files = files
             .iter()
             .map(|f| path::to_string(f.strip_prefix(&workspace.root).unwrap()))
-            .collect::<Result<Vec<String>, MoonError>>()?;
+            .collect::<Result<Vec<String>, _>>()?;
 
         copy_files(&files, &workspace.root, &docker_sources_root)?;
     }

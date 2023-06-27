@@ -3,7 +3,6 @@ use dialoguer::{theme::Theme, Confirm, Input, MultiSelect, Select};
 use miette::IntoDiagnostic;
 use moon::load_workspace;
 use moon_config::{TemplateVariable, TemplateVariableEnumValue};
-use moon_error::MoonError;
 use moon_generator::{FileState, Generator, GeneratorError, Template, TemplateContext};
 use moon_logger::{debug, map_list, trace, warn};
 use moon_terminal::{create_theme, ExtendedTerm};
@@ -133,7 +132,6 @@ fn gather_variables(
 ) -> AppResult<TemplateContext> {
     let mut context = TemplateContext::new();
     let custom_vars = parse_var_args(&options.vars);
-    let error_handler = |e| GeneratorError::Moon(MoonError::Io(e));
     let default_comment = color::muted_light("(defaults)");
 
     debug!(
@@ -159,7 +157,6 @@ fn gather_variables(
                         .with_prompt(var.prompt.as_ref().unwrap())
                         .show_default(true)
                         .interact()
-                        .map_err(error_handler)
                         .into_diagnostic()?;
 
                     log_var(name, &value, None);
@@ -214,7 +211,6 @@ fn gather_variables(
                                     .collect::<Vec<bool>>(),
                             )
                             .interact()
-                            .map_err(error_handler)
                             .into_diagnostic()?;
                         let value = indexes
                             .iter()
@@ -231,7 +227,6 @@ fn gather_variables(
                             .default(default_index)
                             .items(&labels)
                             .interact()
-                            .map_err(error_handler)
                             .into_diagnostic()?;
 
                         log_var(name, &values[index], None);
@@ -270,7 +265,6 @@ fn gather_variables(
                             }
                         })
                         .interact_text()
-                        .map_err(error_handler)
                         .into_diagnostic()?;
 
                     log_var(name, &value, None);
@@ -300,7 +294,6 @@ fn gather_variables(
                             }
                         })
                         .interact_text()
-                        .map_err(error_handler)
                         .into_diagnostic()?;
 
                     log_var(name, &value, None);

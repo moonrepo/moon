@@ -1,6 +1,5 @@
 use moon_cache::get_cache_mode;
 use moon_emitter::{Event, EventFlow, Subscriber};
-use moon_error::MoonError;
 use moon_utils::{async_trait, path};
 use moon_workspace::Workspace;
 
@@ -25,7 +24,7 @@ impl Subscriber for LocalCacheSubscriber {
         &mut self,
         event: &Event<'e>,
         workspace: &Workspace,
-    ) -> Result<EventFlow, MoonError> {
+    ) -> miette::Result<EventFlow> {
         match event {
             // Check to see if a build with the provided hash has been cached locally.
             // We only check for the archive, as the manifest is purely for local debugging!

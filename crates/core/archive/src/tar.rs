@@ -1,9 +1,9 @@
-use crate::errors::ArchiveError;
 use crate::helpers::prepend_name;
 use crate::tree_differ::TreeDiffer;
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 use flate2::Compression;
+use miette::IntoDiagnostic;
 use moon_logger::{debug, trace};
 use moon_utils::path;
 use rustc_hash::FxHashMap;
@@ -61,7 +61,7 @@ impl<'l> TarArchiver<'l> {
         self
     }
 
-    pub fn pack(&self) -> Result<(), ArchiveError> {
+    pub fn pack(&self) -> miette::Result<()> {
         debug!(
             target: LOG_TARGET,
             "Packing tar archive from {} to {}",
@@ -94,7 +94,9 @@ impl<'l> TarArchiver<'l> {
 
                 let mut fh = fs::open_file(source)?;
 
-                archive.append_file(prepend_name(file, self.prefix), &mut fh)?;
+                archive
+                    .append_file(prepend_name(file, self.prefix), &mut fh)
+                    .into_diagnostic()?;
             } else {
                 trace!(
                     target: LOG_TARGET,
@@ -102,7 +104,9 @@ impl<'l> TarArchiver<'l> {
                     color::path(source)
                 );
 
-                archive.append_dir_all(prepend_name(file, self.prefix), source)?;
+                archive
+                    .append_dir_all(prepend_name(file, self.prefix), source)
+                    .into_diagnostic()?;
             }
         }
 
@@ -117,14 +121,16 @@ impl<'l> TarArchiver<'l> {
                 let mut fh = fs::open_file(&file)?;
                 let file_name = path::to_string(file.strip_prefix(self.input_root).unwrap())?;
 
-                archive.append_file(
-                    prepend_name(&prepend_name(&file_name, file_prefix), self.prefix),
-                    &mut fh,
-                )?;
+                archive
+                    .append_file(
+                        prepend_name(&prepend_name(&file_name, file_prefix), self.prefix),
+                        &mut fh,
+                    )
+                    .into_diagnostic()?;
             }
         }
 
-        archive.finish()?;
+        archive.finish().into_diagnostic()?;
 
         Ok(())
     }
@@ -136,7 +142,7 @@ pub fn tar<I: AsRef<Path>, O: AsRef<Path>>(
     files: &[String],
     output_file: O,
     base_prefix: Option<&str>,
-) -> Result<(), ArchiveError> {
+) -> miette::Result<()> {
     let input_root = input_root.as_ref();
     let mut tar = TarArchiver::new(input_root, output_file.as_ref());
 
@@ -162,7 +168,7 @@ pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(
     input_file: I,
     output_dir: O,
     remove_prefix: Option<&str>,
-) -> Result<(), ArchiveError> {
+) -> miette::Result<()> {
     let input_file = input_file.as_ref();
     let output_dir = output_dir.as_ref();
 
@@ -184,9 +190,9 @@ pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(
     // Unpack the archive into the output dir
     let mut archive = Archive::new(tar);
 
-    for entry_result in archive.entries()? {
-        let mut entry = entry_result?;
-        let mut path: PathBuf = entry.path()?.into_owned();
+    for entry_result in archive.entries().into_diagnostic()? {
+        let mut entry = entry_result.into_diagnostic()?;
+        let mut path: PathBuf = entry.path().into_diagnostic()?.into_owned();
 
         // Remove the prefix
         if let Some(prefix) = remove_prefix {
@@ -202,7 +208,7 @@ pub fn untar<I: AsRef<Path>, O: AsRef<Path>>(
             fs::create_dir_all(parent_dir)?;
         }
 
-        entry.unpack(&output_path)?;
+        entry.unpack(&output_path).into_diagnostic()?;
     }
 
     Ok(())
@@ -214,7 +220,7 @@ pub fn untar_with_diff<I: AsRef<Path>, O: AsRef<Path>>(
     input_file: I,
     output_dir: O,
     remove_prefix: Option<&str>,
-) -> Result<(), ArchiveError> {
+) -> miette::Result<()> {
     let input_file = input_file.as_ref();
     let output_dir = output_dir.as_ref();
 
@@ -237,9 +243,9 @@ pub fn untar_with_diff<I: AsRef<Path>, O: AsRef<Path>>(
     let mut archive = Archive::new(tar);
     archive.set_overwrite(true);
 
-    for entry_result in archive.entries()? {
-        let mut entry = entry_result?;
-        let mut path: PathBuf = entry.path()?.into_owned();
+    for entry_result in archive.entries().into_diagnostic()? {
+        let mut entry = entry_result.into_diagnostic()?;
+        let mut path: PathBuf = entry.path().into_diagnostic()?.into_owned();
 
         // Remove the prefix
         if let Some(prefix) = remove_prefix {
@@ -257,7 +263,7 @@ pub fn untar_with_diff<I: AsRef<Path>, O: AsRef<Path>>(
 
         // Unpack the file if different than destination
         if differ.should_write_source(entry.size(), &mut entry, &output_path)? {
-            entry.unpack(&output_path)?;
+            entry.unpack(&output_path).into_diagnostic()?;
         }
 
         differ.untrack_file(&output_path);

@@ -20,7 +20,6 @@ moon_actions = { path = "../core/actions" }
 moon_common = { path = "../../nextgen/common" }
 moon_config = { path = "../../nextgen/config" }
 moon_dep_graph = { path = "../core/dep-graph" }
-moon_error = { path = "../core/error" }
 moon_generator = { path = "../core/generator" }
 moon_lang = { path = "../core/lang" }
 moon_launchpad = { path = "../core/launchpad" }

@@ -1,5 +1,4 @@
 use miette::Diagnostic;
-use moon_error::MoonError;
 use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
@@ -21,8 +20,4 @@ pub enum MoonbaseError {
 
     #[error("Failed to send request to moonbase: {0}")]
     Http(#[from] reqwest::Error),
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
-    Moon(#[from] MoonError),
 }

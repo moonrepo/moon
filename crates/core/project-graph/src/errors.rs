@@ -1,10 +1,4 @@
 use miette::Diagnostic;
-use moon_common::IdError;
-use moon_enforcer::EnforcerError;
-use moon_error::MoonError;
-use moon_file_group::FileGroupError;
-use moon_project::ProjectError;
-use moon_target::TargetError;
 use starbase_styles::{Style, Stylize};
 use thiserror::Error;
 
@@ -28,30 +22,6 @@ pub enum ProjectGraphError {
         .1.style(Style::Label),
     )]
     UnsupportedTargetScopeInDeps(String, String),
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
-    Enforcer(#[from] EnforcerError),
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
-    Id(#[from] IdError),
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
-    Moon(#[from] MoonError),
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
-    Project(#[from] ProjectError),
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
-    Target(#[from] TargetError),
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
-    Token(#[from] TokenError),
 }
 
 #[derive(Error, Debug, Diagnostic)]
@@ -78,16 +48,4 @@ pub enum TokenError {
 
     #[error("Unknown token function {}.", .0.style(Style::Symbol))]
     UnknownTokenFunc(String), // token
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
-    FileGroup(#[from] FileGroupError),
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
-    Moon(#[from] MoonError),
-
-    #[diagnostic(transparent)]
-    #[error(transparent)]
-    Target(#[from] TargetError),
 }

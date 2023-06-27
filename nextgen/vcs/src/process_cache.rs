@@ -1,4 +1,3 @@
-use crate::vcs::VcsResult;
 use moon_process::{output_to_string, Command};
 use once_map::OnceMap;
 use std::ffi::OsStr;
@@ -38,7 +37,7 @@ impl ProcessCache {
         command
     }
 
-    pub async fn run<I, A>(&self, args: I, trim: bool) -> VcsResult<&str>
+    pub async fn run<I, A>(&self, args: I, trim: bool) -> miette::Result<&str>
     where
         I: IntoIterator<Item = A>,
         A: AsRef<OsStr>,
@@ -51,7 +50,7 @@ impl ProcessCache {
         args: I,
         trim: bool,
         format: impl FnOnce(String) -> String,
-    ) -> VcsResult<&str>
+    ) -> miette::Result<&str>
     where
         I: IntoIterator<Item = A>,
         A: AsRef<OsStr>,
@@ -60,7 +59,7 @@ impl ProcessCache {
             .await
     }
 
-    pub async fn run_command(&self, command: Command, trim: bool) -> VcsResult<&str> {
+    pub async fn run_command(&self, command: Command, trim: bool) -> miette::Result<&str> {
         self.run_command_with_formatter(command, trim, |s| s).await
     }
 
@@ -69,7 +68,7 @@ impl ProcessCache {
         command: Command,
         trim: bool,
         format: impl FnOnce(String) -> String,
-    ) -> VcsResult<&str> {
+    ) -> miette::Result<&str> {
         let mut executor = command.create_async();
         let cache_key = executor.inspector.get_cache_key();
 

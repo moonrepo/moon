@@ -17,17 +17,17 @@ fn pad_semicolon(line: &str) -> String {
     line.replace("; ", " ; ")
 }
 
-pub fn split_args<T: AsRef<str>>(line: T) -> Result<Vec<String>, ArgsSplitError> {
+pub fn split_args<T: AsRef<str>>(line: T) -> miette::Result<Vec<String>> {
     let line = pad_semicolon(line.as_ref());
 
-    shell_words::split(&line).map_err(|error| ArgsSplitError {
+    Ok(shell_words::split(&line).map_err(|error| ArgsSplitError {
         args: line.to_owned(),
         error,
-    })
+    })?)
 }
 
 // #[cfg(windows)]
-// pub fn split_args<T: AsRef<str>>(line: T) -> Result<Vec<String>, ArgsSplitError> {
+// pub fn split_args<T: AsRef<str>>(line: T) -> miette::Result<Vec<String>> {
 //     let line = pad_semicolon(line.as_ref());
 
 //     Ok(winsplit::split(&line))

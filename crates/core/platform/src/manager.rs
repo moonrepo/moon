@@ -1,6 +1,6 @@
 use crate::platform::Platform;
 use moon_config::PlatformType;
-use moon_error::MoonError;
+use moon_tool::ToolError;
 use rustc_hash::FxHashMap;
 
 pub type BoxedPlatform = Box<dyn Platform>;
@@ -18,23 +18,23 @@ impl PlatformManager {
         self.cache.values().find(predicate)
     }
 
-    pub fn get<T: Into<PlatformType>>(&self, type_of: T) -> Result<&BoxedPlatform, MoonError> {
+    pub fn get<T: Into<PlatformType>>(&self, type_of: T) -> miette::Result<&BoxedPlatform> {
         let type_of = type_of.into();
 
         self.cache
             .get(&type_of)
-            .ok_or_else(|| MoonError::UnsupportedPlatform(type_of.to_string()))
+            .ok_or_else(|| ToolError::UnsupportedPlatform(type_of.to_string()).into())
     }
 
     pub fn get_mut<T: Into<PlatformType>>(
         &mut self,
         type_of: T,
-    ) -> Result<&mut BoxedPlatform, MoonError> {
+    ) -> miette::Result<&mut BoxedPlatform> {
         let type_of = type_of.into();
 
         self.cache
             .get_mut(&type_of)
-            .ok_or_else(|| MoonError::UnsupportedPlatform(type_of.to_string()))
+            .ok_or_else(|| ToolError::UnsupportedPlatform(type_of.to_string()).into())
     }
 
     pub fn list(&self) -> std::collections::hash_map::Values<PlatformType, BoxedPlatform> {

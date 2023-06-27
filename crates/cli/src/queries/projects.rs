@@ -1,9 +1,9 @@
 use crate::queries::touched_files::{
     query_touched_files, QueryTouchedFilesOptions, QueryTouchedFilesResult,
 };
+use miette::IntoDiagnostic;
 use moon::generate_project_graph;
 use moon_common::{path::WorkspaceRelativePathBuf, Id};
-use moon_error::MoonError;
 use moon_logger::{debug, trace};
 use moon_project::Project;
 use moon_task::Task;
@@ -70,7 +70,7 @@ async fn load_touched_files(
     // Only read piped data when stdin is not a TTY,
     // otherwise the process will hang indefinitely waiting for EOF.
     if !stdin().is_terminal() {
-        stdin().read_to_string(&mut buffer).map_err(MoonError::Io)?;
+        stdin().read_to_string(&mut buffer).into_diagnostic()?;
     }
 
     // If piped via stdin, parse and use it
@@ -78,7 +78,7 @@ async fn load_touched_files(
         // As JSON
         if buffer.starts_with('{') {
             let result: QueryTouchedFilesResult =
-                serde_json::from_str(&buffer).map_err(|e| MoonError::Generic(e.to_string()))?;
+                serde_json::from_str(&buffer).into_diagnostic()?;
 
             return Ok(result.files);
 

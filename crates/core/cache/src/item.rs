@@ -2,7 +2,7 @@
 macro_rules! cache_item {
     ($struct:ident) => {
         impl $struct {
-            pub fn load(path: PathBuf) -> Result<Self, MoonError> {
+            pub fn load(path: PathBuf) -> miette::Result<Self> {
                 let mut item = Self::default();
                 let log_target = "moon:cache:item";
 
@@ -33,7 +33,7 @@ macro_rules! cache_item {
                 Ok(item)
             }
 
-            pub fn save(&self) -> Result<(), MoonError> {
+            pub fn save(&self) -> miette::Result<()> {
                 let log_target = "moon:cache:item";
 
                 if get_cache_mode().is_writable() {

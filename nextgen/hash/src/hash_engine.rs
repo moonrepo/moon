@@ -1,5 +1,5 @@
 use crate::hasher::{ContentHashable, ContentHasher};
-use starbase_utils::{fs, json::JsonError};
+use starbase_utils::fs;
 use std::path::{Path, PathBuf};
 use tracing::debug;
 
@@ -32,7 +32,7 @@ impl HashEngine {
         ContentHasher::new(label)
     }
 
-    pub fn save_manifest(&self, mut hasher: ContentHasher) -> Result<String, JsonError> {
+    pub fn save_manifest(&self, mut hasher: ContentHasher) -> miette::Result<String> {
         let hash = hasher.generate_hash()?;
         let path = self.hashes_dir.join(format!("{hash}.json"));
 
@@ -47,7 +47,7 @@ impl HashEngine {
         &self,
         label: &'hasher str,
         content: &'hasher T,
-    ) -> Result<String, JsonError> {
+    ) -> miette::Result<String> {
         let mut hasher = ContentHasher::new(label);
         hasher.hash_content(content);
 

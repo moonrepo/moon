@@ -81,16 +81,16 @@ pub fn enforce_tag_relationships(
     dependency: &Project,
     required_tags: &[Id],
 ) -> miette::Result<()> {
+    // Dependency project doesn't have any tags
+    if required_tags.is_empty() {
+        return Ok(());
+    }
+
     // Source project isn't using the source tag
     if source_tag.is_empty()
         || source.config.tags.is_empty()
         || !source.config.tags.contains(source_tag)
     {
-        return Ok(());
-    }
-
-    // Dependency project doesn't have any tags
-    if required_tags.is_empty() {
         return Ok(());
     }
 
@@ -114,7 +114,7 @@ pub fn enforce_tag_relationships(
         dep_id: dependency.id.clone(),
         allowed: allowed
             .iter()
-            .map(|t| t.to_string())
+            .map(|t| format!("#{t}"))
             .collect::<Vec<_>>()
             .join(", "),
     }

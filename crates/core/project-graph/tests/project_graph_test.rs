@@ -729,7 +729,7 @@ mod tag_constraints {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "Invalid tag relationship. Project a with tag warrior cannot")]
+    #[should_panic(expected = "Invalid tag relationship. Project a with tag #warrior cannot")]
     async fn errors_for_no_source_tag_match() {
         get_tag_constraints_graph(|sandbox| {
             append_file(
@@ -754,7 +754,7 @@ mod tag_constraints {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "Invalid tag relationship. Project a with tag warrior cannot")]
+    #[should_panic(expected = "Invalid tag relationship. Project a with tag #warrior cannot")]
     async fn errors_for_no_allowed_tag_match() {
         get_tag_constraints_graph(|sandbox| {
             append_file(
@@ -767,7 +767,7 @@ mod tag_constraints {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "Invalid tag relationship. Project a with tag mage cannot")]
+    #[should_panic(expected = "Invalid tag relationship. Project a with tag #mage cannot")]
     async fn errors_for_depon_empty_tags() {
         get_tag_constraints_graph(|sandbox| {
             append_file(

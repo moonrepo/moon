@@ -1,6 +1,6 @@
+use miette::IntoDiagnostic;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
-use moon_error::map_io_to_fs_error;
 use moon_hasher::HashSet;
 use moon_logger::{debug, warn};
 use moon_platform::Runtime;
@@ -107,11 +107,8 @@ pub async fn install_deps(
     }
 
     if lockfile_path.exists() {
-        last_modified = time::to_millis(
-            fs::metadata(&lockfile_path)?
-                .modified()
-                .map_err(|e| map_io_to_fs_error(e, lockfile_path.clone()))?,
-        );
+        last_modified =
+            time::to_millis(fs::metadata(&lockfile_path)?.modified().into_diagnostic()?);
     }
 
     // When running in the workspace root, account for nested manifests

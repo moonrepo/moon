@@ -7,7 +7,6 @@ edition = "2021"
 moon_action_context = { path = "../../core/action-context" }
 moon_common = { path = "../../../nextgen/common" }
 moon_config = { path = "../../../nextgen/config" }
-moon_error = { path = "../../core/error" }
 moon_hasher = { path = "../../core/hasher" }
 moon_lang = { path = "../../core/lang" }
 moon_logger = { path = "../../core/logger" }

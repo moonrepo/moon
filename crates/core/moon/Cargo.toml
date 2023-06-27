@@ -6,7 +6,6 @@ edition = "2021"
 [dependencies]
 moon_deno_platform = { path = "../../deno/platform" }
 moon_dep_graph = { path = "../dep-graph" }
-moon_error = { path = "../error" }
 moon_node_platform = { path = "../../node/platform" }
 moon_project_graph = { path = "../project-graph" }
 moon_rust_platform = { path = "../../rust/platform" }

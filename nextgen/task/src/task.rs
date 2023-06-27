@@ -64,8 +64,11 @@ cacheable!(
 
 impl Task {
     /// Create a globset of all input globs to match with.
-    pub fn create_globset(&self) -> Result<glob::GlobSet, glob::GlobError> {
-        glob::GlobSet::new_split(&self.input_globs, &self.output_globs)
+    pub fn create_globset(&self) -> miette::Result<glob::GlobSet> {
+        Ok(glob::GlobSet::new_split(
+            &self.input_globs,
+            &self.output_globs,
+        )?)
     }
 
     /// Return a list of project-relative affected files filtered down from
@@ -74,7 +77,7 @@ impl Task {
         &self,
         touched_files: &FxHashSet<WorkspaceRelativePathBuf>,
         project_source: S,
-    ) -> Result<Vec<ProjectRelativePathBuf>, glob::GlobError> {
+    ) -> miette::Result<Vec<ProjectRelativePathBuf>> {
         let mut files = vec![];
         let globset = self.create_globset()?;
         let project_source = project_source.as_ref();
@@ -96,7 +99,7 @@ impl Task {
     pub fn is_affected(
         &self,
         touched_files: &FxHashSet<WorkspaceRelativePathBuf>,
-    ) -> Result<bool, glob::GlobError> {
+    ) -> miette::Result<bool> {
         if self.flags.empty_inputs {
             return Ok(true);
         }

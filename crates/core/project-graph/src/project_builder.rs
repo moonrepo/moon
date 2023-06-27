@@ -7,7 +7,6 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{consts, Id};
 use moon_config::{InputPath, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceProjects};
 use moon_enforcer::{enforce_project_type_relationships, enforce_tag_relationships};
-use moon_error::MoonError;
 use moon_hasher::{convert_paths_to_strings, to_hash};
 use moon_logger::{debug, map_list, trace, warn};
 use moon_platform_detector::{detect_project_language, detect_task_platform};
@@ -499,18 +498,16 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         let mut aliases: ProjectsAliasesMap = FxHashMap::default();
         let mut cache = self.workspace.cache.cache_projects_state()?;
 
-        let mut add_sources = |map: &FxHashMap<Id, String>| -> Result<(), ProjectGraphError> {
+        let mut add_sources = |map: &FxHashMap<Id, String>| {
             for (id, source) in map {
                 sources.insert(id.to_owned(), path::standardize_separators(source));
             }
-
-            Ok(())
         };
 
         // Load project sources
         match &self.workspace.config.projects {
             WorkspaceProjects::Sources(map) => {
-                add_sources(map)?;
+                add_sources(map);
             }
             WorkspaceProjects::Globs(list) => {
                 globs.extend(list.clone());
@@ -520,7 +517,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                 sources: map,
             } => {
                 globs.extend(list.clone());
-                add_sources(map)?;
+                add_sources(map);
             }
         };
 
@@ -635,8 +632,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             .workspace
             .vcs
             .get_file_hashes(&configs, false, 100)
-            .await
-            .map_err(|e| MoonError::Generic(e.to_string()))?;
+            .await?;
 
         hasher.hash_configs(&config_hashes);
 

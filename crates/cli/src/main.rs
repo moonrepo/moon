@@ -1,3 +1,4 @@
+use miette::IntoDiagnostic;
 use mimalloc::MiMalloc;
 use moon_cli::{run_cli, BIN_NAME};
 use moon_common::consts::CONFIG_DIRNAME;
@@ -101,7 +102,7 @@ fn find_workspace_root(dir: &Path) -> Option<PathBuf> {
     }
 }
 
-async fn run_bin(bin_path: &Path, current_dir: &Path) -> Result<(), std::io::Error> {
+async fn run_bin(bin_path: &Path, current_dir: &Path) -> miette::Result<()> {
     // Remove the binary path from the current args list
     let args = env::args()
         .enumerate()
@@ -119,9 +120,11 @@ async fn run_bin(bin_path: &Path, current_dir: &Path) -> Result<(), std::io::Err
     let result = Command::new(bin_path)
         .args(args)
         .current_dir(current_dir)
-        .spawn()?
+        .spawn()
+        .into_diagnostic()?
         .wait()
-        .await?;
+        .await
+        .into_diagnostic()?;
 
     if !result.success() {
         safe_exit(result.code().unwrap_or(1));
@@ -150,9 +153,7 @@ async fn main() -> MainResult {
                         {
                             set_executed_with(&moon_bin);
 
-                            run_bin(&moon_bin, &current_dir)
-                                .await
-                                .expect("Failed to run moon binary!");
+                            run_bin(&moon_bin, &current_dir).await?;
 
                             return Ok(());
                         }

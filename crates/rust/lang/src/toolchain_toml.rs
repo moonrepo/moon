@@ -2,7 +2,7 @@ use crate::RUSTUP;
 use cached::proc_macro::cached;
 use moon_lang::config_cache_container;
 use serde::{Deserialize, Serialize};
-use starbase_utils::toml::{read_file as read_toml, write_file, TomlError};
+use starbase_utils::toml::{read_file as read_toml, write_file};
 use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
@@ -48,8 +48,10 @@ impl ToolchainToml {
     }
 }
 
-pub fn write_toml(path: &Path, toml: &ToolchainToml) -> Result<(), TomlError> {
-    write_file(path, toml, true)
+pub fn write_toml(path: &Path, toml: &ToolchainToml) -> miette::Result<()> {
+    write_file(path, toml, true)?;
+
+    Ok(())
 }
 
 config_cache_container!(

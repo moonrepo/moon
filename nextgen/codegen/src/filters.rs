@@ -2,6 +2,7 @@
 #![allow(clippy::disallowed_types)]
 
 use convert_case::{Case, Casing};
+use moon_common::path::RelativePathBuf;
 use pathdiff::diff_paths;
 use serde_json::value::{to_value, Value};
 use std::collections::HashMap;
@@ -54,11 +55,11 @@ pub fn path_join(value: &Value, args: &HashMap<String, Value>) -> Result<Value> 
     let base = try_get_value!("path_join", "value", PathBuf, value);
 
     let part = match args.get("part") {
-        Some(val) => try_get_value!("path_join", "part", String, val),
+        Some(val) => try_get_value!("path_join", "part", RelativePathBuf, val),
         None => return Err(Error::msg("Expected a `part` for `path_join`.")),
     };
 
-    Ok(to_value(base.join(part)).unwrap())
+    Ok(to_value(part.normalize().to_logical_path(base)).unwrap())
 }
 
 pub fn path_relative(value: &Value, args: &HashMap<String, Value>) -> Result<Value> {
@@ -78,7 +79,9 @@ pub fn path_relative(value: &Value, args: &HashMap<String, Value>) -> Result<Val
         None => None,
     };
 
-    let rel = rel_to.unwrap_or_else(|| rel_from.unwrap_or(base));
+    let rel = RelativePathBuf::from_path(rel_to.unwrap_or_else(|| rel_from.unwrap_or(base)))
+        .unwrap()
+        .normalize();
 
     Ok(to_value(rel).unwrap())
 }

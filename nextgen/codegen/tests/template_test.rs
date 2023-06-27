@@ -9,7 +9,7 @@ fn create_template_file() -> TemplateFile {
 }
 
 fn create_template() -> Template {
-    Template::new("standard".into(), locate_fixture("standard")).unwrap()
+    Template::new("standard".into(), locate_fixture("template")).unwrap()
 }
 
 fn create_context() -> TemplateContext {
@@ -28,7 +28,7 @@ mod load_files {
         let mut template = create_template();
 
         template
-            .load_files(&locate_fixture("standard"), &create_context())
+            .load_files(&locate_fixture("template"), &create_context())
             .unwrap();
 
         let has_schema = template

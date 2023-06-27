@@ -3297,6 +3297,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_project_constraints"
+version = "0.1.0"
+dependencies = [
+ "miette",
+ "moon_common",
+ "moon_project",
+ "thiserror",
+]
+
+[[package]]
 name = "moon_project_graph"
 version = "0.1.0"
 dependencies = [

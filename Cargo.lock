@@ -2982,17 +2982,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_enforcer"
-version = "0.1.0"
-dependencies = [
- "miette",
- "moon_common",
- "moon_project",
- "starbase_styles",
- "thiserror",
-]
-
-[[package]]
 name = "moon_file_group"
 version = "0.1.0"
 dependencies = [
@@ -3317,13 +3306,13 @@ dependencies = [
  "moon_cache",
  "moon_common",
  "moon_config",
- "moon_enforcer",
  "moon_file_group",
  "moon_hasher",
  "moon_logger",
  "moon_platform_detector",
  "moon_project",
  "moon_project_builder",
+ "moon_project_constraints",
  "moon_query",
  "moon_target",
  "moon_task",

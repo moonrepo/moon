@@ -1,6 +1,5 @@
 use moon_common::path::RelativePathBuf;
 use moon_config::TemplateFrontmatterConfig;
-use starbase_styles::color;
 use std::path::{Path, PathBuf};
 use tracing::debug;
 
@@ -78,8 +77,8 @@ impl TemplateFile {
 
         if content.starts_with("---") {
             debug!(
-                "Found frontmatter in template file {}, extracting",
-                color::file(&self.name),
+                file = %self.name,
+                "Found frontmatter in template file, extracting",
             );
 
             if let Some(fm_end) = &content[4..].find("---") {

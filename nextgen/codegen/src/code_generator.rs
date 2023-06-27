@@ -1,0 +1,100 @@
+use crate::codegen_error::CodegenError;
+use crate::template::Template;
+use moon_common::consts::CONFIG_TEMPLATE_FILENAME;
+use moon_common::Id;
+use moon_config::{load_template_config_template, GeneratorConfig};
+use starbase_utils::fs;
+use std::path::{Path, PathBuf};
+use tracing::debug;
+
+pub struct CodeGenerator {
+    config: GeneratorConfig,
+    workspace_root: PathBuf,
+}
+
+impl CodeGenerator {
+    pub fn load(workspace_root: &Path, config: &GeneratorConfig) -> miette::Result<CodeGenerator> {
+        debug!("Creating code generator");
+
+        Ok(CodeGenerator {
+            config: config.to_owned(),
+            workspace_root: workspace_root.to_path_buf(),
+        })
+    }
+
+    /// Create a new template with a schema, using the first configured template path.
+    /// Will error if a template of the same name already exists.
+    pub fn create_template(&self, id: &str) -> miette::Result<Template> {
+        let id = Id::new(id)?;
+
+        let root = self
+            .workspace_root
+            .join(&self.config.templates[0])
+            .join(id.as_str());
+
+        if root.exists() {
+            return Err(CodegenError::ExistingTemplate(id, root).into());
+        }
+
+        debug!(
+            template = id.as_str(),
+            to = ?root,
+            "Creating new template",
+        );
+
+        fs::write_file(
+            root.join(CONFIG_TEMPLATE_FILENAME),
+            load_template_config_template(),
+        )?;
+
+        Template::new(id, root)
+    }
+
+    /// Load the template with the provided name, using the first match amongst
+    /// the list of template paths. Will error if no match is found.
+    pub fn load_template(&self, id: &str) -> miette::Result<Template> {
+        let id = Id::new(id)?;
+
+        debug!(
+            template = %id,
+            locations = self.config.templates.len(),
+            "Finding template from configured locations",
+        );
+
+        for template_path in &self.config.templates {
+            let root = self.workspace_root.join(template_path).join(id.as_str());
+
+            if root.exists() {
+                debug!(
+                    template = %id,
+                    root = ?root,
+                    "Found template"
+                );
+
+                return Template::new(id, root);
+            }
+        }
+
+        Err(CodegenError::MissingTemplate(id).into())
+    }
+
+    pub fn generate(&self, template: &Template) -> miette::Result<()> {
+        debug!(
+            template = %template.id,
+            "Generating template files",
+        );
+
+        for file in &template.files {
+            if file.should_write() {
+                template.write_file(file)?;
+            }
+        }
+
+        debug!(
+            template = %template.id,
+            "Code generation complete!",
+        );
+
+        Ok(())
+    }
+}

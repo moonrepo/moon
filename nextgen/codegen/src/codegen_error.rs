@@ -1,6 +1,5 @@
 use miette::Diagnostic;
-use moon_common::consts;
-use starbase_styles::{Style, Stylize};
+use moon_common::{consts, Id, Style, Stylize};
 use std::path::PathBuf;
 use thiserror::Error;
 
@@ -11,7 +10,7 @@ pub enum CodegenError {
         .0.style(Style::Id),
         .1.style(Style::Path),
     )]
-    ExistingTemplate(String, PathBuf),
+    ExistingTemplate(Id, PathBuf),
 
     #[error("Failed to parse variable argument --{0}: {1}")]
     FailedToParseArgVar(String, String),
@@ -26,5 +25,5 @@ pub enum CodegenError {
         "No template with the name {} could not be found at any of the configured template paths.",
         .0.style(Style::Id),
     )]
-    MissingTemplate(String),
+    MissingTemplate(Id),
 }

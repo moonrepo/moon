@@ -3,6 +3,7 @@ use crate::template_file::{FileState, TemplateFile};
 use miette::IntoDiagnostic;
 use moon_common::consts::CONFIG_TEMPLATE_FILENAME;
 use moon_common::path::{standardize_separators, RelativePathBuf};
+use moon_common::Id;
 use moon_config::TemplateConfig;
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -18,13 +19,13 @@ pub struct Template {
     pub config: TemplateConfig,
     pub engine: Tera,
     pub files: Vec<TemplateFile>,
-    pub name: String,
+    pub id: Id,
     pub root: PathBuf,
 }
 
 impl Template {
-    pub fn new(name: String, root: PathBuf) -> miette::Result<Template> {
-        debug!(template = name, root = ?root, "Loading template");
+    pub fn new(id: Id, root: PathBuf) -> miette::Result<Template> {
+        debug!(template = id.as_str(), root = ?root, "Loading template");
 
         let mut engine = Tera::default();
         engine.register_filter("camel_case", filters::camel_case);
@@ -42,7 +43,7 @@ impl Template {
             config: TemplateConfig::load_from(&root)?,
             engine,
             files: vec![],
-            name,
+            id,
             root,
         })
     }

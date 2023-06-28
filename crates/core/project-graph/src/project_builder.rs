@@ -451,7 +451,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
         // Create the current project
         let Some(source) = self.sources.get(&id) else {
-            return Err(ProjectBuilderError::UnconfiguredID(id.to_string()).into());
+            return Err(ProjectBuilderError::UnconfiguredID(id).into());
         };
 
         let mut project = self.create_project(&id, source)?;

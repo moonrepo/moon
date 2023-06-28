@@ -68,8 +68,8 @@ impl Project {
             .tasks
             .get(&task_id)
             .ok_or_else(|| ProjectError::UnknownTask {
-                task_id: task_id.to_string(),
-                project_id: self.id.to_string(),
+                task_id,
+                project_id: self.id.clone(),
             })?)
     }
 

@@ -2,8 +2,9 @@
 #![allow(clippy::disallowed_types)]
 
 use convert_case::{Case, Casing};
-use moon_utils::path;
-use serde_json::value::{to_value, Value};
+use moon_common::path::RelativePathBuf;
+use pathdiff::diff_paths;
+use starbase_utils::json::{to_value, JsonValue as Value};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use tera::{try_get_value, Error, Result};
@@ -54,14 +55,11 @@ pub fn path_join(value: &Value, args: &HashMap<String, Value>) -> Result<Value> 
     let base = try_get_value!("path_join", "value", PathBuf, value);
 
     let part = match args.get("part") {
-        Some(val) => try_get_value!("path_join", "part", String, val),
+        Some(val) => try_get_value!("path_join", "part", RelativePathBuf, val),
         None => return Err(Error::msg("Expected a `part` for `path_join`.")),
     };
 
-    let full = path::to_virtual_string(path::normalize(base.join(part)))
-        .map_err(|e| Error::msg(e.to_string()))?;
-
-    Ok(to_value(full).unwrap())
+    Ok(to_value(part.normalize().to_logical_path(base)).unwrap())
 }
 
 pub fn path_relative(value: &Value, args: &HashMap<String, Value>) -> Result<Value> {
@@ -72,20 +70,18 @@ pub fn path_relative(value: &Value, args: &HashMap<String, Value>) -> Result<Val
     }
 
     let rel_to = match args.get("to") {
-        Some(val) => path::relative_from(try_get_value!("path_relative", "to", String, val), &base),
+        Some(val) => diff_paths(try_get_value!("path_relative", "to", String, val), &base),
         None => None,
     };
 
     let rel_from = match args.get("from") {
-        Some(val) => {
-            path::relative_from(&base, try_get_value!("path_relative", "from", String, val))
-        }
+        Some(val) => diff_paths(&base, try_get_value!("path_relative", "from", String, val)),
         None => None,
     };
 
-    let rel = rel_to.unwrap_or_else(|| rel_from.unwrap_or(base));
-    let full =
-        path::to_virtual_string(path::normalize(rel)).map_err(|e| Error::msg(e.to_string()))?;
+    let rel = RelativePathBuf::from_path(rel_to.unwrap_or_else(|| rel_from.unwrap_or(base)))
+        .unwrap()
+        .normalize();
 
-    Ok(to_value(full).unwrap())
+    Ok(to_value(rel).unwrap())
 }

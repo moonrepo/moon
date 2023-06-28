@@ -17,10 +17,10 @@ moon = { path = "../core/moon" }
 moon_action_context = { path = "../core/action-context" }
 moon_action_pipeline = { path = "../core/action-pipeline" }
 moon_actions = { path = "../core/actions" }
+moon_codegen = { path = "../../nextgen/codegen" }
 moon_common = { path = "../../nextgen/common" }
 moon_config = { path = "../../nextgen/config" }
 moon_dep_graph = { path = "../core/dep-graph" }
-moon_generator = { path = "../core/generator" }
 moon_lang = { path = "../core/lang" }
 moon_launchpad = { path = "../core/launchpad" }
 moon_logger = { path = "../core/logger" }

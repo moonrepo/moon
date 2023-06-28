@@ -13,13 +13,13 @@ harness = false
 [dependencies]
 moon_common = { path = "../../../nextgen/common" }
 moon_config = { path = "../../../nextgen/config" }
-moon_enforcer = { path = "../enforcer" }
 moon_file_group = { path = "../../../nextgen/file-group" }
 moon_hasher = { path = "../hasher" }
 moon_logger = { path = "../logger" }
 moon_platform_detector = { path = "../platform-detector" }
 moon_project = { path = "../../../nextgen/project" }
 moon_project_builder = { path = "../../../nextgen/project-builder" }
+moon_project_constraints = { path = "../../../nextgen/project-constraints" }
 moon_query = { path = "../../../nextgen/query" }
 moon_target = { path = "../../../nextgen/target" }
 moon_task = { path = "../../../nextgen/task" }

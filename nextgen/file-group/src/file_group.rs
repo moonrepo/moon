@@ -94,7 +94,7 @@ impl FileGroup {
     /// relative to the project root.
     pub fn globs(&self) -> miette::Result<&Vec<WorkspaceRelativePathBuf>> {
         if self.globs.is_empty() {
-            return Err(FileGroupError::NoGlobs(self.id.to_string()).into());
+            return Err(FileGroupError::NoGlobs(self.id.clone()).into());
         }
 
         Ok(&self.globs)

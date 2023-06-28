@@ -21,7 +21,6 @@ moon_codegen = { path = "../../nextgen/codegen" }
 moon_common = { path = "../../nextgen/common" }
 moon_config = { path = "../../nextgen/config" }
 moon_dep_graph = { path = "../core/dep-graph" }
-moon_generator = { path = "../core/generator" }
 moon_lang = { path = "../core/lang" }
 moon_launchpad = { path = "../core/launchpad" }
 moon_logger = { path = "../core/logger" }

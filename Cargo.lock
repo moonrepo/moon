@@ -2788,7 +2788,6 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_dep_graph",
- "moon_generator",
  "moon_lang",
  "moon_launchpad",
  "moon_logger",
@@ -3013,25 +3012,6 @@ dependencies = [
  "starbase_utils",
  "thiserror",
  "tracing",
-]
-
-[[package]]
-name = "moon_generator"
-version = "0.1.0"
-dependencies = [
- "convert_case",
- "miette",
- "moon_common",
- "moon_config",
- "moon_logger",
- "moon_test_utils",
- "moon_utils",
- "once_cell",
- "serde_json",
- "starbase_styles",
- "starbase_utils",
- "tera",
- "thiserror",
 ]
 
 [[package]]

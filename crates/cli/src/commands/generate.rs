@@ -290,7 +290,7 @@ fn gather_variables(
 
 pub async fn generate(name: String, options: GenerateOptions) -> AppResult {
     let workspace = load_workspace().await?;
-    let generator = CodeGenerator::load(&workspace.root, &workspace.config.generator)?;
+    let generator = CodeGenerator::new(&workspace.root, &workspace.config.generator);
     let theme = create_theme();
     let cwd = env::current_dir().into_diagnostic()?;
 

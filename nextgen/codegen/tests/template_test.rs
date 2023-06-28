@@ -70,6 +70,25 @@ mod template {
         }
 
         #[test]
+        fn renders_content_of_files() {
+            let mut template = create_template();
+            let fixture = locate_fixture("template");
+
+            template.load_files(&fixture, &create_context()).unwrap();
+
+            let file = &template.files[0];
+
+            assert_eq!(file.content, "export {};\n");
+            assert_eq!(
+                file.config,
+                Some(TemplateFrontmatterConfig {
+                    force: true,
+                    ..TemplateFrontmatterConfig::default()
+                })
+            );
+        }
+
+        #[test]
         fn filters_out_schema_file() {
             let mut template = create_template();
 
@@ -171,6 +190,25 @@ mod template {
                     .interpolate_path(&PathBuf::from("folder/[unknown].ts"), &context)
                     .unwrap(),
                 "folder/[unknown].ts"
+            );
+        }
+
+        #[test]
+        fn removes_exts() {
+            let template = create_template();
+            let context = create_context();
+
+            assert_eq!(
+                template
+                    .interpolate_path(&PathBuf::from("file.ts.tera"), &context)
+                    .unwrap(),
+                "file.ts"
+            );
+            assert_eq!(
+                template
+                    .interpolate_path(&PathBuf::from("file.ts.twig"), &context)
+                    .unwrap(),
+                "file.ts"
             );
         }
     }

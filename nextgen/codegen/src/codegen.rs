@@ -8,19 +8,19 @@ use starbase_utils::fs;
 use std::path::{Path, PathBuf};
 use tracing::debug;
 
-pub struct CodeGenerator {
-    config: GeneratorConfig,
-    workspace_root: PathBuf,
+pub struct CodeGenerator<'app> {
+    config: &'app GeneratorConfig,
+    workspace_root: &'app Path,
 }
 
-impl CodeGenerator {
-    pub fn load(workspace_root: &Path, config: &GeneratorConfig) -> miette::Result<CodeGenerator> {
+impl<'app> CodeGenerator<'app> {
+    pub fn new(workspace_root: &'app Path, config: &'app GeneratorConfig) -> CodeGenerator<'app> {
         debug!("Creating code generator");
 
-        Ok(CodeGenerator {
-            config: config.to_owned(),
-            workspace_root: workspace_root.to_path_buf(),
-        })
+        CodeGenerator {
+            config,
+            workspace_root,
+        }
     }
 
     /// Create a new template with a schema, using the first configured template path.
@@ -93,6 +93,6 @@ impl CodeGenerator {
         RelativePathBuf::from(template_path)
             .join(template_name)
             .normalize()
-            .to_logical_path(&self.workspace_root)
+            .to_logical_path(self.workspace_root)
     }
 }

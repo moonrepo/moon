@@ -4,7 +4,7 @@
 use convert_case::{Case, Casing};
 use moon_common::path::RelativePathBuf;
 use pathdiff::diff_paths;
-use serde_json::value::{to_value, Value};
+use starbase_utils::json::{to_value, JsonValue as Value};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use tera::{try_get_value, Error, Result};

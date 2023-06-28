@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- Modernized the code generator and project constraints implementation.
+
 ## 1.9.0
 
 #### 🚀 Updates

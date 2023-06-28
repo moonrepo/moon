@@ -217,6 +217,7 @@ const sidebars = {
 					collapsed: true,
 					collapsible: true,
 					items: [
+						'guides/examples/angular',
 						'guides/examples/astro',
 						'guides/examples/eslint',
 						'guides/examples/jest',

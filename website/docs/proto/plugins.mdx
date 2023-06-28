@@ -246,10 +246,11 @@ and must return a human-readable name and plugin type.
 
 ```rust
 #[plugin_fn]
-pub fn register_tool(_: ()) -> FnResult<Json<ToolMetadata>> {
-    Ok(Json(Metadata {
+pub fn register_tool(_: ()) -> FnResult<Json<ToolMetadataOutput>> {
+    Ok(Json(ToolMetadataOutput {
         name: "Node.js".into(),
         type_of: PluginType::Language,
+        ..ToolMetadataOutput::default()
     }))
 }
 ```
@@ -260,7 +261,7 @@ commands (e.g. `proto install <id>`).
 
 ```rust
 #[plugin_fn]
-pub fn register_metadata(Json(input): Json<ToolMetadataInput>) -> FnResult<Json<ToolMetadata>> {
+pub fn register_metadata(Json(input): Json<ToolMetadataInput>) -> FnResult<Json<ToolMetadataOutput>> {
   input.id
   // ...
 }
@@ -269,7 +270,7 @@ pub fn register_metadata(Json(input): Json<ToolMetadataInput>) -> FnResult<Json<
 #### Downloading and installing
 
 Our plugin layer _only_ supports downloading pre-built tools, typically as an archive, and does
-_not_ support building from source. The `register_install_params` function _must_ be defined, whichs
+_not_ support building from source. The `register_install` function _must_ be defined, whichs
 configures how the tool should be downloaded and installed.
 
 The following fields are available:
@@ -278,17 +279,17 @@ The following fields are available:
   the direct folder within the archive that contains the tool, and will be removed when unpacking
   the archive. If there is no prefix folder within the archive, this setting can be omitted.
 - `download_url` (required) - A secure URL to download the tool/archive.
-- `download_file` - File name of the archive to download. If not provided, will attempt to extract
+- `download_name` - File name of the archive to download. If not provided, will attempt to extract
   it from the URL.
 - `checksum_url` - A secure URL to download the checksum file for verification. If the tool does not
   support checksum verification, this setting can be omitted.
 
 ```rust
 #[plugin_fn]
-pub fn register_install_params(Json(input): Json<EnvironmentInput>) -> FnResult<Json<InstallParams>> {
-    let version = input.version;
-    let arch = input.arch;
-    let os = input.os;
+pub fn register_install(Json(input): Json<InstallParamsInput>) -> FnResult<Json<InstallParamsOutput>> {
+    let version = input.env.version;
+    let arch = input.env.arch;
+    let os = input.env.os;
 
     let prefix = match os.as_str() {
         "linux" => format!("node-v{version}-linux-{arch}"),
@@ -299,18 +300,18 @@ pub fn register_install_params(Json(input): Json<EnvironmentInput>) -> FnResult<
         }
     };
 
-    let filename = if input.os == "windows" {
+    let filename = if os == "windows" {
         format!("{prefix}.zip")
     } else {
         format!("{prefix}.tar.xz")
     };
 
-    Ok(Json(InstallParams {
+    Ok(Json(InstallParamsOutput {
         archive_prefix: Some(prefix),
         download_url: format!("https://nodejs.org/dist/v{version}/{filename}"),
-        download_file: Some(filename),
+        download_name: Some(filename),
         checksum_url: Some(format!("https://nodejs.org/dist/v{version}/SHASUMS256.txt")),
-        ..InstallParams::default()
+        ..InstallParamsOutput::default()
     }))
 }
 ```
@@ -327,14 +328,14 @@ edge cases, so for situations where the install params above are not sufficient,
 
 This function receives an input with the following fields:
 
-- `download_path` - Virtual path to the downloaded file. Maps to `~/.proto/temp/<id>/<file>`.
-- `install_dir` - Virtual directory to unpack the archive into, or copy the binary to. Maps to
+- `input_file` - Virtual path to the downloaded file. Maps to `~/.proto/temp/<id>/<file>`.
+- `output_dir` - Virtual directory to unpack the archive into, or copy the binary to. Maps to
   `~/.proto/tools/<id>/<version>`.
 
 ```rust
 #[plugin_fn]
 pub fn unpack_archive(Json(input): Json<UnpackArchiveInput>) -> FnResult<()> {
-    untar(input.download_path, input.install_dir)?;
+    untar(input.input_file, input.output_dir)?;
     Ok(())
 }
 ```
@@ -347,8 +348,8 @@ the `detect_version_files` function and optional `parse_version_file` function. 
 
 ```rust
 #[plugin_fn]
-pub fn detect_version_files(_: ()) -> FnResult<Json<DetectVersionFiles>> {
-    Ok(Json(DetectVersionFiles {
+pub fn detect_version_files(_: ()) -> FnResult<Json<DetectVersionOutput>> {
+    Ok(Json(DetectVersionOutput {
         files: vec![
             ".nvmrc".into(),
             ".node-version".into(),
@@ -367,7 +368,7 @@ applicable).
 
 ```rust
 #[plugin_fn]
-pub fn parse_version_file(Json(input): Json<ParseVersionInput>) -> FnResult<Json<ParseVersion>> {
+pub fn parse_version_file(Json(input): Json<ParseVersionInput>) -> FnResult<Json<ParseVersionOutput>> {
     let mut version = None;
 
     if input.file == "package.json" {
@@ -382,7 +383,7 @@ pub fn parse_version_file(Json(input): Json<ParseVersionInput>) -> FnResult<Json
         version = Some(input.content.trim().to_owned());
     }
 
-    Ok(Json(ParseVersion { version }))
+    Ok(Json(ParseVersionOutput { version }))
 }
 ```
 
@@ -401,7 +402,7 @@ directory) to a binary to execute.
 
 ```rust
 #[plugin_fn]
-pub fn register_shims(Json(input): Json<EnvironmentInput>) -> FnResult<Json<ShimParams>> {
+pub fn register_shims(Json(input): Json<ShimParamsInput>) -> FnResult<Json<ShimParamsOutput>> {
     let mut global_shims = HashMap::new();
 
     global_shims.insert("npx".into(), if input.os == "windows" {

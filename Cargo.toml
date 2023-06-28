@@ -34,6 +34,7 @@ criterion = { version = "0.5.1", features = ["async_tokio"] }
 miette = "5.9.0"
 once_cell = "1.18.0"
 once_map = "0.4.6"
+pathdiff = "0.2.1"
 petgraph = { version = "0.6.3", default-features = false, features = ["serde-1"] }
 proto_cli = "0.12.0"
 relative-path = { version = "1.8.0", features = ["serde"] }

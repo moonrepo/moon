@@ -1,4 +1,6 @@
 pub use relative_path::{RelativePath, RelativePathBuf};
+use starbase_styles::color;
+use std::path::Path;
 
 // Named types for better readability
 pub type ProjectRelativePath = RelativePath;
@@ -53,4 +55,22 @@ pub fn expand_to_workspace_relative<P: AsRef<str>>(
         }
         RelativeFrom::Workspace => WorkspaceRelativePathBuf::from(path),
     }
+}
+
+#[inline]
+pub fn to_string<T: AsRef<Path>>(path: T) -> miette::Result<String> {
+    let path = path.as_ref();
+
+    match path.to_str() {
+        Some(p) => Ok(p.to_owned()),
+        None => Err(miette::miette!(
+            "Path {} contains invalid UTF-8 characters.",
+            color::path(path)
+        )),
+    }
+}
+
+#[inline]
+pub fn to_virtual_string<T: AsRef<Path>>(path: T) -> miette::Result<String> {
+    Ok(standardize_separators(to_string(path)?))
 }

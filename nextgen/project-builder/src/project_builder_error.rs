@@ -1,5 +1,5 @@
 use miette::Diagnostic;
-use moon_common::{Style, Stylize};
+use moon_common::{Id, Style, Stylize};
 use std::path::PathBuf;
 use thiserror::Error;
 
@@ -15,13 +15,5 @@ pub enum ProjectBuilderError {
 
     #[diagnostic(code(project::unknown))]
     #[error("No project has been configured with the ID {}.", .0.style(Style::Id))]
-    UnconfiguredID(String),
-
-    #[diagnostic(code(project::task::unknown), help = "Has this task been configured?")]
-    #[error(
-        "Unknown task {} for project {}.",
-        .task_id.style(Style::Id),
-        .project_id.style(Style::Id),
-    )]
-    UnknownTask { task_id: String, project_id: String },
+    UnconfiguredID(Id),
 }

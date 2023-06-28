@@ -3316,10 +3316,10 @@ dependencies = [
  "moon_actions",
  "moon_archive",
  "moon_cache",
+ "moon_codegen",
  "moon_common",
  "moon_config",
  "moon_dep_graph",
- "moon_generator",
  "moon_lang",
  "moon_launchpad",
  "moon_logger",
@@ -3359,6 +3359,24 @@ dependencies = [
  "tera",
  "tiny_http",
  "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "moon_codegen"
+version = "0.1.0"
+dependencies = [
+ "convert_case",
+ "miette",
+ "moon_common",
+ "moon_config",
+ "once_cell",
+ "pathdiff",
+ "regex",
+ "starbase_sandbox",
+ "starbase_utils",
+ "tera",
+ "thiserror",
  "tracing",
 ]
 
@@ -3514,17 +3532,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_enforcer"
-version = "0.1.0"
-dependencies = [
- "miette",
- "moon_common",
- "moon_project",
- "starbase_styles",
- "thiserror",
-]
-
-[[package]]
 name = "moon_file_group"
 version = "0.1.0"
 dependencies = [
@@ -3537,25 +3544,6 @@ dependencies = [
  "starbase_utils",
  "thiserror",
  "tracing",
-]
-
-[[package]]
-name = "moon_generator"
-version = "0.1.0"
-dependencies = [
- "convert_case",
- "miette",
- "moon_common",
- "moon_config",
- "moon_logger",
- "moon_test_utils",
- "moon_utils",
- "once_cell",
- "serde_json",
- "starbase_styles",
- "starbase_utils",
- "tera",
- "thiserror",
 ]
 
 [[package]]
@@ -3829,6 +3817,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_project_constraints"
+version = "0.1.0"
+dependencies = [
+ "miette",
+ "moon_common",
+ "moon_project",
+ "thiserror",
+]
+
+[[package]]
 name = "moon_project_graph"
 version = "0.1.0"
 dependencies = [
@@ -3839,13 +3837,13 @@ dependencies = [
  "moon_cache",
  "moon_common",
  "moon_config",
- "moon_enforcer",
  "moon_file_group",
  "moon_hasher",
  "moon_logger",
  "moon_platform_detector",
  "moon_project",
  "moon_project_builder",
+ "moon_project_constraints",
  "moon_query",
  "moon_target",
  "moon_task",

@@ -1,3 +1,4 @@
+use moon_common::path::standardize_separators;
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, predicates::prelude::*, Sandbox,
 };
@@ -201,7 +202,9 @@ fn supports_custom_filters() {
 
     assert.success();
 
-    assert_snapshot!(fs::read_to_string(sandbox.path().join("./test/filters.txt")).unwrap());
+    let content = fs::read_to_string(sandbox.path().join("./test/filters.txt")).unwrap();
+
+    assert_snapshot!(standardize_separators(content));
 }
 
 #[test]

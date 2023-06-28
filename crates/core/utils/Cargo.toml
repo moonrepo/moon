@@ -15,7 +15,7 @@ humantime = "2.1.0"
 md5 = "0.7.0"
 miette = { workspace = true }
 once_cell = { workspace = true }
-pathdiff = "0.2.1"
+pathdiff = { workspace = true }
 regex = { workspace = true }
 rustc-hash = { workspace = true }
 semver = "1.0.17"

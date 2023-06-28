@@ -1,5 +1,5 @@
 use miette::Diagnostic;
-use moon_common::{Style, Stylize};
+use moon_common::{Id, Style, Stylize};
 use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
@@ -10,5 +10,5 @@ pub enum ProjectError {
         .task_id.style(Style::Id),
         .project_id.style(Style::Id),
     )]
-    UnknownTask { task_id: String, project_id: String },
+    UnknownTask { task_id: Id, project_id: Id },
 }

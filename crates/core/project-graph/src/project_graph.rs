@@ -124,7 +124,7 @@ impl ProjectGraph {
         let index = self
             .indices
             .get(&id)
-            .ok_or_else(|| ProjectBuilderError::UnconfiguredID(id.to_string()))?;
+            .ok_or_else(|| ProjectBuilderError::UnconfiguredID(id))?;
 
         Ok(self.graph.node_weight(*index).unwrap())
     }

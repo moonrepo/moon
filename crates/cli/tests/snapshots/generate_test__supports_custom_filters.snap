@@ -1,7 +1,6 @@
 ---
 source: crates/cli/tests/generate_test.rs
-assertion_line: 209
-expression: "fs::read_to_string(fixture.path().join(\"./test/filters.txt\")).unwrap()"
+expression: "fs::read_to_string(sandbox.path().join(\"./test/filters.txt\")).unwrap()"
 ---
 STRINGS:
 
@@ -15,7 +14,7 @@ upper_snake_case = SOME_RANDOM_VALUE
 PATHS:
 
 path_join = some/dir/another/dir
-path_join_with_var = test/another/dir
+path_join_with_var = ./test/another/dir
 
 RELATIVE PATHS:
 

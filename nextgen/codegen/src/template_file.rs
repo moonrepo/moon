@@ -33,7 +33,7 @@ pub struct TemplateFile {
 }
 
 impl TemplateFile {
-    pub fn load(name: RelativePathBuf, source_path: PathBuf) -> Self {
+    pub fn new(name: RelativePathBuf, source_path: PathBuf) -> Self {
         TemplateFile {
             config: None,
             content: String::new(),

@@ -5,7 +5,7 @@ use starbase_sandbox::locate_fixture;
 use std::path::PathBuf;
 
 fn create_template_file() -> TemplateFile {
-    TemplateFile::load("standard".into(), PathBuf::from("."))
+    TemplateFile::new("standard".into(), PathBuf::from("."))
 }
 
 fn create_template() -> Template {

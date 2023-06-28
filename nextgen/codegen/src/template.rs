@@ -94,7 +94,7 @@ impl Template {
                 "Loading template file",
             );
 
-            files.push(TemplateFile::load(name, source_path));
+            files.push(TemplateFile::new(name, source_path));
         }
 
         // Do a second pass and render the content

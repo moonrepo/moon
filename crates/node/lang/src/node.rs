@@ -61,6 +61,7 @@ pub fn extract_canonical_node_module_bin(bin_path: PathBuf) -> miette::Result<Bi
     }
 
     let contents = String::from_utf8(buffer).into_diagnostic()?;
+    let shebang = contents.starts_with("#!");
 
     // Found a JavaScript file, use as-is
     if has_shebang(&contents, "node") {
@@ -74,11 +75,13 @@ pub fn extract_canonical_node_module_bin(bin_path: PathBuf) -> miette::Result<Bi
     if is_pwsh || is_bash {
         let Some(extracted_path) = parse_bin_file(contents) else {
             // No path found, might just be a regular Bash script
-            return Ok(BinFile::Other(bin_path, if is_pwsh {
-                "powershell".into()
+            return Ok(if shebang {
+                BinFile::Binary(bin_path)
+            } else if is_pwsh {
+                BinFile::Other(bin_path, "powershell".into())
             } else {
-                "bash".into()
-            }));
+                BinFile::Other(bin_path, "bash".into())
+            });
         };
 
         let extracted_bin = path::normalize(bin_path.parent().unwrap().join(extracted_path));

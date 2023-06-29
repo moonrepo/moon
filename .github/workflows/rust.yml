@@ -15,7 +15,6 @@ on:
       - Makefile.toml
       - rust-toolchain.toml
 env:
-  # RUST_BACKTRACE: 1
   WITH_COVERAGE: ${{ contains(github.head_ref, 'develop-') || endsWith(github.ref, 'master') }}
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -51,7 +50,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [buildjet-4vcpu-ubuntu-2204, self-hosted-laptop-macos-m1, self-hosted-windows-t2-2xl]
+        os: [buildjet-4vcpu-ubuntu-2204, self-hosted-laptop-macos-m1, self-hosted-laptop-windows-i7]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -73,8 +72,6 @@ jobs:
       - name: Generate code coverage
         if: ${{ env.WITH_COVERAGE == 'true' }}
         run: cargo make generate-report
-      - run: Get-PSDrive
-        if: ${{ runner.os == 'Windows' }}
       - name: Upload coverage report
         uses: actions/upload-artifact@v3
         if: ${{ env.WITH_COVERAGE == 'true' }}

@@ -4,7 +4,7 @@ expression: assert.output()
 ---
 ▪▪▪▪ unix:exitNonZeroInline
 ▪▪▪▪ unix:exitNonZeroInline (100ms)
-Error:   × Process bash failed with a 2 exit code.
+Error:   × Failed to run bash (exit code 2)
 
 
 

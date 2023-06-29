@@ -5,14 +5,14 @@ use crate::run_report::RunReport;
 use crate::subscribers::local_cache::LocalCacheSubscriber;
 use crate::subscribers::moonbase::MoonbaseSubscriber;
 use console::Term;
-use moon_action::{Action, ActionStatus};
+use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_dep_graph::DepGraph;
 use moon_emitter::{Emitter, Event};
 use moon_logger::{debug, error, trace};
 use moon_notifier::WebhooksSubscriber;
 use moon_project_graph::ProjectGraph;
-use moon_terminal::{label_to_the_moon, ExtendedTerm};
+use moon_terminal::{label_checkpoint, label_to_the_moon, Checkpoint, ExtendedTerm};
 use moon_utils::{is_ci, is_test_env, time};
 use moon_workspace::Workspace;
 use starbase_styles::color;
@@ -256,6 +256,63 @@ impl Pipeline {
         Ok(results)
     }
 
+    pub fn render_summary(&self, results: &ActionResults) -> miette::Result<()> {
+        let term = Term::buffered_stdout();
+        term.line("")?;
+
+        let mut count = 0;
+
+        for result in results {
+            if !result.has_failed() {
+                continue;
+            }
+
+            term.line(label_checkpoint(
+                match &result.node {
+                    Some(ActionNode::RunTarget(_, target)) => target.as_str(),
+                    Some(ActionNode::RunPersistentTarget(_, target)) => target.as_str(),
+                    _ => &result.label,
+                },
+                Checkpoint::RunFailed,
+            ))?;
+
+            if let Some(attempts) = &result.attempts {
+                if let Some(attempt) = attempts.iter().find(|a| a.has_failed()) {
+                    let mut has_stdout = false;
+
+                    if let Some(stdout) = &attempt.stdout {
+                        if !stdout.is_empty() {
+                            has_stdout = true;
+                            term.line(stdout)?;
+                        }
+                    }
+
+                    if let Some(stderr) = &attempt.stderr {
+                        if has_stdout {
+                            term.line("")?;
+                        }
+
+                        if !stderr.is_empty() {
+                            term.line(stderr)?;
+                        }
+                    }
+                }
+            }
+
+            term.line("")?;
+            count += 1;
+        }
+
+        if count == 0 {
+            term.line("No failed actions to summarize.")?;
+        }
+
+        term.line("")?;
+        term.flush_lines()?;
+
+        Ok(())
+    }
+
     pub fn render_results(&self, results: &ActionResults) -> miette::Result<bool> {
         let term = Term::buffered_stdout();
         term.line("")?;
@@ -296,10 +353,6 @@ impl Pipeline {
                 &result.label,
                 color::muted(format!("({})", meta.join(", ")))
             ))?;
-
-            if let Some(error) = &result.error {
-                term.line(format!("     {}", color::muted_light(error)))?;
-            }
         }
 
         term.line("")?;
@@ -316,8 +369,10 @@ impl Pipeline {
 
         for result in results {
             if compact
-                && !result.label.contains("RunTarget")
-                && !result.label.contains("RunPersistentTarget")
+                && !matches!(
+                    result.node.as_ref().unwrap(),
+                    ActionNode::RunTarget(_, _) | ActionNode::RunPersistentTarget(_, _)
+                )
             {
                 continue;
             }

@@ -6,7 +6,7 @@ expression: assert.output()
 stdout
 ▪▪▪▪ windows:exitNonZero (100ms)
 stderr 
-Error:   × Process cmd.exe failed with a 1 exit code.
+Error:   × Failed to run cmd.exe (exit code 1)
 
 
 

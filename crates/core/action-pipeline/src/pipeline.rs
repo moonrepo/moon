@@ -12,7 +12,7 @@ use moon_emitter::{Emitter, Event};
 use moon_logger::{debug, error, trace};
 use moon_notifier::WebhooksSubscriber;
 use moon_project_graph::ProjectGraph;
-use moon_terminal::{label_to_the_moon, ExtendedTerm};
+use moon_terminal::{label_checkpoint, label_to_the_moon, Checkpoint, ExtendedTerm};
 use moon_utils::{is_ci, is_test_env, time};
 use moon_workspace::Workspace;
 use starbase_styles::color;
@@ -254,6 +254,54 @@ impl Pipeline {
         self.create_run_report(&results, &context, estimate).await?;
 
         Ok(results)
+    }
+
+    pub fn render_summary(&self, results: &ActionResults) -> miette::Result<()> {
+        let term = Term::buffered_stderr();
+        term.line("")?;
+
+        let mut count = 0;
+
+        for result in results {
+            if !result.has_failed() {
+                continue;
+            }
+
+            term.line(label_checkpoint(&result.label, Checkpoint::RunFailed))?;
+
+            if let Some(error) = &result.error {
+                term.line(color::muted_light(error))?;
+                term.line("")?;
+            }
+
+            if let Some(attempts) = &result.attempts {
+                if let Some(attempt) = attempts.iter().find(|a| a.has_failed()) {
+                    if let Some(stdout) = &attempt.stdout {
+                        term.line(format!("[stdout]: {stdout}"))?;
+                    }
+
+                    if let Some(stderr) = &attempt.stderr {
+                        if attempt.stdout.is_some() {
+                            term.line("")?;
+                        }
+
+                        term.line(format!("[stderr]: {stderr}"))?;
+                    }
+                }
+            }
+
+            term.line("")?;
+            count += 1;
+        }
+
+        if count == 0 {
+            term.line("No failed actions!")?;
+        }
+
+        term.line("")?;
+        term.flush_lines()?;
+
+        Ok(())
     }
 
     pub fn render_results(&self, results: &ActionResults) -> miette::Result<bool> {

@@ -220,6 +220,12 @@ pub async fn ci(options: CiOptions) -> AppResult {
 
     print_footer(&ci_provider);
 
+    print_header(&ci_provider, "Summary");
+
+    pipeline.render_summary(&results)?;
+
+    print_footer(&ci_provider);
+
     // Print out the results and exit if an error occurs
     print_header(&ci_provider, "Results");
 

@@ -36,6 +36,10 @@ pub struct Attempt {
     pub start_time: Option<Instant>,
 
     pub status: ActionStatus,
+
+    pub stderr: Option<String>,
+
+    pub stdout: Option<String>,
 }
 
 impl Attempt {
@@ -47,6 +51,8 @@ impl Attempt {
             started_at: now_timestamp(),
             start_time: Some(Instant::now()),
             status: ActionStatus::Running,
+            stderr: None,
+            stdout: None,
         }
     }
 
@@ -57,6 +63,10 @@ impl Attempt {
         if let Some(start) = &self.start_time {
             self.duration = Some(start.elapsed());
         }
+    }
+
+    pub fn has_failed(&self) -> bool {
+        has_failed(&self.status)
     }
 }
 

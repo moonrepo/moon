@@ -5,10 +5,10 @@ expression: assert.output()
 ▪▪▪▪ windows:bat
 stdout
 ▪▪▪▪ windows:bat (100ms)
-stderr
 
 Tasks: 1 completed
  Time: 100ms
 
+stderr 
 
 

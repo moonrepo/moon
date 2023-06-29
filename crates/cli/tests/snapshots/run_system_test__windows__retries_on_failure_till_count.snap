@@ -14,10 +14,10 @@ stdout
 ▪▪▪▪ windows:retryCount (4/4)
 stdout
 ▪▪▪▪ windows:retryCount (4/4, 100ms)
-stderr
-stderr
-stderr
-stderr
+stderr 
+stderr 
+stderr 
+stderr 
 Error:   × Failed to run cmd.exe (exit code 1)
 
 

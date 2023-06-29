@@ -1,7 +1,6 @@
 ---
 source: crates/cli/tests/run_node_test.rs
-assertion_line: 42
-expression: get_assert_output(&assert)
+expression: assert.output()
 ---
 ▪▪▪▪ npm install
 ▪▪▪▪ node:cjs

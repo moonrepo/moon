@@ -7,7 +7,7 @@ expression: assert.output()
 stdout
 ▪▪▪▪ node:processExitNonZero (100ms)
 stderr
-Error:   × Process node failed with a 1 exit code.
+Error:   × Failed to run node (exit code 1)
 
 
 

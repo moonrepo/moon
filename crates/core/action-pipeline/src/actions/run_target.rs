@@ -77,7 +77,7 @@ pub async fn run_target(
         runner.create_and_run_command(&context, runtime).await?
     };
 
-    let status = if action.set_attempts(attempts) {
+    let status = if action.set_attempts(attempts, &task.command) {
         ActionStatus::Passed
     } else {
         ActionStatus::Failed

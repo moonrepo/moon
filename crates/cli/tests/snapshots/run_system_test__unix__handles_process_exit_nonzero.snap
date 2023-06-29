@@ -6,7 +6,7 @@ expression: assert.output()
 stdout
 ▪▪▪▪ unix:exitNonZero (100ms)
 stderr
-Error:   × Process bash failed with a 1 exit code.
+Error:   × Failed to run bash (exit code 1)
 
 
 

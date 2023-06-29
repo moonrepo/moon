@@ -6,10 +6,10 @@ expression: assert.output()
 ▪▪▪▪ node:cjs
 stdout
 ▪▪▪▪ node:cjs (100ms)
-stderr
 
 Tasks: 1 completed
  Time: 100ms
 
+stderr
 
 

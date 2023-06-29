@@ -7,10 +7,10 @@ expression: assert.output()
        outputStyles:stream | stdout
 ▪▪▪▪ outputStyles:stream (100ms)
 ▪▪▪▪ outputStyles:streamPrimary (no op)
-       outputStyles:stream | stderr
 
 Tasks: 2 completed
  Time: 100ms
 
+       outputStyles:stream | stderr
 
 

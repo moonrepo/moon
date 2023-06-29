@@ -8,11 +8,11 @@ expression: assert.output()
 stdout
 
 ▪▪▪▪ outputStyles:bufferPrimary (no op)
-stderr
-
 
 Tasks: 2 completed
  Time: 100ms
+
+stderr
 
 
 

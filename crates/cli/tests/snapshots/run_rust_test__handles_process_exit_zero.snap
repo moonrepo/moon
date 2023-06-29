@@ -6,10 +6,10 @@ expression: assert.output()
 ▪▪▪▪ rust:exitZero
 stdout
 ▪▪▪▪ rust:exitZero (100ms)
+stderr
 
 Tasks: 1 completed
  Time: 100ms
 
-stderr
 
 

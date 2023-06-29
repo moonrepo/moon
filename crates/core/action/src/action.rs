@@ -1,4 +1,5 @@
 use crate::node::ActionNode;
+use moon_common::color;
 use moon_utils::time::{chrono::prelude::*, now_timestamp};
 use serde::{Deserialize, Serialize};
 use std::time::{Duration, Instant};
@@ -26,6 +27,8 @@ pub enum ActionStatus {
 pub struct Attempt {
     pub duration: Option<Duration>,
 
+    pub exit_code: Option<i32>,
+
     pub finished_at: Option<NaiveDateTime>,
 
     pub index: u8,
@@ -46,6 +49,7 @@ impl Attempt {
     pub fn new(index: u8) -> Self {
         Attempt {
             duration: None,
+            exit_code: None,
             finished_at: None,
             index,
             started_at: now_timestamp(),
@@ -146,12 +150,26 @@ impl Action {
         has_failed(&self.status)
     }
 
-    pub fn set_attempts(&mut self, attempts: Vec<Attempt>) -> bool {
+    pub fn set_attempts(&mut self, attempts: Vec<Attempt>, command: &str) -> bool {
         let some_failed = attempts.iter().any(|a| has_failed(&a.status));
-        let passed = match attempts.last() {
-            Some(a) => matches!(a.status, ActionStatus::Passed),
-            None => true,
-        };
+        let mut passed = false;
+
+        if let Some(last) = attempts.last() {
+            if last.has_failed() {
+                let mut message = format!("Failed to run {}", color::shell(command));
+
+                if let Some(code) = last.exit_code {
+                    message += " ";
+                    message += color::muted_light(format!("(exit code {})", code)).as_str();
+                }
+
+                self.error = Some(message);
+            } else {
+                passed = true;
+            }
+        } else {
+            passed = true;
+        }
 
         self.attempts = Some(attempts);
         self.flaky = some_failed && passed;

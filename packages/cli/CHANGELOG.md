@@ -7,6 +7,10 @@
 - Updated `moon ci` to include a summary of all failed actions.
 - Updated the run report to include stderr/stdout for all attempts.
 
+#### 🐞 Fixes
+
+- Fixed an issue where failed target run attempts would not appear in the run report.
+
 #### ⚙️ Internal
 
 - Modernized the code generator and project constraints implementation.

@@ -1,16 +1,15 @@
 ---
 source: crates/cli/tests/run_node_test.rs
-assertion_line: 78
-expression: get_assert_output(&assert)
+expression: assert.output()
 ---
 ▪▪▪▪ npm install
 ▪▪▪▪ node:processExitZero
 stdout
 ▪▪▪▪ node:processExitZero (100ms)
+stderr
 
 Tasks: 1 completed
  Time: 100ms
 
-stderr
 
 

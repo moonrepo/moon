@@ -10,7 +10,7 @@ use moon_emitter::{Emitter, Event, EventFlow};
 use moon_hasher::HashSet;
 use moon_logger::{debug, warn};
 use moon_platform_runtime::Runtime;
-use moon_process::{args, output_to_error, output_to_string, Command, Output};
+use moon_process::{args, output_to_string, Command, Output};
 use moon_project::Project;
 use moon_target::{TargetError, TargetScope};
 use moon_task::Task;
@@ -604,13 +604,9 @@ impl<'a> Runner<'a> {
 
                     attempts.push(attempt);
 
-                    if out.status.success() {
+                    if out.status.success() || attempt_index >= attempt_total {
                         output = out;
                         break;
-                    } else if attempt_index >= attempt_total {
-                        interval_handle.abort();
-
-                        return Err(output_to_error(self.task.command.clone(), &out, false).into());
                     } else {
                         attempt_index += 1;
 
@@ -848,6 +844,7 @@ impl<'a> Runner<'a> {
         self.print_output_with_style(&stdout, &stderr, !output.status.success())?;
         self.flush_output()?;
 
+        attempt.exit_code = output.status.code();
         attempt.stdout = Some(stdout);
         attempt.stderr = Some(stderr);
 
@@ -874,6 +871,7 @@ impl<'a> Runner<'a> {
 
         self.flush_output()?;
 
+        attempt.exit_code = output.status.code();
         attempt.stdout = Some(output_to_string(&output.stdout));
         attempt.stderr = Some(output_to_string(&output.stderr));
 

@@ -18,7 +18,7 @@ stderr
 stderr
 stderr
 stderr
-Error:   × Process bash failed with a 1 exit code.
+Error:   × Failed to run bash (exit code 1)
 
 
 

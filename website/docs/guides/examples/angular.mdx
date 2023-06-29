@@ -1,0 +1,223 @@
+---
+title: Angular example
+sidebar_label: Angular
+---
+
+import AddDepsTabs from '@site/src/components/AddDepsTabs';
+import CreateDepTabs from '@site/src/components/CreateDepTabs';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
+
+In this guide, you'll learn how to integrate [Angular](https://angular.io/) into moon.
+
+Begin by creating a new Angular project in the root of an existing moon project (this should not be
+created in the workspace root, unless a polyrepo).
+
+```shell
+cd apps && npx -p @angular/cli@latest ng new angular-app
+```
+
+> View the [official Angular docs](https://angular.io/start) for a more in-depth guide to getting
+> started!
+
+## Setup
+
+Since Angular is per-project, the associated moon tasks should be defined in each project's
+[`moon.yml`](../../config/project) file.
+
+```yaml title="<project>/moon.yml"
+fileGroups:
+  app:
+    - 'src/**/*'
+    - 'angular.*'
+
+tasks:
+  dev:
+    command: 'ng serve'
+    local: true
+
+  build:
+    command: 'ng build'
+    inputs:
+      - '@group(app)'
+      - '@group(sources)'
+    outputs:
+      - 'dist'
+
+  # Extends the top-level lint
+  lint:
+    args:
+      - '--ext'
+      - '.ts'
+```
+
+### ESLint integration
+
+Angular does not provide a built-in linting abstraction, but instead there is an
+[ESLint package](https://github.com/angular-eslint/angular-eslint), which is great, but complicates
+things a bit. Because of this, you have two options for moving forward:
+
+- Use a [global `lint` task](./eslint) and bypass Angular's solution (preferred).
+- Use Angular's ESLint package solution only.
+
+Regardless of which option is chosen, the following changes are applicable to all options and should
+be made. Begin be installing the dependencies that the
+[`@angular-eslint`](https://nextjs.org/docs/basic-features/eslint#eslint-config) package need in the
+application's `package.json`.
+
+<AddDepsTabs
+  dep="@angular-eslint/builder @angular-eslint/eslint-plugin @angular-eslint/eslint-plugin-template @angular-eslint/schematics @angular-eslint/template-parser"
+  package="<project>"
+  dev
+/>
+
+Since Angular has some specific rules, we'll need to tell the ESLint package to overrides the
+default ones. This can be achieved with a project-level `.eslintrc.json` file.
+
+```json title="<project>/.eslintrc.json"
+{
+  "root": true,
+  "ignorePatterns": ["projects/**/*"],
+  "overrides": [
+    {
+      "files": ["*.ts"],
+      "extends": [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/recommended",
+        "plugin:@angular-eslint/recommended",
+        // This is required if you use inline templates in Components
+        "plugin:@angular-eslint/template/process-inline-templates"
+      ],
+      "rules": {
+        /**
+         * Any TypeScript source code (NOT TEMPLATE) related rules you wish to use/reconfigure over and above the
+         * recommended set provided by the @angular-eslint project would go here.
+         */
+        "@angular-eslint/directive-selector": [
+          "error",
+          { "type": "attribute", "prefix": "app", "style": "camelCase" }
+        ],
+        "@angular-eslint/component-selector": [
+          "error",
+          { "type": "element", "prefix": "app", "style": "kebab-case" }
+        ]
+      }
+    },
+    {
+      "files": ["*.html"],
+      "extends": [
+        "plugin:@angular-eslint/template/recommended",
+        "plugin:@angular-eslint/template/accessibility"
+      ],
+      "rules": {
+        /**
+         * Any template/HTML related rules you wish to use/reconfigure over and above the
+         * recommended set provided by the @angular-eslint project would go here.
+         */
+      }
+    }
+  ]
+}
+```
+
+With the basics now setup, choose the option that works best for you.
+
+<Tabs
+  groupId="lint-type"
+  defaultValue="global"
+  values={[
+    { label: 'Global lint', value: 'global' },
+    { label: 'Angular lint', value: 'angular' },
+  ]}
+>
+<TabItem value="global">
+
+We encourage using the global `lint` task for consistency across all projects within the repository.
+With this approach, the `eslint` command itself will be ran and the `ng lint` command will be
+ignored, but the `@angular-eslint` rules will still be used.
+
+</TabItem>
+<TabItem value="angular">
+
+If you'd prefer to use the `ng lint` command, add it as a task to the project's
+[`moon.yml`](../../config/project).
+
+```yaml title="<project>/moon.yml"
+tasks:
+	lint:
+		command: 'ng lint'
+		inputs:
+			- '@group(angular)'
+```
+
+Furthermore, if a global `lint` task exists, be sure to exclude it from being inherited.
+
+```yaml title="<project>/moon.yml"
+workspace:
+  inheritedTasks:
+    exclude: ['lint']
+```
+
+In addition to configuring `moon.yml`, you also need to add a lint target in the `angular.json` file
+for linting to work properly. The lint target specifies which builder to use for linting, as well as
+the file patterns that should be linted.
+
+```json title="<project>/angular.json"
+{
+  "projects": {
+    "angular-app": {
+      "architect": {
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "lintFilePatterns": ["src/**/*.ts", "src/**/*.html"]
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Adding this lint target is crucial for ensuring that the linting process is properly configured and
+integrated with Angular's build system.
+
+</TabItem>
+</Tabs>
+
+### TypeScript integration
+
+Angular has [built-in support for TypeScript](https://angular.io/guide/typescript-configuration), so
+there is no need for additional configuration to enable TypeScript support.
+
+At this point we'll assume that a `tsconfig.json` has been created in the application, and
+typechecking works. From here we suggest utilizing a [global `typecheck` task](./typescript) for
+consistency across all projects within the repository.
+
+## Configuration
+
+### Root-level
+
+We suggest _against_ root-level configuration, as Angular should be installed per-project, and the
+`ng` command expects the configuration to live relative to the project root.
+
+### Project-level
+
+When creating a new Angular project, a [`angular.json`](https://angular.io/guide/workspace-config)
+is created, and _must_ exist in the project root. This allows each project to configure Angular for
+their needs.
+
+```json title="<project>/angular.json"
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "projects": {
+    "angular-app": {
+      "projectType": "application",
+      ...
+    }
+  },
+  ...
+}
+```

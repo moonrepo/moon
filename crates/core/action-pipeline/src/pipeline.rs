@@ -276,22 +276,25 @@ impl Pipeline {
                 Checkpoint::RunFailed,
             ))?;
 
-            if let Some(error) = &result.error {
-                term.render_entry("Error", error)?;
-            }
-
             if let Some(attempts) = &result.attempts {
                 if let Some(attempt) = attempts.iter().find(|a| a.has_failed()) {
+                    let mut has_stdout = false;
+
                     if let Some(stdout) = &attempt.stdout {
-                        term.line(format!("[stdout]: {stdout}"))?;
+                        if !stdout.is_empty() {
+                            has_stdout = true;
+                            term.line(stdout)?;
+                        }
                     }
 
                     if let Some(stderr) = &attempt.stderr {
-                        if attempt.stdout.is_some() {
+                        if has_stdout {
                             term.line("")?;
                         }
 
-                        term.line(format!("[stderr]: {stderr}"))?;
+                        if !stderr.is_empty() {
+                            term.line(stderr)?;
+                        }
                     }
                 }
             }
@@ -350,10 +353,6 @@ impl Pipeline {
                 &result.label,
                 color::muted(format!("({})", meta.join(", ")))
             ))?;
-
-            if let Some(error) = &result.error {
-                term.line(format!("     {}", color::muted_light(error)))?;
-            }
         }
 
         term.line("")?;

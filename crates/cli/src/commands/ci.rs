@@ -224,10 +224,8 @@ pub async fn ci(options: CiOptions) -> AppResult {
 
     pipeline.render_summary(&results)?;
 
-    print_footer(&ci_provider);
-
     // Print out the results and exit if an error occurs
-    print_header(&ci_provider, "Results");
+    print_header(&ci_provider, "Stats");
 
     let failed = pipeline.render_results(&results)?;
 

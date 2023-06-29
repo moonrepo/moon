@@ -196,13 +196,13 @@ pub async fn process_action(
         }
         Err(error) => {
             action.fail(error.to_string());
+        }
+    };
 
-            // If these fail, we should abort instead of trying to continue
-            if matches!(node, ActionNode::SetupTool(_))
-                || matches!(node, ActionNode::InstallDeps(_))
-            {
-                action.abort();
-            }
+    if action.has_failed() {
+        // If these fail, we should abort instead of trying to continue
+        if matches!(node, ActionNode::SetupTool(_)) || matches!(node, ActionNode::InstallDeps(_)) {
+            action.abort();
         }
     }
 

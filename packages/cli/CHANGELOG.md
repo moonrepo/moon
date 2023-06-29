@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Updated `moon ci` to include a summary of all failed actions.
+- Updated the run report to include stderr/stdout for all attempts.
+
 #### ⚙️ Internal
 
 - Modernized the code generator and project constraints implementation.

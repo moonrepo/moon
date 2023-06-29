@@ -55,15 +55,15 @@ tasks:
 ### ESLint integration
 
 Angular does not provide a built-in linting abstraction, but instead there is an
-[ESLint plugin](https://github.com/angular-eslint/angular-eslint), which is great, but complicates
+[ESLint package](https://github.com/angular-eslint/angular-eslint), which is great, but complicates
 things a bit. Because of this, you have two options for moving forward:
 
 - Use a [global `lint` task](./eslint) and bypass Angular's solution (preferred).
-- Use Angular's ESLint plugin solution only.
+- Use Angular's ESLint package solution only.
 
 Regardless of which option is chosen, the following changes are applicable to all options and should
 be made. Begin be installing the dependencies that the
-[`@angular-eslint`](https://nextjs.org/docs/basic-features/eslint#eslint-config) plugin need in the
+[`@angular-eslint`](https://nextjs.org/docs/basic-features/eslint#eslint-config) package need in the
 application's `package.json`.
 
 <AddDepsTabs
@@ -72,8 +72,8 @@ application's `package.json`.
   dev
 />
 
-Since Angular has some specific rules, we'll need to tell the ESLint plugin to overrides the default
-ones. This can be achieved with a project-level `.eslintrc.json` file.
+Since Angular has some specific rules, we'll need to tell the ESLint package to overrides the
+default ones. This can be achieved with a project-level `.eslintrc.json` file.
 
 ```json title="<project>/.eslintrc.json"
 {
@@ -159,7 +159,7 @@ workspace:
     exclude: ['lint']
 ```
 
-In addition to configuring moon.yml, you also need to add a lint target in the `angular.json` file
+In addition to configuring `moon.yml`, you also need to add a lint target in the `angular.json` file
 for linting to work properly. The lint target specifies which builder to use for linting, as well as
 the file patterns that should be linted.
 
@@ -180,10 +180,8 @@ the file patterns that should be linted.
 }
 ```
 
-This configuration uses the `@angular-eslint/builder` for linting and specifies that all TypeScript
-files and HTML files within the src directory should be linted. Adding this lint target is crucial
-for ensuring that the linting process is properly configured and integrated with Angular's build
-system.
+Adding this lint target is crucial for ensuring that the linting process is properly configured and
+integrated with Angular's build system.
 
 </TabItem>
 </Tabs>

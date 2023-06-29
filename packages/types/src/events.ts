@@ -3,7 +3,7 @@ import type { Action, ActionContext, ActionNode } from './pipeline';
 import type { Project, Task } from './project';
 
 export interface ProviderEnvironment {
-	baseBranch: string | null;
+	baseBranch: nll | string;
 	branch: string;
 	id: string;
 	provider: string;

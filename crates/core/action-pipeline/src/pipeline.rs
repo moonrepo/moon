@@ -5,7 +5,7 @@ use crate::run_report::RunReport;
 use crate::subscribers::local_cache::LocalCacheSubscriber;
 use crate::subscribers::moonbase::MoonbaseSubscriber;
 use console::Term;
-use moon_action::{Action, ActionStatus};
+use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_dep_graph::DepGraph;
 use moon_emitter::{Emitter, Event};
@@ -267,11 +267,17 @@ impl Pipeline {
                 continue;
             }
 
-            term.line(label_checkpoint(&result.label, Checkpoint::RunFailed))?;
+            term.line(label_checkpoint(
+                match &result.node {
+                    Some(ActionNode::RunTarget(_, target)) => target.as_str(),
+                    Some(ActionNode::RunPersistentTarget(_, target)) => target.as_str(),
+                    _ => &result.label,
+                },
+                Checkpoint::RunFailed,
+            ))?;
 
             if let Some(error) = &result.error {
-                term.line(color::muted_light(error))?;
-                term.line("")?;
+                term.render_entry("Error", error)?;
             }
 
             if let Some(attempts) = &result.attempts {
@@ -305,7 +311,7 @@ impl Pipeline {
     }
 
     pub fn render_results(&self, results: &ActionResults) -> miette::Result<bool> {
-        let term = Term::buffered_stdout();
+        let term = Term::buffered_stderr();
         term.line("")?;
 
         let mut failed = false;
@@ -408,7 +414,7 @@ impl Pipeline {
             counts_message.push(color::invalid(format!("{invalid_count} invalid")));
         }
 
-        let term = Term::buffered_stdout();
+        let term = Term::buffered_stderr();
         term.line("")?;
 
         let counts_message = counts_message.join(&color::muted(", "));

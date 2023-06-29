@@ -5,7 +5,7 @@ import { type Project } from '@moonrepo/types';
 export interface RuntimeContext {
 	project: Project;
 	projectRoot: Path;
-	target: string;
+	target: sting;
 	workspaceRoot: Path;
 }
 

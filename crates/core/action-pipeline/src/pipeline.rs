@@ -304,7 +304,7 @@ impl Pipeline {
         }
 
         if count == 0 {
-            term.line("No failed actions!")?;
+            term.line("No failed actions to summarize.")?;
         }
 
         term.line("")?;
@@ -369,8 +369,10 @@ impl Pipeline {
 
         for result in results {
             if compact
-                && !result.label.contains("RunTarget")
-                && !result.label.contains("RunPersistentTarget")
+                && !matches!(
+                    result.node.as_ref().unwrap(),
+                    ActionNode::RunTarget(_, _) | ActionNode::RunPersistentTarget(_, _)
+                )
             {
                 continue;
             }

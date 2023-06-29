@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.9.1
+
+#### 🐞 Fixes
+
+- Fixed a panic when parsing the output of `git --version`.
+
 ## 1.9.0
 
 #### 🚀 Updates

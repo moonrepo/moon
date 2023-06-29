@@ -22,7 +22,32 @@ pub static DIFF_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(A|D|M|T|U|X)$
 pub static DIFF_SCORE_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(C|M|R)(\d{3})$").unwrap());
 
 pub static VERSION_CLEAN: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"\.(win|windows|msysgit)\.\d+").unwrap());
+    Lazy::new(|| Regex::new(r"\.(windows|win|msysgit|msys)\.\d+").unwrap());
+
+pub fn clean_git_version(version: String) -> String {
+    let version = if let Some(index) = version.find('(') {
+        &version[0..index]
+    } else {
+        &version
+    };
+
+    VERSION_CLEAN
+        .replace(
+            version
+                .to_lowercase()
+                .replace("git", "")
+                .replace("version", "")
+                .replace("for windows", "")
+                .replace("(32-bit)", "")
+                .replace("(64-bit)", "")
+                .replace("(32bit)", "")
+                .replace("(64bit)", "")
+                .as_str(),
+            "",
+        )
+        .trim()
+        .to_string()
+}
 
 #[derive(Debug)]
 pub struct Git {
@@ -490,18 +515,7 @@ impl Vcs for Git {
     async fn get_version(&self) -> VcsResult<Version> {
         let version = self
             .process
-            .run_with_formatter(["--version"], true, |out| {
-                VERSION_CLEAN
-                    .replace(
-                        &out.to_lowercase()
-                            .replace("git version", "")
-                            .replace("git for windows", "")
-                            .replace("(32-bit)", "")
-                            .replace("(64-bit)", ""),
-                        "",
-                    )
-                    .to_string()
-            })
+            .run_with_formatter(["--version"], true, clean_git_version)
             .await?;
 
         Ok(Version::parse(version).unwrap())

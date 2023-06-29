@@ -257,7 +257,7 @@ impl Pipeline {
     }
 
     pub fn render_summary(&self, results: &ActionResults) -> miette::Result<()> {
-        let term = Term::buffered_stderr();
+        let term = Term::buffered_stdout();
         term.line("")?;
 
         let mut count = 0;
@@ -314,7 +314,7 @@ impl Pipeline {
     }
 
     pub fn render_results(&self, results: &ActionResults) -> miette::Result<bool> {
-        let term = Term::buffered_stderr();
+        let term = Term::buffered_stdout();
         term.line("")?;
 
         let mut failed = false;
@@ -413,7 +413,7 @@ impl Pipeline {
             counts_message.push(color::invalid(format!("{invalid_count} invalid")));
         }
 
-        let term = Term::buffered_stderr();
+        let term = Term::buffered_stdout();
         term.line("")?;
 
         let counts_message = counts_message.join(&color::muted(", "));

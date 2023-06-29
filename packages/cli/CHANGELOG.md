@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed a panic when attempting to execute an npm package who's binary is purely Bash.
+
 ## 1.9.1
 
 #### 🐞 Fixes

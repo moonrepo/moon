@@ -109,6 +109,13 @@ fn find_package_bin(
                 path::relative_from(bin_path, working_dir).unwrap(),
             )?);
         }
+        // Other (Bash)
+        BinFile::Other(bin_path, parent_cmd) => {
+            let mut cmd = Command::new(parent_cmd);
+            cmd.arg(bin_path);
+
+            return Ok(Some(cmd));
+        }
     };
 
     Ok(None)

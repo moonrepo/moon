@@ -300,36 +300,10 @@
     "TemplateVariableEnumValue": {
       "anyOf": [
         {
-          "type": "object",
-          "properties": {
-            "string": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            }
-          },
-          "additionalProperties": false
+          "type": "string"
         },
         {
-          "type": "object",
-          "properties": {
-            "object": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/PartialTemplateVariableEnumValueConfig"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            }
-          },
-          "additionalProperties": false
+          "$ref": "#/definitions/PartialTemplateVariableEnumValueConfig"
         }
       ]
     }

@@ -3,12 +3,11 @@
 use moon_common::consts;
 use rustc_hash::FxHashMap;
 use schematic::{validate, Config, ConfigLoader};
-use serde::Serialize;
 use std::path::Path;
 
 macro_rules! var_setting {
     ($name:ident, $ty:ty) => {
-        #[derive(Config, Debug, Serialize)]
+        #[derive(Config, Debug, Eq, PartialEq)]
         pub struct $name {
             pub default: $ty,
             pub prompt: Option<String>,
@@ -21,20 +20,21 @@ var_setting!(TemplateVariableBoolSetting, bool);
 var_setting!(TemplateVariableNumberSetting, usize);
 var_setting!(TemplateVariableStringSetting, String);
 
-#[derive(Config, Debug, Serialize)]
+#[derive(Config, Debug, Eq, PartialEq)]
 pub struct TemplateVariableEnumValueConfig {
     pub label: String,
     pub value: String,
 }
 
-#[derive(Config, Debug, Serialize)]
+#[derive(Config, Debug, Eq, PartialEq)]
+#[config(serde(untagged))]
 pub enum TemplateVariableEnumValue {
     String(String),
     #[setting(nested)]
     Object(TemplateVariableEnumValueConfig),
 }
 
-#[derive(Config, Debug, Serialize)]
+#[derive(Config, Debug, Eq, PartialEq)]
 pub struct TemplateVariableEnumSetting {
     pub default: String,
     pub multiple: Option<bool>,
@@ -43,8 +43,8 @@ pub struct TemplateVariableEnumSetting {
     pub values: Vec<TemplateVariableEnumValue>,
 }
 
-#[derive(Config, Debug, Serialize)]
-#[serde(tag = "type")]
+#[derive(Config, Debug, Eq, PartialEq)]
+#[config(serde(tag = "type"))]
 pub enum TemplateVariable {
     #[setting(nested)]
     Boolean(TemplateVariableBoolSetting),

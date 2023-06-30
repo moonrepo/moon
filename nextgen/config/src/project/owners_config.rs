@@ -4,14 +4,13 @@ use schematic::{Config, PathSegment, ValidateError};
 
 cacheable!(
     #[derive(Clone, Config, Debug, Eq, PartialEq)]
-    #[serde(
+    #[config(serde(
         untagged,
         expecting = "expected a list of paths, or a map of paths to owners"
-    )]
+    ))]
     pub enum OwnersPaths {
         #[setting(default)]
         List(Vec<String>),
-
         Map(FxHashMap<String, Vec<String>>),
     }
 );

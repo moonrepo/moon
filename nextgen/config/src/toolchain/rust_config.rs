@@ -3,7 +3,7 @@ use schematic::Config;
 use serde::Serialize;
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain#rust
-#[derive(Debug, Clone, Config, Serialize)]
+#[derive(Clone, Config, Debug, Serialize)]
 pub struct RustConfig {
     pub bins: Vec<String>,
 

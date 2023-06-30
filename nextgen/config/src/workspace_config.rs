@@ -3,7 +3,7 @@
 use crate::portable_path::{Portable, ProjectFilePath, ProjectGlobPath};
 use crate::validate::validate_semver_requirement;
 use crate::workspace::*;
-use moon_common::{cacheable, consts, Id};
+use moon_common::{consts, Id};
 use rustc_hash::FxHashMap;
 use schematic::{validate, Config, ConfigLoader, Path as SettingPath, PathSegment, ValidateError};
 use std::path::Path;
@@ -59,30 +59,26 @@ fn validate_projects<D, C>(
     Ok(())
 }
 
-cacheable!(
-    #[derive(Config, Debug)]
-    pub struct WorkspaceProjectsConfig {
-        pub globs: Vec<String>,
-        pub sources: FxHashMap<Id, String>,
-    }
-);
+#[derive(Config, Debug)]
+pub struct WorkspaceProjectsConfig {
+    pub globs: Vec<String>,
+    pub sources: FxHashMap<Id, String>,
+}
 
-cacheable!(
-    #[derive(Config, Debug)]
-    #[serde(
-        untagged,
-        expecting = "expected a list of globs, a map of projects, or both"
-    )]
-    pub enum WorkspaceProjects {
-        #[setting(nested)]
-        Both(WorkspaceProjectsConfig),
+#[derive(Config, Debug)]
+#[config(serde(
+    untagged,
+    expecting = "expected a list of globs, a map of projects, or both"
+))]
+pub enum WorkspaceProjects {
+    #[setting(nested)]
+    Both(WorkspaceProjectsConfig),
 
-        Globs(Vec<String>),
+    Globs(Vec<String>),
 
-        #[setting(default)]
-        Sources(FxHashMap<Id, String>),
-    }
-);
+    #[setting(default)]
+    Sources(FxHashMap<Id, String>),
+}
 
 /// Docs: https://moonrepo.dev/docs/config/workspace
 #[derive(Config, Debug)]

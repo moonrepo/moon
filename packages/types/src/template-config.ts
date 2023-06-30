@@ -14,11 +14,7 @@ export interface PartialTemplateVariableEnumValueConfig {
 	value?: string | null;
 }
 
-export type TemplateVariableEnumValue = {
-	string: string;
-} | {
-	object: TemplateVariableEnumValueConfig;
-};
+export type TemplateVariableEnumValue = string | TemplateVariableEnumValueConfig;
 
 export interface PartialTemplateVariableEnumSetting {
 	default?: string | null;

@@ -88,6 +88,22 @@
   },
   "additionalProperties": false,
   "definitions": {
+    "PartialTaskCommandArgs": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
     "PartialTaskConfig": {
       "title": "PartialTaskConfig",
       "type": "object",
@@ -95,7 +111,7 @@
         "args": {
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskCommandArgs"
+              "$ref": "#/definitions/PartialTaskCommandArgs"
             },
             {
               "type": "null"
@@ -105,7 +121,7 @@
         "command": {
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskCommandArgs"
+              "$ref": "#/definitions/PartialTaskCommandArgs"
             },
             {
               "type": "null"
@@ -375,22 +391,6 @@
         "rust",
         "system",
         "unknown"
-      ]
-    },
-    "TaskCommandArgs": {
-      "anyOf": [
-        {
-          "type": "null"
-        },
-        {
-          "type": "string"
-        },
-        {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
       ]
     },
     "TaskMergeStrategy": {

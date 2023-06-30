@@ -15,86 +15,28 @@ export interface PartialDependencyConfig {
 	via?: string | null;
 }
 
-export type ProjectDependsOn = string | DependencyConfig;
+export type PartialProjectDependsOn = string | PartialDependencyConfig;
 
-export type LanguageType = 'bash' | 'batch' | 'go' | 'javascript' | 'php' | 'python' | 'ruby' | 'rust' | 'typescript' | 'unknown';
+export type LanguageType =
+	| 'bash'
+	| 'batch'
+	| 'go'
+	| 'javascript'
+	| 'php'
+	| 'python'
+	| 'ruby'
+	| 'rust'
+	| 'typescript'
+	| 'unknown';
 
-export type OwnersPaths = string[] | Record<string, string[]>;
+export type PartialOwnersPaths = string[] | Record<string, string[]>;
 
 export interface PartialOwnersConfig {
 	customGroups?: Record<string, string[]> | null;
 	defaultOwner?: string | null;
 	optional?: boolean | null;
-	paths?: OwnersPaths | null;
+	paths?: PartialOwnersPaths | null;
 	requiredApprovals?: number | null;
-}
-
-export interface PartialProjectMetadataConfig {
-	channel?: string | null;
-	description?: string | null;
-	maintainers?: string[] | null;
-	name?: string | null;
-	owner?: string | null;
-}
-
-export interface PartialProjectToolchainCommonToolConfig {
-	version?: string | null;
-}
-
-export interface PartialProjectToolchainTypeScriptConfig {
-	disabled?: boolean | null;
-	routeOutDirToCache?: boolean | null;
-	syncProjectReferences?: boolean | null;
-	syncProjectReferencesToPaths?: boolean | null;
-}
-
-export interface PartialProjectToolchainConfig {
-	node?: PartialProjectToolchainCommonToolConfig | null;
-	rust?: PartialProjectToolchainCommonToolConfig | null;
-	typescript?: PartialProjectToolchainTypeScriptConfig | null;
-}
-
-export type ProjectType = 'application' | 'library' | 'tool' | 'unknown';
-
-export interface PartialProjectWorkspaceInheritedTasksConfig {
-	exclude?: string[] | null;
-	include?: string[] | null;
-	rename?: Record<string, string> | null;
-}
-
-export interface PartialProjectWorkspaceConfig {
-	inheritedTasks?: PartialProjectWorkspaceInheritedTasksConfig | null;
-}
-
-export interface PartialProjectConfig {
-	$schema?: string | null;
-	dependsOn?: ProjectDependsOn[] | null;
-	env?: Record<string, string> | null;
-	fileGroups?: Record<string, string[]> | null;
-	language?: LanguageType | null;
-	owners?: PartialOwnersConfig | null;
-	platform?: PlatformType | null;
-	project?: PartialProjectMetadataConfig | null;
-	tags?: string[] | null;
-	tasks?: Record<string, PartialTaskConfig> | null;
-	toolchain?: PartialProjectToolchainConfig | null;
-	type?: ProjectType | null;
-	workspace?: PartialProjectWorkspaceConfig | null;
-}
-
-export interface DependencyConfig {
-	id: string;
-	scope: DependencyScope;
-	source: DependencySource | null;
-	via: string | null;
-}
-
-export interface OwnersConfig {
-	customGroups: Record<string, string[]>;
-	defaultOwner: string | null;
-	optional: boolean;
-	paths: OwnersPaths;
-	requiredApprovals: number;
 }
 
 export interface ProjectMetadataConfig {
@@ -114,6 +56,59 @@ export interface ProjectToolchainTypeScriptConfig {
 	routeOutDirToCache: boolean | null;
 	syncProjectReferences: boolean | null;
 	syncProjectReferencesToPaths: boolean | null;
+}
+
+export interface PartialProjectToolchainConfig {
+	node?: ProjectToolchainCommonToolConfig | null;
+	rust?: ProjectToolchainCommonToolConfig | null;
+	typescript?: ProjectToolchainTypeScriptConfig | null;
+}
+
+export type ProjectType = 'application' | 'library' | 'tool' | 'unknown';
+
+export interface PartialProjectWorkspaceInheritedTasksConfig {
+	exclude?: string[] | null;
+	include?: string[] | null;
+	rename?: Record<string, string> | null;
+}
+
+export interface PartialProjectWorkspaceConfig {
+	inheritedTasks?: PartialProjectWorkspaceInheritedTasksConfig | null;
+}
+
+export interface PartialProjectConfig {
+	$schema?: string | null;
+	dependsOn?: PartialProjectDependsOn[] | null;
+	env?: Record<string, string> | null;
+	fileGroups?: Record<string, string[]> | null;
+	language?: LanguageType | null;
+	owners?: PartialOwnersConfig | null;
+	platform?: PlatformType | null;
+	project?: ProjectMetadataConfig | null;
+	tags?: string[] | null;
+	tasks?: Record<string, PartialTaskConfig> | null;
+	toolchain?: PartialProjectToolchainConfig | null;
+	type?: ProjectType | null;
+	workspace?: PartialProjectWorkspaceConfig | null;
+}
+
+export interface DependencyConfig {
+	id: string;
+	scope: DependencyScope;
+	source: DependencySource | null;
+	via: string | null;
+}
+
+export type ProjectDependsOn = string | DependencyConfig;
+
+export type OwnersPaths = string[] | Record<string, string[]>;
+
+export interface OwnersConfig {
+	customGroups: Record<string, string[]>;
+	defaultOwner: string | null;
+	optional: boolean;
+	paths: OwnersPaths;
+	requiredApprovals: number;
 }
 
 export interface ProjectToolchainConfig {

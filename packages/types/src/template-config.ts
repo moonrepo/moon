@@ -14,14 +14,14 @@ export interface PartialTemplateVariableEnumValueConfig {
 	value?: string | null;
 }
 
-export type TemplateVariableEnumValue = string | TemplateVariableEnumValueConfig;
+export type PartialTemplateVariableEnumValue = string | PartialTemplateVariableEnumValueConfig;
 
 export interface PartialTemplateVariableEnumSetting {
 	default?: string | null;
 	multiple?: boolean | null;
 	prompt?: string | null;
 	type?: 'enum' | null;
-	values?: TemplateVariableEnumValue[] | null;
+	values?: PartialTemplateVariableEnumValue[] | null;
 }
 
 export interface PartialTemplateVariableNumberSetting {
@@ -38,13 +38,17 @@ export interface PartialTemplateVariableStringSetting {
 	type?: 'string' | null;
 }
 
-export type TemplateVariable = TemplateVariableBoolSetting | TemplateVariableEnumSetting | TemplateVariableNumberSetting | TemplateVariableStringSetting;
+export type PartialTemplateVariable =
+	| PartialTemplateVariableBoolSetting
+	| PartialTemplateVariableEnumSetting
+	| PartialTemplateVariableNumberSetting
+	| PartialTemplateVariableStringSetting;
 
 export interface PartialTemplateConfig {
 	$schema?: string | null;
 	description?: string | null;
 	title?: string | null;
-	variables?: Record<string, TemplateVariable> | null;
+	variables?: Record<string, PartialTemplateVariable> | null;
 }
 
 export interface PartialTemplateFrontmatterConfig {
@@ -65,6 +69,8 @@ export interface TemplateVariableEnumValueConfig {
 	label: string;
 	value: string;
 }
+
+export type TemplateVariableEnumValue = string | TemplateVariableEnumValueConfig;
 
 export interface TemplateVariableEnumSetting {
 	default: string;
@@ -87,6 +93,12 @@ export interface TemplateVariableStringSetting {
 	required: boolean | null;
 	type: 'string';
 }
+
+export type TemplateVariable =
+	| TemplateVariableBoolSetting
+	| TemplateVariableEnumSetting
+	| TemplateVariableNumberSetting
+	| TemplateVariableStringSetting;
 
 export interface TemplateConfig {
 	$schema: string;

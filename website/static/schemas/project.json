@@ -19,7 +19,7 @@
         {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/ProjectDependsOn"
+            "$ref": "#/definitions/PartialProjectDependsOn"
           }
         },
         {
@@ -95,7 +95,7 @@
     "project": {
       "anyOf": [
         {
-          "$ref": "#/definitions/PartialProjectMetadataConfig"
+          "$ref": "#/definitions/ProjectMetadataConfig"
         },
         {
           "type": "null"
@@ -194,28 +194,6 @@
         "unknown"
       ]
     },
-    "OwnersPaths": {
-      "anyOf": [
-        {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        {
-          "type": "object",
-          "additionalProperties": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "propertyNames": {
-            "type": "string"
-          }
-        }
-      ]
-    },
     "PartialDependencyConfig": {
       "title": "PartialDependencyConfig",
       "type": "object",
@@ -309,7 +287,7 @@
         "paths": {
           "anyOf": [
             {
-              "$ref": "#/definitions/OwnersPaths"
+              "$ref": "#/definitions/PartialOwnersPaths"
             },
             {
               "type": "null"
@@ -329,82 +307,37 @@
       },
       "additionalProperties": false
     },
-    "PartialProjectMetadataConfig": {
-      "title": "PartialProjectMetadataConfig",
-      "type": "object",
-      "properties": {
-        "channel": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
+    "PartialOwnersPaths": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
-        "description": {
-          "anyOf": [
-            {
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
               "type": "string"
-            },
-            {
-              "type": "null"
             }
-          ]
-        },
-        "maintainers": {
-          "anyOf": [
-            {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "name": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "owner": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          },
+          "propertyNames": {
+            "type": "string"
+          }
         }
-      },
-      "additionalProperties": false
+      ]
     },
-    "PartialProjectToolchainCommonToolConfig": {
-      "title": "PartialProjectToolchainCommonToolConfig",
-      "type": "object",
-      "properties": {
-        "version": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
+    "PartialProjectDependsOn": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/PartialDependencyConfig"
         }
-      },
-      "additionalProperties": false
+      ]
     },
     "PartialProjectToolchainConfig": {
       "title": "PartialProjectToolchainConfig",
@@ -413,7 +346,7 @@
         "node": {
           "anyOf": [
             {
-              "$ref": "#/definitions/PartialProjectToolchainCommonToolConfig"
+              "$ref": "#/definitions/ProjectToolchainCommonToolConfig"
             },
             {
               "type": "null"
@@ -423,7 +356,7 @@
         "rust": {
           "anyOf": [
             {
-              "$ref": "#/definitions/PartialProjectToolchainCommonToolConfig"
+              "$ref": "#/definitions/ProjectToolchainCommonToolConfig"
             },
             {
               "type": "null"
@@ -433,54 +366,7 @@
         "typescript": {
           "anyOf": [
             {
-              "$ref": "#/definitions/PartialProjectToolchainTypeScriptConfig"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false
-    },
-    "PartialProjectToolchainTypeScriptConfig": {
-      "title": "PartialProjectToolchainTypeScriptConfig",
-      "type": "object",
-      "properties": {
-        "disabled": {
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "routeOutDirToCache": {
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "syncProjectReferences": {
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "syncProjectReferencesToPaths": {
-          "anyOf": [
-            {
-              "type": "boolean"
+              "$ref": "#/definitions/ProjectToolchainTypeScriptConfig"
             },
             {
               "type": "null"
@@ -556,6 +442,22 @@
       },
       "additionalProperties": false
     },
+    "PartialTaskCommandArgs": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
     "PartialTaskConfig": {
       "title": "PartialTaskConfig",
       "type": "object",
@@ -563,7 +465,7 @@
         "args": {
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskCommandArgs"
+              "$ref": "#/definitions/PartialTaskCommandArgs"
             },
             {
               "type": "null"
@@ -573,7 +475,7 @@
         "command": {
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskCommandArgs"
+              "$ref": "#/definitions/PartialTaskCommandArgs"
             },
             {
               "type": "null"
@@ -845,15 +747,124 @@
         "unknown"
       ]
     },
-    "ProjectDependsOn": {
-      "anyOf": [
-        {
+    "ProjectMetadataConfig": {
+      "title": "ProjectMetadataConfig",
+      "type": "object",
+      "required": [
+        "channel",
+        "description",
+        "maintainers",
+        "name",
+        "owner"
+      ],
+      "properties": {
+        "channel": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "description": {
           "type": "string"
         },
-        {
-          "$ref": "#/definitions/PartialDependencyConfig"
+        "maintainers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "owner": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
-      ]
+      },
+      "additionalProperties": false
+    },
+    "ProjectToolchainCommonToolConfig": {
+      "title": "ProjectToolchainCommonToolConfig",
+      "type": "object",
+      "required": [
+        "version"
+      ],
+      "properties": {
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "ProjectToolchainTypeScriptConfig": {
+      "title": "ProjectToolchainTypeScriptConfig",
+      "type": "object",
+      "required": [
+        "disabled",
+        "routeOutDirToCache",
+        "syncProjectReferences",
+        "syncProjectReferencesToPaths"
+      ],
+      "properties": {
+        "disabled": {
+          "type": "boolean"
+        },
+        "routeOutDirToCache": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "syncProjectReferences": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "syncProjectReferencesToPaths": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
     },
     "ProjectType": {
       "type": "string",
@@ -862,22 +873,6 @@
         "library",
         "tool",
         "unknown"
-      ]
-    },
-    "TaskCommandArgs": {
-      "anyOf": [
-        {
-          "type": "null"
-        },
-        {
-          "type": "string"
-        },
-        {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
       ]
     },
     "TaskMergeStrategy": {

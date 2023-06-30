@@ -2,7 +2,7 @@
 
 /* eslint-disable */
 
-export type TaskCommandArgs = null | string | string[];
+export type PartialTaskCommandArgs = null | string | string[];
 
 export type TaskOptionAffectedFiles = boolean | 'args' | 'env';
 
@@ -35,8 +35,8 @@ export type PlatformType = 'deno' | 'node' | 'rust' | 'system' | 'unknown';
 export type TaskType = 'build' | 'run' | 'test';
 
 export interface PartialTaskConfig {
-	args?: TaskCommandArgs | null;
-	command?: TaskCommandArgs | null;
+	args?: PartialTaskCommandArgs | null;
+	command?: PartialTaskCommandArgs | null;
 	deps?: string[] | null;
 	env?: Record<string, string> | null;
 	inputs?: string[] | null;
@@ -55,6 +55,8 @@ export interface PartialInheritedTasksConfig {
 	implicitInputs?: string[] | null;
 	tasks?: Record<string, PartialTaskConfig> | null;
 }
+
+export type TaskCommandArgs = null | string | string[];
 
 export interface TaskOptionsConfig {
 	affectedFiles: TaskOptionAffectedFiles | null;

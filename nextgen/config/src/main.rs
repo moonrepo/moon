@@ -27,6 +27,7 @@ fn generate_project() {
             PathBuf::from("packages/types/src/project-config.ts"),
             TypeScriptRenderer::new(TypeScriptOptions {
                 exclude_references: HashSet::from_iter([
+                    "PartialTaskCommandArgs".into(),
                     "PartialTaskConfig".into(),
                     "PartialTaskOptionsConfig".into(),
                     "PlatformType".into(),

@@ -77,7 +77,7 @@
     "projects": {
       "anyOf": [
         {
-          "$ref": "#/definitions/WorkspaceProjects"
+          "$ref": "#/definitions/PartialWorkspaceProjects"
         },
         {
           "type": "null"
@@ -443,6 +443,28 @@
       },
       "additionalProperties": false
     },
+    "PartialWorkspaceProjects": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialWorkspaceProjectsConfig"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        }
+      ]
+    },
     "PartialWorkspaceProjectsConfig": {
       "title": "PartialWorkspaceProjectsConfig",
       "type": "object",
@@ -492,28 +514,6 @@
         "github",
         "gitlab",
         "other"
-      ]
-    },
-    "WorkspaceProjects": {
-      "anyOf": [
-        {
-          "$ref": "#/definitions/PartialWorkspaceProjectsConfig"
-        },
-        {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "propertyNames": {
-            "type": "string"
-          }
-        }
       ]
     }
   }

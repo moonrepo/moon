@@ -39,7 +39,10 @@ export interface PartialWorkspaceProjectsConfig {
 	sources?: Record<string, string> | null;
 }
 
-export type WorkspaceProjects = WorkspaceProjectsConfig | string[] | Record<string, string>;
+export type PartialWorkspaceProjects =
+	| PartialWorkspaceProjectsConfig
+	| string[]
+	| Record<string, string>;
 
 export interface PartialRunnerConfig {
 	archivableTargets?: string[] | null;
@@ -69,7 +72,7 @@ export interface PartialWorkspaceConfig {
 	generator?: PartialGeneratorConfig | null;
 	hasher?: PartialHasherConfig | null;
 	notifier?: PartialNotifierConfig | null;
-	projects?: WorkspaceProjects | null;
+	projects?: PartialWorkspaceProjects | null;
 	runner?: PartialRunnerConfig | null;
 	telemetry?: boolean | null;
 	vcs?: PartialVcsConfig | null;
@@ -106,6 +109,8 @@ export interface WorkspaceProjectsConfig {
 	globs: string[];
 	sources: Record<string, string>;
 }
+
+export type WorkspaceProjects = WorkspaceProjectsConfig | string[] | Record<string, string>;
 
 export interface RunnerConfig {
 	archivableTargets: string[];

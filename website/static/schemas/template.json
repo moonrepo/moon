@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "PartialTemplateConfig",
-  "description": "Docs: https://moonrepo.dev/docs/config/template",
+  "description": "Docs: https://moonrepo.dev/docs/config/templategs",
   "type": "object",
   "properties": {
     "$schema": {
@@ -39,7 +39,7 @@
         {
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/TemplateVariable"
+            "$ref": "#/definitions/PartialTemplateVariable"
           },
           "propertyNames": {
             "type": "string"
@@ -53,6 +53,22 @@
   },
   "additionalProperties": false,
   "definitions": {
+    "PartialTemplateVariable": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialTemplateVariableBoolSetting"
+        },
+        {
+          "$ref": "#/definitions/PartialTemplateVariableEnumSetting"
+        },
+        {
+          "$ref": "#/definitions/PartialTemplateVariableNumberSetting"
+        },
+        {
+          "$ref": "#/definitions/PartialTemplateVariableStringSetting"
+        }
+      ]
+    },
     "PartialTemplateVariableBoolSetting": {
       "title": "PartialTemplateVariableBoolSetting",
       "type": "object",
@@ -149,7 +165,7 @@
             {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/TemplateVariableEnumValue"
+                "$ref": "#/definitions/PartialTemplateVariableEnumValue"
               }
             },
             {
@@ -159,6 +175,16 @@
         }
       },
       "additionalProperties": false
+    },
+    "PartialTemplateVariableEnumValue": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/PartialTemplateVariableEnumValueConfig"
+        }
+      ]
     },
     "PartialTemplateVariableEnumValueConfig": {
       "title": "PartialTemplateVariableEnumValueConfig",
@@ -280,32 +306,6 @@
         }
       },
       "additionalProperties": false
-    },
-    "TemplateVariable": {
-      "anyOf": [
-        {
-          "$ref": "#/definitions/PartialTemplateVariableBoolSetting"
-        },
-        {
-          "$ref": "#/definitions/PartialTemplateVariableEnumSetting"
-        },
-        {
-          "$ref": "#/definitions/PartialTemplateVariableNumberSetting"
-        },
-        {
-          "$ref": "#/definitions/PartialTemplateVariableStringSetting"
-        }
-      ]
-    },
-    "TemplateVariableEnumValue": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "$ref": "#/definitions/PartialTemplateVariableEnumValueConfig"
-        }
-      ]
     }
   }
 }

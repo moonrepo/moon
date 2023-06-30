@@ -93,6 +93,18 @@ fn generate_template() {
             JsonSchemaRenderer::default(),
         )
         .unwrap();
+
+    let mut generator = SchemaGenerator::default();
+    generator.add::<PartialTemplateConfig>();
+    generator.add::<PartialTemplateFrontmatterConfig>();
+    generator.add::<TemplateConfig>();
+    generator.add::<TemplateFrontmatterConfig>();
+    generator
+        .generate(
+            PathBuf::from("packages/types/src/template-config.ts"),
+            TypeScriptRenderer::default(),
+        )
+        .unwrap();
 }
 
 fn generate_toolchain() {

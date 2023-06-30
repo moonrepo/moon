@@ -5,8 +5,7 @@ use moon_common::cacheable;
 use moon_target::{Target, TargetScope};
 use rustc_hash::FxHashMap;
 use schematic::{
-    derive_enum, merge, Config, ConfigEnum, ConfigLoader, Format, PathSegment, SchemaType,
-    Schematic, ValidateError,
+    derive_enum, merge, Config, ConfigEnum, ConfigLoader, Format, PathSegment, ValidateError,
 };
 
 fn validate_command<D, C>(cmd: &TaskCommandArgs, _task: &D, _ctx: &C) -> Result<(), ValidateError> {
@@ -57,35 +56,24 @@ derive_enum!(
     }
 );
 
-derive_enum!(
-    #[derive(Default)]
+cacheable!(
+    #[derive(Clone, Config, Debug, Eq, PartialEq)]
     #[serde(untagged, expecting = "expected a string or a list of strings")]
     pub enum TaskCommandArgs {
-        #[default]
+        #[setting(default, null)]
         None,
         String(String),
         List(Vec<String>),
     }
 );
 
-impl Schematic for TaskCommandArgs {
-    fn generate_schema() -> SchemaType {
-        let mut schema = SchemaType::union(vec![
-            SchemaType::Null,
-            SchemaType::string(),
-            SchemaType::array(SchemaType::string()),
-        ]);
-        schema.set_name("TaskCommandArgs");
-        schema
-    }
-}
-
 cacheable!(
     #[derive(Clone, Config, Debug, Eq, PartialEq)]
     pub struct TaskConfig {
-        #[setting(validate = validate_command)]
+        #[setting(nested)] // validate = validate_command)]
         pub command: TaskCommandArgs,
 
+        #[setting(nested)]
         pub args: TaskCommandArgs,
 
         #[setting(validate = validate_deps)]

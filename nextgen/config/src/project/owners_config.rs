@@ -1,14 +1,17 @@
 use moon_common::cacheable;
 use rustc_hash::FxHashMap;
-use schematic::{derive_enum, Config, PathSegment, SchemaType, Schematic, ValidateError};
+use schematic::{Config, PathSegment, ValidateError};
 
-derive_enum!(
+cacheable!(
+    #[derive(Clone, Config, Debug, Eq, PartialEq)]
     #[serde(
         untagged,
         expecting = "expected a list of paths, or a map of paths to owners"
     )]
     pub enum OwnersPaths {
+        #[setting(default)]
         List(Vec<String>),
+
         Map(FxHashMap<String, Vec<String>>),
     }
 );
@@ -22,24 +25,7 @@ impl OwnersPaths {
     }
 }
 
-impl Default for OwnersPaths {
-    fn default() -> Self {
-        OwnersPaths::List(Vec::new())
-    }
-}
-
-impl Schematic for OwnersPaths {
-    fn generate_schema() -> SchemaType {
-        SchemaType::union(vec![
-            SchemaType::array(SchemaType::string()),
-            SchemaType::object(
-                SchemaType::string(),
-                SchemaType::array(SchemaType::string()),
-            ),
-        ])
-    }
-}
-
+// TODO
 fn validate_paths<C>(
     value: &OwnersPaths,
     data: &PartialOwnersConfig,
@@ -91,7 +77,7 @@ cacheable!(
         // GitLab
         pub optional: bool,
 
-        #[setting(validate = validate_paths)]
+        #[setting(nested)]
         pub paths: OwnersPaths,
 
         // GitLab

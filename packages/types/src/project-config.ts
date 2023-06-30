@@ -17,23 +17,15 @@ export interface PartialDependencyConfig {
 
 export type ProjectDependsOn = string | DependencyConfig;
 
-export type LanguageType =
-	| 'bash'
-	| 'batch'
-	| 'go'
-	| 'javascript'
-	| 'php'
-	| 'python'
-	| 'ruby'
-	| 'rust'
-	| 'typescript'
-	| 'unknown';
+export type LanguageType = 'bash' | 'batch' | 'go' | 'javascript' | 'php' | 'python' | 'ruby' | 'rust' | 'typescript' | 'unknown';
+
+export type OwnersPaths = string[] | Record<string, string[]>;
 
 export interface PartialOwnersConfig {
 	customGroups?: Record<string, string[]> | null;
 	defaultOwner?: string | null;
 	optional?: boolean | null;
-	paths?: string[] | Record<string, string[]> | null;
+	paths?: OwnersPaths | null;
 	requiredApprovals?: number | null;
 }
 
@@ -101,7 +93,7 @@ export interface OwnersConfig {
 	customGroups: Record<string, string[]>;
 	defaultOwner: string | null;
 	optional: boolean;
-	paths: string[] | Record<string, string[]>;
+	paths: OwnersPaths;
 	requiredApprovals: number;
 }
 

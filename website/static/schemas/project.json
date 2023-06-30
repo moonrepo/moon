@@ -194,6 +194,28 @@
         "unknown"
       ]
     },
+    "OwnersPaths": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        }
+      ]
+    },
     "PartialDependencyConfig": {
       "title": "PartialDependencyConfig",
       "type": "object",
@@ -287,22 +309,7 @@
         "paths": {
           "anyOf": [
             {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "object",
-              "additionalProperties": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              "propertyNames": {
-                "type": "string"
-              }
+              "$ref": "#/definitions/OwnersPaths"
             },
             {
               "type": "null"

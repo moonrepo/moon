@@ -47,7 +47,7 @@ cacheable!(
 );
 
 cacheable!(
-    #[derive(Clone, Config, Debug)]
+    #[derive(Clone, Config, Debug, Eq, PartialEq)]
     #[serde(
         untagged,
         expecting = "expected a project name or dependency config object"

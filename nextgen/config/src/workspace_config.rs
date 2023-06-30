@@ -3,14 +3,12 @@
 use crate::portable_path::{Portable, ProjectFilePath, ProjectGlobPath};
 use crate::validate::validate_semver_requirement;
 use crate::workspace::*;
-use moon_common::{consts, Id};
+use moon_common::{cacheable, consts, Id};
 use rustc_hash::FxHashMap;
-use schematic::{
-    derive_enum, validate, Config, ConfigLoader, Path as SettingPath, PathSegment, SchemaField,
-    SchemaType, Schematic, ValidateError,
-};
+use schematic::{validate, Config, ConfigLoader, Path as SettingPath, PathSegment, ValidateError};
 use std::path::Path;
 
+// TODO
 // We can't use serde based types in the enum below to handle validation,
 // as serde fails to parse correctly. So we must manually validate here.
 fn validate_projects<D, C>(
@@ -19,7 +17,7 @@ fn validate_projects<D, C>(
     _ctx: &C,
 ) -> Result<(), ValidateError> {
     match projects {
-        WorkspaceProjects::Both { globs, sources } => {
+        WorkspaceProjects::Both(WorkspaceProjectsConfig { globs, sources }) => {
             for (i, g) in globs.iter().enumerate() {
                 ProjectGlobPath::from_str(g).map_err(|mut error| {
                     error.path = SettingPath::new(vec![
@@ -61,47 +59,33 @@ fn validate_projects<D, C>(
     Ok(())
 }
 
-derive_enum!(
+cacheable!(
+    #[derive(Config, Debug)]
+    pub struct WorkspaceProjectsConfig {
+        pub globs: Vec<String>,
+        pub sources: FxHashMap<Id, String>,
+    }
+);
+
+cacheable!(
+    #[derive(Config, Debug)]
     #[serde(
         untagged,
-        expecting = "expected a sequence of globs or a map of projects"
+        expecting = "expected a list of globs, a map of projects, or both"
     )]
     pub enum WorkspaceProjects {
-        Both {
-            globs: Vec<String>,
-            sources: FxHashMap<Id, String>,
-        },
+        #[setting(nested)]
+        Both(WorkspaceProjectsConfig),
+
         Globs(Vec<String>),
+
+        #[setting(default)]
         Sources(FxHashMap<Id, String>),
     }
 );
 
-impl Default for WorkspaceProjects {
-    fn default() -> Self {
-        WorkspaceProjects::Sources(FxHashMap::default())
-    }
-}
-
-impl Schematic for WorkspaceProjects {
-    fn generate_schema() -> SchemaType {
-        let mut schema = SchemaType::union(vec![
-            SchemaType::array(SchemaType::string()),
-            SchemaType::object(SchemaType::string(), SchemaType::string()),
-            SchemaType::structure(vec![
-                SchemaField::new("globs", SchemaType::array(SchemaType::string())),
-                SchemaField::new(
-                    "sources",
-                    SchemaType::object(SchemaType::string(), SchemaType::string()),
-                ),
-            ]),
-        ]);
-        schema.set_name("WorkspaceProjects");
-        schema
-    }
-}
-
 /// Docs: https://moonrepo.dev/docs/config/workspace
-#[derive(Debug, Config)]
+#[derive(Config, Debug)]
 pub struct WorkspaceConfig {
     #[setting(
         default = "https://moonrepo.dev/schemas/workspace.json",
@@ -127,7 +111,7 @@ pub struct WorkspaceConfig {
     #[setting(nested)]
     pub notifier: NotifierConfig,
 
-    #[setting(validate = validate_projects)]
+    #[setting(nested)]
     pub projects: WorkspaceProjects,
 
     #[setting(nested)]

@@ -3,7 +3,7 @@ use moon_common::Id;
 use moon_config::{
     DependencyConfig, DependencyScope, DependencySource, PartialConstraintsConfig,
     PartialNodeConfig, PartialRustConfig, PartialToolchainConfig, PartialWorkspaceConfig,
-    WorkspaceProjects,
+    PartialWorkspaceProjects, PartialWorkspaceProjectsConfig,
 };
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
@@ -45,7 +45,7 @@ async fn get_aliases_graph() -> (ProjectGraph, Sandbox) {
 
 async fn get_dependencies_graph(enable_git: bool) -> (ProjectGraph, Sandbox) {
     let workspace_config = PartialWorkspaceConfig {
-        projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([
+        projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
             ("a".into(), "a".to_owned()),
             ("b".into(), "b".to_owned()),
             ("c".into(), "c".to_owned()),
@@ -73,7 +73,7 @@ async fn get_dependencies_graph(enable_git: bool) -> (ProjectGraph, Sandbox) {
 
 async fn get_dependents_graph() -> (ProjectGraph, Sandbox) {
     let workspace_config = PartialWorkspaceConfig {
-        projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([
+        projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
             ("a".into(), "a".to_owned()),
             ("b".into(), "b".to_owned()),
             ("c".into(), "c".to_owned()),
@@ -100,7 +100,7 @@ where
     F: FnOnce(&Sandbox),
 {
     let workspace_config = PartialWorkspaceConfig {
-        projects: Some(WorkspaceProjects::Globs(vec!["*".into()])),
+        projects: Some(PartialWorkspaceProjects::Globs(vec!["*".into()])),
         constraints: Some(PartialConstraintsConfig {
             tag_relationships: Some(FxHashMap::from_iter([
                 (
@@ -137,7 +137,7 @@ where
     F: FnOnce(&Sandbox),
 {
     let workspace_config = PartialWorkspaceConfig {
-        projects: Some(WorkspaceProjects::Globs(vec!["*".into()])),
+        projects: Some(PartialWorkspaceProjects::Globs(vec!["*".into()])),
         constraints: Some(PartialConstraintsConfig {
             enforce_project_type_relationships: Some(true),
             ..PartialConstraintsConfig::default()
@@ -162,7 +162,7 @@ where
 
 async fn get_queries_graph() -> (ProjectGraph, Sandbox) {
     let workspace_config = PartialWorkspaceConfig {
-        projects: Some(WorkspaceProjects::Globs(vec!["*".into()])),
+        projects: Some(PartialWorkspaceProjects::Globs(vec!["*".into()])),
         ..PartialWorkspaceConfig::default()
     };
 
@@ -188,13 +188,15 @@ async fn get_queries_graph() -> (ProjectGraph, Sandbox) {
 #[tokio::test]
 async fn can_use_map_and_globs_setting() {
     let workspace_config = PartialWorkspaceConfig {
-        projects: Some(WorkspaceProjects::Both {
-            globs: string_vec!["deps/*"],
-            sources: FxHashMap::from_iter([
-                ("basic".into(), "basic".to_owned()),
-                ("noConfig".into(), "no-config".to_owned()),
-            ]),
-        }),
+        projects: Some(PartialWorkspaceProjects::Both(
+            PartialWorkspaceProjectsConfig {
+                globs: Some(string_vec!["deps/*"]),
+                sources: Some(FxHashMap::from_iter([
+                    ("basic".into(), "basic".to_owned()),
+                    ("noConfig".into(), "no-config".to_owned()),
+                ])),
+            },
+        )),
         ..PartialWorkspaceConfig::default()
     };
 
@@ -218,7 +220,7 @@ async fn can_use_map_and_globs_setting() {
 #[tokio::test]
 async fn can_generate_with_deps_cycles() {
     let workspace_config = PartialWorkspaceConfig {
-        projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([
+        projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
             ("a".into(), "a".to_owned()),
             ("b".into(), "b".to_owned()),
         ]))),
@@ -306,7 +308,7 @@ mod globs {
     #[tokio::test]
     async fn ignores_moon_dot_folder() {
         let workspace_config = PartialWorkspaceConfig {
-            projects: Some(WorkspaceProjects::Globs(string_vec!["*"])),
+            projects: Some(PartialWorkspaceProjects::Globs(string_vec!["*"])),
             ..PartialWorkspaceConfig::default()
         };
 
@@ -330,7 +332,7 @@ mod globs {
     #[tokio::test]
     async fn filters_ignored_sources() {
         let workspace_config = PartialWorkspaceConfig {
-            projects: Some(WorkspaceProjects::Globs(string_vec!["*"])),
+            projects: Some(PartialWorkspaceProjects::Globs(string_vec!["*"])),
             ..PartialWorkspaceConfig::default()
         };
 
@@ -355,7 +357,7 @@ mod globs {
     #[tokio::test]
     async fn supports_all_id_formats() {
         let workspace_config = PartialWorkspaceConfig {
-            projects: Some(WorkspaceProjects::Globs(string_vec!["*"])),
+            projects: Some(PartialWorkspaceProjects::Globs(string_vec!["*"])),
             ..PartialWorkspaceConfig::default()
         };
 
@@ -437,7 +439,7 @@ mod to_dot {
     #[tokio::test]
     async fn renders_partial_tree() {
         let workspace_config = PartialWorkspaceConfig {
-            projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([
+            projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
                 ("a".into(), "a".to_owned()),
                 ("b".into(), "b".to_owned()),
                 ("c".into(), "c".to_owned()),

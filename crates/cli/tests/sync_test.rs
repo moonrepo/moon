@@ -1,4 +1,4 @@
-use moon_config::{PartialVcsConfig, PartialWorkspaceConfig, WorkspaceProjects};
+use moon_config::{PartialVcsConfig, PartialWorkspaceConfig, PartialWorkspaceProjects};
 use moon_test_utils::{
     create_sandbox_with_config, get_cases_fixture_configs, predicates::prelude::*,
 };
@@ -132,7 +132,7 @@ mod sync_projects {
     #[test]
     fn syncs_all_projects() {
         let workspace_config = PartialWorkspaceConfig {
-            projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([
+            projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
                 ("a".into(), "a".to_owned()),
                 ("b".into(), "b".to_owned()),
                 ("c".into(), "c".to_owned()),
@@ -166,7 +166,7 @@ mod sync_projects {
     #[test]
     fn runs_legacy_sync_command() {
         let workspace_config = PartialWorkspaceConfig {
-            projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([
+            projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
                 ("a".into(), "a".to_owned()),
                 ("b".into(), "b".to_owned()),
                 ("c".into(), "c".to_owned()),

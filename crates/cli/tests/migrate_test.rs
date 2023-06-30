@@ -1,4 +1,4 @@
-use moon_config::{InputPath, PartialWorkspaceConfig, WorkspaceProjects};
+use moon_config::{InputPath, PartialWorkspaceConfig, PartialWorkspaceProjects};
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, get_default_toolchain, predicates::str::contains,
     Sandbox,
@@ -8,7 +8,7 @@ use std::fs;
 
 fn migrate_sandbox() -> Sandbox {
     let workspace_config = PartialWorkspaceConfig {
-        projects: Some(WorkspaceProjects::Globs(string_vec![
+        projects: Some(PartialWorkspaceProjects::Globs(string_vec![
             "package-json/*",
             "turborepo/*"
         ])),

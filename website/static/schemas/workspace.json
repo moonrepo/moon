@@ -443,6 +443,42 @@
       },
       "additionalProperties": false
     },
+    "PartialWorkspaceProjectsConfig": {
+      "title": "PartialWorkspaceProjectsConfig",
+      "type": "object",
+      "properties": {
+        "globs": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sources": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "propertyNames": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
     "VcsManager": {
       "type": "string",
       "enum": [
@@ -461,6 +497,9 @@
     "WorkspaceProjects": {
       "anyOf": [
         {
+          "$ref": "#/definitions/PartialWorkspaceProjectsConfig"
+        },
+        {
           "type": "array",
           "items": {
             "type": "string"
@@ -474,41 +513,6 @@
           "propertyNames": {
             "type": "string"
           }
-        },
-        {
-          "type": "object",
-          "properties": {
-            "globs": {
-              "anyOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "sources": {
-              "anyOf": [
-                {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "propertyNames": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            }
-          },
-          "additionalProperties": false
         }
       ]
     }

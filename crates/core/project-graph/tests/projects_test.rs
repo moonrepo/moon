@@ -6,7 +6,7 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{
     InputPath, LanguageType, OutputPath, PartialInheritedTasksConfig, PartialNodeConfig,
     PartialRustConfig, PartialTaskConfig, PartialTaskOptionsConfig, PartialToolchainConfig,
-    PartialWorkspaceConfig, PlatformType, TaskCommandArgs, WorkspaceProjects,
+    PartialWorkspaceConfig, PartialWorkspaceProjects, PlatformType, TaskCommandArgs,
 };
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
@@ -381,7 +381,7 @@ tasks:
 
         async fn tasks_inheritance_sandbox() -> (Sandbox, ProjectGraph) {
             let workspace_config = PartialWorkspaceConfig {
-                projects: Some(WorkspaceProjects::Globs(string_vec!["*"])),
+                projects: Some(PartialWorkspaceProjects::Globs(string_vec!["*"])),
                 ..PartialWorkspaceConfig::default()
             };
 
@@ -1482,7 +1482,7 @@ mod detection {
 
     async fn langs_sandbox() -> (Sandbox, ProjectGraph) {
         let workspace_config = PartialWorkspaceConfig {
-            projects: Some(WorkspaceProjects::Globs(string_vec!["*"])),
+            projects: Some(PartialWorkspaceProjects::Globs(string_vec!["*"])),
             ..PartialWorkspaceConfig::default()
         };
 

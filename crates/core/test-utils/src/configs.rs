@@ -2,8 +2,8 @@ use crate::create_input_paths;
 use moon_config::{
     InputPath, NodePackageManager, PartialInheritedTasksConfig, PartialNodeConfig,
     PartialNpmConfig, PartialPnpmConfig, PartialTaskConfig, PartialToolchainConfig,
-    PartialTypeScriptConfig, PartialWorkspaceConfig, PartialYarnConfig, TaskCommandArgs,
-    WorkspaceProjects,
+    PartialTypeScriptConfig, PartialWorkspaceConfig, PartialWorkspaceProjects,
+    PartialWorkspaceProjectsConfig, PartialYarnConfig, TaskCommandArgs,
 };
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
@@ -40,7 +40,7 @@ pub fn get_cases_fixture_configs() -> (
     PartialInheritedTasksConfig,
 ) {
     let workspace_config = PartialWorkspaceConfig {
-        projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([
+        projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
             ("root".into(), ".".to_owned()),
             ("affected".into(), "affected".to_owned()),
             ("base".into(), "base".to_owned()),
@@ -88,7 +88,7 @@ pub fn get_projects_fixture_configs() -> (
     PartialInheritedTasksConfig,
 ) {
     let workspace_config = PartialWorkspaceConfig {
-        projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([
+        projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
             ("advanced".into(), "advanced".to_owned()),
             ("basic".into(), "basic".to_owned()),
             ("emptyConfig".into(), "empty-config".to_owned()),
@@ -125,7 +125,7 @@ pub fn get_project_graph_aliases_fixture_configs() -> (
     PartialInheritedTasksConfig,
 ) {
     let workspace_config = PartialWorkspaceConfig {
-        projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([
+        projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
             ("explicit".into(), "explicit".to_owned()),
             (
                 "explicitAndImplicit".into(),
@@ -165,7 +165,7 @@ pub fn get_tasks_fixture_configs() -> (
     PartialInheritedTasksConfig,
 ) {
     let workspace_config = PartialWorkspaceConfig {
-        projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([
+        projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
             ("basic".into(), "basic".to_owned()),
             ("buildA".into(), "build-a".to_owned()),
             ("buildB".into(), "build-b".to_owned()),
@@ -277,7 +277,7 @@ pub fn get_node_fixture_configs() -> (
     PartialInheritedTasksConfig,
 ) {
     let workspace_config = PartialWorkspaceConfig {
-        projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([
+        projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
             ("node".into(), "base".to_owned()),
             ("lifecycles".into(), "lifecycles".to_owned()),
             (
@@ -334,7 +334,7 @@ pub fn get_node_depman_fixture_configs(
 ) {
     let (mut workspace_config, mut toolchain_config, tasks_config) = get_node_fixture_configs();
 
-    workspace_config.projects = Some(WorkspaceProjects::Sources(FxHashMap::from_iter([
+    workspace_config.projects = Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
         (depman.into(), "base".to_owned()),
         ("other".into(), "other".to_owned()),
         ("notInWorkspace".into(), "not-in-workspace".to_owned()),
@@ -382,10 +382,12 @@ pub fn get_typescript_fixture_configs() -> (
 ) {
     let (mut workspace_config, mut toolchain_config, tasks_config) = get_node_fixture_configs();
 
-    workspace_config.projects = Some(WorkspaceProjects::Both {
-        globs: vec!["*".into()],
-        sources: FxHashMap::from_iter([("root".into(), ".".into())]),
-    });
+    workspace_config.projects = Some(PartialWorkspaceProjects::Both(
+        PartialWorkspaceProjectsConfig {
+            globs: Some(vec!["*".into()]),
+            sources: Some(FxHashMap::from_iter([("root".into(), ".".into())])),
+        },
+    ));
 
     if let Some(ts_config) = &mut toolchain_config.typescript {
         ts_config.create_missing_config = Some(true);

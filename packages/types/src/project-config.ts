@@ -39,29 +39,29 @@ export interface PartialOwnersConfig {
 	requiredApprovals?: number | null;
 }
 
-export interface ProjectMetadataConfig {
-	channel: string | null;
-	description: string;
-	maintainers: string[];
-	name: string | null;
-	owner: string | null;
+export interface PartialProjectMetadataConfig {
+	channel?: string | null;
+	description?: string | null;
+	maintainers?: string[] | null;
+	name?: string | null;
+	owner?: string | null;
 }
 
-export interface ProjectToolchainCommonToolConfig {
-	version: string | null;
+export interface PartialProjectToolchainCommonToolConfig {
+	version?: string | null;
 }
 
-export interface ProjectToolchainTypeScriptConfig {
-	disabled: boolean;
-	routeOutDirToCache: boolean | null;
-	syncProjectReferences: boolean | null;
-	syncProjectReferencesToPaths: boolean | null;
+export interface PartialProjectToolchainTypeScriptConfig {
+	disabled?: boolean | null;
+	routeOutDirToCache?: boolean | null;
+	syncProjectReferences?: boolean | null;
+	syncProjectReferencesToPaths?: boolean | null;
 }
 
 export interface PartialProjectToolchainConfig {
-	node?: ProjectToolchainCommonToolConfig | null;
-	rust?: ProjectToolchainCommonToolConfig | null;
-	typescript?: ProjectToolchainTypeScriptConfig | null;
+	node?: PartialProjectToolchainCommonToolConfig | null;
+	rust?: PartialProjectToolchainCommonToolConfig | null;
+	typescript?: PartialProjectToolchainTypeScriptConfig | null;
 }
 
 export type ProjectType = 'application' | 'library' | 'tool' | 'unknown';
@@ -84,7 +84,7 @@ export interface PartialProjectConfig {
 	language?: LanguageType | null;
 	owners?: PartialOwnersConfig | null;
 	platform?: PlatformType | null;
-	project?: ProjectMetadataConfig | null;
+	project?: PartialProjectMetadataConfig | null;
 	tags?: string[] | null;
 	tasks?: Record<string, PartialTaskConfig> | null;
 	toolchain?: PartialProjectToolchainConfig | null;
@@ -109,6 +109,25 @@ export interface OwnersConfig {
 	optional: boolean;
 	paths: OwnersPaths;
 	requiredApprovals: number;
+}
+
+export interface ProjectMetadataConfig {
+	channel: string | null;
+	description: string;
+	maintainers: string[];
+	name: string | null;
+	owner: string | null;
+}
+
+export interface ProjectToolchainCommonToolConfig {
+	version: string | null;
+}
+
+export interface ProjectToolchainTypeScriptConfig {
+	disabled: boolean;
+	routeOutDirToCache: boolean | null;
+	syncProjectReferences: boolean | null;
+	syncProjectReferencesToPaths: boolean | null;
 }
 
 export interface ProjectToolchainConfig {

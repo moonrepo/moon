@@ -95,7 +95,7 @@
     "project": {
       "anyOf": [
         {
-          "$ref": "#/definitions/ProjectMetadataConfig"
+          "$ref": "#/definitions/PartialProjectMetadataConfig"
         },
         {
           "type": "null"
@@ -339,6 +339,83 @@
         }
       ]
     },
+    "PartialProjectMetadataConfig": {
+      "title": "PartialProjectMetadataConfig",
+      "type": "object",
+      "properties": {
+        "channel": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "maintainers": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "owner": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "PartialProjectToolchainCommonToolConfig": {
+      "title": "PartialProjectToolchainCommonToolConfig",
+      "type": "object",
+      "properties": {
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
     "PartialProjectToolchainConfig": {
       "title": "PartialProjectToolchainConfig",
       "type": "object",
@@ -346,7 +423,7 @@
         "node": {
           "anyOf": [
             {
-              "$ref": "#/definitions/ProjectToolchainCommonToolConfig"
+              "$ref": "#/definitions/PartialProjectToolchainCommonToolConfig"
             },
             {
               "type": "null"
@@ -356,7 +433,7 @@
         "rust": {
           "anyOf": [
             {
-              "$ref": "#/definitions/ProjectToolchainCommonToolConfig"
+              "$ref": "#/definitions/PartialProjectToolchainCommonToolConfig"
             },
             {
               "type": "null"
@@ -366,7 +443,54 @@
         "typescript": {
           "anyOf": [
             {
-              "$ref": "#/definitions/ProjectToolchainTypeScriptConfig"
+              "$ref": "#/definitions/PartialProjectToolchainTypeScriptConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "PartialProjectToolchainTypeScriptConfig": {
+      "title": "PartialProjectToolchainTypeScriptConfig",
+      "type": "object",
+      "properties": {
+        "disabled": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "routeOutDirToCache": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "syncProjectReferences": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "syncProjectReferencesToPaths": {
+          "anyOf": [
+            {
+              "type": "boolean"
             },
             {
               "type": "null"
@@ -746,125 +870,6 @@
         "system",
         "unknown"
       ]
-    },
-    "ProjectMetadataConfig": {
-      "title": "ProjectMetadataConfig",
-      "type": "object",
-      "required": [
-        "channel",
-        "description",
-        "maintainers",
-        "name",
-        "owner"
-      ],
-      "properties": {
-        "channel": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "description": {
-          "type": "string"
-        },
-        "maintainers": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "name": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "owner": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false
-    },
-    "ProjectToolchainCommonToolConfig": {
-      "title": "ProjectToolchainCommonToolConfig",
-      "type": "object",
-      "required": [
-        "version"
-      ],
-      "properties": {
-        "version": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false
-    },
-    "ProjectToolchainTypeScriptConfig": {
-      "title": "ProjectToolchainTypeScriptConfig",
-      "type": "object",
-      "required": [
-        "disabled",
-        "routeOutDirToCache",
-        "syncProjectReferences",
-        "syncProjectReferencesToPaths"
-      ],
-      "properties": {
-        "disabled": {
-          "type": "boolean"
-        },
-        "routeOutDirToCache": {
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "syncProjectReferences": {
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "syncProjectReferencesToPaths": {
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false
     },
     "ProjectType": {
       "type": "string",

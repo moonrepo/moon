@@ -17,7 +17,7 @@
     "deno": {
       "anyOf": [
         {
-          "$ref": "#/definitions/DenoConfig"
+          "$ref": "#/definitions/PartialDenoConfig"
         },
         {
           "type": "null"
@@ -37,7 +37,7 @@
     "node": {
       "anyOf": [
         {
-          "$ref": "#/definitions/NodeConfig"
+          "$ref": "#/definitions/PartialNodeConfig"
         },
         {
           "type": "null"
@@ -47,7 +47,7 @@
     "rust": {
       "anyOf": [
         {
-          "$ref": "#/definitions/RustConfig"
+          "$ref": "#/definitions/PartialRustConfig"
         },
         {
           "type": "null"
@@ -57,7 +57,7 @@
     "typescript": {
       "anyOf": [
         {
-          "$ref": "#/definitions/TypeScriptConfig"
+          "$ref": "#/definitions/PartialTypeScriptConfig"
         },
         {
           "type": "null"
@@ -67,134 +67,6 @@
   },
   "additionalProperties": false,
   "definitions": {
-    "DenoConfig": {
-      "title": "DenoConfig",
-      "description": "Docs: https://moonrepo.dev/docs/config/toolchain#deno",
-      "type": "object",
-      "required": [
-        "depsFile",
-        "lockfile"
-      ],
-      "properties": {
-        "depsFile": {
-          "type": "string"
-        },
-        "lockfile": {
-          "type": "boolean"
-        }
-      },
-      "additionalProperties": false
-    },
-    "NodeConfig": {
-      "title": "NodeConfig",
-      "description": "Docs: https://moonrepo.dev/docs/config/toolchain#node",
-      "type": "object",
-      "required": [
-        "addEnginesConstraint",
-        "aliasPackageNames",
-        "binExecArgs",
-        "dedupeOnLockfileChange",
-        "dependencyVersionFormat",
-        "inferTasksFromScripts",
-        "npm",
-        "packageManager",
-        "pnpm",
-        "syncProjectWorkspaceDependencies",
-        "syncVersionManagerConfig",
-        "version",
-        "yarn"
-      ],
-      "properties": {
-        "addEnginesConstraint": {
-          "type": "boolean"
-        },
-        "aliasPackageNames": {
-          "deprecated": true,
-          "allOf": [
-            {
-              "$ref": "#/definitions/NodeProjectAliasFormat"
-            }
-          ]
-        },
-        "binExecArgs": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "dedupeOnLockfileChange": {
-          "type": "boolean"
-        },
-        "dependencyVersionFormat": {
-          "allOf": [
-            {
-              "$ref": "#/definitions/NodeVersionFormat"
-            }
-          ]
-        },
-        "inferTasksFromScripts": {
-          "type": "boolean"
-        },
-        "npm": {
-          "allOf": [
-            {
-              "$ref": "#/definitions/PartialNpmConfig"
-            }
-          ]
-        },
-        "packageManager": {
-          "allOf": [
-            {
-              "$ref": "#/definitions/NodePackageManager"
-            }
-          ]
-        },
-        "pnpm": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PnpmConfig"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "syncProjectWorkspaceDependencies": {
-          "type": "boolean"
-        },
-        "syncVersionManagerConfig": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/NodeVersionManager"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "version": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "yarn": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/YarnConfig"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false
-    },
     "NodePackageManager": {
       "type": "string",
       "enum": [
@@ -231,6 +103,176 @@
         "nvm"
       ]
     },
+    "PartialDenoConfig": {
+      "title": "PartialDenoConfig",
+      "description": "Docs: https://moonrepo.dev/docs/config/toolchain#deno",
+      "type": "object",
+      "properties": {
+        "depsFile": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lockfile": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "PartialNodeConfig": {
+      "title": "PartialNodeConfig",
+      "description": "Docs: https://moonrepo.dev/docs/config/toolchain#node",
+      "type": "object",
+      "properties": {
+        "addEnginesConstraint": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "aliasPackageNames": {
+          "deprecated": true,
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NodeProjectAliasFormat"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "binExecArgs": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dedupeOnLockfileChange": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dependencyVersionFormat": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NodeVersionFormat"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "inferTasksFromScripts": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "npm": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PartialNpmConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "packageManager": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NodePackageManager"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "pnpm": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PartialPnpmConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "syncProjectWorkspaceDependencies": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "syncVersionManagerConfig": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NodeVersionManager"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "yarn": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PartialYarnConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
     "PartialNpmConfig": {
       "title": "PartialNpmConfig",
       "type": "object",
@@ -248,12 +290,9 @@
       },
       "additionalProperties": false
     },
-    "PnpmConfig": {
-      "title": "PnpmConfig",
+    "PartialPnpmConfig": {
+      "title": "PartialPnpmConfig",
       "type": "object",
-      "required": [
-        "version"
-      ],
       "properties": {
         "version": {
           "anyOf": [
@@ -268,24 +307,33 @@
       },
       "additionalProperties": false
     },
-    "RustConfig": {
-      "title": "RustConfig",
+    "PartialRustConfig": {
+      "title": "PartialRustConfig",
       "description": "Docs: https://moonrepo.dev/docs/config/toolchain#rust",
       "type": "object",
-      "required": [
-        "bins",
-        "syncToolchainConfig",
-        "version"
-      ],
       "properties": {
         "bins": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "syncToolchainConfig": {
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "version": {
           "anyOf": [
@@ -300,57 +348,100 @@
       },
       "additionalProperties": false
     },
-    "TypeScriptConfig": {
-      "title": "TypeScriptConfig",
+    "PartialTypeScriptConfig": {
+      "title": "PartialTypeScriptConfig",
       "description": "Docs: https://moonrepo.dev/docs/config/toolchain#typescript",
       "type": "object",
-      "required": [
-        "createMissingConfig",
-        "projectConfigFileName",
-        "rootConfigFileName",
-        "rootOptionsConfigFileName",
-        "routeOutDirToCache",
-        "syncProjectReferences",
-        "syncProjectReferencesToPaths"
-      ],
       "properties": {
         "createMissingConfig": {
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "projectConfigFileName": {
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "rootConfigFileName": {
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "rootOptionsConfigFileName": {
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "routeOutDirToCache": {
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "syncProjectReferences": {
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "syncProjectReferencesToPaths": {
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
     },
-    "YarnConfig": {
-      "title": "YarnConfig",
+    "PartialYarnConfig": {
+      "title": "PartialYarnConfig",
       "type": "object",
-      "required": [
-        "plugins",
-        "version"
-      ],
       "properties": {
         "plugins": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "version": {
           "anyOf": [

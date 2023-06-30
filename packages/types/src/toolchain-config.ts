@@ -2,9 +2,9 @@
 
 /* eslint-disable */
 
-export interface DenoConfig {
-	depsFile: string;
-	lockfile: boolean;
+export interface PartialDenoConfig {
+	depsFile?: string | null;
+	lockfile?: boolean | null;
 }
 
 export type NodeProjectAliasFormat = 'name-and-scope' | 'name-only';
@@ -26,11 +26,70 @@ export interface PartialNpmConfig {
 
 export type NodePackageManager = 'npm' | 'pnpm' | 'yarn';
 
-export interface PnpmConfig {
-	version: string | null;
+export interface PartialPnpmConfig {
+	version?: string | null;
 }
 
 export type NodeVersionManager = 'nodenv' | 'nvm';
+
+export interface PartialYarnConfig {
+	plugins?: string[] | null;
+	version?: string | null;
+}
+
+export interface PartialNodeConfig {
+	addEnginesConstraint?: boolean | null;
+	aliasPackageNames?: NodeProjectAliasFormat | null;
+	binExecArgs?: string[] | null;
+	dedupeOnLockfileChange?: boolean | null;
+	dependencyVersionFormat?: NodeVersionFormat | null;
+	inferTasksFromScripts?: boolean | null;
+	npm?: PartialNpmConfig | null;
+	packageManager?: NodePackageManager | null;
+	pnpm?: PartialPnpmConfig | null;
+	syncProjectWorkspaceDependencies?: boolean | null;
+	syncVersionManagerConfig?: NodeVersionManager | null;
+	version?: string | null;
+	yarn?: PartialYarnConfig | null;
+}
+
+export interface PartialRustConfig {
+	bins?: string[] | null;
+	syncToolchainConfig?: boolean | null;
+	version?: string | null;
+}
+
+export interface PartialTypeScriptConfig {
+	createMissingConfig?: boolean | null;
+	projectConfigFileName?: string | null;
+	rootConfigFileName?: string | null;
+	rootOptionsConfigFileName?: string | null;
+	routeOutDirToCache?: boolean | null;
+	syncProjectReferences?: boolean | null;
+	syncProjectReferencesToPaths?: boolean | null;
+}
+
+export interface PartialToolchainConfig {
+	$schema?: string | null;
+	deno?: PartialDenoConfig | null;
+	extends?: string | null;
+	node?: PartialNodeConfig | null;
+	rust?: PartialRustConfig | null;
+	typescript?: PartialTypeScriptConfig | null;
+}
+
+export interface DenoConfig {
+	depsFile: string;
+	lockfile: boolean;
+}
+
+export interface NpmConfig {
+	version: string | null;
+}
+
+export interface PnpmConfig {
+	version: string | null;
+}
 
 export interface YarnConfig {
 	plugins: string[];
@@ -67,19 +126,6 @@ export interface TypeScriptConfig {
 	routeOutDirToCache: boolean;
 	syncProjectReferences: boolean;
 	syncProjectReferencesToPaths: boolean;
-}
-
-export interface PartialToolchainConfig {
-	$schema?: string | null;
-	deno?: DenoConfig | null;
-	extends?: string | null;
-	node?: NodeConfig | null;
-	rust?: RustConfig | null;
-	typescript?: TypeScriptConfig | null;
-}
-
-export interface NpmConfig {
-	version: string | null;
 }
 
 export interface ToolchainConfig {

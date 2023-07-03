@@ -6,9 +6,7 @@ use crate::shapes::InputPath;
 use moon_common::cacheable;
 use moon_common::{consts, Id};
 use rustc_hash::FxHashMap;
-use schematic::{
-    derive_enum, validate, Config, ConfigEnum, ConfigLoader, SchemaType, Schematic, ValidateError,
-};
+use schematic::{derive_enum, validate, Config, ConfigEnum, ConfigLoader, ValidateError};
 use std::collections::BTreeMap;
 use std::path::Path;
 
@@ -48,27 +46,18 @@ cacheable!(
     }
 );
 
-derive_enum!(
+cacheable!(
+    #[derive(Clone, Config, Debug, Eq, PartialEq)]
     #[serde(
         untagged,
         expecting = "expected a project name or dependency config object"
     )]
     pub enum ProjectDependsOn {
         String(Id),
+        #[setting(nested)]
         Object(DependencyConfig),
     }
 );
-
-impl Schematic for ProjectDependsOn {
-    fn generate_schema() -> SchemaType {
-        let mut schema = SchemaType::union(vec![
-            SchemaType::string(),
-            SchemaType::infer::<DependencyConfig>(),
-        ]);
-        schema.set_name("ProjectDependsOn");
-        schema
-    }
-}
 
 cacheable!(
     /// Docs: https://moonrepo.dev/docs/config/project
@@ -80,6 +69,7 @@ cacheable!(
         )]
         pub schema: String,
 
+        #[setting(nested)]
         pub depends_on: Vec<ProjectDependsOn>,
 
         pub env: FxHashMap<String, String>,

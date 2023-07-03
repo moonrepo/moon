@@ -15,7 +15,7 @@ export interface PartialDependencyConfig {
 	via?: string | null;
 }
 
-export type ProjectDependsOn = string | DependencyConfig;
+export type PartialProjectDependsOn = string | PartialDependencyConfig;
 
 export type LanguageType =
 	| 'bash'
@@ -29,11 +29,14 @@ export type LanguageType =
 	| 'typescript'
 	| 'unknown';
 
+export type PartialOwnersPaths = string[] | Record<string, string[]>;
+
 export interface PartialOwnersConfig {
 	customGroups?: Record<string, string[]> | null;
 	defaultOwner?: string | null;
 	optional?: boolean | null;
-	paths?: string[] | Record<string, string[]> | null;
+	paths?: PartialOwnersPaths | null;
+	/** @default 1 */
 	requiredApprovals?: number | null;
 }
 
@@ -75,8 +78,9 @@ export interface PartialProjectWorkspaceConfig {
 }
 
 export interface PartialProjectConfig {
+	/** @default 'https://moonrepo.dev/schemas/project.json' */
 	$schema?: string | null;
-	dependsOn?: ProjectDependsOn[] | null;
+	dependsOn?: PartialProjectDependsOn[] | null;
 	env?: Record<string, string> | null;
 	fileGroups?: Record<string, string[]> | null;
 	language?: LanguageType | null;
@@ -97,11 +101,16 @@ export interface DependencyConfig {
 	via: string | null;
 }
 
+export type ProjectDependsOn = string | DependencyConfig;
+
+export type OwnersPaths = string[] | Record<string, string[]>;
+
 export interface OwnersConfig {
 	customGroups: Record<string, string[]>;
 	defaultOwner: string | null;
 	optional: boolean;
-	paths: string[] | Record<string, string[]>;
+	paths: OwnersPaths;
+	/** @default 1 */
 	requiredApprovals: number;
 }
 
@@ -141,6 +150,7 @@ export interface ProjectWorkspaceConfig {
 }
 
 export interface ProjectConfig {
+	/** @default 'https://moonrepo.dev/schemas/project.json' */
 	$schema: string;
 	dependsOn: ProjectDependsOn[];
 	env: Record<string, string>;

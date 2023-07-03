@@ -5,8 +5,8 @@ use moon::{generate_project_graph, load_workspace_from};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{
     InputPath, LanguageType, OutputPath, PartialInheritedTasksConfig, PartialNodeConfig,
-    PartialRustConfig, PartialTaskConfig, PartialTaskOptionsConfig, PartialToolchainConfig,
-    PartialWorkspaceConfig, PlatformType, TaskCommandArgs, WorkspaceProjects,
+    PartialRustConfig, PartialTaskCommandArgs, PartialTaskConfig, PartialTaskOptionsConfig,
+    PartialToolchainConfig, PartialWorkspaceConfig, PartialWorkspaceProjects, PlatformType,
 };
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
@@ -212,8 +212,8 @@ tasks:
 
         fn stub_global_task_config() -> PartialTaskConfig {
             PartialTaskConfig {
-                args: Some(TaskCommandArgs::List(string_vec!["--a"])),
-                command: Some(TaskCommandArgs::String("standard".to_owned())),
+                args: Some(PartialTaskCommandArgs::List(string_vec!["--a"])),
+                command: Some(PartialTaskCommandArgs::String("standard".to_owned())),
                 deps: Some(vec![Target::parse("a:standard").unwrap()]),
                 env: Some(stub_global_env_vars()),
                 inputs: Some(vec![InputPath::ProjectGlob("a.*".into())]),
@@ -381,7 +381,7 @@ tasks:
 
         async fn tasks_inheritance_sandbox() -> (Sandbox, ProjectGraph) {
             let workspace_config = PartialWorkspaceConfig {
-                projects: Some(WorkspaceProjects::Globs(string_vec!["*"])),
+                projects: Some(PartialWorkspaceProjects::Globs(string_vec!["*"])),
                 ..PartialWorkspaceConfig::default()
             };
 
@@ -395,7 +395,7 @@ tasks:
                     (
                         "a".into(),
                         PartialTaskConfig {
-                            command: Some(TaskCommandArgs::String("a".into())),
+                            command: Some(PartialTaskCommandArgs::String("a".into())),
                             inputs: Some(vec![InputPath::ProjectFile("a".into())]),
                             platform: Some(PlatformType::Unknown),
                             ..PartialTaskConfig::default()
@@ -404,7 +404,7 @@ tasks:
                     (
                         "b".into(),
                         PartialTaskConfig {
-                            command: Some(TaskCommandArgs::String("b".into())),
+                            command: Some(PartialTaskCommandArgs::String("b".into())),
                             inputs: Some(vec![InputPath::ProjectFile("b".into())]),
                             platform: Some(PlatformType::Node),
                             ..PartialTaskConfig::default()
@@ -413,7 +413,7 @@ tasks:
                     (
                         "c".into(),
                         PartialTaskConfig {
-                            command: Some(TaskCommandArgs::String("c".into())),
+                            command: Some(PartialTaskCommandArgs::String("c".into())),
                             inputs: Some(vec![InputPath::ProjectFile("c".into())]),
                             platform: Some(PlatformType::System),
                             ..PartialTaskConfig::default()
@@ -1482,7 +1482,7 @@ mod detection {
 
     async fn langs_sandbox() -> (Sandbox, ProjectGraph) {
         let workspace_config = PartialWorkspaceConfig {
-            projects: Some(WorkspaceProjects::Globs(string_vec!["*"])),
+            projects: Some(PartialWorkspaceProjects::Globs(string_vec!["*"])),
             ..PartialWorkspaceConfig::default()
         };
 
@@ -1496,7 +1496,7 @@ mod detection {
             tasks: Some(BTreeMap::from_iter([(
                 "command".into(),
                 PartialTaskConfig {
-                    command: Some(TaskCommandArgs::String("command".into())),
+                    command: Some(PartialTaskCommandArgs::String("command".into())),
                     ..PartialTaskConfig::default()
                 },
             )])),

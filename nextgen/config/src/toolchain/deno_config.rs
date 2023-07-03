@@ -2,7 +2,7 @@ use schematic::Config;
 use serde::Serialize;
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain#deno
-#[derive(Debug, Clone, Config, Serialize)]
+#[derive(Clone, Config, Debug, Serialize)]
 pub struct DenoConfig {
     #[setting(default = "deps.ts")]
     pub deps_file: String,

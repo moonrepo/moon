@@ -2,8 +2,9 @@ use super::check_dirty_repo;
 use moon::{generate_project_graph, load_workspace};
 use moon_common::{consts, Id};
 use moon_config::{
-    InputPath, OutputPath, PartialInheritedTasksConfig, PartialProjectConfig, PartialTaskConfig,
-    PartialTaskOptionsConfig, PlatformType, ProjectConfig, TaskCommandArgs,
+    InputPath, OutputPath, PartialInheritedTasksConfig, PartialProjectConfig,
+    PartialTaskCommandArgs, PartialTaskConfig, PartialTaskOptionsConfig, PlatformType,
+    ProjectConfig,
 };
 use moon_logger::{info, warn};
 use moon_target::Target;
@@ -84,7 +85,7 @@ pub fn convert_task(name: Id, task: TurboTask) -> AppResult<PartialTaskConfig> {
     let mut config = PartialTaskConfig::default();
     let mut inputs = vec![];
 
-    config.command = Some(TaskCommandArgs::String(format!(
+    config.command = Some(PartialTaskCommandArgs::String(format!(
         "moon node run-script {name}"
     )));
 
@@ -323,7 +324,9 @@ mod tests {
 
             assert_eq!(
                 config.command,
-                Some(TaskCommandArgs::String("moon node run-script foo".into()))
+                Some(PartialTaskCommandArgs::String(
+                    "moon node run-script foo".into()
+                ))
             );
         }
 

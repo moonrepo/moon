@@ -54,8 +54,8 @@ async fn gather_touched_files(
         workspace,
         &mut QueryTouchedFilesOptions {
             default_branch: true,
-            base: options.base.clone().unwrap_or_default(),
-            head: options.head.clone().unwrap_or_default(),
+            base: options.base.clone(),
+            head: options.head.clone(),
             log: true,
             ..QueryTouchedFilesOptions::default()
         },

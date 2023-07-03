@@ -700,8 +700,8 @@ mod touched_files {
 
         let json: QueryTouchedFilesResult = serde_json::from_str(&assert.output()).unwrap();
 
-        assert_eq!(json.options.base, "master".to_string());
-        assert_eq!(json.options.head, "branch".to_string());
+        assert_eq!(json.options.base.unwrap(), "master".to_string());
+        assert_eq!(json.options.head.unwrap(), "branch".to_string());
         assert_eq!(json.options.status, vec![TouchedStatus::Deleted]);
         assert!(!json.options.local);
     }

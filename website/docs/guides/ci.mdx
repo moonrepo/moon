@@ -146,6 +146,9 @@ of these can be customized with the `--base` and `--head` options respectively.
 $ moon ci --base <BRANCH> --head <SHA>
 ```
 
+The `MOON_BASE` and `MOON_HEAD` environment variables can also be used, which takes highest
+precedence.
+
 ## Parallelizing tasks
 
 If your CI environment supports sharding across multiple jobs, then you can utilize moon's built in

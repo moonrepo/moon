@@ -512,12 +512,9 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             WorkspaceProjects::Globs(list) => {
                 globs.extend(list.clone());
             }
-            WorkspaceProjects::Both {
-                globs: list,
-                sources: map,
-            } => {
-                globs.extend(list.clone());
-                add_sources(map);
+            WorkspaceProjects::Both(cfg) => {
+                globs.extend(cfg.globs.clone());
+                add_sources(&cfg.sources);
             }
         };
 

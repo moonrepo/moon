@@ -2,7 +2,7 @@ use moon::{build_dep_graph, generate_project_graph, load_workspace_from};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{
     PartialInheritedTasksConfig, PartialNodeConfig, PartialToolchainConfig, PartialWorkspaceConfig,
-    WorkspaceProjects,
+    PartialWorkspaceProjects,
 };
 use moon_dep_graph::BatchedTopoSort;
 use moon_project_graph::ProjectGraph;
@@ -14,7 +14,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 async fn create_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
     let workspace_config = PartialWorkspaceConfig {
-        projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([
+        projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
             ("advanced".into(), "advanced".to_owned()),
             ("basic".into(), "basic".to_owned()),
             ("emptyConfig".into(), "empty-config".to_owned()),
@@ -63,7 +63,7 @@ async fn create_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
 
 async fn create_tasks_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
     let workspace_config = PartialWorkspaceConfig {
-        projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([
+        projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
             ("basic".into(), "basic".to_owned()),
             ("buildA".into(), "build-a".to_owned()),
             ("buildB".into(), "build-b".to_owned()),

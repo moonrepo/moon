@@ -1,13 +1,15 @@
 use moon_common::cacheable;
 use rustc_hash::FxHashMap;
-use schematic::{derive_enum, Config, PathSegment, SchemaType, Schematic, ValidateError};
+use schematic::{Config, PathSegment, ValidateError};
 
-derive_enum!(
+cacheable!(
+    #[derive(Clone, Config, Debug, Eq, PartialEq)]
     #[serde(
         untagged,
         expecting = "expected a list of paths, or a map of paths to owners"
     )]
     pub enum OwnersPaths {
+        #[setting(default)]
         List(Vec<String>),
         Map(FxHashMap<String, Vec<String>>),
     }
@@ -22,38 +24,20 @@ impl OwnersPaths {
     }
 }
 
-impl Default for OwnersPaths {
-    fn default() -> Self {
-        OwnersPaths::List(Vec::new())
-    }
-}
-
-impl Schematic for OwnersPaths {
-    fn generate_schema() -> SchemaType {
-        SchemaType::union(vec![
-            SchemaType::array(SchemaType::string()),
-            SchemaType::object(
-                SchemaType::string(),
-                SchemaType::array(SchemaType::string()),
-            ),
-        ])
-    }
-}
-
 fn validate_paths<C>(
-    value: &OwnersPaths,
+    value: &PartialOwnersPaths,
     data: &PartialOwnersConfig,
     _context: &C,
 ) -> Result<(), ValidateError> {
     match value {
-        OwnersPaths::List(list) => {
+        PartialOwnersPaths::List(list) => {
             if !list.is_empty() && data.default_owner.is_none() {
                 return Err(ValidateError::new(
                     "a default owner is required when defining a list of paths",
                 ));
             }
         }
-        OwnersPaths::Map(map) => {
+        PartialOwnersPaths::Map(map) => {
             for (key, value) in map {
                 if value.is_empty() && data.default_owner.is_none() {
                     return Err(ValidateError::with_segment(
@@ -91,7 +75,7 @@ cacheable!(
         // GitLab
         pub optional: bool,
 
-        #[setting(validate = validate_paths)]
+        #[setting(nested, validate = validate_paths)]
         pub paths: OwnersPaths,
 
         // GitLab

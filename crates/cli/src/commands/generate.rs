@@ -151,7 +151,7 @@ fn gather_variables(
                     .iter()
                     .map(|e| match e {
                         TemplateVariableEnumValue::String(value) => value,
-                        TemplateVariableEnumValue::Object { value, .. } => value,
+                        TemplateVariableEnumValue::Object(cfg) => &cfg.value,
                     })
                     .collect::<Vec<_>>();
                 let labels = var
@@ -159,7 +159,7 @@ fn gather_variables(
                     .iter()
                     .map(|e| match e {
                         TemplateVariableEnumValue::String(value) => value,
-                        TemplateVariableEnumValue::Object { label, .. } => label,
+                        TemplateVariableEnumValue::Object(cfg) => &cfg.label,
                     })
                     .collect::<Vec<_>>();
 

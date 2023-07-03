@@ -1,5 +1,5 @@
 use moon_config::{
-    PartialRustConfig, PartialToolchainConfig, PartialWorkspaceConfig, WorkspaceProjects,
+    PartialRustConfig, PartialToolchainConfig, PartialWorkspaceConfig, PartialWorkspaceProjects,
 };
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, predicates::prelude::*, Sandbox,
@@ -8,7 +8,7 @@ use rustc_hash::FxHashMap;
 
 fn rust_sandbox() -> Sandbox {
     let workspace_config = PartialWorkspaceConfig {
-        projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([(
+        projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([(
             "rust".into(),
             ".".into(),
         )]))),

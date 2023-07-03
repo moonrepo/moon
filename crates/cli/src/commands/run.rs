@@ -4,6 +4,7 @@ use miette::miette;
 use moon::{build_dep_graph, generate_project_graph, load_workspace};
 use moon_action_context::{ActionContext, ProfileType};
 use moon_action_pipeline::Pipeline;
+use moon_common::is_test_env;
 use moon_logger::map_list;
 use moon_project_graph::ProjectGraph;
 use moon_utils::is_ci;
@@ -57,7 +58,7 @@ pub async fn run_target(
         query_touched_files(
             &workspace,
             &mut QueryTouchedFilesOptions {
-                default_branch: !local,
+                default_branch: !local && !is_test_env(),
                 local,
                 status: options.status.clone(),
                 ..QueryTouchedFilesOptions::default()

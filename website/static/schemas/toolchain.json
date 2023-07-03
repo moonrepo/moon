@@ -5,6 +5,7 @@
   "type": "object",
   "properties": {
     "$schema": {
+      "default": "https://moonrepo.dev/schemas/toolchain.json",
       "anyOf": [
         {
           "type": "string"
@@ -109,6 +110,7 @@
       "type": "object",
       "properties": {
         "depsFile": {
+          "default": "deps.ts",
           "anyOf": [
             {
               "type": "string"
@@ -137,6 +139,7 @@
       "type": "object",
       "properties": {
         "addEnginesConstraint": {
+          "default": true,
           "anyOf": [
             {
               "type": "boolean"
@@ -171,6 +174,7 @@
           ]
         },
         "dedupeOnLockfileChange": {
+          "default": true,
           "anyOf": [
             {
               "type": "boolean"
@@ -231,6 +235,7 @@
           ]
         },
         "syncProjectWorkspaceDependencies": {
+          "default": true,
           "anyOf": [
             {
               "type": "boolean"
@@ -354,6 +359,7 @@
       "type": "object",
       "properties": {
         "createMissingConfig": {
+          "default": true,
           "anyOf": [
             {
               "type": "boolean"
@@ -364,6 +370,7 @@
           ]
         },
         "projectConfigFileName": {
+          "default": "tsconfig.json",
           "anyOf": [
             {
               "type": "string"
@@ -374,6 +381,7 @@
           ]
         },
         "rootConfigFileName": {
+          "default": "tsconfig.json",
           "anyOf": [
             {
               "type": "string"
@@ -384,6 +392,7 @@
           ]
         },
         "rootOptionsConfigFileName": {
+          "default": "tsconfig.options.json",
           "anyOf": [
             {
               "type": "string"
@@ -404,6 +413,7 @@
           ]
         },
         "syncProjectReferences": {
+          "default": true,
           "anyOf": [
             {
               "type": "boolean"

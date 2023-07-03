@@ -45,6 +45,7 @@ export type PartialTemplateVariable =
 	| PartialTemplateVariableStringSetting;
 
 export interface PartialTemplateConfig {
+	/** @default 'https://moonrepo.dev/schemas/template.json' */
 	$schema?: string | null;
 	description?: string | null;
 	title?: string | null;
@@ -52,6 +53,7 @@ export interface PartialTemplateConfig {
 }
 
 export interface PartialTemplateFrontmatterConfig {
+	/** @default 'https://moonrepo.dev/schemas/template-frontmatter.json' */
 	$schema?: string | null;
 	force?: boolean | null;
 	skip?: boolean | null;
@@ -101,6 +103,7 @@ export type TemplateVariable =
 	| TemplateVariableStringSetting;
 
 export interface TemplateConfig {
+	/** @default 'https://moonrepo.dev/schemas/template.json' */
 	$schema: string;
 	description: string;
 	title: string;
@@ -108,6 +111,7 @@ export interface TemplateConfig {
 }
 
 export interface TemplateFrontmatterConfig {
+	/** @default 'https://moonrepo.dev/schemas/template-frontmatter.json' */
 	$schema: string;
 	force: boolean;
 	skip: boolean;

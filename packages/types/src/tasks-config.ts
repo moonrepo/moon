@@ -48,6 +48,7 @@ export interface PartialTaskConfig {
 }
 
 export interface PartialInheritedTasksConfig {
+	/** @default 'https://moonrepo.dev/schemas/tasks.json' */
 	$schema?: string | null;
 	extends?: string | null;
 	fileGroups?: Record<string, string[]> | null;
@@ -90,6 +91,7 @@ export interface TaskConfig {
 }
 
 export interface InheritedTasksConfig {
+	/** @default 'https://moonrepo.dev/schemas/tasks.json' */
 	$schema: string;
 	extends: string | null;
 	fileGroups: Record<string, string[]>;

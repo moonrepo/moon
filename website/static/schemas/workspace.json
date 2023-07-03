@@ -5,6 +5,7 @@
   "type": "object",
   "properties": {
     "$schema": {
+      "default": "https://moonrepo.dev/schemas/workspace.json",
       "anyOf": [
         {
           "type": "string"
@@ -95,6 +96,7 @@
       ]
     },
     "telemetry": {
+      "default": true,
       "anyOf": [
         {
           "type": "boolean"
@@ -199,6 +201,7 @@
       "type": "object",
       "properties": {
         "enforceProjectTypeRelationships": {
+          "default": true,
           "anyOf": [
             {
               "type": "boolean"
@@ -255,6 +258,7 @@
       "type": "object",
       "properties": {
         "batchSize": {
+          "default": 2500,
           "anyOf": [
             {
               "type": "number"
@@ -285,6 +289,7 @@
           ]
         },
         "warnOnMissingInputs": {
+          "default": true,
           "anyOf": [
             {
               "type": "boolean"
@@ -332,6 +337,7 @@
           ]
         },
         "cacheLifetime": {
+          "default": "7 days",
           "anyOf": [
             {
               "type": "string"
@@ -342,6 +348,7 @@
           ]
         },
         "inheritColorsForPipedTasks": {
+          "default": true,
           "anyOf": [
             {
               "type": "boolean"
@@ -369,6 +376,7 @@
       "type": "object",
       "properties": {
         "defaultBranch": {
+          "default": "master",
           "anyOf": [
             {
               "type": "string"
@@ -444,6 +452,7 @@
       "additionalProperties": false
     },
     "PartialWorkspaceProjects": {
+      "title": "PartialWorkspaceProjects",
       "anyOf": [
         {
           "$ref": "#/definitions/PartialWorkspaceProjectsConfig"

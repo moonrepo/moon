@@ -19,7 +19,7 @@ pub enum TaskOptionAffectedFiles {
 impl Schematic for TaskOptionAffectedFiles {
     fn generate_schema() -> SchemaType {
         let mut schema = SchemaType::union(vec![
-            SchemaType::Boolean,
+            SchemaType::boolean(),
             SchemaType::String(StringType {
                 enum_values: Some(vec!["args".into(), "env".into()]),
                 ..Default::default()
@@ -67,7 +67,7 @@ impl TaskOptionEnvFile {
 
 impl Schematic for TaskOptionEnvFile {
     fn generate_schema() -> SchemaType {
-        let mut schema = SchemaType::union(vec![SchemaType::Boolean, SchemaType::string()]);
+        let mut schema = SchemaType::union(vec![SchemaType::boolean(), SchemaType::string()]);
         schema.set_name("TaskOptionEnvFile");
         schema
     }

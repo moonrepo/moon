@@ -5,6 +5,7 @@
   "type": "object",
   "properties": {
     "$schema": {
+      "default": "https://moonrepo.dev/schemas/tasks.json",
       "anyOf": [
         {
           "type": "string"
@@ -89,6 +90,7 @@
   "additionalProperties": false,
   "definitions": {
     "PartialTaskCommandArgs": {
+      "title": "PartialTaskCommandArgs",
       "anyOf": [
         {
           "type": "null"
@@ -402,6 +404,7 @@
       ]
     },
     "TaskOptionAffectedFiles": {
+      "title": "TaskOptionAffectedFiles",
       "anyOf": [
         {
           "type": "boolean"
@@ -416,6 +419,7 @@
       ]
     },
     "TaskOptionEnvFile": {
+      "title": "TaskOptionEnvFile",
       "anyOf": [
         {
           "type": "boolean"

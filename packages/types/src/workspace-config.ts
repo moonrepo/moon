@@ -11,6 +11,7 @@ export interface PartialCodeownersConfig {
 }
 
 export interface PartialConstraintsConfig {
+	/** @default true */
 	enforceProjectTypeRelationships?: boolean | null;
 	tagRelationships?: Record<string, string[]> | null;
 }
@@ -24,9 +25,11 @@ export type HasherOptimization = 'accuracy' | 'performance';
 export type HasherWalkStrategy = 'glob' | 'vcs';
 
 export interface PartialHasherConfig {
+	/** @default 2500 */
 	batchSize?: number | null;
 	optimization?: HasherOptimization | null;
 	walkStrategy?: HasherWalkStrategy | null;
+	/** @default true */
 	warnOnMissingInputs?: boolean | null;
 }
 
@@ -46,7 +49,9 @@ export type PartialWorkspaceProjects =
 
 export interface PartialRunnerConfig {
 	archivableTargets?: string[] | null;
+	/** @default '7 days' */
 	cacheLifetime?: string | null;
+	/** @default true */
 	inheritColorsForPipedTasks?: boolean | null;
 	logRunningCommand?: boolean | null;
 }
@@ -56,6 +61,7 @@ export type VcsManager = 'git';
 export type VcsProvider = 'bitbucket' | 'github' | 'gitlab' | 'other';
 
 export interface PartialVcsConfig {
+	/** @default 'master' */
 	defaultBranch?: string | null;
 	hooks?: Record<string, string[]> | null;
 	manager?: VcsManager | null;
@@ -65,6 +71,7 @@ export interface PartialVcsConfig {
 }
 
 export interface PartialWorkspaceConfig {
+	/** @default 'https://moonrepo.dev/schemas/workspace.json' */
 	$schema?: string | null;
 	codeowners?: PartialCodeownersConfig | null;
 	constraints?: PartialConstraintsConfig | null;
@@ -74,6 +81,7 @@ export interface PartialWorkspaceConfig {
 	notifier?: PartialNotifierConfig | null;
 	projects?: PartialWorkspaceProjects | null;
 	runner?: PartialRunnerConfig | null;
+	/** @default true */
 	telemetry?: boolean | null;
 	vcs?: PartialVcsConfig | null;
 	versionConstraint?: string | null;
@@ -86,6 +94,7 @@ export interface CodeownersConfig {
 }
 
 export interface ConstraintsConfig {
+	/** @default true */
 	enforceProjectTypeRelationships: boolean;
 	tagRelationships: Record<string, string[]>;
 }
@@ -95,9 +104,11 @@ export interface GeneratorConfig {
 }
 
 export interface HasherConfig {
+	/** @default 2500 */
 	batchSize: number;
 	optimization: HasherOptimization;
 	walkStrategy: HasherWalkStrategy;
+	/** @default true */
 	warnOnMissingInputs: boolean;
 }
 
@@ -114,12 +125,15 @@ export type WorkspaceProjects = WorkspaceProjectsConfig | string[] | Record<stri
 
 export interface RunnerConfig {
 	archivableTargets: string[];
+	/** @default '7 days' */
 	cacheLifetime: string;
+	/** @default true */
 	inheritColorsForPipedTasks: boolean;
 	logRunningCommand: boolean;
 }
 
 export interface VcsConfig {
+	/** @default 'master' */
 	defaultBranch: string;
 	hooks: Record<string, string[]>;
 	manager: VcsManager;
@@ -129,6 +143,7 @@ export interface VcsConfig {
 }
 
 export interface WorkspaceConfig {
+	/** @default 'https://moonrepo.dev/schemas/workspace.json' */
 	$schema: string;
 	codeowners: CodeownersConfig;
 	constraints: ConstraintsConfig;
@@ -138,6 +153,7 @@ export interface WorkspaceConfig {
 	notifier: NotifierConfig;
 	projects: WorkspaceProjects;
 	runner: RunnerConfig;
+	/** @default true */
 	telemetry: boolean;
 	vcs: VcsConfig;
 	versionConstraint: string | null;

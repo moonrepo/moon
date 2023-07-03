@@ -5,6 +5,7 @@
   "type": "object",
   "properties": {
     "$schema": {
+      "default": "https://moonrepo.dev/schemas/template.json",
       "anyOf": [
         {
           "type": "string"
@@ -54,6 +55,7 @@
   "additionalProperties": false,
   "definitions": {
     "PartialTemplateVariable": {
+      "title": "PartialTemplateVariable",
       "anyOf": [
         {
           "$ref": "#/definitions/PartialTemplateVariableBoolSetting"
@@ -177,6 +179,7 @@
       "additionalProperties": false
     },
     "PartialTemplateVariableEnumValue": {
+      "title": "PartialTemplateVariableEnumValue",
       "anyOf": [
         {
           "type": "string"

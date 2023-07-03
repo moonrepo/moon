@@ -36,6 +36,7 @@ export interface PartialOwnersConfig {
 	defaultOwner?: string | null;
 	optional?: boolean | null;
 	paths?: PartialOwnersPaths | null;
+	/** @default 1 */
 	requiredApprovals?: number | null;
 }
 
@@ -77,6 +78,7 @@ export interface PartialProjectWorkspaceConfig {
 }
 
 export interface PartialProjectConfig {
+	/** @default 'https://moonrepo.dev/schemas/project.json' */
 	$schema?: string | null;
 	dependsOn?: PartialProjectDependsOn[] | null;
 	env?: Record<string, string> | null;
@@ -108,6 +110,7 @@ export interface OwnersConfig {
 	defaultOwner: string | null;
 	optional: boolean;
 	paths: OwnersPaths;
+	/** @default 1 */
 	requiredApprovals: number;
 }
 
@@ -147,6 +150,7 @@ export interface ProjectWorkspaceConfig {
 }
 
 export interface ProjectConfig {
+	/** @default 'https://moonrepo.dev/schemas/project.json' */
 	$schema: string;
 	dependsOn: ProjectDependsOn[];
 	env: Record<string, string>;

@@ -8,37 +8,40 @@ use rustc_hash::FxHashMap;
 use schematic::{validate, Config, ConfigLoader, Path as SettingPath, PathSegment, ValidateError};
 use std::path::Path;
 
-// TODO
 // We can't use serde based types in the enum below to handle validation,
 // as serde fails to parse correctly. So we must manually validate here.
 fn validate_projects<D, C>(
-    projects: &WorkspaceProjects,
+    projects: &PartialWorkspaceProjects,
     _data: &D,
     _ctx: &C,
 ) -> Result<(), ValidateError> {
     match projects {
-        WorkspaceProjects::Both(WorkspaceProjectsConfig { globs, sources }) => {
-            for (i, g) in globs.iter().enumerate() {
-                ProjectGlobPath::from_str(g).map_err(|mut error| {
-                    error.path = SettingPath::new(vec![
-                        PathSegment::Key("globs".to_owned()),
-                        PathSegment::Index(i),
-                    ]);
-                    error
-                })?;
+        PartialWorkspaceProjects::Both(cfg) => {
+            if let Some(globs) = &cfg.globs {
+                for (i, g) in globs.iter().enumerate() {
+                    ProjectGlobPath::from_str(g).map_err(|mut error| {
+                        error.path = SettingPath::new(vec![
+                            PathSegment::Key("globs".to_owned()),
+                            PathSegment::Index(i),
+                        ]);
+                        error
+                    })?;
+                }
             }
 
-            for (k, v) in sources {
-                ProjectFilePath::from_str(v).map_err(|mut error| {
-                    error.path = SettingPath::new(vec![
-                        PathSegment::Key("sources".to_owned()),
-                        PathSegment::Key(k.to_string()),
-                    ]);
-                    error
-                })?;
+            if let Some(sources) = &cfg.sources {
+                for (k, v) in sources {
+                    ProjectFilePath::from_str(v).map_err(|mut error| {
+                        error.path = SettingPath::new(vec![
+                            PathSegment::Key("sources".to_owned()),
+                            PathSegment::Key(k.to_string()),
+                        ]);
+                        error
+                    })?;
+                }
             }
         }
-        WorkspaceProjects::Globs(globs) => {
+        PartialWorkspaceProjects::Globs(globs) => {
             for (i, g) in globs.iter().enumerate() {
                 ProjectGlobPath::from_str(g).map_err(|mut error| {
                     error.path = SettingPath::new(vec![PathSegment::Index(i)]);
@@ -46,7 +49,7 @@ fn validate_projects<D, C>(
                 })?;
             }
         }
-        WorkspaceProjects::Sources(sources) => {
+        PartialWorkspaceProjects::Sources(sources) => {
             for (k, v) in sources {
                 ProjectFilePath::from_str(v).map_err(|mut error| {
                     error.path = SettingPath::new(vec![PathSegment::Key(k.to_string())]);
@@ -107,7 +110,7 @@ pub struct WorkspaceConfig {
     #[setting(nested)]
     pub notifier: NotifierConfig,
 
-    #[setting(nested)]
+    #[setting(nested, validate = validate_projects)]
     pub projects: WorkspaceProjects,
 
     #[setting(nested)]

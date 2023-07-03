@@ -24,21 +24,20 @@ impl OwnersPaths {
     }
 }
 
-// TODO
 fn validate_paths<C>(
-    value: &OwnersPaths,
+    value: &PartialOwnersPaths,
     data: &PartialOwnersConfig,
     _context: &C,
 ) -> Result<(), ValidateError> {
     match value {
-        OwnersPaths::List(list) => {
+        PartialOwnersPaths::List(list) => {
             if !list.is_empty() && data.default_owner.is_none() {
                 return Err(ValidateError::new(
                     "a default owner is required when defining a list of paths",
                 ));
             }
         }
-        OwnersPaths::Map(map) => {
+        PartialOwnersPaths::Map(map) => {
             for (key, value) in map {
                 if value.is_empty() && data.default_owner.is_none() {
                     return Err(ValidateError::with_segment(
@@ -76,7 +75,7 @@ cacheable!(
         // GitLab
         pub optional: bool,
 
-        #[setting(nested)]
+        #[setting(nested, validate = validate_paths)]
         pub paths: OwnersPaths,
 
         // GitLab

@@ -8,23 +8,21 @@ use schematic::{
     derive_enum, merge, Config, ConfigEnum, ConfigLoader, Format, PathSegment, ValidateError,
 };
 
-fn validate_command<D, C>(cmd: &TaskCommandArgs, _task: &D, _ctx: &C) -> Result<(), ValidateError> {
-    let empty = match cmd {
-        TaskCommandArgs::None => false,
-        TaskCommandArgs::String(cmd_string) => {
-            let mut parts = cmd_string.split(' ');
+fn validate_command<D, C>(args: &str, _task: &D, _ctx: &C) -> Result<(), ValidateError> {
+    let mut parts = args.split(' ');
+    let cmd = parts.next();
 
-            if let Some(part) = parts.next() {
-                part.is_empty()
-            } else {
-                true
-            }
-        }
-        TaskCommandArgs::List(cmd_args) => cmd_args.is_empty() || cmd_args[0].is_empty(),
-    };
+    if cmd.is_none() || cmd.unwrap().is_empty() {
+        return Err(ValidateError::new(
+            "a command is required; use \"noop\" otherwise",
+        ));
+    }
 
-    // Only fail for empty strings and not `None`
-    if empty {
+    Ok(())
+}
+
+fn validate_command_list<D, C>(args: &[String], _task: &D, _ctx: &C) -> Result<(), ValidateError> {
+    if args.is_empty() || args[0].is_empty() {
         return Err(ValidateError::new(
             "a command is required; use \"noop\" otherwise",
         ));
@@ -62,7 +60,9 @@ cacheable!(
     pub enum TaskCommandArgs {
         #[setting(default, null)]
         None,
+        #[setting(validate = validate_command)]
         String(String),
+        #[setting(validate = validate_command_list)]
         List(Vec<String>),
     }
 );
@@ -70,7 +70,7 @@ cacheable!(
 cacheable!(
     #[derive(Clone, Config, Debug, Eq, PartialEq)]
     pub struct TaskConfig {
-        #[setting(nested)] // validate = validate_command)]
+        #[setting(nested)]
         pub command: TaskCommandArgs,
 
         #[setting(nested)]

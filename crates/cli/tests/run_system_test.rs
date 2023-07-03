@@ -281,7 +281,7 @@ mod unix {
         }
 
         #[test]
-        fn creates_runfile() {
+        fn creates_snapshot() {
             let sandbox = system_sandbox();
 
             sandbox.run_moon(|cmd| {
@@ -290,7 +290,7 @@ mod unix {
 
             assert!(sandbox
                 .path()
-                .join(".moon/cache/states/unix/runfile.json")
+                .join(".moon/cache/states/unix/snapshot.json")
                 .exists());
         }
 
@@ -567,7 +567,7 @@ mod windows {
         }
 
         #[test]
-        fn creates_runfile() {
+        fn creates_snapshot() {
             let sandbox = system_sandbox();
 
             sandbox.run_moon(|cmd| {
@@ -576,7 +576,7 @@ mod windows {
 
             assert!(sandbox
                 .path()
-                .join(".moon/cache/states/windows/runfile.json")
+                .join(".moon/cache/states/windows/snapshot.json")
                 .exists());
         }
 

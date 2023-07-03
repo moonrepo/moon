@@ -1,6 +1,6 @@
 use crate::helpers::LOG_TARGET;
 use crate::items::{CommonState, DependenciesState, ProjectsState, RunTargetState, ToolState};
-use crate::runfiles::Runfile;
+use crate::runfiles::Snapshot;
 use crate::{get_cache_mode, CacheMode};
 use moon_common::consts::CONFIG_DIRNAME;
 use moon_logger::{debug, trace};
@@ -162,12 +162,12 @@ impl CacheEngine {
         Ok(())
     }
 
-    pub fn create_runfile<T: DeserializeOwned + Serialize>(
+    pub fn create_snapshot<T: DeserializeOwned + Serialize>(
         &self,
         project_id: &str,
         data: &T,
-    ) -> miette::Result<Runfile> {
-        Runfile::load(self.get_state_path(project_id).join("runfile.json"), data)
+    ) -> miette::Result<Snapshot> {
+        Snapshot::load(self.get_state_path(project_id).join("snapshot.json"), data)
     }
 
     pub fn get_hash_archive_path(&self, hash: &str) -> PathBuf {

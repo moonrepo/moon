@@ -5,23 +5,23 @@ use starbase_styles::color;
 use starbase_utils::{fs, json};
 use std::path::PathBuf;
 
-pub struct Runfile {
+pub struct Snapshot {
     pub path: PathBuf,
 }
 
-impl Runfile {
+impl Snapshot {
     pub fn load<T: DeserializeOwned + Serialize>(
         path: PathBuf,
         data: &T,
-    ) -> miette::Result<Runfile> {
-        trace!(target: "moon:cache:runfile", "Writing runfile {}", color::path(&path));
+    ) -> miette::Result<Snapshot> {
+        trace!(target: "moon:cache:snapshot", "Writing snapshot {}", color::path(&path));
 
         fs::create_dir_all(path.parent().unwrap())?;
 
-        // Always write a runfile, regardless of MOON_CACHE,
+        // Always write a snapshot, regardless of MOON_CACHE,
         // since consumers expect this to exist at runtime
         json::write_file(&path, data, true)?;
 
-        Ok(Runfile { path })
+        Ok(Snapshot { path })
     }
 }

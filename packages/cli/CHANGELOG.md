@@ -19,6 +19,7 @@
 #### ⚙️ Internal
 
 - Modernized the code generator and project constraints implementation.
+- Renamed runfile to snapshot throughout.
 
 ## 1.9.2
 

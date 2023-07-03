@@ -119,10 +119,18 @@ pub async fn query_touched_files(
         })
         .collect();
 
-    if options.log {
+    if !touched_files_to_log.is_empty() {
         touched_files_to_log.sort();
 
-        println!("{}", touched_files_to_log.join("\n"));
+        if options.log {
+            println!("{}", touched_files_to_log.join("\n"));
+        } else {
+            debug!(
+                target: LOG_TARGET,
+                "Found touched files:\n{}",
+                touched_files_to_log.join("\n")
+            );
+        }
     }
 
     Ok(touched_files)

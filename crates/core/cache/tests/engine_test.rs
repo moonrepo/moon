@@ -53,20 +53,20 @@ mod create {
     }
 }
 
-mod create_runfile {
+mod create_snapshot {
     use super::*;
 
     #[test]
     #[serial]
-    fn creates_runfile_on_call() {
+    fn creates_on_call() {
         let dir = create_temp_dir();
         let cache = CacheEngine::load(dir.path()).unwrap();
-        let runfile = cache.create_runfile("123", &"content".to_owned()).unwrap();
+        let snapshot = cache.create_snapshot("123", &"content".to_owned()).unwrap();
 
-        assert!(runfile.path.exists());
+        assert!(snapshot.path.exists());
 
         assert_eq!(
-            fs::read_to_string(dir.path().join(".moon/cache/states/123/runfile.json")).unwrap(),
+            fs::read_to_string(dir.path().join(".moon/cache/states/123/snapshot.json")).unwrap(),
             "\"content\""
         );
 

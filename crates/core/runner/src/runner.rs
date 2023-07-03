@@ -335,12 +335,12 @@ impl<'a> Runner<'a> {
             path::to_string(&self.workspace.working_dir)?,
         );
         env_vars.insert(
-            "MOON_PROJECT_RUNFILE".to_owned(),
+            "MOON_PROJECT_SNAPSHOT".to_owned(),
             path::to_string(
                 self.workspace
                     .cache
                     .get_state_path(&self.project.id)
-                    .join("runfile.json"),
+                    .join("snapshot.json"),
             )?,
         );
         // env_vars.insert("PROTO_SKIP_USED_AT".to_owned(), "true".to_owned());

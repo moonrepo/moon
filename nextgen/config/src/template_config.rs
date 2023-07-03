@@ -27,7 +27,10 @@ pub struct TemplateVariableEnumValueConfig {
 }
 
 #[derive(Config, Debug, Eq, PartialEq)]
-#[config(serde(untagged))]
+#[config(serde(
+    untagged,
+    expecting = "expected a value string or value object with label"
+))]
 pub enum TemplateVariableEnumValue {
     String(String),
     #[setting(nested)]
@@ -44,7 +47,7 @@ pub struct TemplateVariableEnumSetting {
 }
 
 #[derive(Config, Debug, Eq, PartialEq)]
-#[config(serde(tag = "type"))]
+#[config(serde(tag = "type", expecting = "expected a supported value type"))]
 pub enum TemplateVariable {
     #[setting(nested)]
     Boolean(TemplateVariableBoolSetting),

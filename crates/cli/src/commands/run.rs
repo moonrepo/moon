@@ -52,11 +52,13 @@ pub async fn run_target(
 
     // Always query for a touched files list as it'll be used by many actions
     let touched_files = if !options.force && (options.affected || workspace.vcs.is_enabled()) {
+        let local = is_local(&options);
+
         query_touched_files(
             &workspace,
             &mut QueryTouchedFilesOptions {
-                default_branch: true,
-                local: is_local(&options),
+                default_branch: !local,
+                local,
                 status: options.status.clone(),
                 ..QueryTouchedFilesOptions::default()
             },

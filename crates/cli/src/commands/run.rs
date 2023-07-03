@@ -55,6 +55,7 @@ pub async fn run_target(
         query_touched_files(
             &workspace,
             &mut QueryTouchedFilesOptions {
+                default_branch: true,
                 local: is_local(&options),
                 status: options.status.clone(),
                 ..QueryTouchedFilesOptions::default()

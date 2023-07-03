@@ -5,6 +5,8 @@
 #### 🚀 Updates
 
 - Updated `moon ci` to include a summary of all failed actions.
+- Updated `moon run` to compare against the previous commit when running on the default branch and
+  using `--remote`.
 - Updated the run report to include stderr/stdout for all attempts.
 
 #### 🐞 Fixes

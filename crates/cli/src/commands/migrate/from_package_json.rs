@@ -2,7 +2,9 @@ use super::check_dirty_repo;
 use moon::{generate_project_graph, load_workspace};
 use moon_common::consts::CONFIG_PROJECT_FILENAME;
 use moon_common::Id;
-use moon_config::{DependencyConfig, DependencyScope, ProjectConfig, ProjectDependsOn};
+use moon_config::{
+    DependencyScope, PartialDependencyConfig, PartialProjectDependsOn, ProjectConfig,
+};
 use moon_logger::info;
 use moon_node_lang::package_json::{DepsSet, PackageJson};
 use moon_node_platform::create_tasks_from_scripts;
@@ -43,12 +45,12 @@ pub async fn from_package_json(project_id: Id, skip_touched_files_check: bool) -
             if let Some(dep_id) = package_map.get(package_name) {
                 partial_config.depends_on.get_or_insert(vec![]).push(
                     if matches!(scope, DependencyScope::Production) {
-                        ProjectDependsOn::String(dep_id.to_owned())
+                        PartialProjectDependsOn::String(dep_id.to_owned())
                     } else {
-                        ProjectDependsOn::Object(DependencyConfig {
-                            id: dep_id.to_owned(),
-                            scope,
-                            ..DependencyConfig::default()
+                        PartialProjectDependsOn::Object(PartialDependencyConfig {
+                            id: Some(dep_id.to_owned()),
+                            scope: Some(scope),
+                            ..PartialDependencyConfig::default()
                         })
                     },
                 );

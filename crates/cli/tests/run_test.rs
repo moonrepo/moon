@@ -158,7 +158,7 @@ mod configs {
         let output = assert.output();
 
         assert!(predicate::str::contains(
-            "projects: expected a sequence of globs or a map of projects"
+            "projects: expected a list of globs, a map of projects, or both"
         )
         .eval(&output));
     }

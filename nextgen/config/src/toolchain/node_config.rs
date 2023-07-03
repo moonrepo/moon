@@ -64,19 +64,19 @@ derive_enum!(
     }
 );
 
-#[derive(Debug, Clone, Config, Serialize)]
+#[derive(Clone, Config, Debug, Serialize)]
 pub struct NpmConfig {
     #[setting(env = "MOON_NPM_VERSION", validate = validate_semver)]
     pub version: Option<String>,
 }
 
-#[derive(Debug, Clone, Config, Serialize)]
+#[derive(Clone, Config, Debug, Serialize)]
 pub struct PnpmConfig {
     #[setting(env = "MOON_PNPM_VERSION", validate = validate_semver)]
     pub version: Option<String>,
 }
 
-#[derive(Debug, Clone, Config, Serialize)]
+#[derive(Clone, Config, Debug, Serialize)]
 pub struct YarnConfig {
     pub plugins: Vec<String>,
 
@@ -85,7 +85,7 @@ pub struct YarnConfig {
 }
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain#node
-#[derive(Debug, Clone, Config, Serialize)]
+#[derive(Clone, Config, Debug, Serialize)]
 pub struct NodeConfig {
     #[setting(default = true)]
     pub add_engines_constraint: bool,

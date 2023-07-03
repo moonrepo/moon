@@ -78,8 +78,9 @@ mod template_config {
     mod variables {
         use super::*;
         use moon_config::{
-            TemplateVariable, TemplateVariableEnumSetting, TemplateVariableEnumValue,
-            TemplateVariableSetting,
+            TemplateVariable, TemplateVariableBoolSetting, TemplateVariableEnumSetting,
+            TemplateVariableEnumValue, TemplateVariableEnumValueConfig,
+            TemplateVariableNumberSetting, TemplateVariableStringSetting,
         };
 
         #[test]
@@ -119,7 +120,7 @@ variables:
 
             assert_eq!(
                 *config.variables.get("bool").unwrap(),
-                TemplateVariable::Boolean(TemplateVariableSetting {
+                TemplateVariable::Boolean(TemplateVariableBoolSetting {
                     default: false,
                     prompt: Some("prompt".into()),
                     required: Some(true)
@@ -163,7 +164,7 @@ variables:
 
             assert_eq!(
                 *config.variables.get("num").unwrap(),
-                TemplateVariable::Number(TemplateVariableSetting {
+                TemplateVariable::Number(TemplateVariableNumberSetting {
                     default: 123,
                     prompt: Some("prompt".into()),
                     required: Some(false)
@@ -205,7 +206,7 @@ variables:
 
             assert_eq!(
                 *config.variables.get("str").unwrap(),
-                TemplateVariable::String(TemplateVariableSetting {
+                TemplateVariable::String(TemplateVariableStringSetting {
                     default: "abc".into(),
                     prompt: None,
                     required: None
@@ -260,10 +261,10 @@ variables:
                     values: vec![
                         TemplateVariableEnumValue::String("a".into()),
                         TemplateVariableEnumValue::String("b".into()),
-                        TemplateVariableEnumValue::Object {
+                        TemplateVariableEnumValue::Object(TemplateVariableEnumValueConfig {
                             label: "C".into(),
                             value: "c".into()
-                        }
+                        })
                     ],
                 })
             );

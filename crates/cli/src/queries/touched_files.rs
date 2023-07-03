@@ -6,15 +6,16 @@ use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
 use starbase::AppResult;
 use starbase_styles::color;
+use std::env;
 
 const LOG_TARGET: &str = "moon:query:touched-files";
 
 #[derive(Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct QueryTouchedFilesOptions {
-    pub base: String,
+    pub base: Option<String>,
     pub default_branch: bool,
-    pub head: String,
+    pub head: Option<String>,
     pub json: bool,
     pub local: bool,
     #[serde(skip)]
@@ -39,14 +40,6 @@ pub async fn query_touched_files(
     let default_branch = vcs.get_default_branch().await?;
     let current_branch = vcs.get_local_branch().await?;
 
-    if options.base.is_empty() {
-        options.base = default_branch.to_owned();
-    }
-
-    if options.head.is_empty() {
-        options.head = "HEAD".to_string();
-    }
-
     // On default branch, so compare against self -1 revision
     let touched_files_map = if options.default_branch && vcs.is_default_branch(current_branch) {
         trace!(
@@ -60,14 +53,20 @@ pub async fn query_touched_files(
 
         // On a branch, so compare branch against remote base/default branch
     } else if !options.local {
+        let base = env::var("MOON_BASE")
+            .unwrap_or_else(|_| options.base.as_deref().unwrap_or(default_branch).to_owned());
+
+        let head = env::var("MOON_HEAD")
+            .unwrap_or_else(|_| options.head.as_deref().unwrap_or("HEAD").to_owned());
+
         trace!(
             target: LOG_TARGET,
             "Against remote using base \"{}\" with head \"{}\"",
-            options.base,
-            options.head,
+            base,
+            head,
         );
 
-        vcs.get_touched_files_between_revisions(&options.base, &options.head)
+        vcs.get_touched_files_between_revisions(&base, &head)
             .await?
 
         // Otherwise, check locally touched files
@@ -119,10 +118,18 @@ pub async fn query_touched_files(
         })
         .collect();
 
-    if options.log {
+    if !touched_files_to_log.is_empty() {
         touched_files_to_log.sort();
 
-        println!("{}", touched_files_to_log.join("\n"));
+        if options.log {
+            println!("{}", touched_files_to_log.join("\n"));
+        } else {
+            debug!(
+                target: LOG_TARGET,
+                "Found touched files:\n{}",
+                touched_files_to_log.join("\n")
+            );
+        }
     }
 
     Ok(touched_files)

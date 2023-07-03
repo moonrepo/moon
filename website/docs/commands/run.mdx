@@ -54,5 +54,6 @@ $ moon run :build --query "language=javascript && projectType=library"
 - `--affected` - Only run target if affected by changed files, _otherwise_ will always run.
 - `--remote` - Determine affected against remote by comparing `HEAD` against a base revision
   (default branch), _otherwise_ uses local changes.
+  - Can control revisions with `MOON_BASE` and `MOON_HEAD`.
 - `--status <type>` - Filter affected based on a change status. Can be passed multiple times.
   - Types: `all` (default), `added`, `deleted`, `modified`, `staged`, `unstaged`, `untracked`

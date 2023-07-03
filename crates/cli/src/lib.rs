@@ -249,9 +249,9 @@ pub async fn run_cli() -> AppResult {
                 status,
             } => {
                 query::touched_files(&mut QueryTouchedFilesOptions {
-                    base: base.unwrap_or_default(),
+                    base,
                     default_branch,
-                    head: head.unwrap_or_default(),
+                    head,
                     json,
                     local,
                     log: false,

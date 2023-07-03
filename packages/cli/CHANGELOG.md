@@ -4,7 +4,12 @@
 
 #### 🚀 Updates
 
+- Added support for `MOON_BASE` and `MOON_HEAD` environment variables.
+  - Will be used when diffing across branches or commits.
+  - Works for both `moon ci` and `moon run`.
 - Updated `moon ci` to include a summary of all failed actions.
+- Updated `moon run` to compare against the previous commit when running on the default branch and
+  using `--remote`.
 - Updated the run report to include stderr/stdout for all attempts.
 
 #### 🐞 Fixes

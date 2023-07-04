@@ -9,7 +9,7 @@ pub struct BinConfig {
 
     pub local: bool,
 
-    pub version: Option<String>,
+    pub name: Option<String>,
 }
 
 #[derive(Clone, Config, Debug, Eq, PartialEq, Serialize)]
@@ -21,16 +21,10 @@ pub enum BinEntry {
 }
 
 impl BinEntry {
-    pub fn get_package_identifier(&self) -> String {
+    pub fn get_name(&self) -> &str {
         match self {
-            BinEntry::Name(name) => name.to_owned(),
-            BinEntry::Config(cfg) => {
-                if let Some(version) = cfg.version.as_ref() {
-                    format!("{}@{version}", cfg.bin)
-                } else {
-                    cfg.bin.to_owned()
-                }
-            }
+            BinEntry::Name(name) => name,
+            BinEntry::Config(cfg) => &cfg.bin,
         }
     }
 }

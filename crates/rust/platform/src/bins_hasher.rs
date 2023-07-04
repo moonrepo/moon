@@ -18,8 +18,8 @@ impl Hasher for RustBinsHasher {
                 BinEntry::Config(cfg) => {
                     sha.update(cfg.bin.as_bytes());
 
-                    if let Some(version) = cfg.version.as_ref() {
-                        sha.update(version.as_bytes());
+                    if let Some(name) = cfg.name.as_ref() {
+                        sha.update(name.as_bytes());
                     }
 
                     sha.update(cfg.force.to_string());

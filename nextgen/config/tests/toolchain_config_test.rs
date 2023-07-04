@@ -1,6 +1,6 @@
 mod utils;
 
-use moon_config::{BinEntry, NodePackageManager, ToolchainConfig};
+use moon_config::{BinConfig, BinEntry, NodePackageManager, ToolchainConfig};
 use proto::ToolsConfig;
 use starbase_sandbox::create_sandbox;
 use std::env;
@@ -101,6 +101,37 @@ deno:
 
             assert_eq!(cfg.deps_file, "dependencies.ts".to_owned());
             assert!(cfg.lockfile);
+        }
+
+        #[test]
+        fn can_set_bin_objects() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+deno:
+  bins:
+    - https://deno.land/std@0.192.0/http/file_server.ts
+    - bin: https://deno.land/std@0.192.0/http/file_server.ts
+      name: 'fs'
+      force: true
+",
+                |path| ToolchainConfig::load_from(path, &ToolsConfig::default()),
+            );
+
+            let cfg = config.deno.unwrap();
+
+            assert_eq!(
+                cfg.bins,
+                vec![
+                    BinEntry::Name("https://deno.land/std@0.192.0/http/file_server.ts".into()),
+                    BinEntry::Config(BinConfig {
+                        bin: "https://deno.land/std@0.192.0/http/file_server.ts".into(),
+                        name: Some("fs".into()),
+                        force: true,
+                        ..BinConfig::default()
+                    }),
+                ]
+            );
         }
 
         #[test]
@@ -430,6 +461,44 @@ rust:
             let cfg = config.rust.unwrap();
 
             assert_eq!(cfg.bins, vec![BinEntry::Name("cargo-make".into())]);
+            assert!(cfg.sync_toolchain_config);
+        }
+
+        #[test]
+        fn can_set_bin_objects() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+rust:
+  bins:
+    - cargo-make
+    - bin: cargo-nextest
+      name: 'next'
+    - bin: cargo-insta
+      local: true
+  syncToolchainConfig: true
+",
+                |path| ToolchainConfig::load_from(path, &ToolsConfig::default()),
+            );
+
+            let cfg = config.rust.unwrap();
+
+            assert_eq!(
+                cfg.bins,
+                vec![
+                    BinEntry::Name("cargo-make".into()),
+                    BinEntry::Config(BinConfig {
+                        bin: "cargo-nextest".into(),
+                        name: Some("next".into()),
+                        ..BinConfig::default()
+                    }),
+                    BinEntry::Config(BinConfig {
+                        bin: "cargo-insta".into(),
+                        local: true,
+                        ..BinConfig::default()
+                    }),
+                ]
+            );
             assert!(cfg.sync_toolchain_config);
         }
 

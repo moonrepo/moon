@@ -20,7 +20,7 @@ use moon_rust_tool::RustTool;
 use moon_task::Task;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{Tool, ToolError, ToolManager};
-use moon_utils::{async_trait, string_vec};
+use moon_utils::async_trait;
 use proto::{rust::RustLanguage, Executable, Proto};
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
@@ -240,28 +240,29 @@ impl Platform for RustPlatform {
             debug!(
                 target: LOG_TARGET,
                 "Installing Cargo binaries: {}",
-                map_list(&self.config.bins, |b| color::label(
-                    b.get_package_identifier()
-                ))
+                map_list(&self.config.bins, |b| color::label(b.get_name()))
             );
 
-            let mut args = string_vec!["binstall", "--no-confirm", "--log-level", "info"];
-
             for bin in &self.config.bins {
-                if let BinEntry::Config(cfg) = bin {
-                    if cfg.local && is_ci() {
-                        continue;
-                    }
+                let mut args = vec!["binstall", "--no-confirm", "--log-level", "info"];
 
-                    if cfg.force {
-                        args.push("--force".into());
+                match bin {
+                    BinEntry::Name(name) => args.push(name),
+                    BinEntry::Config(cfg) => {
+                        if cfg.local && is_ci() {
+                            continue;
+                        }
+
+                        if cfg.force {
+                            args.push("--force");
+                        }
+
+                        args.push(&cfg.bin);
                     }
                 };
 
-                args.push(bin.get_package_identifier());
+                tool.exec_cargo(args, working_dir).await?;
             }
-
-            tool.exec_cargo(args, working_dir).await?;
         }
 
         Ok(())

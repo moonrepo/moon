@@ -3279,6 +3279,7 @@ dependencies = [
  "moon_task",
  "moon_task_builder",
  "rustc-hash",
+ "starbase_events",
  "starbase_sandbox",
  "thiserror",
  "tracing",

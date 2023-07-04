@@ -2,7 +2,17 @@
 
 /* eslint-disable */
 
+export interface PartialBinConfig {
+	bin?: string | null;
+	force?: boolean | null;
+	local?: boolean | null;
+	name?: string | null;
+}
+
+export type PartialBinEntry = string | PartialBinConfig;
+
 export interface PartialDenoConfig {
+	bins?: PartialBinEntry[] | null;
 	/** @default 'deps.ts' */
 	depsFile?: string | null;
 	lockfile?: boolean | null;
@@ -57,15 +67,6 @@ export interface PartialNodeConfig {
 	yarn?: PartialYarnConfig | null;
 }
 
-export interface PartialBinConfig {
-	bin?: string | null;
-	force?: boolean | null;
-	local?: boolean | null;
-	version?: string | null;
-}
-
-export type PartialBinEntry = string | PartialBinConfig;
-
 export interface PartialRustConfig {
 	bins?: PartialBinEntry[] | null;
 	syncToolchainConfig?: boolean | null;
@@ -97,7 +98,17 @@ export interface PartialToolchainConfig {
 	typescript?: PartialTypeScriptConfig | null;
 }
 
+export interface BinConfig {
+	bin: string;
+	force: boolean;
+	local: boolean;
+	name: string | null;
+}
+
+export type BinEntry = string | BinConfig;
+
 export interface DenoConfig {
+	bins: BinEntry[];
 	/** @default 'deps.ts' */
 	depsFile: string;
 	lockfile: boolean;
@@ -134,15 +145,6 @@ export interface NodeConfig {
 	version: string | null;
 	yarn: YarnConfig | null;
 }
-
-export interface BinConfig {
-	bin: string;
-	force: boolean;
-	local: boolean;
-	version: string | null;
-}
-
-export type BinEntry = string | BinConfig;
 
 export interface RustConfig {
 	bins: BinEntry[];

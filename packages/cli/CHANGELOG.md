@@ -7,6 +7,7 @@
 - Added support for `MOON_BASE` and `MOON_HEAD` environment variables.
   - Will be used when diffing across branches or commits.
   - Works for both `moon ci` and `moon run`.
+- Added `deno.bins` support in `.moon/toolchain.yml`.
 - Updated `moon ci` to include a summary of all failed actions.
 - Updated `moon run` to compare against the previous commit when running on the default branch and
   using `--remote`.

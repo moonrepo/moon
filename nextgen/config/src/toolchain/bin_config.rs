@@ -13,7 +13,7 @@ pub struct BinConfig {
 }
 
 #[derive(Clone, Config, Debug, Eq, PartialEq, Serialize)]
-#[config(serde(untagged, expecting = "expecting a bin name, or bin config object"))]
+#[serde(untagged, expecting = "expecting a bin name, or bin config object")]
 pub enum BinEntry {
     Name(String),
     #[setting(nested)]

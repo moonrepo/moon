@@ -138,7 +138,7 @@
             }
           ]
         },
-        "version": {
+        "name": {
           "anyOf": [
             {
               "type": "string"
@@ -167,6 +167,19 @@
       "description": "Docs: https://moonrepo.dev/docs/config/toolchain#deno",
       "type": "object",
       "properties": {
+        "bins": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PartialBinEntry"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "depsFile": {
           "default": "deps.ts",
           "anyOf": [

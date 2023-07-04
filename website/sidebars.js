@@ -189,10 +189,10 @@ const sidebars = {
 		'guides/ci',
 		'guides/codegen',
 		'guides/codeowners',
+		'guides/debug-task',
 		'guides/docker',
 		'guides/offline-mode',
 		'guides/open-source',
-		'guides/profile',
 		'guides/remote-cache',
 		'guides/root-project',
 		'guides/sharing-config',
@@ -210,6 +210,7 @@ const sidebars = {
 			items: [
 				'guides/javascript/deno-handbook',
 				'guides/javascript/node-handbook',
+				'guides/profile',
 				'guides/javascript/typescript-project-refs',
 				{
 					type: 'category',

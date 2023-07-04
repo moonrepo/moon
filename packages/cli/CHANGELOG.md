@@ -16,6 +16,10 @@
 
 - Fixed an issue where failed target run attempts would not appear in the run report.
 
+#### 📚 Documentation
+
+- Added a new in-depth "Debugging a task" guide.
+
 #### ⚙️ Internal
 
 - Modernized the code generator and project constraints implementation.

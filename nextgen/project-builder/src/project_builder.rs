@@ -9,7 +9,7 @@ use moon_config::{
 use moon_file_group::FileGroup;
 use moon_project::Project;
 use moon_task::Task;
-use moon_task_builder::TasksBuilder;
+use moon_task_builder::{DetectPlatformEvent, TasksBuilder, TasksBuilderContext};
 use rustc_hash::FxHashMap;
 use starbase_events::Emitter;
 use std::collections::BTreeMap;
@@ -17,13 +17,14 @@ use std::path::{Path, PathBuf};
 use tracing::debug;
 
 pub struct ProjectBuilderContext<'app> {
-    detect_language: &'app Emitter<DetectLanguageEvent>,
-    toolchain_config: &'app ToolchainConfig,
-    workspace_root: &'app Path,
+    pub detect_language: &'app Emitter<DetectLanguageEvent>,
+    pub detect_platform: &'app Emitter<DetectPlatformEvent>,
+    pub toolchain_config: &'app ToolchainConfig,
+    pub workspace_root: &'app Path,
 }
 
 pub struct ProjectBuilder<'app> {
-    context: &'app ProjectBuilderContext<'app>,
+    context: ProjectBuilderContext<'app>,
 
     // Configs to derive information from
     global_config: Option<InheritedTasksResult>,
@@ -41,7 +42,7 @@ impl<'app> ProjectBuilder<'app> {
     pub fn new(
         id: &'app str,
         source: &'app str,
-        context: &'app ProjectBuilderContext<'app>,
+        context: ProjectBuilderContext<'app>,
     ) -> miette::Result<Self> {
         debug!(id, source, "Building project {} from source", color::id(id));
 
@@ -301,12 +302,12 @@ impl<'app> ProjectBuilder<'app> {
             self.id,
             self.source.as_str(),
             &self.platform,
-            self.workspace_root,
+            TasksBuilderContext {
+                detect_platform: self.context.detect_platform,
+                toolchain_config: self.context.toolchain_config,
+                workspace_root: self.context.workspace_root,
+            },
         );
-
-        if let Some(detector) = self.platform_detector.take() {
-            tasks_builder.detect_platform(detector, self.toolchain_config.as_ref().unwrap());
-        }
 
         if let Some(global_config) = &self.global_config {
             tasks_builder.inherit_global_tasks(
@@ -321,6 +322,6 @@ impl<'app> ProjectBuilder<'app> {
             tasks_builder.load_local_tasks(local_config);
         }
 
-        tasks_builder.build()
+        tasks_builder.build().await
     }
 }

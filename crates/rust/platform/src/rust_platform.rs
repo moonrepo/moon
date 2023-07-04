@@ -1,8 +1,9 @@
 use crate::{bins_hasher::RustBinsHasher, find_cargo_lock, target_hasher::RustTargetHasher};
 use moon_action_context::ActionContext;
-use moon_common::Id;
+use moon_common::{is_ci, Id};
 use moon_config::{
-    HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, RustConfig,
+    BinEntry, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap,
+    RustConfig,
 };
 use moon_hasher::HashSet;
 use moon_logger::{debug, map_list};
@@ -236,19 +237,31 @@ impl Platform for RustPlatform {
             }
 
             // Then attempt to install binaries
-            // debug!(
-            //     target: LOG_TARGET,
-            //     "Installing Cargo binaries: {}",
-            //     map_list(&self.config.bins, |b| color::label(b))
-            // );
+            debug!(
+                target: LOG_TARGET,
+                "Installing Cargo binaries: {}",
+                map_list(&self.config.bins, |b| color::label(
+                    b.get_package_identifier()
+                ))
+            );
 
-            // let mut args = string_vec!["binstall", "--no-confirm", "--log-level", "info"];
+            let mut args = string_vec!["binstall", "--no-confirm", "--log-level", "info"];
 
-            // for bin in &self.config.bins {
-            //     args.push(bin.to_owned());
-            // }
+            for bin in &self.config.bins {
+                if let BinEntry::Config(cfg) = bin {
+                    if cfg.local && is_ci() {
+                        continue;
+                    }
 
-            // tool.exec_cargo(args, working_dir).await?;
+                    if cfg.force {
+                        args.push("--force".into());
+                    }
+                };
+
+                args.push(bin.get_package_identifier());
+            }
+
+            tool.exec_cargo(args, working_dir).await?;
         }
 
         Ok(())

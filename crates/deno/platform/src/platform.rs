@@ -1,5 +1,5 @@
-use crate::actions;
 use crate::target_hasher::DenoTargetHasher;
+use crate::{actions, bins_hasher::DenoBinsHasher};
 use moon_action_context::ActionContext;
 use moon_common::{color, is_ci, Id};
 use moon_config::{
@@ -265,6 +265,12 @@ impl Platform for DenoPlatform {
         hashset: &mut HashSet,
         _hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
+        if !self.config.bins.is_empty() {
+            hashset.hash(DenoBinsHasher {
+                bins: self.config.bins.clone(),
+            });
+        }
+
         let mut hasher = DepsHasher::new("deno".into());
         let project_root = manifest_path.parent().unwrap();
 

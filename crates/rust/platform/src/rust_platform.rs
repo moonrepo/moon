@@ -1,8 +1,9 @@
 use crate::{bins_hasher::RustBinsHasher, find_cargo_lock, target_hasher::RustTargetHasher};
 use moon_action_context::ActionContext;
-use moon_common::Id;
+use moon_common::{is_ci, Id};
 use moon_config::{
-    HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, RustConfig,
+    BinEntry, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap,
+    RustConfig,
 };
 use moon_hasher::HashSet;
 use moon_logger::{debug, map_list};
@@ -19,7 +20,7 @@ use moon_rust_tool::RustTool;
 use moon_task::Task;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{Tool, ToolError, ToolManager};
-use moon_utils::{async_trait, string_vec};
+use moon_utils::async_trait;
 use proto::{rust::RustLanguage, Executable, Proto};
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
@@ -239,16 +240,29 @@ impl Platform for RustPlatform {
             debug!(
                 target: LOG_TARGET,
                 "Installing Cargo binaries: {}",
-                map_list(&self.config.bins, |b| color::label(b))
+                map_list(&self.config.bins, |b| color::label(b.get_name()))
             );
 
-            let mut args = string_vec!["binstall", "--no-confirm", "--log-level", "info"];
-
             for bin in &self.config.bins {
-                args.push(bin.to_owned());
-            }
+                let mut args = vec!["binstall", "--no-confirm", "--log-level", "info"];
 
-            tool.exec_cargo(args, working_dir).await?;
+                match bin {
+                    BinEntry::Name(name) => args.push(name),
+                    BinEntry::Config(cfg) => {
+                        if cfg.local && is_ci() {
+                            continue;
+                        }
+
+                        if cfg.force {
+                            args.push("--force");
+                        }
+
+                        args.push(&cfg.bin);
+                    }
+                };
+
+                tool.exec_cargo(args, working_dir).await?;
+            }
         }
 
         Ok(())

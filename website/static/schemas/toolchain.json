@@ -104,11 +104,82 @@
         "nvm"
       ]
     },
+    "PartialBinConfig": {
+      "title": "PartialBinConfig",
+      "type": "object",
+      "properties": {
+        "bin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "force": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "local": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "PartialBinEntry": {
+      "title": "PartialBinEntry",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/PartialBinConfig"
+        }
+      ]
+    },
     "PartialDenoConfig": {
       "title": "PartialDenoConfig",
       "description": "Docs: https://moonrepo.dev/docs/config/toolchain#deno",
       "type": "object",
       "properties": {
+        "bins": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PartialBinEntry"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "depsFile": {
           "default": "deps.ts",
           "anyOf": [
@@ -322,7 +393,7 @@
             {
               "type": "array",
               "items": {
-                "type": "string"
+                "$ref": "#/definitions/PartialBinEntry"
               }
             },
             {

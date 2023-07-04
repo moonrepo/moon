@@ -46,6 +46,26 @@ taking precedence over those defined in the extended configuration.
 
 Enables and configures [Deno](../guides/javascript/deno-handbook).
 
+### `bins`<VersionLabel version="1.10.0" />
+
+<HeadingApiLink to="/api/types/interface/DenoConfig#bins" />
+
+A list of binaries to install globally into Deno (`~/.deno/bin`). This setting requires a list of
+URLs or binary configuration objects with the following fields:
+
+- `bin` (required) - URL of the binary.
+- `name` - Provide a custom name for the binary.
+- `local` - Only install the binary locally, and not in CI.
+- `force` - Force install the binary. This _should_ be toggled for one-offs.
+
+```yaml title=".moon/toolchain.yml" {2-5}
+deno:
+  bins:
+    - 'https://deno.land/std@0.192.0/http/file_server.ts'
+    - bin: 'https://deno.land/std@0.192.0/http/file_server.ts'
+      name: 'fs'
+```
+
 ### `depsFile`
 
 <HeadingApiLink to="/api/types/interface/DenoConfig#depsFile" />
@@ -508,20 +528,28 @@ rust:
 
 > Version can also be defined with [`.prototools`](../proto/config).
 
-### `bins`
+### `bins`<VersionLabel version="1.10.0" updated />
 
 <HeadingApiLink to="/api/types/interface/RustConfig#bins" />
 
-A list of crates/binaries (with optional versions) to install into Cargo (`~/.cargo/bin`), and make
-them available to the `cargo` command. Binaries will be installed with
+A list of binaries (with optional versions) to install into Cargo (`~/.cargo/bin`), and make them
+available to the `cargo` command. Binaries will be installed with
 [`cargo-binstall`](https://crates.io/crates/cargo-binstall) in an effort to reduce build and
 compilation times.
 
-```yaml title=".moon/toolchain.yml" {2-4}
+This setting requires a list of package names or binary configuration objects with the following
+fields:
+
+- `bin` (required) - Name of the binary.
+- `local` - Only install the binary locally, and not in CI.
+- `force` - Force install the binary. This _should_ be toggled for one-offs.
+
+```yaml title=".moon/toolchain.yml" {2-5}
 rust:
   bins:
-    - 'cargo-make@0.35.0'
-    - 'cargo-nextest'
+    - 'cargo-nextest@0.9.52'
+    - bin: 'cargo-nextest'
+      local: true
 ```
 
 Binaries that have been installed into Cargo can be referenced from task commands:

@@ -4,11 +4,11 @@ use serde::Serialize;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct RustBinsHasher {
+pub struct DenoBinsHasher {
     pub bins: Vec<BinEntry>,
 }
 
-impl Hasher for RustBinsHasher {
+impl Hasher for DenoBinsHasher {
     fn hash(&self, sha: &mut Sha256) {
         for bin in &self.bins {
             match bin {

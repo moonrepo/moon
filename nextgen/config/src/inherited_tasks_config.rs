@@ -84,9 +84,9 @@ fn is_js_platform(platform: &PlatformType) -> bool {
 cacheable!(
     #[derive(Clone, Debug, Default)]
     pub struct InheritedTasksResult {
-        pub config: InheritedTasksConfig,
-        pub layers: BTreeMap<String, PartialInheritedTasksConfig>,
         pub order: Vec<String>,
+        pub layers: BTreeMap<String, PartialInheritedTasksConfig>,
+        pub config: InheritedTasksConfig,
     }
 );
 

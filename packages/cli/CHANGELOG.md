@@ -7,9 +7,13 @@
 - Added support for `MOON_BASE` and `MOON_HEAD` environment variables.
   - Will be used when diffing across branches or commits.
   - Works for both `moon ci` and `moon run`.
+- Added `deno.bins` support in `.moon/toolchain.yml`.
 - Updated `moon ci` to include a summary of all failed actions.
 - Updated `moon run` to compare against the previous commit when running on the default branch and
   using `--remote`.
+- Updated `rust.bins` in `.moon/toolchain.yml` to support an object for each bin entry.
+  - Can denote bins as CI or local only.
+  - Can force install bins.
 - Updated the run report to include stderr/stdout for all attempts.
 
 #### 🐞 Fixes

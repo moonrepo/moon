@@ -1,15 +1,15 @@
-use crate::actions;
 use crate::target_hasher::DenoTargetHasher;
+use crate::{actions, bins_hasher::DenoBinsHasher};
 use moon_action_context::ActionContext;
-use moon_common::Id;
+use moon_common::{color, is_ci, Id};
 use moon_config::{
-    DenoConfig, DependencyConfig, HasherConfig, HasherOptimization, PlatformType, ProjectConfig,
-    ProjectsAliasesMap, TypeScriptConfig,
+    BinEntry, DenoConfig, DependencyConfig, HasherConfig, HasherOptimization, PlatformType,
+    ProjectConfig, ProjectsAliasesMap, TypeScriptConfig,
 };
 use moon_deno_lang::{load_lockfile_dependencies, DenoJson, DENO_DEPS};
 use moon_deno_tool::DenoTool;
 use moon_hasher::{DepsHasher, HashSet};
-use moon_logger::debug;
+use moon_logger::{debug, map_list};
 use moon_platform::{Platform, Runtime, Version};
 use moon_process::Command;
 use moon_project::Project;
@@ -189,6 +189,55 @@ impl Platform for DenoPlatform {
             .exec_stream_output()
             .await?;
 
+        // Then attempt to install binaries
+        if !self.config.bins.is_empty() {
+            print_checkpoint("deno install", Checkpoint::Setup);
+
+            debug!(
+                target: LOG_TARGET,
+                "Installing Deno binaries: {}",
+                map_list(&self.config.bins, |b| color::label(b.get_name()))
+            );
+
+            for bin in &self.config.bins {
+                let mut args = vec![
+                    "install",
+                    "--allow-net",
+                    "--allow-read",
+                    "--no-prompt",
+                    "--lock",
+                    DENO_DEPS.lockfile,
+                ];
+
+                match bin {
+                    BinEntry::Name(name) => args.push(name),
+                    BinEntry::Config(cfg) => {
+                        if cfg.local && is_ci() {
+                            continue;
+                        }
+
+                        if cfg.force {
+                            args.push("--force");
+                        }
+
+                        if let Some(name) = &cfg.name {
+                            args.push("--name");
+                            args.push(name);
+                        }
+
+                        args.push(&cfg.bin);
+                    }
+                };
+
+                Command::new(tool.get_bin_path()?)
+                    .args(args)
+                    .cwd(working_dir)
+                    .create_async()
+                    .exec_stream_output()
+                    .await?;
+            }
+        }
+
         Ok(())
     }
 
@@ -216,6 +265,12 @@ impl Platform for DenoPlatform {
         hashset: &mut HashSet,
         _hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
+        if !self.config.bins.is_empty() {
+            hashset.hash(DenoBinsHasher {
+                bins: self.config.bins.clone(),
+            });
+        }
+
         let mut hasher = DepsHasher::new("deno".into());
         let project_root = manifest_path.parent().unwrap();
 

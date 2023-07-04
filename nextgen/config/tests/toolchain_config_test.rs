@@ -1,6 +1,6 @@
 mod utils;
 
-use moon_config::{NodePackageManager, ToolchainConfig};
+use moon_config::{BinEntry, NodePackageManager, ToolchainConfig};
 use proto::ToolsConfig;
 use starbase_sandbox::create_sandbox;
 use std::env;
@@ -411,7 +411,7 @@ node:
 
             let cfg = config.rust.unwrap();
 
-            assert_eq!(cfg.bins, Vec::<String>::new());
+            assert!(cfg.bins.is_empty());
             assert!(!cfg.sync_toolchain_config);
         }
 
@@ -429,7 +429,7 @@ rust:
 
             let cfg = config.rust.unwrap();
 
-            assert_eq!(cfg.bins, vec!["cargo-make"]);
+            assert_eq!(cfg.bins, vec![BinEntry::Name("cargo-make".into())]);
             assert!(cfg.sync_toolchain_config);
         }
 

@@ -104,6 +104,64 @@
         "nvm"
       ]
     },
+    "PartialBinConfig": {
+      "title": "PartialBinConfig",
+      "type": "object",
+      "properties": {
+        "bin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "force": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "local": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "PartialBinEntry": {
+      "title": "PartialBinEntry",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/PartialBinConfig"
+        }
+      ]
+    },
     "PartialDenoConfig": {
       "title": "PartialDenoConfig",
       "description": "Docs: https://moonrepo.dev/docs/config/toolchain#deno",
@@ -322,7 +380,7 @@
             {
               "type": "array",
               "items": {
-                "type": "string"
+                "$ref": "#/definitions/PartialBinEntry"
               }
             },
             {

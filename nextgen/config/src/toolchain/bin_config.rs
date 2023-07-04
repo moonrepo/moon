@@ -1,6 +1,7 @@
 use schematic::Config;
+use serde::Serialize;
 
-#[derive(Clone, Config, Debug)]
+#[derive(Clone, Config, Debug, Eq, PartialEq, Serialize)]
 pub struct BinConfig {
     pub bin: String,
 
@@ -11,7 +12,7 @@ pub struct BinConfig {
     pub version: Option<String>,
 }
 
-#[derive(Clone, Config, Debug)]
+#[derive(Clone, Config, Debug, Eq, PartialEq, Serialize)]
 #[config(serde(untagged, expecting = "expecting a bin name, or bin config object"))]
 pub enum BinEntry {
     Name(String),

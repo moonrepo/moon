@@ -356,11 +356,11 @@ impl Platform for RustPlatform {
         hashset: &mut HashSet,
         _hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
-        // if !self.config.bins.is_empty() {
-        //     hashset.hash(RustBinsHasher {
-        //         bins: self.config.bins.clone(),
-        //     });
-        // }
+        if !self.config.bins.is_empty() {
+            hashset.hash(RustBinsHasher {
+                bins: self.config.bins.clone(),
+            });
+        }
 
         // NOTE: Since Cargo has no way to install dependencies, we don't actually need this!
         // However, will leave it around incase a new cargo command is added in the future.

@@ -57,8 +57,17 @@ export interface PartialNodeConfig {
 	yarn?: PartialYarnConfig | null;
 }
 
+export interface PartialBinConfig {
+	bin?: string | null;
+	force?: boolean | null;
+	local?: boolean | null;
+	version?: string | null;
+}
+
+export type PartialBinEntry = string | PartialBinConfig;
+
 export interface PartialRustConfig {
-	bins?: string[] | null;
+	bins?: PartialBinEntry[] | null;
 	syncToolchainConfig?: boolean | null;
 	version?: string | null;
 }
@@ -126,8 +135,17 @@ export interface NodeConfig {
 	yarn: YarnConfig | null;
 }
 
+export interface BinConfig {
+	bin: string;
+	force: boolean;
+	local: boolean;
+	version: string | null;
+}
+
+export type BinEntry = string | BinConfig;
+
 export interface RustConfig {
-	bins: string[];
+	bins: BinEntry[];
 	syncToolchainConfig: boolean;
 	version: string | null;
 }

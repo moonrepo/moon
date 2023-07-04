@@ -6,6 +6,7 @@ use schematic::schema::typescript::{TypeScriptOptions, TypeScriptRenderer};
 use schematic::schema::SchemaGenerator;
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
+use std::process::Command;
 
 fn generate_project() {
     let mut generator = SchemaGenerator::default();
@@ -158,4 +159,9 @@ fn main() {
     generate_template();
     generate_toolchain();
     generate_workspace();
+
+    // Run prettier
+    let mut cmd = Command::new("node_modules/.bin/prettier");
+    cmd.args(["--write", "packages/types"]);
+    cmd.output().unwrap();
 }

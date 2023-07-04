@@ -236,19 +236,19 @@ impl Platform for RustPlatform {
             }
 
             // Then attempt to install binaries
-            debug!(
-                target: LOG_TARGET,
-                "Installing Cargo binaries: {}",
-                map_list(&self.config.bins, |b| color::label(b))
-            );
+            // debug!(
+            //     target: LOG_TARGET,
+            //     "Installing Cargo binaries: {}",
+            //     map_list(&self.config.bins, |b| color::label(b))
+            // );
 
-            let mut args = string_vec!["binstall", "--no-confirm", "--log-level", "info"];
+            // let mut args = string_vec!["binstall", "--no-confirm", "--log-level", "info"];
 
-            for bin in &self.config.bins {
-                args.push(bin.to_owned());
-            }
+            // for bin in &self.config.bins {
+            //     args.push(bin.to_owned());
+            // }
 
-            tool.exec_cargo(args, working_dir).await?;
+            // tool.exec_cargo(args, working_dir).await?;
         }
 
         Ok(())
@@ -343,11 +343,11 @@ impl Platform for RustPlatform {
         hashset: &mut HashSet,
         _hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
-        if !self.config.bins.is_empty() {
-            hashset.hash(RustBinsHasher {
-                bins: self.config.bins.clone(),
-            });
-        }
+        // if !self.config.bins.is_empty() {
+        //     hashset.hash(RustBinsHasher {
+        //         bins: self.config.bins.clone(),
+        //     });
+        // }
 
         // NOTE: Since Cargo has no way to install dependencies, we don't actually need this!
         // However, will leave it around incase a new cargo command is added in the future.

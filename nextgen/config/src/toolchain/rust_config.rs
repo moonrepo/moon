@@ -1,10 +1,9 @@
 use super::bin_config::BinEntry;
 use crate::validate::validate_semver;
 use schematic::Config;
-use serde::Serialize;
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain#rust
-#[derive(Clone, Config, Debug, Serialize)]
+#[derive(Clone, Config, Debug)]
 pub struct RustConfig {
     #[setting(nested)]
     pub bins: Vec<BinEntry>,

@@ -51,6 +51,7 @@ const workspaceRows: Comparison[] = [
 	{
 		feature: 'Ignore file support',
 		support: {
+			moon: [SUPPORTED, 'via `hasher.ignorePatterns`'],
 			nx: [SUPPORTED, '.nxignore'],
 		},
 	},
@@ -429,7 +430,7 @@ const taskRunnerRows: Comparison[] = [
 	{
 		feature: 'Remote / cloud caching and syncing',
 		support: {
-			moon: [SUPPORTED, 'with moonrepo.app (free + paid)'],
+			moon: [SUPPORTED, 'with moonrepo.app (free / paid)'],
 			nx: [SUPPORTED, 'with Nx cloud (paid)'],
 			turborepo: [SUPPORTED, 'requires a Vercel account (free)'],
 		},

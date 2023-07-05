@@ -1,4 +1,5 @@
 use crate::errors::RunnerError;
+use moon_action_context::TargetState;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
 use moon_hasher::{hash_btree, hash_vec, Digest, Hasher, Sha256};
@@ -104,24 +105,15 @@ impl TargetHasher {
     pub fn hash_task_deps(
         &mut self,
         task: &Task,
-        hashes: &FxHashMap<Target, String>,
+        states: &FxHashMap<Target, TargetState>,
     ) -> miette::Result<()> {
         for dep in &task.deps {
             self.deps.insert(
                 dep.id.to_owned(),
-                match hashes.get(dep) {
-                    Some(hash) => {
-                        if hash == "failed" || hash == "skipped" {
-                            return Err(RunnerError::MissingDependencyHash(
-                                dep.id.to_owned(),
-                                task.target.id.to_owned(),
-                            )
-                            .into());
-                        }
-
-                        hash.to_owned()
-                    }
-                    None => {
+                match states.get(dep) {
+                    Some(TargetState::Completed(hash)) => hash.to_owned(),
+                    Some(TargetState::Passthrough) => "passthrough".into(),
+                    _ => {
                         return Err(RunnerError::MissingDependencyHash(
                             dep.id.to_owned(),
                             task.target.id.to_owned(),

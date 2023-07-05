@@ -1,5 +1,5 @@
 use moon_action::{Action, ActionStatus};
-use moon_action_context::ActionContext;
+use moon_action_context::{ActionContext, TargetState};
 use moon_emitter::Emitter;
 use moon_logger::debug;
 use moon_platform::Runtime;
@@ -40,10 +40,10 @@ pub async fn run_target(
         let mut ctx = context.write().await;
 
         for dep in &task.deps {
-            if let Some(dep_hash) = ctx.target_hashes.get(dep) {
-                if dep_hash == "failed" || dep_hash == "skipped" {
-                    ctx.target_hashes
-                        .insert(task.target.clone(), "skipped".into());
+            if let Some(dep_state) = ctx.target_states.get(dep) {
+                if !dep_state.is_complete() {
+                    ctx.target_states
+                        .insert(task.target.clone(), TargetState::Skipped);
 
                     debug!(
                         target: LOG_TARGET,
@@ -83,8 +83,8 @@ pub async fn run_target(
         context
             .write()
             .await
-            .target_hashes
-            .insert(target.clone(), "passthrough".into());
+            .target_states
+            .insert(target.clone(), TargetState::Passthrough);
     }
 
     let attempts_result = if is_cache_enabled {
@@ -120,8 +120,8 @@ pub async fn run_target(
             context
                 .write()
                 .await
-                .target_hashes
-                .insert(target.clone(), "failed".into());
+                .target_states
+                .insert(target.clone(), TargetState::Failed);
 
             return Err(err);
         }

@@ -11,6 +11,21 @@ pub enum ProfileType {
     Heap,
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(tag = "state", content = "hash", rename_all = "lowercase")]
+pub enum TargetState {
+    Completed(String),
+    Failed,
+    Skipped,
+    Passthrough,
+}
+
+impl TargetState {
+    pub fn is_complete(&self) -> bool {
+        matches!(self, TargetState::Completed(_) | TargetState::Passthrough)
+    }
+}
+
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ActionContext {
@@ -26,7 +41,7 @@ pub struct ActionContext {
 
     pub profile: Option<ProfileType>,
 
-    pub target_hashes: FxHashMap<Target, String>,
+    pub target_states: FxHashMap<Target, TargetState>,
 
     pub touched_files: FxHashSet<WorkspaceRelativePathBuf>,
 

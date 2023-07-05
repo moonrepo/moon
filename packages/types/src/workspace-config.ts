@@ -27,6 +27,8 @@ export type HasherWalkStrategy = 'glob' | 'vcs';
 export interface PartialHasherConfig {
 	/** @default 2500 */
 	batchSize?: number | null;
+	ignoreMissingPatterns?: string[] | null;
+	ignorePatterns?: string[] | null;
 	optimization?: HasherOptimization | null;
 	walkStrategy?: HasherWalkStrategy | null;
 	/** @default true */
@@ -106,6 +108,8 @@ export interface GeneratorConfig {
 export interface HasherConfig {
 	/** @default 2500 */
 	batchSize: number;
+	ignoreMissingPatterns: string[];
+	ignorePatterns: string[];
 	optimization: HasherOptimization;
 	walkStrategy: HasherWalkStrategy;
 	/** @default true */

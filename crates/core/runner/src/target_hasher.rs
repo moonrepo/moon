@@ -110,7 +110,17 @@ impl TargetHasher {
             self.deps.insert(
                 dep.id.to_owned(),
                 match hashes.get(dep) {
-                    Some(hash) => hash.to_owned(),
+                    Some(hash) => {
+                        if hash == "failed" || hash == "skipped" {
+                            return Err(RunnerError::MissingDependencyHash(
+                                dep.id.to_owned(),
+                                task.target.id.to_owned(),
+                            )
+                            .into());
+                        }
+
+                        hash.to_owned()
+                    }
                     None => {
                         return Err(RunnerError::MissingDependencyHash(
                             dep.id.to_owned(),

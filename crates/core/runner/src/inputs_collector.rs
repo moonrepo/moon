@@ -3,7 +3,7 @@ use moon_common::{
     path::{standardize_separators, WorkspaceRelativePathBuf},
 };
 use moon_config::{HasherConfig, HasherWalkStrategy};
-use moon_logger::warn;
+use moon_logger::{debug, warn};
 use moon_task::Task;
 use moon_utils::{is_ci, path};
 use moon_vcs::BoxedVcs;
@@ -24,6 +24,7 @@ fn convert_paths_to_strings(
     hasher_config: &HasherConfig,
 ) -> miette::Result<Vec<String>> {
     let mut files: Vec<String> = vec![];
+    let ignore = GlobSet::new(&hasher_config.ignore_patterns)?;
     let ignore_missing = GlobSet::new(&hasher_config.ignore_missing_patterns)?;
 
     for path in paths {
@@ -58,7 +59,15 @@ fn convert_paths_to_strings(
             continue;
         }
 
-        files.push(standardize_separators(path::to_string(rel_path)?));
+        if ignore.is_match(path) {
+            debug!(
+                target: log_target,
+                "Not hashing input {} as it matches an ignore pattern",
+                color::path(rel_path),
+            );
+        } else {
+            files.push(standardize_separators(path::to_string(rel_path)?));
+        }
     }
 
     Ok(files)

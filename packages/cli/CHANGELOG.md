@@ -8,7 +8,8 @@
   - Will be used when diffing across branches or commits.
   - Works for both `moon ci` and `moon run`.
 - Added `deno.bins` setting to `.moon/toolchain.yml`.
-- Added `hasher.ignoreMissingPatterns` to `.moon/workspace.yml`.
+- Added `hasher.ignorePatterns` and `hasher.ignoreMissingPatterns` settings to
+  `.moon/workspace.yml`.
 - Updated `moon ci` to include a summary of all failed actions.
 - Updated `moon run` to compare against the previous commit when running on the default branch and
   using `--remote`.

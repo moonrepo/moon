@@ -6,6 +6,7 @@ use moon_platform::Runtime;
 use moon_project::Project;
 use moon_runner::Runner;
 use moon_target::Target;
+use moon_terminal::Checkpoint;
 use moon_workspace::Workspace;
 use starbase_styles::color;
 use std::env;
@@ -28,6 +29,7 @@ pub async fn run_target(
     let emitter = emitter.read().await;
     let workspace = workspace.read().await;
     let task = project.get_task(&target.task_id)?;
+    let mut runner = Runner::new(&emitter, &workspace, project, task)?;
 
     debug!(
         target: LOG_TARGET,
@@ -43,22 +45,23 @@ pub async fn run_target(
             if let Some(dep_state) = ctx.target_states.get(dep) {
                 if !dep_state.is_complete() {
                     ctx.target_states
-                        .insert(task.target.clone(), TargetState::Skipped);
+                        .insert(target.clone(), TargetState::Skipped);
 
                     debug!(
                         target: LOG_TARGET,
                         "Dependency {} of {} has failed or has been skipped, skipping this target",
-                        color::label(&dep),
+                        color::label(dep),
                         color::label(&task.target)
                     );
+
+                    runner.print_checkpoint(Checkpoint::RunFailed, &["skipped"])?;
+                    runner.flush_output()?;
 
                     return Ok(ActionStatus::Skipped);
                 }
             }
         }
     }
-
-    let mut runner = Runner::new(&emitter, &workspace, project, task)?;
 
     // If the VCS root does not exist (like in a Docker container),
     // we should avoid failing and simply disable caching.
@@ -106,6 +109,12 @@ pub async fn run_target(
             let status = if action.set_attempts(attempts, &task.command) {
                 ActionStatus::Passed
             } else {
+                context
+                    .write()
+                    .await
+                    .target_states
+                    .insert(target.clone(), TargetState::Failed);
+
                 ActionStatus::Failed
             };
 
@@ -123,7 +132,7 @@ pub async fn run_target(
                 .target_states
                 .insert(target.clone(), TargetState::Failed);
 
-            return Err(err);
+            Err(err)
         }
     }
 }

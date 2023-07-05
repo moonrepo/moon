@@ -31,6 +31,11 @@ export interface Action {
 	status: ActionStatus;
 }
 
+export interface TargetState {
+	state: 'completed' | 'failed' | 'passthrough' | 'skipped';
+	hash?: string;
+}
+
 export interface ActionContext {
 	affectedOnly: boolean;
 	initialTargets: string[];
@@ -38,7 +43,7 @@ export interface ActionContext {
 	passthroughArgs: string[];
 	primaryTargets: string[];
 	profile: 'cpu' | 'heap' | null;
-	targetHashes: Record<string, string>;
+	targetStates: Record<string, TargetState>;
 	touchedFiles: string[];
 	workspaceRoot: string;
 }

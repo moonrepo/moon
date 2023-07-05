@@ -4,7 +4,7 @@ use crate::helpers::detect_projects_with_globs;
 use crate::project_graph::{GraphType, IndicesType, ProjectGraph, LOG_TARGET};
 use crate::token_resolver::{TokenContext, TokenResolver};
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_common::{consts, Id};
+use moon_common::{consts, is_test_env, Id};
 use moon_config::{InputPath, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceProjects};
 use moon_hasher::{convert_paths_to_strings, to_hash};
 use moon_logger::{debug, map_list, trace, warn};
@@ -64,6 +64,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
     pub fn build(&mut self) -> miette::Result<ProjectGraph> {
         self.enforce_constraints()?;
+        self.validate_outputs()?;
 
         Ok(ProjectGraph::new(
             mem::take(&mut self.graph),
@@ -646,5 +647,36 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             Some(project_id) => project_id,
             None => alias_or_id,
         })
+    }
+
+    fn validate_outputs(&self) -> miette::Result<()> {
+        // TODO: Remove when we refactor the graph
+        if is_test_env() || env::var("MOON_DISABLE_OVERLAPPING_OUTPUTS").is_ok() {
+            return Ok(());
+        }
+
+        let mut outputs = FxHashMap::<&WorkspaceRelativePathBuf, &Target>::default();
+
+        for project in self.graph.node_weights() {
+            for task in project.tasks.values() {
+                let mut paths = FxHashSet::default();
+                paths.extend(&task.output_paths);
+                paths.extend(&task.output_globs);
+
+                for path in paths {
+                    if let Some(existing_target) = outputs.get(&path) {
+                        return Err(ProjectGraphError::OverlappingTaskOutputs {
+                            output: path.to_string(),
+                            targets: vec![(*existing_target).to_owned(), task.target.to_owned()],
+                        }
+                        .into());
+                    }
+
+                    outputs.insert(path, &task.target);
+                }
+            }
+        }
+
+        Ok(())
     }
 }

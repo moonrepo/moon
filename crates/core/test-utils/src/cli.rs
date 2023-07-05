@@ -18,6 +18,8 @@ pub fn create_moon_command<T: AsRef<Path>>(path: T) -> assert_cmd::Command {
     // Enable logging for code coverage
     cmd.env("MOON_LOG", "trace");
     cmd.env("PROTO_LOG", "trace");
+    // Feature flags
+    // cmd.env("MOON_DISABLE_OVERLAPPING_OUTPUTS", "true");
     cmd
 }
 

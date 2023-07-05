@@ -72,7 +72,7 @@ function mockReport(): RunReport {
 			passthroughArgs: [],
 			primaryTargets: [],
 			profile: null,
-			targetHashes: {},
+			targetStates: {},
 			touchedFiles: [],
 			workspaceRoot: '',
 		},

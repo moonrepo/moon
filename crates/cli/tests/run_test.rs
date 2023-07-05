@@ -600,11 +600,11 @@ mod hashing {
         // Hashes change because `.moon/workspace.yml` is different from `walk_strategy`
         assert_eq!(
             hash_vcs,
-            "9ffd42e4882528bb44ae0cb5e7f705fa5aa40b81792c6f2b1010a3d977c2a43d"
+            "cfed7d902ce197ea76a924f31d513f741b7ac5e82d162c8a2a121756ec3c1b41"
         );
         assert_eq!(
             hash_glob,
-            "c6cb49b5ba54547f1735be77ebca2fdd7489dc6e727085ccd6027563e2cfe126"
+            "2722726fbc183ffdd19d648eedd76019f652f3206d6ebe1cb0ecaf8d15d0b5c9"
         );
     }
 }
@@ -809,10 +809,10 @@ mod outputs {
 
         moon_archive::untar(tarball, &dir, None).unwrap();
 
-        assert!(dir.join("outputs/build/one.js").exists());
-        assert!(dir.join("outputs/build/two.js").exists());
-        assert!(!dir.join("outputs/build/styles.css").exists());
-        assert!(!dir.join("outputs/build/image.png").exists());
+        assert!(dir.join("outputs/multiple-types/one.js").exists());
+        assert!(dir.join("outputs/multiple-types/two.js").exists());
+        assert!(!dir.join("outputs/multiple-types/styles.css").exists());
+        assert!(!dir.join("outputs/multiple-types/image.png").exists());
     }
 
     #[test]
@@ -835,8 +835,8 @@ mod outputs {
 
         assert!(dir.join("stdout.log").exists());
         assert!(dir.join("stderr.log").exists());
-        assert!(dir.join("outputs/lib/one.js").exists());
-        assert!(dir.join("outputs/esm/two.js").exists());
+        assert!(dir.join("outputs/both/a/one.js").exists());
+        assert!(dir.join("outputs/both/b/two.js").exists());
     }
 
     #[test]
@@ -859,8 +859,8 @@ mod outputs {
 
         assert!(dir.join("stdout.log").exists());
         assert!(dir.join("stderr.log").exists());
-        assert!(dir.join("lib/one.js").exists());
-        assert!(dir.join("esm/two.js").exists());
+        assert!(dir.join("both/a/one.js").exists());
+        assert!(dir.join("both/b/two.js").exists());
     }
 
     #[test]
@@ -960,19 +960,19 @@ mod outputs {
             });
 
             // Remove outputs
-            fs::remove_dir_all(sandbox.path().join("outputs/esm")).unwrap();
-            fs::remove_dir_all(sandbox.path().join("outputs/lib")).unwrap();
+            fs::remove_dir_all(sandbox.path().join("outputs/both/a")).unwrap();
+            fs::remove_dir_all(sandbox.path().join("outputs/both/b")).unwrap();
 
-            assert!(!sandbox.path().join("outputs/esm").exists());
-            assert!(!sandbox.path().join("outputs/lib").exists());
+            assert!(!sandbox.path().join("outputs/both/a").exists());
+            assert!(!sandbox.path().join("outputs/both/b").exists());
 
             sandbox.run_moon(|cmd| {
                 cmd.arg("run").arg("outputs:generateFileAndFolder");
             });
 
             // Outputs should come back
-            assert!(sandbox.path().join("outputs/esm").exists());
-            assert!(sandbox.path().join("outputs/lib").exists());
+            assert!(sandbox.path().join("outputs/both/a").exists());
+            assert!(sandbox.path().join("outputs/both/b").exists());
         }
 
         #[test]
@@ -985,7 +985,8 @@ mod outputs {
             });
 
             let hash1 = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder");
-            let contents1 = fs::read_to_string(sandbox.path().join("outputs/lib/one.js")).unwrap();
+            let contents1 =
+                fs::read_to_string(sandbox.path().join("outputs/both/a/one.js")).unwrap();
 
             // Create a file to trigger an inputs change
             sandbox.create_file("outputs/trigger.js", "");
@@ -995,18 +996,19 @@ mod outputs {
             });
 
             let hash2 = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder");
-            let contents2 = fs::read_to_string(sandbox.path().join("outputs/lib/one.js")).unwrap();
+            let contents2 =
+                fs::read_to_string(sandbox.path().join("outputs/both/a/one.js")).unwrap();
 
             // Hashes and contents should be different!
             assert_ne!(hash1, hash2);
             assert_ne!(contents1, contents2);
 
             // Remove outputs
-            fs::remove_dir_all(sandbox.path().join("outputs/esm")).unwrap();
-            fs::remove_dir_all(sandbox.path().join("outputs/lib")).unwrap();
+            fs::remove_dir_all(sandbox.path().join("outputs/both/a")).unwrap();
+            fs::remove_dir_all(sandbox.path().join("outputs/both/b")).unwrap();
 
-            assert!(!sandbox.path().join("outputs/esm").exists());
-            assert!(!sandbox.path().join("outputs/lib").exists());
+            assert!(!sandbox.path().join("outputs/both/a").exists());
+            assert!(!sandbox.path().join("outputs/both/b").exists());
 
             // Remove the trigger file
             fs::remove_file(sandbox.path().join("outputs/trigger.js")).unwrap();
@@ -1016,7 +1018,8 @@ mod outputs {
             });
 
             let hash3 = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder");
-            let contents3 = fs::read_to_string(sandbox.path().join("outputs/lib/one.js")).unwrap();
+            let contents3 =
+                fs::read_to_string(sandbox.path().join("outputs/both/a/one.js")).unwrap();
 
             // Hashes and contents should match the original!
             assert_eq!(hash1, hash3);
@@ -1024,8 +1027,8 @@ mod outputs {
             assert_ne!(contents2, contents3);
 
             // Outputs should come back
-            assert!(sandbox.path().join("outputs/esm").exists());
-            assert!(sandbox.path().join("outputs/lib").exists());
+            assert!(sandbox.path().join("outputs/both/a").exists());
+            assert!(sandbox.path().join("outputs/both/b").exists());
         }
     }
 

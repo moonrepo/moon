@@ -321,15 +321,14 @@ impl Pipeline {
 
         for result in results {
             let status = match result.status {
-                ActionStatus::Passed
-                | ActionStatus::Cached
-                | ActionStatus::CachedFromRemote
-                | ActionStatus::Skipped => color::success("pass"),
+                ActionStatus::Passed | ActionStatus::Cached | ActionStatus::CachedFromRemote => {
+                    color::success("pass")
+                }
                 ActionStatus::Failed | ActionStatus::FailedAndAbort => {
                     failed = true;
                     color::failure("fail")
                 }
-                ActionStatus::Invalid => color::invalid("warn"),
+                ActionStatus::Invalid | ActionStatus::Skipped => color::invalid("warn"),
                 _ => color::muted_light("oops"),
             };
 
@@ -366,6 +365,7 @@ impl Pipeline {
         let mut pass_count = 0;
         let mut fail_count = 0;
         let mut invalid_count = 0;
+        let mut skipped_count = 0;
 
         for result in results {
             if compact
@@ -382,7 +382,7 @@ impl Pipeline {
                     cached_count += 1;
                     pass_count += 1;
                 }
-                ActionStatus::Passed | ActionStatus::Skipped => {
+                ActionStatus::Passed => {
                     pass_count += 1;
                 }
                 ActionStatus::Failed | ActionStatus::FailedAndAbort => {
@@ -390,6 +390,9 @@ impl Pipeline {
                 }
                 ActionStatus::Invalid => {
                     invalid_count += 1;
+                }
+                ActionStatus::Skipped => {
+                    skipped_count += 1;
                 }
                 _ => {}
             }
@@ -413,6 +416,10 @@ impl Pipeline {
 
         if invalid_count > 0 {
             counts_message.push(color::invalid(format!("{invalid_count} invalid")));
+        }
+
+        if skipped_count > 0 {
+            counts_message.push(color::invalid(format!("{skipped_count} skipped")));
         }
 
         let term = Term::buffered_stdout();

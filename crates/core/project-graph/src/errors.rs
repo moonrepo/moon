@@ -1,9 +1,21 @@
 use miette::Diagnostic;
+use moon_target::Target;
 use starbase_styles::{Style, Stylize};
 use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
 pub enum ProjectGraphError {
+    #[diagnostic(code(project_graph::task::overlapping_outputs))]
+    #[error(
+        "Tasks {} have configured the same output {}. Overlapping outputs is not supported as it can cause non-deterministic results.",
+        .targets.iter().map(|t| t.id.style(Style::Label)).collect::<Vec<_>>().join(", "),
+        .output.style(Style::File),
+    )]
+    OverlappingTaskOutputs {
+        output: String,
+        targets: Vec<Target>,
+    },
+
     #[diagnostic(code(project_graph::task_dep::persistent_requirement))]
     #[error(
         "Non-persistent task {} cannot depend on persistent task {}.\nA task is marked persistent with the {} or {} settings.\n\nIf you're looking to avoid the cache, disable {} instead.",

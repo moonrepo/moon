@@ -3,7 +3,7 @@ use crate::{errors::RunnerError, inputs_collector};
 use console::Term;
 use miette::IntoDiagnostic;
 use moon_action::{ActionStatus, Attempt};
-use moon_action_context::ActionContext;
+use moon_action_context::{ActionContext, TargetState};
 use moon_cache::RunTargetState;
 use moon_config::{TaskOptionAffectedFiles, TaskOutputStyle};
 use moon_emitter::{Emitter, Event, EventFlow};
@@ -189,7 +189,7 @@ impl<'a> Runner<'a> {
 
         hasher.hash_project_deps(self.project.get_dependency_ids());
         hasher.hash_task(task);
-        hasher.hash_task_deps(task, &context.target_hashes)?;
+        hasher.hash_task_deps(task, &context.target_states)?;
 
         if context.should_inherit_args(&task.target) {
             hasher.hash_args(&context.passthrough_args);
@@ -444,9 +444,10 @@ impl<'a> Runner<'a> {
             color::id(&self.task.target)
         );
 
-        context
-            .target_hashes
-            .insert(self.task.target.clone(), hash.clone());
+        context.target_states.insert(
+            self.task.target.clone(),
+            TargetState::Completed(hash.clone()),
+        );
 
         // Hash is the same as the previous build, so simply abort!
         // However, ensure the outputs also exist, otherwise we should hydrate

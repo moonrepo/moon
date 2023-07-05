@@ -1436,13 +1436,13 @@ mod task_expansion {
 
             assert!(task
                 .output_paths
-                .contains(&WorkspaceRelativePathBuf::from(&project.source).join("dir")));
+                .contains(&WorkspaceRelativePathBuf::from(&project.source).join("path")));
 
             let task = project.get_task("outputsGlobs").unwrap();
 
             assert!(task
                 .output_globs
-                .contains(&WorkspaceRelativePathBuf::from(&project.source).join("dir/**/*.js")));
+                .contains(&WorkspaceRelativePathBuf::from(&project.source).join("glob/**/*.js")));
         }
 
         #[tokio::test]

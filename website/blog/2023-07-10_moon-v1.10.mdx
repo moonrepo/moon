@@ -1,0 +1,67 @@
+---
+slug: moon-v1.10
+title: moon v1.10 - Mid-year quality of life improvements
+authors: [milesj]
+tags: []
+image: ./img/moon/v1.9.png
+---
+
+Instead of launching a large feature this release, we're focusing on quality of life and developer
+experience improvements.
+
+<!--truncate-->
+
+## Quality improvements
+
+In the past 6 months, we've released over 16 versions of moon, with our official v1.0 release among
+them. This is extremely impressive and we're very proud of the progress we've made. To continue this
+trend, we'll be starting a new initiative that will land quality of life improvements (instead of
+major features) every 6 months, starting with this release!
+
+### Breaking changes
+
+While APIs haven't changed, we have introduced some fixes for edge case that could be considered
+breaking, but for the most part, these changes probably won't affect you. With that being said...
+
+The first fix is that tasks configured with the same `outputs` location will now error. This is
+extremely problematic for caching and hydration, as multiple tasks all writing to the same output
+will inflate the tarball, and cause unwanted side effects. To demonstrate this, the following is now
+an error:
+
+```yaml title="moon.yml"
+tasks:
+  build:
+    command: 'foo build'
+    outputs:
+      - 'dist'
+
+  compile:
+    command: 'bar compile'
+    outputs:
+      - 'dist'
+```
+
+The other fix, which primarily applies to [`moon ci`][ci] and [`moon check`](/docs/commands/check),
+is that a target will be skipped if one of its dependencies failed or has also been skipped.
+Previously the target would attempt to run and most likely fail since it relied on artifacts from
+its dependencies (which don't exist). Another benefit of this change is that runs should be much
+faster, as we're not wasting time running targets that we know will fail, which is great for CI.
+
+### Ignore input files
+
+### Customize base and head
+
+## New debugging a task guide
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.10.0) for a full list
+of changes.
+
+- Updated [`moon ci`][ci] to include a summary of all failed actions.
+- Updated [`moon run`][run] to compare against the previous commit when running on the default
+  branch and using `--remote`.
+- Updated the run report to include stderr/stdout for all attempts.
+
+[ci]: /docs/commands/ci
+[run]: /docs/commands/run

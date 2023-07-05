@@ -47,7 +47,35 @@ Previously the target would attempt to run and most likely fail since it relied 
 its dependencies (which don't exist). Another benefit of this change is that runs should be much
 faster, as we're not wasting time running targets that we know will fail, which is great for CI.
 
-### Ignore input files
+### Ignore hashing input files
+
+We're introducing 2 new settings to [`.moon/workspace.yml`](/docs/config/workspace) that'll provide
+more control over the hashing flow, [`hasher.ignorePatterns`](/docs/config/workspace#ignorepatterns)
+and [`hasher.ignoreMissingPatterns`](/docs/config/workspace#ignoremissingpatterns).
+
+The `ignorePatterns` setting can be used to entirely ignore a file (using glob patterns) from being
+hashed, and in turn, exclude it as an input source. For example, say we want to ignore all image
+files.
+
+```yml title=".moon/workspace.yml"
+hasher:
+  ignorePatterns:
+    - '**/*.{png,svg}'
+```
+
+The `ignoreMissingPatterns` setting pairs with
+[`hasher.warnOnMissingInputs`](/docs/config/workspace#warnonmissinginputs). When enabled, moon will
+log a warning to the terminal that an input is missing. This is useful for uncovering
+misconfigurations, but can be quite noisy when inputs are truly optional. This new setting can be
+used to filter these warnings.
+
+```yml title=".moon/workspace.yml"
+hasher:
+  warnOnMissingInputs: true
+  ignoreMissingPatterns:
+    - '**/.eslintrc.*'
+    - '**/*.config.*'
+```
 
 ### Customize base and head
 

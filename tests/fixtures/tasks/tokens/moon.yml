@@ -64,10 +64,10 @@ tasks:
       - 'file.$projectType'
   outputs:
     outputs:
-      - 'dir'
+      - 'path'
   outputsGlobs:
     outputs:
-      - 'dir/**/*.js'
+      - 'glob/**/*.js'
   outputsFileGroups:
     outputs:
       - 'file.ts'

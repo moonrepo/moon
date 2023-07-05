@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+> These changes are fixing edge cases that should not have been allowed, but may break existing
+> repos. If these changes become troublesome, we'll revert.
+
+- Tasks that configure the same outputs will now error. This change was made as multiple tasks
+  writing to the same output location will cause caching and hydration issues.
+
 #### 🚀 Updates
 
 - Added support for `MOON_BASE` and `MOON_HEAD` environment variables.

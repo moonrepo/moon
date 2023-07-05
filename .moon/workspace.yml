@@ -17,6 +17,11 @@ generator:
     # - './.moon/templates'
     - './tests/fixtures/generator/templates'
 
+hasher:
+  ignoreMissingPatterns:
+    - '**/.eslintrc.cjs'
+  warnOnMissingInputs: true
+
 runner:
   archivableTargets:
     - ':lint'

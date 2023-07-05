@@ -9,7 +9,7 @@ use moon_utils::{is_ci, path};
 use moon_vcs::BoxedVcs;
 use rustc_hash::FxHashSet;
 use starbase_styles::color;
-use starbase_utils::glob;
+use starbase_utils::glob::{self, GlobSet};
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
@@ -19,11 +19,12 @@ type HashedInputs = BTreeMap<WorkspaceRelativePathBuf, String>;
 
 fn convert_paths_to_strings(
     log_target: &str,
-    log_missing: bool,
     paths: &FxHashSet<PathBuf>,
     workspace_root: &Path,
+    hasher_config: &HasherConfig,
 ) -> miette::Result<Vec<String>> {
     let mut files: Vec<String> = vec![];
+    let ignore_missing = GlobSet::new(&hasher_config.ignore_missing_patterns)?;
 
     for path in paths {
         // We need to use relative paths from the workspace root
@@ -35,20 +36,22 @@ fn convert_paths_to_strings(
         };
 
         // `git hash-object` will fail if you pass an unknown file
-        if !path.exists() && log_missing {
-            warn!(
-                target: log_target,
-                "Attempted to hash input {} but it does not exist, skipping",
-                color::path(rel_path),
-            );
+        if !path.exists() && hasher_config.warn_on_missing_inputs {
+            if hasher_config.ignore_missing_patterns.is_empty() || !ignore_missing.is_match(path) {
+                warn!(
+                    target: log_target,
+                    "Attempted to hash input {} but it does not exist, skipping",
+                    color::path(rel_path),
+                );
+            }
 
             continue;
         }
 
-        if !path.is_file() && log_missing {
+        if !path.is_file() {
             warn!(
                 target: log_target,
-                "Attempted to hash input {} but only files can be hashed, skipping",
+                "Attempted to hash input {} but only files can be hashed, try using a glob instead",
                 color::path(rel_path),
             );
 
@@ -159,9 +162,9 @@ pub async fn collect_and_hash_inputs(
 
     let mut files_to_hash = convert_paths_to_strings(
         task.target.as_str(),
-        hasher_config.warn_on_missing_inputs,
         &files_to_hash,
         workspace_root,
+        hasher_config,
     )?;
 
     files_to_hash.retain(|f| is_valid_input_source(task, &globset, f));

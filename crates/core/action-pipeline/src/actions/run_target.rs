@@ -28,13 +28,37 @@ pub async fn run_target(
     let emitter = emitter.read().await;
     let workspace = workspace.read().await;
     let task = project.get_task(&target.task_id)?;
-    let mut runner = Runner::new(&emitter, &workspace, project, task)?;
 
     debug!(
         target: LOG_TARGET,
         "Running target {}",
         color::label(&task.target)
     );
+
+    // If a dependency failed, we should skip this target
+    if !task.deps.is_empty() {
+        let mut ctx = context.write().await;
+
+        for dep in &task.deps {
+            if let Some(dep_hash) = ctx.target_hashes.get(dep) {
+                if dep_hash == "failed" || dep_hash == "skipped" {
+                    ctx.target_hashes
+                        .insert(task.target.clone(), "skipped".into());
+
+                    debug!(
+                        target: LOG_TARGET,
+                        "Dependency {} of {} has failed or has been skipped, skipping this target",
+                        color::label(&dep),
+                        color::label(&task.target)
+                    );
+
+                    return Ok(ActionStatus::Skipped);
+                }
+            }
+        }
+    }
+
+    let mut runner = Runner::new(&emitter, &workspace, project, task)?;
 
     // If the VCS root does not exist (like in a Docker container),
     // we should avoid failing and simply disable caching.
@@ -60,13 +84,13 @@ pub async fn run_target(
             .write()
             .await
             .target_hashes
-            .insert(target.clone(), "skipped".into());
+            .insert(target.clone(), "passthrough".into());
     }
 
-    let attempts = if is_cache_enabled {
+    let attempts_result = if is_cache_enabled {
         let context = context.read().await;
 
-        runner.create_and_run_command(&context, runtime).await?
+        runner.create_and_run_command(&context, runtime).await
     } else {
         // Concurrent long-running tasks will cause a deadlock, as some threads will
         // attempt to write to context while others are reading from it, and long-running
@@ -74,19 +98,32 @@ pub async fn run_target(
         // around it, so revisit in the future.
         let context = (context.read().await).clone();
 
-        runner.create_and_run_command(&context, runtime).await?
+        runner.create_and_run_command(&context, runtime).await
     };
 
-    let status = if action.set_attempts(attempts, &task.command) {
-        ActionStatus::Passed
-    } else {
-        ActionStatus::Failed
-    };
+    match attempts_result {
+        Ok(attempts) => {
+            let status = if action.set_attempts(attempts, &task.command) {
+                ActionStatus::Passed
+            } else {
+                ActionStatus::Failed
+            };
 
-    // If successful, cache the task outputs
-    if is_cache_enabled {
-        runner.archive_outputs().await?;
+            // If successful, cache the task outputs
+            if is_cache_enabled {
+                runner.archive_outputs().await?;
+            }
+
+            Ok(status)
+        }
+        Err(err) => {
+            context
+                .write()
+                .await
+                .target_hashes
+                .insert(target.clone(), "failed".into());
+
+            return Err(err);
+        }
     }
-
-    Ok(status)
 }

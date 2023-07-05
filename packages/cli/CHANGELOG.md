@@ -9,6 +9,8 @@
 
 - Tasks that configure the same outputs will now error. This change was made as multiple tasks
   writing to the same output location will cause caching and hydration issues.
+- If a dependency of a task failed to run or was skipped, then the parent task will now be skipped.
+  This primarily applies to `moon ci`.
 
 #### 🚀 Updates
 

@@ -262,7 +262,12 @@ const sidebars = {
 		'proto/detection',
 		'proto/config',
 		'proto/tools',
-		'proto/plugins',
+		{
+			type: 'category',
+			label: 'Plugins',
+			link: { type: 'doc', id: 'proto/plugins' },
+			items: ['proto/toml-plugin', 'proto/wasm-plugin'],
+		},
 		'proto/faq',
 		{
 			type: 'category',

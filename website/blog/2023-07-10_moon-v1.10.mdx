@@ -18,15 +18,15 @@ them. This is extremely impressive and we're very proud of the progress we've ma
 trend, we'll be starting a new initiative that will land quality of life improvements (instead of
 major features) every 6 months, starting with this release!
 
-### Breaking changes
+### Potential breaking changes
 
 While APIs haven't changed, we have introduced some fixes for edge case that could be considered
 breaking, but for the most part, these changes probably won't affect you. With that being said...
 
-The first fix is that tasks configured with the same `outputs` location will now error. This is
-extremely problematic for caching and hydration, as multiple tasks all writing to the same output
-will inflate the tarball, and cause unwanted side effects. To demonstrate this, the following is now
-an error:
+The first fix is that tasks configured with the same `outputs` location (including glob overlap)
+will now error. This is extremely problematic for caching and hydration, as multiple tasks all
+writing to the same output will inflate the tarball, and cause unwanted side effects. To demonstrate
+this, the following is now an error:
 
 ```yaml title="moon.yml"
 tasks:

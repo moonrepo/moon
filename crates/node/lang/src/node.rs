@@ -27,8 +27,9 @@ pub fn extend_node_path<T: AsRef<str>>(value: T) -> String {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum BinFile {
-    Binary(PathBuf), // Rust, Go
-    Script(PathBuf), // JavaScript
+    Binary(PathBuf),        // Rust, Go
+    Script(PathBuf),        // JavaScript
+    Other(PathBuf, String), // Bash, Batch, etc.
 }
 
 /// Node module ".bin" files may be JavaScript, Bash, Go, or Rust.
@@ -60,15 +61,29 @@ pub fn extract_canonical_node_module_bin(bin_path: PathBuf) -> miette::Result<Bi
     }
 
     let contents = String::from_utf8(buffer).into_diagnostic()?;
+    let shebang = contents.starts_with("#!");
 
     // Found a JavaScript file, use as-is
     if has_shebang(&contents, "node") {
         return Ok(BinFile::Script(bin_path));
     }
 
+    let is_pwsh = is_cmd_file(&contents) || has_shebang(&contents, "pwsh");
+    let is_bash = has_shebang(&contents, "bash") || has_shebang(&contents, "sh");
+
     // Found a bash/batch script, extract the relative bin path from it
-    if is_cmd_file(&contents) || has_shebang(&contents, "bash") || has_shebang(&contents, "sh") {
-        let extracted_path = parse_bin_file(&bin_path, contents);
+    if is_pwsh || is_bash {
+        let Some(extracted_path) = parse_bin_file(contents) else {
+            // No path found, might just be a regular Bash script
+            return Ok(if shebang {
+                BinFile::Binary(bin_path)
+            } else if is_pwsh {
+                BinFile::Other(bin_path, "powershell".into())
+            } else {
+                BinFile::Other(bin_path, "bash".into())
+            });
+        };
+
         let extracted_bin = path::normalize(bin_path.parent().unwrap().join(extracted_path));
 
         // Do another pass, as the extracted file may be a binary
@@ -175,17 +190,12 @@ pub fn is_cmd_file(contents: &str) -> bool {
 
 #[inline]
 #[track_caller]
-pub fn parse_bin_file(bin_path: &Path, contents: String) -> PathBuf {
-    let captures = BIN_PATH_PATTERN.captures(&contents).unwrap_or_else(|| {
-        // This should ideally never happen!
-        panic!(
-            "Unable to extract binary path from {}:\n\n{}",
-            bin_path.to_string_lossy(),
-            contents
-        )
-    });
+pub fn parse_bin_file(contents: String) -> Option<PathBuf> {
+    let Some(captures) = BIN_PATH_PATTERN.captures(&contents) else {
+        return None;
+    };
 
-    PathBuf::from(captures.get(0).unwrap().as_str())
+    Some(PathBuf::from(captures.get(0).unwrap().as_str()))
 }
 
 #[inline]
@@ -263,26 +273,17 @@ mod tests {
         #[test]
         fn basic_path() {
             assert_eq!(
-                parse_bin_file(
-                    &PathBuf::from("test.cmd"),
-                    create_cmd(r"..\typescript\bin\tsc"),
-                ),
+                parse_bin_file(create_cmd(r"..\typescript\bin\tsc"),).unwrap(),
                 PathBuf::from(r"..\typescript\bin\tsc")
             );
 
             assert_eq!(
-                parse_bin_file(
-                    &PathBuf::from("test.cmd"),
-                    create_cmd(r"../typescript/bin/tsc"),
-                ),
+                parse_bin_file(create_cmd(r"../typescript/bin/tsc"),).unwrap(),
                 PathBuf::from(r"../typescript/bin/tsc")
             );
 
             assert_eq!(
-                parse_bin_file(
-                    &PathBuf::from("test.cmd"),
-                    create_cmd(r"..\json5\lib\cli.js"),
-                ),
+                parse_bin_file(create_cmd(r"..\json5\lib\cli.js"),).unwrap(),
                 PathBuf::from(r"..\json5\lib\cli.js")
             );
         }
@@ -290,7 +291,7 @@ mod tests {
         #[test]
         fn supports_periods() {
             assert_eq!(
-                parse_bin_file(&PathBuf::from("test.cmd"), create_cmd(r"..\.dir\bin\bin"),),
+                parse_bin_file(create_cmd(r"..\.dir\bin\bin"),).unwrap(),
                 PathBuf::from(r"..\.dir\bin\bin")
             );
         }
@@ -298,34 +299,22 @@ mod tests {
         #[test]
         fn relative_paths() {
             assert_eq!(
-                parse_bin_file(
-                    &PathBuf::from("test.cmd"),
-                    create_cmd(r".\eslint\bin\eslint"),
-                ),
+                parse_bin_file(create_cmd(r".\eslint\bin\eslint"),).unwrap(),
                 PathBuf::from(r".\eslint\bin\eslint")
             );
 
             assert_eq!(
-                parse_bin_file(
-                    &PathBuf::from("test.cmd"),
-                    create_cmd(r"..\..\eslint\bin\eslint"),
-                ),
+                parse_bin_file(create_cmd(r"..\..\eslint\bin\eslint"),).unwrap(),
                 PathBuf::from(r"..\..\eslint\bin\eslint")
             );
 
             assert_eq!(
-                parse_bin_file(
-                    &PathBuf::from("test.cmd"),
-                    create_cmd(r"./eslint/bin/eslint"),
-                ),
+                parse_bin_file(create_cmd(r"./eslint/bin/eslint"),).unwrap(),
                 PathBuf::from(r"./eslint/bin/eslint")
             );
 
             assert_eq!(
-                parse_bin_file(
-                    &PathBuf::from("test.cmd"),
-                    create_cmd(r"../../eslint/bin/eslint"),
-                ),
+                parse_bin_file(create_cmd(r"../../eslint/bin/eslint"),).unwrap(),
                 PathBuf::from(r"../../eslint/bin/eslint")
             );
         }
@@ -333,36 +322,30 @@ mod tests {
         #[test]
         fn with_exts() {
             assert_eq!(
-                parse_bin_file(&PathBuf::from("test.cmd"), create_cmd(r"..\babel\index.js"),),
+                parse_bin_file(create_cmd(r"..\babel\index.js"),).unwrap(),
                 PathBuf::from(r"..\babel\index.js")
             );
 
             assert_eq!(
-                parse_bin_file(&PathBuf::from("test.cmd"), create_cmd(r"../babel/index.js"),),
+                parse_bin_file(create_cmd(r"../babel/index.js"),).unwrap(),
                 PathBuf::from(r"../babel/index.js")
             );
 
             assert_eq!(
-                parse_bin_file(
-                    &PathBuf::from("test.cmd"),
-                    create_cmd(r".\webpack\dist\cli.cjs"),
-                ),
+                parse_bin_file(create_cmd(r".\webpack\dist\cli.cjs"),).unwrap(),
                 PathBuf::from(r".\webpack\dist\cli.cjs")
             );
 
             assert_eq!(
-                parse_bin_file(
-                    &PathBuf::from("test.cmd"),
-                    create_cmd(r".\..\rollup\build\rollup.mjs"),
-                ),
+                parse_bin_file(create_cmd(r".\..\rollup\build\rollup.mjs"),).unwrap(),
                 PathBuf::from(r".\..\rollup\build\rollup.mjs")
             );
 
             assert_eq!(
-                parse_bin_file(
-                    &PathBuf::from("test.cmd"),
-                    create_cmd(r"..\webpack-dev-server\bin\webpack-dev-server.js"),
-                ),
+                parse_bin_file(create_cmd(
+                    r"..\webpack-dev-server\bin\webpack-dev-server.js"
+                ),)
+                .unwrap(),
                 PathBuf::from(r"..\webpack-dev-server\bin\webpack-dev-server.js")
             );
         }
@@ -370,39 +353,27 @@ mod tests {
         #[test]
         fn with_scopes() {
             assert_eq!(
-                parse_bin_file(&PathBuf::from("test.cmd"), create_cmd(r"..\@scope\foo\bin"),),
+                parse_bin_file(create_cmd(r"..\@scope\foo\bin"),).unwrap(),
                 PathBuf::from(r"..\@scope\foo\bin")
             );
 
             assert_eq!(
-                parse_bin_file(
-                    &PathBuf::from("test.cmd"),
-                    create_cmd(r"..\@scope\foo-bar\bin.js"),
-                ),
+                parse_bin_file(create_cmd(r"..\@scope\foo-bar\bin.js"),).unwrap(),
                 PathBuf::from(r"..\@scope\foo-bar\bin.js")
             );
 
             assert_eq!(
-                parse_bin_file(
-                    &PathBuf::from("test.cmd"),
-                    create_cmd(r"..\@scope-long\foo-bar\bin_file.js"),
-                ),
+                parse_bin_file(create_cmd(r"..\@scope-long\foo-bar\bin_file.js"),).unwrap(),
                 PathBuf::from(r"..\@scope-long\foo-bar\bin_file.js")
             );
 
             assert_eq!(
-                parse_bin_file(
-                    &PathBuf::from("test.cmd"),
-                    create_cmd(r"..\@docusaurus\core\bin\docusaurus.mjs"),
-                ),
+                parse_bin_file(create_cmd(r"..\@docusaurus\core\bin\docusaurus.mjs"),).unwrap(),
                 PathBuf::from(r"..\@docusaurus\core\bin\docusaurus.mjs")
             );
 
             assert_eq!(
-                parse_bin_file(
-                    &PathBuf::from("test.cmd"),
-                    create_cmd(r"..\@babel\parser\bin\babel-parser.js"),
-                ),
+                parse_bin_file(create_cmd(r"..\@babel\parser\bin\babel-parser.js"),).unwrap(),
                 PathBuf::from(r"..\@babel\parser\bin\babel-parser.js")
             );
         }
@@ -411,7 +382,6 @@ mod tests {
         fn parses_pnpm() {
             assert_eq!(
                 parse_bin_file(
-                    &PathBuf::from("test"),
                     r#"
 #!/bin/sh
 basedir=$(dirname "$(echo "$0" | sed -e 's,\\,/,g')")
@@ -432,13 +402,13 @@ else
 fi
                     "#
                     .to_string(),
-                ),
+                )
+                .unwrap(),
                 PathBuf::from(r"../typescript/bin/tsc")
             );
 
             assert_eq!(
                 parse_bin_file(
-                    &PathBuf::from("test"),
                     r#"
 #!/bin/sh
 basedir=$(dirname "$(echo "$0" | sed -e 's,\\,/,g')")
@@ -459,7 +429,8 @@ else
 fi
                     "#
                     .to_string(),
-                ),
+                )
+                .unwrap(),
                 PathBuf::from(r"..\typescript\bin\tsc")
             );
         }
@@ -468,7 +439,7 @@ fi
         fn parses_pnpm_isolated_linker() {
             assert_eq!(
                 parse_bin_file(
-                    &PathBuf::from("test"),
+
                     r#"
 #!/bin/sh
 basedir=$(dirname "$(echo "$0" | sed -e 's,\\,/,g')")
@@ -489,7 +460,7 @@ else
 fi
                     "#
                     .to_string(),
-                ),
+                ).unwrap(),
                 PathBuf::from(r"../../../node_modules/.pnpm/@docusaurus+core@2.0.0-beta.20_sfoxds7t5ydpegc3knd667wn6m/node_modules/@docusaurus/core/bin/docusaurus.mjs")
             );
         }
@@ -498,7 +469,6 @@ fi
         fn parses_moon_exe() {
             assert_eq!(
                 parse_bin_file(
-                    &PathBuf::from("test"),
                     r#"
 #!/bin/sh
 basedir=$(dirname "$(echo "$0" | sed -e 's,\\,/,g')")
@@ -510,8 +480,37 @@ esac
 exec "$basedir\..\@moonrepo\cli\moon.exe" "$@"
                     "#
                     .to_string(),
-                ),
+                )
+                .unwrap(),
                 PathBuf::from(r"..\@moonrepo\cli\moon.exe")
+            );
+        }
+
+        #[test]
+        fn literal_bash_scripts() {
+            assert_eq!(
+                parse_bin_file(
+                    r#"
+#!/usr/bin/env bash
+
+# Forward all arguments to the local CLI (@expo/cli).
+npm exec --no-install -- expo-internal "$@"
+                    "#
+                    .to_string(),
+                ),
+                None
+            );
+
+            assert_eq!(
+                parse_bin_file(
+                    r#"
+#!/usr/bin/env sh
+
+some-other command --that does nothing
+                    "#
+                    .to_string(),
+                ),
+                None
             );
         }
     }

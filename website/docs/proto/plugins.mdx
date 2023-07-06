@@ -15,7 +15,7 @@ Plugins can be enabled by configuring them in
 
 ```toml title=".prototools"
 [plugins]
-my-tool = "schema:https://raw.githubusercontent.com/my/tool/master/proto-plugin.toml"
+my-tool = "source:https://raw.githubusercontent.com/my/tool/master/proto-plugin.wasm"
 ```
 
 ## Creating a plugin
@@ -194,14 +194,34 @@ the `[detect]` setting. At this time, we only support 1 setting:
 version-files = [".protostar-version", ".protostarrc"]
 ```
 
-### WASM plugin
+### WASM plugin (experimental)
 
-Coming soon!
+Plugins can also be written in [WebAssembly (WASM)](https://webassembly.org/), a portable binary
+format. This means that plugins can be written in any language that compiles to WASM, like Rust, C,
+C++, Go, TypeScript, and more. Because WASM based plugins are powered by a programming language,
+they implicitly support complex business logic and behavior, have access to a sandboxed file system,
+can execute child processes, and much more.
 
-> Although plugins can be written in any language that compiles to WASM, we've only tested Rust. The
-> rest of this article assume you're using Rust and Cargo!
+However, since WASM executes in its own runtime, it _does not_ have access to the current host
+operating system, architecture, environment variables, and more. To bridge this gap, we provide this
+information as an `env` field for every function input (more below).
+
+:::danger
+
+Since our WASM plugin implementation is still experimental, expect breaking changes to occur in
+non-major releases.
+
+:::
 
 #### Creating the project
+
+:::info
+
+Although plugins can be written in any language that compiles to WASM, we've only tested Rust. The
+rest of this article assume you're using Rust and Cargo! Refer to [Extism](https://extism.org/)'s
+documentation for other examples.
+
+:::
 
 To start, create a new crate with Cargo:
 
@@ -261,7 +281,7 @@ commands (e.g. `proto install <id>`).
 
 ```rust
 #[plugin_fn]
-pub fn register_metadata(Json(input): Json<ToolMetadataInput>) -> FnResult<Json<ToolMetadataOutput>> {
+pub fn register_tool(Json(input): Json<ToolMetadataInput>) -> FnResult<Json<ToolMetadataOutput>> {
   input.id
   // ...
 }
@@ -270,7 +290,7 @@ pub fn register_metadata(Json(input): Json<ToolMetadataInput>) -> FnResult<Json<
 #### Downloading and installing
 
 Our plugin layer _only_ supports downloading pre-built tools, typically as an archive, and does
-_not_ support building from source. The `register_install` function _must_ be defined, whichs
+_not_ support building from source. The `download_prebuilt` function _must_ be defined, whichs
 configures how the tool should be downloaded and installed.
 
 The following fields are available:
@@ -286,38 +306,35 @@ The following fields are available:
 
 ```rust
 #[plugin_fn]
-pub fn register_install(Json(input): Json<InstallParamsInput>) -> FnResult<Json<InstallParamsOutput>> {
+pub fn download_prebuilt(Json(input): Json<DownloadPrebuiltInput>) -> FnResult<Json<DownloadPrebuiltOutput>> {
     let version = input.env.version;
     let arch = input.env.arch;
     let os = input.env.os;
 
-    let prefix = match os.as_str() {
-        "linux" => format!("node-v{version}-linux-{arch}"),
-        "macos" => format!("node-v{version}-darwin-{arch}"),
-        "windows" => format!("node-v{version}-win-{arch}"),
+    let prefix = match os {
+        HostOS::Linux => format!("node-v{version}-linux-{arch}"),
+        HostOS::MacOS => format!("node-v{version}-darwin-{arch}"),
+        HostOS::Windows => format!("node-v{version}-win-{arch}"),
         other => {
             return Err(PluginError::UnsupportedPlatform("Node.js".into(), other.into()))?;
         }
     };
 
-    let filename = if os == "windows" {
+    let filename = if os == HostOS::Windows {
         format!("{prefix}.zip")
     } else {
         format!("{prefix}.tar.xz")
     };
 
-    Ok(Json(InstallParamsOutput {
+    Ok(Json(DownloadPrebuiltOutput {
         archive_prefix: Some(prefix),
         download_url: format!("https://nodejs.org/dist/v{version}/{filename}"),
         download_name: Some(filename),
         checksum_url: Some(format!("https://nodejs.org/dist/v{version}/SHASUMS256.txt")),
-        ..InstallParamsOutput::default()
+        ..DownloadPrebuiltOutput::default()
     }))
 }
 ```
-
-> The current environment's `os` and `arch` are passed to the function as input, as these values
-> cannot be accessed from a WASM context.
 
 #### Unpacking an archive
 
@@ -337,6 +354,95 @@ This function receives an input with the following fields:
 pub fn unpack_archive(Json(input): Json<UnpackArchiveInput>) -> FnResult<()> {
     untar(input.input_file, input.output_dir)?;
     Ok(())
+}
+```
+
+#### Locating binaries
+
+Even though a tool has been installed, we must inform proto of where to find the binary to execute.
+This can be achieved with the optional `locate_bins` function. If this function is not defined,
+proto will assume the binary is named `<id>` (`<id>.exe` on Windows), relative from the installation
+directory.
+
+```rust
+#[plugin_fn]
+pub fn locate_bins(Json(input): Json<LocateBinsInput>) -> FnResult<Json<LocateBinsOutput>> {
+    Ok(Json(LocateBinsOutput {
+        bin_path: Some(if input.env.os == HostOS::Windows {
+            "node.exe".into()
+        } else {
+            "bin/node".into()
+        }),
+        ..LocateBinsOutput::default()
+    }))
+}
+```
+
+Furthermore, the `locate_bins` function can define a list of lookups for the globals installation
+directory. proto will loop through each lookup, and return the first directory that exists on the
+current file system. proto will also expand environment variables in the format of `$VAR_NAME`. If a
+variable is not defined, or has an empty value, the lookup will be skipped. To demonstrate this,
+we'll use [Deno](https://deno.land/manual@v1.35.0/tools/script_installer).
+
+```rust
+#[plugin_fn]
+pub fn locate_bins(Json(_): Json<LocateBinsInput>) -> FnResult<Json<LocateBinsOutput>> {
+    Ok(Json(LocateBinsOutput {
+        globals_lookup_dirs: vec!["$DENO_INSTALL_ROOT/bin".into(), "$HOME/.deno/bin".into()],
+        ..LocateBinsOutput::default()
+    }))
+}
+```
+
+#### Loading and resolving versions
+
+Now that the tool can be downloaded and installed, we must configure how to resolve available
+versions to actually be installed. To provide a list of versions and language specific aliases, the
+`load_versions` function must be defined.
+
+```rust
+#[plugin_fn]
+pub fn load_versions(Json(_): Json<LoadVersionsInput>) -> FnResult<Json<LoadVersionsOutput>> {
+    let mut output = LoadVersionsOutput::default();
+    let response: Vec<NodeDistVersion> = fetch_url("https://nodejs.org/dist/index.json")?;
+
+    for (index, item) in response.iter().enumerate() {
+        let version = Version::parse(&item.version[1..])?; // Starts with v
+
+        if index == 0 {
+            output.latest = Some(version.clone());
+        }
+
+        output.versions.push(version);
+    }
+
+    Ok(Json(output))
+}
+```
+
+Furthermore, we support an optional function named `resolve_version`, that can be defined to
+intercept the version resolution process. This function receives an input with an initial candidate,
+either an alias or version, and can replace it with a new candidate. The candidate must be a valid
+alias or version as defined in `load_versions`.
+
+```rust
+#[plugin_fn]
+pub fn resolve_version(
+    Json(input): Json<ResolveVersionInput>,
+) -> FnResult<Json<ResolveVersionOutput>> {
+    let mut output = ResolveVersionOutput::default();
+
+    if input.initial == "node" {
+        output.candidate = Some("latest".into());
+
+    } else if input.initial == "lts-*" || input.initial == "lts/*" {
+        output.candidate = Some("stable".into());
+
+    } else if input.initial.starts_with("lts-") || input.initial.starts_with("lts/") {
+        output.candidate = Some(input.initial[4..].to_owned());
+    }
+
+    Ok(Json(output))
 }
 ```
 
@@ -391,7 +497,7 @@ pub fn parse_version_file(Json(input): Json<ParseVersionInput>) -> FnResult<Json
 
 Tools within proto wouldn't function without shims, and as such, plugins can register their own
 shims to be created. By default, proto _will always_ create a global shim of the plugin at
-`~/.proto/bin/<id>`, but you can also register additional shims with the `register_shims` function.
+`~/.proto/bin/<id>`, but you can also register additional shims with the `create_shims` function.
 
 ##### Global shims
 
@@ -402,18 +508,18 @@ directory) to a binary to execute.
 
 ```rust
 #[plugin_fn]
-pub fn register_shims(Json(input): Json<ShimParamsInput>) -> FnResult<Json<ShimParamsOutput>> {
+pub fn create_shims(Json(input): Json<CreateShimsInput>) -> FnResult<Json<CreateShimsOutput>> {
     let mut global_shims = HashMap::new();
 
-    global_shims.insert("npx".into(), if input.os == "windows" {
+    global_shims.insert("npx".into(), if input.env.os == HostOS::Windows {
         "npx.cmd".into()
     } else {
         "bin/npx".into()
     });
 
-    Ok(Json(ShimParams {
+    Ok(Json(CreateShims {
         global_shims,
-        ..ShimParams::default()
+        ..CreateShims::default()
     }))
 }
 ```

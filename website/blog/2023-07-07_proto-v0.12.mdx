@@ -1,0 +1,97 @@
+---
+slug: proto-v0.12
+title: proto v0.12 - Experimental WASM plugins
+authors: [milesj]
+tags: [proto, wasm, plugin]
+---
+
+import Button from '@site/src/ui/Button';
+
+After months of hard work, we're excited to release our first iteration of WASM plugins for proto.
+
+<!--truncate-->
+
+## WASM plugins
+
+Three months ago, we [published an RFC](https://github.com/moonrepo/proto/issues/73) for supporting
+plugins in proto. Plugins are a must, as they allow consumers to easily extend proto with additional
+tools, instead of them being built into proto core (which is very time consuming).
+
+Two months ago, we released support for [TOML plugins](/docs/proto/toml-plugin). These are very
+simple plugins powered by static configuration files. They're great for simple tools like CLIs and
+pre-built languages, as everything is powered by static HTTP URLs and file names. However, sometimes
+you need dynamic control...
+
+And after 2 months of development, and help from the [Extism team](https://extism.org/), we're
+excited to announce initial support for WASM plugins. WASM is a portable binary format, with
+sandboxed access to the file system (via WASI), and the ability to execute processes and fetch URLs.
+This means that plugins can be written in any language that compiles to WASM, like Rust, C, C++, Go,
+TypeScript, and more. This removes the requirement of writing Rust and contributing to proto
+directly!
+
+<div class="flex justify-center">
+  <Button label="View WASM plugin guide" href="/docs/proto/wasm-plugin" size="lg" />
+</div>
+
+### Using WASM plugins
+
+Once the `.wasm` file is publicly available for download, we can configure it as a plugin in
+[`.prototools`](/docs/proto/config).
+
+```toml
+[plugins]
+my-plugin = "source:https://domain.com/path/to/wasm/plugin.wasm"
+```
+
+And execute all `proto` commands using the configured plugin identifier.
+
+```shell
+proto install my-plugin
+```
+
+### Example implementation
+
+The official guide above walks you through creating a plugin, but to demonstrate the power of WASM
+plugins, here's an example function that defines parameters for downloading and installing Node.js.
+This is written in Rust and using Extism's official PDK.
+
+```rust
+#[plugin_fn]
+pub fn download_prebuilt(
+    Json(input): Json<DownloadPrebuiltInput>,
+) -> FnResult<Json<DownloadPrebuiltOutput>> {
+    let version = input.env.version;
+    let arch = input.env.arch;
+
+    let prefix = match input.env.os {
+        HostOS::Linux => format!("node-v{version}-linux-{arch}"),
+        HostOS::MacOS => format!("node-v{version}-darwin-{arch}"),
+        HostOS::Windows => format!("node-v{version}-win-{arch}"),
+        other => {
+            return Err(PluginError::UnsupportedPlatform {
+                tool: NAME.into(),
+                platform: format!("{:?}", other),
+            })?;
+        }
+    };
+
+    let filename = if input.env.os == HostOS::Windows {
+        format!("{prefix}.zip")
+    } else {
+        format!("{prefix}.tar.xz")
+    };
+
+    Ok(Json(DownloadPrebuiltOutput {
+        archive_prefix: Some(prefix),
+        download_url: format!("https://nodejs.org/dist/v{version}/{filename}"),
+        download_name: Some(filename),
+        checksum_url: Some(format!("https://nodejs.org/dist/v{version}/SHASUMS256.txt")),
+        ..DownloadPrebuiltOutput::default()
+    }))
+}
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.12.0) for a full list
+of changes.

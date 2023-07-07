@@ -1,0 +1,423 @@
+---
+title: WASM plugin (experimental)
+sidebar_label: WASM (experimental)
+toc_max_heading_level: 5
+---
+
+Plugins can be written in [WebAssembly (WASM)](https://webassembly.org/), a portable binary format.
+This means that plugins can be written in any language that compiles to WASM, like Rust, C, C++, Go,
+TypeScript, and more. Because WASM based plugins are powered by a programming language, they
+implicitly support complex business logic and behavior, have access to a sandboxed file system (via
+WASI), can execute child processes, and much more.
+
+However, since WASM executes in its own runtime, it _does not_ have access to the current host
+operating system, architecture, environment variables, and more. To bridge this gap, we provide this
+information as an `env` field for every function input (more below).
+
+:::danger
+
+Since our WASM plugin implementation is still experimental, expect breaking changes to occur in
+non-major releases.
+
+:::
+
+## Create a plugin
+
+:::info
+
+Although plugins can be written in any language that compiles to WASM, we've only tested Rust. The
+rest of this article assume you're using Rust and Cargo! Refer to [Extism](https://extism.org/)'s
+documentation or our official [Node.js plugin](https://github.com/moonrepo/node-plugin) for other
+examples.
+
+:::
+
+To start, create a new crate with Cargo:
+
+```shell
+cargo new plugin --lib
+cd plugin
+```
+
+And set the lib type to `cdylib`.
+
+```toml title="Cargo.toml"
+[lib]
+crate-type = ['cdylib']
+```
+
+Our Rust plugins are powered by [Extism](https://extism.org/), so lets add their PDK and ours as a
+dependency.
+
+```shell
+cargo add extism-pdk proto_pdk
+```
+
+In all Rust files, we can import both PDKs with the following:
+
+```rust title="src/lib.rs"
+use extism_pdk::*;
+use proto_pdk::*;
+```
+
+We can then build the WASM binary. The file will be available at
+`target/wasm32-wasi/debug/<name>.wasm`.
+
+```shell
+cargo build --target wasm32-wasi
+```
+
+### Registering metadata
+
+The first step in a plugin's life-cycle is to register metadata about the plugin with the
+`register_tool` function. This function is called immediately after a plugin is loaded at runtime,
+and must return a human-readable name and plugin type.
+
+```rust
+#[plugin_fn]
+pub fn register_tool(_: ()) -> FnResult<Json<ToolMetadataOutput>> {
+    Ok(Json(ToolMetadataOutput {
+        name: "Node.js".into(),
+        type_of: PluginType::Language,
+        ..ToolMetadataOutput::default()
+    }))
+}
+```
+
+This function also receives the plugin ID as input, allowing for conditional logic based on the ID.
+The ID is the [key the plugin was configured with](#enabling-plugins), and what is passed to `proto`
+commands (e.g. `proto install <id>`).
+
+```rust
+#[plugin_fn]
+pub fn register_tool(Json(input): Json<ToolMetadataInput>) -> FnResult<Json<ToolMetadataOutput>> {
+  input.id
+  // ...
+}
+```
+
+### Downloading pre-builts
+
+Our plugin layer _only_ supports downloading pre-built tools, typically as an archive, and does
+_not_ support building from source. The `download_prebuilt` function _must_ be defined, whichs
+configures how the tool should be downloaded and installed.
+
+The following fields are available:
+
+- `archive_prefix` - If the tool is distributed as an archive (zip, tar, etc), this is the name of
+  the direct folder within the archive that contains the tool, and will be removed when unpacking
+  the archive. If there is no prefix folder within the archive, this setting can be omitted.
+- `download_url` (required) - A secure URL to download the tool/archive.
+- `download_name` - File name of the archive to download. If not provided, will attempt to extract
+  it from the URL.
+- `checksum_url` - A secure URL to download the checksum file for verification. If the tool does not
+  support checksum verification, this setting can be omitted.
+
+```rust
+#[plugin_fn]
+pub fn download_prebuilt(Json(input): Json<DownloadPrebuiltInput>) -> FnResult<Json<DownloadPrebuiltOutput>> {
+    let version = input.env.version;
+    let arch = input.env.arch;
+    let os = input.env.os;
+
+    let prefix = match os {
+        HostOS::Linux => format!("node-v{version}-linux-{arch}"),
+        HostOS::MacOS => format!("node-v{version}-darwin-{arch}"),
+        HostOS::Windows => format!("node-v{version}-win-{arch}"),
+        other => {
+            return Err(PluginError::UnsupportedPlatform("Node.js".into(), other.into()))?;
+        }
+    };
+
+    let filename = if os == HostOS::Windows {
+        format!("{prefix}.zip")
+    } else {
+        format!("{prefix}.tar.xz")
+    };
+
+    Ok(Json(DownloadPrebuiltOutput {
+        archive_prefix: Some(prefix),
+        download_url: format!("https://nodejs.org/dist/v{version}/{filename}"),
+        download_name: Some(filename),
+        checksum_url: Some(format!("https://nodejs.org/dist/v{version}/SHASUMS256.txt")),
+        ..DownloadPrebuiltOutput::default()
+    }))
+}
+```
+
+#### Unpacking an archive
+
+Our plugin layer will do its best to detect file extensions, unpack the downloaded file (if an
+archive), and install the tool to the correct directory. However, we're unable to account for _all_
+edge cases, so for situations where the install params above are not sufficient, you may define an
+`unpack_archive` function.
+
+This function receives an input with the following fields:
+
+- `input_file` - Virtual path to the downloaded file. Maps to `~/.proto/temp/<id>/<file>`.
+- `output_dir` - Virtual directory to unpack the archive into, or copy the binary to. Maps to
+  `~/.proto/tools/<id>/<version>`.
+
+```rust
+#[plugin_fn]
+pub fn unpack_archive(Json(input): Json<UnpackArchiveInput>) -> FnResult<()> {
+    untar(input.input_file, input.output_dir)?;
+    Ok(())
+}
+```
+
+### Locating binaries
+
+Even though a tool has been installed, we must inform proto of where to find the binary to execute.
+This can be achieved with the optional `locate_bins` function. If this function is not defined,
+proto will assume the binary is named `<id>` (`<id>.exe` on Windows), relative from the installation
+directory.
+
+```rust
+#[plugin_fn]
+pub fn locate_bins(Json(input): Json<LocateBinsInput>) -> FnResult<Json<LocateBinsOutput>> {
+    Ok(Json(LocateBinsOutput {
+        bin_path: Some(if input.env.os == HostOS::Windows {
+            "node.exe".into()
+        } else {
+            "bin/node".into()
+        }),
+        ..LocateBinsOutput::default()
+    }))
+}
+```
+
+Furthermore, the `locate_bins` function can define a list of lookups for the globals installation
+directory. proto will loop through each lookup, and return the first directory that exists on the
+current file system. proto will also expand environment variables in the format of `$VAR_NAME`. If a
+variable is not defined, or has an empty value, the lookup will be skipped. To demonstrate this,
+we'll use [Deno](https://deno.land/manual@v1.35.0/tools/script_installer).
+
+```rust
+#[plugin_fn]
+pub fn locate_bins(Json(_): Json<LocateBinsInput>) -> FnResult<Json<LocateBinsOutput>> {
+    Ok(Json(LocateBinsOutput {
+        globals_lookup_dirs: vec!["$DENO_INSTALL_ROOT/bin".into(), "$HOME/.deno/bin".into()],
+        ..LocateBinsOutput::default()
+    }))
+}
+```
+
+### Loading and resolving versions
+
+Now that the tool can be downloaded and installed, we must configure how to resolve available
+versions to actually be installed. To provide a list of versions and language specific aliases, the
+`load_versions` function must be defined.
+
+```rust
+#[plugin_fn]
+pub fn load_versions(Json(_): Json<LoadVersionsInput>) -> FnResult<Json<LoadVersionsOutput>> {
+    let mut output = LoadVersionsOutput::default();
+    let response: Vec<NodeDistVersion> = fetch_url("https://nodejs.org/dist/index.json")?;
+
+    for (index, item) in response.iter().enumerate() {
+        let version = Version::parse(&item.version[1..])?; // Starts with v
+
+        if index == 0 {
+            output.latest = Some(version.clone());
+        }
+
+        output.versions.push(version);
+    }
+
+    Ok(Json(output))
+}
+```
+
+Furthermore, we support an optional function named `resolve_version`, that can be defined to
+intercept the version resolution process. This function receives an input with an initial candidate,
+either an alias or version, and can replace it with a new candidate. The candidate must be a valid
+alias or version as defined in `load_versions`.
+
+```rust
+#[plugin_fn]
+pub fn resolve_version(
+    Json(input): Json<ResolveVersionInput>,
+) -> FnResult<Json<ResolveVersionOutput>> {
+    let mut output = ResolveVersionOutput::default();
+
+    if input.initial == "node" {
+        output.candidate = Some("latest".into());
+
+    } else if input.initial == "lts-*" || input.initial == "lts/*" {
+        output.candidate = Some("stable".into());
+
+    } else if input.initial.starts_with("lts-") || input.initial.starts_with("lts/") {
+        output.candidate = Some(input.initial[4..].to_owned());
+    }
+
+    Ok(Json(output))
+}
+```
+
+### Detecting versions
+
+And lastly, we can configure how to [detect a version](./detection) contextually at runtime, using
+the `detect_version_files` function and optional `parse_version_file` function. The
+`detect_version_files` function can return a list of files to locate within a directory.
+
+```rust
+#[plugin_fn]
+pub fn detect_version_files(_: ()) -> FnResult<Json<DetectVersionOutput>> {
+    Ok(Json(DetectVersionOutput {
+        files: vec![
+            ".nvmrc".into(),
+            ".node-version".into(),
+            "package.json".into(),
+        ],
+    }))
+}
+```
+
+By default our plugin layer will assume the version file's contents contain the literal version, and
+nothing else, like "1.2.3". If any of the files in the `detect_version_files` list require custom
+parsing (for example, `package.json` above), you can define the `parse_version_file` function.
+
+This function receives the file name and contents as input, and must return the parsed version (if
+applicable).
+
+```rust
+#[plugin_fn]
+pub fn parse_version_file(Json(input): Json<ParseVersionInput>) -> FnResult<Json<ParseVersionOutput>> {
+    let mut version = None;
+
+    if input.file == "package.json" {
+        let json: PackageJson = serde_json::from_str(&input.content)?;
+
+        if let Some(engines) = json.engines {
+            if let Some(constraint) = engines.get("node") {
+                version = Some(constraint.to_owned());
+            }
+        }
+    } else {
+        version = Some(input.content.trim().to_owned());
+    }
+
+    Ok(Json(ParseVersionOutput { version }))
+}
+```
+
+### Creating shims
+
+Tools within proto wouldn't function without shims, and as such, plugins can register their own
+shims to be created. By default, proto _will always_ create a global shim of the plugin at
+`~/.proto/bin/<id>`, but you can also register additional shims with the `create_shims` function.
+
+#### Global shims
+
+Global shims are optional scripts that are available on `PATH` as they are generated in the
+`~/.proto/bin` directory, and can be defined with the `global_shims` parameter. This param is a hash
+map, where the key is the shim file name, and the value is a relative path (from the tool's
+directory) to a binary to execute.
+
+```rust
+#[plugin_fn]
+pub fn create_shims(Json(input): Json<CreateShimsInput>) -> FnResult<Json<CreateShimsOutput>> {
+    let mut global_shims = HashMap::new();
+
+    global_shims.insert("npx".into(), if input.env.os == HostOS::Windows {
+        "npx.cmd".into()
+    } else {
+        "bin/npx".into()
+    });
+
+    Ok(Json(CreateShimsOutput {
+        global_shims,
+        ..CreateShimsOutput::default()
+    }))
+}
+```
+
+## Testing
+
+The best way to test the plugin is to execute it through `proto` directly. To do this, you'll need
+to configure a `.prototools` file at the root of your plugin's repository that maps the plugin to a
+debug build:
+
+```toml
+[plugins]
+<id> = "source:target/wasm32-wasi/debug/<name>.wasm"
+```
+
+And everytime you make a change to the plugin, you'll need to rebuild it with:
+
+```shell
+cargo build --target wasm32-wasi
+```
+
+With these 2 pieces in place, you can now execute `proto` commands. Be sure you're running them from
+the directory with the `.prototools` file, and that you're passing `--log trace`. Logs are extremely
+helpful for figuring out what's going on.
+
+```shell
+proto --log trace install <id>
+proto --log trace list-remote <id>
+...
+```
+
+### Unit tests
+
+Coming soon...
+
+## Building and publishing
+
+At this point, you should have a fully working WASM plugin, but to make it available to downstream
+proto users, you'll still need to build and make the `.wasm` file available. The easiest solution is
+to publish a GitHub release and include the `.wasm` file as an asset.
+
+### Manually create releases
+
+When your plugin is ready to be published, you can create a release on GitHub using the following
+steps.
+
+1. Tag the release and push to GitHub.
+
+```shell
+git tag v0.0.1
+git push --tags
+```
+
+2. Build a release version of the plugin. The file will be available at
+   `target/wasm32-wasi/release/<name>.wasm`.
+
+```shell
+cargo build --target wasm32-wasi --release
+```
+
+3. In GitHub, navigate to the tags page, find the new tag, create a new release, and attach the
+   built file as an asset.
+
+### Automate releases
+
+Coming soon!
+
+<!--
+If you'd prefer to automate all releases, we suggest using
+[`cargo-dist`](https://crates.io/crates/cargo-dist) for Rust based plugins. The `cargo-dist` crate
+will scaffold a GitHub workflow that automatically builds the project and creates a GitHub release
+everytime a tag is created.
+
+We won't guide you through the process of setting up `cargo-dist`, but you can see an example of the
+`Cargo.toml` configuration below.
+
+```toml
+[workspace.metadata.dist]
+cargo-dist-version = "0.0.7"
+ci = ["github"]
+targets = ["wasm32-wasi"]
+installers = []
+```
+-->
+
+## Resources
+
+Some helpful resources for learning about and building plugins.
+
+- Official proto WASM plugins
+  - [Node.js, npm, etc](https://github.com/moonrepo/node-plugin)
+- [Documentation for `proto_pdk` (plugin development kit)](https://docs.rs/proto_pdk/)

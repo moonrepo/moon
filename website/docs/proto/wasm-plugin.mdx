@@ -4,11 +4,11 @@ sidebar_label: WASM (experimental)
 toc_max_heading_level: 5
 ---
 
-Plugins can also be written in [WebAssembly (WASM)](https://webassembly.org/), a portable binary
-format. This means that plugins can be written in any language that compiles to WASM, like Rust, C,
-C++, Go, TypeScript, and more. Because WASM based plugins are powered by a programming language,
-they implicitly support complex business logic and behavior, have access to a sandboxed file system,
-can execute child processes, and much more.
+Plugins can be written in [WebAssembly (WASM)](https://webassembly.org/), a portable binary format.
+This means that plugins can be written in any language that compiles to WASM, like Rust, C, C++, Go,
+TypeScript, and more. Because WASM based plugins are powered by a programming language, they
+implicitly support complex business logic and behavior, have access to a sandboxed file system (via
+WASI), can execute child processes, and much more.
 
 However, since WASM executes in its own runtime, it _does not_ have access to the current host
 operating system, architecture, environment variables, and more. To bridge this gap, we provide this
@@ -333,7 +333,7 @@ pub fn create_shims(Json(input): Json<CreateShimsInput>) -> FnResult<Json<Create
 }
 ```
 
-### Testing
+## Testing
 
 The best way to test the plugin is to execute it through `proto` directly. To do this, you'll need
 to configure a `.prototools` file at the root of your plugin's repository that maps the plugin to a
@@ -360,17 +360,17 @@ proto --log trace list-remote <id>
 ...
 ```
 
-#### Unit tests
+### Unit tests
 
 Coming soon...
 
-### Building and publishing
+## Building and publishing
 
 At this point, you should have a fully working WASM plugin, but to make it available to downstream
 proto users, you'll still need to build and make the `.wasm` file available. The easiest solution is
 to publish a GitHub release and include the `.wasm` file as an asset.
 
-#### Manually create releases
+### Manually create releases
 
 When your plugin is ready to be published, you can create a release on GitHub using the following
 steps.
@@ -392,7 +392,7 @@ cargo build --target wasm32-wasi --release
 3. In GitHub, navigate to the tags page, find the new tag, create a new release, and attach the
    built file as an asset.
 
-#### Automate releases
+### Automate releases
 
 Coming soon!
 
@@ -413,20 +413,6 @@ targets = ["wasm32-wasi"]
 installers = []
 ```
 -->
-
-#### Test release
-
-Once the `.wasm` file is publicly available, we can verify that it works correctly in proto by
-configuring it as a plugin in [`.prototools`](./config).
-
-```toml
-[plugins]
-my-plugin = "source:https://github.com/<org>/<repo>/releases/download/<version>/<name>.wasm"
-```
-
-```shell
-proto install my-plugin
-```
 
 ## Resources
 

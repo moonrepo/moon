@@ -335,7 +335,30 @@ pub fn create_shims(Json(input): Json<CreateShimsInput>) -> FnResult<Json<Create
 
 ### Testing
 
-TODO
+The best way to test the plugin is to execute it through `proto` directly. To do this, you'll need
+to configure a `.prototools` file at the root of your plugin's repository that maps the plugin to a
+debug build:
+
+```toml
+[plugins]
+<id> = "source:target/wasm32-wasi/debug/<name>.wasm"
+```
+
+And everytime you make a change to the plugin, you'll need to rebuild it with:
+
+```shell
+cargo build --target wasm32-wasi
+```
+
+With these 2 pieces in place, you can now execute `proto` commands. Be sure you're running them from
+the directory with the `.prototools` file, and that you're passing `--log trace`. Logs are extremely
+helpful for figuring out what's going on.
+
+```shell
+proto --log trace install <id>
+proto --log trace list-remote <id>
+...
+```
 
 #### Unit tests
 
@@ -371,6 +394,9 @@ cargo build --target wasm32-wasi --release
 
 #### Automate releases
 
+Coming soon!
+
+<!--
 If you'd prefer to automate all releases, we suggest using
 [`cargo-dist`](https://crates.io/crates/cargo-dist) for Rust based plugins. The `cargo-dist` crate
 will scaffold a GitHub workflow that automatically builds the project and creates a GitHub release
@@ -386,6 +412,7 @@ ci = ["github"]
 targets = ["wasm32-wasi"]
 installers = []
 ```
+-->
 
 #### Test release
 
@@ -400,3 +427,11 @@ my-plugin = "source:https://github.com/<org>/<repo>/releases/download/<version>/
 ```shell
 proto install my-plugin
 ```
+
+## Resources
+
+Some helpful resources for learning about and building plugins.
+
+- Official proto WASM plugins
+  - [Node.js, npm, etc](https://github.com/moonrepo/node-plugin)
+- [Documentation for `proto_pdk` (plugin development kit)](https://docs.rs/proto_pdk/)

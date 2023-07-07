@@ -222,6 +222,7 @@ impl Platform for RustPlatform {
             if !tool
                 .tool
                 .get_globals_bin_dir()?
+                .unwrap()
                 .join("cargo-binstall")
                 .exists()
             {
@@ -453,7 +454,9 @@ impl Platform for RustPlatform {
             }
             // Binary may be installed to ~/.cargo/bin
             _ => {
-                let globals_dir = RustLanguage::new(Proto::new()?).get_globals_bin_dir()?;
+                let globals_dir = RustLanguage::new(Proto::new()?)
+                    .get_globals_bin_dir()?
+                    .unwrap();
                 let global_bin_path = globals_dir.join(&task.command);
 
                 let cargo_bin = if task.command.starts_with("cargo-") {

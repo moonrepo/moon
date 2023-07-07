@@ -24,5 +24,5 @@ serde_json = { workspace = true }
 serde_yaml = { workspace = true }
 
 [dev-dependencies]
-httpmock = "0.6.7"
+httpmock = "0.6.8"
 starbase_sandbox = { workspace = true }

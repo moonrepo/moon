@@ -27,7 +27,8 @@ non-major releases.
 
 Although plugins can be written in any language that compiles to WASM, we've only tested Rust. The
 rest of this article assume you're using Rust and Cargo! Refer to [Extism](https://extism.org/)'s
-documentation for other examples.
+documentation or our official [Node.js plugin](https://github.com/moonrepo/node-plugin) for other
+examples.
 
 :::
 
@@ -325,9 +326,9 @@ pub fn create_shims(Json(input): Json<CreateShimsInput>) -> FnResult<Json<Create
         "bin/npx".into()
     });
 
-    Ok(Json(CreateShims {
+    Ok(Json(CreateShimsOutput {
         global_shims,
-        ..CreateShims::default()
+        ..CreateShimsOutput::default()
     }))
 }
 ```

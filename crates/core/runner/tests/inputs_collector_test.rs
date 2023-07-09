@@ -318,6 +318,8 @@ async fn filters_using_input_files_in_glob_mode() {
 
 #[tokio::test]
 async fn ignores_from_hasher_patterns() {
+    env::set_var("MOON_DISABLE_OVERLAPPING_OUTPUTS", "true");
+
     let (mut workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
 
     workspace_config.hasher = Some(PartialHasherConfig {
@@ -337,6 +339,8 @@ async fn ignores_from_hasher_patterns() {
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
     let project_graph = generate_project_graph(&mut workspace).await.unwrap();
     let vcs = load_vcs(&workspace.root, &workspace.config);
+
+    env::remove_var("MOON_DISABLE_OVERLAPPING_OUTPUTS");
 
     let project = project_graph.get("outputsFiltering").unwrap();
 

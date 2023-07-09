@@ -38,6 +38,7 @@
 
 #### ⚙️ Internal
 
+- Updated to proto v0.12.
 - Modernized the code generator and project constraints implementation.
 - Renamed runfile to snapshot throughout.
 

@@ -56,8 +56,12 @@ where
 
     box_callback(&sandbox);
 
+    env::set_var("MOON_DISABLE_OVERLAPPING_OUTPUTS", "true");
+
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
     let graph = generate_project_graph(&mut workspace).await.unwrap();
+
+    env::remove_var("MOON_DISABLE_OVERLAPPING_OUTPUTS");
 
     (sandbox, graph)
 }

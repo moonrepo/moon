@@ -5,11 +5,11 @@ edition = "2021"
 
 [dependencies]
 moon_config = { path = "../config" }
-erased-serde = "0.3.25"
+erased-serde = "0.3.27"
 miette = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-sha2 = "0.10.6"
+sha2 = "0.10.7"
 starbase_utils = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }

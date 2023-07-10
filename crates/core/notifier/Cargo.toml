@@ -16,4 +16,4 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 starbase_styles = { workspace = true }
 tokio = { workspace = true }
-uuid = { version = "1.3.4", features = ["v4"] }
+uuid = { version = "1.4.0", features = ["v4"] }

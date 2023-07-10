@@ -23,12 +23,12 @@ exclude = ["tests/fixtures"]
 default-members = ["crates/cli"]
 
 [workspace.dependencies]
-async-trait = "0.1.68"
+async-trait = "0.1.71"
 cached = "0.44.0"
 chrono = { version = "0.4.26", features = ["serde"] }
 ci_env = "0.2.0"
-clap = { version = "4.3.8", features = ["derive", "env", "wrap_help"] }
-clap_complete = "4.3.1"
+clap = { version = "4.3.11", features = ["derive", "env", "wrap_help"] }
+clap_complete = "4.3.2"
 console = "0.15.7"
 criterion = { version = "0.5.1", features = ["async_tokio"] }
 miette = "5.9.0"
@@ -44,15 +44,15 @@ reqwest = { version = "0.11.18", default-features = false, features = ["rustls-t
 rustc-hash = "1.1.0"
 schematic = { version = "0.11.0", default-features = false, features = ["schema", "yaml"] }
 semver = "1.0.17"
-serde = { version = "1.0.163", features = ["derive"] }
-serde_json = "1.0.96"
-serde_yaml = "0.9.21"
+serde = { version = "1.0.166", features = ["derive"] }
+serde_json = "1.0.100"
+serde_yaml = "0.9.22"
 starbase = "0.1.12"
 starbase_sandbox = "0.1.5"
 starbase_styles = { version = "0.1.11", features = ["relative-path"] }
 starbase_utils = { version = "0.2.13", default-features = false, features = ["editor-config", "glob", "json", "toml", "yaml"] }
 tera = { version = "1.19.0", features = ["preserve_order"] }
 thiserror = "1.0.40"
-tokio = { version = "1.28.2", default-features = false, features = ["tracing"] }
+tokio = { version = "1.29.1", default-features = false, features = ["tracing"] }
 tracing = "0.1.37"
 url = "2.4.0"

@@ -1,6 +1,6 @@
 {
   "name": "@moonrepo/core-linux-x64-gnu",
-  "version": "1.9.2",
+  "version": "1.10.0",
   "description": "Linux x64 GNU binary for moon.",
   "keywords": [
     "moon",

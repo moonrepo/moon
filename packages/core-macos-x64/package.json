@@ -1,6 +1,6 @@
 {
   "name": "@moonrepo/core-macos-x64",
-  "version": "1.9.2",
+  "version": "1.10.0",
   "description": "macOS x64 (Intel) binary for moon.",
   "keywords": [
     "moon",

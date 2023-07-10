@@ -2,9 +2,11 @@
 slug: moon-v1.10
 title: moon v1.10 - Mid-year quality of life improvements
 authors: [milesj]
-tags: []
-image: ./img/moon/v1.9.png
+tags: [quality, life, qol, ignore, hasher, vcs, ci, debug]
+image: ./img/moon/v1.10.png
 ---
+
+import Button from '@site/src/ui/Button';
 
 Instead of launching a large feature this release, we're focusing on quality of life and developer
 experience improvements.
@@ -77,9 +79,44 @@ hasher:
     - '**/*.config.*'
 ```
 
-### Customize base and head
+### Customize base and head revision
+
+The [`moon ci`][ci] command has always supported customizing the Git base and head revisions through
+the `--base` and `--head` options respectively. This was a requirement for running CI effectively,
+by comparing across branches or commits. However, the [`moon run`][run] did not support this, as
+this command was designed to primarily be run locally, but it turns out, y'all are using it in CI
+too!
+
+To improve the effectiveness of `moon run` in CI, we've made the following improvements, all of
+which require the `--remote` option to be passed.
+
+- Added support for `MOON_BASE` and `MOON_HEAD` environment variables, for customizing the base and
+  head revisions respectively (also supported in `moon ci`). If not defined, will use the default
+  branch and `HEAD`.
+- When the current branch is the default branch, the base revision will be the previous commit.
+  Useful for commits landing on master/main.
 
 ## New debugging a task guide
+
+Running tasks is the most common way to interact with moon, so what do you do when your task isn't
+working as expected? Diagnose it of course! However, diagnosing the root cause of a broken task can
+be quite daunting:
+
+- Is configuration wrong?
+- What about inheritance? Or merging?
+- Is the task platform correct?
+- Were tokens expanded correctly?
+- What about variable substitution?
+- So on and so forth...
+
+To help answer these questions, we're excited to publish an
+[in-depth guide for debugging a task](/docs/guides/debug-task)! These steps are the same steps we
+use internally to diagnose reported issues, or help the Discord community. We hope you find this
+guide extremely beneficial!
+
+<div class="flex justify-center">
+  <Button label="View debugging a task guide" href="/docs/guides/debug-task" size="lg" />
+</div>
 
 ## Other changes
 
@@ -87,8 +124,6 @@ View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.10.
 of changes.
 
 - Updated [`moon ci`][ci] to include a summary of all failed actions.
-- Updated [`moon run`][run] to compare against the previous commit when running on the default
-  branch and using `--remote`.
 - Updated the run report to include stderr/stdout for all attempts.
 
 [ci]: /docs/commands/ci

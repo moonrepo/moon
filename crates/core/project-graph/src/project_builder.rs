@@ -21,7 +21,7 @@ use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::Direction;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_styles::color;
-use starbase_utils::glob;
+use starbase_utils::glob::{self, GlobSet};
 use std::collections::BTreeMap;
 use std::env;
 use std::mem;
@@ -655,16 +655,18 @@ impl<'ws> ProjectGraphBuilder<'ws> {
             return Ok(());
         }
 
-        let mut outputs = FxHashMap::<&WorkspaceRelativePathBuf, &Target>::default();
+        let mut file_outputs = FxHashMap::<&WorkspaceRelativePathBuf, &Target>::default();
+        let mut glob_outputs = FxHashMap::<&WorkspaceRelativePathBuf, &Target>::default();
 
+        // Do paths first so that we can aggregate everything before globbing
         for project in self.graph.node_weights() {
             for task in project.tasks.values() {
-                let mut paths = FxHashSet::default();
-                paths.extend(&task.output_paths);
-                paths.extend(&task.output_globs);
+                if task.output_paths.is_empty() {
+                    continue;
+                }
 
-                for path in paths {
-                    if let Some(existing_target) = outputs.get(&path) {
+                for path in &task.output_paths {
+                    if let Some(existing_target) = file_outputs.get(&path) {
                         return Err(ProjectGraphError::OverlappingTaskOutputs {
                             output: path.to_string(),
                             targets: vec![(*existing_target).to_owned(), task.target.to_owned()],
@@ -672,7 +674,48 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                         .into());
                     }
 
-                    outputs.insert(path, &task.target);
+                    file_outputs.insert(path, &task.target);
+                }
+            }
+        }
+
+        // Do globs second so we can match against the aggregated paths
+        for project in self.graph.node_weights() {
+            for task in project.tasks.values() {
+                if task.output_globs.is_empty() {
+                    continue;
+                }
+
+                // Do explicit checks first as they're faster
+                for glob in &task.output_globs {
+                    if let Some(existing_target) = glob_outputs.get(&glob) {
+                        if *existing_target != &task.target {
+                            return Err(ProjectGraphError::OverlappingTaskOutputs {
+                                output: glob.to_string(),
+                                targets: vec![
+                                    (*existing_target).to_owned(),
+                                    task.target.to_owned(),
+                                ],
+                            }
+                            .into());
+                        }
+                    }
+
+                    glob_outputs.insert(glob, &task.target);
+                }
+
+                // Now attempt to match
+                let globset = GlobSet::new(&task.output_globs)?;
+
+                for (existing_file, existing_target) in &file_outputs {
+                    if *existing_target != &task.target && globset.is_match(existing_file.as_str())
+                    {
+                        return Err(ProjectGraphError::OverlappingTaskOutputs {
+                            output: existing_file.to_string(),
+                            targets: vec![(*existing_target).to_owned(), task.target.to_owned()],
+                        }
+                        .into());
+                    }
                 }
             }
         }

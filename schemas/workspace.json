@@ -5,6 +5,7 @@
   "type": "object",
   "properties": {
     "$schema": {
+      "default": "https://moonrepo.dev/schemas/workspace.json",
       "anyOf": [
         {
           "type": "string"
@@ -77,7 +78,7 @@
     "projects": {
       "anyOf": [
         {
-          "$ref": "#/definitions/WorkspaceProjects"
+          "$ref": "#/definitions/PartialWorkspaceProjects"
         },
         {
           "type": "null"
@@ -95,6 +96,7 @@
       ]
     },
     "telemetry": {
+      "default": true,
       "anyOf": [
         {
           "type": "boolean"
@@ -199,6 +201,7 @@
       "type": "object",
       "properties": {
         "enforceProjectTypeRelationships": {
+          "default": true,
           "anyOf": [
             {
               "type": "boolean"
@@ -255,9 +258,36 @@
       "type": "object",
       "properties": {
         "batchSize": {
+          "default": 2500,
           "anyOf": [
             {
               "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ignoreMissingPatterns": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ignorePatterns": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
             {
               "type": "null"
@@ -285,6 +315,7 @@
           ]
         },
         "warnOnMissingInputs": {
+          "default": true,
           "anyOf": [
             {
               "type": "boolean"
@@ -332,6 +363,7 @@
           ]
         },
         "cacheLifetime": {
+          "default": "7 days",
           "anyOf": [
             {
               "type": "string"
@@ -342,6 +374,7 @@
           ]
         },
         "inheritColorsForPipedTasks": {
+          "default": true,
           "anyOf": [
             {
               "type": "boolean"
@@ -369,6 +402,7 @@
       "type": "object",
       "properties": {
         "defaultBranch": {
+          "default": "master",
           "anyOf": [
             {
               "type": "string"
@@ -443,23 +477,12 @@
       },
       "additionalProperties": false
     },
-    "VcsManager": {
-      "type": "string",
-      "enum": [
-        "git"
-      ]
-    },
-    "VcsProvider": {
-      "type": "string",
-      "enum": [
-        "bitbucket",
-        "github",
-        "gitlab",
-        "other"
-      ]
-    },
-    "WorkspaceProjects": {
+    "PartialWorkspaceProjects": {
+      "title": "PartialWorkspaceProjects",
       "anyOf": [
+        {
+          "$ref": "#/definitions/PartialWorkspaceProjectsConfig"
+        },
         {
           "type": "array",
           "items": {
@@ -474,42 +497,58 @@
           "propertyNames": {
             "type": "string"
           }
-        },
-        {
-          "type": "object",
-          "properties": {
-            "globs": {
-              "anyOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "sources": {
-              "anyOf": [
-                {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "propertyNames": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            }
-          },
-          "additionalProperties": false
         }
+      ]
+    },
+    "PartialWorkspaceProjectsConfig": {
+      "title": "PartialWorkspaceProjectsConfig",
+      "type": "object",
+      "properties": {
+        "globs": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sources": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "propertyNames": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "VcsManager": {
+      "type": "string",
+      "enum": [
+        "git"
+      ]
+    },
+    "VcsProvider": {
+      "type": "string",
+      "enum": [
+        "bitbucket",
+        "github",
+        "gitlab",
+        "other"
       ]
     }
   }

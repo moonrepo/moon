@@ -5,6 +5,7 @@
   "type": "object",
   "properties": {
     "$schema": {
+      "default": "https://moonrepo.dev/schemas/template-frontmatter.json",
       "anyOf": [
         {
           "type": "string"

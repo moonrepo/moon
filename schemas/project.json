@@ -5,6 +5,7 @@
   "type": "object",
   "properties": {
     "$schema": {
+      "default": "https://moonrepo.dev/schemas/project.json",
       "anyOf": [
         {
           "type": "string"
@@ -19,7 +20,7 @@
         {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/ProjectDependsOn"
+            "$ref": "#/definitions/PartialProjectDependsOn"
           }
         },
         {
@@ -287,22 +288,7 @@
         "paths": {
           "anyOf": [
             {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "object",
-              "additionalProperties": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              "propertyNames": {
-                "type": "string"
-              }
+              "$ref": "#/definitions/PartialOwnersPaths"
             },
             {
               "type": "null"
@@ -310,6 +296,7 @@
           ]
         },
         "requiredApprovals": {
+          "default": 1,
           "anyOf": [
             {
               "type": "number"
@@ -321,6 +308,40 @@
         }
       },
       "additionalProperties": false
+    },
+    "PartialOwnersPaths": {
+      "title": "PartialOwnersPaths",
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "PartialProjectDependsOn": {
+      "title": "PartialProjectDependsOn",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/PartialDependencyConfig"
+        }
+      ]
     },
     "PartialProjectMetadataConfig": {
       "title": "PartialProjectMetadataConfig",
@@ -549,6 +570,23 @@
       },
       "additionalProperties": false
     },
+    "PartialTaskCommandArgs": {
+      "title": "PartialTaskCommandArgs",
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
     "PartialTaskConfig": {
       "title": "PartialTaskConfig",
       "type": "object",
@@ -556,7 +594,7 @@
         "args": {
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskCommandArgs"
+              "$ref": "#/definitions/PartialTaskCommandArgs"
             },
             {
               "type": "null"
@@ -566,7 +604,7 @@
         "command": {
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskCommandArgs"
+              "$ref": "#/definitions/PartialTaskCommandArgs"
             },
             {
               "type": "null"
@@ -838,16 +876,6 @@
         "unknown"
       ]
     },
-    "ProjectDependsOn": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "$ref": "#/definitions/PartialDependencyConfig"
-        }
-      ]
-    },
     "ProjectType": {
       "type": "string",
       "enum": [
@@ -855,22 +883,6 @@
         "library",
         "tool",
         "unknown"
-      ]
-    },
-    "TaskCommandArgs": {
-      "anyOf": [
-        {
-          "type": "null"
-        },
-        {
-          "type": "string"
-        },
-        {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
       ]
     },
     "TaskMergeStrategy": {
@@ -882,6 +894,7 @@
       ]
     },
     "TaskOptionAffectedFiles": {
+      "title": "TaskOptionAffectedFiles",
       "anyOf": [
         {
           "type": "boolean"
@@ -896,6 +909,7 @@
       ]
     },
     "TaskOptionEnvFile": {
+      "title": "TaskOptionEnvFile",
       "anyOf": [
         {
           "type": "boolean"

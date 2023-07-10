@@ -245,6 +245,17 @@ Remote caching is powered by our [moonbase service](/moonbase). Start using toda
 
 :::
 
+### Manual persistence
+
+If you'd prefer to _not use_ remote caching at this time, you can cache artifacts yourself, by
+persisting the `.moon/cache/{hashes,outputs}` directories. All other files and folders in
+`.moon/cache` _should not_ be persisted, as they are not safe/portable across machines.
+
+However, because tasks can generate a different hash each run, you'll need to manually invalidate
+your cache. Blindly storing the `hashes` and `outputs` directories without a mechanism to invalidate
+will simply not work, as the contents will drastically change between CI runs. This is the primary
+reason why the remote caching service exists.
+
 ## Reporting run results
 
 If you're using GitHub Actions as your CI provider, we suggest using our

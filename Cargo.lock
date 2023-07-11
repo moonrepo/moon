@@ -3868,6 +3868,7 @@ dependencies = [
 name = "moon_project_graph2"
 version = "0.1.0"
 dependencies = [
+ "async-recursion",
  "miette",
  "moon_common",
  "moon_config",
@@ -3875,7 +3876,10 @@ dependencies = [
  "moon_project_builder",
  "moon_task_builder",
  "petgraph",
+ "rustc-hash",
+ "starbase_events",
  "thiserror",
+ "tracing",
 ]
 
 [[package]]

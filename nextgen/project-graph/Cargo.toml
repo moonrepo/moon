@@ -9,6 +9,10 @@ moon_config = { path = "../config" }
 moon_project = { path = "../project" }
 moon_project_builder = { path = "../project-builder" }
 moon_task_builder = { path = "../task-builder" }
+async-recursion = "1.0.4"
 miette = { workspace = true }
 petgraph = {  workspace = true }
+rustc-hash = { workspace = true }
+starbase_events = { workspace = true }
 thiserror = { workspace = true }
+tracing = { workspace = true }

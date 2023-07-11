@@ -11,23 +11,35 @@ use moon_config::{
 use moon_target::Target;
 use moon_task::{Task, TaskOptions};
 use rustc_hash::{FxHashMap, FxHashSet};
+use starbase_events::{Emitter, Event};
 use std::collections::BTreeMap;
 use std::hash::Hash;
 use std::path::Path;
 use tracing::{debug, trace, warn};
 
-pub type PlatformDetector = dyn Fn(&str, &ToolchainConfig) -> PlatformType;
+#[derive(Debug)]
+pub struct DetectPlatformEvent {
+    pub enabled_platforms: Vec<PlatformType>,
+    pub task_command: String,
+}
+
+impl Event for DetectPlatformEvent {
+    type Value = PlatformType;
+}
+
+pub struct TasksBuilderContext<'proj> {
+    pub detect_platform: &'proj Emitter<DetectPlatformEvent>,
+    pub toolchain_config: &'proj ToolchainConfig,
+    pub workspace_root: &'proj Path,
+}
 
 pub struct TasksBuilder<'proj> {
+    context: TasksBuilderContext<'proj>,
+
     project_id: &'proj str,
     project_env: FxHashMap<&'proj str, &'proj str>,
     project_platform: &'proj PlatformType,
     project_source: &'proj str,
-
-    // Workspace information
-    workspace_root: &'proj Path,
-    platform_detector: Option<Box<PlatformDetector>>,
-    toolchain_config: Option<&'proj ToolchainConfig>,
 
     // Global settings for tasks to inherit
     implicit_deps: Vec<&'proj Target>,
@@ -44,32 +56,20 @@ impl<'proj> TasksBuilder<'proj> {
         project_id: &'proj str,
         project_source: &'proj str,
         project_platform: &'proj PlatformType,
-        workspace_root: &'proj Path,
+        context: TasksBuilderContext<'proj>,
     ) -> Self {
         Self {
+            context,
             project_id,
             project_env: FxHashMap::default(),
             project_platform,
             project_source,
-            workspace_root,
-            platform_detector: None,
-            toolchain_config: None,
             implicit_deps: vec![],
             implicit_inputs: vec![],
             task_ids: FxHashSet::default(),
             global_tasks: FxHashMap::default(),
             local_tasks: FxHashMap::default(),
         }
-    }
-
-    /// Register a function to detect a task's platform when unknown.
-    pub fn detect_platform<F>(&mut self, detector: F, config: &'proj ToolchainConfig) -> &mut Self
-    where
-        F: Fn(&str, &ToolchainConfig) -> PlatformType + 'static,
-    {
-        self.platform_detector = Some(Box::new(detector));
-        self.toolchain_config = Some(config);
-        self
     }
 
     pub fn inherit_global_tasks(
@@ -174,17 +174,17 @@ impl<'proj> TasksBuilder<'proj> {
     }
 
     #[tracing::instrument(name = "task", skip_all)]
-    pub fn build(self) -> miette::Result<BTreeMap<Id, Task>> {
+    pub async fn build(self) -> miette::Result<BTreeMap<Id, Task>> {
         let mut tasks = BTreeMap::new();
 
         for id in &self.task_ids {
-            tasks.insert((*id).to_owned(), self.build_task(id)?);
+            tasks.insert((*id).to_owned(), self.build_task(id).await?);
         }
 
         Ok(tasks)
     }
 
-    fn build_task(&self, id: &Id) -> miette::Result<Task> {
+    async fn build_task(&self, id: &Id) -> miette::Result<Task> {
         let target = Target::new(self.project_id, id)?;
 
         debug!(target = target.as_str(), "Building task");
@@ -329,17 +329,26 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         if task.platform.is_unknown() {
-            if let Some(detector) = &self.platform_detector {
-                task.platform = detector(&task.command, self.toolchain_config.as_ref().unwrap());
-            }
+            let (_, result) = self
+                .context
+                .detect_platform
+                .emit(DetectPlatformEvent {
+                    enabled_platforms: self.context.toolchain_config.get_enabled_platforms(),
+                    task_command: task.command.clone(),
+                })
+                .await?;
 
-            if task.platform.is_unknown() {
-                task.platform = if self.project_platform.is_unknown() {
+            let platform = result.unwrap_or_default();
+
+            task.platform = if platform.is_unknown() {
+                if self.project_platform.is_unknown() {
                     PlatformType::System
                 } else {
                     self.project_platform.to_owned()
-                };
-            }
+                }
+            } else {
+                platform
+            };
         }
 
         task.target = target;
@@ -511,7 +520,7 @@ impl<'proj> TasksBuilder<'proj> {
         if let Some(env_file) = &options.env_file {
             let env_path = env_file
                 .to_workspace_relative(self.project_source)
-                .to_path(self.workspace_root);
+                .to_path(self.context.workspace_root);
 
             trace!(
                 target = target.as_str(),

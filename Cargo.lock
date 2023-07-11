@@ -3812,6 +3812,7 @@ dependencies = [
  "moon_task",
  "moon_task_builder",
  "rustc-hash",
+ "starbase_events",
  "starbase_sandbox",
  "thiserror",
  "tracing",
@@ -3861,6 +3862,20 @@ dependencies = [
  "starbase_utils",
  "thiserror",
  "tokio",
+]
+
+[[package]]
+name = "moon_project_graph2"
+version = "0.1.0"
+dependencies = [
+ "miette",
+ "moon_common",
+ "moon_config",
+ "moon_project",
+ "moon_project_builder",
+ "moon_task_builder",
+ "petgraph",
+ "thiserror",
 ]
 
 [[package]]
@@ -4051,6 +4066,7 @@ dependencies = [
  "moon_target",
  "moon_task",
  "rustc-hash",
+ "starbase_events",
  "starbase_sandbox",
  "thiserror",
  "tracing",

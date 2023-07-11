@@ -8,82 +8,70 @@ use moon_config::{
 use moon_file_group::FileGroup;
 use moon_project::Project;
 use moon_task::Task;
-use moon_task_builder::{PlatformDetector, TasksBuilder};
+use moon_task_builder::{DetectPlatformEvent, TasksBuilder, TasksBuilderContext};
 use rustc_hash::FxHashMap;
+use starbase_events::{Emitter, Event};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use tracing::debug;
 
-pub type LanguageDetector = dyn Fn(&Path) -> LanguageType;
+#[derive(Debug)]
+pub struct DetectLanguageEvent {
+    pub project_root: PathBuf,
+}
+
+impl Event for DetectLanguageEvent {
+    type Value = LanguageType;
+}
+
+pub struct ProjectBuilderContext<'app> {
+    pub detect_language: &'app Emitter<DetectLanguageEvent>,
+    pub detect_platform: &'app Emitter<DetectPlatformEvent>,
+    pub toolchain_config: &'app ToolchainConfig,
+    pub workspace_root: &'app Path,
+}
 
 pub struct ProjectBuilder<'app> {
-    id: &'app str,
-    source: WorkspaceRelativePathBuf,
-    project_root: PathBuf,
-
-    // Workspace information
-    workspace_root: &'app Path,
-    toolchain_config: Option<&'app ToolchainConfig>,
+    context: ProjectBuilderContext<'app>,
 
     // Configs to derive information from
     global_config: Option<InheritedTasksResult>,
     local_config: Option<ProjectConfig>,
 
     // Values to be continually built
-    pub language: LanguageType,
-    language_detector: Option<Box<LanguageDetector>>,
+    id: &'app str,
+    source: WorkspaceRelativePathBuf,
+    project_root: PathBuf,
 
+    pub language: LanguageType,
     pub platform: PlatformType,
-    platform_detector: Option<Box<PlatformDetector>>,
 }
 
 impl<'app> ProjectBuilder<'app> {
     pub fn new(
         id: &'app str,
         source: &'app str,
-        workspace_root: &'app Path,
+        context: ProjectBuilderContext<'app>,
     ) -> miette::Result<Self> {
         debug!(id, source, "Building project {} from source", color::id(id));
 
         let source = WorkspaceRelativePathBuf::from(source);
-        let root = source.to_logical_path(workspace_root);
+        let root = source.to_logical_path(context.workspace_root);
 
         if !root.exists() {
             return Err(ProjectBuilderError::MissingAtSource(source.as_str().to_owned()).into());
         }
 
         Ok(ProjectBuilder {
+            context,
             id,
             project_root: root,
             source,
-            workspace_root,
-            toolchain_config: None,
             global_config: None,
             local_config: None,
             language: LanguageType::Unknown,
-            language_detector: None,
             platform: PlatformType::Unknown,
-            platform_detector: None,
         })
-    }
-
-    /// Register a function to detect a project's language when unknown.
-    pub fn detect_language<F>(&mut self, detector: F) -> &mut Self
-    where
-        F: Fn(&Path) -> LanguageType + 'static,
-    {
-        self.language_detector = Some(Box::new(detector));
-        self
-    }
-
-    /// Register a function to detect a task's platform when unknown.
-    pub fn detect_platform<F>(&mut self, detector: F, config: &'app ToolchainConfig) -> &mut Self
-    where
-        F: Fn(&str, &ToolchainConfig) -> PlatformType + 'static,
-    {
-        self.platform_detector = Some(Box::new(detector));
-        self.toolchain_config = Some(config);
-        self
     }
 
     /// Inherit tasks, file groups, and more from global `.moon/tasks` configs.
@@ -116,9 +104,9 @@ impl<'app> ProjectBuilder<'app> {
 
     /// Load a `moon.yml` config file from the root of the project (derived from source).
     /// Once loaded, detect applicable language and platform fields.
-    pub fn load_local_config(&mut self) -> miette::Result<&mut Self> {
+    pub async fn load_local_config(&mut self) -> miette::Result<()> {
         let config_name = self.source.join(consts::CONFIG_PROJECT_FILENAME);
-        let config_path = config_name.to_path(self.workspace_root);
+        let config_path = config_name.to_path(self.context.workspace_root);
 
         debug!(
             id = self.id,
@@ -127,23 +115,26 @@ impl<'app> ProjectBuilder<'app> {
             color::file(config_name.as_str())
         );
 
-        let config = ProjectConfig::load(self.workspace_root, config_path)?;
+        let config = ProjectConfig::load(self.context.workspace_root, config_path)?;
 
         // Use configured language or detect from environment
         self.language = if config.language == LanguageType::Unknown {
-            if let Some(detector) = &self.language_detector {
-                let language = detector(&self.project_root);
+            let (_, result) = self
+                .context
+                .detect_language
+                .emit(DetectLanguageEvent {
+                    project_root: self.project_root.clone(),
+                })
+                .await?;
+            let language = result.unwrap_or_else(|| config.language.clone());
 
-                debug!(
-                    id = self.id,
-                    language = ?language,
-                    "Unknown project language, detecting from environment",
-                );
+            debug!(
+                id = self.id,
+                language = ?language,
+                "Unknown project language, detecting from environment",
+            );
 
-                language
-            } else {
-                config.language.clone()
-            }
+            language
         } else {
             config.language.clone()
         };
@@ -164,7 +155,7 @@ impl<'app> ProjectBuilder<'app> {
 
         self.local_config = Some(config);
 
-        Ok(self)
+        Ok(())
     }
 
     /// Extend the builder with a project dependency implicitly derived from the project graph.
@@ -207,11 +198,11 @@ impl<'app> ProjectBuilder<'app> {
     }
 
     #[tracing::instrument(name = "project", skip_all)]
-    pub fn build(mut self) -> miette::Result<Project> {
+    pub async fn build(mut self) -> miette::Result<Project> {
         let mut project = Project {
             dependencies: self.build_dependencies()?,
             file_groups: self.build_file_groups()?,
-            tasks: self.build_tasks()?,
+            tasks: self.build_tasks().await?,
             id: Id::raw(self.id),
             language: self.language,
             platform: self.platform,
@@ -313,19 +304,19 @@ impl<'app> ProjectBuilder<'app> {
         Ok(file_groups)
     }
 
-    fn build_tasks(&mut self) -> miette::Result<BTreeMap<Id, Task>> {
+    async fn build_tasks(&mut self) -> miette::Result<BTreeMap<Id, Task>> {
         debug!(id = self.id, "Building tasks");
 
         let mut tasks_builder = TasksBuilder::new(
             self.id,
             self.source.as_str(),
             &self.platform,
-            self.workspace_root,
+            TasksBuilderContext {
+                detect_platform: self.context.detect_platform,
+                toolchain_config: self.context.toolchain_config,
+                workspace_root: self.context.workspace_root,
+            },
         );
-
-        if let Some(detector) = self.platform_detector.take() {
-            tasks_builder.detect_platform(detector, self.toolchain_config.as_ref().unwrap());
-        }
 
         if let Some(global_config) = &self.global_config {
             tasks_builder.inherit_global_tasks(
@@ -340,6 +331,6 @@ impl<'app> ProjectBuilder<'app> {
             tasks_builder.load_local_tasks(local_config);
         }
 
-        tasks_builder.build()
+        tasks_builder.build().await
     }
 }

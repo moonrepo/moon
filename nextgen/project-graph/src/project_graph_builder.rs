@@ -1,4 +1,5 @@
 use crate::project_graph::GraphType;
+use crate::project_locator::locate_projects_with_globs;
 use async_recursion::async_recursion;
 use moon_common::path::{WorkspaceRelativePath, WorkspaceRelativePathBuf};
 use moon_common::Id;
@@ -8,18 +9,21 @@ use moon_project_builder::{
     DetectLanguageEvent, ProjectBuilder, ProjectBuilderContext, ProjectBuilderError,
 };
 use moon_task_builder::DetectPlatformEvent;
+use moon_vcs::BoxedVcs;
 use petgraph::graph::DiGraph;
 use petgraph::prelude::NodeIndex;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_events::Emitter;
+use std::mem;
 use std::path::Path;
-use tracing::{trace, warn};
+use tracing::{debug, trace, warn};
 
 pub struct ProjectGraphBuilderContext<'app> {
     pub detect_language: &'app Emitter<DetectLanguageEvent>,
     pub detect_platform: &'app Emitter<DetectPlatformEvent>,
     pub inherited_tasks: &'app InheritedTasksManager,
     pub toolchain_config: &'app ToolchainConfig,
+    pub vcs: &'app BoxedVcs,
     pub workspace_config: &'app WorkspaceConfig,
     pub workspace_root: &'app Path,
 }
@@ -56,6 +60,7 @@ impl<'app> ProjectGraphBuilder<'app> {
         Ok(graph)
     }
 
+    /// Load a single project by ID or alias into the graph.
     pub async fn load(&mut self, alias_or_id: &str) -> miette::Result<()> {
         self.internal_load(alias_or_id, &mut FxHashSet::default())
             .await?;
@@ -63,7 +68,19 @@ impl<'app> ProjectGraphBuilder<'app> {
         Ok(())
     }
 
+    /// Load all projects into the graph, as configured in the workspace.
     pub async fn load_all(&mut self) -> miette::Result<()> {
+        let mut sources = FxHashMap::default();
+
+        // Take ownership so that we can mutate while looping,
+        // without having to clone all sources.
+        for (id, source) in mem::take(&mut self.sources) {
+            self.internal_load(&id, &mut FxHashSet::default()).await?;
+            sources.insert(id, source);
+        }
+
+        self.sources = sources;
+
         Ok(())
     }
 
@@ -134,7 +151,7 @@ impl<'app> ProjectGraphBuilder<'app> {
     ) -> miette::Result<Project> {
         let mut builder = ProjectBuilder::new(
             id,
-            source.as_str(), // TODO?
+            source,
             ProjectBuilderContext {
                 detect_language: self.context.detect_language,
                 detect_platform: self.context.detect_platform,
@@ -172,6 +189,8 @@ impl<'app> ProjectGraphBuilder<'app> {
         Ok(project)
     }
 
+    /// Preload the graph with project sources from the workspace configuration.
+    /// If globs are provided, walk the file system and gather sources.
     fn preload(&mut self) -> miette::Result<()> {
         let mut globs = vec![];
         let mut sources = FxHashMap::default();
@@ -187,15 +206,28 @@ impl<'app> ProjectGraphBuilder<'app> {
                 add_sources(map);
             }
             WorkspaceProjects::Globs(list) => {
-                globs.extend(list.clone());
+                globs.extend(list);
             }
             WorkspaceProjects::Both(cfg) => {
-                globs.extend(cfg.globs.clone());
+                globs.extend(&cfg.globs);
                 add_sources(&cfg.sources);
             }
         };
 
-        // TODO glob
+        if !globs.is_empty() {
+            debug!(
+                globs = ?globs,
+                "Locating projects with globs",
+            );
+
+            locate_projects_with_globs(
+                &self.context.workspace_root,
+                &globs,
+                &mut sources,
+                Some(&self.context.vcs),
+            )?;
+        }
+
         // TODO load aliases
 
         self.sources = sources;

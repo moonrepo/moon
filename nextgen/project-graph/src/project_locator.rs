@@ -1,0 +1,84 @@
+use moon_common::path::{to_virtual_string, WorkspaceRelativePathBuf};
+use moon_common::{color, consts, Id};
+use moon_vcs::BoxedVcs;
+use rustc_hash::FxHashMap;
+use starbase_utils::{fs, glob};
+use std::path::Path;
+use tracing::warn;
+
+/// Infer a project name from a source path, by using the name of
+/// the project folder.
+pub fn infer_project_id_and_source(path: &str) -> (Id, WorkspaceRelativePathBuf) {
+    let (id, source) = if path.contains('/') {
+        (path.split('/').last().unwrap().to_owned(), path)
+    } else {
+        (path.to_owned(), path)
+    };
+
+    (Id::clean(id), WorkspaceRelativePathBuf::from(source))
+}
+
+/// For each pattern in the globs list, glob the file system
+/// for potential projects, and infer their name and source.
+pub fn locate_projects_with_globs(
+    workspace_root: &Path,
+    globs: &[&String],
+    sources: &mut FxHashMap<Id, WorkspaceRelativePathBuf>,
+    vcs: Option<&BoxedVcs>,
+) -> miette::Result<()> {
+    let root_source = ".".to_owned();
+
+    // Root-level project has special handling
+    if globs.contains(&&root_source) {
+        let root_id = fs::file_name(workspace_root);
+
+        sources.insert(
+            Id::clean(if root_id.is_empty() {
+                "root"
+            } else {
+                root_id.as_str()
+            }),
+            WorkspaceRelativePathBuf::from(root_source),
+        );
+    }
+
+    // Glob for all other projects
+    for project_root in glob::walk(workspace_root, globs)? {
+        if project_root.is_dir() {
+            let project_source =
+                to_virtual_string(project_root.strip_prefix(workspace_root).unwrap())?;
+
+            if project_source == consts::CONFIG_DIRNAME {
+                continue;
+            }
+
+            if let Some(vcs) = vcs {
+                if vcs.is_ignored(&project_source) {
+                    warn!(
+                        source = project_source,
+                        "Found a project with source {}, but this path has been ignored by your VCS. Skipping ignored source.",
+                        color::file(&project_source)
+                    );
+
+                    continue;
+                }
+            }
+
+            let (id, source) = infer_project_id_and_source(&project_source);
+
+            if let Some(existing_source) = sources.get(&id) {
+                warn!(
+                    source = project_source,
+                    existing_source = existing_source.as_str(),
+                    "A project already exists at source {}, skipping conflicting source {}. Try renaming the project folder to make it unique.",
+                    color::file(existing_source),
+                    color::file(&source)
+                );
+            } else {
+                sources.insert(id, source);
+            }
+        }
+    }
+
+    Ok(())
+}

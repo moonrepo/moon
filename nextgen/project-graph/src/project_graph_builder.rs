@@ -1,11 +1,14 @@
 use crate::project_events::ExtendProjectGraphEvent;
 use crate::project_graph::GraphType;
-use crate::project_locator::locate_projects_with_globs;
+use crate::project_graph_hash::ProjectGraphHash;
+use crate::projects_locator::locate_projects_with_globs;
 use crate::ExtendProjectEvent;
 use async_recursion::async_recursion;
-use moon_common::path::{WorkspaceRelativePath, WorkspaceRelativePathBuf};
-use moon_common::{color, Id};
+use moon_cache::CacheEngine;
+use moon_common::path::{to_virtual_string, WorkspaceRelativePath, WorkspaceRelativePathBuf};
+use moon_common::{color, consts, Id};
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig, WorkspaceProjects};
+use moon_hash::HashEngine;
 use moon_project::Project;
 use moon_project_builder::{
     DetectLanguageEvent, ProjectBuilder, ProjectBuilderContext, ProjectBuilderError,
@@ -18,6 +21,8 @@ use petgraph::prelude::NodeIndex;
 use petgraph::Direction;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_events::Emitter;
+use starbase_utils::{glob, json};
+use std::collections::BTreeMap;
 use std::mem;
 use std::path::Path;
 use tracing::{debug, trace, warn};
@@ -52,6 +57,8 @@ pub struct ProjectGraphBuilder<'app> {
 }
 
 impl<'app> ProjectGraphBuilder<'app> {
+    /// Create a new project graph instance without reading from the
+    /// cache, and preloading all project sources and aliases.
     pub async fn new(
         context: ProjectGraphBuilderContext<'app>,
     ) -> miette::Result<ProjectGraphBuilder<'app>> {
@@ -69,6 +76,69 @@ impl<'app> ProjectGraphBuilder<'app> {
 
         Ok(graph)
     }
+
+    /// Create a project graph with all projects inserted as nodes,
+    /// and read from the file system cache when applicable.
+    pub async fn generate(
+        context: ProjectGraphBuilderContext<'app>,
+        hash_engine: &HashEngine,
+        cache_engine: &CacheEngine,
+    ) -> miette::Result<ProjectGraphBuilder<'app>> {
+        let is_vcs_enabled = context.vcs.is_enabled();
+        let mut graph = Self::new(context).await?;
+
+        // No VCS to hash with, so abort caching
+        if !is_vcs_enabled {
+            graph.load_all().await?;
+            graph.enforce_constraints()?;
+
+            return Ok(graph);
+        }
+
+        // Hash the project graph based on the preloaded state
+        let mut graph_contents = ProjectGraphHash::new();
+        graph_contents.add_sources(&graph.sources);
+        graph_contents.add_aliases(&graph.aliases);
+        graph_contents.add_configs(graph.hash_required_configs().await?);
+
+        let hash = hash_engine.save_manifest_without_hasher("Project graph", &graph_contents)?;
+
+        debug!(hash, "Generated hash for project graph");
+
+        // Check the current state and cache
+        let mut state = cache_engine.cache_projects_state()?;
+        let cache_path = cache_engine.get_state_path("projectGraphInitial.json");
+
+        if hash == state.last_hash && cache_path.exists() {
+            debug!(
+                "Loading project graph with {} projects from cache",
+                graph.sources.len(),
+            );
+
+            graph.graph = json::read_file(cache_path)?;
+
+            return Ok(graph);
+        }
+
+        // Build the graph, update the state, and save the cache
+        debug!(
+            "Creating project graph with {} projects",
+            graph.sources.len(),
+        );
+
+        graph.load_all().await?;
+        graph.enforce_constraints()?;
+
+        state.last_hash = hash;
+        state.projects = graph.sources.clone();
+        state.save()?;
+
+        json::write_file(cache_path, &graph.graph, false)?;
+
+        Ok(graph)
+    }
+
+    pub async fn build(mut self) -> miette::Result<()> {}
 
     /// Load a single project by ID or alias into the graph.
     pub async fn load(&mut self, alias_or_id: &str) -> miette::Result<()> {
@@ -239,6 +309,42 @@ impl<'app> ProjectGraphBuilder<'app> {
         }
 
         Ok(())
+    }
+
+    /// When caching the project graph, we must hash all project and workspace
+    /// config files that are required to invalidate the cache.
+    async fn hash_required_configs(
+        &self,
+    ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
+        let mut configs = vec![];
+
+        // Hash all project-level config files
+        for source in self.sources.values() {
+            configs.push(
+                source
+                    .join(consts::CONFIG_PROJECT_FILENAME)
+                    .as_str()
+                    .to_owned(),
+            );
+        }
+
+        // Hash all workspace-level config files
+        for file in glob::walk(
+            self.context.workspace_root.join(consts::CONFIG_DIRNAME),
+            ["*.yml", "tasks/*.yml"],
+        )? {
+            configs.push(to_virtual_string(
+                file.strip_prefix(self.context.workspace_root).unwrap(),
+            )?);
+        }
+
+        let hashes = self
+            .context
+            .vcs
+            .get_file_hashes(&configs, false, 500)
+            .await?;
+
+        Ok(hashes)
     }
 
     /// Preload the graph with project sources from the workspace configuration.

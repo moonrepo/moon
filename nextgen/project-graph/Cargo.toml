@@ -4,8 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+# TODO REMOVE
+moon_cache = { path = "../../crates/core/cache" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
+moon_hash = { path = "../hash" }
 moon_project = { path = "../project" }
 moon_project_builder = { path = "../project-builder" }
 moon_project_constraints = { path = "../project-constraints" }
@@ -15,6 +18,7 @@ async-recursion = "1.0.4"
 miette = { workspace = true }
 petgraph = {  workspace = true }
 rustc-hash = { workspace = true }
+serde = { workspace = true }
 starbase_events = { workspace = true }
 starbase_utils = { workspace = true }
 thiserror = { workspace = true }

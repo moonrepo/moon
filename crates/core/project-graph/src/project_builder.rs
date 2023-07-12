@@ -143,22 +143,22 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         let tag_relationships = &self.workspace.config.constraints.tag_relationships;
 
         for project in self.graph.node_weights() {
-            // let deps: Vec<_> = self
-            //     .graph
-            //     .neighbors_directed(*self.indices.get(&project.id).unwrap(), Direction::Outgoing)
-            //     .map(|idx| self.graph.node_weight(idx).unwrap())
-            //     .collect();
+            let deps: Vec<_> = self
+                .graph
+                .neighbors_directed(*self.indices.get(&project.id).unwrap(), Direction::Outgoing)
+                .map(|idx| self.graph.node_weight(idx).unwrap())
+                .collect();
 
-            // // Enforce project constraints and boundaries.
-            // for dep in deps {
-            //     if type_relationships {
-            //         enforce_project_type_relationships(project, dep)?;
-            //     }
+            // Enforce project constraints and boundaries.
+            for dep in deps {
+                if type_relationships {
+                    enforce_project_type_relationships(project, dep)?;
+                }
 
-            //     for (source_tag, required_tags) in tag_relationships {
-            //         enforce_tag_relationships(project, source_tag, dep, required_tags)?;
-            //     }
-            // }
+                for (source_tag, required_tags) in tag_relationships {
+                    enforce_tag_relationships(project, source_tag, dep, required_tags)?;
+                }
+            }
 
             // Validate non-persistent tasks dont depend on persistent tasks
             for task in project.tasks.values() {

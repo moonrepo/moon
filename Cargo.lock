@@ -3870,8 +3870,10 @@ version = "0.1.0"
 dependencies = [
  "async-recursion",
  "miette",
+ "moon_cache",
  "moon_common",
  "moon_config",
+ "moon_hash",
  "moon_project",
  "moon_project_builder",
  "moon_project_constraints",
@@ -3879,6 +3881,7 @@ dependencies = [
  "moon_vcs",
  "petgraph",
  "rustc-hash",
+ "serde",
  "starbase_events",
  "starbase_utils",
  "thiserror",

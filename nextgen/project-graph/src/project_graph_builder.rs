@@ -1,3 +1,4 @@
+use crate::project_events::ExtendProjectGraphEvent;
 use crate::project_graph::GraphType;
 use crate::project_locator::locate_projects_with_globs;
 use async_recursion::async_recursion;
@@ -19,6 +20,7 @@ use std::path::Path;
 use tracing::{debug, trace, warn};
 
 pub struct ProjectGraphBuilderContext<'app> {
+    pub extend_project_graph: &'app Emitter<ExtendProjectGraphEvent>,
     pub detect_language: &'app Emitter<DetectLanguageEvent>,
     pub detect_platform: &'app Emitter<DetectPlatformEvent>,
     pub inherited_tasks: &'app InheritedTasksManager,
@@ -35,6 +37,9 @@ pub struct ProjectNode {
 pub struct ProjectGraphBuilder<'app> {
     context: ProjectGraphBuilderContext<'app>,
 
+    /// Mapping of project aliases to their IDs.
+    aliases: FxHashMap<String, Id>,
+
     /// The DAG instance.
     graph: GraphType,
 
@@ -47,15 +52,18 @@ pub struct ProjectGraphBuilder<'app> {
 }
 
 impl<'app> ProjectGraphBuilder<'app> {
-    pub fn new(context: ProjectGraphBuilderContext<'app>) -> miette::Result<Self> {
+    pub async fn new(
+        context: ProjectGraphBuilderContext<'app>,
+    ) -> miette::Result<ProjectGraphBuilder<'app>> {
         let mut graph = ProjectGraphBuilder {
             context,
+            aliases: FxHashMap::default(),
             graph: DiGraph::new(),
             nodes: FxHashMap::default(),
             sources: FxHashMap::default(),
         };
 
-        graph.preload()?;
+        graph.preload().await?;
 
         Ok(graph)
     }
@@ -177,24 +185,26 @@ impl<'app> ProjectGraphBuilder<'app> {
         //     }
         // }
 
-        let project = builder.build().await?;
+        let mut project = builder.build().await?;
 
-        // TODO
-        // for (alias, project_id) in &self.aliases {
-        //     if project_id == id {
-        //         project.alias = Some(alias.to_owned());
-        //     }
-        // }
+        // Inherit alias (is there a better way to do this?)
+        for (alias, project_id) in &self.aliases {
+            if project_id == id {
+                project.alias = Some(alias.to_owned());
+                break;
+            }
+        }
 
         Ok(project)
     }
 
     /// Preload the graph with project sources from the workspace configuration.
     /// If globs are provided, walk the file system and gather sources.
-    fn preload(&mut self) -> miette::Result<()> {
+    async fn preload(&mut self) -> miette::Result<()> {
         let mut globs = vec![];
         let mut sources = FxHashMap::default();
 
+        // Locate all project sources
         let mut add_sources = |map: &FxHashMap<Id, String>| {
             for (id, source) in map {
                 sources.insert(id.to_owned(), WorkspaceRelativePathBuf::from(source));
@@ -228,18 +238,29 @@ impl<'app> ProjectGraphBuilder<'app> {
             )?;
         }
 
-        // TODO load aliases
+        // Extend graph with aliases
+        let (event, result) = self
+            .context
+            .extend_project_graph
+            .emit(ExtendProjectGraphEvent {
+                sources,
+                workspace_root: self.context.workspace_root.to_owned(),
+            })
+            .await?;
 
-        self.sources = sources;
+        self.sources = event.sources;
+
+        if let Some(res) = result {
+            self.aliases.extend(res.aliases);
+        }
 
         Ok(())
     }
 
     fn resolve_id(&self, alias_or_id: &str) -> Id {
-        // Id::raw(match self.aliases.get(alias_or_id) {
-        //     Some(project_id) => project_id,
-        //     None => alias_or_id,
-        // })
-        Id::raw(alias_or_id)
+        match self.aliases.get(alias_or_id) {
+            Some(project_id) => project_id.to_owned(),
+            None => Id::raw(alias_or_id),
+        }
     }
 }

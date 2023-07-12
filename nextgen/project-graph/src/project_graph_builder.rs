@@ -1,5 +1,5 @@
 use crate::project_events::ExtendProjectGraphEvent;
-use crate::project_graph::GraphType;
+use crate::project_graph::{GraphType, ProjectGraph, ProjectNode};
 use crate::project_graph_hash::ProjectGraphHash;
 use crate::projects_locator::locate_projects_with_globs;
 use crate::ExtendProjectEvent;
@@ -90,7 +90,6 @@ impl<'app> ProjectGraphBuilder<'app> {
         // No VCS to hash with, so abort caching
         if !is_vcs_enabled {
             graph.load_all().await?;
-            graph.enforce_constraints()?;
 
             return Ok(graph);
         }
@@ -122,12 +121,11 @@ impl<'app> ProjectGraphBuilder<'app> {
 
         // Build the graph, update the state, and save the cache
         debug!(
-            "Creating project graph with {} projects",
+            "Building project graph with {} projects",
             graph.sources.len(),
         );
 
         graph.load_all().await?;
-        graph.enforce_constraints()?;
 
         state.last_hash = hash;
         state.projects = graph.sources.clone();
@@ -138,7 +136,34 @@ impl<'app> ProjectGraphBuilder<'app> {
         Ok(graph)
     }
 
-    // pub async fn build(mut self) -> miette::Result<()> {}
+    /// Build the project graph and return a new structure.
+    pub async fn build(self) -> miette::Result<ProjectGraph> {
+        self.enforce_constraints()?;
+
+        let mut nodes = FxHashMap::default();
+
+        for (alias, id) in self.aliases {
+            nodes.insert(
+                id,
+                ProjectNode {
+                    alias: Some(alias),
+                    index: NodeIndex::new(0),
+                },
+            );
+        }
+
+        for (id, index) in self.nodes {
+            nodes
+                .entry(id)
+                .and_modify(|node| node.index = index)
+                .or_insert(ProjectNode { alias: None, index });
+        }
+
+        Ok(ProjectGraph {
+            graph: self.graph,
+            nodes,
+        })
+    }
 
     /// Load a single project by ID or alias into the graph.
     pub async fn load(&mut self, alias_or_id: &str) -> miette::Result<()> {
@@ -283,6 +308,8 @@ impl<'app> ProjectGraphBuilder<'app> {
 
     /// Enforce project constraints and boundaries after all nodes have been inserted.
     fn enforce_constraints(&self) -> miette::Result<()> {
+        debug!("Enforcing project constraints");
+
         let type_relationships = self
             .context
             .workspace_config

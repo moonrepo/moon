@@ -13,13 +13,13 @@ use std::path::Path;
 pub type GraphType = DiGraph<Project, DependencyScope>;
 
 pub struct ProjectNode {
-    alias: Option<String>,
-    index: NodeIndex,
+    pub alias: Option<String>,
+    pub index: NodeIndex,
 }
 
 pub struct ProjectGraph {
-    graph: GraphType,
-    nodes: FxHashMap<Id, ProjectNode>,
+    pub graph: GraphType,
+    pub nodes: FxHashMap<Id, ProjectNode>,
 }
 
 impl ProjectGraph {

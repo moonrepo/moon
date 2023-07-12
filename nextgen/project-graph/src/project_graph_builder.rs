@@ -10,10 +10,12 @@ use moon_project::Project;
 use moon_project_builder::{
     DetectLanguageEvent, ProjectBuilder, ProjectBuilderContext, ProjectBuilderError,
 };
+use moon_project_constraints::{enforce_project_type_relationships, enforce_tag_relationships};
 use moon_task_builder::DetectPlatformEvent;
 use moon_vcs::BoxedVcs;
 use petgraph::graph::DiGraph;
 use petgraph::prelude::NodeIndex;
+use petgraph::Direction;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_events::Emitter;
 use std::mem;
@@ -32,10 +34,6 @@ pub struct ProjectGraphBuilderContext<'app> {
     pub workspace_root: &'app Path,
 }
 
-pub struct ProjectNode {
-    index: NodeIndex,
-}
-
 pub struct ProjectGraphBuilder<'app> {
     context: ProjectGraphBuilderContext<'app>,
 
@@ -46,7 +44,7 @@ pub struct ProjectGraphBuilder<'app> {
     graph: GraphType,
 
     /// Nodes (projects) inserted into the graph.
-    nodes: FxHashMap<Id, ProjectNode>,
+    nodes: FxHashMap<Id, NodeIndex>,
 
     /// Mapping of project IDs to file system sources,
     /// derived from the `workspace.projects` setting.
@@ -105,13 +103,13 @@ impl<'app> ProjectGraphBuilder<'app> {
         let id = self.resolve_id(alias_or_id);
 
         // Already loaded, exit early with existing index
-        if let Some(node) = self.nodes.get(&id) {
+        if let Some(index) = self.nodes.get(&id) {
             trace!(
                 project_id = id.as_str(),
-                "Project already exists in the project graph",
+                "Project already exists in the project graph, skipping load",
             );
 
-            return Ok(node.index);
+            return Ok(*index);
         }
 
         // Check that the project ID is configured
@@ -125,7 +123,7 @@ impl<'app> ProjectGraphBuilder<'app> {
         };
 
         // Create the project
-        let project = self.create_project(&id, source).await?;
+        let project = self.build_project(&id, source).await?;
 
         cycle.insert(id.clone());
 
@@ -151,12 +149,13 @@ impl<'app> ProjectGraphBuilder<'app> {
             self.graph.add_edge(index, edge.0, edge.1);
         }
 
-        self.nodes.insert(id, ProjectNode { index });
+        self.nodes.insert(id, index);
 
         Ok(index)
     }
 
-    async fn create_project(
+    /// Create and build the project with the provided ID and source.
+    async fn build_project(
         &self,
         id: &Id,
         source: &WorkspaceRelativePath,
@@ -212,8 +211,39 @@ impl<'app> ProjectGraphBuilder<'app> {
         Ok(project)
     }
 
+    /// Enforce project constraints and boundaries after all nodes have been inserted.
+    fn enforce_constraints(&self) -> miette::Result<()> {
+        let type_relationships = self
+            .context
+            .workspace_config
+            .constraints
+            .enforce_project_type_relationships;
+        let tag_relationships = &self.context.workspace_config.constraints.tag_relationships;
+
+        for project in self.graph.node_weights() {
+            let deps: Vec<_> = self
+                .graph
+                .neighbors_directed(*self.nodes.get(&project.id).unwrap(), Direction::Outgoing)
+                .map(|idx| self.graph.node_weight(idx).unwrap())
+                .collect();
+
+            for dep in deps {
+                if type_relationships {
+                    enforce_project_type_relationships(project, dep)?;
+                }
+
+                for (source_tag, required_tags) in tag_relationships {
+                    enforce_tag_relationships(project, source_tag, dep, required_tags)?;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     /// Preload the graph with project sources from the workspace configuration.
     /// If globs are provided, walk the file system and gather sources.
+    /// Then extend the graph with aliases, derived from all event subscribers.
     async fn preload(&mut self) -> miette::Result<()> {
         let mut globs = vec![];
         let mut sources = FxHashMap::default();
@@ -237,6 +267,13 @@ impl<'app> ProjectGraphBuilder<'app> {
                 add_sources(&cfg.sources);
             }
         };
+
+        if !sources.is_empty() {
+            debug!(
+                sources = ?sources,
+                "Using configured project sources",
+            );
+        }
 
         if !globs.is_empty() {
             debug!(

@@ -3874,6 +3874,7 @@ dependencies = [
  "moon_config",
  "moon_project",
  "moon_project_builder",
+ "moon_project_constraints",
  "moon_task_builder",
  "moon_vcs",
  "petgraph",

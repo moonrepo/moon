@@ -16,6 +16,7 @@ moon_task_builder = { path = "../task-builder" }
 moon_vcs = { path = "../vcs" }
 async-recursion = "1.0.4"
 miette = { workspace = true }
+pathdiff = { workspace = true }
 petgraph = {  workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }

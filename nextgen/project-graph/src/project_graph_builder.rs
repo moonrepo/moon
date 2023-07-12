@@ -138,7 +138,7 @@ impl<'app> ProjectGraphBuilder<'app> {
         Ok(graph)
     }
 
-    pub async fn build(mut self) -> miette::Result<()> {}
+    // pub async fn build(mut self) -> miette::Result<()> {}
 
     /// Load a single project by ID or alias into the graph.
     pub async fn load(&mut self, alias_or_id: &str) -> miette::Result<()> {

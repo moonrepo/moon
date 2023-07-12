@@ -534,7 +534,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
                 Some(&self.workspace.vcs),
             )?;
 
-            cache.last_glob_time = time::now_millis();
+            // cache.last_glob_time = time::now_millis();
         }
 
         // Load project aliases
@@ -560,8 +560,8 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         self.sources.extend(sources.clone());
 
         cache.last_hash = hash;
-        cache.globs = globs;
-        cache.projects = sources;
+        // cache.globs = globs;
+        // cache.projects = sources;
         cache.save()?;
 
         if self.is_cached {

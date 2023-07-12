@@ -1,9 +1,10 @@
 use crate::project_events::ExtendProjectGraphEvent;
 use crate::project_graph::GraphType;
 use crate::project_locator::locate_projects_with_globs;
+use crate::ExtendProjectEvent;
 use async_recursion::async_recursion;
 use moon_common::path::{WorkspaceRelativePath, WorkspaceRelativePathBuf};
-use moon_common::Id;
+use moon_common::{color, Id};
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig, WorkspaceProjects};
 use moon_project::Project;
 use moon_project_builder::{
@@ -20,6 +21,7 @@ use std::path::Path;
 use tracing::{debug, trace, warn};
 
 pub struct ProjectGraphBuilderContext<'app> {
+    pub extend_project: &'app Emitter<ExtendProjectEvent>,
     pub extend_project_graph: &'app Emitter<ExtendProjectGraphEvent>,
     pub detect_language: &'app Emitter<DetectLanguageEvent>,
     pub detect_platform: &'app Emitter<DetectPlatformEvent>,
@@ -55,6 +57,8 @@ impl<'app> ProjectGraphBuilder<'app> {
     pub async fn new(
         context: ProjectGraphBuilderContext<'app>,
     ) -> miette::Result<ProjectGraphBuilder<'app>> {
+        debug!("Creating project graph");
+
         let mut graph = ProjectGraphBuilder {
             context,
             aliases: FxHashMap::default(),
@@ -157,6 +161,8 @@ impl<'app> ProjectGraphBuilder<'app> {
         id: &Id,
         source: &WorkspaceRelativePath,
     ) -> miette::Result<Project> {
+        debug!("Creating project {}", color::id(id));
+
         let mut builder = ProjectBuilder::new(
             id,
             source,
@@ -171,19 +177,27 @@ impl<'app> ProjectGraphBuilder<'app> {
         builder.load_local_config().await?;
         builder.inherit_global_config(self.context.inherited_tasks)?;
 
-        // if let Ok(platform) = self.workspace.platforms.get(builder.language.clone()) {
-        //     // Inherit implicit dependencies
-        //     for dep_config in
-        //         platform.load_project_implicit_dependencies(id, source, &self.aliases)?
-        //     {
-        //         builder.extend_with_dependency(dep_config);
-        //     }
+        let (event, _) = self
+            .context
+            .extend_project
+            .emit(ExtendProjectEvent {
+                project_id: id.to_owned(),
+                project_source: source.to_owned(),
+                workspace_root: self.context.workspace_root.to_owned(),
+                extended_dependencies: vec![],
+                extended_tasks: FxHashMap::default(),
+            })
+            .await?;
 
-        //     // Inherit platform specific tasks
-        //     for (task_id, task_config) in platform.load_project_tasks(id, source)? {
-        //         builder.extend_with_task(task_id, task_config);
-        //     }
-        // }
+        // Inherit implicit dependencies
+        for dep_config in event.extended_dependencies {
+            builder.extend_with_dependency(dep_config);
+        }
+
+        // Inherit inferred tasks
+        for (task_id, task_config) in event.extended_tasks {
+            builder.extend_with_task(task_id, task_config);
+        }
 
         let mut project = builder.build().await?;
 
@@ -238,21 +252,21 @@ impl<'app> ProjectGraphBuilder<'app> {
             )?;
         }
 
-        // Extend graph with aliases
-        let (event, result) = self
+        // Extend graph from subscribers
+        debug!("Extending project graph");
+
+        let (event, _) = self
             .context
             .extend_project_graph
             .emit(ExtendProjectGraphEvent {
                 sources,
                 workspace_root: self.context.workspace_root.to_owned(),
+                extended_aliases: FxHashMap::default(),
             })
             .await?;
 
         self.sources = event.sources;
-
-        if let Some(res) = result {
-            self.aliases.extend(res.aliases);
-        }
+        self.aliases = event.extended_aliases;
 
         Ok(())
     }

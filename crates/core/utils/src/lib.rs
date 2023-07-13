@@ -66,3 +66,8 @@ pub fn is_docker_container() -> bool {
 pub fn is_test_env() -> bool {
     env::var("MOON_TEST").is_ok()
 }
+
+#[inline]
+pub fn is_standard_stdout() -> bool {
+    !env::args().any(|arg| arg == "--json" || arg == "--dot")
+}

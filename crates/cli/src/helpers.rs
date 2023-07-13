@@ -3,7 +3,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 use moon_launchpad::check_version;
 use moon_logger::debug;
 use moon_terminal::{create_theme, get_checkpoint_prefix, Checkpoint};
-use moon_utils::is_test_env;
+use moon_utils::{is_standard_stdout, is_test_env};
 use starbase_styles::color::{self, no_color, supports_color};
 use std::env;
 use std::time::Duration;
@@ -96,7 +96,7 @@ pub fn setup_colors(force: bool) {
 }
 
 pub async fn check_for_new_version() {
-    if !is_test_env() && moon::is_telemetry_enabled() {
+    if !is_test_env() && is_standard_stdout() && moon::is_telemetry_enabled() {
         let version = env!("CARGO_PKG_VERSION");
         let prefix = get_checkpoint_prefix(Checkpoint::Announcement);
 

@@ -3,8 +3,8 @@ use crate::touched_files::TouchedFiles;
 use crate::vcs::Vcs;
 use async_trait::async_trait;
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
-use miette::Diagnostic;
-use moon_common::path::WorkspaceRelativePathBuf;
+use miette::{Diagnostic, IntoDiagnostic};
+use moon_common::path::{RelativePathBuf, WorkspaceRelativePathBuf};
 use moon_common::{Style, Stylize};
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -71,7 +71,7 @@ pub struct Git {
     pub default_branch: String,
 
     /// Path between the git and workspace root.
-    // file_prefix: RelativePathBuf,
+    root_prefix: RelativePathBuf,
 
     /// Ignore rules derived from a root `.gitignore` file.
     ignore: Option<Gitignore>,
@@ -152,10 +152,16 @@ impl Git {
 
         Ok(Git {
             default_branch: default_branch.as_ref().to_owned(),
-            repository_root: git_root.to_owned(),
             ignore,
-            process: ProcessCache::new("git", workspace_root),
             remote_candidates: remote_candidates.to_owned(),
+            root_prefix: if git_root == workspace_root {
+                RelativePathBuf::default()
+            } else {
+                RelativePathBuf::from_path(workspace_root.strip_prefix(git_root).unwrap())
+                    .into_diagnostic()?
+            },
+            process: ProcessCache::new("git", workspace_root),
+            repository_root: git_root.to_owned(),
         })
     }
 
@@ -217,20 +223,30 @@ impl Vcs for Git {
 
     async fn get_file_hashes(
         &self,
-        files: &[String],
+        files: &[String], // Workspace relative
         allow_ignored: bool,
         batch_size: u16,
     ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
         let mut objects = vec![];
         let mut map = BTreeMap::new();
+        let is_not_root = self.process.root != self.repository_root;
 
         for file in files {
             let abs_file = self.process.root.join(file);
 
             // File must exist or git fails
-            if abs_file.exists() && abs_file.is_file() && (allow_ignored || !self.is_ignored(file))
+            if abs_file.exists()
+                && abs_file.is_file()
+                && (allow_ignored || !self.is_ignored(&abs_file))
             {
-                objects.push(file.to_owned());
+                // When moon is setup in a sub-folder and not the git root,
+                // we need to prefix the paths because `--stdin-paths` assumes
+                // the paths are from the git root and don't work correctly...
+                if is_not_root {
+                    objects.push(self.root_prefix.join(file).as_str().to_owned());
+                } else {
+                    objects.push(file.to_owned());
+                }
             }
         }
 
@@ -258,7 +274,14 @@ impl Vcs for Git {
 
             for (i, hash) in output.split('\n').enumerate() {
                 if !hash.is_empty() {
-                    map.insert(WorkspaceRelativePathBuf::from(&slice[i]), hash.to_owned());
+                    let mut file = WorkspaceRelativePathBuf::from(&slice[i]);
+
+                    // Convert the prefixed path back to a workspace relative one...
+                    if is_not_root {
+                        file = file.strip_prefix(&self.root_prefix).unwrap().to_owned();
+                    }
+
+                    map.insert(file, hash.to_owned());
                 }
             }
 
@@ -555,7 +578,7 @@ impl Vcs for Git {
         self.repository_root.join(".git").exists()
     }
 
-    fn is_ignored(&self, file: &str) -> bool {
+    fn is_ignored(&self, file: &Path) -> bool {
         if let Some(ignore) = &self.ignore {
             ignore.matched(file, false).is_ignore()
         } else {

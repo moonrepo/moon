@@ -4,7 +4,7 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use semver::{Version, VersionReq};
 use std::collections::BTreeMap;
 use std::fmt::Debug;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[async_trait]
 pub trait Vcs: Debug {
@@ -68,7 +68,7 @@ pub trait Vcs: Debug {
     fn is_enabled(&self) -> bool;
 
     /// Return true if the provided file path has been ignored.
-    fn is_ignored(&self, file: &str) -> bool;
+    fn is_ignored(&self, file: &Path) -> bool;
 
     /// Return true if the current binary version matches the provided requirement.
     async fn is_version_supported(&self, req: &str) -> miette::Result<bool> {

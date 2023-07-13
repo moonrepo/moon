@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where `.gitignore` patterns weren't always applied correctly.
+- Fixed an issue where `git hash-object` commands would fail if moon was setup in a sub-directory.
+
 ## 1.10.0
 
 #### 💥 Breaking

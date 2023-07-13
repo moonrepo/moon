@@ -55,7 +55,7 @@ pub fn detect_projects_with_globs(
             }
 
             if let Some(vcs) = vcs {
-                if vcs.is_ignored(&project_source) {
+                if vcs.is_ignored(&project_root) {
                     debug!(
                         target: "moon:project",
                         "Found a project with source {}, but this path has been ignored by your VCS. Skipping ignored source.",

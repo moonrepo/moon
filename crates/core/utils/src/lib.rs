@@ -68,6 +68,6 @@ pub fn is_test_env() -> bool {
 }
 
 #[inline]
-pub fn is_standard_stdout() -> bool {
+pub fn is_unformatted_stdout() -> bool {
     !env::args().any(|arg| arg == "--json" || arg == "--dot")
 }

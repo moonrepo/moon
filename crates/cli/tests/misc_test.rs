@@ -16,5 +16,5 @@ fn fails_on_version_constraint() {
 
     assert
         .failure()
-        .stderr(predicate::str::contains("expected >=1000.0.0"));
+        .stderr(predicate::str::contains(">=1000.0.0"));
 }

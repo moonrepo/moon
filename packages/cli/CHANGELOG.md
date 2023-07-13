@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where `.gitignore` patterns weren't always applied correctly.
+
 ## 1.10.0
 
 #### 💥 Breaking

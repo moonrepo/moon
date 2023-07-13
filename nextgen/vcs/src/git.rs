@@ -228,7 +228,9 @@ impl Vcs for Git {
             let abs_file = self.process.root.join(file);
 
             // File must exist or git fails
-            if abs_file.exists() && abs_file.is_file() && (allow_ignored || !self.is_ignored(file))
+            if abs_file.exists()
+                && abs_file.is_file()
+                && (allow_ignored || !self.is_ignored(&abs_file))
             {
                 objects.push(file.to_owned());
             }
@@ -555,7 +557,7 @@ impl Vcs for Git {
         self.repository_root.join(".git").exists()
     }
 
-    fn is_ignored(&self, file: &str) -> bool {
+    fn is_ignored(&self, file: &Path) -> bool {
         if let Some(ignore) = &self.ignore {
             ignore.matched(file, false).is_ignore()
         } else {

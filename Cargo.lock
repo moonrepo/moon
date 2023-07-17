@@ -3815,6 +3815,7 @@ dependencies = [
  "starbase_events",
  "starbase_sandbox",
  "thiserror",
+ "tokio",
  "tracing",
 ]
 

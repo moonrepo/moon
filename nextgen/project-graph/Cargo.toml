@@ -12,12 +12,16 @@ moon_hash = { path = "../hash" }
 moon_project = { path = "../project" }
 moon_project_builder = { path = "../project-builder" }
 moon_project_constraints = { path = "../project-constraints" }
+moon_task = { path = "../task" }
 moon_task_builder = { path = "../task-builder" }
+moon_time = { path = "../time" }
 moon_vcs = { path = "../vcs" }
 async-recursion = "1.0.4"
 miette = { workspace = true }
 pathdiff = { workspace = true }
 petgraph = {  workspace = true }
+once_cell = { workspace = true }
+regex = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 starbase_events = { workspace = true }

@@ -1,8 +1,9 @@
+use crate::project_events::ExtendProjectEvent;
 use crate::project_events::ExtendProjectGraphEvent;
 use crate::project_graph::{GraphType, ProjectGraph, ProjectNode};
+use crate::project_graph_error::ProjectGraphError;
 use crate::project_graph_hash::ProjectGraphHash;
 use crate::projects_locator::locate_projects_with_globs;
-use crate::ExtendProjectEvent;
 use async_recursion::async_recursion;
 use moon_cache::CacheEngine;
 use moon_common::path::{to_virtual_string, WorkspaceRelativePath, WorkspaceRelativePathBuf};
@@ -10,9 +11,7 @@ use moon_common::{color, consts, Id};
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig, WorkspaceProjects};
 use moon_hash::HashEngine;
 use moon_project::Project;
-use moon_project_builder::{
-    DetectLanguageEvent, ProjectBuilder, ProjectBuilderContext, ProjectBuilderError,
-};
+use moon_project_builder::{DetectLanguageEvent, ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_project_type_relationships, enforce_tag_relationships};
 use moon_task_builder::DetectPlatformEvent;
 use moon_vcs::BoxedVcs;
@@ -214,7 +213,7 @@ impl<'app> ProjectGraphBuilder<'app> {
         );
 
         let Some(source) = self.sources.get(&id) else {
-            return Err(ProjectBuilderError::UnconfiguredID(id).into());
+            return Err(ProjectGraphError::UnconfiguredID(id).into());
         };
 
         // Create the project

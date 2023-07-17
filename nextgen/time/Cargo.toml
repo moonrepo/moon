@@ -1,0 +1,9 @@
+[package]
+name = "moon_time"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chrono = { workspace = true }
+humantime = "2.1.0"
+miette = { workspace = true }

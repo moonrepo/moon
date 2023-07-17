@@ -3877,10 +3877,14 @@ dependencies = [
  "moon_project",
  "moon_project_builder",
  "moon_project_constraints",
+ "moon_task",
  "moon_task_builder",
+ "moon_time",
  "moon_vcs",
+ "once_cell",
  "pathdiff",
  "petgraph",
+ "regex",
  "rustc-hash",
  "serde",
  "starbase_events",
@@ -4109,6 +4113,15 @@ dependencies = [
  "serde_yaml 0.9.22",
  "starbase_utils",
  "tokio",
+]
+
+[[package]]
+name = "moon_time"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "humantime",
+ "miette",
 ]
 
 [[package]]

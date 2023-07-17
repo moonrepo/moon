@@ -1,7 +1,7 @@
+use crate::project_graph_error::ProjectGraphError;
 use moon_common::Id;
 use moon_config::DependencyScope;
 use moon_project::Project;
-use moon_project_builder::ProjectBuilderError;
 use pathdiff::diff_paths;
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
@@ -69,7 +69,7 @@ impl ProjectGraph {
         let node = self
             .nodes
             .get(id)
-            .ok_or_else(|| ProjectBuilderError::UnconfiguredID(Id::raw(id)))?;
+            .ok_or_else(|| ProjectGraphError::UnconfiguredID(Id::raw(id)))?;
 
         Ok(self.graph.node_weight(node.index).unwrap())
     }
@@ -123,7 +123,7 @@ impl ProjectGraph {
         }
 
         if possible_id.is_empty() {
-            return Err(ProjectBuilderError::MissingFromPath(file.to_path_buf()).into());
+            return Err(ProjectGraphError::MissingFromPath(file.to_path_buf()).into());
         }
 
         self.get(possible_id)

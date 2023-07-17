@@ -20,3 +20,4 @@ tracing = { workspace = true }
 starbase_sandbox = { workspace = true }
 # TODO remove
 moon_platform_detector = { path = "../../crates/core/platform-detector" }
+tokio = { workspace = true }

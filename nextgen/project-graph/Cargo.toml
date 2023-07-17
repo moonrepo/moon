@@ -28,3 +28,6 @@ starbase_events = { workspace = true }
 starbase_utils = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
+
+[dev-dependencies]
+starbase_sandbox = { workspace = true }

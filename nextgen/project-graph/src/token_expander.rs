@@ -99,10 +99,11 @@ impl<'graph> TokenExpander<'graph> {
                     let file = WorkspaceRelativePathBuf::from(self.replace_variables(
                         input.to_workspace_relative(&self.project.source).as_str(),
                     )?);
+                    let abs_file = file.to_path(self.workspace_root);
 
                     // This is a special case that converts "foo" to "foo/**/*",
                     // when the input is a directory. This is necessary for VCS hashing.
-                    if file.to_path(self.workspace_root).is_dir() {
+                    if abs_file.exists() && abs_file.is_dir() {
                         globs.push(file.join("**/*"));
                     } else {
                         files.push(file);

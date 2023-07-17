@@ -263,8 +263,6 @@ mod caching {
 
         let state = ProjectsState::load(state_path).unwrap();
 
-        assert_eq!(state.globs, string_vec![]);
-        assert_eq!(state.last_glob_time, 0);
         assert_eq!(
             state.last_hash,
             "7ea65b6c65b3c9c3f24d6cde0215268c249686eedde0b689b5085e4c116750ed"
@@ -272,10 +270,10 @@ mod caching {
         assert_eq!(
             state.projects,
             FxHashMap::from_iter([
-                ("a".into(), "a".to_string()),
-                ("b".into(), "b".to_string()),
-                ("c".into(), "c".to_string()),
-                ("d".into(), "d".to_string()),
+                ("a".into(), "a".into()),
+                ("b".into(), "b".into()),
+                ("c".into(), "c".into()),
+                ("d".into(), "d".into()),
             ])
         );
 

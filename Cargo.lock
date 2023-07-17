@@ -3888,6 +3888,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "starbase_events",
+ "starbase_sandbox",
  "starbase_utils",
  "thiserror",
  "tracing",

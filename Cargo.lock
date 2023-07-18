@@ -3878,14 +3878,10 @@ dependencies = [
  "moon_project",
  "moon_project_builder",
  "moon_project_constraints",
- "moon_task",
  "moon_task_builder",
- "moon_time",
  "moon_vcs",
- "once_cell",
  "pathdiff",
  "petgraph",
- "regex",
  "rustc-hash",
  "serde",
  "starbase_events",
@@ -4087,6 +4083,24 @@ dependencies = [
  "starbase_sandbox",
  "thiserror",
  "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "moon_task_expander"
+version = "0.1.0"
+dependencies = [
+ "miette",
+ "moon_common",
+ "moon_config",
+ "moon_project",
+ "moon_task",
+ "moon_time",
+ "once_cell",
+ "regex",
+ "rustc-hash",
+ "starbase_sandbox",
+ "thiserror",
  "tracing",
 ]
 

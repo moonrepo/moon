@@ -105,7 +105,7 @@ impl<'app> ProjectGraphBuilder<'app> {
 
         // Check the current state and cache
         let mut state = cache_engine.cache_projects_state()?;
-        let cache_path = cache_engine.get_state_path("projectGraphInitial.json");
+        let cache_path = cache_engine.get_state_path("partialProjectGraph.json");
 
         if hash == state.last_hash && cache_path.exists() {
             debug!(

@@ -17,7 +17,7 @@ pub enum ProjectGraphError {
     #[error("No project has been configured with the ID {}.", .0.style(Style::Id))]
     UnconfiguredID(Id),
 
-    // Token expander
+    // TOKENS
     #[diagnostic(code(project_graph::token::invalid_index))]
     #[error(
         "Token {} received an invalid type for index \"{index}\", must be a number.",

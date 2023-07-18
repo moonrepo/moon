@@ -41,7 +41,7 @@ pub struct ProjectGraphBuilderContext<'app> {
 pub struct ProjectGraphBuilder<'app> {
     context: ProjectGraphBuilderContext<'app>,
 
-    /// Mapping of project aliases to their IDs.
+    /// Mapping of project aliases to project IDs.
     aliases: FxHashMap<String, Id>,
 
     /// The DAG instance.

@@ -187,14 +187,7 @@ impl<'graph> TokenExpander<'graph> {
                     globs.extend(result.1);
                 }
                 _ => {
-                    let path = WorkspaceRelativePathBuf::from(
-                        self.replace_variables(
-                            output
-                                .to_workspace_relative(&self.project.source)
-                                .unwrap()
-                                .as_str(),
-                        )?,
-                    );
+                    let path = output.to_workspace_relative(&self.project.source).unwrap();
 
                     if output.is_glob() {
                         globs.push(path);

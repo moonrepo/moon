@@ -12,8 +12,10 @@ use std::path::Path;
 
 pub type GraphType = DiGraph<Project, DependencyScope>;
 
+#[derive(Default)]
 pub struct ProjectNode {
     pub alias: Option<String>,
+    pub expanded: bool,
     pub index: NodeIndex,
 }
 

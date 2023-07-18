@@ -1,4 +1,4 @@
-use crate::project_graph_error::ProjectGraphError;
+use crate::token_expander_error::TokenExpanderError;
 use moon_common::path::{self, WorkspaceRelativePathBuf};
 use moon_config::{InputPath, OutputPath};
 use moon_project::{FileGroup, Project};
@@ -217,7 +217,7 @@ impl<'graph> TokenExpander<'graph> {
             )?;
 
             Ok(self.project.file_groups.get(arg).ok_or_else(|| {
-                ProjectGraphError::UnknownFileGroup {
+                TokenExpanderError::UnknownFileGroup {
                     group: arg.to_owned(),
                     token: token.to_owned(),
                 }
@@ -243,7 +243,7 @@ impl<'graph> TokenExpander<'graph> {
 
                 let index = self.parse_index(token, arg)?;
                 let input = self.task.inputs.get(index).ok_or_else(|| {
-                    ProjectGraphError::MissingInIndex {
+                    TokenExpanderError::MissingInIndex {
                         index,
                         token: token.to_owned(),
                     }
@@ -257,7 +257,7 @@ impl<'graph> TokenExpander<'graph> {
                         globs.push(input.to_workspace_relative(&self.project.source));
                     }
                     _ => {
-                        return Err(ProjectGraphError::InvalidTokenIndexReference {
+                        return Err(TokenExpanderError::InvalidTokenIndexReference {
                             token: token.to_owned(),
                         }
                         .into())
@@ -269,7 +269,7 @@ impl<'graph> TokenExpander<'graph> {
 
                 let index = self.parse_index(token, arg)?;
                 let output = self.task.outputs.get(index).ok_or_else(|| {
-                    ProjectGraphError::MissingOutIndex {
+                    TokenExpanderError::MissingOutIndex {
                         index,
                         token: token.to_owned(),
                     }
@@ -283,7 +283,7 @@ impl<'graph> TokenExpander<'graph> {
                         globs.push(output.to_workspace_relative(&self.project.source).unwrap());
                     }
                     _ => {
-                        return Err(ProjectGraphError::InvalidTokenIndexReference {
+                        return Err(TokenExpanderError::InvalidTokenIndexReference {
                             token: token.to_owned(),
                         }
                         .into())
@@ -291,7 +291,7 @@ impl<'graph> TokenExpander<'graph> {
                 };
             }
             _ => {
-                return Err(ProjectGraphError::UnknownToken {
+                return Err(TokenExpanderError::UnknownToken {
                     token: token.to_owned(),
                 }
                 .into())
@@ -355,7 +355,7 @@ impl<'graph> TokenExpander<'graph> {
 
     fn check_scope(&self, token: &str, allowed: &[TokenScope]) -> miette::Result<()> {
         if !allowed.contains(&self.scope) {
-            return Err(ProjectGraphError::InvalidTokenScope {
+            return Err(TokenExpanderError::InvalidTokenScope {
                 token: token.to_owned(),
                 scope: self.scope.label(),
             }
@@ -368,7 +368,7 @@ impl<'graph> TokenExpander<'graph> {
     fn parse_index(&self, token: &str, value: &str) -> miette::Result<usize> {
         Ok(value
             .parse::<usize>()
-            .map_err(|_| ProjectGraphError::InvalidTokenIndex {
+            .map_err(|_| TokenExpanderError::InvalidTokenIndex {
                 token: token.to_owned(),
                 index: value.to_owned(),
             })?)

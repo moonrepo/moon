@@ -146,7 +146,7 @@ impl<'app> ProjectGraphBuilder<'app> {
                 id,
                 ProjectNode {
                     alias: Some(alias),
-                    index: NodeIndex::new(0),
+                    ..ProjectNode::default()
                 },
             );
         }
@@ -155,7 +155,10 @@ impl<'app> ProjectGraphBuilder<'app> {
             nodes
                 .entry(id)
                 .and_modify(|node| node.index = index)
-                .or_insert(ProjectNode { alias: None, index });
+                .or_insert(ProjectNode {
+                    index,
+                    ..ProjectNode::default()
+                });
         }
 
         Ok(ProjectGraph {

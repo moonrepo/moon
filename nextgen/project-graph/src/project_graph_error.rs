@@ -51,4 +51,14 @@ pub enum ProjectGraphError {
         .token.style(Style::Symbol),
     )]
     UnknownFileGroup { group: String, token: String },
+
+    #[diagnostic(
+        code(project_graph::token::unknown),
+        url("https://moonrepo.dev/docs/concepts/token")
+    )]
+    #[error(
+        "Unknown token {}.",
+        .token.style(Style::Symbol),
+    )]
+    UnknownToken { token: String },
 }

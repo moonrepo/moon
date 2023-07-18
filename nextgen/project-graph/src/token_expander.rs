@@ -33,12 +33,13 @@ pub enum TokenScope {
 
 impl TokenScope {
     pub fn label(&self) -> String {
-        String::from(match self {
+        match self {
             TokenScope::Command => "commands",
             TokenScope::Args => "args",
             TokenScope::Inputs => "inputs",
             TokenScope::Outputs => "outputs",
-        })
+        }
+        .into()
     }
 }
 
@@ -50,6 +51,58 @@ pub struct TokenExpander<'graph> {
 }
 
 impl<'graph> TokenExpander<'graph> {
+    pub fn for_command(
+        project: &'graph Project,
+        task: &'graph Task,
+        workspace_root: &'graph Path,
+    ) -> Self {
+        Self {
+            scope: TokenScope::Command,
+            project,
+            task,
+            workspace_root,
+        }
+    }
+
+    pub fn for_args(
+        project: &'graph Project,
+        task: &'graph Task,
+        workspace_root: &'graph Path,
+    ) -> Self {
+        Self {
+            scope: TokenScope::Args,
+            project,
+            task,
+            workspace_root,
+        }
+    }
+
+    pub fn for_inputs(
+        project: &'graph Project,
+        task: &'graph Task,
+        workspace_root: &'graph Path,
+    ) -> Self {
+        Self {
+            scope: TokenScope::Inputs,
+            project,
+            task,
+            workspace_root,
+        }
+    }
+
+    pub fn for_outputs(
+        project: &'graph Project,
+        task: &'graph Task,
+        workspace_root: &'graph Path,
+    ) -> Self {
+        Self {
+            scope: TokenScope::Outputs,
+            project,
+            task,
+            workspace_root,
+        }
+    }
+
     pub fn has_token_function(&self, value: &str) -> bool {
         if value.contains('@') {
             if TOKEN_FUNC_PATTERN.is_match(value) {
@@ -93,7 +146,7 @@ impl<'graph> TokenExpander<'graph> {
                     globs.extend(result.1);
                 }
                 InputPath::TokenVar(var) => {
-                    files.push(WorkspaceRelativePathBuf::from(self.replace_variables(var)?));
+                    files.push(self.project.source.join(self.replace_variable(var)?));
                 }
                 InputPath::ProjectFile(_) | InputPath::WorkspaceFile(_) => {
                     let file = WorkspaceRelativePathBuf::from(self.replace_variables(
@@ -244,13 +297,18 @@ impl<'graph> TokenExpander<'graph> {
                     }
                 };
             }
-            _ => todo!(),
+            _ => {
+                return Err(ProjectGraphError::UnknownToken {
+                    token: token.to_owned(),
+                }
+                .into())
+            }
         };
 
         Ok((files, globs))
     }
 
-    fn replace_variables(&self, value: &str) -> miette::Result<String> {
+    pub fn replace_variables(&self, value: &str) -> miette::Result<String> {
         let mut value = value.to_owned();
 
         while self.has_token_variable(&value) {
@@ -260,7 +318,7 @@ impl<'graph> TokenExpander<'graph> {
         Ok(value)
     }
 
-    fn replace_variable(&self, value: &str) -> miette::Result<String> {
+    pub fn replace_variable(&self, value: &str) -> miette::Result<String> {
         let Some(matches) = TOKEN_VAR_PATTERN.captures(value) else {
             return Ok(value.to_owned());
         };
@@ -275,7 +333,7 @@ impl<'graph> TokenExpander<'graph> {
             &[TokenScope::Command, TokenScope::Args, TokenScope::Inputs],
         )?;
 
-        let value = match variable {
+        let replaced_value = match variable {
             "workspaceRoot" => path::to_string(self.workspace_root)?,
             // Project
             "language" => project.language.to_string(),
@@ -299,7 +357,7 @@ impl<'graph> TokenExpander<'graph> {
             }
         };
 
-        Ok(value.replace(token, &value))
+        Ok(value.replace(token, &replaced_value))
     }
 
     fn check_scope(&self, token: &str, allowed: &[TokenScope]) -> miette::Result<()> {

@@ -15,8 +15,10 @@ path = "src/lib.rs"
 moon_common = { path = "../common" }
 moon_target = { path = "../target" }
 miette = { workspace = true }
+once_cell = { workspace = true }
 once_map = { workspace = true }
 proto_cli = { workspace = true }
+regex = { workspace = true }
 rustc-hash = { workspace = true }
 schematic = { workspace = true, features = ["json_schema", "typescript", "yaml", "valid_url"] }
 semver = { workspace = true }

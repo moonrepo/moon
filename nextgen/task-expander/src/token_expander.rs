@@ -1,25 +1,11 @@
 use crate::token_expander_error::TokenExpanderError;
 use moon_common::path::{self, WorkspaceRelativePathBuf};
-use moon_config::{InputPath, OutputPath};
+use moon_config::{patterns, InputPath, OutputPath};
 use moon_project::{FileGroup, Project};
 use moon_task::Task;
 use moon_time::{now_millis, now_timestamp};
-use once_cell::sync::Lazy;
-use regex::Regex;
 use std::path::Path;
 use tracing::warn;
-
-pub static TOKEN_GROUP: &str = "([0-9A-Za-z_-]+)";
-
-pub static TOKEN_FUNC_PATTERN: Lazy<Regex> =
-    Lazy::new(|| Regex::new(format!("^@([a-z]+)\\({}\\)$", TOKEN_GROUP).as_str()).unwrap());
-
-pub static TOKEN_FUNC_ANYWHERE_PATTERN: Lazy<Regex> =
-    Lazy::new(|| Regex::new(format!("@([a-z]+)\\({}\\)", TOKEN_GROUP).as_str()).unwrap());
-
-pub static TOKEN_VAR_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new("\\$(language|projectAlias|projectRoot|projectSource|projectType|project|target|taskPlatform|taskType|task|workspaceRoot|timestamp|datetime|date|time)").unwrap()
-});
 
 pub type ExpandedPaths = (Vec<WorkspaceRelativePathBuf>, Vec<WorkspaceRelativePathBuf>);
 
@@ -105,9 +91,9 @@ impl<'graph> TokenExpander<'graph> {
 
     pub fn has_token_function(&self, value: &str) -> bool {
         if value.contains('@') {
-            if TOKEN_FUNC_PATTERN.is_match(value) {
+            if patterns::TOKEN_FUNC_DISTINCT.is_match(value) {
                 return true;
-            } else if TOKEN_FUNC_ANYWHERE_PATTERN.is_match(value) {
+            } else if patterns::TOKEN_FUNC.is_match(value) {
                 warn!(
                     "Found a token function in `{}` with other content. Token functions *must* be used literally as the only value.",
                     value
@@ -119,7 +105,7 @@ impl<'graph> TokenExpander<'graph> {
     }
 
     pub fn has_token_variable(&self, value: &str) -> bool {
-        value.contains('$') && TOKEN_VAR_PATTERN.is_match(&value)
+        value.contains('$') && patterns::TOKEN_VAR.is_match(&value)
     }
 
     pub fn expand_command(&self) -> miette::Result<String> {
@@ -202,7 +188,7 @@ impl<'graph> TokenExpander<'graph> {
     }
 
     pub fn replace_function(&self, value: &str) -> miette::Result<ExpandedPaths> {
-        let matches = TOKEN_FUNC_PATTERN.captures(value).unwrap();
+        let matches = patterns::TOKEN_FUNC.captures(value).unwrap();
         let token = matches.get(0).unwrap().as_str(); // @name(arg)
         let func = matches.get(1).unwrap().as_str(); // name
         let arg = matches.get(2).unwrap().as_str(); // arg
@@ -312,7 +298,7 @@ impl<'graph> TokenExpander<'graph> {
     }
 
     pub fn replace_variable(&self, value: &str) -> miette::Result<String> {
-        let Some(matches) = TOKEN_VAR_PATTERN.captures(value) else {
+        let Some(matches) = patterns::TOKEN_VAR.captures(value) else {
             return Ok(value.to_owned());
         };
 

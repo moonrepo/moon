@@ -10,8 +10,6 @@ moon_project = { path = "../project" }
 moon_task = { path = "../task" }
 moon_time = { path = "../time" }
 miette = { workspace = true }
-once_cell = { workspace = true }
-regex = { workspace = true }
 rustc-hash = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }

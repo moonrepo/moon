@@ -377,28 +377,28 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
     /// Expand the inputs list to a set of absolute file paths, while resolving tokens.
     pub fn expand_task_inputs(&self, project: &mut Project, task: &mut Task) -> miette::Result<()> {
-        task.inputs.retain(|input| {
-            if let InputPath::EnvVar(var) = input {
-                task.input_vars.insert(var.to_owned());
-                false
-            } else {
-                true
-            }
-        });
+        // task.inputs.retain(|input| {
+        //     if let InputPath::EnvVar(var) = input {
+        //         task.input_vars.insert(var.to_owned());
+        //         false
+        //     } else {
+        //         true
+        //     }
+        // });
 
-        let mut inputs_to_resolve = vec![];
-        inputs_to_resolve.extend(&task.inputs);
+        // let mut inputs_to_resolve = vec![];
+        // inputs_to_resolve.extend(&task.inputs);
 
-        if inputs_to_resolve.is_empty() {
-            return Ok(());
-        }
+        // if inputs_to_resolve.is_empty() {
+        //     return Ok(());
+        // }
 
-        let token_resolver =
-            TokenResolver::new(TokenContext::Inputs, project, &self.workspace.root);
-        let (paths, globs) = token_resolver.resolve_inputs(&inputs_to_resolve, task)?;
+        // let token_resolver =
+        //     TokenResolver::new(TokenContext::Inputs, project, &self.workspace.root);
+        // let (paths, globs) = token_resolver.resolve_inputs(&inputs_to_resolve, task)?;
 
-        task.input_paths.extend(paths);
-        task.input_globs.extend(globs);
+        // task.input_paths.extend(paths);
+        // task.input_globs.extend(globs);
 
         Ok(())
     }
@@ -409,24 +409,24 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         project: &mut Project,
         task: &mut Task,
     ) -> miette::Result<()> {
-        if task.outputs.is_empty() {
-            return Ok(());
-        }
+        // if task.outputs.is_empty() {
+        //     return Ok(());
+        // }
 
-        let token_resolver =
-            TokenResolver::new(TokenContext::Outputs, project, &self.workspace.root);
-        let (paths, globs) = token_resolver.resolve_outputs(&task.outputs, task)?;
+        // let token_resolver =
+        //     TokenResolver::new(TokenContext::Outputs, project, &self.workspace.root);
+        // let (paths, globs) = token_resolver.resolve_outputs(&task.outputs, task)?;
 
-        task.output_globs.extend(globs);
+        // task.output_globs.extend(globs);
 
-        for path in paths {
-            // Inputs must not consider outputs as a source
-            if task.input_paths.contains(&path) {
-                task.input_paths.remove(&path);
-            }
+        // for path in paths {
+        //     // Inputs must not consider outputs as a source
+        //     if task.input_paths.contains(&path) {
+        //         task.input_paths.remove(&path);
+        //     }
 
-            task.output_paths.insert(path);
-        }
+        //     task.output_paths.insert(path);
+        // }
 
         Ok(())
     }

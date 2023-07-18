@@ -1,5 +1,5 @@
 use once_cell::sync::Lazy;
-use regex::Regex;
+pub use regex::{Captures, Regex};
 
 macro_rules! pattern {
     ($name:ident, $regex:literal) => {
@@ -9,8 +9,8 @@ macro_rules! pattern {
 
 // Environment variables
 
-pattern!(ENV_VAR, r"$[A-Z0-9_]+");
-pattern!(ENV_VAR_DISTINCT, r"^$[A-Z0-9_]+$");
+pattern!(ENV_VAR, r"$([A-Z0-9_]+)");
+pattern!(ENV_VAR_DISTINCT, r"^$([A-Z0-9_]+)$");
 pattern!(ENV_VAR_SUBSTITUTE, r"${([A-Z0-9_]+)}");
 
 // Task tokens

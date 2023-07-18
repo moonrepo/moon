@@ -65,10 +65,8 @@ impl FromStr for OutputPath {
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         // Token function
-        if value.starts_with('@') {
-            if patterns::TOKEN_FUNC_DISTINCT.is_match(value) {
-                return Ok(OutputPath::TokenFunc(value.to_owned()));
-            }
+        if value.starts_with('@') && patterns::TOKEN_FUNC_DISTINCT.is_match(value) {
+            return Ok(OutputPath::TokenFunc(value.to_owned()));
         }
 
         // Token/env var

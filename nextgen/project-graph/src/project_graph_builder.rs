@@ -417,10 +417,10 @@ impl<'app> ProjectGraphBuilder<'app> {
             );
 
             locate_projects_with_globs(
-                &self.context.workspace_root,
+                self.context.workspace_root,
                 &globs,
                 &mut sources,
-                Some(&self.context.vcs),
+                Some(self.context.vcs),
             )?;
         }
 

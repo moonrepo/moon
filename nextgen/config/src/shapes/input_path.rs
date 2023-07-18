@@ -71,16 +71,14 @@ impl FromStr for InputPath {
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         // Token function
-        if value.starts_with('@') {
-            if patterns::TOKEN_FUNC_DISTINCT.is_match(value) {
-                return Ok(InputPath::TokenFunc(value.to_owned()));
-            }
+        if value.starts_with('@') && patterns::TOKEN_FUNC_DISTINCT.is_match(value) {
+            return Ok(InputPath::TokenFunc(value.to_owned()));
         }
 
         // Token/env var
-        if value.starts_with('$') {
+        if let Some(var) = value.strip_prefix('$') {
             if patterns::ENV_VAR_DISTINCT.is_match(value) {
-                return Ok(InputPath::EnvVar(value[1..].to_owned()));
+                return Ok(InputPath::EnvVar(var.to_owned()));
             } else if patterns::TOKEN_VAR_DISTINCT.is_match(value) {
                 return Ok(InputPath::TokenVar(value.to_owned()));
             }

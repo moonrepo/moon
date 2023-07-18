@@ -1,3 +1,5 @@
+#![allow(unused_imports, unused_variables)]
+
 use crate::errors::ProjectGraphError;
 use crate::graph_hasher::GraphHasher;
 use crate::helpers::detect_projects_with_globs;
@@ -226,8 +228,8 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         project: &mut Project,
         task: &mut Task,
     ) -> miette::Result<()> {
-        task.command = TokenResolver::new(TokenContext::Command, project, &self.workspace.root)
-            .resolve_command(task)?;
+        // task.command = TokenResolver::new(TokenContext::Command, project, &self.workspace.root)
+        //     .resolve_command(task)?;
 
         Ok(())
     }
@@ -362,15 +364,15 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
     /// Expand environment variables by loading a `.env` file if configured.
     pub fn expand_task_env(&self, _project: &mut Project, task: &mut Task) -> miette::Result<()> {
-        task.env.iter_mut().for_each(|(_, value)| {
-            while let Some(matches) = ENV_VAR_SUBSTITUTE.captures(value) {
-                let sub = matches.get(0).unwrap().as_str();
-                let sub_key = matches.get(1).unwrap().as_str();
-                let sub_value = env::var(sub_key).unwrap_or_default();
+        // task.env.iter_mut().for_each(|(_, value)| {
+        //     while let Some(matches) = ENV_VAR_SUBSTITUTE.captures(value) {
+        //         let sub = matches.get(0).unwrap().as_str();
+        //         let sub_key = matches.get(1).unwrap().as_str();
+        //         let sub_value = env::var(sub_key).unwrap_or_default();
 
-                *value = value.replace(sub, &sub_value);
-            }
-        });
+        //         *value = value.replace(sub, &sub_value);
+        //     }
+        // });
 
         Ok(())
     }

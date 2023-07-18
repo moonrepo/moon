@@ -9,7 +9,6 @@ moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_target = { path = "../target" }
 moon_task = { path = "../task" }
-dotenvy = "0.15.7"
 miette = { workspace = true }
 rustc-hash = { workspace = true }
 starbase_events = { workspace = true }

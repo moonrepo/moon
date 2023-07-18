@@ -105,7 +105,7 @@ impl<'graph> TokenExpander<'graph> {
     }
 
     pub fn has_token_variable(&self, value: &str) -> bool {
-        value.contains('$') && patterns::TOKEN_VAR.is_match(&value)
+        value.contains('$') && patterns::TOKEN_VAR.is_match(value)
     }
 
     pub fn expand_command(&self) -> miette::Result<String> {
@@ -127,7 +127,7 @@ impl<'graph> TokenExpander<'graph> {
                     continue;
                 }
                 InputPath::TokenFunc(func) => {
-                    let result = self.replace_function(&func)?;
+                    let result = self.replace_function(func)?;
                     files.extend(result.0);
                     globs.extend(result.1);
                 }
@@ -168,7 +168,7 @@ impl<'graph> TokenExpander<'graph> {
         for output in &self.task.outputs {
             match output {
                 OutputPath::TokenFunc(func) => {
-                    let result = self.replace_function(&func)?;
+                    let result = self.replace_function(func)?;
                     files.extend(result.0);
                     globs.extend(result.1);
                 }

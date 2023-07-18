@@ -93,7 +93,7 @@ impl ProjectGraph {
 
         let file = if current_file == workspace_root {
             Path::new(".")
-        } else if let Ok(rel_file) = current_file.strip_prefix(&workspace_root) {
+        } else if let Ok(rel_file) = current_file.strip_prefix(workspace_root) {
             rel_file
         } else {
             current_file

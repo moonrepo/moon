@@ -4,8 +4,8 @@ use std::path::PathBuf;
 use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
-pub enum TasksBuilderError {
-    #[diagnostic(code(task_builder::invalid_env_file))]
+pub enum TasksExpanderError {
+    #[diagnostic(code(task_expander::invalid_env_file))]
     #[error("Failed to parse env file {}.", .path.style(Style::Path))]
     InvalidEnvFile {
         path: PathBuf,

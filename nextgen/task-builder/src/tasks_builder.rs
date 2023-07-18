@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 
-use crate::tasks_builder_error::TasksBuilderError;
 use moon_args::split_args;
 use moon_common::{color, Id};
 use moon_config::{
@@ -15,7 +14,7 @@ use starbase_events::{Emitter, Event};
 use std::collections::BTreeMap;
 use std::hash::Hash;
 use std::path::Path;
-use tracing::{debug, trace, warn};
+use tracing::{debug, trace};
 
 #[derive(Debug)]
 pub struct DetectPlatformEvent {
@@ -238,7 +237,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
         }
 
-        task.env = self.build_env(&target, &task.options)?;
+        task.env = self.build_env(&target)?;
 
         // Finally build the task itself, while applying our complex merge logic!
         let mut configured_inputs = 0;
@@ -498,12 +497,8 @@ impl<'proj> TasksBuilder<'proj> {
     ///     - 1st - project-level `env`
     ///     - 2nd - task `env_file` (when enabled)
     ///     - 3rd - task-level `env`
-    fn build_env(
-        &self,
-        target: &Target,
-        options: &TaskOptions,
-    ) -> miette::Result<FxHashMap<String, String>> {
-        let mut env = self
+    fn build_env(&self, target: &Target) -> miette::Result<FxHashMap<String, String>> {
+        let env = self
             .project_env
             .iter()
             .map(|(k, v)| ((*k).to_owned(), (*v).to_owned()))
@@ -515,38 +510,6 @@ impl<'proj> TasksBuilder<'proj> {
                 env_vars = ?self.project_env,
                 "Inheriting project env vars",
             );
-        }
-
-        if let Some(env_file) = &options.env_file {
-            let env_path = env_file
-                .to_workspace_relative(self.project_source)
-                .to_path(self.context.workspace_root);
-
-            trace!(
-                target = target.as_str(),
-                env_file = ?env_path,
-                "Loading env vars from dotfile",
-            );
-
-            // The `.env` file may not have been committed, so avoid crashing
-            if env_path.exists() {
-                let env_file_vars = dotenvy::from_path_iter(&env_path)
-                    .map_err(|error| TasksBuilderError::InvalidEnvFile {
-                        path: env_path.to_path_buf(),
-                        error,
-                    })?
-                    .flatten()
-                    .collect::<FxHashMap<_, _>>();
-
-                env = self.merge_map(env, env_file_vars, options.merge_env);
-            } else {
-                warn!(
-                    target = target.as_str(),
-                    env_file = ?env_path,
-                    "The {} option is enabled but file doesn't exist, skipping as this may be intentional",
-                    color::id("envFile"),
-                );
-            }
         }
 
         Ok(env)

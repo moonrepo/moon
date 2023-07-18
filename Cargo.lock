@@ -4072,7 +4072,6 @@ dependencies = [
 name = "moon_task_builder"
 version = "0.1.0"
 dependencies = [
- "dotenvy",
  "miette",
  "moon_args",
  "moon_common",
@@ -4092,6 +4091,7 @@ dependencies = [
 name = "moon_task_expander"
 version = "0.1.0"
 dependencies = [
+ "dotenvy",
  "miette",
  "moon_common",
  "moon_config",

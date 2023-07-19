@@ -1,11 +1,15 @@
 use crate::tasks_expander_error::TasksExpanderError;
 use crate::token_expander::TokenExpander;
 use moon_common::color;
+use moon_common::path::{to_virtual_string, WorkspaceRelativePathBuf};
 use moon_config::{patterns, InputPath};
 use moon_project::Project;
-use moon_task::Task;
+use moon_query::Field;
+use moon_task::{Target, TargetScope, Task};
 use rustc_hash::FxHashMap;
+use std::collections::BTreeMap;
 use std::env;
+use std::mem;
 use std::path::Path;
 use tracing::{trace, warn};
 
@@ -41,7 +45,29 @@ pub struct TasksExpander<'proj> {
 }
 
 impl<'proj> TasksExpander<'proj> {
-    pub fn expand(&mut self) {}
+    pub fn expand<F>(&mut self, query: F) -> miette::Result<()>
+    where
+        F: Fn(Field) -> miette::Result<Vec<Project>>,
+    {
+        let mut tasks = BTreeMap::new();
+
+        // Use `mem::take` so that we can mutably borrow the project and tasks in parallel
+        for (task_id, mut task) in mem::take(&mut self.project.tasks) {
+            // Resolve in this order!
+            self.expand_env(&mut task)?;
+            self.expand_deps(&mut task, &query)?;
+            self.expand_inputs(&mut task)?;
+            self.expand_outputs(&mut task)?;
+            self.expand_args(&mut task)?;
+            self.expand_command(&mut task)?;
+
+            tasks.insert(task_id, task);
+        }
+
+        self.project.tasks.extend(tasks);
+
+        Ok(())
+    }
 
     pub fn expand_command(&mut self, task: &mut Task) -> miette::Result<()> {
         // Token variables
@@ -55,10 +81,129 @@ impl<'proj> TasksExpander<'proj> {
     }
 
     pub fn expand_args(&mut self, task: &mut Task) -> miette::Result<()> {
+        if task.args.is_empty() {
+            return Ok(());
+        }
+
+        let handle_path = |path: WorkspaceRelativePathBuf| -> miette::Result<String> {
+            if task.options.run_from_workspace_root {
+                Ok(format!("./{}", path))
+            } else if let Ok(proj_path) = path.strip_prefix(&self.project.source) {
+                Ok(format!("./{}", proj_path))
+            } else {
+                to_virtual_string(path.to_logical_path(self.workspace_root))
+            }
+        };
+
+        // Expand inline tokens
+        let mut args = vec![];
+        let expander = TokenExpander::for_args(self.project, task, self.workspace_root);
+
+        for arg in &task.args {
+            // Token functions
+            if expander.has_token_function(arg) {
+                let (files, globs) = expander.replace_function(arg)?;
+
+                for file in files {
+                    args.push(handle_path(file)?);
+                }
+
+                for glob in globs {
+                    args.push(handle_path(glob)?);
+                }
+
+            // Token variables
+            } else if expander.has_token_variable(arg) {
+                args.push(expander.replace_variables(arg)?);
+
+            // Environment variables
+            } else if patterns::ENV_VAR.is_match(arg) {
+                args.push(substitute_env_var(arg, false));
+
+            // Normal arg
+            } else {
+                args.push(arg.to_owned());
+            }
+        }
+
+        task.args = args;
+
         Ok(())
     }
 
-    pub fn expand_deps(&mut self, task: &mut Task) -> miette::Result<()> {
+    pub fn expand_deps<F>(&mut self, task: &mut Task, query: F) -> miette::Result<()>
+    where
+        F: Fn(Field) -> miette::Result<Vec<Project>>,
+    {
+        if task.deps.is_empty() {
+            return Ok(());
+        }
+
+        let project = &self.project;
+        let mut deps: Vec<Target> = vec![];
+
+        // Dont use a `HashSet` as we want to preserve order
+        let mut push_dep = |dep: Target| {
+            if !deps.contains(&dep) {
+                deps.push(dep);
+            }
+        };
+
+        for dep_target in &task.deps {
+            match &dep_target.scope {
+                // :task
+                TargetScope::All => {
+                    return Err(TasksExpanderError::UnsupportedTargetScopeInDeps {
+                        dep: dep_target.to_owned(),
+                        task: task.target.to_owned(),
+                    }
+                    .into());
+                }
+                // ^:task
+                TargetScope::Deps => {
+                    let dep_ids = project
+                        .get_dependency_ids()
+                        .iter()
+                        .map(|id| id.to_string())
+                        .collect::<Vec<_>>();
+
+                    for dep_project in query(Field::Project(dep_ids))? {
+                        if dep_project.tasks.contains_key(&dep_target.task_id) {
+                            push_dep(Target::new(&dep_project.id, &dep_target.task_id)?);
+                        }
+                    }
+                }
+                // ~:task
+                TargetScope::OwnSelf => {
+                    if dep_target.task_id == task.id {
+                        // Avoid circular references
+                    } else {
+                        push_dep(Target::new(&project.id, &dep_target.task_id)?);
+                    }
+                }
+                // id:task
+                TargetScope::Project(project_id) => {
+                    if project_id == &project.id && dep_target.task_id == task.id {
+                        // Avoid circular references
+                    } else {
+                        push_dep(dep_target.clone());
+                    }
+                }
+                // #tag:task
+                TargetScope::Tag(tag) => {
+                    for dep_project in query(Field::Tag(vec![tag.to_string()]))? {
+                        if dep_project.id == project.id {
+                            // Avoid circular references
+                        } else {
+                            push_dep(Target::new(&dep_project.id, &dep_target.task_id)?);
+                        }
+                    }
+                }
+            }
+        }
+
+        task.deps = deps;
+
         Ok(())
     }
 

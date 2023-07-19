@@ -8,6 +8,7 @@
   - Graph edges now indicate the type of relationship: development, production, peer.
   - Environment variables in commands and arguments are not substituted.
 - Identifiers (project names, file groups, etc) can now be prefixed with underscores (`_`).
+- Task `deps` can now depend on tag targets (`#tag:task`).
 - **Codegen**
   - Templates can be used as-is without rendering with [Tera](https://tera.netlify.app) by appending
     a `.raw` extension.

@@ -203,22 +203,22 @@ impl<'ws> ProjectGraphBuilder<'ws> {
     /// This must run *after* dependent projects have been created, as we require them
     /// to resolve "parent" relations.
     fn expand_project(&mut self, project: &mut Project) -> miette::Result<()> {
-        let mut tasks = BTreeMap::new();
+        // let mut tasks = BTreeMap::new();
 
-        // Use `mem::take` so that we can mutably borrow the project and tasks in parallel
-        for (task_id, mut task) in mem::take(&mut project.tasks) {
-            // Resolve in this order!
-            self.expand_task_env(project, &mut task)?;
-            self.expand_task_deps(project, &mut task)?;
-            self.expand_task_inputs(project, &mut task)?;
-            self.expand_task_outputs(project, &mut task)?;
-            self.expand_task_args(project, &mut task)?;
-            self.expand_task_command(project, &mut task)?;
+        // // Use `mem::take` so that we can mutably borrow the project and tasks in parallel
+        // for (task_id, mut task) in mem::take(&mut project.tasks) {
+        //     // Resolve in this order!
+        //     // self.expand_task_env(project, &mut task)?;
+        //     self.expand_task_deps(project, &mut task)?;
+        //     // self.expand_task_inputs(project, &mut task)?;
+        //     // self.expand_task_outputs(project, &mut task)?;
+        //     // self.expand_task_args(project, &mut task)?;
+        //     // self.expand_task_command(project, &mut task)?;
 
-            tasks.insert(task_id, task);
-        }
+        //     tasks.insert(task_id, task);
+        // }
 
-        project.tasks.extend(tasks);
+        // project.tasks.extend(tasks);
 
         Ok(())
     }
@@ -236,128 +236,128 @@ impl<'ws> ProjectGraphBuilder<'ws> {
 
     /// Expand the args list to resolve tokens, relative to the project root.
     pub fn expand_task_args(&self, project: &mut Project, task: &mut Task) -> miette::Result<()> {
-        if task.args.is_empty() {
-            return Ok(());
-        }
+        // if task.args.is_empty() {
+        //     return Ok(());
+        // }
 
-        let mut args: Vec<String> = vec![];
+        // let mut args: Vec<String> = vec![];
 
-        // When running within a project:
-        //  - Project paths are relative and start with "./"
-        //  - Workspace paths are relative up to the root
-        // When running from the workspace:
-        //  - All paths are absolute
-        let handle_path =
-            |path: WorkspaceRelativePathBuf, is_glob: bool| -> miette::Result<String> {
-                let arg = path::to_virtual_string(
-                    path::relative_from(
-                        path.to_path(&self.workspace.root),
-                        if task.options.run_from_workspace_root {
-                            &self.workspace.root
-                        } else {
-                            &project.root
-                        },
-                    )
-                    .unwrap(),
-                )?;
+        // // When running within a project:
+        // //  - Project paths are relative and start with "./"
+        // //  - Workspace paths are relative up to the root
+        // // When running from the workspace:
+        // //  - All paths are absolute
+        // let handle_path =
+        //     |path: WorkspaceRelativePathBuf, is_glob: bool| -> miette::Result<String> {
+        //         let arg = path::to_virtual_string(
+        //             path::relative_from(
+        //                 path.to_path(&self.workspace.root),
+        //                 if task.options.run_from_workspace_root {
+        //                     &self.workspace.root
+        //                 } else {
+        //                     &project.root
+        //                 },
+        //             )
+        //             .unwrap(),
+        //         )?;
 
-                let arg = if arg.starts_with("..") {
-                    arg
-                } else {
-                    format!("./{}", arg)
-                };
+        //         let arg = if arg.starts_with("..") {
+        //             arg
+        //         } else {
+        //             format!("./{}", arg)
+        //         };
 
-                if is_glob {
-                    return Ok(glob::normalize(arg)?);
-                }
+        //         if is_glob {
+        //             return Ok(glob::normalize(arg)?);
+        //         }
 
-                Ok(arg)
-            };
+        //         Ok(arg)
+        //     };
 
-        // We cant use `TokenResolver.resolve` as args are a mix of strings,
-        // strings with tokens, and file paths when tokens are resolved.
-        let token_resolver = TokenResolver::new(TokenContext::Args, project, &self.workspace.root);
+        // // We cant use `TokenResolver.resolve` as args are a mix of strings,
+        // // strings with tokens, and file paths when tokens are resolved.
+        // let token_resolver = TokenResolver::new(TokenContext::Args, project, &self.workspace.root);
 
-        for arg in &task.args {
-            if token_resolver.has_token_func(arg) {
-                let (paths, globs) = token_resolver.resolve_func(arg, task)?;
+        // for arg in &task.args {
+        //     if token_resolver.has_token_func(arg) {
+        //         let (paths, globs) = token_resolver.resolve_func(arg, task)?;
 
-                for path in paths {
-                    args.push(handle_path(path, false)?);
-                }
+        //         for path in paths {
+        //             args.push(handle_path(path, false)?);
+        //         }
 
-                for glob in globs {
-                    args.push(handle_path(glob, true)?);
-                }
-            } else if token_resolver.has_token_var(arg) {
-                args.push(token_resolver.resolve_vars(arg, task)?);
-            } else {
-                args.push(arg.clone());
-            }
-        }
+        //         for glob in globs {
+        //             args.push(handle_path(glob, true)?);
+        //         }
+        //     } else if token_resolver.has_token_var(arg) {
+        //         args.push(token_resolver.resolve_vars(arg, task)?);
+        //     } else {
+        //         args.push(arg.clone());
+        //     }
+        // }
 
-        task.args = args;
+        // task.args = args;
 
         Ok(())
     }
 
     /// Expand the deps list and resolve parent/self scopes.
     pub fn expand_task_deps(&self, project: &mut Project, task: &mut Task) -> miette::Result<()> {
-        if task.deps.is_empty() {
-            return Ok(());
-        }
+        // if task.deps.is_empty() {
+        //     return Ok(());
+        // }
 
-        let mut dep_targets: Vec<Target> = vec![];
+        // let mut dep_targets: Vec<Target> = vec![];
 
-        // Dont use a `HashSet` as we want to preserve order
-        let mut push_target = |dep: Target| {
-            if !dep_targets.contains(&dep) {
-                dep_targets.push(dep);
-            }
-        };
+        // // Dont use a `HashSet` as we want to preserve order
+        // let mut push_target = |dep: Target| {
+        //     if !dep_targets.contains(&dep) {
+        //         dep_targets.push(dep);
+        //     }
+        // };
 
-        for dep_target in &task.deps {
-            match &dep_target.scope {
-                // ^:task
-                TargetScope::Deps => {
-                    for dep_id in project.get_dependency_ids() {
-                        let dep_index = self.indices.get(dep_id).unwrap();
-                        let dep_project = self.graph.node_weight(*dep_index).unwrap();
+        // for dep_target in &task.deps {
+        //     match &dep_target.scope {
+        //         // ^:task
+        //         TargetScope::Deps => {
+        //             for dep_id in project.get_dependency_ids() {
+        //                 let dep_index = self.indices.get(dep_id).unwrap();
+        //                 let dep_project = self.graph.node_weight(*dep_index).unwrap();
 
-                        if let Some(dep_task) = dep_project.tasks.get(&dep_target.task_id) {
-                            push_target(dep_task.target.clone());
-                        }
-                    }
-                }
-                // ~:task
-                TargetScope::OwnSelf => {
-                    if dep_target.task_id == task.id {
-                        // Avoid circular references
-                    } else {
-                        push_target(Target::new(&project.id, &dep_target.task_id)?);
-                    }
-                }
-                // project:task
-                TargetScope::Project(project_id) => {
-                    if project_id == &project.id && dep_target.task_id == task.id {
-                        // Avoid circular references
-                    } else {
-                        push_target(dep_target.clone());
-                    }
-                }
-                // :task
-                // #tag:task
-                _ => {
-                    return Err(ProjectGraphError::PersistentDepRequirement(
-                        dep_target.to_string(),
-                        task.target.to_string(),
-                    )
-                    .into());
-                }
-            };
-        }
+        //                 if let Some(dep_task) = dep_project.tasks.get(&dep_target.task_id) {
+        //                     push_target(dep_task.target.clone());
+        //                 }
+        //             }
+        //         }
+        //         // ~:task
+        //         TargetScope::OwnSelf => {
+        //             if dep_target.task_id == task.id {
+        //                 // Avoid circular references
+        //             } else {
+        //                 push_target(Target::new(&project.id, &dep_target.task_id)?);
+        //             }
+        //         }
+        //         // project:task
+        //         TargetScope::Project(project_id) => {
+        //             if project_id == &project.id && dep_target.task_id == task.id {
+        //                 // Avoid circular references
+        //             } else {
+        //                 push_target(dep_target.clone());
+        //             }
+        //         }
+        //         // :task
+        //         // #tag:task
+        //         _ => {
+        //             return Err(ProjectGraphError::PersistentDepRequirement(
+        //                 dep_target.to_string(),
+        //                 task.target.to_string(),
+        //             )
+        //             .into());
+        //         }
+        //     };
+        // }
 
-        task.deps = dep_targets;
+        // task.deps = dep_targets;
 
         Ok(())
     }

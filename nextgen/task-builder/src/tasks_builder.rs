@@ -493,10 +493,6 @@ impl<'proj> TasksBuilder<'proj> {
         Ok(global_inputs)
     }
 
-    /// Build environment variables for the task. The precedence is as follows.
-    ///     - 1st - project-level `env`
-    ///     - 2nd - task `env_file` (when enabled)
-    ///     - 3rd - task-level `env`
     fn build_env(&self, target: &Target) -> miette::Result<FxHashMap<String, String>> {
         let env = self
             .project_env

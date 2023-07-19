@@ -7,6 +7,7 @@ edition = "2021"
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_project = { path = "../project" }
+moon_query = { path = "../query" }
 moon_task = { path = "../task" }
 moon_time = { path = "../time" }
 dotenvy = "0.15.7"

@@ -15,9 +15,9 @@ use tracing::{trace, warn};
 
 fn substitute_env_var(value: &str, strict: bool) -> String {
     let pattern = if strict {
-        &patterns::ENV_VAR_SUBSTITUTE
+        &patterns::ENV_VAR_SUBSTITUTE_STRICT
     } else {
-        &patterns::ENV_VAR
+        &patterns::ENV_VAR_SUBSTITUTE
     };
 
     pattern.replace_all(

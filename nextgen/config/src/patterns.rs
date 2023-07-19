@@ -11,7 +11,8 @@ macro_rules! pattern {
 
 pattern!(ENV_VAR, r"$([A-Z0-9_]+)");
 pattern!(ENV_VAR_DISTINCT, r"^$([A-Z0-9_]+)$");
-pattern!(ENV_VAR_SUBSTITUTE, r"${([A-Z0-9_]+)}");
+pattern!(ENV_VAR_SUBSTITUTE, r"$(?:{([A-Z0-9_]+)}|([A-Z0-9_]+))");
+pattern!(ENV_VAR_SUBSTITUTE_STRICT, r"${([A-Z0-9_]+)}");
 
 // Task tokens
 

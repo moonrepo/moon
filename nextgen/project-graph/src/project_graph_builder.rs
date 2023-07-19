@@ -136,35 +136,35 @@ impl<'app> ProjectGraphBuilder<'app> {
     }
 
     /// Build the project graph and return a new structure.
-    pub async fn build(self) -> miette::Result<ProjectGraph> {
+    pub async fn build(mut self) -> miette::Result<ProjectGraph> {
         self.enforce_constraints()?;
 
         let mut nodes = FxHashMap::default();
 
-        for (alias, id) in self.aliases {
+        for (id, index) in self.nodes {
+            let source = self.sources.remove(&id).unwrap();
+
             nodes.insert(
                 id,
                 ProjectNode {
-                    alias: Some(alias),
+                    index,
+                    source,
                     ..ProjectNode::default()
                 },
             );
         }
 
-        for (id, index) in self.nodes {
-            nodes
-                .entry(id)
-                .and_modify(|node| node.index = index)
-                .or_insert(ProjectNode {
-                    index,
-                    ..ProjectNode::default()
-                });
+        for (alias, id) in self.aliases {
+            nodes.entry(id).and_modify(|node| {
+                node.alias = Some(alias);
+            });
         }
 
-        Ok(ProjectGraph {
-            graph: self.graph,
+        Ok(ProjectGraph::new(
+            self.graph,
             nodes,
-        })
+            self.context.workspace_root,
+        ))
     }
 
     /// Load a single project by ID or alias into the graph.

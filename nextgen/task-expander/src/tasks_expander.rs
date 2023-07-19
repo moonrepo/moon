@@ -45,26 +45,32 @@ pub struct TasksExpander<'proj> {
 }
 
 impl<'proj> TasksExpander<'proj> {
-    pub fn expand<F>(&mut self, query: F) -> miette::Result<()>
+    pub fn expand<F>(project: &mut Project, workspace_root: &Path, query: F) -> miette::Result<()>
     where
         F: Fn(Field) -> miette::Result<Vec<Project>>,
     {
         let mut tasks = BTreeMap::new();
+        let old_tasks = mem::take(&mut project.tasks);
+
+        let mut expander = TasksExpander {
+            project,
+            workspace_root,
+        };
 
         // Use `mem::take` so that we can mutably borrow the project and tasks in parallel
-        for (task_id, mut task) in mem::take(&mut self.project.tasks) {
+        for (task_id, mut task) in old_tasks {
             // Resolve in this order!
-            self.expand_env(&mut task)?;
-            self.expand_deps(&mut task, &query)?;
-            self.expand_inputs(&mut task)?;
-            self.expand_outputs(&mut task)?;
-            self.expand_args(&mut task)?;
-            self.expand_command(&mut task)?;
+            expander.expand_env(&mut task)?;
+            expander.expand_deps(&mut task, &query)?;
+            expander.expand_inputs(&mut task)?;
+            expander.expand_outputs(&mut task)?;
+            expander.expand_args(&mut task)?;
+            expander.expand_command(&mut task)?;
 
             tasks.insert(task_id, task);
         }
 
-        self.project.tasks.extend(tasks);
+        project.tasks.extend(tasks);
 
         Ok(())
     }

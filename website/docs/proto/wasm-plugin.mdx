@@ -64,7 +64,8 @@ We can then build the WASM binary. The file will be available at
 `target/wasm32-wasi/debug/<name>.wasm`.
 
 ```shell
-cargo build --target wasm32-wasi
+cargo install cargo-wasi
+cargo wasi build
 ```
 
 ### Registering metadata
@@ -283,7 +284,7 @@ applicable).
 
 ```rust
 #[plugin_fn]
-pub fn parse_version_file(Json(input): Json<ParseVersionInput>) -> FnResult<Json<ParseVersionOutput>> {
+pub fn parse_version_file(Json(input): Json<ParseVersionFileInput>) -> FnResult<Json<ParseVersionFileOutput>> {
     let mut version = None;
 
     if input.file == "package.json" {
@@ -298,7 +299,7 @@ pub fn parse_version_file(Json(input): Json<ParseVersionInput>) -> FnResult<Json
         version = Some(input.content.trim().to_owned());
     }
 
-    Ok(Json(ParseVersionOutput { version }))
+    Ok(Json(ParseVersionFileOutput { version }))
 }
 ```
 
@@ -347,7 +348,7 @@ debug build:
 And everytime you make a change to the plugin, you'll need to rebuild it with:
 
 ```shell
-cargo build --target wasm32-wasi
+cargo wasi build
 ```
 
 With these 2 pieces in place, you can now execute `proto` commands. Be sure you're running them from
@@ -362,7 +363,13 @@ proto --log trace list-remote <id>
 
 ### Unit tests
 
-Coming soon...
+Testing WASM plugins is a bit tricky, but we've taken it upon ourselves to streamline this process
+as much as possible with test utilities, and Rust macros for generating common test cases. To begin,
+install all necessart development dependencies:
+
+```shell
+cargo add --dev proto_core proto_pdk_test_utils starbase_sandbox tokio
+```
 
 ## Building and publishing
 
@@ -386,7 +393,7 @@ git push --tags
    `target/wasm32-wasi/release/<name>.wasm`.
 
 ```shell
-cargo build --target wasm32-wasi --release
+cargo wasi build --release
 ```
 
 3. In GitHub, navigate to the tags page, find the new tag, create a new release, and attach the

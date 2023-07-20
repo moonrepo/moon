@@ -61,7 +61,7 @@ impl<'app> ProjectGraphBuilder<'app> {
     pub async fn new(
         context: ProjectGraphBuilderContext<'app>,
     ) -> miette::Result<ProjectGraphBuilder<'app>> {
-        debug!("Creating project graph");
+        debug!("Building project graph");
 
         let mut graph = ProjectGraphBuilder {
             context,
@@ -120,7 +120,7 @@ impl<'app> ProjectGraphBuilder<'app> {
 
         // Build the graph, update the state, and save the cache
         debug!(
-            "Building project graph with {} projects",
+            "Generating project graph with {} projects",
             graph.sources.len(),
         );
 

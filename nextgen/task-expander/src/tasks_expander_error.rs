@@ -14,6 +14,17 @@ pub enum TasksExpanderError {
         error: dotenvy::Error,
     },
 
+    #[diagnostic(code(task_expander::persistent_requirement))]
+    #[error(
+        "Non-persistent task {} cannot depend on persistent task {}.\nA task is marked persistent with the {} or {} settings.\n\nIf you're looking to avoid the cache, disable {} instead.",
+        .task.id.style(Style::Label),
+        .dep.id.style(Style::Label),
+        "local".style(Style::Symbol),
+        "options.persistent".style(Style::Symbol),
+        "options.cache".style(Style::Symbol),
+    )]
+    PersistentDepRequirement { dep: Target, task: Target },
+
     #[diagnostic(code(task_expander::unsupported_target_scope))]
     #[error(
         "Invalid dependency {} for task {}. All (:) scope is not supported.",

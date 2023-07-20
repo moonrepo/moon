@@ -1,9 +1,11 @@
 use crate::project_graph_error::ProjectGraphError;
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_common::Id;
+use moon_common::{color, Id};
 use moon_config::DependencyScope;
 use moon_project::Project;
+use moon_query::{build_query, Criteria, Queryable};
 use moon_task_expander::TasksExpander;
+use once_map::OnceMap;
 use pathdiff::diff_paths;
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
@@ -12,6 +14,7 @@ use petgraph::Direction;
 use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use tracing::debug;
 
 pub type GraphType = DiGraph<Project, DependencyScope>;
 pub type ProjectsCache = FxHashMap<Id, Arc<Project>>;
@@ -36,17 +39,20 @@ pub struct ProjectGraph {
 
     /// Workspace root, required for expansion.
     pub workspace_root: PathBuf,
+
+    query_cache: OnceMap<String, Vec<Id>>,
 }
 
 impl ProjectGraph {
-    // TODO query
-
     pub fn new(graph: GraphType, nodes: FxHashMap<Id, ProjectNode>, workspace_root: &Path) -> Self {
+        debug!("Creating project graph");
+
         Self {
             graph,
             nodes,
             projects: Arc::new(RwLock::new(FxHashMap::default())),
             workspace_root: workspace_root.to_owned(),
+            query_cache: OnceMap::new(),
         }
     }
 
@@ -99,6 +105,11 @@ impl ProjectGraph {
         }
 
         // Otherwise clone and expand the project
+        debug!(
+            project_id = id,
+            "Expanding project and caching into the graph"
+        );
+
         let node = self
             .nodes
             .get(id)
@@ -106,7 +117,9 @@ impl ProjectGraph {
 
         let mut project = self.graph.node_weight(node.index).unwrap().clone();
 
-        TasksExpander::expand(&mut project, &self.workspace_root, |_| Ok(vec![]))?;
+        TasksExpander::expand(&mut project, &self.workspace_root, |input| {
+            self.query(build_query(input)?)
+        })?;
 
         // And then cache it with an Arc, allowing for reuse
         {
@@ -187,6 +200,45 @@ impl ProjectGraph {
         self.graph.map(|_, n| n.id.to_string(), |_, e| *e)
     }
 
+    /// Return all projects that match the query criteria.
+    pub fn query<Q: AsRef<Criteria>>(&self, query: Q) -> miette::Result<Vec<Arc<Project>>> {
+        let query = query.as_ref();
+        let query_input = query
+            .input
+            .clone()
+            .expect("Querying the project graph requires a query input string.");
+
+        debug!(
+            "Filtering projects using query {}",
+            color::shell(&query_input)
+        );
+
+        let ids: miette::Result<&[Id]> = self.query_cache.try_insert(query_input, |_| {
+            let mut project_ids = vec![];
+
+            for project in self.get_all()? {
+                if project.matches_criteria(query)? {
+                    debug!("{} did match the criteria", color::id(&project.id));
+
+                    project_ids.push(project.id.clone());
+                } else {
+                    debug!(
+                        "{} did {} match the criteria",
+                        color::id(&project.id),
+                        color::failure("NOT"),
+                    );
+                }
+            }
+
+            Ok(project_ids)
+        });
+
+        Ok(ids?
+            .iter()
+            .map(|id| self.read_cache().get(id).unwrap().clone())
+            .collect())
+    }
+
     /// Format graph as a DOT string.
     pub fn to_dot(&self) -> String {
         let dot = Dot::with_attr_getters(
@@ -223,22 +275,5 @@ impl ProjectGraph {
         self.projects
             .write()
             .expect("Failed to acquire write access to project graph!")
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::ProjectGraph;
-
-    #[test]
-    fn wat() {
-        let graph = ProjectGraph::default();
-        let project = graph.get("foo").unwrap();
-
-        project.get_dependency_ids();
-
-        let project = graph.get("foo").unwrap();
-
-        project.get_dependency_ids();
     }
 }

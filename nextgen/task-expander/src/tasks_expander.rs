@@ -1,16 +1,16 @@
 use crate::tasks_expander_error::TasksExpanderError;
 use crate::token_expander::TokenExpander;
-use moon_common::color;
 use moon_common::path::{to_virtual_string, WorkspaceRelativePathBuf};
+use moon_common::{color, Id};
 use moon_config::{patterns, InputPath};
 use moon_project::Project;
-use moon_query::Field;
 use moon_task::{Target, TargetScope, Task};
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::env;
 use std::mem;
 use std::path::Path;
+use std::sync::Arc;
 use tracing::{trace, warn};
 
 fn substitute_env_var(value: &str, strict: bool) -> String {
@@ -47,7 +47,7 @@ pub struct TasksExpander<'proj> {
 impl<'proj> TasksExpander<'proj> {
     pub fn expand<F>(project: &mut Project, workspace_root: &Path, query: F) -> miette::Result<()>
     where
-        F: Fn(Field) -> miette::Result<Vec<Project>>,
+        F: Fn(String) -> miette::Result<Vec<Arc<Project>>>,
     {
         let mut tasks = BTreeMap::new();
         let old_tasks = mem::take(&mut project.tasks);
@@ -139,20 +139,39 @@ impl<'proj> TasksExpander<'proj> {
 
     pub fn expand_deps<F>(&mut self, task: &mut Task, query: F) -> miette::Result<()>
     where
-        F: Fn(Field) -> miette::Result<Vec<Project>>,
+        F: Fn(String) -> miette::Result<Vec<Arc<Project>>>,
     {
         if task.deps.is_empty() {
             return Ok(());
         }
 
         let project = &self.project;
-        let mut deps: Vec<Target> = vec![];
 
         // Dont use a `HashSet` as we want to preserve order
-        let mut push_dep = |dep: Target| {
+        let mut deps: Vec<Target> = vec![];
+
+        let mut check_and_push_dep = |dep_project: &Project, task_id: &Id| -> miette::Result<()> {
+            let Some(dep_task) = dep_project.tasks.get(task_id) else {
+                return Ok(());
+             };
+
+            // Enforce persistent constraints
+            if dep_task.is_persistent() && !task.is_persistent() {
+                return Err(TasksExpanderError::PersistentDepRequirement {
+                    dep: dep_task.target.to_owned(),
+                    task: task.target.to_owned(),
+                }
+                .into());
+            }
+
+            // Add the dep if it has not already been
+            let dep = Target::new(&dep_project.id, task_id)?;
+
             if !deps.contains(&dep) {
                 deps.push(dep);
             }
+
+            Ok(())
         };
 
         for dep_target in &task.deps {
@@ -167,16 +186,17 @@ impl<'proj> TasksExpander<'proj> {
                 }
                 // ^:task
                 TargetScope::Deps => {
-                    let dep_ids = project
+                    let mut dep_ids = project
                         .get_dependency_ids()
                         .iter()
                         .map(|id| id.to_string())
                         .collect::<Vec<_>>();
 
-                    for dep_project in query(Field::Project(dep_ids))? {
-                        if dep_project.tasks.contains_key(&dep_target.task_id) {
-                            push_dep(Target::new(&dep_project.id, &dep_target.task_id)?);
-                        }
+                    // Sort so query cache is more deterministic
+                    dep_ids.sort();
+
+                    for dep_project in query(format!("project=[{}]", dep_ids.join(",")))? {
+                        check_and_push_dep(&dep_project, &dep_target.task_id)?;
                     }
                 }
                 // ~:task
@@ -184,7 +204,7 @@ impl<'proj> TasksExpander<'proj> {
                     if dep_target.task_id == task.id {
                         // Avoid circular references
                     } else {
-                        push_dep(Target::new(&project.id, &dep_target.task_id)?);
+                        check_and_push_dep(&project, &dep_target.task_id)?;
                     }
                 }
                 // id:task
@@ -192,16 +212,21 @@ impl<'proj> TasksExpander<'proj> {
                     if project_id == &project.id && dep_target.task_id == task.id {
                         // Avoid circular references
                     } else {
-                        push_dep(dep_target.clone());
+                        for dep_project in query(format!(
+                            "project={} && task={}",
+                            project_id, dep_target.task_id
+                        ))? {
+                            check_and_push_dep(&dep_project, &dep_target.task_id)?;
+                        }
                     }
                 }
                 // #tag:task
                 TargetScope::Tag(tag) => {
-                    for dep_project in query(Field::Tag(vec![tag.to_string()]))? {
+                    for dep_project in query(format!("tag={tag}"))? {
                         if dep_project.id == project.id {
                             // Avoid circular references
                         } else {
-                            push_dep(Target::new(&dep_project.id, &dep_target.task_id)?);
+                            check_and_push_dep(&dep_project, &dep_target.task_id)?;
                         }
                     }
                 }

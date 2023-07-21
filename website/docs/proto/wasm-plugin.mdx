@@ -64,7 +64,8 @@ We can then build the WASM binary. The file will be available at
 `target/wasm32-wasi/debug/<name>.wasm`.
 
 ```shell
-cargo build --target wasm32-wasi
+cargo install cargo-wasi
+cargo wasi build
 ```
 
 ### Registering metadata
@@ -116,6 +117,16 @@ The following fields are available:
 ```rust
 #[plugin_fn]
 pub fn download_prebuilt(Json(input): Json<DownloadPrebuiltInput>) -> FnResult<Json<DownloadPrebuiltOutput>> {
+    check_supported_os_and_arch(
+        NAME,
+        &input.env,
+        permutations! [
+            HostOS::Linux => [HostArch::X64, HostArch::Arm64, HostArch::Arm, HostArch::Powerpc64, HostArch::S390x],
+            HostOS::MacOS => [HostArch::X64, HostArch::Arm64],
+            HostOS::Windows => [HostArch::X64, HostArch::X86, HostArch::Arm64],
+        ],
+    )?;
+
     let version = input.env.version;
     let arch = input.env.arch;
     let os = input.env.os;
@@ -283,7 +294,7 @@ applicable).
 
 ```rust
 #[plugin_fn]
-pub fn parse_version_file(Json(input): Json<ParseVersionInput>) -> FnResult<Json<ParseVersionOutput>> {
+pub fn parse_version_file(Json(input): Json<ParseVersionFileInput>) -> FnResult<Json<ParseVersionFileOutput>> {
     let mut version = None;
 
     if input.file == "package.json" {
@@ -298,7 +309,7 @@ pub fn parse_version_file(Json(input): Json<ParseVersionInput>) -> FnResult<Json
         version = Some(input.content.trim().to_owned());
     }
 
-    Ok(Json(ParseVersionOutput { version }))
+    Ok(Json(ParseVersionFileOutput { version }))
 }
 ```
 
@@ -347,7 +358,7 @@ debug build:
 And everytime you make a change to the plugin, you'll need to rebuild it with:
 
 ```shell
-cargo build --target wasm32-wasi
+cargo wasi build
 ```
 
 With these 2 pieces in place, you can now execute `proto` commands. Be sure you're running them from
@@ -362,7 +373,95 @@ proto --log trace list-remote <id>
 
 ### Unit tests
 
-Coming soon...
+Testing WASM plugins is a bit tricky, but we've taken it upon ourselves to streamline this process
+as much as possible with built-in test utilities, and Rust macros for generating common test cases.
+To begin, install all necessary development dependencies:
+
+```shell
+cargo add --dev proto_core proto_pdk_test_utils starbase_sandbox tokio
+```
+
+And as mentioned above, everytime you make a change to the plugin, you'll need to rebuild it with:
+
+```shell
+cargo wasi build
+```
+
+#### Testing plugin functions
+
+The common test case is simply calling plugin functions with a provided input and asserting the
+output is correct. This can be achieved by creating a plugin instance with `create_plugin` and
+calling the appropriate method.
+
+```rust
+use proto_pdk::*;
+use proto_pdk_test_utils::create_plugin;
+use starbase_sandbox::create_empty_sandbox;
+
+#[test]
+fn registers_metadata() {
+    let sandbox = create_empty_sandbox();
+    let plugin = create_plugin("id", sandbox.path());
+
+    assert_eq!(
+        plugin.register_tool(ToolMetadataInput::default()),
+        ToolMetadataOutput {
+            name: "Name".into(),
+            ..ToolMetadataOutput::default()
+        }
+    );
+}
+```
+
+:::info
+
+We suggest using this pattern for static functions that return a deterministic output from a
+provided input, and not for dynamic functions that make HTTP requests or execute host commands.
+
+:::
+
+#### Generating cases from macros
+
+To reduce the burden of writing custom tests for common flows, like downloading a pre-built,
+resolving versions, and generating shims, we provide a set of Rust decl macros that will generate
+the tests for you.
+
+To test downloading and installing, use `generate_download_install_tests!`. This macro requires a
+plugin ID and a real version to test with.
+
+```rust
+use proto_pdk::*;
+use proto_pdk_test_utils::{create_plugin, generate_download_install_tests};
+use starbase_sandbox::create_empty_sandbox;
+
+generate_download_install_tests!("id", "1.2.3");
+```
+
+To test version resolving, use `generate_resolve_versions_tests!`. This macro requires a plugin ID,
+and a mapping of version/aliases assertions to expectations.
+
+```rust
+generate_resolve_versions_tests!("id", {
+    "0.4" => "0.4.12",
+    "0.5.1" => "0.5.1",
+    "stable" => "1.0.0",
+});
+```
+
+And lastly, to test shims, use `generate_global_shims_test!` or `generate_local_shims_test!`. Both
+macros require a plugin ID, but also support additional arguments when creating more than 1 shim.
+These macros generate snapshots using [Insta](https://insta.rs/).
+
+```rust
+// Only the single binary
+generate_global_shims_test!("id");
+
+// When creating alternate/additional globals
+generate_global_shims_test!("id", ["other", "another"]);
+
+// When creating local shims, each file required in the list
+generate_local_shims_test!("id", ["a", "b", "c"]);
+```
 
 ## Building and publishing
 
@@ -386,7 +485,7 @@ git push --tags
    `target/wasm32-wasi/release/<name>.wasm`.
 
 ```shell
-cargo build --target wasm32-wasi --release
+cargo wasi build --release
 ```
 
 3. In GitHub, navigate to the tags page, find the new tag, create a new release, and attach the
@@ -419,5 +518,11 @@ installers = []
 Some helpful resources for learning about and building plugins.
 
 - Official proto WASM plugins
-  - [Node.js, npm, etc](https://github.com/moonrepo/node-plugin)
-- [Documentation for `proto_pdk` (plugin development kit)](https://docs.rs/proto_pdk/)
+  - [Bun](https://github.com/moonrepo/bun-plugin)
+  - [Deno](https://github.com/moonrepo/deno-plugin)
+  - [Go](https://github.com/moonrepo/go-plugin)
+  - [Node](https://github.com/moonrepo/node-plugin)
+  - [npm, pnpm, yarn](https://github.com/moonrepo/node-plugin)
+- Plugin development kit
+  - [`proto_pdk` docs](https://docs.rs/proto_pdk/)
+  - [`proto_pdk_test_utils` docs](https://docs.rs/proto_pdk_test_utils/)

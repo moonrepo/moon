@@ -269,7 +269,6 @@ const sidebars = {
 			link: { type: 'doc', id: 'proto/plugins' },
 			items: ['proto/toml-plugin', 'proto/wasm-plugin'],
 		},
-		'proto/faq',
 		{
 			type: 'category',
 			label: 'Commands',
@@ -285,6 +284,7 @@ const sidebars = {
 				'proto/commands/list-global',
 				'proto/commands/list-remote',
 				'proto/commands/local',
+				'proto/commands/plugins',
 				'proto/commands/run',
 				'proto/commands/setup',
 				'proto/commands/unalias',
@@ -292,6 +292,12 @@ const sidebars = {
 				'proto/commands/upgrade',
 				'proto/commands/use',
 			],
+		},
+		'proto/faq',
+		{
+			type: 'link',
+			label: 'Changelog',
+			href: 'https://github.com/moonrepo/proto/releases',
 		},
 	],
 };

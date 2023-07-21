@@ -1,0 +1,88 @@
+---
+slug: proto-v0.13
+title: proto v0.13 - Bun, Deno, and Go now powered by WASM plugins
+authors: [milesj]
+tags: [proto, wasm, plugin]
+---
+
+With this release, we're embracing WASM even further.
+
+<!--truncate-->
+
+## Core migration to WASM
+
+Now that WASM plugin support is up and running, we've hit a non-ideal situation where we have
+multiple competing implementations for "tools" in proto. We currently have 3 different approaches:
+
+- Tools implemented in Rust and built into proto's core.
+- TOML based plugins, with a simple Rust based wrapper.
+- WASM based plugins.
+
+This is far too many implementations to support, and makes it extremely difficult to add new
+features for tools, as it affects all 3. To remedy this situation, we've decided to migrate all core
+tools to WASM plugins, and remove the Rust based implementations. The core of proto and its CLI will
+still be Rust, but will be slowly migrated into a truly pluggable architecture.
+
+To test drive and experiment with this solution, we've migrated
+[Bun](https://github.com/moonrepo/bun-plugin), [Deno](https://github.com/moonrepo/deno-plugin), and
+[Go](https://github.com/moonrepo/go-plugin) into WASM plugins, and starting with this release, they
+are purely powered by WASM and have been removed entirely from the Rust implementation.
+
+In the next release, we hope to migrate Node.js and Rust as well. And in a future release, the TOML
+plugins will be compiled into
+[`.wat` files](https://developer.mozilla.org/en-US/docs/WebAssembly/Understanding_the_text_format)
+and loaded as WASM plugins. From here, we will have a single tool implementation, and can implement
+some really exciting features!
+
+## New `github:` plugin configuration
+
+Alongside the `source:` configuration strategy, plugins can now be configured with the `github:`
+strategy to locate WASM files from GitHub releases. For example, the `bun_plugin.wasm` file will be
+downloaded from our
+[`bun-plugin`'s latest release](https://github.com/moonrepo/bun-plugin/releases).
+
+[Learn more about this new locator scope!](/docs/proto/plugins#github)
+
+```toml title=".prototools"
+[plugins]
+bun = "github:moonrepo/bun-plugin"
+```
+
+> Bun support is built into proto, there is merely an example!
+
+## New `proto plugins` commands
+
+With the advent of plugins, we thought it would be nice to know which plugins are actually
+configured and in use, without having to manually search config files across the file system, and as
+such, have added a new [`proto plugins`](/docs/proto/commands/plugins) command.
+
+This command is simple. It will list all plugins that are currently configured for the current
+project, by loading all `.prototools` files up the tree, and loading the user
+`~/.proto/config.toml`.
+
+```shell
+$ proto plugins
+bun - Bun
+  GitHub: moonrepo/bun-plugin
+  Tag: latest
+
+deno - Deno
+  GitHub: moonrepo/deno-plugin
+  Tag: latest
+
+go - Go
+  GitHub: moonrepo/go-plugin
+  Tag: latest
+```
+
+[Learn more about this new command!](/docs/proto/commands/plugins)
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.13.0) for a full list
+of changes.
+
+- Added documentation for writing [unit tests for WASM plugins](/docs/proto/wasm-plugin#unit-tests).
+- Updated `proto clean` and `proto use` to load and merge all `.prototools` from the current
+  directory and upwards.
+- Many WASM API improvements.

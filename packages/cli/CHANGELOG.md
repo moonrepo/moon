@@ -10,6 +10,8 @@
 - Environment variables in commands and arguments are not substituted.
   - Will now also read from a task's `env`.
 - Task `deps` can now depend on tag targets (`#tag:task`).
+- Task `outputs` can now use token variables.
+
 - **Codegen**
   - Templates can be used as-is without rendering with [Tera](https://tera.netlify.app) by appending
     a `.raw` extension.

@@ -1,11 +1,16 @@
 mod utils;
 
-use moon_config::{InputPath, LanguageType, OutputPath, ProjectType};
+use moon_common::path::WorkspaceRelativePathBuf;
+use moon_config::{InputPath, OutputPath};
 use moon_task_expander::TasksExpander;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
 use std::env;
 use utils::{create_project, create_task};
+
+fn create_path_set(inputs: Vec<&str>) -> FxHashSet<WorkspaceRelativePathBuf> {
+    FxHashSet::from_iter(inputs.into_iter().map(|s| s.into()))
+}
 
 mod tasks_expander {
     use super::*;
@@ -361,6 +366,253 @@ mod tasks_expander {
             }
             .expand_env(&mut task)
             .unwrap();
+        }
+    }
+
+    mod expand_inputs {
+        use super::*;
+
+        #[test]
+        fn extracts_env_var() {
+            let sandbox = create_sandbox("file-group");
+            let mut project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.inputs.push(InputPath::EnvVar("FOO_BAR".into()));
+
+            TasksExpander {
+                project: &mut project,
+                workspace_root: sandbox.path(),
+            }
+            .expand_inputs(&mut task)
+            .unwrap();
+
+            assert_eq!(task.input_vars, FxHashSet::from_iter(["FOO_BAR".into()]));
+            assert_eq!(task.input_globs, FxHashSet::default());
+            assert_eq!(task.input_paths, FxHashSet::default());
+        }
+
+        #[test]
+        fn replaces_token_funcs() {
+            let sandbox = create_sandbox("file-group");
+            let mut project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.inputs.push(InputPath::ProjectFile("file.txt".into()));
+            task.inputs.push(InputPath::TokenFunc("@files(all)".into()));
+
+            TasksExpander {
+                project: &mut project,
+                workspace_root: sandbox.path(),
+            }
+            .expand_inputs(&mut task)
+            .unwrap();
+
+            assert_eq!(task.input_globs, FxHashSet::default());
+            assert_eq!(
+                task.input_paths,
+                create_path_set(vec![
+                    "project/source/dir/subdir/nested.json",
+                    "project/source/file.txt",
+                    "project/source/docs.md",
+                    "project/source/config.yml",
+                    "project/source/other/file.json"
+                ])
+            );
+        }
+
+        #[test]
+        fn splits_token_func_into_files_globs() {
+            let sandbox = create_sandbox("file-group");
+            let mut project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.inputs.push(InputPath::ProjectFile("file.txt".into()));
+            task.inputs.push(InputPath::TokenFunc("@group(all)".into()));
+
+            TasksExpander {
+                project: &mut project,
+                workspace_root: sandbox.path(),
+            }
+            .expand_inputs(&mut task)
+            .unwrap();
+
+            assert_eq!(
+                task.input_globs,
+                create_path_set(vec!["project/source/*.md", "project/source/**/*.json"])
+            );
+            assert_eq!(
+                task.input_paths,
+                create_path_set(vec![
+                    "project/source/dir/subdir",
+                    "project/source/file.txt",
+                    "project/source/config.yml",
+                ])
+            );
+        }
+
+        #[test]
+        fn replaces_token_vars() {
+            let sandbox = create_sandbox("file-group");
+            let mut project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.inputs
+                .push(InputPath::ProjectGlob("$task/**/*".into()));
+            task.inputs
+                .push(InputPath::WorkspaceFile("$project/index.js".into()));
+
+            TasksExpander {
+                project: &mut project,
+                workspace_root: sandbox.path(),
+            }
+            .expand_inputs(&mut task)
+            .unwrap();
+
+            assert_eq!(
+                task.input_globs,
+                create_path_set(vec!["project/source/task/**/*"])
+            );
+            assert_eq!(task.input_paths, create_path_set(vec!["project/index.js"]));
+        }
+    }
+
+    mod expand_outputs {
+        use super::*;
+
+        #[test]
+        fn replaces_token_funcs() {
+            let sandbox = create_sandbox("file-group");
+            let mut project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.outputs
+                .push(OutputPath::ProjectFile("file.txt".into()));
+            task.outputs
+                .push(OutputPath::TokenFunc("@files(all)".into()));
+
+            TasksExpander {
+                project: &mut project,
+                workspace_root: sandbox.path(),
+            }
+            .expand_outputs(&mut task)
+            .unwrap();
+
+            assert_eq!(task.output_globs, FxHashSet::default());
+            assert_eq!(
+                task.output_paths,
+                create_path_set(vec![
+                    "project/source/dir/subdir/nested.json",
+                    "project/source/file.txt",
+                    "project/source/docs.md",
+                    "project/source/config.yml",
+                    "project/source/other/file.json"
+                ])
+            );
+        }
+
+        #[test]
+        fn splits_token_func_into_files_globs() {
+            let sandbox = create_sandbox("file-group");
+            let mut project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.outputs
+                .push(OutputPath::ProjectFile("file.txt".into()));
+            task.outputs
+                .push(OutputPath::TokenFunc("@group(all)".into()));
+
+            TasksExpander {
+                project: &mut project,
+                workspace_root: sandbox.path(),
+            }
+            .expand_outputs(&mut task)
+            .unwrap();
+
+            assert_eq!(
+                task.output_globs,
+                create_path_set(vec!["project/source/*.md", "project/source/**/*.json"])
+            );
+            assert_eq!(
+                task.output_paths,
+                create_path_set(vec![
+                    "project/source/dir/subdir",
+                    "project/source/file.txt",
+                    "project/source/config.yml",
+                ])
+            );
+        }
+
+        #[test]
+        fn replaces_token_vars() {
+            let sandbox = create_sandbox("file-group");
+            let mut project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.outputs
+                .push(OutputPath::ProjectGlob("$task/**/*".into()));
+            task.outputs
+                .push(OutputPath::WorkspaceFile("$project/index.js".into()));
+
+            TasksExpander {
+                project: &mut project,
+                workspace_root: sandbox.path(),
+            }
+            .expand_outputs(&mut task)
+            .unwrap();
+
+            assert_eq!(
+                task.output_globs,
+                create_path_set(vec!["project/source/task/**/*"])
+            );
+            assert_eq!(task.output_paths, create_path_set(vec!["project/index.js"]));
+        }
+
+        #[test]
+        fn doesnt_overlap_input_file() {
+            let sandbox = create_sandbox("file-group");
+            let mut project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.outputs.push(OutputPath::ProjectFile("out".into()));
+            task.input_paths.insert(project.source.join("out"));
+
+            TasksExpander {
+                project: &mut project,
+                workspace_root: sandbox.path(),
+            }
+            .expand_outputs(&mut task)
+            .unwrap();
+
+            assert!(task.input_paths.is_empty());
+            assert_eq!(
+                task.output_paths,
+                create_path_set(vec!["project/source/out"])
+            );
+        }
+
+        #[test]
+        fn doesnt_overlap_input_glob() {
+            let sandbox = create_sandbox("file-group");
+            let mut project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.outputs
+                .push(OutputPath::ProjectGlob("out/**/*".into()));
+            task.input_globs.insert(project.source.join("out/**/*"));
+
+            TasksExpander {
+                project: &mut project,
+                workspace_root: sandbox.path(),
+            }
+            .expand_outputs(&mut task)
+            .unwrap();
+
+            assert!(task.input_globs.is_empty());
+            assert_eq!(
+                task.output_globs,
+                create_path_set(vec!["project/source/out/**/*"])
+            );
         }
     }
 }

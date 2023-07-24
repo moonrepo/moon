@@ -619,7 +619,7 @@ mod token_expander {
         }
 
         #[test]
-        fn doesnt_convert_variables() {
+        fn converts_variables() {
             let sandbox = create_sandbox("file-group");
             let project = create_project(sandbox.path());
             let mut task = create_task();
@@ -637,12 +637,12 @@ mod token_expander {
                 expander.expand_outputs().unwrap(),
                 (
                     vec![
-                        WorkspaceRelativePathBuf::from("project/source/$task/file.txt"),
-                        WorkspaceRelativePathBuf::from("cache/$target/file.txt"),
+                        WorkspaceRelativePathBuf::from("project/source/task/file.txt"),
+                        WorkspaceRelativePathBuf::from("cache/project:task/file.txt"),
                     ],
                     vec![
-                        WorkspaceRelativePathBuf::from("project/source/$task/files/**/*"),
-                        WorkspaceRelativePathBuf::from("cache/$target/files/**/*"),
+                        WorkspaceRelativePathBuf::from("project/source/task/files/**/*"),
+                        WorkspaceRelativePathBuf::from("cache/project:task/files/**/*"),
                     ]
                 )
             );

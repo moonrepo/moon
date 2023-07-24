@@ -173,7 +173,14 @@ impl<'graph> TokenExpander<'graph> {
                     globs.extend(result.1);
                 }
                 _ => {
-                    let path = output.to_workspace_relative(&self.project.source).unwrap();
+                    let path = WorkspaceRelativePathBuf::from(
+                        self.replace_variables(
+                            output
+                                .to_workspace_relative(&self.project.source)
+                                .unwrap()
+                                .as_str(),
+                        )?,
+                    );
 
                     if output.is_glob() {
                         globs.push(path);
@@ -309,7 +316,12 @@ impl<'graph> TokenExpander<'graph> {
 
         self.check_scope(
             token,
-            &[TokenScope::Command, TokenScope::Args, TokenScope::Inputs],
+            &[
+                TokenScope::Command,
+                TokenScope::Args,
+                TokenScope::Inputs,
+                TokenScope::Outputs,
+            ],
         )?;
 
         let replaced_value = match variable {

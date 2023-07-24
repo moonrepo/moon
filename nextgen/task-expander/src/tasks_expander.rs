@@ -13,18 +13,15 @@ use std::path::Path;
 use std::sync::Arc;
 use tracing::{trace, warn};
 
-fn substitute_env_var(value: &str, strict: bool) -> String {
-    let pattern = if strict {
-        &patterns::ENV_VAR_SUBSTITUTE_STRICT
-    } else {
-        &patterns::ENV_VAR_SUBSTITUTE
-    };
-
-    pattern.replace_all(
+fn substitute_env_var(value: &str, env_map: &FxHashMap<String, String>) -> String {
+    patterns::ENV_VAR_SUBSTITUTE.replace_all(
         value,
         |caps: &patterns::Captures| {
             let name = caps.get(1).unwrap().as_str();
-            let value = env::var(name).unwrap_or_default();
+            let value = match env_map.get(name) {
+                Some(var) => var.to_owned(),
+                None => env::var(name).unwrap_or_default(),
+            };
 
             if value.is_empty() {
                 warn!(
@@ -87,7 +84,7 @@ impl<'proj> TasksExpander<'proj> {
             TokenExpander::for_command(self.project, task, self.workspace_root).expand_command()?;
 
         // Environment variables
-        task.command = substitute_env_var(&command, false);
+        task.command = substitute_env_var(&command, &task.env);
 
         Ok(())
     }
@@ -136,7 +133,7 @@ impl<'proj> TasksExpander<'proj> {
 
             // Environment variables
             } else if patterns::ENV_VAR_SUBSTITUTE.is_match(arg) {
-                args.push(substitute_env_var(arg, false));
+                args.push(substitute_env_var(arg, &task.env));
 
             // Normal arg
             } else {
@@ -264,43 +261,43 @@ impl<'proj> TasksExpander<'proj> {
         );
 
         // Substitute environment variables
+        let cloned_env = task.env.clone();
+
         task.env.iter_mut().for_each(|(_, value)| {
-            *value = substitute_env_var(value, true);
+            *value = substitute_env_var(value, &cloned_env);
         });
 
         // Load variables from an .env file
         if let Some(env_file) = &task.options.env_file {
-            let target = &task.target;
             let env_path = env_file
                 .to_workspace_relative(self.project.source.as_str())
                 .to_path(self.workspace_root);
 
             trace!(
-                target = target.as_str(),
+                target = task.target.as_str(),
                 env_file = ?env_path,
-                "Loading env vars from dotenv",
+                "Loading environment variables from dotenv",
             );
 
             // The `.env` file may not have been committed, so avoid crashing
             if env_path.exists() {
-                let env_vars = dotenvy::from_path_iter(&env_path)
-                    .map_err(|error| TasksExpanderError::InvalidEnvFile {
-                        path: env_path.to_path_buf(),
-                        error,
-                    })?
-                    .flatten()
-                    .collect::<FxHashMap<_, _>>();
+                let handle_error = |error: dotenvy::Error| TasksExpanderError::InvalidEnvFile {
+                    path: env_path.to_path_buf(),
+                    error,
+                };
 
-                // Don't override task-level variables
-                for (key, val) in env_vars {
+                for line in dotenvy::from_path_iter(&env_path).map_err(handle_error)? {
+                    let (key, val) = line.map_err(handle_error)?;
+
+                    // Don't override task-level variables
                     task.env.entry(key).or_insert(val);
                 }
             } else {
                 warn!(
-                    target = target.as_str(),
+                    target = task.target.as_str(),
                     env_file = ?env_path,
-                    "The {} option is enabled but file doesn't exist, skipping as this may be intentional",
-                    color::id("envFile"),
+                    "Setting {} is enabled but file doesn't exist, skipping as this may be intentional",
+                    color::symbol("options.envFile"),
                 );
             }
         }

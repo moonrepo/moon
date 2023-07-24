@@ -76,6 +76,12 @@ impl<'proj> TasksExpander<'proj> {
     }
 
     pub fn expand_command(&mut self, task: &mut Task) -> miette::Result<()> {
+        trace!(
+            target = task.target.as_str(),
+            command = &task.command,
+            "Expanding tokens and variables in command"
+        );
+
         // Token variables
         let command =
             TokenExpander::for_command(self.project, task, self.workspace_root).expand_command()?;
@@ -101,6 +107,12 @@ impl<'proj> TasksExpander<'proj> {
             }
         };
 
+        trace!(
+            target = task.target.as_str(),
+            args = ?task.args,
+            "Expanding tokens and variables in args",
+        );
+
         // Expand inline tokens
         let mut args = vec![];
         let expander = TokenExpander::for_args(self.project, task, self.workspace_root);
@@ -123,7 +135,7 @@ impl<'proj> TasksExpander<'proj> {
                 args.push(expander.replace_variables(arg)?);
 
             // Environment variables
-            } else if patterns::ENV_VAR.is_match(arg) {
+            } else if patterns::ENV_VAR_SUBSTITUTE.is_match(arg) {
                 args.push(substitute_env_var(arg, false));
 
             // Normal arg
@@ -144,6 +156,12 @@ impl<'proj> TasksExpander<'proj> {
         if task.deps.is_empty() {
             return Ok(());
         }
+
+        trace!(
+            target = task.target.as_str(),
+            deps = ?task.deps,
+            "Expanding target scopes for deps",
+        );
 
         let project = &self.project;
 
@@ -239,6 +257,12 @@ impl<'proj> TasksExpander<'proj> {
     }
 
     pub fn expand_env(&mut self, task: &mut Task) -> miette::Result<()> {
+        trace!(
+            target = task.target.as_str(),
+            env = ?task.env,
+            "Expanding environment variables"
+        );
+
         // Substitute environment variables
         task.env.iter_mut().for_each(|(_, value)| {
             *value = substitute_env_var(value, true);
@@ -289,6 +313,12 @@ impl<'proj> TasksExpander<'proj> {
             return Ok(());
         }
 
+        trace!(
+            target = task.target.as_str(),
+            inputs = ?task.inputs,
+            "Expanding inputs into file system paths"
+        );
+
         // Expand inputs to file system paths and environment variables
         for input in &task.inputs {
             if let InputPath::EnvVar(var) = input {
@@ -309,6 +339,12 @@ impl<'proj> TasksExpander<'proj> {
         if task.outputs.is_empty() {
             return Ok(());
         }
+
+        trace!(
+            target = task.target.as_str(),
+            outputs = ?task.outputs,
+            "Expanding outputs into file system paths"
+        );
 
         // Expand outputs to file system paths
         let (files, globs) =

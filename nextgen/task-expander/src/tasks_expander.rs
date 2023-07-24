@@ -5,10 +5,8 @@ use moon_common::{color, Id};
 use moon_config::{patterns, InputPath};
 use moon_project::Project;
 use moon_task::{Target, TargetScope, Task};
-use rustc_hash::FxHashMap;
-use std::collections::BTreeMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::env;
-use std::mem;
 use std::path::Path;
 use std::sync::Arc;
 use tracing::{trace, warn};
@@ -46,33 +44,32 @@ impl<'proj> TasksExpander<'proj> {
     where
         F: Fn(String) -> miette::Result<Vec<Arc<Project>>>,
     {
-        let mut tasks = BTreeMap::new();
-        let old_tasks = mem::take(&mut project.tasks);
+        // We unfortunately need to clone the keys here since we can't
+        // borrow the project mutably (for the expander) while we're
+        // also iterating over and mutating the tasks.
+        let task_ids = project.tasks.keys().cloned().collect::<Vec<_>>();
 
         let mut expander = TasksExpander {
             project,
             workspace_root,
         };
 
-        // Use `mem::take` so that we can mutably borrow the project and tasks in parallel
-        for (task_id, mut task) in old_tasks {
+        for task_id in &task_ids {
             // Resolve in this order!
-            expander.expand_env(&mut task)?;
-            expander.expand_deps(&mut task, &query)?;
-            expander.expand_inputs(&mut task)?;
-            expander.expand_outputs(&mut task)?;
-            expander.expand_args(&mut task)?;
-            expander.expand_command(&mut task)?;
-
-            tasks.insert(task_id, task);
+            expander.expand_env(task_id)?;
+            expander.expand_deps(task_id, &query)?;
+            expander.expand_inputs(task_id)?;
+            expander.expand_outputs(task_id)?;
+            expander.expand_args(task_id)?;
+            expander.expand_command(task_id)?;
         }
-
-        project.tasks.extend(tasks);
 
         Ok(())
     }
 
-    pub fn expand_command(&mut self, task: &mut Task) -> miette::Result<()> {
+    pub fn expand_command(&mut self, task_id: &str) -> miette::Result<()> {
+        let task = self.get_task(task_id);
+
         trace!(
             target = task.target.as_str(),
             command = &task.command,
@@ -84,12 +81,18 @@ impl<'proj> TasksExpander<'proj> {
             TokenExpander::for_command(self.project, task, self.workspace_root).expand_command()?;
 
         // Environment variables
-        task.command = substitute_env_var(&command, &task.env);
+        let command = substitute_env_var(&command, &task.env);
+
+        {
+            self.get_task_mut(task_id).command = command;
+        }
 
         Ok(())
     }
 
-    pub fn expand_args(&mut self, task: &mut Task) -> miette::Result<()> {
+    pub fn expand_args(&mut self, task_id: &str) -> miette::Result<()> {
+        let task = self.get_task(task_id);
+
         if task.args.is_empty() {
             return Ok(());
         }
@@ -141,15 +144,19 @@ impl<'proj> TasksExpander<'proj> {
             }
         }
 
-        task.args = args;
+        {
+            self.get_task_mut(task_id).args = args;
+        }
 
         Ok(())
     }
 
-    pub fn expand_deps<F>(&mut self, task: &mut Task, query: F) -> miette::Result<()>
+    pub fn expand_deps<F>(&mut self, task_id: &str, query: F) -> miette::Result<()>
     where
         F: Fn(String) -> miette::Result<Vec<Arc<Project>>>,
     {
+        let task = self.get_task(task_id);
+
         if task.deps.is_empty() {
             return Ok(());
         }
@@ -271,12 +278,16 @@ impl<'proj> TasksExpander<'proj> {
             }
         }
 
-        task.deps = deps;
+        {
+            self.get_task_mut(task_id).deps = deps;
+        }
 
         Ok(())
     }
 
-    pub fn expand_env(&mut self, task: &mut Task) -> miette::Result<()> {
+    pub fn expand_env(&mut self, task_id: &str) -> miette::Result<()> {
+        let task = self.get_task(task_id);
+
         trace!(
             target = task.target.as_str(),
             env = ?task.env,
@@ -285,10 +296,11 @@ impl<'proj> TasksExpander<'proj> {
 
         // Substitute environment variables
         let cloned_env = task.env.clone();
+        let mut env = FxHashMap::default();
 
-        task.env.iter_mut().for_each(|(_, value)| {
-            *value = substitute_env_var(value, &cloned_env);
-        });
+        for (key, val) in &task.env {
+            env.insert(key.to_owned(), substitute_env_var(val, &cloned_env));
+        }
 
         // Load variables from an .env file
         if let Some(env_file) = &task.options.env_file {
@@ -313,7 +325,7 @@ impl<'proj> TasksExpander<'proj> {
                     let (key, val) = line.map_err(handle_error)?;
 
                     // Don't override task-level variables
-                    task.env.entry(key).or_insert(val);
+                    env.entry(key).or_insert(val);
                 }
             } else {
                 warn!(
@@ -325,10 +337,16 @@ impl<'proj> TasksExpander<'proj> {
             }
         }
 
+        {
+            self.get_task_mut(task_id).env = env;
+        }
+
         Ok(())
     }
 
-    pub fn expand_inputs(&mut self, task: &mut Task) -> miette::Result<()> {
+    pub fn expand_inputs(&mut self, task_id: &str) -> miette::Result<()> {
+        let task = self.get_task(task_id);
+
         if task.inputs.is_empty() {
             return Ok(());
         }
@@ -340,22 +358,30 @@ impl<'proj> TasksExpander<'proj> {
         );
 
         // Expand inputs to file system paths and environment variables
+        let mut vars = FxHashSet::default();
+
         for input in &task.inputs {
             if let InputPath::EnvVar(var) = input {
-                task.input_vars.insert(var.to_owned());
+                vars.insert(var.to_owned());
             }
         }
 
         let (files, globs) =
             TokenExpander::for_inputs(self.project, task, self.workspace_root).expand_inputs()?;
 
-        task.input_paths.extend(files);
-        task.input_globs.extend(globs);
+        {
+            let task = self.get_task_mut(task_id);
+            task.input_vars.extend(vars);
+            task.input_paths.extend(files);
+            task.input_globs.extend(globs);
+        }
 
         Ok(())
     }
 
-    pub fn expand_outputs(&mut self, task: &mut Task) -> miette::Result<()> {
+    pub fn expand_outputs(&mut self, task_id: &str) -> miette::Result<()> {
+        let task = self.get_task(task_id);
+
         if task.outputs.is_empty() {
             return Ok(());
         }
@@ -373,22 +399,34 @@ impl<'proj> TasksExpander<'proj> {
         // Outputs must *not* be considered an input,
         // so if there's an input that matches an output,
         // remove it! Is there a better way to do this?
-        for file in files {
-            if task.input_paths.contains(&file) {
-                task.input_paths.remove(&file);
+        {
+            let task = self.get_task_mut(task_id);
+
+            for file in files {
+                if task.input_paths.contains(&file) {
+                    task.input_paths.remove(&file);
+                }
+
+                task.output_paths.insert(file);
             }
 
-            task.output_paths.insert(file);
-        }
+            for glob in globs {
+                if task.input_globs.contains(&glob) {
+                    task.input_globs.remove(&glob);
+                }
 
-        for glob in globs {
-            if task.input_globs.contains(&glob) {
-                task.input_globs.remove(&glob);
+                task.output_globs.insert(glob);
             }
-
-            task.output_globs.insert(glob);
         }
 
         Ok(())
+    }
+
+    fn get_task(&self, task_id: &str) -> &Task {
+        self.project.tasks.get(task_id).unwrap()
+    }
+
+    fn get_task_mut(&mut self, task_id: &str) -> &mut Task {
+        self.project.tasks.get_mut(task_id).unwrap()
     }
 }

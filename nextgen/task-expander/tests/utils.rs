@@ -8,7 +8,7 @@ use std::path::Path;
 pub fn create_project(workspace_root: &Path) -> Project {
     let source = WorkspaceRelativePathBuf::from("project/source");
 
-    Project {
+    let mut project = Project {
         id: Id::raw("project"),
         root: workspace_root.join(source.as_str()),
         file_groups: FxHashMap::from_iter([
@@ -40,7 +40,10 @@ pub fn create_project(workspace_root: &Path) -> Project {
         ]),
         source,
         ..Project::default()
-    }
+    };
+
+    project.tasks.insert("task".into(), create_task());
+    project
 }
 
 #[allow(dead_code)]

@@ -1,19 +1,32 @@
 mod utils;
 
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_config::{InputPath, OutputPath};
+use moon_config::{DependencyConfig, InputPath, OutputPath};
 use moon_project::Project;
-use moon_task::Target;
+use moon_task::{Target, Task};
 use moon_task_expander::TasksExpander;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use utils::{create_project, create_project_with_tasks, create_task};
+use utils::{create_project, create_project_with_tasks};
 
 fn create_path_set(inputs: Vec<&str>) -> FxHashSet<WorkspaceRelativePathBuf> {
     FxHashSet::from_iter(inputs.into_iter().map(|s| s.into()))
+}
+
+fn create_expander<'l>(
+    workspace_root: &'l Path,
+    project: &'l mut Project,
+    func: impl FnOnce(&mut Task),
+) -> TasksExpander<'l> {
+    func(project.tasks.get_mut("task").unwrap());
+
+    TasksExpander {
+        project,
+        workspace_root,
+    }
 }
 
 mod tasks_expander {
@@ -27,15 +40,11 @@ mod tasks_expander {
         fn errors_on_token_funcs() {
             let sandbox = create_empty_sandbox();
             let mut project = create_project(sandbox.path());
-            let mut task = create_task();
 
-            task.command = "@dirs(group)".into();
-
-            TasksExpander {
-                project: &mut project,
-                workspace_root: sandbox.path(),
-            }
-            .expand_command(&mut task)
+            create_expander(sandbox.path(), &mut project, |task| {
+                task.command = "@dirs(group)".into();
+            })
+            .expand_command("task")
             .unwrap();
         }
 
@@ -43,61 +52,49 @@ mod tasks_expander {
         fn replaces_token_vars() {
             let sandbox = create_empty_sandbox();
             let mut project = create_project(sandbox.path());
-            let mut task = create_task();
 
-            task.command = "./$project/bin".into();
-
-            TasksExpander {
-                project: &mut project,
-                workspace_root: sandbox.path(),
-            }
-            .expand_command(&mut task)
+            create_expander(sandbox.path(), &mut project, |task| {
+                task.command = "./$project/bin".into();
+            })
+            .expand_command("task")
             .unwrap();
 
-            assert_eq!(task.command, "./project/bin");
+            assert_eq!(project.get_task("task").unwrap().command, "./project/bin");
         }
 
         #[test]
         fn replaces_env_vars() {
             let sandbox = create_empty_sandbox();
             let mut project = create_project(sandbox.path());
-            let mut task = create_task();
-
-            task.command = "./$FOO/${BAR}/$BAZ_QUX".into();
 
             env::set_var("FOO", "foo");
             env::set_var("BAZ_QUX", "baz-qux");
 
-            TasksExpander {
-                project: &mut project,
-                workspace_root: sandbox.path(),
-            }
-            .expand_command(&mut task)
+            create_expander(sandbox.path(), &mut project, |task| {
+                task.command = "./$FOO/${BAR}/$BAZ_QUX".into();
+            })
+            .expand_command("task")
             .unwrap();
 
             env::remove_var("FOO");
             env::remove_var("BAZ_QUX");
 
-            assert_eq!(task.command, "./foo//baz-qux");
+            assert_eq!(project.get_task("task").unwrap().command, "./foo//baz-qux");
         }
 
         #[test]
         fn replaces_env_var_from_self() {
             let sandbox = create_empty_sandbox();
             let mut project = create_project(sandbox.path());
-            let mut task = create_task();
 
-            task.command = "./$FOO".into();
-            task.env.insert("FOO".into(), "foo-self".into());
-
-            TasksExpander {
-                project: &mut project,
-                workspace_root: sandbox.path(),
-            }
-            .expand_command(&mut task)
+            create_expander(sandbox.path(), &mut project, |task| {
+                task.command = "./$FOO".into();
+                task.env.insert("FOO".into(), "foo-self".into());
+            })
+            .expand_command("task")
             .unwrap();
 
-            assert_eq!(task.command, "./foo-self");
+            assert_eq!(project.get_task("task").unwrap().command, "./foo-self");
         }
     }
 
@@ -108,19 +105,15 @@ mod tasks_expander {
         fn replaces_token_funcs() {
             let sandbox = create_sandbox("file-group");
             let mut project = create_project(sandbox.path());
-            let mut task = create_task();
 
-            task.args = vec!["a".into(), "@files(all)".into(), "b".into()];
-
-            TasksExpander {
-                project: &mut project,
-                workspace_root: sandbox.path(),
-            }
-            .expand_args(&mut task)
+            create_expander(sandbox.path(), &mut project, |task| {
+                task.args = vec!["a".into(), "@files(all)".into(), "b".into()];
+            })
+            .expand_args("task")
             .unwrap();
 
             assert_eq!(
-                task.args,
+                project.get_task("task").unwrap().args,
                 [
                     "a",
                     "./config.yml",
@@ -136,20 +129,16 @@ mod tasks_expander {
         fn replaces_token_funcs_from_workspace_root() {
             let sandbox = create_sandbox("file-group");
             let mut project = create_project(sandbox.path());
-            let mut task = create_task();
 
-            task.args = vec!["a".into(), "@files(all)".into(), "b".into()];
-            task.options.run_from_workspace_root = true;
-
-            TasksExpander {
-                project: &mut project,
-                workspace_root: sandbox.path(),
-            }
-            .expand_args(&mut task)
+            create_expander(sandbox.path(), &mut project, |task| {
+                task.args = vec!["a".into(), "@files(all)".into(), "b".into()];
+                task.options.run_from_workspace_root = true;
+            })
+            .expand_args("task")
             .unwrap();
 
             assert_eq!(
-                task.args,
+                project.get_task("task").unwrap().args,
                 [
                     "a",
                     "./project/source/config.yml",
@@ -165,71 +154,68 @@ mod tasks_expander {
         fn replaces_token_vars() {
             let sandbox = create_empty_sandbox();
             let mut project = create_project(sandbox.path());
-            let mut task = create_task();
 
-            task.args = vec![
-                "a".into(),
-                "$project/dir".into(),
-                "b".into(),
-                "some/$task".into(),
-            ];
-
-            TasksExpander {
-                project: &mut project,
-                workspace_root: sandbox.path(),
-            }
-            .expand_args(&mut task)
+            create_expander(sandbox.path(), &mut project, |task| {
+                task.args = vec![
+                    "a".into(),
+                    "$project/dir".into(),
+                    "b".into(),
+                    "some/$task".into(),
+                ];
+            })
+            .expand_args("task")
             .unwrap();
 
-            assert_eq!(task.args, ["a", "project/dir", "b", "some/task"]);
+            assert_eq!(
+                project.get_task("task").unwrap().args,
+                ["a", "project/dir", "b", "some/task"]
+            );
         }
 
         #[test]
         fn replaces_env_vars() {
             let sandbox = create_empty_sandbox();
             let mut project = create_project(sandbox.path());
-            let mut task = create_task();
-
-            task.args = vec![
-                "a".into(),
-                "$FOO_BAR".into(),
-                "b".into(),
-                "c/${BAR_BAZ}/d".into(),
-            ];
 
             env::set_var("FOO_BAR", "foo-bar");
             env::set_var("BAR_BAZ", "bar-baz");
 
-            TasksExpander {
-                project: &mut project,
-                workspace_root: sandbox.path(),
-            }
-            .expand_args(&mut task)
+            create_expander(sandbox.path(), &mut project, |task| {
+                task.args = vec![
+                    "a".into(),
+                    "$FOO_BAR".into(),
+                    "b".into(),
+                    "c/${BAR_BAZ}/d".into(),
+                ];
+            })
+            .expand_args("task")
             .unwrap();
 
             env::remove_var("FOO_BAR");
             env::remove_var("BAR_BAZ");
 
-            assert_eq!(task.args, ["a", "foo-bar", "b", "c/bar-baz/d"]);
+            assert_eq!(
+                project.get_task("task").unwrap().args,
+                ["a", "foo-bar", "b", "c/bar-baz/d"]
+            );
         }
 
         #[test]
         fn replaces_env_var_from_self() {
             let sandbox = create_empty_sandbox();
             let mut project = create_project(sandbox.path());
-            let mut task = create_task();
 
-            task.args = vec!["a".into(), "${FOO_BAR}".into(), "b".into()];
-            task.env.insert("FOO_BAR".into(), "foo-bar-self".into());
-
-            TasksExpander {
-                project: &mut project,
-                workspace_root: sandbox.path(),
-            }
-            .expand_args(&mut task)
+            create_expander(sandbox.path(), &mut project, |task| {
+                task.args = vec!["a".into(), "${FOO_BAR}".into(), "b".into()];
+                task.env.insert("FOO_BAR".into(), "foo-bar-self".into());
+            })
+            .expand_args("task")
             .unwrap();
 
-            assert_eq!(task.args, ["a", "foo-bar-self", "b"]);
+            assert_eq!(
+                project.get_task("task").unwrap().args,
+                ["a", "foo-bar-self", "b"]
+            );
         }
     }
 
@@ -260,15 +246,11 @@ mod tasks_expander {
             fn errors() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
-                let mut task = create_task();
 
-                task.deps.push(Target::parse(":build").unwrap());
-
-                TasksExpander {
-                    project: &mut project,
-                    workspace_root: sandbox.path(),
-                }
-                .expand_deps(&mut task, do_query)
+                create_expander(sandbox.path(), &mut project, |task| {
+                    task.deps.push(Target::parse(":build").unwrap());
+                })
+                .expand_deps("task", do_query)
                 .unwrap();
             }
         }
@@ -280,37 +262,35 @@ mod tasks_expander {
             fn no_depends_on() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
-                let mut task = create_task();
 
-                task.deps.push(Target::parse("^:build").unwrap());
-
-                TasksExpander {
-                    project: &mut project,
-                    workspace_root: sandbox.path(),
-                }
-                .expand_deps(&mut task, no_query) // Tested here
+                create_expander(sandbox.path(), &mut project, |task| {
+                    task.deps.push(Target::parse("^:build").unwrap());
+                })
+                .expand_deps("task", no_query) // Tested here
                 .unwrap();
 
-                assert_eq!(task.deps, vec![]);
+                assert_eq!(project.get_task("task").unwrap().deps, vec![]);
             }
 
             #[test]
             fn returns_tasks_of_same_name() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
-                let mut task = create_task();
 
-                task.deps.push(Target::parse("^:build").unwrap());
+                // The valid list comes from `do_query` but we need a
+                // non-empty set for the expansion to work.
+                project
+                    .dependencies
+                    .insert("foo".into(), DependencyConfig::default());
 
-                TasksExpander {
-                    project: &mut project,
-                    workspace_root: sandbox.path(),
-                }
-                .expand_deps(&mut task, do_query)
+                create_expander(sandbox.path(), &mut project, |task| {
+                    task.deps.push(Target::parse("^:build").unwrap());
+                })
+                .expand_deps("task", do_query)
                 .unwrap();
 
                 assert_eq!(
-                    task.deps,
+                    project.get_task("task").unwrap().deps,
                     vec![
                         Target::parse("foo:build").unwrap(),
                         Target::parse("bar:build").unwrap(),
@@ -326,16 +306,18 @@ mod tasks_expander {
             fn errors_for_persistent_chain() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
-                let mut task = create_task();
 
-                task.options.persistent = false;
-                task.deps.push(Target::parse("^:dev").unwrap());
+                // The valid list comes from `do_query` but we need a
+                // non-empty set for the expansion to work.
+                project
+                    .dependencies
+                    .insert("foo".into(), DependencyConfig::default());
 
-                TasksExpander {
-                    project: &mut project,
-                    workspace_root: sandbox.path(),
-                }
-                .expand_deps(&mut task, do_query)
+                create_expander(sandbox.path(), &mut project, |task| {
+                    task.options.persistent = false;
+                    task.deps.push(Target::parse("^:dev").unwrap());
+                })
+                .expand_deps("task", do_query)
                 .unwrap();
             }
         }
@@ -347,20 +329,16 @@ mod tasks_expander {
             fn refs_sibling_task() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
-                let mut task = create_task();
 
-                task.deps.push(Target::parse("~:build").unwrap());
-                task.deps.push(Target::parse("lint").unwrap());
-
-                TasksExpander {
-                    project: &mut project,
-                    workspace_root: sandbox.path(),
-                }
-                .expand_deps(&mut task, no_query)
+                create_expander(sandbox.path(), &mut project, |task| {
+                    task.deps.push(Target::parse("~:build").unwrap());
+                    task.deps.push(Target::parse("lint").unwrap());
+                })
+                .expand_deps("task", no_query)
                 .unwrap();
 
                 assert_eq!(
-                    task.deps,
+                    project.get_task("task").unwrap().deps,
                     vec![
                         Target::parse("project:build").unwrap(),
                         Target::parse("project:lint").unwrap()
@@ -372,37 +350,32 @@ mod tasks_expander {
             fn ignores_self_ref_cycle() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
-                let mut task = create_task();
 
-                task.deps.push(Target::parse("task").unwrap());
-
-                TasksExpander {
-                    project: &mut project,
-                    workspace_root: sandbox.path(),
-                }
-                .expand_deps(&mut task, no_query)
+                create_expander(sandbox.path(), &mut project, |task| {
+                    task.deps.push(Target::parse("task").unwrap());
+                })
+                .expand_deps("task", no_query)
                 .unwrap();
 
-                assert_eq!(task.deps, vec![]);
+                assert_eq!(project.get_task("task").unwrap().deps, vec![]);
             }
 
             #[test]
             fn ignores_dupes() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
-                let mut task = create_task();
 
-                task.deps.push(Target::parse("~:test").unwrap());
-                task.deps.push(Target::parse("test").unwrap());
-
-                TasksExpander {
-                    project: &mut project,
-                    workspace_root: sandbox.path(),
-                }
-                .expand_deps(&mut task, no_query)
+                create_expander(sandbox.path(), &mut project, |task| {
+                    task.deps.push(Target::parse("~:test").unwrap());
+                    task.deps.push(Target::parse("test").unwrap());
+                })
+                .expand_deps("task", no_query)
                 .unwrap();
 
-                assert_eq!(task.deps, vec![Target::parse("project:test").unwrap()]);
+                assert_eq!(
+                    project.get_task("task").unwrap().deps,
+                    vec![Target::parse("project:test").unwrap()]
+                );
             }
 
             #[test]
@@ -412,15 +385,11 @@ mod tasks_expander {
             fn errors_unknown_sibling_task() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
-                let mut task = create_task();
 
-                task.deps.push(Target::parse("~:unknown").unwrap());
-
-                TasksExpander {
-                    project: &mut project,
-                    workspace_root: sandbox.path(),
-                }
-                .expand_deps(&mut task, no_query)
+                create_expander(sandbox.path(), &mut project, |task| {
+                    task.deps.push(Target::parse("~:unknown").unwrap());
+                })
+                .expand_deps("task", no_query)
                 .unwrap();
             }
 
@@ -431,16 +400,12 @@ mod tasks_expander {
             fn errors_for_persistent_chain() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
-                let mut task = create_task();
 
-                task.options.persistent = false;
-                task.deps.push(Target::parse("~:dev").unwrap());
-
-                TasksExpander {
-                    project: &mut project,
-                    workspace_root: sandbox.path(),
-                }
-                .expand_deps(&mut task, do_query)
+                create_expander(sandbox.path(), &mut project, |task| {
+                    task.options.persistent = false;
+                    task.deps.push(Target::parse("~:dev").unwrap());
+                })
+                .expand_deps("task", do_query)
                 .unwrap();
             }
         }
@@ -452,53 +417,44 @@ mod tasks_expander {
             fn refs_sibling_task() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
-                let mut task = create_task();
 
-                task.deps.push(Target::parse("project:build").unwrap());
-
-                TasksExpander {
-                    project: &mut project,
-                    workspace_root: sandbox.path(),
-                }
-                .expand_deps(&mut task, no_query)
+                create_expander(sandbox.path(), &mut project, |task| {
+                    task.deps.push(Target::parse("project:build").unwrap());
+                })
+                .expand_deps("task", no_query)
                 .unwrap();
 
-                assert_eq!(task.deps, vec![Target::parse("project:build").unwrap()]);
+                assert_eq!(
+                    project.get_task("task").unwrap().deps,
+                    vec![Target::parse("project:build").unwrap()]
+                );
             }
 
             #[test]
             fn ignores_self_ref_cycle() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
-                let mut task = create_task();
 
-                task.deps.push(Target::parse("project:task").unwrap());
-
-                TasksExpander {
-                    project: &mut project,
-                    workspace_root: sandbox.path(),
-                }
-                .expand_deps(&mut task, no_query)
+                create_expander(sandbox.path(), &mut project, |task| {
+                    task.deps.push(Target::parse("project:task").unwrap());
+                })
+                .expand_deps("task", no_query)
                 .unwrap();
 
-                assert_eq!(task.deps, vec![]);
+                assert_eq!(project.get_task("task").unwrap().deps, vec![]);
             }
 
             #[test]
             fn refs_other_project_tasks() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
-                let mut task = create_task();
 
-                task.deps.push(Target::parse("foo:build").unwrap());
-                task.deps.push(Target::parse("bar:lint").unwrap());
-                task.deps.push(Target::parse("baz:test").unwrap());
-
-                TasksExpander {
-                    project: &mut project,
-                    workspace_root: sandbox.path(),
-                }
-                .expand_deps(&mut task, |input| {
+                create_expander(sandbox.path(), &mut project, |task| {
+                    task.deps.push(Target::parse("foo:build").unwrap());
+                    task.deps.push(Target::parse("bar:lint").unwrap());
+                    task.deps.push(Target::parse("baz:test").unwrap());
+                })
+                .expand_deps("task", |input| {
                     Ok(vec![Arc::new(create_project_with_tasks(
                         sandbox.path(),
                         if input.contains("foo") {
@@ -513,7 +469,7 @@ mod tasks_expander {
                 .unwrap();
 
                 assert_eq!(
-                    task.deps,
+                    project.get_task("task").unwrap().deps,
                     vec![
                         Target::parse("foo:build").unwrap(),
                         Target::parse("bar:lint").unwrap(),
@@ -529,15 +485,11 @@ mod tasks_expander {
             fn errors_unknown_task() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
-                let mut task = create_task();
 
-                task.deps.push(Target::parse("foo:unknown").unwrap());
-
-                TasksExpander {
-                    project: &mut project,
-                    workspace_root: sandbox.path(),
-                }
-                .expand_deps(&mut task, no_query)
+                create_expander(sandbox.path(), &mut project, |task| {
+                    task.deps.push(Target::parse("foo:unknown").unwrap());
+                })
+                .expand_deps("task", no_query)
                 .unwrap();
             }
 
@@ -548,16 +500,12 @@ mod tasks_expander {
             fn errors_for_persistent_chain() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
-                let mut task = create_task();
 
-                task.options.persistent = false;
-                task.deps.push(Target::parse("foo:dev").unwrap());
-
-                TasksExpander {
-                    project: &mut project,
-                    workspace_root: sandbox.path(),
-                }
-                .expand_deps(&mut task, do_query)
+                create_expander(sandbox.path(), &mut project, |task| {
+                    task.options.persistent = false;
+                    task.deps.push(Target::parse("foo:dev").unwrap());
+                })
+                .expand_deps("task", do_query)
                 .unwrap();
             }
         }
@@ -569,37 +517,29 @@ mod tasks_expander {
             fn no_tags() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
-                let mut task = create_task();
 
-                task.deps.push(Target::parse("#tag:build").unwrap());
-
-                TasksExpander {
-                    project: &mut project,
-                    workspace_root: sandbox.path(),
-                }
-                .expand_deps(&mut task, no_query) // Tested here
+                create_expander(sandbox.path(), &mut project, |task| {
+                    task.deps.push(Target::parse("#tag:build").unwrap());
+                })
+                .expand_deps("task", no_query) // Tested here
                 .unwrap();
 
-                assert_eq!(task.deps, vec![]);
+                assert_eq!(project.get_task("task").unwrap().deps, vec![]);
             }
 
             #[test]
             fn returns_tasks_of_same_name() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
-                let mut task = create_task();
 
-                task.deps.push(Target::parse("#tag:build").unwrap());
-
-                TasksExpander {
-                    project: &mut project,
-                    workspace_root: sandbox.path(),
-                }
-                .expand_deps(&mut task, do_query)
+                create_expander(sandbox.path(), &mut project, |task| {
+                    task.deps.push(Target::parse("#tag:build").unwrap());
+                })
+                .expand_deps("task", do_query)
                 .unwrap();
 
                 assert_eq!(
-                    task.deps,
+                    project.get_task("task").unwrap().deps,
                     vec![
                         Target::parse("foo:build").unwrap(),
                         Target::parse("bar:build").unwrap(),
@@ -612,20 +552,16 @@ mod tasks_expander {
             fn ignores_self_ref_cycle() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
-                let mut task = create_task();
-
-                task.deps.push(Target::parse("#tag:task").unwrap());
 
                 let cloned_project = Arc::new(project.clone());
 
-                TasksExpander {
-                    project: &mut project,
-                    workspace_root: sandbox.path(),
-                }
-                .expand_deps(&mut task, move |_| Ok(vec![cloned_project.clone()]))
+                create_expander(sandbox.path(), &mut project, |task| {
+                    task.deps.push(Target::parse("#tag:task").unwrap());
+                })
+                .expand_deps("task", move |_| Ok(vec![cloned_project.clone()]))
                 .unwrap();
 
-                assert_eq!(task.deps, vec![]);
+                assert_eq!(project.get_task("task").unwrap().deps, vec![]);
             }
 
             #[test]
@@ -635,16 +571,12 @@ mod tasks_expander {
             fn errors_for_persistent_chain() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
-                let mut task = create_task();
 
-                task.options.persistent = false;
-                task.deps.push(Target::parse("#tag:dev").unwrap());
-
-                TasksExpander {
-                    project: &mut project,
-                    workspace_root: sandbox.path(),
-                }
-                .expand_deps(&mut task, do_query)
+                create_expander(sandbox.path(), &mut project, |task| {
+                    task.options.persistent = false;
+                    task.deps.push(Target::parse("#tag:dev").unwrap());
+                })
+                .expand_deps("task", do_query)
                 .unwrap();
             }
         }
@@ -657,25 +589,21 @@ mod tasks_expander {
         fn replaces_env_vars() {
             let sandbox = create_empty_sandbox();
             let mut project = create_project(sandbox.path());
-            let mut task = create_task();
-
-            task.env.insert("KEY1".into(), "value1".into());
-            task.env.insert("KEY2".into(), "inner-${FOO}".into());
-            task.env.insert("KEY3".into(), "$KEY1-self".into());
 
             env::set_var("FOO", "foo");
 
-            TasksExpander {
-                project: &mut project,
-                workspace_root: sandbox.path(),
-            }
-            .expand_env(&mut task)
+            create_expander(sandbox.path(), &mut project, |task| {
+                task.env.insert("KEY1".into(), "value1".into());
+                task.env.insert("KEY2".into(), "inner-${FOO}".into());
+                task.env.insert("KEY3".into(), "$KEY1-self".into());
+            })
+            .expand_env("task")
             .unwrap();
 
             env::remove_var("FOO");
 
             assert_eq!(
-                task.env,
+                project.get_task("task").unwrap().env,
                 FxHashMap::from_iter([
                     ("KEY1".into(), "value1".into()),
                     ("KEY2".into(), "inner-foo".into()),
@@ -688,21 +616,17 @@ mod tasks_expander {
         fn loads_from_env_file() {
             let sandbox = create_sandbox("env-file");
             let mut project = create_project(sandbox.path());
-            let mut task = create_task();
 
-            task.env.insert("KEY1".into(), "value1".into());
-            task.env.insert("KEY2".into(), "value2".into());
-            task.options.env_file = Some(InputPath::ProjectFile(".env".into()));
-
-            TasksExpander {
-                project: &mut project,
-                workspace_root: sandbox.path(),
-            }
-            .expand_env(&mut task)
+            create_expander(sandbox.path(), &mut project, |task| {
+                task.env.insert("KEY1".into(), "value1".into());
+                task.env.insert("KEY2".into(), "value2".into());
+                task.options.env_file = Some(InputPath::ProjectFile(".env".into()));
+            })
+            .expand_env("task")
             .unwrap();
 
             assert_eq!(
-                task.env,
+                project.get_task("task").unwrap().env,
                 FxHashMap::from_iter([
                     ("KEY1".into(), "value1".into()),
                     ("KEY2".into(), "value2".into()), // Not overridden by env file
@@ -715,23 +639,19 @@ mod tasks_expander {
         fn loads_from_root_env_file_and_substitutes() {
             let sandbox = create_sandbox("env-file");
             let mut project = create_project(sandbox.path());
-            let mut task = create_task();
-
-            task.options.env_file = Some(InputPath::WorkspaceFile(".env-shared".into()));
 
             env::set_var("EXTERNAL", "external-value");
 
-            TasksExpander {
-                project: &mut project,
-                workspace_root: sandbox.path(),
-            }
-            .expand_env(&mut task)
+            create_expander(sandbox.path(), &mut project, |task| {
+                task.options.env_file = Some(InputPath::WorkspaceFile(".env-shared".into()));
+            })
+            .expand_env("task")
             .unwrap();
 
             env::remove_var("EXTERNAL");
 
             assert_eq!(
-                task.env,
+                project.get_task("task").unwrap().env,
                 FxHashMap::from_iter([
                     ("ROOT".into(), "true".into()),
                     ("BASE".into(), "value".into()),
@@ -746,21 +666,17 @@ mod tasks_expander {
         fn skips_missing_env_file() {
             let sandbox = create_sandbox("env-file");
             let mut project = create_project(sandbox.path());
-            let mut task = create_task();
 
-            task.env.insert("KEY1".into(), "value1".into());
-            task.env.insert("KEY2".into(), "value2".into());
-            task.options.env_file = Some(InputPath::ProjectFile(".env-missing".into()));
-
-            TasksExpander {
-                project: &mut project,
-                workspace_root: sandbox.path(),
-            }
-            .expand_env(&mut task)
+            create_expander(sandbox.path(), &mut project, |task| {
+                task.env.insert("KEY1".into(), "value1".into());
+                task.env.insert("KEY2".into(), "value2".into());
+                task.options.env_file = Some(InputPath::ProjectFile(".env-missing".into()));
+            })
+            .expand_env("task")
             .unwrap();
 
             assert_eq!(
-                task.env,
+                project.get_task("task").unwrap().env,
                 FxHashMap::from_iter([
                     ("KEY1".into(), "value1".into()),
                     ("KEY2".into(), "value2".into()),
@@ -773,15 +689,11 @@ mod tasks_expander {
         fn errors_invalid_env_file() {
             let sandbox = create_sandbox("env-file");
             let mut project = create_project(sandbox.path());
-            let mut task = create_task();
 
-            task.options.env_file = Some(InputPath::ProjectFile(".env-invalid".into()));
-
-            TasksExpander {
-                project: &mut project,
-                workspace_root: sandbox.path(),
-            }
-            .expand_env(&mut task)
+            create_expander(sandbox.path(), &mut project, |task| {
+                task.options.env_file = Some(InputPath::ProjectFile(".env-invalid".into()));
+            })
+            .expand_env("task")
             .unwrap();
         }
     }
@@ -793,41 +705,45 @@ mod tasks_expander {
         fn extracts_env_var() {
             let sandbox = create_sandbox("file-group");
             let mut project = create_project(sandbox.path());
-            let mut task = create_task();
 
-            task.inputs.push(InputPath::EnvVar("FOO_BAR".into()));
-
-            TasksExpander {
-                project: &mut project,
-                workspace_root: sandbox.path(),
-            }
-            .expand_inputs(&mut task)
+            create_expander(sandbox.path(), &mut project, |task| {
+                task.inputs.push(InputPath::EnvVar("FOO_BAR".into()));
+            })
+            .expand_inputs("task")
             .unwrap();
 
-            assert_eq!(task.input_vars, FxHashSet::from_iter(["FOO_BAR".into()]));
-            assert_eq!(task.input_globs, FxHashSet::default());
-            assert_eq!(task.input_paths, FxHashSet::default());
+            assert_eq!(
+                project.get_task("task").unwrap().input_vars,
+                FxHashSet::from_iter(["FOO_BAR".into()])
+            );
+            assert_eq!(
+                project.get_task("task").unwrap().input_globs,
+                FxHashSet::default()
+            );
+            assert_eq!(
+                project.get_task("task").unwrap().input_paths,
+                FxHashSet::default()
+            );
         }
 
         #[test]
         fn replaces_token_funcs() {
             let sandbox = create_sandbox("file-group");
             let mut project = create_project(sandbox.path());
-            let mut task = create_task();
 
-            task.inputs.push(InputPath::ProjectFile("file.txt".into()));
-            task.inputs.push(InputPath::TokenFunc("@files(all)".into()));
-
-            TasksExpander {
-                project: &mut project,
-                workspace_root: sandbox.path(),
-            }
-            .expand_inputs(&mut task)
+            create_expander(sandbox.path(), &mut project, |task| {
+                task.inputs.push(InputPath::ProjectFile("file.txt".into()));
+                task.inputs.push(InputPath::TokenFunc("@files(all)".into()));
+            })
+            .expand_inputs("task")
             .unwrap();
 
-            assert_eq!(task.input_globs, FxHashSet::default());
             assert_eq!(
-                task.input_paths,
+                project.get_task("task").unwrap().input_globs,
+                FxHashSet::default()
+            );
+            assert_eq!(
+                project.get_task("task").unwrap().input_paths,
                 create_path_set(vec![
                     "project/source/dir/subdir/nested.json",
                     "project/source/file.txt",
@@ -842,24 +758,20 @@ mod tasks_expander {
         fn splits_token_func_into_files_globs() {
             let sandbox = create_sandbox("file-group");
             let mut project = create_project(sandbox.path());
-            let mut task = create_task();
 
-            task.inputs.push(InputPath::ProjectFile("file.txt".into()));
-            task.inputs.push(InputPath::TokenFunc("@group(all)".into()));
-
-            TasksExpander {
-                project: &mut project,
-                workspace_root: sandbox.path(),
-            }
-            .expand_inputs(&mut task)
+            create_expander(sandbox.path(), &mut project, |task| {
+                task.inputs.push(InputPath::ProjectFile("file.txt".into()));
+                task.inputs.push(InputPath::TokenFunc("@group(all)".into()));
+            })
+            .expand_inputs("task")
             .unwrap();
 
             assert_eq!(
-                task.input_globs,
+                project.get_task("task").unwrap().input_globs,
                 create_path_set(vec!["project/source/*.md", "project/source/**/*.json"])
             );
             assert_eq!(
-                task.input_paths,
+                project.get_task("task").unwrap().input_paths,
                 create_path_set(vec![
                     "project/source/dir/subdir",
                     "project/source/file.txt",
@@ -872,25 +784,24 @@ mod tasks_expander {
         fn replaces_token_vars() {
             let sandbox = create_sandbox("file-group");
             let mut project = create_project(sandbox.path());
-            let mut task = create_task();
 
-            task.inputs
-                .push(InputPath::ProjectGlob("$task/**/*".into()));
-            task.inputs
-                .push(InputPath::WorkspaceFile("$project/index.js".into()));
-
-            TasksExpander {
-                project: &mut project,
-                workspace_root: sandbox.path(),
-            }
-            .expand_inputs(&mut task)
+            create_expander(sandbox.path(), &mut project, |task| {
+                task.inputs
+                    .push(InputPath::ProjectGlob("$task/**/*".into()));
+                task.inputs
+                    .push(InputPath::WorkspaceFile("$project/index.js".into()));
+            })
+            .expand_inputs("task")
             .unwrap();
 
             assert_eq!(
-                task.input_globs,
+                project.get_task("task").unwrap().input_globs,
                 create_path_set(vec!["project/source/task/**/*"])
             );
-            assert_eq!(task.input_paths, create_path_set(vec!["project/index.js"]));
+            assert_eq!(
+                project.get_task("task").unwrap().input_paths,
+                create_path_set(vec!["project/index.js"])
+            );
         }
     }
 
@@ -901,23 +812,22 @@ mod tasks_expander {
         fn replaces_token_funcs() {
             let sandbox = create_sandbox("file-group");
             let mut project = create_project(sandbox.path());
-            let mut task = create_task();
 
-            task.outputs
-                .push(OutputPath::ProjectFile("file.txt".into()));
-            task.outputs
-                .push(OutputPath::TokenFunc("@files(all)".into()));
-
-            TasksExpander {
-                project: &mut project,
-                workspace_root: sandbox.path(),
-            }
-            .expand_outputs(&mut task)
+            create_expander(sandbox.path(), &mut project, |task| {
+                task.outputs
+                    .push(OutputPath::ProjectFile("file.txt".into()));
+                task.outputs
+                    .push(OutputPath::TokenFunc("@files(all)".into()));
+            })
+            .expand_outputs("task")
             .unwrap();
 
-            assert_eq!(task.output_globs, FxHashSet::default());
             assert_eq!(
-                task.output_paths,
+                project.get_task("task").unwrap().output_globs,
+                FxHashSet::default()
+            );
+            assert_eq!(
+                project.get_task("task").unwrap().output_paths,
                 create_path_set(vec![
                     "project/source/dir/subdir/nested.json",
                     "project/source/file.txt",
@@ -932,26 +842,22 @@ mod tasks_expander {
         fn splits_token_func_into_files_globs() {
             let sandbox = create_sandbox("file-group");
             let mut project = create_project(sandbox.path());
-            let mut task = create_task();
 
-            task.outputs
-                .push(OutputPath::ProjectFile("file.txt".into()));
-            task.outputs
-                .push(OutputPath::TokenFunc("@group(all)".into()));
-
-            TasksExpander {
-                project: &mut project,
-                workspace_root: sandbox.path(),
-            }
-            .expand_outputs(&mut task)
+            create_expander(sandbox.path(), &mut project, |task| {
+                task.outputs
+                    .push(OutputPath::ProjectFile("file.txt".into()));
+                task.outputs
+                    .push(OutputPath::TokenFunc("@group(all)".into()));
+            })
+            .expand_outputs("task")
             .unwrap();
 
             assert_eq!(
-                task.output_globs,
+                project.get_task("task").unwrap().output_globs,
                 create_path_set(vec!["project/source/*.md", "project/source/**/*.json"])
             );
             assert_eq!(
-                task.output_paths,
+                project.get_task("task").unwrap().output_paths,
                 create_path_set(vec![
                     "project/source/dir/subdir",
                     "project/source/file.txt",
@@ -964,46 +870,41 @@ mod tasks_expander {
         fn replaces_token_vars() {
             let sandbox = create_sandbox("file-group");
             let mut project = create_project(sandbox.path());
-            let mut task = create_task();
 
-            task.outputs
-                .push(OutputPath::ProjectGlob("$task/**/*".into()));
-            task.outputs
-                .push(OutputPath::WorkspaceFile("$project/index.js".into()));
-
-            TasksExpander {
-                project: &mut project,
-                workspace_root: sandbox.path(),
-            }
-            .expand_outputs(&mut task)
+            create_expander(sandbox.path(), &mut project, |task| {
+                task.outputs
+                    .push(OutputPath::ProjectGlob("$task/**/*".into()));
+                task.outputs
+                    .push(OutputPath::WorkspaceFile("$project/index.js".into()));
+            })
+            .expand_outputs("task")
             .unwrap();
 
             assert_eq!(
-                task.output_globs,
+                project.get_task("task").unwrap().output_globs,
                 create_path_set(vec!["project/source/task/**/*"])
             );
-            assert_eq!(task.output_paths, create_path_set(vec!["project/index.js"]));
+            assert_eq!(
+                project.get_task("task").unwrap().output_paths,
+                create_path_set(vec!["project/index.js"])
+            );
         }
 
         #[test]
         fn doesnt_overlap_input_file() {
             let sandbox = create_sandbox("file-group");
             let mut project = create_project(sandbox.path());
-            let mut task = create_task();
 
-            task.outputs.push(OutputPath::ProjectFile("out".into()));
-            task.input_paths.insert(project.source.join("out"));
-
-            TasksExpander {
-                project: &mut project,
-                workspace_root: sandbox.path(),
-            }
-            .expand_outputs(&mut task)
+            create_expander(sandbox.path(), &mut project, |task| {
+                task.outputs.push(OutputPath::ProjectFile("out".into()));
+                task.input_paths.insert("project/source/out".into());
+            })
+            .expand_outputs("task")
             .unwrap();
 
-            assert!(task.input_paths.is_empty());
+            assert!(project.get_task("task").unwrap().input_paths.is_empty());
             assert_eq!(
-                task.output_paths,
+                project.get_task("task").unwrap().output_paths,
                 create_path_set(vec!["project/source/out"])
             );
         }
@@ -1012,22 +913,18 @@ mod tasks_expander {
         fn doesnt_overlap_input_glob() {
             let sandbox = create_sandbox("file-group");
             let mut project = create_project(sandbox.path());
-            let mut task = create_task();
 
-            task.outputs
-                .push(OutputPath::ProjectGlob("out/**/*".into()));
-            task.input_globs.insert(project.source.join("out/**/*"));
-
-            TasksExpander {
-                project: &mut project,
-                workspace_root: sandbox.path(),
-            }
-            .expand_outputs(&mut task)
+            create_expander(sandbox.path(), &mut project, |task| {
+                task.outputs
+                    .push(OutputPath::ProjectGlob("out/**/*".into()));
+                task.input_globs.insert("project/source/out/**/*".into());
+            })
+            .expand_outputs("task")
             .unwrap();
 
-            assert!(task.input_globs.is_empty());
+            assert!(project.get_task("task").unwrap().input_globs.is_empty());
             assert_eq!(
-                task.output_globs,
+                project.get_task("task").unwrap().output_globs,
                 create_path_set(vec!["project/source/out/**/*"])
             );
         }

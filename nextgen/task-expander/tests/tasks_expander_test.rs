@@ -2,11 +2,15 @@ mod utils;
 
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{InputPath, OutputPath};
+use moon_project::Project;
+use moon_task::Target;
 use moon_task_expander::TasksExpander;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
 use std::env;
-use utils::{create_project, create_task};
+use std::path::PathBuf;
+use std::sync::Arc;
+use utils::{create_project, create_project_with_tasks, create_task};
 
 fn create_path_set(inputs: Vec<&str>) -> FxHashSet<WorkspaceRelativePathBuf> {
     FxHashSet::from_iter(inputs.into_iter().map(|s| s.into()))
@@ -231,6 +235,419 @@ mod tasks_expander {
 
     mod expand_deps {
         use super::*;
+
+        fn no_query(_: String) -> miette::Result<Vec<Arc<Project>>> {
+            Ok(vec![])
+        }
+
+        fn do_query(_: String) -> miette::Result<Vec<Arc<Project>>> {
+            let root = PathBuf::from("/root");
+
+            Ok(vec![
+                Arc::new(create_project_with_tasks(&root, "foo")),
+                Arc::new(create_project_with_tasks(&root, "bar")),
+                Arc::new(create_project_with_tasks(&root, "baz")),
+            ])
+        }
+
+        mod all {
+            use super::*;
+
+            #[test]
+            #[should_panic(
+                expected = "Invalid dependency :build for project:task. All (:) scope is not"
+            )]
+            fn errors() {
+                let sandbox = create_empty_sandbox();
+                let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let mut task = create_task();
+
+                task.deps.push(Target::parse(":build").unwrap());
+
+                TasksExpander {
+                    project: &mut project,
+                    workspace_root: sandbox.path(),
+                }
+                .expand_deps(&mut task, do_query)
+                .unwrap();
+            }
+        }
+
+        mod deps {
+            use super::*;
+
+            #[test]
+            fn no_depends_on() {
+                let sandbox = create_empty_sandbox();
+                let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let mut task = create_task();
+
+                task.deps.push(Target::parse("^:build").unwrap());
+
+                TasksExpander {
+                    project: &mut project,
+                    workspace_root: sandbox.path(),
+                }
+                .expand_deps(&mut task, no_query) // Tested here
+                .unwrap();
+
+                assert_eq!(task.deps, vec![]);
+            }
+
+            #[test]
+            fn returns_tasks_of_same_name() {
+                let sandbox = create_empty_sandbox();
+                let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let mut task = create_task();
+
+                task.deps.push(Target::parse("^:build").unwrap());
+
+                TasksExpander {
+                    project: &mut project,
+                    workspace_root: sandbox.path(),
+                }
+                .expand_deps(&mut task, do_query)
+                .unwrap();
+
+                assert_eq!(
+                    task.deps,
+                    vec![
+                        Target::parse("foo:build").unwrap(),
+                        Target::parse("bar:build").unwrap(),
+                        Target::parse("baz:build").unwrap()
+                    ]
+                );
+            }
+
+            #[test]
+            #[should_panic(
+                expected = "Non-persistent task project:task cannot depend on persistent task foo:dev."
+            )]
+            fn errors_for_persistent_chain() {
+                let sandbox = create_empty_sandbox();
+                let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let mut task = create_task();
+
+                task.options.persistent = false;
+                task.deps.push(Target::parse("^:dev").unwrap());
+
+                TasksExpander {
+                    project: &mut project,
+                    workspace_root: sandbox.path(),
+                }
+                .expand_deps(&mut task, do_query)
+                .unwrap();
+            }
+        }
+
+        mod own_self {
+            use super::*;
+
+            #[test]
+            fn refs_sibling_task() {
+                let sandbox = create_empty_sandbox();
+                let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let mut task = create_task();
+
+                task.deps.push(Target::parse("~:build").unwrap());
+                task.deps.push(Target::parse("lint").unwrap());
+
+                TasksExpander {
+                    project: &mut project,
+                    workspace_root: sandbox.path(),
+                }
+                .expand_deps(&mut task, no_query)
+                .unwrap();
+
+                assert_eq!(
+                    task.deps,
+                    vec![
+                        Target::parse("project:build").unwrap(),
+                        Target::parse("project:lint").unwrap()
+                    ]
+                );
+            }
+
+            #[test]
+            fn ignores_self_ref_cycle() {
+                let sandbox = create_empty_sandbox();
+                let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let mut task = create_task();
+
+                task.deps.push(Target::parse("task").unwrap());
+
+                TasksExpander {
+                    project: &mut project,
+                    workspace_root: sandbox.path(),
+                }
+                .expand_deps(&mut task, no_query)
+                .unwrap();
+
+                assert_eq!(task.deps, vec![]);
+            }
+
+            #[test]
+            fn ignores_dupes() {
+                let sandbox = create_empty_sandbox();
+                let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let mut task = create_task();
+
+                task.deps.push(Target::parse("~:test").unwrap());
+                task.deps.push(Target::parse("test").unwrap());
+
+                TasksExpander {
+                    project: &mut project,
+                    workspace_root: sandbox.path(),
+                }
+                .expand_deps(&mut task, no_query)
+                .unwrap();
+
+                assert_eq!(task.deps, vec![Target::parse("project:test").unwrap()]);
+            }
+
+            #[test]
+            #[should_panic(
+                expected = "Invalid dependency project:unknown for project:task, target does not"
+            )]
+            fn errors_unknown_sibling_task() {
+                let sandbox = create_empty_sandbox();
+                let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let mut task = create_task();
+
+                task.deps.push(Target::parse("~:unknown").unwrap());
+
+                TasksExpander {
+                    project: &mut project,
+                    workspace_root: sandbox.path(),
+                }
+                .expand_deps(&mut task, no_query)
+                .unwrap();
+            }
+
+            #[test]
+            #[should_panic(
+                expected = "Non-persistent task project:task cannot depend on persistent task"
+            )]
+            fn errors_for_persistent_chain() {
+                let sandbox = create_empty_sandbox();
+                let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let mut task = create_task();
+
+                task.options.persistent = false;
+                task.deps.push(Target::parse("~:dev").unwrap());
+
+                TasksExpander {
+                    project: &mut project,
+                    workspace_root: sandbox.path(),
+                }
+                .expand_deps(&mut task, do_query)
+                .unwrap();
+            }
+        }
+
+        mod project {
+            use super::*;
+
+            #[test]
+            fn refs_sibling_task() {
+                let sandbox = create_empty_sandbox();
+                let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let mut task = create_task();
+
+                task.deps.push(Target::parse("project:build").unwrap());
+
+                TasksExpander {
+                    project: &mut project,
+                    workspace_root: sandbox.path(),
+                }
+                .expand_deps(&mut task, no_query)
+                .unwrap();
+
+                assert_eq!(task.deps, vec![Target::parse("project:build").unwrap()]);
+            }
+
+            #[test]
+            fn ignores_self_ref_cycle() {
+                let sandbox = create_empty_sandbox();
+                let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let mut task = create_task();
+
+                task.deps.push(Target::parse("project:task").unwrap());
+
+                TasksExpander {
+                    project: &mut project,
+                    workspace_root: sandbox.path(),
+                }
+                .expand_deps(&mut task, no_query)
+                .unwrap();
+
+                assert_eq!(task.deps, vec![]);
+            }
+
+            #[test]
+            fn refs_other_project_tasks() {
+                let sandbox = create_empty_sandbox();
+                let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let mut task = create_task();
+
+                task.deps.push(Target::parse("foo:build").unwrap());
+                task.deps.push(Target::parse("bar:lint").unwrap());
+                task.deps.push(Target::parse("baz:test").unwrap());
+
+                TasksExpander {
+                    project: &mut project,
+                    workspace_root: sandbox.path(),
+                }
+                .expand_deps(&mut task, |input| {
+                    Ok(vec![Arc::new(create_project_with_tasks(
+                        sandbox.path(),
+                        if input.contains("foo") {
+                            "foo"
+                        } else if input.contains("bar") {
+                            "bar"
+                        } else {
+                            "baz"
+                        },
+                    ))])
+                })
+                .unwrap();
+
+                assert_eq!(
+                    task.deps,
+                    vec![
+                        Target::parse("foo:build").unwrap(),
+                        Target::parse("bar:lint").unwrap(),
+                        Target::parse("baz:test").unwrap()
+                    ]
+                );
+            }
+
+            #[test]
+            #[should_panic(
+                expected = "Invalid dependency foo:unknown for project:task, target does not exist."
+            )]
+            fn errors_unknown_task() {
+                let sandbox = create_empty_sandbox();
+                let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let mut task = create_task();
+
+                task.deps.push(Target::parse("foo:unknown").unwrap());
+
+                TasksExpander {
+                    project: &mut project,
+                    workspace_root: sandbox.path(),
+                }
+                .expand_deps(&mut task, no_query)
+                .unwrap();
+            }
+
+            #[test]
+            #[should_panic(
+                expected = "Non-persistent task project:task cannot depend on persistent task"
+            )]
+            fn errors_for_persistent_chain() {
+                let sandbox = create_empty_sandbox();
+                let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let mut task = create_task();
+
+                task.options.persistent = false;
+                task.deps.push(Target::parse("foo:dev").unwrap());
+
+                TasksExpander {
+                    project: &mut project,
+                    workspace_root: sandbox.path(),
+                }
+                .expand_deps(&mut task, do_query)
+                .unwrap();
+            }
+        }
+
+        mod tag {
+            use super::*;
+
+            #[test]
+            fn no_tags() {
+                let sandbox = create_empty_sandbox();
+                let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let mut task = create_task();
+
+                task.deps.push(Target::parse("#tag:build").unwrap());
+
+                TasksExpander {
+                    project: &mut project,
+                    workspace_root: sandbox.path(),
+                }
+                .expand_deps(&mut task, no_query) // Tested here
+                .unwrap();
+
+                assert_eq!(task.deps, vec![]);
+            }
+
+            #[test]
+            fn returns_tasks_of_same_name() {
+                let sandbox = create_empty_sandbox();
+                let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let mut task = create_task();
+
+                task.deps.push(Target::parse("#tag:build").unwrap());
+
+                TasksExpander {
+                    project: &mut project,
+                    workspace_root: sandbox.path(),
+                }
+                .expand_deps(&mut task, do_query)
+                .unwrap();
+
+                assert_eq!(
+                    task.deps,
+                    vec![
+                        Target::parse("foo:build").unwrap(),
+                        Target::parse("bar:build").unwrap(),
+                        Target::parse("baz:build").unwrap()
+                    ]
+                );
+            }
+
+            #[test]
+            fn ignores_self_ref_cycle() {
+                let sandbox = create_empty_sandbox();
+                let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let mut task = create_task();
+
+                task.deps.push(Target::parse("#tag:task").unwrap());
+
+                let cloned_project = Arc::new(project.clone());
+
+                TasksExpander {
+                    project: &mut project,
+                    workspace_root: sandbox.path(),
+                }
+                .expand_deps(&mut task, move |_| Ok(vec![cloned_project.clone()]))
+                .unwrap();
+
+                assert_eq!(task.deps, vec![]);
+            }
+
+            #[test]
+            #[should_panic(
+                expected = "Non-persistent task project:task cannot depend on persistent task"
+            )]
+            fn errors_for_persistent_chain() {
+                let sandbox = create_empty_sandbox();
+                let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let mut task = create_task();
+
+                task.options.persistent = false;
+                task.deps.push(Target::parse("#tag:dev").unwrap());
+
+                TasksExpander {
+                    project: &mut project,
+                    workspace_root: sandbox.path(),
+                }
+                .expand_deps(&mut task, do_query)
+                .unwrap();
+            }
+        }
     }
 
     mod expand_env {

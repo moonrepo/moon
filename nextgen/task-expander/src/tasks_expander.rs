@@ -167,7 +167,11 @@ impl<'proj> TasksExpander<'proj> {
 
         let mut check_and_push_dep = |dep_project: &Project, task_id: &Id| -> miette::Result<()> {
             let Some(dep_task) = dep_project.tasks.get(task_id) else {
-                return Ok(());
+                return Err(TasksExpanderError::UnknownTarget {
+                    dep: Target::new(&dep_project.id, task_id)?,
+                    task: task.target.to_owned(),
+                }
+                .into());
              };
 
             // Enforce persistent constraints
@@ -224,13 +228,24 @@ impl<'proj> TasksExpander<'proj> {
                 }
                 // id:task
                 TargetScope::Project(project_id) => {
-                    if project_id == &project.id && dep_target.task_id == task.id {
-                        // Avoid circular references
+                    if project_id == &project.id {
+                        if dep_target.task_id == task.id {
+                            // Avoid circular references
+                        } else {
+                            check_and_push_dep(&project, &dep_target.task_id)?;
+                        }
                     } else {
-                        for dep_project in query(format!(
-                            "project={} && task={}",
-                            project_id, dep_target.task_id
-                        ))? {
+                        let results = query(format!("project={}", project_id))?;
+
+                        if results.is_empty() {
+                            return Err(TasksExpanderError::UnknownTarget {
+                                dep: dep_target.to_owned(),
+                                task: task.target.to_owned(),
+                            }
+                            .into());
+                        }
+
+                        for dep_project in results {
                             check_and_push_dep(&dep_project, &dep_target.task_id)?;
                         }
                     }

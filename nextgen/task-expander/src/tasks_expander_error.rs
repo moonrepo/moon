@@ -25,9 +25,17 @@ pub enum TasksExpanderError {
     )]
     PersistentDepRequirement { dep: Target, task: Target },
 
+    #[diagnostic(code(task_expander::unknown_target))]
+    #[error(
+        "Invalid dependency {} for {}, target does not exist.",
+        .dep.id.style(Style::Label),
+        .task.id.style(Style::Label),
+    )]
+    UnknownTarget { dep: Target, task: Target },
+
     #[diagnostic(code(task_expander::unsupported_target_scope))]
     #[error(
-        "Invalid dependency {} for task {}. All (:) scope is not supported.",
+        "Invalid dependency {} for {}. All (:) scope is not supported.",
         .dep.id.style(Style::Label),
         .task.id.style(Style::Label),
     )]

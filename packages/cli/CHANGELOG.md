@@ -2,14 +2,20 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- To support the new project graph, the order in which environment variables are resolved and merged
+  has changed. Previously it was task-level > env file > project-level. Now it's task-level >
+  project-level > env file.
+
 #### 🚀 Updates
 
 - Rewrote the project graph from the ground-up:
   - Graph edges now indicate the type of relationship: development, production, peer.
 - Identifiers (project names, file groups, etc) can now be prefixed with underscores (`_`).
 - Environment variables in commands and arguments are not substituted.
-  - Will now also read from a task's `env`.
 - Task `deps` can now depend on tag targets (`#tag:task`).
+- Task `env` are now used when substituting values, alongside system-level.
 - Task `outputs` can now use token variables.
 
 - **Codegen**

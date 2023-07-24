@@ -13,7 +13,7 @@ use rustc_hash::FxHashMap;
 use starbase_events::{Emitter, Event};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-use tracing::debug;
+use tracing::trace;
 
 #[derive(Debug)]
 pub struct DetectLanguageEvent {
@@ -53,7 +53,7 @@ impl<'app> ProjectBuilder<'app> {
         source: &'app WorkspaceRelativePath,
         context: ProjectBuilderContext<'app>,
     ) -> miette::Result<Self> {
-        debug!(
+        trace!(
             id = id.as_str(),
             source = source.as_str(),
             "Building project {} from source",
@@ -95,7 +95,7 @@ impl<'app> ProjectBuilder<'app> {
             &local_config.tags,
         )?;
 
-        debug!(
+        trace!(
             id = self.id.as_str(),
             lookup = ?global_config.order,
             "Inheriting global file groups and tasks",
@@ -112,7 +112,7 @@ impl<'app> ProjectBuilder<'app> {
         let config_name = self.source.join(consts::CONFIG_PROJECT_FILENAME);
         let config_path = config_name.to_path(self.context.workspace_root);
 
-        debug!(
+        trace!(
             id = self.id.as_str(),
             file = ?config_path,
             "Attempting to load {} (optional)",
@@ -132,7 +132,7 @@ impl<'app> ProjectBuilder<'app> {
                 .await?;
             let language = result.unwrap_or_else(|| config.language.clone());
 
-            debug!(
+            trace!(
                 id = self.id.as_str(),
                 language = ?language,
                 "Unknown project language, detecting from environment",
@@ -147,7 +147,7 @@ impl<'app> ProjectBuilder<'app> {
         self.platform = config.platform.unwrap_or_else(|| {
             let platform: PlatformType = self.language.clone().into();
 
-            debug!(
+            trace!(
                 id = self.id.as_str(),
                 language = ?self.language,
                 platform = ?self.platform,
@@ -228,7 +228,7 @@ impl<'app> ProjectBuilder<'app> {
     fn build_dependencies(&self) -> miette::Result<FxHashMap<Id, DependencyConfig>> {
         let mut deps = FxHashMap::default();
 
-        debug!(id = self.id.as_str(), "Building project dependencies");
+        trace!(id = self.id.as_str(), "Building project dependencies");
 
         if let Some(local) = &self.local_config {
             for dep_on in &local.depends_on {
@@ -247,7 +247,7 @@ impl<'app> ProjectBuilder<'app> {
                 deps.insert(dep_config.id.clone(), dep_config);
             }
 
-            debug!(
+            trace!(
                 id = self.id.as_str(),
                 deps = ?deps.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
                 "Depends on {} projects",
@@ -262,11 +262,11 @@ impl<'app> ProjectBuilder<'app> {
         let mut file_inputs = FxHashMap::default();
         let project_source = &self.source;
 
-        debug!(id = self.id.as_str(), "Building file groups");
+        trace!(id = self.id.as_str(), "Building file groups");
 
         // Inherit global first
         if let Some(global) = &self.global_config {
-            debug!(
+            trace!(
                 id = self.id.as_str(),
                 groups = ?global.config.file_groups.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
                 "Inheriting global file groups",
@@ -279,7 +279,7 @@ impl<'app> ProjectBuilder<'app> {
 
         // Override with local second
         if let Some(local) = &self.local_config {
-            debug!(
+            trace!(
                 id = self.id.as_str(),
                 groups = ?local.file_groups.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
                 "Using local file groups",
@@ -309,7 +309,7 @@ impl<'app> ProjectBuilder<'app> {
     }
 
     async fn build_tasks(&mut self) -> miette::Result<BTreeMap<Id, Task>> {
-        debug!(id = self.id.as_str(), "Building tasks");
+        trace!(id = self.id.as_str(), "Building tasks");
 
         let mut tasks_builder = TasksBuilder::new(
             self.id,

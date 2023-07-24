@@ -14,7 +14,7 @@ use starbase_events::{Emitter, Event};
 use std::collections::BTreeMap;
 use std::hash::Hash;
 use std::path::Path;
-use tracing::{debug, trace};
+use tracing::trace;
 
 #[derive(Debug)]
 pub struct DetectPlatformEvent {
@@ -91,7 +91,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
         }
 
-        debug!(project_id = self.project_id, "Filtering global tasks");
+        trace!(id = self.project_id, "Filtering global tasks");
 
         for (task_id, task_config) in &global_config.tasks {
             let target = Target::new(self.project_id, task_id).unwrap();
@@ -101,14 +101,14 @@ impl<'proj> TasksBuilder<'proj> {
             // ["a"] = Include "a"
             if !include_all {
                 if include_set.is_empty() {
-                    debug!(
+                    trace!(
                         target = target.as_str(),
                         "Not inheriting any global tasks, empty include filter",
                     );
 
                     break;
                 } else if !include_set.contains(task_id) {
-                    debug!(
+                    trace!(
                         target = target.as_str(),
                         "Not inheriting global task {}, not included",
                         color::id(task_id)
@@ -121,7 +121,7 @@ impl<'proj> TasksBuilder<'proj> {
             // None, [] = Exclude none
             // ["a"] = Exclude "a"
             if !exclude.is_empty() && exclude.contains(&task_id) {
-                debug!(
+                trace!(
                     target = target.as_str(),
                     "Not inheriting global task {}, excluded",
                     color::id(task_id)
@@ -131,7 +131,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             let task_key = if let Some(renamed_task_id) = rename.get(task_id) {
-                debug!(
+                trace!(
                     target = target.as_str(),
                     "Inheriting global task {} and renaming to {}",
                     color::id(task_id),
@@ -140,7 +140,7 @@ impl<'proj> TasksBuilder<'proj> {
 
                 renamed_task_id
             } else {
-                debug!(
+                trace!(
                     target = target.as_str(),
                     "Inheriting global task {}",
                     color::id(task_id),
@@ -186,7 +186,7 @@ impl<'proj> TasksBuilder<'proj> {
     async fn build_task(&self, id: &Id) -> miette::Result<Task> {
         let target = Target::new(self.project_id, id)?;
 
-        debug!(target = target.as_str(), "Building task");
+        trace!(target = target.as_str(), "Building task");
 
         let mut task = Task::default();
         let mut configs = vec![];
@@ -293,14 +293,14 @@ impl<'proj> TasksBuilder<'proj> {
         // inputs are handled explicitly, while globally inherited sources are handled implicitly.
         if configured_inputs == 0 {
             if has_configured_inputs {
-                debug!(
+                trace!(
                     target = target.as_str(),
                     "Task has explicitly disabled inputs",
                 );
 
                 task.flags.empty_inputs = true;
             } else {
-                debug!(
+                trace!(
                     target = target.as_str(),
                     "No inputs configured, defaulting to {} (from project)",
                     color::file("**/*"),

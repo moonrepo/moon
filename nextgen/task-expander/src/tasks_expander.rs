@@ -156,7 +156,7 @@ impl<'proj> TasksExpander<'proj> {
 
         trace!(
             target = task.target.as_str(),
-            deps = ?task.deps,
+            deps = ?task.deps.iter().map(|d| d.as_str()).collect::<Vec<_>>(),
             "Expanding target scopes for deps",
         );
 
@@ -211,11 +211,19 @@ impl<'proj> TasksExpander<'proj> {
                         .map(|id| id.to_string())
                         .collect::<Vec<_>>();
 
-                    // Sort so query cache is more deterministic
-                    dep_ids.sort();
+                    if !dep_ids.is_empty() {
+                        // Sort so query cache is more deterministic
+                        dep_ids.sort();
 
-                    for dep_project in query(format!("project=[{}]", dep_ids.join(",")))? {
-                        check_and_push_dep(&dep_project, &dep_target.task_id)?;
+                        let input = if dep_ids.len() == 1 {
+                            format!("project={}", dep_ids.join(""))
+                        } else {
+                            format!("project=[{}]", dep_ids.join(","))
+                        };
+
+                        for dep_project in query(input)? {
+                            check_and_push_dep(&dep_project, &dep_target.task_id)?;
+                        }
                     }
                 }
                 // ~:task
@@ -327,7 +335,7 @@ impl<'proj> TasksExpander<'proj> {
 
         trace!(
             target = task.target.as_str(),
-            inputs = ?task.inputs,
+            inputs = ?task.inputs.iter().map(|d| d.as_str()).collect::<Vec<_>>(),
             "Expanding inputs into file system paths"
         );
 
@@ -354,7 +362,7 @@ impl<'proj> TasksExpander<'proj> {
 
         trace!(
             target = task.target.as_str(),
-            outputs = ?task.outputs,
+            outputs = ?task.outputs.iter().map(|d| d.as_str()).collect::<Vec<_>>(),
             "Expanding outputs into file system paths"
         );
 

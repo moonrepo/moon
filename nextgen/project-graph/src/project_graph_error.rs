@@ -13,7 +13,7 @@ pub enum ProjectGraphError {
     #[error("No project could be located starting from path {}.", .0.style(Style::Path))]
     MissingFromPath(PathBuf),
 
-    #[diagnostic(code(project_graph::unknown_id))]
+    #[diagnostic(code(project_graph::unknown_project))]
     #[error("No project has been configured with the ID {}.", .0.style(Style::Id))]
     UnconfiguredID(Id),
 }

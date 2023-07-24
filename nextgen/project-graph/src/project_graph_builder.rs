@@ -19,10 +19,10 @@ use petgraph::graph::DiGraph;
 use petgraph::prelude::NodeIndex;
 use petgraph::Direction;
 use rustc_hash::{FxHashMap, FxHashSet};
+use serde::{Deserialize, Serialize};
 use starbase_events::Emitter;
 use starbase_utils::{glob, json};
 use std::collections::BTreeMap;
-use std::mem;
 use std::path::Path;
 use tracing::{debug, trace, warn};
 
@@ -42,8 +42,10 @@ pub struct ProjectGraphBuilderContext<'app> {
     pub workspace_root: &'app Path,
 }
 
+#[derive(Deserialize, Serialize)]
 pub struct ProjectGraphBuilder<'app> {
-    context: ProjectGraphBuilderContext<'app>,
+    #[serde(skip)]
+    context: Option<ProjectGraphBuilderContext<'app>>,
 
     /// Mapping of project aliases to project IDs.
     aliases: FxHashMap<String, Id>,
@@ -68,7 +70,7 @@ impl<'app> ProjectGraphBuilder<'app> {
         debug!("Building project graph");
 
         let mut graph = ProjectGraphBuilder {
-            context,
+            context: Some(context),
             aliases: FxHashMap::default(),
             graph: DiGraph::new(),
             nodes: FxHashMap::default(),
@@ -113,13 +115,15 @@ impl<'app> ProjectGraphBuilder<'app> {
 
         if hash == state.last_hash && cache_path.exists() {
             debug!(
+                cache_path = ?cache_path,
                 "Loading project graph with {} projects from cache",
                 graph.sources.len(),
             );
 
-            graph.graph = json::read_file(cache_path)?;
+            let mut cache: ProjectGraphBuilder = json::read_file(cache_path)?;
+            cache.context = graph.context;
 
-            return Ok(graph);
+            return Ok(cache);
         }
 
         // Build the graph, update the state, and save the cache
@@ -134,7 +138,7 @@ impl<'app> ProjectGraphBuilder<'app> {
         state.projects = graph.sources.clone();
         state.save()?;
 
-        json::write_file(cache_path, &graph.graph, false)?;
+        json::write_file(cache_path, &graph, false)?;
 
         Ok(graph)
     }
@@ -167,7 +171,7 @@ impl<'app> ProjectGraphBuilder<'app> {
         Ok(ProjectGraph::new(
             self.graph,
             nodes,
-            self.context.workspace_root,
+            self.context.unwrap().workspace_root,
         ))
     }
 
@@ -181,16 +185,11 @@ impl<'app> ProjectGraphBuilder<'app> {
 
     /// Load all projects into the graph, as configured in the workspace.
     pub async fn load_all(&mut self) -> miette::Result<()> {
-        let mut sources = FxHashMap::default();
+        let ids = self.sources.keys().cloned().collect::<Vec<_>>();
 
-        // Take ownership so that we can mutate while looping,
-        // without having to clone all sources.
-        for (id, source) in mem::take(&mut self.sources) {
+        for id in ids {
             self.internal_load(&id, &mut FxHashSet::default()).await?;
-            sources.insert(id, source);
         }
-
-        self.sources = sources;
 
         Ok(())
     }
@@ -206,7 +205,7 @@ impl<'app> ProjectGraphBuilder<'app> {
         // Already loaded, exit early with existing index
         if let Some(index) = self.nodes.get(&id) {
             trace!(
-                project_id = id.as_str(),
+                id = id.as_str(),
                 "Project already exists in the project graph, skipping load",
             );
 
@@ -214,8 +213,8 @@ impl<'app> ProjectGraphBuilder<'app> {
         }
 
         // Check that the project ID is configured
-        trace!(
-            project_id = id.as_str(),
+        debug!(
+            id = id.as_str(),
             "Project does not exist in the project graph, attempting to load",
         );
 
@@ -234,7 +233,7 @@ impl<'app> ProjectGraphBuilder<'app> {
         for (dep_id, dep_config) in &project.dependencies {
             if cycle.contains(dep_id) {
                 warn!(
-                    project_id = id.as_str(),
+                    id = id.as_str(),
                     dependency_id = dep_id.as_str(),
                     "Encountered a dependency cycle; will disconnect nodes to avoid recursion",
                 );
@@ -261,29 +260,29 @@ impl<'app> ProjectGraphBuilder<'app> {
         id: &Id,
         source: &WorkspaceRelativePath,
     ) -> miette::Result<Project> {
-        debug!("Creating project {}", color::id(id));
+        debug!(id = id.as_str(), "Building project {}", color::id(id));
 
+        let context = self.context();
         let mut builder = ProjectBuilder::new(
             id,
             source,
             ProjectBuilderContext {
-                detect_language: &self.context.detect_language,
-                detect_platform: &self.context.detect_platform,
-                toolchain_config: self.context.toolchain_config,
-                workspace_root: self.context.workspace_root,
+                detect_language: &context.detect_language,
+                detect_platform: &context.detect_platform,
+                toolchain_config: context.toolchain_config,
+                workspace_root: context.workspace_root,
             },
         )?;
 
         builder.load_local_config().await?;
-        builder.inherit_global_config(self.context.inherited_tasks)?;
+        builder.inherit_global_config(context.inherited_tasks)?;
 
-        let (event, _) = self
-            .context
+        let (event, _) = context
             .extend_project
             .emit(ExtendProjectEvent {
                 project_id: id.to_owned(),
                 project_source: source.to_owned(),
-                workspace_root: self.context.workspace_root.to_owned(),
+                workspace_root: context.workspace_root.to_owned(),
                 extended_dependencies: vec![],
                 extended_tasks: FxHashMap::default(),
             })
@@ -316,12 +315,12 @@ impl<'app> ProjectGraphBuilder<'app> {
     fn enforce_constraints(&self) -> miette::Result<()> {
         debug!("Enforcing project constraints");
 
-        let type_relationships = self
-            .context
+        let context = self.context();
+        let type_relationships = context
             .workspace_config
             .constraints
             .enforce_project_type_relationships;
-        let tag_relationships = &self.context.workspace_config.constraints.tag_relationships;
+        let tag_relationships = &context.workspace_config.constraints.tag_relationships;
 
         for project in self.graph.node_weights() {
             let deps: Vec<_> = self
@@ -349,6 +348,7 @@ impl<'app> ProjectGraphBuilder<'app> {
     async fn hash_required_configs(
         &self,
     ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
+        let context = self.context();
         let mut configs = vec![];
 
         // Hash all project-level config files
@@ -363,27 +363,22 @@ impl<'app> ProjectGraphBuilder<'app> {
 
         // Hash all workspace-level config files
         for file in glob::walk(
-            self.context.workspace_root.join(consts::CONFIG_DIRNAME),
+            context.workspace_root.join(consts::CONFIG_DIRNAME),
             ["*.yml", "tasks/*.yml"],
         )? {
             configs.push(to_virtual_string(
-                file.strip_prefix(self.context.workspace_root).unwrap(),
+                file.strip_prefix(context.workspace_root).unwrap(),
             )?);
         }
 
-        let hashes = self
-            .context
-            .vcs
-            .get_file_hashes(&configs, false, 500)
-            .await?;
-
-        Ok(hashes)
+        context.vcs.get_file_hashes(&configs, false, 500).await
     }
 
     /// Preload the graph with project sources from the workspace configuration.
     /// If globs are provided, walk the file system and gather sources.
     /// Then extend the graph with aliases, derived from all event subscribers.
     async fn preload(&mut self) -> miette::Result<()> {
+        let context = self.context();
         let mut globs = vec![];
         let mut sources = FxHashMap::default();
 
@@ -394,7 +389,7 @@ impl<'app> ProjectGraphBuilder<'app> {
             }
         };
 
-        match &self.context.workspace_config.projects {
+        match &context.workspace_config.projects {
             WorkspaceProjects::Sources(map) => {
                 add_sources(map);
             }
@@ -421,22 +416,21 @@ impl<'app> ProjectGraphBuilder<'app> {
             );
 
             locate_projects_with_globs(
-                self.context.workspace_root,
+                context.workspace_root,
                 &globs,
                 &mut sources,
-                Some(self.context.vcs),
+                Some(context.vcs),
             )?;
         }
 
         // Extend graph from subscribers
-        debug!("Extending project graph");
+        debug!("Extending project graph from subscribers");
 
-        let (event, _) = self
-            .context
+        let (event, _) = context
             .extend_project_graph
             .emit(ExtendProjectGraphEvent {
                 sources,
-                workspace_root: self.context.workspace_root.to_owned(),
+                workspace_root: context.workspace_root.to_owned(),
                 extended_aliases: FxHashMap::default(),
             })
             .await?;
@@ -445,6 +439,10 @@ impl<'app> ProjectGraphBuilder<'app> {
         self.aliases = event.extended_aliases;
 
         Ok(())
+    }
+
+    fn context(&self) -> &ProjectGraphBuilderContext<'app> {
+        self.context.as_ref().unwrap()
     }
 
     fn resolve_id(&self, alias_or_id: &str) -> Id {

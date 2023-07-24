@@ -36,7 +36,7 @@ impl HashEngine {
         let hash = hasher.generate_hash()?;
         let path = self.hashes_dir.join(format!("{hash}.json"));
 
-        debug!(manifest = ?path, "Saving hash manifest");
+        debug!(label = hasher.label, manifest = ?path, "Saving hash manifest");
 
         fs::write_file(&path, hasher.serialize()?)?;
 

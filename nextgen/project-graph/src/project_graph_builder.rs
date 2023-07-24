@@ -27,10 +27,14 @@ use std::path::Path;
 use tracing::{debug, trace, warn};
 
 pub struct ProjectGraphBuilderContext<'app> {
-    pub extend_project: &'app Emitter<ExtendProjectEvent>,
-    pub extend_project_graph: &'app Emitter<ExtendProjectGraphEvent>,
-    pub detect_language: &'app Emitter<DetectLanguageEvent>,
-    pub detect_platform: &'app Emitter<DetectPlatformEvent>,
+    pub extend_project: Emitter<ExtendProjectEvent>,
+    pub extend_project_graph: Emitter<ExtendProjectGraphEvent>,
+    pub detect_language: Emitter<DetectLanguageEvent>,
+    pub detect_platform: Emitter<DetectPlatformEvent>,
+    // pub extend_project: &'app Emitter<ExtendProjectEvent>,
+    // pub extend_project_graph: &'app Emitter<ExtendProjectGraphEvent>,
+    // pub detect_language: &'app Emitter<DetectLanguageEvent>,
+    // pub detect_platform: &'app Emitter<DetectPlatformEvent>,
     pub inherited_tasks: &'app InheritedTasksManager,
     pub toolchain_config: &'app ToolchainConfig,
     pub vcs: &'app BoxedVcs,
@@ -263,8 +267,8 @@ impl<'app> ProjectGraphBuilder<'app> {
             id,
             source,
             ProjectBuilderContext {
-                detect_language: self.context.detect_language,
-                detect_platform: self.context.detect_platform,
+                detect_language: &self.context.detect_language,
+                detect_platform: &self.context.detect_platform,
                 toolchain_config: self.context.toolchain_config,
                 workspace_root: self.context.workspace_root,
             },

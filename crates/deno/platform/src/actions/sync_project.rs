@@ -5,12 +5,13 @@ use moon_typescript_lang::tsconfig::CompilerOptionsPaths;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::path::Path;
+use std::sync::Arc;
 
 // const LOG_TARGET: &str = "moon:deno-platform:sync-project";
 
 pub async fn sync_project(
     project: &Project,
-    _dependencies: &FxHashMap<Id, &Project>,
+    _dependencies: &FxHashMap<Id, Arc<Project>>,
     workspace_root: &Path,
     _deno_config: &DenoConfig,
     typescript_config: &Option<TypeScriptConfig>,

@@ -184,7 +184,7 @@ pub async fn from_turborepo(skip_touched_files_check: bool) -> AppResult {
 
     // Convert tasks second
     let mut has_warned_root_tasks = false;
-    let mut modified_projects: FxHashMap<&PathBuf, PartialProjectConfig> = FxHashMap::default();
+    let mut modified_projects: FxHashMap<PathBuf, PartialProjectConfig> = FxHashMap::default();
 
     for (id, task) in turbo_json.pipeline {
         if id.starts_with("//#") {
@@ -217,7 +217,7 @@ pub async fn from_turborepo(skip_touched_files_check: bool) -> AppResult {
                         .get_or_insert(BTreeMap::new())
                         .insert(task_id, task_config);
 
-                    modified_projects.insert(&project.root, project_config);
+                    modified_projects.insert(project.root.clone(), project_config);
                 }
             }
             (None, task_id) => {

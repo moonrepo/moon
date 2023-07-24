@@ -223,7 +223,7 @@ impl<'proj> TasksExpander<'proj> {
                     if dep_target.task_id == task.id {
                         // Avoid circular references
                     } else {
-                        check_and_push_dep(&project, &dep_target.task_id)?;
+                        check_and_push_dep(project, &dep_target.task_id)?;
                     }
                 }
                 // id:task
@@ -232,7 +232,7 @@ impl<'proj> TasksExpander<'proj> {
                         if dep_target.task_id == task.id {
                             // Avoid circular references
                         } else {
-                            check_and_push_dep(&project, &dep_target.task_id)?;
+                            check_and_push_dep(project, &dep_target.task_id)?;
                         }
                     } else {
                         let results = query(format!("project={}", project_id))?;

@@ -3,7 +3,7 @@ use moon_action_context::ActionContext;
 use moon_logger::debug;
 use moon_platform::{PlatformManager, Runtime};
 use moon_project::Project;
-use moon_project_graph::ProjectGraph;
+use moon_project_graph2::ProjectGraph;
 use moon_utils::is_ci;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;

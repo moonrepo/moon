@@ -1,7 +1,7 @@
 use moon_codeowners::{CodeownersGenerator, CodeownersHash};
 use moon_config::CodeownersOrderBy;
 use moon_hash::HashEngine;
-use moon_project_graph::ProjectGraph;
+use moon_project_graph2::ProjectGraph;
 use moon_workspace::Workspace;
 use std::path::PathBuf;
 
@@ -30,17 +30,18 @@ pub async fn sync_codeowners(
         codeowners.add_workspace_entries(&workspace.config.codeowners)?;
     }
 
-    for project in projects {
-        if !project.config.owners.paths.is_empty() {
-            codeowners_hash.add_project(&project.id, &project.config.owners);
+    // TODO
+    // for project in projects {
+    //     if !project.config.owners.paths.is_empty() {
+    //         codeowners_hash.add_project(&project.id, &project.config.owners);
 
-            codeowners.add_project_entry(
-                &project.id,
-                project.source.as_str(),
-                &project.config.owners,
-            )?;
-        }
-    }
+    //         codeowners.add_project_entry(
+    //             &project.id,
+    //             project.source.as_str(),
+    //             &project.config.owners,
+    //         )?;
+    //     }
+    // }
 
     hasher.hash_content(&codeowners_hash);
 

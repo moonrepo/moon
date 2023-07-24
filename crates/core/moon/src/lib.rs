@@ -1,13 +1,17 @@
 use moon_deno_platform::DenoPlatform;
 use moon_dep_graph::DepGraphBuilder;
+use moon_hash::HashEngine;
 use moon_node_platform::NodePlatform;
 use moon_platform::{PlatformManager, PlatformType};
-use moon_project_graph::{ProjectGraph, ProjectGraphBuilder};
+use moon_project_graph2::{
+    DetectLanguageEvent, DetectPlatformEvent, ExtendProjectEvent, ExtendProjectGraphEvent,
+    ProjectGraph, ProjectGraphBuilder, ProjectGraphBuilderContext,
+};
 use moon_rust_platform::RustPlatform;
 use moon_system_platform::SystemPlatform;
 use moon_utils::{is_ci, is_test_env};
 use moon_workspace::{Workspace, WorkspaceError};
-use starbase_utils::json;
+use starbase_events::Emitter;
 use std::env;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -117,27 +121,29 @@ pub fn build_dep_graph(project_graph: &ProjectGraph) -> DepGraphBuilder {
     DepGraphBuilder::new(project_graph)
 }
 
+pub fn create_project_graph_context(workspace: &Workspace) -> ProjectGraphBuilderContext {
+    ProjectGraphBuilderContext {
+        extend_project: Emitter::<ExtendProjectEvent>::new(),
+        extend_project_graph: Emitter::<ExtendProjectGraphEvent>::new(),
+        detect_language: Emitter::<DetectLanguageEvent>::new(),
+        detect_platform: Emitter::<DetectPlatformEvent>::new(),
+        inherited_tasks: &workspace.tasks_config,
+        toolchain_config: &workspace.toolchain_config,
+        vcs: &workspace.vcs,
+        workspace_config: &workspace.config,
+        workspace_root: &workspace.root,
+    }
+}
+
 pub async fn build_project_graph(workspace: &mut Workspace) -> miette::Result<ProjectGraphBuilder> {
-    ProjectGraphBuilder::new(workspace).await
+    ProjectGraphBuilder::new(create_project_graph_context(workspace)).await
 }
 
 pub async fn generate_project_graph(workspace: &mut Workspace) -> miette::Result<ProjectGraph> {
-    let cache_path = workspace.cache.get_state_path("projectGraph.json");
-    let mut builder = build_project_graph(workspace).await?;
-
-    if builder.is_cached && cache_path.exists() {
-        let graph: ProjectGraph = json::read_file(&cache_path)?;
-
-        return Ok(graph);
-    }
-
-    builder.load_all()?;
-
-    let graph = builder.build()?;
-
-    if !builder.hash.is_empty() {
-        json::write_file(&cache_path, &graph, false)?;
-    }
+    let context = create_project_graph_context(workspace);
+    let hash_engine = HashEngine::new(&workspace.cache.dir);
+    let builder = ProjectGraphBuilder::generate(context, &hash_engine, &workspace.cache).await?;
+    let graph = builder.build().await?;
 
     Ok(graph)
 }

@@ -9,12 +9,13 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_styles::color;
 use std::collections::BTreeMap;
 use std::path::Path;
+use std::sync::Arc;
 
 const LOG_TARGET: &str = "moon:node-platform:sync-project";
 
 pub async fn sync_project(
     project: &Project,
-    dependencies: &FxHashMap<Id, &Project>,
+    dependencies: &FxHashMap<Id, Arc<Project>>,
     workspace_root: &Path,
     node_config: &NodeConfig,
     typescript_config: &Option<TypeScriptConfig>,

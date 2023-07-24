@@ -34,5 +34,5 @@ tokio = { workspace = true }
 
 [dev-dependencies]
 moon = { path = "../../core/moon" }
-moon_project_graph = { path = "../../core/project-graph" }
+moon_project_graph2 = { path = "../../../nextgen/project-graph" }
 moon_test_utils = { path = "../../core/test-utils" }

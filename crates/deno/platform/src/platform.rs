@@ -20,6 +20,7 @@ use moon_typescript_platform::TypeScriptTargetHasher;
 use moon_utils::async_trait;
 use proto::{get_sha256_hash_of_file, Proto};
 use rustc_hash::FxHashMap;
+use std::sync::Arc;
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
@@ -245,7 +246,7 @@ impl Platform for DenoPlatform {
         &self,
         _context: &ActionContext,
         project: &Project,
-        dependencies: &FxHashMap<Id, &Project>,
+        dependencies: &FxHashMap<Id, Arc<Project>>,
     ) -> miette::Result<bool> {
         let modified = actions::sync_project(
             project,

@@ -4,7 +4,7 @@ use moon_common::consts::CONFIG_DIRNAME;
 use moon_common::Id;
 use moon_config::{ConfigEnum, LanguageType};
 use moon_platform_detector::detect_language_files;
-use moon_project_graph::ProjectGraph;
+use moon_project_graph2::ProjectGraph;
 use moon_rust_lang::cargo_toml::{CargoTomlCache, CargoTomlExt};
 use moon_utils::path;
 use moon_workspace::Workspace;
@@ -81,16 +81,16 @@ fn scaffold_workspace(
     };
 
     // Copy each project and mimic the folder structure
-    for project_source in project_graph.sources.values() {
-        if project_source == "." {
+    for node in project_graph.nodes.values() {
+        if node.source.as_str() == "." {
             continue;
         }
 
-        let docker_project_root = docker_workspace_root.join(project_source);
+        let docker_project_root = docker_workspace_root.join(node.source.as_str());
 
         fs::create_dir_all(&docker_project_root)?;
 
-        copy_from_dir(&workspace.root.join(project_source), &docker_project_root)?;
+        copy_from_dir(&node.source.to_path(&workspace.root), &docker_project_root)?;
     }
 
     // Copy root lockfiles and configurations
@@ -163,8 +163,8 @@ fn scaffold_sources(
 
     // Include non-focused projects in the manifest
     for project_id in project_graph.ids() {
-        if !manifest.focused_projects.contains(&project_id) {
-            manifest.unfocused_projects.insert(project_id);
+        if !manifest.focused_projects.contains(project_id) {
+            manifest.unfocused_projects.insert(project_id.to_owned());
         }
     }
 

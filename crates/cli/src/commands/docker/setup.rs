@@ -20,7 +20,9 @@ pub async fn setup() -> AppResult {
     let mut dep_builder = build_dep_graph(&project_graph);
 
     for project_id in &manifest.focused_projects {
-        dep_builder.install_deps(project_graph.get(project_id)?, None)?;
+        let project = project_graph.get(project_id)?;
+
+        dep_builder.install_deps(&project, None)?;
     }
 
     let dep_graph = dep_builder.build();

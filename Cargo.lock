@@ -3124,14 +3124,15 @@ dependencies = [
  "miette",
  "moon_deno_platform",
  "moon_dep_graph",
+ "moon_hash",
  "moon_node_platform",
  "moon_platform",
- "moon_project_graph",
+ "moon_project_graph2",
  "moon_rust_platform",
  "moon_system_platform",
  "moon_utils",
  "moon_workspace",
- "starbase_utils",
+ "starbase_events",
 ]
 
 [[package]]
@@ -3176,7 +3177,7 @@ dependencies = [
  "moon_notifier",
  "moon_platform",
  "moon_project",
- "moon_project_graph",
+ "moon_project_graph2",
  "moon_runner",
  "moon_target",
  "moon_terminal",
@@ -3204,7 +3205,7 @@ dependencies = [
  "moon_codeowners",
  "moon_config",
  "moon_hash",
- "moon_project_graph",
+ "moon_project_graph2",
  "moon_vcs_hooks",
  "moon_workspace",
 ]
@@ -3331,7 +3332,7 @@ dependencies = [
  "moon_platform",
  "moon_platform_detector",
  "moon_project",
- "moon_project_graph",
+ "moon_project_graph2",
  "moon_query",
  "moon_rust_lang",
  "moon_rust_tool",
@@ -3499,7 +3500,7 @@ dependencies = [
  "moon_logger",
  "moon_platform",
  "moon_project",
- "moon_project_graph",
+ "moon_project_graph2",
  "moon_query",
  "moon_target",
  "moon_task",
@@ -3661,7 +3662,7 @@ dependencies = [
  "moon_platform",
  "moon_process",
  "moon_project",
- "moon_project_graph",
+ "moon_project_graph2",
  "moon_target",
  "moon_task",
  "moon_terminal",
@@ -3832,42 +3833,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_project_graph"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "dotenvy",
- "miette",
- "moon",
- "moon_cache",
- "moon_common",
- "moon_config",
- "moon_file_group",
- "moon_hasher",
- "moon_logger",
- "moon_platform",
- "moon_platform_detector",
- "moon_project",
- "moon_project_builder",
- "moon_project_constraints",
- "moon_query",
- "moon_target",
- "moon_task",
- "moon_test_utils",
- "moon_utils",
- "moon_vcs",
- "moon_workspace",
- "petgraph",
- "rustc-hash",
- "serde",
- "serde_json",
- "starbase_styles",
- "starbase_utils",
- "thiserror",
- "tokio",
-]
-
-[[package]]
 name = "moon_project_graph2"
 version = "0.1.0"
 dependencies = [
@@ -3993,7 +3958,7 @@ dependencies = [
  "moon_platform",
  "moon_process",
  "moon_project",
- "moon_project_graph",
+ "moon_project_graph2",
  "moon_rust_lang",
  "moon_rust_tool",
  "moon_task",

@@ -2,7 +2,7 @@ use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_actions::{sync_codeowners, sync_vcs_hooks};
 use moon_logger::debug;
-use moon_project_graph::ProjectGraph;
+use moon_project_graph2::ProjectGraph;
 use moon_utils::is_test_env;
 use moon_workspace::Workspace;
 use starbase_styles::color;

@@ -6,7 +6,7 @@ use moon_action_context::{ActionContext, ProfileType};
 use moon_action_pipeline::Pipeline;
 use moon_common::is_test_env;
 use moon_logger::map_list;
-use moon_project_graph::ProjectGraph;
+use moon_project_graph2::ProjectGraph;
 use moon_utils::is_ci;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;

@@ -20,16 +20,24 @@ pub fn infer_project_id_and_source(path: &str) -> (Id, WorkspaceRelativePathBuf)
 
 /// For each pattern in the globs list, glob the file system
 /// for potential projects, and infer their name and source.
-pub fn locate_projects_with_globs(
+pub fn locate_projects_with_globs<I, V>(
     workspace_root: &Path,
-    globs: &[&String],
+    globs: I,
     sources: &mut FxHashMap<Id, WorkspaceRelativePathBuf>,
     vcs: Option<&BoxedVcs>,
-) -> miette::Result<()> {
+) -> miette::Result<()>
+where
+    I: IntoIterator<Item = V>,
+    V: AsRef<str>,
+{
     let root_source = ".".to_owned();
+    let globs = globs
+        .into_iter()
+        .map(|glob| glob.as_ref().to_owned())
+        .collect::<Vec<_>>();
 
     // Root-level project has special handling
-    if globs.contains(&&root_source) {
+    if globs.contains(&root_source) {
         let root_id = fs::file_name(workspace_root);
 
         sources.insert(
@@ -43,7 +51,7 @@ pub fn locate_projects_with_globs(
     }
 
     // Glob for all other projects
-    for project_root in glob::walk(workspace_root, globs)? {
+    for project_root in glob::walk(workspace_root, &globs)? {
         if project_root.is_dir() {
             let project_source =
                 to_virtual_string(project_root.strip_prefix(workspace_root).unwrap())?;

@@ -5,6 +5,7 @@ use moon_logger::trace;
 use moon_project::Project;
 use starbase::AppResult;
 use std::env;
+use std::sync::Arc;
 
 pub struct CheckOptions {
     pub all: bool,
@@ -17,7 +18,7 @@ const LOG_TARGET: &str = "moon:check";
 pub async fn check(project_ids: &[Id], options: CheckOptions) -> AppResult {
     let mut workspace = load_workspace().await?;
     let project_graph = generate_project_graph(&mut workspace).await?;
-    let mut projects: Vec<&Project> = vec![];
+    let mut projects: Vec<Arc<Project>> = vec![];
 
     // Load projects
     if options.all {

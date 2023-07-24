@@ -1,7 +1,7 @@
 use super::dto::{GraphEdgeDto, GraphInfoDto, GraphNodeDto};
 use miette::IntoDiagnostic;
 use moon_dep_graph::DepGraph;
-use moon_project_graph::ProjectGraph;
+use moon_project_graph2::ProjectGraph;
 use petgraph::{graph::NodeIndex, Graph};
 use rustc_hash::FxHashMap;
 use serde::Serialize;
@@ -37,8 +37,8 @@ pub async fn setup_server() -> AppResult<(Server, Tera)> {
     Ok((server, tera))
 }
 
-pub fn extract_nodes_and_edges_from_graph(
-    graph: &Graph<String, ()>,
+pub fn extract_nodes_and_edges_from_graph<T>(
+    graph: &Graph<String, T>,
     include_orphans: bool,
 ) -> GraphInfoDto {
     let mut nodes = FxHashMap::default();

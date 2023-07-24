@@ -9,12 +9,12 @@ pub async fn project_graph(project_id: Option<Id>, dot: bool, json: bool) -> App
     let mut project_build = build_project_graph(&mut workspace).await?;
 
     if let Some(id) = &project_id {
-        project_build.load(id)?;
+        project_build.load(id).await?;
     } else {
-        project_build.load_all()?;
+        project_build.load_all().await?;
     }
 
-    let project_graph = project_build.build()?;
+    let project_graph = project_build.build().await?;
 
     if dot {
         println!("{}", project_graph.to_dot());

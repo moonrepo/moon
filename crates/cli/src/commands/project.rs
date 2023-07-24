@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use console::Term;
 use itertools::Itertools;
 use miette::IntoDiagnostic;
@@ -12,10 +14,10 @@ use starbase_styles::color;
 pub async fn project(id: Id, json: bool) -> AppResult {
     let mut workspace = load_workspace().await?;
     let mut project_builder = build_project_graph(&mut workspace).await?;
-    project_builder.load(&id)?;
+    project_builder.load(&id).await?;
 
-    let project_graph = project_builder.build()?;
-    let project = project_graph.get(&id)?;
+    let project_graph = project_builder.build().await?;
+    let project = Arc::into_inner(project_graph.get(&id)?).unwrap();
     let config = &project.config;
 
     if json {

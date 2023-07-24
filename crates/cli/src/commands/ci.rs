@@ -7,7 +7,7 @@ use moon_action_pipeline::Pipeline;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_dep_graph::DepGraph;
 use moon_logger::debug;
-use moon_project_graph::ProjectGraph;
+use moon_project_graph2::ProjectGraph;
 use moon_target::Target;
 use moon_terminal::safe_exit;
 use moon_workspace::Workspace;

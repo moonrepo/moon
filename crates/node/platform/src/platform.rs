@@ -24,6 +24,7 @@ use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use starbase_utils::glob::GlobSet;
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::{collections::BTreeMap, path::Path};
 
 const LOG_TARGET: &str = "moon:node-platform";
@@ -336,7 +337,7 @@ impl Platform for NodePlatform {
         &self,
         _context: &ActionContext,
         project: &Project,
-        dependencies: &FxHashMap<Id, &Project>,
+        dependencies: &FxHashMap<Id, Arc<Project>>,
     ) -> miette::Result<bool> {
         let modified = actions::sync_project(
             project,

@@ -5,7 +5,7 @@ use moon_config::{
     PartialWorkspaceProjects,
 };
 use moon_dep_graph::BatchedTopoSort;
-use moon_project_graph::ProjectGraph;
+use moon_project_graph2::ProjectGraph;
 use moon_target::Target;
 use moon_test_utils::{assert_snapshot, create_input_paths, create_sandbox_with_config, Sandbox};
 use moon_workspace::Workspace;
@@ -492,7 +492,7 @@ mod sync_project {
         for id in ids {
             let project = projects.get(id).unwrap();
 
-            graph.sync_project(project).unwrap();
+            graph.sync_project(&project).unwrap();
         }
     }
 

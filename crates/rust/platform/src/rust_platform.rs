@@ -28,6 +28,7 @@ use starbase_utils::{fs, glob::GlobSet};
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
+    sync::Arc,
 };
 
 const LOG_TARGET: &str = "moon:rust-platform";
@@ -273,7 +274,7 @@ impl Platform for RustPlatform {
         &self,
         _context: &ActionContext,
         project: &Project,
-        _dependencies: &FxHashMap<Id, &Project>,
+        _dependencies: &FxHashMap<Id, Arc<Project>>,
     ) -> miette::Result<bool> {
         let mut mutated_files = false;
 

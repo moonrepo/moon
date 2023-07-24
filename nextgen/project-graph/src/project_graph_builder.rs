@@ -115,7 +115,7 @@ impl<'app> ProjectGraphBuilder<'app> {
 
         if hash == state.last_hash && cache_path.exists() {
             debug!(
-                cache_path = ?cache_path,
+                cache = ?cache_path,
                 "Loading project graph with {} projects from cache",
                 graph.sources.len(),
             );

@@ -14,7 +14,7 @@ use petgraph::Direction;
 use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
-use tracing::debug;
+use tracing::{debug, trace};
 
 pub type GraphType = DiGraph<Project, DependencyScope>;
 pub type ProjectsCache = FxHashMap<Id, Arc<Project>>;
@@ -105,10 +105,7 @@ impl ProjectGraph {
         }
 
         // Otherwise clone and expand the project
-        debug!(
-            project_id = id,
-            "Expanding project and caching into the graph"
-        );
+        debug!(id = id, "Expanding project {}", color::id(id),);
 
         let node = self
             .nodes
@@ -208,21 +205,22 @@ impl ProjectGraph {
             .clone()
             .expect("Querying the project graph requires a query input string.");
 
-        debug!(
-            "Filtering projects using query {}",
-            color::shell(&query_input)
-        );
+        let ids: miette::Result<&[Id]> = self.query_cache.try_insert(query_input.clone(), |_| {
+            debug!("Querying projects with {}", color::shell(query_input));
 
-        let ids: miette::Result<&[Id]> = self.query_cache.try_insert(query_input, |_| {
             let mut project_ids = vec![];
 
-            for project in self.get_all()? {
+            // Don't use `get_all` as it recursively calls `query`,
+            // which runs into a deadlock! This should be faster also...
+            for node in self.graph.raw_nodes() {
+                let project = &node.weight;
+
                 if project.matches_criteria(query)? {
                     debug!("{} did match the criteria", color::id(&project.id));
 
                     project_ids.push(project.id.clone());
                 } else {
-                    debug!(
+                    trace!(
                         "{} did {} match the criteria",
                         color::id(&project.id),
                         color::failure("NOT"),
@@ -233,10 +231,13 @@ impl ProjectGraph {
             Ok(project_ids)
         });
 
-        Ok(ids?
-            .iter()
-            .map(|id| self.read_cache().get(id).unwrap().clone())
-            .collect())
+        let mut projects = vec![];
+
+        for id in ids? {
+            projects.push(self.get(id)?);
+        }
+
+        Ok(projects)
     }
 
     /// Format graph as a DOT string.

@@ -16,6 +16,7 @@ moon_config = { path = "../../../nextgen/config" }
 moon_file_group = { path = "../../../nextgen/file-group" }
 moon_hasher = { path = "../hasher" }
 moon_logger = { path = "../logger" }
+moon_platform = { path = "../platform" }
 moon_platform_detector = { path = "../platform-detector" }
 moon_project = { path = "../../../nextgen/project" }
 moon_project_builder = { path = "../../../nextgen/project-builder" }
@@ -28,7 +29,7 @@ moon_vcs = { path = "../../../nextgen/vcs" }
 moon_workspace = { path = "../workspace" }
 dotenvy = "0.15.7"
 miette = { workspace = true }
-petgraph = {  workspace = true }
+petgraph = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -42,4 +43,3 @@ moon_cache = { path = "../cache" }
 moon_test_utils = { path = "../test-utils" }
 criterion = { workspace = true }
 tokio = { workspace = true }
-

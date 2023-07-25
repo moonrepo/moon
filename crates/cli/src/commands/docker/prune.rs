@@ -4,6 +4,7 @@ use moon::{generate_project_graph, load_workspace_with_toolchain};
 use moon_config::PlatformType;
 use moon_node_lang::{PackageJson, NODE};
 use moon_node_tool::NodeTool;
+use moon_platform::PlatformManager;
 use moon_project_graph::ProjectGraph;
 use moon_rust_lang::{CARGO, RUST};
 use moon_rust_tool::RustTool;
@@ -81,7 +82,7 @@ pub async fn prune() -> AppResult {
 
     // Do this later so we only run once for each platform instead of per project
     for platform_type in platforms {
-        let platform = workspace.platforms.get(platform_type)?;
+        let platform = PlatformManager::read().get(platform_type)?;
 
         match platform.get_type() {
             PlatformType::Node => {

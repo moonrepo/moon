@@ -34,7 +34,6 @@ use commands::syncs::codeowners::SyncCodeownersOptions;
 use commands::syncs::hooks::SyncHooksOptions;
 use enums::{CacheMode, LogLevel};
 use moon_logger::debug;
-use moon_platform::PlatformManager;
 use query::QueryHashDiffOptions;
 use starbase::{tracing::TracingOptions, App, AppResult};
 use starbase_styles::color;
@@ -97,8 +96,6 @@ pub async fn run_cli() -> AppResult {
     });
 
     detect_running_version();
-
-    PlatformManager::init();
 
     // Check for new version
     let version_handle = if matches!(

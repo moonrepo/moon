@@ -14,15 +14,16 @@ pub struct PlatformManager {
 }
 
 impl PlatformManager {
-    pub fn init() {
-        unsafe { PLATFORM_REGISTRY.get_or_init(PlatformManager::default) };
-    }
-
     pub fn read() -> &'static PlatformManager {
-        unsafe { PLATFORM_REGISTRY.get().unwrap() }
+        unsafe { PLATFORM_REGISTRY.get_or_init(PlatformManager::default) }
     }
 
     pub fn write() -> &'static mut PlatformManager {
+        {
+            // Initialize if it hasn't been
+            PlatformManager::read();
+        }
+
         unsafe { PLATFORM_REGISTRY.get_mut().unwrap() }
     }
 
@@ -64,5 +65,9 @@ impl PlatformManager {
 
     pub fn register(&mut self, type_of: PlatformType, platform: BoxedPlatform) {
         self.cache.insert(type_of, platform);
+    }
+
+    pub fn reset(&mut self) {
+        self.cache.clear();
     }
 }

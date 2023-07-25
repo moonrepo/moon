@@ -63,6 +63,9 @@ pub async fn load_workspace_from(path: &Path) -> miette::Result<Workspace> {
 
     let registry = PlatformManager::write();
 
+    // Primarily for testing
+    registry.reset();
+
     if let Some(deno_config) = &workspace.toolchain_config.deno {
         registry.register(
             PlatformType::Deno,

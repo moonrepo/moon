@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 🐞 Fixes
+
+- Fixed an issue where newer moonbase secret keys would fail to sign in.
+
 #### ⚙️ Internal
 
 - Updated Rust to v1.71.

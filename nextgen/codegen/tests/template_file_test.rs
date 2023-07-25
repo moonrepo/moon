@@ -6,6 +6,21 @@ use std::path::PathBuf;
 mod template_file {
     use super::*;
 
+    #[test]
+    fn marks_as_raw() {
+        let template = TemplateFile::new(RelativePathBuf::from("file.raw.txt"), PathBuf::new());
+
+        assert!(template.raw);
+
+        let template = TemplateFile::new(RelativePathBuf::from("file.raw"), PathBuf::new());
+
+        assert!(template.raw);
+
+        let template = TemplateFile::new(RelativePathBuf::from("file.txt.raw"), PathBuf::new());
+
+        assert!(template.raw);
+    }
+
     mod mergeable {
         use super::*;
 
@@ -54,6 +69,19 @@ mod template_file {
                 .set_content(content, &PathBuf::from("root"))
                 .unwrap();
             template
+        }
+
+        #[test]
+        fn removes_raw_from_path() {
+            let mut template =
+                TemplateFile::new(RelativePathBuf::from("file.raw.js"), PathBuf::new());
+            template
+                .set_content("{{ foo }}", &PathBuf::from("root"))
+                .unwrap();
+
+            assert_eq!(template.content, "{{ foo }}");
+            assert_eq!(template.config, None);
+            assert_eq!(template.dest_path, PathBuf::from("root/file.js"));
         }
 
         #[test]

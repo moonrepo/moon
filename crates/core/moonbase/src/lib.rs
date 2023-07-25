@@ -40,7 +40,7 @@ impl Moonbase {
         );
     }
 
-    pub async fn signin(secret_key: String, access_key: String, slug: String) -> Option<Moonbase> {
+    pub async fn signin(secret_key: String, slug: String) -> Option<Moonbase> {
         debug!(
             target: LOG_TARGET,
             "API keys detected, attempting to sign in to moonbase for repository {}",
@@ -52,7 +52,7 @@ impl Moonbase {
             SigninInput {
                 organization_key: secret_key,
                 repository: slug,
-                repository_key: access_key,
+                repository_key: String::new(), // Remove from API
             },
             None,
         )

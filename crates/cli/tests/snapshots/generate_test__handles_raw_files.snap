@@ -1,0 +1,6 @@
+---
+source: crates/cli/tests/generate_test.rs
+expression: "fs::read_to_string(sandbox.path().join(\"./test/file.txt\")).unwrap()"
+---
+2
+

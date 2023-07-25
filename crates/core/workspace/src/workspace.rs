@@ -233,11 +233,6 @@ impl Workspace {
             return Ok(());
         };
 
-        let Ok(access_key) = env::var("MOONBASE_ACCESS_KEY")
-            .or_else(|_| env::var("MOONBASE_API_KEY")) else {
-            return Ok(());
-        };
-
         let Ok(repo_slug) = env::var("MOONBASE_REPO_SLUG")
             .or_else(|_| env::var("MOON_REPO_SLUG")) else {
             Moonbase::no_vcs_root();
@@ -245,7 +240,7 @@ impl Workspace {
             return Ok(());
         };
 
-        self.session = Moonbase::signin(secret_key, access_key, repo_slug).await;
+        self.session = Moonbase::signin(secret_key, repo_slug).await;
 
         Ok(())
     }

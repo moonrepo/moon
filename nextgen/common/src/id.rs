@@ -16,7 +16,7 @@ pub static ID_CHARS: &str = r"[0-9A-Za-z/\._-]*";
 
 // The @ is to support npm package scopes!
 pub static ID_PATTERN: Lazy<Regex> =
-    Lazy::new(|| Regex::new(format!("^([A-Za-z@]{{1}}{})$", ID_CHARS).as_str()).unwrap());
+    Lazy::new(|| Regex::new(format!("^([A-Za-z@_]{{1}}{})$", ID_CHARS).as_str()).unwrap());
 
 // This is to clean and ID and remove unwanted characters
 pub static ID_CLEAN: Lazy<Regex> = Lazy::new(|| Regex::new(r"[^0-9A-Za-z/\._-]+").unwrap());

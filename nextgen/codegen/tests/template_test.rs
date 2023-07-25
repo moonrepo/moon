@@ -41,6 +41,7 @@ mod template {
                     .map(|f| f.source_path)
                     .collect::<Vec<_>>(),
                 vec![
+                    fixture.join("file.raw.txt"),
                     fixture.join("file.ts"),
                     fixture.join("file.txt"),
                     fixture.join("folder/nested-file.ts")
@@ -61,6 +62,7 @@ mod template {
             assert_eq!(
                 files,
                 vec![
+                    "file.raw.txt",
                     "file.ts",
                     "file.txt",
                     "folder/nested-file.ts",
@@ -76,7 +78,7 @@ mod template {
 
             template.load_files(&fixture, &create_context()).unwrap();
 
-            let file = &template.files[0];
+            let file = template.files.iter().find(|f| f.name == "file.ts").unwrap();
 
             assert_eq!(file.content, "export {};\n");
             assert_eq!(
@@ -86,6 +88,31 @@ mod template {
                     ..TemplateFrontmatterConfig::default()
                 })
             );
+
+            let file = template
+                .files
+                .iter()
+                .find(|f| f.name == "file.txt")
+                .unwrap();
+
+            assert_eq!(file.content, "2\n");
+            assert_eq!(file.config, None);
+        }
+
+        #[test]
+        fn doesnt_render_raw_files() {
+            let mut template = create_template();
+            let fixture = locate_fixture("template");
+
+            template.load_files(&fixture, &create_context()).unwrap();
+
+            let file = template
+                .files
+                .iter()
+                .find(|f| f.name == "file.raw.txt")
+                .unwrap();
+
+            assert_eq!(file.content, "{% set my_var = 2 %}\n{{ my_var }}\n");
         }
 
         #[test]

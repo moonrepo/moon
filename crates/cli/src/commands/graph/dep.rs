@@ -7,7 +7,7 @@ use starbase::AppResult;
 pub async fn dep_graph(target_id: Option<String>, dot: bool, json: bool) -> AppResult {
     let mut workspace = load_workspace().await?;
     let project_graph = generate_project_graph(&mut workspace).await?;
-    let mut dep_builder = build_dep_graph(&workspace, &project_graph);
+    let mut dep_builder = build_dep_graph(&project_graph);
 
     // Focus a target and its dependencies/dependents
     if let Some(id) = &target_id {

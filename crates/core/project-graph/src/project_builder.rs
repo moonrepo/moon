@@ -8,6 +8,7 @@ use moon_common::{consts, is_test_env, Id};
 use moon_config::{InputPath, ProjectsAliasesMap, ProjectsSourcesMap, WorkspaceProjects};
 use moon_hasher::{convert_paths_to_strings, to_hash};
 use moon_logger::{debug, map_list, trace, warn};
+use moon_platform::PlatformManager;
 use moon_platform_detector::{detect_project_language, detect_task_platform};
 use moon_project::Project;
 use moon_project_builder::{ProjectBuilder, ProjectBuilderError};
@@ -107,7 +108,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         builder.load_local_config()?;
         builder.inherit_global_config(&self.workspace.tasks_config)?;
 
-        if let Ok(platform) = self.workspace.platforms.get(builder.language.clone()) {
+        if let Ok(platform) = PlatformManager::read().get(builder.language.clone()) {
             // Inherit implicit dependencies
             for dep_config in
                 platform.load_project_implicit_dependencies(id, source, &self.aliases)?
@@ -537,7 +538,7 @@ impl<'ws> ProjectGraphBuilder<'ws> {
         }
 
         // Load project aliases
-        for platform in self.workspace.platforms.list_mut() {
+        for platform in PlatformManager::write().list_mut() {
             platform.load_project_graph_aliases(&sources, &mut aliases)?;
         }
 

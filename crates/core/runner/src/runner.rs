@@ -9,6 +9,7 @@ use moon_config::{TaskOptionAffectedFiles, TaskOutputStyle};
 use moon_emitter::{Emitter, Event, EventFlow};
 use moon_hasher::HashSet;
 use moon_logger::{debug, warn};
+use moon_platform::PlatformManager;
 use moon_platform_runtime::Runtime;
 use moon_process::{args, output_to_string, Command, Output};
 use moon_project::Project;
@@ -232,9 +233,7 @@ impl<'a> Runner<'a> {
             color::path(working_dir)
         );
 
-        let mut command = self
-            .workspace
-            .platforms
+        let mut command = PlatformManager::read()
             .get(task.platform)?
             .create_run_target_command(context, project, task, runtime, working_dir)
             .await?;
@@ -424,8 +423,7 @@ impl<'a> Runner<'a> {
 
         self.hash_common_target(context, &mut hashset).await?;
 
-        self.workspace
-            .platforms
+        PlatformManager::read()
             .get(self.task.platform)?
             .hash_run_target(
                 self.project,

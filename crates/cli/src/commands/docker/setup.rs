@@ -17,7 +17,7 @@ pub async fn setup() -> AppResult {
 
     let manifest: DockerManifest = json::read_file(manifest_path)?;
     let project_graph = generate_project_graph(&mut workspace).await?;
-    let mut dep_builder = build_dep_graph(&workspace, &project_graph);
+    let mut dep_builder = build_dep_graph(&project_graph);
 
     for project_id in &manifest.focused_projects {
         dep_builder.install_deps(project_graph.get(project_id)?, None)?;

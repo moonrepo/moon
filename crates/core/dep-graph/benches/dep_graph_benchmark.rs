@@ -18,7 +18,7 @@ pub fn build_benchmark(c: &mut Criterion) {
             .iter(|| async {
                 let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
                 let project_graph = generate_project_graph(&mut workspace).await.unwrap();
-                let mut dep_graph = build_dep_graph(&workspace, &project_graph);
+                let mut dep_graph = build_dep_graph(&project_graph);
 
                 dep_graph
                     .run_target(Target::parse("base:standard").unwrap(), None)

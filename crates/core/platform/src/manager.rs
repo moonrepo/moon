@@ -2,6 +2,9 @@ use crate::platform::Platform;
 use moon_config::PlatformType;
 use moon_tool::ToolError;
 use rustc_hash::FxHashMap;
+use std::sync::OnceLock;
+
+static mut PLATFORM_REGISTRY: OnceLock<PlatformManager> = OnceLock::new();
 
 pub type BoxedPlatform = Box<dyn Platform>;
 
@@ -11,6 +14,19 @@ pub struct PlatformManager {
 }
 
 impl PlatformManager {
+    pub fn read() -> &'static PlatformManager {
+        unsafe { PLATFORM_REGISTRY.get_or_init(PlatformManager::default) }
+    }
+
+    pub fn write() -> &'static mut PlatformManager {
+        {
+            // Initialize if it hasn't been
+            PlatformManager::read();
+        }
+
+        unsafe { PLATFORM_REGISTRY.get_mut().unwrap() }
+    }
+
     pub fn find<P>(&self, predicate: P) -> Option<&BoxedPlatform>
     where
         P: Fn(&&BoxedPlatform) -> bool,
@@ -49,5 +65,9 @@ impl PlatformManager {
 
     pub fn register(&mut self, type_of: PlatformType, platform: BoxedPlatform) {
         self.cache.insert(type_of, platform);
+    }
+
+    pub fn reset(&mut self) {
+        self.cache.clear();
     }
 }

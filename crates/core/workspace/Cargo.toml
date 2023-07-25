@@ -9,7 +9,6 @@ moon_cache = { path = "../cache" }
 moon_common = { path = "../../../nextgen/common" }
 moon_config = { path = "../../../nextgen/config" }
 moon_logger = { path = "../logger" }
-moon_platform = { path = "../platform" }
 moon_utils = { path = "../utils" }
 moon_vcs = { path = "../../../nextgen/vcs" }
 miette = { workspace = true }

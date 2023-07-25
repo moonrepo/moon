@@ -13,7 +13,7 @@ use std::{
 // The @ is to support npm package scopes!
 pub static TARGET_PATTERN: Lazy<Regex> = Lazy::new(|| {
     Regex::new(&format!(
-        r"^(?P<scope>(?:[A-Za-z@#]{{1}}{chars}|\^|~))?:(?P<task>{chars})$",
+        r"^(?P<scope>(?:[A-Za-z@#_]{{1}}{chars}|\^|~))?:(?P<task>{chars})$",
         chars = ID_CHARS
     ))
     .unwrap()

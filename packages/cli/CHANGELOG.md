@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Identifiers (project names, file groups, etc) can now be prefixed with underscores (`_`).
+
 #### 🐞 Fixes
 
 - Fixed an issue where newer moonbase secret keys would fail to sign in.

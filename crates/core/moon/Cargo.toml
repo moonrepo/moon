@@ -7,6 +7,7 @@ edition = "2021"
 moon_deno_platform = { path = "../../deno/platform" }
 moon_dep_graph = { path = "../dep-graph" }
 moon_node_platform = { path = "../../node/platform" }
+moon_platform = { path = "../platform" }
 moon_project_graph = { path = "../project-graph" }
 moon_rust_platform = { path = "../../rust/platform" }
 moon_system_platform = { path = "../../system/platform" }

@@ -3,7 +3,7 @@ use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_hasher::HashSet;
 use moon_logger::{debug, warn};
-use moon_platform::Runtime;
+use moon_platform::{PlatformManager, Runtime};
 use moon_project::Project;
 use moon_utils::time;
 use moon_workspace::Workspace;
@@ -82,7 +82,8 @@ pub async fn install_deps(
         return Ok(ActionStatus::Skipped);
     }
 
-    let platform = workspace.platforms.get(runtime)?;
+    let registry = PlatformManager::read();
+    let platform = registry.get(runtime)?;
 
     let Some((lockfile, manifest)) = platform.get_dependency_configs()? else {
         debug!(

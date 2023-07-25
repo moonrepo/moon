@@ -1,7 +1,7 @@
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_logger::debug;
-use moon_platform::Runtime;
+use moon_platform::{PlatformManager, Runtime};
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
 use moon_utils::is_ci;
@@ -46,8 +46,7 @@ pub async fn sync_project(
     }
 
     // Sync the projects and return true if any files have been mutated
-    let mutated_files = workspace
-        .platforms
+    let mutated_files = PlatformManager::read()
         .get(runtime)?
         .sync_project(&context, project, &dependencies)
         .await?;

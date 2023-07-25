@@ -1,7 +1,7 @@
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_logger::debug;
-use moon_platform::Runtime;
+use moon_platform::{PlatformManager, Runtime};
 use moon_utils::time;
 use moon_workspace::Workspace;
 use std::env;
@@ -28,13 +28,12 @@ pub async fn setup_tool(
         runtime.label()
     );
 
-    let mut workspace = workspace.write().await;
+    let workspace = workspace.write().await;
     let context = context.read().await;
     let mut cache = workspace.cache.cache_tool_state(runtime)?;
 
     // Install and setup the specific tool + version in the toolchain!
-    let installed_count = workspace
-        .platforms
+    let installed_count = PlatformManager::write()
         .get_mut(runtime)?
         .setup_tool(&context, runtime, &mut cache.last_versions)
         .await?;

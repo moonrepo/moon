@@ -27,13 +27,12 @@ pub struct DepGraphBuilder<'ws> {
     all_query: Option<Criteria>,
     graph: DepGraphType,
     indices: IndicesType,
-    platforms: &'ws PlatformManager,
     project_graph: &'ws ProjectGraph,
     runtimes: FxHashMap<String, RuntimePair>,
 }
 
 impl<'ws> DepGraphBuilder<'ws> {
-    pub fn new(platforms: &'ws PlatformManager, project_graph: &'ws ProjectGraph) -> Self {
+    pub fn new(project_graph: &'ws ProjectGraph) -> Self {
         debug!(target: LOG_TARGET, "Creating dependency graph");
 
         let mut graph = Graph::new();
@@ -54,7 +53,6 @@ impl<'ws> DepGraphBuilder<'ws> {
             all_query: None,
             graph,
             indices,
-            platforms,
             project_graph,
             runtimes: FxHashMap::default(),
         }
@@ -94,7 +92,7 @@ impl<'ws> DepGraphBuilder<'ws> {
         let mut project_runtime = Runtime::System;
         let mut workspace_runtime = Runtime::System;
 
-        if let Some(platform) = self.platforms.find(|p| match task {
+        if let Some(platform) = PlatformManager::read().find(|p| match task {
             Some(task) => p.matches(&task.platform, None),
             None => p.matches(&project.language.clone().into(), None),
         }) {
@@ -119,7 +117,7 @@ impl<'ws> DepGraphBuilder<'ws> {
 
         // If project is NOT in the package manager workspace, then we should
         // install dependencies in the project, not the workspace root.
-        if let Ok(platform) = self.platforms.get(project.language.clone()) {
+        if let Ok(platform) = PlatformManager::read().get(project.language.clone()) {
             if !platform.is_project_in_dependency_workspace(project.source.as_str())? {
                 installs_in_project = true;
 

@@ -16,5 +16,6 @@ moon_system_platform = { path = "../../system/platform" }
 moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
 miette = { workspace = true }
+rustc-hash = { workspace = true }
 starbase_events = { workspace = true }
 tokio = { workspace = true }

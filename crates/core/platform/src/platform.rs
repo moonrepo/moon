@@ -52,7 +52,6 @@ pub trait Platform: Debug + Send + Sync {
         &self,
         project_id: &str,
         project_source: &str,
-        aliases_map: &ProjectsAliasesMap,
     ) -> miette::Result<Vec<DependencyConfig>> {
         Ok(vec![])
     }

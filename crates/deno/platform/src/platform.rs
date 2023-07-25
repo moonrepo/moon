@@ -4,7 +4,7 @@ use moon_action_context::ActionContext;
 use moon_common::{color, is_ci, Id};
 use moon_config::{
     BinEntry, DenoConfig, DependencyConfig, HasherConfig, HasherOptimization, PlatformType,
-    ProjectConfig, ProjectsAliasesMap, TypeScriptConfig,
+    ProjectConfig, TypeScriptConfig,
 };
 use moon_deno_lang::{load_lockfile_dependencies, DenoJson, DENO_DEPS};
 use moon_deno_tool::DenoTool;
@@ -82,7 +82,6 @@ impl Platform for DenoPlatform {
         &self,
         _project_id: &str,
         _project_source: &str,
-        _aliases_map: &ProjectsAliasesMap,
     ) -> miette::Result<Vec<DependencyConfig>> {
         let implicit_deps = vec![];
 

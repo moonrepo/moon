@@ -122,7 +122,8 @@ impl Platform for NodePlatform {
         );
 
         for (project_id, project_source) in projects_map {
-            if let Some(package_json) = PackageJson::read(self.workspace_root.join(project_source))?
+            if let Some(package_json) =
+                PackageJson::read(project_source.to_path(&self.workspace_root))?
             {
                 if let Some(package_name) = package_json.name {
                     let alias = package_name.clone();
@@ -168,7 +169,6 @@ impl Platform for NodePlatform {
         &self,
         project_id: &str,
         project_source: &str,
-        _aliases_map: &ProjectsAliasesMap,
     ) -> miette::Result<Vec<DependencyConfig>> {
         let mut implicit_deps = vec![];
 

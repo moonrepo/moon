@@ -12,6 +12,7 @@ use moon_rust_platform::RustPlatform;
 use moon_system_platform::SystemPlatform;
 use moon_utils::{is_ci, is_test_env};
 use moon_workspace::{Workspace, WorkspaceError};
+use rustc_hash::FxHashMap;
 use starbase_events::{Emitter, EventState};
 use std::env;
 use std::path::Path;
@@ -137,7 +138,59 @@ pub async fn create_project_graph_context(workspace: &Workspace) -> ProjectGraph
         workspace_root: &workspace.root,
     };
 
-    // TODO extending
+    context
+        .extend_project
+        .on(|e: Arc<RwLock<ExtendProjectEvent>>| async move {
+            let mut dependencies = vec![];
+            let mut tasks = FxHashMap::default();
+
+            {
+                let event = e.read().await;
+
+                for platform in PlatformManager::read().list() {
+                    dependencies.extend(platform.load_project_implicit_dependencies(
+                        &event.project_id,
+                        event.project_source.as_str(),
+                    )?);
+
+                    tasks.extend(
+                        platform
+                            .load_project_tasks(&event.project_id, event.project_source.as_str())?,
+                    );
+                }
+            }
+
+            {
+                let mut event = e.write().await;
+                event.extended_dependencies.extend(dependencies);
+                event.extended_tasks.extend(tasks);
+            }
+
+            Ok(EventState::Continue)
+        })
+        .await;
+
+    context
+        .extend_project_graph
+        .on(|e: Arc<RwLock<ExtendProjectGraphEvent>>| async move {
+            let mut aliases = FxHashMap::default();
+
+            {
+                let event = e.read().await;
+
+                for platform in PlatformManager::write().list_mut() {
+                    platform.load_project_graph_aliases(&event.sources, &mut aliases)?;
+                }
+            }
+
+            {
+                let mut event = e.write().await;
+                event.extended_aliases.extend(aliases);
+            }
+
+            Ok(EventState::Continue)
+        })
+        .await;
 
     context
         .detect_language

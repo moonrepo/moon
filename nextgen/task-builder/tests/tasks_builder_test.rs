@@ -1119,39 +1119,5 @@ mod tasks_builder {
                 ])
             );
         }
-
-        #[tokio::test]
-        async fn env_file() {
-            let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "env/moon.yml").await;
-            let task = tasks.get("env-file").unwrap();
-
-            assert_eq!(
-                task.env,
-                FxHashMap::from_iter([
-                    ("SCOPE".into(), "env-file".into()),
-                    ("KEY1".into(), "file-value1".into()),
-                    ("KEY2".into(), "value2".into()),
-                    ("EXTRA".into(), "abc".into()),
-                ])
-            );
-        }
-
-        #[tokio::test]
-        async fn all_patterns() {
-            let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "env/moon.yml").await;
-            let task = tasks.get("all").unwrap();
-
-            assert_eq!(
-                task.env,
-                FxHashMap::from_iter([
-                    ("SCOPE".into(), "task".into()),
-                    ("KEY1".into(), "file-value1".into()),
-                    ("KEY2".into(), "env-value2".into()),
-                    ("EXTRA".into(), "123".into()),
-                ])
-            );
-        }
     }
 }

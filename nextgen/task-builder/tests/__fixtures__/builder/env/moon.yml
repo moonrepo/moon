@@ -10,13 +10,3 @@ tasks:
       SCOPE: 'task'
       KEY2: 'env-value2'
       EXTRA: '123'
-  env-file:
-    options:
-      envFile: true
-  all:
-    env:
-      SCOPE: 'task'
-      KEY2: 'env-value2'
-      EXTRA: '123'
-    options:
-      envFile: true

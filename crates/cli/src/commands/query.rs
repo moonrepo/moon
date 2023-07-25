@@ -14,7 +14,6 @@ use rustc_hash::FxHashMap;
 use starbase::AppResult;
 use starbase_styles::color;
 use std::io::{self, IsTerminal};
-use std::sync::Arc;
 
 pub async fn hash(hash: &str, json: bool) -> AppResult {
     let workspace = load_workspace().await?;
@@ -93,10 +92,7 @@ pub async fn projects(options: &QueryProjectsOptions) -> AppResult {
 
     if options.json {
         let result = QueryProjectsResult {
-            projects: projects
-                .into_iter()
-                .map(|p| Arc::into_inner(p).unwrap())
-                .collect::<Vec<_>>(),
+            projects,
             options: options.clone(),
         };
 

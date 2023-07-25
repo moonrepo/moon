@@ -30,18 +30,17 @@ pub async fn sync_codeowners(
         codeowners.add_workspace_entries(&workspace.config.codeowners)?;
     }
 
-    // TODO
-    // for project in projects {
-    //     if !project.config.owners.paths.is_empty() {
-    //         codeowners_hash.add_project(&project.id, &project.config.owners);
+    for project in &projects {
+        if !project.config.owners.paths.is_empty() {
+            codeowners_hash.add_project(&project.id, &project.config.owners);
 
-    //         codeowners.add_project_entry(
-    //             &project.id,
-    //             project.source.as_str(),
-    //             &project.config.owners,
-    //         )?;
-    //     }
-    // }
+            codeowners.add_project_entry(
+                &project.id,
+                project.source.as_str(),
+                &project.config.owners,
+            )?;
+        }
+    }
 
     hasher.hash_content(&codeowners_hash);
 

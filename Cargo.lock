@@ -3127,12 +3127,14 @@ dependencies = [
  "moon_hash",
  "moon_node_platform",
  "moon_platform",
+ "moon_platform_detector",
  "moon_project_graph2",
  "moon_rust_platform",
  "moon_system_platform",
  "moon_utils",
  "moon_workspace",
  "starbase_events",
+ "tokio",
 ]
 
 [[package]]

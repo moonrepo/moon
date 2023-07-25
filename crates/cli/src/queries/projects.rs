@@ -36,7 +36,7 @@ pub struct QueryProjectsOptions {
 
 #[derive(Deserialize, Serialize)]
 pub struct QueryProjectsResult {
-    pub projects: Vec<Project>,
+    pub projects: Vec<Arc<Project>>,
     pub options: QueryProjectsOptions,
 }
 

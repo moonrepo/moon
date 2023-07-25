@@ -147,7 +147,6 @@ fn distribute_targets_across_jobs(
 /// Generate a dependency graph with the runnable targets.
 fn generate_dep_graph(
     provider: &CiOutput,
-    workspace: &Workspace,
     project_graph: &ProjectGraph,
     targets: &TargetList,
 ) -> AppResult<DepGraph> {
@@ -195,7 +194,7 @@ pub async fn ci(options: CiOptions) -> AppResult {
     }
 
     let targets = distribute_targets_across_jobs(&ci_provider, &options, targets);
-    let dep_graph = generate_dep_graph(&ci_provider, &workspace, &project_graph, &targets)?;
+    let dep_graph = generate_dep_graph(&ci_provider, &project_graph, &targets)?;
 
     // Process all tasks in the graph
     print_header(&ci_provider, "Running all targets");

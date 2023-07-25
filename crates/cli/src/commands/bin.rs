@@ -2,6 +2,7 @@ use clap::ValueEnum;
 use moon::load_workspace_with_toolchain;
 use moon_config::PlatformType;
 use moon_node_tool::NodeTool;
+use moon_platform::PlatformManager;
 use moon_terminal::safe_exit;
 use moon_tool::Tool;
 use starbase::AppResult;
@@ -43,17 +44,18 @@ fn not_configured() -> ! {
 }
 
 pub async fn bin(tool_type: BinTool) -> AppResult {
-    let workspace = load_workspace_with_toolchain().await?;
+    load_workspace_with_toolchain().await?;
 
     match tool_type {
         BinTool::Node => {
-            let node = workspace.platforms.get(PlatformType::Node)?.get_tool()?;
+            let node = PlatformManager::read()
+                .get(PlatformType::Node)?
+                .get_tool()?;
 
             is_installed(*node);
         }
         BinTool::Npm | BinTool::Pnpm | BinTool::Yarn => {
-            let node = workspace
-                .platforms
+            let node = PlatformManager::read()
                 .get(PlatformType::Node)?
                 .get_tool()?
                 .as_any();
@@ -76,7 +78,9 @@ pub async fn bin(tool_type: BinTool) -> AppResult {
             };
         }
         BinTool::Rust => {
-            let rust = workspace.platforms.get(PlatformType::Rust)?.get_tool()?;
+            let rust = PlatformManager::read()
+                .get(PlatformType::Rust)?
+                .get_tool()?;
 
             is_installed(*rust);
         }

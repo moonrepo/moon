@@ -60,7 +60,8 @@ pub async fn load_workspace_from(path: &Path) -> miette::Result<Workspace> {
             return Err(err);
         }
     };
-    let mut registry = PlatformManager::write();
+
+    let registry = PlatformManager::write();
 
     if let Some(deno_config) = &workspace.toolchain_config.deno {
         registry.register(
@@ -109,7 +110,7 @@ pub async fn load_workspace_with_toolchain() -> miette::Result<Workspace> {
     Ok(workspace)
 }
 
-pub fn build_dep_graph<'g>(project_graph: &'g ProjectGraph) -> DepGraphBuilder<'g> {
+pub fn build_dep_graph(project_graph: &ProjectGraph) -> DepGraphBuilder {
     DepGraphBuilder::new(project_graph)
 }
 

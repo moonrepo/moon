@@ -1,13 +1,10 @@
-use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
-
 use crate::platform::Platform;
 use moon_config::PlatformType;
 use moon_tool::ToolError;
-use once_cell::sync::Lazy;
 use rustc_hash::FxHashMap;
+use std::sync::OnceLock;
 
-static PLATFORM_REGISTRY: Lazy<RwLock<PlatformManager>> =
-    Lazy::new(|| RwLock::new(PlatformManager::default()));
+static mut PLATFORM_REGISTRY: OnceLock<PlatformManager> = OnceLock::new();
 
 pub type BoxedPlatform = Box<dyn Platform>;
 
@@ -17,16 +14,16 @@ pub struct PlatformManager {
 }
 
 impl PlatformManager {
-    pub fn read() -> RwLockReadGuard<'static, PlatformManager> {
-        PLATFORM_REGISTRY
-            .read()
-            .expect("Failed to acquire read access to platforms registry!")
+    pub fn init() {
+        unsafe { PLATFORM_REGISTRY.get_or_init(|| PlatformManager::default()) };
     }
 
-    pub fn write() -> RwLockWriteGuard<'static, PlatformManager> {
-        PLATFORM_REGISTRY
-            .write()
-            .expect("Failed to acquire write access to platforms registry!")
+    pub fn read() -> &'static PlatformManager {
+        unsafe { PLATFORM_REGISTRY.get().unwrap() }
+    }
+
+    pub fn write() -> &'static mut PlatformManager {
+        unsafe { PLATFORM_REGISTRY.get_mut().unwrap() }
     }
 
     pub fn find<P>(&self, predicate: P) -> Option<&BoxedPlatform>

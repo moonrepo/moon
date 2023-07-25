@@ -70,7 +70,7 @@ pub async fn run_target(
     };
 
     // Generate a dependency graph for all the targets that need to be ran
-    let mut dep_builder = build_dep_graph(&workspace, &project_graph);
+    let mut dep_builder = build_dep_graph(&project_graph);
 
     if let Some(query_input) = &options.query {
         dep_builder.set_query(query_input)?;

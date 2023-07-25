@@ -1,6 +1,7 @@
 use moon_deno_platform::DenoPlatform;
 use moon_dep_graph::DepGraphBuilder;
 use moon_node_platform::NodePlatform;
+use moon_platform::{PlatformManager, PlatformType};
 use moon_project_graph::{ProjectGraph, ProjectGraphBuilder};
 use moon_rust_platform::RustPlatform;
 use moon_system_platform::SystemPlatform;
@@ -49,7 +50,7 @@ pub async fn load_workspace() -> miette::Result<Workspace> {
 
 /// Loads the workspace from a provided directory.
 pub async fn load_workspace_from(path: &Path) -> miette::Result<Workspace> {
-    let mut workspace = match Workspace::load_from(path) {
+    let workspace = match Workspace::load_from(path) {
         Ok(workspace) => {
             set_telemetry(workspace.config.telemetry);
             workspace
@@ -59,29 +60,39 @@ pub async fn load_workspace_from(path: &Path) -> miette::Result<Workspace> {
             return Err(err);
         }
     };
+    let mut registry = PlatformManager::write();
 
     if let Some(deno_config) = &workspace.toolchain_config.deno {
-        workspace.register_platform(Box::new(DenoPlatform::new(
-            deno_config,
-            &workspace.toolchain_config.typescript,
-            &workspace.root,
-        )));
+        registry.register(
+            PlatformType::Deno,
+            Box::new(DenoPlatform::new(
+                deno_config,
+                &workspace.toolchain_config.typescript,
+                &workspace.root,
+            )),
+        );
     }
 
     if let Some(node_config) = &workspace.toolchain_config.node {
-        workspace.register_platform(Box::new(NodePlatform::new(
-            node_config,
-            &workspace.toolchain_config.typescript,
-            &workspace.root,
-        )));
+        registry.register(
+            PlatformType::Node,
+            Box::new(NodePlatform::new(
+                node_config,
+                &workspace.toolchain_config.typescript,
+                &workspace.root,
+            )),
+        );
     }
 
     if let Some(rust_config) = &workspace.toolchain_config.rust {
-        workspace.register_platform(Box::new(RustPlatform::new(rust_config, &workspace.root)));
+        registry.register(
+            PlatformType::Rust,
+            Box::new(RustPlatform::new(rust_config, &workspace.root)),
+        );
     }
 
     // Should be last since it's the most common
-    workspace.register_platform(Box::<SystemPlatform>::default());
+    registry.register(PlatformType::System, Box::<SystemPlatform>::default());
 
     Ok(workspace)
 }
@@ -89,20 +100,17 @@ pub async fn load_workspace_from(path: &Path) -> miette::Result<Workspace> {
 // Some commands require the toolchain to exist, but don't use
 // the action pipeline. This is a simple flow to wire up the tools.
 pub async fn load_workspace_with_toolchain() -> miette::Result<Workspace> {
-    let mut workspace = load_workspace().await?;
+    let workspace = load_workspace().await?;
 
-    for platform in workspace.platforms.list_mut() {
+    for platform in PlatformManager::write().list_mut() {
         platform.setup_toolchain().await?;
     }
 
     Ok(workspace)
 }
 
-pub fn build_dep_graph<'g>(
-    workspace: &'g Workspace,
-    project_graph: &'g ProjectGraph,
-) -> DepGraphBuilder<'g> {
-    DepGraphBuilder::new(&workspace.platforms, project_graph)
+pub fn build_dep_graph<'g>(project_graph: &'g ProjectGraph) -> DepGraphBuilder<'g> {
+    DepGraphBuilder::new(project_graph)
 }
 
 pub async fn build_project_graph(workspace: &mut Workspace) -> miette::Result<ProjectGraphBuilder> {

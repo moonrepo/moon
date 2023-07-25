@@ -3,7 +3,6 @@ use moon_cache::CacheEngine;
 use moon_common::consts;
 use moon_config::{InheritedTasksConfig, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_logger::{debug, trace};
-use moon_platform::{BoxedPlatform, PlatformManager};
 use moon_utils::semver;
 use moon_vcs::{BoxedVcs, Git};
 use moonbase::Moonbase;
@@ -148,9 +147,6 @@ pub struct Workspace {
     /// Workspace configuration loaded from ".moon/workspace.yml".
     pub config: WorkspaceConfig,
 
-    /// Registered platforms derived from toolchain configuration.
-    pub platforms: PlatformManager,
-
     /// Proto tools loaded from ".prototools".
     pub proto_tools: ToolsConfig,
 
@@ -221,7 +217,6 @@ impl Workspace {
         Ok(Workspace {
             cache,
             config,
-            platforms: PlatformManager::default(),
             proto_tools,
             root: root_dir,
             session: None,
@@ -231,10 +226,6 @@ impl Workspace {
             vcs: Box::new(vcs),
             working_dir: working_dir.to_owned(),
         })
-    }
-
-    pub fn register_platform(&mut self, platform: BoxedPlatform) {
-        self.platforms.register(platform.get_type(), platform);
     }
 
     pub async fn signin_to_moonbase(&mut self) -> miette::Result<()> {

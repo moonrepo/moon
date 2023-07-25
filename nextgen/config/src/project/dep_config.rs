@@ -4,6 +4,7 @@ use schematic::{derive_enum, Config, ConfigEnum};
 derive_enum!(
     #[derive(ConfigEnum, Copy, Default)]
     pub enum DependencyScope {
+        Build,
         Development,
         Peer,
         #[default]

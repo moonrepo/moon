@@ -103,6 +103,7 @@ impl<'proj> TasksExpander<'proj> {
             } else if let Ok(proj_path) = path.strip_prefix(&self.project.source) {
                 Ok(format!("./{}", proj_path))
             } else {
+                // TODO
                 to_virtual_string(path.to_logical_path(self.workspace_root))
             }
         };

@@ -1,4 +1,5 @@
 use crate::project_graph_error::ProjectGraphError;
+use miette::IntoDiagnostic;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{color, Id};
 use moon_config::DependencyScope;
@@ -12,12 +13,20 @@ use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::EdgeRef;
 use petgraph::Direction;
 use rustc_hash::FxHashMap;
+use serde::Serialize;
+use starbase_utils::json;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use tracing::{debug, trace};
 
 pub type GraphType = DiGraph<Project, DependencyScope>;
 pub type ProjectsCache = FxHashMap<Id, Arc<Project>>;
+
+#[derive(Serialize)]
+pub struct ProjectGraphCache<'graph> {
+    graph: &'graph GraphType,
+    projects: &'graph ProjectsCache,
+}
 
 #[derive(Default)]
 pub struct ProjectNode {
@@ -264,6 +273,16 @@ impl ProjectGraph {
         );
 
         format!("{dot:?}")
+    }
+
+    pub fn to_json(&self) -> miette::Result<String> {
+        let projects = self.read_cache();
+
+        json::to_string_pretty(&ProjectGraphCache {
+            graph: &self.graph,
+            projects: &projects,
+        })
+        .into_diagnostic()
     }
 
     fn read_cache(&self) -> RwLockReadGuard<ProjectsCache> {

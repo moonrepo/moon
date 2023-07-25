@@ -11,12 +11,13 @@
 #### 🚀 Updates
 
 - Rewrote the project graph from the ground-up:
-  - Graph edges now indicate the type of relationship: development, production, peer.
+  - Graph edges now indicate the type of relationship: development, production, build, peer.
 - Identifiers (project names, file groups, etc) can now be prefixed with underscores (`_`).
 - Environment variables in commands and arguments are not substituted.
 - Task `deps` can now depend on tag targets (`#tag:task`).
 - Task `env` are now used when substituting values, alongside system-level.
 - Task `outputs` can now use token variables.
+- Updated `moon project-graph --json` to include the fully expanded graph data.
 
 - **Codegen**
   - Templates can be used as-is without rendering with [Tera](https://tera.netlify.app) by appending

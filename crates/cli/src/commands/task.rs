@@ -12,10 +12,10 @@ pub async fn task(target: Target, json: bool) -> AppResult {
     };
 
     let mut workspace = load_workspace().await?;
-    let mut project_builder = build_project_graph(&mut workspace).await?;
-    project_builder.load(&project_id).await?;
+    let mut project_graph_builder = build_project_graph(&mut workspace).await?;
+    project_graph_builder.load(&project_id).await?;
 
-    let project_graph = project_builder.build().await?;
+    let project_graph = project_graph_builder.build().await?;
     let project = project_graph.get(&project_id)?;
     let task = project.get_task(&target.task_id)?;
 

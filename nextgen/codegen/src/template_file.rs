@@ -25,6 +25,9 @@ pub struct TemplateFile {
     /// Relative path from templates dir. Also acts as the Tera engine name.
     pub name: RelativePathBuf,
 
+    /// Whether the file should not be rendered.
+    pub raw: bool,
+
     /// Absolute path to source (in templates dir).
     pub source_path: PathBuf,
 
@@ -35,6 +38,7 @@ pub struct TemplateFile {
 impl TemplateFile {
     pub fn new(name: RelativePathBuf, source_path: PathBuf) -> Self {
         TemplateFile {
+            raw: name.as_str().contains(".raw"),
             config: None,
             content: String::new(),
             dest_path: PathBuf::new(),
@@ -73,7 +77,11 @@ impl TemplateFile {
     pub fn set_content<T: AsRef<str>>(&mut self, content: T, dest: &Path) -> miette::Result<()> {
         let content = content.as_ref().trim_start();
 
-        self.dest_path = self.name.to_path(dest);
+        self.dest_path = if self.raw {
+            dest.join(self.name.as_str().replace(".raw", ""))
+        } else {
+            self.name.to_path(dest)
+        };
 
         if content.starts_with("---") {
             debug!(

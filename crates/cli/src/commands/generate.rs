@@ -431,7 +431,13 @@ pub async fn generate(name: String, options: GenerateOptions) -> AppResult {
                 FileState::Replace => color::muted("->"),
                 _ => color::muted("-->"),
             },
-            color::muted_light(relative_dest.join(file.name).as_str())
+            color::muted_light(
+                file.dest_path
+                    .strip_prefix(&cwd)
+                    .unwrap_or(&file.dest_path)
+                    .to_str()
+                    .unwrap()
+            )
         ))?;
     }
 

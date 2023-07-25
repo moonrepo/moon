@@ -100,12 +100,16 @@ impl Template {
         // Do a second pass and render the content
         for file in &mut files {
             file.set_content(
-                self.engine
-                    .render(file.name.as_str(), context)
-                    .map_err(|error| CodegenError::RenderTemplateFileFailed {
-                        path: file.source_path.clone(),
-                        error,
-                    })?,
+                if file.raw {
+                    fs::read_file(&file.source_path)?
+                } else {
+                    self.engine
+                        .render(file.name.as_str(), context)
+                        .map_err(|error| CodegenError::RenderTemplateFileFailed {
+                            path: file.source_path.clone(),
+                            error,
+                        })?
+                },
                 dest,
             )?;
         }

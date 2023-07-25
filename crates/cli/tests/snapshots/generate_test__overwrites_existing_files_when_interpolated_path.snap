@@ -1,17 +1,16 @@
 ---
 source: crates/cli/tests/generate_test.rs
-assertion_line: 108
-expression: get_path_safe_output(&assert)
+expression: assert.output_standardized()
 ---
 
 Variable testing 
 A template for testing all variable config combinations.
 
 
-replaced -> ./test/control.txt
-replaced -> ./test/expressions.txt
-replaced -> ./test/file-default-0.txt
-replaced -> ./test/filters.txt
+replaced -> test/control.txt
+replaced -> test/expressions.txt
+replaced -> test/file-default-0.txt
+replaced -> test/filters.txt
 
 
 

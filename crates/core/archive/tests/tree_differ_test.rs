@@ -8,7 +8,7 @@ fn loads_all_files() {
     let sandbox = create_sandbox("generator");
     let differ = TreeDiffer::load(sandbox.path(), &string_vec!["templates"]).unwrap();
 
-    assert_eq!(differ.files.len(), 21);
+    assert_eq!(differ.files.len(), 22);
 }
 
 #[test]
@@ -16,7 +16,7 @@ fn loads_using_globs() {
     let sandbox = create_sandbox("generator");
     let differ = TreeDiffer::load(sandbox.path(), &string_vec!["templates/**/*"]).unwrap();
 
-    assert_eq!(differ.files.len(), 21);
+    assert_eq!(differ.files.len(), 22);
 }
 
 #[test]

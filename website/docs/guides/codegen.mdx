@@ -4,6 +4,8 @@ toc_max_heading_level: 6
 tags: [codegen, generator, scaffold, template]
 ---
 
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
 Code generation provides an easy mechanism for automating common development workflows and file
 structures. Whether it's scaffolding a new library or application, updating configuration, or
 standardizing patterns.
@@ -87,6 +89,14 @@ be generated into the target destination, and _do not_ support frontmatter.
 
 To ensure they are not generated, include the word "partial" anywhere in the file path. For example,
 `partials/header.tpl` or `header.partial.tpl`.
+
+#### Raws<VersionLabel version="1.11.0" />
+
+Raw template files are another special type of file that bypass all Tera rendering, and are used
+as-is instead. This is useful for files that contain syntax that conflicts with Tera.
+
+To mark a file as raw, add a `.raw` extension, for example: `file.raw.js` or `file.js.raw`. When the
+file is generated, the `.raw` extension will be removed.
 
 #### Frontmatter
 

@@ -7,7 +7,7 @@ use moon_target::Target;
 use moon_test_utils::{create_sandbox_with_config, get_cases_fixture_configs};
 use moon_workspace::Workspace;
 
-fn generate_dep_graph(workspace: &Workspace, project_graph: &ProjectGraph) -> DepGraph {
+fn generate_dep_graph(_workspace: &Workspace, project_graph: &ProjectGraph) -> DepGraph {
     let mut dep_graph = build_dep_graph(project_graph);
 
     dep_graph

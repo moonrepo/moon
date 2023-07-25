@@ -15,7 +15,7 @@ pub struct PlatformManager {
 
 impl PlatformManager {
     pub fn init() {
-        unsafe { PLATFORM_REGISTRY.get_or_init(|| PlatformManager::default()) };
+        unsafe { PLATFORM_REGISTRY.get_or_init(PlatformManager::default) };
     }
 
     pub fn read() -> &'static PlatformManager {

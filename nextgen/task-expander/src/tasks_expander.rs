@@ -173,33 +173,38 @@ impl<'proj> TasksExpander<'proj> {
         // Dont use a `HashSet` as we want to preserve order
         let mut deps: Vec<Target> = vec![];
 
-        let mut check_and_push_dep = |dep_project: &Project, task_id: &Id| -> miette::Result<()> {
-            let Some(dep_task) = dep_project.tasks.get(task_id) else {
-                return Err(TasksExpanderError::UnknownTarget {
-                    dep: Target::new(&dep_project.id, task_id)?,
-                    task: task.target.to_owned(),
+        let mut check_and_push_dep =
+            |dep_project: &Project, task_id: &Id, skip_if_missing: bool| -> miette::Result<()> {
+                let Some(dep_task) = dep_project.tasks.get(task_id) else {
+                    if skip_if_missing {
+                        return Ok(());
+                    }
+
+                    return Err(TasksExpanderError::UnknownTarget {
+                        dep: Target::new(&dep_project.id, task_id)?,
+                        task: task.target.to_owned(),
+                    }
+                    .into());
+                };
+
+                // Enforce persistent constraints
+                if dep_task.is_persistent() && !task.is_persistent() {
+                    return Err(TasksExpanderError::PersistentDepRequirement {
+                        dep: dep_task.target.to_owned(),
+                        task: task.target.to_owned(),
+                    }
+                    .into());
                 }
-                .into());
-             };
 
-            // Enforce persistent constraints
-            if dep_task.is_persistent() && !task.is_persistent() {
-                return Err(TasksExpanderError::PersistentDepRequirement {
-                    dep: dep_task.target.to_owned(),
-                    task: task.target.to_owned(),
+                // Add the dep if it has not already been
+                let dep = Target::new(&dep_project.id, task_id)?;
+
+                if !deps.contains(&dep) {
+                    deps.push(dep);
                 }
-                .into());
-            }
 
-            // Add the dep if it has not already been
-            let dep = Target::new(&dep_project.id, task_id)?;
-
-            if !deps.contains(&dep) {
-                deps.push(dep);
-            }
-
-            Ok(())
-        };
+                Ok(())
+            };
 
         for dep_target in &task.deps {
             match &dep_target.scope {
@@ -224,13 +229,16 @@ impl<'proj> TasksExpander<'proj> {
                         dep_ids.sort();
 
                         let input = if dep_ids.len() == 1 {
-                            format!("project={}", dep_ids.join(""))
+                            format!("project={id} || projectAlias={id}", id = dep_ids.join(""))
                         } else {
-                            format!("project=[{}]", dep_ids.join(","))
+                            format!(
+                                "project=[{ids}] || projectAlias=[{ids}]",
+                                ids = dep_ids.join(",")
+                            )
                         };
 
                         for dep_project in query(input)? {
-                            check_and_push_dep(&dep_project, &dep_target.task_id)?;
+                            check_and_push_dep(&dep_project, &dep_target.task_id, true)?;
                         }
                     }
                 }
@@ -239,7 +247,7 @@ impl<'proj> TasksExpander<'proj> {
                     if dep_target.task_id == task.id {
                         // Avoid circular references
                     } else {
-                        check_and_push_dep(project, &dep_target.task_id)?;
+                        check_and_push_dep(project, &dep_target.task_id, false)?;
                     }
                 }
                 // id:task
@@ -248,10 +256,13 @@ impl<'proj> TasksExpander<'proj> {
                         if dep_target.task_id == task.id {
                             // Avoid circular references
                         } else {
-                            check_and_push_dep(project, &dep_target.task_id)?;
+                            check_and_push_dep(project, &dep_target.task_id, false)?;
                         }
                     } else {
-                        let results = query(format!("project={}", project_id))?;
+                        let results = query(format!(
+                            "project={id} || projectAlias={id}",
+                            id = project_id
+                        ))?;
 
                         if results.is_empty() {
                             return Err(TasksExpanderError::UnknownTarget {
@@ -262,7 +273,7 @@ impl<'proj> TasksExpander<'proj> {
                         }
 
                         for dep_project in results {
-                            check_and_push_dep(&dep_project, &dep_target.task_id)?;
+                            check_and_push_dep(&dep_project, &dep_target.task_id, false)?;
                         }
                     }
                 }
@@ -272,7 +283,7 @@ impl<'proj> TasksExpander<'proj> {
                         if dep_project.id == project.id {
                             // Avoid circular references
                         } else {
-                            check_and_push_dep(&dep_project, &dep_target.task_id)?;
+                            check_and_push_dep(&dep_project, &dep_target.task_id, true)?;
                         }
                     }
                 }

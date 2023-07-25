@@ -38,18 +38,19 @@ pub struct ProjectNode {
 #[derive(Default)]
 pub struct ProjectGraph {
     /// Direct-acyclic graph of non-expanded projects and their dependencies.
-    pub graph: GraphType,
+    graph: GraphType,
 
     /// Graph node information, mapped by project ID.
     pub nodes: FxHashMap<Id, ProjectNode>,
 
     /// Expanded projects, mapped by project ID.
-    pub projects: Arc<RwLock<ProjectsCache>>,
+    projects: Arc<RwLock<ProjectsCache>>,
+
+    /// Cache of query results, mapped by query input to project IDs.
+    query_cache: OnceMap<String, Vec<Id>>,
 
     /// Workspace root, required for expansion.
-    pub workspace_root: PathBuf,
-
-    query_cache: OnceMap<String, Vec<Id>>,
+    workspace_root: PathBuf,
 }
 
 impl ProjectGraph {

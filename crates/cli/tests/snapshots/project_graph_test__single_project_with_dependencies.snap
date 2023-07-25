@@ -1,14 +1,13 @@
 ---
 source: crates/cli/tests/project_graph_test.rs
-assertion_line: 50
 expression: assert.output()
 ---
 digraph {
     0 [ label="bar" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     1 [ label="baz" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
     2 [ label="foo" style=filled, shape=oval, fillcolor=gray, fontcolor=black]
-    2 -> 0 [ arrowhead=box, arrowtail=box]
-    2 -> 1 [ arrowhead=box, arrowtail=box]
+    2 -> 0 [ label="production" arrowhead=box, arrowtail=box]
+    2 -> 1 [ label="production" arrowhead=box, arrowtail=box]
 }
 
 

@@ -39,37 +39,6 @@ pub struct TasksExpander<'proj> {
 }
 
 impl<'proj> TasksExpander<'proj> {
-    pub fn expand<F>(
-        project: &'proj mut Project,
-        workspace_root: &'proj Path,
-        query: F,
-    ) -> miette::Result<()>
-    where
-        F: Fn(String) -> miette::Result<Vec<&'proj Project>>,
-    {
-        // We unfortunately need to clone the keys here since we can't
-        // borrow the project mutably (for the expander) while we're
-        // also iterating over and mutating the tasks.
-        let task_ids = project.tasks.keys().cloned().collect::<Vec<_>>();
-
-        let mut expander = TasksExpander {
-            project,
-            workspace_root,
-        };
-
-        for task_id in &task_ids {
-            // Resolve in this order!
-            expander.expand_env(task_id)?;
-            expander.expand_deps(task_id, &query)?;
-            expander.expand_inputs(task_id)?;
-            expander.expand_outputs(task_id)?;
-            expander.expand_args(task_id)?;
-            expander.expand_command(task_id)?;
-        }
-
-        Ok(())
-    }
-
     pub fn expand_command(&mut self, task_id: &str) -> miette::Result<()> {
         let task = self.get_task(task_id);
 

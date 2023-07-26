@@ -68,6 +68,11 @@ starbase_utils = { version = "0.2.13", default-features = false, features = [
 ] }
 tera = { version = "1.19.0", features = ["preserve_order"] }
 thiserror = "1.0.40"
-tokio = { version = "1.29.1", default-features = false, features = ["tracing"] }
+tokio = { version = "1.29.1", default-features = false, features = [
+	"process",
+	"rt",
+	"rt-multi-thread",
+	"tracing",
+] }
 tracing = "0.1.37"
 url = "2.4.0"

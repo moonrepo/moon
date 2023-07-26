@@ -8,8 +8,7 @@ use moon_task_expander::TasksExpander;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
 use std::env;
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::path::Path;
 use utils::{create_project, create_project_with_tasks};
 
 fn create_path_set(inputs: Vec<&str>) -> FxHashSet<WorkspaceRelativePathBuf> {
@@ -79,7 +78,10 @@ mod tasks_expander {
             env::remove_var("FOO");
             env::remove_var("BAZ_QUX");
 
-            assert_eq!(project.get_task("task").unwrap().command, "./foo//baz-qux");
+            assert_eq!(
+                project.get_task("task").unwrap().command,
+                "./foo/${BAR}/baz-qux"
+            );
         }
 
         #[test]
@@ -222,18 +224,42 @@ mod tasks_expander {
     mod expand_deps {
         use super::*;
 
-        fn no_query<'l>(_: String) -> miette::Result<Vec<&'l Project>> {
-            Ok(vec![])
+        struct QueryContainer {
+            projects: Vec<Project>,
         }
 
-        fn do_query<'l>(_: String) -> miette::Result<Vec<&'l Project>> {
-            let root = PathBuf::from("/root");
+        impl QueryContainer {
+            pub fn new(root: &Path) -> Self {
+                Self {
+                    projects: vec![
+                        create_project_with_tasks(root, "foo"),
+                        create_project_with_tasks(root, "bar"),
+                        create_project_with_tasks(root, "baz"),
+                    ],
+                }
+            }
 
-            Ok(vec![
-                // Arc::new(create_project_with_tasks(&root, "foo")),
-                // Arc::new(create_project_with_tasks(&root, "bar")),
-                // Arc::new(create_project_with_tasks(&root, "baz")),
-            ])
+            pub fn all(&self, _: String) -> miette::Result<Vec<&Project>> {
+                Ok(vec![
+                    &self.projects[0],
+                    &self.projects[1],
+                    &self.projects[2],
+                ])
+            }
+
+            pub fn filtered(&self, input: String) -> miette::Result<Vec<&Project>> {
+                Ok(vec![if input.contains("foo") {
+                    &self.projects[0]
+                } else if input.contains("bar") {
+                    &self.projects[1]
+                } else {
+                    &self.projects[2]
+                }])
+            }
+
+            pub fn none(&self, _: String) -> miette::Result<Vec<&Project>> {
+                Ok(vec![])
+            }
         }
 
         mod all {
@@ -246,11 +272,12 @@ mod tasks_expander {
             fn errors() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
 
                 create_expander(sandbox.path(), &mut project, |task| {
                     task.deps.push(Target::parse(":build").unwrap());
                 })
-                .expand_deps("task", do_query)
+                .expand_deps("task", |i| query.all(i))
                 .unwrap();
             }
         }
@@ -262,11 +289,12 @@ mod tasks_expander {
             fn no_depends_on() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
 
                 create_expander(sandbox.path(), &mut project, |task| {
                     task.deps.push(Target::parse("^:build").unwrap());
                 })
-                .expand_deps("task", no_query) // Tested here
+                .expand_deps("task", |i| query.none(i)) // Tested here
                 .unwrap();
 
                 assert_eq!(project.get_task("task").unwrap().deps, vec![]);
@@ -276,8 +304,9 @@ mod tasks_expander {
             fn returns_tasks_of_same_name() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
 
-                // The valid list comes from `do_query` but we need a
+                // The valid list comes from `query` but we need a
                 // non-empty set for the expansion to work.
                 project
                     .dependencies
@@ -286,7 +315,7 @@ mod tasks_expander {
                 create_expander(sandbox.path(), &mut project, |task| {
                     task.deps.push(Target::parse("^:build").unwrap());
                 })
-                .expand_deps("task", do_query)
+                .expand_deps("task", |i| query.all(i))
                 .unwrap();
 
                 assert_eq!(
@@ -306,8 +335,9 @@ mod tasks_expander {
             fn errors_for_persistent_chain() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
 
-                // The valid list comes from `do_query` but we need a
+                // The valid list comes from `query` but we need a
                 // non-empty set for the expansion to work.
                 project
                     .dependencies
@@ -317,7 +347,7 @@ mod tasks_expander {
                     task.options.persistent = false;
                     task.deps.push(Target::parse("^:dev").unwrap());
                 })
-                .expand_deps("task", do_query)
+                .expand_deps("task", |i| query.all(i))
                 .unwrap();
             }
         }
@@ -329,12 +359,13 @@ mod tasks_expander {
             fn refs_sibling_task() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
 
                 create_expander(sandbox.path(), &mut project, |task| {
                     task.deps.push(Target::parse("~:build").unwrap());
                     task.deps.push(Target::parse("lint").unwrap());
                 })
-                .expand_deps("task", no_query)
+                .expand_deps("task", |i| query.none(i))
                 .unwrap();
 
                 assert_eq!(
@@ -350,11 +381,12 @@ mod tasks_expander {
             fn ignores_self_ref_cycle() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
 
                 create_expander(sandbox.path(), &mut project, |task| {
                     task.deps.push(Target::parse("task").unwrap());
                 })
-                .expand_deps("task", no_query)
+                .expand_deps("task", |i| query.none(i))
                 .unwrap();
 
                 assert_eq!(project.get_task("task").unwrap().deps, vec![]);
@@ -364,12 +396,13 @@ mod tasks_expander {
             fn ignores_dupes() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
 
                 create_expander(sandbox.path(), &mut project, |task| {
                     task.deps.push(Target::parse("~:test").unwrap());
                     task.deps.push(Target::parse("test").unwrap());
                 })
-                .expand_deps("task", no_query)
+                .expand_deps("task", |i| query.none(i))
                 .unwrap();
 
                 assert_eq!(
@@ -385,11 +418,12 @@ mod tasks_expander {
             fn errors_unknown_sibling_task() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
 
                 create_expander(sandbox.path(), &mut project, |task| {
                     task.deps.push(Target::parse("~:unknown").unwrap());
                 })
-                .expand_deps("task", no_query)
+                .expand_deps("task", |i| query.none(i))
                 .unwrap();
             }
 
@@ -400,12 +434,13 @@ mod tasks_expander {
             fn errors_for_persistent_chain() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
 
                 create_expander(sandbox.path(), &mut project, |task| {
                     task.options.persistent = false;
                     task.deps.push(Target::parse("~:dev").unwrap());
                 })
-                .expand_deps("task", do_query)
+                .expand_deps("task", |i| query.all(i))
                 .unwrap();
             }
         }
@@ -417,11 +452,12 @@ mod tasks_expander {
             fn refs_sibling_task() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
 
                 create_expander(sandbox.path(), &mut project, |task| {
                     task.deps.push(Target::parse("project:build").unwrap());
                 })
-                .expand_deps("task", no_query)
+                .expand_deps("task", |i| query.none(i))
                 .unwrap();
 
                 assert_eq!(
@@ -434,11 +470,12 @@ mod tasks_expander {
             fn ignores_self_ref_cycle() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
 
                 create_expander(sandbox.path(), &mut project, |task| {
                     task.deps.push(Target::parse("project:task").unwrap());
                 })
-                .expand_deps("task", no_query)
+                .expand_deps("task", |i| query.none(i))
                 .unwrap();
 
                 assert_eq!(project.get_task("task").unwrap().deps, vec![]);
@@ -448,26 +485,14 @@ mod tasks_expander {
             fn refs_other_project_tasks() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
 
                 create_expander(sandbox.path(), &mut project, |task| {
                     task.deps.push(Target::parse("foo:build").unwrap());
                     task.deps.push(Target::parse("bar:lint").unwrap());
                     task.deps.push(Target::parse("baz:test").unwrap());
                 })
-                .expand_deps("task", |input| {
-                    Ok(vec![
-                    //     Arc::new(create_project_with_tasks(
-                    //     sandbox.path(),
-                    //     if input.contains("foo") {
-                    //         "foo"
-                    //     } else if input.contains("bar") {
-                    //         "bar"
-                    //     } else {
-                    //         "baz"
-                    //     },
-                    // ))
-                    ])
-                })
+                .expand_deps("task", |i| query.filtered(i))
                 .unwrap();
 
                 assert_eq!(
@@ -487,11 +512,12 @@ mod tasks_expander {
             fn errors_unknown_task() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
 
                 create_expander(sandbox.path(), &mut project, |task| {
                     task.deps.push(Target::parse("foo:unknown").unwrap());
                 })
-                .expand_deps("task", no_query)
+                .expand_deps("task", |i| query.none(i))
                 .unwrap();
             }
 
@@ -502,12 +528,13 @@ mod tasks_expander {
             fn errors_for_persistent_chain() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
 
                 create_expander(sandbox.path(), &mut project, |task| {
                     task.options.persistent = false;
                     task.deps.push(Target::parse("foo:dev").unwrap());
                 })
-                .expand_deps("task", do_query)
+                .expand_deps("task", |i| query.all(i))
                 .unwrap();
             }
         }
@@ -519,11 +546,12 @@ mod tasks_expander {
             fn no_tags() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
 
                 create_expander(sandbox.path(), &mut project, |task| {
                     task.deps.push(Target::parse("#tag:build").unwrap());
                 })
-                .expand_deps("task", no_query) // Tested here
+                .expand_deps("task", |i| query.none(i)) // Tested here
                 .unwrap();
 
                 assert_eq!(project.get_task("task").unwrap().deps, vec![]);
@@ -533,11 +561,12 @@ mod tasks_expander {
             fn returns_tasks_of_same_name() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
 
                 create_expander(sandbox.path(), &mut project, |task| {
                     task.deps.push(Target::parse("#tag:build").unwrap());
                 })
-                .expand_deps("task", do_query)
+                .expand_deps("task", |i| query.all(i))
                 .unwrap();
 
                 assert_eq!(
@@ -555,13 +584,12 @@ mod tasks_expander {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
 
-                let cloned_project = Arc::new(project.clone());
+                let cloned_project = project.clone();
 
                 create_expander(sandbox.path(), &mut project, |task| {
                     task.deps.push(Target::parse("#tag:task").unwrap());
                 })
-                // .expand_deps("task", move |_| Ok(vec![cloned_project.clone()]))
-                .expand_deps("task", move |_| Ok(vec![]))
+                .expand_deps("task", |_| Ok(vec![&cloned_project]))
                 .unwrap();
 
                 assert_eq!(project.get_task("task").unwrap().deps, vec![]);
@@ -574,12 +602,13 @@ mod tasks_expander {
             fn errors_for_persistent_chain() {
                 let sandbox = create_empty_sandbox();
                 let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
 
                 create_expander(sandbox.path(), &mut project, |task| {
                     task.options.persistent = false;
                     task.deps.push(Target::parse("#tag:dev").unwrap());
                 })
-                .expand_deps("task", do_query)
+                .expand_deps("task", |i| query.all(i))
                 .unwrap();
             }
         }

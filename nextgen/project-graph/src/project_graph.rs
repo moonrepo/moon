@@ -236,7 +236,7 @@ impl ProjectGraph {
     }
 
     fn expand_project(&self, id: &Id) -> miette::Result<Project> {
-        debug!(id = id.as_str(), "Expanding project {}", color::id(&id));
+        debug!(id = id.as_str(), "Expanding project {}", color::id(id));
 
         let unexpanded_project = self.get_unexpanded(id)?;
         let mut project = unexpanded_project.to_owned();
@@ -261,7 +261,7 @@ impl ProjectGraph {
         for task_id in unexpanded_project.tasks.keys() {
             // Resolve in this order!
             expander.expand_env(task_id)?;
-            expander.expand_deps(task_id, &query)?;
+            expander.expand_deps(task_id, query)?;
             expander.expand_inputs(task_id)?;
             expander.expand_outputs(task_id)?;
             expander.expand_args(task_id)?;

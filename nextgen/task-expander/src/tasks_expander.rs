@@ -210,7 +210,7 @@ impl<'proj> TasksExpander<'proj> {
                         };
 
                         for dep_project in query(input)? {
-                            check_and_push_dep(&dep_project, &dep_target.task_id, true)?;
+                            check_and_push_dep(dep_project, &dep_target.task_id, true)?;
                         }
                     }
                 }
@@ -245,7 +245,7 @@ impl<'proj> TasksExpander<'proj> {
                         }
 
                         for dep_project in results {
-                            check_and_push_dep(&dep_project, &dep_target.task_id, false)?;
+                            check_and_push_dep(dep_project, &dep_target.task_id, false)?;
                         }
                     }
                 }
@@ -255,7 +255,7 @@ impl<'proj> TasksExpander<'proj> {
                         if dep_project.id == project.id {
                             // Avoid circular references
                         } else {
-                            check_and_push_dep(&dep_project, &dep_target.task_id, true)?;
+                            check_and_push_dep(dep_project, &dep_target.task_id, true)?;
                         }
                     }
                 }

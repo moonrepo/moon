@@ -23,7 +23,7 @@ pub struct DetectPlatformEvent {
 }
 
 impl Event for DetectPlatformEvent {
-    type Value = PlatformType;
+    type Data = PlatformType;
 }
 
 pub struct TasksBuilderContext<'proj> {
@@ -328,7 +328,7 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         if task.platform.is_unknown() {
-            let (_, result) = self
+            let platform = self
                 .context
                 .detect_platform
                 .emit(DetectPlatformEvent {
@@ -336,8 +336,6 @@ impl<'proj> TasksBuilder<'proj> {
                     task_command: task.command.clone(),
                 })
                 .await?;
-
-            let platform = result.unwrap_or_default();
 
             task.platform = if platform.is_unknown() {
                 if self.project_platform.is_unknown() {

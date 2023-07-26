@@ -26,14 +26,14 @@ async fn build_tasks_with_config(
     let emitter = Emitter::<DetectPlatformEvent>::new();
 
     emitter
-        .on(|event: Arc<RwLock<DetectPlatformEvent>>| async move {
-            let event = event.read().await;
+        .on(
+            |event: Arc<DetectPlatformEvent>, data: Arc<RwLock<PlatformType>>| async move {
+                let mut data = data.write().await;
+                *data = detect_task_platform(&event.task_command, &event.enabled_platforms);
 
-            Ok(EventState::Return(detect_task_platform(
-                &event.task_command,
-                &event.enabled_platforms,
-            )))
-        })
+                Ok(EventState::Stop)
+            },
+        )
         .await;
 
     let mut builder = TasksBuilder::new(

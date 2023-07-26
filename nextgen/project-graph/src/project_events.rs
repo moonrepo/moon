@@ -11,13 +11,15 @@ use std::path::PathBuf;
 pub struct ExtendProjectGraphEvent {
     pub sources: FxHashMap<Id, WorkspaceRelativePathBuf>,
     pub workspace_root: PathBuf,
+}
 
-    // Mutable values
-    pub extended_aliases: FxHashMap<String, Id>,
+#[derive(Debug, Default)]
+pub struct ExtendProjectGraphData {
+    pub aliases: FxHashMap<String, Id>,
 }
 
 impl Event for ExtendProjectGraphEvent {
-    type Value = ();
+    type Data = ExtendProjectGraphData;
 }
 
 // Extend an individual project with implicit dependencies or inferred tasks.
@@ -27,12 +29,14 @@ pub struct ExtendProjectEvent {
     pub project_id: Id,
     pub project_source: WorkspaceRelativePathBuf,
     pub workspace_root: PathBuf,
+}
 
-    // Mutable values
-    pub extended_dependencies: Vec<DependencyConfig>,
-    pub extended_tasks: FxHashMap<Id, TaskConfig>,
+#[derive(Debug, Default)]
+pub struct ExtendProjectData {
+    pub dependencies: Vec<DependencyConfig>,
+    pub tasks: FxHashMap<Id, TaskConfig>,
 }
 
 impl Event for ExtendProjectEvent {
-    type Value = ();
+    type Data = ExtendProjectData;
 }

@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+moon_config = { path = "../../../nextgen/config" }
 moon_deno_platform = { path = "../../deno/platform" }
 moon_dep_graph = { path = "../dep-graph" }
 moon_hash = { path = "../../../nextgen/hash" }

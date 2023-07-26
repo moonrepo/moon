@@ -40,13 +40,14 @@ impl Stub {
 
     pub async fn create_builder(&self) -> ProjectBuilder {
         self.detect_language
-            .on(|event: Arc<RwLock<DetectLanguageEvent>>| async move {
-                let event = event.read().await;
+            .on(
+                |event: Arc<DetectLanguageEvent>, data: Arc<RwLock<LanguageType>>| async move {
+                    let mut data = data.write().await;
+                    *data = detect_project_language(&event.project_root);
 
-                Ok(EventState::Return(detect_project_language(
-                    &event.project_root,
-                )))
-            })
+                    Ok(EventState::Stop)
+                },
+            )
             .await;
 
         ProjectBuilder::new(

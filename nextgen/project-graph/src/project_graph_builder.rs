@@ -277,24 +277,22 @@ impl<'app> ProjectGraphBuilder<'app> {
         builder.load_local_config().await?;
         builder.inherit_global_config(context.inherited_tasks)?;
 
-        let (event, _) = context
+        let extended_data = context
             .extend_project
             .emit(ExtendProjectEvent {
                 project_id: id.to_owned(),
                 project_source: source.to_owned(),
                 workspace_root: context.workspace_root.to_owned(),
-                extended_dependencies: vec![],
-                extended_tasks: FxHashMap::default(),
             })
             .await?;
 
         // Inherit implicit dependencies
-        for dep_config in event.extended_dependencies {
+        for dep_config in extended_data.dependencies {
             builder.extend_with_dependency(dep_config);
         }
 
         // Inherit inferred tasks
-        for (task_id, task_config) in event.extended_tasks {
+        for (task_id, task_config) in extended_data.tasks {
             builder.extend_with_task(task_id, task_config);
         }
 
@@ -426,17 +424,16 @@ impl<'app> ProjectGraphBuilder<'app> {
         // Extend graph from subscribers
         debug!("Extending project graph from subscribers");
 
-        let (event, _) = context
+        let extended_data = context
             .extend_project_graph
             .emit(ExtendProjectGraphEvent {
-                sources,
+                sources: sources.clone(),
                 workspace_root: context.workspace_root.to_owned(),
-                extended_aliases: FxHashMap::default(),
             })
             .await?;
 
-        self.sources = event.sources;
-        self.aliases = event.extended_aliases;
+        self.sources = sources;
+        self.aliases = extended_data.aliases;
 
         Ok(())
     }

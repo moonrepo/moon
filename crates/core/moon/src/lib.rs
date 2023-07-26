@@ -1,3 +1,4 @@
+use moon_config::LanguageType;
 use moon_deno_platform::DenoPlatform;
 use moon_dep_graph::DepGraphBuilder;
 use moon_hash::HashEngine;
@@ -5,14 +6,14 @@ use moon_node_platform::NodePlatform;
 use moon_platform::{PlatformManager, PlatformType};
 use moon_platform_detector::{detect_project_language, detect_task_platform};
 use moon_project_graph2::{
-    DetectLanguageEvent, DetectPlatformEvent, ExtendProjectEvent, ExtendProjectGraphEvent,
-    ProjectGraph, ProjectGraphBuilder, ProjectGraphBuilderContext,
+    DetectLanguageEvent, DetectPlatformEvent, ExtendProjectData, ExtendProjectEvent,
+    ExtendProjectGraphData, ExtendProjectGraphEvent, ProjectGraph, ProjectGraphBuilder,
+    ProjectGraphBuilderContext,
 };
 use moon_rust_platform::RustPlatform;
 use moon_system_platform::SystemPlatform;
 use moon_utils::{is_ci, is_test_env};
 use moon_workspace::{Workspace, WorkspaceError};
-use rustc_hash::FxHashMap;
 use starbase_events::{Emitter, EventState};
 use std::env;
 use std::path::Path;
@@ -140,52 +141,36 @@ pub async fn create_project_graph_context(workspace: &Workspace) -> ProjectGraph
 
     context
         .extend_project
-        .on(|e: Arc<RwLock<ExtendProjectEvent>>| async move {
-            let mut dependencies = vec![];
-            let mut tasks = FxHashMap::default();
-
-            {
-                let event = e.read().await;
+        .on(
+            |event: Arc<ExtendProjectEvent>, data: Arc<RwLock<ExtendProjectData>>| async move {
+                let mut data = data.write().await;
 
                 for platform in PlatformManager::read().list() {
-                    dependencies.extend(platform.load_project_implicit_dependencies(
-                        &event.project_id,
-                        event.project_source.as_str(),
-                    )?);
+                    data.dependencies
+                        .extend(platform.load_project_implicit_dependencies(
+                            &event.project_id,
+                            event.project_source.as_str(),
+                        )?);
 
-                    tasks.extend(
+                    data.tasks.extend(
                         platform
                             .load_project_tasks(&event.project_id, event.project_source.as_str())?,
                     );
                 }
-            }
 
-            {
-                let mut event = e.write().await;
-                event.extended_dependencies.extend(dependencies);
-                event.extended_tasks.extend(tasks);
-            }
-
-            Ok(EventState::Continue)
-        })
+                Ok(EventState::Continue)
+            },
+        )
         .await;
 
     context
         .extend_project_graph
-        .on(|e: Arc<RwLock<ExtendProjectGraphEvent>>| async move {
-            let mut aliases = FxHashMap::default();
+        .on(|event: Arc<ExtendProjectGraphEvent>, data: Arc<RwLock<ExtendProjectGraphData>>| async move {
+            let mut data = data.write().await;
 
-            {
-                let event = e.read().await;
 
-                for platform in PlatformManager::write().list_mut() {
-                    platform.load_project_graph_aliases(&event.sources, &mut aliases)?;
-                }
-            }
-
-            {
-                let mut event = e.write().await;
-                event.extended_aliases.extend(aliases);
+            for platform in PlatformManager::write().list_mut() {
+                platform.load_project_graph_aliases(&event.sources, &mut data.aliases)?;
             }
 
             Ok(EventState::Continue)
@@ -194,25 +179,26 @@ pub async fn create_project_graph_context(workspace: &Workspace) -> ProjectGraph
 
     context
         .detect_language
-        .on(|event: Arc<RwLock<DetectLanguageEvent>>| async move {
-            let event = event.read().await;
+        .on(
+            |event: Arc<DetectLanguageEvent>, data: Arc<RwLock<LanguageType>>| async move {
+                let mut data = data.write().await;
+                *data = detect_project_language(&event.project_root);
 
-            Ok(EventState::Return(detect_project_language(
-                &event.project_root,
-            )))
-        })
+                Ok(EventState::Stop)
+            },
+        )
         .await;
 
     context
         .detect_platform
-        .on(|event: Arc<RwLock<DetectPlatformEvent>>| async move {
-            let event = event.read().await;
+        .on(
+            |event: Arc<DetectPlatformEvent>, data: Arc<RwLock<PlatformType>>| async move {
+                let mut data = data.write().await;
+                *data = detect_task_platform(&event.task_command, &event.enabled_platforms);
 
-            Ok(EventState::Return(detect_task_platform(
-                &event.task_command,
-                &event.enabled_platforms,
-            )))
-        })
+                Ok(EventState::Stop)
+            },
+        )
         .await;
 
     context

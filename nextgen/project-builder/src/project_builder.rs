@@ -21,7 +21,7 @@ pub struct DetectLanguageEvent {
 }
 
 impl Event for DetectLanguageEvent {
-    type Value = LanguageType;
+    type Data = LanguageType;
 }
 
 pub struct ProjectBuilderContext<'app> {
@@ -123,14 +123,17 @@ impl<'app> ProjectBuilder<'app> {
 
         // Use configured language or detect from environment
         self.language = if config.language == LanguageType::Unknown {
-            let (_, result) = self
+            let mut language = self
                 .context
                 .detect_language
                 .emit(DetectLanguageEvent {
                     project_root: self.project_root.clone(),
                 })
                 .await?;
-            let language = result.unwrap_or_else(|| config.language.clone());
+
+            if language == LanguageType::Unknown {
+                language = config.language.clone();
+            }
 
             trace!(
                 id = self.id.as_str(),

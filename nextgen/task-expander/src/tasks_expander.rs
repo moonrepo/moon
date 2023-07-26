@@ -8,28 +8,27 @@ use moon_task::{Target, TargetScope, Task};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::env;
 use std::path::Path;
-use std::sync::Arc;
 use tracing::{trace, warn};
 
 fn substitute_env_var(value: &str, env_map: &FxHashMap<String, String>) -> String {
     patterns::ENV_VAR_SUBSTITUTE.replace_all(
         value,
         |caps: &patterns::Captures| {
-            let name = caps.get(1).unwrap().as_str();
-            let value = match env_map.get(name) {
-                Some(var) => var.to_owned(),
-                None => env::var(name).unwrap_or_default(),
-            };
+            // First with wrapping {}, then without
+            let name = caps.get(1).or_else(|| caps.get(2)).unwrap().as_str();
 
-            if value.is_empty() {
-                warn!(
-                    "Task value `{}` contains the environment variable ${}, but this variable is either not set or is empty. Substituting with an empty string.",
-                    value,
-                    name
-                );
+            match env_map.get(name).map(|v| v.to_owned()).or_else(|| env::var(name).ok()) {
+                Some(var) => var,
+                None => {
+                     warn!(
+                        "Task value `{}` contains the environment variable ${}, but this variable is not set. Not substituting and keeping as-is.",
+                        value,
+                        name
+                    );
+
+                    caps.get(0).unwrap().as_str().to_owned()
+                }
             }
-
-            value
         })
     .to_string()
 }
@@ -40,9 +39,13 @@ pub struct TasksExpander<'proj> {
 }
 
 impl<'proj> TasksExpander<'proj> {
-    pub fn expand<F>(project: &mut Project, workspace_root: &Path, query: F) -> miette::Result<()>
+    pub fn expand<F>(
+        project: &'proj mut Project,
+        workspace_root: &'proj Path,
+        query: F,
+    ) -> miette::Result<()>
     where
-        F: Fn(String) -> miette::Result<Vec<Arc<Project>>>,
+        F: Fn(String) -> miette::Result<Vec<&'proj Project>>,
     {
         // We unfortunately need to clone the keys here since we can't
         // borrow the project mutably (for the expander) while we're
@@ -154,7 +157,7 @@ impl<'proj> TasksExpander<'proj> {
 
     pub fn expand_deps<F>(&mut self, task_id: &str, query: F) -> miette::Result<()>
     where
-        F: Fn(String) -> miette::Result<Vec<Arc<Project>>>,
+        F: Fn(String) -> miette::Result<Vec<&'proj Project>>,
     {
         let task = self.get_task(task_id);
 

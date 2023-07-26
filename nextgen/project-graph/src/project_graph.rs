@@ -37,7 +37,7 @@ pub struct ProjectNode {
 
 #[derive(Default)]
 pub struct ProjectGraph {
-    /// Direct-acyclic graph of non-expanded projects and their dependencies.
+    /// Directed-acyclic graph (DAG) of non-expanded projects and their dependencies.
     graph: GraphType,
 
     /// Graph node information, mapped by project ID.
@@ -97,35 +97,31 @@ impl ProjectGraph {
     /// Return a project with the provided ID or alias from the graph.
     /// If the project does not exist or has been misconfigured, return an error.
     pub fn get(&self, alias_or_id: &str) -> miette::Result<Arc<Project>> {
-        let id = if self.nodes.contains_key(alias_or_id) {
-            alias_or_id
-        } else {
-            self.nodes
-                .iter()
-                .find(|(_, node)| node.alias.as_ref().is_some_and(|a| a == alias_or_id))
-                .map(|(id, _)| id.as_str())
-                .unwrap_or(alias_or_id)
-        };
+        let id = self.resolve_id(alias_or_id);
 
         // Check if the expanded project has been created, if so return it
         {
-            if let Some(project) = self.read_cache().get(id) {
-                return Ok(project.clone());
+            if let Some(project) = self.read_cache().get(&id) {
+                return Ok(Arc::clone(project));
             }
         }
 
         // Otherwise clone and expand the project
-        debug!(id = id, "Expanding project {}", color::id(id),);
+        debug!(id = id.as_str(), "Expanding project {}", color::id(&id));
 
-        let node = self
-            .nodes
-            .get(id)
-            .ok_or_else(|| ProjectGraphError::UnconfiguredID(Id::raw(id)))?;
-
-        let mut project = self.graph.node_weight(node.index).unwrap().clone();
+        let mut project = self.get_unexpanded(&id)?.to_owned();
 
         TasksExpander::expand(&mut project, &self.workspace_root, |input| {
-            self.query(build_query(input)?)
+            let mut results = vec![];
+
+            // Don't get() the expanded projects, since it'll overflow the
+            // stack trying to recursively expand projects! Using unexpanded
+            // dependent projects works just fine for the expansion process.
+            for id in self.raw_query(build_query(input)?)? {
+                results.push(self.get_unexpanded(id)?);
+            }
+
+            Ok(results)
         })?;
 
         // And then cache it with an Arc, allowing for reuse
@@ -134,7 +130,7 @@ impl ProjectGraph {
                 .insert(project.id.clone(), Arc::new(project));
         }
 
-        Ok(self.read_cache().get(id).unwrap().clone())
+        Ok(self.read_cache().get(&id).unwrap().clone())
     }
 
     /// Return all projects from the graph.
@@ -207,43 +203,11 @@ impl ProjectGraph {
         self.graph.map(|_, n| n.id.to_string(), |_, e| *e)
     }
 
-    /// Return all projects that match the query criteria.
+    /// Return all expanded projects that match the query criteria.
     pub fn query<Q: AsRef<Criteria>>(&self, query: Q) -> miette::Result<Vec<Arc<Project>>> {
-        let query = query.as_ref();
-        let query_input = query
-            .input
-            .clone()
-            .expect("Querying the project graph requires a query input string.");
-
-        let ids: miette::Result<&[Id]> = self.query_cache.try_insert(query_input.clone(), |_| {
-            debug!("Querying projects with {}", color::shell(query_input));
-
-            let mut project_ids = vec![];
-
-            // Don't use `get_all` as it recursively calls `query`,
-            // which runs into a deadlock! This should be faster also...
-            for node in self.graph.raw_nodes() {
-                let project = &node.weight;
-
-                if project.matches_criteria(query)? {
-                    debug!("{} did match the criteria", color::id(&project.id));
-
-                    project_ids.push(project.id.clone());
-                } else {
-                    trace!(
-                        "{} did {} match the criteria",
-                        color::id(&project.id),
-                        color::failure("NOT"),
-                    );
-                }
-            }
-
-            Ok(project_ids)
-        });
-
         let mut projects = vec![];
 
-        for id in ids? {
+        for id in self.raw_query(query)? {
             projects.push(self.get(id)?);
         }
 
@@ -276,6 +240,7 @@ impl ProjectGraph {
         format!("{dot:?}")
     }
 
+    /// Format graph as a JSON string.
     pub fn to_json(&self) -> miette::Result<String> {
         let projects = self.read_cache();
 
@@ -284,6 +249,61 @@ impl ProjectGraph {
             projects: &projects,
         })
         .into_diagnostic()
+    }
+
+    fn get_unexpanded(&self, id: &Id) -> miette::Result<&Project> {
+        let node = self
+            .nodes
+            .get(id)
+            .ok_or_else(|| ProjectGraphError::UnconfiguredID(id.to_owned()))?;
+
+        Ok(self.graph.node_weight(node.index).unwrap())
+    }
+
+    fn raw_query<Q: AsRef<Criteria>>(&self, query: Q) -> miette::Result<&[Id]> {
+        let query = query.as_ref();
+        let query_input = query
+            .input
+            .clone()
+            .expect("Querying the project graph requires a query input string.");
+
+        self.query_cache.try_insert(query_input.clone(), |_| {
+            debug!("Querying projects with {}", color::shell(query_input));
+
+            let mut project_ids = vec![];
+
+            // Don't use `get_all` as it recursively calls `query`,
+            // which runs into a deadlock! This should be faster also...
+            for node in self.graph.raw_nodes() {
+                let project = &node.weight;
+
+                if project.matches_criteria(query)? {
+                    debug!("{} did match the criteria", color::id(&project.id));
+
+                    project_ids.push(project.id.clone());
+                } else {
+                    trace!(
+                        "{} did {} match the criteria",
+                        color::id(&project.id),
+                        color::failure("NOT"),
+                    );
+                }
+            }
+
+            Ok(project_ids)
+        })
+    }
+
+    fn resolve_id(&self, alias_or_id: &str) -> Id {
+        Id::raw(if self.nodes.contains_key(alias_or_id) {
+            alias_or_id
+        } else {
+            self.nodes
+                .iter()
+                .find(|(_, node)| node.alias.as_ref().is_some_and(|a| a == alias_or_id))
+                .map(|(id, _)| id.as_str())
+                .unwrap_or(alias_or_id)
+        })
     }
 
     fn read_cache(&self) -> RwLockReadGuard<ProjectsCache> {

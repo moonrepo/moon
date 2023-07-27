@@ -2,7 +2,7 @@ use crate::project_graph_error::ProjectGraphError;
 use miette::IntoDiagnostic;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{color, Id};
-use moon_config::DependencyScope;
+use moon_config::{DependencyConfig, DependencyScope};
 use moon_project::Project;
 use moon_query::{build_query, Criteria, Queryable};
 use moon_task_expander::TasksExpander;
@@ -240,6 +240,25 @@ impl ProjectGraph {
 
         let unexpanded_project = self.get_unexpanded(id)?;
         let mut project = unexpanded_project.to_owned();
+
+        // Expand and flatten depends on
+        let mut depends_on = FxHashMap::default();
+
+        for (dep_id, dep_config) in project.dependencies {
+            let new_dep_id = self.resolve_id(&dep_id);
+
+            depends_on.insert(
+                new_dep_id.clone(),
+                DependencyConfig {
+                    id: new_dep_id,
+                    ..dep_config
+                },
+            );
+        }
+
+        project.dependencies = depends_on;
+
+        // Expand tasks
         let mut expander = TasksExpander {
             project: &mut project,
             workspace_root: &self.workspace_root,

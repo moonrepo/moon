@@ -201,7 +201,7 @@ impl<'proj> TasksExpander<'proj> {
                         dep_ids.sort();
 
                         let input = if dep_ids.len() == 1 {
-                            format!("project={id} || projectAlias={id}", id = dep_ids.join(""))
+                            format!("project={id} || projectAlias={id}", id = dep_ids[0])
                         } else {
                             format!(
                                 "project=[{ids}] || projectAlias=[{ids}]",

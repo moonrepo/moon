@@ -29,5 +29,6 @@ thiserror = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
+moon_target = { path = "../target" }
 starbase_sandbox = { workspace = true }
 tokio = { workspace = true }

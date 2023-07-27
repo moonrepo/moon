@@ -4,7 +4,7 @@
 
 import type { PartialTaskConfig, PlatformType, TaskConfig } from './tasks-config';
 
-export type DependencyScope = 'development' | 'peer' | 'production';
+export type DependencyScope = 'build' | 'development' | 'peer' | 'production';
 
 export type DependencySource = 'explicit' | 'implicit';
 

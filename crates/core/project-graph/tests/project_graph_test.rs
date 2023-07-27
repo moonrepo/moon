@@ -17,37 +17,6 @@ use std::io::Write;
 use std::path::Path;
 
 
-#[tokio::test]
-async fn can_use_map_and_globs_setting() {
-    let workspace_config = PartialWorkspaceConfig {
-        projects: Some(PartialWorkspaceProjects::Both(
-            PartialWorkspaceProjectsConfig {
-                globs: Some(string_vec!["deps/*"]),
-                sources: Some(FxHashMap::from_iter([
-                    ("basic".into(), "basic".to_owned()),
-                    ("noConfig".into(), "no-config".to_owned()),
-                ])),
-            },
-        )),
-        ..PartialWorkspaceConfig::default()
-    };
-
-    let sandbox = create_sandbox_with_config("projects", Some(workspace_config), None, None);
-
-    let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
-    let graph = generate_project_graph(&mut workspace).await.unwrap();
-
-    assert_eq!(
-        graph.sources,
-        FxHashMap::from_iter([
-            ("noConfig".into(), "no-config".to_owned()),
-            ("bar".into(), "deps/bar".to_owned()),
-            ("basic".into(), "basic".to_owned()),
-            ("baz".into(), "deps/baz".to_owned()),
-            ("foo".into(), "deps/foo".to_owned()),
-        ])
-    );
-}
 
 #[tokio::test]
 async fn can_generate_with_deps_cycles() {

@@ -3,6 +3,7 @@ use moon_config::PartialTaskConfig;
 use moon_config::{
     DependencyConfig, DependencyScope, DependencySource, InheritedTasksManager, NodeConfig,
     PartialInheritedTasksConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
+    WorkspaceProjectsConfig,
 };
 use moon_project::Project;
 use moon_project_builder::DetectLanguageEvent;
@@ -105,14 +106,6 @@ impl GraphContainer {
     }
 }
 
-async fn generate_project_graph(fixture: &str) -> ProjectGraph {
-    let sandbox = create_sandbox(fixture);
-    let container = GraphContainer::new(sandbox.path());
-    let context = container.create_context();
-
-    container.build_graph(context).await
-}
-
 pub fn append_file<P: AsRef<Path>>(path: P, data: &str) {
     let mut file = OpenOptions::new()
         .write(true)
@@ -127,12 +120,103 @@ fn map_ids(ids: Vec<&Id>) -> Vec<String> {
     ids.iter().map(|id| id.to_string()).collect()
 }
 
+fn get_ids_from_projects(projects: Vec<Arc<Project>>) -> Vec<String> {
+    let mut ids = projects
+        .iter()
+        .map(|p| p.id.to_string())
+        .collect::<Vec<_>>();
+    ids.sort();
+    ids
+}
+
 mod project_graph {
     use super::*;
 
+    async fn generate_project_graph(fixture: &str) -> ProjectGraph {
+        let sandbox = create_sandbox(fixture);
+        let container = GraphContainer::new(sandbox.path());
+        let context = container.create_context();
+
+        container.build_graph(context).await
+    }
+
     // TODO
-    // source types
     // get by path
+
+    mod sources {
+        use super::*;
+
+        #[tokio::test]
+        async fn globs() {
+            let graph = generate_project_graph("dependencies").await;
+
+            assert_eq!(
+                get_ids_from_projects(graph.get_all().unwrap()),
+                ["a", "b", "c", "d"]
+            );
+        }
+
+        #[tokio::test]
+        async fn globs_with_root() {
+            let sandbox = create_sandbox("dependencies");
+            let root = sandbox.path().join("dir");
+
+            // Move files so that we can infer a compatible root project name
+            fs::copy_dir_all(sandbox.path(), sandbox.path(), &root).unwrap();
+
+            let mut container = GraphContainer::new(&root);
+
+            container.workspace_config.projects = WorkspaceProjects::Globs(string_vec!["*", "."]);
+
+            let context = container.create_context();
+            let graph = container.build_graph(context).await;
+
+            assert_eq!(
+                get_ids_from_projects(graph.get_all().unwrap()),
+                ["a", "b", "c", "d", "dir"]
+            );
+        }
+
+        #[tokio::test]
+        async fn paths() {
+            let sandbox = create_sandbox("dependencies");
+            let mut container = GraphContainer::new(sandbox.path());
+
+            container.workspace_config.projects =
+                WorkspaceProjects::Sources(FxHashMap::from_iter([
+                    ("a".into(), "a".into()),
+                    ("b".into(), "b".into()),
+                ]));
+
+            let context = container.create_context();
+            let graph = container.build_graph(context).await;
+
+            assert_eq!(get_ids_from_projects(graph.get_all().unwrap()), ["a", "b"]);
+        }
+
+        #[tokio::test]
+        async fn paths_and_globs() {
+            let sandbox = create_sandbox("dependencies");
+            let mut container = GraphContainer::new(sandbox.path());
+
+            container.workspace_config.projects =
+                WorkspaceProjects::Both(WorkspaceProjectsConfig {
+                    globs: string_vec!["{a,c}"],
+                    sources: FxHashMap::from_iter([
+                        ("b".into(), "b".into()),
+                        ("root".into(), ".".into()),
+                    ]),
+                });
+
+            let context = container.create_context();
+            let graph = container.build_graph(context).await;
+
+            assert_eq!(
+                get_ids_from_projects(graph.get_all().unwrap()),
+                ["a", "b", "c", "root"]
+            );
+        }
+    }
 
     mod cache {
         use super::*;
@@ -686,15 +770,6 @@ mod project_graph {
     mod query {
         use super::*;
 
-        fn get_ids(projects: Vec<Arc<Project>>) -> Vec<String> {
-            let mut ids = projects
-                .iter()
-                .map(|p| p.id.to_string())
-                .collect::<Vec<_>>();
-            ids.sort();
-            ids
-        }
-
         #[tokio::test]
         async fn by_language() {
             let graph = generate_project_graph("query").await;
@@ -703,7 +778,7 @@ mod project_graph {
                 .query(build_query("language!=[typescript,python]").unwrap())
                 .unwrap();
 
-            assert_eq!(get_ids(projects), vec!["a", "d"]);
+            assert_eq!(get_ids_from_projects(projects), vec!["a", "d"]);
         }
 
         #[tokio::test]
@@ -712,7 +787,7 @@ mod project_graph {
 
             let projects = graph.query(build_query("project~{b,d}").unwrap()).unwrap();
 
-            assert_eq!(get_ids(projects), vec!["b", "d"]);
+            assert_eq!(get_ids_from_projects(projects), vec!["b", "d"]);
         }
 
         #[tokio::test]
@@ -723,7 +798,7 @@ mod project_graph {
                 .query(build_query("projectType!=[library]").unwrap())
                 .unwrap();
 
-            assert_eq!(get_ids(projects), vec!["a", "c"]);
+            assert_eq!(get_ids_from_projects(projects), vec!["a", "c"]);
         }
 
         #[tokio::test]
@@ -734,7 +809,7 @@ mod project_graph {
                 .query(build_query("projectSource~a").unwrap())
                 .unwrap();
 
-            assert_eq!(get_ids(projects), vec!["a"]);
+            assert_eq!(get_ids_from_projects(projects), vec!["a"]);
         }
 
         #[tokio::test]
@@ -745,7 +820,7 @@ mod project_graph {
                 .query(build_query("tag=[three,five]").unwrap())
                 .unwrap();
 
-            assert_eq!(get_ids(projects), vec!["b", "c"]);
+            assert_eq!(get_ids_from_projects(projects), vec!["b", "c"]);
         }
 
         #[tokio::test]
@@ -756,7 +831,7 @@ mod project_graph {
                 .query(build_query("task=[test,build]").unwrap())
                 .unwrap();
 
-            assert_eq!(get_ids(projects), vec!["a", "c", "d"]);
+            assert_eq!(get_ids_from_projects(projects), vec!["a", "c", "d"]);
         }
 
         #[tokio::test]
@@ -767,13 +842,13 @@ mod project_graph {
                 .query(build_query("taskPlatform=[node]").unwrap())
                 .unwrap();
 
-            assert_eq!(get_ids(projects), vec!["a", "b"]);
+            assert_eq!(get_ids_from_projects(projects), vec!["a", "b"]);
 
             let projects = graph
                 .query(build_query("taskPlatform=system").unwrap())
                 .unwrap();
 
-            assert_eq!(get_ids(projects), vec!["c", "d"]);
+            assert_eq!(get_ids_from_projects(projects), vec!["c", "d"]);
         }
 
         #[tokio::test]
@@ -782,7 +857,7 @@ mod project_graph {
 
             let projects = graph.query(build_query("taskType=run").unwrap()).unwrap();
 
-            assert_eq!(get_ids(projects), vec!["a"]);
+            assert_eq!(get_ids_from_projects(projects), vec!["a"]);
         }
 
         #[tokio::test]
@@ -793,7 +868,7 @@ mod project_graph {
                 .query(build_query("task=build && taskPlatform=deno").unwrap())
                 .unwrap();
 
-            assert_eq!(get_ids(projects), vec!["d"]);
+            assert_eq!(get_ids_from_projects(projects), vec!["d"]);
         }
 
         #[tokio::test]
@@ -804,7 +879,7 @@ mod project_graph {
                 .query(build_query("language=javascript || language=typescript").unwrap())
                 .unwrap();
 
-            assert_eq!(get_ids(projects), vec!["a", "b"]);
+            assert_eq!(get_ids_from_projects(projects), vec!["a", "b"]);
         }
 
         #[tokio::test]
@@ -815,7 +890,7 @@ mod project_graph {
                 .query(build_query("projectType=library && (taskType=build || tag=three)").unwrap())
                 .unwrap();
 
-            assert_eq!(get_ids(projects), vec!["b", "d"]);
+            assert_eq!(get_ids_from_projects(projects), vec!["b", "d"]);
         }
     }
 

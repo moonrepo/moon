@@ -4,19 +4,23 @@ use moon_config::{
     DependencyConfig, DependencyScope, DependencySource, InheritedTasksManager, NodeConfig,
     PartialInheritedTasksConfig, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
 };
+use moon_project::Project;
 use moon_project_builder::DetectLanguageEvent;
 use moon_project_graph2::{
     ExtendProjectData, ExtendProjectEvent, ExtendProjectGraphData, ExtendProjectGraphEvent,
     ProjectGraph, ProjectGraphBuilder, ProjectGraphBuilderContext,
 };
+use moon_query::build_query;
 use moon_target::Target;
 use moon_task_builder::DetectPlatformEvent;
 use rustc_hash::FxHashMap;
 use starbase_events::{Emitter, EventState};
-use starbase_sandbox::{assert_snapshot, create_sandbox};
+use starbase_sandbox::{assert_snapshot, create_sandbox, Sandbox};
 use starbase_utils::fs;
 use starbase_utils::string_vec;
 use std::collections::BTreeMap;
+use std::fs::OpenOptions;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -79,6 +83,26 @@ impl GraphContainer {
         graph.get_all().unwrap();
         graph
     }
+
+    pub async fn build_graph_for<'l>(
+        &self,
+        context: ProjectGraphBuilderContext<'l>,
+        ids: &[&str],
+    ) -> ProjectGraph {
+        let mut builder = ProjectGraphBuilder::new(context).await.unwrap();
+
+        for id in ids {
+            builder.load(id).await.unwrap();
+        }
+
+        let graph = builder.build().await.unwrap();
+
+        for id in ids {
+            graph.get(id).unwrap();
+        }
+
+        graph
+    }
 }
 
 async fn generate_project_graph(fixture: &str) -> ProjectGraph {
@@ -89,6 +113,16 @@ async fn generate_project_graph(fixture: &str) -> ProjectGraph {
     container.build_graph(context).await
 }
 
+pub fn append_file<P: AsRef<Path>>(path: P, data: &str) {
+    let mut file = OpenOptions::new()
+        .write(true)
+        .append(true)
+        .open(path.as_ref())
+        .unwrap();
+
+    writeln!(file, "\n\n{data}").unwrap();
+}
+
 fn map_ids(ids: Vec<&Id>) -> Vec<String> {
     ids.iter().map(|id| id.to_string()).collect()
 }
@@ -96,15 +130,36 @@ fn map_ids(ids: Vec<&Id>) -> Vec<String> {
 mod project_graph {
     use super::*;
 
-    mod dependencies {
+    // TODO
+    // source types
+    // get by path
+
+    mod cache {
         use super::*;
 
-        #[tokio::test]
-        async fn explicit_depends_on() {
-            let graph = generate_project_graph("dependencies").await;
+        // TODO
+    }
 
-            assert_snapshot!(graph.to_dot());
-        }
+    mod cycles {
+        use super::*;
+
+        // TODO
+    }
+
+    mod inheritance {
+        use super::*;
+
+        // TODO
+    }
+
+    mod expansion {
+        use super::*;
+
+        // TODO
+    }
+
+    mod dependencies {
+        use super::*;
 
         #[tokio::test]
         async fn lists_ids_of_dependencies() {
@@ -337,6 +392,451 @@ mod project_graph {
                     Target::parse("implicit:noop").unwrap(),
                 ]
             );
+        }
+    }
+
+    mod type_constraints {
+        use super::*;
+
+        async fn generate_type_constraints_project_graph(
+            func: impl FnOnce(&Sandbox),
+        ) -> ProjectGraph {
+            let sandbox = create_sandbox("type-constraints");
+
+            func(&sandbox);
+
+            let mut container = GraphContainer::new(sandbox.path());
+
+            container
+                .workspace_config
+                .constraints
+                .enforce_project_type_relationships = true;
+
+            let context = container.create_context();
+
+            container.build_graph(context).await
+        }
+
+        #[tokio::test]
+        async fn app_can_use_unknown() {
+            generate_type_constraints_project_graph(|sandbox| {
+                append_file(sandbox.path().join("app/moon.yml"), "dependsOn: [unknown]");
+            })
+            .await;
+        }
+
+        #[tokio::test]
+        async fn app_can_use_library() {
+            generate_type_constraints_project_graph(|sandbox| {
+                append_file(sandbox.path().join("app/moon.yml"), "dependsOn: [library]");
+            })
+            .await;
+        }
+
+        #[tokio::test]
+        async fn app_can_use_tool() {
+            generate_type_constraints_project_graph(|sandbox| {
+                append_file(sandbox.path().join("app/moon.yml"), "dependsOn: [tool]");
+            })
+            .await;
+        }
+
+        #[tokio::test]
+        #[should_panic(
+            expected = "Invalid project relationship. Project app of type application cannot"
+        )]
+        async fn app_cannot_use_app() {
+            generate_type_constraints_project_graph(|sandbox| {
+                append_file(
+                    sandbox.path().join("app/moon.yml"),
+                    "dependsOn: [app-other]",
+                );
+            })
+            .await;
+        }
+
+        #[tokio::test]
+        async fn library_can_use_unknown() {
+            generate_type_constraints_project_graph(|sandbox| {
+                append_file(
+                    sandbox.path().join("library/moon.yml"),
+                    "dependsOn: [unknown]",
+                );
+            })
+            .await;
+        }
+
+        #[tokio::test]
+        async fn library_can_use_library() {
+            generate_type_constraints_project_graph(|sandbox| {
+                append_file(
+                    sandbox.path().join("library/moon.yml"),
+                    "dependsOn: [library-other]",
+                );
+            })
+            .await;
+        }
+
+        #[tokio::test]
+        #[should_panic(
+            expected = "Invalid project relationship. Project library of type library cannot"
+        )]
+        async fn library_cannot_use_app() {
+            generate_type_constraints_project_graph(|sandbox| {
+                append_file(sandbox.path().join("library/moon.yml"), "dependsOn: [app]");
+            })
+            .await;
+        }
+
+        #[tokio::test]
+        #[should_panic(
+            expected = "Invalid project relationship. Project library of type library cannot"
+        )]
+        async fn library_cannot_use_tool() {
+            generate_type_constraints_project_graph(|sandbox| {
+                append_file(sandbox.path().join("library/moon.yml"), "dependsOn: [tool]");
+            })
+            .await;
+        }
+
+        #[tokio::test]
+        async fn tool_can_use_unknown() {
+            generate_type_constraints_project_graph(|sandbox| {
+                append_file(sandbox.path().join("tool/moon.yml"), "dependsOn: [unknown]");
+            })
+            .await;
+        }
+
+        #[tokio::test]
+        async fn tool_can_use_library() {
+            generate_type_constraints_project_graph(|sandbox| {
+                append_file(sandbox.path().join("tool/moon.yml"), "dependsOn: [library]");
+            })
+            .await;
+        }
+
+        #[tokio::test]
+        #[should_panic(expected = "Invalid project relationship. Project tool of type tool cannot")]
+        async fn tool_cannot_use_app() {
+            generate_type_constraints_project_graph(|sandbox| {
+                append_file(sandbox.path().join("tool/moon.yml"), "dependsOn: [app]");
+            })
+            .await;
+        }
+
+        #[tokio::test]
+        #[should_panic(expected = "Invalid project relationship. Project tool of type tool cannot")]
+        async fn tool_cannot_use_tool() {
+            generate_type_constraints_project_graph(|sandbox| {
+                append_file(
+                    sandbox.path().join("tool/moon.yml"),
+                    "dependsOn: [tool-other]",
+                );
+            })
+            .await;
+        }
+    }
+
+    mod tag_constraints {
+        use super::*;
+
+        async fn generate_tag_constraints_project_graph(
+            func: impl FnOnce(&Sandbox),
+        ) -> ProjectGraph {
+            let sandbox = create_sandbox("tag-constraints");
+
+            func(&sandbox);
+
+            let mut container = GraphContainer::new(sandbox.path());
+
+            container
+                .workspace_config
+                .constraints
+                .tag_relationships
+                .insert(
+                    "warrior".into(),
+                    vec![Id::raw("barbarian"), Id::raw("paladin"), Id::raw("druid")],
+                );
+
+            container
+                .workspace_config
+                .constraints
+                .tag_relationships
+                .insert(
+                    "mage".into(),
+                    vec![Id::raw("wizard"), Id::raw("sorcerer"), Id::raw("druid")],
+                );
+
+            let context = container.create_context();
+
+            container.build_graph(context).await
+        }
+
+        #[tokio::test]
+        async fn can_depon_tags_but_self_empty() {
+            generate_tag_constraints_project_graph(|sandbox| {
+                append_file(sandbox.path().join("a/moon.yml"), "dependsOn: [b, c]");
+                append_file(sandbox.path().join("b/moon.yml"), "tags: [barbarian]");
+                append_file(sandbox.path().join("c/moon.yml"), "tags: [druid]");
+            })
+            .await;
+        }
+
+        #[tokio::test]
+        async fn ignores_unconfigured_relationships() {
+            generate_tag_constraints_project_graph(|sandbox| {
+                append_file(sandbox.path().join("a/moon.yml"), "dependsOn: [b, c]");
+                append_file(sandbox.path().join("b/moon.yml"), "tags: [some]");
+                append_file(sandbox.path().join("c/moon.yml"), "tags: [value]");
+            })
+            .await;
+        }
+
+        #[tokio::test]
+        async fn matches_with_source_tag() {
+            generate_tag_constraints_project_graph(|sandbox| {
+                append_file(
+                    sandbox.path().join("a/moon.yml"),
+                    "dependsOn: [b]\ntags: [warrior]",
+                );
+                append_file(sandbox.path().join("b/moon.yml"), "tags: [warrior]");
+            })
+            .await;
+        }
+
+        #[tokio::test]
+        #[should_panic(expected = "Invalid tag relationship. Project a with tag #warrior cannot")]
+        async fn errors_for_no_source_tag_match() {
+            generate_tag_constraints_project_graph(|sandbox| {
+                append_file(
+                    sandbox.path().join("a/moon.yml"),
+                    "dependsOn: [b]\ntags: [warrior]",
+                );
+                append_file(sandbox.path().join("b/moon.yml"), "tags: [other]");
+            })
+            .await;
+        }
+
+        #[tokio::test]
+        async fn matches_with_allowed_tag() {
+            generate_tag_constraints_project_graph(|sandbox| {
+                append_file(
+                    sandbox.path().join("a/moon.yml"),
+                    "dependsOn: [b]\ntags: [warrior]",
+                );
+                append_file(sandbox.path().join("b/moon.yml"), "tags: [barbarian]");
+            })
+            .await;
+        }
+
+        #[tokio::test]
+        #[should_panic(expected = "Invalid tag relationship. Project a with tag #warrior cannot")]
+        async fn errors_for_no_allowed_tag_match() {
+            generate_tag_constraints_project_graph(|sandbox| {
+                append_file(
+                    sandbox.path().join("a/moon.yml"),
+                    "dependsOn: [b]\ntags: [warrior]",
+                );
+                append_file(sandbox.path().join("b/moon.yml"), "tags: [other]");
+            })
+            .await;
+        }
+
+        #[tokio::test]
+        #[should_panic(expected = "Invalid tag relationship. Project a with tag #mage cannot")]
+        async fn errors_for_depon_empty_tags() {
+            generate_tag_constraints_project_graph(|sandbox| {
+                append_file(
+                    sandbox.path().join("a/moon.yml"),
+                    "dependsOn: [b]\ntags: [mage]",
+                );
+            })
+            .await;
+        }
+
+        #[tokio::test]
+        async fn matches_multiple_source_tags_to_a_single_allowed_tag() {
+            generate_tag_constraints_project_graph(|sandbox| {
+                append_file(
+                    sandbox.path().join("a/moon.yml"),
+                    "dependsOn: [b]\ntags: [warrior, mage]",
+                );
+                append_file(sandbox.path().join("b/moon.yml"), "tags: [druid]");
+            })
+            .await;
+        }
+
+        #[tokio::test]
+        async fn matches_single_source_tag_to_a_multiple_allowed_tags() {
+            generate_tag_constraints_project_graph(|sandbox| {
+                append_file(
+                    sandbox.path().join("a/moon.yml"),
+                    "dependsOn: [b, c]\ntags: [mage]",
+                );
+                append_file(sandbox.path().join("b/moon.yml"), "tags: [druid, wizard]");
+                append_file(
+                    sandbox.path().join("c/moon.yml"),
+                    "tags: [wizard, sorcerer, barbarian]",
+                );
+            })
+            .await;
+        }
+    }
+
+    mod query {
+        use super::*;
+
+        fn get_ids(projects: Vec<Arc<Project>>) -> Vec<String> {
+            let mut ids = projects
+                .iter()
+                .map(|p| p.id.to_string())
+                .collect::<Vec<_>>();
+            ids.sort();
+            ids
+        }
+
+        #[tokio::test]
+        async fn by_language() {
+            let graph = generate_project_graph("query").await;
+
+            let projects = graph
+                .query(build_query("language!=[typescript,python]").unwrap())
+                .unwrap();
+
+            assert_eq!(get_ids(projects), vec!["a", "d"]);
+        }
+
+        #[tokio::test]
+        async fn by_project() {
+            let graph = generate_project_graph("query").await;
+
+            let projects = graph.query(build_query("project~{b,d}").unwrap()).unwrap();
+
+            assert_eq!(get_ids(projects), vec!["b", "d"]);
+        }
+
+        #[tokio::test]
+        async fn by_project_type() {
+            let graph = generate_project_graph("query").await;
+
+            let projects = graph
+                .query(build_query("projectType!=[library]").unwrap())
+                .unwrap();
+
+            assert_eq!(get_ids(projects), vec!["a", "c"]);
+        }
+
+        #[tokio::test]
+        async fn by_project_source() {
+            let graph = generate_project_graph("query").await;
+
+            let projects = graph
+                .query(build_query("projectSource~a").unwrap())
+                .unwrap();
+
+            assert_eq!(get_ids(projects), vec!["a"]);
+        }
+
+        #[tokio::test]
+        async fn by_tag() {
+            let graph = generate_project_graph("query").await;
+
+            let projects = graph
+                .query(build_query("tag=[three,five]").unwrap())
+                .unwrap();
+
+            assert_eq!(get_ids(projects), vec!["b", "c"]);
+        }
+
+        #[tokio::test]
+        async fn by_task() {
+            let graph = generate_project_graph("query").await;
+
+            let projects = graph
+                .query(build_query("task=[test,build]").unwrap())
+                .unwrap();
+
+            assert_eq!(get_ids(projects), vec!["a", "c", "d"]);
+        }
+
+        #[tokio::test]
+        async fn by_task_platform() {
+            let graph = generate_project_graph("query").await;
+
+            let projects = graph
+                .query(build_query("taskPlatform=[node]").unwrap())
+                .unwrap();
+
+            assert_eq!(get_ids(projects), vec!["a", "b"]);
+
+            let projects = graph
+                .query(build_query("taskPlatform=system").unwrap())
+                .unwrap();
+
+            assert_eq!(get_ids(projects), vec!["c", "d"]);
+        }
+
+        #[tokio::test]
+        async fn by_task_type() {
+            let graph = generate_project_graph("query").await;
+
+            let projects = graph.query(build_query("taskType=run").unwrap()).unwrap();
+
+            assert_eq!(get_ids(projects), vec!["a"]);
+        }
+
+        #[tokio::test]
+        async fn with_and_conditions() {
+            let graph = generate_project_graph("query").await;
+
+            let projects = graph
+                .query(build_query("task=build && taskPlatform=deno").unwrap())
+                .unwrap();
+
+            assert_eq!(get_ids(projects), vec!["d"]);
+        }
+
+        #[tokio::test]
+        async fn with_or_conditions() {
+            let graph = generate_project_graph("query").await;
+
+            let projects = graph
+                .query(build_query("language=javascript || language=typescript").unwrap())
+                .unwrap();
+
+            assert_eq!(get_ids(projects), vec!["a", "b"]);
+        }
+
+        #[tokio::test]
+        async fn with_nested_conditions() {
+            let graph = generate_project_graph("query").await;
+
+            let projects = graph
+                .query(build_query("projectType=library && (taskType=build || tag=three)").unwrap())
+                .unwrap();
+
+            assert_eq!(get_ids(projects), vec!["b", "d"]);
+        }
+    }
+
+    mod to_dot {
+        use super::*;
+
+        #[tokio::test]
+        async fn renders_full() {
+            let graph = generate_project_graph("dependencies").await;
+
+            assert_snapshot!(graph.to_dot());
+        }
+
+        #[tokio::test]
+        async fn renders_partial() {
+            let sandbox = create_sandbox("dependencies");
+            let container = GraphContainer::new(sandbox.path());
+            let context = container.create_context();
+            let graph = container.build_graph_for(context, &["b"]).await;
+
+            assert_snapshot!(graph.to_dot());
         }
     }
 }

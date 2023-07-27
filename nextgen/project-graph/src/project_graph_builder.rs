@@ -328,6 +328,10 @@ impl<'app> ProjectGraphBuilder<'app> {
             .enforce_project_type_relationships;
         let tag_relationships = &context.workspace_config.constraints.tag_relationships;
 
+        if !type_relationships && tag_relationships.is_empty() {
+            return Ok(());
+        }
+
         for project in self.graph.node_weights() {
             let deps: Vec<_> = self
                 .graph

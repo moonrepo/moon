@@ -14,6 +14,6 @@ pub enum ProjectGraphError {
     MissingFromPath(PathBuf),
 
     #[diagnostic(code(project_graph::unknown_project))]
-    #[error("No project has been configured with the ID {}.", .0.style(Style::Id))]
+    #[error("No project has been configured with the ID or alias {}.", .0.style(Style::Id))]
     UnconfiguredID(Id),
 }

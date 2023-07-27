@@ -20,7 +20,7 @@ async-recursion = "1.0.4"
 miette = { workspace = true }
 once_map = { workspace = true }
 pathdiff = { workspace = true }
-petgraph = {  workspace = true }
+petgraph = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 starbase_events = { workspace = true }
@@ -30,3 +30,4 @@ tracing = { workspace = true }
 
 [dev-dependencies]
 starbase_sandbox = { workspace = true }
+tokio = { workspace = true }

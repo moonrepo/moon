@@ -134,7 +134,7 @@ pub async fn create_project_graph_context(workspace: &Workspace) -> ProjectGraph
         detect_platform: Emitter::<DetectPlatformEvent>::new(),
         inherited_tasks: &workspace.tasks_config,
         toolchain_config: &workspace.toolchain_config,
-        vcs: &workspace.vcs,
+        vcs: Some(&workspace.vcs),
         workspace_config: &workspace.config,
         workspace_root: &workspace.root,
     };

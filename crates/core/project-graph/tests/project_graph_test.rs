@@ -379,50 +379,6 @@ mod globs {
     }
 }
 
-mod get_dependencies_of {
-    use super::*;
-
-    #[tokio::test]
-    async fn returns_dep_list() {
-        let (graph, _sandbox) = get_dependencies_graph(false).await;
-
-        let a = graph.get("a").unwrap();
-        let b = graph.get("b").unwrap();
-        let c = graph.get("c").unwrap();
-        let d = graph.get("d").unwrap();
-
-        assert_eq!(graph.get_dependencies_of(a).unwrap(), string_vec!["b"]);
-        assert_eq!(graph.get_dependencies_of(b).unwrap(), string_vec!["c"]);
-        assert_eq!(graph.get_dependencies_of(c).unwrap(), string_vec![]);
-        assert_eq!(
-            graph.get_dependencies_of(d).unwrap(),
-            string_vec!["a", "b", "c"]
-        );
-    }
-}
-
-mod get_dependents_of {
-    use super::*;
-
-    #[tokio::test]
-    async fn returns_dep_list() {
-        let (graph, _sandbox) = get_dependents_graph().await;
-
-        let a = graph.get("a").unwrap();
-        let b = graph.get("b").unwrap();
-        let c = graph.get("c").unwrap();
-        let d = graph.get("d").unwrap();
-
-        assert_eq!(graph.get_dependents_of(a).unwrap(), string_vec![]);
-        assert_eq!(graph.get_dependents_of(b).unwrap(), string_vec!["a"]);
-        assert_eq!(graph.get_dependents_of(c).unwrap(), string_vec!["b"]);
-        assert_eq!(
-            graph.get_dependents_of(d).unwrap(),
-            string_vec!["a", "b", "c"]
-        );
-    }
-}
-
 mod to_dot {
     use super::*;
     use moon::build_project_graph;

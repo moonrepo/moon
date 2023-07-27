@@ -37,7 +37,7 @@ pub struct ProjectGraphBuilderContext<'app> {
     // pub detect_platform: &'app Emitter<DetectPlatformEvent>,
     pub inherited_tasks: &'app InheritedTasksManager,
     pub toolchain_config: &'app ToolchainConfig,
-    pub vcs: &'app BoxedVcs,
+    pub vcs: Option<&'app BoxedVcs>,
     pub workspace_config: &'app WorkspaceConfig,
     pub workspace_root: &'app Path,
 }
@@ -89,7 +89,11 @@ impl<'app> ProjectGraphBuilder<'app> {
         hash_engine: &HashEngine,
         cache_engine: &CacheEngine,
     ) -> miette::Result<ProjectGraphBuilder<'app>> {
-        let is_vcs_enabled = context.vcs.is_enabled();
+        let is_vcs_enabled = context
+            .vcs
+            .as_ref()
+            .expect("VCS is required for project graph caching!")
+            .is_enabled();
         let mut graph = Self::new(context).await?;
 
         // No VCS to hash with, so abort caching
@@ -230,17 +234,21 @@ impl<'app> ProjectGraphBuilder<'app> {
         // Create dependent projects
         let mut edges = vec![];
 
+        // dbg!(&id, &project.dependencies, &cycle);
+
         for (dep_id, dep_config) in &project.dependencies {
-            if cycle.contains(dep_id) {
-                warn!(
-                    id = id.as_str(),
-                    dependency_id = dep_id.as_str(),
-                    "Encountered a dependency cycle; will disconnect nodes to avoid recursion",
-                );
-            } else {
-                edges.push((self.internal_load(dep_id, cycle).await?, dep_config.scope));
-            }
+            // if cycle.contains(dep_id) {
+            //     warn!(
+            //         id = id.as_str(),
+            //         dependency_id = dep_id.as_str(),
+            //         "Encountered a dependency cycle; will disconnect nodes to avoid recursion",
+            //     );
+            // } else {
+            edges.push((self.internal_load(dep_id, cycle).await?, dep_config.scope));
+            // }
         }
+
+        // dbg!(&id, &edges);
 
         // Insert into the graph and connect edges
         let index = self.graph.add_node(project);
@@ -369,7 +377,12 @@ impl<'app> ProjectGraphBuilder<'app> {
             )?);
         }
 
-        context.vcs.get_file_hashes(&configs, false, 500).await
+        context
+            .vcs
+            .as_ref()
+            .unwrap()
+            .get_file_hashes(&configs, false, 500)
+            .await
     }
 
     /// Preload the graph with project sources from the workspace configuration.
@@ -413,12 +426,7 @@ impl<'app> ProjectGraphBuilder<'app> {
                 "Locating projects with globs",
             );
 
-            locate_projects_with_globs(
-                context.workspace_root,
-                &globs,
-                &mut sources,
-                Some(context.vcs),
-            )?;
+            locate_projects_with_globs(context.workspace_root, &globs, &mut sources, context.vcs)?;
         }
 
         // Extend graph from subscribers

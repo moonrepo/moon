@@ -23,6 +23,13 @@ pub const PIPENV: DependencyManager = DependencyManager {
     manifest: "Pipfile",
 };
 
+pub const POETRY: DependencyManager = DependencyManager {
+    binary: "poetry",
+    config_files: &["poetry.toml"],
+    lockfile: "poetry.lock",
+    manifest: "pyproject.toml",
+};
+
 // Version managers
 
 pub const PYENV: VersionManager = VersionManager {

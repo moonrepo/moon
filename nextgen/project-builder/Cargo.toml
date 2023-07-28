@@ -13,7 +13,6 @@ moon_task_builder = { path = "../task-builder" }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
 starbase_events = { workspace = true }
-thiserror = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]

@@ -39,9 +39,9 @@ cacheable!(
 
         pub inputs: Vec<InputPath>,
 
-        pub input_globs: FxHashSet<WorkspaceRelativePathBuf>,
+        pub input_files: FxHashSet<WorkspaceRelativePathBuf>,
 
-        pub input_paths: FxHashSet<WorkspaceRelativePathBuf>,
+        pub input_globs: FxHashSet<WorkspaceRelativePathBuf>,
 
         pub input_vars: FxHashSet<String>,
 
@@ -49,9 +49,9 @@ cacheable!(
 
         pub outputs: Vec<OutputPath>,
 
-        pub output_globs: FxHashSet<WorkspaceRelativePathBuf>,
+        pub output_files: FxHashSet<WorkspaceRelativePathBuf>,
 
-        pub output_paths: FxHashSet<WorkspaceRelativePathBuf>,
+        pub output_globs: FxHashSet<WorkspaceRelativePathBuf>,
 
         pub platform: PlatformType,
 
@@ -85,7 +85,7 @@ impl Task {
         for file in touched_files {
             // Don't run on files outside of the project
             if let Ok(project_file) = file.strip_prefix(project_source) {
-                if self.input_paths.contains(file) || globset.matches(file.as_str()) {
+                if self.input_files.contains(file) || globset.matches(file.as_str()) {
                     files.push(project_file.to_owned());
                 }
             }
@@ -122,7 +122,7 @@ impl Task {
         let globset = self.create_globset()?;
 
         for file in touched_files {
-            if self.input_paths.contains(file) {
+            if self.input_files.contains(file) {
                 debug!(
                     target = ?self.target,
                     input = ?file,

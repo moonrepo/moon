@@ -363,7 +363,7 @@ impl<'proj> TasksExpander<'proj> {
         {
             let task = self.get_task_mut(task_id);
             task.input_vars.extend(vars);
-            task.input_paths.extend(files);
+            task.input_files.extend(files);
             task.input_globs.extend(globs);
         }
 
@@ -394,11 +394,11 @@ impl<'proj> TasksExpander<'proj> {
             let task = self.get_task_mut(task_id);
 
             for file in files {
-                if task.input_paths.contains(&file) {
-                    task.input_paths.remove(&file);
+                if task.input_files.contains(&file) {
+                    task.input_files.remove(&file);
                 }
 
-                task.output_paths.insert(file);
+                task.output_files.insert(file);
             }
 
             for glob in globs {

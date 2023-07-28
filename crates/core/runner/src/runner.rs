@@ -364,7 +364,7 @@ impl<'a> Runner<'a> {
 
     pub fn has_outputs(&self) -> miette::Result<bool> {
         // Check paths first since they are literal
-        for output in &self.task.output_paths {
+        for output in &self.task.output_files {
             if !output.to_path(&self.workspace.root).exists() {
                 return Ok(false);
             }

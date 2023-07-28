@@ -75,7 +75,7 @@ pub async fn task(target: Target, json: bool) -> AppResult {
         term.render_list(task.deps.iter().map(color::label).collect::<Vec<_>>())?;
     }
 
-    if !task.input_paths.is_empty() || !task.input_globs.is_empty() {
+    if !task.input_files.is_empty() || !task.input_globs.is_empty() {
         term.line("")?;
         term.render_label(Label::Default, "Inputs")?;
         term.render_list(
@@ -85,14 +85,14 @@ pub async fn task(target: Target, json: bool) -> AppResult {
                 .collect::<Vec<_>>(),
         )?;
         term.render_list(
-            task.input_paths
+            task.input_files
                 .iter()
                 .map(color::rel_path)
                 .collect::<Vec<_>>(),
         )?;
     }
 
-    if !task.output_paths.is_empty() || !task.output_globs.is_empty() {
+    if !task.output_files.is_empty() || !task.output_globs.is_empty() {
         term.line("")?;
         term.render_label(Label::Default, "Outputs")?;
         term.render_list(
@@ -102,7 +102,7 @@ pub async fn task(target: Target, json: bool) -> AppResult {
                 .collect::<Vec<_>>(),
         )?;
         term.render_list(
-            task.output_paths
+            task.output_files
                 .iter()
                 .map(color::rel_path)
                 .collect::<Vec<_>>(),

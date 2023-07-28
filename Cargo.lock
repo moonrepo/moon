@@ -3812,7 +3812,6 @@ dependencies = [
  "rustc-hash",
  "starbase_events 0.2.0",
  "starbase_sandbox",
- "thiserror",
  "tokio",
  "tracing",
 ]

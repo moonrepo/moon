@@ -179,7 +179,7 @@ impl<'app> ProjectGraphBuilder<'app> {
         ))
     }
 
-    /// Load a single project by ID or alias into the graph.
+    /// Load a single project by name or alias into the graph.
     pub async fn load(&mut self, alias_or_id: &str) -> miette::Result<()> {
         self.internal_load(alias_or_id, &mut FxHashSet::default())
             .await?;
@@ -269,6 +269,11 @@ impl<'app> ProjectGraphBuilder<'app> {
         debug!(id = id.as_str(), "Building project {}", color::id(id));
 
         let context = self.context();
+
+        if !source.to_path(context.workspace_root).exists() {
+            return Err(ProjectGraphError::MissingAtSource(source.to_string()).into());
+        }
+
         let mut builder = ProjectBuilder::new(
             id,
             source,

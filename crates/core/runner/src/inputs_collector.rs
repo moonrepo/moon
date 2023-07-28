@@ -91,14 +91,14 @@ fn is_valid_input_source(
 
     let workspace_relative_path = WorkspaceRelativePathBuf::from(workspace_relative_input);
 
-    for output in &task.output_paths {
+    for output in &task.output_files {
         if &workspace_relative_path == output || workspace_relative_path.starts_with(output) {
             return false;
         }
     }
 
     // Filter inputs last
-    task.input_paths.contains(&workspace_relative_path) || globset.matches(workspace_relative_input)
+    task.input_files.contains(&workspace_relative_path) || globset.matches(workspace_relative_input)
 }
 
 // Hash all inputs for a task, but exclude outputs
@@ -118,8 +118,8 @@ pub async fn collect_and_hash_inputs(
 
     // 1: Collect inputs as a set of absolute paths
 
-    if !task.input_paths.is_empty() {
-        for input in &task.input_paths {
+    if !task.input_files.is_empty() {
+        for input in &task.input_files {
             files_to_hash.insert(input.to_path(workspace_root));
         }
     }

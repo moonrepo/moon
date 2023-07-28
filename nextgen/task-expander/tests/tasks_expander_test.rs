@@ -753,7 +753,7 @@ mod tasks_expander {
                 FxHashSet::default()
             );
             assert_eq!(
-                project.get_task("task").unwrap().input_paths,
+                project.get_task("task").unwrap().input_files,
                 FxHashSet::default()
             );
         }
@@ -775,7 +775,7 @@ mod tasks_expander {
                 FxHashSet::default()
             );
             assert_eq!(
-                project.get_task("task").unwrap().input_paths,
+                project.get_task("task").unwrap().input_files,
                 create_path_set(vec![
                     "project/source/dir/subdir/nested.json",
                     "project/source/file.txt",
@@ -803,7 +803,7 @@ mod tasks_expander {
                 create_path_set(vec!["project/source/*.md", "project/source/**/*.json"])
             );
             assert_eq!(
-                project.get_task("task").unwrap().input_paths,
+                project.get_task("task").unwrap().input_files,
                 create_path_set(vec![
                     "project/source/dir/subdir",
                     "project/source/file.txt",
@@ -831,7 +831,7 @@ mod tasks_expander {
                 create_path_set(vec!["project/source/task/**/*"])
             );
             assert_eq!(
-                project.get_task("task").unwrap().input_paths,
+                project.get_task("task").unwrap().input_files,
                 create_path_set(vec!["project/index.js"])
             );
         }
@@ -859,7 +859,7 @@ mod tasks_expander {
                 FxHashSet::default()
             );
             assert_eq!(
-                project.get_task("task").unwrap().output_paths,
+                project.get_task("task").unwrap().output_files,
                 create_path_set(vec![
                     "project/source/dir/subdir/nested.json",
                     "project/source/file.txt",
@@ -889,7 +889,7 @@ mod tasks_expander {
                 create_path_set(vec!["project/source/*.md", "project/source/**/*.json"])
             );
             assert_eq!(
-                project.get_task("task").unwrap().output_paths,
+                project.get_task("task").unwrap().output_files,
                 create_path_set(vec![
                     "project/source/dir/subdir",
                     "project/source/file.txt",
@@ -917,7 +917,7 @@ mod tasks_expander {
                 create_path_set(vec!["project/source/task/**/*"])
             );
             assert_eq!(
-                project.get_task("task").unwrap().output_paths,
+                project.get_task("task").unwrap().output_files,
                 create_path_set(vec!["project/index.js"])
             );
         }
@@ -929,14 +929,14 @@ mod tasks_expander {
 
             create_expander(sandbox.path(), &mut project, |task| {
                 task.outputs.push(OutputPath::ProjectFile("out".into()));
-                task.input_paths.insert("project/source/out".into());
+                task.input_files.insert("project/source/out".into());
             })
             .expand_outputs("task")
             .unwrap();
 
-            assert!(project.get_task("task").unwrap().input_paths.is_empty());
+            assert!(project.get_task("task").unwrap().input_files.is_empty());
             assert_eq!(
-                project.get_task("task").unwrap().output_paths,
+                project.get_task("task").unwrap().output_files,
                 create_path_set(vec!["project/source/out"])
             );
         }

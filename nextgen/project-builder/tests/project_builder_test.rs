@@ -96,14 +96,6 @@ mod project_builder {
     use super::*;
 
     #[tokio::test]
-    #[should_panic(expected = "No project exists at path qux.")]
-    async fn errors_missing_source() {
-        let sandbox = create_sandbox("builder");
-
-        build_project("qux", sandbox.path()).await;
-    }
-
-    #[tokio::test]
     async fn sets_common_fields() {
         let sandbox = create_sandbox("builder");
         let project = build_project_without_inherited("baz", sandbox.path()).await;

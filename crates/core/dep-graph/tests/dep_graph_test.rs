@@ -408,7 +408,7 @@ mod run_target {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "No project has been configured with the ID unknown")]
+    #[should_panic(expected = "No project has been configured with the name or alias unknown")]
     async fn errors_for_unknown_project() {
         let (_workspace, projects, _sandbox) = create_project_graph().await;
 
@@ -621,7 +621,7 @@ mod sync_project {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "No project has been configured with the ID unknown")]
+    #[should_panic(expected = "No project has been configured with the name or alias unknown")]
     async fn errors_for_unknown_project() {
         let (_workspace, projects, _sandbox) = create_project_graph().await;
         let mut graph = build_dep_graph(&projects);

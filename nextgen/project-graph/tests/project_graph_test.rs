@@ -161,7 +161,7 @@ mod project_graph {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "No project has been configured with the ID or alias z")]
+    #[should_panic(expected = "No project has been configured with the name or alias z")]
     async fn errors_unknown_id() {
         let graph = generate_project_graph("dependencies").await;
 
@@ -560,7 +560,7 @@ mod project_graph {
             assert_eq!(task.args, string_vec!["a", "../other.yaml", "b"]);
 
             assert_eq!(
-                task.input_paths,
+                task.input_files,
                 FxHashSet::from_iter([
                     WorkspaceRelativePathBuf::from("tasks/config.json"),
                     WorkspaceRelativePathBuf::from("other.yaml"),
@@ -576,7 +576,7 @@ mod project_graph {
             );
 
             assert_eq!(
-                task.output_paths,
+                task.output_files,
                 FxHashSet::from_iter([WorkspaceRelativePathBuf::from("tasks/build")])
             );
 

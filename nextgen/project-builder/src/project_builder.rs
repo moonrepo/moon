@@ -1,4 +1,3 @@
-use crate::project_builder_error::ProjectBuilderError;
 use moon_common::path::WorkspaceRelativePath;
 use moon_common::{color, consts, Id};
 use moon_config::{
@@ -60,16 +59,10 @@ impl<'app> ProjectBuilder<'app> {
             color::id(id)
         );
 
-        let root = source.to_logical_path(context.workspace_root);
-
-        if !root.exists() {
-            return Err(ProjectBuilderError::MissingAtSource(source.as_str().to_owned()).into());
-        }
-
         Ok(ProjectBuilder {
+            project_root: source.to_logical_path(context.workspace_root),
             context,
             id,
-            project_root: root,
             source,
             global_config: None,
             local_config: None,

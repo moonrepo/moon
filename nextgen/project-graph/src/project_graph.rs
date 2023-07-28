@@ -102,7 +102,7 @@ impl ProjectGraph {
         Ok(deps)
     }
 
-    /// Return a project with the provided ID or alias from the graph.
+    /// Return a project with the provided name or alias from the graph.
     /// If the project does not exist or has been misconfigured, return an error.
     pub fn get(&self, alias_or_id: &str) -> miette::Result<Arc<Project>> {
         let id = self.resolve_id(alias_or_id);

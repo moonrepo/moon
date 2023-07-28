@@ -3827,6 +3827,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_project_expander"
+version = "0.1.0"
+dependencies = [
+ "dotenvy",
+ "miette",
+ "moon_common",
+ "moon_config",
+ "moon_project",
+ "moon_query",
+ "moon_task",
+ "moon_time",
+ "pathdiff",
+ "rustc-hash",
+ "starbase_sandbox",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "moon_project_graph2"
 version = "0.1.0"
 dependencies = [
@@ -3839,10 +3858,10 @@ dependencies = [
  "moon_project",
  "moon_project_builder",
  "moon_project_constraints",
+ "moon_project_expander",
  "moon_query",
  "moon_target",
  "moon_task_builder",
- "moon_task_expander",
  "moon_vcs",
  "once_map",
  "pathdiff",
@@ -4048,25 +4067,6 @@ dependencies = [
  "starbase_sandbox",
  "thiserror",
  "tokio",
- "tracing",
-]
-
-[[package]]
-name = "moon_task_expander"
-version = "0.1.0"
-dependencies = [
- "dotenvy",
- "miette",
- "moon_common",
- "moon_config",
- "moon_project",
- "moon_query",
- "moon_task",
- "moon_time",
- "pathdiff",
- "rustc-hash",
- "starbase_sandbox",
- "thiserror",
  "tracing",
 ]
 

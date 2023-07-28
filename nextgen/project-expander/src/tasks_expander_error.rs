@@ -25,6 +25,17 @@ pub enum TasksExpanderError {
     )]
     PersistentDepRequirement { dep: Target, task: Target },
 
+    #[diagnostic(code(task_expander::overlapping_outputs))]
+    #[error(
+        "Tasks {} have configured the same output {}. Overlapping outputs is not supported as it can cause non-deterministic results.",
+        .targets.iter().map(|t| t.id.style(Style::Label)).collect::<Vec<_>>().join(", "),
+        .output.style(Style::File),
+    )]
+    OverlappingOutputs {
+        output: String,
+        targets: Vec<Target>,
+    },
+
     #[diagnostic(code(task_expander::unknown_target))]
     #[error(
         "Invalid dependency {} for {}, target does not exist.",

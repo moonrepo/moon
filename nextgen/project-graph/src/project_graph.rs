@@ -4,8 +4,8 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{color, Id};
 use moon_config::{DependencyConfig, DependencyScope};
 use moon_project::Project;
+use moon_project_expander::{OutputsBoundaries, TasksExpander};
 use moon_query::{build_query, Criteria, Queryable};
-use moon_task_expander::TasksExpander;
 use once_map::OnceMap;
 use pathdiff::diff_paths;
 use petgraph::dot::{Config, Dot};
@@ -276,6 +276,7 @@ impl ProjectGraph {
 
         // Expand tasks
         let mut expander = TasksExpander {
+            output_boundaries: OutputsBoundaries::default(),
             project: &mut project,
             workspace_root: &self.workspace_root,
         };

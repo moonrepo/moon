@@ -34,7 +34,14 @@ fn substitute_env_var(value: &str, env_map: &FxHashMap<String, String>) -> Strin
     .to_string()
 }
 
+#[derive(Default)]
+pub struct OutputsBoundaries<'proj> {
+    pub files: FxHashMap<&'proj WorkspaceRelativePathBuf, &'proj Target>,
+    pub globs: FxHashMap<&'proj WorkspaceRelativePathBuf, &'proj Target>,
+}
+
 pub struct TasksExpander<'proj> {
+    pub output_boundaries: OutputsBoundaries<'proj>,
     pub project: &'proj mut Project,
     pub workspace_root: &'proj Path,
 }
@@ -386,6 +393,21 @@ impl<'proj> TasksExpander<'proj> {
         // Expand outputs to file system paths
         let (files, globs) =
             TokenExpander::for_outputs(self.project, task, self.workspace_root).expand_outputs()?;
+
+        // Validate there are no overlapping outputs with other tasks
+        // {
+        //     for file in &files {
+        //         if let Some(existing_target) = self.output_boundaries.files.get(&file) {
+        //             return Err(TasksExpanderError::OverlappingTaskOutputs {
+        //                 output: file.to_string(),
+        //                 targets: vec![(*existing_target).to_owned(), task.target.to_owned()],
+        //             }
+        //             .into());
+        //         } else {
+        //             self.output_boundaries.files.insert(file, &task.target);
+        //         }
+        //     }
+        // }
 
         // Outputs must *not* be considered an input,
         // so if there's an input that matches an output,

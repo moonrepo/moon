@@ -2,7 +2,7 @@ mod utils;
 
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{InputPath, LanguageType, OutputPath, ProjectType};
-use moon_task_expander::TokenExpander;
+use moon_project_expander::TokenExpander;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox, predicates::prelude::*};
 use utils::{create_project, create_task};
 

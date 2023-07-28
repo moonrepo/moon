@@ -8,14 +8,14 @@ use tracing::warn;
 
 /// Infer a project name from a source path, by using the name of
 /// the project folder.
-pub fn infer_project_id_and_source(path: &str) -> (Id, WorkspaceRelativePathBuf) {
+pub fn infer_project_id_and_source(path: &str) -> miette::Result<(Id, WorkspaceRelativePathBuf)> {
     let (id, source) = if path.contains('/') {
         (path.split('/').last().unwrap().to_owned(), path)
     } else {
         (path.to_owned(), path)
     };
 
-    (Id::clean(id), WorkspaceRelativePathBuf::from(source))
+    Ok((Id::clean(id)?, WorkspaceRelativePathBuf::from(source)))
 }
 
 /// For each pattern in the globs list, glob the file system
@@ -45,7 +45,7 @@ where
                 "root"
             } else {
                 root_id.as_str()
-            }),
+            })?,
             WorkspaceRelativePathBuf::from(root_source),
         );
     }
@@ -72,7 +72,7 @@ where
                 }
             }
 
-            let (id, source) = infer_project_id_and_source(&project_source);
+            let (id, source) = infer_project_id_and_source(&project_source)?;
 
             if let Some(existing_source) = sources.get(&id) {
                 warn!(

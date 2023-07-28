@@ -14,6 +14,7 @@ use moon_project_graph2::{
 use moon_query::build_query;
 use moon_target::Target;
 use moon_task_builder::DetectPlatformEvent;
+use moon_vcs::{BoxedVcs, Git};
 use rustc_hash::FxHashMap;
 use starbase_events::{Emitter, EventState};
 use starbase_sandbox::{assert_snapshot, create_sandbox, Sandbox};
@@ -32,6 +33,7 @@ struct GraphContainer {
     pub toolchain_config: ToolchainConfig,
     pub workspace_config: WorkspaceConfig,
     pub workspace_root: PathBuf,
+    pub vcs: Option<BoxedVcs>,
 }
 
 impl GraphContainer {
@@ -62,6 +64,12 @@ impl GraphContainer {
         graph
     }
 
+    pub fn new_with_vcs(root: &Path) -> Self {
+        let mut container = Self::new(root);
+        container.vcs = Some(Box::new(Git::load(root, "master", &[]).unwrap()));
+        container
+    }
+
     pub fn create_context(&self) -> ProjectGraphBuilderContext {
         ProjectGraphBuilderContext {
             extend_project: Emitter::<ExtendProjectEvent>::new(),
@@ -70,7 +78,7 @@ impl GraphContainer {
             detect_platform: Emitter::<DetectPlatformEvent>::new(),
             inherited_tasks: &self.inherited_tasks,
             toolchain_config: &self.toolchain_config,
-            vcs: None,
+            vcs: self.vcs.as_ref(),
             workspace_config: &self.workspace_config,
             workspace_root: &self.workspace_root,
         }
@@ -134,7 +142,12 @@ mod project_graph {
 
     async fn generate_project_graph(fixture: &str) -> ProjectGraph {
         let sandbox = create_sandbox(fixture);
-        let container = GraphContainer::new(sandbox.path());
+
+        generate_project_graph_from_sandbox(sandbox.path()).await
+    }
+
+    async fn generate_project_graph_from_sandbox(path: &Path) -> ProjectGraph {
+        let container = GraphContainer::new(path);
         let context = container.create_context();
 
         container.build_graph(context).await
@@ -184,14 +197,14 @@ mod project_graph {
 
             container.workspace_config.projects =
                 WorkspaceProjects::Sources(FxHashMap::from_iter([
-                    ("a".into(), "a".into()),
+                    ("c".into(), "c".into()),
                     ("b".into(), "b".into()),
                 ]));
 
             let context = container.create_context();
             let graph = container.build_graph(context).await;
 
-            assert_eq!(get_ids_from_projects(graph.get_all().unwrap()), ["a", "b"]);
+            assert_eq!(get_ids_from_projects(graph.get_all().unwrap()), ["b", "c"]);
         }
 
         #[tokio::test]
@@ -214,6 +227,69 @@ mod project_graph {
             assert_eq!(
                 get_ids_from_projects(graph.get_all().unwrap()),
                 ["a", "b", "c", "root"]
+            );
+        }
+
+        #[tokio::test]
+        async fn ignores_git_moon_folders() {
+            let sandbox = create_sandbox("dependencies");
+
+            sandbox.enable_git();
+            sandbox.create_file(".moon/workspace.yml", "");
+
+            let graph = generate_project_graph_from_sandbox(sandbox.path()).await;
+
+            assert_eq!(
+                get_ids_from_projects(graph.get_all().unwrap()),
+                ["a", "b", "c", "d"]
+            );
+        }
+
+        #[tokio::test]
+        #[should_panic(expected = "Invalid format for .foo")]
+        async fn errors_for_dot_folders() {
+            let sandbox = create_sandbox("dependencies");
+            sandbox.create_file(".foo/moon.yml", "");
+
+            let graph = generate_project_graph_from_sandbox(sandbox.path()).await;
+
+            assert_eq!(
+                get_ids_from_projects(graph.get_all().unwrap()),
+                ["a", "b", "c", "d"]
+            );
+        }
+
+        #[tokio::test]
+        async fn filters_using_gitignore() {
+            let sandbox = create_sandbox("type-constraints");
+
+            sandbox.enable_git();
+            sandbox.create_file(".gitignore", "*-other");
+
+            let container = GraphContainer::new_with_vcs(sandbox.path());
+            let context = container.create_context();
+            let graph = container.build_graph(context).await;
+
+            assert_eq!(
+                get_ids_from_projects(graph.get_all().unwrap()),
+                ["app", "library", "tool", "unknown"]
+            );
+        }
+
+        #[tokio::test]
+        async fn supports_id_formats() {
+            let graph = generate_project_graph("ids").await;
+
+            assert_eq!(
+                get_ids_from_projects(graph.get_all().unwrap()),
+                [
+                    "Capital",
+                    "PascalCase",
+                    "With_nums-123",
+                    "camelCase",
+                    "kebab-case",
+                    "snake_case"
+                ]
             );
         }
     }

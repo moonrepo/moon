@@ -23,7 +23,7 @@ pub static ID_CLEAN: Lazy<Regex> = Lazy::new(|| Regex::new(r"[^0-9A-Za-z/\._-]+"
 
 #[derive(Error, Debug, Diagnostic)]
 #[diagnostic(code(id::invalid_format))]
-#[error("Invalid format for {}, may only contain alpha-numeric characters, dashes (-), slashes (/), underscores (_), and dots (.).", .0.style(Style::Id))]
+#[error("Invalid format for {}, may only contain alpha-numeric characters, dashes (-), slashes (/), underscores (_), and dots (.), and must start with an alpha character.", .0.style(Style::Id))]
 pub struct IdError(String);
 
 #[derive(Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
@@ -40,8 +40,8 @@ impl Id {
         Ok(Self::raw(id))
     }
 
-    pub fn clean<S: AsRef<str>>(id: S) -> Id {
-        Id(ID_CLEAN.replace_all(id.as_ref(), "-").to_string())
+    pub fn clean<S: AsRef<str>>(id: S) -> Result<Id, IdError> {
+        Id::new(ID_CLEAN.replace_all(id.as_ref(), "-"))
     }
 
     pub fn raw<S: AsRef<str>>(id: S) -> Id {

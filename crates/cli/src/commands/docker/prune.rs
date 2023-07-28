@@ -24,8 +24,8 @@ pub async fn prune_node(
     let mut package_names = vec![];
 
     for project_id in &manifest.focused_projects {
-        if let Some(node) = project_graph.nodes.get(project_id) {
-            if let Some(package_json) = PackageJson::read(node.source.to_path(workspace_root))? {
+        if let Some(source) = project_graph.sources().get(project_id) {
+            if let Some(package_json) = PackageJson::read(source.to_path(workspace_root))? {
                 if let Some(package_name) = package_json.name {
                     package_names.push(package_name);
                 }
@@ -37,8 +37,8 @@ pub async fn prune_node(
     if let Some(vendor_dir) = NODE.vendor_dir {
         fs::remove_dir_all(workspace_root.join(vendor_dir))?;
 
-        for node in project_graph.nodes.values() {
-            fs::remove_dir_all(node.source.join(vendor_dir).to_path(workspace_root))?;
+        for source in project_graph.sources().values() {
+            fs::remove_dir_all(source.join(vendor_dir).to_path(workspace_root))?;
         }
     }
 

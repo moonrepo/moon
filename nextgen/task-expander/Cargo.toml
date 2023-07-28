@@ -12,6 +12,7 @@ moon_task = { path = "../task" }
 moon_time = { path = "../time" }
 dotenvy = "0.15.7"
 miette = { workspace = true }
+pathdiff = { workspace = true }
 rustc-hash = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }

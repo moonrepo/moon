@@ -13,8 +13,8 @@
 - Rewrote the project graph from the ground-up:
   - Lazily built using a multi-pass approach.
   - Graph edges now indicate the type of relationship: development, production, build, peer.
+  - Updated `moon project-graph --json` to include the fully expanded graph data.
 - Identifiers (project names, file groups, etc) can now be prefixed with underscores (`_`).
-- Updated `moon project-graph --json` to include the fully expanded graph data.
 - **Tasks**
   - Environment variables in `command` and `args` are now substituted.
   - Task `deps` can now depend on tag targets (`#tag:task`).

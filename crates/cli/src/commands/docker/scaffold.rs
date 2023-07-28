@@ -81,16 +81,16 @@ fn scaffold_workspace(
     };
 
     // Copy each project and mimic the folder structure
-    for node in project_graph.nodes.values() {
-        if node.source.as_str() == "." {
+    for source in project_graph.sources().values() {
+        if source.as_str() == "." {
             continue;
         }
 
-        let docker_project_root = docker_workspace_root.join(node.source.as_str());
+        let docker_project_root = docker_workspace_root.join(source.as_str());
 
         fs::create_dir_all(&docker_project_root)?;
 
-        copy_from_dir(&node.source.to_path(&workspace.root), &docker_project_root)?;
+        copy_from_dir(&source.to_path(&workspace.root), &docker_project_root)?;
     }
 
     // Copy root lockfiles and configurations

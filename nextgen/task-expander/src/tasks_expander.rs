@@ -5,6 +5,7 @@ use moon_common::{color, Id};
 use moon_config::{patterns, InputPath};
 use moon_project::Project;
 use moon_task::{Target, TargetScope, Task};
+use pathdiff::diff_paths;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::env;
 use std::path::Path;
@@ -70,13 +71,19 @@ impl<'proj> TasksExpander<'proj> {
         }
 
         let handle_path = |path: WorkspaceRelativePathBuf| -> miette::Result<String> {
+            // From workspace root to any file
             if task.options.run_from_workspace_root {
                 Ok(format!("./{}", path))
+
+                // From project root to project file
             } else if let Ok(proj_path) = path.strip_prefix(&self.project.source) {
                 Ok(format!("./{}", proj_path))
+
+                // From project root to non-project file
             } else {
-                // TODO
-                to_virtual_string(path.to_logical_path(self.workspace_root))
+                let abs_path = path.to_logical_path(self.workspace_root);
+
+                to_virtual_string(diff_paths(&abs_path, &self.project.root).unwrap_or(abs_path))
             }
         };
 

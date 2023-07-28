@@ -1,4 +1,4 @@
-use moon_common::Id;
+use moon_common::{path::WorkspaceRelativePathBuf, Id};
 use moon_config::PartialTaskConfig;
 use moon_config::{
     DependencyConfig, DependencyScope, DependencySource, InheritedTasksManager, NodeConfig,
@@ -15,7 +15,7 @@ use moon_query::build_query;
 use moon_target::Target;
 use moon_task_builder::DetectPlatformEvent;
 use moon_vcs::{BoxedVcs, Git};
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_events::{Emitter, EventState};
 use starbase_sandbox::{assert_snapshot, create_sandbox, Sandbox};
 use starbase_utils::fs;
@@ -153,8 +153,45 @@ mod project_graph {
         container.build_graph(context).await
     }
 
-    // TODO
-    // get by path
+    #[tokio::test]
+    async fn gets_by_id() {
+        let graph = generate_project_graph("dependencies").await;
+
+        assert!(graph.get("a").is_ok());
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "No project has been configured with the ID or alias z")]
+    async fn errors_unknown_id() {
+        let graph = generate_project_graph("dependencies").await;
+
+        graph.get("z").unwrap();
+    }
+
+    #[tokio::test]
+    async fn gets_by_path() {
+        let sandbox = create_sandbox("dependencies");
+        let graph = generate_project_graph_from_sandbox(sandbox.path()).await;
+
+        assert_eq!(
+            graph
+                .get_from_path(sandbox.path().join("c/moon.yml"))
+                .unwrap()
+                .id,
+            "c"
+        );
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "No project could be located starting from path z/moon.yml")]
+    async fn errors_non_matching_path() {
+        let sandbox = create_sandbox("dependencies");
+        let graph = generate_project_graph_from_sandbox(sandbox.path()).await;
+
+        graph
+            .get_from_path(sandbox.path().join("z/moon.yml"))
+            .unwrap();
+    }
 
     mod sources {
         use super::*;
@@ -447,6 +484,14 @@ mod project_graph {
                 })
                 .await;
             }
+
+            #[tokio::test]
+            async fn with_new_source_add() {
+                test_invalidate(|sandbox| {
+                    sandbox.create_file("z/moon.yml", "# Changes");
+                })
+                .await;
+            }
         }
     }
 
@@ -488,7 +533,55 @@ mod project_graph {
     mod expansion {
         use super::*;
 
-        // TODO
+        #[tokio::test]
+        async fn expands_project() {
+            let graph = generate_project_graph("expansion").await;
+            let project = graph.get("project").unwrap();
+
+            assert_eq!(
+                project.dependencies.values().cloned().collect::<Vec<_>>(),
+                vec![DependencyConfig {
+                    id: "base".into(),
+                    scope: DependencyScope::Development,
+                    source: Some(DependencySource::Explicit),
+                    ..Default::default()
+                }]
+            );
+
+            assert!(project.get_task("build").unwrap().deps.is_empty());
+        }
+
+        #[tokio::test]
+        async fn expands_tasks() {
+            let graph = generate_project_graph("expansion").await;
+            let project = graph.get("tasks").unwrap();
+            let task = project.get_task("build").unwrap();
+
+            assert_eq!(task.args, string_vec!["a", "../other.yaml", "b"]);
+
+            assert_eq!(
+                task.input_paths,
+                FxHashSet::from_iter([
+                    WorkspaceRelativePathBuf::from("tasks/config.json"),
+                    WorkspaceRelativePathBuf::from("other.yaml"),
+                ])
+            );
+
+            assert_eq!(
+                task.input_globs,
+                FxHashSet::from_iter([
+                    WorkspaceRelativePathBuf::from(".moon/*.yml"),
+                    WorkspaceRelativePathBuf::from("tasks/file.*"),
+                ])
+            );
+
+            assert_eq!(
+                task.output_paths,
+                FxHashSet::from_iter([WorkspaceRelativePathBuf::from("tasks/build")])
+            );
+
+            assert_eq!(task.deps, [Target::parse("project:build").unwrap()]);
+        }
     }
 
     mod dependencies {
@@ -610,21 +703,11 @@ mod project_graph {
             assert_snapshot!(graph.to_dot());
 
             assert_eq!(
-                graph
-                    .nodes
-                    .into_iter()
-                    .map(|(id, node)| (id, node.alias))
-                    .collect::<FxHashMap<_, _>>(),
+                graph.aliases(),
                 FxHashMap::from_iter([
-                    ("alias-one".into(), Some("@one".to_owned())),
-                    ("alias-two".into(), Some("@two".to_owned())),
-                    ("alias-three".into(), Some("@three".to_owned())),
-                    ("dupes-depends-on".into(), None),
-                    ("dupes-task-deps".into(), None),
-                    ("explicit".into(), None),
-                    ("explicit-and-implicit".into(), None),
-                    ("implicit".into(), None),
-                    ("tasks".into(), None),
+                    (&Id::raw("alias-one"), "@one"),
+                    (&Id::raw("alias-two"), "@two"),
+                    (&Id::raw("alias-three"), "@three"),
                 ])
             );
         }

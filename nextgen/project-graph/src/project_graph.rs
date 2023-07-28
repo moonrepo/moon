@@ -41,7 +41,7 @@ pub struct ProjectGraph {
     graph: GraphType,
 
     /// Graph node information, mapped by project ID.
-    pub nodes: FxHashMap<Id, ProjectNode>,
+    nodes: FxHashMap<Id, ProjectNode>,
 
     /// Expanded projects, mapped by project ID.
     projects: Arc<RwLock<ProjectsCache>>,
@@ -64,6 +64,14 @@ impl ProjectGraph {
             workspace_root: workspace_root.to_owned(),
             query_cache: OnceMap::new(),
         }
+    }
+
+    /// Return a map of project IDs to their derived aliases. Projects without aliases are omitted.
+    pub fn aliases(&self) -> FxHashMap<&Id, &str> {
+        self.nodes
+            .iter()
+            .filter_map(|(id, node)| node.alias.as_ref().map(|alias| (id, alias.as_str())))
+            .collect()
     }
 
     /// Return a list of project IDs that the provide project depends on.
@@ -196,6 +204,14 @@ impl ProjectGraph {
         }
 
         Ok(projects)
+    }
+
+    /// Return a map of project IDs to their file source paths.
+    pub fn sources(&self) -> FxHashMap<&Id, &WorkspaceRelativePathBuf> {
+        self.nodes
+            .iter()
+            .map(|(id, node)| (id, &node.source))
+            .collect()
     }
 
     /// Format graph as a DOT string.

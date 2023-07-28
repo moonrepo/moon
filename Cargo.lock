@@ -4064,6 +4064,7 @@ dependencies = [
  "moon_query",
  "moon_task",
  "moon_time",
+ "pathdiff",
  "rustc-hash",
  "starbase_sandbox",
  "thiserror",

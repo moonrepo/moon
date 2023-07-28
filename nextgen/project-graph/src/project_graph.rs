@@ -28,7 +28,7 @@ pub struct ProjectGraphCache<'graph> {
     projects: &'graph ProjectsCache,
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct ProjectNode {
     pub alias: Option<String>,
     pub index: NodeIndex,

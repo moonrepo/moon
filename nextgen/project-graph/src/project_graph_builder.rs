@@ -234,21 +234,17 @@ impl<'app> ProjectGraphBuilder<'app> {
         // Create dependent projects
         let mut edges = vec![];
 
-        // dbg!(&id, &project.dependencies, &cycle);
-
         for (dep_id, dep_config) in &project.dependencies {
-            // if cycle.contains(dep_id) {
-            //     warn!(
-            //         id = id.as_str(),
-            //         dependency_id = dep_id.as_str(),
-            //         "Encountered a dependency cycle; will disconnect nodes to avoid recursion",
-            //     );
-            // } else {
-            edges.push((self.internal_load(dep_id, cycle).await?, dep_config.scope));
-            // }
+            if cycle.contains(dep_id) {
+                warn!(
+                    id = id.as_str(),
+                    dependency_id = dep_id.as_str(),
+                    "Encountered a dependency cycle; will disconnect nodes to avoid recursion",
+                );
+            } else {
+                edges.push((self.internal_load(dep_id, cycle).await?, dep_config.scope));
+            }
         }
-
-        // dbg!(&id, &edges);
 
         // Insert into the graph and connect edges
         let index = self.graph.add_node(project);
@@ -258,6 +254,8 @@ impl<'app> ProjectGraphBuilder<'app> {
         }
 
         self.nodes.insert(id, index);
+
+        cycle.clear();
 
         Ok(index)
     }

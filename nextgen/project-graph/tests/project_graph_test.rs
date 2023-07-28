@@ -303,7 +303,30 @@ mod project_graph {
     mod cycles {
         use super::*;
 
-        // TODO
+        #[tokio::test]
+        async fn can_generate_with_cycles() {
+            let graph = generate_project_graph("cycle").await;
+
+            assert_eq!(
+                get_ids_from_projects(graph.get_all().unwrap()),
+                ["a", "b", "c"]
+            );
+
+            assert_eq!(
+                map_ids(graph.dependencies_of(&graph.get("a").unwrap()).unwrap()),
+                ["b"]
+            );
+
+            assert_eq!(
+                map_ids(graph.dependencies_of(&graph.get("b").unwrap()).unwrap()),
+                string_vec![]
+            );
+
+            assert_eq!(
+                map_ids(graph.dependencies_of(&graph.get("c").unwrap()).unwrap()),
+                ["a"]
+            );
+        }
     }
 
     mod inheritance {

@@ -1,5 +1,0 @@
-{
-  "name": "project-graph-dependencies",
-  "private": true,
-  "workspaces": ["*"]
-}

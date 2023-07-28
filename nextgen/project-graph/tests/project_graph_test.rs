@@ -296,8 +296,158 @@ mod project_graph {
 
     mod cache {
         use super::*;
+        use moon_cache::{CacheEngine, ProjectsState};
+        use moon_hash::HashEngine;
 
-        // TODO
+        const CACHE_PATH: &str = ".moon/cache/states/partialProjectGraph.json";
+        const STATE_PATH: &str = ".moon/cache/states/projects.json";
+
+        async fn do_generate(root: &Path) -> ProjectGraph {
+            let cache_engine = CacheEngine::load(root).unwrap();
+            let hash_engine = HashEngine::new(&cache_engine.dir);
+            let container = GraphContainer::new_with_vcs(root);
+            let context = container.create_context();
+
+            let mut builder = ProjectGraphBuilder::generate(context, &hash_engine, &cache_engine)
+                .await
+                .unwrap();
+            builder.load_all().await.unwrap();
+
+            let graph = builder.build().await.unwrap();
+            graph.get_all().unwrap();
+            graph
+        }
+
+        async fn generate_cached_project_graph(
+            func: impl FnOnce(&Sandbox),
+        ) -> (Sandbox, ProjectGraph) {
+            let sandbox = create_sandbox("dependencies");
+
+            func(&sandbox);
+
+            let graph = do_generate(sandbox.path()).await;
+
+            (sandbox, graph)
+        }
+
+        #[tokio::test]
+        async fn doesnt_cache_if_no_vcs() {
+            let (sandbox, _graph) = generate_cached_project_graph(|_| {}).await;
+
+            assert!(!sandbox.path().join(CACHE_PATH).exists())
+        }
+
+        #[tokio::test]
+        async fn caches_if_vcs() {
+            let (sandbox, _graph) = generate_cached_project_graph(|sandbox| {
+                sandbox.enable_git();
+            })
+            .await;
+
+            assert!(sandbox.path().join(CACHE_PATH).exists());
+        }
+
+        #[tokio::test]
+        async fn loads_from_cache() {
+            let (sandbox, graph) = generate_cached_project_graph(|sandbox| {
+                sandbox.enable_git();
+            })
+            .await;
+            let cached_graph = do_generate(sandbox.path()).await;
+
+            assert_eq!(graph.ids(), cached_graph.ids());
+        }
+
+        #[tokio::test]
+        async fn creates_states_and_manifests() {
+            let (sandbox, _graph) = generate_cached_project_graph(|sandbox| {
+                sandbox.enable_git();
+            })
+            .await;
+
+            let state = ProjectsState::load(sandbox.path().join(STATE_PATH)).unwrap();
+
+            assert_eq!(
+                state.projects,
+                FxHashMap::from_iter([
+                    ("a".into(), "a".into()),
+                    ("b".into(), "b".into()),
+                    ("c".into(), "c".into()),
+                    ("d".into(), "d".into()),
+                ])
+            );
+
+            assert!(sandbox
+                .path()
+                .join(".moon/cache/hashes")
+                .join(format!("{}.json", state.last_hash))
+                .exists());
+        }
+
+        mod invalidation {
+            use super::*;
+
+            async fn test_invalidate(func: impl FnOnce(&Sandbox)) {
+                let (sandbox, _graph) = generate_cached_project_graph(|sandbox| {
+                    sandbox.enable_git();
+                })
+                .await;
+
+                let state1 = ProjectsState::load(sandbox.path().join(STATE_PATH)).unwrap();
+
+                func(&sandbox);
+                do_generate(sandbox.path()).await;
+
+                let state2 = ProjectsState::load(sandbox.path().join(STATE_PATH)).unwrap();
+
+                assert_ne!(state1.last_hash, state2.last_hash);
+            }
+
+            #[tokio::test]
+            async fn with_workspace_changes() {
+                test_invalidate(|sandbox| {
+                    sandbox.create_file(".moon/workspace.yml", "# Changes");
+                })
+                .await;
+            }
+
+            #[tokio::test]
+            async fn with_toolchain_changes() {
+                test_invalidate(|sandbox| {
+                    sandbox.create_file(".moon/toolchain.yml", "# Changes");
+                })
+                .await;
+            }
+
+            #[tokio::test]
+            async fn with_tasks_changes() {
+                test_invalidate(|sandbox| {
+                    sandbox.create_file(".moon/tasks.yml", "# Changes");
+                })
+                .await;
+            }
+
+            #[tokio::test]
+            async fn with_scoped_tasks_changes() {
+                test_invalidate(|sandbox| {
+                    sandbox.create_file(".moon/tasks/node.yml", "# Changes");
+                })
+                .await;
+            }
+
+            #[tokio::test]
+            async fn with_project_config_changes() {
+                test_invalidate(|sandbox| {
+                    sandbox.create_file("a/moon.yml", "# Changes");
+                })
+                .await;
+
+                test_invalidate(|sandbox| {
+                    sandbox.create_file("b/moon.yml", "# Changes");
+                })
+                .await;
+            }
+        }
     }
 
     mod cycles {

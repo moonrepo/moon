@@ -217,7 +217,7 @@ impl<'app> ProjectGraphBuilder<'app> {
         }
 
         // Check that the project ID is configured
-        debug!(
+        trace!(
             id = id.as_str(),
             "Project does not exist in the project graph, attempting to load",
         );

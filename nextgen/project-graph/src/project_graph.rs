@@ -2,9 +2,9 @@ use crate::project_graph_error::ProjectGraphError;
 use miette::IntoDiagnostic;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{color, Id};
-use moon_config::{DependencyConfig, DependencyScope};
+use moon_config::DependencyScope;
 use moon_project::Project;
-use moon_project_expander::{OutputsBoundaries, TasksExpander};
+use moon_project_expander::{ExpanderContext, ProjectExpander};
 use moon_query::{build_query, Criteria, Queryable};
 use once_map::OnceMap;
 use pathdiff::diff_paths;
@@ -66,11 +66,11 @@ impl ProjectGraph {
         }
     }
 
-    /// Return a map of project IDs to their derived aliases. Projects without aliases are omitted.
-    pub fn aliases(&self) -> FxHashMap<&Id, &str> {
+    /// Return a map of aliases to their project IDs. Projects without aliases are omitted.
+    pub fn aliases(&self) -> FxHashMap<&str, &Id> {
         self.nodes
             .iter()
-            .filter_map(|(id, node)| node.alias.as_ref().map(|alias| (id, alias.as_str())))
+            .filter_map(|(id, node)| node.alias.as_ref().map(|alias| (alias.as_str(), id)))
             .collect()
     }
 
@@ -116,10 +116,30 @@ impl ProjectGraph {
 
         // Otherwise expand the project and cache it with an Arc
         {
-            let project = self.expand_project(&id)?;
+            debug!(id = id.as_str(), "Expanding project {}", color::id(&id));
+
+            let query = |input: String| {
+                let mut results = vec![];
+
+                // Don't use get() for expanded projects, since it'll overflow the
+                // stack trying to recursively expand projects! Using unexpanded
+                // dependent projects works just fine for the this entire process.
+                for result_id in self.raw_query(build_query(input)?)? {
+                    results.push(self.get_unexpanded(result_id)?);
+                }
+
+                Ok(results)
+            };
+
+            let mut expander = ProjectExpander::new(ExpanderContext {
+                aliases: self.aliases(),
+                project: self.get_unexpanded(&id)?,
+                query: Box::new(query),
+                workspace_root: &self.workspace_root,
+            });
 
             self.write_cache()
-                .insert(project.id.clone(), Arc::new(project));
+                .insert(id.clone(), Arc::new(expander.expand()?));
         }
 
         Ok(Arc::clone(self.read_cache().get(&id).unwrap()))
@@ -249,62 +269,6 @@ impl ProjectGraph {
             projects: &projects,
         })
         .into_diagnostic()
-    }
-
-    fn expand_project(&self, id: &Id) -> miette::Result<Project> {
-        debug!(id = id.as_str(), "Expanding project {}", color::id(id));
-
-        let unexpanded_project = self.get_unexpanded(id)?;
-        let mut project = unexpanded_project.to_owned();
-
-        // Expand and flatten depends on
-        let mut depends_on = FxHashMap::default();
-
-        for (dep_id, dep_config) in project.dependencies {
-            let new_dep_id = self.resolve_id(&dep_id);
-
-            depends_on.insert(
-                new_dep_id.clone(),
-                DependencyConfig {
-                    id: new_dep_id,
-                    ..dep_config
-                },
-            );
-        }
-
-        project.dependencies = depends_on;
-
-        // Expand tasks
-        let mut expander = TasksExpander {
-            output_boundaries: OutputsBoundaries::default(),
-            project: &mut project,
-            workspace_root: &self.workspace_root,
-        };
-
-        let query = |input: String| {
-            let mut results = vec![];
-
-            // Don't get() the expanded projects, since it'll overflow the
-            // stack trying to recursively expand projects! Using unexpanded
-            // dependent projects works just fine for the expansion process.
-            for id in self.raw_query(build_query(input)?)? {
-                results.push(self.get_unexpanded(id)?);
-            }
-
-            Ok(results)
-        };
-
-        for task_id in unexpanded_project.tasks.keys() {
-            // Resolve in this order!
-            expander.expand_env(task_id)?;
-            expander.expand_deps(task_id, query)?;
-            expander.expand_inputs(task_id)?;
-            expander.expand_outputs(task_id)?;
-            expander.expand_args(task_id)?;
-            expander.expand_command(task_id)?;
-        }
-
-        Ok(project)
     }
 
     fn get_unexpanded(&self, id: &Id) -> miette::Result<&Project> {

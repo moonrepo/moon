@@ -4,7 +4,7 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{InputPath, LanguageType, OutputPath, ProjectType};
 use moon_project_expander::TokenExpander;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox, predicates::prelude::*};
-use utils::{create_project, create_task};
+use utils::{create_context, create_project, create_task};
 
 mod token_expander {
     use super::*;
@@ -15,9 +15,10 @@ mod token_expander {
         let sandbox = create_empty_sandbox();
         let project = create_project(sandbox.path());
         let task = create_task();
-        let expander = TokenExpander::for_args(&project, &task, sandbox.path());
+        let context = create_context(&project, sandbox.path());
+        let expander = TokenExpander::new(&context);
 
-        expander.replace_function("@unknown(id)").unwrap();
+        expander.replace_function(&task, "@unknown(id)").unwrap();
     }
 
     #[test]
@@ -26,9 +27,10 @@ mod token_expander {
         let sandbox = create_empty_sandbox();
         let project = create_project(sandbox.path());
         let task = create_task();
-        let expander = TokenExpander::for_args(&project, &task, sandbox.path());
+        let context = create_context(&project, sandbox.path());
+        let expander = TokenExpander::new(&context);
 
-        expander.replace_function("@files(unknown)").unwrap();
+        expander.replace_function(&task, "@files(unknown)").unwrap();
     }
 
     #[test]
@@ -37,9 +39,10 @@ mod token_expander {
         let sandbox = create_empty_sandbox();
         let project = create_project(sandbox.path());
         let task = create_task();
-        let expander = TokenExpander::for_args(&project, &task, sandbox.path());
+        let context = create_context(&project, sandbox.path());
+        let expander = TokenExpander::new(&context);
 
-        expander.replace_function("@in(str)").unwrap();
+        expander.replace_function(&task, "@in(str)").unwrap();
     }
 
     #[test]
@@ -48,9 +51,10 @@ mod token_expander {
         let sandbox = create_empty_sandbox();
         let project = create_project(sandbox.path());
         let task = create_task();
-        let expander = TokenExpander::for_args(&project, &task, sandbox.path());
+        let context = create_context(&project, sandbox.path());
+        let expander = TokenExpander::new(&context);
 
-        expander.replace_function("@in(10)").unwrap();
+        expander.replace_function(&task, "@in(10)").unwrap();
     }
 
     #[test]
@@ -59,9 +63,10 @@ mod token_expander {
         let sandbox = create_empty_sandbox();
         let project = create_project(sandbox.path());
         let task = create_task();
-        let expander = TokenExpander::for_args(&project, &task, sandbox.path());
+        let context = create_context(&project, sandbox.path());
+        let expander = TokenExpander::new(&context);
 
-        expander.replace_function("@out(str)").unwrap();
+        expander.replace_function(&task, "@out(str)").unwrap();
     }
 
     #[test]
@@ -70,9 +75,10 @@ mod token_expander {
         let sandbox = create_empty_sandbox();
         let project = create_project(sandbox.path());
         let task = create_task();
-        let expander = TokenExpander::for_args(&project, &task, sandbox.path());
+        let context = create_context(&project, sandbox.path());
+        let expander = TokenExpander::new(&context);
 
-        expander.replace_function("@out(10)").unwrap();
+        expander.replace_function(&task, "@out(10)").unwrap();
     }
 
     mod vars {
@@ -86,58 +92,68 @@ mod token_expander {
 
             let task = create_task();
 
-            let expander = TokenExpander::for_command(&project, &task, sandbox.path());
+            let context = create_context(&project, sandbox.path());
+            let expander = TokenExpander::new(&context);
 
             assert_eq!(
-                expander.replace_variable("$language").unwrap(),
+                expander.replace_variable(&task, "$language").unwrap(),
                 "javascript"
             );
-            assert_eq!(expander.replace_variable("$project").unwrap(), "project");
-            assert_eq!(expander.replace_variable("$projectAlias").unwrap(), "");
             assert_eq!(
-                expander.replace_variable("$projectSource").unwrap(),
+                expander.replace_variable(&task, "$project").unwrap(),
+                "project"
+            );
+            assert_eq!(
+                expander.replace_variable(&task, "$projectAlias").unwrap(),
+                ""
+            );
+            assert_eq!(
+                expander.replace_variable(&task, "$projectSource").unwrap(),
                 "project/source"
             );
             assert_eq!(
-                expander.replace_variable("$projectRoot").unwrap(),
+                expander.replace_variable(&task, "$projectRoot").unwrap(),
                 project.root.to_string_lossy()
             );
             assert_eq!(
-                expander.replace_variable("$projectType").unwrap(),
+                expander.replace_variable(&task, "$projectType").unwrap(),
                 "library"
             );
             assert_eq!(
-                expander.replace_variable("$target").unwrap(),
+                expander.replace_variable(&task, "$target").unwrap(),
                 "project:task"
             );
-            assert_eq!(expander.replace_variable("$task").unwrap(), "task");
+            assert_eq!(expander.replace_variable(&task, "$task").unwrap(), "task");
             assert_eq!(
-                expander.replace_variable("$taskPlatform").unwrap(),
+                expander.replace_variable(&task, "$taskPlatform").unwrap(),
                 "unknown"
             );
-            assert_eq!(expander.replace_variable("$taskType").unwrap(), "test");
             assert_eq!(
-                expander.replace_variable("$workspaceRoot").unwrap(),
+                expander.replace_variable(&task, "$taskType").unwrap(),
+                "test"
+            );
+            assert_eq!(
+                expander.replace_variable(&task, "$workspaceRoot").unwrap(),
                 sandbox.path().to_string_lossy()
             );
 
             assert!(predicate::str::is_match("[0-9]{4}-[0-9]{2}-[0-9]{2}")
                 .unwrap()
-                .eval(&expander.replace_variable("$date").unwrap()));
+                .eval(&expander.replace_variable(&task, "$date").unwrap()));
 
             assert!(predicate::str::is_match("[0-9]{2}:[0-9]{2}:[0-9]{2}")
                 .unwrap()
-                .eval(&expander.replace_variable("$time").unwrap()));
+                .eval(&expander.replace_variable(&task, "$time").unwrap()));
 
             assert!(predicate::str::is_match(
                 "[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}:[0-9]{2}:[0-9]{2}"
             )
             .unwrap()
-            .eval(&expander.replace_variable("$datetime").unwrap()));
+            .eval(&expander.replace_variable(&task, "$datetime").unwrap()));
 
             assert!(predicate::str::is_match("[0-9]{10}")
                 .unwrap()
-                .eval(&expander.replace_variable("$timestamp").unwrap()));
+                .eval(&expander.replace_variable(&task, "$timestamp").unwrap()));
         }
 
         #[test]
@@ -147,26 +163,33 @@ mod token_expander {
             project.language = LanguageType::JavaScript;
             let task = create_task();
 
-            let expander = TokenExpander::for_command(&project, &task, sandbox.path());
+            let context = create_context(&project, sandbox.path());
+            let expander = TokenExpander::new(&context);
 
             assert_eq!(
-                expander.replace_variable("$language").unwrap(),
+                expander.replace_variable(&task, "$language").unwrap(),
                 "javascript"
             );
             assert_eq!(
-                expander.replace_variable("$language/before").unwrap(),
+                expander
+                    .replace_variable(&task, "$language/before")
+                    .unwrap(),
                 "javascript/before"
             );
             assert_eq!(
-                expander.replace_variable("after/$language").unwrap(),
+                expander.replace_variable(&task, "after/$language").unwrap(),
                 "after/javascript"
             );
             assert_eq!(
-                expander.replace_variable("in/$language/between").unwrap(),
+                expander
+                    .replace_variable(&task, "in/$language/between")
+                    .unwrap(),
                 "in/javascript/between"
             );
             assert_eq!(
-                expander.replace_variable("partof$languagestring").unwrap(),
+                expander
+                    .replace_variable(&task, "partof$languagestring")
+                    .unwrap(),
                 "partofjavascriptstring"
             );
         }
@@ -177,9 +200,13 @@ mod token_expander {
             let project = create_project(sandbox.path());
             let task = create_task();
 
-            let expander = TokenExpander::for_command(&project, &task, sandbox.path());
+            let context = create_context(&project, sandbox.path());
+            let expander = TokenExpander::new(&context);
 
-            assert_eq!(expander.replace_variable("$unknown").unwrap(), "$unknown");
+            assert_eq!(
+                expander.replace_variable(&task, "$unknown").unwrap(),
+                "$unknown"
+            );
         }
     }
 
@@ -195,9 +222,10 @@ mod token_expander {
 
             task.command = "@files(sources)".into();
 
-            let expander = TokenExpander::for_command(&project, &task, sandbox.path());
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
 
-            expander.expand_command().unwrap();
+            expander.expand_command(&task).unwrap();
         }
 
         #[test]
@@ -208,9 +236,10 @@ mod token_expander {
 
             task.command = "bin".into();
 
-            let expander = TokenExpander::for_command(&project, &task, sandbox.path());
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
 
-            assert_eq!(expander.expand_command().unwrap(), "bin");
+            assert_eq!(expander.expand_command(&task).unwrap(), "bin");
         }
 
         #[test]
@@ -221,9 +250,10 @@ mod token_expander {
 
             task.command = "$project/bin".into();
 
-            let expander = TokenExpander::for_command(&project, &task, sandbox.path());
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
 
-            assert_eq!(expander.expand_command().unwrap(), "project/bin");
+            assert_eq!(expander.expand_command(&task).unwrap(), "project/bin");
         }
 
         #[test]
@@ -234,9 +264,10 @@ mod token_expander {
 
             task.command = "$project/bin/$task".into();
 
-            let expander = TokenExpander::for_command(&project, &task, sandbox.path());
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
 
-            assert_eq!(expander.expand_command().unwrap(), "project/bin/task");
+            assert_eq!(expander.expand_command(&task).unwrap(), "project/bin/task");
         }
     }
 
@@ -251,9 +282,10 @@ mod token_expander {
 
             task.inputs = vec![InputPath::EnvVar("FOO_BAR".into())];
 
-            let expander = TokenExpander::for_inputs(&project, &task, sandbox.path());
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
 
-            assert_eq!(expander.expand_inputs().unwrap(), (vec![], vec![]));
+            assert_eq!(expander.expand_inputs(&task).unwrap(), (vec![], vec![]));
         }
 
         #[test]
@@ -264,10 +296,11 @@ mod token_expander {
 
             task.inputs = vec![InputPath::TokenFunc("@group(all)".into())];
 
-            let expander = TokenExpander::for_inputs(&project, &task, sandbox.path());
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
 
             assert_eq!(
-                expander.expand_inputs().unwrap(),
+                expander.expand_inputs(&task).unwrap(),
                 (
                     vec![
                         WorkspaceRelativePathBuf::from("project/source/config.yml"),
@@ -289,10 +322,11 @@ mod token_expander {
 
             task.inputs = vec![InputPath::TokenFunc("@dirs(dirs)".into())];
 
-            let expander = TokenExpander::for_inputs(&project, &task, sandbox.path());
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
 
             assert_eq!(
-                expander.expand_inputs().unwrap(),
+                expander.expand_inputs(&task).unwrap(),
                 (
                     vec![
                         WorkspaceRelativePathBuf::from("project/source/other"),
@@ -311,10 +345,11 @@ mod token_expander {
 
             task.inputs = vec![InputPath::TokenFunc("@files(all)".into())];
 
-            let expander = TokenExpander::for_inputs(&project, &task, sandbox.path());
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
 
             assert_eq!(
-                expander.expand_inputs().unwrap(),
+                expander.expand_inputs(&task).unwrap(),
                 (
                     vec![
                         WorkspaceRelativePathBuf::from("project/source/config.yml"),
@@ -335,10 +370,11 @@ mod token_expander {
 
             task.inputs = vec![InputPath::TokenFunc("@globs(all)".into())];
 
-            let expander = TokenExpander::for_inputs(&project, &task, sandbox.path());
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
 
             assert_eq!(
-                expander.expand_inputs().unwrap(),
+                expander.expand_inputs(&task).unwrap(),
                 (
                     vec![],
                     vec![
@@ -357,10 +393,11 @@ mod token_expander {
 
             task.inputs = vec![InputPath::TokenFunc("@root(all)".into())];
 
-            let expander = TokenExpander::for_inputs(&project, &task, sandbox.path());
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
 
             assert_eq!(
-                expander.expand_inputs().unwrap(),
+                expander.expand_inputs(&task).unwrap(),
                 (
                     vec![WorkspaceRelativePathBuf::from("project/source/dir/subdir")],
                     vec![]
@@ -377,9 +414,10 @@ mod token_expander {
 
             task.inputs = vec![InputPath::TokenFunc("@in(0)".into())];
 
-            let expander = TokenExpander::for_inputs(&project, &task, sandbox.path());
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
 
-            expander.expand_inputs().unwrap();
+            expander.expand_inputs(&task).unwrap();
         }
 
         #[test]
@@ -391,9 +429,10 @@ mod token_expander {
 
             task.inputs = vec![InputPath::TokenFunc("@out(0)".into())];
 
-            let expander = TokenExpander::for_inputs(&project, &task, sandbox.path());
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
 
-            expander.expand_inputs().unwrap();
+            expander.expand_inputs(&task).unwrap();
         }
 
         #[test]
@@ -407,10 +446,11 @@ mod token_expander {
                 InputPath::TokenVar("$taskPlatform".into()),
             ];
 
-            let expander = TokenExpander::for_inputs(&project, &task, sandbox.path());
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
 
             assert_eq!(
-                expander.expand_inputs().unwrap(),
+                expander.expand_inputs(&task).unwrap(),
                 (
                     vec![
                         WorkspaceRelativePathBuf::from("project/source/project:task"),
@@ -434,10 +474,11 @@ mod token_expander {
                 InputPath::WorkspaceGlob("cache/$target/files/**/*".into()),
             ];
 
-            let expander = TokenExpander::for_inputs(&project, &task, sandbox.path());
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
 
             assert_eq!(
-                expander.expand_inputs().unwrap(),
+                expander.expand_inputs(&task).unwrap(),
                 (
                     vec![
                         WorkspaceRelativePathBuf::from("project/source/task/file.txt"),
@@ -463,10 +504,11 @@ mod token_expander {
 
             task.inputs = vec![InputPath::ProjectFile("dir".into())];
 
-            let expander = TokenExpander::for_inputs(&project, &task, sandbox.path());
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
 
             assert_eq!(
-                expander.expand_inputs().unwrap(),
+                expander.expand_inputs(&task).unwrap(),
                 (
                     vec![],
                     vec![WorkspaceRelativePathBuf::from("project/source/dir/**/*"),]
@@ -486,10 +528,11 @@ mod token_expander {
 
             task.outputs = vec![OutputPath::TokenFunc("@group(all)".into())];
 
-            let expander = TokenExpander::for_outputs(&project, &task, sandbox.path());
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
 
             assert_eq!(
-                expander.expand_outputs().unwrap(),
+                expander.expand_outputs(&task).unwrap(),
                 (
                     vec![
                         WorkspaceRelativePathBuf::from("project/source/config.yml"),
@@ -511,10 +554,11 @@ mod token_expander {
 
             task.outputs = vec![OutputPath::TokenFunc("@dirs(dirs)".into())];
 
-            let expander = TokenExpander::for_outputs(&project, &task, sandbox.path());
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
 
             assert_eq!(
-                expander.expand_outputs().unwrap(),
+                expander.expand_outputs(&task).unwrap(),
                 (
                     vec![
                         WorkspaceRelativePathBuf::from("project/source/other"),
@@ -533,10 +577,11 @@ mod token_expander {
 
             task.outputs = vec![OutputPath::TokenFunc("@files(all)".into())];
 
-            let expander = TokenExpander::for_outputs(&project, &task, sandbox.path());
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
 
             assert_eq!(
-                expander.expand_outputs().unwrap(),
+                expander.expand_outputs(&task).unwrap(),
                 (
                     vec![
                         WorkspaceRelativePathBuf::from("project/source/config.yml"),
@@ -557,10 +602,11 @@ mod token_expander {
 
             task.outputs = vec![OutputPath::TokenFunc("@globs(all)".into())];
 
-            let expander = TokenExpander::for_outputs(&project, &task, sandbox.path());
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
 
             assert_eq!(
-                expander.expand_outputs().unwrap(),
+                expander.expand_outputs(&task).unwrap(),
                 (
                     vec![],
                     vec![
@@ -579,10 +625,11 @@ mod token_expander {
 
             task.outputs = vec![OutputPath::TokenFunc("@root(all)".into())];
 
-            let expander = TokenExpander::for_outputs(&project, &task, sandbox.path());
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
 
             assert_eq!(
-                expander.expand_outputs().unwrap(),
+                expander.expand_outputs(&task).unwrap(),
                 (
                     vec![WorkspaceRelativePathBuf::from("project/source/dir/subdir")],
                     vec![]
@@ -599,9 +646,10 @@ mod token_expander {
 
             task.outputs = vec![OutputPath::TokenFunc("@in(0)".into())];
 
-            let expander = TokenExpander::for_outputs(&project, &task, sandbox.path());
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
 
-            expander.expand_outputs().unwrap();
+            expander.expand_outputs(&task).unwrap();
         }
 
         #[test]
@@ -613,9 +661,10 @@ mod token_expander {
 
             task.outputs = vec![OutputPath::TokenFunc("@out(0)".into())];
 
-            let expander = TokenExpander::for_outputs(&project, &task, sandbox.path());
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
 
-            expander.expand_outputs().unwrap();
+            expander.expand_outputs(&task).unwrap();
         }
 
         #[test]
@@ -631,10 +680,11 @@ mod token_expander {
                 OutputPath::WorkspaceGlob("cache/$target/files/**/*".into()),
             ];
 
-            let expander = TokenExpander::for_outputs(&project, &task, sandbox.path());
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
 
             assert_eq!(
-                expander.expand_outputs().unwrap(),
+                expander.expand_outputs(&task).unwrap(),
                 (
                     vec![
                         WorkspaceRelativePathBuf::from("project/source/task/file.txt"),

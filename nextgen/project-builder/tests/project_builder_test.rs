@@ -115,12 +115,12 @@ mod project_builder {
             vec![
                 DependencyConfig {
                     id: "bar".into(),
-                    source: Some(DependencySource::Explicit),
+                    source: DependencySource::Explicit,
                     ..Default::default()
                 },
                 DependencyConfig {
                     id: "foo".into(),
-                    source: Some(DependencySource::Explicit),
+                    source: DependencySource::Explicit,
                     scope: DependencyScope::Development,
                     ..Default::default()
                 }
@@ -438,36 +438,9 @@ mod project_builder {
                 vec![DependencyConfig {
                     id: "foo".into(),
                     scope: DependencyScope::Development,
-                    source: Some(DependencySource::Implicit),
+                    source: DependencySource::Implicit,
                     ..DependencyConfig::default()
                 }]
-            );
-        }
-
-        #[tokio::test]
-        async fn doesnt_override_dep_of_same_id() {
-            let sandbox = create_sandbox("builder");
-            let stub = Stub::new("baz", sandbox.path());
-
-            let mut builder = stub.create_builder().await;
-            builder.load_local_config().await.unwrap();
-
-            builder.extend_with_dependency(DependencyConfig {
-                id: "foo".into(),
-                scope: DependencyScope::Peer,
-                ..DependencyConfig::default()
-            });
-
-            let project = builder.build().await.unwrap();
-
-            assert!(project.dependencies.contains_key("foo"));
-            assert_eq!(
-                project.dependencies.get("foo").unwrap().scope,
-                DependencyScope::Development
-            );
-            assert_eq!(
-                project.dependencies.get("foo").unwrap().source,
-                Some(DependencySource::Explicit)
             );
         }
 

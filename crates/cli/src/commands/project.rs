@@ -77,11 +77,7 @@ pub async fn project(id: Id, json: bool) -> AppResult {
         deps.push(format!(
             "{} {}",
             color::id(dep_id),
-            color::muted_light(format!(
-                "({}, {})",
-                dep_cfg.source.unwrap_or_default(),
-                dep_cfg.scope
-            )),
+            color::muted_light(format!("({}, {})", dep_cfg.source, dep_cfg.scope)),
         ));
     }
 

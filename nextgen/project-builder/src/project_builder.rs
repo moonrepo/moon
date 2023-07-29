@@ -166,20 +166,11 @@ impl<'app> ProjectBuilder<'app> {
             .as_mut()
             .expect("Local config must be loaded before extending dependencies!");
 
-        let has_dep = local_config.depends_on.iter().any(|d| match d {
-            ProjectDependsOn::String(id) => id == &config.id,
-            ProjectDependsOn::Object(cfg) => cfg.id == config.id,
-        });
+        config.source = DependencySource::Implicit;
 
-        if !has_dep {
-            if config.source.is_none() {
-                config.source = Some(DependencySource::Implicit);
-            }
-
-            local_config
-                .depends_on
-                .push(ProjectDependsOn::Object(config));
-        }
+        local_config
+            .depends_on
+            .push(ProjectDependsOn::Object(config));
 
         self
     }
@@ -228,17 +219,13 @@ impl<'app> ProjectBuilder<'app> {
 
         if let Some(local) = &self.local_config {
             for dep_on in &local.depends_on {
-                let mut dep_config = match dep_on {
+                let dep_config = match dep_on {
                     ProjectDependsOn::String(id) => DependencyConfig {
                         id: id.to_owned(),
                         ..DependencyConfig::default()
                     },
                     ProjectDependsOn::Object(config) => config.to_owned(),
                 };
-
-                if dep_config.source.is_none() {
-                    dep_config.source = Some(DependencySource::Explicit);
-                }
 
                 deps.insert(dep_config.id.clone(), dep_config);
             }

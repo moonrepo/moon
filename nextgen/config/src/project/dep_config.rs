@@ -26,7 +26,7 @@ cacheable!(
     pub struct DependencyConfig {
         pub id: Id,
         pub scope: DependencyScope,
-        pub source: Option<DependencySource>,
+        pub source: DependencySource,
         pub via: Option<String>,
     }
 );

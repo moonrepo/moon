@@ -543,7 +543,7 @@ mod project_graph {
                 vec![DependencyConfig {
                     id: "base".into(),
                     scope: DependencyScope::Development,
-                    source: Some(DependencySource::Explicit),
+                    source: DependencySource::Explicit,
                     ..Default::default()
                 }]
             );
@@ -586,6 +586,8 @@ mod project_graph {
 
     mod dependencies {
         use super::*;
+
+        // TODO #tag deps
 
         #[tokio::test]
         async fn lists_ids_of_dependencies() {
@@ -705,9 +707,9 @@ mod project_graph {
             assert_eq!(
                 graph.aliases(),
                 FxHashMap::from_iter([
-                    (&Id::raw("alias-one"), "@one"),
-                    (&Id::raw("alias-two"), "@two"),
-                    (&Id::raw("alias-three"), "@three"),
+                    ("@one", &Id::raw("alias-one")),
+                    ("@two", &Id::raw("alias-two")),
+                    ("@three", &Id::raw("alias-three")),
                 ])
             );
         }
@@ -775,7 +777,7 @@ mod project_graph {
                 [DependencyConfig {
                     id: "alias-two".into(),
                     scope: DependencyScope::Build,
-                    source: Some(DependencySource::Explicit),
+                    source: DependencySource::Explicit,
                     ..DependencyConfig::default()
                 }]
             );

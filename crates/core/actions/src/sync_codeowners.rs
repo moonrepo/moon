@@ -1,7 +1,7 @@
 use moon_codeowners::{CodeownersGenerator, CodeownersHash};
 use moon_config::CodeownersOrderBy;
 use moon_hash::HashEngine;
-use moon_project_graph2::ProjectGraph;
+use moon_project_graph::ProjectGraph;
 use moon_workspace::Workspace;
 use std::path::PathBuf;
 

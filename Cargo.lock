@@ -3120,7 +3120,7 @@ dependencies = [
  "moon_node_platform",
  "moon_platform",
  "moon_platform_detector",
- "moon_project_graph2",
+ "moon_project_graph",
  "moon_rust_platform",
  "moon_system_platform",
  "moon_utils",
@@ -3172,7 +3172,7 @@ dependencies = [
  "moon_notifier",
  "moon_platform",
  "moon_project",
- "moon_project_graph2",
+ "moon_project_graph",
  "moon_runner",
  "moon_target",
  "moon_terminal",
@@ -3200,7 +3200,7 @@ dependencies = [
  "moon_codeowners",
  "moon_config",
  "moon_hash",
- "moon_project_graph2",
+ "moon_project_graph",
  "moon_vcs_hooks",
  "moon_workspace",
 ]
@@ -3327,7 +3327,7 @@ dependencies = [
  "moon_platform",
  "moon_platform_detector",
  "moon_project",
- "moon_project_graph2",
+ "moon_project_graph",
  "moon_query",
  "moon_rust_lang",
  "moon_rust_tool",
@@ -3495,7 +3495,7 @@ dependencies = [
  "moon_logger",
  "moon_platform",
  "moon_project",
- "moon_project_graph2",
+ "moon_project_graph",
  "moon_query",
  "moon_target",
  "moon_task",
@@ -3657,7 +3657,7 @@ dependencies = [
  "moon_platform",
  "moon_process",
  "moon_project",
- "moon_project_graph2",
+ "moon_project_graph",
  "moon_target",
  "moon_task",
  "moon_terminal",
@@ -3846,7 +3846,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_project_graph2"
+name = "moon_project_graph"
 version = "0.1.0"
 dependencies = [
  "async-recursion",
@@ -3973,7 +3973,7 @@ dependencies = [
  "moon_platform",
  "moon_process",
  "moon_project",
- "moon_project_graph2",
+ "moon_project_graph",
  "moon_rust_lang",
  "moon_rust_tool",
  "moon_task",

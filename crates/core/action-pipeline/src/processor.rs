@@ -7,7 +7,7 @@ use moon_action::{Action, ActionNode};
 use moon_action_context::ActionContext;
 use moon_emitter::{Emitter, Event};
 use moon_logger::trace;
-use moon_project_graph2::ProjectGraph;
+use moon_project_graph::ProjectGraph;
 use moon_workspace::Workspace;
 use starbase_styles::color;
 use std::sync::Arc;

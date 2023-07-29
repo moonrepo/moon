@@ -5,7 +5,7 @@ use moon_config::PlatformType;
 use moon_node_lang::{PackageJson, NODE};
 use moon_node_tool::NodeTool;
 use moon_platform::PlatformManager;
-use moon_project_graph2::ProjectGraph;
+use moon_project_graph::ProjectGraph;
 use moon_rust_lang::{CARGO, RUST};
 use moon_rust_tool::RustTool;
 use moon_terminal::safe_exit;

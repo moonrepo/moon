@@ -11,7 +11,7 @@ use moon_dep_graph::DepGraph;
 use moon_emitter::{Emitter, Event};
 use moon_logger::{debug, error, trace};
 use moon_notifier::WebhooksSubscriber;
-use moon_project_graph2::ProjectGraph;
+use moon_project_graph::ProjectGraph;
 use moon_terminal::{label_checkpoint, label_to_the_moon, Checkpoint, ExtendedTerm};
 use moon_utils::{is_ci, is_test_env, time};
 use moon_workspace::Workspace;

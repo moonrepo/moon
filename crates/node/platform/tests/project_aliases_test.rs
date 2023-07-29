@@ -1,5 +1,5 @@
 use moon::{generate_project_graph, load_workspace_from};
-use moon_project_graph2::ProjectGraph;
+use moon_project_graph::ProjectGraph;
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, get_project_graph_aliases_fixture_configs, Sandbox,
 };

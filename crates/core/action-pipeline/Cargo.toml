@@ -22,7 +22,7 @@ moon_logger = { path = "../logger" }
 moon_notifier = { path = "../notifier" }
 moon_platform = { path = "../platform" }
 moon_project = { path = "../../../nextgen/project" }
-moon_project_graph2 = { path = "../../../nextgen/project-graph" }
+moon_project_graph = { path = "../../../nextgen/project-graph" }
 moon_runner = { path = "../runner" }
 moon_target = { path = "../../../nextgen/target" }
 moon_terminal = { path = "../terminal" }

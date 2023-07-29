@@ -1,7 +1,7 @@
 use super::dto::{GraphEdgeDto, GraphInfoDto, GraphNodeDto};
 use miette::IntoDiagnostic;
 use moon_dep_graph::DepGraph;
-use moon_project_graph2::ProjectGraph;
+use moon_project_graph::ProjectGraph;
 use petgraph::{graph::NodeIndex, Graph};
 use rustc_hash::FxHashMap;
 use serde::Serialize;

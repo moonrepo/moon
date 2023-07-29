@@ -5,7 +5,7 @@ use moon_hash::HashEngine;
 use moon_node_platform::NodePlatform;
 use moon_platform::{PlatformManager, PlatformType};
 use moon_platform_detector::{detect_project_language, detect_task_platform};
-use moon_project_graph2::{
+use moon_project_graph::{
     DetectLanguageEvent, DetectPlatformEvent, ExtendProjectData, ExtendProjectEvent,
     ExtendProjectGraphData, ExtendProjectGraphEvent, ProjectGraph, ProjectGraphBuilder,
     ProjectGraphBuilderContext,

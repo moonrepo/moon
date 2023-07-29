@@ -7,7 +7,7 @@ use moon_config::{
 };
 use moon_project::Project;
 use moon_project_builder::DetectLanguageEvent;
-use moon_project_graph2::{
+use moon_project_graph::{
     ExtendProjectData, ExtendProjectEvent, ExtendProjectGraphData, ExtendProjectGraphEvent,
     ProjectGraph, ProjectGraphBuilder, ProjectGraphBuilderContext,
 };

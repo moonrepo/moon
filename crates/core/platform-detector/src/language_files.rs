@@ -5,7 +5,7 @@ use moon_go_lang::{G, GOENV, GOMOD, GVM};
 use moon_lang::{DependencyManager, VersionManager};
 use moon_node_lang::{NODE, NODENV, NPM, NVM, PNPM, YARN};
 use moon_php_lang::{COMPOSER, PHPBREW, PHPENV};
-use moon_python_lang::{PIP, PIPENV, PYENV, POETRY};
+use moon_python_lang::{PIP, PIPENV, POETRY, PYENV};
 use moon_ruby_lang::{BUNDLER, RBENV, RVM};
 use moon_rust_lang::{CARGO, RUSTUP, RUSTUP_LEGACY};
 

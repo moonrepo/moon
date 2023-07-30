@@ -19,6 +19,9 @@ pub struct ExpanderContext<'graph, 'query> {
     /// Mapping of aliases to their project IDs.
     pub aliases: FxHashMap<&'graph str, &'graph Id>,
 
+    /// Whether to check project boundaries.
+    pub check_boundaries: bool,
+
     /// The base unexpanded project.
     pub project: &'graph Project,
 

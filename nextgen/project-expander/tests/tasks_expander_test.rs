@@ -959,9 +959,6 @@ mod tasks_expander {
             expected = "Tasks example:target, project:task have configured the same output"
         )]
         fn errors_overlapping_file() {
-            env::remove_var("MOON_DISABLE_OVERLAPPING_OUTPUTS");
-            env::remove_var("MOON_TEST");
-
             let sandbox = create_sandbox("file-group");
             let project = create_project(sandbox.path());
 
@@ -979,8 +976,6 @@ mod tasks_expander {
             TasksExpander::new(&context)
                 .expand_outputs(&mut task, &mut boundaries)
                 .unwrap();
-
-            env::set_var("MOON_TEST", "true");
         }
 
         #[test]
@@ -988,9 +983,6 @@ mod tasks_expander {
             expected = "Tasks example:target, project:task have configured the same output"
         )]
         fn errors_overlapping_glob() {
-            env::remove_var("MOON_DISABLE_OVERLAPPING_OUTPUTS");
-            env::remove_var("MOON_TEST");
-
             let sandbox = create_sandbox("file-group");
             let project = create_project(sandbox.path());
 
@@ -1009,8 +1001,6 @@ mod tasks_expander {
             TasksExpander::new(&context)
                 .expand_outputs(&mut task, &mut boundaries)
                 .unwrap();
-
-            env::set_var("MOON_TEST", "true");
         }
 
         #[test]
@@ -1018,9 +1008,6 @@ mod tasks_expander {
             expected = "Tasks example:target, project:task have configured the same output"
         )]
         fn errors_overlapping_glob_matching_file() {
-            env::remove_var("MOON_DISABLE_OVERLAPPING_OUTPUTS");
-            env::remove_var("MOON_TEST");
-
             let sandbox = create_sandbox("file-group");
             let project = create_project(sandbox.path());
 
@@ -1039,8 +1026,6 @@ mod tasks_expander {
             TasksExpander::new(&context)
                 .expand_outputs(&mut task, &mut boundaries)
                 .unwrap();
-
-            env::set_var("MOON_TEST", "true");
         }
     }
 }

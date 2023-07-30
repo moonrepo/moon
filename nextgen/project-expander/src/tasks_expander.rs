@@ -1,13 +1,12 @@
 use crate::expander_context::{substitute_env_var, ExpanderContext, ExpansionBoundaries};
 use crate::tasks_expander_error::TasksExpanderError;
 use crate::token_expander::TokenExpander;
-use moon_common::{color, is_test_env, Id};
+use moon_common::{color, Id};
 use moon_config::InputPath;
 use moon_project::Project;
 use moon_task::{Target, TargetScope, Task};
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::glob::GlobSet;
-use std::env;
 use tracing::{trace, warn};
 
 pub struct TasksExpander<'graph, 'query> {
@@ -288,9 +287,6 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
             return Ok(());
         }
 
-        let bypass_output_boundaries =
-            is_test_env() || env::var("MOON_DISABLE_OVERLAPPING_OUTPUTS").is_ok();
-
         trace!(
             target = task.target.as_str(),
             outputs = ?task.outputs.iter().map(|d| d.as_str()).collect::<Vec<_>>(),
@@ -302,7 +298,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
 
         // Aggregate paths first before globbing, as they are literal
         for file in files {
-            if !bypass_output_boundaries {
+            if self.context.check_boundaries {
                 if let Some(existing_target) = boundaries.output_files.get(&file) {
                     return Err(TasksExpanderError::OverlappingOutputs {
                         output: file.to_string(),
@@ -328,7 +324,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
 
         // Aggregate globs second so we can match against the paths
         for glob in globs {
-            if !bypass_output_boundaries {
+            if self.context.check_boundaries {
                 if let Some(existing_target) = boundaries.output_globs.get(&glob) {
                     return Err(TasksExpanderError::OverlappingOutputs {
                         output: glob.to_string(),
@@ -351,7 +347,7 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
 
         // Now that we have globs, match against all aggreated paths for boundary conflicts,
         // primarily overlapping outputs!
-        if !bypass_output_boundaries
+        if self.context.check_boundaries
             && !task.output_globs.is_empty()
             && !boundaries.output_files.is_empty()
         {

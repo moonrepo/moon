@@ -88,7 +88,8 @@ impl GraphContainer {
         let mut builder = ProjectGraphBuilder::new(context).await.unwrap();
         builder.load_all().await.unwrap();
 
-        let graph = builder.build().await.unwrap();
+        let mut graph = builder.build().await.unwrap();
+        graph.check_boundaries = true;
         graph.get_all().unwrap();
         graph
     }
@@ -1391,8 +1392,6 @@ mod project_graph {
         #[tokio::test]
         #[should_panic(expected = "Tasks a:base, a:other have configured the same output a/out.")]
         async fn errors_overlapping_outputs() {
-            std::env::remove_var("MOON_DISABLE_OVERLAPPING_OUTPUTS");
-
             generate_project_graph("boundaries/overlapping-outputs").await;
         }
     }

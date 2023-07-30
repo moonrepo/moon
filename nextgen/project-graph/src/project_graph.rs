@@ -112,8 +112,8 @@ impl ProjectGraph {
 
     /// Return all projects from the graph.
     pub fn get_all(&self) -> miette::Result<Vec<Arc<Project>>> {
-        let mut all = vec![];
         let mut boundaries = ExpansionBoundaries::default();
+        let mut all = vec![];
 
         for id in self.nodes.keys() {
             all.push(self.internal_get(id, &mut boundaries)?);
@@ -185,7 +185,7 @@ impl ProjectGraph {
     pub fn query<Q: AsRef<Criteria>>(&self, query: Q) -> miette::Result<Vec<Arc<Project>>> {
         let mut projects = vec![];
 
-        for id in self.raw_query(query)? {
+        for id in self.internal_query(query)? {
             projects.push(self.get(id)?);
         }
 
@@ -262,15 +262,13 @@ impl ProjectGraph {
 
         // Otherwise expand the project and cache it with an Arc
         {
-            debug!(id = id.as_str(), "Expanding project {}", color::id(&id));
-
             let query = |input: String| {
                 let mut results = vec![];
 
                 // Don't use get() for expanded projects, since it'll overflow the
                 // stack trying to recursively expand projects! Using unexpanded
                 // dependent projects works just fine for the this entire process.
-                for result_id in self.raw_query(build_query(input)?)? {
+                for result_id in self.internal_query(build_query(input)?)? {
                     results.push(self.get_unexpanded(result_id)?);
                 }
 
@@ -291,7 +289,7 @@ impl ProjectGraph {
         Ok(Arc::clone(self.read_cache().get(&id).unwrap()))
     }
 
-    fn raw_query<Q: AsRef<Criteria>>(&self, query: Q) -> miette::Result<&[Id]> {
+    fn internal_query<Q: AsRef<Criteria>>(&self, query: Q) -> miette::Result<&[Id]> {
         let query = query.as_ref();
         let query_input = query
             .input

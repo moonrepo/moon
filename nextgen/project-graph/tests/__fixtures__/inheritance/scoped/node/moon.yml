@@ -1,0 +1,6 @@
+platform: node
+
+tasks:
+  node:
+    command: node
+    platform: node

@@ -43,12 +43,12 @@ impl GraphContainer {
             ..Default::default()
         };
 
-        // Add a noop tasks to all projects
+        // Add a global task to all projects
         graph.inherited_tasks.configs.insert(
             "*".into(),
             PartialInheritedTasksConfig {
                 tasks: Some(BTreeMap::from_iter([(
-                    "noop".into(),
+                    "global".into(),
                     PartialTaskConfig::default(),
                 )])),
                 ..PartialInheritedTasksConfig::default()
@@ -525,9 +525,153 @@ mod project_graph {
     }
 
     mod inheritance {
+        use moon_project::FileGroup;
+
         use super::*;
 
-        // TODO
+        async fn generate_inheritance_project_graph(fixture: &str) -> ProjectGraph {
+            let sandbox = create_sandbox(fixture);
+
+            let mut container = GraphContainer::new(sandbox.path());
+            container.inherited_tasks =
+                InheritedTasksManager::load(sandbox.path(), sandbox.path().join(".moon")).unwrap();
+
+            let context = container.create_context();
+
+            container.build_graph(context).await
+        }
+
+        #[tokio::test]
+        async fn inherits_scoped_tasks() {
+            let graph = generate_inheritance_project_graph("inheritance/scoped").await;
+
+            assert_eq!(
+                map_ids(graph.get("node").unwrap().tasks.keys().collect::<Vec<_>>()),
+                ["global", "global-node", "node"]
+            );
+
+            assert_eq!(
+                map_ids(
+                    graph
+                        .get("node-library")
+                        .unwrap()
+                        .tasks
+                        .keys()
+                        .collect::<Vec<_>>()
+                ),
+                [
+                    "global",
+                    "global-node",
+                    "global-node-library",
+                    "node-library"
+                ]
+            );
+
+            assert_eq!(
+                map_ids(
+                    graph
+                        .get("system-library")
+                        .unwrap()
+                        .tasks
+                        .keys()
+                        .collect::<Vec<_>>()
+                ),
+                ["global", "system-library"]
+            );
+        }
+
+        #[tokio::test]
+        async fn inherits_tagged_tasks() {
+            let graph = generate_inheritance_project_graph("inheritance/tagged").await;
+
+            assert_eq!(
+                map_ids(graph.get("mage").unwrap().tasks.keys().collect::<Vec<_>>()),
+                ["mage", "magic"]
+            );
+
+            assert_eq!(
+                map_ids(
+                    graph
+                        .get("warrior")
+                        .unwrap()
+                        .tasks
+                        .keys()
+                        .collect::<Vec<_>>()
+                ),
+                ["warrior", "weapons"]
+            );
+
+            assert_eq!(
+                map_ids(
+                    graph
+                        .get("priest")
+                        .unwrap()
+                        .tasks
+                        .keys()
+                        .collect::<Vec<_>>()
+                ),
+                ["magic", "priest", "weapons"]
+            );
+        }
+
+        #[tokio::test]
+        async fn inherits_file_groups() {
+            let graph = generate_inheritance_project_graph("inheritance/file-groups").await;
+            let project = graph.get("project").unwrap();
+
+            assert_eq!(
+                project.file_groups.get("sources").unwrap(),
+                &FileGroup::new_with_source(
+                    "sources",
+                    [WorkspaceRelativePathBuf::from("project/src/**/*")]
+                )
+                .unwrap()
+            );
+            assert_eq!(
+                project.file_groups.get("tests").unwrap(),
+                &FileGroup::new_with_source(
+                    "tests",
+                    [WorkspaceRelativePathBuf::from("project/tests/**/*")]
+                )
+                .unwrap()
+            );
+            assert_eq!(
+                project.file_groups.get("configs").unwrap(),
+                &FileGroup::new_with_source(
+                    "configs",
+                    [WorkspaceRelativePathBuf::from("project/config.*")]
+                )
+                .unwrap()
+            );
+        }
+
+        #[tokio::test]
+        async fn inherits_implicit_deps_inputs() {
+            let graph = generate_inheritance_project_graph("inheritance/implicits").await;
+            let project = graph.get("project").unwrap();
+            let task = project.get_task("example").unwrap();
+
+            assert_eq!(
+                task.deps,
+                [
+                    Target::parse("project:other").unwrap(),
+                    Target::parse("base:local").unwrap(),
+                ]
+            );
+
+            assert_eq!(
+                task.input_files,
+                FxHashSet::from_iter([WorkspaceRelativePathBuf::from("project/local.txt")])
+            );
+
+            assert_eq!(
+                task.input_globs,
+                FxHashSet::from_iter([
+                    WorkspaceRelativePathBuf::from(".moon/*.yml"),
+                    WorkspaceRelativePathBuf::from("project/global.*")
+                ])
+            );
+        }
     }
 
     mod expansion {
@@ -789,7 +933,7 @@ mod project_graph {
                     .get_task("no-dupes")
                     .unwrap()
                     .deps,
-                [Target::parse("alias-one:noop").unwrap()]
+                [Target::parse("alias-one:global").unwrap()]
             );
         }
 
@@ -805,9 +949,9 @@ mod project_graph {
                     .unwrap()
                     .deps,
                 [
-                    Target::parse("alias-one:noop").unwrap(),
-                    Target::parse("alias-three:noop").unwrap(),
-                    Target::parse("implicit:noop").unwrap(),
+                    Target::parse("alias-one:global").unwrap(),
+                    Target::parse("alias-three:global").unwrap(),
+                    Target::parse("implicit:global").unwrap(),
                 ]
             );
         }

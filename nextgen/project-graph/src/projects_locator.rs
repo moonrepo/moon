@@ -51,7 +51,10 @@ where
     }
 
     // Glob for all other projects
-    for project_root in glob::walk(workspace_root, &globs)? {
+    let mut potential_projects = glob::walk(workspace_root, &globs)?;
+    potential_projects.sort();
+
+    for project_root in potential_projects {
         if project_root.is_dir() {
             let project_source =
                 to_virtual_string(project_root.strip_prefix(workspace_root).unwrap())?;

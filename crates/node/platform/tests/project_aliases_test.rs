@@ -30,18 +30,12 @@ async fn loads_node_aliases_name_scopes() {
     assert_eq!(
         graph.aliases(),
         FxHashMap::from_iter([
-            (
-                "project-graph-aliases-explicit",
-                &Id::raw("explicit")
-            ),
+            ("project-graph-aliases-explicit", &Id::raw("explicit")),
             (
                 "project-graph-aliases-explicit-and-implicit",
                 &Id::raw("explicitAndImplicit")
             ),
-            (
-                "project-graph-aliases-implicit",
-                &Id::raw("implicit")
-            ),
+            ("project-graph-aliases-implicit", &Id::raw("implicit")),
             ("project-graph-aliases-node", &Id::raw("node")),
             ("pkg-bar", &Id::raw("nodeNameOnly")),
             ("@scope/pkg-foo", &Id::raw("nodeNameScope"))

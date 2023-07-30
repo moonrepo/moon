@@ -83,6 +83,7 @@ mod token_expander {
 
     mod vars {
         use super::*;
+
         #[test]
         fn replaces_variables() {
             let sandbox = create_empty_sandbox();
@@ -329,8 +330,8 @@ mod token_expander {
                 expander.expand_inputs(&task).unwrap(),
                 (
                     vec![
+                        WorkspaceRelativePathBuf::from("project/source/dir/subdir"),
                         WorkspaceRelativePathBuf::from("project/source/other"),
-                        WorkspaceRelativePathBuf::from("project/source/dir/subdir")
                     ],
                     vec![]
                 )
@@ -353,9 +354,9 @@ mod token_expander {
                 (
                     vec![
                         WorkspaceRelativePathBuf::from("project/source/config.yml"),
+                        WorkspaceRelativePathBuf::from("project/source/dir/subdir/nested.json"),
                         WorkspaceRelativePathBuf::from("project/source/docs.md"),
                         WorkspaceRelativePathBuf::from("project/source/other/file.json"),
-                        WorkspaceRelativePathBuf::from("project/source/dir/subdir/nested.json"),
                     ],
                     vec![]
                 )
@@ -561,8 +562,8 @@ mod token_expander {
                 expander.expand_outputs(&task).unwrap(),
                 (
                     vec![
+                        WorkspaceRelativePathBuf::from("project/source/dir/subdir"),
                         WorkspaceRelativePathBuf::from("project/source/other"),
-                        WorkspaceRelativePathBuf::from("project/source/dir/subdir")
                     ],
                     vec![]
                 )
@@ -585,9 +586,9 @@ mod token_expander {
                 (
                     vec![
                         WorkspaceRelativePathBuf::from("project/source/config.yml"),
+                        WorkspaceRelativePathBuf::from("project/source/dir/subdir/nested.json"),
                         WorkspaceRelativePathBuf::from("project/source/docs.md"),
                         WorkspaceRelativePathBuf::from("project/source/other/file.json"),
-                        WorkspaceRelativePathBuf::from("project/source/dir/subdir/nested.json"),
                     ],
                     vec![]
                 )

@@ -736,8 +736,8 @@ mod project_graph {
             assert_eq!(
                 task.deps,
                 [
-                    Target::parse("tag-three:test").unwrap(),
                     Target::parse("tag-one:test").unwrap(),
+                    Target::parse("tag-three:test").unwrap(),
                 ]
             );
         }

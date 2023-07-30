@@ -173,6 +173,8 @@ impl FileGroup {
             }
         }
 
+        list.sort();
+
         Ok(list)
     }
 }

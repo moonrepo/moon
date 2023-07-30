@@ -319,6 +319,9 @@ impl ProjectGraph {
                 }
             }
 
+            // Sort so that the order is deterministic
+            project_ids.sort();
+
             Ok(project_ids)
         })
     }

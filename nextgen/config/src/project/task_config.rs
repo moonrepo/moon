@@ -33,7 +33,7 @@ fn validate_command_list<D, C>(args: &[String], _task: &D, _ctx: &C) -> Result<(
 
 pub fn validate_deps<D, C>(deps: &[Target], _data: &D, _context: &C) -> Result<(), ValidateError> {
     for (i, dep) in deps.iter().enumerate() {
-        if matches!(dep.scope, TargetScope::All | TargetScope::Tag(_)) {
+        if matches!(dep.scope, TargetScope::All) {
             return Err(ValidateError::with_segment(
                 "target scope not supported as a task dependency",
                 PathSegment::Index(i),

@@ -726,12 +726,25 @@ mod project_graph {
 
             assert_eq!(task.deps, [Target::parse("project:build").unwrap()]);
         }
+
+        #[tokio::test]
+        async fn expands_tag_deps_in_task() {
+            let graph = generate_project_graph("expansion").await;
+            let project = graph.get("tasks").unwrap();
+            let task = project.get_task("test-tags").unwrap();
+
+            assert_eq!(
+                task.deps,
+                [
+                    Target::parse("tag-three:test").unwrap(),
+                    Target::parse("tag-one:test").unwrap(),
+                ]
+            );
+        }
     }
 
     mod dependencies {
         use super::*;
-
-        // TODO #tag deps
 
         #[tokio::test]
         async fn lists_ids_of_dependencies() {

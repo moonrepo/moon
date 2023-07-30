@@ -4,7 +4,7 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{color, Id};
 use moon_config::DependencyScope;
 use moon_project::Project;
-use moon_project_expander::{ExpanderContext, ProjectExpander};
+use moon_project_expander::{ExpanderContext, ExpansionBoundaries, ProjectExpander};
 use moon_query::{build_query, Criteria, Queryable};
 use once_map::OnceMap;
 use pathdiff::diff_paths;
@@ -105,52 +105,18 @@ impl ProjectGraph {
     /// Return a project with the provided name or alias from the graph.
     /// If the project does not exist or has been misconfigured, return an error.
     pub fn get(&self, alias_or_id: &str) -> miette::Result<Arc<Project>> {
-        let id = self.resolve_id(alias_or_id);
+        let mut boundaries = ExpansionBoundaries::default();
 
-        // Check if the expanded project has been created, if so return it
-        {
-            if let Some(project) = self.read_cache().get(&id) {
-                return Ok(Arc::clone(project));
-            }
-        }
-
-        // Otherwise expand the project and cache it with an Arc
-        {
-            debug!(id = id.as_str(), "Expanding project {}", color::id(&id));
-
-            let query = |input: String| {
-                let mut results = vec![];
-
-                // Don't use get() for expanded projects, since it'll overflow the
-                // stack trying to recursively expand projects! Using unexpanded
-                // dependent projects works just fine for the this entire process.
-                for result_id in self.raw_query(build_query(input)?)? {
-                    results.push(self.get_unexpanded(result_id)?);
-                }
-
-                Ok(results)
-            };
-
-            let mut expander = ProjectExpander::new(ExpanderContext {
-                aliases: self.aliases(),
-                project: self.get_unexpanded(&id)?,
-                query: Box::new(query),
-                workspace_root: &self.workspace_root,
-            });
-
-            self.write_cache()
-                .insert(id.clone(), Arc::new(expander.expand()?));
-        }
-
-        Ok(Arc::clone(self.read_cache().get(&id).unwrap()))
+        self.internal_get(alias_or_id, &mut boundaries)
     }
 
     /// Return all projects from the graph.
     pub fn get_all(&self) -> miette::Result<Vec<Arc<Project>>> {
         let mut all = vec![];
+        let mut boundaries = ExpansionBoundaries::default();
 
         for id in self.nodes.keys() {
-            all.push(self.get(id)?);
+            all.push(self.internal_get(id, &mut boundaries)?);
         }
 
         Ok(all)
@@ -278,6 +244,51 @@ impl ProjectGraph {
             .ok_or_else(|| ProjectGraphError::UnconfiguredID(id.to_owned()))?;
 
         Ok(self.graph.node_weight(node.index).unwrap())
+    }
+
+    fn internal_get(
+        &self,
+        alias_or_id: &str,
+        boundaries: &mut ExpansionBoundaries,
+    ) -> miette::Result<Arc<Project>> {
+        let id = self.resolve_id(alias_or_id);
+
+        // Check if the expanded project has been created, if so return it
+        {
+            if let Some(project) = self.read_cache().get(&id) {
+                return Ok(Arc::clone(project));
+            }
+        }
+
+        // Otherwise expand the project and cache it with an Arc
+        {
+            debug!(id = id.as_str(), "Expanding project {}", color::id(&id));
+
+            let query = |input: String| {
+                let mut results = vec![];
+
+                // Don't use get() for expanded projects, since it'll overflow the
+                // stack trying to recursively expand projects! Using unexpanded
+                // dependent projects works just fine for the this entire process.
+                for result_id in self.raw_query(build_query(input)?)? {
+                    results.push(self.get_unexpanded(result_id)?);
+                }
+
+                Ok(results)
+            };
+
+            let mut expander = ProjectExpander::new(ExpanderContext {
+                aliases: self.aliases(),
+                project: self.get_unexpanded(&id)?,
+                query: Box::new(query),
+                workspace_root: &self.workspace_root,
+            });
+
+            self.write_cache()
+                .insert(id.clone(), Arc::new(expander.expand(boundaries)?));
+        }
+
+        Ok(Arc::clone(self.read_cache().get(&id).unwrap()))
     }
 
     fn raw_query<Q: AsRef<Criteria>>(&self, query: Q) -> miette::Result<&[Id]> {

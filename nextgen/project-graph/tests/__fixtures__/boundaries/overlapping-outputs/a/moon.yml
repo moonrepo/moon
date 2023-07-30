@@ -1,0 +1,7 @@
+tasks:
+  base:
+    outputs:
+      - 'out'
+  other:
+    outputs:
+      - 'out'

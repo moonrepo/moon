@@ -3,7 +3,7 @@ mod utils;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{DependencyConfig, InputPath, OutputPath};
 use moon_project::Project;
-use moon_project_expander::TasksExpander;
+use moon_project_expander::{ExpansionBoundaries, TasksExpander};
 use moon_task::Target;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
@@ -836,8 +836,9 @@ mod tasks_expander {
                 .push(OutputPath::TokenFunc("@files(all)".into()));
 
             let context = create_context(&project, sandbox.path());
+            let mut boundaries = ExpansionBoundaries::default();
             TasksExpander::new(&context)
-                .expand_outputs(&mut task)
+                .expand_outputs(&mut task, &mut boundaries)
                 .unwrap();
 
             assert_eq!(task.output_globs, FxHashSet::default());
@@ -865,8 +866,9 @@ mod tasks_expander {
                 .push(OutputPath::TokenFunc("@group(all)".into()));
 
             let context = create_context(&project, sandbox.path());
+            let mut boundaries = ExpansionBoundaries::default();
             TasksExpander::new(&context)
-                .expand_outputs(&mut task)
+                .expand_outputs(&mut task, &mut boundaries)
                 .unwrap();
 
             assert_eq!(
@@ -895,8 +897,9 @@ mod tasks_expander {
                 .push(OutputPath::WorkspaceFile("$project/index.js".into()));
 
             let context = create_context(&project, sandbox.path());
+            let mut boundaries = ExpansionBoundaries::default();
             TasksExpander::new(&context)
-                .expand_outputs(&mut task)
+                .expand_outputs(&mut task, &mut boundaries)
                 .unwrap();
 
             assert_eq!(
@@ -916,8 +919,9 @@ mod tasks_expander {
             task.input_files.insert("project/source/out".into());
 
             let context = create_context(&project, sandbox.path());
+            let mut boundaries = ExpansionBoundaries::default();
             TasksExpander::new(&context)
-                .expand_outputs(&mut task)
+                .expand_outputs(&mut task, &mut boundaries)
                 .unwrap();
 
             assert!(task.input_files.is_empty());
@@ -938,8 +942,9 @@ mod tasks_expander {
             task.input_globs.insert("project/source/out/**/*".into());
 
             let context = create_context(&project, sandbox.path());
+            let mut boundaries = ExpansionBoundaries::default();
             TasksExpander::new(&context)
-                .expand_outputs(&mut task)
+                .expand_outputs(&mut task, &mut boundaries)
                 .unwrap();
 
             assert!(task.input_globs.is_empty());
@@ -947,6 +952,80 @@ mod tasks_expander {
                 task.output_globs,
                 create_path_set(vec!["project/source/out/**/*"])
             );
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Tasks example:target, project:task have configured the same output"
+        )]
+        fn errors_overlapping_file() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+
+            let mut task = create_task();
+            task.outputs.push(OutputPath::ProjectFile("out".into()));
+
+            let context = create_context(&project, sandbox.path());
+            let mut boundaries = ExpansionBoundaries::default();
+
+            boundaries.output_files.insert(
+                "project/source/out".into(),
+                Target::parse("example:target").unwrap(),
+            );
+
+            TasksExpander::new(&context)
+                .expand_outputs(&mut task, &mut boundaries)
+                .unwrap();
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Tasks example:target, project:task have configured the same output"
+        )]
+        fn errors_overlapping_glob() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+
+            let mut task = create_task();
+            task.outputs
+                .push(OutputPath::ProjectGlob("out/**/*".into()));
+
+            let context = create_context(&project, sandbox.path());
+            let mut boundaries = ExpansionBoundaries::default();
+
+            boundaries.output_globs.insert(
+                "project/source/out/**/*".into(),
+                Target::parse("example:target").unwrap(),
+            );
+
+            TasksExpander::new(&context)
+                .expand_outputs(&mut task, &mut boundaries)
+                .unwrap();
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Tasks example:target, project:task have configured the same output"
+        )]
+        fn errors_overlapping_glob_matching_file() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+
+            let mut task = create_task();
+            task.outputs
+                .push(OutputPath::ProjectGlob("out/**/*".into()));
+
+            let context = create_context(&project, sandbox.path());
+            let mut boundaries = ExpansionBoundaries::default();
+
+            boundaries.output_files.insert(
+                "project/source/out".into(),
+                Target::parse("example:target").unwrap(),
+            );
+
+            TasksExpander::new(&context)
+                .expand_outputs(&mut task, &mut boundaries)
+                .unwrap();
         }
     }
 }

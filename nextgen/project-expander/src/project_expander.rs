@@ -1,4 +1,4 @@
-use crate::expander_context::ExpanderContext;
+use crate::expander_context::{ExpanderContext, ExpansionBoundaries};
 use crate::tasks_expander::TasksExpander;
 use moon_config::DependencyConfig;
 use moon_project::Project;
@@ -15,12 +15,12 @@ impl<'graph, 'query> ProjectExpander<'graph, 'query> {
         Self { context }
     }
 
-    pub fn expand(&mut self) -> miette::Result<Project> {
+    pub fn expand(&mut self, boundaries: &mut ExpansionBoundaries) -> miette::Result<Project> {
         // Clone before expanding!
         let mut project = self.context.project.to_owned();
 
         self.expand_deps(&mut project)?;
-        self.expand_tasks(&mut project)?;
+        self.expand_tasks(&mut project, boundaries)?;
 
         Ok(project)
     }
@@ -50,7 +50,11 @@ impl<'graph, 'query> ProjectExpander<'graph, 'query> {
         Ok(())
     }
 
-    pub fn expand_tasks(&mut self, project: &mut Project) -> miette::Result<()> {
+    pub fn expand_tasks(
+        &mut self,
+        project: &mut Project,
+        boundaries: &mut ExpansionBoundaries,
+    ) -> miette::Result<()> {
         let mut tasks = BTreeMap::new();
         let mut expander = TasksExpander::new(&self.context);
 
@@ -59,7 +63,7 @@ impl<'graph, 'query> ProjectExpander<'graph, 'query> {
             expander.expand_env(&mut task)?;
             expander.expand_deps(&mut task)?;
             expander.expand_inputs(&mut task)?;
-            expander.expand_outputs(&mut task)?;
+            expander.expand_outputs(&mut task, boundaries)?;
             expander.expand_args(&mut task)?;
             expander.expand_command(&mut task)?;
 

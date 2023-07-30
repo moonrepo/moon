@@ -3841,6 +3841,7 @@ dependencies = [
  "pathdiff",
  "rustc-hash",
  "starbase_sandbox",
+ "starbase_utils",
  "thiserror",
  "tracing",
 ]

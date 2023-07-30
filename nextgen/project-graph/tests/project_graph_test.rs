@@ -1228,6 +1228,16 @@ mod project_graph {
         }
     }
 
+    mod boundaries {
+        use super::*;
+
+        #[tokio::test]
+        #[should_panic(expected = "Tasks a:base, a:other have configured the same output a/out.")]
+        async fn errors_overlapping_outputs() {
+            generate_project_graph("boundaries/overlapping-outputs").await;
+        }
+    }
+
     mod to_dot {
         use super::*;
 

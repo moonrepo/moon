@@ -12,10 +12,11 @@ moon_task = { path = "../task" }
 moon_task_builder = { path = "../task-builder" }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
-thiserror = { workspace = true }
+starbase_events = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
 starbase_sandbox = { workspace = true }
 # TODO remove
 moon_platform_detector = { path = "../../crates/core/platform-detector" }
+tokio = { workspace = true }

@@ -1,0 +1,5 @@
+tasks:
+  no-dupes:
+    deps:
+      - '@one:global'
+      - 'alias-one:global'

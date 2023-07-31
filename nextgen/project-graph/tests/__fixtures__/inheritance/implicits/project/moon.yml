@@ -1,0 +1,7 @@
+tasks:
+  example:
+    deps:
+      - 'other'
+    inputs:
+      - 'local.txt'
+  other: {}

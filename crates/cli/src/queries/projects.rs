@@ -15,6 +15,7 @@ use starbase::AppResult;
 use std::{
     collections::BTreeMap,
     io::{stdin, IsTerminal, Read},
+    sync::Arc,
 };
 
 const LOG_TARGET: &str = "moon:query:projects";
@@ -35,7 +36,7 @@ pub struct QueryProjectsOptions {
 
 #[derive(Deserialize, Serialize)]
 pub struct QueryProjectsResult {
-    pub projects: Vec<Project>,
+    pub projects: Vec<Arc<Project>>,
     pub options: QueryProjectsOptions,
 }
 
@@ -104,7 +105,7 @@ async fn load_touched_files(
 pub async fn query_projects(
     workspace: &mut Workspace,
     options: &QueryProjectsOptions,
-) -> AppResult<Vec<Project>> {
+) -> AppResult<Vec<Arc<Project>>> {
     debug!(target: LOG_TARGET, "Querying for projects");
 
     let project_graph = generate_project_graph(workspace).await?;
@@ -117,7 +118,7 @@ pub async fn query_projects(
     // When a MQL input is provided, it takes full precedence over option args
     if let Some(query) = &options.query {
         let projects = project_graph
-            .query(&moon_query::build_query(query)?)?
+            .query(moon_query::build_query(query)?)?
             .into_iter()
             .filter_map(|project| {
                 if options.affected && !project.is_affected(&touched_files) {

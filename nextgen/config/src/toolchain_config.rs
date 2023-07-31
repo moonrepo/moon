@@ -1,5 +1,6 @@
 // .moon/toolchain.yml
 
+use crate::language_platform::PlatformType;
 use crate::toolchain::*;
 use crate::{inherit_tool, inherit_tool_without_version};
 use moon_common::consts;
@@ -45,6 +46,24 @@ impl ToolchainConfig {
         "typescript",
         inherit_proto_typescript
     );
+
+    pub fn get_enabled_platforms(&self) -> Vec<PlatformType> {
+        let mut tools = vec![];
+
+        if self.deno.is_some() {
+            tools.push(PlatformType::Deno);
+        }
+
+        if self.node.is_some() {
+            tools.push(PlatformType::Node);
+        }
+
+        if self.rust.is_some() {
+            tools.push(PlatformType::Rust);
+        }
+
+        tools
+    }
 
     pub fn inherit_proto(&mut self, proto_tools: &ToolsConfig) -> miette::Result<()> {
         self.inherit_proto_deno(proto_tools)?;

@@ -1,0 +1,7 @@
+platform: node
+type: library
+
+tasks:
+  node-library:
+    command: node-library
+    platform: node

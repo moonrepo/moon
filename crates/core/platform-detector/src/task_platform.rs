@@ -1,4 +1,4 @@
-use moon_config::{PlatformType, ToolchainConfig};
+use moon_config::PlatformType;
 use moon_utils::regex::{self, UNIX_SYSTEM_COMMAND, WINDOWS_SYSTEM_COMMAND};
 use once_cell::sync::Lazy;
 
@@ -13,12 +13,12 @@ static NODE_COMMANDS: Lazy<regex::Regex> = Lazy::new(|| {
 
 fn use_platform_if_enabled(
     platform: PlatformType,
-    toolchain_config: &ToolchainConfig,
+    enabled_platforms: &[PlatformType],
 ) -> PlatformType {
     match platform {
-        PlatformType::Deno if toolchain_config.deno.is_some() => return platform,
-        PlatformType::Node if toolchain_config.node.is_some() => return platform,
-        PlatformType::Rust if toolchain_config.rust.is_some() => return platform,
+        PlatformType::Deno if enabled_platforms.contains(&PlatformType::Deno) => return platform,
+        PlatformType::Node if enabled_platforms.contains(&PlatformType::Node) => return platform,
+        PlatformType::Rust if enabled_platforms.contains(&PlatformType::Rust) => return platform,
         _ => {}
     };
 
@@ -28,18 +28,18 @@ fn use_platform_if_enabled(
 pub fn detect_task_platform(
     command: &str,
     // language: &LanguageType,
-    toolchain_config: &ToolchainConfig,
+    enabled_platforms: &[PlatformType],
 ) -> PlatformType {
     if DENO_COMMANDS.is_match(command) {
-        return use_platform_if_enabled(PlatformType::Deno, toolchain_config);
+        return use_platform_if_enabled(PlatformType::Deno, enabled_platforms);
     }
 
     if NODE_COMMANDS.is_match(command) {
-        return use_platform_if_enabled(PlatformType::Node, toolchain_config);
+        return use_platform_if_enabled(PlatformType::Node, enabled_platforms);
     }
 
     if RUST_COMMANDS.is_match(command) {
-        return use_platform_if_enabled(PlatformType::Rust, toolchain_config);
+        return use_platform_if_enabled(PlatformType::Rust, enabled_platforms);
     }
 
     if UNIX_SYSTEM_COMMAND.is_match(command) || WINDOWS_SYSTEM_COMMAND.is_match(command) {

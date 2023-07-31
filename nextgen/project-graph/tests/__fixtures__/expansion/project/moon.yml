@@ -1,0 +1,10 @@
+dependsOn:
+  - base
+  - id: base
+    scope: development
+
+tasks:
+  build:
+    command: 'build'
+    deps:
+      - '^:build'

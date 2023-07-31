@@ -1,0 +1,5 @@
+dependsOn:
+  - id: 'alias-one'
+    scope: 'development'
+  - id: '@two'
+    scope: 'production'

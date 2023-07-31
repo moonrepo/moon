@@ -24,6 +24,7 @@ use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use starbase_utils::glob::GlobSet;
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::{collections::BTreeMap, path::Path};
 
 const LOG_TARGET: &str = "moon:node-platform";
@@ -121,7 +122,8 @@ impl Platform for NodePlatform {
         );
 
         for (project_id, project_source) in projects_map {
-            if let Some(package_json) = PackageJson::read(self.workspace_root.join(project_source))?
+            if let Some(package_json) =
+                PackageJson::read(project_source.to_path(&self.workspace_root))?
             {
                 if let Some(package_name) = package_json.name {
                     let alias = package_name.clone();
@@ -167,7 +169,6 @@ impl Platform for NodePlatform {
         &self,
         project_id: &str,
         project_source: &str,
-        _aliases_map: &ProjectsAliasesMap,
     ) -> miette::Result<Vec<DependencyConfig>> {
         let mut implicit_deps = vec![];
 
@@ -185,7 +186,7 @@ impl Platform for NodePlatform {
                             implicit_deps.push(DependencyConfig {
                                 id: dep_project_id.to_owned(),
                                 scope: *scope,
-                                source: Some(DependencySource::Implicit),
+                                source: DependencySource::Implicit,
                                 via: Some(dep_name.clone()),
                             });
                         }
@@ -336,7 +337,7 @@ impl Platform for NodePlatform {
         &self,
         _context: &ActionContext,
         project: &Project,
-        dependencies: &FxHashMap<Id, &Project>,
+        dependencies: &FxHashMap<Id, Arc<Project>>,
     ) -> miette::Result<bool> {
         let modified = actions::sync_project(
             project,

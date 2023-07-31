@@ -30,7 +30,7 @@ pub async fn sync_codeowners(
         codeowners.add_workspace_entries(&workspace.config.codeowners)?;
     }
 
-    for project in projects {
+    for project in &projects {
         if !project.config.owners.paths.is_empty() {
             codeowners_hash.add_project(&project.id, &project.config.owners);
 

@@ -1,0 +1,22 @@
+[package]
+name = "moon_project_expander"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_common = { path = "../common" }
+moon_config = { path = "../config" }
+moon_project = { path = "../project" }
+moon_query = { path = "../query" }
+moon_task = { path = "../task" }
+moon_time = { path = "../time" }
+dotenvy = "0.15.7"
+miette = { workspace = true }
+pathdiff = { workspace = true }
+rustc-hash = { workspace = true }
+starbase_utils = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+starbase_sandbox = { workspace = true }

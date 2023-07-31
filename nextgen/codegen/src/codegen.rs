@@ -26,7 +26,7 @@ impl<'app> CodeGenerator<'app> {
     /// Create a new template with a schema, using the first configured template path.
     /// Will error if a template of the same name already exists.
     pub fn create_template(&self, id: &str) -> miette::Result<Template> {
-        let id = Id::clean(id);
+        let id = Id::clean(id)?;
         let root = self.create_absolute_path(self.config.templates[0].as_str(), id.as_str());
 
         if root.exists() {
@@ -50,7 +50,7 @@ impl<'app> CodeGenerator<'app> {
     /// Load the template with the provided name, using the first match amongst
     /// the list of template paths. Will error if no match is found.
     pub fn load_template(&self, id: &str) -> miette::Result<Template> {
-        let id = Id::clean(id);
+        let id = Id::clean(id)?;
 
         debug!(
             template = id.as_str(),

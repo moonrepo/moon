@@ -153,12 +153,6 @@ deps:
         fn errors_on_all_scope() {
             test_parse_config("deps: [':task']", |code| TaskConfig::parse(code));
         }
-
-        #[test]
-        #[should_panic(expected = "target scope not supported as a task dependency")]
-        fn errors_on_tag_scope() {
-            test_parse_config("deps: ['#tag:task']", |code| TaskConfig::parse(code));
-        }
     }
 
     mod inputs {

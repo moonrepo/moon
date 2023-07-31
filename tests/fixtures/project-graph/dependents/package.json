@@ -1,5 +1,0 @@
-{
-  "name": "project-graph-dependents",
-  "private": true,
-  "workspaces": ["*"]
-}

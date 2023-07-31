@@ -1,5 +1,6 @@
 mod inherited_tasks_config;
 mod language_platform;
+pub mod patterns;
 mod portable_path;
 mod project;
 mod project_config;

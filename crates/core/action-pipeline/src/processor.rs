@@ -98,18 +98,18 @@ pub async fn process_action(
 
             local_emitter
                 .emit(Event::DependenciesInstalling {
-                    project: Some(project),
+                    project: Some(&project),
                     runtime,
                 })
                 .await?;
 
             let install_result =
-                install_deps(&mut action, context, workspace, runtime, Some(project)).await;
+                install_deps(&mut action, context, workspace, runtime, Some(&project)).await;
 
             local_emitter
                 .emit(Event::DependenciesInstalled {
                     error: extract_error(&install_result),
-                    project: Some(project),
+                    project: Some(&project),
                     runtime,
                 })
                 .await?;
@@ -122,7 +122,10 @@ pub async fn process_action(
             let project = local_project_graph.get(project_id)?;
 
             local_emitter
-                .emit(Event::ProjectSyncing { project, runtime })
+                .emit(Event::ProjectSyncing {
+                    project: &project,
+                    runtime,
+                })
                 .await?;
 
             let sync_result = sync_project(
@@ -130,7 +133,7 @@ pub async fn process_action(
                 context,
                 workspace,
                 project_graph,
-                project,
+                &project,
                 runtime,
             )
             .await;
@@ -138,7 +141,7 @@ pub async fn process_action(
             local_emitter
                 .emit(Event::ProjectSynced {
                     error: extract_error(&sync_result),
-                    project,
+                    project: &project,
                     runtime,
                 })
                 .await?;
@@ -173,7 +176,7 @@ pub async fn process_action(
                 context,
                 emitter,
                 workspace,
-                project,
+                &project,
                 target,
                 runtime,
             )

@@ -1,0 +1,3 @@
+tasks:
+  global-node:
+    command: global-node

@@ -9,9 +9,9 @@ moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_target = { path = "../target" }
 moon_task = { path = "../task" }
-dotenvy = "0.15.7"
 miette = { workspace = true }
 rustc-hash = { workspace = true }
+starbase_events = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 
@@ -19,3 +19,4 @@ tracing = { workspace = true }
 starbase_sandbox = { workspace = true }
 # TODO remove
 moon_platform_detector = { path = "../../crates/core/platform-detector" }
+tokio = { workspace = true }

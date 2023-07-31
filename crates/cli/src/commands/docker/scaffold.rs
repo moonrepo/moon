@@ -81,16 +81,16 @@ fn scaffold_workspace(
     };
 
     // Copy each project and mimic the folder structure
-    for project_source in project_graph.sources.values() {
-        if project_source == "." {
+    for source in project_graph.sources().values() {
+        if source.as_str() == "." {
             continue;
         }
 
-        let docker_project_root = docker_workspace_root.join(project_source);
+        let docker_project_root = docker_workspace_root.join(source.as_str());
 
         fs::create_dir_all(&docker_project_root)?;
 
-        copy_from_dir(&workspace.root.join(project_source), &docker_project_root)?;
+        copy_from_dir(&source.to_path(&workspace.root), &docker_project_root)?;
     }
 
     // Copy root lockfiles and configurations
@@ -163,8 +163,8 @@ fn scaffold_sources(
 
     // Include non-focused projects in the manifest
     for project_id in project_graph.ids() {
-        if !manifest.focused_projects.contains(&project_id) {
-            manifest.unfocused_projects.insert(project_id);
+        if !manifest.focused_projects.contains(project_id) {
+            manifest.unfocused_projects.insert(project_id.to_owned());
         }
     }
 

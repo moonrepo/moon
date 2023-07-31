@@ -12,8 +12,8 @@ pub async fn sync() -> AppResult {
     let mut project_count = 0;
     let mut dep_builder = build_dep_graph(&project_graph);
 
-    for project in project_graph.get_all()? {
-        dep_builder.sync_project(&project)?;
+    for project in project_graph.get_all_unexpanded() {
+        dep_builder.sync_project(project)?;
         project_count += 1;
     }
 

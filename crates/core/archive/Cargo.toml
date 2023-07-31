@@ -18,7 +18,7 @@ miette = { workspace = true }
 rustc-hash = { workspace = true }
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true }
-tar = "0.4.38"
+tar = "0.4.39"
 thiserror = { workspace = true }
 zip = { version = "0.6.6", default-features = false }
 

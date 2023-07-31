@@ -9,6 +9,7 @@ pub struct GraphNodeDto {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GraphEdgeDto {
     pub id: String,
+    pub label: String,
     pub source: usize,
     pub target: usize,
 }

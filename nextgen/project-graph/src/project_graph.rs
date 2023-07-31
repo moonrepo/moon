@@ -113,6 +113,18 @@ impl ProjectGraph {
         self.internal_get(alias_or_id, &mut boundaries)
     }
 
+    /// Return an unexpanded project with the provided name or alias from the graph.
+    pub fn get_unexpanded(&self, alias_or_id: &str) -> miette::Result<&Project> {
+        let id = self.resolve_id(alias_or_id);
+
+        let node = self
+            .nodes
+            .get(&id)
+            .ok_or(ProjectGraphError::UnconfiguredID(id))?;
+
+        Ok(self.graph.node_weight(node.index).unwrap())
+    }
+
     /// Return all projects from the graph.
     pub fn get_all(&self) -> miette::Result<Vec<Arc<Project>>> {
         let mut boundaries = ExpansionBoundaries::default();
@@ -123,6 +135,15 @@ impl ProjectGraph {
         }
 
         Ok(all)
+    }
+
+    /// Return all unexpanded projects from the graph.
+    pub fn get_all_unexpanded(&self) -> Vec<&Project> {
+        self.graph
+            .raw_nodes()
+            .iter()
+            .map(|node| &node.weight)
+            .collect()
     }
 
     /// Find and return a project based on the initial path location.
@@ -238,15 +259,6 @@ impl ProjectGraph {
             projects: &projects,
         })
         .into_diagnostic()
-    }
-
-    fn get_unexpanded(&self, id: &Id) -> miette::Result<&Project> {
-        let node = self
-            .nodes
-            .get(id)
-            .ok_or_else(|| ProjectGraphError::UnconfiguredID(id.to_owned()))?;
-
-        Ok(self.graph.node_weight(node.index).unwrap())
     }
 
     fn internal_get(

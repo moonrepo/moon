@@ -98,6 +98,9 @@ pub struct WorkspaceConfig {
     #[setting(nested)]
     pub constraints: ConstraintsConfig,
 
+    #[setting(nested)]
+    pub experiments: ExperimentsConfig,
+
     #[setting(extend, validate = validate::extends_string)]
     pub extends: Option<String>,
 

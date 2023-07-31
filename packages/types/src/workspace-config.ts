@@ -16,6 +16,11 @@ export interface PartialConstraintsConfig {
 	tagRelationships?: Record<string, string[]> | null;
 }
 
+export interface PartialExperimentsConfig {
+	/** @default true */
+	projectGraphOutputBoundaries?: boolean | null;
+}
+
 export interface PartialGeneratorConfig {
 	templates?: string[] | null;
 }
@@ -77,6 +82,7 @@ export interface PartialWorkspaceConfig {
 	$schema?: string | null;
 	codeowners?: PartialCodeownersConfig | null;
 	constraints?: PartialConstraintsConfig | null;
+	experiments?: PartialExperimentsConfig | null;
 	extends?: string | null;
 	generator?: PartialGeneratorConfig | null;
 	hasher?: PartialHasherConfig | null;
@@ -99,6 +105,11 @@ export interface ConstraintsConfig {
 	/** @default true */
 	enforceProjectTypeRelationships: boolean;
 	tagRelationships: Record<string, string[]>;
+}
+
+export interface ExperimentsConfig {
+	/** @default true */
+	projectGraphOutputBoundaries: boolean;
 }
 
 export interface GeneratorConfig {
@@ -151,6 +162,7 @@ export interface WorkspaceConfig {
 	$schema: string;
 	codeowners: CodeownersConfig;
 	constraints: ConstraintsConfig;
+	experiments: ExperimentsConfig;
 	extends: string | null;
 	generator: GeneratorConfig;
 	hasher: HasherConfig;

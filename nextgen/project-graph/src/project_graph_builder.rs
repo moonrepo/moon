@@ -6,6 +6,7 @@ use crate::project_graph_hash::ProjectGraphHash;
 use crate::projects_locator::locate_projects_with_globs;
 use async_recursion::async_recursion;
 use moon_cache::CacheEngine;
+use moon_common::is_test_env;
 use moon_common::path::{to_virtual_string, WorkspaceRelativePath, WorkspaceRelativePathBuf};
 use moon_common::{color, consts, Id};
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig, WorkspaceProjects};
@@ -151,6 +152,7 @@ impl<'app> ProjectGraphBuilder<'app> {
     pub async fn build(mut self) -> miette::Result<ProjectGraph> {
         self.enforce_constraints()?;
 
+        let context = self.context.take().unwrap();
         let mut nodes = FxHashMap::default();
 
         for (id, index) in self.nodes {
@@ -172,11 +174,15 @@ impl<'app> ProjectGraphBuilder<'app> {
             });
         }
 
-        Ok(ProjectGraph::new(
-            self.graph,
-            nodes,
-            self.context.unwrap().workspace_root,
-        ))
+        let mut graph = ProjectGraph::new(self.graph, nodes, context.workspace_root);
+
+        graph.check_boundaries = !is_test_env()
+            && context
+                .workspace_config
+                .experiments
+                .project_graph_output_boundaries;
+
+        Ok(graph)
     }
 
     /// Load a single project by name or alias into the graph.

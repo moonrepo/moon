@@ -33,7 +33,7 @@ moonbase = { path = "../moonbase" }
 ci_env = { workspace = true }
 console = { workspace = true }
 miette = { workspace = true }
-num_cpus = "1.15.0"
+num_cpus = "1.16.0"
 proto_cli = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }

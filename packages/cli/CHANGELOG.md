@@ -27,7 +27,7 @@
     a `.raw` extension.
 - **Query language**
   - Updated `project` to query both project name AND alias.
-  - Added `projectName` for only querying by name
+  - Added `projectName` for only querying by name.
 
 #### 🐞 Fixes
 

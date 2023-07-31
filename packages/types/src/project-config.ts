@@ -97,7 +97,7 @@ export interface PartialProjectConfig {
 export interface DependencyConfig {
 	id: string;
 	scope: DependencyScope;
-	source: DependencySource | null;
+	source: DependencySource;
 	via: string | null;
 }
 

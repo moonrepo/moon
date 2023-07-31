@@ -1,7 +1,7 @@
 use crate::project_graph_error::ProjectGraphError;
 use miette::IntoDiagnostic;
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_common::{color, is_test_env, Id};
+use moon_common::{color, Id};
 use moon_config::DependencyScope;
 use moon_project::Project;
 use moon_project_expander::{ExpanderContext, ExpansionBoundaries, ProjectExpander};
@@ -15,7 +15,6 @@ use petgraph::Direction;
 use rustc_hash::FxHashMap;
 use serde::Serialize;
 use starbase_utils::json;
-use std::env;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use tracing::{debug, trace};
@@ -66,8 +65,7 @@ impl ProjectGraph {
             projects: Arc::new(RwLock::new(FxHashMap::default())),
             workspace_root: workspace_root.to_owned(),
             query_cache: OnceMap::new(),
-            check_boundaries: !is_test_env()
-                && env::var("MOON_DISABLE_OVERLAPPING_OUTPUTS").is_err(),
+            check_boundaries: false,
         }
     }
 

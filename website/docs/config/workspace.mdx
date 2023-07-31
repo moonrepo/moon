@@ -204,6 +204,25 @@ dependsOn: ['components']
 tags: ['react']
 ```
 
+## `experiments`<VersionLabel version="1.11.0" />
+
+<HeadingApiLink to="/api/types/interface/WorkspaceConfig#experiments" />
+
+Enable or disable experiments that alter core functionality.
+
+### `taskOutputBoundaries`
+
+<HeadingApiLink to="/api/types/interface/ExperimentsConfig#taskOutputBoundaries" />
+
+Enforces strict boundaries for task outputs and will error when multiple tasks write to the same
+output location. This includes output globs that overlap with literal output file paths. Defaults to
+`true`, and will be fully enabled by default in a future release.
+
+```yaml title=".moon/workspace.yml" {2}
+experiments:
+  taskOutputBoundaries: false
+```
+
 ## `generator`
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#generator" />

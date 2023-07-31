@@ -14,7 +14,7 @@ pub async fn sync_codeowners(
     let mut hasher = hash_engine.create_hasher("CODEOWNERS");
 
     // Sort the projects based on config
-    let mut projects = project_graph.get_all()?;
+    let mut projects = project_graph.get_all_unexpanded();
     let order_by = workspace.config.codeowners.order_by;
 
     projects.sort_by(|a, d| match order_by {

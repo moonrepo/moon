@@ -4,9 +4,9 @@
 
 #### 💥 Breaking
 
-- To support the new project graph, the order in which environment variables are resolved and merged
-  has changed. Previously it was task-level > env file > project-level. Now it's task-level >
-  project-level > env file.
+- To support the new project graph, the order and priority in which environment variables are
+  resolved has changed. Previously it was task-level > .env file > project-level. Now it's
+  task-level > project-level > .env file.
 
 #### 🚀 Updates
 
@@ -27,7 +27,7 @@
     a `.raw` extension.
 - **Query language**
   - Updated `project` to query both project name AND alias.
-  - Added `projectName` for only querying by name
+  - Added `projectName` for only querying by name.
 
 #### 🐞 Fixes
 
@@ -37,6 +37,7 @@
 
 #### ⚙️ Internal
 
+- Updated to proto v0.13.
 - Updated Rust to v1.71.
 
 ## 1.10.1

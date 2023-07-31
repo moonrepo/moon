@@ -78,7 +78,7 @@ fn gather_runnable_targets(
     let mut targets = vec![];
 
     // Required for dependents
-    for project in project_graph.get_all()? {
+    for project in project_graph.get_all_unexpanded() {
         for task in project.tasks.values() {
             if task.should_run_in_ci() {
                 if task.is_affected(touched_files)? {

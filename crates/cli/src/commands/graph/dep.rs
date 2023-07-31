@@ -18,7 +18,7 @@ pub async fn dep_graph(target_id: Option<String>, dot: bool, json: bool) -> AppR
 
         // Show all targets and actions
     } else {
-        for project in project_graph.get_all()? {
+        for project in project_graph.get_all_unexpanded() {
             for task in project.tasks.values() {
                 dep_builder.run_target(&task.target, None)?;
             }

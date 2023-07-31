@@ -28,7 +28,7 @@ pub async fn from_package_json(project_id: Id, skip_touched_files_check: bool) -
     let project_graph = generate_project_graph(&mut workspace).await?;
     let mut package_map: FxHashMap<String, Id> = FxHashMap::default();
 
-    for project in project_graph.get_all()? {
+    for project in project_graph.get_all_unexpanded() {
         if let Some(package_json) = PackageJson::read(&project.root)? {
             if let Some(package_name) = package_json.name {
                 package_map.insert(package_name, project.id.to_owned());

@@ -138,9 +138,9 @@ impl DepGraph {
     }
 
     /// Get a labelled representation of the dep graph (which can be serialized easily).
-    pub fn labeled_graph(&self) -> DiGraph<String, ()> {
+    pub fn labeled_graph(&self) -> DiGraph<String, String> {
         let graph = self.graph.clone();
-        graph.map(|_, n| n.label(), |_, e| *e)
+        graph.map(|_, n| n.label(), |_, _| String::new())
     }
 
     pub fn to_dot(&self) -> String {

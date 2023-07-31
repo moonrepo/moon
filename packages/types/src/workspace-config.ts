@@ -18,7 +18,7 @@ export interface PartialConstraintsConfig {
 
 export interface PartialExperimentsConfig {
 	/** @default true */
-	projectGraphOutputBoundaries?: boolean | null;
+	taskOutputBoundaries?: boolean | null;
 }
 
 export interface PartialGeneratorConfig {
@@ -109,7 +109,7 @@ export interface ConstraintsConfig {
 
 export interface ExperimentsConfig {
 	/** @default true */
-	projectGraphOutputBoundaries: boolean;
+	taskOutputBoundaries: boolean;
 }
 
 export interface GeneratorConfig {

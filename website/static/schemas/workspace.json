@@ -247,7 +247,7 @@
       "title": "PartialExperimentsConfig",
       "type": "object",
       "properties": {
-        "projectGraphOutputBoundaries": {
+        "taskOutputBoundaries": {
           "default": true,
           "anyOf": [
             {

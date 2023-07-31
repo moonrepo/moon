@@ -93,7 +93,15 @@ impl Queryable for Project {
                 Condition::Field { field, .. } => {
                     let result = match field {
                         Field::Language(langs) => condition.matches_enum(langs, &self.language),
-                        Field::Project(ids) => condition.matches(ids, &self.id),
+                        Field::Project(ids) => {
+                            if condition.matches(ids, &self.id)? {
+                                Ok(true)
+                            } else if let Some(alias) = &self.alias {
+                                condition.matches(ids, alias)
+                            } else {
+                                Ok(false)
+                            }
+                        }
                         Field::ProjectAlias(aliases) => {
                             if let Some(alias) = &self.alias {
                                 condition.matches(aliases, alias)
@@ -101,6 +109,7 @@ impl Queryable for Project {
                                 Ok(false)
                             }
                         }
+                        Field::ProjectName(ids) => condition.matches(ids, &self.id),
                         Field::ProjectSource(sources) => {
                             condition.matches(sources, &self.source.to_string())
                         }

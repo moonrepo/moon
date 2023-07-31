@@ -23,6 +23,9 @@
 - **Codegen**
   - Templates can be used as-is without rendering with [Tera](https://tera.netlify.app) by appending
     a `.raw` extension.
+- **Query language**
+  - Updated `project` to query both project name AND alias.
+  - Added `projectName` for only querying by name
 
 #### 🐞 Fixes
 

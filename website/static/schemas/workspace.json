@@ -35,6 +35,16 @@
         }
       ]
     },
+    "experiments": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialExperimentsConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "extends": {
       "anyOf": [
         {
@@ -224,6 +234,24 @@
               "propertyNames": {
                 "type": "string"
               }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "PartialExperimentsConfig": {
+      "title": "PartialExperimentsConfig",
+      "type": "object",
+      "properties": {
+        "taskOutputBoundaries": {
+          "default": true,
+          "anyOf": [
+            {
+              "type": "boolean"
             },
             {
               "type": "null"

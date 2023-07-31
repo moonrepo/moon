@@ -15,6 +15,8 @@
   - Graph edges now indicate the type of relationship: development, production, build, peer.
   - Updated `moon project-graph --json` to include the fully expanded graph data.
 - Identifiers (project names, file groups, etc) can now be prefixed with underscores (`_`).
+- Added Poetry detection support for Python projects.
+- Added an `experiments` setting to `.moon/workspace.yml`.
 - **Tasks**
   - Environment variables in `command` and `args` are now substituted.
   - Task `deps` can now depend on tag targets (`#tag:task`).

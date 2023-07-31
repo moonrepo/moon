@@ -176,11 +176,8 @@ impl<'app> ProjectGraphBuilder<'app> {
 
         let mut graph = ProjectGraph::new(self.graph, nodes, context.workspace_root);
 
-        graph.check_boundaries = !is_test_env()
-            && context
-                .workspace_config
-                .experiments
-                .project_graph_output_boundaries;
+        graph.check_boundaries =
+            !is_test_env() && context.workspace_config.experiments.task_output_boundaries;
 
         Ok(graph)
     }

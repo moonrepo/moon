@@ -1,0 +1,27 @@
+dependsOn:
+  - 'project'
+
+fileGroups:
+  sources:
+    - 'file.*'
+    - 'config.json'
+
+tasks:
+  build:
+    command: 'noop'
+    args:
+      - 'a'
+      - '@in(1)'
+      - 'b'
+    inputs:
+      - '@group(sources)'
+      - '/other.yaml'
+    outputs:
+      - 'build'
+    deps:
+      - '^:build'
+
+  test-tags:
+    command: 'test'
+    deps:
+      - '#test:test'

@@ -15,6 +15,7 @@ use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::fmt::Debug;
 use std::path::Path;
+use std::sync::Arc;
 
 #[async_trait]
 pub trait Platform: Debug + Send + Sync {
@@ -51,7 +52,6 @@ pub trait Platform: Debug + Send + Sync {
         &self,
         project_id: &str,
         project_source: &str,
-        aliases_map: &ProjectsAliasesMap,
     ) -> miette::Result<Vec<DependencyConfig>> {
         Ok(vec![])
     }
@@ -126,7 +126,7 @@ pub trait Platform: Debug + Send + Sync {
         &self,
         context: &ActionContext,
         project: &Project,
-        dependencies: &FxHashMap<Id, &Project>,
+        dependencies: &FxHashMap<Id, Arc<Project>>,
     ) -> miette::Result<bool> {
         Ok(false)
     }

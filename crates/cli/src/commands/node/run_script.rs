@@ -26,9 +26,9 @@ pub async fn run_script(name: String, project_id: Option<Id>) -> AppResult {
         // Otherwise try and find the project in the graph
     } else if let Some(project_id) = &project_id {
         let mut project_graph = build_project_graph(&mut workspace).await?;
-        project_graph.load(project_id)?;
+        project_graph.load(project_id).await?;
 
-        command.cwd(&project_graph.build()?.get(project_id)?.root);
+        command.cwd(&project_graph.build().await?.get(project_id)?.root);
 
         // This should rarely happen...
     } else {

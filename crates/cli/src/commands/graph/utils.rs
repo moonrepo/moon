@@ -37,8 +37,8 @@ pub async fn setup_server() -> AppResult<(Server, Tera)> {
     Ok((server, tera))
 }
 
-pub fn extract_nodes_and_edges_from_graph(
-    graph: &Graph<String, ()>,
+pub fn extract_nodes_and_edges_from_graph<T>(
+    graph: &Graph<String, T>,
     include_orphans: bool,
 ) -> GraphInfoDto {
     let mut nodes = FxHashMap::default();

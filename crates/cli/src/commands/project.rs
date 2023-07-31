@@ -11,10 +11,10 @@ use starbase_styles::color;
 
 pub async fn project(id: Id, json: bool) -> AppResult {
     let mut workspace = load_workspace().await?;
-    let mut project_builder = build_project_graph(&mut workspace).await?;
-    project_builder.load(&id)?;
+    let mut project_graph_builder = build_project_graph(&mut workspace).await?;
+    project_graph_builder.load(&id).await?;
 
-    let project_graph = project_builder.build()?;
+    let project_graph = project_graph_builder.build().await?;
     let project = project_graph.get(&id)?;
     let config = &project.config;
 
@@ -77,11 +77,7 @@ pub async fn project(id: Id, json: bool) -> AppResult {
         deps.push(format!(
             "{} {}",
             color::id(dep_id),
-            color::muted_light(format!(
-                "({}, {})",
-                dep_cfg.source.unwrap_or_default(),
-                dep_cfg.scope
-            )),
+            color::muted_light(format!("({}, {})", dep_cfg.source, dep_cfg.scope)),
         ));
     }
 

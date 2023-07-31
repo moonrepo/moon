@@ -150,7 +150,11 @@ pub async fn tasks(options: &QueryProjectsOptions) -> AppResult {
 
     if options.json {
         let result = QueryTasksResult {
-            tasks: FxHashMap::from_iter(projects.into_iter().map(|p| (p.id, p.tasks))),
+            tasks: FxHashMap::from_iter(
+                projects
+                    .into_iter()
+                    .map(|p| (p.id.clone(), p.tasks.clone())),
+            ),
             options: options.to_owned(),
         };
 

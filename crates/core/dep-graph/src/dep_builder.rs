@@ -194,10 +194,10 @@ impl<'ws> DepGraphBuilder<'ws> {
 
         if let TargetScope::Project(project_id) = &target.scope {
             let project = self.project_graph.get(project_id)?;
-            let dependents = self.project_graph.get_dependents_of(project)?;
+            let dependents = self.project_graph.dependents_of(&project)?;
 
             for dependent_id in dependents {
-                let dep_project = self.project_graph.get(&dependent_id)?;
+                let dep_project = self.project_graph.get(dependent_id)?;
 
                 if let Some(dep_task) = dep_project.tasks.get(&target.task_id) {
                     self.run_target(&dep_task.target, None)?;
@@ -233,7 +233,7 @@ impl<'ws> DepGraphBuilder<'ws> {
                         let all_target = Target::new(&project.id, &target.task_id)?;
 
                         if let Some(index) =
-                            self.run_target_by_project(&all_target, project, touched_files)?
+                            self.run_target_by_project(&all_target, &project, touched_files)?
                         {
                             inserted_targets.insert(all_target);
                             inserted_indexes.insert(index);
@@ -251,7 +251,7 @@ impl<'ws> DepGraphBuilder<'ws> {
                 let task = project.get_task(&target.task_id)?;
 
                 if let Some(index) =
-                    self.run_target_by_project(&task.target, project, touched_files)?
+                    self.run_target_by_project(&task.target, &project, touched_files)?
                 {
                     inserted_targets.insert(task.target.to_owned());
                     inserted_indexes.insert(index);
@@ -268,7 +268,7 @@ impl<'ws> DepGraphBuilder<'ws> {
                         let tag_target = Target::new(&project.id, &target.task_id)?;
 
                         if let Some(index) =
-                            self.run_target_by_project(&tag_target, project, touched_files)?
+                            self.run_target_by_project(&tag_target, &project, touched_files)?
                         {
                             inserted_targets.insert(tag_target);
                             inserted_indexes.insert(index);
@@ -455,9 +455,9 @@ impl<'ws> DepGraphBuilder<'ws> {
         self.graph.add_edge(index, setup_tool_index, ());
 
         // And we should also depend on other projects
-        for dep_project_id in self.project_graph.get_dependencies_of(project)? {
-            let dep_project = self.project_graph.get(&dep_project_id)?;
-            let dep_index = self.sync_project(dep_project)?;
+        for dep_project_id in self.project_graph.dependencies_of(project)? {
+            let dep_project = self.project_graph.get(dep_project_id)?;
+            let dep_index = self.sync_project(&dep_project)?;
 
             if index != dep_index {
                 self.graph.add_edge(index, dep_index, ());

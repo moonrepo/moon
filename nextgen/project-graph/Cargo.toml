@@ -1,0 +1,34 @@
+[package]
+name = "moon_project_graph"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# TODO REMOVE
+moon_cache = { path = "../../crates/core/cache" }
+moon_common = { path = "../common" }
+moon_config = { path = "../config" }
+moon_hash = { path = "../hash" }
+moon_project = { path = "../project" }
+moon_project_builder = { path = "../project-builder" }
+moon_project_constraints = { path = "../project-constraints" }
+moon_project_expander = { path = "../project-expander" }
+moon_query = { path = "../query" }
+moon_task_builder = { path = "../task-builder" }
+moon_vcs = { path = "../vcs" }
+async-recursion = "1.0.4"
+miette = { workspace = true }
+once_map = { workspace = true }
+pathdiff = { workspace = true }
+petgraph = { workspace = true }
+rustc-hash = { workspace = true }
+serde = { workspace = true }
+starbase_events = { workspace = true }
+starbase_utils = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+moon_target = { path = "../target" }
+starbase_sandbox = { workspace = true }
+tokio = { workspace = true }

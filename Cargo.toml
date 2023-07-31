@@ -17,9 +17,9 @@ members = [
 	"crates/typescript/*",
 
 	# Next-gen
-	"nextgen/*"
+	"nextgen/*",
 ]
-exclude = ["tests/fixtures"]
+exclude = ["tests/fixtures", "crates/core/project-graph"]
 default-members = ["crates/cli"]
 
 [workspace.dependencies]
@@ -35,24 +35,44 @@ miette = "5.9.0"
 once_cell = "1.18.0"
 once_map = "0.4.6"
 pathdiff = "0.2.1"
-petgraph = { version = "0.6.3", default-features = false, features = ["serde-1"] }
+petgraph = { version = "0.6.3", default-features = false, features = [
+	"serde-1",
+] }
 proto_cli = "0.12.0"
 relative-path = { version = "1.8.0", features = ["serde"] }
 regex = "1.9.0"
 # We don't use openssl but its required for musl builds
-reqwest = { version = "0.11.18", default-features = false, features = ["rustls-tls", "native-tls-vendored"] }
+reqwest = { version = "0.11.18", default-features = false, features = [
+	"rustls-tls",
+	"native-tls-vendored",
+] }
 rustc-hash = "1.1.0"
-schematic = { version = "0.11.0", default-features = false, features = ["schema", "yaml"] }
+schematic = { version = "0.11.0", default-features = false, features = [
+	"schema",
+	"yaml",
+] }
 semver = "1.0.17"
-serde = { version = "1.0.166", features = ["derive"] }
+serde = { version = "1.0.166", features = ["derive", "rc"] }
 serde_json = "1.0.100"
 serde_yaml = "0.9.22"
-starbase = "0.1.12"
-starbase_sandbox = "0.1.5"
+starbase = "0.2.0"
+starbase_events = "0.2.0"
+starbase_sandbox = "0.1.6"
 starbase_styles = { version = "0.1.11", features = ["relative-path"] }
-starbase_utils = { version = "0.2.13", default-features = false, features = ["editor-config", "glob", "json", "toml", "yaml"] }
+starbase_utils = { version = "0.2.14", default-features = false, features = [
+	"editor-config",
+	"glob",
+	"json",
+	"toml",
+	"yaml",
+] }
 tera = { version = "1.19.0", features = ["preserve_order"] }
 thiserror = "1.0.40"
-tokio = { version = "1.29.1", default-features = false, features = ["tracing"] }
+tokio = { version = "1.29.1", default-features = false, features = [
+	"process",
+	"rt",
+	"rt-multi-thread",
+	"tracing",
+] }
 tracing = "0.1.37"
 url = "2.4.0"

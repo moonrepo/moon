@@ -10,7 +10,7 @@ pub struct ContentHasher<'owner> {
     content_cache: Option<String>,
     contents: Vec<&'owner dyn ContentHashable>,
     hash_cache: Option<String>,
-    label: &'owner str,
+    pub label: &'owner str,
 }
 
 unsafe impl<'owner> Send for ContentHasher<'owner> {}
@@ -45,7 +45,7 @@ impl<'owner> ContentHasher<'owner> {
 
         let hash = format!("{:x}", hasher.finalize());
 
-        debug!(hash, label = self.label, "Generated content hash");
+        debug!(label = self.label, hash, "Generated content hash");
 
         self.hash_cache = Some(hash.clone());
 

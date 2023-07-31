@@ -4,14 +4,19 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+moon_config = { path = "../../../nextgen/config" }
 moon_deno_platform = { path = "../../deno/platform" }
 moon_dep_graph = { path = "../dep-graph" }
+moon_hash = { path = "../../../nextgen/hash" }
 moon_node_platform = { path = "../../node/platform" }
 moon_platform = { path = "../platform" }
-moon_project_graph = { path = "../project-graph" }
+moon_platform_detector = { path = "../platform-detector" }
+moon_project_graph = { path = "../../../nextgen/project-graph" }
 moon_rust_platform = { path = "../../rust/platform" }
 moon_system_platform = { path = "../../system/platform" }
 moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
 miette = { workspace = true }
-starbase_utils = { workspace = true }
+rustc-hash = { workspace = true }
+starbase_events = { workspace = true }
+tokio = { workspace = true }

@@ -1,7 +1,7 @@
 tasks:
   standard:
     deps:
-      - buildB:standard
+      - buildB:build
     args:
       - --b
     inputs:

@@ -28,6 +28,7 @@ use starbase_utils::{fs, glob::GlobSet};
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
+    sync::Arc,
 };
 
 const LOG_TARGET: &str = "moon:rust-platform";
@@ -113,7 +114,7 @@ impl Platform for RustPlatform {
     ) -> miette::Result<()> {
         // Extract the alias from the Cargo project relative to the lockfile
         for (id, source) in projects_map {
-            let project_root = self.workspace_root.join(source);
+            let project_root = source.to_path(&self.workspace_root);
 
             if let Some(cargo_toml) = CargoTomlCache::read(project_root)? {
                 if let Some(package) = cargo_toml.package {
@@ -273,7 +274,7 @@ impl Platform for RustPlatform {
         &self,
         _context: &ActionContext,
         project: &Project,
-        _dependencies: &FxHashMap<Id, &Project>,
+        _dependencies: &FxHashMap<Id, Arc<Project>>,
     ) -> miette::Result<bool> {
         let mut mutated_files = false;
 

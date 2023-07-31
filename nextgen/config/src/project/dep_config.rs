@@ -4,6 +4,7 @@ use schematic::{derive_enum, Config, ConfigEnum};
 derive_enum!(
     #[derive(ConfigEnum, Copy, Default)]
     pub enum DependencyScope {
+        Build,
         Development,
         Peer,
         #[default]
@@ -25,7 +26,7 @@ cacheable!(
     pub struct DependencyConfig {
         pub id: Id,
         pub scope: DependencyScope,
-        pub source: Option<DependencySource>,
+        pub source: DependencySource,
         pub via: Option<String>,
     }
 );

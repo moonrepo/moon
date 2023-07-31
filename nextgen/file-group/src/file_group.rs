@@ -6,7 +6,7 @@ use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use starbase_utils::glob;
 use std::path::{Path, PathBuf};
-use tracing::debug;
+use tracing::trace;
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(default)]
@@ -69,7 +69,7 @@ impl FileGroup {
             }
         }
 
-        debug!(
+        trace!(
             id = self.id.as_str(),
             patterns = ?log_patterns,
             "Creating file group"
@@ -172,6 +172,8 @@ impl FileGroup {
                 }
             }
         }
+
+        list.sort();
 
         Ok(list)
     }

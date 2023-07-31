@@ -1,5 +1,6 @@
 #![allow(clippy::from_over_into)]
 
+use crate::patterns;
 use crate::portable_path::is_glob;
 use crate::validate::validate_child_relative_path;
 use moon_common::path::{
@@ -64,7 +65,7 @@ impl FromStr for OutputPath {
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         // Token function
-        if value.starts_with('@') {
+        if value.starts_with('@') && patterns::TOKEN_FUNC_DISTINCT.is_match(value) {
             return Ok(OutputPath::TokenFunc(value.to_owned()));
         }
 

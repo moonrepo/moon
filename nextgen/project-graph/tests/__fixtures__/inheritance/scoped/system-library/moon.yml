@@ -1,0 +1,6 @@
+type: library
+
+tasks:
+  system-library:
+    command: system-library
+    platform: system

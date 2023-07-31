@@ -128,12 +128,9 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
                         dep_ids.sort();
 
                         let input = if dep_ids.len() == 1 {
-                            format!("project={id} || projectAlias={id}", id = dep_ids[0])
+                            format!("project={id}", id = dep_ids[0])
                         } else {
-                            format!(
-                                "project=[{ids}] || projectAlias=[{ids}]",
-                                ids = dep_ids.join(",")
-                            )
+                            format!("project=[{ids}]", ids = dep_ids.join(","))
                         };
 
                         for dep_project in (self.context.query)(input)? {
@@ -158,10 +155,8 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
                             check_and_push_dep(project, &dep_target.task_id, false)?;
                         }
                     } else {
-                        let results = (self.context.query)(format!(
-                            "project={id} || projectAlias={id}",
-                            id = project_id
-                        ))?;
+                        let results =
+                            (self.context.query)(format!("project={id}", id = project_id))?;
 
                         if results.is_empty() {
                             return Err(TasksExpanderError::UnknownTarget {

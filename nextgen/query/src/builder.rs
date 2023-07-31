@@ -10,6 +10,7 @@ pub enum Field {
     Language(Vec<LanguageType>),
     Project(Vec<String>),
     ProjectAlias(Vec<String>),
+    ProjectName(Vec<String>),
     ProjectSource(Vec<String>),
     ProjectType(Vec<ProjectType>),
     Tag(Vec<String>),

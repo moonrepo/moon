@@ -8,7 +8,6 @@ use starbase_archive::Archiver;
 use starbase_styles::color;
 use starbase_utils::{fs, glob, json};
 use std::path::{Path, PathBuf};
-use std::{thread, time};
 
 #[derive(Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(default, rename_all = "camelCase")]
@@ -84,61 +83,38 @@ impl RunTargetState {
         output_paths: &[WorkspaceRelativePathBuf],
     ) -> miette::Result<bool> {
         if get_cache_mode().is_readable() && archive_file.exists() {
-            let tarball_file = archive_file.to_path_buf();
-            let workspace_root = workspace_root.to_path_buf();
+            let archive = create_archive(workspace_root, archive_file, output_paths);
             let cache_logs = self.get_output_logs();
-            let output_paths = output_paths
-                .iter()
-                .map(|o| o.to_owned())
-                .collect::<Vec<_>>();
+            let stdout_log = workspace_root.join("stdout.log");
+            let stderr_log = workspace_root.join("stderr.log");
 
-            // Run in a separate thread so that if the current thread aborts,
-            // we don't stop hydration partially though, resulting in a
-            // corrupted cache.
-            tokio::spawn(async move {
-                let archive = create_archive(&workspace_root, &tarball_file, &output_paths);
-                let stdout_log = workspace_root.join("stdout.log");
-                let stderr_log = workspace_root.join("stderr.log");
-
-                match archive.unpack(TarUnpacker::new_gz) {
-                    Ok(_) => {
-                        if stdout_log.exists() {
-                            fs::rename(&stdout_log, cache_logs.0)?;
-                        }
-
-                        if stderr_log.exists() {
-                            fs::rename(&stderr_log, cache_logs.1)?;
-                        }
+            match archive.unpack(TarUnpacker::new_gz) {
+                Ok(_) => {
+                    if stdout_log.exists() {
+                        fs::rename(&stdout_log, cache_logs.0)?;
                     }
-                    Err(e) => {
-                        warn!(
-                            "Failed to hydrate outputs ({}) from cache: {}",
-                            map_list(&output_paths, |f| color::file(f)),
-                            color::muted_light(e.to_string())
-                        );
 
-                        // Delete target outputs to ensure a clean slate
-                        for output in output_paths {
-                            fs::remove(output.to_path(&workspace_root))?;
-                        }
-
-                        fs::remove(stdout_log)?;
-                        fs::remove(stderr_log)?;
+                    if stderr_log.exists() {
+                        fs::rename(&stderr_log, cache_logs.1)?;
                     }
                 }
+                Err(e) => {
+                    warn!(
+                        "Failed to hydrate outputs ({}) from cache: {}",
+                        map_list(output_paths, |f| color::file(f)),
+                        color::muted_light(e.to_string())
+                    );
 
-                Ok::<(), miette::Report>(())
-            });
+                    // Delete target outputs to ensure a clean slate
+                    for output in output_paths {
+                        if !glob::is_glob(output) {
+                            fs::remove(output.to_path(workspace_root))?;
+                        }
+                    }
 
-            // Attempt to emulate how long it would take to unpack the archive
-            // based on its filesize. We do this so that subsequent tasks that
-            // depend on this output aren't interacting with it before it's
-            // entirely unpacked.
-            if let Ok(meta) = fs::metadata(archive_file) {
-                let size = meta.len();
-                let millis = (size / 1000000) * 10;
-
-                thread::sleep(time::Duration::from_millis(millis));
+                    fs::remove(stdout_log)?;
+                    fs::remove(stderr_log)?;
+                }
             }
 
             return Ok(true);

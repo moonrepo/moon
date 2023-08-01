@@ -1,6 +1,7 @@
 use crate::cache_item;
 use crate::helpers::get_cache_mode;
-use moon_archive::{untar_with_diff, TarArchiver, TreeDiffer};
+// use moon_archive::{untar_with_diff, TarArchiver, TreeDiffer};
+use starbase_archive::Archiver;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_logger::{map_list, trace, warn};
 use serde::{Deserialize, Serialize};
@@ -85,36 +86,36 @@ impl RunTargetState {
             // we don't stop hydration partially though, resulting in a
             // corrupted cache.
             tokio::spawn(async move {
-                let mut differ = TreeDiffer::load(&workspace_root, &outputs)?;
-                let stdout_log = workspace_root.join("stdout.log");
-                let stderr_log = workspace_root.join("stderr.log");
+                // let mut differ = TreeDiffer::load(&workspace_root, &outputs)?;
+                // let stdout_log = workspace_root.join("stdout.log");
+                // let stderr_log = workspace_root.join("stderr.log");
 
-                match untar_with_diff(&mut differ, tarball_file, &workspace_root, None) {
-                    Ok(_) => {
-                        if stdout_log.exists() {
-                            fs::rename(&stdout_log, cache_logs.0)?;
-                        }
+                // match untar_with_diff(&mut differ, tarball_file, &workspace_root, None) {
+                //     Ok(_) => {
+                //         if stdout_log.exists() {
+                //             fs::rename(&stdout_log, cache_logs.0)?;
+                //         }
 
-                        if stderr_log.exists() {
-                            fs::rename(&stderr_log, cache_logs.1)?;
-                        }
-                    }
-                    Err(e) => {
-                        warn!(
-                            "Failed to hydrate outputs ({}) from cache: {}",
-                            map_list(&outputs, |f| color::file(f)),
-                            color::muted_light(e.to_string())
-                        );
+                //         if stderr_log.exists() {
+                //             fs::rename(&stderr_log, cache_logs.1)?;
+                //         }
+                //     }
+                //     Err(e) => {
+                //         warn!(
+                //             "Failed to hydrate outputs ({}) from cache: {}",
+                //             map_list(&outputs, |f| color::file(f)),
+                //             color::muted_light(e.to_string())
+                //         );
 
-                        // Delete target outputs to ensure a clean slate
-                        for output in outputs {
-                            fs::remove(workspace_root.join(output))?;
-                        }
+                //         // Delete target outputs to ensure a clean slate
+                //         for output in outputs {
+                //             fs::remove(workspace_root.join(output))?;
+                //         }
 
-                        fs::remove(stdout_log)?;
-                        fs::remove(stderr_log)?;
-                    }
-                }
+                //         fs::remove(stdout_log)?;
+                //         fs::remove(stderr_log)?;
+                //     }
+                // }
 
                 Ok::<(), miette::Report>(())
             });

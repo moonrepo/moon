@@ -28,8 +28,8 @@ pub struct RunTargetState {
 cache_item!(RunTargetState);
 
 fn create_archive<'o>(
-    archive_file: &'o Path,
     workspace_root: &'o Path,
+    archive_file: &'o Path,
     output_paths: &[WorkspaceRelativePathBuf],
 ) -> Archiver<'o> {
     let mut archive = Archiver::new(workspace_root, archive_file);

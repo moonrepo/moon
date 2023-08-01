@@ -79,7 +79,7 @@ impl<'a> Runner<'a> {
         }
 
         // Check that outputs actually exist
-        if !self.task.outputs.is_empty() && !self.has_outputs()? {
+        if !self.task.outputs.is_empty() && !self.has_outputs(false)? {
             return Err(RunnerError::MissingOutput(self.task.target.id.clone()).into());
         }
 
@@ -362,7 +362,13 @@ impl<'a> Runner<'a> {
         }
     }
 
-    pub fn has_outputs(&self) -> miette::Result<bool> {
+    pub fn has_outputs(&self, bypass_globs: bool) -> miette::Result<bool> {
+        // If using globs, we have no way to truly determine if all outputs
+        // exist on the current file system, so always hydrate...
+        if bypass_globs && !self.task.output_globs.is_empty() {
+            return Ok(false);
+        }
+
         // Check paths first since they are literal
         for output in &self.task.output_files {
             if !output.to_path(&self.workspace.root).exists() {
@@ -449,7 +455,7 @@ impl<'a> Runner<'a> {
 
         // Hash is the same as the previous build, so simply abort!
         // However, ensure the outputs also exist, otherwise we should hydrate
-        if self.cache.hash == hash && self.has_outputs()? {
+        if self.cache.hash == hash && self.has_outputs(true)? {
             debug!(
                 target: LOG_TARGET,
                 "Cache hit for hash {}, reusing previous build",

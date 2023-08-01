@@ -5701,9 +5701,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_archive"
-version = "0.1.4"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd53b817fac10a126716d11a5ecc5111be15469c7715422e0bdefe996c3e1651"
+checksum = "3ed2cc992018a6a8f036e2292900ca21ea7331a7d5a121b4d2aa3ff06d22011f"
 dependencies = [
  "flate2",
  "miette",

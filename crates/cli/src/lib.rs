@@ -91,7 +91,7 @@ pub async fn run_cli() -> AppResult {
         filter_modules: string_vec!["moon", "proto", "schematic", "starbase"],
         log_env: "STARBASE_LOG".into(),
         log_file: args.log_file,
-        test_env: "MOON_TEST".into(),
+        // test_env: "MOON_TEST".into(),
         ..TracingOptions::default()
     });
 

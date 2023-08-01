@@ -73,9 +73,9 @@ tokio = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
-moon_archive = { path = "../core/archive" }
 moon_cache = { path = "../core/cache" }
 moon_notifier = { path = "../core/notifier" }
 moon_test_utils = { path = "../core/test-utils" }
 httpmock = "0.6.8"
 serial_test = "2.0.0"
+starbase_archive = { workspace = true }

@@ -612,6 +612,12 @@ mod hashing {
 mod outputs {
     use super::*;
 
+    fn untar(tarball: &Path, root: &Path) {
+        starbase_archive::Archiver::new(root, tarball)
+            .unpack(starbase_archive::tar::TarUnpacker::new_gz)
+            .unwrap();
+    }
+
     #[test]
     fn errors_if_output_missing() {
         let sandbox = cases_sandbox();
@@ -807,7 +813,7 @@ mod outputs {
             .join(format!("{hash}.tar.gz"));
         let dir = sandbox.path().join(".moon/cache/outputs").join(hash);
 
-        moon_archive::untar(tarball, &dir, None).unwrap();
+        untar(&tarball, &dir);
 
         assert!(dir.join("outputs/multiple-types/one.js").exists());
         assert!(dir.join("outputs/multiple-types/two.js").exists());
@@ -831,7 +837,7 @@ mod outputs {
             .join(format!("{hash}.tar.gz"));
         let dir = sandbox.path().join(".moon/cache/outputs").join(hash);
 
-        moon_archive::untar(tarball, &dir, None).unwrap();
+        untar(&tarball, &dir);
 
         assert!(dir.join("stdout.log").exists());
         assert!(dir.join("stderr.log").exists());
@@ -855,7 +861,7 @@ mod outputs {
             .join(format!("{hash}.tar.gz"));
         let dir = sandbox.path().join(".moon/cache/outputs").join(hash);
 
-        moon_archive::untar(tarball, &dir, None).unwrap();
+        untar(&tarball, &dir);
 
         assert!(dir.join("stdout.log").exists());
         assert!(dir.join("stderr.log").exists());
@@ -879,7 +885,7 @@ mod outputs {
             .join(format!("{hash}.tar.gz"));
         let dir = sandbox.path().join(".moon/cache/outputs").join(hash);
 
-        moon_archive::untar(tarball, &dir, None).unwrap();
+        untar(&tarball, &dir);
 
         assert!(dir.join("stdout.log").exists());
         assert!(dir.join("stderr.log").exists());

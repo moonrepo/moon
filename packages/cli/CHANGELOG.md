@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where tasks using output globs would not always hydrate from the cache.
+
 ## 1.11.0
 
 #### 💥 Breaking

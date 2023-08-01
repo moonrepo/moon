@@ -1,6 +1,7 @@
 import type { DependencyConfig, LanguageType, ProjectConfig, ProjectType } from './project-config';
 import type {
 	InheritedTasksConfig,
+	PartialInheritedTasksConfig,
 	PlatformType,
 	TaskMergeStrategy,
 	TaskOutputStyle,
@@ -9,11 +10,12 @@ import type {
 
 export interface FileGroup {
 	files: string[];
+	globs: string[];
 	id: string;
 }
 
 export interface TaskOptions {
-	affectedFiles: 'args' | 'both' | 'env';
+	affectedFiles: boolean | 'args' | 'env';
 	cache: boolean;
 	envFile: string | null;
 	mergeArgs: TaskMergeStrategy;
@@ -22,6 +24,7 @@ export interface TaskOptions {
 	mergeInputs: TaskMergeStrategy;
 	mergeOutputs: TaskMergeStrategy;
 	outputStyle: TaskOutputStyle | null;
+	persistent: boolean;
 	retryCount: number;
 	runDepsInParallel: boolean;
 	runInCI: boolean;
@@ -36,13 +39,13 @@ export interface Task {
 	env: Record<string, string>;
 	id: string;
 	inputs: string[];
+	inputFiles: string[];
 	inputGlobs: string[];
-	inputPaths: string[];
 	inputVars: string[];
 	options: TaskOptions;
 	outputs: string[];
+	outputFiles: string[];
 	outputGlobs: string[];
-	outputPaths: string[];
 	platform: PlatformType;
 	target: string;
 	type: TaskType;
@@ -54,8 +57,13 @@ export interface Project {
 	dependencies: Record<string, DependencyConfig>;
 	fileGroups: Record<string, FileGroup>;
 	id: string;
-	inheritedConfig: InheritedTasksConfig;
+	inherited: {
+		order: string[];
+		layers: Record<string, PartialInheritedTasksConfig>;
+		config: InheritedTasksConfig;
+	};
 	language: LanguageType;
+	platform: PlatformType;
 	root: string;
 	source: string;
 	tasks: Record<string, Task>;

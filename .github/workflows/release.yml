@@ -72,7 +72,7 @@ jobs:
     runs-on: ${{ matrix.host }}
     steps:
       - uses: actions/checkout@v3
-      - uses: moonrepo/setup-rust@v0
+      - uses: moonrepo/setup-rust@v1
         if: ${{ !matrix.docker-target }}
         with:
           targets: ${{ matrix.target }}

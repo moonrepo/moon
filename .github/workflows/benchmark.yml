@@ -33,7 +33,7 @@ jobs:
           submodules: false
           ref: ${{ steps.sha.outputs.result }}
           # ref: ${{ github.event.pull_request.head.sha }}
-      - uses: moonrepo/setup-rust@v0
+      - uses: moonrepo/setup-rust@v1
       - name: Run benchmarks
         # args: --workspace --bench ${{ matrix.bench }} -- --save-baseline base-sha
         run:

@@ -36,6 +36,28 @@ unpacking, and much more!
 
 > Because of the rewrite, we may have introduced a few bugs. Please report any issues!
 
+## Breaking changes for TOML plugins
+
+In preparation for the next release, and as clean up during the rewrite, we've made a few breaking
+changes to the TOML schema, primarily around global handling. To start, this old code:
+
+```toml
+[install]
+globals-dir = ["$PROTOSTAR_HOME/bin", "$HOME/.protostar/bin"]
+global-args = ["install", "--force", "{dependency}"]
+```
+
+Can now be rewritten as:
+
+```toml
+[globals]
+lookup-dirs = ["$PROTOSTAR_HOME/bin", "$HOME/.protostar/bin"]
+install-args = ["install", "--force", "{dependency}"]
+```
+
+And lastly, the `install.unpack` setting has been removed. We believe our installation layer is
+smart enough to unpack or move files automatically.
+
 ## Other changes
 
 View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.14.0) for a full list

@@ -208,6 +208,7 @@ we'll use [Deno](https://deno.land/manual@v1.35.0/tools/script_installer).
 #[plugin_fn]
 pub fn locate_bins(Json(_): Json<LocateBinsInput>) -> FnResult<Json<LocateBinsOutput>> {
     Ok(Json(LocateBinsOutput {
+        fallback_last_globals_dir: true,
         globals_lookup_dirs: vec!["$DENO_INSTALL_ROOT/bin".into(), "$HOME/.deno/bin".into()],
         ..LocateBinsOutput::default()
     }))
@@ -224,7 +225,7 @@ versions to actually be installed. To provide a list of versions and language sp
 #[plugin_fn]
 pub fn load_versions(Json(_): Json<LoadVersionsInput>) -> FnResult<Json<LoadVersionsOutput>> {
     let mut output = LoadVersionsOutput::default();
-    let response: Vec<NodeDistVersion> = fetch_url("https://nodejs.org/dist/index.json")?;
+    let response: Vec<NodeDistVersion> = fetch_url_with_cache("https://nodejs.org/dist/index.json")?;
 
     for (index, item) in response.iter().enumerate() {
         let version = Version::parse(&item.version[1..])?; // Starts with v
@@ -323,22 +324,37 @@ shims to be created. By default, proto _will always_ create a global shim of the
 
 Global shims are optional scripts that are available on `PATH` as they are generated in the
 `~/.proto/bin` directory, and can be defined with the `global_shims` parameter. This param is a hash
-map, where the key is the shim file name, and the value is a relative path (from the tool's
-directory) to a binary to execute.
+map, where the key is the shim file name, and the value is a configuration object.
 
 ```rust
 #[plugin_fn]
 pub fn create_shims(Json(input): Json<CreateShimsInput>) -> FnResult<Json<CreateShimsOutput>> {
     let mut global_shims = HashMap::new();
 
-    global_shims.insert("npx".into(), if input.env.os == HostOS::Windows {
-        "npx.cmd".into()
-    } else {
-        "bin/npx".into()
-    });
+    global_shims.insert(
+        "npx".into(),
+        ShimConfig::global_with_alt_bin(if input.env.os == HostOS::Windows {
+            "npx.cmd".into()
+        } else {
+            "bin/npx".into()
+        }),
+    );
 
     Ok(Json(CreateShimsOutput {
         global_shims,
+        ..CreateShimsOutput::default()
+    }))
+}
+```
+
+Furthermore, if you'd prefer to _not_ create a primary global shim at all, enable the
+`no_primary_global` field.
+
+```rust
+#[plugin_fn]
+pub fn create_shims(Json(input): Json<CreateShimsInput>) -> FnResult<Json<CreateShimsOutput>> {
+    Ok(Json(CreateShimsOutput {
+        no_primary_global: true,
         ..CreateShimsOutput::default()
     }))
 }
@@ -394,8 +410,7 @@ output is correct. This can be achieved by creating a plugin instance with `crea
 calling the appropriate method.
 
 ```rust
-use proto_pdk::*;
-use proto_pdk_test_utils::create_plugin;
+use proto_pdk_test_utils::*;
 use starbase_sandbox::create_empty_sandbox;
 
 #[test]
@@ -430,8 +445,7 @@ To test downloading and installing, use `generate_download_install_tests!`. This
 plugin ID and a real version to test with.
 
 ```rust
-use proto_pdk::*;
-use proto_pdk_test_utils::{create_plugin, generate_download_install_tests};
+use proto_pdk_test_utils::*;
 use starbase_sandbox::create_empty_sandbox;
 
 generate_download_install_tests!("id", "1.2.3");
@@ -523,6 +537,8 @@ Some helpful resources for learning about and building plugins.
   - [Go](https://github.com/moonrepo/go-plugin)
   - [Node](https://github.com/moonrepo/node-plugin)
   - [npm, pnpm, yarn](https://github.com/moonrepo/node-plugin)
+  - [Rust](https://github.com/moonrepo/rust-plugin)
+  - [Schema](https://github.com/moonrepo/schema-plugin)
 - Plugin development kit
   - [`proto_pdk` docs](https://docs.rs/proto_pdk/)
   - [`proto_pdk_test_utils` docs](https://docs.rs/proto_pdk_test_utils/)

@@ -1,0 +1,73 @@
+---
+slug: proto-v0.14
+title: proto v0.14 - Node.js and Rust now powered by WASM plugins
+authors: [milesj]
+tags: [proto, wasm, plugin]
+---
+
+With this release, we've finished our migration to a WASM based plugin architecture.
+
+<!--truncate-->
+
+## Full migration to WASM
+
+In [our last release](./proto-v0.13), we migrated the Bun, Deno, and Go plugins to WASM. In this
+release, we're excited to announce that we have completed our WASM migration by also converting
+Node.js (and npm, etc) and Rust to WASM plugins. We've also updated our TOML plugin layer to use
+WASM under the hood.
+
+With this, 100% of our tools are now powered by WASM, and the APIs are stable enough for you, the
+consumers, to build your own plugins! We have plans for additional APIs in the next release,
+primarily installing and uninstall globals, and a hooks system, so look forward to that! To learn
+more about our official plugins, check out the their repositories!
+
+- [Bun](https://github.com/moonrepo/bun-plugin)
+- [Deno](https://github.com/moonrepo/deno-plugin)
+- [Go](https://github.com/moonrepo/go-plugin)
+- [Node](https://github.com/moonrepo/node-plugin)
+- [Rust](https://github.com/moonrepo/rust-plugin)
+- [Schema](https://github.com/moonrepo/schema-plugin)
+
+This release may seem light, but we
+[rewrote the entire core](https://github.com/moonrepo/proto/pull/161) from the ground up to support
+a pure plugin based architecture. This was a lot of work, but our implementation is far easier to
+work with, and more robust. As part of this process, we improved version and range handling, archive
+unpacking, and much more!
+
+> Because of the rewrite, we may have introduced a few bugs. Please report any issues!
+
+## Breaking changes for TOML plugins
+
+In preparation for the next release, and as clean up during the rewrite, we've made a few breaking
+changes to the TOML schema, primarily around global handling. To start, this old code:
+
+```toml
+[install]
+globals-dir = ["$PROTOSTAR_HOME/bin", "$HOME/.protostar/bin"]
+global-args = ["install", "--force", "{dependency}"]
+```
+
+Can now be rewritten as:
+
+```toml
+[globals]
+lookup-dirs = ["$PROTOSTAR_HOME/bin", "$HOME/.protostar/bin"]
+install-args = ["install", "--force", "{dependency}"]
+```
+
+And lastly, the `install.unpack` setting has been removed. We believe our installation layer is
+smart enough to unpack or move files automatically.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.14.0) for a full list
+of changes.
+
+- Versions defined in `.prototools` must be fully-qualified semantic versions. Partial versions
+  (missing patch or minor) are no longer supported. This may change in the future based on feedback.
+- Tool and plugin names must now be in kebab-case.
+- Node
+  - Yarn 2+ is now installed using `@yarnpkg/cli-dist`. We no longer downgrade to the latest v1.
+  - Will no longer detect a version from `engines` in `package.json`.
+- Rust
+  - Will now detect a version/channel from `rust-toolchain.toml` and `rust-toolchain`.

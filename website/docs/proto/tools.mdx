@@ -61,6 +61,8 @@ $ proto install go -- --no-gobin
 
 ## Node.js
 
+<WasmLink to="https://github.com/moonrepo/node-plugin" />
+
 [Node.js](https://nodejs.org/) (`node`) is a JavaScript runtime built on Chrome's V8 engine.
 
 #### Post-install hook
@@ -80,17 +82,10 @@ $ proto install node -- --no-bundled-npm
 
 - An [`.nvmrc`](https://github.com/nvm-sh/nvm) or
   [`.node-version`](https://github.com/nodenv/nodenv) file.
-- The [`engines`](https://docs.npmjs.com/cli/v9/configuring-npm/package-json#engines) field in
-  `package.json`.
-
-:::info
-
-When parsing engines, explicit versions (`1.2.3`, `=1.2.3`) will be used as-is, but
-requirements/ranges (`^1.2.3`, `>=1.2.3`) will scan `~/.proto/tools/node` for an applicable match.
-
-:::
 
 ### npm, pnpm, yarn
+
+<WasmLink to="https://github.com/moonrepo/node-plugin" />
 
 proto supports all popular Node.js package managers: `npm`, `pnpm`, `yarn`.
 
@@ -103,8 +98,6 @@ proto supports all popular Node.js package managers: `npm`, `pnpm`, `yarn`.
 #### Detection sources
 
 - The `packageManager` field in `package.json`.
-- The [`engines`](https://docs.npmjs.com/cli/v9/configuring-npm/package-json#engines) field in
-  `package.json` (same notice above applies).
 
 ### node-gyp
 
@@ -116,6 +109,8 @@ Corepack _is not supported_ by proto, and will never be. Use [`proto use`](./com
 which is a far more poweful alternative.
 
 ## Rust
+
+<WasmLink to="https://github.com/moonrepo/rust-plugin" />
 
 [Rust](https://www.rust-lang.org/) (`rust`) is blazingly fast and memory-efficient systems language.
 

@@ -71,6 +71,8 @@ are available:
 - `{arch}` - The architecture of the host machine, like `x86_64`. These values map to Rust's
   [`ARCH` constant](https://doc.rust-lang.org/std/env/consts/constant.ARCH.html), but can be
   customized with [`install.arch`](#downloading-and-installing).
+- `{os}` - The operating system of the host machine, like `windows`. These values map to Rust's
+  [`OS` constant](https://doc.rust-lang.org/std/env/consts/constant.OS.html).
 - `{libc}` - For Linux machines, this is the current libc implementation, either `gnu` or `musl`.
 
 ### Downloading and installing
@@ -85,8 +87,6 @@ be downloaded and installed into the toolchain. The following settings are avail
 - `checksum-url` - A secure URL to download the checksum file for verification. If the tool does not
   support checksum verification, this setting can be omitted.
 - `download-url` (required) - A secure URL to download the tool/archive.
-- `unpack` - Whether the downloaded file should be unpacked or not. For tools that download the
-  binary directly, this should be disabled.
 
 The URL settings support `{checksum_file}` and `{download_file}` tokens, which will be replaced with
 the values from the `[platform]` section.
@@ -103,21 +103,25 @@ aarch64 = "arm64"
 x86_64 = "x64"
 ```
 
-The `[install]` sections also supports the following settings that dictate the installation of
-global binaries for the tool. If the tool does not support globals (is not a programming language),
-these settings can be omitted.
+#### Global packages
 
-- `globals-dir` - A list of directories to locate and install the global binaries into. This setting
+The `[globals]` sections can be configured that dictates the installation of global binaries for the
+tool. If the tool does not support globals (is not a programming language), these settings can be
+omitted.
+
+- `lookup-dirs` - A list of directories to locate and install the global binaries into. This setting
   supports interpolating environment variables via the syntax `$ENV_VAR`.
-- `global-args` - A list of CLI arguments to pass to the tool to install a global binary. The name
+- `install-args` - A list of CLI arguments to pass to the tool to install a global binary. The name
   of the binary can be inserted using the `{dependency}` token.
+- `package-prefix` - A string that all package names are prefixed with. The prefix will be removed
+  when filtering/listing packages. For example, Cargo/Rust binaries are prefixed wih `cargo-`.
 
 ```toml title="protostar.toml"
 # ...
 
-[install]
-globals-dir = ["$PROTOSTAR_HOME/bin", "$HOME/.protostar/bin"]
-global-args = ["install", "--force", "{dependency}"]
+[globals]
+lookup-dirs = ["$PROTOSTAR_HOME/bin", "$HOME/.protostar/bin"]
+install-args = ["install", "--force", "{dependency}"]
 ```
 
 ### Resolving versions

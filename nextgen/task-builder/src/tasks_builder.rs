@@ -16,6 +16,21 @@ use std::hash::Hash;
 use std::path::Path;
 use tracing::trace;
 
+// This is a standalone function as recursive closures are not possible!
+fn extract_config<'builder, 'proj>(
+    task_id: &'builder Id,
+    tasks_map: &'builder FxHashMap<&'proj Id, &'proj TaskConfig>,
+    configs: &'builder mut Vec<&'proj TaskConfig>,
+) {
+    if let Some(config) = tasks_map.get(task_id) {
+        if let Some(extend_task_id) = &config.extends {
+            extract_config(extend_task_id, tasks_map, configs);
+        }
+
+        configs.push(*config);
+    }
+}
+
 #[derive(Debug)]
 pub struct DetectPlatformEvent {
     pub enabled_platforms: Vec<PlatformType>,
@@ -529,25 +544,8 @@ impl<'proj> TasksBuilder<'proj> {
     fn get_config_inherit_chain(&self, id: &Id) -> Vec<&TaskConfig> {
         let mut configs = vec![];
 
-        if let Some(config) = self.global_tasks.get(id) {
-            if let Some(extends_from) = &config.extends {
-                if let Some(extends_config) = self.global_tasks.get(extends_from) {
-                    configs.push(*extends_config);
-                }
-            }
-
-            configs.push(*config);
-        }
-
-        if let Some(config) = self.local_tasks.get(id) {
-            if let Some(extends_from) = &config.extends {
-                if let Some(extends_config) = self.local_tasks.get(extends_from) {
-                    configs.push(*extends_config);
-                }
-            }
-
-            configs.push(*config);
-        }
+        extract_config(id, &self.global_tasks, &mut configs);
+        extract_config(id, &self.local_tasks, &mut configs);
 
         configs
     }

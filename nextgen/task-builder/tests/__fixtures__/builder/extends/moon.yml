@@ -13,6 +13,12 @@ tasks:
     options:
       mergeArgs: prepend
 
+  extend-args-again:
+    extends: extend-args
+    args: --bail
+    options:
+      mergeArgs: append
+
   extend-inputs:
     extends: base
     inputs:

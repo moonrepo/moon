@@ -1197,5 +1197,15 @@ mod tasks_builder {
             assert!(task.options.persistent);
             assert_eq!(task.options.retry_count, 3);
         }
+
+        #[tokio::test]
+        async fn can_create_extends_chains() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "extends/moon.yml").await;
+            let task = tasks.get("extend-args-again").unwrap();
+
+            assert_eq!(task.command, "lint");
+            assert_eq!(task.args, vec!["./src", "--fix", "--bail"]);
+        }
     }
 }

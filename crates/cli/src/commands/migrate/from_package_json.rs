@@ -3,8 +3,7 @@ use moon::{generate_project_graph, load_workspace};
 use moon_common::consts::CONFIG_PROJECT_FILENAME;
 use moon_common::Id;
 use moon_config::{
-    DependencyScope, PartialDependencyConfig, PartialProjectDependsOn, PartialTaskEntry,
-    ProjectConfig,
+    DependencyScope, PartialDependencyConfig, PartialProjectDependsOn, ProjectConfig,
 };
 use moon_logger::info;
 use moon_node_lang::package_json::{DepsSet, PackageJson};
@@ -65,7 +64,7 @@ pub async fn from_package_json(project_id: Id, skip_touched_files_check: bool) -
             partial_config
                 .tasks
                 .get_or_insert(BTreeMap::new())
-                .insert(task_id, PartialTaskEntry::Base(task_config));
+                .insert(task_id, task_config);
         }
 
         // Link deps from `package.json` dependencies

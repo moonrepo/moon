@@ -70,6 +70,8 @@ cacheable!(
 cacheable!(
     #[derive(Clone, Config, Debug, Eq, PartialEq)]
     pub struct TaskConfig {
+        pub extends: Option<Id>,
+
         #[setting(nested)]
         pub command: TaskCommandArgs,
 
@@ -112,71 +114,3 @@ impl TaskConfig {
         Ok(result.config)
     }
 }
-
-fn validate_extends<D, C>(id: &str, _task: &D, _ctx: &C) -> Result<(), ValidateError> {
-    if id.is_empty() {
-        return Err(ValidateError::new(
-            "a sibling task is required to extend from",
-        ));
-    }
-
-    Ok(())
-}
-
-cacheable!(
-    #[derive(Clone, Config, Debug, Eq, PartialEq)]
-    pub struct ExtendTaskConfig {
-        #[setting(validate = validate_extends)]
-        pub extends: Id,
-
-        #[setting(nested)]
-        pub args: TaskCommandArgs,
-
-        #[setting(validate = validate_deps)]
-        pub deps: Vec<Target>,
-
-        pub env: FxHashMap<String, String>,
-
-        #[setting(skip, merge = merge::append_vec)]
-        pub global_inputs: Vec<InputPath>,
-
-        // None = All inputs (**/*)
-        // [] = No inputs
-        // [...] = Specific inputs
-        pub inputs: Option<Vec<InputPath>>,
-
-        pub local: Option<bool>,
-
-        pub outputs: Option<Vec<OutputPath>>,
-
-        #[setting(nested)]
-        pub options: TaskOptionsConfig,
-
-        pub platform: PlatformType,
-
-        #[serde(rename = "type")]
-        pub type_of: Option<TaskType>,
-    }
-);
-
-impl ExtendTaskConfig {
-    pub fn parse<T: AsRef<str>>(code: T) -> miette::Result<ExtendTaskConfig> {
-        let result = ConfigLoader::<ExtendTaskConfig>::new()
-            .code(code.as_ref(), Format::Yaml)?
-            .load()?;
-
-        Ok(result.config)
-    }
-}
-
-cacheable!(
-    #[derive(Clone, Config, Debug, Eq, PartialEq)]
-    #[serde(untagged)]
-    pub enum TaskEntry {
-        #[setting(nested)]
-        Base(TaskConfig),
-
-        #[setting(nested)]
-        Extend(ExtendTaskConfig),
-    }
-);

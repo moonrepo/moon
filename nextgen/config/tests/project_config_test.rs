@@ -3,7 +3,7 @@ mod utils;
 use moon_common::{consts::CONFIG_PROJECT_FILENAME, Id};
 use moon_config::{
     DependencyConfig, DependencyScope, InputPath, LanguageType, OwnersPaths, PlatformType,
-    ProjectConfig, ProjectDependsOn, ProjectType, TaskCommandArgs, TaskEntry,
+    ProjectConfig, ProjectDependsOn, ProjectType, TaskCommandArgs,
 };
 use rustc_hash::FxHashMap;
 use utils::*;
@@ -48,27 +48,23 @@ tasks:
             |path| ProjectConfig::load_from(path, "."),
         );
 
-        if let TaskEntry::Base(build) = config.tasks.get("build").unwrap() {
-            assert_eq!(build.command, TaskCommandArgs::String("webpack".to_owned()));
-            assert_eq!(build.args, TaskCommandArgs::None);
-            assert_eq!(
-                build.inputs,
-                Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
-            );
-        } else {
-            panic!();
-        }
+        let build = config.tasks.get("build").unwrap();
 
-        if let TaskEntry::Base(start) = config.tasks.get("start").unwrap() {
-            assert_eq!(start.command, TaskCommandArgs::String("webpack".to_owned()));
-            assert_eq!(start.args, TaskCommandArgs::String("serve".to_owned()));
-            assert_eq!(
-                start.inputs,
-                Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
-            );
-        } else {
-            panic!();
-        }
+        assert_eq!(build.command, TaskCommandArgs::String("webpack".to_owned()));
+        assert_eq!(build.args, TaskCommandArgs::None);
+        assert_eq!(
+            build.inputs,
+            Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
+        );
+
+        let start = config.tasks.get("start").unwrap();
+
+        assert_eq!(start.command, TaskCommandArgs::String("webpack".to_owned()));
+        assert_eq!(start.args, TaskCommandArgs::String("serve".to_owned()));
+        assert_eq!(
+            start.inputs,
+            Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
+        );
     }
 
     // TODO: fix this in schematic?
@@ -92,27 +88,23 @@ tasks:
             |path| ProjectConfig::load_from(path, "."),
         );
 
-        if let TaskEntry::Base(build) = config.tasks.get("build").unwrap() {
-            assert_eq!(build.command, TaskCommandArgs::String("webpack".to_owned()));
-            assert_eq!(build.args, TaskCommandArgs::None);
-            assert_eq!(
-                build.inputs,
-                Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
-            );
-        } else {
-            panic!();
-        }
+        let build = config.tasks.get("build").unwrap();
 
-        if let TaskEntry::Base(start) = config.tasks.get("start").unwrap() {
-            assert_eq!(start.command, TaskCommandArgs::String("webpack".to_owned()));
-            assert_eq!(start.args, TaskCommandArgs::String("serve".to_owned()));
-            assert_eq!(
-                start.inputs,
-                Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
-            );
-        } else {
-            panic!();
-        }
+        assert_eq!(build.command, TaskCommandArgs::String("webpack".to_owned()));
+        assert_eq!(build.args, TaskCommandArgs::None);
+        assert_eq!(
+            build.inputs,
+            Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
+        );
+
+        let start = config.tasks.get("start").unwrap();
+
+        assert_eq!(start.command, TaskCommandArgs::String("webpack".to_owned()));
+        assert_eq!(start.args, TaskCommandArgs::String("serve".to_owned()));
+        assert_eq!(
+            start.inputs,
+            Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
+        );
     }
 
     mod depends_on {

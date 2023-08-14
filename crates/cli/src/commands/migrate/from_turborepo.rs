@@ -3,8 +3,8 @@ use moon::{generate_project_graph, load_workspace};
 use moon_common::{consts, Id};
 use moon_config::{
     InputPath, OutputPath, PartialInheritedTasksConfig, PartialProjectConfig,
-    PartialTaskCommandArgs, PartialTaskConfig, PartialTaskEntry, PartialTaskOptionsConfig,
-    PlatformType, ProjectConfig,
+    PartialTaskCommandArgs, PartialTaskConfig, PartialTaskOptionsConfig, PlatformType,
+    ProjectConfig,
 };
 use moon_logger::{info, warn};
 use moon_target::Target;
@@ -208,14 +208,14 @@ pub async fn from_turborepo(skip_touched_files_check: bool) -> AppResult {
                     project_config
                         .tasks
                         .get_or_insert(BTreeMap::new())
-                        .insert(task_id, PartialTaskEntry::Base(task_config));
+                        .insert(task_id, task_config);
                 } else {
                     let mut project_config = ProjectConfig::load_partial(&project.root)?;
 
                     project_config
                         .tasks
                         .get_or_insert(BTreeMap::new())
-                        .insert(task_id, PartialTaskEntry::Base(task_config));
+                        .insert(task_id, task_config);
 
                     modified_projects.insert(project.root.clone(), project_config);
                 }

@@ -1120,4 +1120,82 @@ mod tasks_builder {
             );
         }
     }
+
+    mod extending {
+        use super::*;
+
+        #[tokio::test]
+        async fn handles_args() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "extends/moon.yml").await;
+            let task = tasks.get("extend-args").unwrap();
+
+            assert_eq!(task.command, "lint");
+            assert_eq!(task.args, vec!["--fix", "./src"]);
+        }
+
+        #[tokio::test]
+        async fn handles_inputs() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "extends/moon.yml").await;
+            let task = tasks.get("extend-inputs").unwrap();
+
+            assert_eq!(
+                task.inputs,
+                vec![
+                    InputPath::ProjectGlob("src/**/*".into()),
+                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                ]
+            );
+        }
+
+        #[tokio::test]
+        async fn handles_options() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "extends/moon.yml").await;
+            let task = tasks.get("extend-options").unwrap();
+
+            assert!(!task.options.cache);
+            assert!(task.options.run_in_ci);
+            assert!(task.options.persistent);
+            assert_eq!(task.options.retry_count, 3);
+        }
+
+        #[tokio::test]
+        async fn handles_local() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "extends/moon.yml").await;
+            let task = tasks.get("extend-local").unwrap();
+
+            assert!(task.options.cache);
+            assert!(task.options.run_in_ci);
+            assert!(!task.options.persistent);
+        }
+
+        #[tokio::test]
+        async fn inherits_and_merges_globals_extend_chain() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "extends/moon.yml").await;
+            let task = tasks.get("extender").unwrap();
+
+            assert_eq!(task.command, "global-base");
+            assert_eq!(task.args, vec!["-qux", "--foo", "--bar", "-z"]);
+            assert_eq!(
+                task.inputs,
+                vec![
+                    InputPath::ProjectFile("global-base".into()),
+                    InputPath::ProjectFile("global-extender".into()),
+                    InputPath::ProjectFile("local-base".into()),
+                    InputPath::ProjectFile("local-extender".into()),
+                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                    InputPath::WorkspaceFile(".moon/tasks/tag-extends.yml".into()),
+                ]
+            );
+
+            assert!(task.options.cache);
+            assert!(!task.options.run_in_ci);
+            assert!(task.options.persistent);
+            assert_eq!(task.options.retry_count, 3);
+        }
+    }
 }

@@ -13,7 +13,7 @@ mod task_config {
 
     #[test]
     #[should_panic(
-        expected = "unknown field `unknown`, expected one of `command`, `args`, `deps`, `env`, `inputs`, `local`, `outputs`, `options`, `platform`, `type`"
+        expected = "unknown field `unknown`, expected one of `extends`, `command`, `args`, `deps`, `env`, `inputs`, `local`, `outputs`, `options`, `platform`, `type`"
     )]
     fn error_unknown_field() {
         test_parse_config("unknown: 123", |code| TaskConfig::parse(code));

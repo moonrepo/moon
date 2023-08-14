@@ -27,7 +27,7 @@ pub fn validate_tasks<D, C>(
         if let Some(extends_from) = &config.extends {
             if !tasks.contains_key(extends_from) {
                 return Err(ValidateError::new(format!(
-                    "task {} is extending a non-existent task {}",
+                    "task {} is extending an unknown task {}",
                     id, extends_from
                 )));
             }

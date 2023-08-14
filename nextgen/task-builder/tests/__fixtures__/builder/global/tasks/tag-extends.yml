@@ -1,0 +1,12 @@
+tasks:
+  global-base:
+    command: 'global-base'
+    local: true
+    inputs:
+      - 'global-base'
+
+  extender:
+    extends: 'global-base'
+    args: '--foo --bar -z'
+    inputs:
+      - 'global-extender'

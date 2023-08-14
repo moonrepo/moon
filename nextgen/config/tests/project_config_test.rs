@@ -579,7 +579,7 @@ tasks:
         }
 
         #[test]
-        #[should_panic(expected = "task extender is extending a non-existent task unknown")]
+        #[should_panic(expected = "task extender is extending an unknown task unknown")]
         fn errors_if_extending_unknown_task() {
             test_load_config(
                 CONFIG_PROJECT_FILENAME,

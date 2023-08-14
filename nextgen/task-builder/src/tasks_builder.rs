@@ -189,15 +189,7 @@ impl<'proj> TasksBuilder<'proj> {
         trace!(target = target.as_str(), "Building task");
 
         let mut task = Task::default();
-        let mut configs = vec![];
-
-        if let Some(config) = self.global_tasks.get(id) {
-            configs.push(*config);
-        }
-
-        if let Some(config) = self.local_tasks.get(id) {
-            configs.push(*config);
-        }
+        let configs = self.get_config_inherit_chain(id);
 
         // Determine command and args before building options and the task,
         // as we need to figure out if we're running in local mode or not.
@@ -219,7 +211,9 @@ impl<'proj> TasksBuilder<'proj> {
             }
         }
 
-        trace!(target = target.as_str(), "Marking task as local");
+        if is_local {
+            trace!(target = target.as_str(), "Marking task as local");
+        }
 
         task.options = self.build_task_options(id, is_local)?;
         task.flags.local = is_local;
@@ -370,15 +364,11 @@ impl<'proj> TasksBuilder<'proj> {
             ..TaskOptions::default()
         };
 
-        let mut configs = vec![];
-
-        if let Some(config) = self.global_tasks.get(id) {
-            configs.push(&config.options);
-        }
-
-        if let Some(config) = self.local_tasks.get(id) {
-            configs.push(&config.options);
-        }
+        let configs = self
+            .get_config_inherit_chain(id)
+            .iter()
+            .map(|cfg| &cfg.options)
+            .collect::<Vec<_>>();
 
         for config in configs {
             if let Some(affected_files) = &config.affected_files {
@@ -534,6 +524,32 @@ impl<'proj> TasksBuilder<'proj> {
         };
 
         Ok((command, args))
+    }
+
+    fn get_config_inherit_chain(&self, id: &Id) -> Vec<&TaskConfig> {
+        let mut configs = vec![];
+
+        if let Some(config) = self.global_tasks.get(id) {
+            if let Some(extends_from) = &config.extends {
+                if let Some(extends_config) = self.global_tasks.get(extends_from) {
+                    configs.push(*extends_config);
+                }
+            }
+
+            configs.push(*config);
+        }
+
+        if let Some(config) = self.local_tasks.get(id) {
+            if let Some(extends_from) = &config.extends {
+                if let Some(extends_config) = self.local_tasks.get(extends_from) {
+                    configs.push(*extends_config);
+                }
+            }
+
+            configs.push(*config);
+        }
+
+        configs
     }
 
     fn merge_map<K, V>(

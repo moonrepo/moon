@@ -1,7 +1,7 @@
 use crate::language_platform::PlatformType;
 use crate::project::{PartialTaskOptionsConfig, TaskOptionsConfig};
 use crate::shapes::{InputPath, OutputPath};
-use moon_common::cacheable;
+use moon_common::{cacheable, Id};
 use moon_target::{Target, TargetScope};
 use rustc_hash::FxHashMap;
 use schematic::{
@@ -31,7 +31,7 @@ fn validate_command_list<D, C>(args: &[String], _task: &D, _ctx: &C) -> Result<(
     Ok(())
 }
 
-pub fn validate_deps<D, C>(deps: &[Target], _data: &D, _context: &C) -> Result<(), ValidateError> {
+pub fn validate_deps<D, C>(deps: &[Target], _task: &D, _context: &C) -> Result<(), ValidateError> {
     for (i, dep) in deps.iter().enumerate() {
         if matches!(dep.scope, TargetScope::All) {
             return Err(ValidateError::with_segment(
@@ -112,3 +112,68 @@ impl TaskConfig {
         Ok(result.config)
     }
 }
+
+fn validate_extends<D, C>(id: &str, _task: &D, _ctx: &C) -> Result<(), ValidateError> {
+    if id.is_empty() {
+        return Err(ValidateError::new(
+            "a sibling task is required to extend from",
+        ));
+    }
+
+    Ok(())
+}
+
+cacheable!(
+    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    pub struct ExtendTaskConfig {
+        #[setting(validate = validate_extends)]
+        pub extends: Id,
+
+        #[setting(nested)]
+        pub args: TaskCommandArgs,
+
+        #[setting(validate = validate_deps)]
+        pub deps: Vec<Target>,
+
+        pub env: FxHashMap<String, String>,
+
+        #[setting(skip, merge = merge::append_vec)]
+        pub global_inputs: Vec<InputPath>,
+
+        // None = All inputs (**/*)
+        // [] = No inputs
+        // [...] = Specific inputs
+        pub inputs: Option<Vec<InputPath>>,
+
+        pub local: Option<bool>,
+
+        pub outputs: Option<Vec<OutputPath>>,
+
+        #[setting(nested)]
+        pub options: TaskOptionsConfig,
+
+        pub platform: PlatformType,
+
+        #[serde(rename = "type")]
+        pub type_of: Option<TaskType>,
+    }
+);
+
+impl ExtendTaskConfig {
+    pub fn parse<T: AsRef<str>>(code: T) -> miette::Result<ExtendTaskConfig> {
+        let result = ConfigLoader::<ExtendTaskConfig>::new()
+            .code(code.as_ref(), Format::Yaml)?
+            .load()?;
+
+        Ok(result.config)
+    }
+}
+
+cacheable!(
+    #[derive(Clone, Config, Debug, Eq, PartialEq)]
+    #[serde(untagged)]
+    pub enum TaskEntry {
+        Base(TaskConfig),
+        Extend(ExtendTaskConfig),
+    }
+);

@@ -1,8 +1,9 @@
 mod utils;
 
+use moon_common::Id;
 use moon_config::{
-    FilePath, InputPath, OutputPath, PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy,
-    TaskOutputStyle, TaskType,
+    ExtendTaskConfig, FilePath, InputPath, OutputPath, PlatformType, TaskCommandArgs, TaskConfig,
+    TaskMergeStrategy, TaskOutputStyle, TaskType,
 };
 use moon_target::Target;
 use utils::*;
@@ -495,5 +496,38 @@ options:
             //                 );
             //             }
         }
+    }
+}
+
+mod extend_task_config {
+    use super::*;
+
+    #[test]
+    #[should_panic(
+        expected = "unknown field `unknown`, expected one of `extends`, `args`, `deps`, `env`, `inputs`, `local`, `outputs`, `options`, `platform`, `type`"
+    )]
+    fn error_unknown_field() {
+        test_parse_config("unknown: 123", |code| ExtendTaskConfig::parse(code));
+    }
+
+    #[test]
+    #[should_panic(expected = "a sibling task is required to extend from")]
+    fn error_missing_extends() {
+        test_parse_config("{}", |code| ExtendTaskConfig::parse(code));
+    }
+
+    #[test]
+    #[should_panic(expected = "Invalid format")]
+    fn error_empty_extends() {
+        test_parse_config("extends: ''", |code| ExtendTaskConfig::parse(code));
+    }
+
+    #[test]
+    fn loads_defaults() {
+        let config = test_parse_config("extends: id", |code| ExtendTaskConfig::parse(code));
+
+        assert_eq!(config.extends, Id::raw("id"));
+        assert_eq!(config.args, TaskCommandArgs::None);
+        assert_eq!(config.type_of, None);
     }
 }

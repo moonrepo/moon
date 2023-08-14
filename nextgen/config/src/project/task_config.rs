@@ -173,7 +173,10 @@ cacheable!(
     #[derive(Clone, Config, Debug, Eq, PartialEq)]
     #[serde(untagged)]
     pub enum TaskEntry {
+        #[setting(nested)]
         Base(TaskConfig),
+
+        #[setting(nested)]
         Extend(ExtendTaskConfig),
     }
 );

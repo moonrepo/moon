@@ -3,7 +3,7 @@ mod utils;
 use moon_common::{consts::CONFIG_PROJECT_FILENAME, Id};
 use moon_config::{
     DependencyConfig, DependencyScope, InputPath, LanguageType, OwnersPaths, PlatformType,
-    ProjectConfig, ProjectDependsOn, ProjectType, TaskCommandArgs,
+    ProjectConfig, ProjectDependsOn, ProjectType, TaskCommandArgs, TaskEntry,
 };
 use rustc_hash::FxHashMap;
 use utils::*;
@@ -48,23 +48,27 @@ tasks:
             |path| ProjectConfig::load_from(path, "."),
         );
 
-        let build = config.tasks.get("build").unwrap();
+        if let TaskEntry::Base(build) = config.tasks.get("build").unwrap() {
+            assert_eq!(build.command, TaskCommandArgs::String("webpack".to_owned()));
+            assert_eq!(build.args, TaskCommandArgs::None);
+            assert_eq!(
+                build.inputs,
+                Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
+            );
+        } else {
+            panic!();
+        }
 
-        assert_eq!(build.command, TaskCommandArgs::String("webpack".to_owned()));
-        assert_eq!(build.args, TaskCommandArgs::None);
-        assert_eq!(
-            build.inputs,
-            Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
-        );
-
-        let start = config.tasks.get("start").unwrap();
-
-        assert_eq!(start.command, TaskCommandArgs::String("webpack".to_owned()));
-        assert_eq!(start.args, TaskCommandArgs::String("serve".to_owned()));
-        assert_eq!(
-            start.inputs,
-            Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
-        );
+        if let TaskEntry::Base(start) = config.tasks.get("start").unwrap() {
+            assert_eq!(start.command, TaskCommandArgs::String("webpack".to_owned()));
+            assert_eq!(start.args, TaskCommandArgs::String("serve".to_owned()));
+            assert_eq!(
+                start.inputs,
+                Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
+            );
+        } else {
+            panic!();
+        }
     }
 
     // TODO: fix this in schematic?
@@ -88,23 +92,27 @@ tasks:
             |path| ProjectConfig::load_from(path, "."),
         );
 
-        let build = config.tasks.get("build").unwrap();
+        if let TaskEntry::Base(build) = config.tasks.get("build").unwrap() {
+            assert_eq!(build.command, TaskCommandArgs::String("webpack".to_owned()));
+            assert_eq!(build.args, TaskCommandArgs::None);
+            assert_eq!(
+                build.inputs,
+                Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
+            );
+        } else {
+            panic!();
+        }
 
-        assert_eq!(build.command, TaskCommandArgs::String("webpack".to_owned()));
-        assert_eq!(build.args, TaskCommandArgs::None);
-        assert_eq!(
-            build.inputs,
-            Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
-        );
-
-        let start = config.tasks.get("start").unwrap();
-
-        assert_eq!(start.command, TaskCommandArgs::String("webpack".to_owned()));
-        assert_eq!(start.args, TaskCommandArgs::String("serve".to_owned()));
-        assert_eq!(
-            start.inputs,
-            Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
-        );
+        if let TaskEntry::Base(start) = config.tasks.get("start").unwrap() {
+            assert_eq!(start.command, TaskCommandArgs::String("webpack".to_owned()));
+            assert_eq!(start.args, TaskCommandArgs::String("serve".to_owned()));
+            assert_eq!(
+                start.inputs,
+                Some(vec![InputPath::ProjectGlob("src/**/*".to_owned())])
+            );
+        } else {
+            panic!();
+        }
     }
 
     mod depends_on {
@@ -557,6 +565,42 @@ tasks:
             assert!(config.tasks.contains_key("snake_case"));
             assert!(config.tasks.contains_key("dot.case"));
             assert!(config.tasks.contains_key("slash/case"));
+        }
+
+        #[test]
+        fn can_extend_siblings() {
+            let config = test_load_config(
+                CONFIG_PROJECT_FILENAME,
+                r"
+tasks:
+  base:
+    command: 'base'
+  extender:
+    extends: 'base'
+    args: '--more'
+",
+                |path| ProjectConfig::load_from(path, "."),
+            );
+
+            assert!(config.tasks.contains_key("base"));
+            assert!(config.tasks.contains_key("extender"));
+        }
+
+        #[test]
+        #[should_panic(expected = "task extender is extending a non-existent task unknown")]
+        fn errors_if_extending_unknown_task() {
+            test_load_config(
+                CONFIG_PROJECT_FILENAME,
+                r"
+tasks:
+  base:
+    command: 'base'
+  extender:
+    extends: 'unknown'
+    args: '--more'
+",
+                |path| ProjectConfig::load_from(path, "."),
+            );
         }
     }
 

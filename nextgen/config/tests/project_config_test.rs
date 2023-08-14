@@ -558,6 +558,42 @@ tasks:
             assert!(config.tasks.contains_key("dot.case"));
             assert!(config.tasks.contains_key("slash/case"));
         }
+
+        #[test]
+        fn can_extend_siblings() {
+            let config = test_load_config(
+                CONFIG_PROJECT_FILENAME,
+                r"
+tasks:
+  base:
+    command: 'base'
+  extender:
+    extends: 'base'
+    args: '--more'
+",
+                |path| ProjectConfig::load_from(path, "."),
+            );
+
+            assert!(config.tasks.contains_key("base"));
+            assert!(config.tasks.contains_key("extender"));
+        }
+
+        #[test]
+        #[should_panic(expected = "task extender is extending an unknown task unknown")]
+        fn errors_if_extending_unknown_task() {
+            test_load_config(
+                CONFIG_PROJECT_FILENAME,
+                r"
+tasks:
+  base:
+    command: 'base'
+  extender:
+    extends: 'unknown'
+    args: '--more'
+",
+                |path| ProjectConfig::load_from(path, "."),
+            );
+        }
     }
 
     mod toolchain {

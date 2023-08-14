@@ -39,6 +39,7 @@ export interface PartialTaskConfig {
 	command?: PartialTaskCommandArgs | null;
 	deps?: string[] | null;
 	env?: Record<string, string> | null;
+	extends?: string | null;
 	inputs?: string[] | null;
 	local?: boolean | null;
 	options?: PartialTaskOptionsConfig | null;
@@ -82,6 +83,7 @@ export interface TaskConfig {
 	command: TaskCommandArgs;
 	deps: string[];
 	env: Record<string, string>;
+	extends: string | null;
 	inputs: string[] | null;
 	local: boolean | null;
 	options: TaskOptionsConfig;

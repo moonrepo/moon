@@ -1,0 +1,92 @@
+---
+slug: moon-v1.12
+title: moon v1.12 - Task extending
+authors: [milesj]
+tags: [tasks, inheritance]
+# image: ./img/moon/v1.11.png
+---
+
+???
+
+<!--truncate-->
+
+## Extending sibling or inherited tasks
+
+Three months ago, we posted an
+[RFC on how to support task extending / task variants](https://github.com/moonrepo/moon/issues/849).
+On paper this doesn't sound like a hard problem to solve, but internally it would of been an uphill
+battle to implement. Thanks to previous releases from the past few months, and the rewrite of the
+project graph, task builder, and more, this implementation was a breeze. To finalize the RFC, we
+went with option 2, by adding a new `extends` field to task configurations.
+
+With this new addition, we can now rewrite this old configuration, which was needlessly
+repetitive...
+
+```yaml title="moon.yml"
+tasks:
+  lint:
+    command: 'eslint .'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - '*.js'
+      - '.eslintrc.js'
+      - 'tsconfig.json'
+      - '/.eslintignore'
+      - '/.eslintrc.js'
+      - '/tsconfig.eslint.json'
+      - '/tsconfig.options.json'
+
+  lint-fix:
+    command: 'eslint . --fix'
+    local: true
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - '*.js'
+      - '.eslintrc.js'
+      - 'tsconfig.json'
+      - '/.eslintignore'
+      - '/.eslintrc.js'
+      - '/tsconfig.eslint.json'
+      - '/tsconfig.options.json'
+```
+
+Into the following configuration.
+
+```yaml title="moon.yml"
+tasks:
+  lint:
+    command: 'eslint .'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - '*.js'
+      - '.eslintrc.js'
+      - 'tsconfig.json'
+      - '/.eslintignore'
+      - '/.eslintrc.js'
+      - '/tsconfig.eslint.json'
+      - '/tsconfig.options.json'
+
+  lint-fix:
+    extends: 'lint'
+    args: '--fix'
+    local: true
+```
+
+We're very happy with this solution, as it's far more readable, maintainable, and doesn't introduce
+yet another paradigm to learn. Our goal was to be as familiar as possible, while providing extensive
+functionality behind the scenes, which we believe to have achieved.
+
+Some other interesting facts around task extending:
+
+- When extending a task, [merge strategies](/docs/concepts/task#merge-strategies) are applied in a
+  similar fashion to inheritance.
+- Inherited tasks can be extended from by project-level tasks.
+- It's possible to create multiple extended chains.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.12.0) for a full list
+of changes.

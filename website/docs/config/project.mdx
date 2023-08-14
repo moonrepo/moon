@@ -350,6 +350,30 @@ tasks:
     command: 'tsc'
 ```
 
+### `extends`<VersionLabel version="1.12.0" />
+
+<HeadingApiLink to="/api/types/interface/TaskConfig#extends" />
+
+The `extends` field can be used to extend the settings from a sibling task within the same project,
+or [inherited from the global scope](../concepts/task#inheritance). This is useful for composing
+similar tasks with different arguments or options.
+
+When extending another task, the same [merge strategies](../concepts/task#merge-strategies) used for
+inheritance are applied.
+
+```yaml title="moon.yml"
+tasks:
+  lint:
+    command: 'eslint .'
+    inputs:
+      - 'src/**/*'
+
+  lint-fix:
+    extends: 'lint'
+    args: '--fix'
+    local: true
+```
+
 ### `command`<RequiredLabel />
 
 <HeadingApiLink to="/api/types/interface/TaskConfig#command" />

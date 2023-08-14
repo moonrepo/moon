@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added an `extends` field to task configurations. This allows tasks to extend and inherit settings
+  from sibling tasks.
+
 ## 1.11.1
 
 #### 🐞 Fixes

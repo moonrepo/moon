@@ -159,6 +159,16 @@
             }
           ]
         },
+        "extends": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "inputs": {
           "anyOf": [
             {

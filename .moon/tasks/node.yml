@@ -52,7 +52,6 @@ tasks:
       - '--color'
       - '--ext'
       - '.js,.ts,.tsx'
-      - '--fix'
       - '--ignore-path'
       - '@in(5)'
       - '--exit-on-fatal-error'
@@ -70,6 +69,11 @@ tasks:
       - '/tsconfig.options.json'
     options:
       affectedFiles: true
+
+  lint-fix:
+    extends: 'lint'
+    args: '--fix'
+    local: true
 
   test:
     command: 'jest'

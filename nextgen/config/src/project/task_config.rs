@@ -1,7 +1,7 @@
 use crate::language_platform::PlatformType;
 use crate::project::{PartialTaskOptionsConfig, TaskOptionsConfig};
 use crate::shapes::{InputPath, OutputPath};
-use moon_common::cacheable;
+use moon_common::{cacheable, Id};
 use moon_target::{Target, TargetScope};
 use rustc_hash::FxHashMap;
 use schematic::{
@@ -31,7 +31,7 @@ fn validate_command_list<D, C>(args: &[String], _task: &D, _ctx: &C) -> Result<(
     Ok(())
 }
 
-pub fn validate_deps<D, C>(deps: &[Target], _data: &D, _context: &C) -> Result<(), ValidateError> {
+pub fn validate_deps<D, C>(deps: &[Target], _task: &D, _context: &C) -> Result<(), ValidateError> {
     for (i, dep) in deps.iter().enumerate() {
         if matches!(dep.scope, TargetScope::All) {
             return Err(ValidateError::with_segment(
@@ -70,6 +70,8 @@ cacheable!(
 cacheable!(
     #[derive(Clone, Config, Debug, Eq, PartialEq)]
     pub struct TaskConfig {
+        pub extends: Option<Id>,
+
         #[setting(nested)]
         pub command: TaskCommandArgs,
 

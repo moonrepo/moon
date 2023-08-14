@@ -1,5 +1,6 @@
 mod utils;
 
+use moon_common::Id;
 use moon_config::{
     FilePath, InputPath, OutputPath, PlatformType, TaskCommandArgs, TaskConfig, TaskMergeStrategy,
     TaskOutputStyle, TaskType,
@@ -12,7 +13,7 @@ mod task_config {
 
     #[test]
     #[should_panic(
-        expected = "unknown field `unknown`, expected one of `command`, `args`, `deps`, `env`, `inputs`, `local`, `outputs`, `options`, `platform`, `type`"
+        expected = "unknown field `unknown`, expected one of `extends`, `command`, `args`, `deps`, `env`, `inputs`, `local`, `outputs`, `options`, `platform`, `type`"
     )]
     fn error_unknown_field() {
         test_parse_config("unknown: 123", |code| TaskConfig::parse(code));
@@ -25,6 +26,13 @@ mod task_config {
         assert_eq!(config.command, TaskCommandArgs::None);
         assert_eq!(config.args, TaskCommandArgs::None);
         assert_eq!(config.type_of, None);
+    }
+
+    #[test]
+    fn can_extend() {
+        let config = test_parse_config("extends: id", |code| TaskConfig::parse(code));
+
+        assert_eq!(config.extends, Some(Id::raw("id")));
     }
 
     mod command {

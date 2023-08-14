@@ -1,6 +1,6 @@
 use crate::language_platform::{LanguageType, PlatformType};
 use crate::project::{validate_deps, TaskConfig};
-use crate::project_config::ProjectType;
+use crate::project_config::{validate_tasks, ProjectType};
 use crate::shapes::InputPath;
 use moon_common::cacheable;
 use moon_common::{consts, Id};
@@ -49,7 +49,7 @@ cacheable!(
         #[setting(merge = merge::append_vec)]
         pub implicit_inputs: Vec<InputPath>,
 
-        #[setting(nested, merge = merge::merge_btreemap)]
+        #[setting(nested, merge = merge::merge_btreemap, validate = validate_tasks)]
         pub tasks: BTreeMap<Id, TaskConfig>,
     }
 );

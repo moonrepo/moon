@@ -3254,9 +3254,20 @@ name = "moon_cache2"
 version = "0.1.0"
 dependencies = [
  "miette",
+ "moon_cache_item",
  "moon_common",
  "moon_hash",
  "moon_time",
+ "serde",
+ "starbase_utils",
+ "tracing",
+]
+
+[[package]]
+name = "moon_cache_item"
+version = "0.1.0"
+dependencies = [
+ "miette",
  "serde",
  "starbase_utils",
  "tracing",
@@ -4201,6 +4212,7 @@ version = "0.1.0"
 dependencies = [
  "miette",
  "moon_cache",
+ "moon_cache2",
  "moon_common",
  "moon_config",
  "moon_logger",

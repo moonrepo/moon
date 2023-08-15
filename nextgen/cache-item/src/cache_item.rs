@@ -35,7 +35,7 @@ impl<T: Default + DeserializeOwned + Serialize> CacheItem<T> {
             } else {
                 debug!(
                     cache = ?path,
-                    "Cache miss, does not exist",
+                    "Cache miss, item does not exist",
                 );
             }
         } else {

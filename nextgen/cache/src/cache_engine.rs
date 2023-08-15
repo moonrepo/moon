@@ -1,6 +1,5 @@
-use crate::cache_item::CacheItem;
-use crate::cache_mode::*;
-use moon_common::consts::CONFIG_DIRNAME;
+use moon_cache_item::*;
+use moon_common::consts;
 use moon_hash::HashEngine;
 use moon_time::parse_duration;
 use serde::de::DeserializeOwned;
@@ -25,7 +24,7 @@ pub struct CacheEngine {
 
 impl CacheEngine {
     pub fn new(workspace_root: &Path) -> miette::Result<CacheEngine> {
-        let dir = workspace_root.join(CONFIG_DIRNAME).join("cache");
+        let dir = workspace_root.join(consts::CONFIG_DIRNAME).join("cache");
         let states_dir = dir.join("states");
         let cache_tag = dir.join("CACHEDIR.TAG");
 

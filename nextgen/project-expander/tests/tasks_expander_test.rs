@@ -636,6 +636,52 @@ mod tasks_expander {
         }
 
         #[test]
+        fn replaces_tokens() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+
+            let mut task = create_task();
+            task.env.insert("KEY1".into(), "@globs(all)".into());
+            task.env.insert("KEY2".into(), "$project-$task".into());
+
+            let context = create_context(&project, sandbox.path());
+            TasksExpander::new(&context).expand_env(&mut task).unwrap();
+
+            assert_eq!(
+                task.env,
+                FxHashMap::from_iter([
+                    (
+                        "KEY1".into(),
+                        "project/source/*.md,project/source/**/*.json".into()
+                    ),
+                    ("KEY2".into(), "project-task".into()),
+                ])
+            );
+        }
+
+        #[test]
+        fn can_use_env_vars_and_token_vars() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+
+            let mut task = create_task();
+            task.env
+                .insert("KEY".into(), "$project-$FOO-$unknown".into());
+
+            env::set_var("FOO", "foo");
+
+            let context = create_context(&project, sandbox.path());
+            TasksExpander::new(&context).expand_env(&mut task).unwrap();
+
+            env::remove_var("FOO");
+
+            assert_eq!(
+                task.env,
+                FxHashMap::from_iter([("KEY".into(), "project-foo-$unknown".into()),])
+            );
+        }
+
+        #[test]
         fn loads_from_env_file() {
             let sandbox = create_sandbox("env-file");
             let project = create_project(sandbox.path());

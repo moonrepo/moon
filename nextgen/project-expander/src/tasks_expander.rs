@@ -5,7 +5,7 @@ use moon_common::{color, Id};
 use moon_config::InputPath;
 use moon_project::Project;
 use moon_task::{Target, TargetScope, Task};
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashSet;
 use starbase_utils::glob::GlobSet;
 use tracing::{trace, warn};
 
@@ -196,12 +196,13 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
             "Expanding environment variables"
         );
 
-        // Substitute environment variables
-        let cloned_env = task.env.clone();
-        let mut env = FxHashMap::default();
+        // Expand tokens
+        let mut env = self.token.expand_env(task)?;
+        let cloned_env = env.clone();
 
-        for (key, val) in &task.env {
-            env.insert(key.to_owned(), substitute_env_var(val, &cloned_env));
+        // Substitute environment variables
+        for (_, value) in env.iter_mut() {
+            *value = substitute_env_var(value, &cloned_env);
         }
 
         // Load variables from an .env file

@@ -52,6 +52,7 @@ const sidebars = {
 				'concepts/project',
 				'concepts/target',
 				'concepts/task',
+				'concepts/task-inheritance',
 				'concepts/token',
 				'concepts/toolchain',
 				'concepts/workspace',

@@ -144,7 +144,7 @@ pub async fn install_deps(
         workspace
             .cache2
             .cache_state::<DependenciesState>(if let Some(project) = &project {
-                PathBuf::from(project.id.as_str()).join(state_path)
+                project.get_cache_dir().join(state_path)
             } else {
                 PathBuf::from(state_path)
             })?;

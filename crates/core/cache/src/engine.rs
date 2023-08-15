@@ -1,11 +1,8 @@
 use crate::helpers::LOG_TARGET;
-use crate::items::{DependenciesState, RunTargetState};
-use crate::runfiles::Snapshot;
+use crate::items::RunTargetState;
 use crate::{get_cache_mode, CacheMode};
 use moon_common::consts::CONFIG_DIRNAME;
 use moon_logger::{debug, trace};
-use moon_platform_runtime::Runtime;
-use serde::de::DeserializeOwned;
 use serde::Serialize;
 use starbase_styles::color;
 use starbase_utils::{fs, json};
@@ -64,20 +61,6 @@ impl CacheEngine {
         })
     }
 
-    pub fn cache_deps_state(
-        &self,
-        runtime: &Runtime,
-        project_id: Option<&str>,
-    ) -> miette::Result<DependenciesState> {
-        let name = format!("deps{runtime}.json");
-
-        DependenciesState::load(self.get_state_path(if let Some(id) = project_id {
-            format!("{id}{}{name}", MAIN_SEPARATOR_STR)
-        } else {
-            name
-        }))
-    }
-
     pub fn cache_run_target_state<T: AsRef<str>>(
         &self,
         target_id: T,
@@ -117,14 +100,6 @@ impl CacheEngine {
         json::write_file(path, &data, true)?;
 
         Ok(())
-    }
-
-    pub fn create_snapshot<T: DeserializeOwned + Serialize>(
-        &self,
-        project_id: &str,
-        data: &T,
-    ) -> miette::Result<Snapshot> {
-        Snapshot::load(self.get_state_path(project_id).join("snapshot.json"), data)
     }
 
     pub fn get_hash_archive_path(&self, hash: &str) -> PathBuf {

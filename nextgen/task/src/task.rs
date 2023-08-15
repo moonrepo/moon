@@ -8,7 +8,7 @@ use moon_config::{InputPath, OutputPath, PlatformType, TaskType};
 use moon_target::Target;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::glob;
-use std::env;
+use std::{env, path::PathBuf};
 use tracing::debug;
 
 cacheable!(
@@ -92,6 +92,11 @@ impl Task {
         }
 
         Ok(files)
+    }
+
+    /// Return a cache directory for this task, relative from the cache root.
+    pub fn get_cache_dir(&self) -> PathBuf {
+        PathBuf::from(self.target.scope_id.as_ref().unwrap().as_str()).join(self.id.as_str())
     }
 
     /// Return true if this task is affected based on touched files.

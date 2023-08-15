@@ -53,27 +53,6 @@ mod create {
     }
 }
 
-mod create_snapshot {
-    use super::*;
-
-    #[test]
-    #[serial]
-    fn creates_on_call() {
-        let dir = create_temp_dir();
-        let cache = CacheEngine::load(dir.path()).unwrap();
-        let snapshot = cache.create_snapshot("123", &"content".to_owned()).unwrap();
-
-        assert!(snapshot.path.exists());
-
-        assert_eq!(
-            fs::read_to_string(dir.path().join(".moon/cache/states/123/snapshot.json")).unwrap(),
-            "\"content\""
-        );
-
-        dir.close().unwrap();
-    }
-}
-
 mod cache_run_target_state {
     use super::*;
 

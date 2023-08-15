@@ -4,7 +4,7 @@ use moon_hash::HashEngine;
 use moon_time::parse_duration;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use starbase_utils::fs;
+use starbase_utils::{fs, json};
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use tracing::debug;
@@ -50,18 +50,24 @@ impl CacheEngine {
         })
     }
 
-    pub fn cache<T, P>(&self, path: impl AsRef<OsStr>) -> miette::Result<CacheItem<T>>
+    pub fn cache<T>(&self, path: impl AsRef<OsStr>) -> miette::Result<CacheItem<T>>
     where
         T: Default + DeserializeOwned + Serialize,
     {
-        CacheItem::<T>::load(self.dir.join(path.as_ref()))
+        let path = PathBuf::from(path.as_ref());
+
+        CacheItem::<T>::load(if path.is_absolute() {
+            path
+        } else {
+            self.dir.join(path)
+        })
     }
 
     pub fn cache_state<T>(&self, path: impl AsRef<OsStr>) -> miette::Result<CacheItem<T>>
     where
         T: Default + DeserializeOwned + Serialize,
     {
-        CacheItem::<T>::load(self.states_dir.join(path.as_ref()))
+        self.cache(self.states_dir.join(path.as_ref()))
     }
 
     pub fn clean_stale_cache(&self, lifetime: &str) -> miette::Result<(usize, u64)> {
@@ -88,5 +94,31 @@ impl CacheEngine {
 
     pub fn get_mode(&self) -> CacheMode {
         get_cache_mode()
+    }
+
+    pub fn write<T>(&self, path: impl AsRef<OsStr>, data: &T) -> miette::Result<()>
+    where
+        T: ?Sized + Serialize,
+    {
+        let path = PathBuf::from(path.as_ref());
+        let path = if path.is_absolute() {
+            path
+        } else {
+            self.dir.join(path)
+        };
+
+        debug!(cache = ?path, "Writing cache");
+
+        // This purposefully ignores the cache mode and always writes!
+        json::write_file(path, &data, false)?;
+
+        Ok(())
+    }
+
+    pub fn write_state<T>(&self, path: impl AsRef<OsStr>, state: &T) -> miette::Result<()>
+    where
+        T: ?Sized + Serialize,
+    {
+        self.write(self.states_dir.join(path.as_ref()), state)
     }
 }

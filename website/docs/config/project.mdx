@@ -240,7 +240,7 @@ suggest _not_ listing people/developers as the owner, use [maintainers](#maintai
 Tags are a simple mechanism for categorizing projects. They can be used to group projects together
 for [easier querying](../commands/query/projects), enforcing of
 [project boundaries and constraints](./workspace#constraints),
-[task inheritance](../concepts/task#inheritance), and more.
+[task inheritance](../concepts/task-inheritance), and more.
 
 ```yaml title="moon.yml"
 tags:
@@ -355,10 +355,10 @@ tasks:
 <HeadingApiLink to="/api/types/interface/TaskConfig#extends" />
 
 The `extends` field can be used to extend the settings from a sibling task within the same project,
-or [inherited from the global scope](../concepts/task#inheritance). This is useful for composing
+or [inherited from the global scope](../concepts/task-inheritance). This is useful for composing
 similar tasks with different arguments or options.
 
-When extending another task, the same [merge strategies](../concepts/task#merge-strategies) used for
+When extending another task, the same [merge strategies](../concepts/task-inheritance#merge-strategies) used for
 inheritance are applied.
 
 ```yaml title="moon.yml"
@@ -637,7 +637,7 @@ tasks:
 
 The `options` field is an object of configurable options that can be used to modify the task and its
 execution. The following fields can be provided, with merge related fields supporting all
-[merge strategies](../concepts/task#merge-strategies).
+[merge strategies](../concepts/task-inheritance#merge-strategies).
 
 ```yaml title="moon.yml" {6-8}
 tasks:
@@ -733,35 +733,35 @@ differences are around quote handling and variable substitution, so be aware of 
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#mergeArgs" />
 
-The [strategy](../concepts/task#merge-strategies) to use when merging the [`args`](#args) list with
+The [strategy](../concepts/task-inheritance#merge-strategies) to use when merging the [`args`](#args) list with
 an inherited task. Defaults to "append".
 
 #### `mergeDeps`
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#mergeDeps" />
 
-The [strategy](../concepts/task#merge-strategies) to use when merging the [`deps`](#deps) list with
+The [strategy](../concepts/task-inheritance#merge-strategies) to use when merging the [`deps`](#deps) list with
 an inherited task. Defaults to "append".
 
 #### `mergeEnv`
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#mergeEnv" />
 
-The [strategy](../concepts/task#merge-strategies) to use when merging the [`env`](#env-1) map with
+The [strategy](../concepts/task-inheritance#merge-strategies) to use when merging the [`env`](#env-1) map with
 an inherited task. Defaults to "append".
 
 #### `mergeInputs`
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#mergeInputs" />
 
-The [strategy](../concepts/task#merge-strategies) to use when merging the [`inputs`](#inputs) list
+The [strategy](../concepts/task-inheritance#merge-strategies) to use when merging the [`inputs`](#inputs) list
 with an inherited task. Defaults to "append".
 
 #### `mergeOutputs`
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#mergeOutputs" />
 
-The [strategy](../concepts/task#merge-strategies) to use when merging the [`outputs`](#outputs) list
+The [strategy](../concepts/task-inheritance#merge-strategies) to use when merging the [`outputs`](#outputs) list
 with an inherited task. Defaults to "append".
 
 #### `outputStyle`

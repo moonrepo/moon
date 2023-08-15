@@ -1,5 +1,5 @@
 use crate::helpers::LOG_TARGET;
-use crate::items::{CommonState, DependenciesState, ProjectsState, RunTargetState, ToolState};
+use crate::items::{DependenciesState, ProjectsState, RunTargetState, ToolState};
 use crate::runfiles::Snapshot;
 use crate::{get_cache_mode, CacheMode};
 use moon_common::consts::CONFIG_DIRNAME;
@@ -93,9 +93,9 @@ impl CacheEngine {
         Ok(item)
     }
 
-    pub fn cache_codeowners_state(&self) -> miette::Result<CommonState> {
-        CommonState::load(self.get_state_path("codeowners.json"))
-    }
+    // pub fn cache_codeowners_state(&self) -> miette::Result<CommonState> {
+    //     CommonState::load(self.get_state_path("codeowners.json"))
+    // }
 
     pub fn cache_projects_state(&self) -> miette::Result<ProjectsState> {
         ProjectsState::load(self.get_state_path("projects.json"))
@@ -105,9 +105,9 @@ impl CacheEngine {
         ToolState::load(self.get_state_path(format!("tool{}-{}.json", runtime, runtime.version())))
     }
 
-    pub fn cache_vcs_hooks_state(&self) -> miette::Result<CommonState> {
-        CommonState::load(self.get_state_path("vcsHooks.json"))
-    }
+    // pub fn cache_vcs_hooks_state(&self) -> miette::Result<CommonState> {
+    //     CommonState::load(self.get_state_path("vcsHooks.json"))
+    // }
 
     pub fn clean_stale_cache(&self, lifetime: &str) -> miette::Result<(usize, u64)> {
         let duration =

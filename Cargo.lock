@@ -3176,9 +3176,9 @@ name = "moon_actions"
 version = "0.1.0"
 dependencies = [
  "miette",
+ "moon_cache_item",
  "moon_codeowners",
  "moon_config",
- "moon_hash",
  "moon_project_graph",
  "moon_vcs_hooks",
  "moon_workspace",

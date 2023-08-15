@@ -1,6 +1,6 @@
 use crate::cache_mode::get_cache_mode;
 use serde::de::DeserializeOwned;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use starbase_utils::json;
 use std::path::{Path, PathBuf};
 use tracing::{debug, trace};
@@ -21,7 +21,9 @@ pub struct CacheItem<T: Default + DeserializeOwned + Serialize> {
 
 impl<T: Default + DeserializeOwned + Serialize> CacheItem<T> {
     pub fn load<P: AsRef<Path>>(path: P) -> miette::Result<CacheItem<T>> {
-        let path = path.as_ref();
+        let mut path = path.as_ref().to_path_buf();
+        path.set_extension("json");
+
         let mut data = T::default();
 
         if get_cache_mode().is_readable() {
@@ -45,10 +47,7 @@ impl<T: Default + DeserializeOwned + Serialize> CacheItem<T> {
             );
         }
 
-        Ok(CacheItem {
-            data,
-            path: path.to_path_buf(),
-        })
+        Ok(CacheItem { data, path })
     }
 
     pub fn save(&self) -> miette::Result<()> {
@@ -73,3 +72,9 @@ impl<T: Default + DeserializeOwned + Serialize> CacheItem<T> {
         self.path.parent().unwrap()
     }
 }
+
+cache_item!(
+    pub struct CommonState {
+        pub last_hash: String,
+    }
+);

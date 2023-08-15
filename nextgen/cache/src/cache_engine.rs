@@ -50,18 +50,16 @@ impl CacheEngine {
         })
     }
 
-    pub fn cache<T, P>(&self, path: P) -> miette::Result<CacheItem<T>>
+    pub fn cache<T, P>(&self, path: impl AsRef<OsStr>) -> miette::Result<CacheItem<T>>
     where
         T: Default + DeserializeOwned + Serialize,
-        P: AsRef<OsStr>,
     {
         CacheItem::<T>::load(self.dir.join(path.as_ref()))
     }
 
-    pub fn cache_state<T, P>(&self, path: P) -> miette::Result<CacheItem<T>>
+    pub fn cache_state<T>(&self, path: impl AsRef<OsStr>) -> miette::Result<CacheItem<T>>
     where
         T: Default + DeserializeOwned + Serialize,
-        P: AsRef<OsStr>,
     {
         CacheItem::<T>::load(self.states_dir.join(path.as_ref()))
     }

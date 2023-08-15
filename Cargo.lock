@@ -3250,6 +3250,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_cache2"
+version = "0.1.0"
+dependencies = [
+ "miette",
+ "moon_common",
+ "moon_hash",
+ "moon_time",
+ "serde",
+ "starbase_utils",
+ "tracing",
+]
+
+[[package]]
 name = "moon_cli"
 version = "1.11.1"
 dependencies = [

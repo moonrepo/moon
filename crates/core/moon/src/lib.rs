@@ -1,7 +1,6 @@
 use moon_config::LanguageType;
 use moon_deno_platform::DenoPlatform;
 use moon_dep_graph::DepGraphBuilder;
-use moon_hash::HashEngine;
 use moon_node_platform::NodePlatform;
 use moon_platform::{PlatformManager, PlatformType};
 use moon_platform_detector::{detect_project_language, detect_task_platform};
@@ -210,8 +209,7 @@ pub async fn build_project_graph(workspace: &mut Workspace) -> miette::Result<Pr
 
 pub async fn generate_project_graph(workspace: &mut Workspace) -> miette::Result<ProjectGraph> {
     let context = create_project_graph_context(workspace).await;
-    let hash_engine = HashEngine::new(&workspace.cache.dir);
-    let builder = ProjectGraphBuilder::generate(context, &hash_engine, &workspace.cache).await?;
+    let builder = ProjectGraphBuilder::generate(context, &workspace.cache2).await?;
     let graph = builder.build().await?;
 
     Ok(graph)

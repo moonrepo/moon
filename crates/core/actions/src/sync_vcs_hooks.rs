@@ -14,19 +14,19 @@ pub async fn sync_vcs_hooks(workspace: &Workspace, force: bool) -> miette::Resul
     }
 
     // Check the cache before creating the files
-    let mut cache = cache_engine.cache_state::<CommonState>("vcsHooks.json")?;
+    let mut state = cache_engine.cache_state::<CommonState>("vcsHooks.json")?;
 
     let hash = cache_engine
         .hash
         .save_manifest_without_hasher("VCS hooks", &hooks_hash)?;
 
-    if force || hash != cache.data.last_hash {
+    if force || hash != state.data.last_hash {
         HooksGenerator::new(&workspace.root, &workspace.vcs, vcs_config)
             .generate()
             .await?;
 
-        cache.data.last_hash = hash;
-        cache.save()?;
+        state.data.last_hash = hash;
+        state.save()?;
     }
 
     Ok(())

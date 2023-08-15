@@ -44,17 +44,17 @@ pub async fn sync_codeowners(
     let file_path = codeowners.file_path.clone();
 
     // Check the cache before writing the file
-    let mut cache = cache_engine.cache_state::<CommonState>("codeowners.json")?;
+    let mut state = cache_engine.cache_state::<CommonState>("codeowners.json")?;
 
     let hash = cache_engine
         .hash
         .save_manifest_without_hasher("CODEOWNERS", &codeowners_hash)?;
 
-    if force || hash != cache.data.last_hash {
+    if force || hash != state.data.last_hash {
         codeowners.generate()?;
 
-        cache.data.last_hash = hash;
-        cache.save()?;
+        state.data.last_hash = hash;
+        state.save()?;
     }
 
     Ok(file_path)

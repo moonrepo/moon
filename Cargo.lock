@@ -3095,7 +3095,6 @@ dependencies = [
  "moon_config",
  "moon_deno_platform",
  "moon_dep_graph",
- "moon_hash",
  "moon_node_platform",
  "moon_platform",
  "moon_platform_detector",
@@ -3835,7 +3834,7 @@ version = "0.1.0"
 dependencies = [
  "async-recursion",
  "miette",
- "moon_cache",
+ "moon_cache2",
  "moon_common",
  "moon_config",
  "moon_hash",

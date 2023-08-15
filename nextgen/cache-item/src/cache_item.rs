@@ -1,6 +1,6 @@
 use crate::cache_mode::get_cache_mode;
 use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use starbase_utils::json;
 use std::path::{Path, PathBuf};
 use tracing::{debug, trace};
@@ -8,7 +8,7 @@ use tracing::{debug, trace};
 #[macro_export]
 macro_rules! cache_item {
     ($item:item) => {
-        #[derive(Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+        #[derive(Debug, Default, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
         #[serde(default, rename_all = "camelCase")]
         $item
     };

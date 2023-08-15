@@ -143,7 +143,9 @@ fn load_workspace_config(root_dir: &Path) -> miette::Result<WorkspaceConfig> {
 
 pub struct Workspace {
     /// Engine for reading and writing cache/outputs.
+    #[deprecated]
     pub cache: CacheEngine,
+
     pub cache2: Cache2Engine,
 
     /// Workspace configuration loaded from ".moon/workspace.yml".

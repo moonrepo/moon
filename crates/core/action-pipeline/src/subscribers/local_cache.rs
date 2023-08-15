@@ -79,7 +79,7 @@ impl Subscriber for LocalCacheSubscriber {
             // After the run has finished, clean any stale archives.
             Event::PipelineFinished { .. } => {
                 workspace
-                    .cache
+                    .cache2
                     .clean_stale_cache(&workspace.config.runner.cache_lifetime)?;
             }
             _ => {}

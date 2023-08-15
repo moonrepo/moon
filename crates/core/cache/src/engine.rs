@@ -5,7 +5,6 @@ use crate::{get_cache_mode, CacheMode};
 use moon_common::consts::CONFIG_DIRNAME;
 use moon_logger::{debug, trace};
 use moon_platform_runtime::Runtime;
-use moon_utils::time;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use starbase_styles::color;
@@ -91,48 +90,6 @@ impl CacheEngine {
         }
 
         Ok(item)
-    }
-
-    // pub fn cache_codeowners_state(&self) -> miette::Result<CommonState> {
-    //     CommonState::load(self.get_state_path("codeowners.json"))
-    // }
-
-    // pub fn cache_projects_state(&self) -> miette::Result<ProjectsState> {
-    //     ProjectsState::load(self.get_state_path("projects.json"))
-    // }
-
-    // pub fn cache_tool_state(&self, runtime: &Runtime) -> miette::Result<ToolState> {
-    //     ToolState::load(self.get_state_path(format!("tool{}-{}.json", runtime, runtime.version())))
-    // }
-
-    // pub fn cache_vcs_hooks_state(&self) -> miette::Result<CommonState> {
-    //     CommonState::load(self.get_state_path("vcsHooks.json"))
-    // }
-
-    pub fn clean_stale_cache(&self, lifetime: &str) -> miette::Result<(usize, u64)> {
-        let duration =
-            time::parse_duration(lifetime).map_err(|e| miette::miette!("Invalid lifetime: {e}"))?;
-
-        trace!(
-            target: LOG_TARGET,
-            "Cleaning up and deleting stale cache older than \"{}\"",
-            lifetime
-        );
-
-        let hashes_dir = fs::remove_dir_stale_contents(&self.hashes_dir, duration)?;
-        let outputs_dir = fs::remove_dir_stale_contents(&self.outputs_dir, duration)?;
-
-        let deleted = hashes_dir.files_deleted + outputs_dir.files_deleted;
-        let bytes = hashes_dir.bytes_saved + outputs_dir.bytes_saved;
-
-        trace!(
-            target: LOG_TARGET,
-            "Deleted {} files and saved {} bytes",
-            deleted,
-            bytes
-        );
-
-        Ok((deleted, bytes))
     }
 
     pub fn create_hash_manifest<T>(&self, hash: &str, contents: &T) -> miette::Result<()>

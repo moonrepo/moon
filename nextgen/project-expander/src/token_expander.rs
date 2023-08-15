@@ -267,7 +267,12 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
         let file_group = || -> miette::Result<&FileGroup> {
             self.check_scope(
                 token,
-                &[TokenScope::Args, TokenScope::Inputs, TokenScope::Outputs],
+                &[
+                    TokenScope::Args,
+                    TokenScope::Env,
+                    TokenScope::Inputs,
+                    TokenScope::Outputs,
+                ],
             )?;
 
             Ok(self.context.project.file_groups.get(arg).ok_or_else(|| {
@@ -392,6 +397,7 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
             &[
                 TokenScope::Command,
                 TokenScope::Args,
+                TokenScope::Env,
                 TokenScope::Inputs,
                 TokenScope::Outputs,
             ],

@@ -3,6 +3,7 @@ mod utils;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{InputPath, LanguageType, OutputPath, ProjectType};
 use moon_project_expander::TokenExpander;
+use rustc_hash::FxHashMap;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox, predicates::prelude::*};
 use utils::{create_context, create_project, create_task};
 
@@ -269,6 +270,186 @@ mod token_expander {
             let mut expander = TokenExpander::new(&context);
 
             assert_eq!(expander.expand_command(&task).unwrap(), "project/bin/task");
+        }
+    }
+
+    mod env {
+        use super::*;
+
+        #[test]
+        fn passes_through() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.env.insert("KEY".into(), "value".into());
+
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
+
+            assert_eq!(
+                expander.expand_env(&task).unwrap(),
+                FxHashMap::from_iter([("KEY".into(), "value".into())])
+            );
+        }
+
+        #[test]
+        fn replaces_one_var() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.env.insert("VAR".into(), "$project-prod".into());
+
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
+
+            assert_eq!(
+                expander.expand_env(&task).unwrap(),
+                FxHashMap::from_iter([("VAR".into(), "project-prod".into())])
+            );
+        }
+
+        #[test]
+        fn replaces_two_vars() {
+            let sandbox = create_empty_sandbox();
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.env
+                .insert("VARS".into(), "$project-debug-$task".into());
+
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
+
+            assert_eq!(
+                expander.expand_env(&task).unwrap(),
+                FxHashMap::from_iter([("VARS".into(), "project-debug-task".into())])
+            );
+        }
+
+        #[test]
+        fn supports_group_func() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.env.insert("GROUP".into(), "@group(all)".into());
+
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
+
+            assert_eq!(
+                expander.expand_env(&task).unwrap(),
+                FxHashMap::from_iter([("GROUP".into(), "project/source/config.yml,project/source/dir/subdir,project/source/*.md,project/source/**/*.json".into())])
+            );
+        }
+
+        #[test]
+        fn supports_dirs_func() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.env.insert("DIRS".into(), "@dirs(dirs)".into());
+
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
+
+            assert_eq!(
+                expander.expand_env(&task).unwrap(),
+                FxHashMap::from_iter([(
+                    "DIRS".into(),
+                    "project/source/dir/subdir,project/source/other".into()
+                )])
+            );
+        }
+
+        #[test]
+        fn supports_files_func() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.env.insert("FILES".into(), "@files(all)".into());
+
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
+
+            assert_eq!(
+                expander.expand_env(&task).unwrap(),
+                FxHashMap::from_iter([(
+                    "FILES".into(),
+                    "project/source/config.yml,project/source/dir/subdir/nested.json,project/source/docs.md,project/source/other/file.json".into()
+                )])
+            );
+        }
+
+        #[test]
+        fn supports_globs_func() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.env.insert("GLOBS".into(), "@globs(all)".into());
+
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
+
+            assert_eq!(
+                expander.expand_env(&task).unwrap(),
+                FxHashMap::from_iter([(
+                    "GLOBS".into(),
+                    "project/source/*.md,project/source/**/*.json".into()
+                )])
+            );
+        }
+
+        #[test]
+        fn supports_root_func() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.env.insert("ROOT".into(), "@root(all)".into());
+
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
+
+            assert_eq!(
+                expander.expand_env(&task).unwrap(),
+                FxHashMap::from_iter([("ROOT".into(), "project/source/dir/subdir".into())])
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "Token @in(0) cannot be used within task env.")]
+        fn errors_for_in_func() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.env.insert("IN".into(), "@in(0)".into());
+
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
+
+            expander.expand_env(&task).unwrap();
+        }
+
+        #[test]
+        #[should_panic(expected = "Token @out(0) cannot be used within task env.")]
+        fn errors_for_out_func() {
+            let sandbox = create_sandbox("file-group");
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+
+            task.env.insert("OUT".into(), "@out(0)".into());
+
+            let context = create_context(&project, sandbox.path());
+            let mut expander = TokenExpander::new(&context);
+
+            expander.expand_env(&task).unwrap();
         }
     }
 

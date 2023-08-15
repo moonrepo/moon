@@ -6,6 +6,7 @@ use moon_project::FileGroup;
 use moon_task::Task;
 use moon_time::{now_millis, now_timestamp};
 use pathdiff::diff_paths;
+use rustc_hash::FxHashMap;
 use tracing::warn;
 
 pub type ExpandedPaths = (Vec<WorkspaceRelativePathBuf>, Vec<WorkspaceRelativePathBuf>);
@@ -14,6 +15,7 @@ pub type ExpandedPaths = (Vec<WorkspaceRelativePathBuf>, Vec<WorkspaceRelativePa
 pub enum TokenScope {
     Command,
     Args,
+    Env,
     Inputs,
     Outputs,
 }
@@ -23,6 +25,7 @@ impl TokenScope {
         match self {
             TokenScope::Command => "commands",
             TokenScope::Args => "args",
+            TokenScope::Env => "env",
             TokenScope::Inputs => "inputs",
             TokenScope::Outputs => "outputs",
         }
@@ -125,6 +128,36 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
         }
 
         Ok(args)
+    }
+
+    pub fn expand_env(&mut self, task: &Task) -> miette::Result<FxHashMap<String, String>> {
+        self.scope = TokenScope::Env;
+
+        let mut env = FxHashMap::default();
+
+        for (key, value) in &task.env {
+            if self.has_token_function(value) {
+                let (files, globs) = self.replace_function(task, value)?;
+
+                let mut list = vec![];
+                list.extend(files);
+                list.extend(globs);
+
+                env.insert(
+                    key.to_owned(),
+                    list.iter()
+                        .map(|i| i.as_str())
+                        .collect::<Vec<_>>()
+                        .join(","),
+                );
+            } else if self.has_token_variable(value) {
+                env.insert(key.to_owned(), self.replace_variables(task, value)?);
+            } else {
+                env.insert(key.to_owned(), value.to_owned());
+            }
+        }
+
+        Ok(env)
     }
 
     pub fn expand_inputs(&mut self, task: &Task) -> miette::Result<ExpandedPaths> {
@@ -234,7 +267,12 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
         let file_group = || -> miette::Result<&FileGroup> {
             self.check_scope(
                 token,
-                &[TokenScope::Args, TokenScope::Inputs, TokenScope::Outputs],
+                &[
+                    TokenScope::Args,
+                    TokenScope::Env,
+                    TokenScope::Inputs,
+                    TokenScope::Outputs,
+                ],
             )?;
 
             Ok(self.context.project.file_groups.get(arg).ok_or_else(|| {
@@ -359,6 +397,7 @@ impl<'graph, 'query> TokenExpander<'graph, 'query> {
             &[
                 TokenScope::Command,
                 TokenScope::Args,
+                TokenScope::Env,
                 TokenScope::Inputs,
                 TokenScope::Outputs,
             ],

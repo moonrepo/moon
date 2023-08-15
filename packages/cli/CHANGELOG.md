@@ -6,6 +6,7 @@
 
 - Added an `extends` field to task configurations. This allows tasks to extend and inherit settings
   from sibling tasks.
+- Updated task `env` values to support token functions and variables.
 
 ## 1.11.1
 

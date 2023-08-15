@@ -3143,6 +3143,7 @@ dependencies = [
  "moon_action_context",
  "moon_actions",
  "moon_cache",
+ "moon_cache_item",
  "moon_dep_graph",
  "moon_emitter",
  "moon_hasher",

@@ -1,5 +1,5 @@
 use crate::helpers::LOG_TARGET;
-use crate::items::{DependenciesState, RunTargetState, ToolState};
+use crate::items::{DependenciesState, RunTargetState};
 use crate::runfiles::Snapshot;
 use crate::{get_cache_mode, CacheMode};
 use moon_common::consts::CONFIG_DIRNAME;
@@ -101,9 +101,9 @@ impl CacheEngine {
     //     ProjectsState::load(self.get_state_path("projects.json"))
     // }
 
-    pub fn cache_tool_state(&self, runtime: &Runtime) -> miette::Result<ToolState> {
-        ToolState::load(self.get_state_path(format!("tool{}-{}.json", runtime, runtime.version())))
-    }
+    // pub fn cache_tool_state(&self, runtime: &Runtime) -> miette::Result<ToolState> {
+    //     ToolState::load(self.get_state_path(format!("tool{}-{}.json", runtime, runtime.version())))
+    // }
 
     // pub fn cache_vcs_hooks_state(&self) -> miette::Result<CommonState> {
     //     CommonState::load(self.get_state_path("vcsHooks.json"))

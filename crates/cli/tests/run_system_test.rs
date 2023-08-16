@@ -261,7 +261,8 @@ mod unix {
 
     mod caching {
         use super::*;
-        use moon_cache::RunTargetState;
+        use moon_runner::RunTargetState;
+        use starbase_utils::json;
 
         #[test]
         fn uses_cache_on_subsequent_runs() {
@@ -308,7 +309,7 @@ mod unix {
 
             assert!(cache_path.exists());
 
-            let state = RunTargetState::load(cache_path).unwrap();
+            let state: RunTargetState = json::read_file(cache_path).unwrap();
 
             assert!(sandbox
                 .path()

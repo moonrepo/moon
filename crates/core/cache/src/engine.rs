@@ -1,5 +1,4 @@
 use crate::helpers::LOG_TARGET;
-use crate::items::RunTargetState;
 use crate::{get_cache_mode, CacheMode};
 use moon_common::consts::CONFIG_DIRNAME;
 use moon_logger::{debug, trace};
@@ -59,20 +58,6 @@ impl CacheEngine {
             outputs_dir,
             states_dir,
         })
-    }
-
-    pub fn cache_run_target_state<T: AsRef<str>>(
-        &self,
-        target_id: T,
-    ) -> miette::Result<RunTargetState> {
-        let target_id = target_id.as_ref();
-        let mut item = RunTargetState::load(self.get_target_dir(target_id).join("lastRun.json"))?;
-
-        if item.target.is_empty() {
-            item.target = target_id.to_owned();
-        }
-
-        Ok(item)
     }
 
     pub fn create_hash_manifest<T>(&self, hash: &str, contents: &T) -> miette::Result<()>

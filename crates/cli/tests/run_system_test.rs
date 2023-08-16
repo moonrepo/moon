@@ -595,7 +595,7 @@ mod windows {
 
             assert!(cache_path.exists());
 
-            let state = RunTargetState::load(cache_path).unwrap();
+            let state: RunTargetState = json::read_file(cache_path).unwrap();
 
             assert!(sandbox
                 .path()

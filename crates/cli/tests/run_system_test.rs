@@ -548,7 +548,7 @@ mod windows {
 
     mod caching {
         use super::*;
-        use moon_cache::RunTargetState;
+        use moon_runner::RunTargetState;
 
         #[test]
         fn uses_cache_on_subsequent_runs() {

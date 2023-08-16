@@ -45,7 +45,7 @@ impl CacheEngine {
     {
         let path = self.hashes_dir.join(format!("{hash}.json"));
 
-        json::write_file(&path, &contents, true)?;
+        json::write_file(path, &contents, true)?;
 
         Ok(())
     }

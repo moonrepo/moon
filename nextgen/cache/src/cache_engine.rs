@@ -30,6 +30,7 @@ impl CacheEngine {
 
         debug!(
             cache_dir = ?dir,
+            states_dir = ?states_dir,
             "Creating cache engine",
         );
 
@@ -54,13 +55,7 @@ impl CacheEngine {
     where
         T: Default + DeserializeOwned + Serialize,
     {
-        let path = PathBuf::from(path.as_ref());
-
-        CacheItem::<T>::load(if path.is_absolute() {
-            path
-        } else {
-            self.dir.join(path)
-        })
+        CacheItem::<T>::load(self.resolve_path(path))
     }
 
     pub fn cache_state<T>(&self, path: impl AsRef<OsStr>) -> miette::Result<CacheItem<T>>
@@ -100,12 +95,7 @@ impl CacheEngine {
     where
         T: ?Sized + Serialize,
     {
-        let path = PathBuf::from(path.as_ref());
-        let path = if path.is_absolute() {
-            path
-        } else {
-            self.dir.join(path)
-        };
+        let path = self.resolve_path(path);
 
         debug!(cache = ?path, "Writing cache");
 
@@ -120,5 +110,15 @@ impl CacheEngine {
         T: ?Sized + Serialize,
     {
         self.write(self.states_dir.join(path.as_ref()), state)
+    }
+
+    fn resolve_path(&self, path: impl AsRef<OsStr>) -> PathBuf {
+        let path = PathBuf::from(path.as_ref());
+
+        if path.is_absolute() {
+            path
+        } else {
+            self.dir.join(path)
+        }
     }
 }

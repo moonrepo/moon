@@ -3259,6 +3259,7 @@ dependencies = [
  "moon_hash",
  "moon_time",
  "serde",
+ "starbase_sandbox",
  "starbase_utils",
  "tracing",
 ]

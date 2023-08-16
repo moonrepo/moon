@@ -1,8 +1,10 @@
 use moon_config::{PartialInheritedTasksConfig, PartialWorkspaceConfig, PartialWorkspaceProjects};
+use moon_runner::RunTargetState;
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, predicates::prelude::*, Sandbox,
 };
 use rustc_hash::FxHashMap;
+use starbase_utils::json;
 
 fn system_sandbox() -> Sandbox {
     let workspace_config = PartialWorkspaceConfig {
@@ -261,8 +263,6 @@ mod unix {
 
     mod caching {
         use super::*;
-        use moon_runner::RunTargetState;
-        use starbase_utils::json;
 
         #[test]
         fn uses_cache_on_subsequent_runs() {
@@ -548,7 +548,6 @@ mod windows {
 
     mod caching {
         use super::*;
-        use moon_runner::RunTargetState;
 
         #[test]
         fn uses_cache_on_subsequent_runs() {

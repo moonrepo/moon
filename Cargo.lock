@@ -3270,6 +3270,8 @@ version = "0.1.0"
 dependencies = [
  "miette",
  "serde",
+ "serial_test",
+ "starbase_sandbox",
  "starbase_utils",
  "tracing",
 ]

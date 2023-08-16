@@ -8,3 +8,7 @@ miette = { workspace = true }
 serde = { workspace = true }
 starbase_utils = { workspace = true }
 tracing = { workspace = true }
+
+[dev-dependencies]
+serial_test = "2.0.0"
+starbase_sandbox = { workspace = true }

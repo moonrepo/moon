@@ -3,6 +3,7 @@ use tracing::warn;
 
 static mut LOGGED_WARNING: bool = false;
 
+#[derive(PartialEq)]
 pub enum CacheMode {
     Off,
     Read,
@@ -17,7 +18,7 @@ impl From<String> for CacheMode {
             "read" => CacheMode::Read,
             "read-write" => CacheMode::ReadWrite,
             "write" => CacheMode::Write,
-            val => {
+            unknown => {
                 // We only want to show this once, not everytime the function is called
                 unsafe {
                     if !LOGGED_WARNING {
@@ -25,7 +26,7 @@ impl From<String> for CacheMode {
 
                         warn!(
                             "Unknown MOON_CACHE environment variable value \"{}\", falling back to read-write mode",
-                            val
+                            unknown
                         );
                     }
                 }

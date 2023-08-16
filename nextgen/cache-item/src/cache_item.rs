@@ -5,15 +5,6 @@ use starbase_utils::json;
 use std::path::{Path, PathBuf};
 use tracing::{debug, trace};
 
-#[macro_export]
-macro_rules! cache_item {
-    ($item:item) => {
-        #[derive(Debug, Default, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
-        #[serde(default, rename_all = "camelCase")]
-        $item
-    };
-}
-
 pub struct CacheItem<T: Default + DeserializeOwned + Serialize> {
     pub data: T,
     pub path: PathBuf,
@@ -72,9 +63,3 @@ impl<T: Default + DeserializeOwned + Serialize> CacheItem<T> {
         self.path.parent().unwrap()
     }
 }
-
-cache_item!(
-    pub struct CommonState {
-        pub last_hash: String,
-    }
-);

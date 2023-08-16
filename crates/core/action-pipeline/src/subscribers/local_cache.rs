@@ -1,4 +1,4 @@
-use moon_cache::get_cache_mode;
+use moon_cache_item::get_cache_mode;
 use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_runner::{archive_outputs, hydrate_outputs};
 use moon_utils::{async_trait, path};

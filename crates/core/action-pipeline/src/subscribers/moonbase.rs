@@ -1,6 +1,6 @@
 use ci_env::get_environment;
 use moon_action::{ActionNode, ActionStatus};
-use moon_cache::get_cache_mode;
+use moon_cache_item::get_cache_mode;
 use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_logger::{debug, error, map_list, trace, warn};
 use moon_platform::Runtime;

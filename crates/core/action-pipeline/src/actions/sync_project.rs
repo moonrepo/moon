@@ -36,7 +36,7 @@ pub async fn sync_project(
 
     // Create a snapshot for tasks to reference
     workspace
-        .cache2
+        .cache_engine
         .write_state(project.get_cache_dir().join("snapshot.json"), project)?;
 
     // Collect all project dependencies so we can pass them along.

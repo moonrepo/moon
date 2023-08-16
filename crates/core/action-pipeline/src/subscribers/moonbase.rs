@@ -493,7 +493,8 @@ impl Subscriber for MoonbaseSubscriber {
                 Event::TargetOutputHydrating { hash, .. } => {
                     if get_cache_mode().is_readable() {
                         if let Some(download_url) = self.download_urls.get(*hash) {
-                            let archive_file = workspace.cache2.hash.get_archive_path(hash);
+                            let archive_file =
+                                workspace.cache_engine.hash_engine.get_archive_path(hash);
 
                             trace!(
                                 target: LOG_TARGET,

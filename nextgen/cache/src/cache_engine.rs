@@ -12,10 +12,10 @@ use tracing::debug;
 pub struct CacheEngine {
     /// The `.moon/cache` directory relative to workspace root.
     /// Contains cached items pertaining to runs and processes.
-    pub dir: PathBuf,
+    pub cache_dir: PathBuf,
 
     /// An engine specifically for hashing content and generating manifests.
-    pub hash: HashEngine,
+    pub hash_engine: HashEngine,
 
     /// The `.moon/cache/states` directory. Stores state information about anything...
     /// tools, dependencies, projects, tasks, etc.
@@ -45,8 +45,8 @@ impl CacheEngine {
         }
 
         Ok(CacheEngine {
-            hash: HashEngine::new(&dir),
-            dir,
+            hash_engine: HashEngine::new(&dir),
+            cache_dir: dir,
             states_dir,
         })
     }
@@ -74,8 +74,8 @@ impl CacheEngine {
             lifetime
         );
 
-        let hashes_dir = fs::remove_dir_stale_contents(&self.hash.hashes_dir, duration)?;
-        let outputs_dir = fs::remove_dir_stale_contents(&self.hash.outputs_dir, duration)?;
+        let hashes_dir = fs::remove_dir_stale_contents(&self.hash_engine.hashes_dir, duration)?;
+        let outputs_dir = fs::remove_dir_stale_contents(&self.hash_engine.outputs_dir, duration)?;
         let states_dir = fs::remove_dir_stale_contents(&self.states_dir, duration)?;
 
         let deleted =
@@ -118,7 +118,7 @@ impl CacheEngine {
         if path.is_absolute() {
             path
         } else {
-            self.dir.join(path)
+            self.cache_dir.join(path)
         }
     }
 }

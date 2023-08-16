@@ -457,7 +457,7 @@ impl Pipeline {
             let duration = self.duration.unwrap();
 
             workspace
-                .cache2
+                .cache_engine
                 .write(name, &RunReport::new(actions, context, duration, estimate))?;
         }
 

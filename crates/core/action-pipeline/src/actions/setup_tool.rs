@@ -40,7 +40,7 @@ pub async fn setup_tool(
     let workspace = workspace.write().await;
     let context = context.read().await;
 
-    let mut state = workspace.cache2.cache_state::<ToolState>(format!(
+    let mut state = workspace.cache_engine.cache_state::<ToolState>(format!(
         "tool{}-{}.json",
         runtime,
         runtime.version()

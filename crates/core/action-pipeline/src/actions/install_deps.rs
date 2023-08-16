@@ -75,7 +75,7 @@ pub async fn install_deps(
     }
 
     // When cache is write only, avoid install as user is typically force updating cache
-    if workspace.cache2.get_mode().is_write_only() {
+    if workspace.cache_engine.get_mode().is_write_only() {
         debug!(target: LOG_TARGET, "Force updating cache, skipping install");
 
         return Ok(ActionStatus::Skipped);
@@ -140,14 +140,13 @@ pub async fn install_deps(
     let hash = hashset.generate();
 
     let state_path = format!("deps{runtime}.json");
-    let mut state =
-        workspace
-            .cache2
-            .cache_state::<DependenciesState>(if let Some(project) = &project {
-                project.get_cache_dir().join(state_path)
-            } else {
-                PathBuf::from(state_path)
-            })?;
+    let mut state = workspace.cache_engine.cache_state::<DependenciesState>(
+        if let Some(project) = &project {
+            project.get_cache_dir().join(state_path)
+        } else {
+            PathBuf::from(state_path)
+        },
+    )?;
 
     if hash != state.data.last_hash
         || last_modified == 0

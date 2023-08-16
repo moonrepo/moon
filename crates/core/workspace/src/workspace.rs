@@ -146,7 +146,7 @@ pub struct Workspace {
     #[deprecated]
     pub cache: CacheEngine,
 
-    pub cache2: Cache2Engine,
+    pub cache_engine: Cache2Engine,
 
     /// Workspace configuration loaded from ".moon/workspace.yml".
     pub config: WorkspaceConfig,
@@ -212,7 +212,7 @@ impl Workspace {
 
         // Setup components
         let cache = CacheEngine::load(&root_dir)?;
-        let cache2 = Cache2Engine::new(&root_dir)?;
+        let cache_engine = Cache2Engine::new(&root_dir)?;
         let vcs = Git::load(
             &root_dir,
             &config.vcs.default_branch,
@@ -221,7 +221,7 @@ impl Workspace {
 
         Ok(Workspace {
             cache,
-            cache2,
+            cache_engine,
             config,
             proto_tools,
             root: root_dir,

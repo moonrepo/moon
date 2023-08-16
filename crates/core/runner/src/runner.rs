@@ -59,7 +59,7 @@ impl<'a> Runner<'a> {
         task: &'a Task,
     ) -> miette::Result<Runner<'a>> {
         let mut cache = workspace
-            .cache2
+            .cache_engine
             .cache_state::<RunTargetState>(task.get_cache_dir().join("lastRun.json"))?;
 
         if cache.data.target.is_empty() {
@@ -96,7 +96,6 @@ impl<'a> Runner<'a> {
         if let EventFlow::Return(archive_path) = self
             .emitter
             .emit(Event::TargetOutputArchiving {
-                // cache: &self.cache.data,
                 hash,
                 project: self.project,
                 target: &self.task.target,
@@ -159,7 +158,6 @@ impl<'a> Runner<'a> {
         if let EventFlow::Return(archive_path) = self
             .emitter
             .emit(Event::TargetOutputHydrating {
-                // cache: &self.cache.data,
                 hash,
                 project: self.project,
                 target: &self.task.target,
@@ -318,7 +316,7 @@ impl<'a> Runner<'a> {
 
         env_vars.insert(
             "MOON_CACHE_DIR".to_owned(),
-            path::to_string(&self.workspace.cache2.dir)?,
+            path::to_string(&self.workspace.cache_engine.cache_dir)?,
         );
         env_vars.insert("MOON_PROJECT_ID".to_owned(), self.project.id.to_string());
         env_vars.insert(
@@ -346,7 +344,7 @@ impl<'a> Runner<'a> {
             "MOON_PROJECT_SNAPSHOT".to_owned(),
             path::to_string(
                 self.workspace
-                    .cache2
+                    .cache_engine
                     .states_dir
                     .join(self.project.get_cache_dir().join("snapshot.json")),
             )?,

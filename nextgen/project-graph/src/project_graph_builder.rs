@@ -110,7 +110,7 @@ impl<'app> ProjectGraphBuilder<'app> {
         graph_contents.add_configs(graph.hash_required_configs().await?);
 
         let hash = cache_engine
-            .hash
+            .hash_engine
             .save_manifest_without_hasher("Project graph", &graph_contents)?;
 
         debug!(hash, "Generated hash for project graph");

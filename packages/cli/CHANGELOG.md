@@ -8,6 +8,10 @@
   from sibling tasks.
 - Updated task `env` values to support token functions and variables.
 
+#### ⚙️ Internal
+
+- Improved caching and hashing layers.
+
 ## 1.11.1
 
 #### 🐞 Fixes

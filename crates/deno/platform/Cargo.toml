@@ -9,7 +9,7 @@ moon_common = { path = "../../../nextgen/common" }
 moon_config = { path = "../../../nextgen/config" }
 moon_deno_lang = { path = "../lang" }
 moon_deno_tool = { path = "../tool" }
-moon_hasher = { path = "../../core/hasher" }
+moon_hash = { path = "../../../nextgen/hash" }
 moon_logger = { path = "../../core/logger" }
 moon_platform = { path = "../../core/platform" }
 moon_process = { path = "../../../nextgen/process" }

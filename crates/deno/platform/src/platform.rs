@@ -1,5 +1,6 @@
-use crate::target_hasher::DenoTargetHasher;
-use crate::{actions, bins_hasher::DenoBinsHasher};
+use crate::deps_hash::DenoDepsHash;
+use crate::target_hash::DenoTargetHash;
+use crate::{actions, bins_hash::DenoBinsHash};
 use moon_action_context::ActionContext;
 use moon_common::{color, is_ci, Id};
 use moon_config::{
@@ -8,7 +9,7 @@ use moon_config::{
 };
 use moon_deno_lang::{load_lockfile_dependencies, DenoJson, DENO_DEPS};
 use moon_deno_tool::DenoTool;
-use moon_hasher::{DepsHasher, HashSet};
+use moon_hash::ContentHasher;
 use moon_logger::{debug, map_list};
 use moon_platform::{Platform, Runtime, Version};
 use moon_process::Command;
@@ -16,7 +17,7 @@ use moon_project::Project;
 use moon_task::Task;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{Tool, ToolManager};
-use moon_typescript_platform::TypeScriptTargetHasher;
+use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::async_trait;
 use proto::{get_sha256_hash_of_file, Proto};
 use rustc_hash::FxHashMap;
@@ -262,33 +263,33 @@ impl Platform for DenoPlatform {
     async fn hash_manifest_deps(
         &self,
         manifest_path: &Path,
-        hashset: &mut HashSet,
+        hasher: &mut ContentHasher,
         _hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
         if !self.config.bins.is_empty() {
-            hashset.hash(DenoBinsHasher {
-                bins: self.config.bins.clone(),
-            });
+            hasher.hash_content(DenoBinsHash {
+                bins: &self.config.bins,
+            })?;
         }
 
-        let mut hasher = DepsHasher::new("deno".into());
         let project_root = manifest_path.parent().unwrap();
+        let mut deps_hash = DenoDepsHash::default();
 
         if let Ok(Some(deno_json)) = DenoJson::read(manifest_path) {
-            if let Some(imports) = &deno_json.imports {
-                hasher.hash_deps(imports);
+            if let Some(imports) = deno_json.imports {
+                deps_hash.dependencies.extend(imports);
             }
 
             if let Some(import_map_path) = &deno_json.import_map {
                 if let Ok(Some(import_map)) = DenoJson::read(project_root.join(import_map_path)) {
-                    if let Some(imports) = &import_map.imports {
-                        hasher.hash_deps(imports);
+                    if let Some(imports) = import_map.imports {
+                        deps_hash.dependencies.extend(imports);
                     }
                 }
             }
 
-            if let Some(scopes) = &deno_json.scopes {
-                hasher.hash_aliases(scopes);
+            if let Some(scopes) = deno_json.scopes {
+                deps_hash.aliases.extend(scopes);
             }
         }
 
@@ -296,10 +297,13 @@ impl Platform for DenoPlatform {
         let deps_path = project_root.join(&self.config.deps_file);
 
         if deps_path.exists() {
-            hasher.hash_dep(&self.config.deps_file, get_sha256_hash_of_file(deps_path)?);
+            deps_hash.dependencies.insert(
+                self.config.deps_file.to_owned(),
+                get_sha256_hash_of_file(deps_path)?,
+            );
         }
 
-        hashset.hash(hasher);
+        hasher.hash_content(deps_hash)?;
 
         Ok(())
     }
@@ -308,10 +312,10 @@ impl Platform for DenoPlatform {
         &self,
         project: &Project,
         _runtime: &Runtime,
-        hashset: &mut HashSet,
+        hasher: &mut ContentHasher,
         hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
-        let mut deno_hasher = DenoTargetHasher::new(None);
+        let mut target_hash = DenoTargetHash::new(None);
 
         if matches!(hasher_config.optimization, HasherOptimization::Accuracy)
             && self.config.lockfile
@@ -319,29 +323,29 @@ impl Platform for DenoPlatform {
             let resolved_dependencies =
                 load_lockfile_dependencies(project.root.join(DENO_DEPS.lockfile))?;
 
-            deno_hasher.hash_deps(BTreeMap::from_iter(resolved_dependencies));
+            target_hash.hash_deps(BTreeMap::from_iter(resolved_dependencies));
         };
 
-        hashset.hash(deno_hasher);
+        hasher.hash_content(target_hash)?;
 
         if let Ok(Some(deno_json)) = DenoJson::read(&project.root) {
             if let Some(compiler_options) = &deno_json.compiler_options {
-                let mut ts_hasher = TypeScriptTargetHasher::default();
-                ts_hasher.hash_compiler_options(compiler_options);
+                let mut ts_hash = TypeScriptTargetHash::default();
+                ts_hash.hash_compiler_options(compiler_options);
 
-                hashset.hash(ts_hasher);
+                hasher.hash_content(ts_hash)?;
             }
         }
 
         // Do we need this if we're using compiler options from deno.json?
         if let Some(typescript_config) = &self.typescript_config {
-            let ts_hasher = TypeScriptTargetHasher::generate(
+            let ts_hash = TypeScriptTargetHash::generate(
                 typescript_config,
                 &self.workspace_root,
                 &project.root,
             )?;
 
-            hashset.hash(ts_hasher);
+            hasher.hash_content(ts_hash)?;
         }
 
         Ok(())

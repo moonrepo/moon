@@ -1,25 +1,24 @@
-use moon_hasher::{Digest, Hasher, Sha256};
+use moon_hash::hash_content;
 use moon_lang::LockfileDependencyVersions;
 use moon_node_lang::PackageJson;
-use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-#[derive(Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct NodeTargetHasher {
-    // Node.js version
-    node_version: String,
+hash_content!(
+    pub struct NodeTargetHash {
+        // Node.js version
+        node_version: String,
 
-    // All the dependencies of the project (including dev and peer),
-    // and the hashes corresponding with their versions
-    dependencies: BTreeMap<String, Vec<String>>,
-}
+        // All the dependencies of the project (including dev and peer),
+        // and the hashes corresponding with their versions
+        dependencies: BTreeMap<String, Vec<String>>,
+    }
+);
 
-impl NodeTargetHasher {
+impl NodeTargetHash {
     pub fn new(node_version: Option<String>) -> Self {
-        NodeTargetHasher {
+        NodeTargetHash {
             node_version: node_version.unwrap_or_else(|| "unknown".into()),
-            ..NodeTargetHasher::default()
+            dependencies: BTreeMap::new(),
         }
     }
 
@@ -57,49 +56,39 @@ impl NodeTargetHasher {
     }
 }
 
-impl Hasher for NodeTargetHasher {
-    fn hash(&self, sha: &mut Sha256) {
-        sha.update(self.node_version.as_bytes());
-
-        for versions in self.dependencies.values() {
-            for version in versions {
-                sha.update(version.as_bytes());
-            }
-        }
-    }
-
-    fn serialize(&self) -> serde_json::Value {
-        serde_json::to_value(self).unwrap()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use moon_hasher::to_hash;
+    use moon_hash::ContentHasher;
     use rustc_hash::FxHashMap;
+
+    fn to_hash(content: &NodeTargetHash) -> String {
+        let mut hasher = ContentHasher::new("Test");
+        hasher.hash_content(content).unwrap();
+        hasher.generate_hash().unwrap()
+    }
 
     #[test]
     fn returns_default_hash() {
-        let hasher = NodeTargetHasher::new(Some("0.0.0".into()));
+        let hasher = NodeTargetHash::new(Some("0.0.0".into()));
 
         assert_eq!(
             to_hash(&hasher),
-            "f0b8c77d978d7b4aebeb1df5a2c0a6aa70393689819dd4060826ab6d36b5ea90"
+            "6c2b8e2e909d85e4c20044bc8a8d542e6c8f39bcdf59d09c17791b8176e028ba"
         );
     }
 
     #[test]
     fn returns_same_hash_if_called_again() {
-        let hasher = NodeTargetHasher::new(Some("0.0.0".into()));
+        let hasher = NodeTargetHash::new(Some("0.0.0".into()));
 
         assert_eq!(to_hash(&hasher), to_hash(&hasher));
     }
 
     #[test]
     fn returns_different_hash_for_diff_contents() {
-        let hasher1 = NodeTargetHasher::new(Some("0.0.0".into()));
-        let hasher2 = NodeTargetHasher::new(Some("1.0.0".into()));
+        let hasher1 = NodeTargetHash::new(Some("0.0.0".into()));
+        let hasher2 = NodeTargetHash::new(Some("1.0.0".into()));
 
         assert_ne!(to_hash(&hasher1), to_hash(&hasher2));
     }
@@ -114,10 +103,10 @@ mod tests {
             let mut package1 = PackageJson::default();
             package1.add_dependency("react", "17.0.0", true);
 
-            let mut hasher1 = NodeTargetHasher::new(Some("0.0.0".into()));
+            let mut hasher1 = NodeTargetHash::new(Some("0.0.0".into()));
             hasher1.hash_package_json(&package1, &resolved_deps);
 
-            let mut hasher2 = NodeTargetHasher::new(Some("0.0.0".into()));
+            let mut hasher2 = NodeTargetHash::new(Some("0.0.0".into()));
             hasher2.hash_package_json(&package1, &resolved_deps);
             hasher2.hash_package_json(&package1, &resolved_deps);
 
@@ -134,11 +123,11 @@ mod tests {
             let mut package2 = PackageJson::default();
             package2.add_dependency("react-dom", "17.0.0", true);
 
-            let mut hasher1 = NodeTargetHasher::new(Some("0.0.0".into()));
+            let mut hasher1 = NodeTargetHash::new(Some("0.0.0".into()));
             hasher1.hash_package_json(&package2, &resolved_deps);
             hasher1.hash_package_json(&package1, &resolved_deps);
 
-            let mut hasher2 = NodeTargetHasher::new(Some("0.0.0".into()));
+            let mut hasher2 = NodeTargetHash::new(Some("0.0.0".into()));
             hasher2.hash_package_json(&package1, &resolved_deps);
             hasher2.hash_package_json(&package2, &resolved_deps);
 
@@ -155,7 +144,7 @@ mod tests {
             let mut package2 = PackageJson::default();
             package2.add_dependency("react", "18.0.0", true);
 
-            let mut hasher1 = NodeTargetHasher::new(Some("0.0.0".into()));
+            let mut hasher1 = NodeTargetHash::new(Some("0.0.0".into()));
             hasher1.hash_package_json(&package1, &resolved_deps);
 
             let hash1 = to_hash(&hasher1);
@@ -178,21 +167,21 @@ mod tests {
             let mut package = PackageJson::default();
             package.add_dependency("moment", "10.0.0", true);
 
-            let mut hasher1 = NodeTargetHasher::new(Some("0.0.0".into()));
+            let mut hasher1 = NodeTargetHash::new(Some("0.0.0".into()));
             hasher1.hash_package_json(&package, &resolved_deps);
             let hash1 = to_hash(&hasher1);
 
             package.dev_dependencies =
                 Some(BTreeMap::from([("eslint".to_owned(), "8.0.0".to_owned())]));
 
-            let mut hasher2 = NodeTargetHasher::new(Some("0.0.0".into()));
+            let mut hasher2 = NodeTargetHash::new(Some("0.0.0".into()));
             hasher2.hash_package_json(&package, &resolved_deps);
             let hash2 = to_hash(&hasher2);
 
             package.peer_dependencies =
                 Some(BTreeMap::from([("react".to_owned(), "18.0.0".to_owned())]));
 
-            let mut hasher3 = NodeTargetHasher::new(Some("0.0.0".into()));
+            let mut hasher3 = NodeTargetHash::new(Some("0.0.0".into()));
             hasher3.hash_package_json(&package, &resolved_deps);
             let hash3 = to_hash(&hasher3);
 
@@ -210,7 +199,7 @@ mod tests {
             package.add_dependency("prettier", "^2.0.0", true);
             package.add_dependency("rollup", "^2.0.0", true);
 
-            let mut hasher = NodeTargetHasher::new(Some("0.0.0".into()));
+            let mut hasher = NodeTargetHash::new(Some("0.0.0".into()));
             hasher.hash_package_json(&package, &resolved_deps);
 
             assert_eq!(
@@ -232,7 +221,7 @@ mod tests {
             let mut package = PackageJson::default();
             package.add_dependency("prettier", "^2.0.0", true);
 
-            let mut hasher = NodeTargetHasher::new(Some("0.0.0".into()));
+            let mut hasher = NodeTargetHash::new(Some("0.0.0".into()));
             hasher.hash_package_json(&package, &resolved_deps);
 
             assert_eq!(

@@ -2,7 +2,6 @@ use miette::IntoDiagnostic;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_cache_item::cache_item;
-use moon_hasher::HashSet;
 use moon_logger::{debug, warn};
 use moon_platform::{PlatformManager, Runtime};
 use moon_project::Project;
@@ -107,12 +106,15 @@ pub async fn install_deps(
     let working_dir = project.map(|p| &p.root).unwrap_or_else(|| &workspace.root);
     let manifest_path = working_dir.join(&manifest);
     let lockfile_path = working_dir.join(&lockfile);
-    let mut hashset = HashSet::default();
+    let mut hasher = workspace
+        .cache_engine
+        .hash_engine
+        .create_hasher(format!("Install {} deps", runtime.label()));
     let mut last_modified = 0;
 
     if manifest_path.exists() {
         platform
-            .hash_manifest_deps(&manifest_path, &mut hashset, &workspace.config.hasher)
+            .hash_manifest_deps(&manifest_path, &mut hasher, &workspace.config.hasher)
             .await?;
     }
 
@@ -128,7 +130,7 @@ pub async fn install_deps(
                 platform
                     .hash_manifest_deps(
                         &touched_file.to_path(""),
-                        &mut hashset,
+                        &mut hasher,
                         &workspace.config.hasher,
                     )
                     .await?;
@@ -137,7 +139,7 @@ pub async fn install_deps(
     }
 
     // Install dependencies in the working directory
-    let hash = hashset.generate();
+    let hash = workspace.cache_engine.hash_engine.save_manifest(hasher)?;
 
     let state_path = format!("deps{runtime}.json");
     let mut state = workspace.cache_engine.cache_state::<DependenciesState>(
@@ -160,8 +162,6 @@ pub async fn install_deps(
             runtime.label(),
             color::path(working_dir)
         );
-
-        workspace.cache.create_hash_manifest(&hash, &hashset)?;
 
         platform
             .install_deps(&context, runtime, working_dir)

@@ -60,6 +60,12 @@ impl AsRef<str> for OutputPath {
     }
 }
 
+impl AsRef<OutputPath> for OutputPath {
+    fn as_ref(&self) -> &OutputPath {
+        self
+    }
+}
+
 impl FromStr for OutputPath {
     type Err = ValidateError;
 

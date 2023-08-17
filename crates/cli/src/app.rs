@@ -325,8 +325,8 @@ pub enum Commands {
     version,
     disable_colored_help = true,
     disable_help_subcommand = true,
-    propagate_version = true,
     next_line_help = false,
+    propagate_version = true,
     rename_all = "camelCase"
 )]
 pub struct App {

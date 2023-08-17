@@ -1,7 +1,7 @@
-use moon_hash::content_hashable;
+use moon_hash::hash_content;
 use std::collections::BTreeMap;
 
-content_hashable!(
+hash_content!(
     pub struct RustTargetHash {
         pub rust_version: String,
         pub locked_dependencies: BTreeMap<String, Vec<String>>,

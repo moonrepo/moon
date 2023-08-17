@@ -1,9 +1,9 @@
-use moon_hash::content_hashable;
+use moon_hash::hash_content;
 use moon_lang::LockfileDependencyVersions;
 use moon_node_lang::PackageJson;
 use std::collections::BTreeMap;
 
-content_hashable!(
+hash_content!(
     pub struct NodeTargetHash {
         // Node.js version
         node_version: String,

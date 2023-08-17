@@ -1,9 +1,9 @@
 use moon_config::TypeScriptConfig;
-use moon_hash::content_hashable;
+use moon_hash::hash_content;
 use moon_typescript_lang::tsconfig::{CompilerOptions, TsConfigJson};
 use std::{collections::BTreeMap, path::Path};
 
-content_hashable!(
+hash_content!(
     #[derive(Default)]
     pub struct TypeScriptTargetHash {
         // `tsconfig.json` `compilerOptions`

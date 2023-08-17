@@ -2,7 +2,7 @@ use moon_hash::*;
 use starbase_sandbox::create_empty_sandbox;
 use std::fs;
 
-content_hashable!(
+hash_content!(
     struct Content<'l> {
         pub one: &'l str,
         pub two: usize,

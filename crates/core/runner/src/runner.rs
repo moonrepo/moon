@@ -193,10 +193,9 @@ impl<'a> Runner<'a> {
         let task = &self.task;
         let project = &self.project;
         let workspace = &self.workspace;
-        let mut hash = TargetHasher::new();
+        let mut hash = TargetHasher::new(task);
 
         hash.hash_project_deps(self.project.get_dependency_ids());
-        hash.hash_task(task);
         hash.hash_task_deps(task, &context.target_states)?;
 
         if context.should_inherit_args(&task.target) {

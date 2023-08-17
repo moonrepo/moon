@@ -1,7 +1,7 @@
-use moon_hash::content_hashable;
+use moon_hash::hash_content;
 use std::collections::BTreeMap;
 
-content_hashable!(
+hash_content!(
     pub struct DenoTargetHash {
         // Deno version
         deno_version: String,

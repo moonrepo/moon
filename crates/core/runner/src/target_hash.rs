@@ -2,117 +2,96 @@ use crate::errors::RunnerError;
 use moon_action_context::TargetState;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
-use moon_hash::content_hashable;
+use moon_config::OutputPath;
+use moon_hash::hash_content;
 use moon_target::Target;
 use moon_task::Task;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
-use std::env;
 
-content_hashable!(
-    #[derive(Default)]
-    pub struct TargetHasher {
+hash_content!(
+    pub struct TargetHasher<'task> {
         // Task `command`
-        command: String,
+        command: &'task str,
 
         // Task `args`
-        args: Vec<String>,
+        args: Vec<&'task str>,
 
         // Task `deps` mapped to their hash
-        deps: BTreeMap<String, String>,
+        deps: BTreeMap<&'task Target, &'task str>,
 
         // Environment variables
-        env_vars: BTreeMap<String, String>,
+        env_vars: BTreeMap<&'task str, &'task str>,
 
         // Input files and globs mapped to a unique hash
-        inputs: BTreeMap<String, String>,
+        inputs: BTreeMap<WorkspaceRelativePathBuf, String>,
 
         // Relative output paths
-        outputs: Vec<String>,
+        outputs: Vec<&'task OutputPath>,
 
         // `moon.yml` `dependsOn`
-        project_deps: Vec<Id>,
+        project_deps: Vec<&'task Id>,
 
         // Task `target`
-        target: String,
+        target: &'task Target,
 
         // Bump this to invalidate all caches
         version: String,
     }
 );
 
-impl TargetHasher {
-    pub fn new() -> Self {
+impl<'task> TargetHasher<'task> {
+    pub fn new(task: &'task Task) -> Self {
         TargetHasher {
+            command: &task.command,
+            args: task.args.iter().map(|a| a.as_str()).collect(),
+            deps: BTreeMap::new(),
+            env_vars: task
+                .env
+                .iter()
+                .map(|(k, v)| (k.as_str(), v.as_str()))
+                .collect(),
+            inputs: BTreeMap::new(),
+            outputs: task.outputs.iter().collect(),
+            project_deps: Vec::new(),
+            target: &task.target,
             version: "1".into(),
-            ..TargetHasher::default()
         }
     }
 
     /// Hash additional args outside of the provided task.
-    pub fn hash_args(&mut self, passthrough_args: &[String]) {
+    pub fn hash_args(&mut self, passthrough_args: &'task [String]) {
         if !passthrough_args.is_empty() {
             for arg in passthrough_args {
-                self.args.push(arg.clone());
+                self.args.push(arg);
             }
-
-            // Sort vectors to be deterministic
-            self.args.sort();
         }
     }
 
     /// Hash a mapping of input file paths to unique file hashes.
     /// File paths *must* be relative from the workspace root.
     pub fn hash_inputs(&mut self, inputs: BTreeMap<WorkspaceRelativePathBuf, String>) {
-        for (file, hash) in inputs {
-            // Standardize on `/` separators so that the hash is
-            // the same between windows and nix machines.
-            self.inputs.insert(file.to_string(), hash);
-        }
+        self.inputs.extend(inputs);
     }
 
     /// Hash `dependsOn` from the owning project.
-    pub fn hash_project_deps(&mut self, deps: Vec<&Id>) {
-        self.project_deps = deps.into_iter().map(|d| d.to_owned()).collect();
+    pub fn hash_project_deps(&mut self, deps: Vec<&'task Id>) {
+        self.project_deps = deps;
         self.project_deps.sort();
-    }
-
-    /// Hash `args`, `inputs`, `deps`, and `env` vars from a task.
-    pub fn hash_task(&mut self, task: &Task) {
-        self.command = task.command.clone();
-        self.args = task.args.clone();
-        self.env_vars.extend(task.env.clone());
-        self.outputs = task
-            .outputs
-            .iter()
-            .map(|o| o.as_str().to_string())
-            .collect();
-        self.target = task.target.id.clone();
-
-        // Sort vectors to be deterministic
-        self.args.sort();
-        self.outputs.sort();
-
-        // Inherits vars from inputs
-        for var_name in &task.input_vars {
-            self.env_vars
-                .entry(var_name.to_owned())
-                .or_insert_with(|| env::var(var_name).unwrap_or_default());
-        }
     }
 
     /// Hash `deps` from a task and associate it with their current hash.
     pub fn hash_task_deps(
         &mut self,
-        task: &Task,
-        states: &FxHashMap<Target, TargetState>,
+        task: &'task Task,
+        states: &'task FxHashMap<Target, TargetState>,
     ) -> miette::Result<()> {
         for dep in &task.deps {
             self.deps.insert(
-                dep.id.to_owned(),
+                dep,
                 match states.get(dep) {
-                    Some(TargetState::Completed(hash)) => hash.to_owned(),
-                    Some(TargetState::Passthrough) => "passthrough".into(),
+                    Some(TargetState::Completed(hash)) => hash,
+                    Some(TargetState::Passthrough) => "passthrough",
                     _ => {
                         return Err(RunnerError::MissingDependencyHash(
                             dep.id.to_owned(),

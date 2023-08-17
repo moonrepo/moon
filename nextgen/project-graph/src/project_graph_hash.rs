@@ -1,11 +1,11 @@
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{is_docker_container, Id};
-use moon_hash::content_hashable;
+use moon_hash::hash_content;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::env;
 
-content_hashable!(
+hash_content!(
     pub struct ProjectGraphHash<'graph> {
         // Data derived from the project graph builder.
         aliases: BTreeMap<&'graph String, &'graph Id>,

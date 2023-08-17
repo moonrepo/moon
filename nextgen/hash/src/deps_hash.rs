@@ -1,10 +1,10 @@
-use crate::content_hashable;
+use crate::hash_content;
 use std::collections::BTreeMap;
 
 pub type DepsMap = BTreeMap<String, String>;
 pub type DepsAliasesMap = BTreeMap<String, DepsMap>;
 
-content_hashable!(
+hash_content!(
     pub struct DepsHash<'cfg> {
         pub aliases: BTreeMap<&'cfg str, BTreeMap<&'cfg str, &'cfg str>>,
         pub dependencies: BTreeMap<&'cfg str, &'cfg str>,

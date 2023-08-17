@@ -1,7 +1,7 @@
 use moon_config::BinEntry;
-use moon_hash::content_hashable;
+use moon_hash::hash_content;
 
-content_hashable!(
+hash_content!(
     pub struct RustBinsHash<'cfg> {
         pub bins: &'cfg Vec<BinEntry>,
     }

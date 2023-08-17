@@ -1,21 +1,21 @@
-use moon_hash::content_hashable;
+use moon_hash::hash_content;
 use std::env::consts;
 
-content_hashable!(
-    pub struct SystemTargetHash {
+hash_content!(
+    pub struct SystemTargetHash<'proc> {
         // Architecture
-        arch: String,
+        arch: &'proc str,
 
         // Operating system
-        os: String,
+        os: &'proc str,
     }
 );
 
-impl SystemTargetHash {
+impl<'proc> SystemTargetHash<'proc> {
     pub fn new() -> Self {
         SystemTargetHash {
-            arch: consts::ARCH.to_owned(),
-            os: consts::OS.to_owned(),
+            arch: consts::ARCH,
+            os: consts::OS,
         }
     }
 }

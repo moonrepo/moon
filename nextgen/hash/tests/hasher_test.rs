@@ -1,12 +1,12 @@
-use moon_hash::{content_hashable, ContentHasher};
+use moon_hash::{hash_content, ContentHasher};
 
-content_hashable!(
+hash_content!(
     struct ContentOne<'l> {
         pub one: &'l str,
     }
 );
 
-content_hashable!(
+hash_content!(
     struct ContentTwo {
         pub two: usize,
     }

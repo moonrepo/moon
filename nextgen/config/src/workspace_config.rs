@@ -1,7 +1,7 @@
 // .moon/workspace.yml
 
 use crate::portable_path::{Portable, ProjectFilePath, ProjectGlobPath};
-use crate::validate::validate_semver_requirement;
+use crate::validate::{check_yml_extension, validate_semver_requirement};
 use crate::workspace::*;
 use moon_common::{consts, Id};
 use rustc_hash::FxHashMap;
@@ -136,7 +136,7 @@ impl WorkspaceConfig {
     ) -> miette::Result<WorkspaceConfig> {
         let result = ConfigLoader::<WorkspaceConfig>::new()
             .set_root(workspace_root.as_ref())
-            .file(path.as_ref())?
+            .file(check_yml_extension(path.as_ref()))?
             .load()?;
 
         Ok(result.config)

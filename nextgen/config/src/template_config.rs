@@ -5,6 +5,8 @@ use rustc_hash::FxHashMap;
 use schematic::{validate, Config, ConfigLoader};
 use std::path::Path;
 
+use crate::validate::check_yml_extension;
+
 macro_rules! var_setting {
     ($name:ident, $ty:ty) => {
         #[derive(Config, Debug, Eq, PartialEq)]
@@ -81,7 +83,7 @@ pub struct TemplateConfig {
 impl TemplateConfig {
     pub fn load<P: AsRef<Path>>(path: P) -> miette::Result<TemplateConfig> {
         let result = ConfigLoader::<TemplateConfig>::new()
-            .file(path.as_ref())?
+            .file(check_yml_extension(path.as_ref()))?
             .load()?;
 
         Ok(result.config)

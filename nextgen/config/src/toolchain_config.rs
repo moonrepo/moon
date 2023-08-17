@@ -2,6 +2,7 @@
 
 use crate::language_platform::PlatformType;
 use crate::toolchain::*;
+use crate::validate::check_yml_extension;
 use crate::{inherit_tool, inherit_tool_without_version};
 use moon_common::consts;
 use proto::ToolsConfig;
@@ -85,7 +86,7 @@ impl ToolchainConfig {
     ) -> miette::Result<ToolchainConfig> {
         let mut result = ConfigLoader::<ToolchainConfig>::new()
             .set_root(workspace_root)
-            .file_optional(path.as_ref())?
+            .file_optional(check_yml_extension(path.as_ref()))?
             .load()?;
 
         result.config.inherit_proto(proto_tools)?;

@@ -144,7 +144,7 @@ pub async fn run_cli() -> AppResult {
             .await
         }
         Commands::Completions { shell } => completions::completions(shell).await,
-        Commands::DepGraph { target, dot, json } => dep_graph(target, dot, json).await,
+        Commands::DepGraph(args) => dep_graph(args).await,
         Commands::Docker { command } => match command {
             DockerCommands::Prune => docker::prune().await,
             DockerCommands::Scaffold(args) => docker::scaffold(args).await,
@@ -187,8 +187,8 @@ pub async fn run_cli() -> AppResult {
         Commands::Node { command } => match command {
             NodeCommands::RunScript(args) => node::run_script(args).await,
         },
-        Commands::Project { id, json } => project(id, json).await,
-        Commands::ProjectGraph { id, dot, json } => project_graph(id, dot, json).await,
+        Commands::Project(args) => project(args).await,
+        Commands::ProjectGraph(args) => project_graph(args).await,
         Commands::Query { command } => match command {
             QueryCommands::Hash(args) => query::hash(args).await,
             QueryCommands::HashDiff(args) => query::hash_diff(args).await,
@@ -234,7 +234,7 @@ pub async fn run_cli() -> AppResult {
             Some(SyncCommands::Projects) => syncs::projects::sync().await,
             None => sync().await,
         },
-        Commands::Task { target, json } => task(target, json).await,
+        Commands::Task(args) => task(args).await,
         Commands::Teardown => teardown().await,
         Commands::Upgrade => upgrade().await,
     };

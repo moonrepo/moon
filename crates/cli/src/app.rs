@@ -2,20 +2,23 @@
 
 use crate::commands::bin::BinTool;
 use crate::commands::docker::DockerScaffoldArgs;
+use crate::commands::graph::dep::DepGraphArgs;
+use crate::commands::graph::project::ProjectGraphArgs;
 use crate::commands::init::InitArgs;
 use crate::commands::migrate::FromPackageJsonArgs;
 use crate::commands::node::RunScriptArgs;
+use crate::commands::project::ProjectArgs;
 use crate::commands::query::{
     QueryHashArgs, QueryHashDiffArgs, QueryProjectsArgs, QueryTasksArgs, QueryTouchedFilesArgs,
 };
 use crate::commands::syncs::codeowners::SyncCodeownersArgs;
 use crate::commands::syncs::hooks::SyncHooksArgs;
+use crate::commands::task::TaskArgs;
 use crate::enums::{CacheMode, LogLevel, TouchedStatus};
 use clap::{Parser, Subcommand};
 use clap_complete::Shell;
 use moon_action_context::ProfileType;
 use moon_common::Id;
-use moon_target::Target;
 use std::path::PathBuf;
 
 pub const BIN_NAME: &str = if cfg!(windows) { "moon.exe" } else { "moon" };
@@ -191,16 +194,7 @@ pub enum Commands {
         about = "Display an interactive dependency graph of all tasks and actions.",
         alias = "dg"
     )]
-    DepGraph {
-        #[arg(help = "Target to *only* graph")]
-        target: Option<String>,
-
-        #[arg(long, help = "Print the graph in DOT format")]
-        dot: bool,
-
-        #[arg(long, help = "Print the graph in JSON format")]
-        json: bool,
-    },
+    DepGraph(DepGraphArgs),
 
     // moon project <id>
     #[command(
@@ -208,13 +202,7 @@ pub enum Commands {
         about = "Display information about a single project.",
         alias = "p"
     )]
-    Project {
-        #[arg(help = "ID of project to display")]
-        id: Id,
-
-        #[arg(long, help = "Print in JSON format")]
-        json: bool,
-    },
+    Project(ProjectArgs),
 
     // moon project-graph [id]
     #[command(
@@ -222,16 +210,7 @@ pub enum Commands {
         about = "Display an interactive graph of projects.",
         alias = "pg"
     )]
-    ProjectGraph {
-        #[arg(help = "ID of project to *only* graph")]
-        id: Option<Id>,
-
-        #[arg(long, help = "Print the graph in DOT format")]
-        dot: bool,
-
-        #[arg(long, help = "Print the graph in JSON format")]
-        json: bool,
-    },
+    ProjectGraph(ProjectGraphArgs),
 
     #[command(name = "sync", about = "Sync the workspace to a healthy state.")]
     Sync {
@@ -245,13 +224,7 @@ pub enum Commands {
         about = "Display information about a single task.",
         alias = "t"
     )]
-    Task {
-        #[arg(help = "Target of task to display")]
-        target: Target,
-
-        #[arg(long, help = "Print in JSON format")]
-        json: bool,
-    },
+    Task(TaskArgs),
 
     // GENERATOR
 

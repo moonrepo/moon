@@ -8,6 +8,8 @@ use crate::commands::node::RunScriptArgs;
 use crate::commands::query::{
     QueryHashArgs, QueryHashDiffArgs, QueryProjectsArgs, QueryTasksArgs, QueryTouchedFilesArgs,
 };
+use crate::commands::syncs::codeowners::SyncCodeownersArgs;
+use crate::commands::syncs::hooks::SyncHooksArgs;
 use crate::enums::{CacheMode, LogLevel, TouchedStatus};
 use clap::{Parser, Subcommand};
 use clap_complete::Shell;
@@ -111,25 +113,13 @@ pub enum SyncCommands {
         name = "codeowners",
         about = "Aggregate and sync code owners to a `CODEOWNERS` file."
     )]
-    Codeowners {
-        #[arg(long, help = "Clean and remove previously generated file")]
-        clean: bool,
-
-        #[arg(long, help = "Bypass cache and force create file")]
-        force: bool,
-    },
+    Codeowners(SyncCodeownersArgs),
 
     #[command(
         name = "hooks",
         about = "Generate and sync hook scripts for the workspace configured VCS."
     )]
-    Hooks {
-        #[arg(long, help = "Clean and remove previously generated hooks")]
-        clean: bool,
-
-        #[arg(long, help = "Bypass cache and force create hooks")]
-        force: bool,
-    },
+    Hooks(SyncHooksArgs),
 
     #[command(
         name = "projects",

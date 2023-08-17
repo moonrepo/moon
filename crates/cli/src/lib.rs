@@ -30,8 +30,6 @@ use app::{
     SyncCommands,
 };
 use clap::Parser;
-use commands::syncs::codeowners::SyncCodeownersOptions;
-use commands::syncs::hooks::SyncHooksOptions;
 use enums::{CacheMode, LogLevel};
 use moon_logger::debug;
 use starbase::{tracing::TracingOptions, App, AppResult};
@@ -248,12 +246,8 @@ pub async fn run_cli() -> AppResult {
         }
         Commands::Setup => setup().await,
         Commands::Sync { command } => match command {
-            Some(SyncCommands::Codeowners { clean, force }) => {
-                syncs::codeowners::sync(SyncCodeownersOptions { clean, force }).await
-            }
-            Some(SyncCommands::Hooks { clean, force }) => {
-                syncs::hooks::sync(SyncHooksOptions { clean, force }).await
-            }
+            Some(SyncCommands::Codeowners(args)) => syncs::codeowners::sync(args).await,
+            Some(SyncCommands::Hooks(args)) => syncs::hooks::sync(args).await,
             Some(SyncCommands::Projects) => syncs::projects::sync().await,
             None => sync().await,
         },

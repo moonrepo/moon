@@ -1,11 +1,11 @@
-use crate::{bins_hasher::RustBinsHasher, find_cargo_lock, target_hasher::RustTargetHasher};
+use crate::{bins_hash::RustBinsHash, find_cargo_lock, target_hash::RustTargetHash};
 use moon_action_context::ActionContext;
 use moon_common::{is_ci, Id};
 use moon_config::{
     BinEntry, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap,
     RustConfig,
 };
-use moon_hasher::HashSet;
+use moon_hash::ContentHasher;
 use moon_logger::{debug, map_list};
 use moon_platform::{Platform, Runtime, Version};
 use moon_process::Command;
@@ -356,13 +356,13 @@ impl Platform for RustPlatform {
     async fn hash_manifest_deps(
         &self,
         _manifest_path: &Path,
-        hashset: &mut HashSet,
+        hasher: &mut ContentHasher,
         _hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
         if !self.config.bins.is_empty() {
-            hashset.hash(RustBinsHasher {
-                bins: self.config.bins.clone(),
-            });
+            hasher.hash_content(RustBinsHash {
+                bins: &self.config.bins,
+            })?;
         }
 
         // NOTE: Since Cargo has no way to install dependencies, we don't actually need this!
@@ -422,7 +422,7 @@ impl Platform for RustPlatform {
         &self,
         project: &Project,
         _runtime: &Runtime,
-        hashset: &mut HashSet,
+        hasher: &mut ContentHasher,
         _hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
         let lockfile_path = project.root.join(CARGO.lockfile);
@@ -432,14 +432,13 @@ impl Platform for RustPlatform {
             return Ok(());
         }
 
-        let mut hasher = RustTargetHasher::new(None);
+        let mut hash = RustTargetHash::new(None);
 
         // Use the resolved dependencies from the lockfile directly,
         // since it also takes into account features and workspace members.
-        hasher.locked_dependencies =
-            BTreeMap::from_iter(load_lockfile_dependencies(lockfile_path)?);
+        hash.locked_dependencies = BTreeMap::from_iter(load_lockfile_dependencies(lockfile_path)?);
 
-        hashset.hash(hasher);
+        hasher.hash_content(hash)?;
 
         Ok(())
     }

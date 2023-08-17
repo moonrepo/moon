@@ -1,4 +1,4 @@
-use crate::target_hasher::NodeTargetHasher;
+use crate::target_hash::NodeTargetHash;
 use moon_action_context::{ActionContext, ProfileType};
 use moon_config::{HasherConfig, HasherOptimization, NodeConfig, NodePackageManager};
 
@@ -237,9 +237,9 @@ pub async fn create_target_hasher(
     project: &Project,
     workspace_root: &Path,
     hasher_config: &HasherConfig,
-) -> miette::Result<NodeTargetHasher> {
+) -> miette::Result<NodeTargetHash> {
     let mut hasher =
-        NodeTargetHasher::new(node.map(|n| n.config.version.clone()).unwrap_or_default());
+        NodeTargetHash::new(node.map(|n| n.config.version.clone()).unwrap_or_default());
 
     let resolved_dependencies =
         if matches!(hasher_config.optimization, HasherOptimization::Accuracy) && node.is_some() {

@@ -10,7 +10,7 @@ moon_cache_item = { path = "../../../nextgen/cache-item" }
 moon_common = { path = "../../../nextgen/common" }
 moon_config = { path = "../../../nextgen/config" }
 moon_emitter = { path = "../emitter" }
-moon_hasher = { path = "../hasher" }
+moon_hash = { path = "../../../nextgen/hash" }
 moon_logger = { path = "../logger" }
 moon_platform = { path = "../platform" }
 moon_platform_runtime = { path = "../platform-runtime" }

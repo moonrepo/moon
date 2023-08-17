@@ -1,23 +1,23 @@
 use moon_config::TypeScriptConfig;
-use moon_hasher::{hash_btree, Hasher, Sha256};
+use moon_hash::hash_content;
 use moon_typescript_lang::tsconfig::{CompilerOptions, TsConfigJson};
-use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, path::Path};
 
-#[derive(Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TypeScriptTargetHasher {
-    // `tsconfig.json` `compilerOptions`
-    compiler_options: BTreeMap<String, String>,
-}
+hash_content!(
+    #[derive(Default)]
+    pub struct TypeScriptTargetHash {
+        // `tsconfig.json` `compilerOptions`
+        compiler_options: BTreeMap<String, String>,
+    }
+);
 
-impl TypeScriptTargetHasher {
+impl TypeScriptTargetHash {
     pub fn generate(
         config: &TypeScriptConfig,
         workspace_root: &Path,
         project_root: &Path,
-    ) -> miette::Result<TypeScriptTargetHasher> {
-        let mut hasher = TypeScriptTargetHasher::default();
+    ) -> miette::Result<TypeScriptTargetHash> {
+        let mut hasher = TypeScriptTargetHash::default();
 
         if let Some(root_tsconfig) =
             TsConfigJson::read_with_name(workspace_root, &config.root_config_file_name)?
@@ -80,56 +80,5 @@ impl TypeScriptTargetHasher {
             self.compiler_options
                 .insert("target".to_owned(), format!("{target:?}"));
         }
-    }
-}
-
-impl Hasher for TypeScriptTargetHasher {
-    fn hash(&self, sha: &mut Sha256) {
-        hash_btree(&self.compiler_options, sha);
-    }
-
-    fn serialize(&self) -> serde_json::Value {
-        serde_json::to_value(self).unwrap()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use moon_hasher::to_hash;
-    use moon_typescript_lang::tsconfig::{CompilerOptions, Module, ModuleResolution, Target};
-
-    #[test]
-    fn supports_all_dep_types() {
-        let mut tsconfig = TsConfigJson {
-            compiler_options: Some(CompilerOptions::default()),
-            ..TsConfigJson::default()
-        };
-
-        tsconfig.compiler_options.as_mut().unwrap().module = Some(Module::Es2022);
-
-        let mut hasher1 = TypeScriptTargetHasher::default();
-        hasher1.hash_compiler_options(tsconfig.compiler_options.as_ref().unwrap());
-        let hash1 = to_hash(&hasher1);
-
-        tsconfig
-            .compiler_options
-            .as_mut()
-            .unwrap()
-            .module_resolution = Some(ModuleResolution::NodeNext);
-
-        let mut hasher2 = TypeScriptTargetHasher::default();
-        hasher2.hash_compiler_options(tsconfig.compiler_options.as_ref().unwrap());
-        let hash2 = to_hash(&hasher2);
-
-        tsconfig.compiler_options.as_mut().unwrap().target = Some(Target::Es2019);
-
-        let mut hasher3 = TypeScriptTargetHasher::default();
-        hasher3.hash_compiler_options(tsconfig.compiler_options.as_ref().unwrap());
-        let hash3 = to_hash(&hasher3);
-
-        assert_ne!(hash1, hash2);
-        assert_ne!(hash1, hash3);
-        assert_ne!(hash2, hash3);
     }
 }

@@ -5,6 +5,9 @@ use crate::commands::docker::DockerScaffoldArgs;
 use crate::commands::init::InitTool;
 use crate::commands::migrate::FromPackageJsonArgs;
 use crate::commands::node::RunScriptArgs;
+use crate::commands::query::{
+    QueryHashArgs, QueryHashDiffArgs, QueryProjectsArgs, QueryTasksArgs, QueryTouchedFilesArgs,
+};
 use crate::enums::{CacheMode, LogLevel, TouchedStatus};
 use clap::{Parser, Subcommand};
 use clap_complete::Shell;
@@ -71,134 +74,35 @@ pub enum QueryCommands {
         about = "Inspect the contents of a generated hash.",
         long_about = "Inspect the contents of a generated hash, and display all sources and inputs that were used to generate it."
     )]
-    Hash {
-        #[arg(required = true, help = "Hash to inspect")]
-        hash: String,
-
-        #[arg(long, help = "Print the manifest in JSON format")]
-        json: bool,
-    },
+    Hash(QueryHashArgs),
 
     #[command(
         name = "hash-diff",
         about = "Query the difference between two hashes.",
         long_about = "Query the difference between two hashes. The left differences will be printed in green, while the right in red, and equal lines in white."
     )]
-    HashDiff {
-        #[arg(required = true, help = "Base hash to compare against")]
-        left: String,
-
-        #[arg(required = true, help = "Other hash to compare with")]
-        right: String,
-
-        #[arg(long, help = "Print the diff in JSON format")]
-        json: bool,
-    },
+    HashDiff(QueryHashDiffArgs),
 
     #[command(
         name = "projects",
         about = "Query for projects within the project graph.",
         long_about = "Query for projects within the project graph. All options support regex patterns."
     )]
-    Projects {
-        #[arg(help = "Filter projects using a query (takes precedence over options)")]
-        query: Option<String>,
-
-        #[arg(long, help = "Filter projects that match this alias")]
-        alias: Option<String>,
-
-        #[arg(
-            long,
-            help = "Filter projects that are affected based on touched files"
-        )]
-        affected: bool,
-
-        #[arg(long, help = "Filter projects that match this ID")]
-        id: Option<String>,
-
-        #[arg(long, help = "Print the projects in JSON format")]
-        json: bool,
-
-        #[arg(long, help = "Filter projects of this programming language")]
-        language: Option<String>,
-
-        #[arg(long, help = "Filter projects that match this source path")]
-        source: Option<String>,
-
-        #[arg(long, help = "Filter projects that have the following tags")]
-        tags: Option<String>,
-
-        #[arg(long, help = "Filter projects that have the following tasks")]
-        tasks: Option<String>,
-
-        #[arg(long = "type", help = "Filter projects of this type")]
-        type_of: Option<String>,
-    },
+    Projects(QueryProjectsArgs),
 
     #[command(
         name = "tasks",
         about = "List all available projects & their tasks.",
         rename_all = "camelCase"
     )]
-    Tasks {
-        #[arg(help = "Filter projects using a query (takes precedence over options)")]
-        query: Option<String>,
-
-        #[arg(long, help = "Filter projects that match this alias")]
-        alias: Option<String>,
-
-        #[arg(
-            long,
-            help = "Filter projects that are affected based on touched files"
-        )]
-        affected: bool,
-
-        #[arg(long, help = "Filter projects that match this ID")]
-        id: Option<String>,
-
-        #[arg(long, help = "Print the tasks in JSON format")]
-        json: bool,
-
-        #[arg(long, help = "Filter projects of this programming language")]
-        language: Option<String>,
-
-        #[arg(long, help = "Filter projects that match this source path")]
-        source: Option<String>,
-
-        #[arg(long, help = "Filter projects that have the following tasks")]
-        tasks: Option<String>,
-
-        #[arg(long = "type", help = "Filter projects of this type")]
-        type_of: Option<String>,
-    },
+    Tasks(QueryTasksArgs),
 
     #[command(
         name = "touched-files",
         about = "Query for touched files between revisions.",
         rename_all = "camelCase"
     )]
-    TouchedFiles {
-        #[arg(long, help = "Base branch, commit, or revision to compare against")]
-        base: Option<String>,
-
-        #[arg(
-            long,
-            help = "When on the default branch, compare against the previous revision"
-        )]
-        default_branch: bool,
-
-        #[arg(long, help = "Current branch, commit, or revision to compare with")]
-        head: Option<String>,
-
-        #[arg(long, help = "Print the files in JSON format")]
-        json: bool,
-
-        #[arg(long, help = "Gather files from you local state instead of the remote")]
-        local: bool,
-
-        #[arg(value_enum, long, help = "Filter files based on a touched status")]
-        status: Vec<TouchedStatus>,
-    },
+    TouchedFiles(QueryTouchedFilesArgs),
 }
 
 #[derive(Debug, Subcommand)]

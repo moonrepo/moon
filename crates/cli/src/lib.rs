@@ -16,7 +16,7 @@ use crate::commands::init::{init, InitOptions};
 use crate::commands::migrate;
 use crate::commands::node;
 use crate::commands::project::project;
-use crate::commands::query::{self, QueryProjectsOptions, QueryTouchedFilesOptions};
+use crate::commands::query;
 use crate::commands::run::{run, RunOptions};
 use crate::commands::setup::setup;
 use crate::commands::sync::sync;
@@ -34,7 +34,6 @@ use commands::syncs::codeowners::SyncCodeownersOptions;
 use commands::syncs::hooks::SyncHooksOptions;
 use enums::{CacheMode, LogLevel};
 use moon_logger::debug;
-use query::QueryHashDiffOptions;
 use starbase::{tracing::TracingOptions, App, AppResult};
 use starbase_styles::color;
 use starbase_utils::string_vec;
@@ -210,80 +209,11 @@ pub async fn run_cli() -> AppResult {
         Commands::Project { id, json } => project(id, json).await,
         Commands::ProjectGraph { id, dot, json } => project_graph(id, dot, json).await,
         Commands::Query { command } => match command {
-            QueryCommands::Hash { hash, json } => query::hash(&hash, json).await,
-            QueryCommands::HashDiff { left, right, json } => {
-                query::hash_diff(&QueryHashDiffOptions { json, left, right }).await
-            }
-            QueryCommands::Projects {
-                alias,
-                affected,
-                id,
-                json,
-                language,
-                query,
-                source,
-                tags,
-                tasks,
-                type_of,
-            } => {
-                query::projects(&QueryProjectsOptions {
-                    alias,
-                    affected,
-                    id,
-                    json,
-                    language,
-                    query,
-                    source,
-                    tags,
-                    tasks,
-                    type_of,
-                })
-                .await
-            }
-            QueryCommands::TouchedFiles {
-                base,
-                default_branch,
-                head,
-                json,
-                local,
-                status,
-            } => {
-                query::touched_files(&mut QueryTouchedFilesOptions {
-                    base,
-                    default_branch,
-                    head,
-                    json,
-                    local,
-                    log: false,
-                    status,
-                })
-                .await
-            }
-            QueryCommands::Tasks {
-                alias,
-                affected,
-                id,
-                json,
-                language,
-                query,
-                source,
-                tasks,
-                type_of,
-            } => {
-                query::tasks(&QueryProjectsOptions {
-                    alias,
-                    affected,
-                    id,
-                    json,
-                    language,
-                    query,
-                    source,
-                    tasks,
-                    type_of,
-                    ..QueryProjectsOptions::default()
-                })
-                .await
-            }
+            QueryCommands::Hash(args) => query::hash(args).await,
+            QueryCommands::HashDiff(args) => query::hash_diff(args).await,
+            QueryCommands::Projects(args) => query::projects(args).await,
+            QueryCommands::Tasks(args) => query::tasks(args).await,
+            QueryCommands::TouchedFiles(args) => query::touched_files(args).await,
         },
         Commands::Run {
             affected,

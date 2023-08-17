@@ -139,7 +139,7 @@ pub async fn install_deps(
     }
 
     // Install dependencies in the working directory
-    let hash = hasher.generate_hash()?;
+    let hash = workspace.cache_engine.hash_engine.save_manifest(hasher)?;
 
     let state_path = format!("deps{runtime}.json");
     let mut state = workspace.cache_engine.cache_state::<DependenciesState>(
@@ -162,8 +162,6 @@ pub async fn install_deps(
             runtime.label(),
             color::path(working_dir)
         );
-
-        workspace.cache_engine.hash_engine.save_manifest(hasher)?;
 
         platform
             .install_deps(&context, runtime, working_dir)

@@ -67,26 +67,12 @@ fn serializes_with_1_content() {
     let mut hasher = ContentHasher::new("test");
     hasher.hash_content(ContentOne { one: "abc" }).unwrap();
 
-    assert_eq!(
-        hasher.serialize().unwrap(),
-        r#"[
-  {
-    "one": "abc"
-  }
-]"#
-    );
+    assert_eq!(hasher.serialize().unwrap(), r#"[{"one":"abc"}]"#);
 
     let mut hasher = ContentHasher::new("test");
     hasher.hash_content(ContentOne { one: "xyz" }).unwrap();
 
-    assert_eq!(
-        hasher.serialize().unwrap(),
-        r#"[
-  {
-    "one": "xyz"
-  }
-]"#
-    );
+    assert_eq!(hasher.serialize().unwrap(), r#"[{"one":"xyz"}]"#);
 }
 
 #[test]
@@ -97,14 +83,7 @@ fn serializes_with_2_content() {
 
     assert_eq!(
         hasher.serialize().unwrap(),
-        r#"[
-  {
-    "one": "abc"
-  },
-  {
-    "two": 123
-  }
-]"#
+        r#"[{"one":"abc"},{"two":123}]"#
     );
 
     let mut hasher = ContentHasher::new("test");
@@ -113,13 +92,6 @@ fn serializes_with_2_content() {
 
     assert_eq!(
         hasher.serialize().unwrap(),
-        r#"[
-  {
-    "one": "xyz"
-  },
-  {
-    "two": 789
-  }
-]"#
+        r#"[{"one":"xyz"},{"two":789}]"#
     );
 }

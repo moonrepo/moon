@@ -435,7 +435,7 @@ impl<'a> Runner<'a> {
             .workspace
             .cache_engine
             .hash_engine
-            .create_hasher(self.task.target.as_str());
+            .create_hasher(format!("Run {} target", self.task.target));
 
         self.hash_common_target(context, &mut hasher).await?;
 

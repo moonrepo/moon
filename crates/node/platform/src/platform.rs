@@ -7,8 +7,7 @@ use moon_config::{
     PlatformType, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, TaskConfig,
     TasksConfigsMap, TypeScriptConfig,
 };
-use moon_hash::ContentHasher;
-use moon_hash::DepsHash;
+use moon_hash::{ContentHasher, DepsHash};
 use moon_logger::{debug, warn};
 use moon_node_lang::node::get_package_manager_workspaces;
 use moon_node_lang::{PackageJson, NPM};

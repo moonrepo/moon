@@ -3267,6 +3267,7 @@ dependencies = [
  "moon_action_context",
  "moon_action_pipeline",
  "moon_actions",
+ "moon_cache",
  "moon_codegen",
  "moon_common",
  "moon_config",

@@ -52,37 +52,37 @@ pub struct RunArgs {
 
     // Debugging
     #[arg(
-            value_enum,
-            long,
-            help = "Record and generate a profile for ran tasks",
-            help_heading = HEADING_DEBUGGING,
-        )]
+        value_enum,
+        long,
+        help = "Record and generate a profile for ran tasks",
+        help_heading = HEADING_DEBUGGING,
+    )]
     pub profile: Option<ProfileType>,
 
     // Affected
     #[arg(
-            long,
-            help = "Only run target if affected by touched files",
-            help_heading = HEADING_AFFECTED,
-            group = "affected-args"
-        )]
+        long,
+        help = "Only run target if affected by touched files",
+        help_heading = HEADING_AFFECTED,
+        group = "affected-args"
+    )]
     pub affected: bool,
 
     #[arg(
-            long,
-            help = "Determine affected against remote by comparing against a base revision",
-            help_heading = HEADING_AFFECTED,
-            requires = "affected-args",
-        )]
+        long,
+        help = "Determine affected against remote by comparing against a base revision",
+        help_heading = HEADING_AFFECTED,
+        requires = "affected-args",
+    )]
     pub remote: bool,
 
     #[arg(
-            value_enum,
-            long,
-            help = "Filter affected files based on a touched status",
-            help_heading = HEADING_AFFECTED,
-            requires = "affected-args",
-        )]
+        value_enum,
+        long,
+        help = "Filter affected files based on a touched status",
+        help_heading = HEADING_AFFECTED,
+        requires = "affected-args",
+    )]
     pub status: Vec<TouchedStatus>,
 
     // Passthrough args (after --)

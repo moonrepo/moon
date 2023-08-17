@@ -16,7 +16,7 @@ unsafe impl Sync for ContentHasher {}
 
 impl ContentHasher {
     pub fn new(label: &str) -> ContentHasher {
-        debug!(label, "Created new content hasher");
+        trace!(label, "Created new content hasher");
 
         ContentHasher {
             content_cache: None,
@@ -53,10 +53,8 @@ impl ContentHasher {
     pub fn hash_content<T: Serialize>(&mut self, content: T) -> miette::Result<()> {
         trace!(label = &self.label, "Adding content to hasher");
 
-        self.contents.push(
-            serde_json::to_string_pretty(&content)
-                .map_err(|error| JsonError::Stringify { error })?,
-        );
+        self.contents
+            .push(serde_json::to_string(&content).map_err(|error| JsonError::Stringify { error })?);
 
         self.content_cache = None;
         self.hash_cache = None;

@@ -29,7 +29,7 @@ fn hashes_with_1_content() {
 
     assert_eq!(
         hasher.generate_hash().unwrap(),
-        "22ecfb9f32de525b6ab34a4c9e6b96dd9eee6c0873823b8dacfe586a1c4ec553"
+        "37d04b9909c26008c08eeed62baf021fbd439a748c8a4b0aa27e66fe17c4dcb8"
     );
 
     let mut hasher = ContentHasher::new("test");
@@ -37,7 +37,7 @@ fn hashes_with_1_content() {
 
     assert_eq!(
         hasher.generate_hash().unwrap(),
-        "91d2e04331bdbe1e4836e32f9f2be57c80442cacb03955414347f3c9a82d3930"
+        "deec63985262a5c34ea2352e368aa96623193584ec1055817dcaaea1eb746c30"
     );
 }
 
@@ -49,7 +49,7 @@ fn hashes_with_2_content() {
 
     assert_eq!(
         hasher.generate_hash().unwrap(),
-        "9184b4ed2b6ebf4fe1b843cdf8705e749929b7a6910d0d6a0325f4d06b435291"
+        "c65c4706a49bfa57a44b25bf5b441ec6549358c1a87a91a2aa8502fe225ac5f6"
     );
 
     let mut hasher = ContentHasher::new("test");
@@ -58,7 +58,7 @@ fn hashes_with_2_content() {
 
     assert_eq!(
         hasher.generate_hash().unwrap(),
-        "efc26aa8f0742cbc84ee91c78a2a6ecf96b8331f85db733f3d3dbf0ab01d7c16"
+        "295892f785d11426dec31aa569e913db83d7a1cf2e944f82e55f1fdc33eccf96"
     );
 }
 

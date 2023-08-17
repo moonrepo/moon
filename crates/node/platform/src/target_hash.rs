@@ -74,7 +74,7 @@ mod tests {
 
         assert_eq!(
             to_hash(&hasher),
-            "f0b8c77d978d7b4aebeb1df5a2c0a6aa70393689819dd4060826ab6d36b5ea90"
+            "6c2b8e2e909d85e4c20044bc8a8d542e6c8f39bcdf59d09c17791b8176e028ba"
         );
     }
 

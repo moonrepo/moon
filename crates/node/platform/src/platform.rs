@@ -7,7 +7,8 @@ use moon_config::{
     PlatformType, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, TaskConfig,
     TasksConfigsMap, TypeScriptConfig,
 };
-use moon_hasher::{DepsHasher, HashSet};
+use moon_hash::ContentHasher;
+use moon_hash::DepsHash;
 use moon_logger::{debug, warn};
 use moon_node_lang::node::get_package_manager_workspaces;
 use moon_node_lang::{PackageJson, NPM};
@@ -354,26 +355,26 @@ impl Platform for NodePlatform {
     async fn hash_manifest_deps(
         &self,
         manifest_path: &Path,
-        hashset: &mut HashSet,
+        hasher: &mut ContentHasher,
         _hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
         if let Ok(Some(package)) = PackageJson::read(manifest_path) {
             let name = package.name.unwrap_or_else(|| "unknown".into());
-            let mut hasher = DepsHasher::new(name);
+            let mut hash = DepsHash::new(name);
 
             if let Some(peer_deps) = &package.peer_dependencies {
-                hasher.hash_deps(peer_deps);
+                hash.add_deps(peer_deps);
             }
 
             if let Some(dev_deps) = &package.dev_dependencies {
-                hasher.hash_deps(dev_deps);
+                hash.add_deps(dev_deps);
             }
 
             if let Some(deps) = &package.dependencies {
-                hasher.hash_deps(deps);
+                hash.add_deps(deps);
             }
 
-            hashset.hash(hasher);
+            hasher.hash_content(hash)?;
         }
 
         Ok(())
@@ -383,10 +384,10 @@ impl Platform for NodePlatform {
         &self,
         project: &Project,
         runtime: &Runtime,
-        hashset: &mut HashSet,
+        hasher: &mut ContentHasher,
         hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
-        let node_hasher = actions::create_target_hasher(
+        let node_hash = actions::create_target_hasher(
             self.toolchain.get_for_version(runtime.version()).ok(),
             project,
             &self.workspace_root,
@@ -394,16 +395,16 @@ impl Platform for NodePlatform {
         )
         .await?;
 
-        hashset.hash(node_hasher);
+        hasher.hash_content(node_hash)?;
 
         if let Some(typescript_config) = &self.typescript_config {
-            let ts_hasher = TypeScriptTargetHash::generate(
+            let ts_hash = TypeScriptTargetHash::generate(
                 typescript_config,
                 &self.workspace_root,
                 &project.root,
             )?;
 
-            hashset.hash(ts_hasher);
+            hasher.hash_content(ts_hash)?;
         }
 
         Ok(())

@@ -29,8 +29,8 @@ impl HashEngine {
         }
     }
 
-    pub fn create_hasher(&self, label: &str) -> ContentHasher {
-        ContentHasher::new(label)
+    pub fn create_hasher<T: AsRef<str>>(&self, label: T) -> ContentHasher {
+        ContentHasher::new(label.as_ref())
     }
 
     pub fn get_archive_path(&self, hash: &str) -> PathBuf {

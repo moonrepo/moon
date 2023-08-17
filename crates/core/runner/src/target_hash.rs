@@ -2,44 +2,44 @@ use crate::errors::RunnerError;
 use moon_action_context::TargetState;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
-use moon_hasher::{hash_btree, hash_vec, Digest, Hasher, Sha256};
+use moon_hash::content_hashable;
 use moon_target::Target;
 use moon_task::Task;
 use rustc_hash::FxHashMap;
-use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::env;
 
-#[derive(Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TargetHasher {
-    // Task `command`
-    command: String,
+content_hashable!(
+    #[derive(Default)]
+    pub struct TargetHasher {
+        // Task `command`
+        command: String,
 
-    // Task `args`
-    args: Vec<String>,
+        // Task `args`
+        args: Vec<String>,
 
-    // Task `deps` mapped to their hash
-    deps: BTreeMap<String, String>,
+        // Task `deps` mapped to their hash
+        deps: BTreeMap<String, String>,
 
-    // Environment variables
-    env_vars: BTreeMap<String, String>,
+        // Environment variables
+        env_vars: BTreeMap<String, String>,
 
-    // Input files and globs mapped to a unique hash
-    inputs: BTreeMap<String, String>,
+        // Input files and globs mapped to a unique hash
+        inputs: BTreeMap<String, String>,
 
-    // Relative output paths
-    outputs: Vec<String>,
+        // Relative output paths
+        outputs: Vec<String>,
 
-    // `moon.yml` `dependsOn`
-    project_deps: Vec<Id>,
+        // `moon.yml` `dependsOn`
+        project_deps: Vec<Id>,
 
-    // Task `target`
-    target: String,
+        // Task `target`
+        target: String,
 
-    // Bump this to invalidate all caches
-    version: String,
-}
+        // Bump this to invalidate all caches
+        version: String,
+    }
+);
 
 impl TargetHasher {
     pub fn new() -> Self {
@@ -125,24 +125,5 @@ impl TargetHasher {
         }
 
         Ok(())
-    }
-}
-
-impl Hasher for TargetHasher {
-    fn hash(&self, sha: &mut Sha256) {
-        sha.update(self.version.as_bytes());
-        sha.update(self.command.as_bytes());
-        sha.update(self.target.as_bytes());
-
-        hash_vec(&self.args, sha);
-        hash_btree(&self.deps, sha);
-        hash_btree(&self.env_vars, sha);
-        hash_btree(&self.inputs, sha);
-        hash_vec(&self.outputs, sha);
-        hash_vec(&self.project_deps, sha);
-    }
-
-    fn serialize(&self) -> serde_json::Value {
-        serde_json::to_value(self).unwrap()
     }
 }

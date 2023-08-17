@@ -3136,7 +3136,7 @@ dependencies = [
  "moon_cache_item",
  "moon_dep_graph",
  "moon_emitter",
- "moon_hasher",
+ "moon_hash",
  "moon_logger",
  "moon_notifier",
  "moon_platform",
@@ -3545,18 +3545,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_hasher"
-version = "0.1.0"
-dependencies = [
- "miette",
- "moon_utils",
- "rustc-hash",
- "serde",
- "serde_json",
- "sha2",
-]
-
-[[package]]
 name = "moon_lang"
 version = "0.1.0"
 dependencies = [
@@ -3624,7 +3612,7 @@ dependencies = [
  "moon_action_context",
  "moon_common",
  "moon_config",
- "moon_hasher",
+ "moon_hash",
  "moon_lang",
  "moon_logger",
  "moon_node_lang",
@@ -3894,7 +3882,7 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_emitter",
- "moon_hasher",
+ "moon_hash",
  "moon_logger",
  "moon_platform",
  "moon_platform_runtime",

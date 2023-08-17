@@ -1,5 +1,5 @@
 use crate::run_state::{load_output_logs, save_output_logs, RunTargetState};
-use crate::target_hasher::TargetHasher;
+use crate::target_hash::TargetHasher;
 use crate::{errors::RunnerError, inputs_collector};
 use console::Term;
 use miette::IntoDiagnostic;
@@ -8,7 +8,7 @@ use moon_action_context::{ActionContext, TargetState};
 use moon_cache_item::CacheItem;
 use moon_config::{TaskOptionAffectedFiles, TaskOutputStyle};
 use moon_emitter::{Emitter, Event, EventFlow};
-use moon_hasher::HashSet;
+use moon_hash::ContentHasher;
 use moon_logger::{debug, warn};
 use moon_platform::PlatformManager;
 use moon_platform_runtime::Runtime;
@@ -187,23 +187,23 @@ impl<'a> Runner<'a> {
     pub async fn hash_common_target(
         &self,
         context: &ActionContext,
-        hashset: &mut HashSet,
+        hasher: &mut ContentHasher,
     ) -> miette::Result<()> {
         let vcs = &self.workspace.vcs;
         let task = &self.task;
         let project = &self.project;
         let workspace = &self.workspace;
-        let mut hasher = TargetHasher::new();
+        let mut hash = TargetHasher::new();
 
-        hasher.hash_project_deps(self.project.get_dependency_ids());
-        hasher.hash_task(task);
-        hasher.hash_task_deps(task, &context.target_states)?;
+        hash.hash_project_deps(self.project.get_dependency_ids());
+        hash.hash_task(task);
+        hash.hash_task_deps(task, &context.target_states)?;
 
         if context.should_inherit_args(&task.target) {
-            hasher.hash_args(&context.passthrough_args);
+            hash.hash_args(&context.passthrough_args);
         }
 
-        hasher.hash_inputs(
+        hash.hash_inputs(
             inputs_collector::collect_and_hash_inputs(
                 vcs,
                 task,
@@ -214,7 +214,7 @@ impl<'a> Runner<'a> {
             .await?,
         );
 
-        hashset.hash(hasher);
+        hasher.hash_content(hash)?;
 
         Ok(())
     }
@@ -432,21 +432,25 @@ impl<'a> Runner<'a> {
         context: &mut ActionContext,
         runtime: &Runtime,
     ) -> miette::Result<Option<HydrateFrom>> {
-        let mut hashset = HashSet::default();
+        let mut hasher = self
+            .workspace
+            .cache_engine
+            .hash_engine
+            .create_hasher(self.task.target.as_str());
 
-        self.hash_common_target(context, &mut hashset).await?;
+        self.hash_common_target(context, &mut hasher).await?;
 
         PlatformManager::read()
             .get(self.task.platform)?
             .hash_run_target(
                 self.project,
                 runtime,
-                &mut hashset,
+                &mut hasher,
                 &self.workspace.config.hasher,
             )
             .await?;
 
-        let hash = hashset.generate();
+        let hash = hasher.generate_hash()?;
 
         debug!(
             target: LOG_TARGET,
@@ -475,7 +479,10 @@ impl<'a> Runner<'a> {
         self.cache.data.hash = hash.clone();
 
         // Refresh the hash manifest
-        self.workspace.cache.create_hash_manifest(&hash, &hashset)?;
+        self.workspace
+            .cache_engine
+            .hash_engine
+            .save_manifest(hasher)?;
 
         // Check if that hash exists in the cache
         if let EventFlow::Return(value) = self

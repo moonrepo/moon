@@ -1,4 +1,5 @@
 use super::MANIFEST_NAME;
+use clap::Args;
 use moon::{generate_project_graph, load_workspace};
 use moon_common::consts::CONFIG_DIRNAME;
 use moon_common::Id;
@@ -13,6 +14,15 @@ use serde::{Deserialize, Serialize};
 use starbase::AppResult;
 use starbase_utils::{fs, glob, json};
 use std::path::Path;
+
+#[derive(Args, Debug)]
+pub struct DockerScaffoldArgs {
+    #[arg(required = true, help = "List of project IDs to copy sources for")]
+    ids: Vec<Id>,
+
+    #[arg(long, help = "Additional file globs to include in sources")]
+    include: Vec<String>,
+}
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -191,7 +201,7 @@ fn scaffold_sources(
     Ok(())
 }
 
-pub async fn scaffold(project_ids: &[Id], include: &[String]) -> AppResult {
+pub async fn scaffold(args: DockerScaffoldArgs) -> AppResult {
     let mut workspace = load_workspace().await?;
     let docker_root = workspace.root.join(CONFIG_DIRNAME).join("docker");
 
@@ -208,8 +218,8 @@ pub async fn scaffold(project_ids: &[Id], include: &[String]) -> AppResult {
         &workspace,
         &project_graph,
         &docker_root,
-        project_ids,
-        include,
+        &args.ids,
+        &args.include,
     )?;
 
     Ok(())

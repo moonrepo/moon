@@ -1,6 +1,7 @@
 // https://github.com/clap-rs/clap/tree/master/examples/derive_ref#app-attributes
 
 use crate::commands::bin::BinTool;
+use crate::commands::docker::DockerScaffoldArgs;
 use crate::commands::init::InitTool;
 use crate::enums::{CacheMode, LogLevel, TouchedStatus};
 use clap::{Parser, Subcommand};
@@ -28,13 +29,7 @@ pub enum DockerCommands {
         name = "scaffold",
         about = "Scaffold a repository skeleton for use within Dockerfile(s)."
     )]
-    Scaffold {
-        #[arg(required = true, help = "List of project IDs to copy sources for")]
-        ids: Vec<Id>,
-
-        #[arg(long, help = "Additional file globs to include in sources")]
-        include: Vec<String>,
-    },
+    Scaffold(DockerScaffoldArgs),
 
     #[command(
         name = "setup",

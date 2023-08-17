@@ -150,7 +150,7 @@ pub async fn run_cli() -> AppResult {
         Commands::DepGraph { target, dot, json } => dep_graph(target, dot, json).await,
         Commands::Docker { command } => match command {
             DockerCommands::Prune => docker::prune().await,
-            DockerCommands::Scaffold { ids, include } => docker::scaffold(&ids, &include).await,
+            DockerCommands::Scaffold(args) => docker::scaffold(args).await,
             DockerCommands::Setup => docker::setup().await,
         },
         Commands::Generate {

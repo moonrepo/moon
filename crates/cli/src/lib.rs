@@ -12,7 +12,7 @@ use crate::commands::completions;
 use crate::commands::docker;
 use crate::commands::generate::{generate, GenerateOptions};
 use crate::commands::graph::{dep::dep_graph, project::project_graph};
-use crate::commands::init::{init, InitOptions};
+use crate::commands::init::init;
 use crate::commands::migrate;
 use crate::commands::node;
 use crate::commands::project::project;
@@ -172,24 +172,7 @@ pub async fn run_cli() -> AppResult {
             )
             .await
         }
-        Commands::Init {
-            dest,
-            force,
-            minimal,
-            tool,
-            yes,
-        } => {
-            init(
-                dest,
-                tool,
-                InitOptions {
-                    force,
-                    minimal,
-                    yes,
-                },
-            )
-            .await
-        }
+        Commands::Init(args) => init(args).await,
         Commands::Migrate {
             command,
             skip_touched_files_check,

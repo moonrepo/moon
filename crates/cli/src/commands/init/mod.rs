@@ -2,7 +2,7 @@ mod node;
 mod rust;
 mod typescript;
 
-use clap::ValueEnum;
+use clap::{Args, ValueEnum};
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::Confirm;
 use miette::IntoDiagnostic;
@@ -32,6 +32,24 @@ pub enum InitTool {
     Node,
     Rust,
     TypeScript,
+}
+
+#[derive(Args, Debug)]
+pub struct InitArgs {
+    #[arg(help = "Destination to initialize in", default_value = ".")]
+    dest: String,
+
+    #[arg(long, help = "Overwrite existing configurations")]
+    force: bool,
+
+    #[arg(long, help = "Initialize with minimal configuration and prompts")]
+    minimal: bool,
+
+    #[arg(long, help = "Skip prompts and use default values")]
+    yes: bool,
+
+    #[arg(long, value_enum, help = "Specific tool to initialize")]
+    tool: Option<InitTool>,
 }
 
 fn render_toolchain_template(context: &Context) -> AppResult<String> {
@@ -139,21 +157,27 @@ pub async fn init_tool(
     Ok(())
 }
 
-pub async fn init(dest: String, tool: Option<InitTool>, options: InitOptions) -> AppResult {
+pub async fn init(args: InitArgs) -> AppResult {
+    let options = InitOptions {
+        force: args.force,
+        minimal: args.minimal,
+        yes: args.yes,
+    };
+
     let theme = create_theme();
     let working_dir = env::current_dir().expect("Failed to determine working directory.");
-    let dest_path = PathBuf::from(&dest);
-    let dest_dir = if dest == "." {
+    let dest_path = PathBuf::from(&args.dest);
+    let dest_dir = if args.dest == "." {
         working_dir
     } else if dest_path.is_absolute() {
         dest_path
     } else {
-        working_dir.join(dest)
+        working_dir.join(&args.dest)
     };
     let dest_dir = path::normalize(&dest_dir);
 
     // Initialize a specific tool and exit early
-    if let Some(tool) = &tool {
+    if let Some(tool) = &args.tool {
         init_tool(&dest_dir, tool, &options, &theme).await?;
 
         return Ok(());

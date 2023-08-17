@@ -2,7 +2,7 @@
 
 use crate::commands::bin::BinTool;
 use crate::commands::docker::DockerScaffoldArgs;
-use crate::commands::init::InitTool;
+use crate::commands::init::InitArgs;
 use crate::commands::migrate::FromPackageJsonArgs;
 use crate::commands::node::RunScriptArgs;
 use crate::commands::query::{
@@ -147,22 +147,7 @@ pub enum Commands {
         about = "Initialize a new tool or a new moon repository, and scaffold config files.",
         rename_all = "camelCase"
     )]
-    Init {
-        #[arg(help = "Destination to initialize in", default_value = ".")]
-        dest: String,
-
-        #[arg(long, help = "Overwrite existing configurations")]
-        force: bool,
-
-        #[arg(long, help = "Initialize with minimal configuration and prompts")]
-        minimal: bool,
-
-        #[arg(long, help = "Skip prompts and use default values")]
-        yes: bool,
-
-        #[arg(long, value_enum, help = "Specific tool to initialize")]
-        tool: Option<InitTool>,
-    },
+    Init(InitArgs),
 
     // TOOLCHAIN
 

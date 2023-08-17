@@ -3221,25 +3221,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_cache"
-version = "0.1.0"
-dependencies = [
- "miette",
- "moon_common",
- "moon_logger",
- "moon_platform_runtime",
- "moon_test_utils",
- "moon_utils",
- "rustc-hash",
- "serde",
- "serial_test",
- "starbase_archive",
- "starbase_styles",
- "starbase_utils",
- "tokio",
-]
-
-[[package]]
 name = "moon_cache2"
 version = "0.1.0"
 dependencies = [
@@ -3287,7 +3268,6 @@ dependencies = [
  "moon_action_context",
  "moon_action_pipeline",
  "moon_actions",
- "moon_cache",
  "moon_codegen",
  "moon_common",
  "moon_config",
@@ -4192,7 +4172,6 @@ name = "moon_workspace"
 version = "0.1.0"
 dependencies = [
  "miette",
- "moon_cache",
  "moon_cache2",
  "moon_common",
  "moon_config",

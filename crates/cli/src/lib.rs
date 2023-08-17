@@ -205,7 +205,7 @@ pub async fn run_cli() -> AppResult {
             }
         },
         Commands::Node { command } => match command {
-            NodeCommands::RunScript { name, project } => node::run_script(name, project).await,
+            NodeCommands::RunScript(args) => node::run_script(args).await,
         },
         Commands::Project { id, json } => project(id, json).await,
         Commands::ProjectGraph { id, dot, json } => project_graph(id, dot, json).await,

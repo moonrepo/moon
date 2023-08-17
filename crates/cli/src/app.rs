@@ -4,6 +4,7 @@ use crate::commands::bin::BinTool;
 use crate::commands::docker::DockerScaffoldArgs;
 use crate::commands::init::InitTool;
 use crate::commands::migrate::FromPackageJsonArgs;
+use crate::commands::node::RunScriptArgs;
 use crate::enums::{CacheMode, LogLevel, TouchedStatus};
 use clap::{Parser, Subcommand};
 use clap_complete::Shell;
@@ -60,13 +61,7 @@ pub enum NodeCommands {
         name = "run-script",
         about = "Run a `package.json` script within a project."
     )]
-    RunScript {
-        #[arg(help = "Name of the script")]
-        name: String,
-
-        #[arg(long, help = "ID of project to run in")]
-        project: Option<Id>,
-    },
+    RunScript(RunScriptArgs),
 }
 
 #[derive(Debug, Subcommand)]

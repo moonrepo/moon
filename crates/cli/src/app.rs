@@ -3,6 +3,7 @@
 use crate::commands::bin::BinTool;
 use crate::commands::docker::DockerScaffoldArgs;
 use crate::commands::init::InitTool;
+use crate::commands::migrate::FromPackageJsonArgs;
 use crate::enums::{CacheMode, LogLevel, TouchedStatus};
 use clap::{Parser, Subcommand};
 use clap_complete::Shell;
@@ -44,10 +45,7 @@ pub enum MigrateCommands {
         name = "from-package-json",
         about = "Migrate `package.json` scripts and dependencies to `moon.yml`."
     )]
-    FromPackageJson {
-        #[arg(help = "ID of project to migrate")]
-        id: Id,
-    },
+    FromPackageJson(FromPackageJsonArgs),
 
     #[command(
         name = "from-turborepo",

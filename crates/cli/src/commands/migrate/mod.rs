@@ -1,7 +1,7 @@
 mod from_package_json;
 mod from_turborepo;
 
-pub use from_package_json::from_package_json;
+pub use from_package_json::{from_package_json, FromPackageJsonArgs};
 pub use from_turborepo::*;
 
 use miette::miette;

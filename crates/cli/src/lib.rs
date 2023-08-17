@@ -197,8 +197,8 @@ pub async fn run_cli() -> AppResult {
             command,
             skip_touched_files_check,
         } => match command {
-            MigrateCommands::FromPackageJson { id } => {
-                migrate::from_package_json(id, skip_touched_files_check).await
+            MigrateCommands::FromPackageJson(args) => {
+                migrate::from_package_json(args, skip_touched_files_check).await
             }
             MigrateCommands::FromTurborepo => {
                 migrate::from_turborepo(skip_touched_files_check).await

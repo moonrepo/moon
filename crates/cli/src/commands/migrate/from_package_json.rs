@@ -1,4 +1,5 @@
 use super::check_dirty_repo;
+use clap::Args;
 use moon::{generate_project_graph, load_workspace};
 use moon_common::consts::CONFIG_PROJECT_FILENAME;
 use moon_common::Id;
@@ -13,9 +14,18 @@ use starbase::AppResult;
 use starbase_utils::yaml;
 use std::collections::BTreeMap;
 
+#[derive(Args, Debug)]
+pub struct FromPackageJsonArgs {
+    #[arg(help = "ID of project to migrate")]
+    id: Id,
+}
+
 const LOG_TARGET: &str = "moon:migrate:from-package-json";
 
-pub async fn from_package_json(project_id: Id, skip_touched_files_check: bool) -> AppResult {
+pub async fn from_package_json(
+    args: FromPackageJsonArgs,
+    skip_touched_files_check: bool,
+) -> AppResult {
     let mut workspace = load_workspace().await?;
 
     if skip_touched_files_check {
@@ -37,7 +47,7 @@ pub async fn from_package_json(project_id: Id, skip_touched_files_check: bool) -
     }
 
     // Create or update the local `moon.yml`
-    let project = project_graph.get(&project_id)?;
+    let project = project_graph.get(&args.id)?;
     let mut partial_config = ProjectConfig::load_partial(&project.root)?;
 
     let mut link_deps = |deps: &DepsSet, scope: DependencyScope| {

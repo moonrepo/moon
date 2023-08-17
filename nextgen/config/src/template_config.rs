@@ -1,11 +1,10 @@
 // template.yml
 
+use crate::validate::check_yml_extension;
 use moon_common::consts;
 use rustc_hash::FxHashMap;
 use schematic::{validate, Config, ConfigLoader};
 use std::path::Path;
-
-use crate::validate::check_yml_extension;
 
 macro_rules! var_setting {
     ($name:ident, $ty:ty) => {

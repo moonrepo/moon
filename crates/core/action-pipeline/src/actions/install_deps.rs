@@ -1,6 +1,7 @@
 use miette::IntoDiagnostic;
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
+use moon_cache_item::cache_item;
 use moon_hasher::HashSet;
 use moon_logger::{debug, warn};
 use moon_platform::{PlatformManager, Runtime};
@@ -10,8 +11,16 @@ use moon_workspace::Workspace;
 use starbase_styles::color;
 use starbase_utils::fs;
 use std::env;
+use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
+
+cache_item!(
+    pub struct DependenciesState {
+        pub last_hash: String,
+        pub last_install_time: u128,
+    }
+);
 
 const LOG_TARGET: &str = "moon:action:install-deps";
 
@@ -66,7 +75,7 @@ pub async fn install_deps(
     }
 
     // When cache is write only, avoid install as user is typically force updating cache
-    if workspace.cache.get_mode().is_write_only() {
+    if workspace.cache_engine.get_mode().is_write_only() {
         debug!(target: LOG_TARGET, "Force updating cache, skipping install");
 
         return Ok(ActionStatus::Skipped);
@@ -129,11 +138,20 @@ pub async fn install_deps(
 
     // Install dependencies in the working directory
     let hash = hashset.generate();
-    let mut cache = workspace
-        .cache
-        .cache_deps_state(runtime, project.map(|p| p.id.as_ref()))?;
 
-    if hash != cache.last_hash || last_modified == 0 || last_modified > cache.last_install_time {
+    let state_path = format!("deps{runtime}.json");
+    let mut state = workspace.cache_engine.cache_state::<DependenciesState>(
+        if let Some(project) = &project {
+            project.get_cache_dir().join(state_path)
+        } else {
+            PathBuf::from(state_path)
+        },
+    )?;
+
+    if hash != state.data.last_hash
+        || last_modified == 0
+        || last_modified > state.data.last_install_time
+    {
         env::set_var("MOON_INSTALLING_DEPS", install_key);
 
         debug!(
@@ -149,9 +167,9 @@ pub async fn install_deps(
             .install_deps(&context, runtime, working_dir)
             .await?;
 
-        cache.last_hash = hash;
-        cache.last_install_time = time::now_millis();
-        cache.save()?;
+        state.data.last_hash = hash;
+        state.data.last_install_time = time::now_millis();
+        state.save()?;
 
         env::remove_var("MOON_INSTALLING_DEPS");
 

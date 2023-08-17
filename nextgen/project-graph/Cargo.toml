@@ -4,8 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-# TODO REMOVE
-moon_cache = { path = "../../crates/core/cache" }
+moon_cache2 = { path = "../cache" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_hash = { path = "../hash" }

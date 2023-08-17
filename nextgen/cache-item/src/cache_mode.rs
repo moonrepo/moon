@@ -1,10 +1,9 @@
-use moon_logger::warn;
 use std::env;
-
-pub const LOG_TARGET: &str = "moon:cache";
+use tracing::warn;
 
 static mut LOGGED_WARNING: bool = false;
 
+#[derive(PartialEq)]
 pub enum CacheMode {
     Off,
     Read,
@@ -19,16 +18,15 @@ impl From<String> for CacheMode {
             "read" => CacheMode::Read,
             "read-write" => CacheMode::ReadWrite,
             "write" => CacheMode::Write,
-            val => {
+            unknown => {
                 // We only want to show this once, not everytime the function is called
                 unsafe {
                     if !LOGGED_WARNING {
                         LOGGED_WARNING = true;
 
                         warn!(
-                            target: LOG_TARGET,
                             "Unknown MOON_CACHE environment variable value \"{}\", falling back to read-write mode",
-                            val
+                            unknown
                         );
                     }
                 }

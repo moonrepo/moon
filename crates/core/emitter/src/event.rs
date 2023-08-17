@@ -1,6 +1,5 @@
 use moon_action::{Action, ActionNode};
 use moon_action_context::ActionContext;
-use moon_cache::RunTargetState;
 use moon_platform_runtime::Runtime;
 use moon_project::Project;
 use moon_target::Target;
@@ -79,8 +78,6 @@ pub enum Event<'e> {
         target: &'e Target,
     },
     TargetOutputArchiving {
-        #[serde(skip)]
-        cache: &'e RunTargetState,
         hash: &'e str,
         project: &'e Project,
         target: &'e Target,
@@ -95,8 +92,6 @@ pub enum Event<'e> {
         task: &'e Task,
     },
     TargetOutputHydrating {
-        #[serde(skip)]
-        cache: &'e RunTargetState,
         hash: &'e str,
         project: &'e Project,
         target: &'e Target,

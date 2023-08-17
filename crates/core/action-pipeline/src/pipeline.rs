@@ -457,8 +457,8 @@ impl Pipeline {
             let duration = self.duration.unwrap();
 
             workspace
-                .cache
-                .create_json_report(name, RunReport::new(actions, context, duration, estimate))?;
+                .cache_engine
+                .write(name, &RunReport::new(actions, context, duration, estimate))?;
         }
 
         Ok(())

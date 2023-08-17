@@ -3095,7 +3095,6 @@ dependencies = [
  "moon_config",
  "moon_deno_platform",
  "moon_dep_graph",
- "moon_hash",
  "moon_node_platform",
  "moon_platform",
  "moon_platform_detector",
@@ -3143,7 +3142,7 @@ dependencies = [
  "moon_action",
  "moon_action_context",
  "moon_actions",
- "moon_cache",
+ "moon_cache_item",
  "moon_dep_graph",
  "moon_emitter",
  "moon_hasher",
@@ -3176,9 +3175,9 @@ name = "moon_actions"
 version = "0.1.0"
 dependencies = [
  "miette",
+ "moon_cache_item",
  "moon_codeowners",
  "moon_config",
- "moon_hash",
  "moon_project_graph",
  "moon_vcs_hooks",
  "moon_workspace",
@@ -3250,6 +3249,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_cache2"
+version = "0.1.0"
+dependencies = [
+ "miette",
+ "moon_cache_item",
+ "moon_common",
+ "moon_hash",
+ "moon_time",
+ "serde",
+ "starbase_sandbox",
+ "starbase_utils",
+ "tracing",
+]
+
+[[package]]
+name = "moon_cache_item"
+version = "0.1.0"
+dependencies = [
+ "miette",
+ "serde",
+ "serial_test",
+ "starbase_sandbox",
+ "starbase_utils",
+ "tracing",
+]
+
+[[package]]
 name = "moon_cli"
 version = "1.11.1"
 dependencies = [
@@ -3287,6 +3313,7 @@ dependencies = [
  "moon_project",
  "moon_project_graph",
  "moon_query",
+ "moon_runner",
  "moon_rust_lang",
  "moon_rust_tool",
  "moon_system_platform",
@@ -3477,7 +3504,6 @@ dependencies = [
  "miette",
  "moon_action",
  "moon_action_context",
- "moon_cache",
  "moon_platform_runtime",
  "moon_project",
  "moon_target",
@@ -3811,7 +3837,7 @@ version = "0.1.0"
 dependencies = [
  "async-recursion",
  "miette",
- "moon_cache",
+ "moon_cache2",
  "moon_common",
  "moon_config",
  "moon_hash",
@@ -3874,7 +3900,7 @@ dependencies = [
  "moon",
  "moon_action",
  "moon_action_context",
- "moon_cache",
+ "moon_cache_item",
  "moon_common",
  "moon_config",
  "moon_emitter",
@@ -3895,6 +3921,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "serde_json",
+ "starbase_archive",
  "starbase_styles",
  "starbase_utils",
  "thiserror",
@@ -4188,6 +4215,7 @@ version = "0.1.0"
 dependencies = [
  "miette",
  "moon_cache",
+ "moon_cache2",
  "moon_common",
  "moon_config",
  "moon_logger",

@@ -433,7 +433,6 @@ impl<'a> Runner<'a> {
     ) -> miette::Result<Option<HydrateFrom>> {
         let mut hasher = self
             .workspace
-            .cache_engine
             .hash_engine
             .create_hasher(format!("Run {} target", self.task.target));
 
@@ -478,10 +477,7 @@ impl<'a> Runner<'a> {
         self.cache.data.hash = hash.clone();
 
         // Refresh the hash manifest
-        self.workspace
-            .cache_engine
-            .hash_engine
-            .save_manifest(hasher)?;
+        self.workspace.hash_engine.save_manifest(hasher)?;
 
         // Check if that hash exists in the cache
         if let EventFlow::Return(value) = self

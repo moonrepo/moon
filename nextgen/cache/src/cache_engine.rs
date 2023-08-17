@@ -1,6 +1,5 @@
 use moon_cache_item::*;
 use moon_common::consts;
-use moon_hash::HashEngine;
 use moon_time::parse_duration;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -13,9 +12,6 @@ pub struct CacheEngine {
     /// The `.moon/cache` directory relative to workspace root.
     /// Contains cached items pertaining to runs and processes.
     pub cache_dir: PathBuf,
-
-    /// An engine specifically for hashing content and generating manifests.
-    pub hash_engine: HashEngine,
 
     /// The `.moon/cache/states` directory. Stores state information about anything...
     /// tools, dependencies, projects, tasks, etc.
@@ -45,7 +41,6 @@ impl CacheEngine {
         }
 
         Ok(CacheEngine {
-            hash_engine: HashEngine::new(&dir),
             cache_dir: dir,
             states_dir,
         })
@@ -74,13 +69,9 @@ impl CacheEngine {
             lifetime
         );
 
-        let hashes_dir = fs::remove_dir_stale_contents(&self.hash_engine.hashes_dir, duration)?;
-        let outputs_dir = fs::remove_dir_stale_contents(&self.hash_engine.outputs_dir, duration)?;
-        let states_dir = fs::remove_dir_stale_contents(&self.states_dir, duration)?;
-
-        let deleted =
-            hashes_dir.files_deleted + outputs_dir.files_deleted + states_dir.files_deleted;
-        let bytes = hashes_dir.bytes_saved + outputs_dir.bytes_saved + states_dir.bytes_saved;
+        let stats = fs::remove_dir_stale_contents(&self.cache_dir, duration)?;
+        let deleted = stats.files_deleted;
+        let bytes = stats.bytes_saved;
 
         debug!("Deleted {} files and saved {} bytes", deleted, bytes);
 

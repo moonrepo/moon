@@ -8,6 +8,7 @@ moonbase = { path = "../moonbase" }
 moon_cache2 = { path = "../../../nextgen/cache" }
 moon_common = { path = "../../../nextgen/common" }
 moon_config = { path = "../../../nextgen/config" }
+moon_hash = { path = "../../../nextgen/hash" }
 moon_logger = { path = "../logger" }
 moon_utils = { path = "../utils" }
 moon_vcs = { path = "../../../nextgen/vcs" }

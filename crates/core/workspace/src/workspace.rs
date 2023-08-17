@@ -2,6 +2,7 @@ use crate::errors::WorkspaceError;
 use moon_cache2::CacheEngine;
 use moon_common::consts;
 use moon_config::{InheritedTasksConfig, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
+use moon_hash::HashEngine;
 use moon_logger::{debug, trace};
 use moon_utils::semver;
 use moon_vcs::{BoxedVcs, Git};
@@ -141,11 +142,14 @@ fn load_workspace_config(root_dir: &Path) -> miette::Result<WorkspaceConfig> {
 }
 
 pub struct Workspace {
-    /// Engine for reading and writing cache/outputs.
+    /// Engine for reading and writing cache/states.
     pub cache_engine: CacheEngine,
 
     /// Workspace configuration loaded from ".moon/workspace.yml".
     pub config: WorkspaceConfig,
+
+    /// Engine for reading and writing hashes/outputs.
+    pub hash_engine: HashEngine,
 
     /// Proto tools loaded from ".prototools".
     pub proto_tools: ToolsConfig,
@@ -208,6 +212,7 @@ impl Workspace {
 
         // Setup components
         let cache_engine = CacheEngine::new(&root_dir)?;
+        let hash_engine = HashEngine::new(&cache_engine.cache_dir);
         let vcs = Git::load(
             &root_dir,
             &config.vcs.default_branch,
@@ -217,6 +222,7 @@ impl Workspace {
         Ok(Workspace {
             cache_engine,
             config,
+            hash_engine,
             proto_tools,
             root: root_dir,
             session: None,

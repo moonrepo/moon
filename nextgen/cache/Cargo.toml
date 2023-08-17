@@ -6,7 +6,6 @@ edition = "2021"
 [dependencies]
 moon_cache_item = { path = "../cache-item" }
 moon_common = { path = "../common" }
-moon_hash = { path = "../hash" }
 moon_time = { path = "../time" }
 miette = { workspace = true }
 serde = { workspace = true }

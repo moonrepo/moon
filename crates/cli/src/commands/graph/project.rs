@@ -1,13 +1,26 @@
 use crate::commands::graph::utils::{project_graph_repr, respond_to_request, setup_server};
+use clap::Args;
 use moon::{build_project_graph, load_workspace};
 use moon_common::Id;
 use starbase::AppResult;
 
-pub async fn project_graph(project_id: Option<Id>, dot: bool, json: bool) -> AppResult {
+#[derive(Args, Debug)]
+pub struct ProjectGraphArgs {
+    #[arg(help = "ID of project to *only* graph")]
+    id: Option<Id>,
+
+    #[arg(long, help = "Print the graph in DOT format")]
+    dot: bool,
+
+    #[arg(long, help = "Print the graph in JSON format")]
+    json: bool,
+}
+
+pub async fn project_graph(args: ProjectGraphArgs) -> AppResult {
     let mut workspace = load_workspace().await?;
     let mut project_graph_builder = build_project_graph(&mut workspace).await?;
 
-    if let Some(id) = &project_id {
+    if let Some(id) = &args.id {
         project_graph_builder.load(id).await?;
     } else {
         project_graph_builder.load_all().await?;
@@ -18,13 +31,13 @@ pub async fn project_graph(project_id: Option<Id>, dot: bool, json: bool) -> App
     // Force expand all projects
     project_graph.get_all()?;
 
-    if dot {
+    if args.dot {
         println!("{}", project_graph.to_dot());
 
         return Ok(());
     }
 
-    if json {
+    if args.json {
         println!("{}", project_graph.to_json()?);
 
         return Ok(());

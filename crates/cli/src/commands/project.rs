@@ -1,3 +1,4 @@
+use clap::Args;
 use console::Term;
 use itertools::Itertools;
 use miette::IntoDiagnostic;
@@ -9,16 +10,25 @@ use moon_utils::is_test_env;
 use starbase::AppResult;
 use starbase_styles::color;
 
-pub async fn project(id: Id, json: bool) -> AppResult {
+#[derive(Args, Debug)]
+pub struct ProjectArgs {
+    #[arg(help = "ID of project to display")]
+    id: Id,
+
+    #[arg(long, help = "Print in JSON format")]
+    json: bool,
+}
+
+pub async fn project(args: ProjectArgs) -> AppResult {
     let mut workspace = load_workspace().await?;
     let mut project_graph_builder = build_project_graph(&mut workspace).await?;
-    project_graph_builder.load(&id).await?;
+    project_graph_builder.load(&args.id).await?;
 
     let project_graph = project_graph_builder.build().await?;
-    let project = project_graph.get(&id)?;
+    let project = project_graph.get(&args.id)?;
     let config = &project.config;
 
-    if json {
+    if args.json {
         println!(
             "{}",
             serde_json::to_string_pretty(&project).into_diagnostic()?

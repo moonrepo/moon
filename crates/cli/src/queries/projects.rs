@@ -94,7 +94,7 @@ async fn load_touched_files(
 
     query_touched_files(
         workspace,
-        &mut QueryTouchedFilesOptions {
+        &QueryTouchedFilesOptions {
             local: !is_ci(),
             ..QueryTouchedFilesOptions::default()
         },

@@ -1,20 +1,25 @@
 use crate::helpers::create_progress_bar;
+use clap::Args;
 use moon::{generate_project_graph, load_workspace};
 use moon_actions::{sync_codeowners, unsync_codeowners};
 use starbase::AppResult;
 use starbase_styles::color;
 
-pub struct SyncCodeownersOptions {
-    pub clean: bool,
-    pub force: bool,
+#[derive(Args, Debug)]
+pub struct SyncCodeownersArgs {
+    #[arg(long, help = "Clean and remove previously generated file")]
+    clean: bool,
+
+    #[arg(long, help = "Bypass cache and force create file")]
+    force: bool,
 }
 
-pub async fn sync(options: SyncCodeownersOptions) -> AppResult {
+pub async fn sync(args: SyncCodeownersArgs) -> AppResult {
     let mut workspace = load_workspace().await?;
 
     let done = create_progress_bar("Syncing code owners...");
 
-    if options.clean {
+    if args.clean {
         let codeowners_path = unsync_codeowners(&workspace).await?;
 
         done(
@@ -26,7 +31,7 @@ pub async fn sync(options: SyncCodeownersOptions) -> AppResult {
         );
     } else {
         let project_graph = generate_project_graph(&mut workspace).await?;
-        let codeowners_path = sync_codeowners(&workspace, &project_graph, options.force).await?;
+        let codeowners_path = sync_codeowners(&workspace, &project_graph, args.force).await?;
 
         done(
             format!(

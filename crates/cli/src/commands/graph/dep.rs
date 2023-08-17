@@ -1,16 +1,29 @@
 use crate::commands::graph::utils::{dep_graph_repr, respond_to_request, setup_server};
+use clap::Args;
 use miette::IntoDiagnostic;
 use moon::{build_dep_graph, generate_project_graph, load_workspace};
 use moon_target::Target;
 use starbase::AppResult;
 
-pub async fn dep_graph(target_id: Option<String>, dot: bool, json: bool) -> AppResult {
+#[derive(Args, Debug)]
+pub struct DepGraphArgs {
+    #[arg(help = "Target to *only* graph")]
+    target: Option<String>,
+
+    #[arg(long, help = "Print the graph in DOT format")]
+    dot: bool,
+
+    #[arg(long, help = "Print the graph in JSON format")]
+    json: bool,
+}
+
+pub async fn dep_graph(args: DepGraphArgs) -> AppResult {
     let mut workspace = load_workspace().await?;
     let project_graph = generate_project_graph(&mut workspace).await?;
     let mut dep_builder = build_dep_graph(&project_graph);
 
     // Focus a target and its dependencies/dependents
-    if let Some(id) = &target_id {
+    if let Some(id) = &args.target {
         let target = Target::parse(id)?;
 
         dep_builder.run_target(&target, None)?;
@@ -27,7 +40,7 @@ pub async fn dep_graph(target_id: Option<String>, dot: bool, json: bool) -> AppR
 
     let dep_graph = dep_builder.build();
 
-    if dot {
+    if args.dot {
         println!("{}", dep_graph.to_dot());
 
         return Ok(());
@@ -35,7 +48,7 @@ pub async fn dep_graph(target_id: Option<String>, dot: bool, json: bool) -> AppR
 
     let graph_info = dep_graph_repr(&dep_graph).await;
 
-    if json {
+    if args.json {
         println!("{}", serde_json::to_string(&graph_info).into_diagnostic()?);
 
         return Ok(());

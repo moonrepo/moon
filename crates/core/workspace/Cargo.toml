@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 moonbase = { path = "../moonbase" }
 moon_cache = { path = "../cache" }
+moon_cache2 = { path = "../../../nextgen/cache" }
 moon_common = { path = "../../../nextgen/common" }
 moon_config = { path = "../../../nextgen/config" }
 moon_logger = { path = "../logger" }

@@ -1,10 +1,11 @@
+use crate::run_state::{load_output_logs, save_output_logs, RunTargetState};
 use crate::target_hasher::TargetHasher;
 use crate::{errors::RunnerError, inputs_collector};
 use console::Term;
 use miette::IntoDiagnostic;
 use moon_action::{ActionStatus, Attempt};
 use moon_action_context::{ActionContext, TargetState};
-use moon_cache::RunTargetState;
+use moon_cache_item::CacheItem;
 use moon_config::{TaskOptionAffectedFiles, TaskOutputStyle};
 use moon_emitter::{Emitter, Event, EventFlow};
 use moon_hasher::HashSet;
@@ -35,7 +36,7 @@ pub enum HydrateFrom {
 }
 
 pub struct Runner<'a> {
-    pub cache: RunTargetState,
+    pub cache: CacheItem<RunTargetState>,
 
     emitter: &'a Emitter,
 
@@ -57,8 +58,16 @@ impl<'a> Runner<'a> {
         project: &'a Project,
         task: &'a Task,
     ) -> miette::Result<Runner<'a>> {
+        let mut cache = workspace
+            .cache_engine
+            .cache_state::<RunTargetState>(task.get_cache_dir().join("lastRun.json"))?;
+
+        if cache.data.target.is_empty() {
+            cache.data.target = task.target.to_string();
+        }
+
         Ok(Runner {
-            cache: workspace.cache.cache_run_target_state(&task.target)?,
+            cache,
             emitter,
             project,
             stderr: Term::buffered_stderr(),
@@ -72,7 +81,7 @@ impl<'a> Runner<'a> {
     /// so that subsequent builds are faster, and any local outputs
     /// can be hydrated easily.
     pub async fn archive_outputs(&self) -> miette::Result<()> {
-        let hash = &self.cache.hash;
+        let hash = &self.cache.data.hash;
 
         if hash.is_empty() || !self.is_archivable()? {
             return Ok(());
@@ -87,7 +96,6 @@ impl<'a> Runner<'a> {
         if let EventFlow::Return(archive_path) = self
             .emitter
             .emit(Event::TargetOutputArchiving {
-                cache: &self.cache,
                 hash,
                 project: self.project,
                 target: &self.task.target,
@@ -140,7 +148,7 @@ impl<'a> Runner<'a> {
     /// If we are cached (hash match), hydrate the project with the
     /// cached task outputs found in the hashed archive.
     pub async fn hydrate_outputs(&self) -> miette::Result<()> {
-        let hash = &self.cache.hash;
+        let hash = &self.cache.data.hash;
 
         if hash.is_empty() {
             return Ok(());
@@ -150,7 +158,6 @@ impl<'a> Runner<'a> {
         if let EventFlow::Return(archive_path) = self
             .emitter
             .emit(Event::TargetOutputHydrating {
-                cache: &self.cache,
                 hash,
                 project: self.project,
                 target: &self.task.target,
@@ -309,7 +316,7 @@ impl<'a> Runner<'a> {
 
         env_vars.insert(
             "MOON_CACHE_DIR".to_owned(),
-            path::to_string(&self.workspace.cache.dir)?,
+            path::to_string(&self.workspace.cache_engine.cache_dir)?,
         );
         env_vars.insert("MOON_PROJECT_ID".to_owned(), self.project.id.to_string());
         env_vars.insert(
@@ -337,9 +344,9 @@ impl<'a> Runner<'a> {
             "MOON_PROJECT_SNAPSHOT".to_owned(),
             path::to_string(
                 self.workspace
-                    .cache
-                    .get_state_path(&self.project.id)
-                    .join("snapshot.json"),
+                    .cache_engine
+                    .states_dir
+                    .join(self.project.get_cache_dir().join("snapshot.json")),
             )?,
         );
         // env_vars.insert("PROTO_SKIP_USED_AT".to_owned(), "true".to_owned());
@@ -355,10 +362,10 @@ impl<'a> Runner<'a> {
     }
 
     pub fn get_short_hash(&self) -> &str {
-        if self.cache.hash.is_empty() {
+        if self.cache.data.hash.is_empty() {
             "" // Empty when cache is disabled
         } else {
-            &self.cache.hash[0..8]
+            &self.cache.data.hash[0..8]
         }
     }
 
@@ -455,7 +462,7 @@ impl<'a> Runner<'a> {
 
         // Hash is the same as the previous build, so simply abort!
         // However, ensure the outputs also exist, otherwise we should hydrate
-        if self.cache.hash == hash && self.has_outputs(true)? {
+        if self.cache.data.hash == hash && self.has_outputs(true)? {
             debug!(
                 target: LOG_TARGET,
                 "Cache hit for hash {}, reusing previous build",
@@ -465,7 +472,7 @@ impl<'a> Runner<'a> {
             return Ok(Some(HydrateFrom::PreviousOutput));
         }
 
-        self.cache.hash = hash.clone();
+        self.cache.data.hash = hash.clone();
 
         // Refresh the hash manifest
         self.workspace.cache.create_hash_manifest(&hash, &hashset)?;
@@ -638,8 +645,10 @@ impl<'a> Runner<'a> {
         interval_handle.abort();
 
         // Write the cache with the result and output
-        self.cache.exit_code = output.status.code().unwrap_or(0);
-        self.cache.save_output_logs(
+        self.cache.data.exit_code = output.status.code().unwrap_or(0);
+
+        save_output_logs(
+            self.cache.get_dir(),
             output_to_string(&output.stdout),
             output_to_string(&output.stderr),
         )?;
@@ -669,7 +678,7 @@ impl<'a> Runner<'a> {
             self.run_command(context, &mut command).await?
         };
 
-        self.cache.last_run_time = time::now_millis();
+        self.cache.data.last_run_time = time::now_millis();
         self.cache.save()?;
 
         Ok(attempts)
@@ -677,9 +686,9 @@ impl<'a> Runner<'a> {
 
     pub fn print_cache_item(&self) -> miette::Result<()> {
         let item = &self.cache;
-        let (stdout, stderr) = item.load_output_logs()?;
+        let (stdout, stderr) = load_output_logs(item.get_dir())?;
 
-        self.print_output_with_style(&stdout, &stderr, item.exit_code != 0)?;
+        self.print_output_with_style(&stdout, &stderr, item.data.exit_code != 0)?;
 
         Ok(())
     }
@@ -745,7 +754,7 @@ impl<'a> Runner<'a> {
             }
             // Only show the hash
             Some(TaskOutputStyle::Hash) => {
-                let hash = &self.cache.hash;
+                let hash = &self.cache.data.hash;
 
                 if !hash.is_empty() {
                     // Print to stderr so it can be captured
@@ -886,6 +895,6 @@ impl<'a> Runner<'a> {
     fn should_print_short_hash(&self) -> bool {
         // Do not include the hash while testing, as the hash
         // constantly changes and breaks our local snapshots
-        !is_test_env() && self.task.options.cache && !self.cache.hash.is_empty()
+        !is_test_env() && self.task.options.cache && !self.cache.data.hash.is_empty()
     }
 }

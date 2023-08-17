@@ -32,9 +32,17 @@ impl HashEngine {
         ContentHasher::new(label)
     }
 
+    pub fn get_archive_path(&self, hash: &str) -> PathBuf {
+        self.outputs_dir.join(format!("{hash}.tar.gz"))
+    }
+
+    pub fn get_manifest_path(&self, hash: &str) -> PathBuf {
+        self.hashes_dir.join(format!("{hash}.json"))
+    }
+
     pub fn save_manifest(&self, mut hasher: ContentHasher) -> miette::Result<String> {
         let hash = hasher.generate_hash()?;
-        let path = self.hashes_dir.join(format!("{hash}.json"));
+        let path = self.get_manifest_path(&hash);
 
         debug!(label = hasher.label, manifest = ?path, "Saving hash manifest");
 

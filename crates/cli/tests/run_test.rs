@@ -3,6 +3,7 @@ use moon_config::{
     HasherWalkStrategy, PartialCodeownersConfig, PartialHasherConfig, PartialRunnerConfig,
     PartialVcsConfig, PartialWorkspaceConfig, VcsProvider,
 };
+use moon_runner::RunTargetState;
 use moon_target::Target;
 use moon_test_utils::{
     assert_debug_snapshot, assert_snapshot, create_sandbox_with_config, get_cases_fixture_configs,
@@ -10,6 +11,7 @@ use moon_test_utils::{
     Sandbox,
 };
 use rustc_hash::FxHashMap;
+use starbase_utils::json;
 use std::fs;
 use std::path::Path;
 
@@ -42,7 +44,15 @@ where
 
 fn extract_hash_from_run(fixture: &Path, target_id: &str) -> String {
     let engine = CacheEngine::load(fixture).unwrap();
-    let cache = engine.cache_run_target_state(target_id).unwrap();
+    let cache: RunTargetState = json::read_file(
+        engine
+            .states_dir
+            .join(target_id.replace(':', "/"))
+            .join("lastRun.json"),
+    )
+    .unwrap();
+
+    // engine.cache_run_target_state(target_id).unwrap();
 
     cache.hash
 }

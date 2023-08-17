@@ -1,16 +1,16 @@
 use crate::project_events::ExtendProjectEvent;
 use crate::project_events::ExtendProjectGraphEvent;
 use crate::project_graph::{GraphType, ProjectGraph, ProjectNode};
+use crate::project_graph_cache::ProjectsState;
 use crate::project_graph_error::ProjectGraphError;
 use crate::project_graph_hash::ProjectGraphHash;
 use crate::projects_locator::locate_projects_with_globs;
 use async_recursion::async_recursion;
-use moon_cache::CacheEngine;
+use moon_cache2::CacheEngine;
 use moon_common::is_test_env;
 use moon_common::path::{to_virtual_string, WorkspaceRelativePath, WorkspaceRelativePathBuf};
 use moon_common::{color, consts, Id};
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig, WorkspaceProjects};
-use moon_hash::HashEngine;
 use moon_project::Project;
 use moon_project_builder::{DetectLanguageEvent, ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_project_type_relationships, enforce_tag_relationships};
@@ -87,7 +87,6 @@ impl<'app> ProjectGraphBuilder<'app> {
     /// and read from the file system cache when applicable.
     pub async fn generate(
         context: ProjectGraphBuilderContext<'app>,
-        hash_engine: &HashEngine,
         cache_engine: &CacheEngine,
     ) -> miette::Result<ProjectGraphBuilder<'app>> {
         let is_vcs_enabled = context
@@ -110,15 +109,17 @@ impl<'app> ProjectGraphBuilder<'app> {
         graph_contents.add_aliases(&graph.aliases);
         graph_contents.add_configs(graph.hash_required_configs().await?);
 
-        let hash = hash_engine.save_manifest_without_hasher("Project graph", &graph_contents)?;
+        let hash = cache_engine
+            .hash_engine
+            .save_manifest_without_hasher("Project graph", &graph_contents)?;
 
         debug!(hash, "Generated hash for project graph");
 
         // Check the current state and cache
-        let mut state = cache_engine.cache_projects_state()?;
-        let cache_path = cache_engine.get_state_path("partialProjectGraph.json");
+        let mut state = cache_engine.cache_state::<ProjectsState>("projects.json")?;
+        let cache_path = cache_engine.states_dir.join("partialProjectGraph.json");
 
-        if hash == state.last_hash && cache_path.exists() {
+        if hash == state.data.last_hash && cache_path.exists() {
             debug!(
                 cache = ?cache_path,
                 "Loading project graph with {} projects from cache",
@@ -139,8 +140,8 @@ impl<'app> ProjectGraphBuilder<'app> {
 
         graph.load_all().await?;
 
-        state.last_hash = hash;
-        state.projects = graph.sources.clone();
+        state.data.last_hash = hash;
+        state.data.projects = graph.sources.clone();
         state.save()?;
 
         json::write_file(cache_path, &graph, false)?;

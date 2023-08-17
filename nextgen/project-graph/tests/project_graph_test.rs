@@ -18,8 +18,8 @@ use moon_vcs::{BoxedVcs, Git};
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_events::{Emitter, EventState};
 use starbase_sandbox::{assert_snapshot, create_sandbox, Sandbox};
-use starbase_utils::fs;
 use starbase_utils::string_vec;
+use starbase_utils::{fs, json};
 use std::collections::BTreeMap;
 use std::fs::OpenOptions;
 use std::io::Write;
@@ -334,19 +334,18 @@ mod project_graph {
 
     mod cache {
         use super::*;
-        use moon_cache::{CacheEngine, ProjectsState};
-        use moon_hash::HashEngine;
+        use moon_cache2::CacheEngine;
+        use moon_project_graph::ProjectsState;
 
         const CACHE_PATH: &str = ".moon/cache/states/partialProjectGraph.json";
         const STATE_PATH: &str = ".moon/cache/states/projects.json";
 
         async fn do_generate(root: &Path) -> ProjectGraph {
-            let cache_engine = CacheEngine::load(root).unwrap();
-            let hash_engine = HashEngine::new(&cache_engine.dir);
+            let cache_engine = CacheEngine::new(root).unwrap();
             let container = GraphContainer::new_with_vcs(root);
             let context = container.create_context();
 
-            let mut builder = ProjectGraphBuilder::generate(context, &hash_engine, &cache_engine)
+            let mut builder = ProjectGraphBuilder::generate(context, &cache_engine)
                 .await
                 .unwrap();
             builder.load_all().await.unwrap();
@@ -403,7 +402,7 @@ mod project_graph {
             })
             .await;
 
-            let state = ProjectsState::load(sandbox.path().join(STATE_PATH)).unwrap();
+            let state: ProjectsState = json::read_file(sandbox.path().join(STATE_PATH)).unwrap();
 
             assert_eq!(
                 state.projects,
@@ -431,12 +430,14 @@ mod project_graph {
                 })
                 .await;
 
-                let state1 = ProjectsState::load(sandbox.path().join(STATE_PATH)).unwrap();
+                let state1: ProjectsState =
+                    json::read_file(sandbox.path().join(STATE_PATH)).unwrap();
 
                 func(&sandbox);
                 do_generate(sandbox.path()).await;
 
-                let state2 = ProjectsState::load(sandbox.path().join(STATE_PATH)).unwrap();
+                let state2: ProjectsState =
+                    json::read_file(sandbox.path().join(STATE_PATH)).unwrap();
 
                 assert_ne!(state1.last_hash, state2.last_hash);
             }

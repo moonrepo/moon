@@ -289,7 +289,7 @@ pub struct QueryTouchedFilesArgs {
 }
 
 pub async fn touched_files(args: QueryTouchedFilesArgs) -> AppResult {
-    let mut options = &mut QueryTouchedFilesOptions {
+    let options = &mut QueryTouchedFilesOptions {
         base: args.base,
         default_branch: args.default_branch,
         head: args.head,
@@ -300,7 +300,7 @@ pub async fn touched_files(args: QueryTouchedFilesArgs) -> AppResult {
     };
 
     let workspace = load_workspace().await?;
-    let files = query_touched_files(&workspace, &mut options).await?;
+    let files = query_touched_files(&workspace, options).await?;
 
     // Write to stdout directly to avoid broken pipe panics
     let term = Term::buffered_stdout();

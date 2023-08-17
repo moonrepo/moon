@@ -1,7 +1,9 @@
 // https://github.com/clap-rs/clap/tree/master/examples/derive_ref#app-attributes
 
 use crate::commands::bin::BinTool;
+use crate::commands::check::CheckArgs;
 use crate::commands::docker::DockerScaffoldArgs;
+use crate::commands::generate::GenerateArgs;
 use crate::commands::graph::dep::DepGraphArgs;
 use crate::commands::graph::project::ProjectGraphArgs;
 use crate::commands::init::InitArgs;
@@ -11,20 +13,17 @@ use crate::commands::project::ProjectArgs;
 use crate::commands::query::{
     QueryHashArgs, QueryHashDiffArgs, QueryProjectsArgs, QueryTasksArgs, QueryTouchedFilesArgs,
 };
+use crate::commands::run::RunArgs;
 use crate::commands::syncs::codeowners::SyncCodeownersArgs;
 use crate::commands::syncs::hooks::SyncHooksArgs;
 use crate::commands::task::TaskArgs;
-use crate::enums::{CacheMode, LogLevel, TouchedStatus};
+use crate::enums::{CacheMode, LogLevel};
 use clap::{Parser, Subcommand};
 use clap_complete::Shell;
-use moon_action_context::ProfileType;
-use moon_common::Id;
 use std::path::PathBuf;
 
 pub const BIN_NAME: &str = if cfg!(windows) { "moon.exe" } else { "moon" };
 
-const HEADING_AFFECTED: &str = "Affected by changes";
-const HEADING_DEBUGGING: &str = "Debugging";
 const HEADING_PARALLELISM: &str = "Parallelism and distribution";
 
 #[derive(Debug, Subcommand)]
@@ -235,32 +234,7 @@ pub enum Commands {
         alias = "g",
         rename_all = "camelCase"
     )]
-    Generate {
-        #[arg(help = "Name of template to generate")]
-        name: String,
-
-        #[arg(help = "Destination path, relative from the current working directory")]
-        dest: Option<String>,
-
-        #[arg(
-            long,
-            help = "Use the default value of all variables instead of prompting"
-        )]
-        defaults: bool,
-
-        #[arg(long, help = "Run entire generator process without writing files")]
-        dry_run: bool,
-
-        #[arg(long, help = "Force overwrite any existing files at the destination")]
-        force: bool,
-
-        #[arg(long, help = "Create a new template")]
-        template: bool,
-
-        // Variable args (after --)
-        #[arg(last = true, help = "Arguments to define as variable values")]
-        vars: Vec<String>,
-    },
+    Generate(GenerateArgs),
 
     // RUNNER
 
@@ -271,22 +245,7 @@ pub enum Commands {
         alias = "c",
         rename_all = "camelCase"
     )]
-    Check {
-        #[arg(help = "List of project IDs to explicitly check")]
-        #[clap(group = "projects")]
-        ids: Vec<Id>,
-
-        #[arg(long, help = "Run check for all projects in the workspace")]
-        #[clap(group = "projects")]
-        all: bool,
-
-        #[arg(
-            long,
-            short = 'u',
-            help = "Bypass cache and force update any existing items"
-        )]
-        update_cache: bool,
-    },
+    Check(CheckArgs),
 
     // moon ci
     #[command(
@@ -315,78 +274,7 @@ pub enum Commands {
         alias = "r",
         rename_all = "camelCase"
     )]
-    Run {
-        #[arg(required = true, help = "List of targets (scope:task) to run")]
-        targets: Vec<String>,
-
-        #[arg(
-            long,
-            help = "Run dependents of the primary targets, as well as dependencies"
-        )]
-        dependents: bool,
-
-        #[arg(
-            long,
-            short = 'f',
-            help = "Force run and ignore touched files and affected status"
-        )]
-        force: bool,
-
-        #[arg(long, short = 'i', help = "Run the target interactively")]
-        interactive: bool,
-
-        #[arg(long, help = "Focus target(s) based on the result of a query")]
-        query: Option<String>,
-
-        #[arg(
-            long,
-            short = 'u',
-            help = "Bypass cache and force update any existing items"
-        )]
-        update_cache: bool,
-
-        // Debugging
-        #[arg(
-            value_enum,
-            long,
-            help = "Record and generate a profile for ran tasks",
-            help_heading = HEADING_DEBUGGING,
-        )]
-        profile: Option<ProfileType>,
-
-        // Affected
-        #[arg(
-            long,
-            help = "Only run target if affected by touched files",
-            help_heading = HEADING_AFFECTED,
-            group = "affected-args"
-        )]
-        affected: bool,
-
-        #[arg(
-            long,
-            help = "Determine affected against remote by comparing against a base revision",
-            help_heading = HEADING_AFFECTED,
-            requires = "affected-args",
-        )]
-        remote: bool,
-
-        #[arg(
-            value_enum,
-            long,
-            help = "Filter affected files based on a touched status",
-            help_heading = HEADING_AFFECTED,
-            requires = "affected-args",
-        )]
-        status: Vec<TouchedStatus>,
-
-        // Passthrough args (after --)
-        #[arg(
-            last = true,
-            help = "Arguments to pass through to the underlying command"
-        )]
-        passthrough: Vec<String>,
-    },
+    Run(RunArgs),
 
     // OTHER
 

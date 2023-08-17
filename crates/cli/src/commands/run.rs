@@ -1,5 +1,6 @@
 use crate::enums::{CacheMode, TouchedStatus};
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
+use clap::Args;
 use miette::miette;
 use moon::{build_dep_graph, generate_project_graph, load_workspace};
 use moon_action_context::{ActionContext, ProfileType};
@@ -15,24 +16,86 @@ use starbase_styles::color;
 use std::env;
 use std::string::ToString;
 
-#[derive(Default)]
-pub struct RunOptions {
-    pub affected: bool,
-    pub concurrency: Option<usize>,
+const HEADING_AFFECTED: &str = "Affected by changes";
+const HEADING_DEBUGGING: &str = "Debugging";
+
+#[derive(Args, Debug, Default)]
+pub struct RunArgs {
+    #[arg(required = true, help = "List of targets (scope:task) to run")]
+    pub targets: Vec<String>,
+
+    #[arg(
+        long,
+        help = "Run dependents of the primary targets, as well as dependencies"
+    )]
     pub dependents: bool,
+
+    #[arg(
+        long,
+        short = 'f',
+        help = "Force run and ignore touched files and affected status"
+    )]
     pub force: bool,
+
+    #[arg(long, short = 'i', help = "Run the target interactively")]
     pub interactive: bool,
-    pub passthrough: Vec<String>,
-    pub profile: Option<ProfileType>,
+
+    #[arg(long, help = "Focus target(s) based on the result of a query")]
     pub query: Option<String>,
-    pub remote: bool,
-    pub status: Vec<TouchedStatus>,
+
+    #[arg(
+        long,
+        short = 'u',
+        help = "Bypass cache and force update any existing items"
+    )]
     pub update_cache: bool,
+
+    // Debugging
+    #[arg(
+            value_enum,
+            long,
+            help = "Record and generate a profile for ran tasks",
+            help_heading = HEADING_DEBUGGING,
+        )]
+    pub profile: Option<ProfileType>,
+
+    // Affected
+    #[arg(
+            long,
+            help = "Only run target if affected by touched files",
+            help_heading = HEADING_AFFECTED,
+            group = "affected-args"
+        )]
+    pub affected: bool,
+
+    #[arg(
+            long,
+            help = "Determine affected against remote by comparing against a base revision",
+            help_heading = HEADING_AFFECTED,
+            requires = "affected-args",
+        )]
+    pub remote: bool,
+
+    #[arg(
+            value_enum,
+            long,
+            help = "Filter affected files based on a touched status",
+            help_heading = HEADING_AFFECTED,
+            requires = "affected-args",
+        )]
+    pub status: Vec<TouchedStatus>,
+
+    // Passthrough args (after --)
+    #[arg(
+        last = true,
+        help = "Arguments to pass through to the underlying command"
+    )]
+    pub passthrough: Vec<String>,
 }
 
-pub fn is_local(options: &RunOptions) -> bool {
-    if options.affected {
-        !options.remote
+pub fn is_local(args: &RunArgs) -> bool {
+    if args.affected {
+        !args.remote
     } else {
         !is_ci()
     }
@@ -40,27 +103,28 @@ pub fn is_local(options: &RunOptions) -> bool {
 
 pub async fn run_target(
     target_ids: &[String],
-    options: RunOptions,
+    args: &RunArgs,
+    concurrency: Option<usize>,
     workspace: Workspace,
     project_graph: ProjectGraph,
 ) -> AppResult {
     // Force cache to update using write-only mode
-    if options.update_cache {
+    if args.update_cache {
         env::set_var("MOON_CACHE", CacheMode::Write.to_string());
     }
 
-    let should_run_affected = !options.force && options.affected;
+    let should_run_affected = !args.force && args.affected;
 
     // Always query for a touched files list as it'll be used by many actions
-    let touched_files = if !options.force && (options.affected || workspace.vcs.is_enabled()) {
-        let local = is_local(&options);
+    let touched_files = if !args.force && (args.affected || workspace.vcs.is_enabled()) {
+        let local = is_local(args);
 
         query_touched_files(
             &workspace,
-            &mut QueryTouchedFilesOptions {
+            &QueryTouchedFilesOptions {
                 default_branch: !local && !is_test_env(),
                 local,
-                status: options.status.clone(),
+                status: args.status.clone(),
                 ..QueryTouchedFilesOptions::default()
             },
         )
@@ -72,7 +136,7 @@ pub async fn run_target(
     // Generate a dependency graph for all the targets that need to be ran
     let mut dep_builder = build_dep_graph(&project_graph);
 
-    if let Some(query_input) = &options.query {
+    if let Some(query_input) = &args.query {
         dep_builder.set_query(query_input)?;
     }
 
@@ -90,10 +154,10 @@ pub async fn run_target(
         let targets_list = map_list(target_ids, |id| color::label(id));
 
         if should_run_affected {
-            let status_list = if options.status.is_empty() {
+            let status_list = if args.status.is_empty() {
                 color::symbol(TouchedStatus::All.to_string())
             } else {
-                map_list(&options.status, |s| color::symbol(s.to_string()))
+                map_list(&args.status, |s| color::symbol(s.to_string()))
             };
 
             println!(
@@ -103,7 +167,7 @@ pub async fn run_target(
             println!("No tasks found for target(s) {targets_list}");
         }
 
-        if let Some(query_input) = &options.query {
+        if let Some(query_input) = &args.query {
             println!("Using query {}", color::shell(query_input));
         }
 
@@ -111,14 +175,14 @@ pub async fn run_target(
     }
 
     // Interactive can only run against 1 task
-    if options.interactive && primary_targets.len() > 1 {
+    if args.interactive && primary_targets.len() > 1 {
         return Err(miette!(
             "Only 1 target can be ran as interactive. Requires a fully qualified project target."
         ));
     }
 
     // Run dependents for all primary targets
-    if options.dependents {
+    if args.dependents {
         for target in &primary_targets {
             dep_builder.run_dependents_for_target(target)?;
         }
@@ -128,10 +192,10 @@ pub async fn run_target(
     let context = ActionContext {
         affected_only: should_run_affected,
         initial_targets: FxHashSet::from_iter(target_ids.to_owned()),
-        interactive: options.interactive,
-        passthrough_args: options.passthrough,
+        interactive: args.interactive,
+        passthrough_args: args.passthrough.to_owned(),
         primary_targets: FxHashSet::from_iter(primary_targets),
-        profile: options.profile,
+        profile: args.profile.to_owned(),
         touched_files,
         workspace_root: workspace.root.clone(),
         ..ActionContext::default()
@@ -140,7 +204,7 @@ pub async fn run_target(
     let dep_graph = dep_builder.build();
     let mut pipeline = Pipeline::new(workspace, project_graph);
 
-    if let Some(concurrency) = options.concurrency {
+    if let Some(concurrency) = concurrency {
         pipeline.concurrency(concurrency);
     }
 
@@ -155,11 +219,11 @@ pub async fn run_target(
     Ok(())
 }
 
-pub async fn run(target_ids: &[String], options: RunOptions) -> AppResult {
+pub async fn run(args: RunArgs, concurrency: Option<usize>) -> AppResult {
     let mut workspace = load_workspace().await?;
     let project_graph = generate_project_graph(&mut workspace).await?;
 
-    run_target(target_ids, options, workspace, project_graph).await?;
+    run_target(&args.targets, &args, concurrency, workspace, project_graph).await?;
 
     Ok(())
 }

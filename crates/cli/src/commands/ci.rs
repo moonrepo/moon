@@ -52,7 +52,7 @@ async fn gather_touched_files(
 
     let results = query_touched_files(
         workspace,
-        &mut QueryTouchedFilesOptions {
+        &QueryTouchedFilesOptions {
             default_branch: true,
             base: options.base.clone(),
             head: options.head.clone(),

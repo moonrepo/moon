@@ -5,19 +5,19 @@ mod helpers;
 pub mod queries;
 
 use crate::commands::bin::bin;
-use crate::commands::check::{check, CheckOptions};
+use crate::commands::check::check;
 use crate::commands::ci::{ci, CiOptions};
 use crate::commands::clean::{clean, CleanOptions};
 use crate::commands::completions;
 use crate::commands::docker;
-use crate::commands::generate::{generate, GenerateOptions};
+use crate::commands::generate::generate;
 use crate::commands::graph::{dep::dep_graph, project::project_graph};
 use crate::commands::init::init;
 use crate::commands::migrate;
 use crate::commands::node;
 use crate::commands::project::project;
 use crate::commands::query;
-use crate::commands::run::{run, RunOptions};
+use crate::commands::run::run;
 use crate::commands::setup::setup;
 use crate::commands::sync::sync;
 use crate::commands::syncs;
@@ -78,16 +78,16 @@ pub async fn run_cli() -> AppResult {
     App::setup_diagnostics();
 
     // Create app and parse arguments
-    let args = CLI::parse();
+    let global_args = CLI::parse();
 
-    setup_colors(args.color);
-    setup_logging(&args.log);
-    setup_caching(&args.cache);
+    setup_colors(global_args.color);
+    setup_logging(&global_args.log);
+    setup_caching(&global_args.cache);
 
     App::setup_tracing_with_options(TracingOptions {
         filter_modules: string_vec!["moon", "proto", "schematic", "starbase"],
         log_env: "STARBASE_LOG".into(),
-        log_file: args.log_file,
+        log_file: global_args.log_file,
         // test_env: "MOON_TEST".into(),
         ..TracingOptions::default()
     });
@@ -96,7 +96,7 @@ pub async fn run_cli() -> AppResult {
 
     // Check for new version
     let version_handle = if matches!(
-        &args.command,
+        &global_args.command,
         Commands::Check { .. } | Commands::Ci { .. } | Commands::Run { .. } | Commands::Sync { .. }
     ) {
         Some(tokio::spawn(check_for_new_version()))
@@ -105,7 +105,7 @@ pub async fn run_cli() -> AppResult {
     };
 
     // Match and run subcommand
-    let result = match args.command {
+    let result = match global_args.command {
         Commands::Bin { tool } => bin(tool).await,
         Commands::Ci {
             base,
@@ -115,28 +115,14 @@ pub async fn run_cli() -> AppResult {
         } => {
             ci(CiOptions {
                 base,
-                concurrency: args.concurrency,
+                concurrency: global_args.concurrency,
                 head,
                 job,
                 job_total,
             })
             .await
         }
-        Commands::Check {
-            ids,
-            all,
-            update_cache,
-        } => {
-            check(
-                &ids,
-                CheckOptions {
-                    all,
-                    concurrency: args.concurrency,
-                    update_cache,
-                },
-            )
-            .await
-        }
+        Commands::Check(args) => check(args, global_args.concurrency).await,
         Commands::Clean { lifetime } => {
             clean(CleanOptions {
                 cache_lifetime: lifetime.to_owned(),
@@ -150,28 +136,7 @@ pub async fn run_cli() -> AppResult {
             DockerCommands::Scaffold(args) => docker::scaffold(args).await,
             DockerCommands::Setup => docker::setup().await,
         },
-        Commands::Generate {
-            name,
-            dest,
-            defaults,
-            dry_run,
-            force,
-            template,
-            vars,
-        } => {
-            generate(
-                name,
-                GenerateOptions {
-                    defaults,
-                    dest,
-                    dry_run,
-                    force,
-                    template,
-                    vars,
-                },
-            )
-            .await
-        }
+        Commands::Generate(args) => generate(args).await,
         Commands::Init(args) => init(args).await,
         Commands::Migrate {
             command,
@@ -196,37 +161,7 @@ pub async fn run_cli() -> AppResult {
             QueryCommands::Tasks(args) => query::tasks(args).await,
             QueryCommands::TouchedFiles(args) => query::touched_files(args).await,
         },
-        Commands::Run {
-            affected,
-            dependents,
-            force,
-            interactive,
-            passthrough,
-            profile,
-            query,
-            remote,
-            status,
-            targets,
-            update_cache,
-        } => {
-            run(
-                &targets,
-                RunOptions {
-                    affected,
-                    concurrency: args.concurrency,
-                    dependents,
-                    force,
-                    interactive,
-                    passthrough,
-                    profile,
-                    query,
-                    remote,
-                    status,
-                    update_cache,
-                },
-            )
-            .await
-        }
+        Commands::Run(args) => run(args, global_args.concurrency).await,
         Commands::Setup => setup().await,
         Commands::Sync { command } => match command {
             Some(SyncCommands::Codeowners(args)) => syncs::codeowners::sync(args).await,

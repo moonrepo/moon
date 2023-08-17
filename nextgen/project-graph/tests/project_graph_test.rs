@@ -334,7 +334,7 @@ mod project_graph {
 
     mod cache {
         use super::*;
-        use moon_cache2::CacheEngine;
+        use moon_cache::CacheEngine;
         use moon_project_graph::ProjectsState;
 
         const CACHE_PATH: &str = ".moon/cache/states/partialProjectGraph.json";

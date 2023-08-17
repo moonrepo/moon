@@ -6,7 +6,7 @@ use crate::project_graph_error::ProjectGraphError;
 use crate::project_graph_hash::ProjectGraphHash;
 use crate::projects_locator::locate_projects_with_globs;
 use async_recursion::async_recursion;
-use moon_cache2::CacheEngine;
+use moon_cache::CacheEngine;
 use moon_common::is_test_env;
 use moon_common::path::{to_virtual_string, WorkspaceRelativePath, WorkspaceRelativePathBuf};
 use moon_common::{color, consts, Id};

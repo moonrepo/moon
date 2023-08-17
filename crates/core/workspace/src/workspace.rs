@@ -1,5 +1,5 @@
 use crate::errors::WorkspaceError;
-use moon_cache2::CacheEngine;
+use moon_cache::CacheEngine;
 use moon_common::consts;
 use moon_config::{InheritedTasksConfig, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_hash::HashEngine;

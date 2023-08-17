@@ -3221,7 +3221,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_cache2"
+name = "moon_cache"
 version = "0.1.0"
 dependencies = [
  "miette",
@@ -3794,7 +3794,7 @@ version = "0.1.0"
 dependencies = [
  "async-recursion",
  "miette",
- "moon_cache2",
+ "moon_cache",
  "moon_common",
  "moon_config",
  "moon_hash",
@@ -4171,7 +4171,7 @@ name = "moon_workspace"
 version = "0.1.0"
 dependencies = [
  "miette",
- "moon_cache2",
+ "moon_cache",
  "moon_common",
  "moon_config",
  "moon_hash",

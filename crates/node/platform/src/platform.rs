@@ -17,7 +17,7 @@ use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
 use moon_tool::{Tool, ToolManager};
-use moon_typescript_platform::TypeScriptTargetHasher;
+use moon_typescript_platform::TypeScriptTargetHash;
 use moon_utils::async_trait;
 use proto::Proto;
 use rustc_hash::FxHashMap;
@@ -397,7 +397,7 @@ impl Platform for NodePlatform {
         hashset.hash(node_hasher);
 
         if let Some(typescript_config) = &self.typescript_config {
-            let ts_hasher = TypeScriptTargetHasher::generate(
+            let ts_hasher = TypeScriptTargetHash::generate(
                 typescript_config,
                 &self.workspace_root,
                 &project.root,

@@ -1,7 +1,7 @@
-mod bins_hasher;
-mod manifest_hasher;
+mod bins_hash;
+mod manifest_hash;
 mod rust_platform;
-mod target_hasher;
+mod target_hash;
 
 pub use rust_platform::*;
 

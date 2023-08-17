@@ -1,22 +1,20 @@
+use serde::Serialize;
 use sha2::{Digest, Sha256};
 use starbase_utils::json::JsonError;
 use tracing::{debug, trace};
 
-pub trait ContentHashable: erased_serde::Serialize {}
-
-erased_serde::serialize_trait_object!(ContentHashable);
-
-pub struct ContentHasher<'owner> {
+pub struct ContentHasher {
     content_cache: Option<String>,
-    contents: Vec<&'owner dyn ContentHashable>,
+    contents: Vec<String>,
     hash_cache: Option<String>,
-    pub label: &'owner str,
+
+    pub label: String,
 }
 
-unsafe impl<'owner> Send for ContentHasher<'owner> {}
-unsafe impl<'owner> Sync for ContentHasher<'owner> {}
+unsafe impl Send for ContentHasher {}
+unsafe impl Sync for ContentHasher {}
 
-impl<'owner> ContentHasher<'owner> {
+impl ContentHasher {
     pub fn new(label: &str) -> ContentHasher {
         debug!(label, "Created new content hasher");
 
@@ -24,7 +22,7 @@ impl<'owner> ContentHasher<'owner> {
             content_cache: None,
             contents: Vec::new(),
             hash_cache: None,
-            label,
+            label: label.to_owned(),
         }
     }
 
@@ -32,7 +30,7 @@ impl<'owner> ContentHasher<'owner> {
         if let Some(hash) = &self.hash_cache {
             debug!(
                 hash,
-                label = self.label,
+                label = &self.label,
                 "Using cached content hash (previously generated)"
             );
 
@@ -45,27 +43,30 @@ impl<'owner> ContentHasher<'owner> {
 
         let hash = format!("{:x}", hasher.finalize());
 
-        debug!(label = self.label, hash, "Generated content hash");
+        debug!(label = &self.label, hash, "Generated content hash");
 
         self.hash_cache = Some(hash.clone());
 
         Ok(hash)
     }
 
-    pub fn hash_content<T: ContentHashable>(&mut self, content: &'owner T) {
-        trace!(label = self.label, "Adding content to hasher");
+    pub fn hash_content<T: Serialize>(&mut self, content: T) -> miette::Result<()> {
+        trace!(label = &self.label, "Adding content to hasher");
 
-        self.contents.push(content);
+        self.contents.push(
+            serde_json::to_string_pretty(&content)
+                .map_err(|error| JsonError::Stringify { error })?,
+        );
+
         self.content_cache = None;
         self.hash_cache = None;
+
+        Ok(())
     }
 
     pub fn serialize(&mut self) -> miette::Result<&String> {
         if self.content_cache.is_none() {
-            self.content_cache = Some(
-                serde_json::to_string_pretty(&self.contents)
-                    .map_err(|error| JsonError::Stringify { error })?,
-            );
+            self.content_cache = Some(format!("[{}]", self.contents.join(",")));
         }
 
         Ok(self.content_cache.as_ref().unwrap())

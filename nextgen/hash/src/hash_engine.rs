@@ -1,4 +1,5 @@
-use crate::hasher::{ContentHashable, ContentHasher};
+use crate::hasher::ContentHasher;
+use serde::Serialize;
 use starbase_utils::fs;
 use std::path::{Path, PathBuf};
 use tracing::debug;
@@ -28,7 +29,7 @@ impl HashEngine {
         }
     }
 
-    pub fn create_hasher<'hasher>(&self, label: &'hasher str) -> ContentHasher<'hasher> {
+    pub fn create_hasher(&self, label: &str) -> ContentHasher {
         ContentHasher::new(label)
     }
 
@@ -51,13 +52,13 @@ impl HashEngine {
         Ok(hash)
     }
 
-    pub fn save_manifest_without_hasher<'hasher, T: ContentHashable>(
+    pub fn save_manifest_without_hasher<T: Serialize>(
         &self,
-        label: &'hasher str,
-        content: &'hasher T,
+        label: &str,
+        content: T,
     ) -> miette::Result<String> {
         let mut hasher = ContentHasher::new(label);
-        hasher.hash_content(content);
+        hasher.hash_content(content)?;
 
         self.save_manifest(hasher)
     }

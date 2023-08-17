@@ -5,7 +5,7 @@ use moon_config::{
     DependencyConfig, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap,
     ProjectsSourcesMap, TasksConfigsMap,
 };
-use moon_hasher::HashSet;
+use moon_hash::ContentHasher;
 use moon_platform_runtime::{Runtime, Version};
 use moon_process::Command;
 use moon_project::Project;
@@ -136,7 +136,7 @@ pub trait Platform: Debug + Send + Sync {
     async fn hash_manifest_deps(
         &self,
         manifest_path: &Path,
-        hashset: &mut HashSet,
+        hasher: &mut ContentHasher,
         hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
         Ok(())
@@ -148,7 +148,7 @@ pub trait Platform: Debug + Send + Sync {
         &self,
         project: &Project,
         runtime: &Runtime,
-        hashset: &mut HashSet,
+        hasher: &mut ContentHasher,
         hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
         Ok(())

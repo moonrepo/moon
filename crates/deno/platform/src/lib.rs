@@ -1,6 +1,7 @@
 mod actions;
-mod bins_hasher;
+mod bins_hash;
 mod platform;
-mod target_hasher;
+mod deps_hash;
+mod target_hash;
 
 pub use platform::*;

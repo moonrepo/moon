@@ -1,6 +1,6 @@
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{is_docker_container, Id};
-use moon_hash::{content_hashable, ContentHashable};
+use moon_hash::content_hashable;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::env;
@@ -50,5 +50,3 @@ impl<'cfg> ProjectGraphHash<'cfg> {
         self.sources.extend(sources.iter().map(|(k, v)| (k, v)));
     }
 }
-
-impl<'graph> ContentHashable for ProjectGraphHash<'graph> {}

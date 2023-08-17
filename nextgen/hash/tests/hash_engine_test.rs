@@ -9,18 +9,18 @@ content_hashable!(
     }
 );
 
-impl<'l> ContentHashable for Content<'l> {}
-
 #[test]
 fn saves_manifest() {
     let sandbox = create_empty_sandbox();
     let engine = HashEngine::new(sandbox.path());
 
     let mut hasher = ContentHasher::new("test");
-    hasher.hash_content(&Content {
-        one: "abc",
-        two: 123,
-    });
+    hasher
+        .hash_content(Content {
+            one: "abc",
+            two: 123,
+        })
+        .unwrap();
 
     let hash = engine.save_manifest(hasher).unwrap();
 
@@ -55,7 +55,7 @@ fn saves_manifest_without_hasher() {
     let hash = engine
         .save_manifest_without_hasher(
             "test",
-            &Content {
+            Content {
                 one: "abc",
                 two: 123,
             },

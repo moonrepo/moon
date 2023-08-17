@@ -1,5 +1,5 @@
 use moon_config::VcsManager;
-use moon_hash::{content_hashable, ContentHashable};
+use moon_hash::content_hashable;
 use std::collections::BTreeMap;
 
 content_hashable!(
@@ -21,5 +21,3 @@ impl<'cfg> HooksHash<'cfg> {
         self.hooks.insert(name, commands);
     }
 }
-
-impl<'cfg> ContentHashable for HooksHash<'cfg> {}

@@ -1,4 +1,4 @@
-use moon_hash::{content_hashable, ContentHashable, ContentHasher};
+use moon_hash::{content_hashable, ContentHasher};
 
 content_hashable!(
     struct ContentOne<'l> {
@@ -6,15 +6,11 @@ content_hashable!(
     }
 );
 
-impl<'l> ContentHashable for ContentOne<'l> {}
-
 content_hashable!(
     struct ContentTwo {
         pub two: usize,
     }
 );
-
-impl ContentHashable for ContentTwo {}
 
 #[test]
 fn hashes_empty() {
@@ -29,7 +25,7 @@ fn hashes_empty() {
 #[test]
 fn hashes_with_1_content() {
     let mut hasher = ContentHasher::new("test");
-    hasher.hash_content(&ContentOne { one: "abc" });
+    hasher.hash_content(ContentOne { one: "abc" }).unwrap();
 
     assert_eq!(
         hasher.generate_hash().unwrap(),
@@ -37,7 +33,7 @@ fn hashes_with_1_content() {
     );
 
     let mut hasher = ContentHasher::new("test");
-    hasher.hash_content(&ContentOne { one: "xyz" });
+    hasher.hash_content(ContentOne { one: "xyz" }).unwrap();
 
     assert_eq!(
         hasher.generate_hash().unwrap(),
@@ -48,8 +44,8 @@ fn hashes_with_1_content() {
 #[test]
 fn hashes_with_2_content() {
     let mut hasher = ContentHasher::new("test");
-    hasher.hash_content(&ContentOne { one: "abc" });
-    hasher.hash_content(&ContentTwo { two: 123 });
+    hasher.hash_content(ContentOne { one: "abc" }).unwrap();
+    hasher.hash_content(ContentTwo { two: 123 }).unwrap();
 
     assert_eq!(
         hasher.generate_hash().unwrap(),
@@ -57,8 +53,8 @@ fn hashes_with_2_content() {
     );
 
     let mut hasher = ContentHasher::new("test");
-    hasher.hash_content(&ContentOne { one: "xyz" });
-    hasher.hash_content(&ContentTwo { two: 789 });
+    hasher.hash_content(ContentOne { one: "xyz" }).unwrap();
+    hasher.hash_content(ContentTwo { two: 789 }).unwrap();
 
     assert_eq!(
         hasher.generate_hash().unwrap(),
@@ -69,7 +65,7 @@ fn hashes_with_2_content() {
 #[test]
 fn serializes_with_1_content() {
     let mut hasher = ContentHasher::new("test");
-    hasher.hash_content(&ContentOne { one: "abc" });
+    hasher.hash_content(ContentOne { one: "abc" }).unwrap();
 
     assert_eq!(
         hasher.serialize().unwrap(),
@@ -81,7 +77,7 @@ fn serializes_with_1_content() {
     );
 
     let mut hasher = ContentHasher::new("test");
-    hasher.hash_content(&ContentOne { one: "xyz" });
+    hasher.hash_content(ContentOne { one: "xyz" }).unwrap();
 
     assert_eq!(
         hasher.serialize().unwrap(),
@@ -96,8 +92,8 @@ fn serializes_with_1_content() {
 #[test]
 fn serializes_with_2_content() {
     let mut hasher = ContentHasher::new("test");
-    hasher.hash_content(&ContentOne { one: "abc" });
-    hasher.hash_content(&ContentTwo { two: 123 });
+    hasher.hash_content(ContentOne { one: "abc" }).unwrap();
+    hasher.hash_content(ContentTwo { two: 123 }).unwrap();
 
     assert_eq!(
         hasher.serialize().unwrap(),
@@ -112,8 +108,8 @@ fn serializes_with_2_content() {
     );
 
     let mut hasher = ContentHasher::new("test");
-    hasher.hash_content(&ContentOne { one: "xyz" });
-    hasher.hash_content(&ContentTwo { two: 789 });
+    hasher.hash_content(ContentOne { one: "xyz" }).unwrap();
+    hasher.hash_content(ContentTwo { two: 789 }).unwrap();
 
     assert_eq!(
         hasher.serialize().unwrap(),

@@ -1,5 +1,5 @@
 use moon_config::{CodeownersConfig, OwnersConfig};
-use moon_hash::{content_hashable, ContentHashable};
+use moon_hash::content_hashable;
 use std::collections::BTreeMap;
 
 content_hashable!(
@@ -21,5 +21,3 @@ impl<'cfg> CodeownersHash<'cfg> {
         self.projects.insert(name, config);
     }
 }
-
-impl<'cfg> ContentHashable for CodeownersHash<'cfg> {}

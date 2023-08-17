@@ -1,6 +1,8 @@
+mod deps_hash;
 mod hash_engine;
 mod hasher;
 
+pub use deps_hash::*;
 pub use hash_engine::*;
 pub use hasher::*;
 

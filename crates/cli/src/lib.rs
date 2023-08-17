@@ -6,8 +6,8 @@ pub mod queries;
 
 use crate::commands::bin::bin;
 use crate::commands::check::check;
-use crate::commands::ci::{ci, CiOptions};
-use crate::commands::clean::{clean, CleanOptions};
+use crate::commands::ci::ci;
+use crate::commands::clean::clean;
 use crate::commands::completions;
 use crate::commands::docker;
 use crate::commands::generate::generate;
@@ -107,28 +107,9 @@ pub async fn run_cli() -> AppResult {
     // Match and run subcommand
     let result = match global_args.command {
         Commands::Bin { tool } => bin(tool).await,
-        Commands::Ci {
-            base,
-            head,
-            job,
-            job_total,
-        } => {
-            ci(CiOptions {
-                base,
-                concurrency: global_args.concurrency,
-                head,
-                job,
-                job_total,
-            })
-            .await
-        }
+        Commands::Ci(args) => ci(args, global_args.concurrency).await,
         Commands::Check(args) => check(args, global_args.concurrency).await,
-        Commands::Clean { lifetime } => {
-            clean(CleanOptions {
-                cache_lifetime: lifetime.to_owned(),
-            })
-            .await
-        }
+        Commands::Clean(args) => clean(args).await,
         Commands::Completions { shell } => completions::completions(shell).await,
         Commands::DepGraph(args) => dep_graph(args).await,
         Commands::Docker { command } => match command {

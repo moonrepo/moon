@@ -2,6 +2,8 @@
 
 use crate::commands::bin::BinTool;
 use crate::commands::check::CheckArgs;
+use crate::commands::ci::CiArgs;
+use crate::commands::clean::CleanArgs;
 use crate::commands::docker::DockerScaffoldArgs;
 use crate::commands::generate::GenerateArgs;
 use crate::commands::graph::dep::DepGraphArgs;
@@ -23,8 +25,6 @@ use clap_complete::Shell;
 use std::path::PathBuf;
 
 pub const BIN_NAME: &str = if cfg!(windows) { "moon.exe" } else { "moon" };
-
-const HEADING_PARALLELISM: &str = "Parallelism and distribution";
 
 #[derive(Debug, Subcommand)]
 pub enum DockerCommands {
@@ -253,19 +253,7 @@ pub enum Commands {
         about = "Run all affected projects and tasks in a CI environment.",
         rename_all = "camelCase"
     )]
-    Ci {
-        #[arg(long, help = "Base branch, commit, or revision to compare against")]
-        base: Option<String>,
-
-        #[arg(long, help = "Current branch, commit, or revision to compare with")]
-        head: Option<String>,
-
-        #[arg(long, help = "Index of the current job", help_heading = HEADING_PARALLELISM)]
-        job: Option<usize>,
-
-        #[arg(long, help = "Total amount of jobs to run", help_heading = HEADING_PARALLELISM)]
-        job_total: Option<usize>,
-    },
+    Ci(CiArgs),
 
     // moon run [...targets]
     #[command(
@@ -283,10 +271,7 @@ pub enum Commands {
         name = "clean",
         about = "Clean the workspace and delete any stale or invalid artifacts."
     )]
-    Clean {
-        #[arg(long, default_value = "7 days", help = "Lifetime of cached artifacts")]
-        lifetime: String,
-    },
+    Clean(CleanArgs),
 
     // moon docker <operation>
     #[command(

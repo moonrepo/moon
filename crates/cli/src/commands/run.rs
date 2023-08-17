@@ -44,8 +44,8 @@ pub struct RunArgs {
     pub query: Option<String>,
 
     #[arg(
-        long,
         short = 'u',
+        long = "updateCache",
         help = "Bypass cache and force update any existing items"
     )]
     pub update_cache: bool,

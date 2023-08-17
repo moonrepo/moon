@@ -31,7 +31,7 @@ pub struct CiArgs {
     #[arg(long, help = "Index of the current job", help_heading = HEADING_PARALLELISM)]
     job: Option<usize>,
 
-    #[arg(long, help = "Total amount of jobs to run", help_heading = HEADING_PARALLELISM)]
+    #[arg(long = "jobTotal", help = "Total amount of jobs to run", help_heading = HEADING_PARALLELISM)]
     job_total: Option<usize>,
 }
 

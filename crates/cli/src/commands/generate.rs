@@ -29,7 +29,10 @@ pub struct GenerateArgs {
     )]
     defaults: bool,
 
-    #[arg(long, help = "Run entire generator process without writing files")]
+    #[arg(
+        long = "dryRun",
+        help = "Run entire generator process without writing files"
+    )]
     dry_run: bool,
 
     #[arg(long, help = "Force overwrite any existing files at the destination")]

@@ -270,7 +270,7 @@ pub struct QueryTouchedFilesArgs {
     base: Option<String>,
 
     #[arg(
-        long,
+        long = "defaultBranch",
         help = "When on the default branch, compare against the previous revision"
     )]
     default_branch: bool,

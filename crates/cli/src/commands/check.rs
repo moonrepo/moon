@@ -19,8 +19,8 @@ pub struct CheckArgs {
     all: bool,
 
     #[arg(
-        long,
         short = 'u',
+        long = "updateCache",
         help = "Bypass cache and force update any existing items"
     )]
     update_cache: bool,

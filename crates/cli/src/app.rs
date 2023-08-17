@@ -94,17 +94,12 @@ pub enum QueryCommands {
     )]
     Projects(QueryProjectsArgs),
 
-    #[command(
-        name = "tasks",
-        about = "List all available projects & their tasks.",
-        rename_all = "camelCase"
-    )]
+    #[command(name = "tasks", about = "List all available projects & their tasks.")]
     Tasks(QueryTasksArgs),
 
     #[command(
         name = "touched-files",
-        about = "Query for touched files between revisions.",
-        rename_all = "camelCase"
+        about = "Query for touched files between revisions."
     )]
     TouchedFiles(QueryTouchedFilesArgs),
 }
@@ -146,8 +141,7 @@ pub enum Commands {
     // moon init
     #[command(
         name = "init",
-        about = "Initialize a new tool or a new moon repository, and scaffold config files.",
-        rename_all = "camelCase"
+        about = "Initialize a new tool or a new moon repository, and scaffold config files."
     )]
     Init(InitArgs),
 
@@ -231,8 +225,7 @@ pub enum Commands {
     #[command(
         name = "generate",
         about = "Generate and scaffold files from a pre-defined template.",
-        alias = "g",
-        rename_all = "camelCase"
+        alias = "g"
     )]
     Generate(GenerateArgs),
 
@@ -242,16 +235,14 @@ pub enum Commands {
     #[command(
         name = "check",
         about = "Run all build and test related tasks for the current project.",
-        alias = "c",
-        rename_all = "camelCase"
+        alias = "c"
     )]
     Check(CheckArgs),
 
     // moon ci
     #[command(
         name = "ci",
-        about = "Run all affected projects and tasks in a CI environment.",
-        rename_all = "camelCase"
+        about = "Run all affected projects and tasks in a CI environment."
     )]
     Ci(CiArgs),
 
@@ -259,8 +250,7 @@ pub enum Commands {
     #[command(
         name = "run",
         about = "Run one or many project tasks and their dependent tasks.",
-        alias = "r",
-        rename_all = "camelCase"
+        alias = "r"
     )]
     Run(RunArgs),
 

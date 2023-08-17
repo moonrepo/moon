@@ -32,7 +32,7 @@ pub struct QueryTouchedFilesResult {
 /// Query a list of files that have been modified between branches.
 pub async fn query_touched_files(
     workspace: &Workspace,
-    options: &mut QueryTouchedFilesOptions,
+    options: &QueryTouchedFilesOptions,
 ) -> AppResult<FxHashSet<WorkspaceRelativePathBuf>> {
     debug!(target: LOG_TARGET, "Querying for touched files");
 

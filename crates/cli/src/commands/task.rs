@@ -1,3 +1,4 @@
+use clap::Args;
 use console::Term;
 use miette::{miette, IntoDiagnostic};
 use moon::{build_project_graph, load_workspace};
@@ -6,8 +7,17 @@ use moon_terminal::{ExtendedTerm, Label};
 use starbase::AppResult;
 use starbase_styles::color;
 
-pub async fn task(target: Target, json: bool) -> AppResult {
-    let Some(project_id) = target.scope_id else {
+#[derive(Args, Debug)]
+pub struct TaskArgs {
+    #[arg(help = "Target of task to display")]
+    target: Target,
+
+    #[arg(long, help = "Print in JSON format")]
+    json: bool,
+}
+
+pub async fn task(args: TaskArgs) -> AppResult {
+    let Some(project_id) = args.target.scope_id else {
         return Err(miette!("A project ID is required."));
     };
 
@@ -17,9 +27,9 @@ pub async fn task(target: Target, json: bool) -> AppResult {
 
     let project_graph = project_graph_builder.build().await?;
     let project = project_graph.get(&project_id)?;
-    let task = project.get_task(&target.task_id)?;
+    let task = project.get_task(&args.target.task_id)?;
 
-    if json {
+    if args.json {
         println!("{}", serde_json::to_string_pretty(&task).into_diagnostic()?);
 
         return Ok(());
@@ -28,8 +38,8 @@ pub async fn task(target: Target, json: bool) -> AppResult {
     let term = Term::buffered_stdout();
 
     term.line("")?;
-    term.render_label(Label::Brand, &target.id)?;
-    term.render_entry("Task", color::id(&target.task_id))?;
+    term.render_label(Label::Brand, &args.target.id)?;
+    term.render_entry("Task", color::id(&args.target.task_id))?;
     term.render_entry("Project", color::id(&project_id))?;
     term.render_entry("Platform", term.format(&task.platform))?;
     term.render_entry("Type", term.format(&task.type_of))?;

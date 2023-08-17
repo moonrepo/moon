@@ -11,7 +11,8 @@ pub fn check_yml_extension(path: &Path) -> PathBuf {
     if yaml_path.exists() {
         warn!(
             config = ?yaml_path,
-            "Found a config file with the {} extension, please use {} instead. We'll continue to load the file, but this should be changed.",
+            "{} Found a config file with the {} extension, please use {} instead. We'll continue to load the file, but this will cause unintended side-effects!",
+            color::invalid("WARN"),
             color::file(".yaml"),
             color::file(".yml"),
         );

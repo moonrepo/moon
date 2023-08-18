@@ -182,13 +182,17 @@ impl Template {
                         let prev: json::JsonValue = json::read_file(&file.dest_path)?;
                         let next: json::JsonValue = json::read_file(&file.source_path)?;
 
-                        json::write_with_config(&file.dest_path, json::merge(&prev, &next), true)?;
+                        json::write_file_with_config(
+                            &file.dest_path,
+                            json::merge(&prev, &next),
+                            true,
+                        )?;
                     }
                     Some("yaml") => {
                         let prev: yaml::YamlValue = yaml::read_file(&file.dest_path)?;
                         let next: yaml::YamlValue = yaml::read_file(&file.source_path)?;
 
-                        yaml::write_with_config(&file.dest_path, &yaml::merge(&prev, &next))?;
+                        yaml::write_file_with_config(&file.dest_path, &yaml::merge(&prev, &next))?;
                     }
                     _ => {}
                 };

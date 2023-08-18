@@ -93,7 +93,7 @@ pub async fn from_package_json(
         Ok(true)
     })?;
 
-    yaml::write_with_config(project.root.join(CONFIG_PROJECT_FILENAME), &partial_config)?;
+    yaml::write_file_with_config(project.root.join(CONFIG_PROJECT_FILENAME), &partial_config)?;
 
     Ok(())
 }

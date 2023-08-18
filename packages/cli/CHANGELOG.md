@@ -5,6 +5,8 @@
 #### 🚀 Updates
 
 - Added [git worktree](https://git-scm.com/docs/git-worktree) support (experimental).
+- Added an `interactive` field to task options. This marks tasks as interactive, so they can use
+  stdin.
 - Added an `extends` field to task configurations. This allows tasks to extend and inherit settings
   from sibling tasks.
 - Updated task `env` values to support token functions and variables.

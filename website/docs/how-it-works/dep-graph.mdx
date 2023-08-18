@@ -83,10 +83,15 @@ orchestrated and executed by running in topological order _and_ in batches via a
 > This action depends on the previous actions, as the toolchain is used for running the task's
 > command, and the outcome of the task is best when the project state is healthy and deterministic.
 
+### Run interactive target
+
+Like the base run target, but runs the [task interactively](../concepts/task#interactive) with stdin
+capabilities. All interactive tasks are run in isolation in the graph.
+
 ### Run persistent target
 
-Like the base run target, but runs the task in a persistent process that never exits. All persistent
-tasks are run in parallel as the last batch in the graph.
+Like the base run target, but runs the [task in a persistent process](../concepts/task#persistent)
+that never exits. All persistent tasks are run in parallel as the last batch in the graph.
 
 ## What is the graph used for?
 

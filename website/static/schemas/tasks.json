@@ -272,6 +272,16 @@
             }
           ]
         },
+        "interactive": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "mergeArgs": {
           "anyOf": [
             {

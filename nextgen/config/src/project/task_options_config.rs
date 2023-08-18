@@ -104,6 +104,8 @@ cacheable!(
 
         pub env_file: Option<TaskOptionEnvFile>,
 
+        pub interactive: Option<bool>,
+
         pub merge_args: Option<TaskMergeStrategy>,
 
         pub merge_deps: Option<TaskMergeStrategy>,

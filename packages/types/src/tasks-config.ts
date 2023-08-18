@@ -16,6 +16,7 @@ export interface PartialTaskOptionsConfig {
 	affectedFiles?: TaskOptionAffectedFiles | null;
 	cache?: boolean | null;
 	envFile?: TaskOptionEnvFile | null;
+	interactive?: boolean | null;
 	mergeArgs?: TaskMergeStrategy | null;
 	mergeDeps?: TaskMergeStrategy | null;
 	mergeEnv?: TaskMergeStrategy | null;
@@ -64,6 +65,7 @@ export interface TaskOptionsConfig {
 	affectedFiles: TaskOptionAffectedFiles | null;
 	cache: boolean | null;
 	envFile: TaskOptionEnvFile | null;
+	interactive: boolean | null;
 	mergeArgs: TaskMergeStrategy | null;
 	mergeDeps: TaskMergeStrategy | null;
 	mergeEnv: TaskMergeStrategy | null;

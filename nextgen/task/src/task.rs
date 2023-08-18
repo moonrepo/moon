@@ -17,6 +17,9 @@ cacheable!(
         // Inputs were configured explicitly as `[]`
         pub empty_inputs: bool,
 
+        // Has the task (and parent project) been expanded
+        pub expanded: bool,
+
         // Was configured as a local running task
         pub local: bool,
     }
@@ -159,6 +162,11 @@ impl Task {
     /// Return true if the task is a "build" type.
     pub fn is_build_type(&self) -> bool {
         matches!(self.type_of, TaskType::Build) || !self.outputs.is_empty()
+    }
+
+    /// Return true if the task has been expanded.
+    pub fn is_expanded(&self) -> bool {
+        self.flags.expanded
     }
 
     /// Return true if the task is a "no operation" and does nothing.

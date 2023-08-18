@@ -574,11 +574,10 @@ tasks:
 
 <HeadingApiLink to="/api/types/interface/TaskConfig#outputs" />
 
-The `outputs` field is a list of files and folders (using
-[project relative file patterns](../concepts/file-pattern#project-relative)) that are _created_ as a
-result of executing this task, typically from a build or compilation related task. Outputs are
-necessary for [incremental caching and hydration](../concepts/cache). If you'd prefer to avoid that
-functionality, omit this field.
+The `outputs` field is a list of [files and folders](../concepts/file-pattern#project-relative) that
+are _created_ as a result of executing this task, typically from a build or compilation related
+task. Outputs are necessary for [incremental caching and hydration](../concepts/cache). If you'd
+prefer to avoid that functionality, omit this field.
 
 ```yaml title="moon.yml" {4-6}
 tasks:
@@ -598,6 +597,7 @@ tasks:
     command: 'webpack'
     outputs:
       - 'build/**/*.js'
+      - '!build/internal.js'
 ```
 
 :::caution

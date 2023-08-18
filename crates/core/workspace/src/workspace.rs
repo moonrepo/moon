@@ -212,7 +212,7 @@ impl Workspace {
 
         // Setup components
         let cache_engine = CacheEngine::new(&root_dir)?;
-        let hash_engine = HashEngine::new(&cache_engine.cache_dir);
+        let hash_engine = HashEngine::new(&cache_engine.cache_dir)?;
         let vcs = Git::load(
             &root_dir,
             &config.vcs.default_branch,

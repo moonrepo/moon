@@ -343,7 +343,7 @@ mod project_graph {
 
         async fn do_generate(root: &Path) -> ProjectGraph {
             let cache_engine = CacheEngine::new(root).unwrap();
-            let hash_engine = HashEngine::new(&cache_engine.cache_dir);
+            let hash_engine = HashEngine::new(&cache_engine.cache_dir).unwrap();
             let container = GraphContainer::new_with_vcs(root);
             let context = container.create_context();
 

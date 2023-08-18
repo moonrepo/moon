@@ -104,6 +104,14 @@ tasks:
       - '*.js'
     outputs:
       - 'unknown/*'
+  negatedOutputGlob:
+    command: node
+    args: generate.js both
+    inputs:
+      - '*.js'
+    outputs:
+      - 'both/{a,b}/*.js'
+      - '!both/b/two.js'
   noOutput:
     command: node
     args: generate.js none

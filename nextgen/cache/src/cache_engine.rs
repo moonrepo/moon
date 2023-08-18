@@ -30,6 +30,8 @@ impl CacheEngine {
             "Creating cache engine",
         );
 
+        fs::create_dir_all(&states_dir)?;
+
         // Create a cache directory tag
         if !cache_tag.exists() {
             fs::write_file(

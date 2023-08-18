@@ -12,7 +12,7 @@ hash_content!(
 #[test]
 fn saves_manifest() {
     let sandbox = create_empty_sandbox();
-    let engine = HashEngine::new(sandbox.path());
+    let engine = HashEngine::new(sandbox.path()).unwrap();
 
     let mut hasher = ContentHasher::new("test");
     hasher
@@ -45,7 +45,7 @@ fn saves_manifest() {
 #[test]
 fn saves_manifest_without_hasher() {
     let sandbox = create_empty_sandbox();
-    let engine = HashEngine::new(sandbox.path());
+    let engine = HashEngine::new(sandbox.path()).unwrap();
 
     let hash = engine
         .save_manifest_without_hasher(

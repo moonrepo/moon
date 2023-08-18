@@ -878,6 +878,28 @@ mod outputs {
     }
 
     #[test]
+    fn can_ignore_files_with_negated_globs() {
+        let sandbox = cases_sandbox();
+        sandbox.enable_git();
+
+        sandbox.run_moon(|cmd| {
+            cmd.arg("run").arg("outputs:negatedOutputGlob");
+        });
+
+        let hash = extract_hash_from_run(sandbox.path(), "outputs:negatedOutputGlob");
+        let tarball = sandbox
+            .path()
+            .join(".moon/cache/outputs")
+            .join(format!("{hash}.tar.gz"));
+        let dir = sandbox.path().join(".moon/cache/outputs").join(hash);
+
+        untar(&tarball, &dir);
+
+        assert!(dir.join("outputs/both/a/one.js").exists());
+        assert!(!dir.join("outputs/both/b/two.js").exists());
+    }
+
+    #[test]
     fn caches_output_logs_in_tarball() {
         let sandbox = cases_sandbox();
         sandbox.enable_git();
@@ -1043,6 +1065,25 @@ mod outputs {
             // Outputs should come back
             assert!(sandbox.path().join("outputs/both/a").exists());
             assert!(sandbox.path().join("outputs/both/b").exists());
+        }
+
+        #[test]
+        fn ignores_files_negated_by_globs() {
+            let sandbox = cases_sandbox();
+            sandbox.enable_git();
+
+            sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("outputs:negatedOutputGlob");
+            });
+
+            sandbox.run_moon(|cmd| {
+                cmd.arg("run").arg("outputs:negatedOutputGlob");
+            });
+
+            assert!(sandbox.path().join("outputs/both/a/one.js").exists());
+
+            // Exists from first build and isn't deleted
+            assert!(sandbox.path().join("outputs/both/b/two.js").exists());
         }
     }
 

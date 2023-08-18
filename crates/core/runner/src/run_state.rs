@@ -27,7 +27,7 @@ fn create_archive<'o>(
     if !output_paths.is_empty() {
         for output in output_paths {
             if glob::is_glob(output) {
-                archive.add_source_glob(output.as_str(), None);
+                archive.add_source_glob(output.as_str());
             } else {
                 archive.add_source_file(output.as_str(), None);
             }

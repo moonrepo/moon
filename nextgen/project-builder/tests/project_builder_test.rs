@@ -398,17 +398,17 @@ mod project_builder {
             let project = build_lang_project("project-platform").await;
 
             assert_eq!(
-                project.get_task("node-a").unwrap().platform,
+                project.tasks.get("node-a").unwrap().platform,
                 PlatformType::Node
             );
 
             assert_eq!(
-                project.get_task("node-b").unwrap().platform,
+                project.tasks.get("node-b").unwrap().platform,
                 PlatformType::Node
             );
 
             assert_eq!(
-                project.get_task("system").unwrap().platform,
+                project.tasks.get("system").unwrap().platform,
                 PlatformType::System
             );
         }

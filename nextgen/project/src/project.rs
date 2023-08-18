@@ -69,13 +69,33 @@ impl Project {
     pub fn get_task<I: AsRef<str>>(&self, task_id: I) -> miette::Result<&Task> {
         let task_id = Id::raw(task_id.as_ref());
 
-        Ok(self
+        let task = self
             .tasks
             .get(&task_id)
             .ok_or_else(|| ProjectError::UnknownTask {
+                task_id: task_id.clone(),
+                project_id: self.id.clone(),
+            })?;
+
+        if !task.is_expanded() {
+            return Err(ProjectError::UnexpandedTask {
                 task_id,
                 project_id: self.id.clone(),
-            })?)
+            })?;
+        }
+
+        Ok(task)
+    }
+
+    /// Return all tasks within the project.
+    pub fn get_tasks(&self) -> miette::Result<Vec<&Task>> {
+        let mut tasks = vec![];
+
+        for task_id in self.tasks.keys() {
+            tasks.push(self.get_task(task_id)?);
+        }
+
+        Ok(tasks)
     }
 
     /// Return true if this project is affected based on touched files.

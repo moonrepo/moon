@@ -81,6 +81,8 @@ impl<'graph, 'query> ProjectExpander<'graph, 'query> {
             expander.expand_args(&mut task)?;
             expander.expand_command(&mut task)?;
 
+            task.flags.expanded = true;
+
             tasks.insert(task_id, task);
         }
 

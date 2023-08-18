@@ -62,7 +62,7 @@ pub async fn check(args: CheckArgs, concurrency: Option<usize>) -> AppResult {
     let mut targets = vec![];
 
     for project in projects {
-        for task in project.tasks.values() {
+        for task in project.get_tasks()? {
             if task.is_build_type() || task.is_test_type() {
                 targets.push(task.target.id.clone());
             }

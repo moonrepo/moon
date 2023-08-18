@@ -447,6 +447,13 @@ impl<'proj> TasksBuilder<'proj> {
             }
         }
 
+        if options.interactive {
+            options.cache = false;
+            options.output_style = Some(TaskOutputStyle::Stream);
+            options.persistent = false;
+            options.run_in_ci = false;
+        }
+
         Ok(options)
     }
 

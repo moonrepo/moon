@@ -295,8 +295,10 @@ impl<'ws> DepGraphBuilder<'ws> {
         let task = project.get_task(&target.task_id)?;
         let (runtime, _) = self.get_runtimes_from_project(project, Some(task));
 
-        let node = if task.options.persistent {
+        let node = if task.is_persistent() {
             ActionNode::RunPersistentTarget(runtime, target.clone())
+        } else if task.is_interactive() {
+            ActionNode::RunInteractiveTarget(runtime, target.clone())
         } else {
             ActionNode::RunTarget(runtime, target.clone())
         };

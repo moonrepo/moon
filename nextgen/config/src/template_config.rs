@@ -1,5 +1,6 @@
 // template.yml
 
+use crate::validate::check_yml_extension;
 use moon_common::consts;
 use rustc_hash::FxHashMap;
 use schematic::{validate, Config, ConfigLoader};
@@ -81,7 +82,7 @@ pub struct TemplateConfig {
 impl TemplateConfig {
     pub fn load<P: AsRef<Path>>(path: P) -> miette::Result<TemplateConfig> {
         let result = ConfigLoader::<TemplateConfig>::new()
-            .file(path.as_ref())?
+            .file(check_yml_extension(path.as_ref()))?
             .load()?;
 
         Ok(result.config)

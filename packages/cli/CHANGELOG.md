@@ -7,6 +7,7 @@
 - Added an `extends` field to task configurations. This allows tasks to extend and inherit settings
   from sibling tasks.
 - Updated task `env` values to support token functions and variables.
+- Will now log a warning to the console if a configuration file uses the `.yaml` extension.
 
 ## 1.11.1
 

@@ -3400,6 +3400,7 @@ dependencies = [
  "serde_json",
  "serde_yaml 0.9.25",
  "starbase_sandbox",
+ "tracing",
 ]
 
 [[package]]

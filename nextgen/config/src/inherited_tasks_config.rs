@@ -2,6 +2,7 @@ use crate::language_platform::{LanguageType, PlatformType};
 use crate::project::{validate_deps, TaskConfig};
 use crate::project_config::{validate_tasks, ProjectType};
 use crate::shapes::InputPath;
+use crate::validate::check_yml_extension;
 use moon_common::cacheable;
 use moon_common::{consts, Id};
 use moon_target::Target;
@@ -57,7 +58,7 @@ cacheable!(
 impl InheritedTasksConfig {
     pub fn load<F: AsRef<Path>>(path: F) -> miette::Result<InheritedTasksConfig> {
         let result = ConfigLoader::<InheritedTasksConfig>::new()
-            .file_optional(path.as_ref())?
+            .file_optional(check_yml_extension(path.as_ref()))?
             .load()?;
 
         Ok(result.config)
@@ -67,12 +68,9 @@ impl InheritedTasksConfig {
         workspace_root: T,
         path: F,
     ) -> miette::Result<PartialInheritedTasksConfig> {
-        let workspace_root = workspace_root.as_ref();
-        let path = path.as_ref();
-
         Ok(ConfigLoader::<InheritedTasksConfig>::new()
-            .set_root(workspace_root)
-            .file_optional(path)?
+            .set_root(workspace_root.as_ref())
+            .file_optional(check_yml_extension(path.as_ref()))?
             .load_partial(&())?)
     }
 }
@@ -205,7 +203,6 @@ impl InheritedTasksManager {
         lookup
     }
 
-    // TODO make this return an option
     pub fn get_inherited_config(
         &self,
         platform: &PlatformType,

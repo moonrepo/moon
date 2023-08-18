@@ -3,6 +3,7 @@
 use crate::language_platform::{LanguageType, PlatformType};
 use crate::project::*;
 use crate::shapes::InputPath;
+use crate::validate::check_yml_extension;
 use moon_common::cacheable;
 use moon_common::{consts, Id};
 use rustc_hash::FxHashMap;
@@ -126,12 +127,9 @@ impl ProjectConfig {
         workspace_root: R,
         path: P,
     ) -> miette::Result<ProjectConfig> {
-        let workspace_root = workspace_root.as_ref();
-        let path = path.as_ref();
-
         let result = ConfigLoader::<ProjectConfig>::new()
-            .set_root(workspace_root)
-            .file_optional(path)?
+            .set_root(workspace_root.as_ref())
+            .file_optional(check_yml_extension(path.as_ref()))?
             .load()?;
 
         Ok(result.config)

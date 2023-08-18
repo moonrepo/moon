@@ -1,4 +1,4 @@
-use moon_cache2::*;
+use moon_cache::*;
 use starbase_sandbox::create_empty_sandbox;
 use std::env;
 

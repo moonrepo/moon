@@ -73,7 +73,7 @@ tokio = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
-moon_cache = { path = "../core/cache" }
+moon_cache = { path = "../../nextgen/cache" }
 moon_notifier = { path = "../core/notifier" }
 moon_runner = { path = "../core/runner" }
 moon_test_utils = { path = "../core/test-utils" }

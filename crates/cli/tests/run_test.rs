@@ -43,7 +43,7 @@ where
 }
 
 fn extract_hash_from_run(fixture: &Path, target_id: &str) -> String {
-    let engine = CacheEngine::load(fixture).unwrap();
+    let engine = CacheEngine::new(fixture).unwrap();
     let cache: RunTargetState = json::read_file(
         engine
             .states_dir
@@ -51,8 +51,6 @@ fn extract_hash_from_run(fixture: &Path, target_id: &str) -> String {
             .join("lastRun.json"),
     )
     .unwrap();
-
-    // engine.cache_run_target_state(target_id).unwrap();
 
     cache.hash
 }

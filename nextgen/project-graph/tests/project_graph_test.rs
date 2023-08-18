@@ -334,7 +334,8 @@ mod project_graph {
 
     mod cache {
         use super::*;
-        use moon_cache2::CacheEngine;
+        use moon_cache::CacheEngine;
+        use moon_hash::HashEngine;
         use moon_project_graph::ProjectsState;
 
         const CACHE_PATH: &str = ".moon/cache/states/partialProjectGraph.json";
@@ -342,10 +343,11 @@ mod project_graph {
 
         async fn do_generate(root: &Path) -> ProjectGraph {
             let cache_engine = CacheEngine::new(root).unwrap();
+            let hash_engine = HashEngine::new(&cache_engine.cache_dir);
             let container = GraphContainer::new_with_vcs(root);
             let context = container.create_context();
 
-            let mut builder = ProjectGraphBuilder::generate(context, &cache_engine)
+            let mut builder = ProjectGraphBuilder::generate(context, &cache_engine, &hash_engine)
                 .await
                 .unwrap();
             builder.load_all().await.unwrap();

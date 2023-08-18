@@ -13,7 +13,7 @@ pub async fn query_hash(workspace: &Workspace, hash: &str) -> AppResult<(String,
         color::hash(hash)
     );
 
-    for file in fs::read_dir(&workspace.cache_engine.hash_engine.hashes_dir)? {
+    for file in fs::read_dir(&workspace.hash_engine.hashes_dir)? {
         let path = file.path();
         let name = fs::file_name(&path).replace(".json", "");
 

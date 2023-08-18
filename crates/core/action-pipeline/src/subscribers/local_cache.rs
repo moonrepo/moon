@@ -31,11 +31,7 @@ impl Subscriber for LocalCacheSubscriber {
             // We only check for the archive, as the manifest is purely for local debugging!
             Event::TargetOutputCacheCheck { hash, .. } => {
                 if get_cache_mode().is_readable()
-                    && workspace
-                        .cache_engine
-                        .hash_engine
-                        .get_archive_path(hash)
-                        .exists()
+                    && workspace.hash_engine.get_archive_path(hash).exists()
                 {
                     return Ok(EventFlow::Return("local-cache".into()));
                 }
@@ -49,7 +45,7 @@ impl Subscriber for LocalCacheSubscriber {
                 ..
             } => {
                 let state_dir = workspace.cache_engine.states_dir.join(task.get_cache_dir());
-                let archive_path = workspace.cache_engine.hash_engine.get_archive_path(hash);
+                let archive_path = workspace.hash_engine.get_archive_path(hash);
                 let output_paths = task
                     .outputs
                     .iter()
@@ -69,7 +65,7 @@ impl Subscriber for LocalCacheSubscriber {
                 ..
             } => {
                 let state_dir = workspace.cache_engine.states_dir.join(task.get_cache_dir());
-                let archive_path = workspace.cache_engine.hash_engine.get_archive_path(hash);
+                let archive_path = workspace.hash_engine.get_archive_path(hash);
                 let output_paths = task
                     .outputs
                     .iter()

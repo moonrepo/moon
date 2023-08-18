@@ -6,11 +6,12 @@ use crate::project_graph_error::ProjectGraphError;
 use crate::project_graph_hash::ProjectGraphHash;
 use crate::projects_locator::locate_projects_with_globs;
 use async_recursion::async_recursion;
-use moon_cache2::CacheEngine;
+use moon_cache::CacheEngine;
 use moon_common::is_test_env;
 use moon_common::path::{to_virtual_string, WorkspaceRelativePath, WorkspaceRelativePathBuf};
 use moon_common::{color, consts, Id};
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig, WorkspaceProjects};
+use moon_hash::HashEngine;
 use moon_project::Project;
 use moon_project_builder::{DetectLanguageEvent, ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_project_type_relationships, enforce_tag_relationships};
@@ -88,6 +89,7 @@ impl<'app> ProjectGraphBuilder<'app> {
     pub async fn generate(
         context: ProjectGraphBuilderContext<'app>,
         cache_engine: &CacheEngine,
+        hash_engine: &HashEngine,
     ) -> miette::Result<ProjectGraphBuilder<'app>> {
         let is_vcs_enabled = context
             .vcs
@@ -109,9 +111,7 @@ impl<'app> ProjectGraphBuilder<'app> {
         graph_contents.add_aliases(&graph.aliases);
         graph_contents.add_configs(graph.hash_required_configs().await?);
 
-        let hash = cache_engine
-            .hash_engine
-            .save_manifest_without_hasher("Project graph", &graph_contents)?;
+        let hash = hash_engine.save_manifest_without_hasher("Project graph", &graph_contents)?;
 
         debug!(hash, "Generated hash for project graph");
 

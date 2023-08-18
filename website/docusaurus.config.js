@@ -25,7 +25,7 @@ const config = {
 	tagline: 'A developer productivity tooling platform.',
 	url: 'https://moonrepo.dev',
 	baseUrl: '/',
-	onBrokenLinks: 'throw',
+	onBrokenLinks: 'warn',
 	onBrokenMarkdownLinks: 'warn',
 	favicon: 'img/favicon.svg',
 	organizationName: 'moonrepo',

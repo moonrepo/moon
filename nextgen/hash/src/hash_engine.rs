@@ -13,7 +13,7 @@ pub struct HashEngine {
 }
 
 impl HashEngine {
-    pub fn new(cache_dir: &Path) -> HashEngine {
+    pub fn new(cache_dir: &Path) -> miette::Result<HashEngine> {
         let hashes_dir = cache_dir.join("hashes");
         let outputs_dir = cache_dir.join("outputs");
 
@@ -23,10 +23,13 @@ impl HashEngine {
             "Creating hash engine",
         );
 
-        HashEngine {
+        fs::create_dir_all(&hashes_dir)?;
+        fs::create_dir_all(&outputs_dir)?;
+
+        Ok(HashEngine {
             hashes_dir,
             outputs_dir,
-        }
+        })
     }
 
     pub fn create_hasher<T: AsRef<str>>(&self, label: T) -> ContentHasher {

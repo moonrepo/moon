@@ -84,9 +84,9 @@ impl FromStr for OutputPath {
 
         let value = standardize_separators(value);
 
-        // Negated glob
-        if value.starts_with("/!") || value.starts_with("!/") || value.starts_with('!') {
-            return Err(ValidateError::new("negated globs are not supported"));
+        // Workspace negated glob
+        if value.starts_with("/!") || value.starts_with("!/") {
+            return Ok(OutputPath::WorkspaceGlob(format!("!{}", &value[2..])));
         }
 
         // Workspace-relative
@@ -157,6 +157,10 @@ mod tests {
             OutputPath::from_str("dir/**/*").unwrap(),
             OutputPath::ProjectGlob("dir/**/*".into())
         );
+        assert_eq!(
+            OutputPath::from_str("!dir/**/*").unwrap(),
+            OutputPath::ProjectGlob("!dir/**/*".into())
+        );
 
         // Workspace relative
         assert_eq!(
@@ -170,6 +174,14 @@ mod tests {
         assert_eq!(
             OutputPath::from_str("/dir/**/*").unwrap(),
             OutputPath::WorkspaceGlob("dir/**/*".into())
+        );
+        assert_eq!(
+            OutputPath::from_str("!/dir/**/*").unwrap(),
+            OutputPath::WorkspaceGlob("!dir/**/*".into())
+        );
+        assert_eq!(
+            OutputPath::from_str("/!dir/**/*").unwrap(),
+            OutputPath::WorkspaceGlob("!dir/**/*".into())
         );
     }
 
@@ -220,17 +232,5 @@ mod tests {
     #[should_panic(expected = "parent relative paths are not supported")]
     fn errors_for_parent_relative_from_workspace() {
         OutputPath::from_str("/../test").unwrap();
-    }
-
-    #[test]
-    #[should_panic(expected = "negated globs are not supported")]
-    fn errors_for_project_negated_glob() {
-        OutputPath::from_str("!test").unwrap();
-    }
-
-    #[test]
-    #[should_panic(expected = "negated globs are not supported")]
-    fn errors_for_workspace_negated_glob() {
-        OutputPath::from_str("/!test").unwrap();
     }
 }

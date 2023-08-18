@@ -87,6 +87,17 @@ impl Project {
         Ok(task)
     }
 
+    /// Return all tasks within the project.
+    pub fn get_tasks(&self) -> miette::Result<Vec<&Task>> {
+        let mut tasks = vec![];
+
+        for task_id in self.tasks.keys() {
+            tasks.push(self.get_task(task_id)?);
+        }
+
+        Ok(tasks)
+    }
+
     /// Return true if this project is affected based on touched files.
     /// Since the project is a folder, we check if a file starts with the root.
     pub fn is_affected(&self, touched_files: &FxHashSet<WorkspaceRelativePathBuf>) -> bool {

@@ -199,8 +199,8 @@ impl<'ws> DepGraphBuilder<'ws> {
             for dependent_id in dependents {
                 let dep_project = self.project_graph.get(dependent_id)?;
 
-                if let Some(dep_task) = dep_project.tasks.get(&target.task_id) {
-                    self.run_target(&dep_task.target, None)?;
+                if dep_project.tasks.contains_key(&target.task_id) {
+                    self.run_target(&dep_project.get_task(&target.task_id)?.target, None)?;
                 }
             }
         }

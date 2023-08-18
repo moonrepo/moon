@@ -9,6 +9,10 @@
 - Updated task `env` values to support token functions and variables.
 - Will now log a warning to the console if a configuration file uses the `.yaml` extension.
 
+#### 🐞 Fixes
+
+- Fixed an issue where `moon ci` would no run affected targets based on touched files.
+
 #### ⚙️ Internal
 
 - Improved caching and hashing layers.

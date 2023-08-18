@@ -97,7 +97,7 @@ fn gather_runnable_targets(
 
     // Required for dependents
     for project in project_graph.get_all()? {
-        for task in project.tasks.values() {
+        for task in project.get_tasks()? {
             if task.should_run_in_ci() {
                 if task.is_affected(touched_files)? {
                     targets.push(task.target.clone());

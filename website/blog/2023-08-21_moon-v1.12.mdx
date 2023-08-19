@@ -1,12 +1,12 @@
 ---
 slug: moon-v1.12
-title: moon v1.12 - Task extending, tokens in env vars, and more
+title: 'moon v1.12 - Task improvements: extending, interactive, and more'
 authors: [milesj]
 tags: [tasks, inheritance]
-# image: ./img/moon/v1.11.png
+image: ./img/moon/v1.12.png
 ---
 
-???
+In this release, we focused heavily on improving tasks, its configuration, and related systems.
 
 <!--truncate-->
 
@@ -86,6 +86,30 @@ Some other interesting facts around task extending:
 - Inherited tasks can be extended from by project-level tasks.
 - It's possible to create multiple extended chains.
 
+## Configure tasks as interactive
+
+Six months ago, we added support for [interactive tasks in v0.24](./v0.24#interactive-tasks), but
+only if certain conditions were met: if only 1 target is running, they are considered interactive,
+or if the `--interactive` option was passed to [`moon run`](/docs/commands/run). However, we believe
+it nice to support interactive tasks through task configuration directly, but it required some
+thought into how this would work within the dependency graph and pipeline, as only 1 task can
+interact with stdin at a time.
+
+We solved this problem by reworking our dependency graph so that interactive tasks are isolated from
+other actions in the graph, and are not run in parallel with other actions. This will result in
+longer dependency chains, but results in a working stdin solution.
+
+To mark a task as interactive, enable the [`options.interactive`](/docs/config/project#interactive)
+setting.
+
+```yaml title="moon.yml"
+tasks:
+  init:
+    command: 'init-app'
+    options:
+      interactive: true
+```
+
 ## Tokens in enviroment variables
 
 Up until now, [token functions and variables](/docs/concepts/token) were only supported in task
@@ -129,5 +153,6 @@ const paths = process.env.SRCS.split(',');
 View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.12.0) for a full list
 of changes.
 
+- Added git worktree support.
 - Updated task `outputs` to support negated globs.
 - Will now log a warning to the console if a configuration file uses the `.yaml` extension.

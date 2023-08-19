@@ -110,19 +110,19 @@ impl Git {
         let mut worktree_root = None;
 
         loop {
-            let git_dir = current_dir.join(".git");
+            let git_check = current_dir.join(".git");
 
-            if git_dir.exists() {
-                if git_dir.is_file() {
+            if git_check.exists() {
+                if git_check.is_file() {
                     debug!(
-                        git_dir = ?git_dir,
+                        git = ?git_check,
                         "Found a .git file (worktree root), continuing search"
                     );
 
                     worktree_root = Some(current_dir.to_path_buf());
                 } else {
                     debug!(
-                        git_dir = ?git_dir,
+                        git = ?git_check,
                         "Found a .git directory (repository root)"
                     );
 
@@ -135,8 +135,6 @@ impl Git {
                 Some(parent) => current_dir = parent,
                 None => {
                     debug!("Unable to find .git, falling back to workspace root");
-
-                    current_dir = workspace_root;
                     break;
                 }
             };
@@ -144,7 +142,7 @@ impl Git {
 
         // Load .gitignore
         let mut ignore: Option<Gitignore> = None;
-        let ignore_path = current_dir.join(".gitignore");
+        let ignore_path = repository_root.join(".gitignore");
 
         if ignore_path.exists() {
             debug!(
@@ -152,7 +150,7 @@ impl Git {
                 "Loading ignore rules from .gitignore",
             );
 
-            let mut builder = GitignoreBuilder::new(current_dir);
+            let mut builder = GitignoreBuilder::new(&repository_root);
 
             if let Some(error) = builder.add(ignore_path) {
                 return Err(GitError::GitignoreLoadFailed { error }.into());

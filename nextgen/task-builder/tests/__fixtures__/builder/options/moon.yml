@@ -24,3 +24,16 @@ tasks:
   no-env-file:
     options:
       envFile: false
+
+  interactive:
+    options:
+      interactive: true
+  interactive-local:
+    local: true
+    options:
+      interactive: true
+  interactive-override:
+    options:
+      cache: true
+      interactive: true
+      runInCI: true

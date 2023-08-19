@@ -82,6 +82,7 @@ async fn create_tasks_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
             ("mergeReplace".into(), "merge-replace".to_owned()),
             ("noTasks".into(), "no-tasks".to_owned()),
             ("persistent".into(), "persistent".to_owned()),
+            ("interactive".into(), "interactive".to_owned()),
         ]))),
         ..PartialWorkspaceConfig::default()
     };
@@ -293,6 +294,46 @@ mod run_target {
                     NodeIndex::new(6),
                     NodeIndex::new(14)
                 ],
+            ]
+        );
+    }
+
+    #[tokio::test]
+    async fn isolates_interactive_tasks() {
+        let (_workspace, projects, _sandbox) = create_tasks_project_graph().await;
+
+        let mut graph = build_dep_graph(&projects);
+        graph
+            .run_target(&Target::new("interactive", "one").unwrap(), None)
+            .unwrap();
+        graph
+            .run_target(&Target::new("chain", "c").unwrap(), None)
+            .unwrap();
+        graph
+            .run_target(&Target::new("interactive", "two").unwrap(), None)
+            .unwrap();
+        graph
+            .run_target(&Target::new("basic", "lint").unwrap(), None)
+            .unwrap();
+        graph
+            .run_target(&Target::new("interactive", "depOnOne").unwrap(), None)
+            .unwrap();
+        let graph = graph.build();
+
+        assert_snapshot!(graph.to_dot());
+
+        assert_eq!(
+            sort_batches(graph.sort_batched_topological().unwrap()),
+            vec![
+                vec![NodeIndex::new(1)],
+                vec![NodeIndex::new(2), NodeIndex::new(5)],
+                vec![NodeIndex::new(9)],
+                vec![NodeIndex::new(3), NodeIndex::new(8)],
+                vec![NodeIndex::new(4)], // interactive
+                vec![NodeIndex::new(7), NodeIndex::new(11)],
+                vec![NodeIndex::new(13)], // interactive
+                vec![NodeIndex::new(10)], // interactive
+                vec![NodeIndex::new(0), NodeIndex::new(6), NodeIndex::new(12)],
             ]
         );
     }

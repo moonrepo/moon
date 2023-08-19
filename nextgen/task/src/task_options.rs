@@ -10,6 +10,8 @@ cacheable!(
 
         pub env_file: Option<InputPath>,
 
+        pub interactive: bool,
+
         pub merge_args: TaskMergeStrategy,
 
         pub merge_deps: TaskMergeStrategy,
@@ -43,6 +45,7 @@ impl Default for TaskOptions {
             affected_files: None,
             cache: true,
             env_file: None,
+            interactive: false,
             merge_args: TaskMergeStrategy::Append,
             merge_deps: TaskMergeStrategy::Append,
             merge_env: TaskMergeStrategy::Append,

@@ -373,6 +373,7 @@ impl<'proj> TasksBuilder<'proj> {
     fn build_task_options(&self, id: &Id, is_local: bool) -> miette::Result<TaskOptions> {
         let mut options = TaskOptions {
             cache: !is_local,
+            interactive: false,
             output_style: is_local.then_some(TaskOutputStyle::Stream),
             persistent: is_local,
             run_in_ci: !is_local,
@@ -396,6 +397,10 @@ impl<'proj> TasksBuilder<'proj> {
 
             if let Some(env_file) = &config.env_file {
                 options.env_file = env_file.to_input_path();
+            }
+
+            if let Some(interactive) = &config.interactive {
+                options.interactive = *interactive;
             }
 
             if let Some(merge_args) = &config.merge_args {
@@ -445,6 +450,13 @@ impl<'proj> TasksBuilder<'proj> {
             if let Some(shell) = &config.shell {
                 options.shell = *shell;
             }
+        }
+
+        if options.interactive {
+            options.cache = false;
+            options.output_style = Some(TaskOutputStyle::Stream);
+            options.persistent = false;
+            options.run_in_ci = false;
         }
 
         Ok(options)

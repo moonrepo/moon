@@ -159,6 +159,16 @@
             }
           ]
         },
+        "extends": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "inputs": {
           "anyOf": [
             {
@@ -256,6 +266,16 @@
           "anyOf": [
             {
               "$ref": "#/definitions/TaskOptionEnvFile"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "interactive": {
+          "anyOf": [
+            {
+              "type": "boolean"
             },
             {
               "type": "null"

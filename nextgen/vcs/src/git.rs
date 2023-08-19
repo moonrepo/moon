@@ -70,9 +70,6 @@ pub struct Git {
     /// Default git branch name.
     pub default_branch: String,
 
-    /// Path between the git and workspace root.
-    root_prefix: RelativePathBuf,
-
     /// Ignore rules derived from a root `.gitignore` file.
     ignore: Option<Gitignore>,
 
@@ -84,6 +81,9 @@ pub struct Git {
 
     /// Root of the git repository (where `.git` directory is located).
     pub repository_root: PathBuf,
+
+    /// Path between the git and workspace root.
+    pub root_prefix: RelativePathBuf,
 
     /// If in a git worktree, the root of the worktree (the `.git` file).
     pub worktree_root: Option<PathBuf>,

@@ -577,6 +577,12 @@ const otherSystemRows: Comparison[] = [
 			moon: SUPPORTED,
 		},
 	},
+	{
+		feature: 'Supports git worktrees',
+		support: {
+			moon: SUPPORTED,
+		},
+	},
 ];
 
 const javascriptRows: Comparison[] = [

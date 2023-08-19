@@ -82,8 +82,11 @@ pub struct Git {
     /// List of remotes to use as merge candidates.
     pub remote_candidates: Vec<String>,
 
-    /// Root of the git repository (where `.git` is located).
+    /// Root of the git repository (where `.git` directory is located).
     pub repository_root: PathBuf,
+
+    /// If in a git worktree, the root of the worktree (the `.git` file).
+    pub worktree_root: Option<PathBuf>,
 }
 
 impl Git {
@@ -98,30 +101,42 @@ impl Git {
 
         debug!(
             starting_dir = ?workspace_root,
-            "Attempting to find a .git directory"
+            "Attempting to find a .git directory or file"
         );
 
         // Find the .git dir
-        let mut git_root = workspace_root;
+        let mut current_dir = workspace_root;
+        let mut repository_root = workspace_root.to_path_buf();
+        let mut worktree_root = None;
 
         loop {
-            let git_dir = git_root.join(".git");
+            let git_dir = current_dir.join(".git");
 
             if git_dir.exists() {
-                debug!(
-                    git_dir = ?git_dir,
-                    "Found a .git directory"
-                );
+                if git_dir.is_file() {
+                    debug!(
+                        git_dir = ?git_dir,
+                        "Found a .git file (worktree root), continuing search"
+                    );
 
-                break;
+                    worktree_root = Some(current_dir.to_path_buf());
+                } else {
+                    debug!(
+                        git_dir = ?git_dir,
+                        "Found a .git directory (repository root)"
+                    );
+
+                    repository_root = current_dir.to_path_buf();
+                    break;
+                }
             }
 
-            match git_root.parent() {
-                Some(parent) => git_root = parent,
+            match current_dir.parent() {
+                Some(parent) => current_dir = parent,
                 None => {
                     debug!("Unable to find .git, falling back to workspace root");
 
-                    git_root = workspace_root;
+                    current_dir = workspace_root;
                     break;
                 }
             };
@@ -129,7 +144,7 @@ impl Git {
 
         // Load .gitignore
         let mut ignore: Option<Gitignore> = None;
-        let ignore_path = git_root.join(".gitignore");
+        let ignore_path = current_dir.join(".gitignore");
 
         if ignore_path.exists() {
             debug!(
@@ -137,7 +152,7 @@ impl Git {
                 "Loading ignore rules from .gitignore",
             );
 
-            let mut builder = GitignoreBuilder::new(git_root);
+            let mut builder = GitignoreBuilder::new(current_dir);
 
             if let Some(error) = builder.add(ignore_path) {
                 return Err(GitError::GitignoreLoadFailed { error }.into());
@@ -150,18 +165,21 @@ impl Git {
             );
         }
 
+        let active_dir = worktree_root.as_ref().unwrap_or(&repository_root);
+
         Ok(Git {
             default_branch: default_branch.as_ref().to_owned(),
             ignore,
             remote_candidates: remote_candidates.to_owned(),
-            root_prefix: if git_root == workspace_root {
+            root_prefix: if active_dir == workspace_root {
                 RelativePathBuf::default()
             } else {
-                RelativePathBuf::from_path(workspace_root.strip_prefix(git_root).unwrap())
+                RelativePathBuf::from_path(workspace_root.strip_prefix(active_dir).unwrap())
                     .into_diagnostic()?
             },
             process: ProcessCache::new("git", workspace_root),
-            repository_root: git_root.to_owned(),
+            repository_root,
+            worktree_root,
         })
     }
 
@@ -192,6 +210,10 @@ impl Git {
         }
 
         Ok(None)
+    }
+
+    fn get_working_root(&self) -> &Path {
+        self.worktree_root.as_ref().unwrap_or(&self.repository_root)
     }
 }
 
@@ -229,7 +251,7 @@ impl Vcs for Git {
     ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
         let mut objects = vec![];
         let mut map = BTreeMap::new();
-        let is_not_root = self.process.root != self.repository_root;
+        let is_not_root = self.process.root != self.get_working_root();
 
         for file in files {
             let abs_file = self.process.root.join(file);
@@ -575,7 +597,7 @@ impl Vcs for Git {
     }
 
     fn is_enabled(&self) -> bool {
-        self.repository_root.join(".git").exists()
+        self.get_working_root().join(".git").exists()
     }
 
     fn is_ignored(&self, file: &Path) -> bool {

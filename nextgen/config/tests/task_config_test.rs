@@ -503,5 +503,22 @@ options:
             //                 );
             //             }
         }
+
+        mod interactive {
+            use super::*;
+
+            #[test]
+            #[should_panic(expected = "an interactive task cannot be persistent")]
+            fn errors_if_persistent() {
+                test_parse_config(
+                    r"
+options:
+  interactive: true
+  persistent: true
+",
+                    |code| TaskConfig::parse(code),
+                );
+            }
+        }
     }
 }

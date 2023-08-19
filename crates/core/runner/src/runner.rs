@@ -533,7 +533,7 @@ impl<'a> Runner<'a> {
         let primary_longest_width = context.primary_targets.iter().map(|t| t.id.len()).max();
         let is_primary = context.primary_targets.contains(&self.task.target);
         let is_real_ci = is_ci() && !is_test_env();
-        let is_persistent = self.task.options.persistent;
+        let is_persistent = self.task.is_persistent();
         let output;
 
         // When a task is configured as local (no caching), or the interactive flag is passed,

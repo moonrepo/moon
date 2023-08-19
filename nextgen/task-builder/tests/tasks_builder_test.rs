@@ -531,6 +531,33 @@ mod tasks_builder {
                 .inputs
                 .contains(&InputPath::WorkspaceFile(".env.shared".into())));
         }
+
+        #[tokio::test]
+        async fn interactive() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "options/moon.yml").await;
+
+            let task = tasks.get("interactive").unwrap();
+
+            assert!(!task.options.cache);
+            assert!(!task.options.persistent);
+            assert!(!task.options.run_in_ci);
+            assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
+
+            let task = tasks.get("interactive-local").unwrap();
+
+            assert!(!task.options.cache);
+            assert!(!task.options.persistent);
+            assert!(!task.options.run_in_ci);
+            assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
+
+            let task = tasks.get("interactive-override").unwrap();
+
+            assert!(!task.options.cache);
+            assert!(!task.options.persistent);
+            assert!(!task.options.run_in_ci);
+            assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
+        }
     }
 
     mod local_mode {

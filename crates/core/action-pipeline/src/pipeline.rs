@@ -270,6 +270,7 @@ impl Pipeline {
             term.line(label_checkpoint(
                 match &result.node {
                     Some(ActionNode::RunTarget(_, target)) => target.as_str(),
+                    Some(ActionNode::RunInteractiveTarget(_, target)) => target.as_str(),
                     Some(ActionNode::RunPersistentTarget(_, target)) => target.as_str(),
                     _ => &result.label,
                 },
@@ -371,7 +372,9 @@ impl Pipeline {
             if compact
                 && !matches!(
                     result.node.as_ref().unwrap(),
-                    ActionNode::RunTarget(_, _) | ActionNode::RunPersistentTarget(_, _)
+                    ActionNode::RunTarget(_, _)
+                        | ActionNode::RunInteractiveTarget(_, _)
+                        | ActionNode::RunPersistentTarget(_, _)
                 )
             {
                 continue;

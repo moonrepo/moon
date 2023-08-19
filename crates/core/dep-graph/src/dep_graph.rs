@@ -118,6 +118,14 @@ impl DepGraph {
 
         for mut batch in batches.into_iter().rev() {
             batch.retain(|ix| match self.graph.node_weight(*ix).unwrap() {
+                // Interactive tasks must be the only item in their batch
+                // for stdin to work correctly
+                ActionNode::RunInteractiveTarget(_, _) => {
+                    sorted_batches.push(vec![*ix]);
+                    false
+                }
+                // Persistent tasks always run last as a combined batch,
+                // as their processes may never end
                 ActionNode::RunPersistentTarget(_, _) => {
                     persistent.push(*ix);
                     false

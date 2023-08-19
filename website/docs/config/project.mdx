@@ -729,6 +729,24 @@ differences are around quote handling and variable substitution, so be aware of 
 
 :::
 
+#### `interactive`<VersionLabel version="1.12.0" />
+
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#interactive" />
+
+Marks the task as interactive. [Interactive tasks](../concepts/task#interactive) run in isolation so
+that they can interact with stdin.
+
+This setting also disables caching, turns of CI, and other functionality, similar to the
+[`local`](#local) setting.
+
+```yaml title="moon.yml" {5}
+tasks:
+  init:
+    # ...
+    options:
+      interactive: true
+```
+
 #### `mergeArgs`
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#mergeArgs" />
@@ -791,9 +809,9 @@ tasks:
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#persistent" />
 
-Marks the task as persistent (continuously running). Persistent tasks are a special case that are
-handled differently than non-persistent tasks in the dependency graph. When running a target, all
-persistent tasks are _ran last_ and _in parallel_, after all their dependencies have completed.
+Marks the task as persistent (continuously running). [Persistent tasks](../concepts/task#persistent)
+are handled differently than non-persistent tasks in the dependency graph. When running a target,
+all persistent tasks are _ran last_ and _in parallel_, after all their dependencies have completed.
 
 This is extremely useful for running a server (or a watcher) in the background while other tasks are
 running.

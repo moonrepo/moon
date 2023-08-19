@@ -1,0 +1,17 @@
+language: javascript
+
+tasks:
+  one:
+    command: one
+    options:
+      interactive: true
+  two:
+    command: two
+    options:
+      interactive: true
+  depOnOne:
+    command: three
+    options:
+      interactive: true
+    deps:
+      - one

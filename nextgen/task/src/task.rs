@@ -169,6 +169,11 @@ impl Task {
         self.flags.expanded
     }
 
+    /// Return true if an interactive task.
+    pub fn is_interactive(&self) -> bool {
+        self.options.interactive
+    }
+
     /// Return true if the task is a "no operation" and does nothing.
     pub fn is_no_op(&self) -> bool {
         self.command == "nop" || self.command == "noop" || self.command == "no-op"

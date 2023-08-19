@@ -18,7 +18,7 @@ A task name can be paired with a scope to create a [target](./target).
 
 ## Types
 
-Tasks are categorized into 1 of the following types based on their configured parameters.
+Tasks are grouped into 1 of the following types based on their configured parameters.
 
 - **Build** - Task generates one or many artifacts, and is derived from the
   [`outputs`](../config/project#outputs) setting.
@@ -27,11 +27,76 @@ Tasks are categorized into 1 of the following types based on their configured pa
 - **Test** - Task asserts code is correct and behaves as expected. This includes linting,
   typechecking, unit tests, and any other form of testing. Is the default.
 
+## Modes
+
+Alongside types, tasks can also grouped into a special mode that provides unique handling within the
+dependency graph and pipelines.
+
+### Local only
+
+Tasks either run locally, in CI (continuous integration pipelines), or both. For tasks that should
+_only_ be ran locally, for example, development servers and watchers, we provide a mechanism for
+marking a task as local only. When enabled, caching is turned off, the task will not run in CI,
+terminal output is not captured, and the task is marked as [persistent](#persistent).
+
+To mark a task as local only, enable the [`local`](../config/project#local) setting.
+
+```yaml title="moon.yml"
+tasks:
+  dev:
+    command: 'start-dev-server'
+    local: true
+```
+
+### Interactive<VersionLabel version="1.12.0" />
+
+Tasks that need to interact with the user via terminal prompts are known as interactive tasks.
+Because interactive tasks require stdin, and it's not possible to have multiple parallel running
+tasks interact with stdin, we isolate interactive tasks from other tasks in the dependency graph.
+This ensures that only 1 interactive task is ran at a time.
+
+To mark a task as interactive, enable the [`options.interactive`](../config/project#interactive)
+setting.
+
+```yaml title="moon.yml"
+tasks:
+  init:
+    command: 'init-app'
+    options:
+      interactive: true
+```
+
+### Persistent<VersionLabel version="1.6.0" />
+
+Tasks that never complete, like servers and watchers, are known as persistent tasks. Persistent
+tasks are typically problematic when it comes to dependency graphs, because if they run in the
+middle of the graph, subsequent tasks will never run because the persistent task never completes!
+
+However in moon, this is a non-issue, as we collect all persistent tasks within the dependency graph
+and run them _last as a batch_. This is perfect for a few reasons:
+
+- All persistent tasks are ran in parallel, so they don't block each other.
+- Running both the backend API and frontend webapp in parallel is a breeze.
+- Dependencies of persistent tasks are guaranteed to have ran and completed.
+
+To mark a task as persistent, enable the [`local`](../config/project#local) or
+[`options.persistent`](../config/project#persistent) settings.
+
+```yaml title="moon.yml"
+tasks:
+  dev:
+    command: 'start-dev-server'
+    local: true
+    # OR
+    options:
+      persistent: true
+```
+
 ## Configuration
 
 Tasks can be configured per project through [`moon.yml`](../config/project), or for many projects
 through [`.moon/tasks.yml`](../config/tasks).
 
-## Inheritance
+### Inheritance
 
 View the official documentation on [task inheritance](./task-inheritance).

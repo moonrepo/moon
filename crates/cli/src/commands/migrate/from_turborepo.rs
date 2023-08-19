@@ -237,11 +237,11 @@ pub async fn from_turborepo(skip_touched_files_check: bool) -> AppResult {
             fs::create_dir_all(&tasks_dir)?;
         }
 
-        yaml::write_with_config(tasks_dir.join("node.yml"), &node_tasks_config)?;
+        yaml::write_file_with_config(tasks_dir.join("node.yml"), &node_tasks_config)?;
     }
 
     for (project_root, project_config) in modified_projects {
-        yaml::write_with_config(
+        yaml::write_file_with_config(
             project_root.join(consts::CONFIG_PROJECT_FILENAME),
             &project_config,
         )?;

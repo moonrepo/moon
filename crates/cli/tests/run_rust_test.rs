@@ -73,7 +73,11 @@ fn handles_panic() {
 
     let output = assert.output();
 
-    assert!(predicate::str::contains("thread 'main' panicked at 'Oops'").eval(&output));
+    assert!(
+        predicate::str::is_match("thread 'main' panicked at(?s:.)*Oops")
+            .unwrap()
+            .eval(&output)
+    );
 }
 
 #[test]

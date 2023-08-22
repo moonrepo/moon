@@ -10,16 +10,81 @@ TypeScript, and more. Because WASM based plugins are powered by a programming la
 implicitly support complex business logic and behavior, have access to a sandboxed file system (via
 WASI), can execute child processes, and much more.
 
-However, since WASM executes in its own runtime, it _does not_ have access to the current host
-operating system, architecture, environment variables, and more. To bridge this gap, we provide this
-information as an `env` field for every function input (more below).
-
 :::danger
 
 Since our WASM plugin implementation is still experimental, expect breaking changes to occur in
 non-major releases.
 
 :::
+
+## Concepts
+
+Before we begin, let's talk about a few concepts that are critical to WASM and our plugin system.
+
+### Virtual paths
+
+WASM by default does not have access to the host file system, but through [WASI](https://wasi.dev/),
+we can provide sandboxed access to a pre-defined list of allowed directories. We call this
+[virtual paths](https://docs.rs/proto_pdk/latest/proto_pdk/enum.VirtualPath.html), and all paths
+provided via input or context use them.
+
+Virtual paths are implemented by mapping a real path (host machine) to a virtual path (guest
+runtime) using file path prefixes. The following prefixes are currently supported:
+
+| Real path  | Virtual path |
+| ---------- | ------------ |
+| `~`        | `/home`      |
+| `~/.proto` | `/proto`     |
+| CWD        | `/workspace` |
+
+For example, from the context of WASM, you may have a virtual path of `/proto/tools/node/1.2.3`,
+which simply maps back to `~/.proto/tools/node/1.2.3` on the host machine. However, this should
+almost always be transparent to you, the developer, and to end users.
+
+However, there may be a few cases where you need access to the real path from WASM, for example,
+logging or executing commands. For this, the real path can be accessed with the
+[`real_path`](https://docs.rs/proto_pdk/latest/proto_pdk/enum.VirtualPath.html#method.real_path)
+function on the `VirtualPath` enum (this is a Rust only feature).
+
+```rust
+input.tool_dir.real_path();
+```
+
+### Host environment
+
+Since WASM executes in its own runtime, it _does not_ have access to the current host operating
+system, architecture, so on and so forth. To bridge this gap, we provide the
+[`get_proto_environment`](https://docs.rs/proto_pdk/latest/proto_pdk/fn.get_proto_environment.html)
+function.
+[Learn more about this type](https://docs.rs/proto_pdk/latest/proto_pdk/struct.HostEnvironment.html).
+
+```rust
+let env = get_proto_environment()?;
+```
+
+The host operating system and architecture can be accessed with `os` and `arch` fields respectively.
+Both fields are an enum in Rust, or a string in other languages.
+
+```rust
+if env.os == HostOS::Windows {
+    // Windows only
+}
+
+if env.arch == HostArch::Arm64 {
+    // aarch64 only
+}
+```
+
+Furthermore, the user's home directory (`~`) and proto's root directory (`~/.proto`) can be accessed
+with the `home_dir` and `proto_dir` fields, both of which are [virtual paths](#virtual-paths).
+
+```rust
+if env.home_dir.join(some_path).exists() {
+    // Do something
+}
+```
+
+### Tool ID and context
 
 ## Create a plugin
 

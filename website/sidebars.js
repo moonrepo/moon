@@ -290,6 +290,7 @@ const sidebars = {
 				'proto/commands/setup',
 				'proto/commands/unalias',
 				'proto/commands/uninstall',
+				'proto/commands/uninstall-global',
 				'proto/commands/upgrade',
 				'proto/commands/use',
 			],

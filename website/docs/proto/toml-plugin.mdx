@@ -113,6 +113,8 @@ omitted.
   supports interpolating environment variables via the syntax `$ENV_VAR`.
 - `install-args` - A list of CLI arguments to pass to the tool to install a global binary. The name
   of the binary can be inserted using the `{dependency}` token.
+- `uninstall-args` - A list of CLI arguments to pass to the tool to uninstall a global binary. The
+  name of the binary can be inserted using the `{dependency}` token.
 - `package-prefix` - A string that all package names are prefixed with. The prefix will be removed
   when filtering/listing packages. For example, Cargo/Rust binaries are prefixed wih `cargo-`.
 
@@ -122,6 +124,7 @@ omitted.
 [globals]
 lookup-dirs = ["$PROTOSTAR_HOME/bin", "$HOME/.protostar/bin"]
 install-args = ["install", "--force", "{dependency}"]
+uninstall-args = ["uninstall", "{dependency}"]
 ```
 
 ### Resolving versions

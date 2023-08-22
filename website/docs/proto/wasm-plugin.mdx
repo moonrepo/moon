@@ -96,7 +96,7 @@ provide a mechanism known as host functions, which are functions that are implem
   the host's stderr. This acts like tracing logs, and is not a general purpose stdout logger.
 
 To use host functions, you'll need to make them available by registering them at the top of your
-Rust file:
+Rust file (only add the functions you want to use).
 
 ```rust
 #[host_fn]
@@ -126,7 +126,9 @@ host_log!("Some message");
 host_log!("Some message with {}", "args");
 host_log!(HostLogInput::Fields {
     message: "Some message with data".into(),
-    data: HashMap::from_iter([("data".into(), serde_json::to_value(data)?)]),
+    data: HashMap::from_iter([
+        ("data".into(), serde_json::to_value(data)?),
+    ]),
 });
 ```
 

@@ -10,16 +10,158 @@ TypeScript, and more. Because WASM based plugins are powered by a programming la
 implicitly support complex business logic and behavior, have access to a sandboxed file system (via
 WASI), can execute child processes, and much more.
 
-However, since WASM executes in its own runtime, it _does not_ have access to the current host
-operating system, architecture, environment variables, and more. To bridge this gap, we provide this
-information as an `env` field for every function input (more below).
-
 :::danger
 
 Since our WASM plugin implementation is still experimental, expect breaking changes to occur in
 non-major releases.
 
 :::
+
+## Concepts
+
+Before we begin, let's talk about a few concepts that are critical to WASM and our plugin system.
+
+### Virtual paths
+
+WASM by default does not have access to the host file system, but through [WASI](https://wasi.dev/),
+we can provide sandboxed access to a pre-defined list of allowed directories. We call this
+[virtual paths](https://docs.rs/proto_pdk/latest/proto_pdk/enum.VirtualPath.html), and all paths
+provided via function input or context use them.
+
+Virtual paths are implemented by mapping a real path (host machine) to a virtual path (guest
+runtime) using file path prefixes. The following prefixes are currently supported:
+
+| Real path  | Virtual path |
+| ---------- | ------------ |
+| `~`        | `/home`      |
+| `~/.proto` | `/proto`     |
+| CWD        | `/workspace` |
+
+For example, from the context of WASM, you may have a virtual path of `/proto/tools/node/1.2.3`,
+which simply maps back to `~/.proto/tools/node/1.2.3` on the host machine. However, this should
+almost always be transparent to you, the developer, and to end users.
+
+However, there may be a few cases where you need access to the real path from WASM, for example,
+logging or executing commands. For this, the real path can be accessed with the
+[`real_path`](https://docs.rs/proto_pdk/latest/proto_pdk/enum.VirtualPath.html#method.real_path)
+function on the `VirtualPath` enum (this is a Rust only feature).
+
+```rust
+input.tool_dir.real_path();
+```
+
+### Host environment
+
+Since WASM executes in its own runtime, it _does not_ have access to the current host operating
+system, architecture, so on and so forth. To bridge this gap, we provide the
+[`get_proto_environment`](https://docs.rs/proto_pdk/latest/proto_pdk/fn.get_proto_environment.html)
+function.
+[Learn more about this type](https://docs.rs/proto_pdk/latest/proto_pdk/struct.HostEnvironment.html).
+
+```rust
+let env = get_proto_environment()?;
+```
+
+The host operating system and architecture can be accessed with `os` and `arch` fields respectively.
+Both fields are an enum in Rust, or a string in other languages.
+
+```rust
+if env.os == HostOS::Windows {
+    // Windows only
+}
+
+if env.arch == HostArch::Arm64 {
+    // aarch64 only
+}
+```
+
+Furthermore, the user's home directory (`~`) and proto's root directory (`~/.proto`) can be accessed
+with the `home_dir` and `proto_dir` fields, both of which are [virtual paths](#virtual-paths).
+
+```rust
+if env.home_dir.join(some_path).exists() {
+    // Do something
+}
+```
+
+### Host functions
+
+WASM is pretty powerful but it can't do everything since it's sandboxed. To work around this, we
+provide a mechanism known as host functions, which are functions that are implemented on the host
+(in Rust), and can be executed from WASM. The following host functions are currently available:
+
+- [`exec_command`](https://docs.rs/proto_pdk/latest/proto_pdk/macro.exec_command.html) - Execute a
+  system command on the host machine, with a provided list of arguments or environment variables.
+- [`host_log`](https://docs.rs/proto_pdk/latest/proto_pdk/macro.host_log.html) - Log a message to
+  the host's stderr. This acts like tracing logs, and is not a general purpose stdout logger.
+
+To use host functions, you'll need to make them available by registering them at the top of your
+Rust file (only add the functions you want to use).
+
+```rust
+#[host_fn]
+extern "ExtismHost" {
+    fn exec_command(input: Json<ExecCommandInput>) -> Json<ExecCommandOutput>;
+    fn host_log(input: Json<HostLogInput>);
+}
+```
+
+And then calling the provided `exec_command!` or `host_log!` macros. Each macro supports shorthand
+variants, and an explicit variant that accepts the input struct.
+
+```rust
+exec_command!("which", ["node"]);
+exec_command!(pipe, "npm", ["install"]); // Pipe stdout/stderr
+exec_command!(inherit, "npm", ["install"]); // Inherit stdout/stderr
+exec_command!(ExecCommandInput {
+    command: "npm".into(),
+    args: vec!["install".into()],
+    env_vars: HashMap::new(),
+    stream: false,
+});
+```
+
+```rust
+host_log!("Some message");
+host_log!("Some message with {}", "args");
+host_log!(HostLogInput::Fields {
+    message: "Some message with data".into(),
+    data: HashMap::from_iter([
+        ("data".into(), serde_json::to_value(data)?),
+    ]),
+});
+```
+
+### Tool ID and context
+
+When implementing plugin functions, you'll need to access information about the current tool. To get
+the current tool ID (the key the plugin was configured with), use the
+[`get_tool_id`](https://docs.rs/proto_pdk/latest/proto_pdk/fn.get_tool_id.html) function.
+
+```rust
+let id = get_tool_id();
+```
+
+Additionally, we also provide what we call the tool context, which is information that is constantly
+changing depending on the current step or state of proto's execution. The context cannot be accessed
+with a stand-alone function, and is instead passed as a `context` field in the input of many plugin
+functions.
+
+```rust
+#[plugin_fn]
+pub fn download_prebuilt(Json(input): Json<DownloadPrebuiltInput>) -> FnResult<Json<DownloadPrebuiltOutput>> {
+    let version = input.context.version;
+    // ...
+}
+```
+
+The following fields are available on the
+[context object](https://docs.rs/proto_pdk/latest/proto_pdk/struct.ToolContext.html):
+
+- `env_vars` - A map of environment variables requested by the
+  [`register_tool`](#registering-metadata) function.
+- `tool_dir` - A virtual path to the tool's directory for the current version.
+- `version` - The current version. If not resolved, will be "latest".
 
 ## Create a plugin
 
@@ -68,6 +210,11 @@ cargo install cargo-wasi
 cargo wasi build
 ```
 
+## Implementing plugin functions
+
+Plugins are powered by a set of functions that are called from the host, and are annotated with
+`#[plugin_fn]`.
+
 ### Registering metadata
 
 The first step in a plugin's life-cycle is to register metadata about the plugin with the
@@ -80,6 +227,7 @@ pub fn register_tool(_: ()) -> FnResult<Json<ToolMetadataOutput>> {
     Ok(Json(ToolMetadataOutput {
         name: "Node.js".into(),
         type_of: PluginType::Language,
+        plugin_version: Some(env!("CARGO_PKG_VERSION").into()),
         ..ToolMetadataOutput::default()
     }))
 }
@@ -117,9 +265,11 @@ The following fields are available:
 ```rust
 #[plugin_fn]
 pub fn download_prebuilt(Json(input): Json<DownloadPrebuiltInput>) -> FnResult<Json<DownloadPrebuiltOutput>> {
+     let env = get_proto_environment()?;
+
     check_supported_os_and_arch(
         NAME,
-        &input.env,
+        &env,
         permutations! [
             HostOS::Linux => [HostArch::X64, HostArch::Arm64, HostArch::Arm, HostArch::Powerpc64, HostArch::S390x],
             HostOS::MacOS => [HostArch::X64, HostArch::Arm64],
@@ -127,9 +277,9 @@ pub fn download_prebuilt(Json(input): Json<DownloadPrebuiltInput>) -> FnResult<J
         ],
     )?;
 
-    let version = input.env.version;
-    let arch = input.env.arch;
-    let os = input.env.os;
+    let version = input.context.version;
+    let arch = env.arch;
+    let os = env.os;
 
     let prefix = match os {
         HostOS::Linux => format!("node-v{version}-linux-{arch}"),
@@ -186,9 +336,11 @@ directory.
 
 ```rust
 #[plugin_fn]
-pub fn locate_bins(Json(input): Json<LocateBinsInput>) -> FnResult<Json<LocateBinsOutput>> {
+pub fn locate_bins(Json(_): Json<LocateBinsInput>) -> FnResult<Json<LocateBinsOutput>> {
+    let env = get_proto_environment()?;
+
     Ok(Json(LocateBinsOutput {
-        bin_path: Some(if input.env.os == HostOS::Windows {
+        bin_path: Some(if env.os == HostOS::Windows {
             "node.exe".into()
         } else {
             "bin/node".into()
@@ -225,7 +377,7 @@ versions to actually be installed. To provide a list of versions and language sp
 #[plugin_fn]
 pub fn load_versions(Json(_): Json<LoadVersionsInput>) -> FnResult<Json<LoadVersionsOutput>> {
     let mut output = LoadVersionsOutput::default();
-    let response: Vec<NodeDistVersion> = fetch_url_with_cache("https://nodejs.org/dist/index.json")?;
+    let response: Vec<NodeDistVersion> = fetch_url("https://nodejs.org/dist/index.json")?;
 
     for (index, item) in response.iter().enumerate() {
         let version = Version::parse(&item.version[1..])?; // Starts with v
@@ -328,12 +480,13 @@ map, where the key is the shim file name, and the value is a configuration objec
 
 ```rust
 #[plugin_fn]
-pub fn create_shims(Json(input): Json<CreateShimsInput>) -> FnResult<Json<CreateShimsOutput>> {
+pub fn create_shims(Json(_): Json<CreateShimsInput>) -> FnResult<Json<CreateShimsOutput>> {
+    let env = get_proto_environment()?;
     let mut global_shims = HashMap::new();
 
     global_shims.insert(
         "npx".into(),
-        ShimConfig::global_with_alt_bin(if input.env.os == HostOS::Windows {
+        ShimConfig::global_with_alt_bin(if env.os == HostOS::Windows {
             "npx.cmd".into()
         } else {
             "bin/npx".into()
@@ -352,11 +505,43 @@ Furthermore, if you'd prefer to _not_ create a primary global shim at all, enabl
 
 ```rust
 #[plugin_fn]
-pub fn create_shims(Json(input): Json<CreateShimsInput>) -> FnResult<Json<CreateShimsOutput>> {
+pub fn create_shims(Json(_): Json<CreateShimsInput>) -> FnResult<Json<CreateShimsOutput>> {
     Ok(Json(CreateShimsOutput {
         no_primary_global: true,
         ..CreateShimsOutput::default()
     }))
+}
+```
+
+### Installing and uninstalling globals
+
+Most languages support the concept of installing packages/dependencies globally, and making them
+available on `PATH`. proto supports this with the
+[`proto install-global`](./commands/install-global) and
+[`proto uninstall-global`](./commands/uninstall-global) commands, which are simple convenience
+wrappers around the native binary.
+
+From the context of the plugin, how globals are installed and uninstalled is implemented with the
+`install_global` and `uninstall_global` functions respectively. Both functions receive the
+`dependency` to install as input.
+
+```rust
+#[plugin_fn]
+pub fn install_global(
+    Json(input): Json<InstallGlobalInput>,
+) -> FnResult<Json<InstallGlobalOutput>> {
+    let result = exec_command!(inherit, "npm", ["install", "--global", &input.dependency]);
+
+    Ok(Json(InstallGlobalOutput::from_exec_command(result)))
+}
+
+#[plugin_fn]
+pub fn uninstall_global(
+    Json(input): Json<UninstallGlobalInput>,
+) -> FnResult<Json<UninstallGlobalOutput>> {
+    let result = exec_command!(inherit, "npm", ["uninstall", "--global", &input.dependency]);
+
+    Ok(Json(UninstallGlobalOutput::from_exec_command(result)))
 }
 ```
 
@@ -460,6 +645,14 @@ generate_resolve_versions_tests!("id", {
     "0.5.1" => "0.5.1",
     "stable" => "1.0.0",
 });
+```
+
+To test installing and uninstalling globals, use `generate_globals_test!`. This macro requires a
+plugin ID, the dependency to install, and an optional environment variable to the globals directory.
+
+```rust
+// Doesn't support all use cases! If this doesn't work, implement a test case manually.
+generate_globals_test!("id", "dependency", "GLOBAL_INSTALL_ROOT");
 ```
 
 And lastly, to test shims, use `generate_global_shims_test!` or `generate_local_shims_test!`. Both

@@ -1,6 +1,6 @@
 ---
 source: crates/cli/tests/generate_test.rs
-expression: "fs::read_to_string(sandbox.path().join(\"./test/filters.txt\")).unwrap()"
+expression: standardize_separators(content)
 ---
 STRINGS:
 
@@ -22,7 +22,7 @@ to_up = ../../../../foo/bar
 to_down = ../../foo/bar
 to_down_norel = ../../foo/bar
 
-from_up = some/dir
+from_up = .
 from_down = ../dir
 from_down_norel = ../../some/dir
 

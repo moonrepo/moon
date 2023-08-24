@@ -1,13 +1,12 @@
 use crate::project_graph_error::ProjectGraphError;
 use miette::IntoDiagnostic;
-use moon_common::path::WorkspaceRelativePathBuf;
+use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
 use moon_common::{color, Id};
 use moon_config::DependencyScope;
 use moon_project::Project;
 use moon_project_expander::{ExpanderContext, ExpansionBoundaries, ProjectExpander};
 use moon_query::{build_query, Criteria, Queryable};
 use once_map::OnceMap;
-use pathdiff::diff_paths;
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::EdgeRef;
@@ -168,7 +167,7 @@ impl ProjectGraph {
                 continue;
             }
 
-            if let Some(diff) = diff_paths(file, node.source.as_str()) {
+            if let Ok(diff) = file.relative_to(node.source.as_str()) {
                 let diff_comps = diff.components().count();
 
                 // Exact match, abort

@@ -251,8 +251,6 @@ async fn filters_using_input_files() {
 
 #[tokio::test]
 async fn filters_using_input_files_in_glob_mode() {
-    dbg!("ENV VAR");
-
     let sandbox = cases_sandbox();
     sandbox.enable_git();
 

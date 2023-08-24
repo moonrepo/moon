@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
 use tracing::debug;
 
-static PATH_VAR: Lazy<Regex> = Lazy::new(|| Regex::new(r#"\[([A-Za-z0-9_]+)\]"#).unwrap());
+static PATH_VAR: Lazy<Regex> = Lazy::new(|| Regex::new(r"\[([A-Za-z0-9_]+)\]").unwrap());
 
 #[derive(Debug)]
 pub struct Template {

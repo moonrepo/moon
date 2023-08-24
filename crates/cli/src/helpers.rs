@@ -15,7 +15,7 @@ pub fn fully_qualify_version(version: &str) -> String {
 
     let mut parts = version.split('.');
 
-    vec![
+    [
         parts.next().unwrap_or("0"),
         parts.next().unwrap_or("0"),
         parts.next().unwrap_or("0"),

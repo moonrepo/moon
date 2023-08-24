@@ -3178,8 +3178,19 @@ dependencies = [
 name = "moon_api"
 version = "0.1.0"
 dependencies = [
+ "cd_env",
+ "ci_env",
+ "md5",
  "miette",
+ "moon_cache",
+ "moon_common",
+ "proto_cli",
+ "reqwest",
+ "semver",
+ "serde",
+ "starbase_utils",
  "tracing",
+ "uuid",
 ]
 
 [[package]]

@@ -79,3 +79,4 @@ tokio = { version = "1.32.0", default-features = false, features = [
 ] }
 tracing = "0.1.37"
 url = "2.4.0"
+uuid = { version = "1.4.1", features = ["v4"] }

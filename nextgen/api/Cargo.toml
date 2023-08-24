@@ -4,5 +4,16 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+moon_cache = { path = "../cache" }
+moon_common = { path = "../common" }
+cd_env = { version = "0.1.0" }
+ci_env = { workspace = true }
+md5 = "0.7.0"
 miette = { workspace = true }
+proto_cli = { workspace = true }
+reqwest = { workspace = true }
+semver = { workspace = true }
+serde = { workspace = true }
+starbase_utils = { workspace = true }
 tracing = { workspace = true }
+uuid = { workspace = true }

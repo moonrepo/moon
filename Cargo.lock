@@ -3325,7 +3325,6 @@ dependencies = [
  "moon_common",
  "moon_config",
  "once_cell",
- "pathdiff",
  "regex",
  "starbase_sandbox",
  "starbase_utils",
@@ -3809,7 +3808,6 @@ dependencies = [
  "moon_task_builder",
  "moon_vcs",
  "once_map",
- "pathdiff",
  "petgraph",
  "rustc-hash",
  "serde",
@@ -5075,9 +5073,9 @@ checksum = "e5ea92a5b6195c6ef2a0295ea818b312502c6fc94dde986c5553242e18fd4ce2"
 
 [[package]]
 name = "relative-path"
-version = "1.8.0"
+version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4bf2521270932c3c7bed1a59151222bd7643c79310f2916f01925e1e16255698"
+checksum = "c707298afce11da2efef2f600116fa93ffa7a032b5d7b628aa17711ec81383ca"
 dependencies = [
  "serde",
 ]

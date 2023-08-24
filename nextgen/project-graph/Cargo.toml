@@ -18,7 +18,6 @@ moon_vcs = { path = "../vcs" }
 async-recursion = "1.0.4"
 miette = { workspace = true }
 once_map = { workspace = true }
-pathdiff = { workspace = true }
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }

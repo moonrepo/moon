@@ -1,4 +1,4 @@
-pub use relative_path::{RelativePath, RelativePathBuf};
+pub use relative_path::*;
 use starbase_styles::color;
 use std::path::Path;
 

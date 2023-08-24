@@ -2,8 +2,7 @@
 #![allow(clippy::disallowed_types)]
 
 use convert_case::{Case, Casing};
-use moon_common::path::RelativePathBuf;
-use pathdiff::diff_paths;
+use moon_common::path::{PathExt, RelativePathBuf};
 use starbase_utils::json::{to_value, JsonValue as Value};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -70,18 +69,26 @@ pub fn path_relative(value: &Value, args: &HashMap<String, Value>) -> Result<Val
     }
 
     let rel_to = match args.get("to") {
-        Some(val) => diff_paths(try_get_value!("path_relative", "to", String, val), &base),
+        Some(val) => try_get_value!("path_relative", "to", PathBuf, val)
+            .relative_to(&base)
+            .ok(),
         None => None,
     };
 
     let rel_from = match args.get("from") {
-        Some(val) => diff_paths(&base, try_get_value!("path_relative", "from", String, val)),
+        Some(val) => base
+            .relative_to(try_get_value!("path_relative", "from", PathBuf, val))
+            .ok(),
         None => None,
     };
 
-    let rel = RelativePathBuf::from_path(rel_to.unwrap_or_else(|| rel_from.unwrap_or(base)))
-        .unwrap()
+    let mut rel = rel_to
+        .unwrap_or_else(|| rel_from.unwrap_or(RelativePathBuf::from(".")))
         .normalize();
+
+    if rel.as_str().is_empty() {
+        rel = RelativePathBuf::from(".");
+    }
 
     Ok(to_value(rel).unwrap())
 }

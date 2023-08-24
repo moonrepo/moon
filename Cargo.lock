@@ -3175,6 +3175,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_api"
+version = "0.1.0"
+dependencies = [
+ "cd_env",
+ "ci_env",
+ "graphql_client",
+ "md5",
+ "miette",
+ "moon_cache",
+ "moon_common",
+ "moon_time",
+ "proto_cli",
+ "reqwest",
+ "semver",
+ "serde",
+ "starbase_utils",
+ "thiserror",
+ "tokio",
+ "tokio-util",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "moon_app"
 version = "0.1.0"
 dependencies = [

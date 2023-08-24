@@ -67,7 +67,7 @@ impl Tool for RustTool {
     async fn setup(&mut self, last_versions: &mut FxHashMap<String, String>) -> miette::Result<u8> {
         let mut installed = 0;
 
-        let Some(version) = &self.config.version else  {
+        let Some(version) = &self.config.version else {
             return Ok(installed);
         };
 

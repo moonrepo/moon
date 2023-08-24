@@ -33,7 +33,8 @@ fn find_workspace_root<P: AsRef<Path>>(current_dir: P) -> miette::Result<PathBuf
     );
 
     let Some(possible_root) = fs::find_upwards(consts::CONFIG_DIRNAME, current_dir)
-        .map(|dir| dir.parent().unwrap().to_path_buf()) else {
+        .map(|dir| dir.parent().unwrap().to_path_buf())
+    else {
         return Err(WorkspaceError::MissingConfigDir.into());
     };
 
@@ -239,8 +240,8 @@ impl Workspace {
             return Ok(());
         };
 
-        let Ok(repo_slug) = env::var("MOONBASE_REPO_SLUG")
-            .or_else(|_| env::var("MOON_REPO_SLUG")) else {
+        let Ok(repo_slug) = env::var("MOONBASE_REPO_SLUG").or_else(|_| env::var("MOON_REPO_SLUG"))
+        else {
             Moonbase::no_vcs_root();
 
             return Ok(());

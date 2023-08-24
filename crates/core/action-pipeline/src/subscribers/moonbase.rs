@@ -60,12 +60,11 @@ impl MoonbaseSubscriber {
         }
 
         let Ok(response) = graphql::post_mutation::<update_run::ResponseData>(
-            UpdateRun::build_query(update_run::Variables {
-                id: *run_id,
-                input,
-            }),
+            UpdateRun::build_query(update_run::Variables { id: *run_id, input }),
             Some(auth_token),
-        ).await else {
+        )
+        .await
+        else {
             return Ok(());
         };
 
@@ -282,7 +281,9 @@ impl Subscriber for MoonbaseSubscriber {
                                 },
                             }),
                             Some(&moonbase.auth_token),
-                        ).await else {
+                        )
+                        .await
+                        else {
                             return Ok(EventFlow::Continue);
                         };
 

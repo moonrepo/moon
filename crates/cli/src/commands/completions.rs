@@ -6,7 +6,7 @@ use starbase::AppResult;
 
 pub async fn completions(shell: Option<Shell>) -> AppResult {
     let Some(shell) = shell.or_else(Shell::from_env) else {
-      return Err(miette!("Could not determine your shell!"));
+        return Err(miette!("Could not determine your shell!"));
     };
 
     let mut app = App::command();

@@ -53,16 +53,15 @@ static PM_LIFE_CYCLES: Lazy<regex::Regex> = Lazy::new(|| {
 });
 
 // These patterns are currently not allowed
-static INVALID_CD: Lazy<regex::Regex> =
-    Lazy::new(|| regex::create_regex(r#"(^|\b|\s)cd "#).unwrap());
+static INVALID_CD: Lazy<regex::Regex> = Lazy::new(|| regex::create_regex(r"(^|\b|\s)cd ").unwrap());
 
 static INVALID_REDIRECT: Lazy<regex::Regex> =
-    Lazy::new(|| regex::create_regex(r#"\s(<|<<|>>|>)\s"#).unwrap());
+    Lazy::new(|| regex::create_regex(r"\s(<|<<|>>|>)\s").unwrap());
 
-static INVALID_PIPE: Lazy<regex::Regex> = Lazy::new(|| regex::create_regex(r#"\s\|\s"#).unwrap());
+static INVALID_PIPE: Lazy<regex::Regex> = Lazy::new(|| regex::create_regex(r"\s\|\s").unwrap());
 
 static INVALID_OPERATOR: Lazy<regex::Regex> =
-    Lazy::new(|| regex::create_regex(r#"\s(\|\||;;)\s"#).unwrap());
+    Lazy::new(|| regex::create_regex(r"\s(\|\||;;)\s").unwrap());
 
 fn is_bash_script(arg: &str) -> bool {
     arg.ends_with(".sh")

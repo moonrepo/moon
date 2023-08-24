@@ -22,3 +22,5 @@ tokio = { workspace = true }
 tokio-util = "0.7.8"
 tracing = { workspace = true }
 uuid = { workspace = true }
+
+# Rebuild schema: graphql-client introspect-schema http://localhost:8080/graphql --output ./nextgen/api/schema.json

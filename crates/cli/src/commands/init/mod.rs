@@ -185,7 +185,7 @@ pub async fn init(args: InitArgs) -> AppResult {
 
     // Extract template variables
     let Some(moon_dir) = verify_dest_dir(&dest_dir, &options, &theme)? else {
-        return Ok(())
+        return Ok(());
     };
     let mut context = create_default_context();
 

@@ -1,0 +1,10 @@
+mutation AddJobToRun($input: CreateJobInput!) {
+	addJobToRun(input: $input) {
+		job {
+			id
+		}
+		userErrors {
+			message
+		}
+	}
+}

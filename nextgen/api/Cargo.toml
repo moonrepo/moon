@@ -6,14 +6,19 @@ edition = "2021"
 [dependencies]
 moon_cache = { path = "../cache" }
 moon_common = { path = "../common" }
+moon_time = { path = "../time" }
 cd_env = { version = "0.1.0" }
 ci_env = { workspace = true }
 md5 = "0.7.0"
+graphql_client = { version = "0.13.0", features = ["reqwest-rustls"] }
 miette = { workspace = true }
 proto_cli = { workspace = true }
-reqwest = { workspace = true }
+reqwest = { workspace = true, features = ["json", "multipart", "stream"] }
 semver = { workspace = true }
 serde = { workspace = true }
 starbase_utils = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tokio-util = "0.7.8"
 tracing = { workspace = true }
 uuid = { workspace = true }

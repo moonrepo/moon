@@ -3175,6 +3175,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_api"
+version = "0.1.0"
+dependencies = [
+ "miette",
+ "tracing",
+]
+
+[[package]]
 name = "moon_app"
 version = "0.1.0"
 dependencies = [

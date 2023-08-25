@@ -5,7 +5,6 @@ use itertools::Itertools;
 use miette::{miette, IntoDiagnostic};
 use moon_api::Launchpad;
 use moon_cache::CacheEngine;
-use moon_logger::error;
 use moon_utils::{get_workspace_root, semver::Version};
 use proto::ProtoError;
 use starbase::system;
@@ -16,6 +15,7 @@ use std::{
     io::copy,
     path::Component,
 };
+use tracing::error;
 
 #[system]
 pub async fn upgrade() {

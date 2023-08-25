@@ -1,5 +1,6 @@
 use crate::app::GlobalArgs;
 use crate::enums::{CacheMode, TouchedStatus};
+use crate::helpers::map_list;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use clap::Args;
 use miette::miette;
@@ -7,7 +8,6 @@ use moon::{build_dep_graph, generate_project_graph};
 use moon_action_context::{ActionContext, ProfileType};
 use moon_action_pipeline::Pipeline;
 use moon_common::is_test_env;
-use moon_logger::map_list;
 use moon_project_graph::ProjectGraph;
 use moon_utils::is_ci;
 use moon_workspace::Workspace;

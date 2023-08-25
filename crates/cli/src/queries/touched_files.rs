@@ -1,14 +1,13 @@
 use crate::enums::TouchedStatus;
+use crate::helpers::map_list;
 use moon_common::path::{standardize_separators, WorkspaceRelativePathBuf};
-use moon_logger::{debug, map_list, trace};
 use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
 use starbase::AppResult;
 use starbase_styles::color;
 use std::env;
-
-const LOG_TARGET: &str = "moon:query:touched-files";
+use tracing::{debug, trace};
 
 #[derive(Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -34,7 +33,7 @@ pub async fn query_touched_files(
     workspace: &Workspace,
     options: &QueryTouchedFilesOptions,
 ) -> AppResult<FxHashSet<WorkspaceRelativePathBuf>> {
-    debug!(target: LOG_TARGET, "Querying for touched files");
+    debug!("Querying for touched files");
 
     let vcs = &workspace.vcs;
     let default_branch = vcs.get_default_branch().await?;
@@ -43,7 +42,6 @@ pub async fn query_touched_files(
     // On default branch, so compare against self -1 revision
     let touched_files_map = if options.default_branch && vcs.is_default_branch(current_branch) {
         trace!(
-            target: LOG_TARGET,
             "On default branch {}, comparing against previous revision",
             current_branch
         );
@@ -60,7 +58,6 @@ pub async fn query_touched_files(
             .unwrap_or_else(|_| options.head.as_deref().unwrap_or("HEAD").to_owned());
 
         trace!(
-            target: LOG_TARGET,
             "Against remote using base \"{}\" with head \"{}\"",
             base,
             head,
@@ -71,7 +68,7 @@ pub async fn query_touched_files(
 
         // Otherwise, check locally touched files
     } else {
-        trace!(target: LOG_TARGET, "Against locally touched");
+        trace!("Against locally touched");
 
         vcs.get_touched_files().await?
     };
@@ -81,7 +78,6 @@ pub async fn query_touched_files(
 
     if options.status.is_empty() {
         debug!(
-            target: LOG_TARGET,
             "Filtering based on touched status \"{}\"",
             color::symbol(TouchedStatus::All.to_string())
         );
@@ -89,7 +85,6 @@ pub async fn query_touched_files(
         touched_files.extend(touched_files_map.all());
     } else {
         debug!(
-            target: LOG_TARGET,
             "Filtering based on touched status \"{}\"",
             map_list(&options.status, |f| color::symbol(f.to_string()))
         );
@@ -124,11 +119,7 @@ pub async fn query_touched_files(
         if options.log {
             println!("{}", touched_files_to_log.join("\n"));
         } else {
-            debug!(
-                target: LOG_TARGET,
-                "Found touched files:\n{}",
-                touched_files_to_log.join("\n")
-            );
+            debug!("Found touched files:\n{}", touched_files_to_log.join("\n"));
         }
     }
 

@@ -33,11 +33,11 @@ use app::App as CLI;
 use clap::Parser;
 use commands::migrate::FromTurborepoArgs;
 use enums::{CacheMode, LogLevel};
-use moon_logger::debug;
 use starbase::{tracing::TracingOptions, App, AppResult};
 use starbase_styles::color;
 use starbase_utils::string_vec;
 use std::env;
+use tracing::debug;
 
 pub use app::BIN_NAME;
 
@@ -63,14 +63,9 @@ fn detect_running_version() {
     let version = env!("CARGO_PKG_VERSION");
 
     if let Ok(exe_with) = env::var("MOON_EXECUTED_WITH") {
-        debug!(
-            target: "moon",
-            "Running moon v{} (with {})",
-            version,
-            color::file(exe_with),
-        );
+        debug!("Running moon v{} (with {})", version, color::file(exe_with),);
     } else {
-        debug!(target: "moon", "Running moon v{}", version);
+        debug!("Running moon v{}", version);
     }
 
     env::set_var("MOON_VERSION", version);

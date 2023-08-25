@@ -3298,7 +3298,6 @@ dependencies = [
  "moon_config",
  "moon_dep_graph",
  "moon_lang",
- "moon_logger",
  "moon_node_lang",
  "moon_node_platform",
  "moon_node_tool",

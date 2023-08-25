@@ -7,7 +7,6 @@ use moon_config::{
     PartialTaskCommandArgs, PartialTaskConfig, PartialTaskOptionsConfig, PlatformType,
     ProjectConfig,
 };
-use moon_logger::{info, warn};
 use moon_target::Target;
 use moon_terminal::safe_exit;
 use moon_workspace::Workspace;
@@ -24,8 +23,6 @@ pub struct FromTurborepoArgs {
     #[arg(long, hide = true)]
     pub skip_touched_files_check: bool,
 }
-
-const LOG_TARGET: &str = "moon:migrate:from-turborepo";
 
 #[derive(Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -175,7 +172,7 @@ pub async fn from_turborepo(args: ArgsRef<FromTurborepoArgs>, workspace: Resourc
     }
 
     if args.skip_touched_files_check {
-        info!(target: LOG_TARGET, "Skipping touched files check.");
+        info!("Skipping touched files check.");
     } else {
         check_dirty_repo(workspace).await?;
     };
@@ -198,7 +195,6 @@ pub async fn from_turborepo(args: ArgsRef<FromTurborepoArgs>, workspace: Resourc
         if id.starts_with("//#") {
             if !has_warned_root_tasks {
                 warn!(
-                    target: LOG_TARGET,
                     "Unable to migrate root-level `//#` tasks. Create a root-level project manually to support similar functionality: https://moonrepo.dev/docs/guides/root-project"
                 );
                 has_warned_root_tasks = true;

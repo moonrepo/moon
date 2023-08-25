@@ -4,7 +4,6 @@ use crate::queries::touched_files::{
 use miette::IntoDiagnostic;
 use moon::generate_project_graph;
 use moon_common::{path::WorkspaceRelativePathBuf, Id};
-use moon_logger::{debug, trace};
 use moon_project::Project;
 use moon_task::Task;
 use moon_utils::{is_ci, regex};
@@ -17,8 +16,7 @@ use std::{
     io::{stdin, IsTerminal, Read},
     sync::Arc,
 };
-
-const LOG_TARGET: &str = "moon:query:projects";
+use tracing::{debug, trace};
 
 #[derive(Clone, Default, Deserialize, Serialize)]
 pub struct QueryProjectsOptions {
@@ -50,7 +48,6 @@ fn convert_to_regex(field: &str, value: &Option<String>) -> AppResult<Option<reg
     match value {
         Some(pattern) => {
             trace!(
-                target: LOG_TARGET,
                 "Filtering projects \"{}\" by matching pattern \"{}\"",
                 field,
                 pattern
@@ -106,7 +103,7 @@ pub async fn query_projects(
     workspace: &mut Workspace,
     options: &QueryProjectsOptions,
 ) -> AppResult<Vec<Arc<Project>>> {
-    debug!(target: LOG_TARGET, "Querying for projects");
+    debug!("Querying for projects");
 
     let project_graph = generate_project_graph(workspace).await?;
     let touched_files = if options.affected {

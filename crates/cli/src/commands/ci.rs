@@ -8,7 +8,6 @@ use moon_action_context::ActionContext;
 use moon_action_pipeline::Pipeline;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_dep_graph::DepGraph;
-use moon_logger::debug;
 use moon_project_graph::ProjectGraph;
 use moon_target::Target;
 use moon_terminal::safe_exit;
@@ -16,6 +15,7 @@ use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
 use starbase::{system, AppResult};
 use starbase_styles::color;
+use tracing::debug;
 
 type TargetList = Vec<Target>;
 
@@ -35,8 +35,6 @@ pub struct CiArgs {
     #[arg(long = "jobTotal", help = "Total amount of jobs to run", help_heading = HEADING_PARALLELISM)]
     job_total: Option<usize>,
 }
-
-const LOG_TARGET: &str = "moon:ci";
 
 fn print_header(provider: &CiOutput, title: &str) {
     println!("{}{}", provider.open_log_group, title);
@@ -105,7 +103,6 @@ fn gather_runnable_targets(
                 }
             } else {
                 debug!(
-                    target: LOG_TARGET,
                     "Not running target {} because it either has no `outputs` or `runInCI` is false",
                     color::label(&task.target.id),
                 );

@@ -5,6 +5,13 @@ use starbase_styles::color::{no_color, supports_color};
 use std::env;
 use std::time::Duration;
 
+pub fn map_list<T, F>(list: &[T], fmt: F) -> String
+where
+    F: Fn(&T) -> String,
+{
+    list.iter().map(fmt).collect::<Vec<_>>().join(", ")
+}
+
 pub fn fully_qualify_version(version: &str) -> String {
     if version.is_empty() {
         return version.to_owned();

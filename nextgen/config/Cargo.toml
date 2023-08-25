@@ -2,6 +2,7 @@
 name = "moon_config"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
 description = "Core workspace, project, and moon configuration."
 homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"

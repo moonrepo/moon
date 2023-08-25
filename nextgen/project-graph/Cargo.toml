@@ -2,6 +2,7 @@
 name = "moon_project_graph"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
 description = "Project graph for moon represented as a DAG."
 homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"

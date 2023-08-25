@@ -2,6 +2,7 @@
 name = "moon_cache"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
 description = "Caching engine."
 homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"

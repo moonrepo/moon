@@ -2,6 +2,7 @@
 name = "moon_file_group"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
 description = "File groups and collections."
 homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"

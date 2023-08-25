@@ -2,6 +2,7 @@
 name = "moon_project_builder"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
 description = "Builder for creating projects and their tasks."
 homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"

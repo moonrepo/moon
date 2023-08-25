@@ -1,13 +1,13 @@
 use super::MANIFEST_NAME;
 use crate::commands::docker::scaffold::DockerManifest;
-use moon::{build_dep_graph, generate_project_graph, load_workspace_with_toolchain};
+use moon::{build_dep_graph, generate_project_graph};
 use moon_action_pipeline::Pipeline;
 use moon_terminal::safe_exit;
+use moon_workspace::Workspace;
 use starbase::AppResult;
 use starbase_utils::json;
 
-pub async fn setup() -> AppResult {
-    let mut workspace = load_workspace_with_toolchain().await?;
+pub async fn setup(mut workspace: Workspace) -> AppResult {
     let manifest_path = workspace.root.join(MANIFEST_NAME);
 
     if !manifest_path.exists() {

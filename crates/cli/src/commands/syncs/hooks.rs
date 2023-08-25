@@ -1,7 +1,7 @@
 use crate::helpers::create_progress_bar;
 use clap::Args;
-use moon::load_workspace;
 use moon_actions::{sync_vcs_hooks, unsync_vcs_hooks};
+use moon_workspace::Workspace;
 use starbase::AppResult;
 use starbase_styles::color;
 
@@ -14,9 +14,7 @@ pub struct SyncHooksArgs {
     force: bool,
 }
 
-pub async fn sync(args: SyncHooksArgs) -> AppResult {
-    let workspace = load_workspace().await?;
-
+pub async fn sync(args: SyncHooksArgs, workspace: Workspace) -> AppResult {
     if workspace.config.vcs.hooks.is_empty() {
         println!(
             "No hooks available to sync. Configure them with the {} setting.",

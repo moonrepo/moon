@@ -1,6 +1,6 @@
 use super::check_dirty_repo;
 use clap::Args;
-use moon::{generate_project_graph, load_workspace};
+use moon::generate_project_graph;
 use moon_common::consts::CONFIG_PROJECT_FILENAME;
 use moon_common::Id;
 use moon_config::{
@@ -9,6 +9,7 @@ use moon_config::{
 use moon_logger::info;
 use moon_node_lang::package_json::{DepsSet, PackageJson};
 use moon_node_platform::create_tasks_from_scripts;
+use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
 use starbase::AppResult;
 use starbase_utils::yaml;
@@ -25,9 +26,8 @@ const LOG_TARGET: &str = "moon:migrate:from-package-json";
 pub async fn from_package_json(
     args: FromPackageJsonArgs,
     skip_touched_files_check: bool,
+    mut workspace: Workspace,
 ) -> AppResult {
-    let mut workspace = load_workspace().await?;
-
     if skip_touched_files_check {
         info!(target: LOG_TARGET, "Skipping touched files check.");
     } else {

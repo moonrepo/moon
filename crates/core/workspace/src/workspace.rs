@@ -12,6 +12,7 @@ use starbase_styles::color;
 use starbase_utils::{dirs, fs, glob};
 use std::env;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 const LOG_TARGET: &str = "moon:workspace";
 
@@ -142,27 +143,28 @@ fn load_workspace_config(root_dir: &Path) -> miette::Result<WorkspaceConfig> {
     WorkspaceConfig::load_from(root_dir)
 }
 
+#[derive(Clone)]
 pub struct Workspace {
     /// Engine for reading and writing cache/states.
-    pub cache_engine: CacheEngine,
+    pub cache_engine: Arc<CacheEngine>,
 
     /// Workspace configuration loaded from ".moon/workspace.yml".
     pub config: WorkspaceConfig,
 
     /// Engine for reading and writing hashes/outputs.
-    pub hash_engine: HashEngine,
+    pub hash_engine: Arc<HashEngine>,
 
     /// Proto tools loaded from ".prototools".
-    pub proto_tools: ToolsConfig,
+    pub proto_tools: Arc<ToolsConfig>,
 
     /// The root of the workspace that contains the ".moon" config folder.
     pub root: PathBuf,
 
     /// When logged in, the auth token and IDs for making API requests.
-    pub session: Option<Moonbase>,
+    pub session: Option<Arc<Moonbase>>,
 
     /// Global tasks configuration loaded from ".moon/tasks.yml".
-    pub tasks_config: InheritedTasksManager,
+    pub tasks_config: Arc<InheritedTasksManager>,
 
     /// Toolchain configuration loaded from ".moon/toolchain.yml".
     pub toolchain_config: ToolchainConfig,
@@ -171,7 +173,7 @@ pub struct Workspace {
     pub toolchain_root: PathBuf,
 
     /// Configured version control system.
-    pub vcs: BoxedVcs,
+    pub vcs: Arc<BoxedVcs>,
 
     /// The current working directory.
     pub working_dir: PathBuf,
@@ -221,16 +223,16 @@ impl Workspace {
         )?;
 
         Ok(Workspace {
-            cache_engine,
+            cache_engine: Arc::new(cache_engine),
             config,
-            hash_engine,
-            proto_tools,
+            hash_engine: Arc::new(hash_engine),
+            proto_tools: Arc::new(proto_tools),
             root: root_dir,
             session: None,
-            tasks_config,
+            tasks_config: Arc::new(tasks_config),
             toolchain_config,
             toolchain_root: get_root()?,
-            vcs: Box::new(vcs),
+            vcs: Arc::new(Box::new(vcs)),
             working_dir: working_dir.to_owned(),
         })
     }
@@ -247,7 +249,7 @@ impl Workspace {
             return Ok(());
         };
 
-        self.session = Moonbase::signin(secret_key, repo_slug).await;
+        self.session = Moonbase::signin(secret_key, repo_slug).await.map(Arc::new);
 
         Ok(())
     }

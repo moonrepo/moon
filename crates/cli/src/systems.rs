@@ -29,9 +29,34 @@ use starbase::system;
 use tracing::debug;
 
 #[system]
+pub async fn load_workspace(resources: ResourcesMut, global_args: StateRef<CurrentCommand>) {
+    let workspace = match &global_args.command {
+        // Must not load the workspace!
+        Commands::Init(_) | Commands::Completions { .. } | Commands::Setup | Commands::Upgrade => {
+            return Ok(());
+        }
+
+        // Requires the toolchain
+        Commands::Bin { .. }
+        | Commands::Docker {
+            command: DockerCommands::Prune | DockerCommands::Setup,
+        }
+        | Commands::Node {
+            command: NodeCommands::RunScript(_),
+        }
+        | Commands::Teardown => moon::load_workspace_with_toolchain().await?,
+
+        // Does not require the toolchain
+        _ => moon::load_workspace().await?,
+    };
+
+    resources.set(WorkspaceInstance(workspace));
+}
+
+#[system]
 pub async fn check_for_new_version(
     global_args: StateRef<CurrentCommand>,
-    workspace: StateRef<WorkspaceInstance>,
+    workspace: ResourceRef<WorkspaceInstance>,
 ) {
     if is_test_env() || !is_unformatted_stdout() || !moon::is_telemetry_enabled() {
         return Ok(());
@@ -44,7 +69,7 @@ pub async fn check_for_new_version(
         let current_version = env!("CARGO_PKG_VERSION");
         let prefix = get_checkpoint_prefix(Checkpoint::Announcement);
 
-        match Launchpad::check_version(&workspace.cache_engine, current_version, false).await {
+        match Launchpad::check_version(&workspace.0.cache_engine, current_version, false).await {
             Ok(Some(latest)) => {
                 println!(
                     "{} There's a new version of moon available, {} (currently on {})!",
@@ -75,54 +100,57 @@ pub async fn check_for_new_version(
 #[system(instrument = false)]
 pub async fn run_command(
     global_args: StateRef<CurrentCommand>,
-    // workspace: StateRef<WorkspaceInstance>,
+    workspace: ResourceRef<WorkspaceInstance>,
 ) {
+    // Take ownership so that we can freely pass it to commands
+    let workspace = workspace.0.to_owned();
+
     let result = match global_args.command.clone() {
         Commands::Bin { tool } => bin(tool).await,
-        Commands::Ci(args) => ci(args, global_args.concurrency).await,
-        Commands::Check(args) => check(args, global_args.concurrency).await,
-        Commands::Clean(args) => clean(args).await,
+        Commands::Ci(args) => ci(args, global_args.concurrency, workspace).await,
+        Commands::Check(args) => check(args, global_args.concurrency, workspace).await,
+        Commands::Clean(args) => clean(args, workspace).await,
         Commands::Completions { shell } => completions::completions(shell).await,
-        Commands::DepGraph(args) => dep_graph(args).await,
+        Commands::DepGraph(args) => dep_graph(args, workspace).await,
         Commands::Docker { command } => match command {
-            DockerCommands::Prune => docker::prune().await,
-            DockerCommands::Scaffold(args) => docker::scaffold(args).await,
-            DockerCommands::Setup => docker::setup().await,
+            DockerCommands::Prune => docker::prune(workspace).await,
+            DockerCommands::Scaffold(args) => docker::scaffold(args, workspace).await,
+            DockerCommands::Setup => docker::setup(workspace).await,
         },
-        Commands::Generate(args) => generate(args).await,
+        Commands::Generate(args) => generate(args, workspace).await,
         Commands::Init(args) => init(args).await,
         Commands::Migrate {
             command,
             skip_touched_files_check,
         } => match command {
             MigrateCommands::FromPackageJson(args) => {
-                migrate::from_package_json(args, skip_touched_files_check).await
+                migrate::from_package_json(args, skip_touched_files_check, workspace).await
             }
             MigrateCommands::FromTurborepo => {
-                migrate::from_turborepo(skip_touched_files_check).await
+                migrate::from_turborepo(skip_touched_files_check, workspace).await
             }
         },
         Commands::Node { command } => match command {
-            NodeCommands::RunScript(args) => node::run_script(args).await,
+            NodeCommands::RunScript(args) => node::run_script(args, workspace).await,
         },
-        Commands::Project(args) => project(args).await,
-        Commands::ProjectGraph(args) => project_graph(args).await,
+        Commands::Project(args) => project(args, workspace).await,
+        Commands::ProjectGraph(args) => project_graph(args, workspace).await,
         Commands::Query { command } => match command {
-            QueryCommands::Hash(args) => query::hash(args).await,
-            QueryCommands::HashDiff(args) => query::hash_diff(args).await,
-            QueryCommands::Projects(args) => query::projects(args).await,
-            QueryCommands::Tasks(args) => query::tasks(args).await,
-            QueryCommands::TouchedFiles(args) => query::touched_files(args).await,
+            QueryCommands::Hash(args) => query::hash(args, workspace).await,
+            QueryCommands::HashDiff(args) => query::hash_diff(args, workspace).await,
+            QueryCommands::Projects(args) => query::projects(args, workspace).await,
+            QueryCommands::Tasks(args) => query::tasks(args, workspace).await,
+            QueryCommands::TouchedFiles(args) => query::touched_files(args, workspace).await,
         },
-        Commands::Run(args) => run(args, global_args.concurrency).await,
+        Commands::Run(args) => run(args, global_args.concurrency, workspace).await,
         Commands::Setup => setup().await,
         Commands::Sync { command } => match command {
-            Some(SyncCommands::Codeowners(args)) => syncs::codeowners::sync(args).await,
-            Some(SyncCommands::Hooks(args)) => syncs::hooks::sync(args).await,
-            Some(SyncCommands::Projects) => syncs::projects::sync().await,
-            None => sync().await,
+            Some(SyncCommands::Codeowners(args)) => syncs::codeowners::sync(args, workspace).await,
+            Some(SyncCommands::Hooks(args)) => syncs::hooks::sync(args, workspace).await,
+            Some(SyncCommands::Projects) => syncs::projects::sync(workspace).await,
+            None => sync(workspace).await,
         },
-        Commands::Task(args) => task(args).await,
+        Commands::Task(args) => task(args, workspace).await,
         Commands::Teardown => teardown().await,
         Commands::Upgrade => upgrade().await,
     };

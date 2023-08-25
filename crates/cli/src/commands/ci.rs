@@ -2,7 +2,7 @@ use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOption
 use ci_env::CiOutput;
 use clap::Args;
 use itertools::Itertools;
-use moon::{build_dep_graph, generate_project_graph, load_workspace};
+use moon::{build_dep_graph, generate_project_graph};
 use moon_action_context::ActionContext;
 use moon_action_pipeline::Pipeline;
 use moon_common::path::WorkspaceRelativePathBuf;
@@ -189,8 +189,7 @@ fn generate_dep_graph(
     Ok(dep_graph)
 }
 
-pub async fn ci(args: CiArgs, concurrency: Option<usize>) -> AppResult {
-    let mut workspace = load_workspace().await?;
+pub async fn ci(args: CiArgs, concurrency: Option<usize>, mut workspace: Workspace) -> AppResult {
     let ci_provider = ci_env::get_output().unwrap_or(CiOutput {
         close_log_group: "",
         open_log_group: "▪▪▪▪ ",

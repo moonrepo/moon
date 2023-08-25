@@ -1,7 +1,8 @@
 use crate::commands::graph::utils::{project_graph_repr, respond_to_request, setup_server};
 use clap::Args;
-use moon::{build_project_graph, load_workspace};
+use moon::build_project_graph;
 use moon_common::Id;
+use moon_workspace::Workspace;
 use starbase::AppResult;
 
 #[derive(Args, Clone, Debug)]
@@ -16,8 +17,7 @@ pub struct ProjectGraphArgs {
     json: bool,
 }
 
-pub async fn project_graph(args: ProjectGraphArgs) -> AppResult {
-    let mut workspace = load_workspace().await?;
+pub async fn project_graph(args: ProjectGraphArgs, mut workspace: Workspace) -> AppResult {
     let mut project_graph_builder = build_project_graph(&mut workspace).await?;
 
     if let Some(id) = &args.id {

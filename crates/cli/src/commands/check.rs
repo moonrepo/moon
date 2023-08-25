@@ -1,9 +1,10 @@
 use crate::commands::run::{run_target, RunArgs};
 use clap::Args;
-use moon::{generate_project_graph, load_workspace};
+use moon::generate_project_graph;
 use moon_common::Id;
 use moon_logger::trace;
 use moon_project::Project;
+use moon_workspace::Workspace;
 use starbase::AppResult;
 use std::env;
 use std::sync::Arc;
@@ -28,8 +29,11 @@ pub struct CheckArgs {
 
 const LOG_TARGET: &str = "moon:check";
 
-pub async fn check(args: CheckArgs, concurrency: Option<usize>) -> AppResult {
-    let mut workspace = load_workspace().await?;
+pub async fn check(
+    args: CheckArgs,
+    concurrency: Option<usize>,
+    mut workspace: Workspace,
+) -> AppResult {
     let project_graph = generate_project_graph(&mut workspace).await?;
     let mut projects: Vec<Arc<Project>> = vec![];
 

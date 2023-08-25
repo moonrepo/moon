@@ -1,8 +1,9 @@
 use crate::commands::graph::utils::{dep_graph_repr, respond_to_request, setup_server};
 use clap::Args;
 use miette::IntoDiagnostic;
-use moon::{build_dep_graph, generate_project_graph, load_workspace};
+use moon::{build_dep_graph, generate_project_graph};
 use moon_target::Target;
+use moon_workspace::Workspace;
 use starbase::AppResult;
 
 #[derive(Args, Clone, Debug)]
@@ -17,8 +18,7 @@ pub struct DepGraphArgs {
     json: bool,
 }
 
-pub async fn dep_graph(args: DepGraphArgs) -> AppResult {
-    let mut workspace = load_workspace().await?;
+pub async fn dep_graph(args: DepGraphArgs, mut workspace: Workspace) -> AppResult {
     let project_graph = generate_project_graph(&mut workspace).await?;
     let mut dep_builder = build_dep_graph(&project_graph);
 

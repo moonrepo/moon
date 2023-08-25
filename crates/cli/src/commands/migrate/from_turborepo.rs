@@ -1,5 +1,5 @@
 use super::check_dirty_repo;
-use moon::{generate_project_graph, load_workspace};
+use moon::generate_project_graph;
 use moon_common::{consts, Id};
 use moon_config::{
     InputPath, OutputPath, PartialInheritedTasksConfig, PartialProjectConfig,
@@ -9,6 +9,7 @@ use moon_config::{
 use moon_logger::{info, warn};
 use moon_target::Target;
 use moon_terminal::safe_exit;
+use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use starbase::AppResult;
@@ -157,8 +158,7 @@ pub fn convert_task(name: Id, task: TurboTask) -> AppResult<PartialTaskConfig> {
     Ok(config)
 }
 
-pub async fn from_turborepo(skip_touched_files_check: bool) -> AppResult {
-    let mut workspace = load_workspace().await?;
+pub async fn from_turborepo(skip_touched_files_check: bool, mut workspace: Workspace) -> AppResult {
     let turbo_file = workspace.root.join("turbo.json");
 
     if !turbo_file.exists() {

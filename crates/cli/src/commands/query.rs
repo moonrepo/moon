@@ -10,8 +10,8 @@ pub use crate::queries::touched_files::{
 use clap::Args;
 use console::Term;
 use miette::IntoDiagnostic;
-use moon::load_workspace;
 use moon_terminal::ExtendedTerm;
+use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
 use starbase::AppResult;
 use starbase_styles::color;
@@ -26,8 +26,7 @@ pub struct QueryHashArgs {
     json: bool,
 }
 
-pub async fn hash(args: QueryHashArgs) -> AppResult {
-    let workspace = load_workspace().await?;
+pub async fn hash(args: QueryHashArgs, workspace: Workspace) -> AppResult {
     let result = query_hash(&workspace, &args.hash).await?;
 
     if !args.json {
@@ -51,8 +50,7 @@ pub struct QueryHashDiffArgs {
     json: bool,
 }
 
-pub async fn hash_diff(args: QueryHashDiffArgs) -> AppResult {
-    let mut workspace = load_workspace().await?;
+pub async fn hash_diff(args: QueryHashDiffArgs, mut workspace: Workspace) -> AppResult {
     let mut result = query_hash_diff(&mut workspace, &args.left, &args.right).await?;
 
     let is_tty = io::stdout().is_terminal();
@@ -140,7 +138,7 @@ pub struct QueryProjectsArgs {
     type_of: Option<String>,
 }
 
-pub async fn projects(args: QueryProjectsArgs) -> AppResult {
+pub async fn projects(args: QueryProjectsArgs, mut workspace: Workspace) -> AppResult {
     let options = QueryProjectsOptions {
         alias: args.alias,
         affected: args.affected,
@@ -154,7 +152,6 @@ pub async fn projects(args: QueryProjectsArgs) -> AppResult {
         type_of: args.type_of,
     };
 
-    let mut workspace = load_workspace().await?;
     let mut projects = query_projects(&mut workspace, &options).await?;
 
     projects.sort_by(|a, d| a.id.cmp(&d.id));
@@ -214,7 +211,7 @@ pub struct QueryTasksArgs {
     type_of: Option<String>,
 }
 
-pub async fn tasks(args: QueryTasksArgs) -> AppResult {
+pub async fn tasks(args: QueryTasksArgs, mut workspace: Workspace) -> AppResult {
     let options = QueryProjectsOptions {
         alias: args.alias,
         affected: args.affected,
@@ -228,7 +225,6 @@ pub async fn tasks(args: QueryTasksArgs) -> AppResult {
         type_of: args.type_of,
     };
 
-    let mut workspace = load_workspace().await?;
     let projects = query_projects(&mut workspace, &options).await?;
 
     // Write to stdout directly to avoid broken pipe panics
@@ -288,7 +284,7 @@ pub struct QueryTouchedFilesArgs {
     status: Vec<TouchedStatus>,
 }
 
-pub async fn touched_files(args: QueryTouchedFilesArgs) -> AppResult {
+pub async fn touched_files(args: QueryTouchedFilesArgs, workspace: Workspace) -> AppResult {
     let options = &mut QueryTouchedFilesOptions {
         base: args.base,
         default_branch: args.default_branch,
@@ -299,7 +295,6 @@ pub async fn touched_files(args: QueryTouchedFilesArgs) -> AppResult {
         status: args.status,
     };
 
-    let workspace = load_workspace().await?;
     let files = query_touched_files(&workspace, options).await?;
 
     // Write to stdout directly to avoid broken pipe panics

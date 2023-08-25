@@ -32,14 +32,14 @@ use tracing::debug;
 
 #[system]
 pub async fn check_for_new_version(global_args: StateRef<CurrentCommand>) {
-    if is_test_env() || !is_unformatted_stdout() || !moon::is_telemetry_enabled() {
-        return Ok(());
-    }
-
     if matches!(
         &global_args.command,
         Commands::Check { .. } | Commands::Ci { .. } | Commands::Run { .. } | Commands::Sync { .. }
     ) {
+        if is_test_env() || !is_unformatted_stdout() || !moon::is_telemetry_enabled() {
+            return Ok(());
+        }
+
         let current_version = env!("CARGO_PKG_VERSION");
         let prefix = get_checkpoint_prefix(Checkpoint::Announcement);
         let cache_engine = CacheEngine::new(&get_workspace_root())?;

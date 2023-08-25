@@ -21,18 +21,17 @@ use crate::commands::syncs;
 use crate::commands::task::task;
 use crate::commands::teardown::teardown;
 use crate::commands::upgrade::upgrade;
-use crate::states::{CurrentCommand, WorkspaceInstance};
+use crate::states::CurrentCommand;
 use moon_api::Launchpad;
+use moon_cache::CacheEngine;
 use moon_common::{color, is_test_env, is_unformatted_stdout};
 use moon_terminal::{get_checkpoint_prefix, Checkpoint};
+use moon_utils::get_workspace_root;
 use starbase::system;
 use tracing::debug;
 
 #[system]
-pub async fn check_for_new_version(
-    global_args: StateRef<CurrentCommand>,
-    workspace: StateRef<WorkspaceInstance>,
-) {
+pub async fn check_for_new_version(global_args: StateRef<CurrentCommand>) {
     if is_test_env() || !is_unformatted_stdout() || !moon::is_telemetry_enabled() {
         return Ok(());
     }
@@ -43,8 +42,9 @@ pub async fn check_for_new_version(
     ) {
         let current_version = env!("CARGO_PKG_VERSION");
         let prefix = get_checkpoint_prefix(Checkpoint::Announcement);
+        let cache_engine = CacheEngine::new(&get_workspace_root())?;
 
-        match Launchpad::check_version(&workspace.cache_engine, current_version, false).await {
+        match Launchpad::check_version(&cache_engine, current_version, false).await {
             Ok(Some(latest)) => {
                 println!(
                     "{} There's a new version of moon available, {} (currently on {})!",

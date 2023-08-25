@@ -35,13 +35,11 @@ pub fn get_workspace_root() -> PathBuf {
         return root;
     }
 
-    match starbase_utils::fs::find_upwards(
+    starbase_utils::fs::find_upwards_root(
         CONFIG_DIRNAME,
         env::current_dir().expect("Invalid working directory."),
-    ) {
-        Some(dir) => dir.parent().unwrap().to_path_buf(),
-        None => panic!("Unable to get workspace root. Is moon running?"),
-    }
+    )
+    .expect("Unable to get workspace root. Is moon running?")
 }
 
 #[inline]

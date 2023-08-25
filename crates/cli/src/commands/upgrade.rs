@@ -3,7 +3,7 @@ use crate::helpers::create_progress_bar;
 use bytes::Buf;
 use itertools::Itertools;
 use miette::{miette, IntoDiagnostic};
-use moon_launchpad::check_version;
+use moon_api::Launchpad;
 use moon_logger::error;
 use moon_utils::semver::Version;
 use proto::ProtoError;

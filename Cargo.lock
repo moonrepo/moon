@@ -3298,7 +3298,6 @@ dependencies = [
  "moon_config",
  "moon_dep_graph",
  "moon_lang",
- "moon_launchpad",
  "moon_logger",
  "moon_node_lang",
  "moon_node_platform",
@@ -3555,24 +3554,6 @@ version = "0.1.0"
 dependencies = [
  "miette",
  "rustc-hash",
-]
-
-[[package]]
-name = "moon_launchpad"
-version = "0.1.0"
-dependencies = [
- "cd_env",
- "ci_env",
- "miette",
- "moon_common",
- "moon_logger",
- "moon_utils",
- "proto_cli",
- "reqwest",
- "serde",
- "serde_json",
- "starbase_utils",
- "uuid",
 ]
 
 [[package]]
@@ -4211,23 +4192,6 @@ dependencies = [
  "starbase_utils",
  "thiserror",
  "tracing",
-]
-
-[[package]]
-name = "moonbase"
-version = "0.1.0"
-dependencies = [
- "graphql_client",
- "miette",
- "moon_logger",
- "moon_utils",
- "reqwest",
- "serde",
- "serde_json",
- "starbase_styles",
- "thiserror",
- "tokio",
- "tokio-util",
 ]
 
 [[package]]

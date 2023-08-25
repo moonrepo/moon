@@ -2,12 +2,11 @@ use clap::Args;
 use console::Term;
 use itertools::Itertools;
 use miette::IntoDiagnostic;
-use moon::build_project_graph;
+use moon::{build_project_graph, load_workspace};
 use moon_common::Id;
 use moon_logger::map_list;
 use moon_terminal::{ExtendedTerm, Label};
 use moon_utils::is_test_env;
-use moon_workspace::Workspace;
 use starbase::AppResult;
 use starbase_styles::color;
 
@@ -20,7 +19,8 @@ pub struct ProjectArgs {
     json: bool,
 }
 
-pub async fn project(args: ProjectArgs, mut workspace: Workspace) -> AppResult {
+pub async fn project(args: ProjectArgs) -> AppResult {
+    let mut workspace = load_workspace().await?;
     let mut project_graph_builder = build_project_graph(&mut workspace).await?;
     project_graph_builder.load(&args.id).await?;
 

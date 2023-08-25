@@ -1,10 +1,9 @@
 use clap::Args;
 use console::Term;
 use miette::{miette, IntoDiagnostic};
-use moon::build_project_graph;
+use moon::{build_project_graph, load_workspace};
 use moon_target::Target;
 use moon_terminal::{ExtendedTerm, Label};
-use moon_workspace::Workspace;
 use starbase::AppResult;
 use starbase_styles::color;
 
@@ -17,11 +16,12 @@ pub struct TaskArgs {
     json: bool,
 }
 
-pub async fn task(args: TaskArgs, mut workspace: Workspace) -> AppResult {
+pub async fn task(args: TaskArgs) -> AppResult {
     let Some(project_id) = args.target.scope_id else {
         return Err(miette!("A project ID is required."));
     };
 
+    let mut workspace = load_workspace().await?;
     let mut project_graph_builder = build_project_graph(&mut workspace).await?;
     project_graph_builder.load(&project_id).await?;
 

@@ -2,7 +2,7 @@ use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::Config;
 
-#[derive(Clone, Config, Debug)]
+#[derive(Config, Debug)]
 pub struct ConstraintsConfig {
     #[setting(default = true)]
     pub enforce_project_type_relationships: bool,

@@ -1,12 +1,12 @@
 use crate::helpers::create_progress_bar;
-use moon::{build_dep_graph, generate_project_graph};
+use moon::{build_dep_graph, generate_project_graph, load_workspace};
 use moon_action_pipeline::Pipeline;
-use moon_workspace::Workspace;
 use starbase::AppResult;
 
-pub async fn sync(mut workspace: Workspace) -> AppResult {
+pub async fn sync() -> AppResult {
     let done = create_progress_bar("Syncing projects...");
 
+    let mut workspace = load_workspace().await?;
     let project_graph = generate_project_graph(&mut workspace).await?;
 
     let mut project_count = 0;

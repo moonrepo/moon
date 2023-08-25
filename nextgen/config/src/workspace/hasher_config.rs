@@ -19,7 +19,7 @@ derive_enum!(
     }
 );
 
-#[derive(Clone, Config, Debug)]
+#[derive(Config, Debug)]
 pub struct HasherConfig {
     #[setting(default = 2500)]
     pub batch_size: u16,

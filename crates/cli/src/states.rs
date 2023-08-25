@@ -1,9 +1,9 @@
 use crate::app::App;
 use moon_workspace::Workspace;
-use starbase::{Resource, State};
+use starbase::State;
 
 #[derive(State)]
 pub struct CurrentCommand(pub App);
 
-#[derive(Resource)]
+#[derive(State)]
 pub struct WorkspaceInstance(pub Workspace);

@@ -74,7 +74,6 @@ pub async fn run_cli() -> AppResult {
     detect_running_version();
 
     let mut app = App::new();
-    app.startup(systems::load_workspace);
     app.execute(systems::check_for_new_version);
     app.execute(systems::run_command);
     app.run().await?;

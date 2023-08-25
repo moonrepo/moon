@@ -62,13 +62,13 @@ fn validate_projects<D, C>(
     Ok(())
 }
 
-#[derive(Clone, Config, Debug)]
+#[derive(Config, Debug)]
 pub struct WorkspaceProjectsConfig {
     pub globs: Vec<String>,
     pub sources: FxHashMap<Id, String>,
 }
 
-#[derive(Clone, Config, Debug)]
+#[derive(Config, Debug)]
 #[config(serde(
     untagged,
     expecting = "expected a list of globs, a map of projects, or both"
@@ -84,7 +84,7 @@ pub enum WorkspaceProjects {
 }
 
 /// Docs: https://moonrepo.dev/docs/config/workspace
-#[derive(Clone, Config, Debug)]
+#[derive(Config, Debug)]
 pub struct WorkspaceConfig {
     #[setting(
         default = "https://moonrepo.dev/schemas/workspace.json",

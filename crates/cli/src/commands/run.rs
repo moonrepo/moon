@@ -2,7 +2,7 @@ use crate::enums::{CacheMode, TouchedStatus};
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use clap::Args;
 use miette::miette;
-use moon::{build_dep_graph, generate_project_graph};
+use moon::{build_dep_graph, generate_project_graph, load_workspace};
 use moon_action_context::{ActionContext, ProfileType};
 use moon_action_pipeline::Pipeline;
 use moon_common::is_test_env;
@@ -219,7 +219,8 @@ pub async fn run_target(
     Ok(())
 }
 
-pub async fn run(args: RunArgs, concurrency: Option<usize>, mut workspace: Workspace) -> AppResult {
+pub async fn run(args: RunArgs, concurrency: Option<usize>) -> AppResult {
+    let mut workspace = load_workspace().await?;
     let project_graph = generate_project_graph(&mut workspace).await?;
 
     run_target(&args.targets, &args, concurrency, workspace, project_graph).await?;

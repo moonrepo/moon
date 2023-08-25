@@ -1,10 +1,9 @@
 use clap::Args;
-use moon::build_project_graph;
+use moon::{build_project_graph, load_workspace_with_toolchain};
 use moon_common::Id;
 use moon_config::PlatformType;
 use moon_node_tool::NodeTool;
 use moon_platform::PlatformManager;
-use moon_workspace::Workspace;
 use starbase::AppResult;
 use std::env;
 
@@ -17,7 +16,8 @@ pub struct RunScriptArgs {
     project: Option<Id>,
 }
 
-pub async fn run_script(args: RunScriptArgs, mut workspace: Workspace) -> AppResult {
+pub async fn run_script(args: RunScriptArgs) -> AppResult {
+    let mut workspace = load_workspace_with_toolchain().await?;
     let node = PlatformManager::read()
         .get(PlatformType::Node)?
         .get_tool()?

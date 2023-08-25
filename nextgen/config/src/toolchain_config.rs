@@ -10,7 +10,7 @@ use schematic::{validate, Config, ConfigLoader};
 use std::path::Path;
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain
-#[derive(Clone, Config, Debug)]
+#[derive(Config, Debug)]
 pub struct ToolchainConfig {
     #[setting(
         default = "https://moonrepo.dev/schemas/toolchain.json",

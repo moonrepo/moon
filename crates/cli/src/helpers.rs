@@ -1,10 +1,7 @@
 use console::{set_colors_enabled, set_colors_enabled_stderr};
 use indicatif::{ProgressBar, ProgressStyle};
-use moon_launchpad::check_version;
-use moon_logger::debug;
-use moon_terminal::{create_theme, get_checkpoint_prefix, Checkpoint};
-use moon_utils::{is_test_env, is_unformatted_stdout};
-use starbase_styles::color::{self, no_color, supports_color};
+use moon_terminal::create_theme;
+use starbase_styles::color::{no_color, supports_color};
 use std::env;
 use std::time::Duration;
 
@@ -92,39 +89,6 @@ pub fn setup_colors(force: bool) {
         setup_no_colors();
     } else {
         env::set_var("CLICOLOR", supports_color().to_string());
-    }
-}
-
-pub async fn check_for_new_version() {
-    if !is_test_env() && is_unformatted_stdout() && moon::is_telemetry_enabled() {
-        let version = env!("CARGO_PKG_VERSION");
-        let prefix = get_checkpoint_prefix(Checkpoint::Announcement);
-
-        match check_version(version, false).await {
-            Ok(Some(newer_version)) => {
-                println!(
-                    "{} There's a new version of moon available, {} (currently on {})!",
-                    prefix,
-                    color::success(newer_version.current_version),
-                    version,
-                );
-
-                if let Some(newer_message) = newer_version.message {
-                    println!("{} {}", prefix, newer_message);
-                }
-
-                println!(
-                    "{} Run {} or install from {}",
-                    prefix,
-                    color::success("moon upgrade"),
-                    color::url("https://moonrepo.dev/docs/install"),
-                );
-            }
-            Err(error) => {
-                debug!(target: "moon:cli", "Failed to check for current version: {}", error);
-            }
-            _ => {}
-        }
     }
 }
 

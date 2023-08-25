@@ -7,7 +7,7 @@ use moon_terminal::{ExtendedTerm, Label};
 use starbase::AppResult;
 use starbase_styles::color;
 
-#[derive(Args, Debug)]
+#[derive(Args, Clone, Debug)]
 pub struct TaskArgs {
     #[arg(help = "Target of task to display")]
     target: Target,

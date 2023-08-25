@@ -14,7 +14,7 @@ use starbase::AppResult;
 use starbase_utils::yaml;
 use std::collections::BTreeMap;
 
-#[derive(Args, Debug)]
+#[derive(Args, Clone, Debug)]
 pub struct FromPackageJsonArgs {
     #[arg(help = "ID of project to migrate")]
     id: Id,

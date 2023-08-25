@@ -15,7 +15,7 @@ use std::env;
 use std::fmt::Display;
 use tracing::{debug, warn};
 
-#[derive(Args, Debug)]
+#[derive(Args, Clone, Debug)]
 pub struct GenerateArgs {
     #[arg(help = "Name of template to generate")]
     name: String,

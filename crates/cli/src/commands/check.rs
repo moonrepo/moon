@@ -8,7 +8,7 @@ use starbase::AppResult;
 use std::env;
 use std::sync::Arc;
 
-#[derive(Args, Debug)]
+#[derive(Args, Clone, Debug)]
 pub struct CheckArgs {
     #[arg(help = "List of project IDs to explicitly check")]
     #[clap(group = "projects")]

@@ -10,7 +10,7 @@ use moon_utils::is_test_env;
 use starbase::AppResult;
 use starbase_styles::color;
 
-#[derive(Args, Debug)]
+#[derive(Args, Clone, Debug)]
 pub struct ProjectArgs {
     #[arg(help = "ID of project to display")]
     id: Id,

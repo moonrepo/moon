@@ -26,7 +26,7 @@ use std::path::PathBuf;
 
 pub const BIN_NAME: &str = if cfg!(windows) { "moon.exe" } else { "moon" };
 
-#[derive(Debug, Subcommand)]
+#[derive(Clone, Debug, Subcommand)]
 pub enum DockerCommands {
     #[command(
         name = "prune",
@@ -47,7 +47,7 @@ pub enum DockerCommands {
     Setup,
 }
 
-#[derive(Debug, Subcommand)]
+#[derive(Clone, Debug, Subcommand)]
 pub enum MigrateCommands {
     #[command(
         name = "from-package-json",
@@ -62,7 +62,7 @@ pub enum MigrateCommands {
     FromTurborepo,
 }
 
-#[derive(Debug, Subcommand)]
+#[derive(Clone, Debug, Subcommand)]
 pub enum NodeCommands {
     #[command(
         name = "run-script",
@@ -71,7 +71,7 @@ pub enum NodeCommands {
     RunScript(RunScriptArgs),
 }
 
-#[derive(Debug, Subcommand)]
+#[derive(Clone, Debug, Subcommand)]
 pub enum QueryCommands {
     #[command(
         name = "hash",
@@ -104,7 +104,7 @@ pub enum QueryCommands {
     TouchedFiles(QueryTouchedFilesArgs),
 }
 
-#[derive(Debug, Subcommand)]
+#[derive(Clone, Debug, Subcommand)]
 pub enum SyncCommands {
     #[command(
         name = "codeowners",
@@ -125,7 +125,7 @@ pub enum SyncCommands {
     Projects,
 }
 
-#[derive(Debug, Subcommand)]
+#[derive(Clone, Debug, Subcommand)]
 pub enum Commands {
     #[command(
         name = "completions",

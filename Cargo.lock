@@ -3209,7 +3209,7 @@ dependencies = [
  "moon_config",
  "proto_cli",
  "semver",
- "starbase 0.2.2",
+ "starbase 0.2.3",
  "starbase_styles",
  "starbase_utils",
  "thiserror",
@@ -3224,7 +3224,7 @@ dependencies = [
  "moon_config",
  "proto_cli",
  "semver",
- "starbase 0.2.2",
+ "starbase 0.2.3",
 ]
 
 [[package]]
@@ -3291,6 +3291,7 @@ dependencies = [
  "moon_action_context",
  "moon_action_pipeline",
  "moon_actions",
+ "moon_api",
  "moon_cache",
  "moon_codegen",
  "moon_common",
@@ -3330,7 +3331,7 @@ dependencies = [
  "serde_json",
  "serde_yaml 0.9.25",
  "serial_test",
- "starbase 0.2.2",
+ "starbase 0.2.3",
  "starbase_archive",
  "starbase_styles",
  "starbase_utils",
@@ -5699,9 +5700,9 @@ dependencies = [
 
 [[package]]
 name = "starbase"
-version = "0.2.2"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e232368bb652c0a66460768afa96db62562c8a4ee501accd2e0b5c0ca1fbc93b"
+checksum = "5d50cebb3999d006a422348a983f20d0d0f1b4687d6c13294965aa0aa89b1a46"
 dependencies = [
  "async-trait",
  "chrono",
@@ -5709,7 +5710,7 @@ dependencies = [
  "num_cpus",
  "rustc-hash",
  "starbase_events 0.2.0",
- "starbase_macros 0.2.1",
+ "starbase_macros 0.2.2",
  "starbase_styles",
  "thiserror",
  "tokio",
@@ -5755,7 +5756,7 @@ checksum = "6913545608418518959d13ac9e05568d0d059f53ab3a24cf3283b7958ee5e732"
 dependencies = [
  "async-trait",
  "miette",
- "starbase_macros 0.2.1",
+ "starbase_macros 0.2.2",
  "tokio",
 ]
 
@@ -5773,9 +5774,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_macros"
-version = "0.2.1"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6bb6e2768648b90e29b6575f789a9adffb36b60c52d3242b36974e76a756aa30"
+checksum = "0ef480c59ed0d7b02bf3c3328a738370bc2b65f46dd2737342396d0cde9ca403"
 dependencies = [
  "darling 0.20.3",
  "proc-macro2",
@@ -5814,9 +5815,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.2.19"
+version = "0.2.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d3838378ebcb7a591ff5ffdd286f9bff94662b223ed50fa879eee72cdb430e4"
+checksum = "465ca58c4b63cd1b36ac839c4e09d36e7979bda4d005f40adfcc14e50c2aeec8"
 dependencies = [
  "dirs 5.0.1",
  "ec4rs",

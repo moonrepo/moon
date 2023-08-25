@@ -20,7 +20,7 @@ type TargetList = Vec<Target>;
 
 const HEADING_PARALLELISM: &str = "Parallelism and distribution";
 
-#[derive(Args, Debug)]
+#[derive(Args, Clone, Debug)]
 pub struct CiArgs {
     #[arg(long, help = "Base branch, commit, or revision to compare against")]
     base: Option<String>,

@@ -3,7 +3,7 @@ use clap::Args;
 use moon::load_workspace;
 use starbase::AppResult;
 
-#[derive(Args, Debug)]
+#[derive(Args, Clone, Debug)]
 pub struct CleanArgs {
     #[arg(long, default_value = "7 days", help = "Lifetime of cached artifacts")]
     lifetime: String,

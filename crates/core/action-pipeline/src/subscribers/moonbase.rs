@@ -1,22 +1,22 @@
 use ci_env::get_environment;
 use moon_action::{ActionNode, ActionStatus};
+use moon_api::{
+    endpoints::ArtifactWriteInput,
+    graphql::{
+        self, add_job_to_run, create_run, update_job, update_run, AddJobToRun, CreateRun,
+        GraphQLQuery, UpdateJob, UpdateRun,
+    },
+};
 use moon_cache_item::get_cache_mode;
 use moon_emitter::{Event, EventFlow, Subscriber};
 use moon_logger::{debug, error, map_list, trace, warn};
 use moon_platform::Runtime;
 use moon_utils::async_trait;
 use moon_workspace::Workspace;
-use moonbase::{
-    graphql::{
-        self, add_job_to_run, create_run, update_job, update_run, AddJobToRun, CreateRun,
-        GraphQLQuery, UpdateJob, UpdateRun,
-    },
-    upload_artifact, ArtifactWriteInput,
-};
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use starbase_utils::fs;
-use std::env;
+use std::{env, sync::Arc};
 use tokio::task::JoinHandle;
 
 const LOG_TARGET: &str = "moonbase";
@@ -456,7 +456,6 @@ impl Subscriber for MoonbaseSubscriber {
                                 );
 
                                 let hash = (*hash).to_owned();
-                                let auth_token = moonbase.auth_token.to_owned();
                                 let archive_path = archive_path.to_owned();
 
                                 // Create a fake action label so that we can check the CI cache
@@ -467,15 +466,12 @@ impl Subscriber for MoonbaseSubscriber {
 
                                 // Run this in the background so we don't slow down the pipeline
                                 // while waiting for very large archives to upload
+                                let moonbase = Arc::clone(moonbase);
+
                                 self.requests.push(tokio::spawn(async move {
-                                    if let Err(error) = upload_artifact(
-                                        auth_token,
-                                        hash,
-                                        archive_path,
-                                        presigned_url,
-                                        job_id,
-                                    )
-                                    .await
+                                    if let Err(error) = moonbase
+                                        .upload_artifact(hash, archive_path, presigned_url, job_id)
+                                        .await
                                     {
                                         log_failure(error);
                                     }

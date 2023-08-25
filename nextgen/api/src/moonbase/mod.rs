@@ -1,5 +1,5 @@
 mod common;
-mod endpoints;
+pub mod endpoints;
 pub mod graphql;
 
 use crate::moonbase::common::*;

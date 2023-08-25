@@ -3,6 +3,8 @@ pub mod commands;
 pub mod enums;
 mod helpers;
 pub mod queries;
+mod states;
+mod systems;
 
 use crate::commands::bin::bin;
 use crate::commands::check::check;
@@ -24,7 +26,7 @@ use crate::commands::syncs;
 use crate::commands::task::task;
 use crate::commands::teardown::teardown;
 use crate::commands::upgrade::upgrade;
-use crate::helpers::{check_for_new_version, setup_colors};
+use crate::helpers::setup_colors;
 use app::{
     App as CLI, Commands, DockerCommands, MigrateCommands, NodeCommands, QueryCommands,
     SyncCommands,
@@ -36,6 +38,7 @@ use starbase::{tracing::TracingOptions, App, AppResult};
 use starbase_styles::color;
 use starbase_utils::string_vec;
 use std::env;
+use systems::check_for_new_version;
 
 pub use app::BIN_NAME;
 
@@ -94,15 +97,8 @@ pub async fn run_cli() -> AppResult {
 
     detect_running_version();
 
-    // Check for new version
-    let version_handle = if matches!(
-        &global_args.command,
-        Commands::Check { .. } | Commands::Ci { .. } | Commands::Run { .. } | Commands::Sync { .. }
-    ) {
-        Some(tokio::spawn(check_for_new_version()))
-    } else {
-        None
-    };
+    let mut app = App::new();
+    app.execute(check_for_new_version);
 
     // Match and run subcommand
     let result = match global_args.command {
@@ -154,10 +150,6 @@ pub async fn run_cli() -> AppResult {
         Commands::Teardown => teardown().await,
         Commands::Upgrade => upgrade().await,
     };
-
-    if let Some(version_check) = version_handle {
-        let _ = version_check.await;
-    }
 
     if let Err(error) = result {
         // Rust crashes with a broken pipe error by default,

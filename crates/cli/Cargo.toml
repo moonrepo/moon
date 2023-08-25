@@ -17,6 +17,7 @@ moon = { path = "../core/moon" }
 moon_action_context = { path = "../core/action-context" }
 moon_action_pipeline = { path = "../core/action-pipeline" }
 moon_actions = { path = "../core/actions" }
+moon_api = { path = "../../nextgen/api" }
 moon_codegen = { path = "../../nextgen/codegen" }
 moon_common = { path = "../../nextgen/common" }
 moon_config = { path = "../../nextgen/config" }

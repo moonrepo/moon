@@ -15,7 +15,7 @@ use starbase::AppResult;
 use starbase_utils::{fs, glob, json};
 use std::path::Path;
 
-#[derive(Args, Debug)]
+#[derive(Args, Clone, Debug)]
 pub struct DockerScaffoldArgs {
     #[arg(required = true, help = "List of project IDs to copy sources for")]
     ids: Vec<Id>,

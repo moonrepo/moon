@@ -5,7 +5,7 @@ use moon::{build_dep_graph, generate_project_graph, load_workspace};
 use moon_target::Target;
 use starbase::AppResult;
 
-#[derive(Args, Debug)]
+#[derive(Args, Clone, Debug)]
 pub struct DepGraphArgs {
     #[arg(help = "Target to *only* graph")]
     target: Option<String>,

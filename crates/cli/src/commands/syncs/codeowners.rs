@@ -5,7 +5,7 @@ use moon_actions::{sync_codeowners, unsync_codeowners};
 use starbase::AppResult;
 use starbase_styles::color;
 
-#[derive(Args, Debug)]
+#[derive(Args, Clone, Debug)]
 pub struct SyncCodeownersArgs {
     #[arg(long, help = "Clean and remove previously generated file")]
     clean: bool,

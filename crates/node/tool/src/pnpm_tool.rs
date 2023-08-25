@@ -39,7 +39,7 @@ impl PnpmTool {
 
 #[async_trait]
 impl Tool for PnpmTool {
-    fn as_any(&self) -> &dyn std::any::Any {
+    fn as_any(&self) -> &(dyn std::any::Any + Send + Sync) {
         self
     }
 

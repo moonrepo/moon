@@ -7,7 +7,7 @@ use moon_platform::PlatformManager;
 use starbase::AppResult;
 use std::env;
 
-#[derive(Args, Debug)]
+#[derive(Args, Clone, Debug)]
 pub struct RunScriptArgs {
     #[arg(help = "Name of the script")]
     name: String,

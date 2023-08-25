@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 
 #[async_trait]
 pub trait Tool: Any + Debug + Send + Sync {
-    fn as_any(&self) -> &dyn Any;
+    fn as_any(&self) -> &(dyn Any + Send + Sync);
 
     /// Return an absolute path to the tool's binary.
     fn get_bin_path(&self) -> miette::Result<PathBuf>;

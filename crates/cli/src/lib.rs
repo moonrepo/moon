@@ -14,7 +14,6 @@ use moon_logger::debug;
 use starbase::{tracing::TracingOptions, App, AppResult};
 use starbase_styles::color;
 use starbase_utils::string_vec;
-use states::CurrentCommand;
 use std::env;
 
 pub use app::BIN_NAME;
@@ -67,7 +66,7 @@ pub async fn run_cli() -> AppResult {
     App::setup_tracing_with_options(TracingOptions {
         filter_modules: string_vec!["moon", "proto", "schematic", "starbase"],
         log_env: "STARBASE_LOG".into(),
-        log_file: global_args.log_file.clone(),
+        log_file: global_args.log_file,
         // test_env: "MOON_TEST".into(),
         ..TracingOptions::default()
     });
@@ -75,7 +74,6 @@ pub async fn run_cli() -> AppResult {
     detect_running_version();
 
     let mut app = App::new();
-    app.set_state(CurrentCommand(global_args));
     app.startup(systems::load_workspace);
     app.execute(systems::check_for_new_version);
     app.execute(systems::run_command);

@@ -18,13 +18,15 @@ use std::env;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use tokio::sync::RwLock;
+use std::time::Duration;
+use tokio::{sync::RwLock, time::sleep};
 
 static TELEMETRY: AtomicBool = AtomicBool::new(true);
 static TELEMETRY_READY: AtomicBool = AtomicBool::new(false);
 
-pub fn is_telemetry_enabled() -> bool {
+pub async fn is_telemetry_enabled() -> bool {
     while !TELEMETRY_READY.load(Ordering::Acquire) {
+        sleep(Duration::from_millis(50)).await;
         continue;
     }
 

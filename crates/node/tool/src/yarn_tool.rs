@@ -85,7 +85,7 @@ impl YarnTool {
 
 #[async_trait]
 impl Tool for YarnTool {
-    fn as_any(&self) -> &dyn std::any::Any {
+    fn as_any(&self) -> &(dyn std::any::Any + Send + Sync) {
         self
     }
 

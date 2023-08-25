@@ -4,7 +4,7 @@ use moon::{build_project_graph, load_workspace};
 use moon_common::Id;
 use starbase::AppResult;
 
-#[derive(Args, Debug)]
+#[derive(Args, Clone, Debug)]
 pub struct ProjectGraphArgs {
     #[arg(help = "ID of project to *only* graph")]
     id: Option<Id>,

@@ -3,38 +3,18 @@ pub mod commands;
 pub mod enums;
 mod helpers;
 pub mod queries;
+mod states;
+mod systems;
 
-use crate::commands::bin::bin;
-use crate::commands::check::check;
-use crate::commands::ci::ci;
-use crate::commands::clean::clean;
-use crate::commands::completions;
-use crate::commands::docker;
-use crate::commands::generate::generate;
-use crate::commands::graph::{dep::dep_graph, project::project_graph};
-use crate::commands::init::init;
-use crate::commands::migrate;
-use crate::commands::node;
-use crate::commands::project::project;
-use crate::commands::query;
-use crate::commands::run::run;
-use crate::commands::setup::setup;
-use crate::commands::sync::sync;
-use crate::commands::syncs;
-use crate::commands::task::task;
-use crate::commands::teardown::teardown;
-use crate::commands::upgrade::upgrade;
-use crate::helpers::{check_for_new_version, setup_colors};
-use app::{
-    App as CLI, Commands, DockerCommands, MigrateCommands, NodeCommands, QueryCommands,
-    SyncCommands,
-};
+use crate::helpers::setup_colors;
+use app::App as CLI;
 use clap::Parser;
 use enums::{CacheMode, LogLevel};
 use moon_logger::debug;
 use starbase::{tracing::TracingOptions, App, AppResult};
 use starbase_styles::color;
 use starbase_utils::string_vec;
+use states::CurrentCommand;
 use std::env;
 
 pub use app::BIN_NAME;
@@ -87,88 +67,18 @@ pub async fn run_cli() -> AppResult {
     App::setup_tracing_with_options(TracingOptions {
         filter_modules: string_vec!["moon", "proto", "schematic", "starbase"],
         log_env: "STARBASE_LOG".into(),
-        log_file: global_args.log_file,
+        log_file: global_args.log_file.clone(),
         // test_env: "MOON_TEST".into(),
         ..TracingOptions::default()
     });
 
     detect_running_version();
 
-    // Check for new version
-    let version_handle = if matches!(
-        &global_args.command,
-        Commands::Check { .. } | Commands::Ci { .. } | Commands::Run { .. } | Commands::Sync { .. }
-    ) {
-        Some(tokio::spawn(check_for_new_version()))
-    } else {
-        None
-    };
-
-    // Match and run subcommand
-    let result = match global_args.command {
-        Commands::Bin { tool } => bin(tool).await,
-        Commands::Ci(args) => ci(args, global_args.concurrency).await,
-        Commands::Check(args) => check(args, global_args.concurrency).await,
-        Commands::Clean(args) => clean(args).await,
-        Commands::Completions { shell } => completions::completions(shell).await,
-        Commands::DepGraph(args) => dep_graph(args).await,
-        Commands::Docker { command } => match command {
-            DockerCommands::Prune => docker::prune().await,
-            DockerCommands::Scaffold(args) => docker::scaffold(args).await,
-            DockerCommands::Setup => docker::setup().await,
-        },
-        Commands::Generate(args) => generate(args).await,
-        Commands::Init(args) => init(args).await,
-        Commands::Migrate {
-            command,
-            skip_touched_files_check,
-        } => match command {
-            MigrateCommands::FromPackageJson(args) => {
-                migrate::from_package_json(args, skip_touched_files_check).await
-            }
-            MigrateCommands::FromTurborepo => {
-                migrate::from_turborepo(skip_touched_files_check).await
-            }
-        },
-        Commands::Node { command } => match command {
-            NodeCommands::RunScript(args) => node::run_script(args).await,
-        },
-        Commands::Project(args) => project(args).await,
-        Commands::ProjectGraph(args) => project_graph(args).await,
-        Commands::Query { command } => match command {
-            QueryCommands::Hash(args) => query::hash(args).await,
-            QueryCommands::HashDiff(args) => query::hash_diff(args).await,
-            QueryCommands::Projects(args) => query::projects(args).await,
-            QueryCommands::Tasks(args) => query::tasks(args).await,
-            QueryCommands::TouchedFiles(args) => query::touched_files(args).await,
-        },
-        Commands::Run(args) => run(args, global_args.concurrency).await,
-        Commands::Setup => setup().await,
-        Commands::Sync { command } => match command {
-            Some(SyncCommands::Codeowners(args)) => syncs::codeowners::sync(args).await,
-            Some(SyncCommands::Hooks(args)) => syncs::hooks::sync(args).await,
-            Some(SyncCommands::Projects) => syncs::projects::sync().await,
-            None => sync().await,
-        },
-        Commands::Task(args) => task(args).await,
-        Commands::Teardown => teardown().await,
-        Commands::Upgrade => upgrade().await,
-    };
-
-    if let Some(version_check) = version_handle {
-        let _ = version_check.await;
-    }
-
-    if let Err(error) = result {
-        // Rust crashes with a broken pipe error by default,
-        // so we unfortunately need to work around it with this hack!
-        // https://github.com/rust-lang/rust/issues/46016
-        if error.to_string().to_lowercase().contains("broken pipe") {
-            std::process::exit(0);
-        } else {
-            return Err(error);
-        }
-    }
+    let mut app = App::new();
+    app.set_state(CurrentCommand(global_args));
+    app.execute(systems::run_command);
+    app.execute(systems::check_for_new_version);
+    app.run().await?;
 
     Ok(())
 }

@@ -17,7 +17,7 @@ use starbase::AppResult;
 use starbase_styles::color;
 use std::io::{self, IsTerminal};
 
-#[derive(Args, Debug)]
+#[derive(Args, Clone, Debug)]
 pub struct QueryHashArgs {
     #[arg(required = true, help = "Hash to inspect")]
     hash: String,
@@ -39,7 +39,7 @@ pub async fn hash(args: QueryHashArgs) -> AppResult {
     Ok(())
 }
 
-#[derive(Args, Debug)]
+#[derive(Args, Clone, Debug)]
 pub struct QueryHashDiffArgs {
     #[arg(required = true, help = "Base hash to compare against")]
     left: String,
@@ -104,7 +104,7 @@ pub async fn hash_diff(args: QueryHashDiffArgs) -> AppResult {
     Ok(())
 }
 
-#[derive(Args, Debug)]
+#[derive(Args, Clone, Debug)]
 pub struct QueryProjectsArgs {
     #[arg(help = "Filter projects using a query (takes precedence over options)")]
     query: Option<String>,
@@ -181,7 +181,7 @@ pub async fn projects(args: QueryProjectsArgs) -> AppResult {
     Ok(())
 }
 
-#[derive(Args, Debug)]
+#[derive(Args, Clone, Debug)]
 pub struct QueryTasksArgs {
     #[arg(help = "Filter projects using a query (takes precedence over options)")]
     query: Option<String>,
@@ -264,7 +264,7 @@ pub async fn tasks(args: QueryTasksArgs) -> AppResult {
     Ok(())
 }
 
-#[derive(Args, Debug)]
+#[derive(Args, Clone, Debug)]
 pub struct QueryTouchedFilesArgs {
     #[arg(long, help = "Base branch, commit, or revision to compare against")]
     base: Option<String>,

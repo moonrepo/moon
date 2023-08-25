@@ -34,7 +34,7 @@ pub enum InitTool {
     TypeScript,
 }
 
-#[derive(Args, Debug)]
+#[derive(Args, Clone, Debug)]
 pub struct InitArgs {
     #[arg(help = "Destination to initialize in", default_value = ".")]
     dest: String,

@@ -19,7 +19,7 @@ use std::string::ToString;
 const HEADING_AFFECTED: &str = "Affected by changes";
 const HEADING_DEBUGGING: &str = "Debugging";
 
-#[derive(Args, Debug, Default)]
+#[derive(Args, Clone, Debug, Default)]
 pub struct RunArgs {
     #[arg(required = true, help = "List of targets (scope:task) to run")]
     pub targets: Vec<String>,

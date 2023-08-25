@@ -5,7 +5,7 @@ use moon_actions::{sync_vcs_hooks, unsync_vcs_hooks};
 use starbase::AppResult;
 use starbase_styles::color;
 
-#[derive(Args, Debug)]
+#[derive(Args, Clone, Debug)]
 pub struct SyncHooksArgs {
     #[arg(long, help = "Clean and remove previously generated hooks")]
     clean: bool,

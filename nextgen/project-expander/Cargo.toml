@@ -2,6 +2,9 @@
 name = "moon_project_expander"
 version = "0.1.0"
 edition = "2021"
+description = "Expands projects and tasks with runtime information."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
 
 [dependencies]
 moon_common = { path = "../common" }

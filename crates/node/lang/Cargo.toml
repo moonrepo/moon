@@ -2,6 +2,7 @@
 name = "moon_node_lang"
 version = "0.1.0"
 edition = "2021"
+publish = false
 
 [dependencies]
 moon_lang = { path = "../../core/lang" }

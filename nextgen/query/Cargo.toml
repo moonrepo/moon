@@ -2,6 +2,9 @@
 name = "moon_query"
 version = "0.1.0"
 edition = "2021"
+description = "Query language for moon (MQL)."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
 
 [dependencies]
 moon_common = { path = "../common" }

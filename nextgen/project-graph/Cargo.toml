@@ -2,6 +2,9 @@
 name = "moon_project_graph"
 version = "0.1.0"
 edition = "2021"
+description = "Project graph for moon represented as a DAG."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
 
 [dependencies]
 moon_cache = { path = "../cache" }

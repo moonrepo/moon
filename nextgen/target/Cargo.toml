@@ -2,6 +2,9 @@
 name = "moon_target"
 version = "0.1.0"
 edition = "2021"
+description = "Project + task target identifier."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
 
 [dependencies]
 moon_common = { path = "../common" }

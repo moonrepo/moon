@@ -2,6 +2,7 @@
 name = "moon_app"
 version = "0.1.0"
 edition = "2021"
+publish = false
 
 [[bin]]
 name = "moon_app"

@@ -2,6 +2,9 @@
 name = "moon_project"
 version = "0.1.0"
 edition = "2021"
+description = "A project (app, lib, etc) in moon."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
 
 [dependencies]
 moon_common = { path = "../common" }

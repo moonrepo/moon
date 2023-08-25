@@ -4,8 +4,9 @@ use bytes::Buf;
 use itertools::Itertools;
 use miette::{miette, IntoDiagnostic};
 use moon_api::Launchpad;
+use moon_cache::CacheEngine;
 use moon_logger::error;
-use moon_utils::semver::Version;
+use moon_utils::{get_workspace_root, semver::Version};
 use proto::ProtoError;
 use starbase::system;
 use starbase_utils::{dirs, fs};
@@ -22,8 +23,9 @@ pub async fn upgrade() {
         return Err(miette!("Upgrading moon requires an internet connection!"));
     }
 
+    let cache_engine = CacheEngine::new(&get_workspace_root())?;
     let version = env!("CARGO_PKG_VERSION");
-    let version_check = check_version(version, true).await;
+    let version_check = Launchpad::check_version(&cache_engine, version, true).await;
 
     let new_version = match version_check {
         Ok(Some(newer_version))

@@ -7,8 +7,8 @@ homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 
 [dependencies]
-moon_config = { path = "../config" }
-moon_hash = { path = "../hash" }
+moon_config = { version = "0.1.0", path = "../config" }
+moon_hash = { version = "0.1.0", path = "../hash" }
 miette = { workspace = true }
 serde = { workspace = true }
 starbase_utils = { workspace = true }

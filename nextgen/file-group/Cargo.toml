@@ -7,7 +7,7 @@ homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 
 [dependencies]
-moon_common = { path = "../common" }
+moon_common = { version = "0.1.0", path = "../common" }
 common-path = "1.0.0"
 miette = { workspace = true }
 once_cell = { workspace = true }

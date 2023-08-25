@@ -7,11 +7,11 @@ homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 
 [dependencies]
-moon_args = { path = "../args" }
-moon_common = { path = "../common" }
-moon_config = { path = "../config" }
-moon_target = { path = "../target" }
-moon_task = { path = "../task" }
+moon_args = { version = "0.1.0", path = "../args" }
+moon_common = { version = "0.1.0", path = "../common" }
+moon_config = { version = "0.1.0", path = "../config" }
+moon_target = { version = "0.1.0", path = "../target" }
+moon_task = { version = "0.1.0", path = "../task" }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
 starbase_events = { workspace = true }

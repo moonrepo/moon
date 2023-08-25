@@ -3133,6 +3133,7 @@ dependencies = [
  "moon_action",
  "moon_action_context",
  "moon_actions",
+ "moon_api",
  "moon_cache_item",
  "moon_dep_graph",
  "moon_emitter",
@@ -3149,7 +3150,6 @@ dependencies = [
  "moon_tool",
  "moon_utils",
  "moon_workspace",
- "moonbase",
  "num_cpus",
  "proto_cli",
  "rustc-hash",
@@ -4196,21 +4196,21 @@ name = "moon_workspace"
 version = "0.1.0"
 dependencies = [
  "miette",
+ "moon_api",
  "moon_cache",
  "moon_common",
  "moon_config",
  "moon_hash",
- "moon_logger",
  "moon_test_utils",
  "moon_utils",
  "moon_vcs",
- "moonbase",
  "proto_cli",
  "reqwest",
  "starbase 0.2.5",
  "starbase_styles",
  "starbase_utils",
  "thiserror",
+ "tracing",
 ]
 
 [[package]]

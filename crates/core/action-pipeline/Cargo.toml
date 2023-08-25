@@ -14,6 +14,7 @@ harness = false
 moon_action = { path = "../action" }
 moon_action_context = { path = "../action-context" }
 moon_actions = { path = "../actions" }
+moon_api = { path = "../../../nextgen/api" }
 moon_cache_item = { path = "../../../nextgen/cache-item" }
 moon_dep_graph = { path = "../dep-graph" }
 moon_emitter = { path = "../emitter" }
@@ -29,7 +30,6 @@ moon_terminal = { path = "../terminal" }
 moon_tool = { path = "../tool" }
 moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
-moonbase = { path = "../moonbase" }
 ci_env = { workspace = true }
 console = { workspace = true }
 miette = { workspace = true }

@@ -70,7 +70,7 @@ impl Launchpad {
             env::current_dir().expect("Invalid working directory."),
         );
 
-        if is_test_env() || proto::is_offline() || moon_dir.is_none() {
+        if is_test_env() || proto_core::is_offline() || moon_dir.is_none() {
             return Ok(None);
         }
 

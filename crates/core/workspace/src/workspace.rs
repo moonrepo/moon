@@ -6,7 +6,7 @@ use moon_config::{InheritedTasksConfig, InheritedTasksManager, ToolchainConfig, 
 use moon_hash::HashEngine;
 use moon_utils::semver;
 use moon_vcs::{BoxedVcs, Git};
-use proto::{get_root, ToolsConfig, TOOLS_CONFIG_NAME};
+use proto_core::{get_root, ToolsConfig, TOOLS_CONFIG_NAME};
 use starbase::Resource;
 use starbase_styles::color;
 use starbase_utils::{dirs, fs, glob};

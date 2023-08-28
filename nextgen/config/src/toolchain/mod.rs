@@ -17,11 +17,11 @@ macro_rules! inherit_tool {
             if let Some(version) = proto_tools.tools.get($key) {
                 if let Some(config) = &mut self.$tool {
                     if config.version.is_none() {
-                        config.version = Some(version.to_owned());
+                        config.version = Some(version.to_string());
                     }
                 } else {
                     let mut data = $config::default();
-                    data.version = Some(version.to_owned());
+                    data.version = Some(version.to_string());
 
                     self.$tool = Some(data);
                 }
@@ -38,7 +38,7 @@ macro_rules! inherit_tool_required {
         pub fn $method(&mut self, proto_tools: &ToolsConfig) -> miette::Result<()> {
             if let Some(version) = proto_tools.tools.get($key) {
                 if self.$tool.version.is_none() {
-                    self.$tool.version = Some(version.to_owned());
+                    self.$tool.version = Some(version.to_string());
                 }
             }
 

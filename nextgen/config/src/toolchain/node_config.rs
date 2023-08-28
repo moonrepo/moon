@@ -1,6 +1,6 @@
 use crate::validate::validate_semver;
 use crate::{inherit_tool, inherit_tool_required};
-use proto::ToolsConfig;
+use proto_core::ToolsConfig;
 use schematic::{derive_enum, Config, ConfigEnum};
 
 derive_enum!(

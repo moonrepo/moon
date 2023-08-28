@@ -17,7 +17,7 @@ moon_target = { path = "../target" }
 miette = { workspace = true }
 once_cell = { workspace = true }
 once_map = { workspace = true }
-proto_cli = { workspace = true }
+proto_core = { workspace = true }
 regex = { workspace = true }
 rustc-hash = { workspace = true }
 schematic = { workspace = true, features = [

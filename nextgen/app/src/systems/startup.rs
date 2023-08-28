@@ -4,7 +4,7 @@ use crate::app_error::AppError;
 use moon_app_components::{AppInfo, Tasks, Toolchain, WorkingDir, Workspace, WorkspaceRoot};
 use moon_common::consts;
 use moon_config::{InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
-use proto::{get_root, ToolsConfig, TOOLS_CONFIG_NAME};
+use proto_core::{get_root, ToolsConfig, TOOLS_CONFIG_NAME};
 use semver::Version;
 use starbase::system;
 use starbase_styles::color;

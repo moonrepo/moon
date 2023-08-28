@@ -12,7 +12,7 @@ ci_env = { workspace = true }
 md5 = "0.7.0"
 graphql_client = { version = "0.13.0", features = ["reqwest-rustls"] }
 miette = { workspace = true }
-proto_cli = { workspace = true }
+proto_core = { workspace = true }
 reqwest = { workspace = true, features = ["json", "multipart", "stream"] }
 semver = { workspace = true }
 serde = { workspace = true }

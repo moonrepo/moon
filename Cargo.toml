@@ -38,7 +38,6 @@ pathdiff = "0.2.1"
 petgraph = { version = "0.6.3", default-features = false, features = [
 	"serde-1",
 ] }
-proto_cli = "0.13.1"
 proto_core = "0.16.2"
 relative-path = { version = "1.9.0", features = ["serde"] }
 regex = "1.9.3"

@@ -49,7 +49,12 @@ pub async fn setup_tool(
     // Install and setup the specific tool + version in the toolchain!
     let installed_count = PlatformManager::write()
         .get_mut(runtime)?
-        .setup_tool(&context, runtime, &mut state.data.last_versions)
+        .setup_tool(
+            &context,
+            runtime,
+            &mut state.data.last_versions,
+            &workspace.plugin_loader,
+        )
         .await?;
 
     // Update the cache with the timestamp

@@ -3,29 +3,39 @@ use moon_logger::debug;
 use moon_platform_runtime::Version;
 use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
-use moon_tool::Tool;
-use proto::{async_trait, rust::RustLanguage, Installable, Proto, Tool as ProtoTool};
+use moon_tool::{async_trait, load_tool_plugin, Tool};
+use proto_core::{Id, PluginLoader, ProtoEnvironment, Tool as ProtoTool, VersionType};
 use rustc_hash::FxHashMap;
 use std::{
     ffi::OsStr,
     path::{Path, PathBuf},
 };
 
-#[derive(Debug)]
 pub struct RustTool {
     pub config: RustConfig,
 
     pub global: bool,
 
-    pub tool: RustLanguage,
+    pub tool: ProtoTool,
 }
 
 impl RustTool {
-    pub fn new(proto: &Proto, config: &RustConfig, version: &Version) -> miette::Result<RustTool> {
+    pub async fn new(
+        proto: &ProtoEnvironment,
+        config: &RustConfig,
+        version: &Version,
+        plugin_loader: &PluginLoader,
+    ) -> miette::Result<RustTool> {
         let mut rust = RustTool {
             config: config.to_owned(),
             global: false,
-            tool: RustLanguage::new(proto),
+            tool: load_tool_plugin(
+                &Id::raw("rust"),
+                proto,
+                config.plugin.as_ref().unwrap(),
+                plugin_loader,
+            )
+            .await?,
         };
 
         if version.is_global() {
@@ -71,11 +81,13 @@ impl Tool for RustTool {
             return Ok(installed);
         };
 
-        if self.tool.is_setup(version).await? {
+        let version_type = VersionType::parse(&version)?;
+
+        if self.tool.is_setup(&version_type).await? {
             debug!("Rust has already been setup");
 
             // When offline and the tool doesn't exist, fallback to the global binary
-        } else if proto::is_offline() {
+        } else if proto_core::is_offline() {
             debug!(
                     "No internet connection and Rust has not been setup, falling back to global binary in PATH"
                 );
@@ -89,10 +101,10 @@ impl Tool for RustTool {
                 None => true,
             };
 
-            if setup || !self.tool.get_install_dir()?.exists() {
+            if setup || !self.tool.get_tool_dir().exists() {
                 print_checkpoint(format!("installing rust v{version}"), Checkpoint::Setup);
 
-                if self.tool.setup(version).await? {
+                if self.tool.setup(&version_type).await? {
                     last_versions.insert("rust".into(), version.to_string());
                     installed += 1;
                 }

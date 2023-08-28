@@ -1,10 +1,10 @@
 use miette::IntoDiagnostic;
-use moon_cache::{cache_item, CacheEngine};
+use moon_cache::{cache_item, get_moon_home_dir, CacheEngine};
 use moon_common::consts::CONFIG_DIRNAME;
 use moon_common::is_test_env;
 use semver::Version;
 use serde::{Deserialize, Serialize};
-use starbase_utils::{dirs, fs, json};
+use starbase_utils::{fs, json};
 use std::env;
 use std::path::Path;
 use std::time::{Duration, SystemTime};
@@ -30,10 +30,7 @@ cache_item!(
 );
 
 fn load_or_create_anonymous_uid() -> miette::Result<String> {
-    let moon_home_dir = dirs::home_dir()
-        .expect("Invalid home directory.")
-        .join(CONFIG_DIRNAME);
-    let id_path = moon_home_dir.join("id");
+    let id_path = get_moon_home_dir().join("id");
 
     if id_path.exists() {
         return Ok(fs::read_file(id_path)?);

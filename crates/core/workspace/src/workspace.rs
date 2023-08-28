@@ -1,6 +1,6 @@
 use crate::errors::WorkspaceError;
 use moon_api::Moonbase;
-use moon_cache::CacheEngine;
+use moon_cache::{get_moon_home_dir, CacheEngine};
 use moon_common::consts;
 use moon_config::{InheritedTasksConfig, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_hash::HashEngine;
@@ -190,7 +190,8 @@ impl Workspace {
         );
 
         // Load proto tools
-        let proto_tools = ToolsConfig::load(root_dir.join(TOOLS_CONFIG_NAME))?;
+        let mut proto_tools = ToolsConfig::load(root_dir.join(TOOLS_CONFIG_NAME))?;
+        proto_tools.inherit_builtin_plugins();
 
         // Load configs
         let config = load_workspace_config(&root_dir)?;
@@ -217,7 +218,12 @@ impl Workspace {
             &config.vcs.default_branch,
             &config.vcs.remote_candidates,
         )?;
-        let plugin_loader = PluginLoader::new();
+
+        let moon_home_dir = get_moon_home_dir();
+
+        let mut plugin_loader =
+            PluginLoader::new(moon_home_dir.join("plugins"), moon_home_dir.join("temp"));
+        plugin_loader.set_seed(env::var("MOON_VERSION").unwrap_or_default().as_str());
 
         Ok(Workspace {
             cache_engine: Arc::new(cache_engine),

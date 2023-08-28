@@ -21,6 +21,7 @@ moon_tool = { path = "../../core/tool" }
 moon_utils = { path = "../../core/utils" }
 miette = { workspace = true }
 proto_cli = { workspace = true }
+proto_core = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

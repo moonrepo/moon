@@ -8,6 +8,8 @@ pub struct RustConfig {
     #[setting(nested)]
     pub bins: Vec<BinEntry>,
 
+    pub plugin: Option<String>,
+
     pub sync_toolchain_config: bool,
 
     #[setting(env = "MOON_RUST_VERSION", validate = validate_semver)]

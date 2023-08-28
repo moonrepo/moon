@@ -8,7 +8,7 @@ static mut PLATFORM_REGISTRY: OnceLock<PlatformManager> = OnceLock::new();
 
 pub type BoxedPlatform = Box<dyn Platform>;
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct PlatformManager {
     cache: FxHashMap<PlatformType, BoxedPlatform>,
 }

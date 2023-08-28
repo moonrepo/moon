@@ -4,9 +4,9 @@ use moon_logger::debug;
 use moon_node_lang::{pnpm, LockfileDependencyVersions, PNPM};
 use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
-use moon_tool::{async_trait, get_path_env_var, DependencyManager, Tool};
+use moon_tool::{async_trait, get_path_env_var, load_tool_plugin, DependencyManager, Tool};
 use moon_utils::{is_ci, semver};
-use proto_core::{ProtoEnvironment, Tool as ProtoTool, VersionType};
+use proto_core::{Id, PluginLoader, ProtoEnvironment, Tool as ProtoTool, VersionType};
 use rustc_hash::FxHashMap;
 use starbase_utils::fs;
 use std::env;
@@ -21,13 +21,23 @@ pub struct PnpmTool {
 }
 
 impl PnpmTool {
-    pub fn new(proto: &ProtoEnvironment, config: &Option<PnpmConfig>) -> miette::Result<PnpmTool> {
+    pub async fn new(
+        proto: &ProtoEnvironment,
+        config: &Option<PnpmConfig>,
+        plugin_loader: &PluginLoader,
+    ) -> miette::Result<PnpmTool> {
         let config = config.to_owned().unwrap_or_default();
 
         Ok(PnpmTool {
             global: config.version.is_none(),
+            tool: load_tool_plugin(
+                &Id::raw("pnpm"),
+                proto,
+                config.plugin.as_ref().unwrap(),
+                plugin_loader,
+            )
+            .await?,
             config,
-            tool: NodeDependencyManager::new(proto, NodeDependencyManagerType::Pnpm),
         })
     }
 }
@@ -58,7 +68,7 @@ impl Tool for PnpmTool {
             return Ok(count);
         };
 
-        let version_type = VersionType::parse(version)?;
+        let version_type = VersionType::parse(&version)?;
 
         if self.tool.is_setup(&version_type).await? {
             debug!("pnpm has already been setup");

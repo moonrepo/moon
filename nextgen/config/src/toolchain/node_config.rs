@@ -65,18 +65,24 @@ derive_enum!(
 
 #[derive(Clone, Config, Debug)]
 pub struct NpmConfig {
+    pub plugin: Option<String>,
+
     #[setting(env = "MOON_NPM_VERSION", validate = validate_semver)]
     pub version: Option<String>,
 }
 
 #[derive(Clone, Config, Debug)]
 pub struct PnpmConfig {
+    pub plugin: Option<String>,
+
     #[setting(env = "MOON_PNPM_VERSION", validate = validate_semver)]
     pub version: Option<String>,
 }
 
 #[derive(Clone, Config, Debug)]
 pub struct YarnConfig {
+    pub plugin: Option<String>,
+
     pub plugins: Vec<String>,
 
     #[setting(env = "MOON_YARN_VERSION", validate = validate_semver)]
@@ -105,6 +111,8 @@ pub struct NodeConfig {
     pub npm: NpmConfig,
 
     pub package_manager: NodePackageManager,
+
+    pub plugin: Option<String>,
 
     #[setting(nested)]
     pub pnpm: Option<PnpmConfig>,
@@ -138,6 +146,10 @@ impl NodeConfig {
                 self.inherit_proto_yarn(proto_tools)?;
             }
         };
+
+        if self.plugin.is_none() {
+            self.plugin = proto_tools.plugins.get("node").map(|p| p.to_string());
+        }
 
         Ok(())
     }

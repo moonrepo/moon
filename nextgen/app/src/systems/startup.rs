@@ -136,7 +136,8 @@ pub fn load_toolchain_config(workspace_root: StateRef<WorkspaceRoot>, resources:
         );
     }
 
-    let proto_tools = ToolsConfig::load(proto_path)?;
+    let mut proto_tools = ToolsConfig::load(proto_path)?;
+    proto_tools.inherit_builtin_plugins();
 
     let config = if config_path.exists() {
         debug!("Config file does not exist, using defaults");

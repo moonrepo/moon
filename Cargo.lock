@@ -3152,7 +3152,7 @@ dependencies = [
  "moon_utils",
  "moon_workspace",
  "num_cpus",
- "proto_core 0.16.1",
+ "proto_core 0.16.2",
  "rustc-hash",
  "serde",
  "starbase_styles",
@@ -3187,7 +3187,7 @@ dependencies = [
  "moon_cache",
  "moon_common",
  "moon_time",
- "proto_core 0.16.1",
+ "proto_core 0.16.2",
  "reqwest",
  "semver",
  "serde",
@@ -3208,7 +3208,7 @@ dependencies = [
  "moon_app_components",
  "moon_common",
  "moon_config",
- "proto_core 0.16.1",
+ "proto_core 0.16.2",
  "semver",
  "starbase 0.2.5",
  "starbase_styles",
@@ -3223,7 +3223,7 @@ name = "moon_app_components"
 version = "0.1.0"
 dependencies = [
  "moon_config",
- "proto_core 0.16.1",
+ "proto_core 0.16.2",
  "semver",
  "starbase 0.2.5",
 ]
@@ -3323,7 +3323,7 @@ dependencies = [
  "moon_workspace",
  "open",
  "petgraph",
- "proto_core 0.16.1",
+ "proto_core 0.16.2",
  "reqwest",
  "rustc-hash",
  "serde",
@@ -3394,7 +3394,7 @@ dependencies = [
  "moon_target",
  "once_cell",
  "once_map",
- "proto_core 0.16.1",
+ "proto_core 0.16.2",
  "regex",
  "rustc-hash",
  "schematic",
@@ -3616,7 +3616,7 @@ dependencies = [
  "moon_typescript_platform",
  "moon_utils",
  "once_cell",
- "proto_cli",
+ "proto_core 0.16.2",
  "rustc-hash",
  "serde",
  "serde_json",
@@ -3638,7 +3638,7 @@ dependencies = [
  "moon_terminal",
  "moon_tool",
  "moon_utils",
- "proto_core 0.16.1",
+ "proto_core 0.16.2",
  "rustc-hash",
  "starbase_styles",
  "starbase_utils",
@@ -3686,6 +3686,7 @@ dependencies = [
  "moon_project",
  "moon_task",
  "moon_tool",
+ "proto_core 0.16.2",
  "rustc-hash",
  "serde",
 ]
@@ -3932,6 +3933,7 @@ dependencies = [
  "moon_tool",
  "moon_utils",
  "proto_cli",
+ "proto_core 0.16.2",
  "rustc-hash",
  "serde",
  "serde_json",
@@ -4066,6 +4068,7 @@ dependencies = [
  "moon_lang",
  "moon_platform_runtime",
  "moon_process",
+ "proto_core 0.16.2",
  "rustc-hash",
  "starbase_styles",
  "thiserror",
@@ -4184,7 +4187,7 @@ dependencies = [
  "moon_test_utils",
  "moon_utils",
  "moon_vcs",
- "proto_core 0.16.1",
+ "proto_core 0.16.2",
  "reqwest",
  "starbase 0.2.5",
  "starbase_styles",
@@ -4828,9 +4831,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.16.1"
+version = "0.16.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d7a30e591bc3ab16c82a54dcf9e2c04a66dd070d7b217f2a2f895d9ca91f014"
+checksum = "a58820f2cd075713a50eff34c7ca5426a9a07436e2f71d10ebb2c2025b7621e3"
 dependencies = [
  "cached",
  "extism",

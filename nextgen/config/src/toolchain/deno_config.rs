@@ -11,4 +11,6 @@ pub struct DenoConfig {
     pub deps_file: String,
 
     pub lockfile: bool,
+
+    pub plugin: Option<String>,
 }

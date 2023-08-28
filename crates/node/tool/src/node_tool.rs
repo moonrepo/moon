@@ -7,8 +7,10 @@ use moon_node_lang::node;
 use moon_platform_runtime::Version;
 use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
-use moon_tool::{async_trait, get_path_env_var, DependencyManager, Tool, ToolError};
-use proto_core::{ProtoEnvironment, Tool as ProtoTool, VersionType};
+use moon_tool::{
+    async_trait, get_path_env_var, load_tool_plugin, DependencyManager, Tool, ToolError,
+};
+use proto_core::{Id, PluginLoader, ProtoEnvironment, Tool as ProtoTool, VersionType};
 use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
 
@@ -27,15 +29,22 @@ pub struct NodeTool {
 }
 
 impl NodeTool {
-    pub fn new(
+    pub async fn new(
         proto: &ProtoEnvironment,
         config: &NodeConfig,
         version: &Version,
+        plugin_loader: &PluginLoader,
     ) -> miette::Result<NodeTool> {
         let mut node = NodeTool {
             global: false,
             config: config.to_owned(),
-            tool: NodeLanguage::new(proto),
+            tool: load_tool_plugin(
+                &Id::raw("node"),
+                proto,
+                config.plugin.as_ref().unwrap(),
+                plugin_loader,
+            )
+            .await?,
             npm: None,
             pnpm: None,
             yarn: None,
@@ -50,13 +59,13 @@ impl NodeTool {
 
         match config.package_manager {
             NodePackageManager::Npm => {
-                node.npm = Some(NpmTool::new(proto, &config.npm)?);
+                node.npm = Some(NpmTool::new(proto, &config.npm, plugin_loader).await?);
             }
             NodePackageManager::Pnpm => {
-                node.pnpm = Some(PnpmTool::new(proto, &config.pnpm)?);
+                node.pnpm = Some(PnpmTool::new(proto, &config.pnpm, plugin_loader).await?);
             }
             NodePackageManager::Yarn => {
-                node.yarn = Some(YarnTool::new(proto, &config.yarn)?);
+                node.yarn = Some(YarnTool::new(proto, &config.yarn, plugin_loader).await?);
             }
         };
 

@@ -6,6 +6,10 @@ pub struct TypeScriptConfig {
     #[setting(default = true)]
     pub create_missing_config: bool,
 
+    // Not used but required by the toolchain!
+    #[setting(skip)]
+    pub plugin: Option<String>,
+
     #[setting(default = "tsconfig.json")]
     pub project_config_file_name: String,
 

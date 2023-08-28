@@ -6,7 +6,7 @@ use moon_config::{InheritedTasksConfig, InheritedTasksManager, ToolchainConfig, 
 use moon_hash::HashEngine;
 use moon_utils::semver;
 use moon_vcs::{BoxedVcs, Git};
-use proto_core::{get_root, ToolsConfig, TOOLS_CONFIG_NAME};
+use proto_core::{get_root, PluginLoader, ToolsConfig, TOOLS_CONFIG_NAME};
 use starbase::Resource;
 use starbase_styles::color;
 use starbase_utils::{dirs, fs, glob};
@@ -148,6 +148,9 @@ pub struct Workspace {
     /// Engine for reading and writing hashes/outputs.
     pub hash_engine: Arc<HashEngine>,
 
+    /// The plugin loader.
+    pub plugin_loader: Arc<PluginLoader>,
+
     /// Proto tools loaded from ".prototools".
     pub proto_tools: Arc<ToolsConfig>,
 
@@ -214,11 +217,13 @@ impl Workspace {
             &config.vcs.default_branch,
             &config.vcs.remote_candidates,
         )?;
+        let plugin_loader = PluginLoader::new();
 
         Ok(Workspace {
             cache_engine: Arc::new(cache_engine),
             config,
             hash_engine: Arc::new(hash_engine),
+            plugin_loader: Arc::new(plugin_loader),
             proto_tools: Arc::new(proto_tools),
             root: root_dir,
             session: None,

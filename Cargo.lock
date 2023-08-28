@@ -3638,7 +3638,7 @@ dependencies = [
  "moon_terminal",
  "moon_tool",
  "moon_utils",
- "proto_cli",
+ "proto_core 0.16.1",
  "rustc-hash",
  "starbase_styles",
  "starbase_utils",

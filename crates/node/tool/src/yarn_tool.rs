@@ -4,30 +4,25 @@ use moon_logger::debug;
 use moon_node_lang::{yarn, LockfileDependencyVersions, YARN};
 use moon_process::Command;
 use moon_terminal::{print_checkpoint, Checkpoint};
-use moon_tool::{get_path_env_var, DependencyManager, Tool, ToolError};
+use moon_tool::{async_trait, get_path_env_var, DependencyManager, Tool, ToolError};
 use moon_utils::{get_workspace_root, is_ci};
-use proto::{
-    async_trait,
-    node::{NodeDependencyManager, NodeDependencyManagerType},
-    Executable, Installable, Proto, Shimable, Tool as ProtoTool,
-};
+use proto_core::{ProtoEnvironment, Tool as ProtoTool, VersionType};
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
 use starbase_utils::fs;
 use std::env;
 use std::path::{Path, PathBuf};
 
-#[derive(Debug)]
 pub struct YarnTool {
     pub config: YarnConfig,
 
     pub global: bool,
 
-    pub tool: NodeDependencyManager,
+    pub tool: ProtoTool,
 }
 
 impl YarnTool {
-    pub fn new(proto: &Proto, config: &Option<YarnConfig>) -> miette::Result<YarnTool> {
+    pub fn new(proto: &ProtoEnvironment, config: &Option<YarnConfig>) -> miette::Result<YarnTool> {
         let config = config.to_owned().unwrap_or_default();
 
         Ok(YarnTool {
@@ -109,14 +104,16 @@ impl Tool for YarnTool {
             return Ok(count);
         };
 
-        if self.tool.is_setup(&version).await? {
+        let version_type = VersionType::parse(version)?;
+
+        if self.tool.is_setup(&version_type).await? {
             debug!("yarn has already been setup");
 
             return Ok(count);
         }
 
         // When offline and the tool doesn't exist, fallback to the global binary
-        if proto::is_offline() {
+        if proto_core::is_offline() {
             debug!(
                 "No internet connection and yarn has not been setup, falling back to global binary in PATH"
             );
@@ -127,14 +124,14 @@ impl Tool for YarnTool {
         }
 
         if let Some(last) = last_versions.get("yarn") {
-            if last == &version && self.tool.get_install_dir()?.exists() {
+            if last == &version && self.tool.get_tool_dir().exists() {
                 return Ok(count);
             }
         }
 
         print_checkpoint(format!("installing yarn v{version}"), Checkpoint::Setup);
 
-        if self.tool.setup(&version).await? {
+        if self.tool.setup(&version_type).await? {
             last_versions.insert("yarn".into(), version);
             count += 1;
         }
@@ -163,7 +160,7 @@ impl DependencyManager<NodeTool> for YarnTool {
         };
 
         if !self.global {
-            cmd.env("PATH", get_path_env_var(&self.tool.get_install_dir()?));
+            cmd.env("PATH", get_path_env_var(&self.tool.get_tool_dir()));
         }
 
         cmd.env("PROTO_NODE_BIN", node.get_bin_path()?);

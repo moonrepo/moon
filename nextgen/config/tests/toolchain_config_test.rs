@@ -1,7 +1,7 @@
 mod utils;
 
 use moon_config::{BinConfig, BinEntry, NodePackageManager, ToolchainConfig};
-use proto::ToolsConfig;
+use proto_core::ToolsConfig;
 use starbase_sandbox::create_sandbox;
 use std::env;
 use utils::*;

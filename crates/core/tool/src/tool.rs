@@ -3,11 +3,10 @@ use moon_lang::LockfileDependencyVersions;
 use moon_process::Command;
 use rustc_hash::FxHashMap;
 use std::any::Any;
-use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 
 #[async_trait]
-pub trait Tool: Any + Debug + Send + Sync {
+pub trait Tool: Any + Send + Sync {
     fn as_any(&self) -> &(dyn Any + Send + Sync);
 
     /// Return an absolute path to the tool's binary.

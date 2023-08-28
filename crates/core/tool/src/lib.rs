@@ -2,6 +2,7 @@ mod errors;
 mod manager;
 mod tool;
 
+pub use async_trait::async_trait;
 pub use errors::*;
 pub use manager::*;
 pub use tool::*;

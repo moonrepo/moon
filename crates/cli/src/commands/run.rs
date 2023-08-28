@@ -1,8 +1,9 @@
+use crate::app::GlobalArgs;
 use crate::enums::{CacheMode, TouchedStatus};
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use clap::Args;
 use miette::miette;
-use moon::{build_dep_graph, generate_project_graph, load_workspace};
+use moon::{build_dep_graph, generate_project_graph};
 use moon_action_context::{ActionContext, ProfileType};
 use moon_action_pipeline::Pipeline;
 use moon_common::is_test_env;
@@ -11,7 +12,7 @@ use moon_project_graph::ProjectGraph;
 use moon_utils::is_ci;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
-use starbase::AppResult;
+use starbase::{system, AppResult};
 use starbase_styles::color;
 use std::env;
 use std::string::ToString;
@@ -105,7 +106,7 @@ pub async fn run_target(
     target_ids: &[String],
     args: &RunArgs,
     concurrency: Option<usize>,
-    workspace: Workspace,
+    workspace: &Workspace,
     project_graph: ProjectGraph,
 ) -> AppResult {
     // Force cache to update using write-only mode
@@ -120,7 +121,7 @@ pub async fn run_target(
         let local = is_local(args);
 
         query_touched_files(
-            &workspace,
+            workspace,
             &QueryTouchedFilesOptions {
                 default_branch: !local && !is_test_env(),
                 local,
@@ -202,7 +203,7 @@ pub async fn run_target(
     };
 
     let dep_graph = dep_builder.build();
-    let mut pipeline = Pipeline::new(workspace, project_graph);
+    let mut pipeline = Pipeline::new(workspace.to_owned(), project_graph);
 
     if let Some(concurrency) = concurrency {
         pipeline.concurrency(concurrency);
@@ -219,11 +220,20 @@ pub async fn run_target(
     Ok(())
 }
 
-pub async fn run(args: RunArgs, concurrency: Option<usize>) -> AppResult {
-    let mut workspace = load_workspace().await?;
-    let project_graph = generate_project_graph(&mut workspace).await?;
+#[system]
+pub async fn run(
+    args: ArgsRef<RunArgs>,
+    global_args: StateRef<GlobalArgs>,
+    workspace: ResourceMut<Workspace>,
+) {
+    let project_graph = generate_project_graph(workspace).await?;
 
-    run_target(&args.targets, &args, concurrency, workspace, project_graph).await?;
-
-    Ok(())
+    run_target(
+        &args.targets,
+        args,
+        global_args.concurrency,
+        workspace,
+        project_graph,
+    )
+    .await?;
 }

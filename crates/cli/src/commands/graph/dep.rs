@@ -1,9 +1,10 @@
 use crate::commands::graph::utils::{dep_graph_repr, respond_to_request, setup_server};
 use clap::Args;
 use miette::IntoDiagnostic;
-use moon::{build_dep_graph, generate_project_graph, load_workspace};
+use moon::{build_dep_graph, generate_project_graph};
 use moon_target::Target;
-use starbase::AppResult;
+use moon_workspace::Workspace;
+use starbase::system;
 
 #[derive(Args, Clone, Debug)]
 pub struct DepGraphArgs {
@@ -17,9 +18,9 @@ pub struct DepGraphArgs {
     json: bool,
 }
 
-pub async fn dep_graph(args: DepGraphArgs) -> AppResult {
-    let mut workspace = load_workspace().await?;
-    let project_graph = generate_project_graph(&mut workspace).await?;
+#[system]
+pub async fn dep_graph(args: ArgsRef<DepGraphArgs>, workspace: ResourceMut<Workspace>) {
+    let project_graph = generate_project_graph(workspace).await?;
     let mut dep_builder = build_dep_graph(&project_graph);
 
     // Focus a target and its dependencies/dependents
@@ -63,6 +64,4 @@ pub async fn dep_graph(args: DepGraphArgs) -> AppResult {
     for req in server.incoming_requests() {
         respond_to_request(req, &mut tera, &graph_info, "Dependency graph".to_owned())?;
     }
-
-    Ok(())
 }

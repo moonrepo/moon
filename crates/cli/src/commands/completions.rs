@@ -1,11 +1,18 @@
 use crate::app::App;
-use clap::CommandFactory;
+use clap::{Args, CommandFactory};
 use clap_complete::{generate, Shell};
 use miette::miette;
-use starbase::AppResult;
+use starbase::system;
 
-pub async fn completions(shell: Option<Shell>) -> AppResult {
-    let Some(shell) = shell.or_else(Shell::from_env) else {
+#[derive(Args, Clone, Debug)]
+pub struct CompletionsArgs {
+    #[arg(long, help = "Shell to generate for")]
+    shell: Option<Shell>,
+}
+
+#[system]
+pub async fn completions(args: ArgsRef<CompletionsArgs>) {
+    let Some(shell) = args.shell.or_else(Shell::from_env) else {
         return Err(miette!("Could not determine your shell!"));
     };
 
@@ -13,6 +20,4 @@ pub async fn completions(shell: Option<Shell>) -> AppResult {
     let mut stdio = std::io::stdout();
 
     generate(shell, &mut app, "moon", &mut stdio);
-
-    Ok(())
 }

@@ -10,6 +10,21 @@ use tokio::time::sleep;
 use tracing::debug;
 
 #[system]
+pub async fn load_workspace(cli: StateRef<CLI>, resources: ResourcesMut) {
+    match &cli.command {
+        Commands::Completions(_) | Commands::Init(_) | Commands::Setup => {
+            // Do nothing
+        }
+        Commands::Bin(_) | Commands::Teardown => {
+            resources.set(moon::load_workspace_with_toolchain().await?);
+        }
+        _ => {
+            resources.set(moon::load_workspace().await?);
+        }
+    };
+}
+
+#[system]
 pub async fn check_for_new_version(cli: StateRef<CLI>) {
     if matches!(
         &cli.command,

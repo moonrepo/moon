@@ -4207,6 +4207,7 @@ dependencies = [
  "moonbase",
  "proto_cli",
  "reqwest",
+ "starbase 0.2.4",
  "starbase_styles",
  "starbase_utils",
  "thiserror",

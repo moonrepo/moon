@@ -10,8 +10,8 @@ pub use crate::queries::touched_files::{
 use clap::Args;
 use console::Term;
 use miette::IntoDiagnostic;
-use moon::load_workspace;
 use moon_terminal::ExtendedTerm;
+use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
 use starbase::{system, ExecuteArgs};
 use starbase_styles::color;
@@ -27,8 +27,7 @@ pub struct QueryHashArgs {
 }
 
 #[system]
-pub async fn hash(args: StateRef<ExecuteArgs, QueryHashArgs>) {
-    let workspace = load_workspace().await?;
+pub async fn hash(args: StateRef<ExecuteArgs, QueryHashArgs>, workspace: ResourceRef<Workspace>) {
     let result = query_hash(&workspace, &args.hash).await?;
 
     if !args.json {
@@ -51,9 +50,11 @@ pub struct QueryHashDiffArgs {
 }
 
 #[system]
-pub async fn hash_diff(args: StateRef<ExecuteArgs, QueryHashDiffArgs>) {
-    let mut workspace = load_workspace().await?;
-    let mut result = query_hash_diff(&mut workspace, &args.left, &args.right).await?;
+pub async fn hash_diff(
+    args: StateRef<ExecuteArgs, QueryHashDiffArgs>,
+    workspace: ResourceMut<Workspace>,
+) {
+    let mut result = query_hash_diff(workspace, &args.left, &args.right).await?;
 
     let is_tty = io::stdout().is_terminal();
     let term = Term::buffered_stdout();
@@ -139,7 +140,10 @@ pub struct QueryProjectsArgs {
 }
 
 #[system]
-pub async fn projects(args: StateRef<ExecuteArgs, QueryProjectsArgs>) {
+pub async fn projects(
+    args: StateRef<ExecuteArgs, QueryProjectsArgs>,
+    workspace: ResourceMut<Workspace>,
+) {
     let args = args.to_owned();
     let options = QueryProjectsOptions {
         alias: args.alias,
@@ -154,8 +158,7 @@ pub async fn projects(args: StateRef<ExecuteArgs, QueryProjectsArgs>) {
         type_of: args.type_of,
     };
 
-    let mut workspace = load_workspace().await?;
-    let mut projects = query_projects(&mut workspace, &options).await?;
+    let mut projects = query_projects(workspace, &options).await?;
 
     projects.sort_by(|a, d| a.id.cmp(&d.id));
 
@@ -213,7 +216,7 @@ pub struct QueryTasksArgs {
 }
 
 #[system]
-pub async fn tasks(args: StateRef<ExecuteArgs, QueryTasksArgs>) {
+pub async fn tasks(args: StateRef<ExecuteArgs, QueryTasksArgs>, workspace: ResourceMut<Workspace>) {
     let args = args.to_owned();
     let options = QueryProjectsOptions {
         alias: args.alias,
@@ -228,8 +231,7 @@ pub async fn tasks(args: StateRef<ExecuteArgs, QueryTasksArgs>) {
         type_of: args.type_of,
     };
 
-    let mut workspace = load_workspace().await?;
-    let projects = query_projects(&mut workspace, &options).await?;
+    let projects = query_projects(workspace, &options).await?;
 
     // Write to stdout directly to avoid broken pipe panics
     let term = Term::buffered_stdout();
@@ -287,7 +289,10 @@ pub struct QueryTouchedFilesArgs {
 }
 
 #[system]
-pub async fn touched_files(args: StateRef<ExecuteArgs, QueryTouchedFilesArgs>) {
+pub async fn touched_files(
+    args: StateRef<ExecuteArgs, QueryTouchedFilesArgs>,
+    workspace: ResourceRef<Workspace>,
+) {
     let args = args.to_owned();
     let options = QueryTouchedFilesOptions {
         base: args.base,
@@ -299,7 +304,6 @@ pub async fn touched_files(args: StateRef<ExecuteArgs, QueryTouchedFilesArgs>) {
         status: args.status,
     };
 
-    let workspace = load_workspace().await?;
     let files = query_touched_files(&workspace, &options).await?;
 
     // Write to stdout directly to avoid broken pipe panics

@@ -8,6 +8,7 @@ use moon_utils::semver;
 use moon_vcs::{BoxedVcs, Git};
 use moonbase::Moonbase;
 use proto::{get_root, ToolsConfig, TOOLS_CONFIG_NAME};
+use starbase::Resource;
 use starbase_styles::color;
 use starbase_utils::{dirs, fs, glob};
 use std::env;
@@ -142,6 +143,7 @@ fn load_workspace_config(root_dir: &Path) -> miette::Result<WorkspaceConfig> {
     WorkspaceConfig::load_from(root_dir)
 }
 
+#[derive(Resource)]
 pub struct Workspace {
     /// Engine for reading and writing cache/states.
     pub cache_engine: CacheEngine,

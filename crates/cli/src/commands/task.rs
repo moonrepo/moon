@@ -1,9 +1,10 @@
 use clap::Args;
 use console::Term;
 use miette::{miette, IntoDiagnostic};
-use moon::{build_project_graph, load_workspace};
+use moon::build_project_graph;
 use moon_target::Target;
 use moon_terminal::{ExtendedTerm, Label};
+use moon_workspace::Workspace;
 use starbase::{system, ExecuteArgs};
 use starbase_styles::color;
 
@@ -17,13 +18,12 @@ pub struct TaskArgs {
 }
 
 #[system]
-pub async fn task(args: StateRef<ExecuteArgs, TaskArgs>) {
+pub async fn task(args: StateRef<ExecuteArgs, TaskArgs>, workspace: ResourceMut<Workspace>) {
     let Some(project_id) = args.target.scope_id.clone() else {
         return Err(miette!("A project ID is required."));
     };
 
-    let mut workspace = load_workspace().await?;
-    let mut project_graph_builder = build_project_graph(&mut workspace).await?;
+    let mut project_graph_builder = build_project_graph(workspace).await?;
     project_graph_builder.load(&project_id).await?;
 
     let project_graph = project_graph_builder.build().await?;

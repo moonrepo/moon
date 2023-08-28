@@ -1,5 +1,4 @@
 use clap::{Args, ValueEnum};
-use moon::load_workspace_with_toolchain;
 use moon_config::PlatformType;
 use moon_node_tool::NodeTool;
 use moon_platform::PlatformManager;
@@ -51,8 +50,6 @@ fn not_configured() -> ! {
 
 #[system]
 pub async fn bin(args: StateRef<ExecuteArgs, BinArgs>) {
-    load_workspace_with_toolchain().await?;
-
     match &args.tool {
         BinTool::Node => {
             let node = PlatformManager::read()

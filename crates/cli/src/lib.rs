@@ -99,6 +99,7 @@ pub async fn run_cli() -> AppResult {
     let mut app = App::new();
     app.set_state(cli.global_args());
     app.set_state(cli.clone());
+    app.startup(systems::load_workspace);
     app.execute(systems::check_for_new_version);
 
     match cli.command {

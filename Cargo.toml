@@ -55,7 +55,7 @@ semver = "1.0.18"
 serde = { version = "1.0.183", features = ["derive", "rc"] }
 serde_json = "1.0.105"
 serde_yaml = "0.9.25"
-starbase = "0.2.3"
+starbase = "0.2.5"
 starbase_archive = { version = "0.2.0", default-features = false, features = [
 	"tar-gz",
 ] }

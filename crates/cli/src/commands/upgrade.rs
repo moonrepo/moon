@@ -7,7 +7,7 @@ use moon_launchpad::check_version;
 use moon_logger::error;
 use moon_utils::semver::Version;
 use proto::ProtoError;
-use starbase::AppResult;
+use starbase::system;
 use starbase_utils::{dirs, fs};
 use std::{
     env::{self, consts},
@@ -16,7 +16,8 @@ use std::{
     path::Component,
 };
 
-pub async fn upgrade() -> AppResult {
+#[system]
+pub async fn upgrade() {
     if proto::is_offline() {
         return Err(miette!("Upgrading moon requires an internet connection!"));
     }
@@ -118,6 +119,4 @@ pub async fn upgrade() -> AppResult {
         format!("Successfully upgraded moon to version {new_version}"),
         true,
     );
-
-    Ok(())
 }

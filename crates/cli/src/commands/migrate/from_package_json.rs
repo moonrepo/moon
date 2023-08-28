@@ -1,6 +1,6 @@
 use super::check_dirty_repo;
 use clap::Args;
-use moon::{generate_project_graph, load_workspace};
+use moon::generate_project_graph;
 use moon_common::consts::CONFIG_PROJECT_FILENAME;
 use moon_common::Id;
 use moon_config::{
@@ -9,8 +9,9 @@ use moon_config::{
 use moon_logger::info;
 use moon_node_lang::package_json::{DepsSet, PackageJson};
 use moon_node_platform::create_tasks_from_scripts;
+use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
-use starbase::AppResult;
+use starbase::system;
 use starbase_utils::yaml;
 use std::collections::BTreeMap;
 
@@ -18,24 +19,26 @@ use std::collections::BTreeMap;
 pub struct FromPackageJsonArgs {
     #[arg(help = "ID of project to migrate")]
     id: Id,
+
+    #[arg(long, hide = true)]
+    pub skip_touched_files_check: bool,
 }
 
 const LOG_TARGET: &str = "moon:migrate:from-package-json";
 
+#[system]
 pub async fn from_package_json(
-    args: FromPackageJsonArgs,
-    skip_touched_files_check: bool,
+    args: ArgsRef<FromPackageJsonArgs>,
+    workspace: ResourceMut<Workspace>,
 ) -> AppResult {
-    let mut workspace = load_workspace().await?;
-
-    if skip_touched_files_check {
+    if args.skip_touched_files_check {
         info!(target: LOG_TARGET, "Skipping touched files check.");
     } else {
-        check_dirty_repo(&workspace).await?;
+        check_dirty_repo(workspace).await?;
     };
 
     // Create a mapping of `package.json` names to project IDs
-    let project_graph = generate_project_graph(&mut workspace).await?;
+    let project_graph = generate_project_graph(workspace).await?;
     let mut package_map: FxHashMap<String, Id> = FxHashMap::default();
 
     for project in project_graph.get_all_unexpanded() {
@@ -94,6 +97,4 @@ pub async fn from_package_json(
     })?;
 
     yaml::write_file_with_config(project.root.join(CONFIG_PROJECT_FILENAME), &partial_config)?;
-
-    Ok(())
 }

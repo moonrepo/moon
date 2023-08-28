@@ -2,14 +2,14 @@ use clap::Args;
 use console::Term;
 use dialoguer::{theme::Theme, Confirm, Input, MultiSelect, Select};
 use miette::IntoDiagnostic;
-use moon::load_workspace;
 use moon_codegen::{CodeGenerator, CodegenError, FileState, Template, TemplateContext};
 use moon_common::path::RelativePathBuf;
 use moon_config::{TemplateVariable, TemplateVariableEnumValue};
 use moon_logger::map_list;
 use moon_terminal::{create_theme, ExtendedTerm};
+use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
-use starbase::AppResult;
+use starbase::{system, AppResult};
 use starbase_styles::color;
 use std::env;
 use std::fmt::Display;
@@ -310,8 +310,8 @@ fn gather_variables(
     Ok(context)
 }
 
-pub async fn generate(args: GenerateArgs) -> AppResult {
-    let workspace = load_workspace().await?;
+#[system]
+pub async fn generate(args: ArgsRef<GenerateArgs>, workspace: ResourceRef<Workspace>) {
     let generator = CodeGenerator::new(&workspace.root, &workspace.config.generator);
     let theme = create_theme();
     let cwd = env::current_dir().into_diagnostic()?;
@@ -369,7 +369,7 @@ pub async fn generate(args: GenerateArgs) -> AppResult {
     debug!(dest = ?dest, "Destination path set");
 
     // Gather variables and build context
-    let mut context = gather_variables(&template, &theme, &args)?;
+    let mut context = gather_variables(&template, &theme, args)?;
     context.insert("dest_dir", &dest);
     context.insert("dest_rel_dir", &relative_dest);
     context.insert("working_dir", &cwd);
@@ -464,6 +464,4 @@ pub async fn generate(args: GenerateArgs) -> AppResult {
 
     term.line("")?;
     term.flush_lines()?;
-
-    Ok(())
 }

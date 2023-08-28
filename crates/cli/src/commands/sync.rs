@@ -1,14 +1,14 @@
 use moon_logger::warn;
-use starbase::AppResult;
+use moon_workspace::Workspace;
+use starbase::system;
 use starbase_styles::color;
 
-pub async fn sync() -> AppResult {
+#[system]
+pub async fn sync(workspace: ResourceMut<Workspace>) {
     warn!(
         "This command is deprecated. Use {} instead.",
         color::shell("moon sync projects")
     );
 
-    crate::commands::syncs::projects::sync().await?;
-
-    Ok(())
+    crate::commands::syncs::projects::internal_sync(workspace).await?;
 }

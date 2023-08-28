@@ -201,7 +201,7 @@ pub async fn ci(
         open_log_group: "▪▪▪▪ ",
     });
     let project_graph = generate_project_graph(workspace).await?;
-    let touched_files = gather_touched_files(&ci_provider, &workspace, args).await?;
+    let touched_files = gather_touched_files(&ci_provider, workspace, args).await?;
     let targets = gather_runnable_targets(&ci_provider, &project_graph, &touched_files)?;
 
     if targets.is_empty() {

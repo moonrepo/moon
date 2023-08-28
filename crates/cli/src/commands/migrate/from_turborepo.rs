@@ -176,7 +176,7 @@ pub async fn from_turborepo(args: ArgsRef<FromTurborepoArgs>, workspace: Resourc
     if args.skip_touched_files_check {
         info!(target: LOG_TARGET, "Skipping touched files check.");
     } else {
-        check_dirty_repo(&workspace).await?;
+        check_dirty_repo(workspace).await?;
     };
 
     let project_graph = generate_project_graph(workspace).await?;

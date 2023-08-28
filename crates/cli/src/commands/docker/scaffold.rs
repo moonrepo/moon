@@ -212,10 +212,10 @@ pub async fn scaffold(args: ArgsRef<DockerScaffoldArgs>, workspace: ResourceMut<
     // Create the workspace skeleton
     let project_graph = generate_project_graph(workspace).await?;
 
-    scaffold_workspace(&workspace, &project_graph, &docker_root)?;
+    scaffold_workspace(workspace, &project_graph, &docker_root)?;
 
     scaffold_sources(
-        &workspace,
+        workspace,
         &project_graph,
         &docker_root,
         &args.ids,

@@ -20,7 +20,7 @@ pub async fn sync(args: ArgsRef<SyncCodeownersArgs>, workspace: ResourceMut<Work
     let done = create_progress_bar("Syncing code owners...");
 
     if args.clean {
-        let codeowners_path = unsync_codeowners(&workspace).await?;
+        let codeowners_path = unsync_codeowners(workspace).await?;
 
         done(
             format!(
@@ -31,7 +31,7 @@ pub async fn sync(args: ArgsRef<SyncCodeownersArgs>, workspace: ResourceMut<Work
         );
     } else {
         let project_graph = generate_project_graph(workspace).await?;
-        let codeowners_path = sync_codeowners(&workspace, &project_graph, args.force).await?;
+        let codeowners_path = sync_codeowners(workspace, &project_graph, args.force).await?;
 
         done(
             format!(

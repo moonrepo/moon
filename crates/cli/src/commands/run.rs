@@ -121,7 +121,7 @@ pub async fn run_target(
         let local = is_local(args);
 
         query_touched_files(
-            &workspace,
+            workspace,
             &QueryTouchedFilesOptions {
                 default_branch: !local && !is_test_env(),
                 local,

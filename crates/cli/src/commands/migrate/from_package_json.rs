@@ -33,7 +33,7 @@ pub async fn from_package_json(
     if args.skip_touched_files_check {
         info!(target: LOG_TARGET, "Skipping touched files check.");
     } else {
-        check_dirty_repo(&workspace).await?;
+        check_dirty_repo(workspace).await?;
     };
 
     // Create a mapping of `package.json` names to project IDs

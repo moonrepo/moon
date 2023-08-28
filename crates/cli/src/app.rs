@@ -1,9 +1,10 @@
 // https://github.com/clap-rs/clap/tree/master/examples/derive_ref#app-attributes
 
-use crate::commands::bin::BinTool;
+use crate::commands::bin::BinArgs;
 use crate::commands::check::CheckArgs;
 use crate::commands::ci::CiArgs;
 use crate::commands::clean::CleanArgs;
+use crate::commands::completions::CompletionsArgs;
 use crate::commands::docker::DockerScaffoldArgs;
 use crate::commands::generate::GenerateArgs;
 use crate::commands::graph::dep::DepGraphArgs;
@@ -21,7 +22,7 @@ use crate::commands::syncs::hooks::SyncHooksArgs;
 use crate::commands::task::TaskArgs;
 use crate::enums::{CacheMode, LogLevel};
 use clap::{Parser, Subcommand};
-use clap_complete::Shell;
+use starbase::State;
 use std::path::PathBuf;
 
 pub const BIN_NAME: &str = if cfg!(windows) { "moon.exe" } else { "moon" };
@@ -131,10 +132,7 @@ pub enum Commands {
         name = "completions",
         about = "Generate command completions for your current shell."
     )]
-    Completions {
-        #[arg(long, help = "Shell to generate for")]
-        shell: Option<Shell>,
-    },
+    Completions(CompletionsArgs),
 
     // ENVIRONMENT
 
@@ -153,10 +151,7 @@ pub enum Commands {
         about = "Return an absolute path to a tool's binary within the toolchain.",
         long_about = "Return an absolute path to a tool's binary within the toolchain. If a tool has not been configured or installed, this will return a non-zero exit code with no value."
     )]
-    Bin {
-        #[arg(value_enum, help = "The tool to query")]
-        tool: BinTool,
-    },
+    Bin(BinArgs),
 
     // moon node <command>
     #[command(name = "node", about = "Special Node.js commands.")]
@@ -307,7 +302,7 @@ pub enum Commands {
     Upgrade,
 }
 
-#[derive(Debug, Parser)]
+#[derive(Clone, Debug, Parser, State)]
 #[command(
     bin_name = BIN_NAME,
     name = "moon",
@@ -362,4 +357,17 @@ pub struct App {
 
     #[command(subcommand)]
     pub command: Commands,
+}
+
+impl App {
+    pub fn global_args(&self) -> GlobalArgs {
+        GlobalArgs {
+            concurrency: self.concurrency,
+        }
+    }
+}
+
+#[derive(State)]
+pub struct GlobalArgs {
+    pub concurrency: Option<usize>,
 }

@@ -15,7 +15,7 @@ use moon_utils::path;
 use moon_vcs::{Git, Vcs};
 use node::init_node;
 use rust::init_rust;
-use starbase::AppResult;
+use starbase::{system, AppResult};
 use starbase_styles::color;
 use starbase_utils::fs;
 use std::collections::{BTreeMap, VecDeque};
@@ -157,7 +157,8 @@ pub async fn init_tool(
     Ok(())
 }
 
-pub async fn init(args: InitArgs) -> AppResult {
+#[system]
+pub async fn init(args: ArgsRef<InitArgs>) {
     let options = InitOptions {
         force: args.force,
         minimal: args.minimal,
@@ -282,8 +283,6 @@ pub async fn init(args: InitArgs) -> AppResult {
         "\nNot enjoying moon? Let us know with a 1 minute survey: {}",
         color::url("https://bit.ly/moon-survey")
     );
-
-    Ok(())
 }
 
 #[cfg(test)]

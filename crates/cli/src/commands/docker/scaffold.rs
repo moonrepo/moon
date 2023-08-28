@@ -1,6 +1,6 @@
 use super::MANIFEST_NAME;
 use clap::Args;
-use moon::{generate_project_graph, load_workspace};
+use moon::generate_project_graph;
 use moon_common::consts::CONFIG_DIRNAME;
 use moon_common::Id;
 use moon_config::{ConfigEnum, LanguageType};
@@ -11,7 +11,7 @@ use moon_utils::path;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
-use starbase::AppResult;
+use starbase::{system, AppResult};
 use starbase_utils::{fs, glob, json};
 use std::path::Path;
 
@@ -201,8 +201,8 @@ fn scaffold_sources(
     Ok(())
 }
 
-pub async fn scaffold(args: DockerScaffoldArgs) -> AppResult {
-    let mut workspace = load_workspace().await?;
+#[system]
+pub async fn scaffold(args: ArgsRef<DockerScaffoldArgs>, workspace: ResourceMut<Workspace>) {
     let docker_root = workspace.root.join(CONFIG_DIRNAME).join("docker");
 
     // Delete the docker skeleton to remove any stale files
@@ -210,17 +210,15 @@ pub async fn scaffold(args: DockerScaffoldArgs) -> AppResult {
     fs::create_dir_all(&docker_root)?;
 
     // Create the workspace skeleton
-    let project_graph = generate_project_graph(&mut workspace).await?;
+    let project_graph = generate_project_graph(workspace).await?;
 
-    scaffold_workspace(&workspace, &project_graph, &docker_root)?;
+    scaffold_workspace(workspace, &project_graph, &docker_root)?;
 
     scaffold_sources(
-        &workspace,
+        workspace,
         &project_graph,
         &docker_root,
         &args.ids,
         &args.include,
     )?;
-
-    Ok(())
 }

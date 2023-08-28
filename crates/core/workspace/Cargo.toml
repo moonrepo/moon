@@ -15,6 +15,7 @@ moon_vcs = { path = "../../../nextgen/vcs" }
 miette = { workspace = true }
 proto_cli = { workspace = true }
 reqwest = { workspace = true }
+starbase = { workspace = true }
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true }
 thiserror = { workspace = true }

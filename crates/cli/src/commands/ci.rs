@@ -1,8 +1,9 @@
+use crate::app::GlobalArgs;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use ci_env::CiOutput;
 use clap::Args;
 use itertools::Itertools;
-use moon::{build_dep_graph, generate_project_graph, load_workspace};
+use moon::{build_dep_graph, generate_project_graph};
 use moon_action_context::ActionContext;
 use moon_action_pipeline::Pipeline;
 use moon_common::path::WorkspaceRelativePathBuf;
@@ -13,7 +14,7 @@ use moon_target::Target;
 use moon_terminal::safe_exit;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
-use starbase::AppResult;
+use starbase::{system, AppResult};
 use starbase_styles::color;
 
 type TargetList = Vec<Target>;
@@ -189,21 +190,25 @@ fn generate_dep_graph(
     Ok(dep_graph)
 }
 
-pub async fn ci(args: CiArgs, concurrency: Option<usize>) -> AppResult {
-    let mut workspace = load_workspace().await?;
+#[system]
+pub async fn ci(
+    args: ArgsRef<CiArgs>,
+    global_args: StateRef<GlobalArgs>,
+    workspace: ResourceMut<Workspace>,
+) {
     let ci_provider = ci_env::get_output().unwrap_or(CiOutput {
         close_log_group: "",
         open_log_group: "▪▪▪▪ ",
     });
-    let project_graph = generate_project_graph(&mut workspace).await?;
-    let touched_files = gather_touched_files(&ci_provider, &workspace, &args).await?;
+    let project_graph = generate_project_graph(workspace).await?;
+    let touched_files = gather_touched_files(&ci_provider, workspace, args).await?;
     let targets = gather_runnable_targets(&ci_provider, &project_graph, &touched_files)?;
 
     if targets.is_empty() {
         return Ok(());
     }
 
-    let targets = distribute_targets_across_jobs(&ci_provider, &args, targets);
+    let targets = distribute_targets_across_jobs(&ci_provider, args, targets);
     let dep_graph = generate_dep_graph(&ci_provider, &project_graph, &targets)?;
 
     // Process all tasks in the graph
@@ -216,10 +221,10 @@ pub async fn ci(args: CiArgs, concurrency: Option<usize>) -> AppResult {
         ..ActionContext::default()
     };
 
-    let mut pipeline = Pipeline::new(workspace, project_graph);
+    let mut pipeline = Pipeline::new(workspace.to_owned(), project_graph);
 
-    if let Some(concurrency) = concurrency {
-        pipeline.concurrency(concurrency);
+    if let Some(concurrency) = &global_args.concurrency {
+        pipeline.concurrency(*concurrency);
     }
 
     let results = pipeline
@@ -243,6 +248,4 @@ pub async fn ci(args: CiArgs, concurrency: Option<usize>) -> AppResult {
     if failed {
         safe_exit(1);
     }
-
-    Ok(())
 }

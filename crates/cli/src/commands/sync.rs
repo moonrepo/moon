@@ -1,7 +1,7 @@
-use moon_logger::warn;
 use moon_workspace::Workspace;
 use starbase::system;
 use starbase_styles::color;
+use tracing::warn;
 
 #[system]
 pub async fn sync(workspace: ResourceMut<Workspace>) {

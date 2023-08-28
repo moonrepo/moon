@@ -3134,6 +3134,7 @@ dependencies = [
  "moon_action",
  "moon_action_context",
  "moon_actions",
+ "moon_api",
  "moon_cache_item",
  "moon_dep_graph",
  "moon_emitter",
@@ -3150,7 +3151,6 @@ dependencies = [
  "moon_tool",
  "moon_utils",
  "moon_workspace",
- "moonbase",
  "num_cpus",
  "proto_cli",
  "rustc-hash",
@@ -3299,8 +3299,6 @@ dependencies = [
  "moon_config",
  "moon_dep_graph",
  "moon_lang",
- "moon_launchpad",
- "moon_logger",
  "moon_node_lang",
  "moon_node_platform",
  "moon_node_tool",
@@ -3556,24 +3554,6 @@ version = "0.1.0"
 dependencies = [
  "miette",
  "rustc-hash",
-]
-
-[[package]]
-name = "moon_launchpad"
-version = "0.1.0"
-dependencies = [
- "cd_env",
- "ci_env",
- "miette",
- "moon_common",
- "moon_logger",
- "moon_utils",
- "proto_cli",
- "reqwest",
- "serde",
- "serde_json",
- "starbase_utils",
- "uuid",
 ]
 
 [[package]]
@@ -4197,38 +4177,21 @@ name = "moon_workspace"
 version = "0.1.0"
 dependencies = [
  "miette",
+ "moon_api",
  "moon_cache",
  "moon_common",
  "moon_config",
  "moon_hash",
- "moon_logger",
  "moon_test_utils",
  "moon_utils",
  "moon_vcs",
- "moonbase",
  "proto_cli",
  "reqwest",
  "starbase 0.2.5",
  "starbase_styles",
  "starbase_utils",
  "thiserror",
-]
-
-[[package]]
-name = "moonbase"
-version = "0.1.0"
-dependencies = [
- "graphql_client",
- "miette",
- "moon_logger",
- "moon_utils",
- "reqwest",
- "serde",
- "serde_json",
- "starbase_styles",
- "thiserror",
- "tokio",
- "tokio-util",
+ "tracing",
 ]
 
 [[package]]

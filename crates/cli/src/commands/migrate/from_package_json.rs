@@ -6,7 +6,6 @@ use moon_common::Id;
 use moon_config::{
     DependencyScope, PartialDependencyConfig, PartialProjectDependsOn, ProjectConfig,
 };
-use moon_logger::info;
 use moon_node_lang::package_json::{DepsSet, PackageJson};
 use moon_node_platform::create_tasks_from_scripts;
 use moon_workspace::Workspace;
@@ -14,6 +13,7 @@ use rustc_hash::FxHashMap;
 use starbase::system;
 use starbase_utils::yaml;
 use std::collections::BTreeMap;
+use tracing::info;
 
 #[derive(Args, Clone, Debug)]
 pub struct FromPackageJsonArgs {
@@ -24,15 +24,13 @@ pub struct FromPackageJsonArgs {
     pub skip_touched_files_check: bool,
 }
 
-const LOG_TARGET: &str = "moon:migrate:from-package-json";
-
 #[system]
 pub async fn from_package_json(
     args: ArgsRef<FromPackageJsonArgs>,
     workspace: ResourceMut<Workspace>,
 ) -> AppResult {
     if args.skip_touched_files_check {
-        info!(target: LOG_TARGET, "Skipping touched files check.");
+        info!("Skipping touched files check.");
     } else {
         check_dirty_repo(workspace).await?;
     };

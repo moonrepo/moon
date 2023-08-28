@@ -1,5 +1,5 @@
 mod common;
-mod endpoints;
+pub mod endpoints;
 pub mod graphql;
 
 use crate::moonbase::common::*;
@@ -12,7 +12,7 @@ use std::io;
 use std::path::Path;
 use std::path::PathBuf;
 use tokio_util::codec::{BytesCodec, FramedRead};
-use tracing::{debug, warn};
+use tracing::{info, warn};
 
 #[derive(Clone, Debug)]
 pub struct Moonbase {
@@ -36,7 +36,7 @@ impl Moonbase {
     }
 
     pub async fn signin(secret_key: String, slug: String) -> Option<Moonbase> {
-        debug!(
+        info!(
             "API keys detected, attempting to sign in to moonbase for repository {}",
             color::id(&slug),
         );

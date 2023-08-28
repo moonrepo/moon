@@ -3,12 +3,12 @@ use crate::commands::run::{run_target, RunArgs};
 use clap::Args;
 use moon::generate_project_graph;
 use moon_common::Id;
-use moon_logger::trace;
 use moon_project::Project;
 use moon_workspace::Workspace;
 use starbase::system;
 use std::env;
 use std::sync::Arc;
+use tracing::trace;
 
 #[derive(Args, Clone, Debug)]
 pub struct CheckArgs {
@@ -28,8 +28,6 @@ pub struct CheckArgs {
     update_cache: bool,
 }
 
-const LOG_TARGET: &str = "moon:check";
-
 #[system]
 pub async fn check(
     args: ArgsRef<CheckArgs>,
@@ -41,16 +39,15 @@ pub async fn check(
 
     // Load projects
     if args.all {
-        trace!(target: LOG_TARGET, "Running check on all projects");
+        trace!("Running check on all projects");
 
         projects.extend(project_graph.get_all()?);
     } else if args.ids.is_empty() {
-        trace!(target: LOG_TARGET, "Loading from path");
+        trace!("Loading from path");
 
         projects.push(project_graph.get_from_path(env::current_dir().unwrap())?);
     } else {
         trace!(
-            target: LOG_TARGET,
             "Running for specific projects: {}",
             args.ids
                 .iter()

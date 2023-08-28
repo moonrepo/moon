@@ -1,10 +1,10 @@
+use crate::helpers::map_list;
 use clap::Args;
 use console::Term;
 use itertools::Itertools;
 use miette::IntoDiagnostic;
 use moon::build_project_graph;
 use moon_common::Id;
-use moon_logger::map_list;
 use moon_terminal::{ExtendedTerm, Label};
 use moon_utils::is_test_env;
 use moon_workspace::Workspace;

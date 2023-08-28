@@ -1,3 +1,4 @@
+use crate::helpers::map_list;
 use clap::Args;
 use console::Term;
 use dialoguer::{theme::Theme, Confirm, Input, MultiSelect, Select};
@@ -5,7 +6,6 @@ use miette::IntoDiagnostic;
 use moon_codegen::{CodeGenerator, CodegenError, FileState, Template, TemplateContext};
 use moon_common::path::RelativePathBuf;
 use moon_config::{TemplateVariable, TemplateVariableEnumValue};
-use moon_logger::map_list;
 use moon_terminal::{create_theme, ExtendedTerm};
 use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;

@@ -1,12 +1,11 @@
 use crate::errors::WorkspaceError;
+use moon_api::Moonbase;
 use moon_cache::CacheEngine;
 use moon_common::consts;
 use moon_config::{InheritedTasksConfig, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_hash::HashEngine;
-use moon_logger::{debug, trace};
 use moon_utils::semver;
 use moon_vcs::{BoxedVcs, Git};
-use moonbase::Moonbase;
 use proto::{get_root, ToolsConfig, TOOLS_CONFIG_NAME};
 use starbase::Resource;
 use starbase_styles::color;
@@ -14,8 +13,7 @@ use starbase_utils::{dirs, fs, glob};
 use std::env;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-
-const LOG_TARGET: &str = "moon:workspace";
+use tracing::{debug, trace};
 
 /// Recursively attempt to find the workspace root by locating the ".moon"
 /// configuration folder, starting from the current working directory.
@@ -29,7 +27,6 @@ fn find_workspace_root<P: AsRef<Path>>(current_dir: P) -> miette::Result<PathBuf
     let current_dir = current_dir.as_ref();
 
     trace!(
-        target: "moon:workspace",
         "Attempting to find workspace root at {}",
         color::path(current_dir),
     );
@@ -60,7 +57,6 @@ fn load_tasks_config(root_dir: &Path) -> miette::Result<InheritedTasksManager> {
     let do_load = |cfg_path: &Path| InheritedTasksConfig::load_partial(root_dir, cfg_path);
 
     trace!(
-        target: LOG_TARGET,
         "Attempting to find {} in {}",
         color::file(format!(
             "{}/{}",
@@ -75,7 +71,6 @@ fn load_tasks_config(root_dir: &Path) -> miette::Result<InheritedTasksManager> {
     }
 
     trace!(
-        target: LOG_TARGET,
         "Attempting to find {} in {}",
         color::file(format!("{}/{}", consts::CONFIG_DIRNAME, "tasks/*.yml")),
         color::path(root_dir)
@@ -85,7 +80,7 @@ fn load_tasks_config(root_dir: &Path) -> miette::Result<InheritedTasksManager> {
         root_dir.join(consts::CONFIG_DIRNAME).join("tasks"),
         ["*.yml"],
     )? {
-        trace!(target: LOG_TARGET, "Found {}", color::path(&config_path));
+        trace!("Found {}", color::path(&config_path));
 
         manager.add_config(&config_path, do_load(&config_path)?);
     }
@@ -103,7 +98,6 @@ fn load_toolchain_config(
         .join(consts::CONFIG_TOOLCHAIN_FILENAME);
 
     trace!(
-        target: LOG_TARGET,
         "Loading {} from {}",
         color::file(format!(
             "{}/{}",
@@ -127,7 +121,6 @@ fn load_workspace_config(root_dir: &Path) -> miette::Result<WorkspaceConfig> {
         .join(consts::CONFIG_WORKSPACE_FILENAME);
 
     trace!(
-        target: LOG_TARGET,
         "Loading {} from {}",
         color::file(format!(
             "{}/{}",
@@ -162,7 +155,7 @@ pub struct Workspace {
     pub root: PathBuf,
 
     /// When logged in, the auth token and IDs for making API requests.
-    pub session: Option<Moonbase>,
+    pub session: Option<Arc<Moonbase>>,
 
     /// Global tasks configuration loaded from ".moon/tasks.yml".
     pub tasks_config: Arc<InheritedTasksManager>,
@@ -188,7 +181,6 @@ impl Workspace {
         let root_dir = find_workspace_root(working_dir)?;
 
         debug!(
-            target: LOG_TARGET,
             "Creating workspace at {} (from working directory {})",
             color::path(&root_dir),
             color::path(working_dir)
@@ -250,7 +242,7 @@ impl Workspace {
             return Ok(());
         };
 
-        self.session = Moonbase::signin(secret_key, repo_slug).await;
+        self.session = Moonbase::signin(secret_key, repo_slug).await.map(Arc::new);
 
         Ok(())
     }

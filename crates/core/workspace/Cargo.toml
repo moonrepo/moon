@@ -4,12 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-moonbase = { path = "../moonbase" }
+moon_api = { path = "../../../nextgen/api" }
 moon_cache = { path = "../../../nextgen/cache" }
 moon_common = { path = "../../../nextgen/common" }
 moon_config = { path = "../../../nextgen/config" }
 moon_hash = { path = "../../../nextgen/hash" }
-moon_logger = { path = "../logger" }
 moon_utils = { path = "../utils" }
 moon_vcs = { path = "../../../nextgen/vcs" }
 miette = { workspace = true }
@@ -19,6 +18,7 @@ starbase = { workspace = true }
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true }
 thiserror = { workspace = true }
+tracing = { workspace = true }
 
 [dev-dependencies]
 moon_test_utils = { path = "../test-utils" }

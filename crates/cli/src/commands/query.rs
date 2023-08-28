@@ -13,7 +13,7 @@ use miette::IntoDiagnostic;
 use moon::load_workspace;
 use moon_terminal::ExtendedTerm;
 use rustc_hash::FxHashMap;
-use starbase::AppResult;
+use starbase::{system, ExecuteArgs};
 use starbase_styles::color;
 use std::io::{self, IsTerminal};
 
@@ -26,7 +26,8 @@ pub struct QueryHashArgs {
     json: bool,
 }
 
-pub async fn hash(args: QueryHashArgs) -> AppResult {
+#[system]
+pub async fn hash(args: StateRef<ExecuteArgs, QueryHashArgs>) {
     let workspace = load_workspace().await?;
     let result = query_hash(&workspace, &args.hash).await?;
 
@@ -35,8 +36,6 @@ pub async fn hash(args: QueryHashArgs) -> AppResult {
     }
 
     println!("{}", result.1);
-
-    Ok(())
 }
 
 #[derive(Args, Clone, Debug)]
@@ -51,7 +50,8 @@ pub struct QueryHashDiffArgs {
     json: bool,
 }
 
-pub async fn hash_diff(args: QueryHashDiffArgs) -> AppResult {
+#[system]
+pub async fn hash_diff(args: StateRef<ExecuteArgs, QueryHashDiffArgs>) {
     let mut workspace = load_workspace().await?;
     let mut result = query_hash_diff(&mut workspace, &args.left, &args.right).await?;
 
@@ -100,8 +100,6 @@ pub async fn hash_diff(args: QueryHashDiffArgs) -> AppResult {
     }
 
     term.flush_lines()?;
-
-    Ok(())
 }
 
 #[derive(Args, Clone, Debug)]
@@ -140,7 +138,9 @@ pub struct QueryProjectsArgs {
     type_of: Option<String>,
 }
 
-pub async fn projects(args: QueryProjectsArgs) -> AppResult {
+#[system]
+pub async fn projects(args: StateRef<ExecuteArgs, QueryProjectsArgs>) {
+    let args = args.to_owned();
     let options = QueryProjectsOptions {
         alias: args.alias,
         affected: args.affected,
@@ -177,8 +177,6 @@ pub async fn projects(args: QueryProjectsArgs) -> AppResult {
     }
 
     term.flush_lines()?;
-
-    Ok(())
 }
 
 #[derive(Args, Clone, Debug)]
@@ -214,7 +212,9 @@ pub struct QueryTasksArgs {
     type_of: Option<String>,
 }
 
-pub async fn tasks(args: QueryTasksArgs) -> AppResult {
+#[system]
+pub async fn tasks(args: StateRef<ExecuteArgs, QueryTasksArgs>) {
+    let args = args.to_owned();
     let options = QueryProjectsOptions {
         alias: args.alias,
         affected: args.affected,
@@ -260,8 +260,6 @@ pub async fn tasks(args: QueryTasksArgs) -> AppResult {
     }
 
     term.flush_lines()?;
-
-    Ok(())
 }
 
 #[derive(Args, Clone, Debug)]
@@ -288,8 +286,10 @@ pub struct QueryTouchedFilesArgs {
     status: Vec<TouchedStatus>,
 }
 
-pub async fn touched_files(args: QueryTouchedFilesArgs) -> AppResult {
-    let options = &mut QueryTouchedFilesOptions {
+#[system]
+pub async fn touched_files(args: StateRef<ExecuteArgs, QueryTouchedFilesArgs>) {
+    let args = args.to_owned();
+    let options = QueryTouchedFilesOptions {
         base: args.base,
         default_branch: args.default_branch,
         head: args.head,
@@ -300,7 +300,7 @@ pub async fn touched_files(args: QueryTouchedFilesArgs) -> AppResult {
     };
 
     let workspace = load_workspace().await?;
-    let files = query_touched_files(&workspace, options).await?;
+    let files = query_touched_files(&workspace, &options).await?;
 
     // Write to stdout directly to avoid broken pipe panics
     let term = Term::buffered_stdout();
@@ -323,6 +323,4 @@ pub async fn touched_files(args: QueryTouchedFilesArgs) -> AppResult {
     }
 
     term.flush_lines()?;
-
-    Ok(())
 }

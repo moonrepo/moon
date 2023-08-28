@@ -10,7 +10,7 @@ use moon_logger::info;
 use moon_node_lang::package_json::{DepsSet, PackageJson};
 use moon_node_platform::create_tasks_from_scripts;
 use rustc_hash::FxHashMap;
-use starbase::AppResult;
+use starbase::{system, ExecuteArgs};
 use starbase_utils::yaml;
 use std::collections::BTreeMap;
 
@@ -18,17 +18,17 @@ use std::collections::BTreeMap;
 pub struct FromPackageJsonArgs {
     #[arg(help = "ID of project to migrate")]
     id: Id,
+
+    pub skip_touched_files_check: bool,
 }
 
 const LOG_TARGET: &str = "moon:migrate:from-package-json";
 
-pub async fn from_package_json(
-    args: FromPackageJsonArgs,
-    skip_touched_files_check: bool,
-) -> AppResult {
+#[system]
+pub async fn from_package_json(args: StateRef<ExecuteArgs, FromPackageJsonArgs>) -> AppResult {
     let mut workspace = load_workspace().await?;
 
-    if skip_touched_files_check {
+    if args.skip_touched_files_check {
         info!(target: LOG_TARGET, "Skipping touched files check.");
     } else {
         check_dirty_repo(&workspace).await?;
@@ -94,6 +94,4 @@ pub async fn from_package_json(
     })?;
 
     yaml::write_file_with_config(project.root.join(CONFIG_PROJECT_FILENAME), &partial_config)?;
-
-    Ok(())
 }

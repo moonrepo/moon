@@ -4,7 +4,7 @@ use moon_common::Id;
 use moon_config::PlatformType;
 use moon_node_tool::NodeTool;
 use moon_platform::PlatformManager;
-use starbase::AppResult;
+use starbase::{system, ExecuteArgs};
 use std::env;
 
 #[derive(Args, Clone, Debug)]
@@ -16,7 +16,8 @@ pub struct RunScriptArgs {
     project: Option<Id>,
 }
 
-pub async fn run_script(args: RunScriptArgs) -> AppResult {
+#[system]
+pub async fn run_script(args: StateRef<ExecuteArgs, RunScriptArgs>) {
     let mut workspace = load_workspace_with_toolchain().await?;
     let node = PlatformManager::read()
         .get(PlatformType::Node)?
@@ -48,6 +49,4 @@ pub async fn run_script(args: RunScriptArgs) -> AppResult {
     }
 
     command.create_async().exec_stream_output().await?;
-
-    Ok(())
 }

@@ -1,9 +1,9 @@
 use crate::helpers::create_progress_bar;
 use moon::{build_dep_graph, generate_project_graph, load_workspace};
 use moon_action_pipeline::Pipeline;
-use starbase::AppResult;
+use starbase::{system, SystemResult};
 
-pub async fn sync() -> AppResult {
+pub async fn internal_sync() -> SystemResult {
     let done = create_progress_bar("Syncing projects...");
 
     let mut workspace = load_workspace().await?;
@@ -30,4 +30,9 @@ pub async fn sync() -> AppResult {
     pipeline.render_results(&results)?;
 
     Ok(())
+}
+
+#[system]
+pub async fn sync() {
+    internal_sync().await?;
 }

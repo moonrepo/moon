@@ -10,6 +10,7 @@ use moon_rust_lang::{CARGO, RUST};
 use moon_rust_tool::RustTool;
 use moon_terminal::safe_exit;
 use rustc_hash::FxHashSet;
+use starbase::system;
 use starbase::AppResult;
 use starbase_utils::fs;
 use starbase_utils::json;
@@ -63,7 +64,8 @@ pub async fn prune_rust(_rust: &RustTool, workspace_root: &Path) -> AppResult {
     Ok(())
 }
 
-pub async fn prune() -> AppResult {
+#[system]
+pub async fn prune() {
     let mut workspace = load_workspace_with_toolchain().await?;
     let manifest_path = workspace.root.join(MANIFEST_NAME);
 
@@ -112,6 +114,4 @@ pub async fn prune() -> AppResult {
             PlatformType::Deno | PlatformType::System | PlatformType::Unknown => {}
         }
     }
-
-    Ok(())
 }

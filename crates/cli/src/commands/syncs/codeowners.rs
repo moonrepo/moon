@@ -2,7 +2,7 @@ use crate::helpers::create_progress_bar;
 use clap::Args;
 use moon::{generate_project_graph, load_workspace};
 use moon_actions::{sync_codeowners, unsync_codeowners};
-use starbase::AppResult;
+use starbase::{system, ExecuteArgs};
 use starbase_styles::color;
 
 #[derive(Args, Clone, Debug)]
@@ -14,7 +14,8 @@ pub struct SyncCodeownersArgs {
     force: bool,
 }
 
-pub async fn sync(args: SyncCodeownersArgs) -> AppResult {
+#[system]
+pub async fn sync(args: StateRef<ExecuteArgs, SyncCodeownersArgs>) {
     let mut workspace = load_workspace().await?;
 
     let done = create_progress_bar("Syncing code owners...");
@@ -41,6 +42,4 @@ pub async fn sync(args: SyncCodeownersArgs) -> AppResult {
             true,
         );
     }
-
-    Ok(())
 }

@@ -6,15 +6,38 @@ pub mod queries;
 mod states;
 mod systems;
 
+use crate::app::{
+    Commands, DockerCommands, MigrateCommands, NodeCommands, QueryCommands, SyncCommands,
+};
+use crate::commands::bin::bin;
+use crate::commands::check::check;
+use crate::commands::ci::ci;
+use crate::commands::clean::clean;
+use crate::commands::completions;
+use crate::commands::docker;
+use crate::commands::generate::generate;
+use crate::commands::graph::{dep::dep_graph, project::project_graph};
+use crate::commands::init::init;
+use crate::commands::migrate;
+use crate::commands::node;
+use crate::commands::project::project;
+use crate::commands::query;
+use crate::commands::run::run;
+use crate::commands::setup::setup;
+use crate::commands::sync::sync;
+use crate::commands::syncs;
+use crate::commands::task::task;
+use crate::commands::teardown::teardown;
+use crate::commands::upgrade::upgrade;
 use crate::helpers::setup_colors;
 use app::App as CLI;
 use clap::Parser;
+use commands::migrate::FromTurborepoArgs;
 use enums::{CacheMode, LogLevel};
 use moon_logger::debug;
 use starbase::{tracing::TracingOptions, App, AppResult};
 use starbase_styles::color;
 use starbase_utils::string_vec;
-use states::CurrentCommand;
 use std::env;
 
 pub use app::BIN_NAME;
@@ -58,16 +81,16 @@ pub async fn run_cli() -> AppResult {
     App::setup_diagnostics();
 
     // Create app and parse arguments
-    let global_args = CLI::parse();
+    let cli = CLI::parse();
 
-    setup_colors(global_args.color);
-    setup_logging(&global_args.log);
-    setup_caching(&global_args.cache);
+    setup_colors(cli.color);
+    setup_logging(&cli.log);
+    setup_caching(&cli.cache);
 
     App::setup_tracing_with_options(TracingOptions {
         filter_modules: string_vec!["moon", "proto", "schematic", "starbase"],
         log_env: "STARBASE_LOG".into(),
-        log_file: global_args.log_file.clone(),
+        log_file: cli.log_file.clone(),
         // test_env: "MOON_TEST".into(),
         ..TracingOptions::default()
     });
@@ -75,9 +98,77 @@ pub async fn run_cli() -> AppResult {
     detect_running_version();
 
     let mut app = App::new();
-    app.set_state(CurrentCommand(global_args));
-    app.execute(systems::run_command);
+    app.set_state(cli.global_args());
+    //app.set_state(CurrentCommand(global_args));
     app.execute(systems::check_for_new_version);
+
+    match cli.command.clone() {
+        Commands::Bin(args) => app.execute_with_args(bin, args),
+        Commands::Ci(args) => app.execute_with_args(ci, args),
+        Commands::Check(args) => app.execute_with_args(check, args),
+        Commands::Clean(args) => app.execute_with_args(clean, args),
+        Commands::Completions(args) => app.execute_with_args(completions::completions, args),
+        Commands::DepGraph(args) => app.execute_with_args(dep_graph, args),
+        Commands::Docker { command } => match command {
+            DockerCommands::Prune => app.execute(docker::prune),
+            DockerCommands::Scaffold(args) => app.execute_with_args(docker::scaffold, args),
+            DockerCommands::Setup => app.execute(docker::setup),
+        },
+        Commands::Generate(args) => app.execute_with_args(generate, args),
+        Commands::Init(args) => app.execute_with_args(init, args),
+        Commands::Migrate {
+            command,
+            skip_touched_files_check,
+        } => match command {
+            MigrateCommands::FromPackageJson(mut args) => {
+                args.skip_touched_files_check = skip_touched_files_check;
+                app.execute_with_args(migrate::from_package_json, args)
+            }
+            MigrateCommands::FromTurborepo => app.execute_with_args(
+                migrate::from_turborepo,
+                FromTurborepoArgs {
+                    skip_touched_files_check,
+                },
+            ),
+        },
+        Commands::Node { command } => match command {
+            NodeCommands::RunScript(args) => app.execute_with_args(node::run_script, args),
+        },
+        Commands::Project(args) => app.execute_with_args(project, args),
+        Commands::ProjectGraph(args) => app.execute_with_args(project_graph, args),
+        Commands::Query { command } => match command {
+            QueryCommands::Hash(args) => app.execute_with_args(query::hash, args),
+            QueryCommands::HashDiff(args) => app.execute_with_args(query::hash_diff, args),
+            QueryCommands::Projects(args) => app.execute_with_args(query::projects, args),
+            QueryCommands::Tasks(args) => app.execute_with_args(query::tasks, args),
+            QueryCommands::TouchedFiles(args) => app.execute_with_args(query::touched_files, args),
+        },
+        Commands::Run(args) => app.execute_with_args(run, args),
+        Commands::Setup => app.execute(setup),
+        Commands::Sync { command } => match command {
+            Some(SyncCommands::Codeowners(args)) => {
+                app.execute_with_args(syncs::codeowners::sync, args)
+            }
+            Some(SyncCommands::Hooks(args)) => app.execute_with_args(syncs::hooks::sync, args),
+            Some(SyncCommands::Projects) => app.execute(syncs::projects::sync),
+            None => app.execute(sync),
+        },
+        Commands::Task(args) => app.execute_with_args(task, args),
+        Commands::Teardown => app.execute(teardown),
+        Commands::Upgrade => app.execute(upgrade),
+    };
+
+    // if let Err(error) = result {
+    //     // Rust crashes with a broken pipe error by default,
+    //     // so we unfortunately need to work around it with this hack!
+    //     // https://github.com/rust-lang/rust/issues/46016
+    //     if error.to_string().to_lowercase().contains("broken pipe") {
+    //         std::process::exit(0);
+    //     } else {
+    //         return Err(error);
+    //     }
+    // }
+
     app.run().await?;
 
     Ok(())

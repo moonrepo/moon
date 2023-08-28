@@ -4,7 +4,7 @@ use miette::{miette, IntoDiagnostic};
 use moon::{build_project_graph, load_workspace};
 use moon_target::Target;
 use moon_terminal::{ExtendedTerm, Label};
-use starbase::AppResult;
+use starbase::{system, ExecuteArgs};
 use starbase_styles::color;
 
 #[derive(Args, Clone, Debug)]
@@ -16,8 +16,9 @@ pub struct TaskArgs {
     json: bool,
 }
 
-pub async fn task(args: TaskArgs) -> AppResult {
-    let Some(project_id) = args.target.scope_id else {
+#[system]
+pub async fn task(args: StateRef<ExecuteArgs, TaskArgs>) {
+    let Some(project_id) = args.target.scope_id.clone() else {
         return Err(miette!("A project ID is required."));
     };
 
@@ -121,6 +122,4 @@ pub async fn task(args: TaskArgs) -> AppResult {
 
     term.line("")?;
     term.flush_lines()?;
-
-    Ok(())
 }

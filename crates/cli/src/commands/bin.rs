@@ -1,11 +1,11 @@
-use clap::ValueEnum;
+use clap::{Args, ValueEnum};
 use moon::load_workspace_with_toolchain;
 use moon_config::PlatformType;
 use moon_node_tool::NodeTool;
 use moon_platform::PlatformManager;
 use moon_terminal::safe_exit;
 use moon_tool::Tool;
-use starbase::AppResult;
+use starbase::{system, ExecuteArgs};
 
 #[derive(ValueEnum, Clone, Debug)]
 #[value(rename_all = "lowercase")]
@@ -17,6 +17,12 @@ pub enum BinTool {
     Yarn,
     // Rust
     Rust,
+}
+
+#[derive(Args, Clone, Debug)]
+pub struct BinArgs {
+    #[arg(value_enum, help = "The tool to query")]
+    tool: BinTool,
 }
 
 enum BinExitCodes {
@@ -43,10 +49,11 @@ fn not_configured() -> ! {
     safe_exit(BinExitCodes::NotConfigured as i32);
 }
 
-pub async fn bin(tool_type: BinTool) -> AppResult {
+#[system]
+pub async fn bin(args: StateRef<ExecuteArgs, BinArgs>) {
     load_workspace_with_toolchain().await?;
 
-    match tool_type {
+    match &args.tool {
         BinTool::Node => {
             let node = PlatformManager::read()
                 .get(PlatformType::Node)?
@@ -61,7 +68,7 @@ pub async fn bin(tool_type: BinTool) -> AppResult {
                 .as_any();
             let node = node.downcast_ref::<NodeTool>().unwrap();
 
-            match tool_type {
+            match &args.tool {
                 BinTool::Npm => match node.get_npm() {
                     Ok(npm) => is_installed(npm),
                     Err(_) => not_configured(),
@@ -85,6 +92,4 @@ pub async fn bin(tool_type: BinTool) -> AppResult {
             is_installed(*rust);
         }
     };
-
-    Ok(())
 }

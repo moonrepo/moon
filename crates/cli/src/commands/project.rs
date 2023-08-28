@@ -7,7 +7,7 @@ use moon_common::Id;
 use moon_logger::map_list;
 use moon_terminal::{ExtendedTerm, Label};
 use moon_utils::is_test_env;
-use starbase::AppResult;
+use starbase::{system, ExecuteArgs};
 use starbase_styles::color;
 
 #[derive(Args, Clone, Debug)]
@@ -19,7 +19,8 @@ pub struct ProjectArgs {
     json: bool,
 }
 
-pub async fn project(args: ProjectArgs) -> AppResult {
+#[system]
+pub async fn project(args: StateRef<ExecuteArgs, ProjectArgs>) {
     let mut workspace = load_workspace().await?;
     let mut project_graph_builder = build_project_graph(&mut workspace).await?;
     project_graph_builder.load(&args.id).await?;
@@ -135,6 +136,4 @@ pub async fn project(args: ProjectArgs) -> AppResult {
 
     term.line("")?;
     term.flush_lines()?;
-
-    Ok(())
 }

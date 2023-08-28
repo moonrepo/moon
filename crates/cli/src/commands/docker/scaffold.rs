@@ -11,7 +11,7 @@ use moon_utils::path;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
-use starbase::AppResult;
+use starbase::{system, AppResult, ExecuteArgs};
 use starbase_utils::{fs, glob, json};
 use std::path::Path;
 
@@ -201,7 +201,8 @@ fn scaffold_sources(
     Ok(())
 }
 
-pub async fn scaffold(args: DockerScaffoldArgs) -> AppResult {
+#[system]
+pub async fn scaffold(args: StateRef<ExecuteArgs, DockerScaffoldArgs>) {
     let mut workspace = load_workspace().await?;
     let docker_root = workspace.root.join(CONFIG_DIRNAME).join("docker");
 
@@ -221,6 +222,4 @@ pub async fn scaffold(args: DockerScaffoldArgs) -> AppResult {
         &args.ids,
         &args.include,
     )?;
-
-    Ok(())
 }

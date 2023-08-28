@@ -3,7 +3,7 @@ use clap::Args;
 use miette::IntoDiagnostic;
 use moon::{build_dep_graph, generate_project_graph, load_workspace};
 use moon_target::Target;
-use starbase::AppResult;
+use starbase::{system, ExecuteArgs};
 
 #[derive(Args, Clone, Debug)]
 pub struct DepGraphArgs {
@@ -17,7 +17,8 @@ pub struct DepGraphArgs {
     json: bool,
 }
 
-pub async fn dep_graph(args: DepGraphArgs) -> AppResult {
+#[system]
+pub async fn dep_graph(args: StateRef<ExecuteArgs, DepGraphArgs>) {
     let mut workspace = load_workspace().await?;
     let project_graph = generate_project_graph(&mut workspace).await?;
     let mut dep_builder = build_dep_graph(&project_graph);
@@ -63,6 +64,4 @@ pub async fn dep_graph(args: DepGraphArgs) -> AppResult {
     for req in server.incoming_requests() {
         respond_to_request(req, &mut tera, &graph_info, "Dependency graph".to_owned())?;
     }
-
-    Ok(())
 }

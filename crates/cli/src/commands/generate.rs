@@ -9,7 +9,7 @@ use moon_config::{TemplateVariable, TemplateVariableEnumValue};
 use moon_logger::map_list;
 use moon_terminal::{create_theme, ExtendedTerm};
 use rustc_hash::FxHashMap;
-use starbase::AppResult;
+use starbase::{system, AppResult, ExecuteArgs};
 use starbase_styles::color;
 use std::env;
 use std::fmt::Display;
@@ -310,7 +310,8 @@ fn gather_variables(
     Ok(context)
 }
 
-pub async fn generate(args: GenerateArgs) -> AppResult {
+#[system]
+pub async fn generate(args: StateRef<ExecuteArgs, GenerateArgs>) {
     let workspace = load_workspace().await?;
     let generator = CodeGenerator::new(&workspace.root, &workspace.config.generator);
     let theme = create_theme();
@@ -464,6 +465,4 @@ pub async fn generate(args: GenerateArgs) -> AppResult {
 
     term.line("")?;
     term.flush_lines()?;
-
-    Ok(())
 }

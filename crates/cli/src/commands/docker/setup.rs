@@ -3,10 +3,11 @@ use crate::commands::docker::scaffold::DockerManifest;
 use moon::{build_dep_graph, generate_project_graph, load_workspace_with_toolchain};
 use moon_action_pipeline::Pipeline;
 use moon_terminal::safe_exit;
-use starbase::AppResult;
+use starbase::system;
 use starbase_utils::json;
 
-pub async fn setup() -> AppResult {
+#[system]
+pub async fn setup() {
     let mut workspace = load_workspace_with_toolchain().await?;
     let manifest_path = workspace.root.join(MANIFEST_NAME);
 
@@ -30,6 +31,4 @@ pub async fn setup() -> AppResult {
     Pipeline::new(workspace, project_graph)
         .run(dep_graph, None)
         .await?;
-
-    Ok(())
 }

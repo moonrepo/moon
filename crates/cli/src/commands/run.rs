@@ -1,3 +1,4 @@
+use crate::app::GlobalArgs;
 use crate::enums::{CacheMode, TouchedStatus};
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use clap::Args;
@@ -11,7 +12,7 @@ use moon_project_graph::ProjectGraph;
 use moon_utils::is_ci;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
-use starbase::AppResult;
+use starbase::{system, AppResult, ExecuteArgs};
 use starbase_styles::color;
 use std::env;
 use std::string::ToString;
@@ -219,11 +220,17 @@ pub async fn run_target(
     Ok(())
 }
 
-pub async fn run(args: RunArgs, concurrency: Option<usize>) -> AppResult {
+#[system]
+pub async fn run(args: StateRef<ExecuteArgs, RunArgs>, global_args: StateRef<GlobalArgs>) {
     let mut workspace = load_workspace().await?;
     let project_graph = generate_project_graph(&mut workspace).await?;
 
-    run_target(&args.targets, &args, concurrency, workspace, project_graph).await?;
-
-    Ok(())
+    run_target(
+        &args.targets,
+        &args,
+        global_args.concurrency,
+        workspace,
+        project_graph,
+    )
+    .await?;
 }

@@ -1,3 +1,4 @@
+use crate::app::GlobalArgs;
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use ci_env::CiOutput;
 use clap::Args;
@@ -13,7 +14,7 @@ use moon_target::Target;
 use moon_terminal::safe_exit;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
-use starbase::AppResult;
+use starbase::{system, AppResult, ExecuteArgs};
 use starbase_styles::color;
 
 type TargetList = Vec<Target>;
@@ -189,7 +190,8 @@ fn generate_dep_graph(
     Ok(dep_graph)
 }
 
-pub async fn ci(args: CiArgs, concurrency: Option<usize>) -> AppResult {
+#[system]
+pub async fn ci(args: StateRef<ExecuteArgs, CiArgs>, global_args: StateRef<GlobalArgs>) {
     let mut workspace = load_workspace().await?;
     let ci_provider = ci_env::get_output().unwrap_or(CiOutput {
         close_log_group: "",
@@ -218,8 +220,8 @@ pub async fn ci(args: CiArgs, concurrency: Option<usize>) -> AppResult {
 
     let mut pipeline = Pipeline::new(workspace, project_graph);
 
-    if let Some(concurrency) = concurrency {
-        pipeline.concurrency(concurrency);
+    if let Some(concurrency) = &global_args.concurrency {
+        pipeline.concurrency(*concurrency);
     }
 
     let results = pipeline
@@ -243,6 +245,4 @@ pub async fn ci(args: CiArgs, concurrency: Option<usize>) -> AppResult {
     if failed {
         safe_exit(1);
     }
-
-    Ok(())
 }

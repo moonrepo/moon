@@ -1,4 +1,5 @@
 use super::check_dirty_repo;
+use clap::Args;
 use moon::{generate_project_graph, load_workspace};
 use moon_common::{consts, Id};
 use moon_config::{
@@ -11,11 +12,16 @@ use moon_target::Target;
 use moon_terminal::safe_exit;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
-use starbase::AppResult;
+use starbase::{system, AppResult, ExecuteArgs};
 use starbase_utils::{fs, json, yaml};
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::str::FromStr;
+
+#[derive(Args, Clone, Debug)]
+pub struct FromTurborepoArgs {
+    pub skip_touched_files_check: bool,
+}
 
 const LOG_TARGET: &str = "moon:migrate:from-turborepo";
 
@@ -157,7 +163,8 @@ pub fn convert_task(name: Id, task: TurboTask) -> AppResult<PartialTaskConfig> {
     Ok(config)
 }
 
-pub async fn from_turborepo(skip_touched_files_check: bool) -> AppResult {
+#[system]
+pub async fn from_turborepo(args: StateRef<ExecuteArgs, FromTurborepoArgs>) {
     let mut workspace = load_workspace().await?;
     let turbo_file = workspace.root.join("turbo.json");
 
@@ -166,7 +173,7 @@ pub async fn from_turborepo(skip_touched_files_check: bool) -> AppResult {
         safe_exit(1);
     }
 
-    if skip_touched_files_check {
+    if args.skip_touched_files_check {
         info!(target: LOG_TARGET, "Skipping touched files check.");
     } else {
         check_dirty_repo(&workspace).await?;
@@ -250,8 +257,6 @@ pub async fn from_turborepo(skip_touched_files_check: bool) -> AppResult {
     fs::remove_file(&turbo_file)?;
 
     println!("Successfully migrated from Turborepo to moon!");
-
-    Ok(())
 }
 
 #[cfg(test)]

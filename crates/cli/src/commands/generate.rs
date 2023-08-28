@@ -9,7 +9,7 @@ use moon_logger::map_list;
 use moon_terminal::{create_theme, ExtendedTerm};
 use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
-use starbase::{system, AppResult, ExecuteArgs};
+use starbase::{system, AppResult};
 use starbase_styles::color;
 use std::env;
 use std::fmt::Display;

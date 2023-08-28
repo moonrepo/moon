@@ -2,7 +2,7 @@ use crate::app::App;
 use clap::{Args, CommandFactory};
 use clap_complete::{generate, Shell};
 use miette::miette;
-use starbase::{system, ExecuteArgs};
+use starbase::system;
 
 #[derive(Args, Clone, Debug)]
 pub struct CompletionsArgs {

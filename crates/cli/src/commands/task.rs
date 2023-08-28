@@ -5,7 +5,7 @@ use moon::build_project_graph;
 use moon_target::Target;
 use moon_terminal::{ExtendedTerm, Label};
 use moon_workspace::Workspace;
-use starbase::{system, ExecuteArgs};
+use starbase::system;
 use starbase_styles::color;
 
 #[derive(Args, Clone, Debug)]

@@ -1,7 +1,7 @@
 use crate::helpers::create_progress_bar;
 use clap::Args;
 use moon_workspace::Workspace;
-use starbase::{system, ExecuteArgs};
+use starbase::system;
 
 #[derive(Args, Clone, Debug)]
 pub struct CleanArgs {

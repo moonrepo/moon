@@ -8,7 +8,7 @@ use moon_logger::map_list;
 use moon_terminal::{ExtendedTerm, Label};
 use moon_utils::is_test_env;
 use moon_workspace::Workspace;
-use starbase::{system, ExecuteArgs};
+use starbase::system;
 use starbase_styles::color;
 
 #[derive(Args, Clone, Debug)]

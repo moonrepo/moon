@@ -14,7 +14,7 @@ use moon_target::Target;
 use moon_terminal::safe_exit;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
-use starbase::{system, AppResult, ExecuteArgs};
+use starbase::{system, AppResult};
 use starbase_styles::color;
 
 type TargetList = Vec<Target>;

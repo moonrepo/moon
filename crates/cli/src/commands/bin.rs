@@ -4,7 +4,7 @@ use moon_node_tool::NodeTool;
 use moon_platform::PlatformManager;
 use moon_terminal::safe_exit;
 use moon_tool::Tool;
-use starbase::{system, ExecuteArgs};
+use starbase::system;
 
 #[derive(ValueEnum, Clone, Debug)]
 #[value(rename_all = "lowercase")]

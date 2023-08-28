@@ -2,7 +2,7 @@ use crate::commands::graph::utils::{project_graph_repr, respond_to_request, setu
 use clap::Args;
 use moon::{build_project_graph, load_workspace};
 use moon_common::Id;
-use starbase::{system, ExecuteArgs};
+use starbase::system;
 
 #[derive(Args, Clone, Debug)]
 pub struct ProjectGraphArgs {

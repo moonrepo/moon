@@ -3,7 +3,7 @@ use clap::Args;
 use miette::IntoDiagnostic;
 use moon::{build_dep_graph, generate_project_graph, load_workspace};
 use moon_target::Target;
-use starbase::{system, ExecuteArgs};
+use starbase::system;
 
 #[derive(Args, Clone, Debug)]
 pub struct DepGraphArgs {

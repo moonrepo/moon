@@ -13,7 +13,7 @@ use miette::IntoDiagnostic;
 use moon_terminal::ExtendedTerm;
 use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
-use starbase::{system, ExecuteArgs};
+use starbase::system;
 use starbase_styles::color;
 use std::io::{self, IsTerminal};
 
@@ -28,7 +28,7 @@ pub struct QueryHashArgs {
 
 #[system]
 pub async fn hash(args: ArgsRef<QueryHashArgs>, workspace: ResourceRef<Workspace>) {
-    let result = query_hash(&workspace, &args.hash).await?;
+    let result = query_hash(workspace, &args.hash).await?;
 
     if !args.json {
         println!("Hash: {}\n", color::id(result.0));
@@ -298,7 +298,7 @@ pub async fn touched_files(
         status: args.status,
     };
 
-    let files = query_touched_files(&workspace, &options).await?;
+    let files = query_touched_files(workspace, &options).await?;
 
     // Write to stdout directly to avoid broken pipe panics
     let term = Term::buffered_stdout();

@@ -170,18 +170,18 @@ pub async fn run_cli() -> AppResult {
         Commands::Upgrade => app.execute(upgrade),
     };
 
-    // if let Err(error) = result {
-    //     // Rust crashes with a broken pipe error by default,
-    //     // so we unfortunately need to work around it with this hack!
-    //     // https://github.com/rust-lang/rust/issues/46016
-    //     if error.to_string().to_lowercase().contains("broken pipe") {
-    //         std::process::exit(0);
-    //     } else {
-    //         return Err(error);
-    //     }
-    // }
+    let result = app.run().await;
 
-    app.run().await?;
+    if let Err(error) = result {
+        // Rust crashes with a broken pipe error by default,
+        // so we unfortunately need to work around it with this hack!
+        // https://github.com/rust-lang/rust/issues/46016
+        if error.to_string().to_lowercase().contains("broken pipe") {
+            std::process::exit(0);
+        } else {
+            return Err(error);
+        }
+    }
 
     Ok(())
 }

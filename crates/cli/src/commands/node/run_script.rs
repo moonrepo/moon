@@ -17,7 +17,7 @@ pub struct RunScriptArgs {
 }
 
 #[system]
-pub async fn run_script(args: StateRef<ExecuteArgs, RunScriptArgs>) {
+pub async fn run_script(args: ArgsRef<RunScriptArgs>) {
     let mut workspace = load_workspace_with_toolchain().await?;
     let node = PlatformManager::read()
         .get(PlatformType::Node)?

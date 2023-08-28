@@ -18,7 +18,7 @@ pub struct TaskArgs {
 }
 
 #[system]
-pub async fn task(args: StateRef<ExecuteArgs, TaskArgs>, workspace: ResourceMut<Workspace>) {
+pub async fn task(args: ArgsRef<TaskArgs>, workspace: ResourceMut<Workspace>) {
     let Some(project_id) = args.target.scope_id.clone() else {
         return Err(miette!("A project ID is required."));
     };

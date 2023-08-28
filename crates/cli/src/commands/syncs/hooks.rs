@@ -15,7 +15,7 @@ pub struct SyncHooksArgs {
 }
 
 #[system]
-pub async fn sync(args: StateRef<ExecuteArgs, SyncHooksArgs>) {
+pub async fn sync(args: ArgsRef<SyncHooksArgs>) {
     let workspace = load_workspace().await?;
 
     if workspace.config.vcs.hooks.is_empty() {

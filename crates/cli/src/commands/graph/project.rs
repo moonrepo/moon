@@ -17,7 +17,7 @@ pub struct ProjectGraphArgs {
 }
 
 #[system]
-pub async fn project_graph(args: StateRef<ExecuteArgs, ProjectGraphArgs>) {
+pub async fn project_graph(args: ArgsRef<ProjectGraphArgs>) {
     let mut workspace = load_workspace().await?;
     let mut project_graph_builder = build_project_graph(&mut workspace).await?;
 

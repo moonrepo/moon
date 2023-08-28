@@ -30,7 +30,7 @@ pub struct CheckArgs {
 const LOG_TARGET: &str = "moon:check";
 
 #[system]
-pub async fn check(args: StateRef<ExecuteArgs, CheckArgs>, global_args: StateRef<GlobalArgs>) {
+pub async fn check(args: ArgsRef<CheckArgs>, global_args: StateRef<GlobalArgs>) {
     let mut workspace = load_workspace().await?;
     let project_graph = generate_project_graph(&mut workspace).await?;
     let mut projects: Vec<Arc<Project>> = vec![];

@@ -18,7 +18,7 @@ pub struct DepGraphArgs {
 }
 
 #[system]
-pub async fn dep_graph(args: StateRef<ExecuteArgs, DepGraphArgs>) {
+pub async fn dep_graph(args: ArgsRef<DepGraphArgs>) {
     let mut workspace = load_workspace().await?;
     let project_graph = generate_project_graph(&mut workspace).await?;
     let mut dep_builder = build_dep_graph(&project_graph);

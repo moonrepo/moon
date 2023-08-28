@@ -27,7 +27,7 @@ pub struct QueryHashArgs {
 }
 
 #[system]
-pub async fn hash(args: StateRef<ExecuteArgs, QueryHashArgs>, workspace: ResourceRef<Workspace>) {
+pub async fn hash(args: ArgsRef<QueryHashArgs>, workspace: ResourceRef<Workspace>) {
     let result = query_hash(&workspace, &args.hash).await?;
 
     if !args.json {
@@ -50,10 +50,7 @@ pub struct QueryHashDiffArgs {
 }
 
 #[system]
-pub async fn hash_diff(
-    args: StateRef<ExecuteArgs, QueryHashDiffArgs>,
-    workspace: ResourceMut<Workspace>,
-) {
+pub async fn hash_diff(args: ArgsRef<QueryHashDiffArgs>, workspace: ResourceMut<Workspace>) {
     let mut result = query_hash_diff(workspace, &args.left, &args.right).await?;
 
     let is_tty = io::stdout().is_terminal();
@@ -140,10 +137,7 @@ pub struct QueryProjectsArgs {
 }
 
 #[system]
-pub async fn projects(
-    args: StateRef<ExecuteArgs, QueryProjectsArgs>,
-    workspace: ResourceMut<Workspace>,
-) {
+pub async fn projects(args: ArgsRef<QueryProjectsArgs>, workspace: ResourceMut<Workspace>) {
     let args = args.to_owned();
     let options = QueryProjectsOptions {
         alias: args.alias,
@@ -216,7 +210,7 @@ pub struct QueryTasksArgs {
 }
 
 #[system]
-pub async fn tasks(args: StateRef<ExecuteArgs, QueryTasksArgs>, workspace: ResourceMut<Workspace>) {
+pub async fn tasks(args: ArgsRef<QueryTasksArgs>, workspace: ResourceMut<Workspace>) {
     let args = args.to_owned();
     let options = QueryProjectsOptions {
         alias: args.alias,
@@ -290,7 +284,7 @@ pub struct QueryTouchedFilesArgs {
 
 #[system]
 pub async fn touched_files(
-    args: StateRef<ExecuteArgs, QueryTouchedFilesArgs>,
+    args: ArgsRef<QueryTouchedFilesArgs>,
     workspace: ResourceRef<Workspace>,
 ) {
     let args = args.to_owned();

@@ -15,7 +15,7 @@ pub struct SyncCodeownersArgs {
 }
 
 #[system]
-pub async fn sync(args: StateRef<ExecuteArgs, SyncCodeownersArgs>) {
+pub async fn sync(args: ArgsRef<SyncCodeownersArgs>) {
     let mut workspace = load_workspace().await?;
 
     let done = create_progress_bar("Syncing code owners...");

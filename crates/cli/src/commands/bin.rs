@@ -49,7 +49,7 @@ fn not_configured() -> ! {
 }
 
 #[system]
-pub async fn bin(args: StateRef<ExecuteArgs, BinArgs>) {
+pub async fn bin(args: ArgsRef<BinArgs>) {
     match &args.tool {
         BinTool::Node => {
             let node = PlatformManager::read()

@@ -158,7 +158,7 @@ pub async fn init_tool(
 }
 
 #[system]
-pub async fn init(args: StateRef<ExecuteArgs, InitArgs>) {
+pub async fn init(args: ArgsRef<InitArgs>) {
     let options = InitOptions {
         force: args.force,
         minimal: args.minimal,

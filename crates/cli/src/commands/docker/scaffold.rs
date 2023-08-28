@@ -202,7 +202,7 @@ fn scaffold_sources(
 }
 
 #[system]
-pub async fn scaffold(args: StateRef<ExecuteArgs, DockerScaffoldArgs>) {
+pub async fn scaffold(args: ArgsRef<DockerScaffoldArgs>) {
     let mut workspace = load_workspace().await?;
     let docker_root = workspace.root.join(CONFIG_DIRNAME).join("docker");
 

@@ -11,7 +11,7 @@ pub struct CompletionsArgs {
 }
 
 #[system]
-pub async fn completions(args: StateRef<ExecuteArgs, CompletionsArgs>) {
+pub async fn completions(args: ArgsRef<CompletionsArgs>) {
     let Some(shell) = args.shell.or_else(Shell::from_env) else {
         return Err(miette!("Could not determine your shell!"));
     };

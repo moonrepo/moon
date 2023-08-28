@@ -191,7 +191,7 @@ fn generate_dep_graph(
 }
 
 #[system]
-pub async fn ci(args: StateRef<ExecuteArgs, CiArgs>, global_args: StateRef<GlobalArgs>) {
+pub async fn ci(args: ArgsRef<CiArgs>, global_args: StateRef<GlobalArgs>) {
     let mut workspace = load_workspace().await?;
     let ci_provider = ci_env::get_output().unwrap_or(CiOutput {
         close_log_group: "",

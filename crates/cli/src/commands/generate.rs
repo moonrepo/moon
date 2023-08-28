@@ -311,10 +311,7 @@ fn gather_variables(
 }
 
 #[system]
-pub async fn generate(
-    args: StateRef<ExecuteArgs, GenerateArgs>,
-    workspace: ResourceRef<Workspace>,
-) {
+pub async fn generate(args: ArgsRef<GenerateArgs>, workspace: ResourceRef<Workspace>) {
     let generator = CodeGenerator::new(&workspace.root, &workspace.config.generator);
     let theme = create_theme();
     let cwd = env::current_dir().into_diagnostic()?;

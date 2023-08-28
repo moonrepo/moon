@@ -164,7 +164,7 @@ pub fn convert_task(name: Id, task: TurboTask) -> AppResult<PartialTaskConfig> {
 }
 
 #[system]
-pub async fn from_turborepo(args: StateRef<ExecuteArgs, FromTurborepoArgs>) {
+pub async fn from_turborepo(args: ArgsRef<FromTurborepoArgs>) {
     let mut workspace = load_workspace().await?;
     let turbo_file = workspace.root.join("turbo.json");
 

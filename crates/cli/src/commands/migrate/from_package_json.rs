@@ -25,7 +25,7 @@ pub struct FromPackageJsonArgs {
 const LOG_TARGET: &str = "moon:migrate:from-package-json";
 
 #[system]
-pub async fn from_package_json(args: StateRef<ExecuteArgs, FromPackageJsonArgs>) -> AppResult {
+pub async fn from_package_json(args: ArgsRef<FromPackageJsonArgs>) -> AppResult {
     let mut workspace = load_workspace().await?;
 
     if args.skip_touched_files_check {

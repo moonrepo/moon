@@ -370,7 +370,7 @@ pub async fn generate(args: StateRef<ExecuteArgs, GenerateArgs>) {
     debug!(dest = ?dest, "Destination path set");
 
     // Gather variables and build context
-    let mut context = gather_variables(&template, &theme, &args)?;
+    let mut context = gather_variables(&template, &theme, args)?;
     context.insert("dest_dir", &dest);
     context.insert("dest_rel_dir", &relative_dest);
     context.insert("working_dir", &cwd);

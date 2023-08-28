@@ -227,7 +227,7 @@ pub async fn run(args: StateRef<ExecuteArgs, RunArgs>, global_args: StateRef<Glo
 
     run_target(
         &args.targets,
-        &args,
+        args,
         global_args.concurrency,
         workspace,
         project_graph,

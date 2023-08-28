@@ -198,14 +198,14 @@ pub async fn ci(args: StateRef<ExecuteArgs, CiArgs>, global_args: StateRef<Globa
         open_log_group: "▪▪▪▪ ",
     });
     let project_graph = generate_project_graph(&mut workspace).await?;
-    let touched_files = gather_touched_files(&ci_provider, &workspace, &args).await?;
+    let touched_files = gather_touched_files(&ci_provider, &workspace, args).await?;
     let targets = gather_runnable_targets(&ci_provider, &project_graph, &touched_files)?;
 
     if targets.is_empty() {
         return Ok(());
     }
 
-    let targets = distribute_targets_across_jobs(&ci_provider, &args, targets);
+    let targets = distribute_targets_across_jobs(&ci_provider, args, targets);
     let dep_graph = generate_dep_graph(&ci_provider, &project_graph, &targets)?;
 
     // Process all tasks in the graph

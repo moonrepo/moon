@@ -362,7 +362,7 @@ pub struct App {
 impl App {
     pub fn global_args(&self) -> GlobalArgs {
         GlobalArgs {
-            concurrency: self.concurrency.clone(),
+            concurrency: self.concurrency,
         }
     }
 }

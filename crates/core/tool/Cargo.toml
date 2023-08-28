@@ -9,7 +9,6 @@ moon_platform_runtime = { path = "../platform-runtime" }
 moon_process = { path = "../../../nextgen/process" }
 async-trait = { workspace = true }
 miette = { workspace = true }
-proto_cli = { workspace = true }
 rustc-hash = { workspace = true }
 starbase_styles = { workspace = true }
 thiserror = { workspace = true }

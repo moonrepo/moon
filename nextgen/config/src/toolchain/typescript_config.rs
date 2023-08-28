@@ -1,3 +1,4 @@
+use proto_core::PluginLocator;
 use schematic::Config;
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain#typescript
@@ -6,9 +7,9 @@ pub struct TypeScriptConfig {
     #[setting(default = true)]
     pub create_missing_config: bool,
 
-    // Not used but required by the toolchain!
+    // Not used but required by the toolchain macros!
     #[setting(skip)]
-    pub plugin: Option<String>,
+    pub plugin: Option<PluginLocator>,
 
     #[setting(default = "tsconfig.json")]
     pub project_config_file_name: String,

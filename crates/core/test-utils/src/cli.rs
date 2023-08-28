@@ -12,7 +12,7 @@ pub fn create_moon_command<T: AsRef<Path>>(path: T) -> assert_cmd::Command {
     cmd.env("RUST_BACKTRACE", "1");
     // Store plugins in the sandbox
     cmd.env(
-        "MOON_ROOT",
+        "MOON_HOME",
         path.join(".moon-home").to_string_lossy().to_string(),
     );
     // Let our code know we're running tests

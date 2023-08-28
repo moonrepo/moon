@@ -47,9 +47,10 @@ reqwest = { version = "0.11.18", default-features = false, features = [
 	"native-tls-vendored",
 ] }
 rustc-hash = "1.1.0"
-schematic = { version = "0.11.2", default-features = false, features = [
+schematic = { version = "0.11.5", default-features = false, features = [
 	"schema",
 	"yaml",
+	"type_warpgate",
 ] }
 semver = "1.0.18"
 serde = { version = "1.0.183", features = ["derive", "rc"] }

@@ -22,9 +22,9 @@ macro_rules! inherit_tool {
                 }
             }
 
-            if let Some(config) = self.$tool.as_mut() {
+            if let Some(config) = &mut self.$tool {
                 if config.plugin.is_none() {
-                    config.plugin = proto_tools.plugins.get($key).map(|p| p.to_string());
+                    config.plugin = proto_tools.plugins.get($key).cloned();
                 }
             }
 
@@ -44,7 +44,7 @@ macro_rules! inherit_tool_required {
             }
 
             if self.$tool.plugin.is_none() {
-                self.$tool.plugin = proto_tools.plugins.get($key).map(|p| p.to_string());
+                self.$tool.plugin = proto_tools.plugins.get($key).cloned();
             }
 
             Ok(())
@@ -62,7 +62,7 @@ macro_rules! inherit_tool_without_version {
 
             if let Some(config) = self.$tool.as_mut() {
                 if config.plugin.is_none() {
-                    config.plugin = proto_tools.plugins.get($key).map(|p| p.to_string());
+                    config.plugin = proto_tools.plugins.get($key).cloned();
                 }
             }
 

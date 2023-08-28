@@ -1,4 +1,5 @@
 use super::bin_config::BinEntry;
+use proto_core::PluginLocator;
 use schematic::Config;
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain#deno
@@ -12,5 +13,5 @@ pub struct DenoConfig {
 
     pub lockfile: bool,
 
-    pub plugin: Option<String>,
+    pub plugin: Option<PluginLocator>,
 }

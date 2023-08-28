@@ -1,7 +1,7 @@
 mod utils;
 
 use moon_config::{BinConfig, BinEntry, NodePackageManager, ToolchainConfig};
-use proto_core::{AliasOrVersion, Id, ToolsConfig};
+use proto_core::{AliasOrVersion, Id, PluginLocator, ToolsConfig};
 use starbase_sandbox::create_sandbox;
 use std::env;
 use utils::*;
@@ -148,6 +148,23 @@ deno:
             assert!(config.deno.is_some());
             // assert_eq!(config.deno.unwrap().version.unwrap(), "1.30.0");
         }
+
+        #[test]
+        fn inherits_plugin_locator() {
+            let config = test_load_config(FILENAME, "deno: {}", |path| {
+                let mut tools = ToolsConfig::default();
+                tools.inherit_builtin_plugins();
+
+                ToolchainConfig::load_from(path, &tools)
+            });
+
+            assert_eq!(
+                config.deno.unwrap().plugin.unwrap(),
+                PluginLocator::SourceUrl {
+                    url: "https://github.com/moonrepo/deno-plugin/releases/latest/download/deno_plugin.wasm".into()
+                }
+            );
+        }
     }
 
     mod node {
@@ -196,6 +213,23 @@ node:
 
             assert!(config.node.is_some());
             assert_eq!(config.node.unwrap().version.unwrap(), "18.0.0");
+        }
+
+        #[test]
+        fn inherits_plugin_locator() {
+            let config = test_load_config(FILENAME, "node: {}", |path| {
+                let mut tools = ToolsConfig::default();
+                tools.inherit_builtin_plugins();
+
+                ToolchainConfig::load_from(path, &tools)
+            });
+
+            assert_eq!(
+                config.node.unwrap().plugin.unwrap(),
+                PluginLocator::SourceUrl {
+                    url: "https://github.com/moonrepo/node-plugin/releases/latest/download/node_plugin.wasm".into()
+                }
+            );
         }
 
         #[test]
@@ -284,6 +318,23 @@ node:
             }
 
             #[test]
+            fn inherits_plugin_locator() {
+                let config = test_load_config(FILENAME, "node:\n  npm: {}", |path| {
+                    let mut tools = ToolsConfig::default();
+                    tools.inherit_builtin_plugins();
+
+                    ToolchainConfig::load_from(path, &tools)
+                });
+
+                assert_eq!(
+                    config.node.unwrap().npm.plugin.unwrap(),
+                    PluginLocator::SourceUrl {
+                        url: "https://github.com/moonrepo/node-plugin/releases/latest/download/node_depman_plugin.wasm".into()
+                    }
+                );
+            }
+
+            #[test]
             fn inherits_version_from_env_var() {
                 env::set_var("MOON_NPM_VERSION", "10.0.0");
 
@@ -326,6 +377,31 @@ node:
                 });
 
                 assert!(config.node.unwrap().pnpm.is_some());
+            }
+
+            #[test]
+            fn inherits_plugin_locator() {
+                let config = test_load_config(
+                    FILENAME,
+                    r"
+node:
+  packageManager: pnpm
+  pnpm: {}
+",
+                    |path| {
+                        let mut tools = ToolsConfig::default();
+                        tools.inherit_builtin_plugins();
+
+                        ToolchainConfig::load_from(path, &tools)
+                    },
+                );
+
+                assert_eq!(
+                    config.node.unwrap().pnpm.unwrap().plugin.unwrap(),
+                    PluginLocator::SourceUrl {
+                        url: "https://github.com/moonrepo/node-plugin/releases/latest/download/node_depman_plugin.wasm".into()
+                    }
+                );
             }
 
             #[test]
@@ -396,6 +472,31 @@ node:
                 });
 
                 assert!(config.node.unwrap().yarn.is_some());
+            }
+
+            #[test]
+            fn inherits_plugin_locator() {
+                let config = test_load_config(
+                    FILENAME,
+                    r"
+node:
+  packageManager: yarn
+  yarn: {}
+",
+                    |path| {
+                        let mut tools = ToolsConfig::default();
+                        tools.inherit_builtin_plugins();
+
+                        ToolchainConfig::load_from(path, &tools)
+                    },
+                );
+
+                assert_eq!(
+                    config.node.unwrap().yarn.unwrap().plugin.unwrap(),
+                    PluginLocator::SourceUrl {
+                        url: "https://github.com/moonrepo/node-plugin/releases/latest/download/node_depman_plugin.wasm".into()
+                    }
+                );
             }
 
             #[test]
@@ -535,6 +636,23 @@ rust:
 
             assert!(config.rust.is_some());
             assert_eq!(config.rust.unwrap().version.unwrap(), "1.69.0");
+        }
+
+        #[test]
+        fn inherits_plugin_locator() {
+            let config = test_load_config(FILENAME, "rust: {}", |path| {
+                let mut tools = ToolsConfig::default();
+                tools.inherit_builtin_plugins();
+
+                ToolchainConfig::load_from(path, &tools)
+            });
+
+            assert_eq!(
+                config.rust.unwrap().plugin.unwrap(),
+                PluginLocator::SourceUrl {
+                    url: "https://github.com/moonrepo/rust-plugin/releases/latest/download/rust_plugin.wasm".into()
+                }
+            );
         }
 
         #[test]

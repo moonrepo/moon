@@ -10,7 +10,7 @@ use std::path::PathBuf;
 
 #[inline]
 pub fn get_moon_home_dir() -> PathBuf {
-    if let Ok(root) = env::var("MOON_ROOT") {
+    if let Ok(root) = env::var("MOON_HOME") {
         return root.into();
     }
 

@@ -1,7 +1,7 @@
 mod utils;
 
 use moon_config::{BinConfig, BinEntry, NodePackageManager, ToolchainConfig};
-use proto_core::ToolsConfig;
+use proto_core::{AliasOrVersion, Id, ToolsConfig};
 use starbase_sandbox::create_sandbox;
 use std::env;
 use utils::*;
@@ -138,7 +138,9 @@ deno:
         fn enables_via_proto() {
             let config = test_load_config(FILENAME, "{}", |path| {
                 let mut proto = ToolsConfig::default();
-                proto.tools.insert("deno".into(), "1.30.0".into());
+                proto
+                    .tools
+                    .insert(Id::raw("deno"), AliasOrVersion::parse("1.30.0").unwrap());
 
                 ToolchainConfig::load_from(path, &proto)
             });
@@ -185,7 +187,9 @@ node:
         fn enables_via_proto() {
             let config = test_load_config(FILENAME, "{}", |path| {
                 let mut proto = ToolsConfig::default();
-                proto.tools.insert("node".into(), "18.0.0".into());
+                proto
+                    .tools
+                    .insert(Id::raw("node"), AliasOrVersion::parse("18.0.0").unwrap());
 
                 ToolchainConfig::load_from(path, &proto)
             });
@@ -204,7 +208,9 @@ node:
 ",
                 |path| {
                     let mut proto = ToolsConfig::default();
-                    proto.tools.insert("node".into(), "18.0.0".into());
+                    proto
+                        .tools
+                        .insert(Id::raw("node"), AliasOrVersion::parse("18.0.0").unwrap());
 
                     ToolchainConfig::load_from(path, &proto)
                 },
@@ -239,7 +245,9 @@ node:
 ",
                 |path| {
                     let mut proto = ToolsConfig::default();
-                    proto.tools.insert("node".into(), "18.0.0".into());
+                    proto
+                        .tools
+                        .insert(Id::raw("node"), AliasOrVersion::parse("18.0.0").unwrap());
 
                     ToolchainConfig::load_from(path, &proto)
                 },
@@ -264,7 +272,9 @@ node:
 ",
                     |path| {
                         let mut proto = ToolsConfig::default();
-                        proto.tools.insert("npm".into(), "8.0.0".into());
+                        proto
+                            .tools
+                            .insert(Id::raw("npm"), AliasOrVersion::parse("8.0.0").unwrap());
 
                         ToolchainConfig::load_from(path, &proto)
                     },
@@ -286,7 +296,9 @@ node:
 ",
                     |path| {
                         let mut proto = ToolsConfig::default();
-                        proto.tools.insert("npm".into(), "8.0.0".into());
+                        proto
+                            .tools
+                            .insert(Id::raw("npm"), AliasOrVersion::parse("8.0.0").unwrap());
 
                         ToolchainConfig::load_from(path, &proto)
                     },
@@ -327,7 +339,9 @@ node:
 ",
                     |path| {
                         let mut proto = ToolsConfig::default();
-                        proto.tools.insert("pnpm".into(), "8.0.0".into());
+                        proto
+                            .tools
+                            .insert(Id::raw("pnpm"), AliasOrVersion::parse("8.0.0").unwrap());
 
                         ToolchainConfig::load_from(path, &proto)
                     },
@@ -349,7 +363,9 @@ node:
 ",
                     |path| {
                         let mut proto = ToolsConfig::default();
-                        proto.tools.insert("pnpm".into(), "8.0.0".into());
+                        proto
+                            .tools
+                            .insert(Id::raw("pnpm"), AliasOrVersion::parse("8.0.0").unwrap());
 
                         ToolchainConfig::load_from(path, &proto)
                     },
@@ -393,7 +409,9 @@ node:
 ",
                     |path| {
                         let mut proto = ToolsConfig::default();
-                        proto.tools.insert("yarn".into(), "8.0.0".into());
+                        proto
+                            .tools
+                            .insert(Id::raw("yarn"), AliasOrVersion::parse("8.0.0").unwrap());
 
                         ToolchainConfig::load_from(path, &proto)
                     },
@@ -415,7 +433,9 @@ node:
 ",
                     |path| {
                         let mut proto = ToolsConfig::default();
-                        proto.tools.insert("yarn".into(), "8.0.0".into());
+                        proto
+                            .tools
+                            .insert(Id::raw("yarn"), AliasOrVersion::parse("8.0.0").unwrap());
 
                         ToolchainConfig::load_from(path, &proto)
                     },
@@ -506,7 +526,9 @@ rust:
         fn enables_via_proto() {
             let config = test_load_config(FILENAME, "{}", |path| {
                 let mut proto = ToolsConfig::default();
-                proto.tools.insert("rust".into(), "1.69.0".into());
+                proto
+                    .tools
+                    .insert(Id::raw("rust"), AliasOrVersion::parse("1.69.0").unwrap());
 
                 ToolchainConfig::load_from(path, &proto)
             });
@@ -525,7 +547,9 @@ rust:
 ",
                 |path| {
                     let mut proto = ToolsConfig::default();
-                    proto.tools.insert("rust".into(), "1.69.0".into());
+                    proto
+                        .tools
+                        .insert(Id::raw("rust"), AliasOrVersion::parse("1.69.0").unwrap());
 
                     ToolchainConfig::load_from(path, &proto)
                 },
@@ -560,7 +584,9 @@ rust:
         ",
                 |path| {
                     let mut proto = ToolsConfig::default();
-                    proto.tools.insert("rust".into(), "1.65.0".into());
+                    proto
+                        .tools
+                        .insert(Id::raw("rust"), AliasOrVersion::parse("1.65.0").unwrap());
 
                     ToolchainConfig::load_from(path, &proto)
                 },
@@ -609,7 +635,10 @@ typescript:
         fn enables_via_proto() {
             let config = test_load_config(FILENAME, "{}", |path| {
                 let mut proto = ToolsConfig::default();
-                proto.tools.insert("typescript".into(), "5.0.0".into());
+                proto.tools.insert(
+                    Id::raw("typescript"),
+                    AliasOrVersion::parse("5.0.0").unwrap(),
+                );
 
                 ToolchainConfig::load_from(path, &proto)
             });

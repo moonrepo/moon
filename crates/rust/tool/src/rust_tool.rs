@@ -81,7 +81,7 @@ impl Tool for RustTool {
             return Ok(installed);
         };
 
-        let version_type = VersionType::parse(&version)?;
+        let version_type = VersionType::parse(version)?;
 
         if self.tool.is_setup(&version_type).await? {
             debug!("Rust has already been setup");

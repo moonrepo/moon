@@ -42,6 +42,8 @@ pub async fn load_tool_plugin(
     )?;
 
     let user_config = UserConfig::load()?;
+
+    #[allow(clippy::disallowed_types)]
     let mut config = std::collections::HashMap::new();
 
     inject_default_manifest_config(id, proto, &user_config, &manifest, &mut config)?;

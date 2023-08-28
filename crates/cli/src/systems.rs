@@ -1,20 +1,18 @@
-use std::time::Duration;
-
-use crate::app::Commands;
-use crate::states::CurrentCommand;
+use crate::app::{App as CLI, Commands};
 use moon_api::Launchpad;
 use moon_cache::CacheEngine;
 use moon_common::{color, is_test_env, is_unformatted_stdout};
 use moon_terminal::{get_checkpoint_prefix, Checkpoint};
 use moon_utils::get_workspace_root;
 use starbase::system;
+use std::time::Duration;
 use tokio::time::sleep;
 use tracing::debug;
 
 #[system]
-pub async fn check_for_new_version(global_args: StateRef<CurrentCommand>) {
+pub async fn check_for_new_version(cli: StateRef<CLI>) {
     if matches!(
-        &global_args.command,
+        &cli.command,
         Commands::Check { .. } | Commands::Ci { .. } | Commands::Run { .. } | Commands::Sync { .. }
     ) {
         // Wait for telemetry to be enabled!

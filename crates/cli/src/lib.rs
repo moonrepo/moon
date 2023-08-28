@@ -3,7 +3,6 @@ pub mod commands;
 pub mod enums;
 mod helpers;
 pub mod queries;
-mod states;
 mod systems;
 
 use crate::app::{
@@ -99,10 +98,10 @@ pub async fn run_cli() -> AppResult {
 
     let mut app = App::new();
     app.set_state(cli.global_args());
-    //app.set_state(CurrentCommand(global_args));
+    app.set_state(cli.clone());
     app.execute(systems::check_for_new_version);
 
-    match cli.command.clone() {
+    match cli.command {
         Commands::Bin(args) => app.execute_with_args(bin, args),
         Commands::Ci(args) => app.execute_with_args(ci, args),
         Commands::Check(args) => app.execute_with_args(check, args),

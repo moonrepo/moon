@@ -302,7 +302,7 @@ pub enum Commands {
     Upgrade,
 }
 
-#[derive(Debug, Parser)]
+#[derive(Clone, Debug, Parser, State)]
 #[command(
     bin_name = BIN_NAME,
     name = "moon",

@@ -21,6 +21,7 @@ use std::str::FromStr;
 
 #[derive(Args, Clone, Debug)]
 pub struct FromTurborepoArgs {
+    #[arg(long, hide = true)]
     pub skip_touched_files_check: bool,
 }
 

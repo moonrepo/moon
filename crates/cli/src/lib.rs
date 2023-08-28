@@ -100,12 +100,17 @@ pub async fn run_cli() -> AppResult {
     app.set_state(cli.global_args());
     app.set_state(cli.clone());
     app.startup(systems::load_workspace);
-    app.execute(systems::check_for_new_version);
 
     match cli.command {
         Commands::Bin(args) => app.execute_with_args(bin, args),
-        Commands::Ci(args) => app.execute_with_args(ci, args),
-        Commands::Check(args) => app.execute_with_args(check, args),
+        Commands::Ci(args) => {
+            app.execute(systems::check_for_new_version);
+            app.execute_with_args(ci, args)
+        }
+        Commands::Check(args) => {
+            app.execute(systems::check_for_new_version);
+            app.execute_with_args(check, args)
+        }
         Commands::Clean(args) => app.execute_with_args(clean, args),
         Commands::Completions(args) => app.execute_with_args(completions::completions, args),
         Commands::DepGraph(args) => app.execute_with_args(dep_graph, args),
@@ -143,16 +148,23 @@ pub async fn run_cli() -> AppResult {
             QueryCommands::Tasks(args) => app.execute_with_args(query::tasks, args),
             QueryCommands::TouchedFiles(args) => app.execute_with_args(query::touched_files, args),
         },
-        Commands::Run(args) => app.execute_with_args(run, args),
+        Commands::Run(args) => {
+            app.execute(systems::check_for_new_version);
+            app.execute_with_args(run, args)
+        }
         Commands::Setup => app.execute(setup),
-        Commands::Sync { command } => match command {
-            Some(SyncCommands::Codeowners(args)) => {
-                app.execute_with_args(syncs::codeowners::sync, args)
+        Commands::Sync { command } => {
+            app.execute(systems::check_for_new_version);
+
+            match command {
+                Some(SyncCommands::Codeowners(args)) => {
+                    app.execute_with_args(syncs::codeowners::sync, args)
+                }
+                Some(SyncCommands::Hooks(args)) => app.execute_with_args(syncs::hooks::sync, args),
+                Some(SyncCommands::Projects) => app.execute(syncs::projects::sync),
+                None => app.execute(sync),
             }
-            Some(SyncCommands::Hooks(args)) => app.execute_with_args(syncs::hooks::sync, args),
-            Some(SyncCommands::Projects) => app.execute(syncs::projects::sync),
-            None => app.execute(sync),
-        },
+        }
         Commands::Task(args) => app.execute_with_args(task, args),
         Commands::Teardown => app.execute(teardown),
         Commands::Upgrade => app.execute(upgrade),

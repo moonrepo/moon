@@ -1,4 +1,3 @@
-use moon_logger::warn;
 use moon_workspace::Workspace;
 use starbase::system;
 use starbase_styles::color;

@@ -1,9 +1,10 @@
 use clap::Args;
-use moon::{build_project_graph, load_workspace_with_toolchain};
+use moon::build_project_graph;
 use moon_common::Id;
 use moon_config::PlatformType;
 use moon_node_tool::NodeTool;
 use moon_platform::PlatformManager;
+use moon_workspace::Workspace;
 use starbase::system;
 use std::env;
 
@@ -17,8 +18,7 @@ pub struct RunScriptArgs {
 }
 
 #[system]
-pub async fn run_script(args: ArgsRef<RunScriptArgs>) {
-    let mut workspace = load_workspace_with_toolchain().await?;
+pub async fn run_script(args: ArgsRef<RunScriptArgs>, workspace: ResourceMut<Workspace>) {
     let node = PlatformManager::read()
         .get(PlatformType::Node)?
         .get_tool()?
@@ -36,7 +36,7 @@ pub async fn run_script(args: ArgsRef<RunScriptArgs>) {
 
         // Otherwise try and find the project in the graph
     } else if let Some(project_id) = &args.project {
-        let mut project_graph = build_project_graph(&mut workspace).await?;
+        let mut project_graph = build_project_graph(workspace).await?;
         project_graph.load(project_id).await?;
 
         command.cwd(&project_graph.build().await?.get(project_id)?.root);

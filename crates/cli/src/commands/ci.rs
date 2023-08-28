@@ -3,7 +3,7 @@ use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOption
 use ci_env::CiOutput;
 use clap::Args;
 use itertools::Itertools;
-use moon::{build_dep_graph, generate_project_graph, load_workspace};
+use moon::{build_dep_graph, generate_project_graph};
 use moon_action_context::ActionContext;
 use moon_action_pipeline::Pipeline;
 use moon_common::path::WorkspaceRelativePathBuf;
@@ -191,13 +191,16 @@ fn generate_dep_graph(
 }
 
 #[system]
-pub async fn ci(args: ArgsRef<CiArgs>, global_args: StateRef<GlobalArgs>) {
-    let mut workspace = load_workspace().await?;
+pub async fn ci(
+    args: ArgsRef<CiArgs>,
+    global_args: StateRef<GlobalArgs>,
+    workspace: ResourceMut<Workspace>,
+) {
     let ci_provider = ci_env::get_output().unwrap_or(CiOutput {
         close_log_group: "",
         open_log_group: "▪▪▪▪ ",
     });
-    let project_graph = generate_project_graph(&mut workspace).await?;
+    let project_graph = generate_project_graph(workspace).await?;
     let touched_files = gather_touched_files(&ci_provider, &workspace, args).await?;
     let targets = gather_runnable_targets(&ci_provider, &project_graph, &touched_files)?;
 
@@ -218,7 +221,7 @@ pub async fn ci(args: ArgsRef<CiArgs>, global_args: StateRef<GlobalArgs>) {
         ..ActionContext::default()
     };
 
-    let mut pipeline = Pipeline::new(workspace, project_graph);
+    let mut pipeline = Pipeline::new(workspace.to_owned(), project_graph);
 
     if let Some(concurrency) = &global_args.concurrency {
         pipeline.concurrency(*concurrency);

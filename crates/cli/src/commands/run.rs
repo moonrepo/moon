@@ -3,7 +3,7 @@ use crate::enums::{CacheMode, TouchedStatus};
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use clap::Args;
 use miette::miette;
-use moon::{build_dep_graph, generate_project_graph, load_workspace};
+use moon::{build_dep_graph, generate_project_graph};
 use moon_action_context::{ActionContext, ProfileType};
 use moon_action_pipeline::Pipeline;
 use moon_common::is_test_env;
@@ -106,7 +106,7 @@ pub async fn run_target(
     target_ids: &[String],
     args: &RunArgs,
     concurrency: Option<usize>,
-    workspace: Workspace,
+    workspace: &Workspace,
     project_graph: ProjectGraph,
 ) -> AppResult {
     // Force cache to update using write-only mode
@@ -203,7 +203,7 @@ pub async fn run_target(
     };
 
     let dep_graph = dep_builder.build();
-    let mut pipeline = Pipeline::new(workspace, project_graph);
+    let mut pipeline = Pipeline::new(workspace.to_owned(), project_graph);
 
     if let Some(concurrency) = concurrency {
         pipeline.concurrency(concurrency);
@@ -221,9 +221,12 @@ pub async fn run_target(
 }
 
 #[system]
-pub async fn run(args: ArgsRef<RunArgs>, global_args: StateRef<GlobalArgs>) {
-    let mut workspace = load_workspace().await?;
-    let project_graph = generate_project_graph(&mut workspace).await?;
+pub async fn run(
+    args: ArgsRef<RunArgs>,
+    global_args: StateRef<GlobalArgs>,
+    workspace: ResourceMut<Workspace>,
+) {
+    let project_graph = generate_project_graph(workspace).await?;
 
     run_target(
         &args.targets,

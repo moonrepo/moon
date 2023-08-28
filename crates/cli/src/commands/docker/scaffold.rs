@@ -1,6 +1,6 @@
 use super::MANIFEST_NAME;
 use clap::Args;
-use moon::{generate_project_graph, load_workspace};
+use moon::generate_project_graph;
 use moon_common::consts::CONFIG_DIRNAME;
 use moon_common::Id;
 use moon_config::{ConfigEnum, LanguageType};
@@ -202,8 +202,7 @@ fn scaffold_sources(
 }
 
 #[system]
-pub async fn scaffold(args: ArgsRef<DockerScaffoldArgs>) {
-    let mut workspace = load_workspace().await?;
+pub async fn scaffold(args: ArgsRef<DockerScaffoldArgs>, workspace: ResourceMut<Workspace>) {
     let docker_root = workspace.root.join(CONFIG_DIRNAME).join("docker");
 
     // Delete the docker skeleton to remove any stale files
@@ -211,7 +210,7 @@ pub async fn scaffold(args: ArgsRef<DockerScaffoldArgs>) {
     fs::create_dir_all(&docker_root)?;
 
     // Create the workspace skeleton
-    let project_graph = generate_project_graph(&mut workspace).await?;
+    let project_graph = generate_project_graph(workspace).await?;
 
     scaffold_workspace(&workspace, &project_graph, &docker_root)?;
 

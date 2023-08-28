@@ -1,6 +1,6 @@
 use super::check_dirty_repo;
 use clap::Args;
-use moon::{generate_project_graph, load_workspace};
+use moon::generate_project_graph;
 use moon_common::consts::CONFIG_PROJECT_FILENAME;
 use moon_common::Id;
 use moon_config::{
@@ -9,6 +9,7 @@ use moon_config::{
 use moon_logger::info;
 use moon_node_lang::package_json::{DepsSet, PackageJson};
 use moon_node_platform::create_tasks_from_scripts;
+use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
 use starbase::system;
 use starbase_utils::yaml;
@@ -25,9 +26,10 @@ pub struct FromPackageJsonArgs {
 const LOG_TARGET: &str = "moon:migrate:from-package-json";
 
 #[system]
-pub async fn from_package_json(args: ArgsRef<FromPackageJsonArgs>) -> AppResult {
-    let mut workspace = load_workspace().await?;
-
+pub async fn from_package_json(
+    args: ArgsRef<FromPackageJsonArgs>,
+    workspace: ResourceMut<Workspace>,
+) -> AppResult {
     if args.skip_touched_files_check {
         info!(target: LOG_TARGET, "Skipping touched files check.");
     } else {
@@ -35,7 +37,7 @@ pub async fn from_package_json(args: ArgsRef<FromPackageJsonArgs>) -> AppResult 
     };
 
     // Create a mapping of `package.json` names to project IDs
-    let project_graph = generate_project_graph(&mut workspace).await?;
+    let project_graph = generate_project_graph(workspace).await?;
     let mut package_map: FxHashMap<String, Id> = FxHashMap::default();
 
     for project in project_graph.get_all_unexpanded() {

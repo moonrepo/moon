@@ -1,6 +1,6 @@
 use super::MANIFEST_NAME;
 use crate::commands::docker::scaffold::DockerManifest;
-use moon::{generate_project_graph, load_workspace_with_toolchain};
+use moon::generate_project_graph;
 use moon_config::PlatformType;
 use moon_node_lang::{PackageJson, NODE};
 use moon_node_tool::NodeTool;
@@ -9,6 +9,7 @@ use moon_project_graph::ProjectGraph;
 use moon_rust_lang::{CARGO, RUST};
 use moon_rust_tool::RustTool;
 use moon_terminal::safe_exit;
+use moon_workspace::Workspace;
 use rustc_hash::FxHashSet;
 use starbase::system;
 use starbase::AppResult;
@@ -65,8 +66,7 @@ pub async fn prune_rust(_rust: &RustTool, workspace_root: &Path) -> AppResult {
 }
 
 #[system]
-pub async fn prune() {
-    let mut workspace = load_workspace_with_toolchain().await?;
+pub async fn prune(workspace: ResourceMut<Workspace>) {
     let manifest_path = workspace.root.join(MANIFEST_NAME);
 
     if !manifest_path.exists() {
@@ -74,7 +74,7 @@ pub async fn prune() {
         safe_exit(1);
     }
 
-    let project_graph = generate_project_graph(&mut workspace).await?;
+    let project_graph = generate_project_graph(workspace).await?;
     let manifest: DockerManifest = json::read_file(manifest_path)?;
     let mut platforms = FxHashSet::<PlatformType>::default();
 

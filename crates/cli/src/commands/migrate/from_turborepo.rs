@@ -1,6 +1,6 @@
 use super::check_dirty_repo;
 use clap::Args;
-use moon::{generate_project_graph, load_workspace};
+use moon::generate_project_graph;
 use moon_common::{consts, Id};
 use moon_config::{
     InputPath, OutputPath, PartialInheritedTasksConfig, PartialProjectConfig,
@@ -10,6 +10,7 @@ use moon_config::{
 use moon_logger::{info, warn};
 use moon_target::Target;
 use moon_terminal::safe_exit;
+use moon_workspace::Workspace;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use starbase::{system, AppResult};
@@ -164,8 +165,7 @@ pub fn convert_task(name: Id, task: TurboTask) -> AppResult<PartialTaskConfig> {
 }
 
 #[system]
-pub async fn from_turborepo(args: ArgsRef<FromTurborepoArgs>) {
-    let mut workspace = load_workspace().await?;
+pub async fn from_turborepo(args: ArgsRef<FromTurborepoArgs>, workspace: ResourceMut<Workspace>) {
     let turbo_file = workspace.root.join("turbo.json");
 
     if !turbo_file.exists() {
@@ -179,7 +179,7 @@ pub async fn from_turborepo(args: ArgsRef<FromTurborepoArgs>) {
         check_dirty_repo(&workspace).await?;
     };
 
-    let project_graph = generate_project_graph(&mut workspace).await?;
+    let project_graph = generate_project_graph(workspace).await?;
     let turbo_json: TurboJson = json::read_file(&turbo_file)?;
     let mut node_tasks_config = PartialInheritedTasksConfig::default();
     let mut has_modified_global_tasks = false;

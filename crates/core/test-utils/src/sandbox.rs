@@ -130,6 +130,14 @@ pub fn create_sandbox_with_config<T: AsRef<str>>(
     tasks_config: Option<PartialInheritedTasksConfig>,
 ) -> Sandbox {
     let sandbox = create_sandbox(fixture);
+    let plugins_path = get_fixtures_path("wasm-plugins");
+
+    starbase_utils::fs::copy_dir_all(
+        &plugins_path,
+        &plugins_path,
+        &sandbox.path().join(".moon-home/plugins"),
+    )
+    .unwrap();
 
     sandbox.create_file(
         ".moon/workspace.yml",

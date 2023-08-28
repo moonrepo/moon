@@ -30,7 +30,14 @@ args = ["clippy", "--workspace", "--all-targets"]
 
 [tasks.lint-fix]
 command = "cargo"
-args = ["clippy", "--workspace", "--all-targets", "--fix", "--allow-dirty", "--allow-staged"]
+args = [
+    "clippy",
+    "--workspace",
+    "--all-targets",
+    "--fix",
+    "--allow-dirty",
+    "--allow-staged",
+]
 
 # TESTING
 
@@ -41,7 +48,13 @@ cwd = "./tests/fixtures/cases"
 
 [tasks.run-tests]
 command = "cargo"
-args = ["nextest", "run", "--workspace", "--config-file", "./.cargo/nextest.toml"]
+args = [
+    "nextest",
+    "run",
+    "--workspace",
+    "--config-file",
+    "./.cargo/nextest.toml",
+]
 
 [tasks.clean-test]
 script = "rm -rf ./tests/fixtures/cases/.moon/cache"
@@ -50,22 +63,46 @@ condition = { platforms = ["mac", "linux"] }
 [tasks.test]
 run_task = { name = ["clean-test", "run-tests"] }
 
+[tasks.sync-plugins-fixture]
+script = "rm -rf ./tests/fixtures/wasm-plugins && cp -r ~/.moon/plugins ./tests/fixtures/wasm-plugins"
+
 # CODE COVERAGE
 
 [tasks.run-tests-with-coverage]
 command = "cargo"
-args = ["llvm-cov", "nextest", "--workspace", "--config-file", "./.cargo/nextest.toml"]
+args = [
+    "llvm-cov",
+    "nextest",
+    "--workspace",
+    "--config-file",
+    "./.cargo/nextest.toml",
+]
 
 [tasks.test-coverage]
 run_task = { name = ["clean-test", "run-tests-with-coverage"] }
 
 [tasks.generate-report]
 command = "cargo"
-args = ["llvm-cov", "report", "--lcov", "--ignore-filename-regex", "error", "--output-path", "./report.txt"]
+args = [
+    "llvm-cov",
+    "report",
+    "--lcov",
+    "--ignore-filename-regex",
+    "error",
+    "--output-path",
+    "./report.txt",
+]
 
 [tasks.generate-html]
 command = "cargo"
-args = ["llvm-cov", "report", "--html", "--ignore-filename-regex", "error", "--open"]
+args = [
+    "llvm-cov",
+    "report",
+    "--html",
+    "--ignore-filename-regex",
+    "error",
+    "--open",
+]
 
 ## OTHER
 
@@ -76,13 +113,14 @@ args = ["run", "-p", "moon_config"]
 
 [tasks.gql-schema]
 command = "graphql-client"
-args = ["introspect-schema", "http://localhost:8080/graphql", "--output", "crates/core/moonbase/schema.json", "--header", "X-Moonbase-TestingId: 1"]
-
-[tasks.check]
-dependencies = [
-    "format",
-    "lint",
-    "build",
-    "test"
+args = [
+    "introspect-schema",
+    "http://localhost:8080/graphql",
+    "--output",
+    "crates/core/moonbase/schema.json",
+    "--header",
+    "X-Moonbase-TestingId: 1",
 ]
 
+[tasks.check]
+dependencies = ["format", "lint", "build", "test"]

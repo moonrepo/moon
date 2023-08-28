@@ -4,10 +4,17 @@ use starbase_utils::dirs::home_dir;
 use std::path::Path;
 
 pub fn create_moon_command<T: AsRef<Path>>(path: T) -> assert_cmd::Command {
+    let path = path.as_ref();
+
     let mut cmd = assert_cmd::Command::cargo_bin("moon").unwrap();
     cmd.current_dir(path);
     cmd.timeout(std::time::Duration::from_secs(90));
     cmd.env("RUST_BACKTRACE", "1");
+    // Store plugins in the sandbox
+    cmd.env(
+        "MOON_ROOT",
+        path.join(".moon-home").to_string_lossy().to_string(),
+    );
     // Let our code know we're running tests
     cmd.env("MOON_TEST", "true");
     cmd.env("STARBASE_TEST", "true");

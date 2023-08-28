@@ -1,4 +1,6 @@
-use crate::{bins_hash::RustBinsHash, find_cargo_lock, target_hash::RustTargetHash};
+use crate::{
+    bins_hash::RustBinsHash, find_cargo_lock, get_cargo_home, target_hash::RustTargetHash,
+};
 use moon_action_context::ActionContext;
 use moon_common::{is_ci, Id};
 use moon_config::{
@@ -480,7 +482,12 @@ impl Platform for RustPlatform {
             }
             // Binary may be installed to ~/.cargo/bin
             _ => {
-                let globals_dir = self.toolchain.get()?.tool.get_globals_bin_dir().unwrap();
+                let globals_dir = if let Ok(tool) = self.toolchain.get() {
+                    tool.tool.get_globals_bin_dir().unwrap().to_path_buf()
+                } else {
+                    get_cargo_home().join("bin")
+                };
+
                 let global_bin_path = globals_dir.join(&task.command);
 
                 let cargo_bin = if task.command.starts_with("cargo-") {

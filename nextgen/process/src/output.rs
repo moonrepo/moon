@@ -25,6 +25,11 @@ pub fn output_to_error(bin: String, output: &Output, with_message: bool) -> Proc
         message = output_to_trimmed_string(&output.stdout);
     }
 
+    // Make error message nicer to look at
+    if !message.is_empty() {
+        message = format!("\n\n{message}");
+    }
+
     ProcessError::ExitNonZeroWithOutput {
         bin,
         code,

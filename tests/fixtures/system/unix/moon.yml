@@ -5,31 +5,45 @@ tasks:
     command: ls
     args: '-1 .'
     platform: system
+    inputs:
+      - '*.sh'
   echo:
     command: echo
     args: 'hello'
     platform: system
+    inputs:
+      - '*.sh'
   bash:
     command: bash
     args: ./standard.sh
     platform: system
+    inputs:
+      - '*.sh'
   exitNonZero:
     command: bash
     args: ./exitNonZero.sh
     platform: system
+    inputs:
+      - '*.sh'
   exitNonZeroInline:
     command: bash -c 'exit 2'
     platform: system
     options:
       shell: false
+    inputs:
+      - '*.sh'
   exitZero:
     command: bash
     args: ./exitZero.sh
     platform: system
+    inputs:
+      - '*.sh'
   passthroughArgs:
     command: bash
     args: ./args.sh
     platform: system
+    inputs:
+      - '*.sh'
   envVars:
     command: bash
     args: ./envVars.sh
@@ -38,32 +52,44 @@ tasks:
       MOON_BAR: '123'
       MOON_BAZ: 'true'
     platform: system
+    inputs:
+      - '*.sh'
   envVarsMoon:
     command: bash
     args: ./envVarsMoon.sh
     platform: system
+    inputs:
+      - '*.sh'
   runFromProject:
     command: bash
     args: ./cwd.sh
     platform: system
+    inputs:
+      - '*.sh'
   runFromWorkspace:
     command: bash
     args: ./unix/cwd.sh
     platform: system
     options:
       runFromWorkspaceRoot: true
+    inputs:
+      - '*.sh'
   retryCount:
     command: bash
     args: ./exitNonZero.sh
     platform: system
     options:
       retryCount: 3
+    inputs:
+      - '*.sh'
   outputs:
     command: bash ./outputs.sh
     platform: system
     outputs:
       - 'file.txt'
       - 'folder'
+    inputs:
+      - '*.sh'
   affectedFiles:
     command: bash ./affectedFiles.sh
     platform: system
@@ -82,9 +108,13 @@ tasks:
   multiAmpersand:
     command: 'mkdir foo && mkdir bar'
     platform: system
+    inputs:
+      - '*.sh'
   multiSemicolon:
     command: 'mkdir foo; mkdir bar'
     platform: system
+    inputs:
+      - '*.sh'
 
   # Shell syntax
   syntaxVar:
@@ -92,17 +122,25 @@ tasks:
     platform: system
     env:
       VAR_NAME: value
+    inputs:
+      - '*.sh'
   syntaxExpansion:
     command: 'echo ${VAR_NAME:2:2}'
     platform: system
     env:
       VAR_NAME: abcdef
+    inputs:
+      - '*.sh'
   syntaxSubstitution:
     command: 'echo $(echo sub)'
     platform: system
+    inputs:
+      - '*.sh'
   syntaxSubstitutionTick:
     command: 'echo `echo sub`'
     platform: system
+    inputs:
+      - '*.sh'
 
   # Misc
   foo:
@@ -110,13 +148,19 @@ tasks:
     platform: system
     options:
       shell: false
+    inputs:
+      - '*.sh'
   bar:
     command: sh -c "echo 'bar'"
     platform: system
     options:
       shell: false
+    inputs:
+      - '*.sh'
   baz:
     command: /bin/bash -c "echo 'baz'"
     platform: system
     options:
       shell: false
+    inputs:
+      - '*.sh'

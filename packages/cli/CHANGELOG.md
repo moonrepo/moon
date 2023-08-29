@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Improved failed task error messages by including information about the failing task.
+- Fixed an issue where failed tasks would be cached.
+- Fixed an issue where errors lost information while bubbling up the stack.
+
 ## 1.12.0
 
 #### 🚀 Updates

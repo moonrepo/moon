@@ -173,7 +173,7 @@ impl Pipeline {
             }
 
             // Wait for all actions in this batch to complete
-            let mut abort_error = None;
+            let mut abort_error: Option<miette::Report> = None;
             let mut show_abort_log = false;
 
             for handle in action_handles {
@@ -183,7 +183,7 @@ impl Pipeline {
                     }
                 } else {
                     match handle.await {
-                        Ok(Ok(result)) => {
+                        Ok(Ok(mut result)) => {
                             if result.has_failed() {
                                 failed_count += 1;
                             } else if result.was_cached() {
@@ -195,17 +195,17 @@ impl Pipeline {
                             show_abort_log = result.should_abort();
 
                             if self.bail && result.has_failed() || result.should_abort() {
-                                abort_error =
-                                    Some(result.error.unwrap_or_else(|| "Unknown error!".into()));
+                                abort_error = Some(result.get_error());
                             } else {
                                 results.push(result);
                             }
                         }
                         Ok(Err(error)) => {
-                            abort_error = Some(error.to_string());
+                            abort_error = Some(error);
                         }
                         _ => {
-                            abort_error = Some("Unknown error!".into());
+                            abort_error =
+                                Some(PipelineError::Aborted("Unknown error!".into()).into());
                         }
                     };
                 }
@@ -221,11 +221,11 @@ impl Pipeline {
 
                 local_emitter
                     .emit(Event::PipelineAborted {
-                        error: abort_error.clone(),
+                        error: abort_error.to_string(),
                     })
                     .await?;
 
-                return Err(PipelineError::Aborted(abort_error).into());
+                return Err(abort_error);
             }
         }
 

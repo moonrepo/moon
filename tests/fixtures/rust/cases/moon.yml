@@ -7,23 +7,41 @@ tasks:
       MOON_FOO: abc
       MOON_BAR: '123'
       MOON_BAZ: 'true'
+    inputs:
+      - 'src/**/*'
   envVarsMoon:
     command: 'cargo run --quiet --bin env_vars_moon'
+    inputs:
+      - 'src/**/*'
   exitNonZero:
     command: 'cargo run --quiet --bin exit_nonzero'
+    inputs:
+      - 'src/**/*'
   exitZero:
     command: 'cargo run --quiet --bin exit_zero'
+    inputs:
+      - 'src/**/*'
   panic:
     command: 'cargo run --quiet --bin panic'
+    inputs:
+      - 'src/**/*'
   retryCount:
     command: 'cargo run --quiet --bin exit_nonzero'
     options:
       retryCount: 3
+    inputs:
+      - 'src/**/*'
   runFromProject:
     command: 'cargo run --quiet --bin cwd'
+    inputs:
+      - 'src/**/*'
   runFromWorkspace:
     command: 'cargo run --quiet --bin cwd'
+    inputs:
+      - 'src/**/*'
     options:
       runFromWorkspaceRoot: true
   standard:
     command: 'cargo run --quiet --bin standard'
+    inputs:
+      - 'src/**/*'

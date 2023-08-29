@@ -8,4 +8,5 @@ moon_common = { path = "../../../nextgen/common" }
 moon_platform_runtime = { path = "../platform-runtime" }
 moon_target = { path = "../../../nextgen/target" }
 moon_utils = { path = "../utils" }
+miette = { workspace = true }
 serde = { workspace = true }

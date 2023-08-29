@@ -4,7 +4,11 @@ expression: assert.output()
 ---
 ▪▪▪▪ unix:exitNonZeroInline
 ▪▪▪▪ unix:exitNonZeroInline (100ms)
-Error:   × Failed to run bash (exit code 2)
+Error: target_runner::run_failed
+
+  × Task unix:exitNonZeroInline failed to run. View hash details with moon
+  │ query hash hash1234.
+  ╰─▶ Process bash failed with a 2 exit code.
 
 
 

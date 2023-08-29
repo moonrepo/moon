@@ -10,7 +10,8 @@ This should appear!
 stderr
 Error: target_runner::run_failed
 
-  × Failed to run task node:exitCodeNonZero with hash 59783c14.
+  × Task node:exitCodeNonZero failed to run. View hash details with moon query
+  │ hash 59783c14.
   ╰─▶ Process node failed with a 1 exit code.
 
 

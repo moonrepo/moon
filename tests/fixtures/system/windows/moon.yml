@@ -4,15 +4,23 @@ tasks:
   bat:
     command: cmd.exe /q /c ./standard.bat
     platform: system
+    inputs:
+      - '*.bat'
   exitNonZero:
     command: cmd.exe /q /c ./exitNonZero.bat
     platform: system
+    inputs:
+      - '*.bat'
   exitZero:
     command: cmd.exe /q /c ./exitZero.bat
     platform: system
+    inputs:
+      - '*.bat'
   passthroughArgs:
     command: cmd /q /c ./passthroughArgs.bat
     platform: system
+    inputs:
+      - '*.bat'
   envVars:
     command: cmd.exe /q /c ./envVars.bat
     env:
@@ -20,28 +28,40 @@ tasks:
       MOON_BAR: '123'
       MOON_BAZ: 'true'
     platform: system
+    inputs:
+      - '*.bat'
   envVarsMoon:
     command: cmd /q /c ./envVarsMoon.bat
     platform: system
+    inputs:
+      - '*.bat'
   runFromProject:
     command: cmd.exe /q /c ./echo.bat "\\windows"
     platform: system
+    inputs:
+      - '*.bat'
   runFromWorkspace:
     command: cmd /q /c ./windows/echo.bat "\\"
     platform: system
     options:
       runFromWorkspaceRoot: true
+    inputs:
+      - '*.bat'
   retryCount:
     command: cmd.exe /q /c ./exitNonZero.bat
     platform: system
     options:
       retryCount: 3
+    inputs:
+      - '*.bat'
   outputs:
     command: cmd.exe /q /c ./outputs.bat
     platform: system
     outputs:
       - 'file.txt'
       - 'folder'
+    inputs:
+      - '*.bat'
 
   # Misc
   foo:
@@ -49,13 +69,19 @@ tasks:
     platform: system
     options:
       shell: false
+    inputs:
+      - '*.bat'
   bar:
     command: powershell.exe -c "./echo.bat 'bar'"
     platform: system
     options:
       shell: false
+    inputs:
+      - '*.bat'
   baz:
     command: cmd /q /c ./echo.bat 'baz'
     platform: system
     options:
       shell: false
+    inputs:
+      - '*.bat'

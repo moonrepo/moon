@@ -11,7 +11,8 @@ stderr
 
 Error: target_runner::run_failed
 
-  × Failed to run task outputStyles:bufferFailureFail with hash d6eb57ac.
+  × Task outputStyles:bufferFailureFail failed to run. View hash details with
+  │ moon query hash d6eb57ac.
   ╰─▶ Process node failed with a 1 exit code.
 
 

@@ -464,7 +464,10 @@ impl<'a> Runner<'a> {
 
         // Hash is the same as the previous build, so simply abort!
         // However, ensure the outputs also exist, otherwise we should hydrate
-        if self.cache.data.hash == hash && self.has_outputs(true)? {
+        if self.cache.data.exit_code == 0
+            && self.cache.data.hash == hash
+            && self.has_outputs(true)?
+        {
             debug!(
                 target: LOG_TARGET,
                 "Cache hit for hash {}, reusing previous build",
@@ -535,6 +538,7 @@ impl<'a> Runner<'a> {
         let is_real_ci = is_ci() && !is_test_env();
         let is_persistent = self.task.is_persistent();
         let output;
+        let error;
 
         // When a task is configured as local (no caching), or the interactive flag is passed,
         // we don't "capture" stdout/stderr (which breaks stdin) and let it stream natively.
@@ -620,19 +624,19 @@ impl<'a> Runner<'a> {
                     attempts.push(attempt);
 
                     if out.status.success() {
+                        error = None;
                         output = out;
-                        interval_handle.abort();
 
                         break;
                     } else if attempt_index >= attempt_total {
-                        interval_handle.abort();
-
-                        return Err(RunnerError::RunFailed {
+                        error = Some(RunnerError::RunFailed {
                             target: self.task.target.id.clone(),
-                            hash: self.get_short_hash().to_owned(),
+                            query: format!("moon query hash {}", self.get_short_hash()),
                             error: output_to_error(self.task.command.clone(), &out, false),
-                        }
-                        .into());
+                        });
+                        output = out;
+
+                        break;
                     } else {
                         attempt_index += 1;
 
@@ -667,6 +671,10 @@ impl<'a> Runner<'a> {
             output_to_string(&output.stderr),
         )?;
 
+        if let Some(error) = error {
+            return Err(error.into());
+        }
+
         Ok(attempts)
     }
 
@@ -675,7 +683,7 @@ impl<'a> Runner<'a> {
         context: &ActionContext,
         runtime: &Runtime,
     ) -> miette::Result<Vec<Attempt>> {
-        let attempts = if self.task.is_no_op() {
+        let result = if self.task.is_no_op() {
             debug!(
                 target: LOG_TARGET,
                 "Target {} is a no operation, skipping",
@@ -685,17 +693,17 @@ impl<'a> Runner<'a> {
             self.print_target_label(Checkpoint::RunPassed, &Attempt::new(0), 0)?;
             self.flush_output()?;
 
-            vec![]
+            Ok(vec![])
         } else {
             let mut command = self.create_command(context, runtime).await?;
 
-            self.run_command(context, &mut command).await?
+            self.run_command(context, &mut command).await
         };
 
         self.cache.data.last_run_time = time::now_millis();
         self.cache.save()?;
 
-        Ok(attempts)
+        result
     }
 
     pub fn print_cache_item(&self) -> miette::Result<()> {

@@ -8,7 +8,8 @@ stdout
 stderr
 Error: target_runner::run_failed
 
-  × Failed to run task unix:exitNonZero with hash feab469d.
+  × Task unix:exitNonZero failed to run. View hash details with moon query
+  │ hash feab469d.
   ╰─▶ Process bash failed with a 1 exit code.
 
 

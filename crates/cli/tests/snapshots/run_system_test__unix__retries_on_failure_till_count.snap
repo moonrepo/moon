@@ -20,7 +20,8 @@ stderr
 stderr
 Error: target_runner::run_failed
 
-  × Failed to run task unix:retryCount with hash 824bccee.
+  × Task unix:retryCount failed to run. View hash details with moon query
+  │ hash 824bccee.
   ╰─▶ Process bash failed with a 1 exit code.
 
 

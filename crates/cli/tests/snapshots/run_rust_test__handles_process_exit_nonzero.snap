@@ -9,7 +9,8 @@ stdout
 stderr
 Error: target_runner::run_failed
 
-  × Failed to run task rust:exitNonZero with hash c6bac153.
+  × Task rust:exitNonZero failed to run. View hash details with moon query
+  │ hash c6bac153.
   ╰─▶ Process cargo failed with a 1 exit code.
 
 

@@ -18,7 +18,8 @@ node:internal/process/promises:288
 Node.js v18.0.0
 Error: target_runner::run_failed
 
-  × Failed to run task node:unhandledPromise with hash b29dfa38.
+  × Task node:unhandledPromise failed to run. View hash details with moon
+  │ query hash b29dfa38.
   ╰─▶ Process node failed with a 1 exit code.
 
 

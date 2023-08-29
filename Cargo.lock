@@ -3103,6 +3103,7 @@ dependencies = [
 name = "moon_action"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_common",
  "moon_platform_runtime",
  "moon_target",

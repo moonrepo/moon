@@ -6,11 +6,15 @@ use thiserror::Error;
 #[derive(Error, Debug, Diagnostic)]
 pub enum RunnerError {
     #[diagnostic(code(target_runner::run_failed))]
-    #[error("Failed to run task {}.", .target.style(Style::Label))]
+    #[error(
+        "Failed to run task {} with hash {}.",
+        .target.style(Style::Label),
+        .hash.style(Style::Hash),
+    )]
     RunFailed {
         target: String,
+        hash: String,
         #[source]
-        #[diagnostic_source]
         error: ProcessError,
     },
 

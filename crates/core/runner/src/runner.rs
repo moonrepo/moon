@@ -629,6 +629,7 @@ impl<'a> Runner<'a> {
 
                         return Err(RunnerError::RunFailed {
                             target: self.task.target.id.clone(),
+                            hash: self.get_short_hash().to_owned(),
                             error: output_to_error(self.task.command.clone(), &out, true),
                         }
                         .into());

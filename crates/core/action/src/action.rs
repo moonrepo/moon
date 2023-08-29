@@ -85,6 +85,9 @@ pub struct Action {
 
     pub error: Option<String>,
 
+    #[serde(skip)]
+    pub error_report: Option<miette::Report>,
+
     pub finished_at: Option<NaiveDateTime>,
 
     pub flaky: bool,
@@ -112,6 +115,7 @@ impl Action {
             created_at: now_timestamp(),
             duration: None,
             error: None,
+            error_report: None,
             finished_at: None,
             flaky: false,
             label: node.label(),
@@ -141,13 +145,26 @@ impl Action {
         }
     }
 
-    pub fn fail(&mut self, error: String) {
-        self.error = Some(error);
+    pub fn fail(&mut self, error: miette::Report) {
+        self.error = Some(error.to_string());
+        self.error_report = Some(error);
         self.finish(ActionStatus::Failed);
     }
 
     pub fn has_failed(&self) -> bool {
         has_failed(&self.status)
+    }
+
+    pub fn get_error(&mut self) -> miette::Report {
+        if let Some(report) = self.error_report.take() {
+            return report;
+        }
+
+        if let Some(error) = &self.error {
+            return miette::miette!("{error}");
+        }
+
+        miette::miette!("Unknown error!")
     }
 
     pub fn set_attempts(&mut self, attempts: Vec<Attempt>, command: &str) -> bool {

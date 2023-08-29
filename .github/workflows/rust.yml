@@ -50,8 +50,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # buildjet-4vcpu-ubuntu-2204
-        os: [ubuntu-latest, self-hosted-laptop-macos-m1, self-hosted-laptop-windows-i7]
+        os: [buildjet-4vcpu-ubuntu-2204, self-hosted-laptop-macos-m1, self-hosted-laptop-windows-i7]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3

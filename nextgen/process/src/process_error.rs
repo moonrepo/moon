@@ -6,9 +6,9 @@ use thiserror::Error;
 pub enum ProcessError {
     #[diagnostic(code(process::capture::failed))]
     #[error(
-        "Failed to execute {} and capture output.\n\n{}",
+        "Failed to execute {} and capture output.",
         .bin.style(Style::Shell),
-        .error.to_string().style(Style::MutedLight),
+        // .error.to_string().style(Style::MutedLight),
     )]
     Capture {
         bin: String,
@@ -16,6 +16,7 @@ pub enum ProcessError {
         error: std::io::Error,
     },
 
+    #[diagnostic(code(process::failed))]
     #[error(
         "Process {} failed with a {} exit code.",
         .bin.style(Style::Shell),
@@ -23,8 +24,9 @@ pub enum ProcessError {
     )]
     ExitNonZero { bin: String, code: i32 },
 
+    #[diagnostic(code(process::failed))]
     #[error(
-        "Process {} failed with a {} exit code.\n\n{}",
+        "Process {} failed with a {} exit code. {}",
         .bin.style(Style::Shell),
         .code.style(Style::Symbol),
         .output.style(Style::MutedLight),
@@ -37,9 +39,9 @@ pub enum ProcessError {
 
     #[diagnostic(code(process::stream::failed))]
     #[error(
-        "Failed to execute {} and stream output.\n\n{}",
+        "Failed to execute {} and stream output.",
         .bin.style(Style::Shell),
-        .error.to_string().style(Style::MutedLight),
+        // .error.to_string().style(Style::MutedLight),
     )]
     Stream {
         bin: String,
@@ -49,9 +51,9 @@ pub enum ProcessError {
 
     #[diagnostic(code(process::capture_stream::failed))]
     #[error(
-        "Failed to execute {} and stream and capture output.\n\n{}",
+        "Failed to execute {} and stream and capture output.",
         .bin.style(Style::Shell),
-        .error.to_string().style(Style::MutedLight),
+        // .error.to_string().style(Style::MutedLight),
     )]
     StreamCapture {
         bin: String,
@@ -61,9 +63,9 @@ pub enum ProcessError {
 
     #[diagnostic(code(process::stdin::failed))]
     #[error(
-        "Failed to write stdin to {}.\n\n{}",
+        "Failed to write stdin to {}.",
         .bin.style(Style::Shell),
-        .error.to_string().style(Style::MutedLight),
+        // .error.to_string().style(Style::MutedLight),
     )]
     WriteInput {
         bin: String,

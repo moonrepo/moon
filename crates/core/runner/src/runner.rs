@@ -12,7 +12,7 @@ use moon_hash::ContentHasher;
 use moon_logger::{debug, warn};
 use moon_platform::PlatformManager;
 use moon_platform_runtime::Runtime;
-use moon_process::{args, output_to_string, Command, Output};
+use moon_process::{args, output_to_error, output_to_string, Command, Output};
 use moon_project::Project;
 use moon_target::{TargetError, TargetScope};
 use moon_task::Task;
@@ -619,9 +619,19 @@ impl<'a> Runner<'a> {
 
                     attempts.push(attempt);
 
-                    if out.status.success() || attempt_index >= attempt_total {
+                    if out.status.success() {
                         output = out;
+                        interval_handle.abort();
+
                         break;
+                    } else if attempt_index >= attempt_total {
+                        interval_handle.abort();
+
+                        return Err(RunnerError::RunFailed {
+                            target: self.task.target.id.clone(),
+                            error: output_to_error(self.task.command.clone(), &out, true),
+                        }
+                        .into());
                     } else {
                         attempt_index += 1;
 

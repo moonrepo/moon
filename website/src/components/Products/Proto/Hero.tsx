@@ -12,6 +12,8 @@ import CTA from '../../Home/CTA';
 import HeroIcon from '../HeroIcon';
 import HeroTerminal from './HeroTerminal';
 
+// A lightspeed and pluggable toolchain manager for languages and their dependency managers.
+
 export default function Hero() {
 	const [version, setVersion] = useState('?.?.?');
 
@@ -33,12 +35,11 @@ export default function Hero() {
 					/>
 
 					<p className="mt-1 mb-0 text-base text-white sm:text-lg sm:max-w-xl sm:mx-auto md:text-xl md:mx-0 md:w-[80%]">
-						A lightspeed and pluggable toolchain manager for languages and their dependency
-						managers.
+						A version manager for all your favorite languages and tools. A unified toolchain.
 					</p>
 
 					<p className="mt-1 text-white opacity-50 text-sm md:text-base md:pr-4">
-						Supports Bun, Deno, Node.js (npm, pnpm, yarn), Rust, and Go.
+						Supports Bun, Deno, Node (npm, pnpm, yarn), Rust, Go, and more.
 					</p>
 
 					<div className="mt-3 flex justify-center md:justify-start">

@@ -1,15 +1,16 @@
 // .moon/toolchain.yml
 
+use crate::language_platform::PlatformType;
 use crate::toolchain::*;
+use crate::validate::check_yml_extension;
 use crate::{inherit_tool, inherit_tool_without_version};
 use moon_common::consts;
 use proto::ToolsConfig;
-use schematic::{validate, Config, ConfigError, ConfigLoader};
-use serde::Serialize;
+use schematic::{validate, Config, ConfigLoader};
 use std::path::Path;
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain
-#[derive(Debug, Config, Serialize)]
+#[derive(Config, Debug)]
 pub struct ToolchainConfig {
     #[setting(
         default = "https://moonrepo.dev/schemas/toolchain.json",
@@ -47,7 +48,25 @@ impl ToolchainConfig {
         inherit_proto_typescript
     );
 
-    pub fn inherit_proto(&mut self, proto_tools: &ToolsConfig) -> Result<(), ConfigError> {
+    pub fn get_enabled_platforms(&self) -> Vec<PlatformType> {
+        let mut tools = vec![];
+
+        if self.deno.is_some() {
+            tools.push(PlatformType::Deno);
+        }
+
+        if self.node.is_some() {
+            tools.push(PlatformType::Node);
+        }
+
+        if self.rust.is_some() {
+            tools.push(PlatformType::Rust);
+        }
+
+        tools
+    }
+
+    pub fn inherit_proto(&mut self, proto_tools: &ToolsConfig) -> miette::Result<()> {
         self.inherit_proto_deno(proto_tools)?;
         self.inherit_proto_rust(proto_tools)?;
         self.inherit_proto_node(proto_tools)?;
@@ -64,10 +83,10 @@ impl ToolchainConfig {
         workspace_root: R,
         path: P,
         proto_tools: &ToolsConfig,
-    ) -> Result<ToolchainConfig, ConfigError> {
+    ) -> miette::Result<ToolchainConfig> {
         let mut result = ConfigLoader::<ToolchainConfig>::new()
             .set_root(workspace_root)
-            .file_optional(path.as_ref())?
+            .file_optional(check_yml_extension(path.as_ref()))?
             .load()?;
 
         result.config.inherit_proto(proto_tools)?;
@@ -78,7 +97,7 @@ impl ToolchainConfig {
     pub fn load_from<R: AsRef<Path>>(
         workspace_root: R,
         proto_tools: &ToolsConfig,
-    ) -> Result<ToolchainConfig, ConfigError> {
+    ) -> miette::Result<ToolchainConfig> {
         let workspace_root = workspace_root.as_ref();
 
         Self::load(

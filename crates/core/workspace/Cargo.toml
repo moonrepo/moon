@@ -5,12 +5,11 @@ edition = "2021"
 
 [dependencies]
 moonbase = { path = "../moonbase" }
-moon_cache = { path = "../cache" }
+moon_cache = { path = "../../../nextgen/cache" }
 moon_common = { path = "../../../nextgen/common" }
 moon_config = { path = "../../../nextgen/config" }
-moon_error = { path = "../error" }
+moon_hash = { path = "../../../nextgen/hash" }
 moon_logger = { path = "../logger" }
-moon_platform = { path = "../platform" }
 moon_utils = { path = "../utils" }
 moon_vcs = { path = "../../../nextgen/vcs" }
 miette = { workspace = true }

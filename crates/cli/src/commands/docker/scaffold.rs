@@ -1,9 +1,9 @@
 use super::MANIFEST_NAME;
+use clap::Args;
 use moon::{generate_project_graph, load_workspace};
 use moon_common::consts::CONFIG_DIRNAME;
 use moon_common::Id;
 use moon_config::{ConfigEnum, LanguageType};
-use moon_error::MoonError;
 use moon_platform_detector::detect_language_files;
 use moon_project_graph::ProjectGraph;
 use moon_rust_lang::cargo_toml::{CargoTomlCache, CargoTomlExt};
@@ -14,6 +14,15 @@ use serde::{Deserialize, Serialize};
 use starbase::AppResult;
 use starbase_utils::{fs, glob, json};
 use std::path::Path;
+
+#[derive(Args, Debug)]
+pub struct DockerScaffoldArgs {
+    #[arg(required = true, help = "List of project IDs to copy sources for")]
+    ids: Vec<Id>,
+
+    #[arg(long, help = "Additional file globs to include in sources")]
+    include: Vec<String>,
+}
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -82,16 +91,16 @@ fn scaffold_workspace(
     };
 
     // Copy each project and mimic the folder structure
-    for project_source in project_graph.sources.values() {
-        if project_source == "." {
+    for source in project_graph.sources().values() {
+        if source.as_str() == "." {
             continue;
         }
 
-        let docker_project_root = docker_workspace_root.join(project_source);
+        let docker_project_root = docker_workspace_root.join(source.as_str());
 
         fs::create_dir_all(&docker_project_root)?;
 
-        copy_from_dir(&workspace.root.join(project_source), &docker_project_root)?;
+        copy_from_dir(&source.to_path(&workspace.root), &docker_project_root)?;
     }
 
     // Copy root lockfiles and configurations
@@ -105,7 +114,7 @@ fn scaffold_workspace(
     let moon_configs = moon_configs
         .iter()
         .map(|f| path::to_string(f.strip_prefix(&workspace.root).unwrap()))
-        .collect::<Result<Vec<String>, MoonError>>()?;
+        .collect::<Result<Vec<String>, _>>()?;
 
     copy_files(&moon_configs, &workspace.root, &docker_workspace_root)?;
 
@@ -164,8 +173,8 @@ fn scaffold_sources(
 
     // Include non-focused projects in the manifest
     for project_id in project_graph.ids() {
-        if !manifest.focused_projects.contains(&project_id) {
-            manifest.unfocused_projects.insert(project_id);
+        if !manifest.focused_projects.contains(project_id) {
+            manifest.unfocused_projects.insert(project_id.to_owned());
         }
     }
 
@@ -175,7 +184,7 @@ fn scaffold_sources(
         let files = files
             .iter()
             .map(|f| path::to_string(f.strip_prefix(&workspace.root).unwrap()))
-            .collect::<Result<Vec<String>, MoonError>>()?;
+            .collect::<Result<Vec<String>, _>>()?;
 
         copy_files(&files, &workspace.root, &docker_sources_root)?;
     }
@@ -192,7 +201,7 @@ fn scaffold_sources(
     Ok(())
 }
 
-pub async fn scaffold(project_ids: &[Id], include: &[String]) -> AppResult {
+pub async fn scaffold(args: DockerScaffoldArgs) -> AppResult {
     let mut workspace = load_workspace().await?;
     let docker_root = workspace.root.join(CONFIG_DIRNAME).join("docker");
 
@@ -209,8 +218,8 @@ pub async fn scaffold(project_ids: &[Id], include: &[String]) -> AppResult {
         &workspace,
         &project_graph,
         &docker_root,
-        project_ids,
-        include,
+        &args.ids,
+        &args.include,
     )?;
 
     Ok(())

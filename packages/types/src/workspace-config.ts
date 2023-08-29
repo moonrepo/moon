@@ -11,8 +11,14 @@ export interface PartialCodeownersConfig {
 }
 
 export interface PartialConstraintsConfig {
+	/** @default true */
 	enforceProjectTypeRelationships?: boolean | null;
 	tagRelationships?: Record<string, string[]> | null;
+}
+
+export interface PartialExperimentsConfig {
+	/** @default true */
+	taskOutputBoundaries?: boolean | null;
 }
 
 export interface PartialGeneratorConfig {
@@ -24,9 +30,13 @@ export type HasherOptimization = 'accuracy' | 'performance';
 export type HasherWalkStrategy = 'glob' | 'vcs';
 
 export interface PartialHasherConfig {
+	/** @default 2500 */
 	batchSize?: number | null;
+	ignoreMissingPatterns?: string[] | null;
+	ignorePatterns?: string[] | null;
 	optimization?: HasherOptimization | null;
 	walkStrategy?: HasherWalkStrategy | null;
+	/** @default true */
 	warnOnMissingInputs?: boolean | null;
 }
 
@@ -34,17 +44,21 @@ export interface PartialNotifierConfig {
 	webhookUrl?: string | null;
 }
 
-export type WorkspaceProjects =
+export interface PartialWorkspaceProjectsConfig {
+	globs?: string[] | null;
+	sources?: Record<string, string> | null;
+}
+
+export type PartialWorkspaceProjects =
+	| PartialWorkspaceProjectsConfig
 	| string[]
-	| Record<string, string>
-	| {
-			globs: string[];
-			sources: Record<string, string>;
-	  };
+	| Record<string, string>;
 
 export interface PartialRunnerConfig {
 	archivableTargets?: string[] | null;
+	/** @default '7 days' */
 	cacheLifetime?: string | null;
+	/** @default true */
 	inheritColorsForPipedTasks?: boolean | null;
 	logRunningCommand?: boolean | null;
 }
@@ -54,6 +68,7 @@ export type VcsManager = 'git';
 export type VcsProvider = 'bitbucket' | 'github' | 'gitlab' | 'other';
 
 export interface PartialVcsConfig {
+	/** @default 'master' */
 	defaultBranch?: string | null;
 	hooks?: Record<string, string[]> | null;
 	manager?: VcsManager | null;
@@ -63,15 +78,18 @@ export interface PartialVcsConfig {
 }
 
 export interface PartialWorkspaceConfig {
+	/** @default 'https://moonrepo.dev/schemas/workspace.json' */
 	$schema?: string | null;
 	codeowners?: PartialCodeownersConfig | null;
 	constraints?: PartialConstraintsConfig | null;
+	experiments?: PartialExperimentsConfig | null;
 	extends?: string | null;
 	generator?: PartialGeneratorConfig | null;
 	hasher?: PartialHasherConfig | null;
 	notifier?: PartialNotifierConfig | null;
-	projects?: WorkspaceProjects | null;
+	projects?: PartialWorkspaceProjects | null;
 	runner?: PartialRunnerConfig | null;
+	/** @default true */
 	telemetry?: boolean | null;
 	vcs?: PartialVcsConfig | null;
 	versionConstraint?: string | null;
@@ -84,8 +102,14 @@ export interface CodeownersConfig {
 }
 
 export interface ConstraintsConfig {
+	/** @default true */
 	enforceProjectTypeRelationships: boolean;
 	tagRelationships: Record<string, string[]>;
+}
+
+export interface ExperimentsConfig {
+	/** @default true */
+	taskOutputBoundaries: boolean;
 }
 
 export interface GeneratorConfig {
@@ -93,9 +117,13 @@ export interface GeneratorConfig {
 }
 
 export interface HasherConfig {
+	/** @default 2500 */
 	batchSize: number;
+	ignoreMissingPatterns: string[];
+	ignorePatterns: string[];
 	optimization: HasherOptimization;
 	walkStrategy: HasherWalkStrategy;
+	/** @default true */
 	warnOnMissingInputs: boolean;
 }
 
@@ -103,14 +131,24 @@ export interface NotifierConfig {
 	webhookUrl: string | null;
 }
 
+export interface WorkspaceProjectsConfig {
+	globs: string[];
+	sources: Record<string, string>;
+}
+
+export type WorkspaceProjects = WorkspaceProjectsConfig | string[] | Record<string, string>;
+
 export interface RunnerConfig {
 	archivableTargets: string[];
+	/** @default '7 days' */
 	cacheLifetime: string;
+	/** @default true */
 	inheritColorsForPipedTasks: boolean;
 	logRunningCommand: boolean;
 }
 
 export interface VcsConfig {
+	/** @default 'master' */
 	defaultBranch: string;
 	hooks: Record<string, string[]>;
 	manager: VcsManager;
@@ -120,15 +158,18 @@ export interface VcsConfig {
 }
 
 export interface WorkspaceConfig {
+	/** @default 'https://moonrepo.dev/schemas/workspace.json' */
 	$schema: string;
 	codeowners: CodeownersConfig;
 	constraints: ConstraintsConfig;
+	experiments: ExperimentsConfig;
 	extends: string | null;
 	generator: GeneratorConfig;
 	hasher: HasherConfig;
 	notifier: NotifierConfig;
 	projects: WorkspaceProjects;
 	runner: RunnerConfig;
+	/** @default true */
 	telemetry: boolean;
 	vcs: VcsConfig;
 	versionConstraint: string | null;

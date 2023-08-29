@@ -1,8 +1,7 @@
 use ci_env::get_environment;
 use moon_action::{ActionNode, ActionStatus};
-use moon_cache::get_cache_mode;
+use moon_cache_item::get_cache_mode;
 use moon_emitter::{Event, EventFlow, Subscriber};
-use moon_error::MoonError;
 use moon_logger::{debug, error, map_list, trace, warn};
 use moon_platform::Runtime;
 use moon_utils::async_trait;
@@ -12,7 +11,7 @@ use moonbase::{
         self, add_job_to_run, create_run, update_job, update_run, AddJobToRun, CreateRun,
         GraphQLQuery, UpdateJob, UpdateRun,
     },
-    upload_artifact, ArtifactWriteInput, MoonbaseError,
+    upload_artifact, ArtifactWriteInput,
 };
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
@@ -50,7 +49,7 @@ impl MoonbaseSubscriber {
         run_id: &i64,
         auth_token: &str,
         input: update_run::UpdateRunInput,
-    ) -> Result<(), MoonError> {
+    ) -> miette::Result<()> {
         fn log_failure(id: &i64, message: String) {
             warn!(
                 target: LOG_TARGET,
@@ -95,7 +94,7 @@ impl Subscriber for MoonbaseSubscriber {
         &mut self,
         event: &Event<'a>,
         workspace: &Workspace,
-    ) -> Result<EventFlow, MoonError> {
+    ) -> miette::Result<EventFlow> {
         let Some(moonbase) = &workspace.session else {
             return Ok(EventFlow::Continue);
         };
@@ -142,21 +141,11 @@ impl Subscriber for MoonbaseSubscriber {
                     }
 
                     if branch.is_empty() {
-                        branch = workspace
-                            .vcs
-                            .get_local_branch()
-                            .await
-                            .map_err(|e| MoonError::Generic(e.to_string()))?
-                            .to_owned();
+                        branch = workspace.vcs.get_local_branch().await?.to_owned();
                     }
 
                     if revision.is_empty() {
-                        revision = workspace
-                            .vcs
-                            .get_local_branch_revision()
-                            .await
-                            .map_err(|e| MoonError::Generic(e.to_string()))?
-                            .to_owned();
+                        revision = workspace.vcs.get_local_branch_revision().await?.to_owned();
                     }
 
                     let affected_targets = context
@@ -397,7 +386,7 @@ impl Subscriber for MoonbaseSubscriber {
         if moonbase.remote_caching_enabled {
             // We don't want errors to bubble up and crash the program,
             // so instead, we log the error (as a warning) to the console!
-            fn log_failure(error: MoonbaseError) {
+            fn log_failure(error: miette::Report) {
                 warn!(
                     target: LOG_TARGET,
                     "Remote caching failure: {}",
@@ -504,7 +493,7 @@ impl Subscriber for MoonbaseSubscriber {
                 Event::TargetOutputHydrating { hash, .. } => {
                     if get_cache_mode().is_readable() {
                         if let Some(download_url) = self.download_urls.get(*hash) {
-                            let archive_file = workspace.cache.get_hash_archive_path(hash);
+                            let archive_file = workspace.hash_engine.get_archive_path(hash);
 
                             trace!(
                                 target: LOG_TARGET,

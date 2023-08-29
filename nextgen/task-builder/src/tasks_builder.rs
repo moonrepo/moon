@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 
-use crate::tasks_builder_error::TasksBuilderError;
 use moon_args::split_args;
 use moon_common::{color, Id};
 use moon_config::{
@@ -11,23 +10,50 @@ use moon_config::{
 use moon_target::Target;
 use moon_task::{Task, TaskOptions};
 use rustc_hash::{FxHashMap, FxHashSet};
+use starbase_events::{Emitter, Event};
 use std::collections::BTreeMap;
 use std::hash::Hash;
 use std::path::Path;
-use tracing::{debug, trace, warn};
+use tracing::trace;
 
-pub type PlatformDetector = dyn Fn(&str, &ToolchainConfig) -> PlatformType;
+// This is a standalone function as recursive closures are not possible!
+fn extract_config<'builder, 'proj>(
+    task_id: &'builder Id,
+    tasks_map: &'builder FxHashMap<&'proj Id, &'proj TaskConfig>,
+    configs: &'builder mut Vec<&'proj TaskConfig>,
+) {
+    if let Some(config) = tasks_map.get(task_id) {
+        if let Some(extend_task_id) = &config.extends {
+            extract_config(extend_task_id, tasks_map, configs);
+        }
+
+        configs.push(*config);
+    }
+}
+
+#[derive(Debug)]
+pub struct DetectPlatformEvent {
+    pub enabled_platforms: Vec<PlatformType>,
+    pub task_command: String,
+}
+
+impl Event for DetectPlatformEvent {
+    type Data = PlatformType;
+}
+
+pub struct TasksBuilderContext<'proj> {
+    pub detect_platform: &'proj Emitter<DetectPlatformEvent>,
+    pub toolchain_config: &'proj ToolchainConfig,
+    pub workspace_root: &'proj Path,
+}
 
 pub struct TasksBuilder<'proj> {
+    context: TasksBuilderContext<'proj>,
+
     project_id: &'proj str,
     project_env: FxHashMap<&'proj str, &'proj str>,
     project_platform: &'proj PlatformType,
     project_source: &'proj str,
-
-    // Workspace information
-    workspace_root: &'proj Path,
-    platform_detector: Option<Box<PlatformDetector>>,
-    toolchain_config: Option<&'proj ToolchainConfig>,
 
     // Global settings for tasks to inherit
     implicit_deps: Vec<&'proj Target>,
@@ -44,32 +70,20 @@ impl<'proj> TasksBuilder<'proj> {
         project_id: &'proj str,
         project_source: &'proj str,
         project_platform: &'proj PlatformType,
-        workspace_root: &'proj Path,
+        context: TasksBuilderContext<'proj>,
     ) -> Self {
         Self {
+            context,
             project_id,
             project_env: FxHashMap::default(),
             project_platform,
             project_source,
-            workspace_root,
-            platform_detector: None,
-            toolchain_config: None,
             implicit_deps: vec![],
             implicit_inputs: vec![],
             task_ids: FxHashSet::default(),
             global_tasks: FxHashMap::default(),
             local_tasks: FxHashMap::default(),
         }
-    }
-
-    /// Register a function to detect a task's platform when unknown.
-    pub fn detect_platform<F>(&mut self, detector: F, config: &'proj ToolchainConfig) -> &mut Self
-    where
-        F: Fn(&str, &ToolchainConfig) -> PlatformType + 'static,
-    {
-        self.platform_detector = Some(Box::new(detector));
-        self.toolchain_config = Some(config);
-        self
     }
 
     pub fn inherit_global_tasks(
@@ -92,7 +106,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
         }
 
-        debug!(project_id = self.project_id, "Filtering global tasks");
+        trace!(id = self.project_id, "Filtering global tasks");
 
         for (task_id, task_config) in &global_config.tasks {
             let target = Target::new(self.project_id, task_id).unwrap();
@@ -102,14 +116,14 @@ impl<'proj> TasksBuilder<'proj> {
             // ["a"] = Include "a"
             if !include_all {
                 if include_set.is_empty() {
-                    debug!(
+                    trace!(
                         target = target.as_str(),
                         "Not inheriting any global tasks, empty include filter",
                     );
 
                     break;
                 } else if !include_set.contains(task_id) {
-                    debug!(
+                    trace!(
                         target = target.as_str(),
                         "Not inheriting global task {}, not included",
                         color::id(task_id)
@@ -122,7 +136,7 @@ impl<'proj> TasksBuilder<'proj> {
             // None, [] = Exclude none
             // ["a"] = Exclude "a"
             if !exclude.is_empty() && exclude.contains(&task_id) {
-                debug!(
+                trace!(
                     target = target.as_str(),
                     "Not inheriting global task {}, excluded",
                     color::id(task_id)
@@ -132,7 +146,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             let task_key = if let Some(renamed_task_id) = rename.get(task_id) {
-                debug!(
+                trace!(
                     target = target.as_str(),
                     "Inheriting global task {} and renaming to {}",
                     color::id(task_id),
@@ -141,7 +155,7 @@ impl<'proj> TasksBuilder<'proj> {
 
                 renamed_task_id
             } else {
-                debug!(
+                trace!(
                     target = target.as_str(),
                     "Inheriting global task {}",
                     color::id(task_id),
@@ -174,31 +188,23 @@ impl<'proj> TasksBuilder<'proj> {
     }
 
     #[tracing::instrument(name = "task", skip_all)]
-    pub fn build(self) -> miette::Result<BTreeMap<Id, Task>> {
+    pub async fn build(self) -> miette::Result<BTreeMap<Id, Task>> {
         let mut tasks = BTreeMap::new();
 
         for id in &self.task_ids {
-            tasks.insert((*id).to_owned(), self.build_task(id)?);
+            tasks.insert((*id).to_owned(), self.build_task(id).await?);
         }
 
         Ok(tasks)
     }
 
-    fn build_task(&self, id: &Id) -> miette::Result<Task> {
+    async fn build_task(&self, id: &Id) -> miette::Result<Task> {
         let target = Target::new(self.project_id, id)?;
 
-        debug!(target = target.as_str(), "Building task");
+        trace!(target = target.as_str(), "Building task");
 
         let mut task = Task::default();
-        let mut configs = vec![];
-
-        if let Some(config) = self.global_tasks.get(id) {
-            configs.push(*config);
-        }
-
-        if let Some(config) = self.local_tasks.get(id) {
-            configs.push(*config);
-        }
+        let configs = self.get_config_inherit_chain(id);
 
         // Determine command and args before building options and the task,
         // as we need to figure out if we're running in local mode or not.
@@ -220,7 +226,9 @@ impl<'proj> TasksBuilder<'proj> {
             }
         }
 
-        trace!(target = target.as_str(), "Marking task as local");
+        if is_local {
+            trace!(target = target.as_str(), "Marking task as local");
+        }
 
         task.options = self.build_task_options(id, is_local)?;
         task.flags.local = is_local;
@@ -238,7 +246,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
         }
 
-        task.env = self.build_env(&target, &task.options)?;
+        task.env = self.build_env(&target)?;
 
         // Finally build the task itself, while applying our complex merge logic!
         let mut configured_inputs = 0;
@@ -294,14 +302,14 @@ impl<'proj> TasksBuilder<'proj> {
         // inputs are handled explicitly, while globally inherited sources are handled implicitly.
         if configured_inputs == 0 {
             if has_configured_inputs {
-                debug!(
+                trace!(
                     target = target.as_str(),
                     "Task has explicitly disabled inputs",
                 );
 
                 task.flags.empty_inputs = true;
             } else {
-                debug!(
+                trace!(
                     target = target.as_str(),
                     "No inputs configured, defaulting to {} (from project)",
                     color::file("**/*"),
@@ -329,17 +337,24 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         if task.platform.is_unknown() {
-            if let Some(detector) = &self.platform_detector {
-                task.platform = detector(&task.command, self.toolchain_config.as_ref().unwrap());
-            }
+            let platform = self
+                .context
+                .detect_platform
+                .emit(DetectPlatformEvent {
+                    enabled_platforms: self.context.toolchain_config.get_enabled_platforms(),
+                    task_command: task.command.clone(),
+                })
+                .await?;
 
-            if task.platform.is_unknown() {
-                task.platform = if self.project_platform.is_unknown() {
+            task.platform = if platform.is_unknown() {
+                if self.project_platform.is_unknown() {
                     PlatformType::System
                 } else {
                     self.project_platform.to_owned()
-                };
-            }
+                }
+            } else {
+                platform
+            };
         }
 
         task.target = target;
@@ -358,21 +373,18 @@ impl<'proj> TasksBuilder<'proj> {
     fn build_task_options(&self, id: &Id, is_local: bool) -> miette::Result<TaskOptions> {
         let mut options = TaskOptions {
             cache: !is_local,
+            interactive: false,
             output_style: is_local.then_some(TaskOutputStyle::Stream),
             persistent: is_local,
             run_in_ci: !is_local,
             ..TaskOptions::default()
         };
 
-        let mut configs = vec![];
-
-        if let Some(config) = self.global_tasks.get(id) {
-            configs.push(&config.options);
-        }
-
-        if let Some(config) = self.local_tasks.get(id) {
-            configs.push(&config.options);
-        }
+        let configs = self
+            .get_config_inherit_chain(id)
+            .iter()
+            .map(|cfg| &cfg.options)
+            .collect::<Vec<_>>();
 
         for config in configs {
             if let Some(affected_files) = &config.affected_files {
@@ -385,6 +397,10 @@ impl<'proj> TasksBuilder<'proj> {
 
             if let Some(env_file) = &config.env_file {
                 options.env_file = env_file.to_input_path();
+            }
+
+            if let Some(interactive) = &config.interactive {
+                options.interactive = *interactive;
             }
 
             if let Some(merge_args) = &config.merge_args {
@@ -436,6 +452,13 @@ impl<'proj> TasksBuilder<'proj> {
             }
         }
 
+        if options.interactive {
+            options.cache = false;
+            options.output_style = Some(TaskOutputStyle::Stream);
+            options.persistent = false;
+            options.run_in_ci = false;
+        }
+
         Ok(options)
     }
 
@@ -485,16 +508,8 @@ impl<'proj> TasksBuilder<'proj> {
         Ok(global_inputs)
     }
 
-    /// Build environment variables for the task. The precedence is as follows.
-    ///     - 1st - project-level `env`
-    ///     - 2nd - task `env_file` (when enabled)
-    ///     - 3rd - task-level `env`
-    fn build_env(
-        &self,
-        target: &Target,
-        options: &TaskOptions,
-    ) -> miette::Result<FxHashMap<String, String>> {
-        let mut env = self
+    fn build_env(&self, target: &Target) -> miette::Result<FxHashMap<String, String>> {
+        let env = self
             .project_env
             .iter()
             .map(|(k, v)| ((*k).to_owned(), (*v).to_owned()))
@@ -506,38 +521,6 @@ impl<'proj> TasksBuilder<'proj> {
                 env_vars = ?self.project_env,
                 "Inheriting project env vars",
             );
-        }
-
-        if let Some(env_file) = &options.env_file {
-            let env_path = env_file
-                .to_workspace_relative(self.project_source)
-                .to_path(self.workspace_root);
-
-            trace!(
-                target = target.as_str(),
-                env_file = ?env_path,
-                "Loading env vars from dotfile",
-            );
-
-            // The `.env` file may not have been committed, so avoid crashing
-            if env_path.exists() {
-                let env_file_vars = dotenvy::from_path_iter(&env_path)
-                    .map_err(|error| TasksBuilderError::InvalidEnvFile {
-                        path: env_path.to_path_buf(),
-                        error,
-                    })?
-                    .flatten()
-                    .collect::<FxHashMap<_, _>>();
-
-                env = self.merge_map(env, env_file_vars, options.merge_env);
-            } else {
-                warn!(
-                    target = target.as_str(),
-                    env_file = ?env_path,
-                    "The {} option is enabled but file doesn't exist, skipping as this may be intentional",
-                    color::id("envFile"),
-                );
-            }
         }
 
         Ok(env)
@@ -568,6 +551,15 @@ impl<'proj> TasksBuilder<'proj> {
         };
 
         Ok((command, args))
+    }
+
+    fn get_config_inherit_chain(&self, id: &Id) -> Vec<&TaskConfig> {
+        let mut configs = vec![];
+
+        extract_config(id, &self.global_tasks, &mut configs);
+        extract_config(id, &self.local_tasks, &mut configs);
+
+        configs
     }
 
     fn merge_map<K, V>(

@@ -2,7 +2,7 @@
 
 /* eslint-disable */
 
-export type TaskCommandArgs = null | string | string[];
+export type PartialTaskCommandArgs = null | string | string[];
 
 export type TaskOptionAffectedFiles = boolean | 'args' | 'env';
 
@@ -16,6 +16,7 @@ export interface PartialTaskOptionsConfig {
 	affectedFiles?: TaskOptionAffectedFiles | null;
 	cache?: boolean | null;
 	envFile?: TaskOptionEnvFile | null;
+	interactive?: boolean | null;
 	mergeArgs?: TaskMergeStrategy | null;
 	mergeDeps?: TaskMergeStrategy | null;
 	mergeEnv?: TaskMergeStrategy | null;
@@ -35,10 +36,11 @@ export type PlatformType = 'deno' | 'node' | 'rust' | 'system' | 'unknown';
 export type TaskType = 'build' | 'run' | 'test';
 
 export interface PartialTaskConfig {
-	args?: TaskCommandArgs | null;
-	command?: TaskCommandArgs | null;
+	args?: PartialTaskCommandArgs | null;
+	command?: PartialTaskCommandArgs | null;
 	deps?: string[] | null;
 	env?: Record<string, string> | null;
+	extends?: string | null;
 	inputs?: string[] | null;
 	local?: boolean | null;
 	options?: PartialTaskOptionsConfig | null;
@@ -48,6 +50,7 @@ export interface PartialTaskConfig {
 }
 
 export interface PartialInheritedTasksConfig {
+	/** @default 'https://moonrepo.dev/schemas/tasks.json' */
 	$schema?: string | null;
 	extends?: string | null;
 	fileGroups?: Record<string, string[]> | null;
@@ -56,10 +59,13 @@ export interface PartialInheritedTasksConfig {
 	tasks?: Record<string, PartialTaskConfig> | null;
 }
 
+export type TaskCommandArgs = null | string | string[];
+
 export interface TaskOptionsConfig {
 	affectedFiles: TaskOptionAffectedFiles | null;
 	cache: boolean | null;
 	envFile: TaskOptionEnvFile | null;
+	interactive: boolean | null;
 	mergeArgs: TaskMergeStrategy | null;
 	mergeDeps: TaskMergeStrategy | null;
 	mergeEnv: TaskMergeStrategy | null;
@@ -79,6 +85,7 @@ export interface TaskConfig {
 	command: TaskCommandArgs;
 	deps: string[];
 	env: Record<string, string>;
+	extends: string | null;
 	inputs: string[] | null;
 	local: boolean | null;
 	options: TaskOptionsConfig;
@@ -88,6 +95,7 @@ export interface TaskConfig {
 }
 
 export interface InheritedTasksConfig {
+	/** @default 'https://moonrepo.dev/schemas/tasks.json' */
 	$schema: string;
 	extends: string | null;
 	fileGroups: Record<string, string[]>;

@@ -1,46 +1,47 @@
 // .moon/workspace.yml
 
 use crate::portable_path::{Portable, ProjectFilePath, ProjectGlobPath};
-use crate::validate::validate_semver_requirement;
+use crate::validate::{check_yml_extension, validate_semver_requirement};
 use crate::workspace::*;
 use moon_common::{consts, Id};
 use rustc_hash::FxHashMap;
-use schematic::{
-    derive_enum, validate, Config, ConfigError, ConfigLoader, Path as SettingPath, PathSegment,
-    SchemaField, SchemaType, Schematic, ValidateError,
-};
+use schematic::{validate, Config, ConfigLoader, Path as SettingPath, PathSegment, ValidateError};
 use std::path::Path;
 
 // We can't use serde based types in the enum below to handle validation,
 // as serde fails to parse correctly. So we must manually validate here.
 fn validate_projects<D, C>(
-    projects: &WorkspaceProjects,
+    projects: &PartialWorkspaceProjects,
     _data: &D,
     _ctx: &C,
 ) -> Result<(), ValidateError> {
     match projects {
-        WorkspaceProjects::Both { globs, sources } => {
-            for (i, g) in globs.iter().enumerate() {
-                ProjectGlobPath::from_str(g).map_err(|mut error| {
-                    error.path = SettingPath::new(vec![
-                        PathSegment::Key("globs".to_owned()),
-                        PathSegment::Index(i),
-                    ]);
-                    error
-                })?;
+        PartialWorkspaceProjects::Both(cfg) => {
+            if let Some(globs) = &cfg.globs {
+                for (i, g) in globs.iter().enumerate() {
+                    ProjectGlobPath::from_str(g).map_err(|mut error| {
+                        error.path = SettingPath::new(vec![
+                            PathSegment::Key("globs".to_owned()),
+                            PathSegment::Index(i),
+                        ]);
+                        error
+                    })?;
+                }
             }
 
-            for (k, v) in sources {
-                ProjectFilePath::from_str(v).map_err(|mut error| {
-                    error.path = SettingPath::new(vec![
-                        PathSegment::Key("sources".to_owned()),
-                        PathSegment::Key(k.to_string()),
-                    ]);
-                    error
-                })?;
+            if let Some(sources) = &cfg.sources {
+                for (k, v) in sources {
+                    ProjectFilePath::from_str(v).map_err(|mut error| {
+                        error.path = SettingPath::new(vec![
+                            PathSegment::Key("sources".to_owned()),
+                            PathSegment::Key(k.to_string()),
+                        ]);
+                        error
+                    })?;
+                }
             }
         }
-        WorkspaceProjects::Globs(globs) => {
+        PartialWorkspaceProjects::Globs(globs) => {
             for (i, g) in globs.iter().enumerate() {
                 ProjectGlobPath::from_str(g).map_err(|mut error| {
                     error.path = SettingPath::new(vec![PathSegment::Index(i)]);
@@ -48,7 +49,7 @@ fn validate_projects<D, C>(
                 })?;
             }
         }
-        WorkspaceProjects::Sources(sources) => {
+        PartialWorkspaceProjects::Sources(sources) => {
             for (k, v) in sources {
                 ProjectFilePath::from_str(v).map_err(|mut error| {
                     error.path = SettingPath::new(vec![PathSegment::Key(k.to_string())]);
@@ -61,47 +62,29 @@ fn validate_projects<D, C>(
     Ok(())
 }
 
-derive_enum!(
-    #[serde(
-        untagged,
-        expecting = "expected a sequence of globs or a map of projects"
-    )]
-    pub enum WorkspaceProjects {
-        Both {
-            globs: Vec<String>,
-            sources: FxHashMap<Id, String>,
-        },
-        Globs(Vec<String>),
-        Sources(FxHashMap<Id, String>),
-    }
-);
-
-impl Default for WorkspaceProjects {
-    fn default() -> Self {
-        WorkspaceProjects::Sources(FxHashMap::default())
-    }
+#[derive(Config, Debug)]
+pub struct WorkspaceProjectsConfig {
+    pub globs: Vec<String>,
+    pub sources: FxHashMap<Id, String>,
 }
 
-impl Schematic for WorkspaceProjects {
-    fn generate_schema() -> SchemaType {
-        let mut schema = SchemaType::union(vec![
-            SchemaType::array(SchemaType::string()),
-            SchemaType::object(SchemaType::string(), SchemaType::string()),
-            SchemaType::structure(vec![
-                SchemaField::new("globs", SchemaType::array(SchemaType::string())),
-                SchemaField::new(
-                    "sources",
-                    SchemaType::object(SchemaType::string(), SchemaType::string()),
-                ),
-            ]),
-        ]);
-        schema.set_name("WorkspaceProjects");
-        schema
-    }
+#[derive(Config, Debug)]
+#[config(serde(
+    untagged,
+    expecting = "expected a list of globs, a map of projects, or both"
+))]
+pub enum WorkspaceProjects {
+    #[setting(nested)]
+    Both(WorkspaceProjectsConfig),
+
+    Globs(Vec<String>),
+
+    #[setting(default)]
+    Sources(FxHashMap<Id, String>),
 }
 
 /// Docs: https://moonrepo.dev/docs/config/workspace
-#[derive(Debug, Config)]
+#[derive(Config, Debug)]
 pub struct WorkspaceConfig {
     #[setting(
         default = "https://moonrepo.dev/schemas/workspace.json",
@@ -115,6 +98,9 @@ pub struct WorkspaceConfig {
     #[setting(nested)]
     pub constraints: ConstraintsConfig,
 
+    #[setting(nested)]
+    pub experiments: ExperimentsConfig,
+
     #[setting(extend, validate = validate::extends_string)]
     pub extends: Option<String>,
 
@@ -127,7 +113,7 @@ pub struct WorkspaceConfig {
     #[setting(nested)]
     pub notifier: NotifierConfig,
 
-    #[setting(validate = validate_projects)]
+    #[setting(nested, validate = validate_projects)]
     pub projects: WorkspaceProjects,
 
     #[setting(nested)]
@@ -147,16 +133,16 @@ impl WorkspaceConfig {
     pub fn load<R: AsRef<Path>, P: AsRef<Path>>(
         workspace_root: R,
         path: P,
-    ) -> Result<WorkspaceConfig, ConfigError> {
+    ) -> miette::Result<WorkspaceConfig> {
         let result = ConfigLoader::<WorkspaceConfig>::new()
             .set_root(workspace_root.as_ref())
-            .file(path.as_ref())?
+            .file(check_yml_extension(path.as_ref()))?
             .load()?;
 
         Ok(result.config)
     }
 
-    pub fn load_from<P: AsRef<Path>>(workspace_root: P) -> Result<WorkspaceConfig, ConfigError> {
+    pub fn load_from<P: AsRef<Path>>(workspace_root: P) -> miette::Result<WorkspaceConfig> {
         let workspace_root = workspace_root.as_ref();
 
         Self::load(

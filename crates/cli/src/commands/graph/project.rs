@@ -1,35 +1,49 @@
 use crate::commands::graph::utils::{project_graph_repr, respond_to_request, setup_server};
-use miette::IntoDiagnostic;
+use clap::Args;
 use moon::{build_project_graph, load_workspace};
 use moon_common::Id;
 use starbase::AppResult;
 
-pub async fn project_graph(project_id: Option<Id>, dot: bool, json: bool) -> AppResult {
-    let mut workspace = load_workspace().await?;
-    let mut project_build = build_project_graph(&mut workspace).await?;
+#[derive(Args, Debug)]
+pub struct ProjectGraphArgs {
+    #[arg(help = "ID of project to *only* graph")]
+    id: Option<Id>,
 
-    if let Some(id) = &project_id {
-        project_build.load(id)?;
+    #[arg(long, help = "Print the graph in DOT format")]
+    dot: bool,
+
+    #[arg(long, help = "Print the graph in JSON format")]
+    json: bool,
+}
+
+pub async fn project_graph(args: ProjectGraphArgs) -> AppResult {
+    let mut workspace = load_workspace().await?;
+    let mut project_graph_builder = build_project_graph(&mut workspace).await?;
+
+    if let Some(id) = &args.id {
+        project_graph_builder.load(id).await?;
     } else {
-        project_build.load_all()?;
+        project_graph_builder.load_all().await?;
     }
 
-    let project_graph = project_build.build()?;
+    let project_graph = project_graph_builder.build().await?;
 
-    if dot {
+    // Force expand all projects
+    project_graph.get_all()?;
+
+    if args.dot {
         println!("{}", project_graph.to_dot());
 
         return Ok(());
     }
 
-    let graph_info = project_graph_repr(&project_graph).await;
-
-    if json {
-        println!("{}", serde_json::to_string(&graph_info).into_diagnostic()?);
+    if args.json {
+        println!("{}", project_graph.to_json()?);
 
         return Ok(());
     }
 
+    let graph_info = project_graph_repr(&project_graph).await;
     let (server, mut tera) = setup_server().await?;
     let url = format!("http://{}", server.server_addr());
     let _ = open::that(&url);

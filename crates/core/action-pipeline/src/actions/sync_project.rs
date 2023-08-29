@@ -1,7 +1,7 @@
 use moon_action::{Action, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_logger::debug;
-use moon_platform::Runtime;
+use moon_platform::{PlatformManager, Runtime};
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
 use moon_utils::is_ci;
@@ -34,8 +34,10 @@ pub async fn sync_project(
         color::id(&project.id)
     );
 
-    // Create a runfile for tasks to reference
-    workspace.cache.create_runfile(&project.id, project)?;
+    // Create a snapshot for tasks to reference
+    workspace
+        .cache_engine
+        .write_state(project.get_cache_dir().join("snapshot.json"), project)?;
 
     // Collect all project dependencies so we can pass them along.
     // We can't pass the graph itself because of circuler references between crates!
@@ -46,8 +48,7 @@ pub async fn sync_project(
     }
 
     // Sync the projects and return true if any files have been mutated
-    let mutated_files = workspace
-        .platforms
+    let mutated_files = PlatformManager::read()
         .get(runtime)?
         .sync_project(&context, project, &dependencies)
         .await?;

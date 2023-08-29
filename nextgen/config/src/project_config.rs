@@ -3,19 +3,36 @@
 use crate::language_platform::{LanguageType, PlatformType};
 use crate::project::*;
 use crate::shapes::InputPath;
+use crate::validate::check_yml_extension;
 use moon_common::cacheable;
 use moon_common::{consts, Id};
 use rustc_hash::FxHashMap;
-use schematic::{
-    derive_enum, validate, Config, ConfigEnum, ConfigError, ConfigLoader, SchemaType, Schematic,
-    ValidateError,
-};
+use schematic::{derive_enum, validate, Config, ConfigEnum, ConfigLoader, ValidateError};
 use std::collections::BTreeMap;
 use std::path::Path;
 
 fn validate_channel<D, C>(value: &str, _data: &D, _ctx: &C) -> Result<(), ValidateError> {
     if !value.is_empty() && !value.starts_with('#') {
         return Err(ValidateError::new("must start with a `#`"));
+    }
+
+    Ok(())
+}
+
+pub fn validate_tasks<D, C>(
+    tasks: &BTreeMap<Id, PartialTaskConfig>,
+    _data: &D,
+    _ctx: &C,
+) -> Result<(), ValidateError> {
+    for (id, config) in tasks {
+        if let Some(extends_from) = &config.extends {
+            if !tasks.contains_key(extends_from) {
+                return Err(ValidateError::new(format!(
+                    "task {} is extending an unknown task {}",
+                    id, extends_from
+                )));
+            }
+        }
     }
 
     Ok(())
@@ -49,27 +66,18 @@ cacheable!(
     }
 );
 
-derive_enum!(
+cacheable!(
+    #[derive(Clone, Config, Debug, Eq, PartialEq)]
     #[serde(
         untagged,
         expecting = "expected a project name or dependency config object"
     )]
     pub enum ProjectDependsOn {
         String(Id),
+        #[setting(nested)]
         Object(DependencyConfig),
     }
 );
-
-impl Schematic for ProjectDependsOn {
-    fn generate_schema() -> SchemaType {
-        let mut schema = SchemaType::union(vec![
-            SchemaType::string(),
-            SchemaType::infer::<DependencyConfig>(),
-        ]);
-        schema.set_name("ProjectDependsOn");
-        schema
-    }
-}
 
 cacheable!(
     /// Docs: https://moonrepo.dev/docs/config/project
@@ -81,6 +89,7 @@ cacheable!(
         )]
         pub schema: String,
 
+        #[setting(nested)]
         pub depends_on: Vec<ProjectDependsOn>,
 
         pub env: FxHashMap<String, String>,
@@ -99,7 +108,7 @@ cacheable!(
 
         pub tags: Vec<Id>,
 
-        #[setting(nested)]
+        #[setting(nested, validate = validate_tasks)]
         pub tasks: BTreeMap<Id, TaskConfig>,
 
         #[setting(nested)]
@@ -117,13 +126,10 @@ impl ProjectConfig {
     pub fn load<R: AsRef<Path>, P: AsRef<Path>>(
         workspace_root: R,
         path: P,
-    ) -> Result<ProjectConfig, ConfigError> {
-        let workspace_root = workspace_root.as_ref();
-        let path = path.as_ref();
-
+    ) -> miette::Result<ProjectConfig> {
         let result = ConfigLoader::<ProjectConfig>::new()
-            .set_root(workspace_root)
-            .file_optional(path)?
+            .set_root(workspace_root.as_ref())
+            .file_optional(check_yml_extension(path.as_ref()))?
             .load()?;
 
         Ok(result.config)
@@ -132,7 +138,7 @@ impl ProjectConfig {
     pub fn load_from<R: AsRef<Path>, P: AsRef<str>>(
         workspace_root: R,
         project_source: P,
-    ) -> Result<ProjectConfig, ConfigError> {
+    ) -> miette::Result<ProjectConfig> {
         let workspace_root = workspace_root.as_ref();
 
         Self::load(
@@ -143,13 +149,11 @@ impl ProjectConfig {
         )
     }
 
-    pub fn load_partial<P: AsRef<Path>>(
-        project_root: P,
-    ) -> Result<PartialProjectConfig, ConfigError> {
+    pub fn load_partial<P: AsRef<Path>>(project_root: P) -> miette::Result<PartialProjectConfig> {
         let path = project_root.as_ref().join(consts::CONFIG_PROJECT_FILENAME);
 
-        ConfigLoader::<ProjectConfig>::new()
+        Ok(ConfigLoader::<ProjectConfig>::new()
             .file_optional(path)?
-            .load_partial(&())
+            .load_partial(&())?)
     }
 }

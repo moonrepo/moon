@@ -1,11 +1,12 @@
 use moon_action::{Action, ActionStatus};
-use moon_action_context::ActionContext;
+use moon_action_context::{ActionContext, TargetState};
 use moon_emitter::Emitter;
 use moon_logger::debug;
 use moon_platform::Runtime;
 use moon_project::Project;
 use moon_runner::Runner;
 use moon_target::Target;
+use moon_terminal::Checkpoint;
 use moon_workspace::Workspace;
 use starbase_styles::color;
 use std::env;
@@ -36,6 +37,32 @@ pub async fn run_target(
         color::label(&task.target)
     );
 
+    // If a dependency failed, we should skip this target
+    if !task.deps.is_empty() {
+        let mut ctx = context.write().await;
+
+        for dep in &task.deps {
+            if let Some(dep_state) = ctx.target_states.get(dep) {
+                if !dep_state.is_complete() {
+                    ctx.target_states
+                        .insert(target.clone(), TargetState::Skipped);
+
+                    debug!(
+                        target: LOG_TARGET,
+                        "Dependency {} of {} has failed or has been skipped, skipping this target",
+                        color::label(dep),
+                        color::label(&task.target)
+                    );
+
+                    runner.print_checkpoint(Checkpoint::RunFailed, &["skipped"])?;
+                    runner.flush_output()?;
+
+                    return Ok(ActionStatus::Skipped);
+                }
+            }
+        }
+    }
+
     // If the VCS root does not exist (like in a Docker container),
     // we should avoid failing and simply disable caching.
     let is_cache_enabled = task.options.cache && workspace.vcs.is_enabled();
@@ -59,14 +86,14 @@ pub async fn run_target(
         context
             .write()
             .await
-            .target_hashes
-            .insert(target.clone(), "skipped".into());
+            .target_states
+            .insert(target.clone(), TargetState::Passthrough);
     }
 
-    let attempts = if is_cache_enabled {
+    let attempts_result = if is_cache_enabled {
         let context = context.read().await;
 
-        runner.create_and_run_command(&context, runtime).await?
+        runner.create_and_run_command(&context, runtime).await
     } else {
         // Concurrent long-running tasks will cause a deadlock, as some threads will
         // attempt to write to context while others are reading from it, and long-running
@@ -74,19 +101,38 @@ pub async fn run_target(
         // around it, so revisit in the future.
         let context = (context.read().await).clone();
 
-        runner.create_and_run_command(&context, runtime).await?
+        runner.create_and_run_command(&context, runtime).await
     };
 
-    let status = if action.set_attempts(attempts) {
-        ActionStatus::Passed
-    } else {
-        ActionStatus::Failed
-    };
+    match attempts_result {
+        Ok(attempts) => {
+            let status = if action.set_attempts(attempts, &task.command) {
+                ActionStatus::Passed
+            } else {
+                context
+                    .write()
+                    .await
+                    .target_states
+                    .insert(target.clone(), TargetState::Failed);
 
-    // If successful, cache the task outputs
-    if is_cache_enabled {
-        runner.archive_outputs().await?;
+                ActionStatus::Failed
+            };
+
+            // If successful, cache the task outputs
+            if is_cache_enabled {
+                runner.archive_outputs().await?;
+            }
+
+            Ok(status)
+        }
+        Err(err) => {
+            context
+                .write()
+                .await
+                .target_states
+                .insert(target.clone(), TargetState::Failed);
+
+            Err(err)
+        }
     }
-
-    Ok(status)
 }

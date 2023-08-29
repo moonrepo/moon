@@ -1,0 +1,54 @@
+use miette::Diagnostic;
+use moon_common::{Style, Stylize};
+use moon_task::Target;
+use std::path::PathBuf;
+use thiserror::Error;
+
+#[derive(Error, Debug, Diagnostic)]
+pub enum TasksExpanderError {
+    #[diagnostic(code(task_expander::invalid_env_file))]
+    #[error("Failed to parse env file {}.", .path.style(Style::Path))]
+    InvalidEnvFile {
+        path: PathBuf,
+        #[source]
+        error: dotenvy::Error,
+    },
+
+    #[diagnostic(code(task_expander::persistent_requirement))]
+    #[error(
+        "Non-persistent task {} cannot depend on persistent task {}.\nA task is marked persistent with the {} or {} settings.\n\nIf you're looking to avoid the cache, disable {} instead.",
+        .task.id.style(Style::Label),
+        .dep.id.style(Style::Label),
+        "local".style(Style::Symbol),
+        "options.persistent".style(Style::Symbol),
+        "options.cache".style(Style::Symbol),
+    )]
+    PersistentDepRequirement { dep: Target, task: Target },
+
+    #[diagnostic(code(task_expander::overlapping_outputs))]
+    #[error(
+        "Tasks {} have configured the same output {}. Overlapping outputs is not supported as it can cause non-deterministic results.",
+        .targets.iter().map(|t| t.id.style(Style::Label)).collect::<Vec<_>>().join(", "),
+        .output.style(Style::File),
+    )]
+    OverlappingOutputs {
+        output: String,
+        targets: Vec<Target>,
+    },
+
+    #[diagnostic(code(task_expander::unknown_target))]
+    #[error(
+        "Invalid dependency {} for {}, target does not exist.",
+        .dep.id.style(Style::Label),
+        .task.id.style(Style::Label),
+    )]
+    UnknownTarget { dep: Target, task: Target },
+
+    #[diagnostic(code(task_expander::unsupported_target_scope))]
+    #[error(
+        "Invalid dependency {} for {}. All (:) scope is not supported.",
+        .dep.id.style(Style::Label),
+        .task.id.style(Style::Label),
+    )]
+    UnsupportedTargetScopeInDeps { dep: Target, task: Target },
+}

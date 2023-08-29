@@ -7,6 +7,7 @@ use rustc_hash::FxHashMap;
 use serde::Serialize;
 use starbase::AppResult;
 use std::env;
+use std::fmt::Display;
 use tera::{Context, Tera};
 use tiny_http::{Header, Request, Response, Server};
 
@@ -37,8 +38,8 @@ pub async fn setup_server() -> AppResult<(Server, Tera)> {
     Ok((server, tera))
 }
 
-pub fn extract_nodes_and_edges_from_graph(
-    graph: &Graph<String, ()>,
+pub fn extract_nodes_and_edges_from_graph<T: Display>(
+    graph: &Graph<String, T>,
     include_orphans: bool,
 ) -> GraphInfoDto {
     let mut nodes = FxHashMap::default();
@@ -46,6 +47,7 @@ pub fn extract_nodes_and_edges_from_graph(
         .raw_edges()
         .iter()
         .map(|e| GraphEdgeDto {
+            label: e.weight.to_string(),
             source: e.source().index(),
             target: e.target().index(),
             id: format!("{} -> {}", e.source().index(), e.target().index()),

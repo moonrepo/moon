@@ -6,6 +6,7 @@ use schematic::schema::typescript::{TypeScriptOptions, TypeScriptRenderer};
 use schematic::schema::SchemaGenerator;
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
+use std::process::Command;
 
 fn generate_project() {
     let mut generator = SchemaGenerator::default();
@@ -27,6 +28,7 @@ fn generate_project() {
             PathBuf::from("packages/types/src/project-config.ts"),
             TypeScriptRenderer::new(TypeScriptOptions {
                 exclude_references: HashSet::from_iter([
+                    "PartialTaskCommandArgs".into(),
                     "PartialTaskConfig".into(),
                     "PartialTaskOptionsConfig".into(),
                     "PlatformType".into(),
@@ -93,6 +95,18 @@ fn generate_template() {
             JsonSchemaRenderer::default(),
         )
         .unwrap();
+
+    let mut generator = SchemaGenerator::default();
+    generator.add::<PartialTemplateConfig>();
+    generator.add::<PartialTemplateFrontmatterConfig>();
+    generator.add::<TemplateConfig>();
+    generator.add::<TemplateFrontmatterConfig>();
+    generator
+        .generate(
+            PathBuf::from("packages/types/src/template-config.ts"),
+            TypeScriptRenderer::default(),
+        )
+        .unwrap();
 }
 
 fn generate_toolchain() {
@@ -145,4 +159,9 @@ fn main() {
     generate_template();
     generate_toolchain();
     generate_workspace();
+
+    // Run prettier
+    let mut cmd = Command::new("node_modules/.bin/prettier");
+    cmd.args(["--write", "packages/types"]);
+    cmd.output().unwrap();
 }

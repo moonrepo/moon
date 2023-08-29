@@ -1,12 +1,14 @@
-use moon_config::{PartialInheritedTasksConfig, PartialWorkspaceConfig, WorkspaceProjects};
+use moon_config::{PartialInheritedTasksConfig, PartialWorkspaceConfig, PartialWorkspaceProjects};
+use moon_runner::RunTargetState;
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, predicates::prelude::*, Sandbox,
 };
 use rustc_hash::FxHashMap;
+use starbase_utils::json;
 
 fn system_sandbox() -> Sandbox {
     let workspace_config = PartialWorkspaceConfig {
-        projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([
+        projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
             ("unix".into(), "unix".to_owned()),
             ("windows".into(), "windows".to_owned()),
         ]))),
@@ -261,7 +263,6 @@ mod unix {
 
     mod caching {
         use super::*;
-        use moon_cache::RunTargetState;
 
         #[test]
         fn uses_cache_on_subsequent_runs() {
@@ -281,7 +282,7 @@ mod unix {
         }
 
         #[test]
-        fn creates_runfile() {
+        fn creates_snapshot() {
             let sandbox = system_sandbox();
 
             sandbox.run_moon(|cmd| {
@@ -290,7 +291,7 @@ mod unix {
 
             assert!(sandbox
                 .path()
-                .join(".moon/cache/states/unix/runfile.json")
+                .join(".moon/cache/states/unix/snapshot.json")
                 .exists());
         }
 
@@ -308,7 +309,7 @@ mod unix {
 
             assert!(cache_path.exists());
 
-            let state = RunTargetState::load(cache_path).unwrap();
+            let state: RunTargetState = json::read_file(cache_path).unwrap();
 
             assert!(sandbox
                 .path()
@@ -547,7 +548,6 @@ mod windows {
 
     mod caching {
         use super::*;
-        use moon_cache::RunTargetState;
 
         #[test]
         fn uses_cache_on_subsequent_runs() {
@@ -567,7 +567,7 @@ mod windows {
         }
 
         #[test]
-        fn creates_runfile() {
+        fn creates_snapshot() {
             let sandbox = system_sandbox();
 
             sandbox.run_moon(|cmd| {
@@ -576,7 +576,7 @@ mod windows {
 
             assert!(sandbox
                 .path()
-                .join(".moon/cache/states/windows/runfile.json")
+                .join(".moon/cache/states/windows/snapshot.json")
                 .exists());
         }
 
@@ -594,7 +594,7 @@ mod windows {
 
             assert!(cache_path.exists());
 
-            let state = RunTargetState::load(cache_path).unwrap();
+            let state: RunTargetState = json::read_file(cache_path).unwrap();
 
             assert!(sandbox
                 .path()

@@ -5,6 +5,7 @@
   "type": "object",
   "properties": {
     "$schema": {
+      "default": "https://moonrepo.dev/schemas/template.json",
       "anyOf": [
         {
           "type": "string"
@@ -39,7 +40,7 @@
         {
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/TemplateVariable"
+            "$ref": "#/definitions/PartialTemplateVariable"
           },
           "propertyNames": {
             "type": "string"
@@ -53,6 +54,70 @@
   },
   "additionalProperties": false,
   "definitions": {
+    "PartialTemplateVariable": {
+      "title": "PartialTemplateVariable",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PartialTemplateVariableBoolSetting"
+        },
+        {
+          "$ref": "#/definitions/PartialTemplateVariableEnumSetting"
+        },
+        {
+          "$ref": "#/definitions/PartialTemplateVariableNumberSetting"
+        },
+        {
+          "$ref": "#/definitions/PartialTemplateVariableStringSetting"
+        }
+      ]
+    },
+    "PartialTemplateVariableBoolSetting": {
+      "title": "PartialTemplateVariableBoolSetting",
+      "type": "object",
+      "properties": {
+        "default": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "prompt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "required": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "type": {
+          "anyOf": [
+            {
+              "const": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
     "PartialTemplateVariableEnumSetting": {
       "title": "PartialTemplateVariableEnumSetting",
       "type": "object",
@@ -90,7 +155,7 @@
         "type": {
           "anyOf": [
             {
-              "type": "string"
+              "const": "enum"
             },
             {
               "type": "null"
@@ -102,7 +167,7 @@
             {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/TemplateVariableEnumValue"
+                "$ref": "#/definitions/PartialTemplateVariableEnumValue"
               }
             },
             {
@@ -113,183 +178,137 @@
       },
       "additionalProperties": false
     },
-    "TemplateVariable": {
-      "anyOf": [
-        {
-          "type": "object",
-          "properties": {
-            "default": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "prompt": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "required": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "type": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "$ref": "#/definitions/PartialTemplateVariableEnumSetting"
-        },
-        {
-          "type": "object",
-          "properties": {
-            "default": {
-              "anyOf": [
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "prompt": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "required": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "type": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "properties": {
-            "default": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "prompt": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "required": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "type": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            }
-          },
-          "additionalProperties": false
-        }
-      ]
-    },
-    "TemplateVariableEnumValue": {
+    "PartialTemplateVariableEnumValue": {
+      "title": "PartialTemplateVariableEnumValue",
       "anyOf": [
         {
           "type": "string"
         },
         {
-          "type": "object",
-          "properties": {
-            "label": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "value": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            }
-          },
-          "additionalProperties": false
+          "$ref": "#/definitions/PartialTemplateVariableEnumValueConfig"
         }
       ]
+    },
+    "PartialTemplateVariableEnumValueConfig": {
+      "title": "PartialTemplateVariableEnumValueConfig",
+      "type": "object",
+      "properties": {
+        "label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "PartialTemplateVariableNumberSetting": {
+      "title": "PartialTemplateVariableNumberSetting",
+      "type": "object",
+      "properties": {
+        "default": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "prompt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "required": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "type": {
+          "anyOf": [
+            {
+              "const": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "PartialTemplateVariableStringSetting": {
+      "title": "PartialTemplateVariableStringSetting",
+      "type": "object",
+      "properties": {
+        "default": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "prompt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "required": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "type": {
+          "anyOf": [
+            {
+              "const": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
     }
   }
 }

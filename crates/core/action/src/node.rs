@@ -16,6 +16,9 @@ pub enum ActionNode {
     /// Run a target (project task).
     RunTarget(Runtime, Target),
 
+    /// Run a target (project task) interactively with stdin.
+    RunInteractiveTarget(Runtime, Target),
+
     /// Run a target (project task) that never terminates.
     RunPersistentTarget(Runtime, Target),
 
@@ -51,6 +54,7 @@ impl ActionNode {
                 }
             }
             ActionNode::RunTarget(_, id) => format!("RunTarget({id})"),
+            ActionNode::RunInteractiveTarget(_, id) => format!("RunInteractiveTarget({id})"),
             ActionNode::RunPersistentTarget(_, id) => format!("RunPersistentTarget({id})"),
             ActionNode::SetupTool(platform) => {
                 let version = platform.version();

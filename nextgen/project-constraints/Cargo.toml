@@ -1,0 +1,10 @@
+[package]
+name = "moon_project_constraints"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+moon_common = { path = "../common" }
+moon_project = { path = "../project" }
+miette = { workspace = true }
+thiserror = { workspace = true }

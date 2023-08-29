@@ -5,8 +5,7 @@ edition = "2021"
 
 [dependencies]
 moon_config = { path = "../../../nextgen/config" }
-moon_error = { path = "../../core/error" }
-moon_hasher = { path = "../../core/hasher" }
+moon_hash = { path = "../../../nextgen/hash" }
 moon_logger = { path = "../../core/logger" }
 moon_project = { path = "../../../nextgen/project" }
 moon_utils = { path = "../../core/utils" }

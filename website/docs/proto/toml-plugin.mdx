@@ -1,0 +1,183 @@
+---
+title: TOML plugin
+sidebar_label: TOML
+toc_max_heading_level: 5
+---
+
+The TOML plugin is by design, very simple. It's a TOML file that describes a schema for the tool,
+how it should be installed, and how it should be invoked. Since this is a static configuration file,
+it does not support any logic or complex behavior, and is merely for simple and common use cases,
+like CLIs.
+
+## Create a plugin
+
+Let's start by creating a new plugin, and defining the `name` and `type` fields. The type can either
+be `language`, `dependency-manager`, or `cli`. For this example, we'll create a plugin for our fake
+product called Protostar, a CLI tool.
+
+```toml title="protostar.toml"
+name = "Protostar"
+type = "cli"
+```
+
+### Platform variations
+
+Native tools are often platform specific, and proto supports this by allowing you to define
+variations based on operating system using the `[platform]` section. For non-native tools, this
+section can typically be skipped.
+
+This section requires a mapping of Rust
+[`OS` strings](https://doc.rust-lang.org/std/env/consts/constant.OS.html) to platform settings. The
+following settings are available:
+
+- `archive-prefix` - If the tool is distributed as an archive (zip, tar, etc), this is the name of
+  the direct folder within the archive that contains the tool, and will be removed when unpacking
+  the archive. If there is no prefix folder within the archive, this setting can be omitted.
+- `bin-path` - The path to the executable binary within the archive (without the prefix). If the
+  tool is distributed as a single binary, this setting can be typically omitted.
+- `checksum-file` - Name of the checksum file to verify the downloaded file with. If the tool does
+  not support checksum verification, this setting can be omitted.
+- `download-file` (required) - Name of the file to download.
+  [Learn more about downloading](#downloading-and-installing).
+
+```toml title="protostar.toml"
+# ...
+
+[platform.linux]
+archive-prefix = "protostar-linux"
+bin-path = "bins/protostar"
+checksum-file = "protostar-{arch}-unknown-linux-{libc}.sha256"
+download-file = "protostar-{arch}-unknown-linux-{libc}.tar.gz"
+
+[platform.macos]
+archive-prefix = "protostar-macos"
+bin-path = "bins/protostar"
+checksum-file = "protostar-{arch}-apple-darwin.sha256"
+download-file = "protostar-{arch}-apple-darwin.tar.xz"
+
+[platform.windows]
+archive-prefix = "protostar-windows"
+bin-path = "bins/protostar.exe"
+checksum-file = "protostar-{arch}-pc-windows-msvc.sha256"
+download-file = "protostar-{arch}-pc-windows-msvc.zip"
+```
+
+You may have noticed tokens above, like `{arch}`. These are special tokens that are replaced with a
+dynamic value at runtime, based on the current host machine executing the code. The following tokens
+are available:
+
+- `{version}` - The currently resolved version, as a fully-qualifed semantic version:
+  `major.minor.patch`.
+- `{arch}` - The architecture of the host machine, like `x86_64`. These values map to Rust's
+  [`ARCH` constant](https://doc.rust-lang.org/std/env/consts/constant.ARCH.html), but can be
+  customized with [`install.arch`](#downloading-and-installing).
+- `{os}` - The operating system of the host machine, like `windows`. These values map to Rust's
+  [`OS` constant](https://doc.rust-lang.org/std/env/consts/constant.OS.html).
+- `{libc}` - For Linux machines, this is the current libc implementation, either `gnu` or `musl`.
+
+### Downloading and installing
+
+A TOML plugin _only_ supports downloading pre-built tools, typically as an archive, and does _not_
+support building from source. The `[install]` section can be used to configure how the tool should
+be downloaded and installed into the toolchain. The following settings are available:
+
+- `arch` - A mapping of Rust
+  [`ARCH` strings](https://doc.rust-lang.org/std/env/consts/constant.ARCH.html) to custom values for
+  the `{arch}` token. This is useful if the tool has different terminology.
+- `checksum-url` - A secure URL to download the checksum file for verification. If the tool does not
+  support checksum verification, this setting can be omitted.
+- `download-url` (required) - A secure URL to download the tool/archive.
+
+The URL settings support `{checksum_file}` and `{download_file}` tokens, which will be replaced with
+the values from the `[platform]` section.
+
+```toml title="protostar.toml"
+# ...
+
+[install]
+checksum-url = "https://github.com/moonrepo/protostar/releases/download/v{version}/{checksum_file}"
+download-url = "https://github.com/moonrepo/protostar/releases/download/v{version}/{download_file}"
+
+[install.arch]
+aarch64 = "arm64"
+x86_64 = "x64"
+```
+
+#### Global packages
+
+The `[globals]` sections can be configured that dictates the installation of global binaries for the
+tool. If the tool does not support globals (is not a programming language), these settings can be
+omitted.
+
+- `lookup-dirs` - A list of directories to locate and install the global binaries into. This setting
+  supports interpolating environment variables via the syntax `$ENV_VAR`.
+- `install-args` - A list of CLI arguments to pass to the tool to install a global binary. The name
+  of the binary can be inserted using the `{dependency}` token.
+- `uninstall-args` - A list of CLI arguments to pass to the tool to uninstall a global binary. The
+  name of the binary can be inserted using the `{dependency}` token.
+- `package-prefix` - A string that all package names are prefixed with. The prefix will be removed
+  when filtering/listing packages. For example, Cargo/Rust binaries are prefixed wih `cargo-`.
+
+```toml title="protostar.toml"
+# ...
+
+[globals]
+lookup-dirs = ["$PROTOSTAR_HOME/bin", "$HOME/.protostar/bin"]
+install-args = ["install", "--force", "{dependency}"]
+uninstall-args = ["uninstall", "{dependency}"]
+```
+
+### Resolving versions
+
+Now that the tool can be downloaded and installed, we must configure how to resolve available
+versions. Resolving is configured through the `[resolve]` section, which supports 2 patterns to
+resolve with: Git tags or a JSON manifest.
+
+#### Git tags
+
+To resolve a list of available versions using Git tags, the following settings are available:
+
+- `git-url` - The remote URL to fetch tags from.
+- `git-tag-pattern` - A regular expression to filter and match with. Defaults to
+  `^v?((\d+)\.(\d+)\.(\d+))`. The capture group `1` will be extracted as the version.
+
+```toml title="protostar.toml"
+# ...
+
+[resolve]
+git-url = "https://github.com/moonrepo/protostar"
+git-tag-pattern = "^@protostar/cli@((\\d+)\.(\\d+)\.(\\d+))"
+```
+
+#### JSON manifest
+
+To resolve a list of available versions using a JSON manifest, the following settings are available:
+
+- `manifest-url` - A URL that returns a JSON response of all versions. This response _must be_ an
+  array of strings, or an array of objects.
+- `manifest-version-key` - If the response is an array of objects, this is the key to extract the
+  version from. If the response is an array of strings, this setting can be omitted. Defaults to
+  `version`.
+
+```toml title="protostar.toml"
+# ...
+
+[resolve]
+manifest-url = "https://someregistry.com/protostar/versions.json"
+manifest-version-key = "latest_version"
+```
+
+### Detecting versions
+
+And lastly, we can configure how to [detect a version](./detection) contextually at runtime, using
+the `[detect]` setting. At this time, we only support 1 setting:
+
+- `version-files` - A list of version files to extract from. The contents of these files can _only_
+  be the version string itself.
+
+```toml title="protostar.toml"
+# ...
+
+[detect]
+version-files = [".protostar-version", ".protostarrc"]
+```

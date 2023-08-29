@@ -4,9 +4,23 @@ use crate::portable_path::FilePath;
 use crate::shapes::InputPath;
 use moon_common::cacheable;
 use schematic::schema::StringType;
-use schematic::{derive_enum, Config, ConfigEnum, SchemaType, Schematic};
+use schematic::{derive_enum, Config, ConfigEnum, SchemaType, Schematic, ValidateError};
 use serde::{de, Deserialize, Deserializer, Serialize};
 use serde_yaml::Value;
+
+fn validate_interactive<C>(
+    enabled: &bool,
+    options: &PartialTaskOptionsConfig,
+    _ctx: &C,
+) -> Result<(), ValidateError> {
+    if *enabled && options.persistent.is_some_and(|v| v) {
+        return Err(ValidateError::new(
+            "an interactive task cannot be persistent",
+        ));
+    }
+
+    Ok(())
+}
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 #[serde(untagged, rename_all = "kebab-case")]
@@ -19,7 +33,7 @@ pub enum TaskOptionAffectedFiles {
 impl Schematic for TaskOptionAffectedFiles {
     fn generate_schema() -> SchemaType {
         let mut schema = SchemaType::union(vec![
-            SchemaType::Boolean,
+            SchemaType::boolean(),
             SchemaType::String(StringType {
                 enum_values: Some(vec!["args".into(), "env".into()]),
                 ..Default::default()
@@ -67,7 +81,7 @@ impl TaskOptionEnvFile {
 
 impl Schematic for TaskOptionEnvFile {
     fn generate_schema() -> SchemaType {
-        let mut schema = SchemaType::union(vec![SchemaType::Boolean, SchemaType::string()]);
+        let mut schema = SchemaType::union(vec![SchemaType::boolean(), SchemaType::string()]);
         schema.set_name("TaskOptionEnvFile");
         schema
     }
@@ -103,6 +117,9 @@ cacheable!(
         pub cache: Option<bool>,
 
         pub env_file: Option<TaskOptionEnvFile>,
+
+        #[setting(validate = validate_interactive)]
+        pub interactive: Option<bool>,
 
         pub merge_args: Option<TaskMergeStrategy>,
 

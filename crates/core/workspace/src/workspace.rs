@@ -2,9 +2,8 @@ use crate::errors::WorkspaceError;
 use moon_cache::CacheEngine;
 use moon_common::consts;
 use moon_config::{InheritedTasksConfig, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
-use moon_error::MoonError;
+use moon_hash::HashEngine;
 use moon_logger::{debug, trace};
-use moon_platform::{BoxedPlatform, PlatformManager};
 use moon_utils::semver;
 use moon_vcs::{BoxedVcs, Git};
 use moonbase::Moonbase;
@@ -18,7 +17,7 @@ const LOG_TARGET: &str = "moon:workspace";
 
 /// Recursively attempt to find the workspace root by locating the ".moon"
 /// configuration folder, starting from the current working directory.
-fn find_workspace_root<P: AsRef<Path>>(current_dir: P) -> Result<PathBuf, WorkspaceError> {
+fn find_workspace_root<P: AsRef<Path>>(current_dir: P) -> miette::Result<PathBuf> {
     if let Ok(root) = env::var("MOON_WORKSPACE_ROOT") {
         let root: PathBuf = root.parse().expect("Failed to parse MOON_WORKSPACE_ROOT.");
 
@@ -35,21 +34,21 @@ fn find_workspace_root<P: AsRef<Path>>(current_dir: P) -> Result<PathBuf, Worksp
 
     let Some(possible_root) = fs::find_upwards(consts::CONFIG_DIRNAME, current_dir)
         .map(|dir| dir.parent().unwrap().to_path_buf()) else {
-        return Err(WorkspaceError::MissingConfigDir);
+        return Err(WorkspaceError::MissingConfigDir.into());
     };
 
     // Avoid finding the ~/.moon directory
     let home_dir = dirs::home_dir().ok_or(WorkspaceError::MissingHomeDir)?;
 
     if home_dir == possible_root {
-        return Err(WorkspaceError::MissingConfigDir);
+        return Err(WorkspaceError::MissingConfigDir.into());
     }
 
     Ok(possible_root)
 }
 
 // .moon/tasks.yml, .moon/tasks/*.yml
-fn load_tasks_config(root_dir: &Path) -> Result<InheritedTasksManager, WorkspaceError> {
+fn load_tasks_config(root_dir: &Path) -> miette::Result<InheritedTasksManager> {
     let mut manager = InheritedTasksManager::default();
     let config_path = root_dir
         .join(consts::CONFIG_DIRNAME)
@@ -82,9 +81,7 @@ fn load_tasks_config(root_dir: &Path) -> Result<InheritedTasksManager, Workspace
     for config_path in glob::walk_files(
         root_dir.join(consts::CONFIG_DIRNAME).join("tasks"),
         ["*.yml"],
-    )
-    .map_err(MoonError::StarGlob)?
-    {
+    )? {
         trace!(target: LOG_TARGET, "Found {}", color::path(&config_path));
 
         manager.add_config(&config_path, do_load(&config_path)?);
@@ -97,7 +94,7 @@ fn load_tasks_config(root_dir: &Path) -> Result<InheritedTasksManager, Workspace
 fn load_toolchain_config(
     root_dir: &Path,
     proto_tools: &ToolsConfig,
-) -> Result<ToolchainConfig, WorkspaceError> {
+) -> miette::Result<ToolchainConfig> {
     let config_path = root_dir
         .join(consts::CONFIG_DIRNAME)
         .join(consts::CONFIG_TOOLCHAIN_FILENAME);
@@ -117,11 +114,11 @@ fn load_toolchain_config(
         return Ok(ToolchainConfig::default());
     }
 
-    Ok(ToolchainConfig::load_from(root_dir, proto_tools)?)
+    ToolchainConfig::load_from(root_dir, proto_tools)
 }
 
 // .moon/workspace.yml
-fn load_workspace_config(root_dir: &Path) -> Result<WorkspaceConfig, WorkspaceError> {
+fn load_workspace_config(root_dir: &Path) -> miette::Result<WorkspaceConfig> {
     let config_path = root_dir
         .join(consts::CONFIG_DIRNAME)
         .join(consts::CONFIG_WORKSPACE_FILENAME);
@@ -138,21 +135,21 @@ fn load_workspace_config(root_dir: &Path) -> Result<WorkspaceConfig, WorkspaceEr
     );
 
     if !config_path.exists() {
-        return Err(WorkspaceError::MissingWorkspaceConfigFile);
+        return Err(WorkspaceError::MissingWorkspaceConfigFile.into());
     }
 
-    Ok(WorkspaceConfig::load_from(root_dir)?)
+    WorkspaceConfig::load_from(root_dir)
 }
 
 pub struct Workspace {
-    /// Engine for reading and writing cache/outputs.
-    pub cache: CacheEngine,
+    /// Engine for reading and writing cache/states.
+    pub cache_engine: CacheEngine,
 
     /// Workspace configuration loaded from ".moon/workspace.yml".
     pub config: WorkspaceConfig,
 
-    /// Registered platforms derived from toolchain configuration.
-    pub platforms: PlatformManager,
+    /// Engine for reading and writing hashes/outputs.
+    pub hash_engine: HashEngine,
 
     /// Proto tools loaded from ".prototools".
     pub proto_tools: ToolsConfig,
@@ -182,7 +179,7 @@ pub struct Workspace {
 impl Workspace {
     /// Create a new workspace instance starting from the current working directory.
     /// Will locate the workspace root and load available configuration files.
-    pub fn load_from<P: AsRef<Path>>(working_dir: P) -> Result<Workspace, WorkspaceError> {
+    pub fn load_from<P: AsRef<Path>>(working_dir: P) -> miette::Result<Workspace> {
         let working_dir = working_dir.as_ref();
         let root_dir = find_workspace_root(working_dir)?;
 
@@ -207,13 +204,15 @@ impl Workspace {
                     return Err(WorkspaceError::InvalidMoonVersion(
                         current_version,
                         constraint.to_owned(),
-                    ));
+                    )
+                    .into());
                 }
             }
         }
 
         // Setup components
-        let cache = CacheEngine::load(&root_dir)?;
+        let cache_engine = CacheEngine::new(&root_dir)?;
+        let hash_engine = HashEngine::new(&cache_engine.cache_dir)?;
         let vcs = Git::load(
             &root_dir,
             &config.vcs.default_branch,
@@ -221,9 +220,9 @@ impl Workspace {
         )?;
 
         Ok(Workspace {
-            cache,
+            cache_engine,
             config,
-            platforms: PlatformManager::default(),
+            hash_engine,
             proto_tools,
             root: root_dir,
             session: None,
@@ -235,17 +234,8 @@ impl Workspace {
         })
     }
 
-    pub fn register_platform(&mut self, platform: BoxedPlatform) {
-        self.platforms.register(platform.get_type(), platform);
-    }
-
-    pub async fn signin_to_moonbase(&mut self) -> Result<(), WorkspaceError> {
+    pub async fn signin_to_moonbase(&mut self) -> miette::Result<()> {
         let Ok(secret_key) = env::var("MOONBASE_SECRET_KEY") else {
-            return Ok(());
-        };
-
-        let Ok(access_key) = env::var("MOONBASE_ACCESS_KEY")
-            .or_else(|_| env::var("MOONBASE_API_KEY")) else {
             return Ok(());
         };
 
@@ -256,7 +246,7 @@ impl Workspace {
             return Ok(());
         };
 
-        self.session = Moonbase::signin(secret_key, access_key, repo_slug).await;
+        self.session = Moonbase::signin(secret_key, repo_slug).await;
 
         Ok(())
     }

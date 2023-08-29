@@ -5,7 +5,7 @@ use moon_go_lang::{G, GOENV, GOMOD, GVM};
 use moon_lang::{DependencyManager, VersionManager};
 use moon_node_lang::{NODE, NODENV, NPM, NVM, PNPM, YARN};
 use moon_php_lang::{COMPOSER, PHPBREW, PHPENV};
-use moon_python_lang::{PIP, PIPENV, PYENV};
+use moon_python_lang::{PIP, PIPENV, POETRY, PYENV};
 use moon_ruby_lang::{BUNDLER, RBENV, RVM};
 use moon_rust_lang::{CARGO, RUSTUP, RUSTUP_LEGACY};
 
@@ -59,6 +59,7 @@ pub fn detect_language_files(language: &LanguageType) -> Vec<String> {
         LanguageType::Python => {
             extract_depman_files(&PIP, &mut files);
             extract_depman_files(&PIPENV, &mut files);
+            extract_depman_files(&POETRY, &mut files);
             extract_verman_files(&PYENV, &mut files);
         }
         LanguageType::Ruby => {

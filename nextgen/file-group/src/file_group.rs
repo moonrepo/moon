@@ -6,7 +6,7 @@ use once_cell::sync::OnceCell;
 use serde::{Deserialize, Serialize};
 use starbase_utils::glob;
 use std::path::{Path, PathBuf};
-use tracing::debug;
+use tracing::trace;
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(default)]
@@ -22,7 +22,7 @@ pub struct FileGroup {
 }
 
 impl FileGroup {
-    pub fn new<T>(id: T) -> Result<FileGroup, FileGroupError>
+    pub fn new<T>(id: T) -> miette::Result<FileGroup>
     where
         T: AsRef<str>,
     {
@@ -36,7 +36,7 @@ impl FileGroup {
         })
     }
 
-    pub fn new_with_source<T, I>(id: T, patterns: I) -> Result<FileGroup, FileGroupError>
+    pub fn new_with_source<T, I>(id: T, patterns: I) -> miette::Result<FileGroup>
     where
         T: AsRef<str>,
         I: IntoIterator<Item = WorkspaceRelativePathBuf>,
@@ -69,7 +69,7 @@ impl FileGroup {
             }
         }
 
-        debug!(
+        trace!(
             id = self.id.as_str(),
             patterns = ?log_patterns,
             "Creating file group"
@@ -80,27 +80,21 @@ impl FileGroup {
 
     /// Return the file group as an expanded list of directory paths.
     /// If a glob is detected, it will aggregate all directories found.
-    pub fn dirs(
-        &self,
-        workspace_root: &Path,
-    ) -> Result<Vec<WorkspaceRelativePathBuf>, FileGroupError> {
+    pub fn dirs(&self, workspace_root: &Path) -> miette::Result<Vec<WorkspaceRelativePathBuf>> {
         self.walk(true, workspace_root)
     }
 
     /// Return the file group as an expanded list of file paths.
     /// If a glob is detected, it will aggregate all files found.
-    pub fn files(
-        &self,
-        workspace_root: &Path,
-    ) -> Result<Vec<WorkspaceRelativePathBuf>, FileGroupError> {
+    pub fn files(&self, workspace_root: &Path) -> miette::Result<Vec<WorkspaceRelativePathBuf>> {
         self.walk(false, workspace_root)
     }
 
     /// Return the file group as a list of file globs (as-is),
     /// relative to the project root.
-    pub fn globs(&self) -> Result<&Vec<WorkspaceRelativePathBuf>, FileGroupError> {
+    pub fn globs(&self) -> miette::Result<&Vec<WorkspaceRelativePathBuf>> {
         if self.globs.is_empty() {
-            return Err(FileGroupError::NoGlobs(self.id.to_string()));
+            return Err(FileGroupError::NoGlobs(self.id.clone()).into());
         }
 
         Ok(&self.globs)
@@ -112,7 +106,7 @@ impl FileGroup {
         &self,
         workspace_root: P,
         project_source: S,
-    ) -> Result<WorkspaceRelativePathBuf, FileGroupError> {
+    ) -> miette::Result<WorkspaceRelativePathBuf> {
         let dirs = self.dirs(workspace_root.as_ref())?;
         let project_source = project_source.as_ref();
 
@@ -139,7 +133,7 @@ impl FileGroup {
         &self,
         is_dir: bool,
         workspace_root: &Path,
-    ) -> Result<Vec<WorkspaceRelativePathBuf>, FileGroupError> {
+    ) -> miette::Result<Vec<WorkspaceRelativePathBuf>> {
         let mut list = vec![];
 
         for path in &self.files {
@@ -178,6 +172,8 @@ impl FileGroup {
                 }
             }
         }
+
+        list.sort();
 
         Ok(list)
     }

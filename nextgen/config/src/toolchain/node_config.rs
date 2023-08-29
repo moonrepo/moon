@@ -1,8 +1,7 @@
 use crate::validate::validate_semver;
 use crate::{inherit_tool, inherit_tool_required};
 use proto::ToolsConfig;
-use schematic::{derive_enum, Config, ConfigEnum, ConfigError};
-use serde::Serialize;
+use schematic::{derive_enum, Config, ConfigEnum};
 
 derive_enum!(
     #[derive(ConfigEnum, Copy, Default)]
@@ -64,19 +63,19 @@ derive_enum!(
     }
 );
 
-#[derive(Debug, Clone, Config, Serialize)]
+#[derive(Clone, Config, Debug)]
 pub struct NpmConfig {
     #[setting(env = "MOON_NPM_VERSION", validate = validate_semver)]
     pub version: Option<String>,
 }
 
-#[derive(Debug, Clone, Config, Serialize)]
+#[derive(Clone, Config, Debug)]
 pub struct PnpmConfig {
     #[setting(env = "MOON_PNPM_VERSION", validate = validate_semver)]
     pub version: Option<String>,
 }
 
-#[derive(Debug, Clone, Config, Serialize)]
+#[derive(Clone, Config, Debug)]
 pub struct YarnConfig {
     pub plugins: Vec<String>,
 
@@ -85,7 +84,7 @@ pub struct YarnConfig {
 }
 
 /// Docs: https://moonrepo.dev/docs/config/toolchain#node
-#[derive(Debug, Clone, Config, Serialize)]
+#[derive(Clone, Config, Debug)]
 pub struct NodeConfig {
     #[setting(default = true)]
     pub add_engines_constraint: bool,
@@ -127,7 +126,7 @@ impl NodeConfig {
     inherit_tool!(PnpmConfig, pnpm, "pnpm", inherit_proto_pnpm);
     inherit_tool!(YarnConfig, yarn, "yarn", inherit_proto_yarn);
 
-    pub fn inherit_proto(&mut self, proto_tools: &ToolsConfig) -> Result<(), ConfigError> {
+    pub fn inherit_proto(&mut self, proto_tools: &ToolsConfig) -> miette::Result<()> {
         match &self.package_manager {
             NodePackageManager::Npm => {
                 self.inherit_proto_npm(proto_tools)?;

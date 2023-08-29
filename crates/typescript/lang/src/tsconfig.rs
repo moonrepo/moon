@@ -1,7 +1,7 @@
 // tsconfig.json
 
 use cached::proc_macro::cached;
-use moon_error::{map_json_to_error, MoonError};
+use miette::IntoDiagnostic;
 use moon_lang::config_cache;
 use moon_utils::path::standardize_separators;
 use serde::{Deserialize, Deserializer, Serialize};
@@ -75,8 +75,7 @@ impl TsConfigJson {
         let path = path.as_ref();
         let values = load_to_value(path, true)?;
 
-        let mut cfg: TsConfigJson =
-            serde_json::from_value(values).map_err(|e| map_json_to_error(e, path.to_path_buf()))?;
+        let mut cfg: TsConfigJson = serde_json::from_value(values).into_diagnostic()?;
         cfg.path = path.to_path_buf();
 
         Ok(cfg)
@@ -789,7 +788,7 @@ impl<'de> Deserialize<'de> for Target {
 // making the changes. For this to work correctly, we need to read the json
 // file again and parse it with `json`, then stringify it with `json`.
 #[track_caller]
-fn write_preserved_json(path: &Path, tsconfig: &TsConfigJson) -> Result<(), MoonError> {
+fn write_preserved_json(path: &Path, tsconfig: &TsConfigJson) -> miette::Result<()> {
     let mut data: JsonValue = json::read_file(path)?;
 
     // We only need to set fields that we modify within moon,
@@ -835,7 +834,7 @@ fn write_preserved_json(path: &Path, tsconfig: &TsConfigJson) -> Result<(), Moon
         }
     }
 
-    json::write_with_config(path, data, true)?;
+    json::write_file_with_config(path, data, true)?;
 
     Ok(())
 }

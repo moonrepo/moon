@@ -146,6 +146,9 @@ of these can be customized with the `--base` and `--head` options respectively.
 $ moon ci --base <BRANCH> --head <SHA>
 ```
 
+The `MOON_BASE` and `MOON_HEAD` environment variables can also be used, which takes highest
+precedence.
+
 ## Parallelizing tasks
 
 If your CI environment supports sharding across multiple jobs, then you can utilize moon's built in
@@ -241,6 +244,17 @@ demand.
 Remote caching is powered by our [moonbase service](/moonbase). Start using today for free!
 
 :::
+
+### Manual persistence
+
+If you'd prefer to _not use_ remote caching at this time, you can cache artifacts yourself, by
+persisting the `.moon/cache/{hashes,outputs}` directories. All other files and folders in
+`.moon/cache` _should not_ be persisted, as they are not safe/portable across machines.
+
+However, because tasks can generate a different hash each run, you'll need to manually invalidate
+your cache. Blindly storing the `hashes` and `outputs` directories without a mechanism to invalidate
+will simply not work, as the contents will drastically change between CI runs. This is the primary
+reason why the remote caching service exists.
 
 ## Reporting run results
 

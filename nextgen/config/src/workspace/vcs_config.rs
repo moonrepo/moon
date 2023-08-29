@@ -6,7 +6,6 @@ derive_enum!(
     pub enum VcsManager {
         #[default]
         Git,
-        // Svn,
     }
 );
 
@@ -26,7 +25,7 @@ derive_enum!(
     }
 );
 
-#[derive(Debug, Clone, Config)]
+#[derive(Clone, Config, Debug)]
 pub struct VcsConfig {
     #[setting(default = "master")]
     pub default_branch: String,

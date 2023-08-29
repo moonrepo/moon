@@ -204,6 +204,25 @@ dependsOn: ['components']
 tags: ['react']
 ```
 
+## `experiments`<VersionLabel version="1.11.0" />
+
+<HeadingApiLink to="/api/types/interface/WorkspaceConfig#experiments" />
+
+Enable or disable experiments that alter core functionality.
+
+### `taskOutputBoundaries`
+
+<HeadingApiLink to="/api/types/interface/ExperimentsConfig#taskOutputBoundaries" />
+
+Enforces strict boundaries for task outputs and will error when multiple tasks write to the same
+output location. This includes output globs that overlap with literal output file paths. Defaults to
+`true`, and will be fully enabled by default in a future release.
+
+```yaml title=".moon/workspace.yml" {2}
+experiments:
+  taskOutputBoundaries: false
+```
+
 ## `generator`
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#generator" />
@@ -244,6 +263,39 @@ number may help resolve the issue.
 ```yaml title=".moon/workspace.yml" {2}
 hasher:
   batchSize: 1000
+```
+
+### `ignoreMissingPatterns`<VersionLabel version="1.10.0" />
+
+<HeadingApiLink to="/api/types/interface/HasherConfig#ignoreMissingPatterns" />
+
+When [`hasher.warnOnMissingInputs`](#warnonmissinginputs) is enabled, moon will log a warning to the
+terminal that an input is missing. This is useful for uncovering misconfigurations, but can be quite
+noisy when inputs are truly optional.
+
+To ignore warnings for missing inputs, a list of [glob patterns](../concepts/file-pattern#globs) can
+be configured to filter and ignore files. Files are matched against workspace relative paths, so
+prefixing patterns with `**/` is suggested.
+
+```yaml title=".moon/workspace.yml" {2-4}
+hasher:
+  ignoreMissingPatterns:
+    - '**/.eslintrc.*'
+    - '**/*.config.*'
+```
+
+### `ignorePatterns`<VersionLabel version="1.10.0" />
+
+<HeadingApiLink to="/api/types/interface/HasherConfig#ignorePatterns" />
+
+A list of [glob patterns](../concepts/file-pattern#globs) used to filter and ignore files during the
+inputs hashing process. Files are matched against workspace relative paths, so prefixing patterns
+with `**/` is suggested.
+
+```yaml title=".moon/workspace.yml" {2,3}
+hasher:
+  ignorePatterns:
+    - '**/*.png'
 ```
 
 ### `optimization`

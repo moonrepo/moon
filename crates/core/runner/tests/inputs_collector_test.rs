@@ -1,10 +1,10 @@
 use moon::{generate_project_graph, load_workspace_from};
-use moon_config::{HasherWalkStrategy, WorkspaceConfig};
+use moon_config::{GlobPath, HasherWalkStrategy, PartialHasherConfig, WorkspaceConfig};
 use moon_runner::inputs_collector::collect_and_hash_inputs;
 use moon_test_utils::{create_sandbox_with_config, get_cases_fixture_configs, Sandbox};
 use moon_vcs::{BoxedVcs, Git};
-use std::fs;
 use std::path::Path;
+use std::{env, fs};
 
 fn cases_sandbox() -> Sandbox {
     let (workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
@@ -44,6 +44,9 @@ async fn filters_using_input_globs() {
     sandbox.enable_git();
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+
+    env::set_var("MOON_DISABLE_OVERLAPPING_OUTPUTS", "true");
+
     let project_graph = generate_project_graph(&mut workspace).await.unwrap();
     let vcs = load_vcs(&workspace.root, &workspace.config);
 
@@ -101,6 +104,8 @@ async fn filters_using_input_globs() {
 
     // .moon/*.yml files
     assert!(files.keys().collect::<Vec<_>>().len() == 3);
+
+    env::remove_var("MOON_DISABLE_OVERLAPPING_OUTPUTS");
 }
 
 #[tokio::test]
@@ -109,6 +114,9 @@ async fn filters_using_input_globs_in_glob_mode() {
     sandbox.enable_git();
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+
+    env::set_var("MOON_DISABLE_OVERLAPPING_OUTPUTS", "true");
+
     let project_graph = generate_project_graph(&mut workspace).await.unwrap();
     let vcs = load_vcs(&workspace.root, &workspace.config);
 
@@ -168,6 +176,8 @@ async fn filters_using_input_globs_in_glob_mode() {
 
     // .moon/*.yml files
     assert!(files.keys().collect::<Vec<_>>().len() == 3);
+
+    env::remove_var("MOON_DISABLE_OVERLAPPING_OUTPUTS");
 }
 
 #[tokio::test]
@@ -176,6 +186,9 @@ async fn filters_using_input_files() {
     sandbox.enable_git();
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+
+    env::set_var("MOON_DISABLE_OVERLAPPING_OUTPUTS", "true");
+
     let project_graph = generate_project_graph(&mut workspace).await.unwrap();
     let vcs = load_vcs(&workspace.root, &workspace.config);
 
@@ -232,14 +245,21 @@ async fn filters_using_input_files() {
 
     // .moon/*.yml files
     assert!(files.keys().collect::<Vec<_>>().len() == 3);
+
+    env::remove_var("MOON_DISABLE_OVERLAPPING_OUTPUTS");
 }
 
 #[tokio::test]
 async fn filters_using_input_files_in_glob_mode() {
+    dbg!("ENV VAR");
+
     let sandbox = cases_sandbox();
     sandbox.enable_git();
 
     let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+
+    env::set_var("MOON_DISABLE_OVERLAPPING_OUTPUTS", "true");
+
     let project_graph = generate_project_graph(&mut workspace).await.unwrap();
     let vcs = load_vcs(&workspace.root, &workspace.config);
 
@@ -298,4 +318,57 @@ async fn filters_using_input_files_in_glob_mode() {
 
     // .moon/*.yml files
     assert!(files.keys().collect::<Vec<_>>().len() == 3);
+
+    env::remove_var("MOON_DISABLE_OVERLAPPING_OUTPUTS");
+}
+
+#[tokio::test]
+async fn ignores_from_hasher_patterns() {
+    let (mut workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
+
+    workspace_config.hasher = Some(PartialHasherConfig {
+        ignore_patterns: Some(vec![GlobPath("**/out/*".into())]),
+        ..Default::default()
+    });
+
+    let sandbox = create_sandbox_with_config(
+        "cases",
+        Some(workspace_config),
+        Some(toolchain_config),
+        Some(tasks_config),
+    );
+
+    sandbox.enable_git();
+
+    let mut workspace = load_workspace_from(sandbox.path()).await.unwrap();
+
+    env::set_var("MOON_DISABLE_OVERLAPPING_OUTPUTS", "true");
+
+    let project_graph = generate_project_graph(&mut workspace).await.unwrap();
+    let vcs = load_vcs(&workspace.root, &workspace.config);
+
+    let project = project_graph.get("outputsFiltering").unwrap();
+
+    create_out_files(&project.root);
+
+    let files = collect_and_hash_inputs(
+        &vcs,
+        project.get_task("inGlobOutFile").unwrap(),
+        &project.root,
+        &workspace.root,
+        &workspace.config.hasher,
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(
+        files.keys().collect::<Vec<_>>(),
+        [
+            ".moon/tasks.yml",
+            ".moon/toolchain.yml",
+            ".moon/workspace.yml",
+        ]
+    );
+
+    env::remove_var("MOON_DISABLE_OVERLAPPING_OUTPUTS");
 }

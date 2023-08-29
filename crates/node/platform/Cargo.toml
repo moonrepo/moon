@@ -7,8 +7,7 @@ edition = "2021"
 moon_action_context = { path = "../../core/action-context" }
 moon_common = { path = "../../../nextgen/common" }
 moon_config = { path = "../../../nextgen/config" }
-moon_error = { path = "../../core/error" }
-moon_hasher = { path = "../../core/hasher" }
+moon_hash = { path = "../../../nextgen/hash" }
 moon_lang = { path = "../../core/lang" }
 moon_logger = { path = "../../core/logger" }
 moon_node_lang = { path = "../lang" }
@@ -35,5 +34,5 @@ tokio = { workspace = true }
 
 [dev-dependencies]
 moon = { path = "../../core/moon" }
-moon_project_graph = { path = "../../core/project-graph" }
+moon_project_graph = { path = "../../../nextgen/project-graph" }
 moon_test_utils = { path = "../../core/test-utils" }

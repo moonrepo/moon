@@ -13,11 +13,10 @@ harness = false
 [dependencies]
 moon_action = { path = "../action" }
 moon_common = { path = "../../../nextgen/common" }
-moon_error = { path = "../error" }
 moon_logger = { path = "../logger" }
 moon_platform = { path = "../platform" }
 moon_project = { path = "../../../nextgen/project" }
-moon_project_graph = { path = "../project-graph" }
+moon_project_graph = { path = "../../../nextgen/project-graph" }
 moon_query = { path = "../../../nextgen/query" }
 moon_target = { path = "../../../nextgen/target" }
 moon_task = { path = "../../../nextgen/task" }
@@ -35,4 +34,3 @@ moon_utils = { path = "../utils" }
 moon_workspace = { path = "../workspace" }
 criterion = { workspace = true }
 tokio = { workspace = true }
-

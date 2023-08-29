@@ -1,4 +1,6 @@
-use moon_config::{NodeVersionFormat, NodeVersionManager, PartialNodeConfig, WorkspaceProjects};
+use moon_config::{
+    NodeVersionFormat, NodeVersionManager, PartialNodeConfig, PartialWorkspaceProjects,
+};
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, get_node_depman_fixture_configs,
     get_node_fixture_configs, get_typescript_fixture_configs, predicates::prelude::*, Sandbox,
@@ -61,7 +63,7 @@ fn depman_non_workspaces_sandbox(depman: &str) -> Sandbox {
     let (mut workspace_config, toolchain_config, tasks_config) =
         get_node_depman_fixture_configs(depman);
 
-    workspace_config.projects = Some(WorkspaceProjects::Sources(FxHashMap::from_iter([(
+    workspace_config.projects = Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([(
         "root".into(),
         ".".into(),
     )])));
@@ -326,7 +328,7 @@ fn retries_on_failure_till_count() {
 
     let output = assert.output();
 
-    assert!(predicate::str::contains("failed with a 1 exit code").eval(&output));
+    assert!(predicate::str::contains("exit code 1").eval(&output));
 }
 
 #[test]

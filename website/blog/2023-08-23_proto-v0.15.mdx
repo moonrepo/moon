@@ -1,0 +1,76 @@
+---
+slug: proto-v0.15
+title: proto v0.15 - Install and uninstall globals
+authors: [milesj]
+tags: [proto, wasm, plugin, global]
+---
+
+This is a small release that adds support for uninstalling globals, and improves our WASM APIs.
+
+<!--truncate-->
+
+## Uninstall global dependencies
+
+proto has supported [installing globals since v0.5](./proto-v0.5), but there's been no way to
+uninstall an existing global, until now! In this release, we're introducing the
+[`proto uninstall-global`](/docs/proto/commands/uninstall-global) command, which will do just that!
+The API is exactly the same as its installation counter-part.
+
+```shell
+proto install-global node prettier
+
+# On second thought, nevermind...
+proto uninstall-global node prettier
+```
+
+### WASM functions
+
+Implementing this command was rather straight forward, but most of the work went into supporting
+[`install_global` and `uninstall_global`](/docs/proto/wasm-plugin#installing-and-uninstalling-globals)
+functions for WASM plugins, and then updating all existing plugins! For those of you writing your
+own plugins, here's an example of what the Rust code looks like:
+
+```rust
+#[plugin_fn]
+pub fn install_global(
+    Json(input): Json<InstallGlobalInput>,
+) -> FnResult<Json<InstallGlobalOutput>> {
+    let result = exec_command!(inherit, "npm", ["install", "--global", &input.dependency]);
+
+    Ok(Json(InstallGlobalOutput::from_exec_command(result)))
+}
+```
+
+### TOML setting
+
+We've also updated our TOML plugins to support uninstalling globals through the new
+[`globals.uninstall-args`](/docs/proto/toml-plugin#global-packages) setting. Hopefully the name is
+self explanatory, but it's a list of arguments passed to the tool's binary, that'll uninstall the
+global.
+
+```toml
+# ...
+
+[globals]
+install-args = ["install", "--global", "{dependency}"]
+uninstall-args = ["uninstall", "--global", "{dependency}"]
+```
+
+## Improved WASM documentation
+
+With each release we're slowly stabilizing the WASM and TOML APIs for an official v1 release (which
+is soon), and with this, it requires more documentation. As part of this release, we've done a giant
+polish pass on our WASM documentation, and have included the following sections:
+
+- [Virtual paths](/docs/proto/wasm-plugin#virtual-paths)
+- [Host environment](/docs/proto/wasm-plugin#host-environment)
+- [Host functions](/docs/proto/wasm-plugin#host-functions)
+- [Tool ID and context](/docs/proto/wasm-plugin#tool-id-and-context)
+- [Installing and uninstalling globals](/docs/proto/wasm-plugin#installing-and-uninstalling-globals)
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.15.0) for a full list
+of changes.
+
+- Major WASM API improvements, including backwards incompatible changes.

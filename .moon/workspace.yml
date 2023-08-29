@@ -1,4 +1,4 @@
-# Trigger CI: 17
+# Trigger CI: 20
 
 $schema: '../website/static/schemas/workspace.json'
 
@@ -14,6 +14,7 @@ projects:
 
 generator:
   templates:
+    # - './.moon/templates'
     - './tests/fixtures/generator/templates'
 
 runner:

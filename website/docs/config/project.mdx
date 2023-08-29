@@ -31,7 +31,7 @@ dependsOn:
 ```
 
 A dependency object can also be defined, where a specific `scope` can be assigned, which accepts
-"production" (default), "development", or "peer".
+"production" (default), "development", "build", or "peer".
 
 ```yaml title="moon.yml"
 dependsOn:
@@ -240,7 +240,7 @@ suggest _not_ listing people/developers as the owner, use [maintainers](#maintai
 Tags are a simple mechanism for categorizing projects. They can be used to group projects together
 for [easier querying](../commands/query/projects), enforcing of
 [project boundaries and constraints](./workspace#constraints),
-[task inheritance](../concepts/task#inheritance), and more.
+[task inheritance](../concepts/task-inheritance), and more.
 
 ```yaml title="moon.yml"
 tags:
@@ -348,6 +348,30 @@ tasks:
     command: 'jest'
   typecheck:
     command: 'tsc'
+```
+
+### `extends`<VersionLabel version="1.12.0" />
+
+<HeadingApiLink to="/api/types/interface/TaskConfig#extends" />
+
+The `extends` field can be used to extend the settings from a sibling task within the same project,
+or [inherited from the global scope](../concepts/task-inheritance). This is useful for composing
+similar tasks with different arguments or options.
+
+When extending another task, the same
+[merge strategies](../concepts/task-inheritance#merge-strategies) used for inheritance are applied.
+
+```yaml title="moon.yml"
+tasks:
+  lint:
+    command: 'eslint .'
+    inputs:
+      - 'src/**/*'
+
+  lint-fix:
+    extends: 'lint'
+    args: '--fix'
+    local: true
 ```
 
 ### `command`<RequiredLabel />
@@ -550,11 +574,10 @@ tasks:
 
 <HeadingApiLink to="/api/types/interface/TaskConfig#outputs" />
 
-The `outputs` field is a list of files and folders (using
-[project relative file patterns](../concepts/file-pattern#project-relative)) that are _created_ as a
-result of executing this task, typically from a build or compilation related task. Outputs are
-necessary for [incremental caching and hydration](../concepts/cache). If you'd prefer to avoid that
-functionality, omit this field.
+The `outputs` field is a list of [files and folders](../concepts/file-pattern#project-relative) that
+are _created_ as a result of executing this task, typically from a build or compilation related
+task. Outputs are necessary for [incremental caching and hydration](../concepts/cache). If you'd
+prefer to avoid that functionality, omit this field.
 
 ```yaml title="moon.yml" {4-6}
 tasks:
@@ -574,6 +597,7 @@ tasks:
     command: 'webpack'
     outputs:
       - 'build/**/*.js'
+      - '!build/internal.js'
 ```
 
 :::caution
@@ -613,7 +637,7 @@ tasks:
 
 The `options` field is an object of configurable options that can be used to modify the task and its
 execution. The following fields can be provided, with merge related fields supporting all
-[merge strategies](../concepts/task#merge-strategies).
+[merge strategies](../concepts/task-inheritance#merge-strategies).
 
 ```yaml title="moon.yml" {6-8}
 tasks:
@@ -705,40 +729,58 @@ differences are around quote handling and variable substitution, so be aware of 
 
 :::
 
+#### `interactive`<VersionLabel version="1.12.0" />
+
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#interactive" />
+
+Marks the task as interactive. [Interactive tasks](../concepts/task#interactive) run in isolation so
+that they can interact with stdin.
+
+This setting also disables caching, turns of CI, and other functionality, similar to the
+[`local`](#local) setting.
+
+```yaml title="moon.yml" {5}
+tasks:
+  init:
+    # ...
+    options:
+      interactive: true
+```
+
 #### `mergeArgs`
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#mergeArgs" />
 
-The [strategy](../concepts/task#merge-strategies) to use when merging the [`args`](#args) list with
-an inherited task. Defaults to "append".
+The [strategy](../concepts/task-inheritance#merge-strategies) to use when merging the
+[`args`](#args) list with an inherited task. Defaults to "append".
 
 #### `mergeDeps`
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#mergeDeps" />
 
-The [strategy](../concepts/task#merge-strategies) to use when merging the [`deps`](#deps) list with
-an inherited task. Defaults to "append".
+The [strategy](../concepts/task-inheritance#merge-strategies) to use when merging the
+[`deps`](#deps) list with an inherited task. Defaults to "append".
 
 #### `mergeEnv`
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#mergeEnv" />
 
-The [strategy](../concepts/task#merge-strategies) to use when merging the [`env`](#env-1) map with
-an inherited task. Defaults to "append".
+The [strategy](../concepts/task-inheritance#merge-strategies) to use when merging the
+[`env`](#env-1) map with an inherited task. Defaults to "append".
 
 #### `mergeInputs`
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#mergeInputs" />
 
-The [strategy](../concepts/task#merge-strategies) to use when merging the [`inputs`](#inputs) list
-with an inherited task. Defaults to "append".
+The [strategy](../concepts/task-inheritance#merge-strategies) to use when merging the
+[`inputs`](#inputs) list with an inherited task. Defaults to "append".
 
 #### `mergeOutputs`
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#mergeOutputs" />
 
-The [strategy](../concepts/task#merge-strategies) to use when merging the [`outputs`](#outputs) list
-with an inherited task. Defaults to "append".
+The [strategy](../concepts/task-inheritance#merge-strategies) to use when merging the
+[`outputs`](#outputs) list with an inherited task. Defaults to "append".
 
 #### `outputStyle`
 
@@ -767,9 +809,9 @@ tasks:
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#persistent" />
 
-Marks the task as persistent (continuously running). Persistent tasks are a special case that are
-handled differently than non-persistent tasks in the dependency graph. When running a target, all
-persistent tasks are _ran last_ and _in parallel_, after all their dependencies have completed.
+Marks the task as persistent (continuously running). [Persistent tasks](../concepts/task#persistent)
+are handled differently than non-persistent tasks in the dependency graph. When running a target,
+all persistent tasks are _ran last_ and _in parallel_, after all their dependencies have completed.
 
 This is extremely useful for running a server (or a watcher) in the background while other tasks are
 running.

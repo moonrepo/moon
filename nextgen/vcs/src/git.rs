@@ -1,10 +1,11 @@
 use crate::process_cache::ProcessCache;
 use crate::touched_files::TouchedFiles;
-use crate::vcs::{Vcs, VcsResult};
-use crate::vcs_error::VcsError;
+use crate::vcs::Vcs;
 use async_trait::async_trait;
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
-use moon_common::path::WorkspaceRelativePathBuf;
+use miette::{Diagnostic, IntoDiagnostic};
+use moon_common::path::{RelativePathBuf, WorkspaceRelativePathBuf};
+use moon_common::{Style, Stylize};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use rustc_hash::FxHashSet;
@@ -12,6 +13,7 @@ use semver::Version;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::{cmp, env};
+use thiserror::Error;
 use tracing::debug;
 
 pub static STATUS_PATTERN: Lazy<Regex> =
@@ -49,13 +51,24 @@ pub fn clean_git_version(version: String) -> String {
         .to_string()
 }
 
+#[derive(Error, Debug, Diagnostic)]
+pub enum GitError {
+    #[diagnostic(code(git::ignore::load_invalid))]
+    #[error("Failed to load and parse {}.", ".gitignore".style(Style::File))]
+    GitignoreLoadFailed {
+        #[source]
+        error: ignore::Error,
+    },
+
+    #[diagnostic(code(git::repository::extract_slug))]
+    #[error("Failed to extract a repository slug from git remote candidates.")]
+    ExtractRepoSlugFailed,
+}
+
 #[derive(Debug)]
 pub struct Git {
     /// Default git branch name.
     pub default_branch: String,
-
-    /// Path between the git and workspace root.
-    // file_prefix: RelativePathBuf,
 
     /// Ignore rules derived from a root `.gitignore` file.
     ignore: Option<Gitignore>,
@@ -66,8 +79,14 @@ pub struct Git {
     /// List of remotes to use as merge candidates.
     pub remote_candidates: Vec<String>,
 
-    /// Root of the git repository (where `.git` is located).
+    /// Root of the git repository (where `.git` directory is located).
     pub repository_root: PathBuf,
+
+    /// Path between the git and workspace root.
+    pub root_prefix: RelativePathBuf,
+
+    /// If in a git worktree, the root of the worktree (the `.git` file).
+    pub worktree_root: Option<PathBuf>,
 }
 
 impl Git {
@@ -75,37 +94,47 @@ impl Git {
         workspace_root: R,
         default_branch: B,
         remote_candidates: &[String],
-    ) -> VcsResult<Git> {
+    ) -> miette::Result<Git> {
         debug!("Using git as a version control system");
 
         let workspace_root = workspace_root.as_ref();
 
         debug!(
             starting_dir = ?workspace_root,
-            "Attempting to find a .git directory"
+            "Attempting to find a .git directory or file"
         );
 
         // Find the .git dir
-        let mut git_root = workspace_root;
+        let mut current_dir = workspace_root;
+        let mut repository_root = workspace_root.to_path_buf();
+        let mut worktree_root = None;
 
         loop {
-            let git_dir = git_root.join(".git");
+            let git_check = current_dir.join(".git");
 
-            if git_dir.exists() {
-                debug!(
-                    git_dir = ?git_dir,
-                    "Found a .git directory"
-                );
+            if git_check.exists() {
+                if git_check.is_file() {
+                    debug!(
+                        git = ?git_check,
+                        "Found a .git file (worktree root), continuing search"
+                    );
 
-                break;
+                    worktree_root = Some(current_dir.to_path_buf());
+                } else {
+                    debug!(
+                        git = ?git_check,
+                        "Found a .git directory (repository root)"
+                    );
+
+                    repository_root = current_dir.to_path_buf();
+                    break;
+                }
             }
 
-            match git_root.parent() {
-                Some(parent) => git_root = parent,
+            match current_dir.parent() {
+                Some(parent) => current_dir = parent,
                 None => {
                     debug!("Unable to find .git, falling back to workspace root");
-
-                    git_root = workspace_root;
                     break;
                 }
             };
@@ -113,7 +142,7 @@ impl Git {
 
         // Load .gitignore
         let mut ignore: Option<Gitignore> = None;
-        let ignore_path = git_root.join(".gitignore");
+        let ignore_path = repository_root.join(".gitignore");
 
         if ignore_path.exists() {
             debug!(
@@ -121,29 +150,38 @@ impl Git {
                 "Loading ignore rules from .gitignore",
             );
 
-            let mut builder = GitignoreBuilder::new(git_root);
+            let mut builder = GitignoreBuilder::new(&repository_root);
 
             if let Some(error) = builder.add(ignore_path) {
-                return Err(VcsError::GitignoreLoadFailed { error });
+                return Err(GitError::GitignoreLoadFailed { error }.into());
             }
 
             ignore = Some(
                 builder
                     .build()
-                    .map_err(|error| VcsError::GitignoreLoadFailed { error })?,
+                    .map_err(|error| GitError::GitignoreLoadFailed { error })?,
             );
         }
 
+        let active_dir = worktree_root.as_ref().unwrap_or(&repository_root);
+
         Ok(Git {
             default_branch: default_branch.as_ref().to_owned(),
-            repository_root: git_root.to_owned(),
             ignore,
-            process: ProcessCache::new("git", workspace_root),
             remote_candidates: remote_candidates.to_owned(),
+            root_prefix: if active_dir == workspace_root {
+                RelativePathBuf::default()
+            } else {
+                RelativePathBuf::from_path(workspace_root.strip_prefix(active_dir).unwrap())
+                    .into_diagnostic()?
+            },
+            process: ProcessCache::new("git", workspace_root),
+            repository_root,
+            worktree_root,
         })
     }
 
-    async fn get_merge_base(&self, base: &str, head: &str) -> VcsResult<Option<&str>> {
+    async fn get_merge_base(&self, base: &str, head: &str) -> miette::Result<Option<&str>> {
         let mut args = vec!["merge-base", head];
         let mut candidates = vec![base.to_owned()];
 
@@ -171,11 +209,15 @@ impl Git {
 
         Ok(None)
     }
+
+    fn get_working_root(&self) -> &Path {
+        self.worktree_root.as_ref().unwrap_or(&self.repository_root)
+    }
 }
 
 #[async_trait]
 impl Vcs for Git {
-    async fn get_local_branch(&self) -> VcsResult<&str> {
+    async fn get_local_branch(&self) -> miette::Result<&str> {
         if self.is_version_supported(">=2.22.0").await? {
             return self.process.run(["branch", "--show-current"], true).await;
         }
@@ -185,15 +227,15 @@ impl Vcs for Git {
             .await
     }
 
-    async fn get_local_branch_revision(&self) -> VcsResult<&str> {
+    async fn get_local_branch_revision(&self) -> miette::Result<&str> {
         self.process.run(["rev-parse", "HEAD"], true).await
     }
 
-    async fn get_default_branch(&self) -> VcsResult<&str> {
+    async fn get_default_branch(&self) -> miette::Result<&str> {
         Ok(&self.default_branch)
     }
 
-    async fn get_default_branch_revision(&self) -> VcsResult<&str> {
+    async fn get_default_branch_revision(&self) -> miette::Result<&str> {
         self.process
             .run(["rev-parse", &self.default_branch], true)
             .await
@@ -201,20 +243,30 @@ impl Vcs for Git {
 
     async fn get_file_hashes(
         &self,
-        files: &[String],
+        files: &[String], // Workspace relative
         allow_ignored: bool,
         batch_size: u16,
-    ) -> VcsResult<BTreeMap<WorkspaceRelativePathBuf, String>> {
+    ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
         let mut objects = vec![];
         let mut map = BTreeMap::new();
+        let is_not_root = self.process.root != self.get_working_root();
 
         for file in files {
             let abs_file = self.process.root.join(file);
 
             // File must exist or git fails
-            if abs_file.exists() && abs_file.is_file() && (allow_ignored || !self.is_ignored(file))
+            if abs_file.exists()
+                && abs_file.is_file()
+                && (allow_ignored || !self.is_ignored(&abs_file))
             {
-                objects.push(file.to_owned());
+                // When moon is setup in a sub-folder and not the git root,
+                // we need to prefix the paths because `--stdin-paths` assumes
+                // the paths are from the git root and don't work correctly...
+                if is_not_root {
+                    objects.push(self.root_prefix.join(file).as_str().to_owned());
+                } else {
+                    objects.push(file.to_owned());
+                }
             }
         }
 
@@ -242,7 +294,14 @@ impl Vcs for Git {
 
             for (i, hash) in output.split('\n').enumerate() {
                 if !hash.is_empty() {
-                    map.insert(WorkspaceRelativePathBuf::from(&slice[i]), hash.to_owned());
+                    let mut file = WorkspaceRelativePathBuf::from(&slice[i]);
+
+                    // Convert the prefixed path back to a workspace relative one...
+                    if is_not_root {
+                        file = file.strip_prefix(&self.root_prefix).unwrap().to_owned();
+                    }
+
+                    map.insert(file, hash.to_owned());
                 }
             }
 
@@ -252,7 +311,7 @@ impl Vcs for Git {
         Ok(map)
     }
 
-    async fn get_file_tree(&self, dir: &str) -> VcsResult<Vec<WorkspaceRelativePathBuf>> {
+    async fn get_file_tree(&self, dir: &str) -> miette::Result<Vec<WorkspaceRelativePathBuf>> {
         let mut args = vec![
             "ls-files",
             "--full-name",
@@ -275,7 +334,7 @@ impl Vcs for Git {
             .collect::<Vec<_>>())
     }
 
-    async fn get_hooks_dir(&self) -> VcsResult<PathBuf> {
+    async fn get_hooks_dir(&self) -> miette::Result<PathBuf> {
         if let Ok(output) = self
             .process
             .run(["config", "--get", "core.hooksPath"], true)
@@ -291,11 +350,11 @@ impl Vcs for Git {
         Ok(self.repository_root.join(".git").join("hooks"))
     }
 
-    async fn get_repository_root(&self) -> VcsResult<PathBuf> {
+    async fn get_repository_root(&self) -> miette::Result<PathBuf> {
         Ok(self.repository_root.to_owned())
     }
 
-    async fn get_repository_slug(&self) -> VcsResult<&str> {
+    async fn get_repository_slug(&self) -> miette::Result<&str> {
         use git_url_parse::GitUrl;
 
         for candidate in &self.remote_candidates {
@@ -314,11 +373,11 @@ impl Vcs for Git {
             }
         }
 
-        Err(VcsError::GitExtractRepoSlug)
+        Err(GitError::ExtractRepoSlugFailed.into())
     }
 
     // https://git-scm.com/docs/git-status#_short_format
-    async fn get_touched_files(&self) -> VcsResult<TouchedFiles> {
+    async fn get_touched_files(&self) -> miette::Result<TouchedFiles> {
         let output = self
             .process
             .run(
@@ -413,7 +472,7 @@ impl Vcs for Git {
     async fn get_touched_files_against_previous_revision(
         &self,
         revision: &str,
-    ) -> VcsResult<TouchedFiles> {
+    ) -> miette::Result<TouchedFiles> {
         let revision = if self.is_default_branch(revision) {
             "HEAD"
         } else {
@@ -428,7 +487,7 @@ impl Vcs for Git {
         &self,
         base_revision: &str,
         revision: &str,
-    ) -> VcsResult<TouchedFiles> {
+    ) -> miette::Result<TouchedFiles> {
         let base = self
             .get_merge_base(base_revision, revision)
             .await?
@@ -512,7 +571,7 @@ impl Vcs for Git {
         })
     }
 
-    async fn get_version(&self) -> VcsResult<Version> {
+    async fn get_version(&self) -> miette::Result<Version> {
         let version = self
             .process
             .run_with_formatter(["--version"], true, clean_git_version)
@@ -536,10 +595,10 @@ impl Vcs for Git {
     }
 
     fn is_enabled(&self) -> bool {
-        self.repository_root.join(".git").exists()
+        self.get_working_root().join(".git").exists()
     }
 
-    fn is_ignored(&self, file: &str) -> bool {
+    fn is_ignored(&self, file: &Path) -> bool {
         if let Some(ignore) = &self.ignore {
             ignore.matched(file, false).is_ignore()
         } else {

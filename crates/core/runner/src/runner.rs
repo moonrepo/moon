@@ -1,16 +1,18 @@
-use crate::target_hasher::TargetHasher;
+use crate::run_state::{load_output_logs, save_output_logs, RunTargetState};
+use crate::target_hash::TargetHasher;
 use crate::{errors::RunnerError, inputs_collector};
 use console::Term;
 use miette::IntoDiagnostic;
 use moon_action::{ActionStatus, Attempt};
-use moon_action_context::ActionContext;
-use moon_cache::RunTargetState;
+use moon_action_context::{ActionContext, TargetState};
+use moon_cache_item::CacheItem;
 use moon_config::{TaskOptionAffectedFiles, TaskOutputStyle};
 use moon_emitter::{Emitter, Event, EventFlow};
-use moon_hasher::HashSet;
+use moon_hash::ContentHasher;
 use moon_logger::{debug, warn};
+use moon_platform::PlatformManager;
 use moon_platform_runtime::Runtime;
-use moon_process::{args, output_to_error, output_to_string, Command, Output};
+use moon_process::{args, output_to_string, Command, Output};
 use moon_project::Project;
 use moon_target::{TargetError, TargetScope};
 use moon_task::Task;
@@ -34,7 +36,7 @@ pub enum HydrateFrom {
 }
 
 pub struct Runner<'a> {
-    pub cache: RunTargetState,
+    pub cache: CacheItem<RunTargetState>,
 
     emitter: &'a Emitter,
 
@@ -56,8 +58,16 @@ impl<'a> Runner<'a> {
         project: &'a Project,
         task: &'a Task,
     ) -> miette::Result<Runner<'a>> {
+        let mut cache = workspace
+            .cache_engine
+            .cache_state::<RunTargetState>(task.get_cache_dir().join("lastRun.json"))?;
+
+        if cache.data.target.is_empty() {
+            cache.data.target = task.target.to_string();
+        }
+
         Ok(Runner {
-            cache: workspace.cache.cache_run_target_state(&task.target)?,
+            cache,
             emitter,
             project,
             stderr: Term::buffered_stderr(),
@@ -71,14 +81,14 @@ impl<'a> Runner<'a> {
     /// so that subsequent builds are faster, and any local outputs
     /// can be hydrated easily.
     pub async fn archive_outputs(&self) -> miette::Result<()> {
-        let hash = &self.cache.hash;
+        let hash = &self.cache.data.hash;
 
         if hash.is_empty() || !self.is_archivable()? {
             return Ok(());
         }
 
         // Check that outputs actually exist
-        if !self.task.outputs.is_empty() && !self.has_outputs()? {
+        if !self.task.outputs.is_empty() && !self.has_outputs(false)? {
             return Err(RunnerError::MissingOutput(self.task.target.id.clone()).into());
         }
 
@@ -86,7 +96,6 @@ impl<'a> Runner<'a> {
         if let EventFlow::Return(archive_path) = self
             .emitter
             .emit(Event::TargetOutputArchiving {
-                cache: &self.cache,
                 hash,
                 project: self.project,
                 target: &self.task.target,
@@ -139,7 +148,7 @@ impl<'a> Runner<'a> {
     /// If we are cached (hash match), hydrate the project with the
     /// cached task outputs found in the hashed archive.
     pub async fn hydrate_outputs(&self) -> miette::Result<()> {
-        let hash = &self.cache.hash;
+        let hash = &self.cache.data.hash;
 
         if hash.is_empty() {
             return Ok(());
@@ -149,7 +158,6 @@ impl<'a> Runner<'a> {
         if let EventFlow::Return(archive_path) = self
             .emitter
             .emit(Event::TargetOutputHydrating {
-                cache: &self.cache,
                 hash,
                 project: self.project,
                 target: &self.task.target,
@@ -179,23 +187,22 @@ impl<'a> Runner<'a> {
     pub async fn hash_common_target(
         &self,
         context: &ActionContext,
-        hashset: &mut HashSet,
+        hasher: &mut ContentHasher,
     ) -> miette::Result<()> {
         let vcs = &self.workspace.vcs;
         let task = &self.task;
         let project = &self.project;
         let workspace = &self.workspace;
-        let mut hasher = TargetHasher::new();
+        let mut hash = TargetHasher::new(task);
 
-        hasher.hash_project_deps(self.project.get_dependency_ids());
-        hasher.hash_task(task);
-        hasher.hash_task_deps(task, &context.target_hashes)?;
+        hash.hash_project_deps(self.project.get_dependency_ids());
+        hash.hash_task_deps(task, &context.target_states)?;
 
         if context.should_inherit_args(&task.target) {
-            hasher.hash_args(&context.passthrough_args);
+            hash.hash_args(&context.passthrough_args);
         }
 
-        hasher.hash_inputs(
+        hash.hash_inputs(
             inputs_collector::collect_and_hash_inputs(
                 vcs,
                 task,
@@ -206,7 +213,7 @@ impl<'a> Runner<'a> {
             .await?,
         );
 
-        hashset.hash(hasher);
+        hasher.hash_content(hash)?;
 
         Ok(())
     }
@@ -232,9 +239,7 @@ impl<'a> Runner<'a> {
             color::path(working_dir)
         );
 
-        let mut command = self
-            .workspace
-            .platforms
+        let mut command = PlatformManager::read()
             .get(task.platform)?
             .create_run_target_command(context, project, task, runtime, working_dir)
             .await?;
@@ -310,7 +315,7 @@ impl<'a> Runner<'a> {
 
         env_vars.insert(
             "MOON_CACHE_DIR".to_owned(),
-            path::to_string(&self.workspace.cache.dir)?,
+            path::to_string(&self.workspace.cache_engine.cache_dir)?,
         );
         env_vars.insert("MOON_PROJECT_ID".to_owned(), self.project.id.to_string());
         env_vars.insert(
@@ -335,12 +340,12 @@ impl<'a> Runner<'a> {
             path::to_string(&self.workspace.working_dir)?,
         );
         env_vars.insert(
-            "MOON_PROJECT_RUNFILE".to_owned(),
+            "MOON_PROJECT_SNAPSHOT".to_owned(),
             path::to_string(
                 self.workspace
-                    .cache
-                    .get_state_path(&self.project.id)
-                    .join("runfile.json"),
+                    .cache_engine
+                    .states_dir
+                    .join(self.project.get_cache_dir().join("snapshot.json")),
             )?,
         );
         // env_vars.insert("PROTO_SKIP_USED_AT".to_owned(), "true".to_owned());
@@ -356,16 +361,22 @@ impl<'a> Runner<'a> {
     }
 
     pub fn get_short_hash(&self) -> &str {
-        if self.cache.hash.is_empty() {
+        if self.cache.data.hash.is_empty() {
             "" // Empty when cache is disabled
         } else {
-            &self.cache.hash[0..8]
+            &self.cache.data.hash[0..8]
         }
     }
 
-    pub fn has_outputs(&self) -> miette::Result<bool> {
+    pub fn has_outputs(&self, bypass_globs: bool) -> miette::Result<bool> {
+        // If using globs, we have no way to truly determine if all outputs
+        // exist on the current file system, so always hydrate...
+        if bypass_globs && !self.task.output_globs.is_empty() {
+            return Ok(false);
+        }
+
         // Check paths first since they are literal
-        for output in &self.task.output_paths {
+        for output in &self.task.output_files {
             if !output.to_path(&self.workspace.root).exists() {
                 return Ok(false);
             }
@@ -420,22 +431,24 @@ impl<'a> Runner<'a> {
         context: &mut ActionContext,
         runtime: &Runtime,
     ) -> miette::Result<Option<HydrateFrom>> {
-        let mut hashset = HashSet::default();
+        let mut hasher = self
+            .workspace
+            .hash_engine
+            .create_hasher(format!("Run {} target", self.task.target));
 
-        self.hash_common_target(context, &mut hashset).await?;
+        self.hash_common_target(context, &mut hasher).await?;
 
-        self.workspace
-            .platforms
+        PlatformManager::read()
             .get(self.task.platform)?
             .hash_run_target(
                 self.project,
                 runtime,
-                &mut hashset,
+                &mut hasher,
                 &self.workspace.config.hasher,
             )
             .await?;
 
-        let hash = hashset.generate();
+        let hash = hasher.generate_hash()?;
 
         debug!(
             target: LOG_TARGET,
@@ -444,13 +457,14 @@ impl<'a> Runner<'a> {
             color::id(&self.task.target)
         );
 
-        context
-            .target_hashes
-            .insert(self.task.target.clone(), hash.clone());
+        context.target_states.insert(
+            self.task.target.clone(),
+            TargetState::Completed(hash.clone()),
+        );
 
         // Hash is the same as the previous build, so simply abort!
         // However, ensure the outputs also exist, otherwise we should hydrate
-        if self.cache.hash == hash && self.has_outputs()? {
+        if self.cache.data.hash == hash && self.has_outputs(true)? {
             debug!(
                 target: LOG_TARGET,
                 "Cache hit for hash {}, reusing previous build",
@@ -460,10 +474,10 @@ impl<'a> Runner<'a> {
             return Ok(Some(HydrateFrom::PreviousOutput));
         }
 
-        self.cache.hash = hash.clone();
+        self.cache.data.hash = hash.clone();
 
         // Refresh the hash manifest
-        self.workspace.cache.create_hash_manifest(&hash, &hashset)?;
+        self.workspace.hash_engine.save_manifest(hasher)?;
 
         // Check if that hash exists in the cache
         if let EventFlow::Return(value) = self
@@ -519,13 +533,14 @@ impl<'a> Runner<'a> {
         let primary_longest_width = context.primary_targets.iter().map(|t| t.id.len()).max();
         let is_primary = context.primary_targets.contains(&self.task.target);
         let is_real_ci = is_ci() && !is_test_env();
-        let is_persistent = self.task.options.persistent;
+        let is_persistent = self.task.is_persistent();
         let output;
 
         // When a task is configured as local (no caching), or the interactive flag is passed,
         // we don't "capture" stdout/stderr (which breaks stdin) and let it stream natively.
-        let is_interactive =
-            (!self.task.options.cache && context.primary_targets.len() == 1) || context.interactive;
+        let is_interactive = (!self.task.options.cache && context.primary_targets.len() == 1)
+            || context.interactive
+            || self.task.is_interactive();
 
         // When the primary target, always stream the output for a better developer experience.
         // However, transitive targets can opt into streaming as well.
@@ -597,25 +612,16 @@ impl<'a> Runner<'a> {
                     });
 
                     if should_stream_output {
-                        self.handle_streamed_output(&attempt, attempt_total, &out)?;
+                        self.handle_streamed_output(&mut attempt, attempt_total, &out)?;
                     } else {
-                        self.handle_captured_output(&attempt, attempt_total, &out)?;
+                        self.handle_captured_output(&mut attempt, attempt_total, &out)?;
                     }
 
                     attempts.push(attempt);
 
-                    if out.status.success() {
+                    if out.status.success() || attempt_index >= attempt_total {
                         output = out;
                         break;
-                    } else if attempt_index >= attempt_total {
-                        interval_handle.abort();
-
-                        return Err(RunnerError::Process(output_to_error(
-                            self.task.command.clone(),
-                            &out,
-                            false,
-                        ))
-                        .into());
                     } else {
                         attempt_index += 1;
 
@@ -634,7 +640,7 @@ impl<'a> Runner<'a> {
 
                     interval_handle.abort();
 
-                    return Err(RunnerError::Process(error).into());
+                    return Err(error);
                 }
             }
         }
@@ -642,8 +648,10 @@ impl<'a> Runner<'a> {
         interval_handle.abort();
 
         // Write the cache with the result and output
-        self.cache.exit_code = output.status.code().unwrap_or(0);
-        self.cache.save_output_logs(
+        self.cache.data.exit_code = output.status.code().unwrap_or(0);
+
+        save_output_logs(
+            self.cache.get_dir(),
             output_to_string(&output.stdout),
             output_to_string(&output.stderr),
         )?;
@@ -673,7 +681,7 @@ impl<'a> Runner<'a> {
             self.run_command(context, &mut command).await?
         };
 
-        self.cache.last_run_time = time::now_millis();
+        self.cache.data.last_run_time = time::now_millis();
         self.cache.save()?;
 
         Ok(attempts)
@@ -681,9 +689,9 @@ impl<'a> Runner<'a> {
 
     pub fn print_cache_item(&self) -> miette::Result<()> {
         let item = &self.cache;
-        let (stdout, stderr) = item.load_output_logs()?;
+        let (stdout, stderr) = load_output_logs(item.get_dir())?;
 
-        self.print_output_with_style(&stdout, &stderr, item.exit_code != 0)?;
+        self.print_output_with_style(&stdout, &stderr, item.data.exit_code != 0)?;
 
         Ok(())
     }
@@ -749,7 +757,7 @@ impl<'a> Runner<'a> {
             }
             // Only show the hash
             Some(TaskOutputStyle::Hash) => {
-                let hash = &self.cache.hash;
+                let hash = &self.cache.data.hash;
 
                 if !hash.is_empty() {
                     // Print to stderr so it can be captured
@@ -833,7 +841,7 @@ impl<'a> Runner<'a> {
     // aren't intertwined and the labels align with the output.
     fn handle_captured_output(
         &self,
-        attempt: &Attempt,
+        attempt: &mut Attempt,
         attempt_total: u8,
         output: &Output,
     ) -> miette::Result<()> {
@@ -853,6 +861,10 @@ impl<'a> Runner<'a> {
         self.print_output_with_style(&stdout, &stderr, !output.status.success())?;
         self.flush_output()?;
 
+        attempt.exit_code = output.status.code();
+        attempt.stdout = Some(stdout);
+        attempt.stderr = Some(stderr);
+
         Ok(())
     }
 
@@ -860,7 +872,7 @@ impl<'a> Runner<'a> {
     // as the actual output has already been streamed to the console.
     fn handle_streamed_output(
         &self,
-        attempt: &Attempt,
+        attempt: &mut Attempt,
         attempt_total: u8,
         output: &Output,
     ) -> miette::Result<()> {
@@ -876,12 +888,16 @@ impl<'a> Runner<'a> {
 
         self.flush_output()?;
 
+        attempt.exit_code = output.status.code();
+        attempt.stdout = Some(output_to_string(&output.stdout));
+        attempt.stderr = Some(output_to_string(&output.stderr));
+
         Ok(())
     }
 
     fn should_print_short_hash(&self) -> bool {
         // Do not include the hash while testing, as the hash
         // constantly changes and breaks our local snapshots
-        !is_test_env() && self.task.options.cache && !self.cache.hash.is_empty()
+        !is_test_env() && self.task.options.cache && !self.cache.data.hash.is_empty()
     }
 }

@@ -8,7 +8,7 @@ use moon_config::{InputPath, OutputPath, PlatformType, TaskType};
 use moon_target::Target;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::glob;
-use std::env;
+use std::{env, path::PathBuf};
 use tracing::debug;
 
 cacheable!(
@@ -16,6 +16,9 @@ cacheable!(
     pub struct TaskFlags {
         // Inputs were configured explicitly as `[]`
         pub empty_inputs: bool,
+
+        // Has the task (and parent project) been expanded
+        pub expanded: bool,
 
         // Was configured as a local running task
         pub local: bool,
@@ -39,9 +42,9 @@ cacheable!(
 
         pub inputs: Vec<InputPath>,
 
-        pub input_globs: FxHashSet<WorkspaceRelativePathBuf>,
+        pub input_files: FxHashSet<WorkspaceRelativePathBuf>,
 
-        pub input_paths: FxHashSet<WorkspaceRelativePathBuf>,
+        pub input_globs: FxHashSet<WorkspaceRelativePathBuf>,
 
         pub input_vars: FxHashSet<String>,
 
@@ -49,9 +52,9 @@ cacheable!(
 
         pub outputs: Vec<OutputPath>,
 
-        pub output_globs: FxHashSet<WorkspaceRelativePathBuf>,
+        pub output_files: FxHashSet<WorkspaceRelativePathBuf>,
 
-        pub output_paths: FxHashSet<WorkspaceRelativePathBuf>,
+        pub output_globs: FxHashSet<WorkspaceRelativePathBuf>,
 
         pub platform: PlatformType,
 
@@ -64,8 +67,11 @@ cacheable!(
 
 impl Task {
     /// Create a globset of all input globs to match with.
-    pub fn create_globset(&self) -> Result<glob::GlobSet, glob::GlobError> {
-        glob::GlobSet::new_split(&self.input_globs, &self.output_globs)
+    pub fn create_globset(&self) -> miette::Result<glob::GlobSet> {
+        Ok(glob::GlobSet::new_split(
+            &self.input_globs,
+            &self.output_globs,
+        )?)
     }
 
     /// Return a list of project-relative affected files filtered down from
@@ -74,7 +80,7 @@ impl Task {
         &self,
         touched_files: &FxHashSet<WorkspaceRelativePathBuf>,
         project_source: S,
-    ) -> Result<Vec<ProjectRelativePathBuf>, glob::GlobError> {
+    ) -> miette::Result<Vec<ProjectRelativePathBuf>> {
         let mut files = vec![];
         let globset = self.create_globset()?;
         let project_source = project_source.as_ref();
@@ -82,7 +88,7 @@ impl Task {
         for file in touched_files {
             // Don't run on files outside of the project
             if let Ok(project_file) = file.strip_prefix(project_source) {
-                if self.input_paths.contains(file) || globset.matches(file.as_str()) {
+                if self.input_files.contains(file) || globset.matches(file.as_str()) {
                     files.push(project_file.to_owned());
                 }
             }
@@ -91,12 +97,17 @@ impl Task {
         Ok(files)
     }
 
+    /// Return a cache directory for this task, relative from the cache root.
+    pub fn get_cache_dir(&self) -> PathBuf {
+        PathBuf::from(self.target.scope_id.as_ref().unwrap().as_str()).join(self.id.as_str())
+    }
+
     /// Return true if this task is affected based on touched files.
     /// Will attempt to find any file that matches our list of inputs.
     pub fn is_affected(
         &self,
         touched_files: &FxHashSet<WorkspaceRelativePathBuf>,
-    ) -> Result<bool, glob::GlobError> {
+    ) -> miette::Result<bool> {
         if self.flags.empty_inputs {
             return Ok(true);
         }
@@ -119,7 +130,7 @@ impl Task {
         let globset = self.create_globset()?;
 
         for file in touched_files {
-            if self.input_paths.contains(file) {
+            if self.input_files.contains(file) {
                 debug!(
                     target = ?self.target,
                     input = ?file,
@@ -151,6 +162,16 @@ impl Task {
     /// Return true if the task is a "build" type.
     pub fn is_build_type(&self) -> bool {
         matches!(self.type_of, TaskType::Build) || !self.outputs.is_empty()
+    }
+
+    /// Return true if the task has been expanded.
+    pub fn is_expanded(&self) -> bool {
+        self.flags.expanded
+    }
+
+    /// Return true if an interactive task.
+    pub fn is_interactive(&self) -> bool {
+        self.options.interactive
     }
 
     /// Return true if the task is a "no operation" and does nothing.

@@ -1,0 +1,130 @@
+---
+slug: moon-v1.10
+title: moon v1.10 - Mid-year quality of life improvements
+authors: [milesj]
+tags: [quality, life, qol, ignore, hasher, vcs, ci, debug]
+image: ./img/moon/v1.10.png
+---
+
+import Button from '@site/src/ui/Button';
+
+Instead of launching a large feature this release, we're focusing on quality of life and developer
+experience improvements.
+
+<!--truncate-->
+
+## Quality improvements
+
+In the past 6 months, we've released over 16 versions of moon, with our official v1.0 release among
+them. This is extremely impressive and we're very proud of the progress we've made. To continue this
+trend, we'll be starting a new initiative that will land quality of life improvements (instead of
+major features) every 6 months, starting with this release!
+
+### Potential breaking changes
+
+While APIs haven't changed, we have introduced some fixes for edge case that could be considered
+breaking, but for the most part, these changes probably won't affect you. With that being said...
+
+The first fix is that tasks configured with the same `outputs` location (including glob overlap)
+will now error. This is extremely problematic for caching and hydration, as multiple tasks all
+writing to the same output will inflate the tarball, and cause unwanted side effects. To demonstrate
+this, the following is now an error:
+
+```yaml title="moon.yml"
+tasks:
+  build:
+    command: 'foo build'
+    outputs:
+      - 'dist'
+
+  compile:
+    command: 'bar compile'
+    outputs:
+      - 'dist'
+```
+
+The other fix, which primarily applies to [`moon ci`][ci] and [`moon check`](/docs/commands/check),
+is that a target will be skipped if one of its dependencies failed or has also been skipped.
+Previously the target would attempt to run and most likely fail since it relied on artifacts from
+its dependencies (which don't exist). Another benefit of this change is that runs should be much
+faster, as we're not wasting time running targets that we know will fail, which is great for CI.
+
+### Ignore hashing input files
+
+We're introducing 2 new settings to [`.moon/workspace.yml`](/docs/config/workspace) that'll provide
+more control over the hashing flow, [`hasher.ignorePatterns`](/docs/config/workspace#ignorepatterns)
+and [`hasher.ignoreMissingPatterns`](/docs/config/workspace#ignoremissingpatterns).
+
+The `ignorePatterns` setting can be used to entirely ignore a file (using glob patterns) from being
+hashed, and in turn, exclude it as an input source. For example, say we want to ignore all image
+files.
+
+```yml title=".moon/workspace.yml"
+hasher:
+  ignorePatterns:
+    - '**/*.{png,svg}'
+```
+
+The `ignoreMissingPatterns` setting pairs with
+[`hasher.warnOnMissingInputs`](/docs/config/workspace#warnonmissinginputs). When enabled, moon will
+log a warning to the terminal that an input is missing. This is useful for uncovering
+misconfigurations, but can be quite noisy when inputs are truly optional. This new setting can be
+used to filter these warnings.
+
+```yml title=".moon/workspace.yml"
+hasher:
+  warnOnMissingInputs: true
+  ignoreMissingPatterns:
+    - '**/.eslintrc.*'
+    - '**/*.config.*'
+```
+
+### Customize base and head revision
+
+The [`moon ci`][ci] command has always supported customizing the Git base and head revisions through
+the `--base` and `--head` options respectively. This was a requirement for running CI effectively,
+by comparing across branches or commits. However, the [`moon run`][run] did not support this, as
+this command was designed to primarily be run locally, but it turns out, y'all are using it in CI
+too!
+
+To improve the effectiveness of `moon run` in CI, we've made the following improvements, all of
+which require the `--remote` option to be passed.
+
+- Added support for `MOON_BASE` and `MOON_HEAD` environment variables, for customizing the base and
+  head revisions respectively (also supported in `moon ci`). If not defined, will use the default
+  branch and `HEAD`.
+- When the current branch is the default branch, the base revision will be the previous commit.
+  Useful for commits landing on master/main.
+
+## New debugging a task guide
+
+Running tasks is the most common way to interact with moon, so what do you do when your task isn't
+working as expected? Diagnose it of course! However, diagnosing the root cause of a broken task can
+be quite daunting:
+
+- Is configuration wrong?
+- What about inheritance? Or merging?
+- Is the task platform correct?
+- Were tokens expanded correctly?
+- What about variable substitution?
+- So on and so forth...
+
+To help answer these questions, we're excited to publish an
+[in-depth guide for debugging a task](/docs/guides/debug-task)! These steps are the same steps we
+use internally to diagnose reported issues, or help the Discord community. We hope you find this
+guide extremely beneficial!
+
+<div class="flex justify-center">
+  <Button label="View debugging a task guide" href="/docs/guides/debug-task" size="lg" />
+</div>
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.10.0) for a full list
+of changes.
+
+- Updated [`moon ci`][ci] to include a summary of all failed actions.
+- Updated the run report to include stderr/stdout for all attempts.
+
+[ci]: /docs/commands/ci
+[run]: /docs/commands/run

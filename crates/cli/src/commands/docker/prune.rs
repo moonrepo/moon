@@ -4,6 +4,7 @@ use moon::{generate_project_graph, load_workspace_with_toolchain};
 use moon_config::PlatformType;
 use moon_node_lang::{PackageJson, NODE};
 use moon_node_tool::NodeTool;
+use moon_platform::PlatformManager;
 use moon_project_graph::ProjectGraph;
 use moon_rust_lang::{CARGO, RUST};
 use moon_rust_tool::RustTool;
@@ -23,8 +24,8 @@ pub async fn prune_node(
     let mut package_names = vec![];
 
     for project_id in &manifest.focused_projects {
-        if let Some(project_source) = project_graph.sources.get(project_id) {
-            if let Some(package_json) = PackageJson::read(workspace_root.join(project_source))? {
+        if let Some(source) = project_graph.sources().get(project_id) {
+            if let Some(package_json) = PackageJson::read(source.to_path(workspace_root))? {
                 if let Some(package_name) = package_json.name {
                     package_names.push(package_name);
                 }
@@ -36,8 +37,8 @@ pub async fn prune_node(
     if let Some(vendor_dir) = NODE.vendor_dir {
         fs::remove_dir_all(workspace_root.join(vendor_dir))?;
 
-        for project_source in project_graph.sources.values() {
-            fs::remove_dir_all(workspace_root.join(project_source).join(vendor_dir))?;
+        for source in project_graph.sources().values() {
+            fs::remove_dir_all(source.join(vendor_dir).to_path(workspace_root))?;
         }
     }
 
@@ -81,7 +82,7 @@ pub async fn prune() -> AppResult {
 
     // Do this later so we only run once for each platform instead of per project
     for platform_type in platforms {
-        let platform = workspace.platforms.get(platform_type)?;
+        let platform = PlatformManager::read().get(platform_type)?;
 
         match platform.get_type() {
             PlatformType::Node => {

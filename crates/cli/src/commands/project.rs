@@ -1,3 +1,4 @@
+use clap::Args;
 use console::Term;
 use itertools::Itertools;
 use miette::IntoDiagnostic;
@@ -9,16 +10,25 @@ use moon_utils::is_test_env;
 use starbase::AppResult;
 use starbase_styles::color;
 
-pub async fn project(id: Id, json: bool) -> AppResult {
-    let mut workspace = load_workspace().await?;
-    let mut project_builder = build_project_graph(&mut workspace).await?;
-    project_builder.load(&id)?;
+#[derive(Args, Debug)]
+pub struct ProjectArgs {
+    #[arg(help = "ID of project to display")]
+    id: Id,
 
-    let project_graph = project_builder.build()?;
-    let project = project_graph.get(&id)?;
+    #[arg(long, help = "Print in JSON format")]
+    json: bool,
+}
+
+pub async fn project(args: ProjectArgs) -> AppResult {
+    let mut workspace = load_workspace().await?;
+    let mut project_graph_builder = build_project_graph(&mut workspace).await?;
+    project_graph_builder.load(&args.id).await?;
+
+    let project_graph = project_graph_builder.build().await?;
+    let project = project_graph.get(&args.id)?;
     let config = &project.config;
 
-    if json {
+    if args.json {
         println!(
             "{}",
             serde_json::to_string_pretty(&project).into_diagnostic()?
@@ -77,11 +87,7 @@ pub async fn project(id: Id, json: bool) -> AppResult {
         deps.push(format!(
             "{} {}",
             color::id(dep_id),
-            color::muted_light(format!(
-                "({}, {})",
-                dep_cfg.source.unwrap_or_default(),
-                dep_cfg.scope
-            )),
+            color::muted_light(format!("({}, {})", dep_cfg.source, dep_cfg.scope)),
         ));
     }
 

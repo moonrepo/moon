@@ -98,18 +98,18 @@ pub async fn process_action(
 
             local_emitter
                 .emit(Event::DependenciesInstalling {
-                    project: Some(project),
+                    project: Some(&project),
                     runtime,
                 })
                 .await?;
 
             let install_result =
-                install_deps(&mut action, context, workspace, runtime, Some(project)).await;
+                install_deps(&mut action, context, workspace, runtime, Some(&project)).await;
 
             local_emitter
                 .emit(Event::DependenciesInstalled {
                     error: extract_error(&install_result),
-                    project: Some(project),
+                    project: Some(&project),
                     runtime,
                 })
                 .await?;
@@ -122,7 +122,10 @@ pub async fn process_action(
             let project = local_project_graph.get(project_id)?;
 
             local_emitter
-                .emit(Event::ProjectSyncing { project, runtime })
+                .emit(Event::ProjectSyncing {
+                    project: &project,
+                    runtime,
+                })
                 .await?;
 
             let sync_result = sync_project(
@@ -130,7 +133,7 @@ pub async fn process_action(
                 context,
                 workspace,
                 project_graph,
-                project,
+                &project,
                 runtime,
             )
             .await;
@@ -138,7 +141,7 @@ pub async fn process_action(
             local_emitter
                 .emit(Event::ProjectSynced {
                     error: extract_error(&sync_result),
-                    project,
+                    project: &project,
                     runtime,
                 })
                 .await?;
@@ -163,6 +166,7 @@ pub async fn process_action(
 
         // Run a task within a project
         ActionNode::RunTarget(runtime, target)
+        | ActionNode::RunInteractiveTarget(runtime, target)
         | ActionNode::RunPersistentTarget(runtime, target) => {
             let project = local_project_graph.get(target.scope_id.as_ref().unwrap())?;
 
@@ -173,7 +177,7 @@ pub async fn process_action(
                 context,
                 emitter,
                 workspace,
-                project,
+                &project,
                 target,
                 runtime,
             )
@@ -196,13 +200,13 @@ pub async fn process_action(
         }
         Err(error) => {
             action.fail(error.to_string());
+        }
+    };
 
-            // If these fail, we should abort instead of trying to continue
-            if matches!(node, ActionNode::SetupTool(_))
-                || matches!(node, ActionNode::InstallDeps(_))
-            {
-                action.abort();
-            }
+    if action.has_failed() {
+        // If these fail, we should abort instead of trying to continue
+        if matches!(node, ActionNode::SetupTool(_)) || matches!(node, ActionNode::InstallDeps(_)) {
+            action.abort();
         }
     }
 

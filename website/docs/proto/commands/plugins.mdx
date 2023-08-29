@@ -1,0 +1,25 @@
+---
+title: plugins
+---
+
+The `proto plugins` command will list all available and configured plugins. Will load all
+`.prototools` traversing upwards, and the `~/.proto/config.toml` file.
+
+```shell
+$ proto plugins
+bun - Bun v1.2
+  GitHub: moonrepo/bun-plugin
+  Tag: latest
+
+deno - Deno v2.0
+  GitHub: moonrepo/deno-plugin
+  Tag: latest
+
+go - Go v0.1
+  GitHub: moonrepo/go-plugin
+  Tag: latest
+```
+
+### Options
+
+- `--json` - Print the list in JSON format.

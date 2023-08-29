@@ -15,30 +15,25 @@ proto supports pinning versions of tools on a per-project or per-directory basis
 `.prototools` configuration file. This file takes precedence during [version detection](./detection)
 and can be created/updated with [`proto local`](./commands/local).
 
-This configuration simply maps tools to semantic versions for the current directory.
+This configuration simply maps tools to fully-qualified semantic versions for the current directory.
+Partial versions are not supported.
 
 ```toml title=".prototools"
 node = "16.16.0"
 npm = "9.0.0"
-go = "1.20"
-rust = "1.68"
+go = "1.20.0"
+rust = "1.68.0"
 ```
 
 > The names of tools are the same used on the command line!
 
 ### Plugins
 
-Plugins can also be configured on a per-project basis, by defining a `[plugins]` section, that maps
-a plugin to a locator string. The map key is the plugin name _in kebab-case_, which is used as the
-binary/tool name in proto, and also the name for configuration and cache purposes. The map value is
-a locator string that defines a protocol and source location, and supports the following formats:
-
-- `schema:<location>` - A [TOML plugin](./plugins#toml-plugin). The location is either an `https://`
-  URL, or a file path relative from the parent configuration (with leading dot).
+[Plugins](./plugins) can also be configured on a per-project basis with the `[plugins]` section.
 
 ```toml title=".prototools"
 [plugins]
-my-tool = "schema:https://raw.githubusercontent.com/my/tool/master/proto-plugin.toml"
+my-tool = "source:https://raw.githubusercontent.com/my/tool/master/proto-plugin.toml"
 ```
 
 Once configured, you can run a plugin as if it was a built-in tool:
@@ -88,6 +83,6 @@ jobs:
     runs-on: 'ubuntu-latest'
     steps:
       - uses: 'actions/checkout@v3'
-      - uses: 'moonrepo/setup-proto@v0'
+      - uses: 'moonrepo/setup-proto@v1'
       - run: 'proto use'
 ```

@@ -1,20 +1,30 @@
 // https://github.com/clap-rs/clap/tree/master/examples/derive_ref#app-attributes
 
 use crate::commands::bin::BinTool;
-use crate::commands::init::InitTool;
-use crate::enums::{CacheMode, LogLevel, TouchedStatus};
+use crate::commands::check::CheckArgs;
+use crate::commands::ci::CiArgs;
+use crate::commands::clean::CleanArgs;
+use crate::commands::docker::DockerScaffoldArgs;
+use crate::commands::generate::GenerateArgs;
+use crate::commands::graph::dep::DepGraphArgs;
+use crate::commands::graph::project::ProjectGraphArgs;
+use crate::commands::init::InitArgs;
+use crate::commands::migrate::FromPackageJsonArgs;
+use crate::commands::node::RunScriptArgs;
+use crate::commands::project::ProjectArgs;
+use crate::commands::query::{
+    QueryHashArgs, QueryHashDiffArgs, QueryProjectsArgs, QueryTasksArgs, QueryTouchedFilesArgs,
+};
+use crate::commands::run::RunArgs;
+use crate::commands::syncs::codeowners::SyncCodeownersArgs;
+use crate::commands::syncs::hooks::SyncHooksArgs;
+use crate::commands::task::TaskArgs;
+use crate::enums::{CacheMode, LogLevel};
 use clap::{Parser, Subcommand};
 use clap_complete::Shell;
-use moon_action_context::ProfileType;
-use moon_common::Id;
-use moon_target::Target;
 use std::path::PathBuf;
 
 pub const BIN_NAME: &str = if cfg!(windows) { "moon.exe" } else { "moon" };
-
-const HEADING_AFFECTED: &str = "Affected by changes";
-const HEADING_DEBUGGING: &str = "Debugging";
-const HEADING_PARALLELISM: &str = "Parallelism and distribution";
 
 #[derive(Debug, Subcommand)]
 pub enum DockerCommands {
@@ -28,13 +38,7 @@ pub enum DockerCommands {
         name = "scaffold",
         about = "Scaffold a repository skeleton for use within Dockerfile(s)."
     )]
-    Scaffold {
-        #[arg(required = true, help = "List of project IDs to copy sources for")]
-        ids: Vec<Id>,
-
-        #[arg(long, help = "Additional file globs to include in sources")]
-        include: Vec<String>,
-    },
+    Scaffold(DockerScaffoldArgs),
 
     #[command(
         name = "setup",
@@ -49,10 +53,7 @@ pub enum MigrateCommands {
         name = "from-package-json",
         about = "Migrate `package.json` scripts and dependencies to `moon.yml`."
     )]
-    FromPackageJson {
-        #[arg(help = "ID of project to migrate")]
-        id: Id,
-    },
+    FromPackageJson(FromPackageJsonArgs),
 
     #[command(
         name = "from-turborepo",
@@ -67,13 +68,7 @@ pub enum NodeCommands {
         name = "run-script",
         about = "Run a `package.json` script within a project."
     )]
-    RunScript {
-        #[arg(help = "Name of the script")]
-        name: String,
-
-        #[arg(long, help = "ID of project to run in")]
-        project: Option<Id>,
-    },
+    RunScript(RunScriptArgs),
 }
 
 #[derive(Debug, Subcommand)]
@@ -83,134 +78,30 @@ pub enum QueryCommands {
         about = "Inspect the contents of a generated hash.",
         long_about = "Inspect the contents of a generated hash, and display all sources and inputs that were used to generate it."
     )]
-    Hash {
-        #[arg(required = true, help = "Hash to inspect")]
-        hash: String,
-
-        #[arg(long, help = "Print the manifest in JSON format")]
-        json: bool,
-    },
+    Hash(QueryHashArgs),
 
     #[command(
         name = "hash-diff",
         about = "Query the difference between two hashes.",
         long_about = "Query the difference between two hashes. The left differences will be printed in green, while the right in red, and equal lines in white."
     )]
-    HashDiff {
-        #[arg(required = true, help = "Base hash to compare against")]
-        left: String,
-
-        #[arg(required = true, help = "Other hash to compare with")]
-        right: String,
-
-        #[arg(long, help = "Print the diff in JSON format")]
-        json: bool,
-    },
+    HashDiff(QueryHashDiffArgs),
 
     #[command(
         name = "projects",
         about = "Query for projects within the project graph.",
         long_about = "Query for projects within the project graph. All options support regex patterns."
     )]
-    Projects {
-        #[arg(help = "Filter projects using a query (takes precedence over options)")]
-        query: Option<String>,
+    Projects(QueryProjectsArgs),
 
-        #[arg(long, help = "Filter projects that match this alias")]
-        alias: Option<String>,
-
-        #[arg(
-            long,
-            help = "Filter projects that are affected based on touched files"
-        )]
-        affected: bool,
-
-        #[arg(long, help = "Filter projects that match this ID")]
-        id: Option<String>,
-
-        #[arg(long, help = "Print the projects in JSON format")]
-        json: bool,
-
-        #[arg(long, help = "Filter projects of this programming language")]
-        language: Option<String>,
-
-        #[arg(long, help = "Filter projects that match this source path")]
-        source: Option<String>,
-
-        #[arg(long, help = "Filter projects that have the following tags")]
-        tags: Option<String>,
-
-        #[arg(long, help = "Filter projects that have the following tasks")]
-        tasks: Option<String>,
-
-        #[arg(long = "type", help = "Filter projects of this type")]
-        type_of: Option<String>,
-    },
-
-    #[command(
-        name = "tasks",
-        about = "List all available projects & their tasks.",
-        rename_all = "camelCase"
-    )]
-    Tasks {
-        #[arg(help = "Filter projects using a query (takes precedence over options)")]
-        query: Option<String>,
-
-        #[arg(long, help = "Filter projects that match this alias")]
-        alias: Option<String>,
-
-        #[arg(
-            long,
-            help = "Filter projects that are affected based on touched files"
-        )]
-        affected: bool,
-
-        #[arg(long, help = "Filter projects that match this ID")]
-        id: Option<String>,
-
-        #[arg(long, help = "Print the tasks in JSON format")]
-        json: bool,
-
-        #[arg(long, help = "Filter projects of this programming language")]
-        language: Option<String>,
-
-        #[arg(long, help = "Filter projects that match this source path")]
-        source: Option<String>,
-
-        #[arg(long, help = "Filter projects that have the following tasks")]
-        tasks: Option<String>,
-
-        #[arg(long = "type", help = "Filter projects of this type")]
-        type_of: Option<String>,
-    },
+    #[command(name = "tasks", about = "List all available projects & their tasks.")]
+    Tasks(QueryTasksArgs),
 
     #[command(
         name = "touched-files",
-        about = "Query for touched files between revisions.",
-        rename_all = "camelCase"
+        about = "Query for touched files between revisions."
     )]
-    TouchedFiles {
-        #[arg(long, help = "Base branch, commit, or revision to compare against")]
-        base: Option<String>,
-
-        #[arg(
-            long,
-            help = "When on the default branch, compare against the previous revision"
-        )]
-        default_branch: bool,
-
-        #[arg(long, help = "Current branch, commit, or revision to compare with")]
-        head: Option<String>,
-
-        #[arg(long, help = "Print the files in JSON format")]
-        json: bool,
-
-        #[arg(long, help = "Gather files from you local state instead of the remote")]
-        local: bool,
-
-        #[arg(value_enum, long, help = "Filter files based on a touched status")]
-        status: Vec<TouchedStatus>,
-    },
+    TouchedFiles(QueryTouchedFilesArgs),
 }
 
 #[derive(Debug, Subcommand)]
@@ -219,25 +110,13 @@ pub enum SyncCommands {
         name = "codeowners",
         about = "Aggregate and sync code owners to a `CODEOWNERS` file."
     )]
-    Codeowners {
-        #[arg(long, help = "Clean and remove previously generated file")]
-        clean: bool,
-
-        #[arg(long, help = "Bypass cache and force create file")]
-        force: bool,
-    },
+    Codeowners(SyncCodeownersArgs),
 
     #[command(
         name = "hooks",
         about = "Generate and sync hook scripts for the workspace configured VCS."
     )]
-    Hooks {
-        #[arg(long, help = "Clean and remove previously generated hooks")]
-        clean: bool,
-
-        #[arg(long, help = "Bypass cache and force create hooks")]
-        force: bool,
-    },
+    Hooks(SyncHooksArgs),
 
     #[command(
         name = "projects",
@@ -262,25 +141,9 @@ pub enum Commands {
     // moon init
     #[command(
         name = "init",
-        about = "Initialize a new tool or a new moon repository, and scaffold config files.",
-        rename_all = "camelCase"
+        about = "Initialize a new tool or a new moon repository, and scaffold config files."
     )]
-    Init {
-        #[arg(help = "Destination to initialize in", default_value = ".")]
-        dest: String,
-
-        #[arg(long, help = "Overwrite existing configurations")]
-        force: bool,
-
-        #[arg(long, help = "Initialize with minimal configuration and prompts")]
-        minimal: bool,
-
-        #[arg(long, help = "Skip prompts and use default values")]
-        yes: bool,
-
-        #[arg(long, value_enum, help = "Specific tool to initialize")]
-        tool: Option<InitTool>,
-    },
+    Init(InitArgs),
 
     // TOOLCHAIN
 
@@ -324,16 +187,7 @@ pub enum Commands {
         about = "Display an interactive dependency graph of all tasks and actions.",
         alias = "dg"
     )]
-    DepGraph {
-        #[arg(help = "Target to *only* graph")]
-        target: Option<String>,
-
-        #[arg(long, help = "Print the graph in DOT format")]
-        dot: bool,
-
-        #[arg(long, help = "Print the graph in JSON format")]
-        json: bool,
-    },
+    DepGraph(DepGraphArgs),
 
     // moon project <id>
     #[command(
@@ -341,13 +195,7 @@ pub enum Commands {
         about = "Display information about a single project.",
         alias = "p"
     )]
-    Project {
-        #[arg(help = "ID of project to display")]
-        id: Id,
-
-        #[arg(long, help = "Print in JSON format")]
-        json: bool,
-    },
+    Project(ProjectArgs),
 
     // moon project-graph [id]
     #[command(
@@ -355,16 +203,7 @@ pub enum Commands {
         about = "Display an interactive graph of projects.",
         alias = "pg"
     )]
-    ProjectGraph {
-        #[arg(help = "ID of project to *only* graph")]
-        id: Option<Id>,
-
-        #[arg(long, help = "Print the graph in DOT format")]
-        dot: bool,
-
-        #[arg(long, help = "Print the graph in JSON format")]
-        json: bool,
-    },
+    ProjectGraph(ProjectGraphArgs),
 
     #[command(name = "sync", about = "Sync the workspace to a healthy state.")]
     Sync {
@@ -378,13 +217,7 @@ pub enum Commands {
         about = "Display information about a single task.",
         alias = "t"
     )]
-    Task {
-        #[arg(help = "Target of task to display")]
-        target: Target,
-
-        #[arg(long, help = "Print in JSON format")]
-        json: bool,
-    },
+    Task(TaskArgs),
 
     // GENERATOR
 
@@ -392,35 +225,9 @@ pub enum Commands {
     #[command(
         name = "generate",
         about = "Generate and scaffold files from a pre-defined template.",
-        alias = "g",
-        rename_all = "camelCase"
+        alias = "g"
     )]
-    Generate {
-        #[arg(help = "Name of template to generate")]
-        name: String,
-
-        #[arg(help = "Destination path, relative from the current working directory")]
-        dest: Option<String>,
-
-        #[arg(
-            long,
-            help = "Use the default value of all variables instead of prompting"
-        )]
-        defaults: bool,
-
-        #[arg(long, help = "Run entire generator process without writing files")]
-        dry_run: bool,
-
-        #[arg(long, help = "Force overwrite any existing files at the destination")]
-        force: bool,
-
-        #[arg(long, help = "Create a new template")]
-        template: bool,
-
-        // Variable args (after --)
-        #[arg(last = true, help = "Arguments to define as variable values")]
-        vars: Vec<String>,
-    },
+    Generate(GenerateArgs),
 
     // RUNNER
 
@@ -428,125 +235,24 @@ pub enum Commands {
     #[command(
         name = "check",
         about = "Run all build and test related tasks for the current project.",
-        alias = "c",
-        rename_all = "camelCase"
+        alias = "c"
     )]
-    Check {
-        #[arg(help = "List of project IDs to explicitly check")]
-        #[clap(group = "projects")]
-        ids: Vec<Id>,
-
-        #[arg(long, help = "Run check for all projects in the workspace")]
-        #[clap(group = "projects")]
-        all: bool,
-
-        #[arg(
-            long,
-            short = 'u',
-            help = "Bypass cache and force update any existing items"
-        )]
-        update_cache: bool,
-    },
+    Check(CheckArgs),
 
     // moon ci
     #[command(
         name = "ci",
-        about = "Run all affected projects and tasks in a CI environment.",
-        rename_all = "camelCase"
+        about = "Run all affected projects and tasks in a CI environment."
     )]
-    Ci {
-        #[arg(long, help = "Base branch, commit, or revision to compare against")]
-        base: Option<String>,
-
-        #[arg(long, help = "Current branch, commit, or revision to compare with")]
-        head: Option<String>,
-
-        #[arg(long, help = "Index of the current job", help_heading = HEADING_PARALLELISM)]
-        job: Option<usize>,
-
-        #[arg(long, help = "Total amount of jobs to run", help_heading = HEADING_PARALLELISM)]
-        job_total: Option<usize>,
-    },
+    Ci(CiArgs),
 
     // moon run [...targets]
     #[command(
         name = "run",
         about = "Run one or many project tasks and their dependent tasks.",
-        alias = "r",
-        rename_all = "camelCase"
+        alias = "r"
     )]
-    Run {
-        #[arg(required = true, help = "List of targets (scope:task) to run")]
-        targets: Vec<String>,
-
-        #[arg(
-            long,
-            help = "Run dependents of the primary targets, as well as dependencies"
-        )]
-        dependents: bool,
-
-        #[arg(
-            long,
-            short = 'f',
-            help = "Force run and ignore touched files and affected status"
-        )]
-        force: bool,
-
-        #[arg(long, short = 'i', help = "Run the target interactively")]
-        interactive: bool,
-
-        #[arg(long, help = "Focus target(s) based on the result of a query")]
-        query: Option<String>,
-
-        #[arg(
-            long,
-            short = 'u',
-            help = "Bypass cache and force update any existing items"
-        )]
-        update_cache: bool,
-
-        // Debugging
-        #[arg(
-            value_enum,
-            long,
-            help = "Record and generate a profile for ran tasks",
-            help_heading = HEADING_DEBUGGING,
-        )]
-        profile: Option<ProfileType>,
-
-        // Affected
-        #[arg(
-            long,
-            help = "Only run target if affected by touched files",
-            help_heading = HEADING_AFFECTED,
-            group = "affected-args"
-        )]
-        affected: bool,
-
-        #[arg(
-            long,
-            help = "Determine affected against remote by comparing against a base revision",
-            help_heading = HEADING_AFFECTED,
-            requires = "affected-args",
-        )]
-        remote: bool,
-
-        #[arg(
-            value_enum,
-            long,
-            help = "Filter affected files based on a touched status",
-            help_heading = HEADING_AFFECTED,
-            requires = "affected-args",
-        )]
-        status: Vec<TouchedStatus>,
-
-        // Passthrough args (after --)
-        #[arg(
-            last = true,
-            help = "Arguments to pass through to the underlying command"
-        )]
-        passthrough: Vec<String>,
-    },
+    Run(RunArgs),
 
     // OTHER
 
@@ -555,10 +261,7 @@ pub enum Commands {
         name = "clean",
         about = "Clean the workspace and delete any stale or invalid artifacts."
     )]
-    Clean {
-        #[arg(long, default_value = "7 days", help = "Lifetime of cached artifacts")]
-        lifetime: String,
-    },
+    Clean(CleanArgs),
 
     // moon docker <operation>
     #[command(
@@ -612,8 +315,8 @@ pub enum Commands {
     version,
     disable_colored_help = true,
     disable_help_subcommand = true,
-    propagate_version = true,
     next_line_help = false,
+    propagate_version = true,
     rename_all = "camelCase"
 )]
 pub struct App {

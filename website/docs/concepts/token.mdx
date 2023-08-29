@@ -3,10 +3,10 @@ title: Tokens
 ---
 
 Tokens are variables and functions that can be used by [`command`](../config/project#command),
-[`args`](../config/project#args), [`inputs`](../config/project#inputs), and
-[`outputs`](../config/project#outputs) when configuring a task. They provide a way of accessing file
-group paths, referencing values from other task fields, and referencing metadata about the project
-and task itself.
+[`args`](../config/project#args), [`env`](../config/project#env) (>= v1.12),
+[`inputs`](../config/project#inputs), and [`outputs`](../config/project#outputs) when configuring a
+task. They provide a way of accessing file group paths, referencing values from other task fields,
+and referencing metadata about the project and task itself.
 
 ## Functions
 
@@ -14,8 +14,12 @@ A token function is labeled as such as it takes a single argument, starts with a
 formatted as `@name(arg)`. The following token functions are available, grouped by their
 functionality.
 
-> Token functions _must_ be the only content within a list item, as they expand to multiple file
-> paths.
+:::caution
+
+Token functions _must_ be the only content within a value, as they expand to multiple files. When
+used in an `env` value, multiple files are joined with a comma (`,`).
+
+:::
 
 ### File groups
 
@@ -23,7 +27,7 @@ These functions reference file groups by name, where the name is passed as the a
 
 ### `@group`
 
-> Usable in `args`, `inputs`, and `outputs`.
+> Usable in `args`, `env`, `inputs`, and `outputs`.
 
 The `@group(file_group)` token is a standard token that will be replaced with the file group items
 as-is, for both file paths and globs. This token merely exists for reusability purposes.
@@ -62,7 +66,7 @@ tasks:
 
 ### `@dirs`
 
-> Usable in `args`, `inputs`, and `outputs`.
+> Usable in `args`, `env`, `inputs`, and `outputs`.
 
 The `@dirs(file_group)` token will be replaced with an expanded list of directory paths, derived
 from the file group of the same name. If a glob pattern is detected within the file group, it will
@@ -100,7 +104,7 @@ tasks:
 
 ### `@files`
 
-> Usable in `args`, `inputs`, and `outputs`.
+> Usable in `args`, `env`, `inputs`, and `outputs`.
 
 The `@files(file_group)` token will be replaced with an expanded list of file paths, derived from
 the file group of the same name. If a glob pattern is detected within the file group, it will walk
@@ -136,11 +140,11 @@ tasks:
 
 ### `@globs`
 
-> Usable in `args`, `inputs`, and `outputs`.
+> Usable in `args`, `env`, `inputs`, and `outputs`.
 
-The `@globs(file_group)` token will be replaced with an expanded list of glob patterns (as-is),
-derived from the file group of the same name. If a non-glob pattern is detected within the file
-group, it will be ignored.
+The `@globs(file_group)` token will be replaced with the list of glob patterns as-is, derived from
+the file group of the same name. If a non-glob pattern is detected within the file group, it will be
+ignored.
 
 ```yaml
 fileGroups:
@@ -170,7 +174,7 @@ tasks:
 
 ### `@root`
 
-> Usable in `args`, `inputs`, and `outputs`.
+> Usable in `args`, `env`, `inputs`, and `outputs`.
 
 The `@root(file_group)` token will be replaced with the lowest common directory, derived from the
 file group of the same name. If a glob pattern is detected within the file group, it will walk the
@@ -275,8 +279,6 @@ tasks:
 ```
 
 ## Variables
-
-> Usable in `command`, `args`, and `inputs` only.
 
 A token variable is a value that starts with `$` and is substituted to a value derived from the
 current workspace, project, and task. And unlike token functions, token variables can be placed

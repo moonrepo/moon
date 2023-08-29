@@ -1,5 +1,122 @@
 # Changelog
 
+## 1.12.0
+
+#### 🚀 Updates
+
+- Added [git worktree](https://git-scm.com/docs/git-worktree) support (experimental).
+- Added an `interactive` field to task options. This marks tasks as interactive, so they can use
+  stdin.
+- Added an `extends` field to task configurations. This allows tasks to extend and inherit settings
+  from sibling tasks.
+- Updated task `env` values to support token functions and variables.
+- Updated task `outputs` to support negated globs.
+- Will now log a warning to the console if a configuration file uses the `.yaml` extension.
+
+#### 🐞 Fixes
+
+- Fixed an issue where `moon ci` would no run affected targets based on touched files.
+
+#### ⚙️ Internal
+
+- Improved caching and hashing layers.
+
+## 1.11.1
+
+#### 🐞 Fixes
+
+- Fixed an issue where tasks using output globs would not always hydrate from the cache.
+
+## 1.11.0
+
+#### 💥 Breaking
+
+- To support the new project graph, the order and priority in which environment variables are
+  resolved has changed. Previously it was task-level > .env file > project-level. Now it's
+  task-level > project-level > .env file.
+
+#### 🚀 Updates
+
+- Rewrote the project graph from the ground-up:
+  - Lazily built using a multi-pass approach.
+  - Graph edges now indicate the type of relationship: development, production, build, peer.
+  - Updated `moon project-graph --json` to include the fully expanded graph data.
+- Identifiers (project names, file groups, etc) can now be prefixed with underscores (`_`).
+- Added Poetry detection support for Python projects.
+- Added an `experiments` setting to `.moon/workspace.yml`.
+- **Tasks**
+  - Environment variables in `command` and `args` are now substituted.
+  - Task `deps` can now depend on tag targets (`#tag:task`).
+  - Task `env` are now used when substituting values, alongside system-level.
+  - Task `outputs` can now use token variables.
+- **Codegen**
+  - Templates can be used as-is without rendering with [Tera](https://tera.netlify.app) by appending
+    a `.raw` extension.
+- **Query language**
+  - Updated `project` to query both project name AND alias.
+  - Added `projectName` for only querying by name.
+
+#### 🐞 Fixes
+
+- Fixed an issue where newer moonbase secret keys would fail to sign in.
+- Fixed an issue where `@files` token would not invalidate the project graph cache.
+- Fixed an issue where changing `.env` would not invalidate the project graph cache.
+
+#### ⚙️ Internal
+
+- Updated to proto v0.13.
+- Updated Rust to v1.71.
+
+## 1.10.1
+
+#### 🐞 Fixes
+
+- Fixed an issue where `.gitignore` patterns weren't always applied correctly.
+- Fixed an issue where `git hash-object` commands would fail if moon was setup in a sub-directory.
+- Fixed an issue where our "upgrade moon" message would print when requesting JSON output
+  (`--json`), resulting in JSON parsing errors.
+
+## 1.10.0
+
+#### 💥 Breaking
+
+> These changes are fixing edge cases that should not have been allowed, but may break existing
+> repos. If these changes become troublesome, we'll revert.
+
+- Tasks that configure the same outputs will now error. This change was made as multiple tasks
+  writing to the same output location will cause caching and hydration issues.
+- If a dependency of a task failed to run or was skipped, then the parent task will now be skipped.
+
+#### 🚀 Updates
+
+- Added support for `MOON_BASE` and `MOON_HEAD` environment variables.
+  - Will be used when diffing across branches or commits.
+  - Works for both `moon ci` and `moon run`.
+- Added `deno.bins` setting to `.moon/toolchain.yml`.
+- Added `hasher.ignorePatterns` and `hasher.ignoreMissingPatterns` settings to
+  `.moon/workspace.yml`.
+- Updated `moon ci` to include a summary of all failed actions.
+- Updated `moon run` to compare against the previous commit when running on the default branch and
+  using `--remote`.
+- Updated `rust.bins` in `.moon/toolchain.yml` to support an object for each bin entry.
+  - Can denote bins as CI or local only.
+  - Can force install bins.
+- Updated the run report to include stderr/stdout for all attempts.
+
+#### 🐞 Fixes
+
+- Fixed an issue where failed target run attempts would not appear in the run report.
+
+#### 📚 Documentation
+
+- Added a new in-depth "Debugging a task" guide.
+
+#### ⚙️ Internal
+
+- Updated to proto v0.12.
+- Modernized the code generator and project constraints implementation.
+- Renamed runfile to snapshot throughout.
+
 ## 1.9.2
 
 #### 🐞 Fixes

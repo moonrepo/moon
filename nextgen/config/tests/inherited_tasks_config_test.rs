@@ -329,14 +329,6 @@ implicitDeps:
                 InheritedTasksConfig::load(path.join(FILENAME))
             });
         }
-
-        #[test]
-        #[should_panic(expected = "target scope not supported as a task dependency")]
-        fn errors_on_tag_scope() {
-            test_load_config(FILENAME, "implicitDeps: ['#tag:task']", |path| {
-                InheritedTasksConfig::load(path.join(FILENAME))
-            });
-        }
     }
 
     mod implicit_inputs {

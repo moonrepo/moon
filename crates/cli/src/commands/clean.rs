@@ -1,21 +1,20 @@
 use crate::helpers::create_progress_bar;
+use clap::Args;
 use moon::load_workspace;
 use starbase::AppResult;
 
-pub struct CleanOptions {
-    pub cache_lifetime: String,
+#[derive(Args, Debug)]
+pub struct CleanArgs {
+    #[arg(long, default_value = "7 days", help = "Lifetime of cached artifacts")]
+    lifetime: String,
 }
 
-pub async fn clean(options: CleanOptions) -> AppResult {
+pub async fn clean(args: CleanArgs) -> AppResult {
     let workspace = load_workspace().await?;
 
-    let done = create_progress_bar(format!(
-        "Cleaning stale cache older than {}",
-        options.cache_lifetime
-    ));
+    let done = create_progress_bar(format!("Cleaning stale cache older than {}", args.lifetime));
 
-    let (files_deleted, bytes_saved) =
-        workspace.cache.clean_stale_cache(&options.cache_lifetime)?;
+    let (files_deleted, bytes_saved) = workspace.cache_engine.clean_stale_cache(&args.lifetime)?;
 
     done(
         format!("Deleted {files_deleted} files and saved {bytes_saved} bytes"),

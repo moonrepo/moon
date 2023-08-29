@@ -7,21 +7,45 @@ use moon_config::{
 use moon_platform_detector::detect_task_platform;
 use moon_target::Target;
 use moon_task::Task;
-use moon_task_builder::TasksBuilder;
+use moon_task_builder::{DetectPlatformEvent, TasksBuilder, TasksBuilderContext};
 use rustc_hash::FxHashMap;
+use starbase_events::{Emitter, EventState};
 use starbase_sandbox::create_sandbox;
 use std::collections::BTreeMap;
 use std::path::Path;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 
-fn build_tasks_with_config(
+async fn build_tasks_with_config(
     root: &Path,
     source: &str,
     local_config: ProjectConfig,
     toolchain_config: ToolchainConfig,
 ) -> BTreeMap<Id, Task> {
     let platform = local_config.platform.unwrap_or_default();
+    let emitter = Emitter::<DetectPlatformEvent>::new();
 
-    let mut builder = TasksBuilder::new("project", source, &platform, root);
+    emitter
+        .on(
+            |event: Arc<DetectPlatformEvent>, data: Arc<RwLock<PlatformType>>| async move {
+                let mut data = data.write().await;
+                *data = detect_task_platform(&event.task_command, &event.enabled_platforms);
+
+                Ok(EventState::Stop)
+            },
+        )
+        .await;
+
+    let mut builder = TasksBuilder::new(
+        "project",
+        source,
+        &platform,
+        TasksBuilderContext {
+            detect_platform: &emitter,
+            toolchain_config: &toolchain_config,
+            workspace_root: root,
+        },
+    );
 
     builder.load_local_tasks(&local_config);
 
@@ -41,21 +65,20 @@ fn build_tasks_with_config(
         Some(&local_config.workspace.inherited_tasks),
     );
 
-    builder.detect_platform(detect_task_platform, &toolchain_config);
-
-    builder.build().unwrap()
+    builder.build().await.unwrap()
 }
 
-fn build_tasks(root: &Path, config_path: &str) -> BTreeMap<Id, Task> {
+async fn build_tasks(root: &Path, config_path: &str) -> BTreeMap<Id, Task> {
     build_tasks_with_config(
         root,
         &config_path.replace("/moon.yml", ""),
         ProjectConfig::load(root, root.join(config_path)).unwrap(),
         ToolchainConfig::default(),
     )
+    .await
 }
 
-fn build_tasks_with_toolchain(root: &Path, config_path: &str) -> BTreeMap<Id, Task> {
+async fn build_tasks_with_toolchain(root: &Path, config_path: &str) -> BTreeMap<Id, Task> {
     build_tasks_with_config(
         root,
         &config_path.replace("/moon.yml", ""),
@@ -67,15 +90,16 @@ fn build_tasks_with_toolchain(root: &Path, config_path: &str) -> BTreeMap<Id, Ta
             ..ToolchainConfig::default()
         },
     )
+    .await
 }
 
 mod tasks_builder {
     use super::*;
 
-    #[test]
-    fn loads_local_tasks() {
+    #[tokio::test]
+    async fn loads_local_tasks() {
         let sandbox = create_sandbox("builder");
-        let tasks = build_tasks(sandbox.path(), "local/moon.yml");
+        let tasks = build_tasks(sandbox.path(), "local/moon.yml").await;
 
         let build = tasks.get("local-build").unwrap();
 
@@ -116,10 +140,10 @@ mod tasks_builder {
         assert!(!test.flags.local);
     }
 
-    #[test]
-    fn inherits_global_tasks() {
+    #[tokio::test]
+    async fn inherits_global_tasks() {
         let sandbox = create_sandbox("builder");
-        let tasks = build_tasks(sandbox.path(), "local/moon.yml");
+        let tasks = build_tasks(sandbox.path(), "local/moon.yml").await;
 
         let build = tasks.get("local-build").unwrap();
 
@@ -148,10 +172,10 @@ mod tasks_builder {
         assert!(run.flags.local);
     }
 
-    #[test]
-    fn inherits_global_tasks_from_all_scopes() {
+    #[tokio::test]
+    async fn inherits_global_tasks_from_all_scopes() {
         let sandbox = create_sandbox("builder");
-        let tasks = build_tasks(sandbox.path(), "scopes/moon.yml");
+        let tasks = build_tasks(sandbox.path(), "scopes/moon.yml").await;
 
         assert_eq!(
             tasks.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
@@ -170,28 +194,28 @@ mod tasks_builder {
     mod defaults {
         use super::*;
 
-        #[test]
-        fn sets_id() {
+        #[tokio::test]
+        async fn sets_id() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "local/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "local/moon.yml").await;
             let task = tasks.get("local-build").unwrap();
 
             assert_eq!(task.id, Id::raw("local-build"));
         }
 
-        #[test]
-        fn sets_target() {
+        #[tokio::test]
+        async fn sets_target() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "local/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "local/moon.yml").await;
             let task = tasks.get("local-build").unwrap();
 
             assert_eq!(task.target, Target::parse("project:local-build").unwrap());
         }
 
-        #[test]
-        fn type_test_by_default() {
+        #[tokio::test]
+        async fn type_test_by_default() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "local/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "local/moon.yml").await;
             let task = tasks.get("global-test").unwrap();
 
             assert_eq!(task.type_of, TaskType::Test);
@@ -199,10 +223,10 @@ mod tasks_builder {
             assert!(task.should_run_in_ci());
         }
 
-        #[test]
-        fn type_run_if_local() {
+        #[tokio::test]
+        async fn type_run_if_local() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "local/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "local/moon.yml").await;
             let task = tasks.get("global-run").unwrap();
 
             assert_eq!(task.type_of, TaskType::Run);
@@ -210,10 +234,10 @@ mod tasks_builder {
             assert!(!task.should_run_in_ci());
         }
 
-        #[test]
-        fn type_build_if_has_outputs() {
+        #[tokio::test]
+        async fn type_build_if_has_outputs() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "local/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "local/moon.yml").await;
             let task = tasks.get("global-build").unwrap();
 
             assert_eq!(task.type_of, TaskType::Build);
@@ -225,110 +249,110 @@ mod tasks_builder {
     mod command_args {
         use super::*;
 
-        #[test]
-        fn command_fallsback_to_noop() {
+        #[tokio::test]
+        async fn command_fallsback_to_noop() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "commands/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "commands/moon.yml").await;
             let task = tasks.get("no-command").unwrap();
 
             assert_eq!(task.command, "noop");
             assert_eq!(task.args, Vec::<String>::new());
         }
 
-        #[test]
-        fn command_only() {
+        #[tokio::test]
+        async fn command_only() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "commands/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "commands/moon.yml").await;
             let task = tasks.get("command-only").unwrap();
 
             assert_eq!(task.command, "bin");
             assert_eq!(task.args, Vec::<String>::new());
         }
 
-        #[test]
-        fn command_string() {
+        #[tokio::test]
+        async fn command_string() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "commands/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "commands/moon.yml").await;
             let task = tasks.get("command-string").unwrap();
 
             assert_eq!(task.command, "bin");
             assert_eq!(task.args, vec!["--foo", "bar"]);
         }
 
-        #[test]
-        fn command_list() {
+        #[tokio::test]
+        async fn command_list() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "commands/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "commands/moon.yml").await;
             let task = tasks.get("command-list").unwrap();
 
             assert_eq!(task.command, "bin");
             assert_eq!(task.args, vec!["--foo", "bar"]);
         }
 
-        #[test]
-        fn args_string() {
+        #[tokio::test]
+        async fn args_string() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "commands/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "commands/moon.yml").await;
             let task = tasks.get("args-string").unwrap();
 
             assert_eq!(task.command, "noop");
             assert_eq!(task.args, vec!["--foo", "bar"]);
         }
 
-        #[test]
-        fn args_list() {
+        #[tokio::test]
+        async fn args_list() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "commands/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "commands/moon.yml").await;
             let task = tasks.get("args-list").unwrap();
 
             assert_eq!(task.command, "noop");
             assert_eq!(task.args, vec!["--foo", "bar"]);
         }
 
-        #[test]
-        fn both_string() {
+        #[tokio::test]
+        async fn both_string() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "commands/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "commands/moon.yml").await;
             let task = tasks.get("both-string").unwrap();
 
             assert_eq!(task.command, "bin");
             assert_eq!(task.args, vec!["--foo", "bar"]);
         }
 
-        #[test]
-        fn both_list() {
+        #[tokio::test]
+        async fn both_list() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "commands/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "commands/moon.yml").await;
             let task = tasks.get("both-list").unwrap();
 
             assert_eq!(task.command, "bin");
             assert_eq!(task.args, vec!["--foo", "bar"]);
         }
 
-        #[test]
-        fn both_list_many() {
+        #[tokio::test]
+        async fn both_list_many() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "commands/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "commands/moon.yml").await;
             let task = tasks.get("both-list-many").unwrap();
 
             assert_eq!(task.command, "bin");
             assert_eq!(task.args, vec!["-qux", "--foo", "bar"]);
         }
 
-        #[test]
-        fn override_global_command() {
+        #[tokio::test]
+        async fn override_global_command() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "commands/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "commands/moon.yml").await;
             let task = tasks.get("global-build").unwrap();
 
             assert_eq!(task.command, "override-bin");
             assert_eq!(task.args, vec!["--with", "args"]);
         }
 
-        #[test]
-        fn merges_local_args() {
+        #[tokio::test]
+        async fn merges_local_args() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "commands/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "commands/moon.yml").await;
             let task = tasks.get("global-test").unwrap();
 
             assert_eq!(task.command, "global-test");
@@ -339,10 +363,10 @@ mod tasks_builder {
     mod detect_platforms {
         use super::*;
 
-        #[test]
-        fn uses_explicitly_configured() {
+        #[tokio::test]
+        async fn uses_explicitly_configured() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "platforms/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "platforms/moon.yml").await;
 
             let task = tasks.get("system").unwrap();
 
@@ -353,10 +377,10 @@ mod tasks_builder {
             assert_eq!(task.platform, PlatformType::Node);
         }
 
-        #[test]
-        fn detects_from_command_name() {
+        #[tokio::test]
+        async fn detects_from_command_name() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks_with_toolchain(sandbox.path(), "platforms/moon.yml");
+            let tasks = build_tasks_with_toolchain(sandbox.path(), "platforms/moon.yml").await;
 
             let task = tasks.get("deno-via-cmd").unwrap();
 
@@ -371,10 +395,10 @@ mod tasks_builder {
             assert_eq!(task.platform, PlatformType::Rust);
         }
 
-        #[test]
-        fn doesnt_detect_from_command_if_not_toolchain_enabled() {
+        #[tokio::test]
+        async fn doesnt_detect_from_command_if_not_toolchain_enabled() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "platforms/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "platforms/moon.yml").await;
 
             let task = tasks.get("deno-via-cmd").unwrap();
 
@@ -389,10 +413,10 @@ mod tasks_builder {
             assert_eq!(task.platform, PlatformType::System);
         }
 
-        #[test]
-        fn unknown_fallsback_to_project_platform() {
+        #[tokio::test]
+        async fn unknown_fallsback_to_project_platform() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks_with_toolchain(sandbox.path(), "platforms/moon.yml");
+            let tasks = build_tasks_with_toolchain(sandbox.path(), "platforms/moon.yml").await;
 
             let task = tasks.get("unknown").unwrap();
 
@@ -403,10 +427,10 @@ mod tasks_builder {
             assert_eq!(task.platform, PlatformType::Rust);
         }
 
-        #[test]
-        fn applies_to_global_inherited() {
+        #[tokio::test]
+        async fn applies_to_global_inherited() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks_with_toolchain(sandbox.path(), "platforms/moon.yml");
+            let tasks = build_tasks_with_toolchain(sandbox.path(), "platforms/moon.yml").await;
 
             let task = tasks.get("global-build").unwrap();
 
@@ -417,10 +441,10 @@ mod tasks_builder {
     mod special_options {
         use super::*;
 
-        #[test]
-        fn affected_files() {
+        #[tokio::test]
+        async fn affected_files() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "options/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "options/moon.yml").await;
 
             let task = tasks.get("affected").unwrap();
 
@@ -451,10 +475,10 @@ mod tasks_builder {
             );
         }
 
-        #[test]
-        fn env_file() {
+        #[tokio::test]
+        async fn env_file() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "options/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "options/moon.yml").await;
 
             let task = tasks.get("env-file").unwrap();
 
@@ -482,10 +506,10 @@ mod tasks_builder {
             );
         }
 
-        #[test]
-        fn adds_env_file_as_an_input() {
+        #[tokio::test]
+        async fn adds_env_file_as_an_input() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "options/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "options/moon.yml").await;
 
             let task = tasks.get("env-file").unwrap();
 
@@ -507,6 +531,33 @@ mod tasks_builder {
                 .inputs
                 .contains(&InputPath::WorkspaceFile(".env.shared".into())));
         }
+
+        #[tokio::test]
+        async fn interactive() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "options/moon.yml").await;
+
+            let task = tasks.get("interactive").unwrap();
+
+            assert!(!task.options.cache);
+            assert!(!task.options.persistent);
+            assert!(!task.options.run_in_ci);
+            assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
+
+            let task = tasks.get("interactive-local").unwrap();
+
+            assert!(!task.options.cache);
+            assert!(!task.options.persistent);
+            assert!(!task.options.run_in_ci);
+            assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
+
+            let task = tasks.get("interactive-override").unwrap();
+
+            assert!(!task.options.cache);
+            assert!(!task.options.persistent);
+            assert!(!task.options.run_in_ci);
+            assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
+        }
     }
 
     mod local_mode {
@@ -520,20 +571,20 @@ mod tasks_builder {
             assert!(!task.options.run_in_ci);
         }
 
-        #[test]
-        fn infers_from_task_name() {
+        #[tokio::test]
+        async fn infers_from_task_name() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "local-mode/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "local-mode/moon.yml").await;
 
             is_local(tasks.get("dev").unwrap());
             is_local(tasks.get("start").unwrap());
             is_local(tasks.get("serve").unwrap());
         }
 
-        #[test]
-        fn can_override_options() {
+        #[tokio::test]
+        async fn can_override_options() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "local-mode/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "local-mode/moon.yml").await;
 
             let cache = tasks.get("override-cache").unwrap();
 
@@ -556,10 +607,10 @@ mod tasks_builder {
             assert!(ci.options.run_in_ci);
         }
 
-        #[test]
-        fn can_override_global_task() {
+        #[tokio::test]
+        async fn can_override_global_task() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "local-mode/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "local-mode/moon.yml").await;
 
             let build = tasks.get("global-build").unwrap();
 
@@ -574,10 +625,10 @@ mod tasks_builder {
     mod inputs_scenarios {
         use super::*;
 
-        #[test]
-        fn handles_different_inputs_values() {
+        #[tokio::test]
+        async fn handles_different_inputs_values() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "inputs/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "inputs/moon.yml").await;
 
             let task = tasks.get("no-inputs").unwrap();
 
@@ -610,10 +661,10 @@ mod tasks_builder {
             assert!(!task.flags.empty_inputs);
         }
 
-        #[test]
-        fn merges_with_global_tasks() {
+        #[tokio::test]
+        async fn merges_with_global_tasks() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "inputs/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "inputs/moon.yml").await;
 
             let task = tasks.get("global-build").unwrap();
 
@@ -651,10 +702,10 @@ mod tasks_builder {
     mod merge_strategies {
         use super::*;
 
-        #[test]
-        fn append() {
+        #[tokio::test]
+        async fn append() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "merge-append/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "merge-append/moon.yml").await;
 
             let task = tasks.get("args").unwrap();
 
@@ -704,10 +755,10 @@ mod tasks_builder {
             );
         }
 
-        #[test]
-        fn prepend() {
+        #[tokio::test]
+        async fn prepend() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "merge-prepend/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "merge-prepend/moon.yml").await;
 
             let task = tasks.get("args").unwrap();
 
@@ -757,10 +808,10 @@ mod tasks_builder {
             );
         }
 
-        #[test]
-        fn replace() {
+        #[tokio::test]
+        async fn replace() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "merge-replace/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "merge-replace/moon.yml").await;
 
             let task = tasks.get("args").unwrap();
 
@@ -800,10 +851,10 @@ mod tasks_builder {
     mod project_settings {
         use super::*;
 
-        #[test]
-        fn inherits_project_env_vars() {
+        #[tokio::test]
+        async fn inherits_project_env_vars() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "local/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "local/moon.yml").await;
 
             let build = tasks.get("local-build").unwrap();
 
@@ -850,15 +901,16 @@ mod tasks_builder {
             }
         }
 
-        #[test]
-        fn inherits_all_globals_by_default() {
+        #[tokio::test]
+        async fn inherits_all_globals_by_default() {
             let sandbox = create_sandbox("builder");
             let tasks = build_tasks_with_config(
                 sandbox.path(),
                 "project",
                 ProjectConfig::default(),
                 ToolchainConfig::default(),
-            );
+            )
+            .await;
 
             assert_eq!(
                 tasks.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
@@ -866,8 +918,8 @@ mod tasks_builder {
             );
         }
 
-        #[test]
-        fn includes_none() {
+        #[tokio::test]
+        async fn includes_none() {
             let sandbox = create_sandbox("builder");
             let tasks = build_tasks_with_config(
                 sandbox.path(),
@@ -877,13 +929,14 @@ mod tasks_builder {
                     ..Default::default()
                 }),
                 ToolchainConfig::default(),
-            );
+            )
+            .await;
 
             assert!(tasks.is_empty());
         }
 
-        #[test]
-        fn includes_by_name() {
+        #[tokio::test]
+        async fn includes_by_name() {
             let sandbox = create_sandbox("builder");
             let tasks = build_tasks_with_config(
                 sandbox.path(),
@@ -893,7 +946,8 @@ mod tasks_builder {
                     ..Default::default()
                 }),
                 ToolchainConfig::default(),
-            );
+            )
+            .await;
 
             assert_eq!(
                 tasks.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
@@ -901,8 +955,8 @@ mod tasks_builder {
             );
         }
 
-        #[test]
-        fn excludes_by_name() {
+        #[tokio::test]
+        async fn excludes_by_name() {
             let sandbox = create_sandbox("builder");
             let tasks = build_tasks_with_config(
                 sandbox.path(),
@@ -912,7 +966,8 @@ mod tasks_builder {
                     ..Default::default()
                 }),
                 ToolchainConfig::default(),
-            );
+            )
+            .await;
 
             assert_eq!(
                 tasks.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
@@ -920,8 +975,8 @@ mod tasks_builder {
             );
         }
 
-        #[test]
-        fn excludes_an_included() {
+        #[tokio::test]
+        async fn excludes_an_included() {
             let sandbox = create_sandbox("builder");
             let tasks = build_tasks_with_config(
                 sandbox.path(),
@@ -932,7 +987,8 @@ mod tasks_builder {
                     ..Default::default()
                 }),
                 ToolchainConfig::default(),
-            );
+            )
+            .await;
 
             assert_eq!(
                 tasks.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
@@ -940,8 +996,8 @@ mod tasks_builder {
             );
         }
 
-        #[test]
-        fn renames() {
+        #[tokio::test]
+        async fn renames() {
             let sandbox = create_sandbox("builder");
             let tasks = build_tasks_with_config(
                 sandbox.path(),
@@ -955,7 +1011,8 @@ mod tasks_builder {
                     ..Default::default()
                 }),
                 ToolchainConfig::default(),
-            );
+            )
+            .await;
 
             assert_eq!(
                 tasks.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
@@ -967,10 +1024,10 @@ mod tasks_builder {
     mod global_implicits {
         use super::*;
 
-        #[test]
-        fn no_inputs() {
+        #[tokio::test]
+        async fn no_inputs() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "implicits/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "implicits/moon.yml").await;
             let task = tasks.get("no-inputs").unwrap();
 
             assert_eq!(
@@ -985,10 +1042,10 @@ mod tasks_builder {
             assert!(!task.flags.empty_inputs);
         }
 
-        #[test]
-        fn empty_inputs() {
+        #[tokio::test]
+        async fn empty_inputs() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "implicits/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "implicits/moon.yml").await;
             let task = tasks.get("empty-inputs").unwrap();
 
             assert_eq!(
@@ -1002,10 +1059,10 @@ mod tasks_builder {
             assert!(task.flags.empty_inputs);
         }
 
-        #[test]
-        fn with_inputs() {
+        #[tokio::test]
+        async fn with_inputs() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "implicits/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "implicits/moon.yml").await;
             let task = tasks.get("with-inputs").unwrap();
 
             assert_eq!(
@@ -1020,28 +1077,28 @@ mod tasks_builder {
             assert!(!task.flags.empty_inputs);
         }
 
-        #[test]
-        fn no_deps() {
+        #[tokio::test]
+        async fn no_deps() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "implicits/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "implicits/moon.yml").await;
             let task = tasks.get("no-deps").unwrap();
 
             assert_eq!(task.deps, vec![Target::parse("app:build").unwrap()]);
         }
 
-        #[test]
-        fn empty_deps() {
+        #[tokio::test]
+        async fn empty_deps() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "implicits/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "implicits/moon.yml").await;
             let task = tasks.get("empty-deps").unwrap();
 
             assert_eq!(task.deps, vec![Target::parse("app:build").unwrap()]);
         }
 
-        #[test]
-        fn with_deps() {
+        #[tokio::test]
+        async fn with_deps() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "implicits/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "implicits/moon.yml").await;
             let task = tasks.get("with-deps").unwrap();
 
             assert_eq!(
@@ -1057,10 +1114,10 @@ mod tasks_builder {
     mod env_var_merging {
         use super::*;
 
-        #[test]
-        fn no_env() {
+        #[tokio::test]
+        async fn no_env() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "env/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "env/moon.yml").await;
             let task = tasks.get("no-env").unwrap();
 
             assert_eq!(
@@ -1073,10 +1130,10 @@ mod tasks_builder {
             );
         }
 
-        #[test]
-        fn with_env() {
+        #[tokio::test]
+        async fn with_env() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "env/moon.yml");
+            let tasks = build_tasks(sandbox.path(), "env/moon.yml").await;
             let task = tasks.get("with-env").unwrap();
 
             assert_eq!(
@@ -1089,39 +1146,93 @@ mod tasks_builder {
                 ])
             );
         }
+    }
 
-        #[test]
-        fn env_file() {
+    mod extending {
+        use super::*;
+
+        #[tokio::test]
+        async fn handles_args() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "env/moon.yml");
-            let task = tasks.get("env-file").unwrap();
+            let tasks = build_tasks(sandbox.path(), "extends/moon.yml").await;
+            let task = tasks.get("extend-args").unwrap();
+
+            assert_eq!(task.command, "lint");
+            assert_eq!(task.args, vec!["--fix", "./src"]);
+        }
+
+        #[tokio::test]
+        async fn handles_inputs() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "extends/moon.yml").await;
+            let task = tasks.get("extend-inputs").unwrap();
 
             assert_eq!(
-                task.env,
-                FxHashMap::from_iter([
-                    ("SCOPE".into(), "env-file".into()),
-                    ("KEY1".into(), "file-value1".into()),
-                    ("KEY2".into(), "value2".into()),
-                    ("EXTRA".into(), "abc".into()),
-                ])
+                task.inputs,
+                vec![
+                    InputPath::ProjectGlob("src/**/*".into()),
+                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                ]
             );
         }
 
-        #[test]
-        fn all_patterns() {
+        #[tokio::test]
+        async fn handles_options() {
             let sandbox = create_sandbox("builder");
-            let tasks = build_tasks(sandbox.path(), "env/moon.yml");
-            let task = tasks.get("all").unwrap();
+            let tasks = build_tasks(sandbox.path(), "extends/moon.yml").await;
+            let task = tasks.get("extend-options").unwrap();
 
+            assert!(!task.options.cache);
+            assert!(task.options.run_in_ci);
+            assert!(task.options.persistent);
+            assert_eq!(task.options.retry_count, 3);
+        }
+
+        #[tokio::test]
+        async fn handles_local() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "extends/moon.yml").await;
+            let task = tasks.get("extend-local").unwrap();
+
+            assert!(task.options.cache);
+            assert!(task.options.run_in_ci);
+            assert!(!task.options.persistent);
+        }
+
+        #[tokio::test]
+        async fn inherits_and_merges_globals_extend_chain() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "extends/moon.yml").await;
+            let task = tasks.get("extender").unwrap();
+
+            assert_eq!(task.command, "global-base");
+            assert_eq!(task.args, vec!["-qux", "--foo", "--bar", "-z"]);
             assert_eq!(
-                task.env,
-                FxHashMap::from_iter([
-                    ("SCOPE".into(), "task".into()),
-                    ("KEY1".into(), "file-value1".into()),
-                    ("KEY2".into(), "env-value2".into()),
-                    ("EXTRA".into(), "123".into()),
-                ])
+                task.inputs,
+                vec![
+                    InputPath::ProjectFile("global-base".into()),
+                    InputPath::ProjectFile("global-extender".into()),
+                    InputPath::ProjectFile("local-base".into()),
+                    InputPath::ProjectFile("local-extender".into()),
+                    InputPath::WorkspaceGlob(".moon/*.yml".into()),
+                    InputPath::WorkspaceFile(".moon/tasks/tag-extends.yml".into()),
+                ]
             );
+
+            assert!(task.options.cache);
+            assert!(!task.options.run_in_ci);
+            assert!(task.options.persistent);
+            assert_eq!(task.options.retry_count, 3);
+        }
+
+        #[tokio::test]
+        async fn can_create_extends_chains() {
+            let sandbox = create_sandbox("builder");
+            let tasks = build_tasks(sandbox.path(), "extends/moon.yml").await;
+            let task = tasks.get("extend-args-again").unwrap();
+
+            assert_eq!(task.command, "lint");
+            assert_eq!(task.args, vec!["./src", "--fix", "--bail"]);
         }
     }
 }

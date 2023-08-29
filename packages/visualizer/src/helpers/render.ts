@@ -28,13 +28,30 @@ function getActionType(label: string) {
 	return 'unknown';
 }
 
+function getShortDepLabel(label: string) {
+	if (label === 'production') {
+		return 'prod';
+	}
+
+	if (label === 'development') {
+		return 'dev';
+	}
+
+	return label;
+}
+
 export function render(element: HTMLElement, data: GraphInfo) {
 	const nodes = data.nodes.map((n) => ({
 		data: { id: n.id.toString(), label: n.label, type: getActionType(n.label) },
 	}));
 
 	const edges = data.edges.map((e) => ({
-		data: { id: e.id.toString(), source: e.source.toString(), target: e.target.toString() },
+		data: {
+			id: e.id.toString(),
+			label: getShortDepLabel(e.label),
+			source: e.source.toString(),
+			target: e.target.toString(),
+		},
 	}));
 
 	// https://js.cytoscape.org/
@@ -53,13 +70,17 @@ export function render(element: HTMLElement, data: GraphInfo) {
 				selector: 'edges',
 				style: {
 					'arrow-scale': 2,
+					color: '#e4f7fb',
 					'curve-style': 'straight',
+					'font-size': 12,
+					label: 'data(label)',
 					'line-cap': 'round',
 					'line-color': '#c9eef6', // '#012a4a',
 					'line-opacity': 0.15,
 					'overlay-color': '#c9eef6',
 					'target-arrow-color': '#c9eef6', // '#1a3f5c',
 					'target-arrow-shape': 'tee',
+					'text-opacity': 0.5,
 					width: 3,
 				},
 			},

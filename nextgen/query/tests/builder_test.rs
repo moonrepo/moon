@@ -6,13 +6,13 @@ mod mql_build {
     use super::*;
 
     #[test]
-    #[should_panic(expected = "EmptyInput")]
+    #[should_panic(expected = "Encountered an empty query.")]
     fn errors_if_empty() {
         build_query("").unwrap();
     }
 
     #[test]
-    #[should_panic(expected = "UnknownField(\"key\")")]
+    #[should_panic(expected = "Unknown query field key.")]
     fn errors_unknown_field() {
         build_query("key=value").unwrap();
     }
@@ -60,7 +60,7 @@ mod mql_build {
     }
 
     #[test]
-    #[should_panic(expected = "LogicalOperatorMismatch")]
+    #[should_panic(expected = "Cannot use both AND (&&) and OR (||) logical operators")]
     fn errors_when_mixing_ops() {
         build_query("language=javascript || language!=typescript && language=ruby").unwrap();
     }
@@ -280,13 +280,17 @@ mod mql_build {
         }
 
         #[test]
-        #[should_panic(expected = "UnsupportedLikeOperator(\"language\")")]
+        #[should_panic(
+            expected = "Like operators (~ and !~) are not supported for field language."
+        )]
         fn errors_for_like() {
             build_query("language~javascript").unwrap();
         }
 
         #[test]
-        #[should_panic(expected = "UnsupportedLikeOperator(\"language\")")]
+        #[should_panic(
+            expected = "Like operators (~ and !~) are not supported for field language."
+        )]
         fn errors_for_not_like() {
             build_query("language!~javascript").unwrap();
         }
@@ -443,19 +447,23 @@ mod mql_build {
         }
 
         #[test]
-        #[should_panic(expected = "UnknownFieldValue(\"projectType\", \"app\")")]
+        #[should_panic(expected = "Unknown query value app for field projectType.")]
         fn invalid_value() {
             build_query("projectType=app").unwrap();
         }
 
         #[test]
-        #[should_panic(expected = "UnsupportedLikeOperator(\"projectType\")")]
+        #[should_panic(
+            expected = "Like operators (~ and !~) are not supported for field projectType."
+        )]
         fn errors_for_like() {
             build_query("projectType~library").unwrap();
         }
 
         #[test]
-        #[should_panic(expected = "UnsupportedLikeOperator(\"projectType\")")]
+        #[should_panic(
+            expected = "Like operators (~ and !~) are not supported for field projectType."
+        )]
         fn errors_for_not_like() {
             build_query("projectType!~tool").unwrap();
         }
@@ -578,19 +586,23 @@ mod mql_build {
         }
 
         #[test]
-        #[should_panic(expected = "UnknownFieldValue(\"taskPlatform\", \"kotlin\")")]
+        #[should_panic(expected = "Unknown query value kotlin for field taskPlatform.")]
         fn invalid_value() {
             build_query("taskPlatform=kotlin").unwrap();
         }
 
         #[test]
-        #[should_panic(expected = "UnsupportedLikeOperator(\"taskPlatform\")")]
+        #[should_panic(
+            expected = "Like operators (~ and !~) are not supported for field taskPlatform."
+        )]
         fn errors_for_like() {
             build_query("taskPlatform~node").unwrap();
         }
 
         #[test]
-        #[should_panic(expected = "UnsupportedLikeOperator(\"taskPlatform\")")]
+        #[should_panic(
+            expected = "Like operators (~ and !~) are not supported for field taskPlatform."
+        )]
         fn errors_for_not_like() {
             build_query("taskPlatform!~node").unwrap();
         }
@@ -615,19 +627,23 @@ mod mql_build {
         }
 
         #[test]
-        #[should_panic(expected = "UnknownFieldValue(\"taskType\", \"kotlin\")")]
+        #[should_panic(expected = "Unknown query value kotlin for field taskType.")]
         fn invalid_value() {
             build_query("taskType=kotlin").unwrap();
         }
 
         #[test]
-        #[should_panic(expected = "UnsupportedLikeOperator(\"taskType\")")]
+        #[should_panic(
+            expected = "Like operators (~ and !~) are not supported for field taskType."
+        )]
         fn errors_for_like() {
             build_query("taskType~node").unwrap();
         }
 
         #[test]
-        #[should_panic(expected = "UnsupportedLikeOperator(\"taskType\")")]
+        #[should_panic(
+            expected = "Like operators (~ and !~) are not supported for field taskType."
+        )]
         fn errors_for_not_like() {
             build_query("taskType!~node").unwrap();
         }

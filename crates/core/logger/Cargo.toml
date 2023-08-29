@@ -5,5 +5,5 @@ edition = "2021"
 
 [dependencies]
 console = { workspace = true }
-log = "0.4.17"
+log = "0.4.20"
 starbase_styles = { workspace = true }

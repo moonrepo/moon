@@ -16,11 +16,14 @@ pub static ID_CHARS: &str = r"[0-9A-Za-z/\._-]*";
 
 // The @ is to support npm package scopes!
 pub static ID_PATTERN: Lazy<Regex> =
-    Lazy::new(|| Regex::new(&format!("^([A-Za-z@]{{1}}{})$", ID_CHARS)).unwrap());
+    Lazy::new(|| Regex::new(format!("^([A-Za-z@_]{{1}}{})$", ID_CHARS).as_str()).unwrap());
+
+// This is to clean and ID and remove unwanted characters
+pub static ID_CLEAN: Lazy<Regex> = Lazy::new(|| Regex::new(r"[^0-9A-Za-z/\._-]+").unwrap());
 
 #[derive(Error, Debug, Diagnostic)]
 #[diagnostic(code(id::invalid_format))]
-#[error("Invalid format for {}, may only contain alpha-numeric characters, dashes (-), slashes (/), underscores (_), and dots (.).", .0.style(Style::Id))]
+#[error("Invalid format for {}, may only contain alpha-numeric characters, dashes (-), slashes (/), underscores (_), and dots (.), and must start with an alpha character.", .0.style(Style::Id))]
 pub struct IdError(String);
 
 #[derive(Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
@@ -35,6 +38,10 @@ impl Id {
         }
 
         Ok(Self::raw(id))
+    }
+
+    pub fn clean<S: AsRef<str>>(id: S) -> Result<Id, IdError> {
+        Id::new(ID_CLEAN.replace_all(id.as_ref(), "-"))
     }
 
     pub fn raw<S: AsRef<str>>(id: S) -> Id {

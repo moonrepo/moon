@@ -1,0 +1,310 @@
+use moon_codegen::{Template, TemplateContext, TemplateFile};
+use moon_common::consts::CONFIG_TEMPLATE_FILENAME;
+use moon_config::TemplateFrontmatterConfig;
+use starbase_sandbox::locate_fixture;
+use std::path::PathBuf;
+
+fn create_template_file() -> TemplateFile {
+    TemplateFile::new("standard".into(), PathBuf::from("."))
+}
+
+fn create_template() -> Template {
+    Template::new("standard".into(), locate_fixture("template")).unwrap()
+}
+
+fn create_context() -> TemplateContext {
+    let mut context = TemplateContext::new();
+    context.insert("string", "string");
+    context.insert("number", &123);
+    context.insert("bool", &true);
+    context
+}
+
+mod template {
+    use super::*;
+
+    mod load_files {
+        use super::*;
+
+        #[test]
+        fn loads_all_template_files() {
+            let mut template = create_template();
+            let fixture = locate_fixture("template");
+
+            template.load_files(&fixture, &create_context()).unwrap();
+
+            // Skips partials
+            assert_eq!(
+                template
+                    .files
+                    .into_iter()
+                    .map(|f| f.source_path)
+                    .collect::<Vec<_>>(),
+                vec![
+                    fixture.join("file.raw.txt"),
+                    fixture.join("file.ts"),
+                    fixture.join("file.txt"),
+                    fixture.join("folder/nested-file.ts")
+                ]
+            );
+        }
+
+        #[test]
+        fn adds_all_to_tera_engine() {
+            let mut template = create_template();
+            let fixture = locate_fixture("template");
+
+            template.load_files(&fixture, &create_context()).unwrap();
+
+            let mut files = template.engine.get_template_names().collect::<Vec<_>>();
+            files.sort();
+
+            assert_eq!(
+                files,
+                vec![
+                    "file.raw.txt",
+                    "file.ts",
+                    "file.txt",
+                    "folder/nested-file.ts",
+                    "partial-file.ts"
+                ]
+            );
+        }
+
+        #[test]
+        fn renders_content_of_files() {
+            let mut template = create_template();
+            let fixture = locate_fixture("template");
+
+            template.load_files(&fixture, &create_context()).unwrap();
+
+            let file = template.files.iter().find(|f| f.name == "file.ts").unwrap();
+
+            assert_eq!(file.content, "export {};\n");
+            assert_eq!(
+                file.config,
+                Some(TemplateFrontmatterConfig {
+                    force: true,
+                    ..TemplateFrontmatterConfig::default()
+                })
+            );
+
+            let file = template
+                .files
+                .iter()
+                .find(|f| f.name == "file.txt")
+                .unwrap();
+
+            assert_eq!(file.content, "2\n");
+            assert_eq!(file.config, None);
+        }
+
+        #[test]
+        fn doesnt_render_raw_files() {
+            let mut template = create_template();
+            let fixture = locate_fixture("template");
+
+            template.load_files(&fixture, &create_context()).unwrap();
+
+            let file = template
+                .files
+                .iter()
+                .find(|f| f.name == "file.raw.txt")
+                .unwrap();
+
+            assert_eq!(file.content, "{% set my_var = 2 %}\n{{ my_var }}\n");
+        }
+
+        #[test]
+        fn filters_out_schema_file() {
+            let mut template = create_template();
+
+            template
+                .load_files(&locate_fixture("template"), &create_context())
+                .unwrap();
+
+            let has_schema = template
+                .files
+                .iter()
+                .any(|f| f.name.ends_with(CONFIG_TEMPLATE_FILENAME));
+
+            assert!(!has_schema);
+        }
+    }
+
+    mod interpolate_path {
+        use super::*;
+
+        #[test]
+        fn path_segments() {
+            let template = create_template();
+            let context = create_context();
+
+            assert_eq!(
+                template
+                    .interpolate_path(&PathBuf::from("folder/[string].ts"), &context)
+                    .unwrap(),
+                "folder/string.ts"
+            );
+            assert_eq!(
+                template
+                    .interpolate_path(&PathBuf::from("[number]/file.ts"), &context)
+                    .unwrap(),
+                "123/file.ts"
+            );
+            assert_eq!(
+                template
+                    .interpolate_path(&PathBuf::from("[bool]"), &context)
+                    .unwrap(),
+                "true"
+            );
+        }
+
+        #[test]
+        fn var_casing() {
+            let template = create_template();
+            let mut context = create_context();
+            context.insert("camelCase", "camelCase");
+            context.insert("PascalCase", "PascalCase");
+            context.insert("snake_case", "snake_case");
+
+            assert_eq!(
+                template
+                    .interpolate_path(&PathBuf::from("folder/[camelCase]/file.ts"), &context)
+                    .unwrap(),
+                "folder/camelCase/file.ts"
+            );
+            assert_eq!(
+                template
+                    .interpolate_path(&PathBuf::from("folder/[PascalCase]/file.ts"), &context)
+                    .unwrap(),
+                "folder/PascalCase/file.ts"
+            );
+            assert_eq!(
+                template
+                    .interpolate_path(&PathBuf::from("folder/[snake_case]/file.ts"), &context)
+                    .unwrap(),
+                "folder/snake_case/file.ts"
+            );
+        }
+
+        #[test]
+        fn multiple_vars() {
+            let template = create_template();
+            let context = create_context();
+
+            assert_eq!(
+                template
+                    .interpolate_path(&PathBuf::from("folder/[string]-[number].ts"), &context)
+                    .unwrap(),
+                "folder/string-123.ts"
+            );
+            assert_eq!(
+                template
+                    .interpolate_path(&PathBuf::from("folder/[string][number].ts"), &context)
+                    .unwrap(),
+                "folder/string123.ts"
+            );
+        }
+
+        #[test]
+        fn ignores_unknown_vars() {
+            let template = create_template();
+            let context = create_context();
+
+            assert_eq!(
+                template
+                    .interpolate_path(&PathBuf::from("folder/[unknown].ts"), &context)
+                    .unwrap(),
+                "folder/[unknown].ts"
+            );
+        }
+
+        #[test]
+        fn removes_exts() {
+            let template = create_template();
+            let context = create_context();
+
+            assert_eq!(
+                template
+                    .interpolate_path(&PathBuf::from("file.ts.tera"), &context)
+                    .unwrap(),
+                "file.ts"
+            );
+            assert_eq!(
+                template
+                    .interpolate_path(&PathBuf::from("file.ts.twig"), &context)
+                    .unwrap(),
+                "file.ts"
+            );
+        }
+    }
+
+    mod set_content {
+        use super::*;
+
+        #[test]
+        fn works_without_frontmatter() {
+            let mut file = create_template_file();
+            file.set_content("Content", &PathBuf::from(".")).unwrap();
+
+            assert_eq!(file.config, None);
+            assert_eq!(file.content, "Content".to_owned());
+        }
+
+        #[test]
+        fn works_with_empty_frontmatter() {
+            let mut file = create_template_file();
+            file.set_content("---\n---\nContent", &PathBuf::from("."))
+                .unwrap();
+
+            assert_eq!(file.config, Some(TemplateFrontmatterConfig::default()));
+            assert_eq!(file.content, "Content".to_owned());
+        }
+
+        #[test]
+        fn to_field() {
+            let mut file = create_template_file();
+            file.set_content("---\nto: some/path.txt\n---\n Content", &PathBuf::from("."))
+                .unwrap();
+
+            assert_eq!(file.config.unwrap().to, Some("some/path.txt".into()));
+            assert_eq!(file.content, "Content".to_owned());
+        }
+
+        #[test]
+        fn to_joins_with_dest() {
+            let mut file = create_template_file();
+            file.set_content(
+                "---\nto: some/path.txt\n---\n  Content",
+                &PathBuf::from("/foo"),
+            )
+            .unwrap();
+
+            assert_eq!(file.dest_path, PathBuf::from("/foo/some/path.txt"));
+            assert_eq!(file.content, "Content".to_owned());
+        }
+
+        #[test]
+        fn force_field() {
+            let mut file = create_template_file();
+            file.set_content("---\nforce: false\n---\nContent", &PathBuf::from("."))
+                .unwrap();
+
+            assert!(!file.is_forced());
+            assert!(!file.config.unwrap().force);
+            assert_eq!(file.content, "Content".to_owned());
+        }
+
+        #[test]
+        fn skip_field() {
+            let mut file = create_template_file();
+            file.set_content("---\nskip: true\n---\n Content", &PathBuf::from("."))
+                .unwrap();
+
+            assert!(file.is_skipped());
+            assert!(file.config.unwrap().skip);
+            assert_eq!(file.content, "Content".to_owned());
+        }
+    }
+}

@@ -1,149 +1,67 @@
 // template.yml
 
+use crate::validate::check_yml_extension;
 use moon_common::consts;
 use rustc_hash::FxHashMap;
-use schematic::{
-    derive_enum, validate, Config, ConfigError, ConfigLoader, SchemaField, SchemaType, Schematic,
-};
-use serde::{Deserialize, Serialize};
+use schematic::{validate, Config, ConfigLoader};
 use std::path::Path;
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-pub struct TemplateVariableSetting<T> {
-    pub default: T,
-    pub prompt: Option<String>,
-    pub required: Option<bool>,
+macro_rules! var_setting {
+    ($name:ident, $ty:ty) => {
+        #[derive(Config, Debug, Eq, PartialEq)]
+        pub struct $name {
+            pub default: $ty,
+            pub prompt: Option<String>,
+            pub required: Option<bool>,
+        }
+    };
 }
 
-impl<T: Schematic> Schematic for TemplateVariableSetting<T> {
-    fn generate_schema() -> SchemaType {
-        SchemaType::structure(vec![
-            SchemaField::new("default", SchemaType::infer::<T>()),
-            SchemaField::new("prompt", SchemaType::infer::<Option<String>>()),
-            SchemaField::new("required", SchemaType::infer::<Option<bool>>()),
-        ])
-    }
+var_setting!(TemplateVariableBoolSetting, bool);
+var_setting!(TemplateVariableNumberSetting, usize);
+var_setting!(TemplateVariableStringSetting, String);
+
+#[derive(Config, Debug, Eq, PartialEq)]
+pub struct TemplateVariableEnumValueConfig {
+    pub label: String,
+    pub value: String,
 }
 
-derive_enum!(
-    #[serde(
-        untagged,
-        expecting = "expected a value string or value object with label"
-    )]
-    pub enum TemplateVariableEnumValue {
-        String(String),
-        Object { label: String, value: String },
-    }
-);
-
-impl Schematic for TemplateVariableEnumValue {
-    fn generate_schema() -> SchemaType {
-        let mut schema = SchemaType::union(vec![
-            SchemaType::string(),
-            SchemaType::structure(vec![
-                SchemaField::new("label", SchemaType::string()),
-                SchemaField::new("value", SchemaType::string()),
-            ]),
-        ]);
-        schema.set_name("TemplateVariableEnumValue");
-        schema
-    }
+#[derive(Config, Debug, Eq, PartialEq)]
+#[config(serde(
+    untagged,
+    expecting = "expected a value string or value object with label"
+))]
+pub enum TemplateVariableEnumValue {
+    String(String),
+    #[setting(nested)]
+    Object(TemplateVariableEnumValueConfig),
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Config, Debug, Eq, PartialEq)]
 pub struct TemplateVariableEnumSetting {
     pub default: String,
     pub multiple: Option<bool>,
     pub prompt: String,
+    #[setting(nested)]
     pub values: Vec<TemplateVariableEnumValue>,
 }
 
-impl Schematic for TemplateVariableEnumSetting {
-    fn generate_schema() -> SchemaType {
-        let mut schema = SchemaType::structure(vec![
-            SchemaField::new("default", SchemaType::string()),
-            SchemaField::new("multiple", SchemaType::infer::<Option<bool>>()),
-            SchemaField::new("prompt", SchemaType::string()),
-            SchemaField::new(
-                "values",
-                SchemaType::infer::<Vec<TemplateVariableEnumValue>>(),
-            ),
-        ]);
-        schema.set_name("TemplateVariableEnumSetting");
-        schema
-    }
-}
-
-derive_enum!(
-    #[serde(tag = "type")]
-    pub enum TemplateVariable {
-        Boolean(TemplateVariableSetting<bool>),
-        Enum(TemplateVariableEnumSetting),
-        Number(TemplateVariableSetting<usize>),
-        // NumberList(TemplateVariableConfig<Vec<usize>>),
-        String(TemplateVariableSetting<String>),
-        // StringList(TemplateVariableConfig<Vec<String>>),
-    }
-);
-
-impl Schematic for TemplateVariable {
-    fn generate_schema() -> SchemaType {
-        let add_type = |schema: &mut SchemaType| {
-            if let SchemaType::Struct(inner) = schema {
-                inner
-                    .fields
-                    .push(SchemaField::new("type", SchemaType::string()));
-            }
-        };
-
-        let mut b = TemplateVariableSetting::<bool>::generate_schema();
-        add_type(&mut b);
-
-        // if let SchemaType::Struct(b) = &mut b {
-        //     b.fields.push(SchemaField::new(
-        //         "type",
-        //         SchemaType::literal(LiteralValue::String("boolean".into())),
-        //     ));
-        // }
-
-        let mut e = TemplateVariableEnumSetting::generate_schema();
-        add_type(&mut e);
-
-        // if let SchemaType::Struct(e) = &mut e {
-        //     e.fields.push(SchemaField::new(
-        //         "type",
-        //         SchemaType::literal(LiteralValue::String("enum".into())),
-        //     ));
-        // }
-
-        let mut n = TemplateVariableSetting::<usize>::generate_schema();
-        add_type(&mut n);
-
-        // if let SchemaType::Struct(n) = &mut n {
-        //     n.fields.push(SchemaField::new(
-        //         "type",
-        //         SchemaType::literal(LiteralValue::String("number".into())),
-        //     ));
-        // }
-
-        let mut s = TemplateVariableSetting::<String>::generate_schema();
-        add_type(&mut s);
-
-        // if let SchemaType::Struct(s) = &mut s {
-        //     s.fields.push(SchemaField::new(
-        //         "type",
-        //         SchemaType::literal(LiteralValue::String("string".into())),
-        //     ));
-        // }
-
-        let mut schema = SchemaType::union(vec![b, e, n, s]);
-        schema.set_name("TemplateVariable");
-        schema
-    }
+#[derive(Config, Debug, Eq, PartialEq)]
+#[config(serde(tag = "type", expecting = "expected a supported value type"))]
+pub enum TemplateVariable {
+    #[setting(nested)]
+    Boolean(TemplateVariableBoolSetting),
+    #[setting(nested)]
+    Enum(TemplateVariableEnumSetting),
+    #[setting(nested)]
+    Number(TemplateVariableNumberSetting),
+    #[setting(nested)]
+    String(TemplateVariableStringSetting),
 }
 
 /// Docs: https://moonrepo.dev/docs/config/template
-#[derive(Debug, Config)]
+#[derive(Config, Debug)]
 pub struct TemplateConfig {
     #[setting(
         default = "https://moonrepo.dev/schemas/template.json",
@@ -157,19 +75,20 @@ pub struct TemplateConfig {
     #[setting(validate = validate::not_empty)]
     pub title: String,
 
+    #[setting(nested)]
     pub variables: FxHashMap<String, TemplateVariable>,
 }
 
 impl TemplateConfig {
-    pub fn load<P: AsRef<Path>>(path: P) -> Result<TemplateConfig, ConfigError> {
+    pub fn load<P: AsRef<Path>>(path: P) -> miette::Result<TemplateConfig> {
         let result = ConfigLoader::<TemplateConfig>::new()
-            .file(path.as_ref())?
+            .file(check_yml_extension(path.as_ref()))?
             .load()?;
 
         Ok(result.config)
     }
 
-    pub fn load_from<P: AsRef<Path>>(template_root: P) -> Result<TemplateConfig, ConfigError> {
+    pub fn load_from<P: AsRef<Path>>(template_root: P) -> miette::Result<TemplateConfig> {
         Self::load(
             template_root
                 .as_ref()

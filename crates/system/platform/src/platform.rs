@@ -1,8 +1,8 @@
-use crate::target_hasher::SystemTargetHasher;
+use crate::target_hash::SystemTargetHash;
 use crate::tool::SystemToolStub;
 use moon_action_context::ActionContext;
 use moon_config::{HasherConfig, PlatformType, ProjectConfig};
-use moon_hasher::HashSet;
+use moon_hash::ContentHasher;
 use moon_platform::{Platform, Runtime, Version};
 use moon_process::Command;
 use moon_project::Project;
@@ -58,10 +58,10 @@ impl Platform for SystemPlatform {
         &self,
         _project: &Project,
         _runtime: &Runtime,
-        hashset: &mut HashSet,
+        hasher: &mut ContentHasher,
         _hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
-        hashset.hash(SystemTargetHasher::new());
+        hasher.hash_content(SystemTargetHash::new())?;
 
         Ok(())
     }

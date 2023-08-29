@@ -10,6 +10,8 @@ cacheable!(
 
         pub env_file: Option<InputPath>,
 
+        pub interactive: bool,
+
         pub merge_args: TaskMergeStrategy,
 
         pub merge_deps: TaskMergeStrategy,
@@ -28,6 +30,7 @@ cacheable!(
 
         pub run_deps_in_parallel: bool,
 
+        #[serde(rename = "runInCI")]
         pub run_in_ci: bool,
 
         pub run_from_workspace_root: bool,
@@ -42,6 +45,7 @@ impl Default for TaskOptions {
             affected_files: None,
             cache: true,
             env_file: None,
+            interactive: false,
             merge_args: TaskMergeStrategy::Append,
             merge_deps: TaskMergeStrategy::Append,
             merge_env: TaskMergeStrategy::Append,

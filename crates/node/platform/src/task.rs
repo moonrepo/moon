@@ -1,5 +1,5 @@
 use moon_common::Id;
-use moon_config::{OutputPath, PartialTaskConfig, PlatformType, TaskCommandArgs};
+use moon_config::{OutputPath, PartialTaskCommandArgs, PartialTaskConfig, PlatformType};
 use moon_logger::{debug, warn};
 use moon_node_lang::package_json::{PackageJson, ScriptsSet};
 use moon_process::args::split_args;
@@ -184,7 +184,7 @@ pub fn create_task(
 
     if is_wrapping {
         task_config.platform = Some(PlatformType::Node);
-        task_config.command = Some(TaskCommandArgs::List(string_vec![
+        task_config.command = Some(PartialTaskCommandArgs::List(string_vec![
             "moon",
             "node",
             "run-script",
@@ -205,9 +205,9 @@ pub fn create_task(
 
         task_config.platform = Some(detect_platform_type(&args[0]));
         task_config.command = Some(if args.len() == 1 {
-            TaskCommandArgs::String(args.remove(0))
+            PartialTaskCommandArgs::String(args.remove(0))
         } else {
-            TaskCommandArgs::List(args)
+            PartialTaskCommandArgs::List(args)
         });
     }
 

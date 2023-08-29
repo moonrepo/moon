@@ -1,7 +1,7 @@
 use crate::parser::{parse_query, AstNode, ComparisonOperator, LogicalOperator};
 use crate::query_error::QueryError;
 use moon_config::{LanguageType, PlatformType, ProjectType, TaskType};
-use starbase_utils::glob::{GlobError, GlobSet};
+use starbase_utils::glob::GlobSet;
 use std::cmp::PartialEq;
 use std::str::FromStr;
 
@@ -10,6 +10,7 @@ pub enum Field {
     Language(Vec<LanguageType>),
     Project(Vec<String>),
     ProjectAlias(Vec<String>),
+    ProjectName(Vec<String>),
     ProjectSource(Vec<String>),
     ProjectType(Vec<ProjectType>),
     Tag(Vec<String>),
@@ -30,7 +31,7 @@ pub enum Condition {
 }
 
 impl Condition {
-    pub fn matches(&self, haystack: &[String], needle: &String) -> Result<bool, GlobError> {
+    pub fn matches(&self, haystack: &[String], needle: &String) -> miette::Result<bool> {
         Ok(match self {
             Condition::Field { op, .. } => match op {
                 ComparisonOperator::Equal => haystack.contains(needle),
@@ -42,7 +43,7 @@ impl Condition {
         })
     }
 
-    pub fn matches_list(&self, haystack: &[String], needles: &[String]) -> Result<bool, GlobError> {
+    pub fn matches_list(&self, haystack: &[String], needles: &[String]) -> miette::Result<bool> {
         for needle in needles {
             if self.matches(haystack, needle)? {
                 return Ok(true);
@@ -52,11 +53,7 @@ impl Condition {
         Ok(false)
     }
 
-    pub fn matches_enum<T: PartialEq>(
-        &self,
-        haystack: &[T],
-        needle: &T,
-    ) -> Result<bool, GlobError> {
+    pub fn matches_enum<T: PartialEq>(&self, haystack: &[T], needle: &T) -> miette::Result<bool> {
         Ok(match self {
             Condition::Field { op, .. } => match op {
                 ComparisonOperator::Equal => haystack.contains(needle),
@@ -86,9 +83,9 @@ fn build_criteria_enum<T: FromStr>(
     field: &str,
     op: &ComparisonOperator,
     values: Vec<String>,
-) -> Result<Vec<T>, QueryError> {
+) -> miette::Result<Vec<T>> {
     if matches!(op, ComparisonOperator::Like | ComparisonOperator::NotLike) {
-        return Err(QueryError::UnsupportedLikeOperator(field.to_owned()));
+        return Err(QueryError::UnsupportedLikeOperator(field.to_owned()).into());
     }
 
     let mut result = vec![];
@@ -104,7 +101,7 @@ fn build_criteria_enum<T: FromStr>(
     Ok(result)
 }
 
-fn build_criteria(ast: Vec<AstNode>) -> Result<Criteria, QueryError> {
+fn build_criteria(ast: Vec<AstNode>) -> miette::Result<Criteria> {
     let mut op = None;
     let mut conditions = vec![];
 
@@ -130,7 +127,7 @@ fn build_criteria(ast: Vec<AstNode>) -> Result<Criteria, QueryError> {
                         Field::TaskType(build_criteria_enum::<TaskType>(&field, &op, value)?)
                     }
                     _ => {
-                        return Err(QueryError::UnknownField(field));
+                        return Err(QueryError::UnknownField(field).into());
                     }
                 };
 
@@ -139,7 +136,7 @@ fn build_criteria(ast: Vec<AstNode>) -> Result<Criteria, QueryError> {
             AstNode::Op { op: next_op } => {
                 if let Some(current_op) = &op {
                     if &next_op != current_op {
-                        return Err(QueryError::LogicalOperatorMismatch);
+                        return Err(QueryError::LogicalOperatorMismatch.into());
                     }
                 } else {
                     op = Some(next_op);
@@ -160,11 +157,11 @@ fn build_criteria(ast: Vec<AstNode>) -> Result<Criteria, QueryError> {
     })
 }
 
-pub fn build_query<I: AsRef<str>>(input: I) -> Result<Criteria, QueryError> {
+pub fn build_query<I: AsRef<str>>(input: I) -> miette::Result<Criteria> {
     let input = input.as_ref();
 
     if input.is_empty() {
-        return Err(QueryError::EmptyInput);
+        return Err(QueryError::EmptyInput.into());
     }
 
     let mut criteria =

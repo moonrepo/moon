@@ -1,5 +1,4 @@
 use crate::dep_graph::{DepGraph, DepGraphType, IndicesType};
-use crate::errors::DepGraphError;
 use moon_action::ActionNode;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::Id;
@@ -28,13 +27,12 @@ pub struct DepGraphBuilder<'ws> {
     all_query: Option<Criteria>,
     graph: DepGraphType,
     indices: IndicesType,
-    platforms: &'ws PlatformManager,
     project_graph: &'ws ProjectGraph,
     runtimes: FxHashMap<String, RuntimePair>,
 }
 
 impl<'ws> DepGraphBuilder<'ws> {
-    pub fn new(platforms: &'ws PlatformManager, project_graph: &'ws ProjectGraph) -> Self {
+    pub fn new(project_graph: &'ws ProjectGraph) -> Self {
         debug!(target: LOG_TARGET, "Creating dependency graph");
 
         let mut graph = Graph::new();
@@ -55,7 +53,6 @@ impl<'ws> DepGraphBuilder<'ws> {
             all_query: None,
             graph,
             indices,
-            platforms,
             project_graph,
             runtimes: FxHashMap::default(),
         }
@@ -95,7 +92,7 @@ impl<'ws> DepGraphBuilder<'ws> {
         let mut project_runtime = Runtime::System;
         let mut workspace_runtime = Runtime::System;
 
-        if let Some(platform) = self.platforms.find(|p| match task {
+        if let Some(platform) = PlatformManager::read().find(|p| match task {
             Some(task) => p.matches(&task.platform, None),
             None => p.matches(&project.language.clone().into(), None),
         }) {
@@ -120,7 +117,7 @@ impl<'ws> DepGraphBuilder<'ws> {
 
         // If project is NOT in the package manager workspace, then we should
         // install dependencies in the project, not the workspace root.
-        if let Ok(platform) = self.platforms.get(project.language.clone()) {
+        if let Ok(platform) = PlatformManager::read().get(project.language.clone()) {
             if !platform.is_project_in_dependency_workspace(project.source.as_str())? {
                 installs_in_project = true;
 
@@ -197,13 +194,13 @@ impl<'ws> DepGraphBuilder<'ws> {
 
         if let TargetScope::Project(project_id) = &target.scope {
             let project = self.project_graph.get(project_id)?;
-            let dependents = self.project_graph.get_dependents_of(project)?;
+            let dependents = self.project_graph.dependents_of(&project)?;
 
             for dependent_id in dependents {
-                let dep_project = self.project_graph.get(&dependent_id)?;
+                let dep_project = self.project_graph.get(dependent_id)?;
 
-                if let Some(dep_task) = dep_project.tasks.get(&target.task_id) {
-                    self.run_target(&dep_task.target, None)?;
+                if dep_project.tasks.contains_key(&target.task_id) {
+                    self.run_target(&dep_project.get_task(&target.task_id)?.target, None)?;
                 }
             }
         }
@@ -236,7 +233,7 @@ impl<'ws> DepGraphBuilder<'ws> {
                         let all_target = Target::new(&project.id, &target.task_id)?;
 
                         if let Some(index) =
-                            self.run_target_by_project(&all_target, project, touched_files)?
+                            self.run_target_by_project(&all_target, &project, touched_files)?
                         {
                             inserted_targets.insert(all_target);
                             inserted_indexes.insert(index);
@@ -246,7 +243,7 @@ impl<'ws> DepGraphBuilder<'ws> {
             }
             // ^:task
             TargetScope::Deps => {
-                return Err(DepGraphError::Target(TargetError::NoDepsInRunContext).into());
+                return Err(TargetError::NoDepsInRunContext.into());
             }
             // project:task
             TargetScope::Project(project_id) => {
@@ -254,7 +251,7 @@ impl<'ws> DepGraphBuilder<'ws> {
                 let task = project.get_task(&target.task_id)?;
 
                 if let Some(index) =
-                    self.run_target_by_project(&task.target, project, touched_files)?
+                    self.run_target_by_project(&task.target, &project, touched_files)?
                 {
                     inserted_targets.insert(task.target.to_owned());
                     inserted_indexes.insert(index);
@@ -271,7 +268,7 @@ impl<'ws> DepGraphBuilder<'ws> {
                         let tag_target = Target::new(&project.id, &target.task_id)?;
 
                         if let Some(index) =
-                            self.run_target_by_project(&tag_target, project, touched_files)?
+                            self.run_target_by_project(&tag_target, &project, touched_files)?
                         {
                             inserted_targets.insert(tag_target);
                             inserted_indexes.insert(index);
@@ -281,7 +278,7 @@ impl<'ws> DepGraphBuilder<'ws> {
             }
             // ~:task
             TargetScope::OwnSelf => {
-                return Err(DepGraphError::Target(TargetError::NoSelfInRunContext).into());
+                return Err(TargetError::NoSelfInRunContext.into());
             }
         };
 
@@ -298,8 +295,10 @@ impl<'ws> DepGraphBuilder<'ws> {
         let task = project.get_task(&target.task_id)?;
         let (runtime, _) = self.get_runtimes_from_project(project, Some(task));
 
-        let node = if task.options.persistent {
+        let node = if task.is_persistent() {
             ActionNode::RunPersistentTarget(runtime, target.clone())
+        } else if task.is_interactive() {
+            ActionNode::RunInteractiveTarget(runtime, target.clone())
         } else {
             ActionNode::RunTarget(runtime, target.clone())
         };
@@ -458,9 +457,9 @@ impl<'ws> DepGraphBuilder<'ws> {
         self.graph.add_edge(index, setup_tool_index, ());
 
         // And we should also depend on other projects
-        for dep_project_id in self.project_graph.get_dependencies_of(project)? {
-            let dep_project = self.project_graph.get(&dep_project_id)?;
-            let dep_index = self.sync_project(dep_project)?;
+        for dep_project_id in self.project_graph.dependencies_of(project)? {
+            let dep_project = self.project_graph.get(dep_project_id)?;
+            let dep_index = self.sync_project(&dep_project)?;
 
             if index != dep_index {
                 self.graph.add_edge(index, dep_index, ());

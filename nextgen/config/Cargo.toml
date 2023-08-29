@@ -14,15 +14,24 @@ path = "src/lib.rs"
 [dependencies]
 moon_common = { path = "../common" }
 moon_target = { path = "../target" }
+miette = { workspace = true }
+once_cell = { workspace = true }
 once_map = { workspace = true }
 proto_cli = { workspace = true }
+regex = { workspace = true }
 rustc-hash = { workspace = true }
-schematic = { workspace = true, features = ["json_schema", "typescript", "yaml", "valid_url"] }
+schematic = { workspace = true, features = [
+	"json_schema",
+	"typescript",
+	"yaml",
+	"valid_url",
+] }
 semver = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
+tracing = { workspace = true }
 
 [dev-dependencies]
-httpmock = "0.6.7"
+httpmock = "0.6.8"
 starbase_sandbox = { workspace = true }

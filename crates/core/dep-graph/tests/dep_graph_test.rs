@@ -2,7 +2,7 @@ use moon::{build_dep_graph, generate_project_graph, load_workspace_from};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{
     PartialInheritedTasksConfig, PartialNodeConfig, PartialToolchainConfig, PartialWorkspaceConfig,
-    WorkspaceProjects,
+    PartialWorkspaceProjects,
 };
 use moon_dep_graph::BatchedTopoSort;
 use moon_project_graph::ProjectGraph;
@@ -14,7 +14,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 async fn create_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
     let workspace_config = PartialWorkspaceConfig {
-        projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([
+        projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
             ("advanced".into(), "advanced".to_owned()),
             ("basic".into(), "basic".to_owned()),
             ("emptyConfig".into(), "empty-config".to_owned()),
@@ -63,7 +63,7 @@ async fn create_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
 
 async fn create_tasks_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
     let workspace_config = PartialWorkspaceConfig {
-        projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([
+        projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
             ("basic".into(), "basic".to_owned()),
             ("buildA".into(), "build-a".to_owned()),
             ("buildB".into(), "build-b".to_owned()),
@@ -82,6 +82,7 @@ async fn create_tasks_project_graph() -> (Workspace, ProjectGraph, Sandbox) {
             ("mergeReplace".into(), "merge-replace".to_owned()),
             ("noTasks".into(), "no-tasks".to_owned()),
             ("persistent".into(), "persistent".to_owned()),
+            ("interactive".into(), "interactive".to_owned()),
         ]))),
         ..PartialWorkspaceConfig::default()
     };
@@ -128,9 +129,9 @@ fn sort_batches(batches: BatchedTopoSort) -> BatchedTopoSort {
 #[tokio::test]
 #[should_panic(expected = "A dependency cycle has been detected for RunTarget(cycle:a)")]
 async fn detects_cycles() {
-    let (workspace, projects, _sandbox) = create_tasks_project_graph().await;
+    let (_workspace, projects, _sandbox) = create_tasks_project_graph().await;
 
-    let mut graph = build_dep_graph(&workspace, &projects);
+    let mut graph = build_dep_graph(&projects);
     graph
         .run_target(&Target::new("cycle", "a").unwrap(), None)
         .unwrap();
@@ -153,9 +154,9 @@ mod run_target {
 
     #[tokio::test]
     async fn single_targets() {
-        let (workspace, projects, _sandbox) = create_project_graph().await;
+        let (_workspace, projects, _sandbox) = create_project_graph().await;
 
-        let mut graph = build_dep_graph(&workspace, &projects);
+        let mut graph = build_dep_graph(&projects);
         graph
             .run_target(&Target::new("tasks", "test").unwrap(), None)
             .unwrap();
@@ -189,9 +190,9 @@ mod run_target {
 
     #[tokio::test]
     async fn deps_chain_target() {
-        let (workspace, projects, _sandbox) = create_tasks_project_graph().await;
+        let (_workspace, projects, _sandbox) = create_tasks_project_graph().await;
 
-        let mut graph = build_dep_graph(&workspace, &projects);
+        let mut graph = build_dep_graph(&projects);
         graph
             .run_target(&Target::new("basic", "test").unwrap(), None)
             .unwrap();
@@ -244,9 +245,9 @@ mod run_target {
 
     #[tokio::test]
     async fn moves_persistent_tasks_last() {
-        let (workspace, projects, _sandbox) = create_tasks_project_graph().await;
+        let (_workspace, projects, _sandbox) = create_tasks_project_graph().await;
 
-        let mut graph = build_dep_graph(&workspace, &projects);
+        let mut graph = build_dep_graph(&projects);
         graph
             .run_target(&Target::new("persistent", "dev").unwrap(), None)
             .unwrap();
@@ -298,10 +299,50 @@ mod run_target {
     }
 
     #[tokio::test]
-    async fn avoids_dupe_targets() {
-        let (workspace, projects, _sandbox) = create_project_graph().await;
+    async fn isolates_interactive_tasks() {
+        let (_workspace, projects, _sandbox) = create_tasks_project_graph().await;
 
-        let mut graph = build_dep_graph(&workspace, &projects);
+        let mut graph = build_dep_graph(&projects);
+        graph
+            .run_target(&Target::new("interactive", "one").unwrap(), None)
+            .unwrap();
+        graph
+            .run_target(&Target::new("chain", "c").unwrap(), None)
+            .unwrap();
+        graph
+            .run_target(&Target::new("interactive", "two").unwrap(), None)
+            .unwrap();
+        graph
+            .run_target(&Target::new("basic", "lint").unwrap(), None)
+            .unwrap();
+        graph
+            .run_target(&Target::new("interactive", "depOnOne").unwrap(), None)
+            .unwrap();
+        let graph = graph.build();
+
+        assert_snapshot!(graph.to_dot());
+
+        assert_eq!(
+            sort_batches(graph.sort_batched_topological().unwrap()),
+            vec![
+                vec![NodeIndex::new(1)],
+                vec![NodeIndex::new(2), NodeIndex::new(5)],
+                vec![NodeIndex::new(9)],
+                vec![NodeIndex::new(3), NodeIndex::new(8)],
+                vec![NodeIndex::new(4)], // interactive
+                vec![NodeIndex::new(7), NodeIndex::new(11)],
+                vec![NodeIndex::new(13)], // interactive
+                vec![NodeIndex::new(10)], // interactive
+                vec![NodeIndex::new(0), NodeIndex::new(6), NodeIndex::new(12)],
+            ]
+        );
+    }
+
+    #[tokio::test]
+    async fn avoids_dupe_targets() {
+        let (_workspace, projects, _sandbox) = create_project_graph().await;
+
+        let mut graph = build_dep_graph(&projects);
         graph
             .run_target(&Target::new("tasks", "lint").unwrap(), None)
             .unwrap();
@@ -337,9 +378,9 @@ mod run_target {
 
     #[tokio::test]
     async fn runs_all_projects_for_target_all_scope() {
-        let (workspace, projects, _sandbox) = create_tasks_project_graph().await;
+        let (_workspace, projects, _sandbox) = create_tasks_project_graph().await;
 
-        let mut graph = build_dep_graph(&workspace, &projects);
+        let mut graph = build_dep_graph(&projects);
         graph
             .run_target(&Target::parse(":build").unwrap(), None)
             .unwrap();
@@ -353,13 +394,13 @@ mod run_target {
                 NodeIndex::new(0),
                 NodeIndex::new(1),
                 NodeIndex::new(2),  // sync project: basic
-                NodeIndex::new(3),  // basic:build
-                NodeIndex::new(4),  // sync project: build-c
-                NodeIndex::new(5),  // sync project: build-a
-                NodeIndex::new(6),  // build-c:build
+                NodeIndex::new(4),  // basic:build
+                NodeIndex::new(5),  // sync project: build-c
+                NodeIndex::new(6),  // sync project: build-a
+                NodeIndex::new(3),  // build-c:build
                 NodeIndex::new(8),  // build-a:build
-                NodeIndex::new(7),  // sync project: build-b
-                NodeIndex::new(9),  // build-b:build
+                NodeIndex::new(9),  // sync project: build-b
+                NodeIndex::new(7),  // build-b:build
                 NodeIndex::new(10), // notasks
                 NodeIndex::new(11)
             ]
@@ -370,17 +411,17 @@ mod run_target {
                 vec![NodeIndex::new(1)],
                 vec![
                     NodeIndex::new(2),
-                    NodeIndex::new(3),
+                    NodeIndex::new(4),
                     NodeIndex::new(5),
-                    NodeIndex::new(8)
+                    NodeIndex::new(6)
                 ],
                 vec![
-                    NodeIndex::new(4),
-                    NodeIndex::new(6),
-                    NodeIndex::new(7),
+                    NodeIndex::new(3),
+                    NodeIndex::new(8),
+                    NodeIndex::new(9),
                     NodeIndex::new(10)
                 ],
-                vec![NodeIndex::new(0), NodeIndex::new(9), NodeIndex::new(11)],
+                vec![NodeIndex::new(0), NodeIndex::new(7), NodeIndex::new(11)],
             ]
         );
     }
@@ -388,9 +429,9 @@ mod run_target {
     #[tokio::test]
     #[should_panic(expected = "Dependencies scope (^:) is not supported in run contexts.")]
     async fn errors_for_target_deps_scope() {
-        let (workspace, projects, _sandbox) = create_project_graph().await;
+        let (_workspace, projects, _sandbox) = create_project_graph().await;
 
-        let mut graph = build_dep_graph(&workspace, &projects);
+        let mut graph = build_dep_graph(&projects);
         graph
             .run_target(&Target::parse("^:lint").unwrap(), None)
             .unwrap();
@@ -399,20 +440,20 @@ mod run_target {
     #[tokio::test]
     #[should_panic(expected = "Self scope (~:) is not supported in run contexts.")]
     async fn errors_for_target_self_scope() {
-        let (workspace, projects, _sandbox) = create_project_graph().await;
+        let (_workspace, projects, _sandbox) = create_project_graph().await;
 
-        let mut graph = build_dep_graph(&workspace, &projects);
+        let mut graph = build_dep_graph(&projects);
         graph
             .run_target(&Target::parse("~:lint").unwrap(), None)
             .unwrap();
     }
 
     #[tokio::test]
-    #[should_panic(expected = "No project has been configured with the ID unknown")]
+    #[should_panic(expected = "No project has been configured with the name or alias unknown")]
     async fn errors_for_unknown_project() {
-        let (workspace, projects, _sandbox) = create_project_graph().await;
+        let (_workspace, projects, _sandbox) = create_project_graph().await;
 
-        let mut graph = build_dep_graph(&workspace, &projects);
+        let mut graph = build_dep_graph(&projects);
         graph
             .run_target(&Target::new("unknown", "test").unwrap(), None)
             .unwrap();
@@ -424,9 +465,9 @@ mod run_target {
     #[tokio::test]
     #[should_panic(expected = "Unknown task build for project tasks.")]
     async fn errors_for_unknown_task() {
-        let (workspace, projects, _sandbox) = create_project_graph().await;
+        let (_workspace, projects, _sandbox) = create_project_graph().await;
 
-        let mut graph = build_dep_graph(&workspace, &projects);
+        let mut graph = build_dep_graph(&projects);
         graph
             .run_target(&Target::new("tasks", "build").unwrap(), None)
             .unwrap();
@@ -441,13 +482,13 @@ mod run_target_if_touched {
 
     #[tokio::test]
     async fn skips_if_untouched_project() {
-        let (workspace, projects, _sandbox) = create_tasks_project_graph().await;
+        let (_workspace, projects, _sandbox) = create_tasks_project_graph().await;
 
         let mut touched_files = FxHashSet::default();
         touched_files.insert(WorkspaceRelativePathBuf::from("input-a/a.ts"));
         touched_files.insert(WorkspaceRelativePathBuf::from("input-c/c.ts"));
 
-        let mut graph = build_dep_graph(&workspace, &projects);
+        let mut graph = build_dep_graph(&projects);
         graph
             .run_target(&Target::new("inputA", "a").unwrap(), Some(&touched_files))
             .unwrap();
@@ -461,14 +502,14 @@ mod run_target_if_touched {
 
     #[tokio::test]
     async fn skips_if_untouched_task() {
-        let (workspace, projects, _sandbox) = create_tasks_project_graph().await;
+        let (_workspace, projects, _sandbox) = create_tasks_project_graph().await;
 
         let mut touched_files = FxHashSet::default();
         touched_files.insert(WorkspaceRelativePathBuf::from("input-a/a2.ts"));
         touched_files.insert(WorkspaceRelativePathBuf::from("input-b/b2.ts"));
         touched_files.insert(WorkspaceRelativePathBuf::from("input-c/any.ts"));
 
-        let mut graph = build_dep_graph(&workspace, &projects);
+        let mut graph = build_dep_graph(&projects);
         graph
             .run_target(&Target::new("inputA", "a").unwrap(), Some(&touched_files))
             .unwrap();
@@ -492,14 +533,14 @@ mod sync_project {
         for id in ids {
             let project = projects.get(id).unwrap();
 
-            graph.sync_project(project).unwrap();
+            graph.sync_project(&project).unwrap();
         }
     }
 
     #[tokio::test]
     async fn isolated_projects() {
-        let (workspace, projects, _sandbox) = create_project_graph().await;
-        let mut graph = build_dep_graph(&workspace, &projects);
+        let (_workspace, projects, _sandbox) = create_project_graph().await;
+        let mut graph = build_dep_graph(&projects);
 
         sync_projects(
             &mut graph,
@@ -540,8 +581,8 @@ mod sync_project {
 
     #[tokio::test]
     async fn projects_with_deps() {
-        let (workspace, projects, _sandbox) = create_project_graph().await;
-        let mut graph = build_dep_graph(&workspace, &projects);
+        let (_workspace, projects, _sandbox) = create_project_graph().await;
+        let mut graph = build_dep_graph(&projects);
 
         sync_projects(&mut graph, &projects, &["foo", "bar", "baz", "basic"]);
 
@@ -580,8 +621,8 @@ mod sync_project {
 
     #[tokio::test]
     async fn projects_with_tasks() {
-        let (workspace, projects, _sandbox) = create_project_graph().await;
-        let mut graph = build_dep_graph(&workspace, &projects);
+        let (_workspace, projects, _sandbox) = create_project_graph().await;
+        let mut graph = build_dep_graph(&projects);
 
         sync_projects(&mut graph, &projects, &["noConfig", "tasks"]);
 
@@ -610,8 +651,8 @@ mod sync_project {
 
     #[tokio::test]
     async fn avoids_dupe_projects() {
-        let (workspace, projects, _sandbox) = create_project_graph().await;
-        let mut graph = build_dep_graph(&workspace, &projects);
+        let (_workspace, projects, _sandbox) = create_project_graph().await;
+        let mut graph = build_dep_graph(&projects);
 
         sync_projects(&mut graph, &projects, &["advanced", "advanced", "advanced"]);
 
@@ -621,10 +662,10 @@ mod sync_project {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "No project has been configured with the ID unknown")]
+    #[should_panic(expected = "No project has been configured with the name or alias unknown")]
     async fn errors_for_unknown_project() {
-        let (workspace, projects, _sandbox) = create_project_graph().await;
-        let mut graph = build_dep_graph(&workspace, &projects);
+        let (_workspace, projects, _sandbox) = create_project_graph().await;
+        let mut graph = build_dep_graph(&projects);
 
         sync_projects(&mut graph, &projects, &["unknown"]);
 
@@ -639,8 +680,8 @@ mod installs_deps {
 
     #[tokio::test]
     async fn tool_is_based_on_task_platform() {
-        let (workspace, projects, _sandbox) = create_project_graph().await;
-        let mut graph = build_dep_graph(&workspace, &projects);
+        let (_workspace, projects, _sandbox) = create_project_graph().await;
+        let mut graph = build_dep_graph(&projects);
 
         graph
             .run_target(&Target::new("platforms", "system").unwrap(), None)

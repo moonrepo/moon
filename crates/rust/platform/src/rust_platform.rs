@@ -1,10 +1,11 @@
-use crate::{bins_hasher::RustBinsHasher, find_cargo_lock, target_hasher::RustTargetHasher};
+use crate::{bins_hash::RustBinsHash, find_cargo_lock, target_hash::RustTargetHash};
 use moon_action_context::ActionContext;
-use moon_common::Id;
+use moon_common::{is_ci, Id};
 use moon_config::{
-    HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap, RustConfig,
+    BinEntry, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap, ProjectsSourcesMap,
+    RustConfig,
 };
-use moon_hasher::HashSet;
+use moon_hash::ContentHasher;
 use moon_logger::{debug, map_list};
 use moon_platform::{Platform, Runtime, Version};
 use moon_process::Command;
@@ -19,7 +20,7 @@ use moon_rust_tool::RustTool;
 use moon_task::Task;
 use moon_terminal::{print_checkpoint, Checkpoint};
 use moon_tool::{Tool, ToolError, ToolManager};
-use moon_utils::{async_trait, string_vec};
+use moon_utils::async_trait;
 use proto::{rust::RustLanguage, Executable, Proto};
 use rustc_hash::FxHashMap;
 use starbase_styles::color;
@@ -27,6 +28,7 @@ use starbase_utils::{fs, glob::GlobSet};
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
+    sync::Arc,
 };
 
 const LOG_TARGET: &str = "moon:rust-platform";
@@ -112,7 +114,7 @@ impl Platform for RustPlatform {
     ) -> miette::Result<()> {
         // Extract the alias from the Cargo project relative to the lockfile
         for (id, source) in projects_map {
-            let project_root = self.workspace_root.join(source);
+            let project_root = source.to_path(&self.workspace_root);
 
             if let Some(cargo_toml) = CargoTomlCache::read(project_root)? {
                 if let Some(package) = cargo_toml.package {
@@ -222,6 +224,7 @@ impl Platform for RustPlatform {
             if !tool
                 .tool
                 .get_globals_bin_dir()?
+                .unwrap()
                 .join("cargo-binstall")
                 .exists()
             {
@@ -239,16 +242,29 @@ impl Platform for RustPlatform {
             debug!(
                 target: LOG_TARGET,
                 "Installing Cargo binaries: {}",
-                map_list(&self.config.bins, |b| color::label(b))
+                map_list(&self.config.bins, |b| color::label(b.get_name()))
             );
 
-            let mut args = string_vec!["binstall", "--no-confirm", "--log-level", "info"];
-
             for bin in &self.config.bins {
-                args.push(bin.to_owned());
-            }
+                let mut args = vec!["binstall", "--no-confirm", "--log-level", "info"];
 
-            tool.exec_cargo(args, working_dir).await?;
+                match bin {
+                    BinEntry::Name(name) => args.push(name),
+                    BinEntry::Config(cfg) => {
+                        if cfg.local && is_ci() {
+                            continue;
+                        }
+
+                        if cfg.force {
+                            args.push("--force");
+                        }
+
+                        args.push(&cfg.bin);
+                    }
+                };
+
+                tool.exec_cargo(args, working_dir).await?;
+            }
         }
 
         Ok(())
@@ -258,7 +274,7 @@ impl Platform for RustPlatform {
         &self,
         _context: &ActionContext,
         project: &Project,
-        _dependencies: &FxHashMap<Id, &Project>,
+        _dependencies: &FxHashMap<Id, Arc<Project>>,
     ) -> miette::Result<bool> {
         let mut mutated_files = false;
 
@@ -340,13 +356,13 @@ impl Platform for RustPlatform {
     async fn hash_manifest_deps(
         &self,
         _manifest_path: &Path,
-        hashset: &mut HashSet,
+        hasher: &mut ContentHasher,
         _hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
         if !self.config.bins.is_empty() {
-            hashset.hash(RustBinsHasher {
-                bins: self.config.bins.clone(),
-            });
+            hasher.hash_content(RustBinsHash {
+                bins: &self.config.bins,
+            })?;
         }
 
         // NOTE: Since Cargo has no way to install dependencies, we don't actually need this!
@@ -406,7 +422,7 @@ impl Platform for RustPlatform {
         &self,
         project: &Project,
         _runtime: &Runtime,
-        hashset: &mut HashSet,
+        hasher: &mut ContentHasher,
         _hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
         let lockfile_path = project.root.join(CARGO.lockfile);
@@ -416,14 +432,13 @@ impl Platform for RustPlatform {
             return Ok(());
         }
 
-        let mut hasher = RustTargetHasher::new(None);
+        let mut hash = RustTargetHash::new(None);
 
         // Use the resolved dependencies from the lockfile directly,
         // since it also takes into account features and workspace members.
-        hasher.locked_dependencies =
-            BTreeMap::from_iter(load_lockfile_dependencies(lockfile_path)?);
+        hash.locked_dependencies = BTreeMap::from_iter(load_lockfile_dependencies(lockfile_path)?);
 
-        hashset.hash(hasher);
+        hasher.hash_content(hash)?;
 
         Ok(())
     }
@@ -453,7 +468,9 @@ impl Platform for RustPlatform {
             }
             // Binary may be installed to ~/.cargo/bin
             _ => {
-                let globals_dir = RustLanguage::new(Proto::new()?).get_globals_bin_dir()?;
+                let globals_dir = RustLanguage::new(Proto::new()?)
+                    .get_globals_bin_dir()?
+                    .unwrap();
                 let global_bin_path = globals_dir.join(&task.command);
 
                 let cargo_bin = if task.command.starts_with("cargo-") {

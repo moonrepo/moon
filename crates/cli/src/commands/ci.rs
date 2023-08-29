@@ -1,5 +1,6 @@
 use crate::queries::touched_files::{query_touched_files, QueryTouchedFilesOptions};
 use ci_env::CiOutput;
+use clap::Args;
 use itertools::Itertools;
 use moon::{build_dep_graph, generate_project_graph, load_workspace};
 use moon_action_context::ActionContext;
@@ -16,6 +17,23 @@ use starbase::AppResult;
 use starbase_styles::color;
 
 type TargetList = Vec<Target>;
+
+const HEADING_PARALLELISM: &str = "Parallelism and distribution";
+
+#[derive(Args, Debug)]
+pub struct CiArgs {
+    #[arg(long, help = "Base branch, commit, or revision to compare against")]
+    base: Option<String>,
+
+    #[arg(long, help = "Current branch, commit, or revision to compare with")]
+    head: Option<String>,
+
+    #[arg(long, help = "Index of the current job", help_heading = HEADING_PARALLELISM)]
+    job: Option<usize>,
+
+    #[arg(long = "jobTotal", help = "Total amount of jobs to run", help_heading = HEADING_PARALLELISM)]
+    job_total: Option<usize>,
+}
 
 const LOG_TARGET: &str = "moon:ci";
 
@@ -46,16 +64,16 @@ fn print_targets(targets: &TargetList) {
 async fn gather_touched_files(
     provider: &CiOutput,
     workspace: &Workspace,
-    options: &CiOptions,
+    args: &CiArgs,
 ) -> AppResult<FxHashSet<WorkspaceRelativePathBuf>> {
     print_header(provider, "Gathering touched files");
 
     let results = query_touched_files(
         workspace,
-        &mut QueryTouchedFilesOptions {
+        &QueryTouchedFilesOptions {
             default_branch: true,
-            base: options.base.clone().unwrap_or_default(),
-            head: options.head.clone().unwrap_or_default(),
+            base: args.base.clone(),
+            head: args.head.clone(),
             log: true,
             ..QueryTouchedFilesOptions::default()
         },
@@ -79,7 +97,7 @@ fn gather_runnable_targets(
 
     // Required for dependents
     for project in project_graph.get_all()? {
-        for task in project.tasks.values() {
+        for task in project.get_tasks()? {
             if task.should_run_in_ci() {
                 if task.is_affected(touched_files)? {
                     targets.push(task.target.clone());
@@ -111,15 +129,15 @@ fn gather_runnable_targets(
 /// Distribute targets across jobs if parallelism is enabled.
 fn distribute_targets_across_jobs(
     provider: &CiOutput,
-    options: &CiOptions,
+    args: &CiArgs,
     targets: TargetList,
 ) -> TargetList {
-    if options.job.is_none() || options.job_total.is_none() {
+    if args.job.is_none() || args.job_total.is_none() {
         return targets;
     }
 
-    let job_index = options.job.unwrap_or_default();
-    let job_total = options.job_total.unwrap_or_default();
+    let job_index = args.job.unwrap_or_default();
+    let job_total = args.job_total.unwrap_or_default();
     let batch_size = targets.len() / job_total;
     let batched_targets;
 
@@ -147,13 +165,12 @@ fn distribute_targets_across_jobs(
 /// Generate a dependency graph with the runnable targets.
 fn generate_dep_graph(
     provider: &CiOutput,
-    workspace: &Workspace,
     project_graph: &ProjectGraph,
     targets: &TargetList,
 ) -> AppResult<DepGraph> {
     print_header(provider, "Generating dependency graph");
 
-    let mut dep_builder = build_dep_graph(workspace, project_graph);
+    let mut dep_builder = build_dep_graph(project_graph);
 
     for target in targets {
         // Run the target and its dependencies
@@ -172,30 +189,22 @@ fn generate_dep_graph(
     Ok(dep_graph)
 }
 
-pub struct CiOptions {
-    pub base: Option<String>,
-    pub concurrency: Option<usize>,
-    pub head: Option<String>,
-    pub job: Option<usize>,
-    pub job_total: Option<usize>,
-}
-
-pub async fn ci(options: CiOptions) -> AppResult {
+pub async fn ci(args: CiArgs, concurrency: Option<usize>) -> AppResult {
     let mut workspace = load_workspace().await?;
     let ci_provider = ci_env::get_output().unwrap_or(CiOutput {
         close_log_group: "",
         open_log_group: "▪▪▪▪ ",
     });
     let project_graph = generate_project_graph(&mut workspace).await?;
-    let touched_files = gather_touched_files(&ci_provider, &workspace, &options).await?;
+    let touched_files = gather_touched_files(&ci_provider, &workspace, &args).await?;
     let targets = gather_runnable_targets(&ci_provider, &project_graph, &touched_files)?;
 
     if targets.is_empty() {
         return Ok(());
     }
 
-    let targets = distribute_targets_across_jobs(&ci_provider, &options, targets);
-    let dep_graph = generate_dep_graph(&ci_provider, &workspace, &project_graph, &targets)?;
+    let targets = distribute_targets_across_jobs(&ci_provider, &args, targets);
+    let dep_graph = generate_dep_graph(&ci_provider, &project_graph, &targets)?;
 
     // Process all tasks in the graph
     print_header(&ci_provider, "Running all targets");
@@ -209,7 +218,7 @@ pub async fn ci(options: CiOptions) -> AppResult {
 
     let mut pipeline = Pipeline::new(workspace, project_graph);
 
-    if let Some(concurrency) = options.concurrency {
+    if let Some(concurrency) = concurrency {
         pipeline.concurrency(concurrency);
     }
 
@@ -220,8 +229,12 @@ pub async fn ci(options: CiOptions) -> AppResult {
 
     print_footer(&ci_provider);
 
+    print_header(&ci_provider, "Summary");
+
+    pipeline.render_summary(&results)?;
+
     // Print out the results and exit if an error occurs
-    print_header(&ci_provider, "Results");
+    print_header(&ci_provider, "Stats");
 
     let failed = pipeline.render_results(&results)?;
 

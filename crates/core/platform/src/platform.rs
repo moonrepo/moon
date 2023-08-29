@@ -5,7 +5,7 @@ use moon_config::{
     DependencyConfig, HasherConfig, PlatformType, ProjectConfig, ProjectsAliasesMap,
     ProjectsSourcesMap, TasksConfigsMap,
 };
-use moon_hasher::HashSet;
+use moon_hash::ContentHasher;
 use moon_platform_runtime::{Runtime, Version};
 use moon_process::Command;
 use moon_project::Project;
@@ -15,6 +15,7 @@ use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::fmt::Debug;
 use std::path::Path;
+use std::sync::Arc;
 
 #[async_trait]
 pub trait Platform: Debug + Send + Sync {
@@ -51,7 +52,6 @@ pub trait Platform: Debug + Send + Sync {
         &self,
         project_id: &str,
         project_source: &str,
-        aliases_map: &ProjectsAliasesMap,
     ) -> miette::Result<Vec<DependencyConfig>> {
         Ok(vec![])
     }
@@ -126,7 +126,7 @@ pub trait Platform: Debug + Send + Sync {
         &self,
         context: &ActionContext,
         project: &Project,
-        dependencies: &FxHashMap<Id, &Project>,
+        dependencies: &FxHashMap<Id, Arc<Project>>,
     ) -> miette::Result<bool> {
         Ok(false)
     }
@@ -136,7 +136,7 @@ pub trait Platform: Debug + Send + Sync {
     async fn hash_manifest_deps(
         &self,
         manifest_path: &Path,
-        hashset: &mut HashSet,
+        hasher: &mut ContentHasher,
         hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
         Ok(())
@@ -148,7 +148,7 @@ pub trait Platform: Debug + Send + Sync {
         &self,
         project: &Project,
         runtime: &Runtime,
-        hashset: &mut HashSet,
+        hasher: &mut ContentHasher,
         hasher_config: &HasherConfig,
     ) -> miette::Result<()> {
         Ok(())

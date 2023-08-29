@@ -1,6 +1,6 @@
 [package]
 name = "moon_cli"
-version = "1.9.2"
+version = "1.12.0"
 edition = "2021"
 
 [[bin]]
@@ -17,11 +17,10 @@ moon = { path = "../core/moon" }
 moon_action_context = { path = "../core/action-context" }
 moon_action_pipeline = { path = "../core/action-pipeline" }
 moon_actions = { path = "../core/actions" }
+moon_codegen = { path = "../../nextgen/codegen" }
 moon_common = { path = "../../nextgen/common" }
 moon_config = { path = "../../nextgen/config" }
 moon_dep_graph = { path = "../core/dep-graph" }
-moon_error = { path = "../core/error" }
-moon_generator = { path = "../core/generator" }
 moon_lang = { path = "../core/lang" }
 moon_launchpad = { path = "../core/launchpad" }
 moon_logger = { path = "../core/logger" }
@@ -31,7 +30,7 @@ moon_node_tool = { path = "../node/tool" }
 moon_platform = { path = "../core/platform" }
 moon_platform_detector = { path = "../core/platform-detector" }
 moon_project = { path = "../../nextgen/project" }
-moon_project_graph = { path = "../core/project-graph" }
+moon_project_graph = { path = "../../nextgen/project-graph" }
 moon_query = { path = "../../nextgen/query" }
 moon_rust_lang = { path = "../rust/lang" }
 moon_rust_tool = { path = "../rust/tool" }
@@ -53,7 +52,7 @@ console = { workspace = true }
 # console-subscriber = "0.1.8"
 dialoguer = { version = "0.10.4", default-features = false }
 diff = "0.1.13"
-indicatif = "0.17.3"
+indicatif = "0.17.5"
 itertools = "0.11.0"
 miette = { workspace = true }
 mimalloc = { version = "0.1.37", default-features = false }
@@ -74,9 +73,10 @@ tokio = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
-moon_archive = { path = "../core/archive" }
-moon_cache = { path = "../core/cache" }
+moon_cache = { path = "../../nextgen/cache" }
 moon_notifier = { path = "../core/notifier" }
+moon_runner = { path = "../core/runner" }
 moon_test_utils = { path = "../core/test-utils" }
-httpmock = "0.6.7"
+httpmock = "0.6.8"
 serial_test = "2.0.0"
+starbase_archive = { workspace = true }

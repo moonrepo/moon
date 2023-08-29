@@ -1,15 +1,20 @@
 use crate::helpers::create_progress_bar;
+use clap::Args;
 use moon::load_workspace;
 use moon_actions::{sync_vcs_hooks, unsync_vcs_hooks};
 use starbase::AppResult;
 use starbase_styles::color;
 
-pub struct SyncHooksOptions {
-    pub clean: bool,
-    pub force: bool,
+#[derive(Args, Debug)]
+pub struct SyncHooksArgs {
+    #[arg(long, help = "Clean and remove previously generated hooks")]
+    clean: bool,
+
+    #[arg(long, help = "Bypass cache and force create hooks")]
+    force: bool,
 }
 
-pub async fn sync(options: SyncHooksOptions) -> AppResult {
+pub async fn sync(args: SyncHooksArgs) -> AppResult {
     let workspace = load_workspace().await?;
 
     if workspace.config.vcs.hooks.is_empty() {
@@ -35,12 +40,12 @@ pub async fn sync(options: SyncHooksOptions) -> AppResult {
         .collect::<Vec<_>>()
         .join(", ");
 
-    if options.clean {
+    if args.clean {
         unsync_vcs_hooks(&workspace).await?;
 
         done(format!("Successfully removed {} hooks", hook_names), true);
     } else {
-        sync_vcs_hooks(&workspace, options.force).await?;
+        sync_vcs_hooks(&workspace, args.force).await?;
 
         done(format!("Successfully created {} hooks", hook_names), true);
     }

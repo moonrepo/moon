@@ -1,40 +1,53 @@
+use clap::Args;
 use console::Term;
 use dialoguer::{theme::Theme, Confirm, Input, MultiSelect, Select};
 use miette::IntoDiagnostic;
 use moon::load_workspace;
+use moon_codegen::{CodeGenerator, CodegenError, FileState, Template, TemplateContext};
+use moon_common::path::RelativePathBuf;
 use moon_config::{TemplateVariable, TemplateVariableEnumValue};
-use moon_error::MoonError;
-use moon_generator::{FileState, Generator, GeneratorError, Template, TemplateContext};
-use moon_logger::{debug, map_list, trace, warn};
+use moon_logger::map_list;
 use moon_terminal::{create_theme, ExtendedTerm};
-use moon_utils::path;
 use rustc_hash::FxHashMap;
 use starbase::AppResult;
 use starbase_styles::color;
 use std::env;
 use std::fmt::Display;
-use std::path::PathBuf;
+use tracing::{debug, warn};
 
-const LOG_TARGET: &str = "moon:generate";
+#[derive(Args, Debug)]
+pub struct GenerateArgs {
+    #[arg(help = "Name of template to generate")]
+    name: String,
 
-#[derive(Debug)]
-pub struct GenerateOptions {
-    pub defaults: bool,
-    pub dest: Option<String>,
-    pub dry_run: bool,
-    pub force: bool,
-    pub template: bool,
-    pub vars: Vec<String>,
+    #[arg(help = "Destination path, relative from the current working directory")]
+    dest: Option<String>,
+
+    #[arg(
+        long,
+        help = "Use the default value of all variables instead of prompting"
+    )]
+    defaults: bool,
+
+    #[arg(
+        long = "dryRun",
+        help = "Run entire generator process without writing files"
+    )]
+    dry_run: bool,
+
+    #[arg(long, help = "Force overwrite any existing files at the destination")]
+    force: bool,
+
+    #[arg(long, help = "Create a new template")]
+    template: bool,
+
+    // Variable args (after --)
+    #[arg(last = true, help = "Arguments to define as variable values")]
+    vars: Vec<String>,
 }
 
 fn log_var<T: Display>(name: &str, value: &T, comment: Option<&str>) {
-    trace!(
-        target: LOG_TARGET,
-        "Setting variable {} to \"{}\" {}",
-        color::id(name),
-        value,
-        comment.unwrap_or_default(),
-    );
+    debug!(name, value = %value, comment, "Setting variable");
 }
 
 fn parse_var_args(vars: &[String]) -> FxHashMap<String, String> {
@@ -44,10 +57,7 @@ fn parse_var_args(vars: &[String]) -> FxHashMap<String, String> {
         return custom_vars;
     }
 
-    debug!(
-        target: LOG_TARGET,
-        "Inheriting variable values from provided command line arguments"
-    );
+    debug!("Inheriting variable values from command line arguments");
 
     let lexer = clap_lex::RawArgs::new(vars);
     let mut cursor = lexer.cursor();
@@ -59,7 +69,7 @@ fn parse_var_args(vars: &[String]) -> FxHashMap<String, String> {
         } else {
             name
         };
-        let comment = color::muted_light(format!("(from --{name})"));
+        let comment = format!("(from --{name})");
 
         log_var(name, &value, Some(&comment));
 
@@ -96,18 +106,13 @@ fn parse_var_args(vars: &[String]) -> FxHashMap<String, String> {
                     }
                 }
                 _ => {
-                    warn!(
-                        target: LOG_TARGET,
-                        "Failed to parse argument --{}",
-                        arg.display()
-                    );
+                    warn!("Failed to parse argument --{}", arg.display());
                 }
             }
 
             // -n
         } else if arg.to_short().is_some() {
             warn!(
-                target: LOG_TARGET,
                 "Short arguments are not supported, found -{}",
                 arg.display()
             );
@@ -129,17 +134,13 @@ fn parse_var_args(vars: &[String]) -> FxHashMap<String, String> {
 fn gather_variables(
     template: &Template,
     theme: &dyn Theme,
-    options: &GenerateOptions,
+    args: &GenerateArgs,
 ) -> AppResult<TemplateContext> {
     let mut context = TemplateContext::new();
-    let custom_vars = parse_var_args(&options.vars);
-    let error_handler = |e| GeneratorError::Moon(MoonError::Io(e));
-    let default_comment = color::muted_light("(defaults)");
+    let custom_vars = parse_var_args(&args.vars);
+    let default_comment = "(defaults)";
 
-    debug!(
-        target: LOG_TARGET,
-        "Declaring variable values from defaults and user prompts"
-    );
+    debug!("Declaring variable values from defaults and user prompts");
 
     for (name, config) in &template.config.variables {
         match config {
@@ -149,8 +150,8 @@ fn gather_variables(
                     None => var.default,
                 };
 
-                if options.defaults || var.prompt.is_none() {
-                    log_var(name, &default, Some(&default_comment));
+                if args.defaults || var.prompt.is_none() {
+                    log_var(name, &default, Some(default_comment));
 
                     context.insert(name, &default);
                 } else {
@@ -159,7 +160,6 @@ fn gather_variables(
                         .with_prompt(var.prompt.as_ref().unwrap())
                         .show_default(true)
                         .interact()
-                        .map_err(error_handler)
                         .into_diagnostic()?;
 
                     log_var(name, &value, None);
@@ -173,7 +173,7 @@ fn gather_variables(
                     .iter()
                     .map(|e| match e {
                         TemplateVariableEnumValue::String(value) => value,
-                        TemplateVariableEnumValue::Object { value, .. } => value,
+                        TemplateVariableEnumValue::Object(cfg) => &cfg.value,
                     })
                     .collect::<Vec<_>>();
                 let labels = var
@@ -181,7 +181,7 @@ fn gather_variables(
                     .iter()
                     .map(|e| match e {
                         TemplateVariableEnumValue::String(value) => value,
-                        TemplateVariableEnumValue::Object { label, .. } => label,
+                        TemplateVariableEnumValue::Object(cfg) => &cfg.label,
                     })
                     .collect::<Vec<_>>();
 
@@ -191,11 +191,11 @@ fn gather_variables(
                     .position(|i| *i == default)
                     .unwrap_or_default();
 
-                if options.defaults {
-                    log_var(name, &values[default_index], Some(&default_comment));
+                if args.defaults {
+                    log_var(name, &values[default_index], Some(default_comment));
                 }
 
-                match (options.defaults, var.multiple.unwrap_or_default()) {
+                match (args.defaults, var.multiple.unwrap_or_default()) {
                     (true, true) => {
                         context.insert(name, &[&values[default_index]]);
                     }
@@ -214,7 +214,6 @@ fn gather_variables(
                                     .collect::<Vec<bool>>(),
                             )
                             .interact()
-                            .map_err(error_handler)
                             .into_diagnostic()?;
                         let value = indexes
                             .iter()
@@ -231,7 +230,6 @@ fn gather_variables(
                             .default(default_index)
                             .items(&labels)
                             .interact()
-                            .map_err(error_handler)
                             .into_diagnostic()?;
 
                         log_var(name, &values[index], None);
@@ -246,14 +244,14 @@ fn gather_variables(
                     Some(val) => val
                         .parse::<i32>()
                         .map_err(|e| {
-                            GeneratorError::FailedToParseArgVar(name.to_owned(), e.to_string())
+                            CodegenError::FailedToParseArgVar(name.to_owned(), e.to_string())
                         })
                         .into_diagnostic()?,
                     None => var.default as i32,
                 };
 
-                if options.defaults || var.prompt.is_none() {
-                    log_var(name, &default, Some(&default_comment));
+                if args.defaults || var.prompt.is_none() {
+                    log_var(name, &default, Some(default_comment));
 
                     context.insert(name, &default);
                 } else {
@@ -270,7 +268,6 @@ fn gather_variables(
                             }
                         })
                         .interact_text()
-                        .map_err(error_handler)
                         .into_diagnostic()?;
 
                     log_var(name, &value, None);
@@ -282,8 +279,8 @@ fn gather_variables(
                 let required = var.required.unwrap_or_default();
                 let default = custom_vars.get(name).unwrap_or(&var.default);
 
-                if options.defaults || var.prompt.is_none() {
-                    log_var(name, &default, Some(&default_comment));
+                if args.defaults || var.prompt.is_none() {
+                    log_var(name, &default, Some(default_comment));
 
                     context.insert(name, &default);
                 } else {
@@ -300,7 +297,6 @@ fn gather_variables(
                             }
                         })
                         .interact_text()
-                        .map_err(error_handler)
                         .into_diagnostic()?;
 
                     log_var(name, &value, None);
@@ -314,39 +310,38 @@ fn gather_variables(
     Ok(context)
 }
 
-pub async fn generate(name: String, options: GenerateOptions) -> AppResult {
+pub async fn generate(args: GenerateArgs) -> AppResult {
     let workspace = load_workspace().await?;
-    let generator = Generator::load(&workspace.root, &workspace.config.generator)?;
+    let generator = CodeGenerator::new(&workspace.root, &workspace.config.generator);
     let theme = create_theme();
     let cwd = env::current_dir().into_diagnostic()?;
 
     // This is a special case for creating a new template with the generator itself!
-    if options.template {
-        let template = generator.create_template(&name)?;
+    if args.template {
+        let template = generator.create_template(&args.name)?;
 
         println!(
             "Created a new template {} at {}",
-            color::id(template.name),
+            color::id(template.id),
             color::path(template.root)
         );
 
         return Ok(());
     }
 
-    if options.dry_run {
-        debug!(target: LOG_TARGET, "Running in DRY MODE");
+    if args.dry_run {
+        debug!("Running in DRY MODE");
     }
 
     // Create the template instance
-    let mut template = generator.load_template(&name)?;
+    let mut template = generator.load_template(&args.name)?;
     let term = Term::buffered_stdout();
 
     term.line("")?;
     term.line(format!(
         "{} {}",
-        // color::style(&template.config.title).bold(),
         &template.config.title,
-        if options.dry_run {
+        if args.dry_run {
             color::muted("(dry run)")
         } else {
             "".into()
@@ -357,13 +352,10 @@ pub async fn generate(name: String, options: GenerateOptions) -> AppResult {
     term.flush_lines()?;
 
     // Determine the destination path
-    let relative_dest = match &options.dest {
+    let relative_dest = RelativePathBuf::from(match &args.dest {
         Some(d) => d.clone(),
         None => {
-            trace!(
-                target: LOG_TARGET,
-                "Destination path not provided, prompting the user"
-            );
+            debug!("Destination path not provided, prompting the user");
 
             Input::with_theme(&theme)
                 .with_prompt("Where to generate code to?")
@@ -371,17 +363,13 @@ pub async fn generate(name: String, options: GenerateOptions) -> AppResult {
                 .interact_text()
                 .into_diagnostic()?
         }
-    };
-    let dest = path::normalize(cwd.join(&relative_dest));
+    });
+    let dest = relative_dest.to_logical_path(&cwd);
 
-    debug!(
-        target: LOG_TARGET,
-        "Destination path set to {}",
-        color::path(&dest)
-    );
+    debug!(dest = ?dest, "Destination path set");
 
     // Gather variables and build context
-    let mut context = gather_variables(&template, &theme, &options)?;
+    let mut context = gather_variables(&template, &theme, &args)?;
     context.insert("dest_dir", &dest);
     context.insert("dest_rel_dir", &relative_dest);
     context.insert("working_dir", &cwd);
@@ -397,7 +385,7 @@ pub async fn generate(name: String, options: GenerateOptions) -> AppResult {
         }
 
         if file.dest_path.exists() {
-            if options.force || file.is_forced() {
+            if args.force || file.is_forced() {
                 file.state = FileState::Replace;
                 continue;
             }
@@ -444,7 +432,7 @@ pub async fn generate(name: String, options: GenerateOptions) -> AppResult {
     }
 
     // Generate the files in the destination and print the results
-    if !options.dry_run {
+    if !args.dry_run {
         generator.generate(&template)?;
     }
 
@@ -465,9 +453,11 @@ pub async fn generate(name: String, options: GenerateOptions) -> AppResult {
                 _ => color::muted("-->"),
             },
             color::muted_light(
-                PathBuf::from(&relative_dest)
-                    .join(&file.name)
-                    .to_string_lossy()
+                file.dest_path
+                    .strip_prefix(&cwd)
+                    .unwrap_or(&file.dest_path)
+                    .to_str()
+                    .unwrap()
             )
         ))?;
     }

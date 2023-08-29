@@ -1,4 +1,4 @@
-use moon_error::MoonError;
+use miette::IntoDiagnostic;
 use once_cell::sync::Lazy;
 
 pub use regex::{Captures, Regex};
@@ -53,8 +53,8 @@ pub static WINDOWS_SYSTEM_COMMAND: Lazy<regex::Regex> = Lazy::new(|| {
 });
 
 #[inline]
-pub fn create_regex<V: AsRef<str>>(value: V) -> Result<Regex, MoonError> {
-    Regex::new(value.as_ref()).map_err(MoonError::Regex)
+pub fn create_regex<V: AsRef<str>>(value: V) -> miette::Result<Regex> {
+    Regex::new(value.as_ref()).into_diagnostic()
 }
 
 #[inline]

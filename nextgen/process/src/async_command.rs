@@ -13,7 +13,7 @@ pub struct AsyncCommand<'cmd> {
 }
 
 impl<'cmd> AsyncCommand<'cmd> {
-    pub async fn exec_capture_output(&mut self) -> Result<Output, ProcessError> {
+    pub async fn exec_capture_output(&mut self) -> miette::Result<Output> {
         self.inspector.log_command();
 
         let command = &mut self.inner;
@@ -54,7 +54,7 @@ impl<'cmd> AsyncCommand<'cmd> {
         Ok(output)
     }
 
-    pub async fn exec_stream_output(&mut self) -> Result<Output, ProcessError> {
+    pub async fn exec_stream_output(&mut self) -> miette::Result<Output> {
         self.inspector.log_command();
 
         let command = &mut self.inner;
@@ -94,7 +94,7 @@ impl<'cmd> AsyncCommand<'cmd> {
         Ok(output)
     }
 
-    pub async fn exec_stream_and_capture_output(&mut self) -> Result<Output, ProcessError> {
+    pub async fn exec_stream_and_capture_output(&mut self) -> miette::Result<Output> {
         self.inspector.log_command();
 
         let command = &mut self.inner;
@@ -208,19 +208,15 @@ impl<'cmd> AsyncCommand<'cmd> {
             .to_string()
     }
 
-    fn handle_nonzero_status(
-        &self,
-        output: &Output,
-        with_message: bool,
-    ) -> Result<(), ProcessError> {
+    fn handle_nonzero_status(&self, output: &Output, with_message: bool) -> miette::Result<()> {
         if self.inspector.should_error_nonzero() && !output.status.success() {
-            return Err(output_to_error(self.get_bin_name(), output, with_message));
+            return Err(output_to_error(self.get_bin_name(), output, with_message).into());
         }
 
         Ok(())
     }
 
-    async fn write_input_to_child(&self, child: &mut Child) -> Result<(), ProcessError> {
+    async fn write_input_to_child(&self, child: &mut Child) -> miette::Result<()> {
         let input = &self.inspector.get_command_line().input;
 
         let mut stdin = child.stdin.take().unwrap_or_else(|| {

@@ -7,60 +7,60 @@ tasks:
     inputs:
       - '*.js'
     outputs:
-      - 'lib/one.js'
+      - 'single-file/one.js'
   generateFiles:
     command: node
     args: generate.js multiple-files
     inputs:
       - '*.js'
     outputs:
-      - 'lib/one.js'
-      - 'lib/two.js'
+      - 'multiple-files/one.js'
+      - 'multiple-files/two.js'
   generateFolder:
     command: node
     args: generate.js single-folder
     inputs:
       - '*.js'
     outputs:
-      - 'lib'
+      - 'single-folder'
   generateFolders:
     command: node
     args: generate.js multiple-folders
     inputs:
       - '*.js'
     outputs:
-      - 'lib'
-      - 'esm'
+      - 'multiple-folders/a'
+      - 'multiple-folders/b'
   generateFileAndFolder:
     command: node
     args: generate.js both
     inputs:
       - '*.js'
     outputs:
-      - 'lib/one.js'
-      - 'esm'
+      - 'both/a/one.js'
+      - 'both/b'
   generateFileAndFolderWorkspace:
     command: node
     args: generate.js both --workspace
     inputs:
       - '*.js'
     outputs:
-      - '/lib/one.js'
-      - '/esm'
+      - '/both/a/one.js'
+      - '/both/b'
   generateFixed:
     command: node
-    args: generate.js custom test.mjs
+    args: generate.js custom test.cjs
     inputs:
       - '*.js'
     outputs:
-      - 'test.mjs'
+      - 'custom/test.cjs'
   generateFileTypes:
     command: node
     args: generate.js multiple-types
     inputs:
       - '*.js'
     outputs:
-      - 'build/*.js'
+      - 'multiple-types/*.js'
 
   # Dependency hashing
   asDep:
@@ -69,7 +69,7 @@ tasks:
     inputs:
       - '*.js'
     outputs:
-      - 'test.js'
+      - 'custom/test.js'
   withDeps:
     command: node
     args: generate.js custom test.mjs
@@ -78,7 +78,7 @@ tasks:
     inputs:
       - '*.mjs'
     outputs:
-      - 'test.mjs'
+      - 'custom/test.mjs'
 
   # Other cases
   noCache:
@@ -87,8 +87,7 @@ tasks:
     inputs:
       - '*.js'
     outputs:
-      - 'lib/one.js'
-      - 'esm'
+      - 'both/**/*'
     options:
       cache: false
   missingOutput:
@@ -105,6 +104,14 @@ tasks:
       - '*.js'
     outputs:
       - 'unknown/*'
+  negatedOutputGlob:
+    command: node
+    args: generate.js both
+    inputs:
+      - '*.js'
+    outputs:
+      - 'both/{a,b}/*.js'
+      - '!both/b/two.js'
   noOutput:
     command: node
     args: generate.js none

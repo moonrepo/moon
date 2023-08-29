@@ -97,17 +97,22 @@ projects:
                 |path| WorkspaceConfig::load_from(path),
             );
 
-            assert_eq!(
-                config.projects,
-                WorkspaceProjects::Sources(FxHashMap::from_iter([
-                    ("app".into(), "apps/app".into()),
-                    ("foo-kebab".into(), "./packages/foo".into()),
-                    ("barCamel".into(), "packages/bar".into()),
-                    ("baz_snake".into(), "./packages/baz".into()),
-                    ("qux.dot".into(), "packages/qux".into()),
-                    ("wat/slash".into(), "./packages/wat".into())
-                ])),
-            );
+            match config.projects {
+                WorkspaceProjects::Sources(map) => {
+                    assert_eq!(
+                        map,
+                        FxHashMap::from_iter([
+                            ("app".into(), "apps/app".into()),
+                            ("foo-kebab".into(), "./packages/foo".into()),
+                            ("barCamel".into(), "packages/bar".into()),
+                            ("baz_snake".into(), "./packages/baz".into()),
+                            ("qux.dot".into(), "packages/qux".into()),
+                            ("wat/slash".into(), "./packages/wat".into())
+                        ]),
+                    );
+                }
+                _ => panic!(),
+            };
         }
 
         #[test]
@@ -162,14 +167,19 @@ projects:
                 |path| WorkspaceConfig::load_from(path),
             );
 
-            assert_eq!(
-                config.projects,
-                WorkspaceProjects::Globs(vec![
-                    "apps/*".into(),
-                    "packages/*".into(),
-                    "internal".into(),
-                ]),
-            );
+            match config.projects {
+                WorkspaceProjects::Globs(list) => {
+                    assert_eq!(
+                        list,
+                        vec![
+                            "apps/*".to_owned(),
+                            "packages/*".to_owned(),
+                            "internal".to_owned(),
+                        ],
+                    );
+                }
+                _ => panic!(),
+            };
         }
 
         #[test]
@@ -212,13 +222,16 @@ projects:
                 |path| WorkspaceConfig::load_from(path),
             );
 
-            assert_eq!(
-                config.projects,
-                WorkspaceProjects::Both {
-                    globs: vec!["packages/*".into()],
-                    sources: FxHashMap::from_iter([("app".into(), "app".into())])
-                },
-            );
+            match config.projects {
+                WorkspaceProjects::Both(cfg) => {
+                    assert_eq!(cfg.globs, vec!["packages/*".to_owned()]);
+                    assert_eq!(
+                        cfg.sources,
+                        FxHashMap::from_iter([("app".into(), "app".into())])
+                    );
+                }
+                _ => panic!(),
+            };
         }
     }
 

@@ -1,5 +1,5 @@
 use moon_config::{
-    PartialRustConfig, PartialToolchainConfig, PartialWorkspaceConfig, WorkspaceProjects,
+    PartialRustConfig, PartialToolchainConfig, PartialWorkspaceConfig, PartialWorkspaceProjects,
 };
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, predicates::prelude::*, Sandbox,
@@ -8,7 +8,7 @@ use rustc_hash::FxHashMap;
 
 fn rust_sandbox() -> Sandbox {
     let workspace_config = PartialWorkspaceConfig {
-        projects: Some(WorkspaceProjects::Sources(FxHashMap::from_iter([(
+        projects: Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([(
             "rust".into(),
             ".".into(),
         )]))),
@@ -73,7 +73,11 @@ fn handles_panic() {
 
     let output = assert.output();
 
-    assert!(predicate::str::contains("thread 'main' panicked at 'Oops'").eval(&output));
+    assert!(
+        predicate::str::is_match("thread 'main' panicked at(?s:.)*Oops")
+            .unwrap()
+            .eval(&output)
+    );
 }
 
 #[test]
@@ -141,5 +145,5 @@ fn retries_on_failure_till_count() {
 
     let output = assert.output();
 
-    assert!(predicate::str::contains("failed with a 1 exit code").eval(&output));
+    assert!(predicate::str::contains("exit code 1").eval(&output));
 }

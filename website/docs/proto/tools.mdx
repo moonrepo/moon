@@ -2,10 +2,14 @@
 title: Supported tools
 ---
 
+import WasmLink from '@site/src/components/Docs/WasmLink';
+
 The following tools are supported natively in proto's toolchain. Additional tools can be supported
 through [plugins](./plugins).
 
 ## Bun
+
+<WasmLink to="https://github.com/moonrepo/bun-plugin" />
 
 [Bun](https://bun.sh/) (`bun`) is an all-in-one runtime and toolset for JavaScript and TypeScript,
 powered by Zig and Webkit.
@@ -15,6 +19,8 @@ powered by Zig and Webkit.
 - Installs to `~/.bun/bin`.
 
 ## Deno
+
+<WasmLink to="https://github.com/moonrepo/deno-plugin" />
 
 [Deno](https://deno.land/) (`deno`) is a secure runtime for JavaScript and TypeScript, powered by
 Rust and Chrome's V8 engine.
@@ -28,6 +34,8 @@ Rust and Chrome's V8 engine.
 - A [`.dvmrc`](https://github.com/justjavac/dvm) file.
 
 ## Go
+
+<WasmLink to="https://github.com/moonrepo/go-plugin" />
 
 [Go](https://go.dev/) (`go`) is a simple, secure, and fast systems language.
 
@@ -53,6 +61,8 @@ $ proto install go -- --no-gobin
 
 ## Node.js
 
+<WasmLink to="https://github.com/moonrepo/node-plugin" />
+
 [Node.js](https://nodejs.org/) (`node`) is a JavaScript runtime built on Chrome's V8 engine.
 
 #### Post-install hook
@@ -72,17 +82,10 @@ $ proto install node -- --no-bundled-npm
 
 - An [`.nvmrc`](https://github.com/nvm-sh/nvm) or
   [`.node-version`](https://github.com/nodenv/nodenv) file.
-- The [`engines`](https://docs.npmjs.com/cli/v9/configuring-npm/package-json#engines) field in
-  `package.json`.
-
-:::info
-
-When parsing engines, explicit versions (`1.2.3`, `=1.2.3`) will be used as-is, but
-requirements/ranges (`^1.2.3`, `>=1.2.3`) will scan `~/.proto/tools/node` for an applicable match.
-
-:::
 
 ### npm, pnpm, yarn
+
+<WasmLink to="https://github.com/moonrepo/node-plugin" />
 
 proto supports all popular Node.js package managers: `npm`, `pnpm`, `yarn`.
 
@@ -95,8 +98,6 @@ proto supports all popular Node.js package managers: `npm`, `pnpm`, `yarn`.
 #### Detection sources
 
 - The `packageManager` field in `package.json`.
-- The [`engines`](https://docs.npmjs.com/cli/v9/configuring-npm/package-json#engines) field in
-  `package.json` (same notice above applies).
 
 ### node-gyp
 
@@ -108,6 +109,8 @@ Corepack _is not supported_ by proto, and will never be. Use [`proto use`](./com
 which is a far more poweful alternative.
 
 ## Rust
+
+<WasmLink to="https://github.com/moonrepo/rust-plugin" />
 
 [Rust](https://www.rust-lang.org/) (`rust`) is blazingly fast and memory-efficient systems language.
 

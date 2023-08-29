@@ -1,0 +1,158 @@
+---
+slug: moon-v1.12
+title: 'moon v1.12 - Task improvements: extending, interactive, and more'
+authors: [milesj]
+tags: [tasks, inheritance]
+image: ./img/moon/v1.12.png
+---
+
+In this release, we focused heavily on improving tasks, its configuration, and related systems.
+
+<!--truncate-->
+
+## Extending sibling or inherited tasks
+
+Three months ago, we posted an
+[RFC on how to support task extending / task variants](https://github.com/moonrepo/moon/issues/849).
+On paper this doesn't sound like a hard problem to solve, but internally it would of been an uphill
+battle to implement. Thanks to previous releases from the past few months, and the rewrite of the
+project graph, task builder, and more, this implementation was a breeze. To finalize the RFC, we
+went with option 2, by adding a new `extends` field to task configurations.
+
+With this new addition, we can now rewrite this old configuration, which was needlessly
+repetitive...
+
+```yaml title="moon.yml"
+tasks:
+  lint:
+    command: 'eslint .'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - '*.js'
+      - '.eslintrc.js'
+      - 'tsconfig.json'
+      - '/.eslintignore'
+      - '/.eslintrc.js'
+      - '/tsconfig.eslint.json'
+      - '/tsconfig.options.json'
+
+  lint-fix:
+    command: 'eslint . --fix'
+    local: true
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - '*.js'
+      - '.eslintrc.js'
+      - 'tsconfig.json'
+      - '/.eslintignore'
+      - '/.eslintrc.js'
+      - '/tsconfig.eslint.json'
+      - '/tsconfig.options.json'
+```
+
+Into the following configuration.
+
+```yaml title="moon.yml"
+tasks:
+  lint:
+    command: 'eslint .'
+    inputs:
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - '*.js'
+      - '.eslintrc.js'
+      - 'tsconfig.json'
+      - '/.eslintignore'
+      - '/.eslintrc.js'
+      - '/tsconfig.eslint.json'
+      - '/tsconfig.options.json'
+
+  lint-fix:
+    extends: 'lint'
+    args: '--fix'
+    local: true
+```
+
+We're very happy with this solution, as it's far more readable, maintainable, and doesn't introduce
+yet another paradigm to learn. Our goal was to be as familiar as possible, while providing extensive
+functionality behind the scenes, which we believe to have achieved.
+
+Some other interesting facts around task extending:
+
+- When extending a task, [merge strategies](/docs/concepts/task-inheritance#merge-strategies) are
+  applied in a similar fashion to inheritance.
+- Inherited tasks can be extended from by project-level tasks.
+- It's possible to create multiple extended chains.
+
+## Configure tasks as interactive
+
+Six months ago, we added support for [interactive tasks in v0.24](./v0.24#interactive-tasks), but
+only if certain conditions were met: if only 1 target is running, they are considered interactive,
+or if the `--interactive` option was passed to [`moon run`](/docs/commands/run). However, we believe
+it nice to support interactive tasks through task configuration directly, but it required some
+thought into how this would work within the dependency graph and pipeline, as only 1 task can
+interact with stdin at a time.
+
+We solved this problem by reworking our dependency graph so that interactive tasks are isolated from
+other actions in the graph, and are not run in parallel with other actions. This will result in
+longer dependency chains, but results in a working stdin solution.
+
+To mark a task as interactive, enable the [`options.interactive`](/docs/config/project#interactive)
+setting.
+
+```yaml title="moon.yml"
+tasks:
+  init:
+    command: 'init-app'
+    options:
+      interactive: true
+```
+
+## Tokens in enviroment variables
+
+Up until now, [token functions and variables](/docs/concepts/token) were only supported in task
+commands, args, inputs, and outputs, but not environment variables... why? Honestly, there was no
+real reason they weren't supported, it simply never crossed our mind! But thanks to requests from
+the community, both token functions and variables are now supported in task
+[`env`](/docs/config/project#env-1).
+
+This is great for propagating moon values to other systems. For example, say you want to use moon
+project names for Sentry, keeping a 1:1 mapping.
+
+```yaml title="moon.yml"
+tasks:
+  start:
+    command: 'run-server'
+    env:
+      SENTRY_PROJECT: '$project'
+```
+
+If you're familiar with tokens, you may be asking yourself, "How do token functions work since they
+expand to a list of paths?" That's a great question! When token functions are used in an environment
+variable, like `@group(sources)`, the list of paths will be joined with a comma (`,`).
+
+```yaml title="moon.yml"
+tasks:
+  build:
+    # ...
+    env:
+      SRCS: '@group(sources)'
+```
+
+Since the environment variable is simply a string, you could parse it with your language of choice
+to extract the list of paths.
+
+```js
+const paths = process.env.SRCS.split(',');
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v1.12.0) for a full list
+of changes.
+
+- Added git worktree support.
+- Updated task `outputs` to support negated globs.
+- Will now log a warning to the console if a configuration file uses the `.yaml` extension.

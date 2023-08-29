@@ -1,10 +1,10 @@
 pub mod actions;
 mod platform;
-mod target_hasher;
+mod target_hash;
 pub mod task;
 
 pub use platform::NodePlatform;
-pub use target_hasher::NodeTargetHasher;
+pub use target_hash::NodeTargetHash;
 
 use moon_common::Id;
 use moon_config::PartialTaskConfig;

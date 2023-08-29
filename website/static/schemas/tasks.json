@@ -5,6 +5,7 @@
   "type": "object",
   "properties": {
     "$schema": {
+      "default": "https://moonrepo.dev/schemas/tasks.json",
       "anyOf": [
         {
           "type": "string"
@@ -88,6 +89,23 @@
   },
   "additionalProperties": false,
   "definitions": {
+    "PartialTaskCommandArgs": {
+      "title": "PartialTaskCommandArgs",
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
     "PartialTaskConfig": {
       "title": "PartialTaskConfig",
       "type": "object",
@@ -95,7 +113,7 @@
         "args": {
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskCommandArgs"
+              "$ref": "#/definitions/PartialTaskCommandArgs"
             },
             {
               "type": "null"
@@ -105,7 +123,7 @@
         "command": {
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskCommandArgs"
+              "$ref": "#/definitions/PartialTaskCommandArgs"
             },
             {
               "type": "null"
@@ -135,6 +153,16 @@
               "propertyNames": {
                 "type": "string"
               }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "extends": {
+          "anyOf": [
+            {
+              "type": "string"
             },
             {
               "type": "null"
@@ -238,6 +266,16 @@
           "anyOf": [
             {
               "$ref": "#/definitions/TaskOptionEnvFile"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "interactive": {
+          "anyOf": [
+            {
+              "type": "boolean"
             },
             {
               "type": "null"
@@ -377,22 +415,6 @@
         "unknown"
       ]
     },
-    "TaskCommandArgs": {
-      "anyOf": [
-        {
-          "type": "null"
-        },
-        {
-          "type": "string"
-        },
-        {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      ]
-    },
     "TaskMergeStrategy": {
       "type": "string",
       "enum": [
@@ -402,6 +424,7 @@
       ]
     },
     "TaskOptionAffectedFiles": {
+      "title": "TaskOptionAffectedFiles",
       "anyOf": [
         {
           "type": "boolean"
@@ -416,6 +439,7 @@
       ]
     },
     "TaskOptionEnvFile": {
+      "title": "TaskOptionEnvFile",
       "anyOf": [
         {
           "type": "boolean"

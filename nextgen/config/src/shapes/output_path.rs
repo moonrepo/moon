@@ -1,5 +1,6 @@
 #![allow(clippy::from_over_into)]
 
+use crate::patterns;
 use crate::portable_path::is_glob;
 use crate::validate::validate_child_relative_path;
 use moon_common::path::{
@@ -59,12 +60,18 @@ impl AsRef<str> for OutputPath {
     }
 }
 
+impl AsRef<OutputPath> for OutputPath {
+    fn as_ref(&self) -> &OutputPath {
+        self
+    }
+}
+
 impl FromStr for OutputPath {
     type Err = ValidateError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         // Token function
-        if value.starts_with('@') {
+        if value.starts_with('@') && patterns::TOKEN_FUNC_DISTINCT.is_match(value) {
             return Ok(OutputPath::TokenFunc(value.to_owned()));
         }
 
@@ -77,9 +84,9 @@ impl FromStr for OutputPath {
 
         let value = standardize_separators(value);
 
-        // Negated glob
-        if value.starts_with("/!") || value.starts_with("!/") || value.starts_with('!') {
-            return Err(ValidateError::new("negated globs are not supported"));
+        // Workspace negated glob
+        if value.starts_with("/!") || value.starts_with("!/") {
+            return Ok(OutputPath::WorkspaceGlob(format!("!{}", &value[2..])));
         }
 
         // Workspace-relative
@@ -150,6 +157,10 @@ mod tests {
             OutputPath::from_str("dir/**/*").unwrap(),
             OutputPath::ProjectGlob("dir/**/*".into())
         );
+        assert_eq!(
+            OutputPath::from_str("!dir/**/*").unwrap(),
+            OutputPath::ProjectGlob("!dir/**/*".into())
+        );
 
         // Workspace relative
         assert_eq!(
@@ -163,6 +174,14 @@ mod tests {
         assert_eq!(
             OutputPath::from_str("/dir/**/*").unwrap(),
             OutputPath::WorkspaceGlob("dir/**/*".into())
+        );
+        assert_eq!(
+            OutputPath::from_str("!/dir/**/*").unwrap(),
+            OutputPath::WorkspaceGlob("!dir/**/*".into())
+        );
+        assert_eq!(
+            OutputPath::from_str("/!dir/**/*").unwrap(),
+            OutputPath::WorkspaceGlob("!dir/**/*".into())
         );
     }
 
@@ -213,17 +232,5 @@ mod tests {
     #[should_panic(expected = "parent relative paths are not supported")]
     fn errors_for_parent_relative_from_workspace() {
         OutputPath::from_str("/../test").unwrap();
-    }
-
-    #[test]
-    #[should_panic(expected = "negated globs are not supported")]
-    fn errors_for_project_negated_glob() {
-        OutputPath::from_str("!test").unwrap();
-    }
-
-    #[test]
-    #[should_panic(expected = "negated globs are not supported")]
-    fn errors_for_workspace_negated_glob() {
-        OutputPath::from_str("/!test").unwrap();
     }
 }

@@ -12,7 +12,10 @@ pub struct CodeownersGenerator {
 }
 
 impl CodeownersGenerator {
-    pub fn new(workspace_root: &Path, provider: VcsProvider) -> Result<Self, FsError> {
+    pub fn new(
+        workspace_root: &Path,
+        provider: VcsProvider,
+    ) -> miette::Result<CodeownersGenerator> {
         debug!("Aggregating code owners");
 
         let file_path = workspace_root.join(match provider {
@@ -38,7 +41,7 @@ impl CodeownersGenerator {
         id: &str,
         source: &str,
         config: &OwnersConfig,
-    ) -> Result<(), FsError> {
+    ) -> miette::Result<()> {
         if config.paths.is_empty() {
             return Ok(());
         }
@@ -121,7 +124,7 @@ impl CodeownersGenerator {
         Ok(())
     }
 
-    pub fn add_workspace_entries(&mut self, config: &CodeownersConfig) -> Result<(), FsError> {
+    pub fn add_workspace_entries(&mut self, config: &CodeownersConfig) -> miette::Result<()> {
         if config.global_paths.is_empty() {
             return Ok(());
         }
@@ -144,7 +147,7 @@ impl CodeownersGenerator {
         Ok(())
     }
 
-    pub fn cleanup(self) -> Result<(), FsError> {
+    pub fn cleanup(self) -> miette::Result<()> {
         debug!(file = ?self.file_path, "Removing CODEOWNERS file");
 
         drop(self.file);
@@ -154,7 +157,7 @@ impl CodeownersGenerator {
         Ok(())
     }
 
-    pub fn generate(mut self) -> Result<(), FsError> {
+    pub fn generate(mut self) -> miette::Result<()> {
         debug!(file = ?self.file_path, "Generating and writing CODEOWNERS file");
 
         let editor_config = fs::get_editor_config_props(&self.file_path);
@@ -179,7 +182,7 @@ impl CodeownersGenerator {
             .replace(' ', "\\ ")
     }
 
-    fn write<T: AsRef<str>>(&mut self, message: T) -> Result<(), FsError> {
+    fn write<T: AsRef<str>>(&mut self, message: T) -> miette::Result<()> {
         writeln!(self.file, "{}", message.as_ref()).map_err(|error| FsError::Create {
             path: self.file_path.to_path_buf(),
             error,

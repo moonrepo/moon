@@ -5,6 +5,7 @@
   "type": "object",
   "properties": {
     "$schema": {
+      "default": "https://moonrepo.dev/schemas/toolchain.json",
       "anyOf": [
         {
           "type": "string"
@@ -103,12 +104,84 @@
         "nvm"
       ]
     },
+    "PartialBinConfig": {
+      "title": "PartialBinConfig",
+      "type": "object",
+      "properties": {
+        "bin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "force": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "local": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "PartialBinEntry": {
+      "title": "PartialBinEntry",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/PartialBinConfig"
+        }
+      ]
+    },
     "PartialDenoConfig": {
       "title": "PartialDenoConfig",
       "description": "Docs: https://moonrepo.dev/docs/config/toolchain#deno",
       "type": "object",
       "properties": {
+        "bins": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PartialBinEntry"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "depsFile": {
+          "default": "deps.ts",
           "anyOf": [
             {
               "type": "string"
@@ -137,6 +210,7 @@
       "type": "object",
       "properties": {
         "addEnginesConstraint": {
+          "default": true,
           "anyOf": [
             {
               "type": "boolean"
@@ -171,6 +245,7 @@
           ]
         },
         "dedupeOnLockfileChange": {
+          "default": true,
           "anyOf": [
             {
               "type": "boolean"
@@ -231,6 +306,7 @@
           ]
         },
         "syncProjectWorkspaceDependencies": {
+          "default": true,
           "anyOf": [
             {
               "type": "boolean"
@@ -317,7 +393,7 @@
             {
               "type": "array",
               "items": {
-                "type": "string"
+                "$ref": "#/definitions/PartialBinEntry"
               }
             },
             {
@@ -354,6 +430,7 @@
       "type": "object",
       "properties": {
         "createMissingConfig": {
+          "default": true,
           "anyOf": [
             {
               "type": "boolean"
@@ -364,6 +441,7 @@
           ]
         },
         "projectConfigFileName": {
+          "default": "tsconfig.json",
           "anyOf": [
             {
               "type": "string"
@@ -374,6 +452,7 @@
           ]
         },
         "rootConfigFileName": {
+          "default": "tsconfig.json",
           "anyOf": [
             {
               "type": "string"
@@ -384,6 +463,7 @@
           ]
         },
         "rootOptionsConfigFileName": {
+          "default": "tsconfig.options.json",
           "anyOf": [
             {
               "type": "string"
@@ -404,6 +484,7 @@
           ]
         },
         "syncProjectReferences": {
+          "default": true,
           "anyOf": [
             {
               "type": "boolean"

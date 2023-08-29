@@ -1,6 +1,5 @@
 ---
 title: Plugins
-toc_max_heading_level: 4
 ---
 
 proto supports a pluggable architecture as a means for consumers to integrate and manage custom
@@ -11,189 +10,60 @@ their needs.
 ## Enabling plugins
 
 Plugins can be enabled by configuring them in
-[`.prototools` or `~/.proto/config.toml`](./config#plugins) files.
+[`.prototools` or `~/.proto/config.toml`](./config#plugins) files, within the `[plugins]` section,
+which maps a plugin to a locator string. The map key is the plugin name _in kebab-case_, which is
+used as the binary/tool name in proto, and also the name for configuration and cache purposes. The
+map value is a locator string that defines a scope and source location.
 
 ```toml title=".prototools"
 [plugins]
-my-tool = "schema:https://raw.githubusercontent.com/my/tool/master/proto-plugin.toml"
+<id> = "<scope>:<location>"
 ```
 
-## Creating a plugin
+The following locator patterns are supported:
 
-To ease the plugin development process, proto supports 2 types of plugins, a TOML based plugin, and
-a WASM based plugin.
+### `source:`
 
-### TOML plugin
+The `source:` locator scope supports both secure URLs and file system paths (relative from the
+config file). Files will be used as-is, while URLs will be downloaded to `~/.proto/plugins`.
 
-The TOML plugin is by design, very simple. It's a TOML file that describes a schema for the tool,
-how it should be installed, and how it should be invoked. Since this is a static configuration file,
-it does not support any logic or complex behavior, and is merely for simple and common use cases,
-like CLIs.
-
-Let's start by creating a new schema plugin, and defining the `name` and `type` fields. The type can
-either be `language`, `dependency-manager`, or `cli`. For this example, we'll create a plugin for
-our fake product called Protostar, a CLI tool.
-
-```toml title="protostar.toml"
-name = "Protostar"
-type = "cli"
+```toml title=".prototools"
+[plugins]
+file-tool = "source:plugins/example.wasm"
+url-tool = "source:https://domain.com/path/to/plugins/example.wasm"
 ```
 
-#### Platform variations
+### `github:`
 
-Native tools are often platform specific, and proto supports this by allowing you to define
-variations based on operating system using the `[platform]` section. For non-native tools, this
-section can typically be skipped.
+The `github:` locator scope can be used to target and download an asset from a specific GitHub
+release. The location must be an organization + repository slug (owner/repo), and the release _must
+have_ a `.wasm` asset available to download.
 
-This section requires a mapping of Rust
-[`OS` strings](https://doc.rust-lang.org/std/env/consts/constant.OS.html) to platform settings. The
-following settings are available:
-
-- `archive-prefix` - If the tool is distributed as an archive (zip, tar, etc), this is the name of
-  the direct folder within the archive that contains the tool, and will be removed when unpacking
-  the archive. If there is no prefix folder within the archive, this setting can be omitted.
-- `bin-path` - The path to the executable binary within the archive (without the prefix). If the
-  tool is distributed as a single binary, this setting can be typically omitted.
-- `checksum-file` - Name of the checksum file to verify the downloaded file with. If the tool does
-  not support checksum verification, this setting can be omitted.
-- `download-file` (required) - Name of the file to download.
-  [Learn more about downloading](#downloading-and-installing).
-
-```toml title="protostar.toml"
-# ...
-
-[platform.linux]
-archive-prefix = "protostar-linux"
-bin-path = "bins/protostar"
-checksum-file = "protostar-{arch}-unknown-linux-{libc}.sha256"
-download-file = "protostar-{arch}-unknown-linux-{libc}.tar.gz"
-
-[platform.macos]
-archive-prefix = "protostar-macos"
-bin-path = "bins/protostar"
-checksum-file = "protostar-{arch}-apple-darwin.sha256"
-download-file = "protostar-{arch}-apple-darwin.tar.xz"
-
-[platform.windows]
-archive-prefix = "protostar-windows"
-bin-path = "bins/protostar.exe"
-checksum-file = "protostar-{arch}-pc-windows-msvc.sha256"
-download-file = "protostar-{arch}-pc-windows-msvc.zip"
+```toml title=".prototools"
+[plugins]
+github-tool = "github:moonrepo/example-repo"
 ```
 
-You may have noticed tokens above, like `{arch}`. These are special tokens that are replaced with a
-dynamic value at runtime, based on the current host machine executing the code. The following tokens
-are available:
+By default, the latest release will be used and cached for 7 days. If you'd prefer to target a
+specific release, append the release tag to the end of the location.
 
-- `{version}` - The currently resolved version, as a fully-qualifed semantic version:
-  `major.minor.patch`.
-- `{arch}` - The architecture of the host machine, like `x86_64`. These values map to Rust's
-  [`ARCH` constant](https://doc.rust-lang.org/std/env/consts/constant.ARCH.html), but can be
-  customized with [`install.arch`](#downloading-and-installing).
-- `{libc}` - For Linux machines, this is the current libc implementation, either `gnu` or `musl`.
-
-#### Downloading and installing
-
-A schema plugin _only_ supports downloading pre-built tools, typically as an archive, and does _not_
-support building from source. The `[install]` section can be used to configure how the tool should
-be downloaded and installed into the toolchain. The following settings are available:
-
-- `arch` - A mapping of Rust
-  [`ARCH` strings](https://doc.rust-lang.org/std/env/consts/constant.ARCH.html) to custom values for
-  the `{arch}` token. This is useful if the tool has different terminology.
-- `checksum-url` - A secure URL to download the checksum file for verification. If the tool does not
-  support checksum verification, this setting can be omitted.
-- `download-url` (required) - A secure URL to download the tool/archive.
-- `unpack` - Whether the downloaded file should be unpacked or not. For tools that download the
-  binary directly, this should be disabled.
-
-The URL settings support `{checksum_file}` and `{download_file}` tokens, which will be replaced with
-the values from the `[platform]` section.
-
-```toml title="protostar.toml"
-# ...
-
-[install]
-checksum-url = "https://github.com/moonrepo/protostar/releases/download/v{version}/{checksum_file}"
-download-url = "https://github.com/moonrepo/protostar/releases/download/v{version}/{download_file}"
-
-[install.arch]
-aarch64 = "arm64"
-x86_64 = "x64"
+```toml title=".prototools"
+[plugins]
+github-tool = "github:moonrepo/example-repo@v1.2.3"
 ```
 
-The `[install]` sections also supports the following settings that dictate the installation of
-global binaries for the tool. If the tool does not support globals (is not a programming language),
-these settings can be omitted.
+This strategy is powered by the [GitHub API](https://api.github.com/) and is subject to rate
+limiting. If running in a CI environment, we suggesting setting a `GITHUB_TOKEN` environment
+variable to authorize API requests with. If using GitHub Actions, it's as simple as:
 
-- `globals-dir` - A list of directories to locate and install the global binaries into. This setting
-  supports interpolating environment variables via the syntax `$ENV_VAR`.
-- `global-args` - A list of CLI arguments to pass to the tool to install a global binary. The name
-  of the binary can be inserted using the `{dependency}` token.
-
-```toml title="protostar.toml"
-# ...
-
-[install]
-globals-dir = ["$PROTOSTAR_HOME/bin", "$HOME/.protostar/bin"]
-global-args = ["install", "--force", "{dependency}"]
+```yaml
+# In some job or step...
+env:
+	GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
 ```
 
-#### Resolving versions
+## Creating plugins
 
-Now that the tool can be downloaded and installed, we must configure how to resolve available
-versions. Resolving is configured through the `[resolve]` section, which supports 2 patterns to
-resolve with: Git tags, or a JSON manifest.
-
-###### Git tags
-
-To resolve a list of available versions using Git tags, the following settings are available:
-
-- `git-url` - The remote URL to fetch tags from.
-- `git-tag-pattern` - A regular expression to filter and match with. Defaults to
-  `^v?((\d+)\.(\d+)\.(\d+))`. The capture group `1` will be extracted as the version.
-
-```toml title="protostar.toml"
-# ...
-
-[resolve]
-git-url = "https://github.com/moonrepo/protostar"
-git-tag-pattern = "^@protostar/cli@((\\d+)\.(\\d+)\.(\\d+))"
-```
-
-###### JSON manifest
-
-To resolve a list of available versions using a JSON manifest, the following settings are available:
-
-- `manifest-url` - A URL that returns a JSON response of all versions. This response _must be_ an
-  array of strings, or an array of objects.
-- `manifest-version-key` - If the response is an array of objects, this is the key to extract the
-  version from. If the response is an array of strings, this setting can be omitted. Defaults to
-  `version`.
-
-```toml title="protostar.toml"
-# ...
-
-[resolve]
-manifest-url = "https://someregistry.com/protostar/versions.json"
-manifest-version-key = "latest_version"
-```
-
-#### Detecting versions
-
-And lastly, we can configure how to [detect a version](./detection) contextually at runtime, using
-the `[detect]` setting. At this time, we only support 1 setting:
-
-- `version-files` - A list of version files to extract from. The contents of these files can _only_
-  be the version string itself.
-
-```toml title="protostar.toml"
-# ...
-
-[detect]
-version-files = [".protostar-version", ".protostarrc"]
-```
-
-### WASM plugin
-
-Coming soon!
+To ease the plugin development process, proto supports 2 types of plugins, a
+[TOML based plugin](./toml-plugin) for basic use cases, and a [WASM based plugin](./wasm-plugin) for
+advanced use cases.

@@ -1,6 +1,6 @@
+use moon_cache_item::CommonState;
 use moon_codeowners::{CodeownersGenerator, CodeownersHash};
 use moon_config::CodeownersOrderBy;
-use moon_hash::HashEngine;
 use moon_project_graph::ProjectGraph;
 use moon_workspace::Workspace;
 use std::path::PathBuf;
@@ -10,11 +10,11 @@ pub async fn sync_codeowners(
     project_graph: &ProjectGraph,
     force: bool,
 ) -> miette::Result<PathBuf> {
-    let hash_engine = HashEngine::new(&workspace.cache.dir);
-    let mut hasher = hash_engine.create_hasher("CODEOWNERS");
+    let cache_engine = &workspace.cache_engine;
+    let hash_engine = &workspace.hash_engine;
 
     // Sort the projects based on config
-    let mut projects = project_graph.get_all()?;
+    let mut projects = project_graph.get_all_unexpanded();
     let order_by = workspace.config.codeowners.order_by;
 
     projects.sort_by(|a, d| match order_by {
@@ -30,7 +30,7 @@ pub async fn sync_codeowners(
         codeowners.add_workspace_entries(&workspace.config.codeowners)?;
     }
 
-    for project in projects {
+    for project in &projects {
         if !project.config.owners.paths.is_empty() {
             codeowners_hash.add_project(&project.id, &project.config.owners);
 
@@ -42,17 +42,17 @@ pub async fn sync_codeowners(
         }
     }
 
-    hasher.hash_content(&codeowners_hash);
-
-    // Check the cache before writing the file
-    let mut cache = workspace.cache.cache_codeowners_state()?;
     let file_path = codeowners.file_path.clone();
 
-    if force || hasher.generate_hash()? != cache.last_hash {
+    // Check the cache before writing the file
+    let mut state = cache_engine.cache_state::<CommonState>("codeowners.json")?;
+    let hash = hash_engine.save_manifest_without_hasher("CODEOWNERS", &codeowners_hash)?;
+
+    if force || hash != state.data.last_hash {
         codeowners.generate()?;
 
-        cache.last_hash = hash_engine.save_manifest(hasher)?;
-        cache.save()?;
+        state.data.last_hash = hash;
+        state.save()?;
     }
 
     Ok(file_path)

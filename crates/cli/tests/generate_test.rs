@@ -1,3 +1,4 @@
+use moon_common::path::standardize_separators;
 use moon_test_utils::{
     assert_snapshot, create_sandbox_with_config, predicates::prelude::*, Sandbox,
 };
@@ -155,6 +156,20 @@ fn renders_with_custom_vars_via_args() {
 }
 
 #[test]
+fn handles_raw_files() {
+    let sandbox = generate_sandbox();
+
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("generate").arg("standard").arg("./test");
+    });
+
+    assert.success();
+
+    assert_snapshot!(fs::read_to_string(sandbox.path().join("./test/file.txt")).unwrap());
+    assert_snapshot!(fs::read_to_string(sandbox.path().join("./test/other.txt")).unwrap());
+}
+
+#[test]
 fn interpolates_destination_path() {
     let sandbox = generate_sandbox();
 
@@ -201,7 +216,9 @@ fn supports_custom_filters() {
 
     assert.success();
 
-    assert_snapshot!(fs::read_to_string(sandbox.path().join("./test/filters.txt")).unwrap());
+    let content = fs::read_to_string(sandbox.path().join("./test/filters.txt")).unwrap();
+
+    assert_snapshot!(standardize_separators(content));
 }
 
 #[test]

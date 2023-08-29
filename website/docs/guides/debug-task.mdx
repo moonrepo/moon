@@ -1,0 +1,179 @@
+---
+title: Debugging a task
+---
+
+Running [tasks](../concepts/task) is the most common way to interact with moon, so what do you do
+when your task isn't working as expected? Diagnose it of course! Diagnosing the root cause of a
+broken task can be quite daunting, but do not fret, as the following steps will help guide you in
+this endeavor.
+
+## Verify configuration
+
+Before we dive into the internals of moon, we should first verify that the task is actually
+configured correctly. Our configuration layer is very strict, but it can't catch everything, so jump
+to the [`moon.yml`](../config/project#tasks) documentation for more information.
+
+To start, moon will create a snapshot of the project and its tasks, with all [tokens][token]
+resolved, and paths expanded. This snapshot is located at
+`.moon/cache/states/<project>/snapshot.json`. With the snapshot open, inspect the root `tasks`
+object for any inconsistencies or inaccuracies.
+
+Some issues to look out for:
+
+- Have `command` and `args` been parsed correctly?
+- Have [tokens][token] resolved correctly? If not, verify syntax or try another token type.
+- Have `inputFiles`, `inputGlobs`, and `inputVars` expanded correctly from [`inputs`][inputs]?
+- Have `outputFiles` and `outputGlobs` expanded correctly from [`outputs`][outputs]?
+- Is the `platform` correct for the command? If incorrect, explicitly set the
+  [`platform`][platform].
+- Are `options` and `flags` correct?
+
+:::info
+
+Resolved information can also be inspected with the [`moon task <target> --json`](../commands/task)
+command.
+
+:::
+
+### Verify inherited configuration
+
+If the configuration from the previous step looks correct, you can skip this step, otherwise let's
+verify that the inherited configuration is also correct. In the `snapshot.json` file, inspect the
+root `inherited` object, which is structured as follows:
+
+- `order` - The order in which configuration files from `.moon` are loaded, from lowest to highest
+  priority, and the order files are merged. The `*` entry is `.moon/tasks.yml`, while other entries
+  map to `.moon/tasks/*.yml`.
+- `layers` - A mapping of configuration files that were loaded, derived from the `order`. Each layer
+  represents a partial object (not expanded or resolved). Only files that exist will be mapped here.
+- `config` - A partial configuration object representing the state of all merged layers. This is
+  what is merged with the project's `moon.yml` file.
+
+Some issues to look out for:
+
+- Is the order correct? If not, verify the project's [`language`](../config/project#language) and
+  the task's [`platform`][platform].
+- Does `config` correctly represent the merged state of all `layers`? Do note that tasks are shallow
+  merged (by name), _not_ deep merged.
+- Have the root `tasks` properly inherited [`implicitDeps`][implicitDeps],
+  [`implicitInputs`][implicitInputs], and `fileGroups`?
+
+## Inspect trace logs
+
+If configuration looks good, let's move on to inspecting the trace logs, which can be a non-trivial
+amount of effort. Run the task to generate the logs, bypass the cache, and include debug
+information:
+
+```shell
+MOON_DEBUG_PROCESS_ENV=true MOON_DEBUG_PROCESS_INPUT=true moon run <target> --log trace --updateCache
+```
+
+Once ran, a large amount of information will be logged to the terminal. However, most of it can be
+ignored, as we're only interested in the "is this task affected by changes" logs. This breaks down
+as follows:
+
+1. First, we gather touched files from the local checkout, which is typically
+   `git status --porcelain --untracked-files` (from the `moon_process::command_inspector` module).
+   The logs do not output the list of files that are touched, but you can run this command locally
+   to verify the output.
+2. Secondly, we gather all files from the project directory, using the
+   `git ls-files --full-name --cached --modified --others --exclude-standard <path> --deduplicate`
+   command (also from the `moon_process::command_inspector` module). This command can also be ran
+   locally to verify the output.
+3. Lastly, all files from the previous 2 commands will be hashed using the `git hash-object`
+   command. If you passed the `MOON_DEBUG_PROCESS_INPUT` environment variable, you'll see a massive
+   log entry of all files being hashed. This is what we use to generate moon's specific hash.
+
+If all went well, you should see a log entry that looks like this:
+
+```
+Generated hash <hash> for target <target>
+```
+
+The important piece is the hash, which is a 64-character SHA256 hash, and represents the unique hash
+of this task/target. This is what moon uses to determine a cache hit/miss, and whether or not to
+skip re-running a task.
+
+Let's copy the hash and move on to the next step.
+
+## Inspect the hash manifest
+
+With the hash in hand, let's dig deeper into moon's internals, by inspecting the hash manifest at
+`.moon/cache/hashes/<hash>.json`, or running the [`moon query hash`](../commands/query/hash)
+command:
+
+```shell
+moon query hash <hash>
+```
+
+The manifest is JSON and its contents are all the information used to generate its unique hash. This
+information is an array, and breaks down as follows:
+
+- The first item in the array is the task itself. The important fields to diagnose here are `deps`
+  and `inputs`.
+  - Dependencies are other tasks (and their hash) that this task depends on.
+  - Inputs are all the files (and their hash from `git hash-object`) this task requires to run.
+- The remaining items are platform/language specific, some examples are:
+  - **Node.js** - The current Node.js version and the resolved versions/hashes of all `package.json`
+    dependencies.
+  - **Rust** - The current Rust version and the resolved versions/hashes of all `Cargo.toml`
+    dependencies.
+  - **TypeScript** - Compiler options for changing compilation output.
+
+Some issues to look out for:
+
+- Do the dependencies match the task's configured [`deps`][deps] and [`implicitDeps`][implicitDeps]?
+- Do the inputs match the task's configured [`inputs`][inputs] and
+  [`implicitInputs`][implicitInputs]? If not, try tweaking the config.
+- Are the platform/language specific items correct?
+- Are dependency versions/hashes correctly parsed from the appropriate lockfile?
+
+### Diffing a previous hash
+
+Another avenue for diagnosing a task is to diff the hash against a hash from a previous run. Since
+we require multiple hashes, we'll need to run the task multiple times,
+[inspect the logs](#inspect-trace-logs), and extract the hash for each. If you receive the same hash
+for each run, you'll need to tweak configuration or change files to produce a different hash.
+
+Once you have 2 unique hashes, we can pass them to the
+[`moon query hash-diff`](../commands/query/hash-diff) command. This will produce a `git diff` styled
+output, allowing for simple line-by-line comparison debugging.
+
+```shell
+moon query hash-diff <hash-left> <hash-right>
+```
+
+```diff
+Left:  0b55b234f1018581c45b00241d7340dc648c63e639fbafdaf85a4cd7e718fdde
+Right: 2388552fee5a02062d0ef402bdc7232f0a447458b058c80ce9c3d0d4d7cfe171
+
+[
+	{
+		"command": "build",
+		"args": [
++			"./dist"
+-			"./build"
+		],
+		...
+	}
+]
+```
+
+This is extremely useful in diagnoising why a task is running differently than before, and is much
+easier than inspecting the hash manifest files manually!
+
+## Ask for help
+
+If you've made it this far, and still can't figure out why a task is not working correctly, please
+ask for help!
+
+- [Join the Discord community](https://discord.gg/qCh9MEynv2) (if lost)
+- [Report an issue](https://github.com/moonrepo/moon/issues/new/choose) (if an actual bug)
+
+[token]: ../concepts/token
+[deps]: ../config/project#deps
+[inputs]: ../config/project#inputs
+[outputs]: ../config/project#outputs
+[platform]: ../config/project#platform-1
+[implicitDeps]: ../config/tasks#implicitdeps
+[implicitInputs]: ../config/tasks#implicitinputs

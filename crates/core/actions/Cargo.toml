@@ -4,10 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+moon_cache_item = { path = "../../../nextgen/cache-item" }
 moon_codeowners = { path = "../../../nextgen/codeowners" }
 moon_config = { path = "../../../nextgen/config" }
-moon_hash = { path = "../../../nextgen/hash" }
-moon_project_graph = { path = "../project-graph" }
+moon_project_graph = { path = "../../../nextgen/project-graph" }
 moon_workspace = { path = "../workspace" }
 moon_vcs_hooks = { path = "../../../nextgen/vcs-hooks" }
 miette = { workspace = true }

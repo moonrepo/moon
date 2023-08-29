@@ -4,7 +4,7 @@ use moon_config::{
     DependencyConfig, InheritedTasksResult, LanguageType, PlatformType, ProjectConfig, ProjectType,
 };
 use moon_file_group::FileGroup;
-use moon_query::{Condition, Criteria, Field, LogicalOperator, QueryError, Queryable};
+use moon_query::{Condition, Criteria, Field, LogicalOperator, Queryable};
 use moon_task::Task;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
@@ -55,21 +55,47 @@ cacheable!(
 );
 
 impl Project {
+    /// Return a cache directory for this project, relative from the cache root.
+    pub fn get_cache_dir(&self) -> PathBuf {
+        PathBuf::from(self.id.as_str())
+    }
+
     /// Return a list of project IDs this project depends on.
     pub fn get_dependency_ids(&self) -> Vec<&Id> {
         self.dependencies.keys().collect::<Vec<_>>()
     }
 
     /// Return a task with the defined ID.
-    pub fn get_task<I: AsRef<str>>(&self, task_id: I) -> Result<&Task, ProjectError> {
+    pub fn get_task<I: AsRef<str>>(&self, task_id: I) -> miette::Result<&Task> {
         let task_id = Id::raw(task_id.as_ref());
 
-        self.tasks
+        let task = self
+            .tasks
             .get(&task_id)
             .ok_or_else(|| ProjectError::UnknownTask {
-                task_id: task_id.to_string(),
-                project_id: self.id.to_string(),
-            })
+                task_id: task_id.clone(),
+                project_id: self.id.clone(),
+            })?;
+
+        if !task.is_expanded() {
+            return Err(ProjectError::UnexpandedTask {
+                task_id,
+                project_id: self.id.clone(),
+            })?;
+        }
+
+        Ok(task)
+    }
+
+    /// Return all tasks within the project.
+    pub fn get_tasks(&self) -> miette::Result<Vec<&Task>> {
+        let mut tasks = vec![];
+
+        for task_id in self.tasks.keys() {
+            tasks.push(self.get_task(task_id)?);
+        }
+
+        Ok(tasks)
     }
 
     /// Return true if this project is affected based on touched files.
@@ -83,7 +109,7 @@ impl Project {
 
 impl Queryable for Project {
     /// Return true if this project matches the given query criteria.
-    fn matches_criteria(&self, query: &Criteria) -> Result<bool, QueryError> {
+    fn matches_criteria(&self, query: &Criteria) -> miette::Result<bool> {
         let match_all = matches!(query.op, LogicalOperator::And);
         let mut matched_any = false;
 
@@ -92,7 +118,15 @@ impl Queryable for Project {
                 Condition::Field { field, .. } => {
                     let result = match field {
                         Field::Language(langs) => condition.matches_enum(langs, &self.language),
-                        Field::Project(ids) => condition.matches(ids, &self.id),
+                        Field::Project(ids) => {
+                            if condition.matches(ids, &self.id)? {
+                                Ok(true)
+                            } else if let Some(alias) = &self.alias {
+                                condition.matches(ids, alias)
+                            } else {
+                                Ok(false)
+                            }
+                        }
                         Field::ProjectAlias(aliases) => {
                             if let Some(alias) = &self.alias {
                                 condition.matches(aliases, alias)
@@ -100,6 +134,7 @@ impl Queryable for Project {
                                 Ok(false)
                             }
                         }
+                        Field::ProjectName(ids) => condition.matches(ids, &self.id),
                         Field::ProjectSource(sources) => {
                             condition.matches(sources, &self.source.to_string())
                         }

@@ -2,8 +2,9 @@ use super::check_dirty_repo;
 use moon::{generate_project_graph, load_workspace};
 use moon_common::{consts, Id};
 use moon_config::{
-    InputPath, OutputPath, PartialInheritedTasksConfig, PartialProjectConfig, PartialTaskConfig,
-    PartialTaskOptionsConfig, PlatformType, ProjectConfig, TaskCommandArgs,
+    InputPath, OutputPath, PartialInheritedTasksConfig, PartialProjectConfig,
+    PartialTaskCommandArgs, PartialTaskConfig, PartialTaskOptionsConfig, PlatformType,
+    ProjectConfig,
 };
 use moon_logger::{info, warn};
 use moon_target::Target;
@@ -84,7 +85,7 @@ pub fn convert_task(name: Id, task: TurboTask) -> AppResult<PartialTaskConfig> {
     let mut config = PartialTaskConfig::default();
     let mut inputs = vec![];
 
-    config.command = Some(TaskCommandArgs::String(format!(
+    config.command = Some(PartialTaskCommandArgs::String(format!(
         "moon node run-script {name}"
     )));
 
@@ -183,7 +184,7 @@ pub async fn from_turborepo(skip_touched_files_check: bool) -> AppResult {
 
     // Convert tasks second
     let mut has_warned_root_tasks = false;
-    let mut modified_projects: FxHashMap<&PathBuf, PartialProjectConfig> = FxHashMap::default();
+    let mut modified_projects: FxHashMap<PathBuf, PartialProjectConfig> = FxHashMap::default();
 
     for (id, task) in turbo_json.pipeline {
         if id.starts_with("//#") {
@@ -216,7 +217,7 @@ pub async fn from_turborepo(skip_touched_files_check: bool) -> AppResult {
                         .get_or_insert(BTreeMap::new())
                         .insert(task_id, task_config);
 
-                    modified_projects.insert(&project.root, project_config);
+                    modified_projects.insert(project.root.clone(), project_config);
                 }
             }
             (None, task_id) => {
@@ -236,11 +237,11 @@ pub async fn from_turborepo(skip_touched_files_check: bool) -> AppResult {
             fs::create_dir_all(&tasks_dir)?;
         }
 
-        yaml::write_with_config(tasks_dir.join("node.yml"), &node_tasks_config)?;
+        yaml::write_file_with_config(tasks_dir.join("node.yml"), &node_tasks_config)?;
     }
 
     for (project_root, project_config) in modified_projects {
-        yaml::write_with_config(
+        yaml::write_file_with_config(
             project_root.join(consts::CONFIG_PROJECT_FILENAME),
             &project_config,
         )?;
@@ -323,7 +324,9 @@ mod tests {
 
             assert_eq!(
                 config.command,
-                Some(TaskCommandArgs::String("moon node run-script foo".into()))
+                Some(PartialTaskCommandArgs::String(
+                    "moon node run-script foo".into()
+                ))
             );
         }
 

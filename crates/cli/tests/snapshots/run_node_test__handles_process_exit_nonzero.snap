@@ -7,7 +7,10 @@ expression: assert.output()
 stdout
 ▪▪▪▪ node:processExitNonZero (100ms)
 stderr
-Error:   × Failed to run node (exit code 1)
+Error: target_runner::run_failed
+
+  × Failed to run task node:processExitNonZero with hash c42c5bf0.
+  ╰─▶ Process node failed with a 1 exit code.
 
 
 

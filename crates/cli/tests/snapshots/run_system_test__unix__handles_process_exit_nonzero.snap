@@ -6,7 +6,10 @@ expression: assert.output()
 stdout
 ▪▪▪▪ unix:exitNonZero (100ms)
 stderr
-Error:   × Failed to run bash (exit code 1)
+Error: target_runner::run_failed
+
+  × Failed to run task unix:exitNonZero with hash feab469d.
+  ╰─▶ Process bash failed with a 1 exit code.
 
 
 

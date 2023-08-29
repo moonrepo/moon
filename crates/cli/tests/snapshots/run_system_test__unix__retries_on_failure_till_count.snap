@@ -18,7 +18,10 @@ stderr
 stderr
 stderr
 stderr
-Error:   × Failed to run bash (exit code 1)
+Error: target_runner::run_failed
+
+  × Failed to run task unix:retryCount with hash 824bccee.
+  ╰─▶ Process bash failed with a 1 exit code.
 
 
 

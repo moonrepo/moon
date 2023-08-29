@@ -63,6 +63,18 @@ condition = { platforms = ["mac", "linux"] }
 [tasks.test]
 run_task = { name = ["clean-test", "run-tests"] }
 
+[tasks.test-ci]
+command = "cargo"
+args = [
+    "nextest",
+    "run",
+    "--workspace",
+    "--config-file",
+    "./.cargo/nextest.toml",
+    "--profile",
+    "ci",
+]
+
 [tasks.sync-plugins-fixture]
 script = "rm -rf ./tests/fixtures/wasm-plugins && cp -r ~/.moon/plugins ./tests/fixtures/wasm-plugins"
 
@@ -76,6 +88,8 @@ args = [
     "--workspace",
     "--config-file",
     "./.cargo/nextest.toml",
+    "--profile",
+    "ci",
 ]
 
 [tasks.test-coverage]

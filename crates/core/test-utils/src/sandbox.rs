@@ -5,9 +5,9 @@ use assert_fs::prelude::*;
 pub use assert_fs::TempDir;
 use moon_config::{PartialInheritedTasksConfig, PartialToolchainConfig, PartialWorkspaceConfig};
 use starbase_utils::glob;
-use std::fs;
 use std::path::Path;
 use std::process::Command as StdCommand;
+use std::{env, fs};
 
 pub struct Sandbox {
     pub fixture: TempDir,
@@ -134,22 +134,20 @@ pub fn create_sandbox_with_config<T: AsRef<str>>(
 
     fs::create_dir_all(sandbox.path().join(".moon-home")).unwrap();
 
-    // Use a symlink so we don't run out of disk space in CI
-    // sandbox
-    //     .fixture
-    //     .child(".moon-home/plugins")
-    //     .symlink_to_dir(get_fixtures_path("wasm-plugins"))
-    //     .unwrap();
-
-    if cfg!(unix) {
-        fs::hard_link(&plugins_dir, sandbox.path().join(".moon-home/plugins")).unwrap();
-    } else {
+    // Symlinks don't have permissions in CI...
+    if env::var("CI").is_ok() {
         starbase_utils::fs::copy_dir_all(
             &plugins_dir,
             &plugins_dir,
             &sandbox.path().join(".moon-home/plugins"),
         )
         .unwrap();
+    } else {
+        sandbox
+            .fixture
+            .child(".moon-home/plugins")
+            .symlink_to_dir(&plugins_dir)
+            .unwrap();
     }
 
     sandbox.create_file(

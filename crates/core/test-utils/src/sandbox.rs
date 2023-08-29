@@ -130,12 +130,13 @@ pub fn create_sandbox_with_config<T: AsRef<str>>(
     tasks_config: Option<PartialInheritedTasksConfig>,
 ) -> Sandbox {
     let sandbox = create_sandbox(fixture);
-    let plugins_path = get_fixtures_path("wasm-plugins");
 
-    starbase_utils::fs::copy_dir_all(
-        &plugins_path,
-        &plugins_path,
-        &sandbox.path().join(".moon-home/plugins"),
+    fs::create_dir_all(sandbox.path().join(".moon-home")).unwrap();
+
+    // Use a symlink so we don't run out of disk space in CI
+    symlink::symlink_dir(
+        get_fixtures_path("wasm-plugins"),
+        sandbox.path().join(".moon-home/plugins"),
     )
     .unwrap();
 

@@ -1,6 +1,6 @@
 [profile.ci]
 retries = 1
-test-threads = 1
+test-threads = 2
 fail-fast = false
 
 [profile.default]

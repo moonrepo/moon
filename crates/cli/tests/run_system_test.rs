@@ -84,9 +84,6 @@ mod unix {
             cmd.arg("run").arg("unix:exitNonZero");
         });
 
-        assert.debug();
-        sandbox.debug_files();
-
         assert_snapshot!(assert.output());
 
         assert.code(1);
@@ -99,9 +96,6 @@ mod unix {
         let assert = sandbox.run_moon(|cmd| {
             cmd.arg("run").arg("unix:exitNonZeroInline");
         });
-
-        assert.debug();
-        sandbox.debug_files();
 
         assert_snapshot!(assert.output());
 

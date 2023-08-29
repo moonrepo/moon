@@ -631,7 +631,14 @@ impl<'a> Runner<'a> {
                     } else if attempt_index >= attempt_total {
                         error = Some(RunnerError::RunFailed {
                             target: self.task.target.id.clone(),
-                            query: format!("moon query hash {}", self.get_short_hash()),
+                            query: format!(
+                                "moon query hash {}",
+                                if is_test_env() {
+                                    "hash1234"
+                                } else {
+                                    self.get_short_hash()
+                                }
+                            ),
                             error: output_to_error(self.task.command.clone(), &out, false),
                         });
                         output = out;

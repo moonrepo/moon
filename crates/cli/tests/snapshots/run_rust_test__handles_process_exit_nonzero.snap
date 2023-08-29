@@ -10,7 +10,7 @@ stderr
 Error: target_runner::run_failed
 
   × Task rust:exitNonZero failed to run. View hash details with moon query
-  │ hash c6bac153.
+  │ hash hash1234.
   ╰─▶ Process cargo failed with a 1 exit code.
 
 

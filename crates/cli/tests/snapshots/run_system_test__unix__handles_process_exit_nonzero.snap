@@ -9,7 +9,7 @@ stderr
 Error: target_runner::run_failed
 
   × Task unix:exitNonZero failed to run. View hash details with moon query
-  │ hash feab469d.
+  │ hash hash1234.
   ╰─▶ Process bash failed with a 1 exit code.
 
 

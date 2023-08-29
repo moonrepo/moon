@@ -10,7 +10,7 @@ stderr
 Error: target_runner::run_failed
 
   × Task node:processExitNonZero failed to run. View hash details with moon
-  │ query hash c42c5bf0.
+  │ query hash hash1234.
   ╰─▶ Process node failed with a 1 exit code.
 
 

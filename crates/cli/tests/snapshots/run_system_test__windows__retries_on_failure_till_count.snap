@@ -21,7 +21,7 @@ stderr
 Error: target_runner::run_failed
 
   × Task windows:retryCount failed to run. View hash details with moon query
-  │ hash b9f8712e.
+  │ hash hash1234.
   ╰─▶ Process cmd.exe failed with a 1 exit code.
 
 

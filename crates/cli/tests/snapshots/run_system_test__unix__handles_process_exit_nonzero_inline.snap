@@ -7,7 +7,7 @@ expression: assert.output()
 Error: target_runner::run_failed
 
   × Task unix:exitNonZeroInline failed to run. View hash details with moon
-  │ query hash c3dcd8dd.
+  │ query hash hash1234.
   ╰─▶ Process bash failed with a 2 exit code.
 
 

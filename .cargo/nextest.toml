@@ -2,3 +2,6 @@
 retries = 1
 test-threads = 1
 fail-fast = false
+
+[profile.default]
+test-threads = 8

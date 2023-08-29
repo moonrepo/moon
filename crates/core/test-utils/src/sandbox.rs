@@ -134,11 +134,23 @@ pub fn create_sandbox_with_config<T: AsRef<str>>(
     fs::create_dir_all(sandbox.path().join(".moon-home")).unwrap();
 
     // Use a symlink so we don't run out of disk space in CI
-    symlink::symlink_dir(
-        get_fixtures_path("wasm-plugins"),
-        sandbox.path().join(".moon-home/plugins"),
-    )
-    .unwrap();
+    sandbox
+        .fixture
+        .child(".moon-home/plugins")
+        .symlink_to_dir(get_fixtures_path("wasm-plugins"))
+        .unwrap();
+
+    // fs::hard_link(
+    //     get_fixtures_path("wasm-plugins"),
+    //     sandbox.path().join(".moon-home/plugins"),
+    // )
+    // .unwrap();
+
+    // symlink::symlink_dir(
+    //     get_fixtures_path("wasm-plugins"),
+    //     sandbox.path().join(".moon-home/plugins"),
+    // )
+    // .unwrap();
 
     sandbox.create_file(
         ".moon/workspace.yml",

@@ -3936,7 +3936,6 @@ dependencies = [
  "rustc-hash",
  "serde_yaml 0.9.25",
  "starbase_utils",
- "symlink",
  "tokio",
 ]
 
@@ -5603,12 +5602,6 @@ checksum = "4b6c2cb240ab5dd21ed4906895ee23fe5a48acdbd15a3ce388e7b62a9b66baf7"
 dependencies = [
  "is-terminal",
 ]
-
-[[package]]
-name = "symlink"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7973cce6668464ea31f176d85b13c7ab3bba2cb3b77a2ed26abd7801688010a"
 
 [[package]]
 name = "syn"

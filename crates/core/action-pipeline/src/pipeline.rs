@@ -194,7 +194,7 @@ impl Pipeline {
 
                             show_abort_log = result.should_abort();
 
-                            if self.bail && result.has_failed() || result.should_abort() {
+                            if self.bail && result.should_bail() || result.should_abort() {
                                 abort_error = Some(result.get_error());
                             } else {
                                 results.push(result);
@@ -326,7 +326,10 @@ impl Pipeline {
                     color::success("pass")
                 }
                 ActionStatus::Failed | ActionStatus::FailedAndAbort => {
-                    failed = true;
+                    if !result.allow_failure {
+                        failed = true;
+                    }
+
                     color::failure("fail")
                 }
                 ActionStatus::Invalid | ActionStatus::Skipped => color::invalid("warn"),

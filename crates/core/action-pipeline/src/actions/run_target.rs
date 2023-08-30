@@ -1,7 +1,7 @@
 use moon_action::{Action, ActionStatus};
 use moon_action_context::{ActionContext, TargetState};
 use moon_emitter::Emitter;
-use moon_logger::debug;
+use moon_logger::{debug, warn};
 use moon_platform::Runtime;
 use moon_project::Project;
 use moon_runner::Runner;
@@ -36,6 +36,8 @@ pub async fn run_target(
         "Running target {}",
         color::label(&task.target)
     );
+
+    action.allow_failure = task.options.allow_failure;
 
     // If a dependency failed, we should skip this target
     if !task.deps.is_empty() {
@@ -114,6 +116,14 @@ pub async fn run_target(
                     .await
                     .target_states
                     .insert(target.clone(), TargetState::Failed);
+
+                if action.allow_failure {
+                    warn!(
+                        target: LOG_TARGET,
+                        "Target {} has failed, but is marked to allow failures, continuing pipeline",
+                        color::label(&task.target),
+                    );
+                }
 
                 ActionStatus::Failed
             };

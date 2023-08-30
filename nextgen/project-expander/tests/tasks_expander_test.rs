@@ -337,6 +337,28 @@ mod tasks_expander {
                 let context = create_context_with_query(&project, sandbox.path(), |i| query.all(i));
                 TasksExpander::new(&context).expand_deps(&mut task).unwrap();
             }
+
+            #[test]
+            #[should_panic(
+                expected = "Task project:task cannot depend on task foo:test-fail, as it is allowed to"
+            )]
+            fn errors_for_allow_failure_chain() {
+                let sandbox = create_empty_sandbox();
+                let mut project = create_project_with_tasks(sandbox.path(), "project");
+                let query = QueryContainer::new(sandbox.path());
+
+                // The valid list comes from `query` but we need a
+                // non-empty set for the expansion to work.
+                project
+                    .dependencies
+                    .insert("foo".into(), DependencyConfig::default());
+
+                let mut task = create_task();
+                task.deps.push(Target::parse("^:test-fail").unwrap());
+
+                let context = create_context_with_query(&project, sandbox.path(), |i| query.all(i));
+                TasksExpander::new(&context).expand_deps(&mut task).unwrap();
+            }
         }
 
         mod own_self {

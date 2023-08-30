@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Updated `runner.archivableTargets` to support tag scoped targets.
+
 #### ⚙️ Internal
 
 - Updated Rust to v1.72.

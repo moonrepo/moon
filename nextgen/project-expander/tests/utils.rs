@@ -79,7 +79,7 @@ pub fn create_project_with_tasks(workspace_root: &Path, id: &str) -> Project {
     let mut project = create_project(workspace_root);
     project.id = Id::raw(id);
 
-    for task_id in ["build", "lint", "test", "dev"] {
+    for task_id in ["build", "lint", "test", "test-fail", "dev"] {
         let mut task = Task {
             id: Id::raw(task_id),
             target: Target::new(id, task_id).unwrap(),
@@ -90,6 +90,10 @@ pub fn create_project_with_tasks(workspace_root: &Path, id: &str) -> Project {
             task.flags.local = true;
             task.options.cache = false;
             task.options.persistent = true;
+        }
+
+        if task_id == "test-fail" {
+            task.options.allow_failure = true;
         }
 
         project.tasks.insert(task_id.into(), task);

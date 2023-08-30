@@ -196,12 +196,14 @@ pub async fn init(args: ArgsRef<InitArgs>) {
         "vcs_provider",
         &detect_vcs_provider(git.get_repository_root().await?),
     );
-    let branch = if git.is_enabled() {
-        git.get_remote_default_branch().await?
-    } else {
-        git.get_default_branch().await?
-    };
-    context.insert("vcs_default_branch", &branch);
+    context.insert(
+        "vcs_default_branch",
+        if git.is_enabled() {
+            git.get_remote_default_branch().await?
+        } else {
+            git.get_default_branch().await?
+        },
+    );
 
     // Initialize all tools
     let mut toolchain_configs = VecDeque::new();
@@ -257,20 +259,14 @@ pub async fn init(args: ArgsRef<InitArgs>) {
     )?;
 
     // Append to ignore file
-    let mut file = OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(dest_dir.join(".gitignore"))
-        .into_diagnostic()?;
-
-    writeln!(
-        file,
+    fs::append_file(
+        dest_dir.join(".gitignore"),
         r#"
 # moon
 .moon/cache
-.moon/docker"#
-    )
-    .into_diagnostic()?;
+.moon/docker
+"#,
+    )?;
 
     println!(
         "\nmoon has successfully been initialized in {}",

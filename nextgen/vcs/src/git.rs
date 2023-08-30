@@ -210,12 +210,13 @@ impl Git {
         Ok(None)
     }
 
-    pub async fn get_remote_default_branch(&self) -> miette::Result<String> {
-        let extract_branch = |result: &str| -> Option<String> {
-            if result.starts_with("origin/") {
-                return Some(result[7..].to_owned());
-            } else if result.starts_with("upstream/") {
-                return Some(result[9..].to_owned());
+    #[allow(clippy::needless_lifetimes)]
+    pub async fn get_remote_default_branch<'l>(&'l self) -> miette::Result<&'l str> {
+        let extract_branch = |result: &'l str| -> Option<&'l str> {
+            if let Some(branch) = result.strip_prefix("origin/") {
+                return Some(branch);
+            } else if let Some(branch) = result.strip_prefix("upstream/") {
+                return Some(branch);
             }
 
             None
@@ -244,7 +245,7 @@ impl Git {
             }
         };
 
-        Ok(self.get_default_branch().await?.to_owned())
+        Ok(&self.default_branch)
     }
 
     fn get_working_root(&self) -> &Path {

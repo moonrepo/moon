@@ -199,7 +199,7 @@ pub async fn init(args: ArgsRef<InitArgs>) {
     let branch = if git.is_enabled() {
         git.get_remote_default_branch().await?
     } else {
-        git.get_default_branch().await?.to_owned()
+        git.get_default_branch().await?
     };
     context.insert("vcs_default_branch", &branch);
 

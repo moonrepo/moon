@@ -28,6 +28,12 @@ tasks:
       - '*.js'
       - 'tsconfig.json'
 
+  testfail:
+    command: 'exit 1'
+    platform: 'system'
+    options:
+      allowFailure: true
+
 workspace:
   inheritedTasks:
     exclude:

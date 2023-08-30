@@ -196,14 +196,12 @@ pub async fn init(args: ArgsRef<InitArgs>) {
         "vcs_provider",
         &detect_vcs_provider(git.get_repository_root().await?),
     );
-    context.insert(
-        "vcs_default_branch",
-        if git.is_enabled() {
-            git.get_local_branch().await?
-        } else {
-            git.get_default_branch().await?
-        },
-    );
+    let branch = if git.is_enabled() {
+        git.get_remote_default_branch().await?
+    } else {
+        git.get_default_branch().await?.to_owned()
+    };
+    context.insert("vcs_default_branch", &branch);
 
     // Initialize all tools
     let mut toolchain_configs = VecDeque::new();

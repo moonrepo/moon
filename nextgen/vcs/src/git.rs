@@ -210,6 +210,43 @@ impl Git {
         Ok(None)
     }
 
+    pub async fn get_remote_default_branch(&self) -> miette::Result<String> {
+        let extract_branch = |result: &str| -> Option<String> {
+            if result.starts_with("origin/") {
+                return Some(result[7..].to_owned());
+            } else if result.starts_with("upstream/") {
+                return Some(result[9..].to_owned());
+            }
+
+            None
+        };
+
+        if let Ok(result) = self
+            .process
+            .run(["rev-parse", "--abbrev-ref", "origin/HEAD"], true)
+            .await
+        {
+            if let Some(branch) = extract_branch(result) {
+                return Ok(branch);
+            }
+        };
+
+        if let Ok(result) = self
+            .process
+            .run(
+                ["symbolic-ref", "refs/remotes/origin/HEAD", "--short"],
+                true,
+            )
+            .await
+        {
+            if let Some(branch) = extract_branch(result) {
+                return Ok(branch);
+            }
+        };
+
+        Ok(self.get_default_branch().await?.to_owned())
+    }
+
     fn get_working_root(&self) -> &Path {
         self.worktree_root.as_ref().unwrap_or(&self.repository_root)
     }

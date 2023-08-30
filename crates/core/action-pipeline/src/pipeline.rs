@@ -332,7 +332,8 @@ impl Pipeline {
 
                     color::failure("fail")
                 }
-                ActionStatus::Invalid | ActionStatus::Skipped => color::invalid("warn"),
+                ActionStatus::Invalid => color::invalid("warn"),
+                ActionStatus::Skipped => color::muted_light("skip"),
                 _ => color::muted_light("oops"),
             };
 
@@ -425,7 +426,7 @@ impl Pipeline {
         }
 
         if skipped_count > 0 {
-            counts_message.push(color::invalid(format!("{skipped_count} skipped")));
+            counts_message.push(color::muted_light(format!("{skipped_count} skipped")));
         }
 
         let term = Term::buffered_stdout();

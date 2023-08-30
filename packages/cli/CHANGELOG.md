@@ -4,10 +4,13 @@
 
 #### 🚀 Updates
 
+- Added an `allowFailure` task option, allowing tasks to fail without bailing the entire run.
+  - Tasks allowed to faill cannot be depended on.
 - Updated `runner.archivableTargets` to support tag scoped targets.
 
 #### ⚙️ Internal
 
+- Cleaned up moonbase and launchpad implementations.
 - Updated Rust to v1.72.
 
 ## 1.12.1

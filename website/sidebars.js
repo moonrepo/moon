@@ -223,6 +223,7 @@ const sidebars = {
 						'guides/examples/astro',
 						'guides/examples/eslint',
 						'guides/examples/jest',
+						'guides/examples/nest',
 						'guides/examples/next',
 						'guides/examples/nuxt',
 						'guides/examples/packemon',

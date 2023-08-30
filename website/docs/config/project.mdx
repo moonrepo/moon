@@ -678,6 +678,26 @@ list of files being passed as arguments.
 
 :::
 
+#### `allowFailure`
+
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#allowFailure" />
+
+Allows a task to fail without failing the entire pipeline. When enabled, the following changes
+occur:
+
+- Other tasks _cannot_ depend on this task, as we can't ensure it's side-effect free.
+- For [`moon run`](../commands/run), the process will not bail early and will run to completion.
+- For [`moon ci`](../commands/ci), the process will not exit with a non-zero exit code, if the only
+  failing tasks are allowed to fail.
+
+```yaml title="moon.yml"
+tasks:
+  lint:
+    command: 'eslint'
+    options:
+      allowFailure: true
+```
+
 #### `cache`
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#cache" />

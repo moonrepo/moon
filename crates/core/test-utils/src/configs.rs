@@ -46,6 +46,7 @@ pub fn get_cases_fixture_configs() -> (
             ("base".into(), "base".to_owned()),
             ("noop".into(), "noop".to_owned()),
             ("files".into(), "files".to_owned()),
+            ("states".into(), "states".to_owned()),
             // Runner
             ("interactive".into(), "interactive".to_owned()),
             ("passthroughArgs".into(), "passthrough-args".to_owned()),

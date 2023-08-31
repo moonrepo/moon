@@ -111,6 +111,39 @@ fn creates_run_report() {
     assert!(sandbox.path().join(".moon/cache/runReport.json").exists());
 }
 
+#[test]
+fn bails_on_failing_task() {
+    let sandbox = cases_sandbox();
+    sandbox.enable_git();
+
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("states:willFail");
+    });
+
+    let output = assert.output();
+
+    assert!(predicate::str::contains("Task states:willFail failed to run.").eval(&output));
+
+    assert.failure();
+}
+
+#[test]
+fn doesnt_bail_on_failing_task_if_allowed_to_fail() {
+    let sandbox = cases_sandbox();
+    sandbox.enable_git();
+
+    let assert = sandbox.run_moon(|cmd| {
+        cmd.arg("run").arg("states:willFailButAllowed");
+    });
+
+    let output = assert.output();
+
+    assert!(!predicate::str::contains("Task states:willFail failed to run.").eval(&output));
+    assert!(predicate::str::contains("Tasks: 1 failed").eval(&output));
+
+    assert.success();
+}
+
 #[cfg(not(windows))]
 mod general {
     use super::*;
@@ -608,11 +641,11 @@ mod hashing {
         // Hashes change because `.moon/workspace.yml` is different from `walk_strategy`
         assert_eq!(
             hash_vcs,
-            "7124516dd636fcbff5a02da0203cc417480a901e70d4fd78a257a2371617f9fc"
+            "2a945bb87fbd0eb7f7d3f693aaab76b55574677bbe153060428ce72d65d09333"
         );
         assert_eq!(
             hash_glob,
-            "e403c51921291eec67872aaab8edc11669492144738261a83aedc2e18b5d13e9"
+            "0a42c5026978985014db5bf39405b8865ba0354f4a17e6ad2f25aeb0b0c9c0cb"
         );
     }
 }

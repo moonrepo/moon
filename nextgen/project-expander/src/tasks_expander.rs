@@ -86,6 +86,15 @@ impl<'graph, 'query> TasksExpander<'graph, 'query> {
                     .into());
                 };
 
+                // Do not depend on tasks that can fail
+                if dep_task.options.allow_failure {
+                    return Err(TasksExpanderError::AllowFailureDepRequirement {
+                        dep: dep_task.target.to_owned(),
+                        task: task.target.to_owned(),
+                    }
+                    .into());
+                }
+
                 // Enforce persistent constraints
                 if dep_task.is_persistent() && !task.is_persistent() {
                     return Err(TasksExpanderError::PersistentDepRequirement {

@@ -14,7 +14,16 @@ pub enum TasksExpanderError {
         error: dotenvy::Error,
     },
 
-    #[diagnostic(code(task_expander::persistent_requirement))]
+    #[diagnostic(code(task_expander::dependency::no_allowed_failures))]
+    #[error(
+        "Task {} cannot depend on task {}, as it is allowed to fail, which may cause unwanted side-effects.\nA task is marked to allow failure with the {} setting.",
+        .task.id.style(Style::Label),
+        .dep.id.style(Style::Label),
+        "options.allowFailure".style(Style::Symbol),
+    )]
+    AllowFailureDepRequirement { dep: Target, task: Target },
+
+    #[diagnostic(code(task_expander::dependency::persistent_requirement))]
     #[error(
         "Non-persistent task {} cannot depend on persistent task {}.\nA task is marked persistent with the {} or {} settings.\n\nIf you're looking to avoid the cache, disable {} instead.",
         .task.id.style(Style::Label),

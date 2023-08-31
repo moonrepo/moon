@@ -391,6 +391,10 @@ impl<'proj> TasksBuilder<'proj> {
                 options.affected_files = Some(affected_files.to_owned());
             }
 
+            if let Some(allow_failure) = &config.allow_failure {
+                options.allow_failure = *allow_failure;
+            }
+
             if let Some(cache) = &config.cache {
                 options.cache = *cache;
             }

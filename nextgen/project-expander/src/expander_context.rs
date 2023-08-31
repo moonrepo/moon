@@ -6,7 +6,7 @@ use moon_task::Target;
 use rustc_hash::FxHashMap;
 use std::env;
 use std::path::Path;
-use tracing::warn;
+use tracing::debug;
 
 /// Boundaries between projects to validate.
 #[derive(Default)]
@@ -42,7 +42,7 @@ pub fn substitute_env_var(value: &str, env_map: &FxHashMap<String, String>) -> S
             match env_map.get(name).map(|v| v.to_owned()).or_else(|| env::var(name).ok()) {
                 Some(var) => var,
                 None => {
-                     warn!(
+                    debug!(
                         "Task value `{}` contains the environment variable ${}, but this variable is not set. Not substituting and keeping as-is.",
                         value,
                         name

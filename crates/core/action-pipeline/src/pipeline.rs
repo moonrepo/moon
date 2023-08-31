@@ -194,7 +194,7 @@ impl Pipeline {
 
                             show_abort_log = result.should_abort();
 
-                            if self.bail && result.has_failed() || result.should_abort() {
+                            if self.bail && result.should_bail() || result.should_abort() {
                                 abort_error = Some(result.get_error());
                             } else {
                                 results.push(result);
@@ -326,10 +326,14 @@ impl Pipeline {
                     color::success("pass")
                 }
                 ActionStatus::Failed | ActionStatus::FailedAndAbort => {
-                    failed = true;
+                    if !result.allow_failure {
+                        failed = true;
+                    }
+
                     color::failure("fail")
                 }
-                ActionStatus::Invalid | ActionStatus::Skipped => color::invalid("warn"),
+                ActionStatus::Invalid => color::invalid("warn"),
+                ActionStatus::Skipped => color::muted_light("skip"),
                 _ => color::muted_light("oops"),
             };
 
@@ -422,7 +426,7 @@ impl Pipeline {
         }
 
         if skipped_count > 0 {
-            counts_message.push(color::invalid(format!("{skipped_count} skipped")));
+            counts_message.push(color::muted_light(format!("{skipped_count} skipped")));
         }
 
         let term = Term::buffered_stdout();

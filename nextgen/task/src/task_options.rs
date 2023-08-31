@@ -6,6 +6,8 @@ cacheable!(
     pub struct TaskOptions {
         pub affected_files: Option<TaskOptionAffectedFiles>,
 
+        pub allow_failure: bool,
+
         pub cache: bool,
 
         pub env_file: Option<InputPath>,
@@ -43,6 +45,7 @@ impl Default for TaskOptions {
     fn default() -> Self {
         TaskOptions {
             affected_files: None,
+            allow_failure: false,
             cache: true,
             env_file: None,
             interactive: false,

@@ -401,20 +401,26 @@ impl<'a> Runner<'a> {
         }
 
         for target in &self.workspace.config.runner.archivable_targets {
+            let is_matching_task = task.target.task_id == target.task_id;
+
             match &target.scope {
                 TargetScope::All => {
-                    if task.target.task_id == target.task_id {
+                    if is_matching_task {
                         return Ok(true);
                     }
                 }
                 TargetScope::Project(project_id) => {
                     if let Some(owner_id) = &task.target.scope_id {
-                        if owner_id == project_id && task.target.task_id == target.task_id {
+                        if owner_id == project_id && is_matching_task {
                             return Ok(true);
                         }
                     }
                 }
-                TargetScope::Tag(_) => todo!(),
+                TargetScope::Tag(tag_id) => {
+                    if self.project.config.tags.contains(tag_id) && is_matching_task {
+                        return Ok(true);
+                    }
+                }
                 TargetScope::Deps => return Err(TargetError::NoDepsInRunContext.into()),
                 TargetScope::OwnSelf => return Err(TargetError::NoSelfInRunContext.into()),
             };

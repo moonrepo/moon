@@ -14,6 +14,7 @@ export type TaskOutputStyle = 'buffer' | 'buffer-only-failure' | 'hash' | 'none'
 
 export interface PartialTaskOptionsConfig {
 	affectedFiles?: TaskOptionAffectedFiles | null;
+	allowFailure?: boolean | null;
 	cache?: boolean | null;
 	envFile?: TaskOptionEnvFile | null;
 	interactive?: boolean | null;
@@ -63,6 +64,7 @@ export type TaskCommandArgs = null | string | string[];
 
 export interface TaskOptionsConfig {
 	affectedFiles: TaskOptionAffectedFiles | null;
+	allowFailure: boolean | null;
 	cache: boolean | null;
 	envFile: TaskOptionEnvFile | null;
 	interactive: boolean | null;

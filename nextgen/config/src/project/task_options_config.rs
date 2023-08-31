@@ -114,6 +114,8 @@ cacheable!(
     pub struct TaskOptionsConfig {
         pub affected_files: Option<TaskOptionAffectedFiles>,
 
+        pub allow_failure: Option<bool>,
+
         pub cache: Option<bool>,
 
         pub env_file: Option<TaskOptionEnvFile>,

@@ -77,6 +77,8 @@ impl Attempt {
 #[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Action {
+    pub allow_failure: bool,
+
     pub attempts: Option<Vec<Attempt>>,
 
     pub created_at: NaiveDateTime,
@@ -111,6 +113,7 @@ pub struct Action {
 impl Action {
     pub fn new(node: ActionNode) -> Self {
         Action {
+            allow_failure: false,
             attempts: None,
             created_at: now_timestamp(),
             duration: None,
@@ -196,6 +199,10 @@ impl Action {
 
     pub fn should_abort(&self) -> bool {
         matches!(self.status, ActionStatus::FailedAndAbort)
+    }
+
+    pub fn should_bail(&self) -> bool {
+        !self.allow_failure && self.has_failed()
     }
 
     pub fn was_cached(&self) -> bool {

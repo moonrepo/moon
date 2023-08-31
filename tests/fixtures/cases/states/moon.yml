@@ -1,0 +1,9 @@
+tasks:
+  willFail:
+    command: exit 1
+    platform: system
+  willFailButAllowed:
+    command: exit 1
+    platform: system
+    options:
+      allowFailure: true

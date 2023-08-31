@@ -199,7 +199,7 @@ pub async fn init(args: ArgsRef<InitArgs>) {
     context.insert(
         "vcs_default_branch",
         if git.is_enabled() {
-            git.get_local_branch().await?
+            git.get_remote_default_branch().await?
         } else {
             git.get_default_branch().await?
         },
@@ -259,20 +259,14 @@ pub async fn init(args: ArgsRef<InitArgs>) {
     )?;
 
     // Append to ignore file
-    let mut file = OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(dest_dir.join(".gitignore"))
-        .into_diagnostic()?;
-
-    writeln!(
-        file,
+    fs::append_file(
+        dest_dir.join(".gitignore"),
         r#"
 # moon
 .moon/cache
-.moon/docker"#
-    )
-    .into_diagnostic()?;
+.moon/docker
+"#,
+    )?;
 
     println!(
         "\nmoon has successfully been initialized in {}",

@@ -147,7 +147,7 @@ mod vcs {
 
         let content = fs::read_to_string(workspace_config).unwrap();
 
-        assert!(predicate::str::contains("manager: 'git'").eval(&content));
-        assert!(predicate::str::contains("defaultBranch: 'sandboxs-test'").eval(&content));
+        // We don't show the vcs block if it defaults to git/master
+        assert!(!predicate::str::contains("manager: 'git'").eval(&content));
     }
 }

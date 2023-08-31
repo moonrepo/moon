@@ -210,6 +210,44 @@ impl Git {
         Ok(None)
     }
 
+    #[allow(clippy::needless_lifetimes)]
+    pub async fn get_remote_default_branch<'l>(&'l self) -> miette::Result<&'l str> {
+        let extract_branch = |result: &'l str| -> Option<&'l str> {
+            if let Some(branch) = result.strip_prefix("origin/") {
+                return Some(branch);
+            } else if let Some(branch) = result.strip_prefix("upstream/") {
+                return Some(branch);
+            }
+
+            None
+        };
+
+        if let Ok(result) = self
+            .process
+            .run(["rev-parse", "--abbrev-ref", "origin/HEAD"], true)
+            .await
+        {
+            if let Some(branch) = extract_branch(result) {
+                return Ok(branch);
+            }
+        };
+
+        if let Ok(result) = self
+            .process
+            .run(
+                ["symbolic-ref", "refs/remotes/origin/HEAD", "--short"],
+                true,
+            )
+            .await
+        {
+            if let Some(branch) = extract_branch(result) {
+                return Ok(branch);
+            }
+        };
+
+        Ok(&self.default_branch)
+    }
+
     fn get_working_root(&self) -> &Path {
         self.worktree_root.as_ref().unwrap_or(&self.repository_root)
     }

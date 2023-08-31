@@ -1,6 +1,6 @@
 use crate::errors::WorkspaceError;
 use moon_api::Moonbase;
-use moon_cache::{get_moon_home_dir, CacheEngine};
+use moon_cache::CacheEngine;
 use moon_common::consts;
 use moon_config::{InheritedTasksConfig, InheritedTasksManager, ToolchainConfig, WorkspaceConfig};
 use moon_hash::HashEngine;
@@ -219,10 +219,9 @@ impl Workspace {
             &config.vcs.remote_candidates,
         )?;
 
-        let moon_home_dir = get_moon_home_dir();
-
+        let toolchain_root = get_root()?;
         let mut plugin_loader =
-            PluginLoader::new(moon_home_dir.join("plugins"), moon_home_dir.join("temp"));
+            PluginLoader::new(toolchain_root.join("plugins"), toolchain_root.join("temp"));
         plugin_loader.set_seed(env::var("MOON_VERSION").unwrap_or_default().as_str());
 
         Ok(Workspace {
@@ -235,7 +234,7 @@ impl Workspace {
             session: None,
             tasks_config: Arc::new(tasks_config),
             toolchain_config,
-            toolchain_root: get_root()?,
+            toolchain_root,
             vcs: Arc::new(Box::new(vcs)),
             working_dir: working_dir.to_owned(),
         })

@@ -715,9 +715,9 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "chrono"
-version = "0.4.26"
+version = "0.4.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec837a71355b28f6556dbd569b37b3f363091c0bd4b2e735674521b4c5fd9bc5"
+checksum = "95ed24df0632f708f5f6d8082675bef2596f7084dee3dd55f632290bf35bfe0f"
 dependencies = [
  "android-tzdata",
  "iana-time-zone",
@@ -726,7 +726,7 @@ dependencies = [
  "serde",
  "time 0.1.45",
  "wasm-bindgen",
- "winapi",
+ "windows-targets 0.48.0",
 ]
 
 [[package]]
@@ -4406,12 +4406,12 @@ dependencies = [
 
 [[package]]
 name = "petgraph"
-version = "0.6.3"
+version = "0.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4dd7d28ee937e54fe3080c91faa1c3a46c06de6252988a7f4592ba2310ef22a4"
+checksum = "e1d3afd2628e69da2be385eb6f2fd57c8ac7977ceeff6dc166ff1657b0e386a9"
 dependencies = [
  "fixedbitset",
- "indexmap 1.9.3",
+ "indexmap 2.0.0",
  "serde",
  "serde_derive",
 ]
@@ -4628,9 +4628,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.16.2"
+version = "0.16.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a58820f2cd075713a50eff34c7ca5426a9a07436e2f71d10ebb2c2025b7621e3"
+checksum = "db1300ec89181afa9125e059c9ebad9857178d78adec0c19e68a1b2925126628"
 dependencies = [
  "cached",
  "extism",
@@ -4657,9 +4657,9 @@ dependencies = [
 
 [[package]]
 name = "proto_pdk_api"
-version = "0.6.1"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "48c44b52b7f838317a89c5933081847623f1a823783a1eee4510cff4e99df118"
+checksum = "ee092647c5eb856f1c298cf6499fc615e3491824fb03afe8338b191266433d2d"
 dependencies = [
  "anyhow",
  "semver",
@@ -4671,9 +4671,9 @@ dependencies = [
 
 [[package]]
 name = "proto_wasm_plugin"
-version = "0.6.1"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7e7fb0f0e197775da1448d90228cc38096a6377eeafa90d83568671d7428b4da"
+checksum = "fe8fd07d5e0cbe173c6212b6a469df14054c55da9b342c7a35cf1a6bd0a591b6"
 dependencies = [
  "extism",
  "proto_pdk_api",
@@ -4796,14 +4796,14 @@ dependencies = [
 
 [[package]]
 name = "regex"
-version = "1.9.3"
+version = "1.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "81bc1d4caf89fac26a70747fe603c130093b53c773888797a6329091246d651a"
+checksum = "12de2eff854e5fa4b1295edd650e227e9d8fb0c9e90b12e7f36d6a6811791a29"
 dependencies = [
  "aho-corasick 1.0.1",
  "memchr",
- "regex-automata 0.3.6",
- "regex-syntax 0.7.4",
+ "regex-automata 0.3.7",
+ "regex-syntax 0.7.5",
 ]
 
 [[package]]
@@ -4817,13 +4817,13 @@ dependencies = [
 
 [[package]]
 name = "regex-automata"
-version = "0.3.6"
+version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fed1ceff11a1dddaee50c9dc8e4938bd106e9d89ae372f192311e7da498e3b69"
+checksum = "49530408a136e16e5b486e883fbb6ba058e8e4e8ae6621a77b048b314336e629"
 dependencies = [
  "aho-corasick 1.0.1",
  "memchr",
- "regex-syntax 0.7.4",
+ "regex-syntax 0.7.5",
 ]
 
 [[package]]
@@ -4834,9 +4834,9 @@ checksum = "f162c6dd7b008981e4d40210aca20b4bd0f9b60ca9271061b07f78537722f2e1"
 
 [[package]]
 name = "regex-syntax"
-version = "0.7.4"
+version = "0.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5ea92a5b6195c6ef2a0295ea818b312502c6fc94dde986c5553242e18fd4ce2"
+checksum = "dbb5fb1acd8a1a18b3dd5be62d25485eb770e05afb408a9627d14d451bae12da"
 
 [[package]]
 name = "relative-path"
@@ -6278,9 +6278,9 @@ dependencies = [
 
 [[package]]
 name = "url"
-version = "2.4.0"
+version = "2.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50bff7831e19200a85b17131d085c25d7811bc4e186efdaf54bbd132994a88cb"
+checksum = "143b538f18257fac9cad154828a57c6bf5157e1aa604d4816b5995bf6de87ae5"
 dependencies = [
  "form_urlencoded",
  "idna",
@@ -6370,9 +6370,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate"
-version = "0.5.1"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "484a10ae0fa0bf64f3da4e3d63608c698a36051b88c6a0c9266e468b88eac8bb"
+checksum = "0dbc39496976283e2ac18e8c7f2d5a7198069137404fc0397f92697aa3fbddc3"
 dependencies = [
  "extism",
  "miette",
@@ -6393,9 +6393,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate_api"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "197cb65c1fc7d16a2488a276f3e5fd48dc6c7cb77d8578d814630dde0924bf8c"
+checksum = "7f5163c150ff440e4b7258bfd69dd5fbb3a540548ee49d187c86d8c01adecabc"
 dependencies = [
  "serde",
 ]

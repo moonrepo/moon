@@ -8,6 +8,10 @@
   - Tasks allowed to faill cannot be depended on.
 - Updated `runner.archivableTargets` to support tag scoped targets.
 
+#### 🐞 Fixes
+
+- Fixed `moon init` not using the remote default branch when scaffolding.
+
 #### ⚙️ Internal
 
 - Cleaned up moonbase and launchpad implementations.

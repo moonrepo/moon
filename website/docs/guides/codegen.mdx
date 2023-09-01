@@ -83,9 +83,9 @@ configured based on file type.
 #### Partials
 
 Partials are special template files that are used for
-[composition](https://tera.netlify.app/docs/#include) and
-[inheritance](https://tera.netlify.app/docs/#inheritance). Because of this, these files _should not_
-be generated into the target destination, and _do not_ support frontmatter.
+[composition](https://keats.github.io/tera/docs/#include) and
+[inheritance](https://keats.github.io/tera/docs/#inheritance). Because of this, these files _should
+not_ be generated into the target destination, and _do not_ support frontmatter.
 
 To ensure they are not generated, include the word "partial" anywhere in the file path. For example,
 `partials/header.tpl` or `header.partial.tpl`.
@@ -137,21 +137,22 @@ export function {{ component_name }}() {
 
 ### Template engine & syntax
 
-Rendering templates is powered by [Tera](https://tera.netlify.app/), a Rust based template engine
-with syntax similar to Twig, Liquid, Django, and more. We highly encourage everyone to read Tera's
-documentation for an in-depth understanding, but as a quick reference, Tera supports the following:
+Rendering templates is powered by [Tera](https://keats.github.io/tera/), a Rust based template
+engine with syntax similar to Twig, Liquid, Django, and more. We highly encourage everyone to read
+Tera's documentation for an in-depth understanding, but as a quick reference, Tera supports the
+following:
 
-- [Variable interpolation](https://tera.netlify.app/docs/#variables) (defined with the
+- [Variable interpolation](https://keats.github.io/tera/docs/#variables) (defined with the
   [`variables`](../config/template#variables) setting), with
-  [built-in filters](https://tera.netlify.app/docs/#built-ins).
+  [built-in filters](https://keats.github.io/tera/docs/#built-in-filters).
 
 ```twig
 {{ varName }} -> foo
 {{ varName | upper }} -> FOO
 ```
 
-- [Conditional blocks](https://tera.netlify.app/docs/#if) and
-  [loops](https://tera.netlify.app/docs/#for).
+- [Conditional blocks](https://keats.github.io/tera/docs/#if) and
+  [loops](https://keats.github.io/tera/docs/#for).
 
 ```twig
 {% if price < 10 or always_show %}
@@ -174,8 +175,8 @@ documentation for an in-depth understanding, but as a quick reference, Tera supp
 #### Filters
 
 Filters are a mechanism for transforming values during interpolation and are written using pipes
-(`|`). Tera provides many [built-in filters](https://tera.netlify.app/docs/#built-in-filters), but
-we also provide the following custom filters:
+(`|`). Tera provides many [built-in filters](https://keats.github.io/tera/docs/#built-in-filters),
+but we also provide the following custom filters:
 
 - Strings - `camel_case`, `pascal_case`, `snake_case`, `upper_snake_case`, `kebab_case`,
   `upper_kebab_case`, `lower_case`, `upper_case`

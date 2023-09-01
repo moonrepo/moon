@@ -194,12 +194,14 @@ pub async fn process_action(
         }
     };
 
-    match &result {
+    let error_message = extract_error(&result);
+
+    match result {
         Ok(status) => {
-            action.finish(*status);
+            action.finish(status);
         }
         Err(error) => {
-            action.fail(error.to_string());
+            action.fail(error);
         }
     };
 
@@ -213,7 +215,7 @@ pub async fn process_action(
     local_emitter
         .emit(Event::ActionFinished {
             action: &action,
-            error: extract_error(&result),
+            error: error_message,
             node: &node,
         })
         .await?;

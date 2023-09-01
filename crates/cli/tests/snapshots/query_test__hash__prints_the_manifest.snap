@@ -5,12 +5,12 @@ expression: assert.output()
 Hash: a
 
 {
-    "command": "base",
-    "args": [
-        "a",
-        "b",
-        "c"
-    ]
+  "command": "base",
+  "args": [
+    "a",
+    "b",
+    "c"
+  ]
 }
 
 

@@ -9,7 +9,11 @@ stdout
 
 stderr
 
-Error:   × Failed to run node (exit code 1)
+Error: target_runner::run_failed
+
+  × Task outputStyles:bufferFailureFail failed to run. View hash details with
+  │ moon query hash hash1234.
+  ╰─▶ Process node failed with a 1 exit code.
 
 
 

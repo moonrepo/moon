@@ -3103,6 +3103,7 @@ dependencies = [
 name = "moon_action"
 version = "0.1.0"
 dependencies = [
+ "miette",
  "moon_common",
  "moon_platform_runtime",
  "moon_target",
@@ -3248,7 +3249,7 @@ dependencies = [
 
 [[package]]
 name = "moon_cli"
-version = "1.12.0"
+version = "1.12.1"
 dependencies = [
  "bytes",
  "ci_env",

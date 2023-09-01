@@ -102,6 +102,10 @@ const config = {
 								to: '/proto',
 								html: '<strong class="block mr-2">proto</strong><div class="opacity-60">Multi-language toolchain manager</div>',
 							},
+							{
+								to: 'https://espresso.build',
+								html: '<strong class="block mr-2">espresso</strong><div class="opacity-60">Next-gen JavaScript package system</div>',
+							},
 						],
 					},
 					{
